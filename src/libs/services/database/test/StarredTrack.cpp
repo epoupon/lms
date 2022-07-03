@@ -64,6 +64,24 @@ TEST_F(DatabaseFixture, StarredTrack)
 	}
 }
 
+TEST_F(DatabaseFixture, Starredtrack_PendingDestroy)
+{
+	ScopedTrack track {session, "MyTrack"};
+	ScopedUser user {session, "MyUser"};
+	ScopedStarredTrack starredTrack {session, track.lockAndGet(), user.lockAndGet(), Scrobbler::Internal};
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		auto tracks {Track::find(session, Track::FindParameters {}.setStarringUser(user.getId(), Scrobbler::Internal))};
+		EXPECT_EQ(tracks.results.size(), 1);
+
+		starredTrack.get().modify()->setScrobblingState(ScrobblingState::PendingRemove);
+		tracks = Track::find(session, Track::FindParameters {}.setStarringUser(user.getId(), Scrobbler::Internal));
+		EXPECT_EQ(tracks.results.size(), 0);
+	}
+}
+
 TEST_F(DatabaseFixture, StarredTrack_dateTime)
 {
 	ScopedTrack track1 {session, "MyTrack1"};

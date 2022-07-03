@@ -1,0 +1,28 @@
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Explore.TrackLists.template">
+	<div class="mb-3">
+		<ul class="nav nav-pills">
+			<li class="nav-item">
+				${recently-modified class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${all class="nav-link"}
+			</li>
+		</ul>
+	</div>
+	${tracklists}
+</message>
+
+<message id="Lms.Explore.TrackLists.template.entry">
+	${name class="text-decoration-none link-secondary"}
+</message>
+
+<message id="Lms.Explore.TrackLists.template.container">
+	${elements class="d-grid gap-3"}
+	${loading-indicator}
+</message>
+
+</messages>

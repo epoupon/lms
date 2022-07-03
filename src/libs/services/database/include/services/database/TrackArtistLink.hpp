@@ -54,7 +54,6 @@ namespace Database
 				void persist(Action& a)
 				{
 					Wt::Dbo::field(a, _type, "type");
-					Wt::Dbo::field(a, _type, "name");
 
 					Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
 					Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
@@ -62,7 +61,6 @@ namespace Database
 
 		private:
 			TrackArtistLinkType _type;
-			std::string	_name;
 
 			Wt::Dbo::ptr<Track> _track;
 			Wt::Dbo::ptr<Artist> _artist;

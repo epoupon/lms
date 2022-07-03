@@ -37,9 +37,21 @@ namespace UserInterface::Utils
 		const std::chrono::seconds duration {std::chrono::duration_cast<std::chrono::seconds>(msDuration)};
 
 		std::ostringstream oss;
-		oss << (duration.count() / 60)
-			<< ":"
-			<< std::setfill('0') << std::setw(2) << duration.count() % 60;
+
+		if (duration.count() >= 3600)
+		{
+			oss << (duration.count() / 3600)
+				<< ":"
+				<< std::setfill('0') << std::setw(2) << (duration.count() % 3600) / 60
+				<< ":"
+				<< std::setfill('0') << std::setw(2) << duration.count() % 60;
+		}
+		else
+		{
+			oss << (duration.count() / 60)
+				<< ":"
+				<< std::setfill('0') << std::setw(2) << duration.count() % 60;
+		}
 
 		return oss.str();
 	}

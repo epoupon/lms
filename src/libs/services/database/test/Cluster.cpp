@@ -187,7 +187,7 @@ TEST_F(DatabaseFixture, Cluster_multiTracksMultipleClustersTopRelease)
 	ScopedRelease releaseC {session, "ReleaseC"};
 
 	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "TrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList {session, "TrackList", TrackListType::Playlist, false, user.lockAndGet()};
 
 	{
 		auto transaction {session.createSharedTransaction()};
@@ -211,9 +211,9 @@ TEST_F(DatabaseFixture, Cluster_multiTracksMultipleClustersTopRelease)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackListEntry::create(session, trackA.get(), trackList.get());
-		TrackListEntry::create(session, trackB.get(), trackList.get());
-		TrackListEntry::create(session, trackB.get(), trackList.get());
+		session.create<TrackListEntry>(trackA.get(), trackList.get());
+		session.create<TrackListEntry>(trackB.get(), trackList.get());
+		session.create<TrackListEntry>(trackB.get(), trackList.get());
 	}
 
 	{
@@ -249,9 +249,9 @@ TEST_F(DatabaseFixture, Cluster_multiTracksMultipleClustersTopRelease)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackListEntry::create(session, trackC.get(), trackList.get());
-		TrackListEntry::create(session, trackC.get(), trackList.get());
-		TrackListEntry::create(session, trackC.get(), trackList.get());
+		session.create<TrackListEntry>(trackC.get(), trackList.get());
+		session.create<TrackListEntry>(trackC.get(), trackList.get());
+		session.create<TrackListEntry>(trackC.get(), trackList.get());
 	}
 
 	{
@@ -574,11 +574,11 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistSingleCluster)
 		ASSERT_EQ(artists.results.size(), 1);
 		EXPECT_EQ(artists.results.front(), artist.getId());
 
-		auto releases {artist->getReleases(Range {})};
+		auto releases {Release::find(session, Release::FindParameters {}.setArtist(artist.getId()))};
 		ASSERT_EQ(releases.results.size(), 1);
 		EXPECT_EQ(releases.results.front(), release.getId());
 
-		releases = artist->getReleases(Range {}, {cluster.getId()});
+		releases = Release::find(session, Release::FindParameters {}.setArtist(artist.getId()).setClusters({cluster.getId()}));
 		ASSERT_EQ(releases.results.size(), 1);
 		EXPECT_EQ(releases.results.front(), release.getId());
 	}
@@ -605,11 +605,11 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistMultiClusters)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		auto releases {artist->getReleases(Range {})};
+		auto releases {Release::find(session, Release::FindParameters {}.setArtist(artist.getId()))};
 		ASSERT_EQ(releases.results.size(), 1);
 		EXPECT_EQ(releases.results.front(), release.getId());
 
-		releases = artist->getReleases(Range {}, {cluster1.getId(), cluster2.getId()});
+		releases = Release::find(session, Release::FindParameters {}.setArtist(artist.getId()).setClusters({cluster1.getId(), cluster2.getId()}));
 		ASSERT_EQ(releases.results.size(), 1);
 		EXPECT_EQ(releases.results.front(), release.getId());
 	}
@@ -618,7 +618,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistMultiClusters)
 TEST_F(DatabaseFixture, SingleTrackListMultipleTrackSingleCluster)
 {
 	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "MyTrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList {session, "MyTrackList", TrackListType::Playlist, false, user.lockAndGet()};
 	ScopedClusterType clusterType {session, "MyClusterType"};
 	ScopedCluster cluster {session, clusterType.lockAndGet(), "MyCluster"};
 	std::list<ScopedTrack> tracks;
@@ -630,7 +630,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackSingleCluster)
 		auto transaction {session.createUniqueTransaction()};
 
 		if (i < 5)
-			TrackListEntry::create(session, tracks.back().get(), trackList.get());
+			session.create<TrackListEntry>(tracks.back().get(), trackList.get());
 
 		if (i < 10)
 			cluster.get().modify()->addTrack(tracks.back().get());
@@ -650,7 +650,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackSingleCluster)
 TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClusters)
 {
 	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "MyTrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList {session, "MyTrackList", TrackListType::Playlist, false, user.lockAndGet()};
 	ScopedClusterType clusterType {session, "MyClusterType"};
 	ScopedCluster cluster1 {session, clusterType.lockAndGet(), "MyCluster1"};
 	ScopedCluster cluster2 {session, clusterType.lockAndGet(), "MyCluster2"};
@@ -663,7 +663,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClusters)
 		auto transaction {session.createUniqueTransaction()};
 
 		if (i < 5)
-			TrackListEntry::create(session, tracks.back().get(), trackList.get());
+			session.create<TrackListEntry>(tracks.back().get(), trackList.get());
 
 		if (i < 10)
 		{
@@ -702,7 +702,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClusters)
 TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClustersRecentlyPlayed)
 {
 	ScopedUser user {session, "MyUser"};
-	ScopedTrackList trackList {session, "MyTrackList", TrackList::Type::Playlist, false, user.lockAndGet()};
+	ScopedTrackList trackList {session, "MyTrackList", TrackListType::Playlist, false, user.lockAndGet()};
 	ScopedClusterType clusterType {session, "MyClusterType"};
 	ScopedCluster cluster1 {session, clusterType.lockAndGet(), "MyCluster1"};
 	ScopedCluster cluster2 {session, clusterType.lockAndGet(), "MyCluster2"};
@@ -742,7 +742,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClustersRecentlyPlayed)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackListEntry::create(session, track1.get(), trackList.get(), now);
+		session.create<TrackListEntry>(track1.get(), trackList.get(), now);
 	}
 
 	{
@@ -828,7 +828,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClustersRecentlyPlayed)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackListEntry::create(session, track2.get(), trackList.get(), now.addSecs(1));
+		session.create<TrackListEntry>(track2.get(), trackList.get(), now.addSecs(1));
 	}
 
 	{
@@ -908,7 +908,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClustersRecentlyPlayed)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		TrackListEntry::create(session, track1.get(), trackList.get(), now.addSecs(2));
+		session.create<TrackListEntry>(track1.get(), trackList.get(), now.addSecs(2));
 	}
 
 	{

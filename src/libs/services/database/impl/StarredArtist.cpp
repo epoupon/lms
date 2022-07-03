@@ -22,6 +22,7 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "services/database/Artist.hpp"
+#include "services/database/Session.hpp"
 #include "services/database/User.hpp"
 #include "IdTypeTraits.hpp"
 #include "Utils.hpp"
@@ -33,6 +34,12 @@ namespace Database
 		, _artist {getDboPtr(artist)}
 		, _user {getDboPtr(user)}
 	{
+	}
+
+	StarredArtist::pointer
+	StarredArtist::create(Session& session, ObjectPtr<Artist> artist, ObjectPtr<User> user, Scrobbler scrobbler)
+	{
+		return session.getDboSession().add(std::unique_ptr<StarredArtist> {new StarredArtist {artist, user, scrobbler}});
 	}
 
 	std::size_t
@@ -60,20 +67,9 @@ namespace Database
 			.resultValue();
 	}
 
-	StarredArtist::pointer
-	StarredArtist::create(Session& session, ObjectPtr<Artist> artist, ObjectPtr<User> user, Scrobbler scrobbler)
-	{
-		session.checkUniqueLocked();
-
-		StarredArtist::pointer res {session.getDboSession().add(std::make_unique<StarredArtist>(artist, user, scrobbler))};
-		session.getDboSession().flush();
-
-		return res;
-	}
-
 	void
 	StarredArtist::setDateTime(const Wt::WDateTime& dateTime)
 	{
-		_dateTime = normalizeDateTime(dateTime);
+		_dateTime = Utils::normalizeDateTime(dateTime);
 	}
 }

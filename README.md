@@ -12,16 +12,12 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
 * Audio transcode for maximum interoperability and low bandwith requirements
 * Multi-value tags: artists, genres, composers, lyricists, moods, ...
 * [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) support to handle duplicated artist and release names
-* [ListenBrainz](https://listenbrainz.org) support for scrobbling and synchronizing listens
-* Compilation support
-* Disc subtitles support
+* [ListenBrainz](https://listenbrainz.org) support for:
+  * Scrobbling and synchronizing listens
+  * Synchronizing 'love' feedbacks
 * ReplayGain support
-* Persistent play queue across sessions
-* _Systemd_ integration
 * User management, with several authentication backends, see [Deployment](INSTALL.md#deployment)
-* Subsonic API, with the following additional features:
-  * Playlists
-  * Bookmarks
+* Subsonic API
 
 ## Music discovery
 _LMS_ provides several ways to help you find the music you like:
@@ -49,9 +45,7 @@ __Notes on the self-organizing map__:
 
 ## Subsonic API
 The API version implemented is 1.16.0 and has been tested on _Android_ using _Subsonic Player_, _Ultrasonic_ and _DSub_.
-
-Since _LMS_ uses metadata tags to organize music, a compatibility mode is used to navigate through the collection when using the directory browsing commands.
-
+Since _LMS_ uses metadata tags to organize music, a compatibility mode is used to browse the collection when using the directory browsing commands.
 The Subsonic API is enabled by default.
 
 __Note__: since _LMS_ may store hashed and salted passwords or may forward authentication requests to external services, it cannot handle the __token authentication__ method. You may need to check your client to make sure to use the __password__ authentication method.
@@ -79,16 +73,14 @@ $setmulti(albumartistssort,%_albumartists_sort%)
 
 ## Security considerations
 _Wt_ (the web framework used) has some [built-in security measures](https://www.webtoolkit.eu/wt/features#security), but _LMS_ also has some too:
-* to mitigate brute force login attempts, _LMS_ uses an internal login throttler based on the client IP address. The `Client-IP` or `X-Forwarded-For` headers are used to determined the real IP adress, so make sure to properly configure your reverse proxy to filter or even erase the values (see example in [INSTALL.md](INSTALL.md)).
+* to mitigate brute force login attempts, _LMS_ uses an internal login throttler based on the client IP address. The `Client-IP` or `X-Forwarded-For` headers are used to determine the real IP adress, so make sure to properly configure your reverse proxy to filter or even erase the values (see example in [INSTALL.md](INSTALL.md)).
 * all passwords are stored hashed and salted using [bcrypt](https://fr.wikipedia.org/wiki/Bcrypt)
-* all the resources relative to the music collection (tracks, covers, etc.) are private to a session
+* all the resources relative to the music collection (tracks, covers, etc.) are private to an anthenticated session
 
 ## Installation
-
 See [INSTALL.md](INSTALL.md) file.
 
 ## Contributing
-
 Any feedback is welcome:
 * feel free to participate in [discussions](https://github.com/epoupon/lms/discussions) if you have questions,
 * report any bug or request for new features in the [issue tracker](https://github.com/epoupon/lms/issues),

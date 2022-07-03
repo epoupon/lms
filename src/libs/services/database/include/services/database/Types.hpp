@@ -98,9 +98,17 @@ namespace Database
 		None,
 		Name,
 		Date,
+		DateDesc,
 		Random,
 		LastWritten,
 		StarredDateDesc,
+	};
+
+	enum class TrackListSortMethod
+	{
+		None,
+		Name,
+		LastModifiedDesc,
 	};
 
 	enum class TrackSortMethod
@@ -109,6 +117,10 @@ namespace Database
 		Random,
 		LastWritten,
 		StarredDateDesc,
+		Name,
+		DateDescAndRelease,
+		Release, // order by disc/track number
+		TrackList, // order by asc order in tracklist
 	};
 
 	enum class TrackArtistLinkType
@@ -172,6 +184,12 @@ namespace Database
 		AllArtists		= 0,
 		ReleaseArtists	= 1,
 		TrackArtists	= 2,
+	};
+
+	enum class TrackListType
+	{
+		Playlist,  // user controlled playlists
+		Internal,  // internal usage (current playqueue, history, ...)
 	};
 }
 

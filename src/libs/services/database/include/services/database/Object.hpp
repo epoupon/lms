@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <Wt/WSignal.h>
 #include <Wt/Dbo/ptr.h>
 #include "services/database/IdType.hpp"
 
@@ -38,7 +39,12 @@ namespace Database
 			bool operator!=(const ObjectPtr& other) const { return other._obj != _obj; }
 
 			auto modify() { return _obj.modify(); }
-			void remove() { _obj.remove(); }
+			void remove()
+			{
+				if (_obj->hasOnPreRemove())
+					_obj.modify()->onPreRemove();
+				_obj.remove();
+			}
 
 		private:
 			template <typename, typename> friend class Object;
@@ -61,6 +67,14 @@ namespace Database
 			typename Wt::Dbo::dbo_traits<T>::IdType id() const = delete;
 
 		protected:
+			template <typename> friend class ObjectPtr;
+
+			virtual bool hasOnPreRemove() const { return false; }
+			virtual void onPreRemove() {}
+
+			virtual bool hasOnPostCreated() const { return false; }
+			virtual void onPostCreated() {}
+
 			// Can get raw dbo ptr only from Objects
 			template <typename SomeObject>
 			static

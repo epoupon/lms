@@ -14,9 +14,12 @@
 		<div class="p-2 flex-fill">
 			${name}${<if-tag>}<span class="badge bg-info ms-2">${tag}</span>${</if-tag>}
 		</div>
+		${<if-edit>}
 		<div class="p-2">
-			${<if-edit>}${edit-btn class="btn btn-sm btn-secondary me-1"}${del-btn class="btn btn-sm btn-danger"}${</if-edit>}
+			${edit-btn class="btn btn-sm btn-outline-secondary border-0"}
+			${del-btn class="btn btn-sm btn-outline-danger border-0"}
 		</div>
+		${</if-edit>}
 	</div>
 </message>
 
@@ -25,11 +28,8 @@
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h5 class="modal-title">${tr:Lms.Admin.Users.del-user}</h5>
+					<h5 class="modal-title">${tr:Lms.Admin.Users.del-user-confirm}</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-				<div class="modal-body">
-					${tr:Lms.Admin.Users.del-user-name}
 				</div>
 				<div class="modal-footer">
 					${del-btn class="btn btn-danger me-1"}${cancel-btn class="btn btn-secondary"}

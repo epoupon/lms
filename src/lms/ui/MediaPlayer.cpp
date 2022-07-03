@@ -22,6 +22,7 @@
 #include <Wt/Json/Object.h>
 #include <Wt/Json/Value.h>
 #include <Wt/Json/Serializer.h>
+#include <Wt/WPushButton.h>
 
 #include "utils/Logger.hpp"
 
@@ -208,6 +209,12 @@ MediaPlayer::MediaPlayer()
 	_title = bindNew<Wt::WText>("title");
 	_artist = bindNew<Wt::WAnchor>("artist");
 	_release = bindNew<Wt::WAnchor>("release");
+
+	{
+		Wt::WPushButton* playQueueBtn {bindNew<Wt::WPushButton>("playqueue-btn", Wt::WString::tr("Lms.MediaPlayer.template.playqueue-btn"), Wt::TextFormat::XHTML)};
+		playQueueBtn->setLink(Wt::WLink {Wt::LinkType::InternalPath, "/playqueue"});
+		playQueueBtn->setToolTip(tr("Lms.PlayQueue.playqueue"));
+	}
 
 	_settingsLoaded.connect([this](const std::string& settings)
 	{

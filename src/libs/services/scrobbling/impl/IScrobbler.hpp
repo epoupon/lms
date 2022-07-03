@@ -23,9 +23,9 @@
 #include <memory>
 #include <optional>
 
-#include "services/database/ArtistId.hpp"
-#include "services/database/ReleaseId.hpp"
-#include "services/database/TrackListId.hpp"
+#include "services/database/StarredArtistId.hpp"
+#include "services/database/StarredReleaseId.hpp"
+#include "services/database/StarredTrackId.hpp"
 #include "services/scrobbling/Listen.hpp"
 
 namespace Database
@@ -47,16 +47,13 @@ namespace Scrobbling
 			virtual void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) = 0;
 			virtual void addTimedListen(const TimedListen& listen) = 0;
 
-			// Feedback
- 			virtual void onStarred(Database::UserId, Database::ArtistId) {};
- 			virtual void onUnstarred(Database::UserId, Database::ArtistId) {};
- 			virtual void onStarred(Database::UserId, Database::ReleaseId) {};
- 			virtual void onUnstarred(Database::UserId, Database::ReleaseId) {};
- 			virtual void onStarred(Database::UserId, Database::TrackId) {};
- 			virtual void onUnstarred(Database::UserId, Database::TrackId) {};
-
-//			virtual void star(Database::TrackId trackId) = 0;
-//			virtual void unstar(Database::TrackId trackId) = 0;
+			// Feedbacks
+ 			virtual void onStarred(Database::StarredArtistId) = 0;
+ 			virtual void onUnstarred(Database::StarredArtistId) = 0;
+ 			virtual void onStarred(Database::StarredReleaseId) = 0;
+ 			virtual void onUnstarred(Database::StarredReleaseId) = 0;
+ 			virtual void onStarred(Database::StarredTrackId) = 0;
+ 			virtual void onUnstarred(Database::StarredTrackId) = 0;
 	};
 
 	std::unique_ptr<IScrobbler> createScrobbler(std::string_view backendName);

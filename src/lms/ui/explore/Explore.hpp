@@ -37,14 +37,17 @@ namespace UserInterface
 			void search(const Wt::WString& searchText);
 
 			PlayQueueActionTrackSignal tracksAction;
+			void setMaxTrackCountForAction(std::size_t maxTrackCount) { _maxTrackCount = maxTrackCount; }
 
 		private:
 			void handleArtistsAction(PlayQueueAction action, const std::vector<Database::ArtistId>& artistsId);
 			void handleReleasesAction(PlayQueueAction action, const std::vector<Database::ReleaseId>& releasesId);
+			void handleTrackListAction(PlayQueueAction action, Database::TrackListId trackiListId);
 			void handleTracksAction(PlayQueueAction action, const std::vector<Database::TrackId>& tracksId);
 
 			Filters* _filters {};
 			SearchView* _search {};
+			std::size_t _maxTrackCount {};
 	};
 } // namespace UserInterface
 

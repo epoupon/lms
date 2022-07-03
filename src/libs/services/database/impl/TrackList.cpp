@@ -35,24 +35,21 @@
 
 namespace Database {
 
-TrackList::TrackList(std::string_view name, Type type, bool isPublic, ObjectPtr<User> user)
-: _name {name},
- _type {type},
- _isPublic {isPublic},
- _user {getDboPtr(user)}
+TrackList::TrackList(std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user)
+	: _name {name}
+, _type {type}
+, _isPublic {isPublic}
+, _creationDateTime {Utils::normalizeDateTime(Wt::WDateTime::currentDateTime())}
+, _lastModifiedDateTime {Utils::normalizeDateTime(Wt::WDateTime::currentDateTime())}
+, _user {getDboPtr(user)}
 {
+	assert(user);
 }
 
 TrackList::pointer
-TrackList::create(Session& session, std::string_view name, Type type, bool isPublic, ObjectPtr<User> user)
+TrackList::create(Session& session, std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user)
 {
-	session.checkUniqueLocked();
-	assert(user);
-
-	TrackList::pointer res {session.getDboSession().add( std::make_unique<TrackList>(name, type, isPublic, user) )};
-	session.getDboSession().flush();
-
-	return res;
+	return session.getDboSession().add(std::unique_ptr<TrackList> {new TrackList {name, type, isPublic, user}});
 }
 
 std::size_t
@@ -65,7 +62,7 @@ TrackList::getCount(Session& session)
 
 
 TrackList::pointer
-TrackList::find(Session& session, std::string_view name, Type type, UserId userId)
+TrackList::find(Session& session, std::string_view name, TrackListType type, UserId userId)
 {
 	session.checkSharedLocked();
 	assert(userId.isValid());
@@ -77,28 +74,54 @@ TrackList::find(Session& session, std::string_view name, Type type, UserId userI
 }
 
 RangeResults<TrackListId>
-TrackList::find(Session& session, UserId userId, Range range)
+TrackList::find(Session& session, const FindParameters& params)
 {
 	session.checkSharedLocked();
 
-	auto query {session.getDboSession().query<TrackListId>("SELECT id FROM tracklist")
-		.where("user_id = ?").bind(userId)
-		.orderBy("name COLLATE NOCASE")};
+	auto query {session.getDboSession().query<TrackListId>("SELECT DISTINCT t_l.id FROM tracklist t_l")};
 
-	return execQuery(query, range);
-}
+	if (params.user.isValid())
+		query.where("t_l.user_id = ?").bind(params.user);
 
-RangeResults<TrackListId>
-TrackList::find(Session& session, UserId userId, Type type, Range range)
-{
-	session.checkSharedLocked();
+	if (params.type)
+		query.where("t_l.type = ?").bind(*params.type);
 
-	auto query {session.getDboSession().query<TrackListId>("SELECT id FROM tracklist")
-		.where("user_id = ?").bind(userId)
-		.where("type = ?").bind(type)
-		.orderBy("name COLLATE NOCASE")};
+	if (!params.clusters.empty())
+	{
+		query.join("tracklist_entry t_l_e ON t_l_e.tracklist_id = t_l.id");
+		query.join("track t ON t.id = t_l_e.track_id");
 
-	return execQuery(query, range);
+		std::ostringstream oss;
+		oss << "t.id IN (SELECT DISTINCT t.id FROM track t"
+			" INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
+			" INNER JOIN cluster c ON c.id = t_c.cluster_id";
+
+		WhereClause clusterClause;
+		for (const ClusterId clusterId : params.clusters)
+		{
+			clusterClause.Or(WhereClause("c.id = ?"));
+			query.bind(clusterId);
+		}
+
+		oss << " " << clusterClause.get();
+		oss << " GROUP BY t.id HAVING COUNT(*) = " << params.clusters.size() << ")";
+
+		query.where(oss.str());
+	}
+
+	switch (params.sortMethod)
+	{
+		case TrackListSortMethod::None:
+			break;
+		case TrackListSortMethod::Name:
+			query.orderBy("t_l.name COLLATE NOCASE");
+			break;
+		case TrackListSortMethod::LastModifiedDesc:
+			query.orderBy("t_l.last_modified_date_time DESC");
+			break;
+	}
+
+	return Utils::execQuery(query, params.range);
 }
 
 TrackList::pointer
@@ -157,7 +180,7 @@ TrackList::getEntryByTrackAndDateTime(ObjectPtr<Track> track, const Wt::WDateTim
 	return session()->find<TrackListEntry>()
 			.where("tracklist_id = ?").bind(getId())
 			.where("track_id = ?").bind(track->getId())
-			.where("date_time = ?").bind(normalizeDateTime(dateTime))
+			.where("date_time = ?").bind(Utils::normalizeDateTime(dateTime))
 			.resultValue();
 }
 
@@ -443,6 +466,57 @@ TrackList::getClusters() const
 	return std::vector<Cluster::pointer>(res.begin(), res.end());
 }
 
+std::vector<std::vector<Cluster::pointer>>
+TrackList::getClusterGroups(const std::vector<ClusterType::pointer>& clusterTypes, std::size_t size) const
+{
+	assert(session());
+	std::vector<std::vector<Cluster::pointer>> res;
+
+	if (clusterTypes.empty())
+		return res;
+
+	auto query {session()->query<Wt::Dbo::ptr<Cluster>>("SELECT c from cluster c")};
+
+	query.join("track t ON c.id = t_c.cluster_id")
+		.join("track_cluster t_c ON t_c.track_id = t.id")
+		.join("cluster_type c_type ON c.cluster_type_id = c_type.id")
+		.join("tracklist_entry t_l_e ON t_l_e.track_id = t.id")
+		.join("tracklist t_l ON t_l.id = t_l_e.tracklist_id")
+		.where("t_l.id = ?").bind(getId());
+
+	{
+		std::ostringstream oss;
+		oss << "c_type.id IN (";
+		bool first {true};
+		for (auto clusterType : clusterTypes)
+		{
+			if (!first)
+				oss << ", ";
+			oss << "?";
+			query.bind(clusterType ->getId());
+			first = false;
+		}
+		oss << ")";
+		query.where(oss.str());
+	}
+	query.groupBy("c.id");
+	query.orderBy("COUNT(c.id) DESC");
+
+	auto queryRes {query.resultList()};
+
+	std::map<ClusterTypeId, std::vector<Cluster::pointer>> clustersByType;
+	for (const Wt::Dbo::ptr<Cluster>& cluster : queryRes)
+	{
+		if (clustersByType[cluster->getType()->getId()].size() < size)
+			clustersByType[cluster->getType()->getId()].push_back(cluster);
+	}
+
+	for (const auto& [clusterTypeId, clusters] : clustersByType)
+		res.push_back(clusters);
+
+	return res;
+}
+
 bool
 TrackList::hasTrack(TrackId trackId) const
 {
@@ -500,6 +574,12 @@ TrackList::getDuration() const
 			.where("p_e.tracklist_id = ?").bind(getId())};
 
 	return query.resultValue();
+}
+
+void
+TrackList::setLastModifiedDateTime(const Wt::WDateTime& dateTime)
+{
+	_lastModifiedDateTime = Utils::normalizeDateTime(dateTime);
 }
 
 std::vector<Artist::pointer>
@@ -580,23 +660,30 @@ TrackList::getTopTracks(const std::vector<ClusterId>& clusterIds, std::optional<
 }
 
 TrackListEntry::TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime)
-: _dateTime {normalizeDateTime(dateTime)}
+: _dateTime {Utils::normalizeDateTime(dateTime)}
 , _track {getDboPtr(track)}
 , _tracklist {getDboPtr(tracklist)}
 {
+	assert(track);
+	assert(tracklist);
 }
 
 TrackListEntry::pointer
 TrackListEntry::create(Session& session, ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime)
 {
-	session.checkUniqueLocked();
-	assert(track);
-	assert(tracklist);
+	return session.getDboSession().add(std::unique_ptr<TrackListEntry>( new TrackListEntry {track, tracklist, dateTime}));
+}
 
-	auto res = session.getDboSession().add(std::make_unique<TrackListEntry>( track, tracklist, dateTime));
-	session.getDboSession().flush();
+void
+TrackListEntry::onPostCreated()
+{
+	_tracklist.modify()->setLastModifiedDateTime(Utils::normalizeDateTime(Wt::WDateTime::currentDateTime()));
+}
 
-	return res;
+void
+TrackListEntry::onPreRemove()
+{
+	_tracklist.modify()->setLastModifiedDateTime(Utils::normalizeDateTime(Wt::WDateTime::currentDateTime()));
 }
 
 TrackListEntry::pointer

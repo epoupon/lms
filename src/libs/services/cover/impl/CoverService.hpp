@@ -129,7 +129,7 @@ namespace Cover
 			const std::size_t _maxCacheSize;
 			static inline const std::vector<std::filesystem::path> _fileExtensions {".jpg", ".jpeg", ".png", ".bmp"}; // TODO parametrize
 			const std::size_t _maxFileSize;
-			static inline const std::vector<std::string> _preferredFileNames {"cover", "front"}; // TODO parametrize
+			const std::vector<std::string> _preferredFileNames;
 			unsigned _jpegQuality;
 	};
 

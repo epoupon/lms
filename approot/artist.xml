@@ -4,33 +4,37 @@
 
 <message id="Lms.Explore.Artist.template">
 	<div class="mb-3">
-		<h3>${name}</h3>
+		<h2>${name}</h2>
 		${clusters class="mb-2"}
 		<div class="btn-group">
 			${play-btn class="btn btn-primary"}
 			<button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"/>
 			<ul class="dropdown-menu">
-				<li>${play-shuffled class="btn dropdown-item"}</li>
-				<li>${play-last class="btn dropdown-item"}</li>
-				<li>${star class="btn dropdown-item"}</li>
+				<li>${play-shuffled class="dropdown-item"}</li>
+				<li>${play-last class="dropdown-item"}</li>
+				<li>${star class="dropdown-item"}</li>
 				${<if-has-mbid>}
 				<li><a href="${mbid-link}" target="_blank" class="dropdown-item">${tr:Lms.Explore.musicbrainz-artist}</a></li>
 				${</if-has-mbid>}
-				<li>${download class="btn dropdown-item"}</li>
+				<li>${download class="dropdown-item"}</li>
 			</ul>
 		</div>
 	</div>
-	${<if-has-release>}
+	${<if-has-releases>}
+	${<if-section-titles>}<h3>${tr:Lms.Explore.releases}</h3>${</if-section-titles>}
 	${releases class="mb-3"}
-	${</if-has-release>}
-	${<if-has-non-release-track>}
+	${</if-has-releases>}
+	${<if-has-appears-on-releases>}
+	${<if-section-titles>}<h3>${tr:Lms.Explore.Artist.appears-on}</h3>${</if-section-titles>}
+	${appears-on-releases class="mb-3"}
+	${</if-has-appears-on-releases>}
+	${<if-has-non-release-tracks>}
+	${<if-section-titles>}<h3>${tr:Lms.Explore.tracks}</h3>${</if-section-titles>}
 	${tracks class="mb-3"}
-	${</if-has-non-release-track>}
+	${</if-has-non-release-tracks>}
 	${<if-has-similar-artists>}
-	<div>
-		<h3>${tr:Lms.Explore.Artist.similar-artists}</h3>
-		${similar-artists class="d-grid gap-3"}
-	</div>
+	<h3>${tr:Lms.Explore.Artist.similar-artists}</h3>
+	${similar-artists class="d-grid gap-3"}
 	${</if-has-similar-artists>}
 </message>
 

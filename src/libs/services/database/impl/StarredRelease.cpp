@@ -22,6 +22,7 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "services/database/Release.hpp"
+#include "services/database/Session.hpp"
 #include "services/database/User.hpp"
 #include "IdTypeTraits.hpp"
 #include "Utils.hpp"
@@ -33,6 +34,12 @@ namespace Database
 		, _release {getDboPtr(release)}
 		, _user {getDboPtr(user)}
 	{
+	}
+
+	StarredRelease::pointer
+	StarredRelease::create(Session& session, ObjectPtr<Release> release, ObjectPtr<User> user, Scrobbler scrobbler)
+	{
+		return session.getDboSession().add(std::unique_ptr<StarredRelease>{new StarredRelease{release, user, scrobbler}});
 	}
 
 	std::size_t
@@ -60,20 +67,9 @@ namespace Database
 			.resultValue();
 	}
 
-	StarredRelease::pointer
-	StarredRelease::create(Session& session, ObjectPtr<Release> release, ObjectPtr<User> user, Scrobbler scrobbler)
-	{
-		session.checkUniqueLocked();
-
-		StarredRelease::pointer res {session.getDboSession().add(std::make_unique<StarredRelease>(release, user, scrobbler))};
-		session.getDboSession().flush();
-
-		return res;
-	}
-
 	void
 	StarredRelease::setDateTime(const Wt::WDateTime& dateTime)
 	{
-		_dateTime = normalizeDateTime(dateTime);
+		_dateTime = Utils::normalizeDateTime(dateTime);
 	}
 }

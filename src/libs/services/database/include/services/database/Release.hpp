@@ -25,11 +25,13 @@
 #include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
 
+#include "services/database/ArtistId.hpp"
 #include "services/database/ClusterId.hpp"
 #include "services/database/Object.hpp"
 #include "services/database/ReleaseId.hpp"
 #include "services/database/Types.hpp"
 #include "services/database/UserId.hpp"
+#include "utils/EnumSet.hpp"
 #include "utils/UUID.hpp"
 
 namespace Database
@@ -54,8 +56,11 @@ class Release : public Object<Release, ReleaseId>
 			Range							range;
 			Wt::WDateTime					writtenAfter;
 			std::optional<DateRange>		dateRange;
-			UserId							starringUser;	// only releases starred by this user
-			std::optional<Scrobbler>			scrobbler;		// and for this scrobbler
+			UserId							starringUser;				// only releases starred by this user
+			std::optional<Scrobbler>		scrobbler;					//    and for this scrobbler
+			ArtistId						artist;						// only releases that involved this user
+			EnumSet<TrackArtistLinkType>	trackArtistLinkTypes; 			//    and for these link types
+			EnumSet<TrackArtistLinkType>	excludedTrackArtistLinkTypes; 	//    but not for these link types
 
 			FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
 			FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
@@ -64,10 +69,16 @@ class Release : public Object<Release, ReleaseId>
 			FindParameters& setWrittenAfter(const Wt::WDateTime& _after) {writtenAfter = _after; return *this; }
 			FindParameters& setDateRange(const std::optional<DateRange>& _dateRange) {dateRange = _dateRange; return *this; }
 			FindParameters& setStarringUser(UserId _user, Scrobbler _scrobbler) { starringUser = _user; scrobbler = _scrobbler; return *this; }
+			FindParameters& setArtist(ArtistId _artist, EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {}, EnumSet<TrackArtistLinkType> _excludedTrackArtistLinkTypes = {})
+			{
+				artist = _artist;
+				trackArtistLinkTypes = _trackArtistLinkTypes;
+				excludedTrackArtistLinkTypes = _excludedTrackArtistLinkTypes;
+				return *this;
+			}
 		};
 
 		Release() = default;
-		Release(const std::string& name, const std::optional<UUID>& MBID = {});
 
 		// Accessors
 		static std::size_t				getCount(Session& session);
@@ -79,17 +90,12 @@ class Release : public Object<Release, ReleaseId>
 		static RangeResults<ReleaseId>	findOrphans(Session& session, Range range); // no track related
 		static RangeResults<ReleaseId>	findOrderedByArtist(Session& session, Range range);
 
-		std::vector<ObjectPtr<Track>>	getTracks(const std::vector<ClusterId>& clusters = {}) const;
 		std::size_t						getTracksCount() const;
-		ObjectPtr<Track>				getFirstTrack() const;
 
 		// Get the cluster of the tracks that belong to this release
 		// Each clusters are grouped by cluster type, sorted by the number of occurence (max to min)
 		// size is the max number of cluster per cluster type
 		std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ObjectPtr<ClusterType>>& clusterTypes, std::size_t size) const;
-
-		// Create
-		static pointer	create(Session& session, const std::string& name, const std::optional<UUID>& MBID = {});
 
 		// Utility functions
 		std::optional<int>			getReleaseYear(bool originalDate = false) const;
@@ -123,6 +129,10 @@ class Release : public Object<Release, ReleaseId>
 			}
 
 	private:
+		friend class Session;
+		Release(const std::string& name, const std::optional<UUID>& MBID = {});
+		static pointer create(Session& session, const std::string& name, const std::optional<UUID>& MBID = {});
+
 		static const std::size_t _maxNameLength {128};
 
 		std::string	_name;

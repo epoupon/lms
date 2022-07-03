@@ -72,7 +72,6 @@ class Artist : public Object<Artist, ArtistId>
 		};
 
 		Artist() = default;
-		Artist(const std::string& name, const std::optional<UUID>& MBID = {});
 
 		// Accessors
 		static std::size_t				getCount(Session& session);
@@ -89,13 +88,6 @@ class Artist : public Object<Artist, ArtistId>
 		const std::string&	getSortName() const { return _sortName; }
 		std::optional<UUID>	getMBID() const { return UUID::fromString(_MBID); }
 
-		RangeResults<ReleaseId>				getReleases(Range range, const std::vector<ClusterId>& clusterIds = {}) const; // if non empty, get the releases that match all these clusters
-		std::size_t							getReleaseCount() const;
-		std::vector<ObjectPtr<Track>>		getTracks(std::optional<TrackArtistLinkType> linkType = {}) const;
-		bool								hasNonReleaseTracks(std::optional<TrackArtistLinkType> linkType = std::nullopt) const;
-		RangeResults<ObjectPtr<Track>>		getNonReleaseTracks(std::optional<TrackArtistLinkType> linkType, Range range) const;
-		std::vector<ObjectPtr<Track>>		getRandomTracks(std::optional<std::size_t> count) const;
-
 		// No artistLinkTypes means get them all
 		RangeResults<ArtistId>				findSimilarArtists(EnumSet<TrackArtistLinkType> artistLinkTypes = {}, Range range = {}) const;
 
@@ -107,9 +99,6 @@ class Artist : public Object<Artist, ArtistId>
 		void setName(std::string_view name)		{ _name  = name; }
 		void setMBID(const std::optional<UUID>& mbid)	{ _MBID = mbid ? mbid->getAsString() : ""; }
 		void setSortName(const std::string& sortName);
-
-		// Create
-		static pointer	create(Session& session, const std::string& name, const std::optional<UUID>& UUID = {});
 
 		template<class Action>
 			void persist(Action& a)
@@ -124,6 +113,11 @@ class Artist : public Object<Artist, ArtistId>
 
 	private:
 		static const std::size_t _maxNameLength = 128;
+
+		friend class Session;
+		// Create
+		Artist(const std::string& name, const std::optional<UUID>& MBID = {});
+		static pointer create(Session& session, const std::string& name, const std::optional<UUID>& UUID = {});
 
 		std::string _name;
 		std::string _sortName;

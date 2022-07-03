@@ -30,6 +30,7 @@
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
+#include "services/database/TrackList.hpp"
 #include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Zipper.hpp"
@@ -59,7 +60,8 @@ DownloadResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Resp
 		else
 		{
 			zipper = createZipper();
-			response.setContentLength(zipper->getTotalZipFile());
+			if (zipper)
+				response.setContentLength(zipper->getTotalZipFile());
 			response.setMimeType("application/zip");
 		}
 
@@ -142,9 +144,19 @@ getTrackPathName(Database::Track::pointer track)
 }
 
 static
+std::string
+getTrackListPathName(Database::TrackList::pointer trackList)
+{
+	return StringUtils::replaceInString(trackList->getName(), "/", "_");
+}
+
+static
 std::unique_ptr<Zip::Zipper>
 createZipper(const std::vector<Database::Track::pointer>& tracks)
 {
+	if (tracks.empty())
+		return {};
+
 	std::map<std::string, std::filesystem::path> files;
 
 	for (const Database::Track::pointer& track : tracks)
@@ -185,14 +197,14 @@ DownloadArtistResource::createZipper()
 {
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const Database::Artist::pointer artist {Database::Artist::find(LmsApp->getDbSession(), _artistId)};
-	if (!artist)
-	{
-		LOG(DEBUG) << "Cannot find artist";
-		return {};
-	}
+	const auto trackResults {Database::Track::find(LmsApp->getDbSession(), Database::Track::FindParameters {}.setArtist(_artistId).setSortMethod(Database::TrackSortMethod::DateDescAndRelease))};
+	std::vector<Database::Track::pointer> tracks;
+	tracks.reserve(trackResults.results.size());
 
-	return UserInterface::createZipper(artist->getTracks());
+	for (const Database::TrackId trackId : trackResults.results)
+		tracks.push_back(Database::Track::find(LmsApp->getDbSession(), trackId));
+
+	return UserInterface::createZipper(tracks);
 }
 
 DownloadReleaseResource::DownloadReleaseResource(Database::ReleaseId releaseId)
@@ -209,16 +221,17 @@ DownloadReleaseResource::DownloadReleaseResource(Database::ReleaseId releaseId)
 std::unique_ptr<Zip::Zipper>
 DownloadReleaseResource::createZipper()
 {
+	using namespace Database;
+
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const Database::Release::pointer release {Database::Release::find(LmsApp->getDbSession(), _releaseId)};
-	if (!release)
-	{
-		LOG(DEBUG) << "Cannot find release";
-		return {};
-	}
+	auto trackResults {Track::find(LmsApp->getDbSession(), Track::FindParameters {}.setRelease(_releaseId).setSortMethod(TrackSortMethod::Release))};
 
-	return UserInterface::createZipper(release->getTracks());
+	std::vector<Track::pointer> tracks;
+	tracks.reserve(trackResults.results.size());
+	std::transform(std::cbegin(trackResults.results), std::cend(trackResults.results), std::back_inserter(tracks), [](TrackId trackId){ return Track::find(LmsApp->getDbSession(), trackId); });
+
+	return UserInterface::createZipper(tracks);
 }
 
 DownloadTrackResource::DownloadTrackResource(Database::TrackId trackId)
@@ -244,6 +257,33 @@ DownloadTrackResource::createZipper()
 	}
 
 	return UserInterface::createZipper({track});
+}
+
+DownloadTrackListResource::DownloadTrackListResource(Database::TrackListId trackListId)
+	: _trackListId {trackListId}
+{
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+	const Database::TrackList::pointer trackList {Database::TrackList::find(LmsApp->getDbSession(), trackListId)};
+	if (trackList)
+		suggestFileName(getTrackListPathName(trackList) + ".zip");
+}
+
+std::unique_ptr<Zip::Zipper>
+DownloadTrackListResource::createZipper()
+{
+	using namespace Database;
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+	Track::FindParameters params;
+	params.setTrackList(_trackListId);
+	const auto trackResults {Track::find(LmsApp->getDbSession(), params)};
+
+	std::vector<Track::pointer> tracks;
+	tracks.reserve(trackResults.results.size());
+	std::transform(std::cbegin(trackResults.results), std::cend(trackResults.results), std::back_inserter(tracks), [](TrackId trackId){ return Track::find(LmsApp->getDbSession(), trackId); });
+
+	return UserInterface::createZipper(tracks);
 }
 
 } // namespace UserInterface

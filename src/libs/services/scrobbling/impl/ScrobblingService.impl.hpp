@@ -35,6 +35,7 @@ namespace Scrobbling
 		if (!scrobbler)
 			return;
 
+		typename StarredObjType::IdType starredObjId;
 		{
 			Session& session {_db.getTLSSession()};
 			auto transaction {session.createUniqueTransaction()};
@@ -50,11 +51,12 @@ namespace Scrobbling
 				if (!user)
 					return;
 
-				starredObj = StarredObjType::create(session, obj, user, *scrobbler);
+				starredObj = session.create<StarredObjType>(obj, user, *scrobbler);
 			}
 			starredObj.modify()->setDateTime(Wt::WDateTime::currentDateTime());
+			starredObjId = starredObj->getId();
 		}
-		_scrobblers[*scrobbler]->onStarred(userId, objId);
+		_scrobblers[*scrobbler]->onStarred(starredObjId);
 	}
 
 	template <typename ObjType, typename ObjIdType, typename StarredObjType>
@@ -65,14 +67,18 @@ namespace Scrobbling
 		if (!scrobbler)
 			return;
 
+		typename StarredObjType::IdType starredObjId;
 		{
 			Session& session {_db.getTLSSession()};
-			auto transaction {session.createUniqueTransaction()};
+			auto transaction {session.createSharedTransaction()};
 
-			if (typename StarredObjType::pointer starredObj {StarredObjType::find(session, objId, userId, *scrobbler)})
-				starredObj.remove();
+			typename StarredObjType::pointer starredObj {StarredObjType::find(session, objId, userId, *scrobbler)};
+			if (!starredObj)
+				return;
+
+			starredObjId = starredObj->getId();
 		}
-		_scrobblers[*scrobbler]->onUnstarred(userId, objId);
+		_scrobblers[*scrobbler]->onUnstarred(starredObjId);
 	}
 
 	template <typename ObjType, typename ObjIdType, typename StarredObjType>
@@ -86,7 +92,8 @@ namespace Scrobbling
 		Session& session {_db.getTLSSession()};
 		auto transaction {session.createSharedTransaction()};
 
-		return StarredObjType::find(session, objId, userId, *scrobbler);
+		typename StarredObjType::pointer starredObj {StarredObjType::find(session, objId, userId, *scrobbler)};
+		return starredObj && (starredObj->getScrobblingState() != ScrobblingState::PendingRemove);
 	}
 
 } // ns Scrobbling

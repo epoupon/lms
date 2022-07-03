@@ -120,7 +120,7 @@ ScanSettings::setClusterTypes(Session& session, const std::set<std::string>& clu
 		if (!clusterType)
 		{
 			LMS_LOG(DB, INFO) << "Creating cluster type " << clusterTypeName;
-			clusterType = ClusterType::create(session, clusterTypeName);
+			clusterType = session.create<ClusterType>(clusterTypeName);
 			_clusterTypes.insert(getDboPtr(clusterType));
 
 			needRescan = true;

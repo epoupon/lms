@@ -232,12 +232,15 @@ Release::refreshView()
 		return noDiscTracksContainer;
 	};
 
-	const auto clusterIds {_filters->getClusterIds()};
-	const auto tracks {release->getTracks(clusterIds)};
+	Database::Track::FindParameters params;
+	params.setRelease(*releaseId);
+	params.setSortMethod(Database::TrackSortMethod::Release);
+	params.setClusters(_filters->getClusterIds());
 
-	for (const auto& track : tracks)
+	const auto tracks {Database::Track::find(LmsApp->getDbSession(), params)};
+	for (const Database::TrackId trackId : tracks.results)
 	{
-		auto trackId {track->getId()};
+		const Database::Track::pointer track {Database::Track::find(LmsApp->getDbSession(), trackId)};
 
 		const auto discNumber {track->getDiscNumber()};
 
@@ -276,14 +279,14 @@ Release::refreshView()
 			entry->bindInt("track-number", *trackNumber);
 		}
 
-		Wt::WPushButton* playBtn {entry->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.template.play-btn"), Wt::TextFormat::XHTML)};
+		Wt::WPushButton* playBtn {entry->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.template.play-btn"), Wt::TextFormat::XHTML)};
 		playBtn->clicked().connect([=]
 		{
 			tracksAction.emit(PlayQueueAction::Play, {trackId});
 		});
 
 		{
-			entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.Explore.template.more-btn"), Wt::TextFormat::XHTML);
+			entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML);
 			entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
 				->clicked().connect([=]
 				{

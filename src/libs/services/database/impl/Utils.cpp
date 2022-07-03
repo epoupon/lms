@@ -21,7 +21,7 @@
 
 #include "utils/String.hpp"
 
-namespace Database
+namespace Database::Utils
 {
 	std::string
 	escapeLikeKeyword(std::string_view keyword)
@@ -35,6 +35,5 @@ namespace Database
 		// force second resolution
 		return Wt::WDateTime::fromTime_t(dateTime.toTime_t());
 	}
-
-} // namespace Database
+} // namespace Database::Utils
 

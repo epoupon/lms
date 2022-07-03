@@ -22,8 +22,32 @@
 #include "services/database/Db.hpp"
 #include "services/database/Listen.hpp"
 #include "services/database/Session.hpp"
-#include "services/database/User.hpp"
+#include "services/database/StarredArtist.hpp"
+#include "services/database/StarredRelease.hpp"
+#include "services/database/StarredTrack.hpp"
 #include "services/database/Track.hpp"
+#include "services/database/User.hpp"
+
+namespace
+{
+	template <typename StarredObjType>
+	void onStarred(Database::Session& session, typename StarredObjType::IdType id)
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		if (auto starredObj {StarredObjType::find(session, id)})
+			starredObj.modify()->setScrobblingState(Database::ScrobblingState::Synchronized);
+	}
+
+	template <typename StarredObjType>
+	void onUnstarred(Database::Session& session, typename StarredObjType::IdType id)
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		if (auto starredObj {StarredObjType::find(session, id)})
+			starredObj.remove();
+	}
+}
 
 namespace Scrobbling
 {
@@ -64,8 +88,43 @@ namespace Scrobbling
 		if (!track)
 			return;
 
-		auto dbListen {Database::Listen::create(session, user, track, Database::Scrobbler::Internal, listen.listenedAt)};
+		auto dbListen {session.create<Database::Listen>(user, track, Database::Scrobbler::Internal, listen.listenedAt)};
 		dbListen.modify()->setScrobblingState(Database::ScrobblingState::Synchronized);
+	}
+
+	void
+	InternalScrobbler::onStarred(Database::StarredArtistId starredArtistId)
+	{
+		::onStarred<Database::StarredArtist>(_db.getTLSSession(), starredArtistId);
+	}
+
+	void
+	InternalScrobbler::onUnstarred(Database::StarredArtistId starredArtistId)
+	{
+		::onUnstarred<Database::StarredArtist>(_db.getTLSSession(), starredArtistId);
+	}
+
+ 	void
+	InternalScrobbler::onStarred(Database::StarredReleaseId starredReleaseId)
+	{
+		::onStarred<Database::StarredRelease>(_db.getTLSSession(), starredReleaseId);
+	}
+
+	void InternalScrobbler::onUnstarred(Database::StarredReleaseId starredReleaseId)
+	{
+		::onUnstarred<Database::StarredRelease>(_db.getTLSSession(), starredReleaseId);
+	}
+
+ 	void
+	InternalScrobbler::onStarred(Database::StarredTrackId starredTrackId)
+	{
+		::onStarred<Database::StarredTrack>(_db.getTLSSession(), starredTrackId);
+	}
+
+	void
+	InternalScrobbler::onUnstarred(Database::StarredTrackId starredTrackId)
+	{
+		::onUnstarred<Database::StarredTrack>(_db.getTLSSession(), starredTrackId);
 	}
 } // Scrobbling
 

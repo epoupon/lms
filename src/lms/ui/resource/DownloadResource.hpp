@@ -25,6 +25,7 @@
 #include "services/database/ArtistId.hpp"
 #include "services/database/ReleaseId.hpp"
 #include "services/database/TrackId.hpp"
+#include "services/database/TrackListId.hpp"
 #include "utils/Zipper.hpp"
 
 namespace UserInterface
@@ -69,6 +70,16 @@ namespace UserInterface
 		private:
 			std::unique_ptr<Zip::Zipper> createZipper() override;
 			Database::TrackId _trackId;
+	};
+
+	class DownloadTrackListResource : public DownloadResource
+	{
+		public:
+			DownloadTrackListResource(Database::TrackListId trackListId);
+
+		private:
+			std::unique_ptr<Zip::Zipper> createZipper() override;
+			Database::TrackListId _trackListId;
 	};
 } // namespace UserInterface
 

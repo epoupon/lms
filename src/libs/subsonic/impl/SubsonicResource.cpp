@@ -422,7 +422,7 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 
 static
 Response::Node
-artistToResponseNode(const User::pointer& user, const Artist::pointer& artist, bool id3)
+artistToResponseNode(const Artist::pointer& artist, Session& session, const User::pointer& user, bool id3)
 {
 	Response::Node artistNode;
 
@@ -430,7 +430,10 @@ artistToResponseNode(const User::pointer& user, const Artist::pointer& artist, b
 	artistNode.setAttribute("name", artist->getName());
 
 	if (id3)
-		artistNode.setAttribute("albumCount", artist->getReleaseCount());
+	{
+		const auto releases {Release::find(session, Release::FindParameters {}.setArtist(artist->getId()))};
+		artistNode.setAttribute("albumCount", releases.results.size());
+	}
 
 	if (Service<Scrobbling::IScrobblingService>::get()->isStarred(user->getId(), artist->getId()))
 		artistNode.setAttribute("starred", reportedStarredDate);
@@ -550,7 +553,7 @@ handleCreatePlaylistRequest(RequestContext& context)
 		tracklist = TrackList::find(context.dbSession, *id);
 		if (!tracklist
 			|| tracklist->getUser() != user
-			|| tracklist->getType() != TrackList::Type::Playlist)
+			|| tracklist->getType() != TrackListType::Playlist)
 		{
 			throw RequestedDataNotFoundError {};
 		}
@@ -560,7 +563,7 @@ handleCreatePlaylistRequest(RequestContext& context)
 	}
 	else
 	{
-		tracklist = TrackList::create(context.dbSession, *name, TrackList::Type::Playlist, false, user);
+		tracklist = context.dbSession.create<TrackList>(*name, TrackListType::Playlist, false, user);
 	}
 
 	for (const TrackId trackId : trackIds)
@@ -569,7 +572,7 @@ handleCreatePlaylistRequest(RequestContext& context)
 		if (!track)
 			continue;
 
-		TrackListEntry::create(context.dbSession, track, tracklist);
+		context.dbSession.create<TrackListEntry>(track, tracklist);
 	}
 
 	return Response::createOkResponse(context.serverProtocolVersion);
@@ -591,7 +594,7 @@ handleCreateUserRequest(RequestContext& context)
 		if (user)
 			throw UserAlreadyExistsGenericError {};
 
-		user = User::create(context.dbSession, username);
+		user = context.dbSession.create<User>(username);
 		userId = user->getId();
 	}
 
@@ -641,7 +644,7 @@ handleDeletePlaylistRequest(RequestContext& context)
 	TrackList::pointer tracklist {TrackList::find(context.dbSession, id)};
 	if (!tracklist
 		|| tracklist->getUser() != user
-		|| tracklist->getType() != TrackList::Type::Playlist)
+		|| tracklist->getType() != TrackListType::Playlist)
 	{
 		throw RequestedDataNotFoundError {};
 	}
@@ -857,9 +860,12 @@ handleGetAlbumRequest(RequestContext& context)
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node releaseNode {releaseToResponseNode(release, context.dbSession, user, true /* id3 */)};
 
-	auto tracks {release->getTracks()};
-	for (const Track::pointer& track : tracks)
+	const auto tracks {Track::find(context.dbSession, Track::FindParameters {}.setRelease(id).setSortMethod(TrackSortMethod::Release))};
+	for (const TrackId trackId : tracks.results)
+	{
+		const Track::pointer track {Track::find(context.dbSession, trackId)};
 		releaseNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
+	}
 
 	response.addNode("album", std::move(releaseNode));
 
@@ -884,9 +890,9 @@ handleGetArtistRequest(RequestContext& context)
 		throw UserNotAuthorizedError {};
 
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
-	Response::Node artistNode {artistToResponseNode(user, artist, true /* id3 */)};
+	Response::Node artistNode {artistToResponseNode(artist, context.dbSession, user, true /* id3 */)};
 
-	auto releases {artist->getReleases(Range {})};
+	const auto releases {Release::find(context.dbSession, Release::FindParameters {}.setArtist(artist->getId()))};
 	for (const ReleaseId releaseId : releases.results)
 	{
 		const Release::pointer release {Release::find(context.dbSession, releaseId)};
@@ -936,7 +942,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 		{
 			const Artist::pointer similarArtist {Artist::find(context.dbSession, similarArtistId)};
 			if (similarArtist)
-				artistInfoNode.addArrayChild("similarArtist", artistToResponseNode(user, similarArtist, id3));
+				artistInfoNode.addArrayChild("similarArtist", artistToResponseNode(similarArtist, context.dbSession, user, id3));
 		}
 	}
 
@@ -988,7 +994,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 		for (const ArtistId artistId : artistIds.results)
 		{
 			const Artist::pointer artist {Artist::find(context.dbSession, artistId)};
-			directoryNode.addArrayChild("child", artistToResponseNode(user, artist, false /* no id3 */));
+			directoryNode.addArrayChild("child", artistToResponseNode(artist, context.dbSession, user, false /* no id3 */));
 		}
 	}
 	else if (artistId)
@@ -1001,7 +1007,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 
 		directoryNode.setAttribute("name", makeNameFilesystemCompatible(artist->getName()));
 
-		auto releases {artist->getReleases(Range {})};
+		const auto releases {Release::find(context.dbSession, Release::FindParameters {}.setArtist(*artistId))};
 		for (const ReleaseId releaseId : releases.results)
 		{
 			const Release::pointer release {Release::find(context.dbSession, releaseId)};
@@ -1018,9 +1024,12 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 
 		directoryNode.setAttribute("name", makeNameFilesystemCompatible(release->getName()));
 
-		auto tracks {release->getTracks()};
-		for (const Track::pointer& track : tracks)
+		const auto tracks {Track::find(context.dbSession, Track::FindParameters {}.setRelease(*releaseId).setSortMethod(TrackSortMethod::Release))};
+		for (const TrackId trackId : tracks.results)
+		{
+			const Track::pointer track {Track::find(context.dbSession, trackId)};
 			directoryNode.addArrayChild("child", trackToResponseNode(track, context.dbSession, user));
+		}
 	}
 	else
 		throw BadParameterGenericError {"id"};
@@ -1095,7 +1104,7 @@ handleGetArtistsRequestCommon(RequestContext& context, bool id3)
 		indexNode.setAttribute("name", std::string {sortChar});
 
 		for (const Artist::pointer& artist :artists)
-			indexNode.addArrayChild("artist", artistToResponseNode(user, artist, id3));
+			indexNode.addArrayChild("artist", artistToResponseNode(artist, context.dbSession, user, id3));
 	}
 
 	return response;
@@ -1160,26 +1169,34 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 		throw UserNotAuthorizedError {};
 
 	// "Returns a random collection of songs from the given artist and similar artists"
-	auto tracks {artist->getRandomTracks(count / 2)};
+	const auto trackResults {Track::find(context.dbSession, Track::FindParameters {}
+													.setArtist(artist->getId())
+													.setRange({0, count / 2})
+													.setSortMethod(TrackSortMethod::Random))};
+
+	std::vector<TrackId> tracks {trackResults.results};
+
 	for (const ArtistId similarArtistId : similarArtistIds)
 	{
-		const Artist::pointer similarArtist {Artist::find(context.dbSession, similarArtistId)};
-		if (!similarArtist)
-			continue;
-
-		auto similarArtistTracks {similarArtist->getRandomTracks((count / 2) / 5)};
+		const auto similarArtistTracks {Track::find(context.dbSession, Track::FindParameters {}
+												.setArtist(similarArtistId)
+												.setRange({0, (count / 2) / 5})
+												.setSortMethod(TrackSortMethod::Random))};
 
 		tracks.insert(std::end(tracks),
-				std::make_move_iterator(std::begin(similarArtistTracks)),
-				std::make_move_iterator(std::end(similarArtistTracks)));
+							std::begin(similarArtistTracks.results),
+							std::end(similarArtistTracks.results));
 	}
 
 	Random::shuffleContainer(tracks);
 
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& similarSongsNode {response.createNode(id3 ? "similarSongs2" : "similarSongs")};
-	for (const Track::pointer& track : tracks)
+	for (const TrackId trackId : tracks)
+	{
+		const Track::pointer track {Track::find(context.dbSession, trackId)};
 		similarSongsNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
+	}
 
 	return response;
 }
@@ -1216,7 +1233,7 @@ handleGetStarredRequestCommon(RequestContext& context, bool id3)
 	for (const ArtistId artistId : scrobbling.getStarredArtists(context.userId, {} /* clusters */, std::nullopt /* linkType */, ArtistSortMethod::BySortName, Range {}).results)
 	{
 		if (auto artist {Artist::find(context.dbSession, artistId)})
-			starredNode.addArrayChild("artist", artistToResponseNode(user, artist, id3));
+			starredNode.addArrayChild("artist", artistToResponseNode(artist, context.dbSession, user, id3));
 	}
 
 	for (const ReleaseId releaseId : scrobbling.getStarredReleases(context.userId, {} /* clusters */, Range {}).results)
@@ -1304,7 +1321,11 @@ handleGetPlaylistsRequest(RequestContext& context)
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& playlistsNode {response.createNode("playlists")};
 
-	auto tracklistIds {TrackList::find(context.dbSession, context.userId, TrackList::Type::Playlist, Range {})};
+	TrackList::FindParameters params;
+	params.setUser(context.userId);
+	params.setType(TrackListType::Playlist);
+
+	auto tracklistIds {TrackList::find(context.dbSession, params)};
 	for (const TrackListId trackListId : tracklistIds.results)
 	{
 		const TrackList::pointer trackList {TrackList::find(context.dbSession, trackListId)};
@@ -1433,7 +1454,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 		for (const ArtistId artistId : artistIds.results)
 		{
 			const auto artist {Artist::find(context.dbSession, artistId)};
-			searchResult2Node.addArrayChild("artist", artistToResponseNode(user, artist, id3));
+			searchResult2Node.addArrayChild("artist", artistToResponseNode(artist, context.dbSession, user, id3));
 		}
 	}
 
@@ -1648,7 +1669,7 @@ handleUpdatePlaylistRequest(RequestContext& context)
 	TrackList::pointer tracklist {TrackList::find(context.dbSession, id)};
 	if (!tracklist
 		|| tracklist->getUser() != user
-		|| tracklist->getType() != TrackList::Type::Playlist)
+		|| tracklist->getType() != TrackListType::Playlist)
 	{
 		throw RequestedDataNotFoundError {};
 	}
@@ -1678,7 +1699,7 @@ handleUpdatePlaylistRequest(RequestContext& context)
 		if (!track)
 			continue;
 
-		TrackListEntry::create(context.dbSession, track, tracklist);
+		context.dbSession.create<TrackListEntry>(track, tracklist);
 	}
 
 	return Response::createOkResponse(context.serverProtocolVersion);
@@ -1733,7 +1754,7 @@ handleCreateBookmark(RequestContext& context)
 	// Replace any existing bookmark
 	auto bookmark {TrackBookmark::find(context.dbSession, user->getId(), trackId)};
 	if (!bookmark)
-		bookmark = TrackBookmark::create(context.dbSession, user, track);
+		bookmark = context.dbSession.create<TrackBookmark>(user, track);
 
 	bookmark.modify()->setOffset(std::chrono::milliseconds {position});
 	if (comment)
@@ -1803,115 +1824,115 @@ struct RequestEntryPointInfo
 static const std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
 {
 	// System
-	{"ping",		{handlePingRequest}},
-	{"getLicense",		{handleGetLicenseRequest}},
+	{"/ping",		{handlePingRequest}},
+	{"/getLicense",		{handleGetLicenseRequest}},
 
 	// Browsing
-	{"getMusicFolders",	{handleGetMusicFoldersRequest}},
-	{"getIndexes",		{handleGetIndexesRequest}},
-	{"getMusicDirectory",	{handleGetMusicDirectoryRequest}},
-	{"getGenres",		{handleGetGenresRequest}},
-	{"getArtists",		{handleGetArtistsRequest}},
-	{"getArtist",		{handleGetArtistRequest}},
-	{"getAlbum",		{handleGetAlbumRequest}},
-	{"getSong",		{handleNotImplemented}},
-	{"getVideos",		{handleNotImplemented}},
-	{"getArtistInfo",	{handleGetArtistInfoRequest}},
-	{"getArtistInfo2",	{handleGetArtistInfo2Request}},
-	{"getAlbumInfo",	{handleNotImplemented}},
-	{"getAlbumInfo2",	{handleNotImplemented}},
-	{"getSimilarSongs",	{handleGetSimilarSongsRequest}},
-	{"getSimilarSongs2",	{handleGetSimilarSongs2Request}},
-	{"getTopSongs",		{handleNotImplemented}},
+	{"/getMusicFolders",	{handleGetMusicFoldersRequest}},
+	{"/getIndexes",		{handleGetIndexesRequest}},
+	{"/getMusicDirectory",	{handleGetMusicDirectoryRequest}},
+	{"/getGenres",		{handleGetGenresRequest}},
+	{"/getArtists",		{handleGetArtistsRequest}},
+	{"/getArtist",		{handleGetArtistRequest}},
+	{"/getAlbum",		{handleGetAlbumRequest}},
+	{"/getSong",		{handleNotImplemented}},
+	{"/getVideos",		{handleNotImplemented}},
+	{"/getArtistInfo",	{handleGetArtistInfoRequest}},
+	{"/getArtistInfo2",	{handleGetArtistInfo2Request}},
+	{"/getAlbumInfo",	{handleNotImplemented}},
+	{"/getAlbumInfo2",	{handleNotImplemented}},
+	{"/getSimilarSongs",	{handleGetSimilarSongsRequest}},
+	{"/getSimilarSongs2",	{handleGetSimilarSongs2Request}},
+	{"/getTopSongs",		{handleNotImplemented}},
 
 	// Album/song lists
-	{"getAlbumList",	{handleGetAlbumListRequest}},
-	{"getAlbumList2",	{handleGetAlbumList2Request}},
-	{"getRandomSongs",	{handleGetRandomSongsRequest}},
-	{"getSongsByGenre",	{handleGetSongsByGenreRequest}},
-	{"getNowPlaying",	{handleNotImplemented}},
-	{"getStarred",		{handleGetStarredRequest}},
-	{"getStarred2",		{handleGetStarred2Request}},
+	{"/getAlbumList",	{handleGetAlbumListRequest}},
+	{"/getAlbumList2",	{handleGetAlbumList2Request}},
+	{"/getRandomSongs",	{handleGetRandomSongsRequest}},
+	{"/getSongsByGenre",	{handleGetSongsByGenreRequest}},
+	{"/getNowPlaying",	{handleNotImplemented}},
+	{"/getStarred",		{handleGetStarredRequest}},
+	{"/getStarred2",		{handleGetStarred2Request}},
 
 	// Searching
-	{"search",		{handleNotImplemented}},
-	{"search2",		{handleSearch2Request}},
-	{"search3",		{handleSearch3Request}},
+	{"/search",		{handleNotImplemented}},
+	{"/search2",		{handleSearch2Request}},
+	{"/search3",		{handleSearch3Request}},
 
 	// Playlists
-	{"getPlaylists",	{handleGetPlaylistsRequest}},
-	{"getPlaylist",		{handleGetPlaylistRequest}},
-	{"createPlaylist",	{handleCreatePlaylistRequest}},
-	{"updatePlaylist",	{handleUpdatePlaylistRequest}},
-	{"deletePlaylist",	{handleDeletePlaylistRequest}},
+	{"/getPlaylists",	{handleGetPlaylistsRequest}},
+	{"/getPlaylist",		{handleGetPlaylistRequest}},
+	{"/createPlaylist",	{handleCreatePlaylistRequest}},
+	{"/updatePlaylist",	{handleUpdatePlaylistRequest}},
+	{"/deletePlaylist",	{handleDeletePlaylistRequest}},
 
 	// Media retrieval
-	{"hls",				{handleNotImplemented}},
-	{"getCaptions",		{handleNotImplemented}},
-	{"getLyrics",		{handleNotImplemented}},
-	{"getAvatar",		{handleNotImplemented}},
+	{"/hls",				{handleNotImplemented}},
+	{"/getCaptions",		{handleNotImplemented}},
+	{"/getLyrics",		{handleNotImplemented}},
+	{"/getAvatar",		{handleNotImplemented}},
 
 	// Media annotation
-	{"star",			{handleStarRequest}},
-	{"unstar",			{handleUnstarRequest}},
-	{"setRating",		{handleNotImplemented}},
-	{"scrobble",		{handleScrobble}},
+	{"/star",			{handleStarRequest}},
+	{"/unstar",			{handleUnstarRequest}},
+	{"/setRating",		{handleNotImplemented}},
+	{"/scrobble",		{handleScrobble}},
 
 	// Sharing
-	{"getShares",		{handleNotImplemented}},
-	{"createShares",	{handleNotImplemented}},
-	{"updateShare",		{handleNotImplemented}},
-	{"deleteShare",		{handleNotImplemented}},
+	{"/getShares",		{handleNotImplemented}},
+	{"/createShares",	{handleNotImplemented}},
+	{"/updateShare",		{handleNotImplemented}},
+	{"/deleteShare",		{handleNotImplemented}},
 
 	// Podcast
-	{"getPodcasts",			{handleNotImplemented}},
-	{"getNewestPodcasts",		{handleNotImplemented}},
-	{"refreshPodcasts",		{handleNotImplemented}},
-	{"createPodcastChannel",	{handleNotImplemented}},
-	{"deletePodcastChannel",	{handleNotImplemented}},
-	{"deletePodcastEpisode",	{handleNotImplemented}},
-	{"downloadPodcastEpisode",	{handleNotImplemented}},
+	{"/getPodcasts",			{handleNotImplemented}},
+	{"/getNewestPodcasts",		{handleNotImplemented}},
+	{"/refreshPodcasts",		{handleNotImplemented}},
+	{"/createPodcastChannel",	{handleNotImplemented}},
+	{"/deletePodcastChannel",	{handleNotImplemented}},
+	{"/deletePodcastEpisode",	{handleNotImplemented}},
+	{"/downloadPodcastEpisode",	{handleNotImplemented}},
 
 	// Jukebox
-	{"jukeboxControl",	{handleNotImplemented}},
+	{"/jukeboxControl",	{handleNotImplemented}},
 
 	// Internet radio
-	{"getInternetRadioStations",	{handleNotImplemented}},
-	{"createInternetRadioStation",	{handleNotImplemented}},
-	{"updateInternetRadioStation",	{handleNotImplemented}},
-	{"deleteInternetRadioStation",	{handleNotImplemented}},
+	{"/getInternetRadioStations",	{handleNotImplemented}},
+	{"/createInternetRadioStation",	{handleNotImplemented}},
+	{"/updateInternetRadioStation",	{handleNotImplemented}},
+	{"/deleteInternetRadioStation",	{handleNotImplemented}},
 
 	// Chat
-	{"getChatMessages",	{handleNotImplemented}},
-	{"addChatMessages",	{handleNotImplemented}},
+	{"/getChatMessages",	{handleNotImplemented}},
+	{"/addChatMessages",	{handleNotImplemented}},
 
 	// User management
-	{"getUser",			{handleGetUserRequest}},
-	{"getUsers",		{handleGetUsersRequest,			{UserType::ADMIN}}},
-	{"createUser",		{handleCreateUserRequest,		{UserType::ADMIN}, &checkSetPasswordImplemented}},
-	{"updateUser",		{handleUpdateUserRequest,		{UserType::ADMIN}}},
-	{"deleteUser",		{handleDeleteUserRequest,		{UserType::ADMIN}}},
-	{"changePassword",	{handleChangePassword,			{UserType::REGULAR, UserType::ADMIN}, &checkSetPasswordImplemented}},
+	{"/getUser",			{handleGetUserRequest}},
+	{"/getUsers",		{handleGetUsersRequest,			{UserType::ADMIN}}},
+	{"/createUser",		{handleCreateUserRequest,		{UserType::ADMIN}, &checkSetPasswordImplemented}},
+	{"/updateUser",		{handleUpdateUserRequest,		{UserType::ADMIN}}},
+	{"/deleteUser",		{handleDeleteUserRequest,		{UserType::ADMIN}}},
+	{"/changePassword",	{handleChangePassword,			{UserType::REGULAR, UserType::ADMIN}, &checkSetPasswordImplemented}},
 
 	// Bookmarks
-	{"getBookmarks",	{handleGetBookmarks}},
-	{"createBookmark",	{handleCreateBookmark}},
-	{"deleteBookmark",	{handleDeleteBookmark}},
-	{"getPlayQueue",	{handleNotImplemented}},
-	{"savePlayQueue",	{handleNotImplemented}},
+	{"/getBookmarks",	{handleGetBookmarks}},
+	{"/createBookmark",	{handleCreateBookmark}},
+	{"/deleteBookmark",	{handleDeleteBookmark}},
+	{"/getPlayQueue",	{handleNotImplemented}},
+	{"/savePlayQueue",	{handleNotImplemented}},
 
 	// Media library scanning
-	{"getScanStatus",	{Scan::handleGetScanStatus,		{UserType::ADMIN}}},
-	{"startScan",		{Scan::handleStartScan,			{UserType::ADMIN}}},
+	{"/getScanStatus",	{Scan::handleGetScanStatus,		{UserType::ADMIN}}},
+	{"/startScan",		{Scan::handleStartScan,			{UserType::ADMIN}}},
 };
 
 using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::Http::Request&, Wt::Http::Response&)>;
 static std::unordered_map<std::string, MediaRetrievalHandlerFunc> mediaRetrievalHandlers
 {
 	// Media retrieval
-	{"download",		Stream::handleDownload},
-	{"stream",			Stream::handleStream},
-	{"getCoverArt",		handleGetCoverArt},
+	{"/download",		Stream::handleDownload},
+	{"/stream",			Stream::handleStream},
+	{"/getCoverArt",		handleGetCoverArt},
 };
 
 

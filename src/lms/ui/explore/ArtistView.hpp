@@ -20,6 +20,8 @@
 #pragma once
 
 #include "services/database/Object.hpp"
+#include "services/database/Types.hpp"
+#include "utils/EnumSet.hpp"
 #include "common/Template.hpp"
 
 #include "PlayQueueAction.hpp"
@@ -46,19 +48,21 @@ namespace UserInterface
 
 		private:
 			void refreshView();
-			void refreshReleases(const Database::ObjectPtr<Database::Artist>& artist);
-			void refreshNonReleaseTracks(const Database::ObjectPtr<Database::Artist>& artist);
+			bool refreshReleases();
+			bool refreshAppearsOnReleases();
+			bool refreshNonReleaseTracks();
 			void refreshSimilarArtists(const std::vector<Database::ArtistId>& similarArtistsId);
 			void refreshLinks(const Database::ObjectPtr<Database::Artist>& artist);
 
-			void addSomeReleases();
-			void addSomeNonReleaseTracks();
+			bool addSomeReleases(InfiniteScrollingContainer& container, EnumSet<Database::TrackArtistLinkType> linkTypes, EnumSet<Database::TrackArtistLinkType> excludedLinkTypes);
+			bool addSomeNonReleaseTracks();
 			static constexpr std::size_t _releasesBatchSize {6};
 			static constexpr std::size_t _tracksBatchSize {6};
 			static constexpr std::size_t _tracksMaxCount {160};
 
 			Filters* _filters {};
 			InfiniteScrollingContainer* _releaseContainer {};
+			InfiniteScrollingContainer* _appearsOnReleaseContainer {};
 			InfiniteScrollingContainer* _trackContainer {};
 			Database::ArtistId			_artistId {};
 	};

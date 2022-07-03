@@ -79,7 +79,7 @@ namespace UserInterface::ReleaseListHelpers
 					strYear += " (" + std::to_string(*originalYear) + ")";
 				}
 
-				entry->bindString("year", strYear);
+				entry->bindString("year", strYear, Wt::TextFormat::Plain);
 			}
 		}
 

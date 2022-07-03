@@ -275,7 +275,7 @@ int main(int argc, char* argv[])
 		if (config->getBool("api-subsonic", true))
 		{
 			subsonicResource = API::Subsonic::createSubsonicResource(database);
-			server.addResource(subsonicResource.get(), "rest/");
+			server.addResource(subsonicResource.get(), "/rest");
 		}
 
 		// bind UI entry point

@@ -87,7 +87,7 @@ readAs(std::string_view str);
 
 [[nodiscard]]
 std::string
-replaceInString(const std::string& str, const std::string& from, const std::string& to);
+replaceInString(std::string_view str, const std::string& from, const std::string& to);
 
 [[nodiscard]]
 std::string

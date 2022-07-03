@@ -36,6 +36,7 @@ namespace Database
 	class Db;
 	class Release;
 	class Session;
+	class TrackList;
 	class User;
 }
 
@@ -82,6 +83,7 @@ class LmsApplication : public Wt::WApplication
 		static std::unique_ptr<Wt::WAnchor>	createArtistAnchor(Database::ObjectPtr<Database::Artist> artist, bool addText = true);
 		static Wt::WLink					createReleaseLink(Database::ObjectPtr<Database::Release> release);
 		static std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Database::ObjectPtr<Database::Release> release, bool addText = true);
+		static std::unique_ptr<Wt::WAnchor>	createTrackListAnchor(Database::ObjectPtr<Database::TrackList> trackList, bool addText = true);
 
 		MediaPlayer&	getMediaPlayer() const { return *_mediaPlayer; }
 		PlayQueue&		getPlayQueue() const { return *_playQueue; }

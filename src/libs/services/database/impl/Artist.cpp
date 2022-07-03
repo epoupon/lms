@@ -40,6 +40,12 @@ _MBID {MBID ? MBID->getAsString() : ""}
 {
 }
 
+Artist::pointer
+Artist::create(Session& session, const std::string& name, const std::optional<UUID>& MBID)
+{
+	return session.getDboSession().add(std::unique_ptr<Artist> {new Artist {name, MBID}});
+}
+
 std::size_t
 Artist::getCount(Session& session)
 {
@@ -81,17 +87,6 @@ Artist::exists(Session& session, ArtistId id)
 	return session.getDboSession().query<int>("SELECT 1 FROM artist").where("id = ?").bind(id).resultValue() == 1;
 }
 
-Artist::pointer
-Artist::create(Session& session, const std::string& name, const std::optional<UUID>& MBID)
-{
-	session.checkUniqueLocked();
-
-	Artist::pointer res {session.getDboSession().add(std::make_unique<Artist>(name, MBID))};
-	session.getDboSession().flush();
-
-	return res;
-}
-
 static
 Wt::Dbo::Query<ArtistId>
 createQuery(Session& session, const Artist::FindParameters& params)
@@ -119,13 +114,13 @@ createQuery(Session& session, const Artist::FindParameters& params)
 		for (std::string_view keyword : params.keywords)
 		{
 			clauses.push_back("a.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
-			query.bind("%" + escapeLikeKeyword(keyword) + "%");
+			query.bind("%" + Utils::escapeLikeKeyword(keyword) + "%");
 		}
 
 		for (std::string_view keyword : params.keywords)
 		{
 			sortClauses.push_back("a.sort_name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
-			query.bind("%" + escapeLikeKeyword(keyword) + "%");
+			query.bind("%" + Utils::escapeLikeKeyword(keyword) + "%");
 		}
 
 		query.where("(" + StringUtils::joinStrings(clauses, " AND ") + ") OR (" + StringUtils::joinStrings(sortClauses, " AND ") + ")");
@@ -136,7 +131,8 @@ createQuery(Session& session, const Artist::FindParameters& params)
 		assert(params.scrobbler);
 		query.join("starred_artist s_a ON s_a.artist_id = a.id")
 			.where("s_a.user_id = ?").bind(params.starringUser)
-			.where("s_a.scrobbler = ?").bind(*params.scrobbler);
+			.where("s_a.scrobbler = ?").bind(*params.scrobbler)
+			.where("s_a.scrobbling_state <> ?").bind(ScrobblingState::PendingRemove);
 	}
 
 	if (!params.clusters.empty())
@@ -192,7 +188,7 @@ Artist::findAllOrphans(Session& session, Range range)
 	session.checkSharedLocked();
 	auto query {session.getDboSession().query<ArtistId>("SELECT DISTINCT a.id FROM artist a WHERE NOT EXISTS(SELECT 1 FROM track t INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id WHERE t.id = t_a_l.track_id)")};
 
-	return execQuery(query, range);
+	return Utils::execQuery(query, range);
 }
 
 RangeResults<ArtistId>
@@ -201,115 +197,7 @@ Artist::find(Session& session, const FindParameters& params)
 	session.checkSharedLocked();
 
 	auto query {createQuery(session, params)};
-	return execQuery(query, params.range);
-}
-
-RangeResults<ReleaseId>
-Artist::getReleases(Range range, const std::vector<ClusterId>& clusterIds) const
-{
-	assert(session());
-
-	WhereClause where;
-
-	std::ostringstream oss;
-
-	oss << "SELECT DISTINCT r.id FROM release r INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id INNER JOIN track t ON t.release_id = r.id";
-
-	if (!clusterIds.empty())
-	{
-		oss << " INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
-
-		WhereClause clusterClause;
-
-		for (auto id : clusterIds)
-			clusterClause.Or(WhereClause("c.id = ?")).bind(id.toString());
-
-		where.And(clusterClause);
-	}
-
-	where.And(WhereClause("a.id = ?")).bind(getId().toString());
-
-	oss << " " << where.get();
-
-	if (!clusterIds.empty())
-		oss << " GROUP BY t.id HAVING COUNT(DISTINCT c.id) = " << clusterIds.size();
-
-	oss << " ORDER BY t.date DESC, r.name COLLATE NOCASE";
-
-	auto query {session()->query<ReleaseId>(oss.str())};
-
-	for (const std::string& bindArg : where.getBindArgs())
-		query.bind(bindArg);
-
-	return execQuery(query, range);
-}
-
-std::size_t
-Artist::getReleaseCount() const
-{
-	assert(session());
-
-	int res = session()->query<int>("SELECT COUNT(DISTINCT r.id) FROM release r INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id INNER JOIN track t ON t.release_id = r.id")
-		.where("a.id = ?").bind(getId());
-	return res;
-}
-
-std::vector<Track::pointer>
-Artist::getTracks(std::optional<TrackArtistLinkType> linkType) const
-{
-	assert(session());
-
-	auto query {session()->query<Wt::Dbo::ptr<Track>>("SELECT DISTINCT t FROM track t INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id")
-		.where("a.id = ?").bind(getId())
-		.orderBy("t.date DESC,t.release_id,t.disc_number,t.track_number")};
-
-	if (linkType)
-		query.where("t_a_l.type = ?").bind(*linkType);
-
-	auto tracks {query.resultList()};
-	return std::vector<Track::pointer>(tracks.begin(), tracks.end());
-}
-
-RangeResults<Track::pointer>
-Artist::getNonReleaseTracks(std::optional<TrackArtistLinkType> linkType, Range range) const
-{
-	assert(session());
-
-	auto query {session()->query<Wt::Dbo::ptr<Track>>("SELECT t FROM track t INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id")
-		.where("a.id = ?").bind(getId())
-		.where("t.release_id is NULL")
-		.orderBy("t.name")};
-	if (linkType)
-		query.where("t_a_l.type = ?").bind(*linkType);
-
-	return execQuery(query, range);
-}
-
-bool
-Artist::hasNonReleaseTracks(std::optional<TrackArtistLinkType> linkType) const
-{
-	auto query {session()->query<Wt::Dbo::ptr<Track>>("SELECT t FROM track t INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id")
-		.where("a.id = ?").bind(getId())
-		.where("t.release_id is NULL")
-		.orderBy("t.name")};
-
-	if (linkType)
-		query.where("t_a_l.type = ?").bind(*linkType);
-
-	return !query.resultList().empty();
-}
-
-std::vector<Track::pointer>
-Artist::getRandomTracks(std::optional<std::size_t> count) const
-{
-	assert(session());
-
-	Wt::Dbo::collection<Wt::Dbo::ptr<Track>> tracks {session()->query<Wt::Dbo::ptr<Track>>("SELECT t from track t INNER JOIN artist a ON a.id = t_a_l.artist_id INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id")
-		.where("a.id = ?").bind(getId())
-		.orderBy("RANDOM()")
-		.limit(count ? static_cast<int>(*count) : -1)};
-
-	return std::vector<Track::pointer>(tracks.begin(), tracks.end());
+	return Utils::execQuery(query, params.range);
 }
 
 RangeResults<ArtistId>
@@ -353,10 +241,11 @@ Artist::findSimilarArtists(EnumSet<TrackArtistLinkType> artistLinkTypes, Range r
 		.bind(getId())
 		.groupBy("a.id")
 		.orderBy("COUNT(*) DESC, RANDOM()")};
+
 	for (TrackArtistLinkType type : artistLinkTypes)
 		query.bind(type);
 
-	return execQuery(query, range);
+	return Utils::execQuery(query, range);
 }
 
 std::vector<std::vector<Cluster::pointer>>
