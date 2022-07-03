@@ -41,7 +41,8 @@ namespace Database
 			auto modify() { return _obj.modify(); }
 			void remove()
 			{
-				_obj.modify()->onPreRemove();
+				if (_obj->hasOnPreRemove())
+					_obj.modify()->onPreRemove();
 				_obj.remove();
 			}
 
@@ -67,8 +68,12 @@ namespace Database
 
 		protected:
 			template <typename> friend class ObjectPtr;
-			virtual void onPostCreated() {}
+
+			virtual bool hasOnPreRemove() const { return false; }
 			virtual void onPreRemove() {}
+
+			virtual bool hasOnPostCreated() const { return false; }
+			virtual void onPostCreated() {}
 
 			// Can get raw dbo ptr only from Objects
 			template <typename SomeObject>

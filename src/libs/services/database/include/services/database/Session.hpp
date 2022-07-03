@@ -80,7 +80,9 @@ namespace Database
 				typename Object::pointer res {Object::create(*this, std::forward<Args>(args)...)};
 				getDboSession().flush();
 
-				res.modify()->onPostCreated();
+				if (res->hasOnPostCreated())
+					res.modify()->onPostCreated();
+
 				return res;
 			}
 

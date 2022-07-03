@@ -85,7 +85,6 @@ class TrackList : public Object<TrackList, TrackListId>
 		void		setName(const std::string& name) { _name = name; }
 		void		setIsPublic(bool isPublic) { _isPublic = isPublic; }
 		void		clear() { _entries.clear(); }
-		void		setLastModifiedDateTime(const Wt::WDateTime& dateTime) { _lastModifiedDateTime = dateTime; }
 
 		// Get tracks, ordered by position
 		bool										isEmpty() const;
@@ -105,6 +104,8 @@ class TrackList : public Object<TrackList, TrackListId>
 
 		std::vector<TrackId>						getTrackIds() const;
 		std::chrono::milliseconds					getDuration() const;
+
+		void										setLastModifiedDateTime(const Wt::WDateTime& dateTime);
 
 		// Get clusters, order by occurence
 		std::vector<ObjectPtr<Cluster>> getClusters() const;
@@ -148,7 +149,10 @@ class TrackListEntry : public Object<TrackListEntry, TrackListEntryId>
 	public:
 		TrackListEntry() = default;
 
+		bool hasOnPostCreated() const override { return true; }
 		void onPostCreated() override;
+
+		bool hasOnPreRemove() const override { return true; }
 		void onPreRemove() override;
 
 		// find utility

@@ -93,22 +93,8 @@ TEST_F(DatabaseFixture, TrackList_SortMethod)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		session.create<TrackListEntry>(track.get(), trackList1.get());
-	}
-
-	{
-		auto transaction {session.createSharedTransaction()};
-
-		const auto trackLists {TrackList::find(session, TrackList::FindParameters {}.setSortMethod(TrackListSortMethod::LastModifiedDesc))};
-		ASSERT_EQ(trackLists.results.size(), 2);
-		EXPECT_EQ(trackLists.results[0], trackList1.getId());
-		EXPECT_EQ(trackLists.results[1], trackList2.getId());
-	}
-
-	{
-		auto transaction {session.createUniqueTransaction()};
-
-		session.create<TrackListEntry>(track.get(), trackList2.get());
+		trackList1.get().modify()->setLastModifiedDateTime(Wt::WDateTime {Wt::WDate {1900,1,1}});
+		trackList2.get().modify()->setLastModifiedDateTime(Wt::WDateTime {Wt::WDate {1900,1,2}});
 	}
 
 	{
@@ -118,6 +104,22 @@ TEST_F(DatabaseFixture, TrackList_SortMethod)
 		ASSERT_EQ(trackLists.results.size(), 2);
 		EXPECT_EQ(trackLists.results[0], trackList2.getId());
 		EXPECT_EQ(trackLists.results[1], trackList1.getId());
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		trackList1.get().modify()->setLastModifiedDateTime(Wt::WDateTime {Wt::WDate {1900,1,2}});
+		trackList2.get().modify()->setLastModifiedDateTime(Wt::WDateTime {Wt::WDate {1900,1,1}});
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		const auto trackLists {TrackList::find(session, TrackList::FindParameters {}.setSortMethod(TrackListSortMethod::LastModifiedDesc))};
+		ASSERT_EQ(trackLists.results.size(), 2);
+		EXPECT_EQ(trackLists.results[0], trackList1.getId());
+		EXPECT_EQ(trackLists.results[1], trackList2.getId());
 	}
 }
 

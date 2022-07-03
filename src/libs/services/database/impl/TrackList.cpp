@@ -576,6 +576,12 @@ TrackList::getDuration() const
 	return query.resultValue();
 }
 
+void
+TrackList::setLastModifiedDateTime(const Wt::WDateTime& dateTime)
+{
+	_lastModifiedDateTime = Utils::normalizeDateTime(dateTime);
+}
+
 std::vector<Artist::pointer>
 TrackList::getTopArtists(const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range, bool& moreResults) const
 {
