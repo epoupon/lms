@@ -375,18 +375,31 @@ Release::getSimilarReleases(std::optional<std::size_t> offset, std::optional<std
 {
 	assert(session());
 
-	auto res {session()->query<Wt::Dbo::ptr<Release>>(
-			"SELECT r FROM release r"
-			" INNER JOIN track t ON t.release_id = r.id"
-			" INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
-				" WHERE "
-					" t_c.cluster_id IN (SELECT c.id from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN release r ON r.id = t.release_id WHERE r.id = ?)"
-					" AND r.id <> ?"
-				)
+	auto res {session()->query<Wt::Dbo::ptr<Release>>(R"(
+			WITH release_cluster AS (
+				SELECT c.id FROM cluster c
+				INNER JOIN track t
+					ON c.id = t_c.cluster_id
+				INNER JOIN track_cluster t_c
+					ON t_c.track_id = t.id
+				INNER JOIN release r
+					ON r.id = t.release_id
+				WHERE r.id = ?
+			)
+			SELECT r FROM release r
+			INNER JOIN track t
+				ON t.release_id = r.id
+			INNER JOIN track_cluster t_c
+				ON t_c.track_id = t.id
+			WHERE t_c.cluster_id IN release_cluster
+				AND r.id <> ?
+			GROUP BY r.id
+			ORDER BY ABS(RANDOM()/((1 << 63) - 1))*(
+				COUNT('x') + (1 << (SELECT COUNT('x') FROM release_cluster))
+			) DESC
+			)")
 		.bind(getId())
 		.bind(getId())
-		.groupBy("r.id")
-		.orderBy("COUNT(*) DESC, RANDOM()")
 		.limit(count ? static_cast<int>(*count) : -1)
 		.offset(offset ? static_cast<int>(*offset) : -1)
 		.resultList()};

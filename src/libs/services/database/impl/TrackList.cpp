@@ -534,17 +534,38 @@ TrackList::getSimilarTracks(std::optional<std::size_t> offset, std::optional<std
 {
 	assert(session());
 
-	auto res {session()->query<Wt::Dbo::ptr<Track>>(
-			"SELECT t FROM track t"
-			" INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
-				" WHERE "
-					" (t_c.cluster_id IN (SELECT c.id from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN tracklist_entry p_e ON p_e.track_id = t.id INNER JOIN tracklist p ON p.id = p_e.tracklist_id WHERE p.id = ?)"
-					" AND t.id NOT IN (SELECT tracklist_t.id FROM track tracklist_t INNER JOIN tracklist_entry t_e ON t_e.track_id = tracklist_t.id WHERE t_e.tracklist_id = ?))"
+	auto res {session()->query<Wt::Dbo::ptr<Track>>(R"(
+			WITH tracklist_cluster AS (
+				SELECT c.id FROM cluster c 
+				INNER JOIN track t 
+					ON c.id = t_c.cluster_id
+				INNER JOIN track_cluster t_c 
+					ON t_c.track_id = t.id
+				INNER JOIN tracklist_entry p_e
+					ON p_e.track_id = t.id
+				INNER JOIN tracklist p
+					ON p.id = p_e.tracklist_id
+				WHERE p.id = ?
+			) 
+			SELECT t FROM track t
+			INNER JOIN track_cluster t_c
+				ON t_c.track_id = t.id
+			WHERE (
+				t_c.cluster_id IN tracklist_cluster
+				AND t.id NOT IN (
+					SELECT tracklist_t.id FROM track tracklist_t
+					INNER JOIN tracklist_entry t_e
+						ON t_e.track_id = tracklist_t.id
+					WHERE t_e.tracklist_id = ?
 				)
+			)
+			GROUP BY t.id
+			ORDER BY ABS(RANDOM()/((1 << 63) - 1))*(
+				COUNT('x') + (1 << (SELECT COUNT('x') FROM tracklist_cluster))
+			) DESC
+		)")
 		.bind(getId())
 		.bind(getId())
-		.groupBy("t.id")
-		.orderBy("COUNT(*) DESC, RANDOM()")
 		.limit(size ? static_cast<int>(*size) : -1)
 		.offset(offset ? static_cast<int>(*offset) : -1)
 		.resultList()};

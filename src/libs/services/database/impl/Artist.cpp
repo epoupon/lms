@@ -205,38 +205,51 @@ Artist::findSimilarArtists(EnumSet<TrackArtistLinkType> artistLinkTypes, Range r
 {
 	assert(session());
 
-	std::ostringstream oss;
-	oss <<
-			"SELECT a.id FROM artist a"
-			" INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id"
-			" INNER JOIN track t ON t.id = t_a_l.track_id"
-			" INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
-				" WHERE "
-					" t_c.cluster_id IN (SELECT c.id from cluster c"
-											" INNER JOIN track t ON c.id = t_c.cluster_id"
-											" INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
-											" INNER JOIN artist a ON a.id = t_a_l.artist_id"
-											" INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id"
-											" WHERE a.id = ?)"
-					" AND a.id <> ?";
+	std::ostringstream extra_cond;
 
 	if (!artistLinkTypes.empty())
 	{
-		oss << " AND t_a_l.type IN (";
+		extra_cond << " AND t_a_l.type IN (";
 
 		bool first {true};
 		for (TrackArtistLinkType type : artistLinkTypes)
 		{
 			(void) type;
 			if (!first)
-				oss << ", ";
-			oss << "?";
+				extra_cond << ", ";
+			extra_cond << "?";
 			first = false;
 		}
-		oss << ")";
+		extra_cond << ")";
 	}
 
-	auto query {session()->query<ArtistId>(oss.str())
+	auto query {session()->query<ArtistId>(R"(
+		WITH artist_cluster AS (
+			SELECT c.id from cluster c
+			INNER JOIN track t
+				ON c.id = t_c.cluster_id
+			INNER JOIN track_cluster t_c
+				ON t_c.track_id = t.id
+			INNER JOIN artist a
+				ON a.id = t_a_l.artist_id
+			INNER JOIN track_artist_link t_a_l
+				ON t_a_l.track_id = t.id
+			WHERE a.id = ?
+		)
+		SELECT a.id FROM artist a
+		INNER JOIN track_artist_link t_a_l
+			ON t_a_l.artist_id = a.id
+		INNER JOIN track t
+			ON t.id = t_a_l.track_id
+		INNER JOIN track_cluster t_c
+			ON t_c.track_id = t.id
+		WHERE t_c.cluster_id IN artist_cluster
+			AND a.id <> ?
+		GROUP BY a.id
+		ORDER BY ABS(RANDOM()/((1 << 63) - 1))*(
+			COUNT('x') + (1 << (SELECT COUNT('x') FROM artist_cluster))
+		) DESC
+		)" + extra_cond.str())
 		.bind(getId())
 		.bind(getId())
 		.groupBy("a.id")

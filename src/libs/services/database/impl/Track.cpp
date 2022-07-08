@@ -309,13 +309,30 @@ Track::findSimilarTracks(Session& session, const std::vector<TrackId>& tracks, R
 		oss << "?";
 	}
 
-	auto query {session.getDboSession().query<TrackId>(
-			"SELECT t.id FROM track t"
-			" INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
-					" AND t_c.cluster_id IN (SELECT c.id FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id WHERE t_c.track_id IN (" + oss.str() + "))"
-					" AND t.id NOT IN (" + oss.str() + ")")
+	auto query {
+		session.getDboSession().query<TrackId>(R"(
+			SELECT t.id, total FROM track t 
+			INNER JOIN track_cluster t_c 
+				ON t_c.track_id = t.id 
+				AND t.id NOT IN ()" + oss.str() + R"()
+				AND t_c.cluster_id IN (
+					SELECT c.id FROM cluster c 
+					INNER JOIN track_cluster t_c 
+						ON t_c.cluster_id = c.id 
+					WHERE t_c.track_id IN ()" + oss.str() + R"()
+				)
+			)")
 		.groupBy("t.id")
-		.orderBy("COUNT(*) DESC, RANDOM()")};
+		.orderBy(R"(
+			ABS(RANDOM()/((1 << 63) - 1))*(
+				COUNT('x') + (1 << (
+					SELECT COUNT('x') FROM track t
+					INNER JOIN track_cluster tc
+						ON t.id = tc.track_id
+						AND tc.track_id IN ()" + oss.str() + R"()
+				))
+			) DESC)")
+	};
 
 	for (TrackId trackId : tracks)
 		query.bind(trackId);
