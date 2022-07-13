@@ -179,25 +179,32 @@ namespace Scrobbling::ListenBrainz
 			switch (type)
 			{
 				case FeedbackType::Love:
-				starredTrack.modify()->setScrobblingState(ScrobblingState::PendingAdd);
-				break;
+					if (starredTrack->getScrobblingState() != ScrobblingState::PendingAdd)
+						starredTrack.modify()->setScrobblingState(ScrobblingState::PendingAdd);
+					break;
 
 				case FeedbackType::Erase:
-				if (!recordingMBID)
-				{
-					LOG(DEBUG) << "Track has no recording MBID: erasing star";
-					starredTrack.remove();
-				}
-				else
-				{
-					// Send the erase order even if it is not on the remote LB server (it may be
-					// queued for add, or not)
-					starredTrack.modify()->setScrobblingState(ScrobblingState::PendingRemove);
-				}
-				break;
+					if (!recordingMBID)
+					{
+						LOG(DEBUG) << "Track has no recording MBID: erasing star";
+						starredTrack.remove();
+					}
+					else
+					{
+						// Send the erase order even if it is not on the remote LB server (it may be
+						// queued for add, or not)
+						starredTrack.modify()->setScrobblingState(ScrobblingState::PendingRemove);
+					}
+					break;
 
-			default:
-				throw Exception {"Unhandled feedback type"};
+				default:
+					throw Exception {"Unhandled feedback type"};
+			}
+
+			if (!recordingMBID)
+			{
+				LOG(DEBUG) << "Track has no recording MBID: skipping";
+				return;
 			}
 
 			const std::optional<UUID> listenBrainzToken {starredTrack->getUser()->getListenBrainzToken()};
