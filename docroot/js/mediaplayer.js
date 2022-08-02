@@ -359,6 +359,27 @@ LMS.mediaplayer = function () {
 				artwork: params.artwork,
 			});
 		}
+
+		var newTitle = "";
+
+		if (params.title) {
+			newTitle += params.title;
+		}
+		else {
+			newTitle += "<unk>";
+		}
+
+		newTitle += " - ";
+
+		if (params.release) {
+			newTitle += params.release;
+		}
+		else {
+			newTitle += "<unk>";
+		}
+
+		newTitle += " | LMS";
+		document.title = newTitle;
 	}
 
 	var stop = function() {
