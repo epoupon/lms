@@ -16,7 +16,7 @@
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> 注销</message>
 <message id="Lms.not-a-directory">不是一个目录</message>
 <message id="Lms.password">密码</message>
-<message id="Lms.password-bad-login-combination">无效的登陆 / 密码组合</message>
+<message id="Lms.password-bad-login-combination">用户名或密码无效</message>
 <message id="Lms.password-client-throttled">登录已被限制，请稍后再试</message>
 <message id="Lms.password-confirm">确认密码</message>
 <message id="Lms.password-must-match-login">演示密码必须是登录名！</message>
@@ -26,20 +26,17 @@
 <message id="Lms.passwords-dont-match">密码不匹配</message>
 <message id="Lms.quit-other-session">另一个会话已打开，重新打开这一个？</message>
 <message id="Lms.save">保存</message>
-
-
-
-
+<message id="Lms.track-count">{1} 个音轨</message>
 <message id="Lms.user">用户</message>
 
 <!--Errors-->
 <message id="Lms.Error.artist-not-found">歌手未找到</message>
 <message id="Lms.Error.error-occurred">发生错误！</message>
 <message id="Lms.Error.go-home">返回主页</message>
-<message id="Lms.Error.release-not-found">发布未找到</message>
-
+<message id="Lms.Error.release-not-found">专辑未找到</message>
+<message id="Lms.Error.tracklist-not-found">播放列表未找到</message>
 <message id="Lms.Error.user-not-allowed">不允许执行此操作</message>
-<message id="Lms.Error.user-not-found">未找到此用户</message>
+<message id="Lms.Error.user-not-found">用户未找到</message>
 
 <!--Administration-->
 <message id="Lms.Admin.Database.daily">每日</message>
@@ -54,7 +51,7 @@
 <message id="Lms.Admin.Database.recommendation-engine-type">推荐引擎</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.clusters">基于标签</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.features">基于音频分析</message>
-<message id="Lms.Admin.Database.scan-complete">扫描完成：总文件 {1}，添加文件 {2}，更新文件 {3}，删除文件 {4}，副本文件 {5}，错误文件 {6}</message>
+<message id="Lms.Admin.Database.scan-complete">扫描完成：总文件 {1}，添加文件 {2}，更新文件 {3}，删除文件 {4}，重复文件 {5}，错误文件 {6}</message>
 <message id="Lms.Admin.Database.scan-launched">扫描已完成！</message>
 <message id="Lms.Admin.Database.scan-options">扫描选项</message>
 <message id="Lms.Admin.Database.settings-saved">新设置已保存！</message>
@@ -66,33 +63,33 @@
 <message id="Lms.Admin.ScannerController.bad-duration">无法获得音轨时间</message>
 <message id="Lms.Admin.ScannerController.cannot-parse-file">无法解析文件</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">无法读取文件</message>
-<message id="Lms.Admin.ScannerController.duplicates-header">{1} 备份文件:</message>
-<message id="Lms.Admin.ScannerController.errors-header">{1} 错误：</message>
+<message id="Lms.Admin.ScannerController.duplicates-header">{1} 个重复文件：</message>
+<message id="Lms.Admin.ScannerController.errors-header">{1} 个错误：</message>
 <message id="Lms.Admin.ScannerController.force-scan-now">立即强制全盘扫描</message>
 <message id="Lms.Admin.ScannerController.get-report">生成报告</message>
 <message id="Lms.Admin.ScannerController.last-scan">最后扫描</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">不可用</message>
-<message id="Lms.Admin.ScannerController.last-scan-status">已扫描 {1} 文件 在 {2} 和 {3} ({4} 错误, {5} 副本)</message>
+<message id="Lms.Admin.ScannerController.last-scan-status">在 {2} 内扫描了 {3} 中的 {1} 个文件（{4} 个错误, {5} 个副本）</message>
 <message id="Lms.Admin.ScannerController.no-audio-track">没有音轨</message>
-<message id="Lms.Admin.ScannerController.same-hash">复制文件哈希值</message>
-<message id="Lms.Admin.ScannerController.same-mbid">复制 Recording MBID</message>
+<message id="Lms.Admin.ScannerController.same-hash">相同文件哈希值</message>
+<message id="Lms.Admin.ScannerController.same-mbid">相同 MBID</message>
 <message id="Lms.Admin.ScannerController.scan-now">立即扫描</message>
 <message id="Lms.Admin.ScannerController.scanner">扫描器</message>
 <message id="Lms.Admin.ScannerController.status">状态</message>
 <message id="Lms.Admin.ScannerController.status-not-scheduled">无计划</message>
-<message id="Lms.Admin.ScannerController.status-scheduled">计划在 {1}</message>
+<message id="Lms.Admin.ScannerController.status-scheduled">计划于 {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">扫描中: 阶段 {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-missing-files">检查文件中... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-discovering-files">检索文件中: {1} 文件</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">从 AcousticBrainz 获取音轨特征: {1}/{2} 音轨 ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">重载相似引擎中 {1}%...</message>
-<message id="Lms.Admin.ScannerController.step-scanning-files">扫描文件中: {1}/{2} 文件 ({3}%)...</message>
-
+<message id="Lms.Admin.ScannerController.step-scanning-files">扫描文件中: {1}/{2} 个文件 ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-status">当前步骤状态</message>
 
 <!--Users-->
 <message id="Lms.Admin.Users.add">新建用户</message>
 <message id="Lms.Admin.Users.admin">管理员</message>
-
+<message id="Lms.Admin.Users.del-user-confirm">删除用户？</message>
 <message id="Lms.Admin.Users.demo">演示</message>
 <message id="Lms.Admin.Users.users">用户</message>
 <message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> 用户</message>
@@ -116,26 +113,26 @@
 <message id="Lms.Auth.welcome">欢迎！</message>
 
 <!--Explore-->
-<message id="Lms.Explore.add-filter">添加筛选</message>
+<message id="Lms.Explore.add-filter">添加过滤器</message>
 <message id="Lms.Explore.all">全部</message>
 <message id="Lms.Explore.artists">歌手</message>
 <message id="Lms.Explore.download">下载</message>
-<message id="Lms.Explore.filter-added">筛选已添加</message>
-<message id="Lms.Explore.filters">筛选</message>
+<message id="Lms.Explore.filter-added">过滤器已添加</message>
+<message id="Lms.Explore.filters">过滤器</message>
 <message id="Lms.Explore.most-played">播放最多</message>
 <message id="Lms.Explore.musicbrainz-artist">MusicBrainz 歌手</message>
 <message id="Lms.Explore.musicbrainz-release">MusicBrainz 专辑</message>
-
-<message id="Lms.Explore.play-last">播放列表</message>
+<message id="Lms.Explore.play">播放</message>
+<message id="Lms.Explore.play-last">最后播放</message>
 <message id="Lms.Explore.play-shuffled">随机播放</message>
 <message id="Lms.Explore.random">随机</message>
 <message id="Lms.Explore.recently-added">最近添加</message>
-
+<message id="Lms.Explore.recently-modified">最近更改</message>
 <message id="Lms.Explore.recently-played">最近播放</message>
 <message id="Lms.Explore.releases">专辑</message>
 <message id="Lms.Explore.star">收藏</message>
 <message id="Lms.Explore.starred">已收藏</message>
-
+<message id="Lms.Explore.tracklists">播放列表</message>
 <message id="Lms.Explore.tracks">音轨</message>
 <message id="Lms.Explore.type">类型</message>
 <message id="Lms.Explore.unstar">取消收藏</message>
@@ -143,7 +140,7 @@
 <message id="Lms.Explore.various-artists">群星</message>
 
 <!--Explore:Artist-->
-
+<message id="Lms.Explore.Artist.appears-on">出现于</message>
 <message id="Lms.Explore.Artist.similar-artists">相似歌手</message>
 
 <!--Explore:Artists-->
@@ -152,7 +149,7 @@
 <message id="Lms.Explore.Artists.linktype-composer">作曲</message>
 <message id="Lms.Explore.Artists.linktype-lyricist">作词</message>
 <message id="Lms.Explore.Artists.linktype-mixer">混响</message>
-<message id="Lms.Explore.Artists.linktype-producer">制片人</message>
+<message id="Lms.Explore.Artists.linktype-producer">制作人</message>
 <message id="Lms.Explore.Artists.linktype-releaseartist">专辑歌手</message>
 <message id="Lms.Explore.Artists.linktype-remixer">混音师</message>
 
@@ -162,26 +159,23 @@
 <message id="Lms.Explore.Release.disc">唱片 {1}</message>
 
 <!--Explore:TrackLists-->
-
+<message id="Lms.Explore.TrackLists.del-tracklist-confirm">删除播放列表？</message>
 
 <!--Explore:Search-->
-<message id="Lms.Explore.Search.search-placeholder">搜索中...</message>
+<message id="Lms.Explore.Search.search-placeholder">搜索...</message>
 
 <!--Player-->
 <message id="Lms.Player.transcoding-active">转码已启用</message>
 
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">清除</message>
-
-<message id="Lms.PlayQueue.nb-tracks-added">
-	<plural case="0">添加 {1} 音轨</plural>
-	<plural case="1">已添加 {1} 音轨</plural>
-</message>
+<message id="Lms.PlayQueue.create-tracklist">创建新播放列表</message>
+<message id="Lms.PlayQueue.nb-tracks-added">已添加 {1} 音轨</message>
 <message id="Lms.PlayQueue.playqueue">播放队列</message>
 <message id="Lms.PlayQueue.playqueue-full">播放队列已满！</message>
 <message id="Lms.PlayQueue.radio-mode">广播模式</message>
 <message id="Lms.PlayQueue.repeat">循环播放</message>
-
+<message id="Lms.PlayQueue.replace-tracklist">替换现有播放列表</message>
 <message id="Lms.PlayQueue.shuffle">随机播放</message>
 
 <!--PlayHistory-->
