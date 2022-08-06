@@ -75,6 +75,7 @@ class LmsApplication : public Wt::WApplication
 
 		// Utils
 		void post(std::function<void()> func);
+		void setTitle(const Wt::WString& title = "");
 
 		// Used to classify the message sent to the user
 		void notifyMsg(Notification::Type type, const Wt::WString& category, const Wt::WString& message, std::chrono::milliseconds duration = std::chrono::milliseconds {5000});

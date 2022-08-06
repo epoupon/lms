@@ -64,6 +64,48 @@
 
 namespace UserInterface {
 
+static
+std::shared_ptr<Wt::WMessageResourceBundle>
+createMessageResourceBundle()
+{
+	const std::string appRoot {Wt::WApplication::appRoot()};
+
+	auto res {std::make_shared<Wt::WMessageResourceBundle>()};
+	res->use(appRoot + "admin-database");
+	res->use(appRoot + "admin-initwizard");
+	res->use(appRoot + "admin-scannercontroller");
+	res->use(appRoot + "admin-user");
+	res->use(appRoot + "admin-users");
+	res->use(appRoot + "artist");
+	res->use(appRoot + "artists");
+	res->use(appRoot + "error");
+	res->use(appRoot + "explore");
+	res->use(appRoot + "login");
+	res->use(appRoot + "main");
+	res->use(appRoot + "mediaplayer");
+	res->use(appRoot + "messages");
+	res->use(appRoot + "misc");
+	res->use(appRoot + "notifications");
+	res->use(appRoot + "playqueue");
+	res->use(appRoot + "release");
+	res->use(appRoot + "releases");
+	res->use(appRoot + "search");
+	res->use(appRoot + "settings");
+	res->use(appRoot + "tracklist");
+	res->use(appRoot + "tracklists");
+	res->use(appRoot + "tracks");
+
+	return res;
+}
+
+static
+std::shared_ptr<Wt::WMessageResourceBundle>
+getOrCreateMessageBundle()
+{
+	static std::shared_ptr<Wt::WMessageResourceBundle> res {createMessageResourceBundle()};
+	return res;
+}
+
 static constexpr const char* defaultPath {"/releases"};
 
 std::unique_ptr<Wt::WApplication>
@@ -169,32 +211,8 @@ LmsApplication::init()
 	useStyleSheet("resources/font-awesome/css/font-awesome.min.css");
 	require("js/mediaplayer.js");
 
-	setTitle("LMS");
-
-	// Add a resource bundle
-	messageResourceBundle().use(appRoot() + "admin-database");
-	messageResourceBundle().use(appRoot() + "admin-initwizard");
-	messageResourceBundle().use(appRoot() + "admin-scannercontroller");
-	messageResourceBundle().use(appRoot() + "admin-user");
-	messageResourceBundle().use(appRoot() + "admin-users");
-	messageResourceBundle().use(appRoot() + "artist");
-	messageResourceBundle().use(appRoot() + "artists");
-	messageResourceBundle().use(appRoot() + "error");
-	messageResourceBundle().use(appRoot() + "explore");
-	messageResourceBundle().use(appRoot() + "login");
-	messageResourceBundle().use(appRoot() + "main");
-	messageResourceBundle().use(appRoot() + "mediaplayer");
-	messageResourceBundle().use(appRoot() + "messages");
-	messageResourceBundle().use(appRoot() + "misc");
-	messageResourceBundle().use(appRoot() + "notifications");
-	messageResourceBundle().use(appRoot() + "playqueue");
-	messageResourceBundle().use(appRoot() + "release");
-	messageResourceBundle().use(appRoot() + "releases");
-	messageResourceBundle().use(appRoot() + "search");
-	messageResourceBundle().use(appRoot() + "settings");
-	messageResourceBundle().use(appRoot() + "tracklist");
-	messageResourceBundle().use(appRoot() + "tracklists");
-	messageResourceBundle().use(appRoot() + "tracks");
+	setTitle();
+	setLocalizedStrings(getOrCreateMessageBundle());
 
 	// Handle Media Scanner events and other session events
 	enableUpdates(true);
@@ -597,6 +615,15 @@ void
 LmsApplication::post(std::function<void()> func)
 {
 	Wt::WServer::instance()->post(LmsApp->sessionId(), std::move(func));
+}
+
+void
+LmsApplication::setTitle(const Wt::WString& title)
+{
+	if (title.empty())
+		WApplication::setTitle("LMS");
+	else
+		WApplication::setTitle(title + " | LMS");
 }
 
 void
