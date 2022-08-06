@@ -168,7 +168,7 @@ ChildProcess::wait(bool block)
 
 
 void
-ChildProcess::asyncRead(std::byte* data, std::size_t bufferSize, ReadCallback callback) 
+ChildProcess::asyncRead(std::byte* data, std::size_t bufferSize, ReadCallback callback)
 {
 	assert(!finished());
 
