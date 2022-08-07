@@ -94,7 +94,7 @@ Filters::showDialog()
 		{
 			const auto clusterType {ClusterType::find(LmsApp->getDbSession(), clusterTypesIds.results.front())};
 
-			for (const Cluster::pointer cluster : clusterType->getClusters())
+			for (const Cluster::pointer& cluster : clusterType->getClusters())
 			{
 				if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), cluster->getId()) == _clusterIds.end())
 					valueCombo->addItem(Wt::WString::fromUTF8(cluster->getName()));

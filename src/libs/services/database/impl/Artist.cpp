@@ -277,7 +277,7 @@ Artist::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::si
 	Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> queryRes = query;
 
 	std::map<ClusterTypeId, std::vector<Cluster::pointer>> clustersByType;
-	for (const Cluster::pointer& cluster : queryRes)
+	for (Cluster::pointer cluster : queryRes)
 	{
 		if (clustersByType[cluster->getType()->getId()].size() < size)
 			clustersByType[cluster->getType()->getId()].push_back(cluster);
