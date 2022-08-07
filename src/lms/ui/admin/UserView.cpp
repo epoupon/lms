@@ -215,16 +215,22 @@ UserView::refreshView()
 		if (!user)
 			throw UserNotFoundException {};
 
-		t->bindString("title", Wt::WString::tr("Lms.Admin.User.user-edit").arg(user->getLoginName()), Wt::TextFormat::Plain);
+		const Wt::WString title {Wt::WString::tr("Lms.Admin.User.user-edit").arg(user->getLoginName())};
+		LmsApp->setTitle(title);
+
+		t->bindString("title", title, Wt::TextFormat::Plain);
 		t->setCondition("if-has-last-login", true);
 		t->bindString("last-login", user->getLastLogin().toString(), Wt::TextFormat::Plain);
 	}
 	else
 	{
+		const Wt::WString title {Wt::WString::tr("Lms.Admin.User.user-create")};
+		LmsApp->setTitle(title);
+
 		// Login
 		t->setCondition("if-has-login", true);
 		t->setFormWidget(UserModel::LoginField, std::make_unique<Wt::WLineEdit>());
-		t->bindString("title", Wt::WString::tr("Lms.Admin.User.user-create"));
+		t->bindString("title", title);
 	}
 
 	if (authPasswordService)

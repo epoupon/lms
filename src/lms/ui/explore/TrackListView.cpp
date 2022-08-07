@@ -88,6 +88,7 @@ namespace UserInterface
 		if (!trackList)
 			throw TrackListNotFoundException {};
 
+		LmsApp->setTitle(std::string {trackList->getName()});
 		_trackListId = *trackListId;
 
 		clear();

@@ -106,6 +106,7 @@ getOrCreateMessageBundle()
 	return res;
 }
 
+static constexpr const char* titleSeparator {" | "};
 static constexpr const char* defaultPath {"/releases"};
 
 std::unique_ptr<Wt::WApplication>
@@ -378,21 +379,22 @@ handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
 		std::string path;
 		int index;
 		bool admin;
+		std::optional<Wt::WString> title;
 	} views[] =
 	{
-		{ "/artists",		IdxExplore,		false },
-		{ "/artist",		IdxExplore,		false },
-		{ "/releases",		IdxExplore,		false },
-		{ "/release",		IdxExplore,		false },
-		{ "/search",		IdxExplore,		false },
-		{ "/tracks",		IdxExplore,		false },
-		{ "/tracklists",	IdxExplore,		false },
-		{ "/tracklist",		IdxExplore,		false },
-		{ "/playqueue",		IdxPlayQueue,		false },
-		{ "/settings",		IdxSettings,		false },
-		{ "/admin/database",	IdxAdminDatabase,	true },
-		{ "/admin/users",	IdxAdminUsers,		true },
-		{ "/admin/user",	IdxAdminUser,		true },
+		{ "/artists",			IdxExplore,			false,	Wt::WString::tr("Lms.Explore.artists") },
+		{ "/artist",			IdxExplore,			false,	std::nullopt },
+		{ "/releases",			IdxExplore,			false,	Wt::WString::tr("Lms.Explore.releases") },
+		{ "/release",			IdxExplore,			false,	std::nullopt },
+		{ "/search",			IdxExplore,			false,	Wt::WString::tr("Lms.Explore.search") },
+		{ "/tracks",			IdxExplore,			false,	Wt::WString::tr("Lms.Explore.tracks") },
+		{ "/tracklists",		IdxExplore,			false,	Wt::WString::tr("Lms.Explore.tracklists") },
+		{ "/tracklist",			IdxExplore,			false,	std::nullopt },
+		{ "/playqueue",			IdxPlayQueue,		false,	Wt::WString::tr("Lms.PlayQueue.playqueue") },
+		{ "/settings",			IdxSettings,		false,	Wt::WString::tr("Lms.Settings.settings") },
+		{ "/admin/database",	IdxAdminDatabase,	true,	Wt::WString::tr("Lms.Admin.Database.database") },
+		{ "/admin/users",		IdxAdminUsers,		true,	Wt::WString::tr("Lms.Admin.Users.users") },
+		{ "/admin/user",		IdxAdminUser,		true,	std::nullopt },
 	};
 
 	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
@@ -406,6 +408,8 @@ handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
 				break;
 
 			stack.setCurrentIndex(view.index);
+			if (view.title)
+				LmsApp->setTitle(*view.title);
 			return;
 		}
 	}
@@ -623,7 +627,7 @@ LmsApplication::setTitle(const Wt::WString& title)
 	if (title.empty())
 		WApplication::setTitle("LMS");
 	else
-		WApplication::setTitle(title + " | LMS");
+		WApplication::setTitle(Wt::WString {"LMS"} + titleSeparator + title);
 }
 
 void

@@ -109,6 +109,7 @@ Artist::refreshView()
 	if (!artist)
 		throw ArtistNotFoundException {};
 
+	LmsApp->setTitle(artist->getName());
 	_artistId = *artistId;
 
 	std::size_t sectionCount{};

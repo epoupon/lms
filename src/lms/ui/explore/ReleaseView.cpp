@@ -106,6 +106,8 @@ Release::refreshView()
 	if (!release)
 		throw ReleaseNotFoundException {};
 
+	LmsApp->setTitle(release->getName());
+
 	refreshCopyright(release);
 	refreshLinks(release);
 	refreshSimilarReleases(similarReleasesIds);

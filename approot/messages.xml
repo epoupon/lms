@@ -104,7 +104,7 @@
 <message id="Lms.Admin.User.user-already-exists">User already exists!</message>
 <message id="Lms.Admin.User.user-create">New user</message>
 <message id="Lms.Admin.User.user-created">New user created!</message>
-<message id="Lms.Admin.User.user-edit">Edit user '{1}'</message>
+<message id="Lms.Admin.User.user-edit">User '{1}'</message>
 <message id="Lms.Admin.User.user-updated">User updated!</message>
 
 <!--Wizard-->
@@ -133,6 +133,7 @@
 <message id="Lms.Explore.recently-modified">Recently modified</message>
 <message id="Lms.Explore.recently-played">Recently played</message>
 <message id="Lms.Explore.releases">Albums</message>
+<message id="Lms.Explore.search">Search</message>
 <message id="Lms.Explore.star">Star</message>
 <message id="Lms.Explore.starred">Starred</message>
 <message id="Lms.Explore.tracklists">Playlists</message>
@@ -186,7 +187,6 @@
 
 <!--PlayHistory-->
 <message id="Lms.PlayHistory.playhistory">Play History</message>
-
 
 <!--Settings-->
 <message id="Lms.Settings.audio">Audio</message>
