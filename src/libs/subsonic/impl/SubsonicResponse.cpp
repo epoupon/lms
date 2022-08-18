@@ -117,6 +117,7 @@ Response::createOkResponse(ProtocolVersion protocolVersion)
 
 	responseNode.setAttribute("status", "ok");
 	responseNode.setVersionAttribute(protocolVersion);
+	responseNode.setAttribute("type", "lms"); // non standard field to ease client hacks
 
 	return response;
 }
@@ -129,6 +130,7 @@ Response::createFailedResponse(ProtocolVersion protocolVersion, const Error& err
 
 	responseNode.setAttribute("status", "failed");
 	responseNode.setVersionAttribute(protocolVersion);
+	responseNode.setAttribute("type", "lms"); // non standard field to ease client hacks
 
 	Node& errorNode {responseNode.createChild("error")};
 	errorNode.setAttribute("code", std::to_string(static_cast<int>(error.getCode())));
