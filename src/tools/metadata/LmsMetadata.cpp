@@ -69,7 +69,7 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 	}
 	const auto end {std::chrono::steady_clock::now()};
 
-	std::cout << "Parsing time: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000. << "ms" << std::endl;
+	std::cout << "Parsing time: " << std::fixed << std::setprecision(2) << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000. << "ms" << std::endl;
 
 	std::cout << "Track metadata:" << std::endl;
 
@@ -117,7 +117,7 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 		}
 	}
 
-	std::cout << "Duration: " << track->duration.count() / 1000 << "s" << std::endl;
+	std::cout << "Duration: " << std::fixed << std::setprecision(2) << track->duration.count() / 1000. << "s" << std::endl;
 
 	if (track->trackNumber)
 		std::cout << "Track: " << *track->trackNumber << std::endl;

@@ -286,7 +286,7 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 	{
 		const TagLib::AudioProperties *properties {f.audioProperties() };
 
-		track.duration = std::chrono::milliseconds {properties->length() * 1000};
+		track.duration = std::chrono::milliseconds {properties->lengthInMilliseconds()};
 
 		MetaData::AudioStream audioStream {static_cast<unsigned>(properties->bitrate() * 1000)};
 		track.audioStreams = {std::move(audioStream)};
