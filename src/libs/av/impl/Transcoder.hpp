@@ -32,7 +32,7 @@ namespace Av
 	class Transcoder
 	{
 		public:
-			Transcoder(const std::filesystem::path& file, const TranscodeParameters& parameters);
+			Transcoder(const InputFileParameters& inputFileParameters, const TranscodeParameters& transcodeParameters);
 			~Transcoder();
 
 			Transcoder(const Transcoder&) = delete;
@@ -49,7 +49,7 @@ namespace Av
 			std::size_t		readSome(std::byte* buffer, std::size_t bufferSize);
 
 			const std::string&	getOutputMimeType() const { return _outputMimeType; }
-			const TranscodeParameters& getParameters() const { return _parameters; }
+			const TranscodeParameters& getParameters() const { return _transcodeParameters; }
 
 			bool			finished() const;
 
@@ -58,9 +58,9 @@ namespace Av
 
 			void start();
 
-			const std::size_t		_id {};
-			const std::filesystem::path	_filePath;
-			const TranscodeParameters	_parameters;
+			const std::size_t			_debugId {};
+			const InputFileParameters	_inputFileParameters;
+			const TranscodeParameters	_transcodeParameters;
 
 			std::unique_ptr<IChildProcess>	_childProcess;
 

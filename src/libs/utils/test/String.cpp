@@ -109,3 +109,12 @@ TEST(StringUtils, escapeString)
 	EXPECT_EQ(StringUtils::escapeString("**||", "*|", '_'), "_*_*_|_|");
 }
 
+TEST(StringUtils, readAs)
+{
+	EXPECT_EQ(StringUtils::readAs<bool>("true"), true);
+	EXPECT_EQ(StringUtils::readAs<bool>("1"), true);
+	EXPECT_EQ(StringUtils::readAs<bool>("false"), false);
+	EXPECT_EQ(StringUtils::readAs<bool>("0"), false);
+	EXPECT_EQ(StringUtils::readAs<bool>("foo"), std::nullopt);
+	EXPECT_EQ(StringUtils::readAs<bool>(""), std::nullopt);
+}

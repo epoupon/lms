@@ -58,9 +58,5 @@ namespace StringUtils
 	template<>
 	std::optional<Database::TrackListId>
 	readAs(std::string_view str);
-
-	template<>
-	std::optional<bool>
-	readAs(std::string_view str);
 }
 

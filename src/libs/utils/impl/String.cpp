@@ -63,6 +63,18 @@ readAs(std::string_view str)
 	return std::string {str};
 }
 
+template<>
+std::optional<bool>
+readAs(std::string_view str)
+{
+	if (str == "1" || str == "true")
+		return true;
+	else if (str == "0" || str == "false")
+		return false;
+
+	return std::nullopt;
+}
+
 std::vector<std::string>
 splitStringCopy(std::string_view string, std::string_view separators)
 {

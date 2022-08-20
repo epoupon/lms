@@ -136,17 +136,4 @@ namespace StringUtils
 
 		return std::nullopt;
 	}
-
-	template<>
-	std::optional<bool>
-	readAs(std::string_view str)
-	{
-		if (str == "true")
-			return true;
-		else if (str == "false")
-			return false;
-
-		return {};
-	}
 }
-
