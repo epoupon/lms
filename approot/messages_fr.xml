@@ -208,6 +208,7 @@
 <message id="Lms.Settings.scrobbling.scrobbler.internal">Interne</message>
 <message id="Lms.Settings.scrobbling.scrobbler.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.scrobbling.listenbrainz-token">Jeton ListenBrainz</message>
+<message id="Lms.Settings.settings">Paramètres</message>
 <message id="Lms.Settings.subsonic-artist-list-mode">Mode de listage des artistes</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.all-artists">Tous les artistes</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Tous les artistes d'album</message>
