@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "metadata/AvFormatParser.hpp"
+#include "AvFormatParser.hpp"
 
 #include <algorithm>
 #include <iostream>

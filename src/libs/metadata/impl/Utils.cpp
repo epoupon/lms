@@ -23,6 +23,8 @@
 #include <iomanip>
 #include <sstream>
 
+#include "utils/Exception.hpp"
+
 namespace MetaData::Utils
 {
 	Wt::WDate
@@ -55,6 +57,19 @@ namespace MetaData::Utils
 		}
 
 		return {};
+	}
+
+	std::string_view
+	readStyleToString(ParserReadStyle readStyle)
+	{
+		switch (readStyle)
+		{
+			case ParserReadStyle::Fast: return "fast";
+			case ParserReadStyle::Average: return "average";
+			case ParserReadStyle::Accurate: return "accurate";
+		}
+
+		throw LmsException {"Unknown read style"};
 	}
 }
 

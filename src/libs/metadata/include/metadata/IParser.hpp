@@ -100,5 +100,18 @@ namespace MetaData
 			std::set<std::string> _clusterTypeNames;
 	};
 
+	enum class ParserType
+	{
+		TagLib,
+		AvFormat,
+	};
+
+	enum class ParserReadStyle
+	{
+		Fast,
+		Average,
+		Accurate,
+	};
+	std::unique_ptr<IParser> createParser(ParserType parserType, ParserReadStyle parserReadStyle);
 } // namespace MetaData
 

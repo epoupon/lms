@@ -25,8 +25,7 @@
 
 #include <Wt/WDate.h>
 
-#include "metadata/AvFormatParser.hpp"
-#include "metadata/TagLibParser.hpp"
+#include "metadata/IParser.hpp"
 #include "utils/StreamLogger.hpp"
 
 std::ostream& operator<<(std::ostream& os, const MetaData::Artist& artist)
@@ -184,14 +183,14 @@ int main(int argc, char *argv[])
 
 			{
 				std::cout << "Using av:" << std::endl;
-				MetaData::AvFormatParser parser;
-				parse(parser, file);
+				auto parser {MetaData::createParser(MetaData::ParserType::AvFormat, MetaData::ParserReadStyle::Accurate)};
+				parse(*parser, file);
 			}
 
 			{
 				std::cout << "Using TagLib:" << std::endl;
-				MetaData::TagLibParser parser;
-				parse(parser, file);
+				auto parser {MetaData::createParser(MetaData::ParserType::TagLib, MetaData::ParserReadStyle::Accurate)};
+				parse(*parser, file);
 			}
 		}
 	}
