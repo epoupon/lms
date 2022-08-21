@@ -27,7 +27,7 @@ namespace Av
 		std::size_t
 		doEstimateContentLength(const InputFileParameters& inputFileParameters, const TranscodeParameters& transcodeParameters)
 		{
-			const std::size_t estimatedContentLength {transcodeParameters.bitrate / 8 * std::chrono::duration_cast<std::chrono::milliseconds>(inputFileParameters.duration).count() / 1000};
+			const std::size_t estimatedContentLength {transcodeParameters.bitrate / 8 * static_cast<std::size_t>(std::chrono::duration_cast<std::chrono::milliseconds>(inputFileParameters.duration).count()) / 1000};
 			return estimatedContentLength;
 		}
 	}
