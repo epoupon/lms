@@ -25,10 +25,41 @@ LMS.mediaplayer = function () {
 	var _audioNativeSrc;
 	var _audioTranscodeSrc;
 	var _settings = {};
-	var _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-	var _gainNode = _audioCtx.createGain();
 	var _playedDuration = 0;
 	var _lastStartPlaying = null;
+	var _audioIsInit = false;
+	var _pendingTrackParameters = null;
+
+	var _unlock = function() {
+		document.removeEventListener("touchstart", _unlock);
+		document.removeEventListener("touchend", _unlock);
+		document.removeEventListener("click", _unlock);
+		_initAudioCtx();
+	};
+
+	document.addEventListener("touchstart", _unlock);
+	document.addEventListener("touchend", _unlock);
+	document.addEventListener("click", _unlock);
+
+	var _initAudioCtx = function() {
+		if (_audioIsInit)
+			return;
+
+		_audioIsInit = true;
+
+		_audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+		_gainNode = _audioCtx.createGain();
+		source = _audioCtx.createMediaElementSource(_elems.audio);
+		source.connect(_gainNode);
+		_gainNode.connect(_audioCtx.destination);
+		_audioCtx.resume(); // not sure of this
+
+		if (_pendingTrackParameters != null) {
+			_applyAudioTrackParameters(_pendingTrackParameters, false);
+			_pendingTrackParameters = null;
+		}
+
+	}
 
 	var _updateControls = function() {
 		const pauseClass = "fa-pause";
@@ -82,14 +113,15 @@ LMS.mediaplayer = function () {
 			playPromise.then(_ => {
 				// Automatic playback started
 			})
-			.catch(error => {
-				// Auto-play was prevented
-			});
+				.catch(error => {
+					// Auto-play was prevented
+				});
 		}
 	}
 
 	var _playPause = function() {
-		_audioCtx.resume();
+		_initAudioCtx();
+
 		if (_elems.audio.paused && _elems.audio.children.length > 0) {
 			_playTrack();
 		}
@@ -98,20 +130,12 @@ LMS.mediaplayer = function () {
 	}
 
 	var _playPrevious = function() {
-		_audioCtx.resume();
-		_requestPreviousTrack();
-	}
-
-	var _playNext = function() {
-		_audioCtx.resume();
-		_requestNextTrack();
-	}
-
-	var _requestPreviousTrack = function() {
+		_initAudioCtx();
 		Wt.emit(_root, "playPrevious");
 	}
 
-	var _requestNextTrack = function() {
+	var _playNext = function() {
+		_initAudioCtx();
 		Wt.emit(_root, "playNext");
 	}
 
@@ -181,10 +205,6 @@ LMS.mediaplayer = function () {
 		_elems.volumeslider = document.getElementById("lms-mp-volume-slider");
 		_elems.transcodingActive = document.getElementById("lms-transcoding-active");
 
-		var source = _audioCtx.createMediaElementSource(_elems.audio);
-		source.connect(_gainNode);
-		_gainNode.connect(_audioCtx.destination);
-
 		_elems.playpause.addEventListener("click", function() {
 			_playPause();
 		});
@@ -196,7 +216,7 @@ LMS.mediaplayer = function () {
 			_playNext();
 		});
 		_elems.seek.addEventListener("change", function() {
-			_audioCtx.resume();
+			_initAudioCtx();
 			let mode = _getAudioMode();
 			if (!mode)
 				return;
@@ -286,14 +306,19 @@ LMS.mediaplayer = function () {
 		});
 
 		if ('mediaSession' in navigator) {
+			navigator.mediaSession.setActionHandler("play", function() {
+				_playPause();
+			});
+			navigator.mediaSession.setActionHandler("pause", function() {
+				_playPause();
+			});
 			navigator.mediaSession.setActionHandler("previoustrack", function() {
-				_requestPreviousTrack();
+				_playPrevious();
 			});
 			navigator.mediaSession.setActionHandler("nexttrack", function() {
-				_requestNextTrack();
+				_playNext();
 			});
 		}
-
 	}
 
 	var _removeAudioSources = function() {
@@ -343,13 +368,8 @@ LMS.mediaplayer = function () {
 		}
 		_elems.audio.load();
 
-		_setReplayGain(params.replayGain);
-
 		_elems.curtime.innerHTML = _durationToString(_offset);
 		_elems.duration.innerHTML = _durationToString(_duration);
-
-		if (autoplay && _audioCtx.state == "running")
-			_playTrack();
 
 		if ('mediaSession' in navigator) {
 			navigator.mediaSession.metadata = new MediaMetadata({
@@ -359,6 +379,21 @@ LMS.mediaplayer = function () {
 				artwork: params.artwork,
 			});
 		}
+
+		if (!_audioIsInit) {
+			_pendingTrackParameters = params;
+			return;
+		}
+
+		_applyAudioTrackParameters(params, autoplay);
+
+		if (autoplay && _audioCtx.state == "running")
+			_playTrack();
+	}
+
+	var _applyAudioTrackParameters = function(params)
+	{
+		_setReplayGain(params.replayGain);
 	}
 
 	var stop = function() {
