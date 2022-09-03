@@ -106,7 +106,6 @@ getOrCreateMessageBundle()
 	return res;
 }
 
-static constexpr const char* titleSeparator {" | "};
 static constexpr const char* defaultPath {"/releases"};
 
 std::unique_ptr<Wt::WApplication>
@@ -627,7 +626,7 @@ LmsApplication::setTitle(const Wt::WString& title)
 	if (title.empty())
 		WApplication::setTitle("LMS");
 	else
-		WApplication::setTitle(Wt::WString {"LMS"} + titleSeparator + title);
+		WApplication::setTitle(title);
 }
 
 void
