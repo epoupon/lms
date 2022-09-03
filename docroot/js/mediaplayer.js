@@ -42,8 +42,10 @@ LMS.mediaplayer = function () {
 	document.addEventListener("click", _unlock);
 
 	var _initAudioCtx = function() {
-		if (_audioIsInit)
+		if (_audioIsInit) {
+			_audioCtx.resume(); // not sure of this
 			return;
+		}
 
 		_audioIsInit = true;
 
@@ -53,6 +55,21 @@ LMS.mediaplayer = function () {
 		source.connect(_gainNode);
 		_gainNode.connect(_audioCtx.destination);
 		_audioCtx.resume(); // not sure of this
+
+		if ("mediaSession" in navigator) {
+			navigator.mediaSession.setActionHandler("play", function() {
+				_playPause();
+			});
+			navigator.mediaSession.setActionHandler("pause", function() {
+				_playPause();
+			});
+			navigator.mediaSession.setActionHandler("previoustrack", function() {
+				_playPrevious();
+			});
+			navigator.mediaSession.setActionHandler("nexttrack", function() {
+				_playNext();
+			});
+		}
 
 		if (_pendingTrackParameters != null) {
 			_applyAudioTrackParameters(_pendingTrackParameters, false);
@@ -68,10 +85,18 @@ LMS.mediaplayer = function () {
 		if (_elems.audio.paused) {
 			_elems.playpause.firstElementChild.classList.remove(pauseClass);
 			_elems.playpause.firstElementChild.classList.add(playClass);
+			if ("mediaSession" in navigator) {
+				navigator.mediaSession.playbackState = "paused";
+				console.log("paused");
+			}
 		}
 		else {
 			_elems.playpause.firstElementChild.classList.remove(playClass);
 			_elems.playpause.firstElementChild.classList.add(pauseClass);
+			if ("mediaSession" in navigator) {
+				navigator.mediaSession.playbackState = "playing";
+				console.log("playing");
+			}
 		}
 	}
 
@@ -107,16 +132,9 @@ LMS.mediaplayer = function () {
 	}
 
 	var _playTrack = function() {
-		var playPromise = _elems.audio.play();
-
-		if (playPromise !== undefined) {
-			playPromise.then(_ => {
-				// Automatic playback started
-			})
-				.catch(error => {
-					// Auto-play was prevented
-				});
-		}
+		_elems.audio.play()
+			.then(_ => {})
+			.catch(error => { console.log("Cannot play audio: " + error); });
 	}
 
 	var _playPause = function() {
@@ -305,20 +323,6 @@ LMS.mediaplayer = function () {
 				event.preventDefault();
 		});
 
-		if ('mediaSession' in navigator) {
-			navigator.mediaSession.setActionHandler("play", function() {
-				_playPause();
-			});
-			navigator.mediaSession.setActionHandler("pause", function() {
-				_playPause();
-			});
-			navigator.mediaSession.setActionHandler("previoustrack", function() {
-				_playPrevious();
-			});
-			navigator.mediaSession.setActionHandler("nexttrack", function() {
-				_playNext();
-			});
-		}
 	}
 
 	var _removeAudioSources = function() {
@@ -371,15 +375,6 @@ LMS.mediaplayer = function () {
 		_elems.curtime.innerHTML = _durationToString(_offset);
 		_elems.duration.innerHTML = _durationToString(_duration);
 
-		if ('mediaSession' in navigator) {
-			navigator.mediaSession.metadata = new MediaMetadata({
-				title: params.title,
-				artist: params.artist,
-				album: params.release,
-				artwork: params.artwork,
-			});
-		}
-
 		if (!_audioIsInit) {
 			_pendingTrackParameters = params;
 			return;
@@ -394,6 +389,14 @@ LMS.mediaplayer = function () {
 	var _applyAudioTrackParameters = function(params)
 	{
 		_setReplayGain(params.replayGain);
+		if ("mediaSession" in navigator) {
+			navigator.mediaSession.metadata = new MediaMetadata({
+				title: params.title,
+				artist: params.artist,
+				album: params.release,
+				artwork: params.artwork,
+			});
+		}
 	}
 
 	var stop = function() {
