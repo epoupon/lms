@@ -197,7 +197,8 @@ Release::refreshView()
 
 	const bool variousArtists {release->hasVariousArtists()};
 	const auto totalDisc {release->getTotalDisc()};
-	const bool isReleaseMultiDisc {totalDisc && *totalDisc > 1};
+	const std::size_t discCount {release->getDiscCount()};
+	const bool isReleaseMultiDisc {(discCount > 1) || (totalDisc && *totalDisc > 1)};
 
 	// Expect to be called in asc order
 	std::map<std::size_t, Wt::WContainerWidget*> trackContainers;

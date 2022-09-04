@@ -464,3 +464,47 @@ TEST_F(DatabaseFixture, Release_artist)
 	}
 }
 
+TEST_F(DatabaseFixture, Release_getDiscCount)
+{
+	ScopedRelease release {session, "MyRelease"};
+	ScopedTrack track {session, "MyTrack"};
+	ScopedTrack track2 {session, "MyTrack2"};
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		EXPECT_EQ(release.get()->getDiscCount(), 0);
+	}
+	{
+		auto transaction {session.createUniqueTransaction()};
+		track.get().modify()->setRelease(release.get());
+	}
+	{
+		auto transaction {session.createSharedTransaction()};
+		EXPECT_EQ(release.get()->getDiscCount(), 1);
+	}
+	{
+		auto transaction {session.createUniqueTransaction()};
+		track.get().modify()->setDiscNumber(5);
+	}
+	{
+		auto transaction {session.createSharedTransaction()};
+		EXPECT_EQ(release.get()->getDiscCount(), 1);
+	}
+	{
+		auto transaction {session.createUniqueTransaction()};
+		track2.get().modify()->setRelease(release.get());
+		track2.get().modify()->setDiscNumber(5);
+	}
+	{
+		auto transaction {session.createSharedTransaction()};
+		EXPECT_EQ(release.get()->getDiscCount(), 1);
+	}
+	{
+		auto transaction {session.createUniqueTransaction()};
+		track2.get().modify()->setDiscNumber(6);
+	}
+	{
+		auto transaction {session.createSharedTransaction()};
+		EXPECT_EQ(release.get()->getDiscCount(), 2);
+	}
+}

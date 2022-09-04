@@ -36,7 +36,7 @@ class WhereClause
 		WhereClause& bind(const std::string& arg);
 
 		std::string get() const;
-		const std::list<std::string>&	getBindArgs(void) const	{return _bindArgs;}
+		const std::list<std::string>&	getBindArgs() const	{return _bindArgs;}
 
 	private:
 		std::string _clause;		// WHERE clause
@@ -101,15 +101,15 @@ class FromClause
 class SqlQuery
 {
 	public:
-		SelectStatement&	select(void)		{ return _selectStatement;}
+		SelectStatement&	select()		{ return _selectStatement;}
 		SelectStatement&	select(const std::string& statement)		{ _selectStatement = SelectStatement(statement); return _selectStatement; }
-		FromClause&		from(void)		{ return _fromClause; }
+		FromClause&		from()		{ return _fromClause; }
 		FromClause&		from(const std::string& clause)			{ _whereClause = WhereClause(clause); return _fromClause; }
-		InnerJoinClause&	innerJoin(void)		{ return _innerJoinClause; }
-		WhereClause&		where(void)		{ return _whereClause; }
-		const WhereClause&	where(void) const	{ return _whereClause; }
-		GroupByStatement&	groupBy(void) 		{ return _groupByStatement; }
-		const GroupByStatement&	groupBy(void) const	{ return _groupByStatement; }
+		InnerJoinClause&	innerJoin()		{ return _innerJoinClause; }
+		WhereClause&		where()		{ return _whereClause; }
+		const WhereClause&	where() const	{ return _whereClause; }
+		GroupByStatement&	groupBy() 		{ return _groupByStatement; }
+		const GroupByStatement&	groupBy() const	{ return _groupByStatement; }
 
 		std::string get() const;
 
