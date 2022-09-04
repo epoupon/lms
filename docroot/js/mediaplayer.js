@@ -87,7 +87,6 @@ LMS.mediaplayer = function () {
 			_elems.playpause.firstElementChild.classList.add(playClass);
 			if ("mediaSession" in navigator) {
 				navigator.mediaSession.playbackState = "paused";
-				console.log("paused");
 			}
 		}
 		else {
@@ -95,7 +94,6 @@ LMS.mediaplayer = function () {
 			_elems.playpause.firstElementChild.classList.add(pauseClass);
 			if ("mediaSession" in navigator) {
 				navigator.mediaSession.playbackState = "playing";
-				console.log("playing");
 			}
 		}
 	}
