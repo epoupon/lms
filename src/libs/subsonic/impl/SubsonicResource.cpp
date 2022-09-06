@@ -874,6 +874,29 @@ handleGetAlbumRequest(RequestContext& context)
 
 static
 Response
+handleGetSongRequest(RequestContext& context)
+{
+	// Mandatory params
+	TrackId id {getMandatoryParameterAs<TrackId>(context.parameters, "id")};
+
+	auto transaction {context.dbSession.createSharedTransaction()};
+
+	const Track::pointer track {Track::find(context.dbSession, id)};
+	if (!track)
+		throw RequestedDataNotFoundError {};
+
+	User::pointer user {User::find(context.dbSession, context.userId)};
+	if (!user)
+		throw UserNotAuthorizedError {};
+
+	Response response {Response::createOkResponse(context.serverProtocolVersion)};
+	response.addNode("song", trackToResponseNode(track, context.dbSession, user));
+
+	return response;
+}
+
+static
+Response
 handleGetArtistRequest(RequestContext& context)
 {
 	// Mandatory params
@@ -1835,7 +1858,7 @@ static const std::unordered_map<std::string, RequestEntryPointInfo> requestEntry
 	{"/getArtists",		{handleGetArtistsRequest}},
 	{"/getArtist",		{handleGetArtistRequest}},
 	{"/getAlbum",		{handleGetAlbumRequest}},
-	{"/getSong",		{handleNotImplemented}},
+	{"/getSong",		{handleGetSongRequest}},
 	{"/getVideos",		{handleNotImplemented}},
 	{"/getArtistInfo",	{handleGetArtistInfoRequest}},
 	{"/getArtistInfo2",	{handleGetArtistInfo2Request}},
