@@ -16,21 +16,22 @@ const Mode = {
 Object.freeze(Mode);
 
 LMS.mediaplayer = function () {
+	let _root = {};
+	let _elems = {};
+	let _offset = 0;
+	let _trackId = null;
+	let _duration = 0;
+	let _audioNativeSrc;
+	let _audioTranscodeSrc;
+	let _settings = {};
+	let _playedDuration = 0;
+	let _lastStartPlaying = null;
+	let _audioIsInit = false;
+	let _pendingTrackParameters = null;
+	let _gainNode = null;
+	let _audioCtx = null;
 
-	var _root = {};
-	var _elems = {};
-	var _offset = 0;
-	var _trackId = null;
-	var _duration = 0;
-	var _audioNativeSrc;
-	var _audioTranscodeSrc;
-	var _settings = {};
-	var _playedDuration = 0;
-	var _lastStartPlaying = null;
-	var _audioIsInit = false;
-	var _pendingTrackParameters = null;
-
-	var _unlock = function() {
+	let _unlock = function() {
 		document.removeEventListener("touchstart", _unlock);
 		document.removeEventListener("touchend", _unlock);
 		document.removeEventListener("click", _unlock);
@@ -41,7 +42,7 @@ LMS.mediaplayer = function () {
 	document.addEventListener("touchend", _unlock);
 	document.addEventListener("click", _unlock);
 
-	var _initAudioCtx = function() {
+	let _initAudioCtx = function() {
 		if (_audioIsInit) {
 			_audioCtx.resume(); // not sure of this
 			return;
@@ -72,13 +73,13 @@ LMS.mediaplayer = function () {
 		}
 
 		if (_pendingTrackParameters != null) {
-			_applyAudioTrackParameters(_pendingTrackParameters, false);
+			_applyAudioTrackParameters(_pendingTrackParameters);
 			_pendingTrackParameters = null;
 		}
 
 	}
 
-	var _updateControls = function() {
+	let _updateControls = function() {
 		const pauseClass = "fa-pause";
 		const playClass = "fa-play";
 
@@ -98,30 +99,30 @@ LMS.mediaplayer = function () {
 		}
 	}
 
-	var _startTimer = function() {
+	let _startTimer = function() {
 		if (_lastStartPlaying == null)
 			Wt.emit(_root, "scrobbleListenNow", _trackId);
 		_lastStartPlaying = Date.now();
 	}
 
-	var _stopTimer = function() {
+	let _stopTimer = function() {
 		if (_lastStartPlaying != null) {
 			_playedDuration += Date.now() - _lastStartPlaying;
 		}
 	}
 
-	var _resetTimer = function() {
+	let _resetTimer = function() {
 		if (_lastStartPlaying != null)
 			Wt.emit(_root, "scrobbleListenFinished", _trackId, _playedDuration);
 		_playedDuration = 0;
 		_lastStartPlaying = null;
 	}
 
-	var _durationToString = function (duration) {
-		var minutes = parseInt(duration / 60, 10);
-		var seconds = parseInt(duration, 10) % 60;
+	let _durationToString = function (duration) {
+		let minutes = parseInt(duration / 60, 10);
+		let seconds = parseInt(duration, 10) % 60;
 
-		var res = "";
+		let res = "";
 
 		res += minutes + ":";
 		res += (seconds  < 10 ? "0" + seconds : seconds);
@@ -129,13 +130,13 @@ LMS.mediaplayer = function () {
 		return res;
 	}
 
-	var _playTrack = function() {
+	let _playTrack = function() {
 		_elems.audio.play()
 			.then(_ => {})
 			.catch(error => { console.log("Cannot play audio: " + error); });
 	}
 
-	var _playPause = function() {
+	let _playPause = function() {
 		_initAudioCtx();
 
 		if (_elems.audio.paused && _elems.audio.children.length > 0) {
@@ -145,17 +146,17 @@ LMS.mediaplayer = function () {
 			_elems.audio.pause();
 	}
 
-	var _playPrevious = function() {
+	let _playPrevious = function() {
 		_initAudioCtx();
 		Wt.emit(_root, "playPrevious");
 	}
 
-	var _playNext = function() {
+	let _playNext = function() {
 		_initAudioCtx();
 		Wt.emit(_root, "playNext");
 	}
 
-	var _initVolume = function() {
+	let _initVolume = function() {
 		if (typeof(Storage) !== "undefined" && localStorage.volume) {
 			_elems.volumeslider.value = Number(localStorage.volume);
 		}
@@ -163,7 +164,7 @@ LMS.mediaplayer = function () {
 		_setVolume(_elems.volumeslider.value);
 	}
 
-	var _initDefaultSettings = function(defaultSettings) {
+	let _initDefaultSettings = function(defaultSettings) {
 		if (typeof(Storage) !== "undefined" && localStorage.settings) {
 			_settings = Object.assign(defaultSettings, JSON.parse(localStorage.settings));
 		}
@@ -174,7 +175,7 @@ LMS.mediaplayer = function () {
 		Wt.emit(_root, "settingsLoaded", JSON.stringify(_settings));
 	}
 
-	var _setVolume = function(volume) {
+	let _setVolume = function(volume) {
 		_elems.lastvolume = _elems.audio.volume;
 
 		_elems.audio.volume = volume;
@@ -202,11 +203,11 @@ LMS.mediaplayer = function () {
 		}
 	}
 
-	var _setReplayGain = function (replayGain) {
+	let _setReplayGain = function (replayGain) {
 		_gainNode.gain.value = Math.pow(10, (_settings.replayGain.preAmpGain + replayGain) / 20);
 	}
 
-	var init = function(root, defaultSettings) {
+	let init = function(root, defaultSettings) {
 		_root = root;
 
 		_elems.audio = document.getElementById("lms-mp-audio");
@@ -323,19 +324,19 @@ LMS.mediaplayer = function () {
 
 	}
 
-	var _removeAudioSources = function() {
+	let _removeAudioSources = function() {
 		while ( _elems.audio.lastElementChild) {
 			_elems.audio.removeChild( _elems.audio.lastElementChild);
 		}
 	}
 
-	var _addAudioSource = function(audioSrc) {
+	let _addAudioSource = function(audioSrc) {
 		let source = document.createElement('source');
 		source.src = audioSrc;
 		_elems.audio.appendChild(source);
 	}
 
-	var _getAudioMode = function() {
+	let _getAudioMode = function() {
 		if (_elems.audio.currentSrc) {
 			if (_elems.audio.currentSrc.includes("format"))
 				return Mode.Transcode;
@@ -346,7 +347,7 @@ LMS.mediaplayer = function () {
 			return undefined;
 	}
 
-	var loadTrack = function(params, autoplay) {
+	let loadTrack = function(params, autoplay) {
 		_stopTimer();
 		_resetTimer();
 
@@ -378,13 +379,13 @@ LMS.mediaplayer = function () {
 			return;
 		}
 
-		_applyAudioTrackParameters(params, autoplay);
+		_applyAudioTrackParameters(params);
 
 		if (autoplay && _audioCtx.state == "running")
 			_playTrack();
 	}
 
-	var _applyAudioTrackParameters = function(params)
+	let _applyAudioTrackParameters = function(params)
 	{
 		_setReplayGain(params.replayGain);
 		if ("mediaSession" in navigator) {
@@ -397,11 +398,11 @@ LMS.mediaplayer = function () {
 		}
 	}
 
-	var stop = function() {
+	let stop = function() {
 		_elems.audio.pause();
 	}
 
-	var setSettings = function(settings) {
+	let setSettings = function(settings) {
 		_settings = settings;
 
 		if (typeof(Storage) !== "undefined") {
