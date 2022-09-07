@@ -26,16 +26,18 @@
 
 #include "common/InfiniteScrollingContainer.hpp"
 #include "common/Template.hpp"
-#include "ReleaseListHelpers.hpp"
-#include "Filters.hpp"
+#include "explore/Filters.hpp"
+#include "explore/PlayQueueController.hpp"
+#include "explore/ReleaseListHelpers.hpp"
 #include "LmsApplication.hpp"
 
 using namespace Database;
 
 namespace UserInterface {
 
-Releases::Releases(Filters& filters)
+Releases::Releases(Filters& filters, PlayQueueController& playQueueController)
 : Template {Wt::WString::tr("Lms.Explore.Releases.template")}
+, _playQueueController {playQueueController}
 , _releaseCollector {filters, _defaultMode, _maxCount}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
@@ -69,18 +71,18 @@ Releases::Releases(Filters& filters)
 	Wt::WPushButton* playBtn {bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)};
 	playBtn->clicked().connect([this]
 	{
-		releasesAction.emit(PlayQueueAction::Play, getAllReleases());
+		_playQueueController.processCommand(PlayQueueController::Command::Play, getAllReleases());
 	});
 
 	bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
 		->clicked().connect([=]
 		{
-			releasesAction.emit(PlayQueueAction::PlayShuffled, getAllReleases());
+			_playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, getAllReleases());
 		});
 	bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
 		->clicked().connect([=]
 		{
-			releasesAction.emit(PlayQueueAction::PlayLast, getAllReleases());
+			_playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, getAllReleases());
 		});
 
 	_container = bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));

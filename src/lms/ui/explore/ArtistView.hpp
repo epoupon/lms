@@ -19,12 +19,11 @@
 
 #pragma once
 
+#include "services/database/ArtistId.hpp"
 #include "services/database/Object.hpp"
 #include "services/database/Types.hpp"
 #include "utils/EnumSet.hpp"
 #include "common/Template.hpp"
-
-#include "PlayQueueAction.hpp"
 
 namespace Database
 {
@@ -34,17 +33,14 @@ namespace Database
 
 namespace UserInterface
 {
-
 	class Filters;
+	class PlayQueueController;
 	class InfiniteScrollingContainer;
 
 	class Artist : public Template
 	{
 		public:
-			Artist(Filters* filters);
-
-			PlayQueueActionArtistSignal artistsAction;
-			PlayQueueActionTrackSignal tracksAction;
+			Artist(Filters& filters, PlayQueueController& controller);
 
 		private:
 			void refreshView();
@@ -60,7 +56,8 @@ namespace UserInterface
 			static constexpr std::size_t _tracksBatchSize {6};
 			static constexpr std::size_t _tracksMaxCount {160};
 
-			Filters* _filters {};
+			Filters&					_filters;
+			PlayQueueController&		_playQueueController;
 			InfiniteScrollingContainer* _releaseContainer {};
 			InfiniteScrollingContainer* _appearsOnReleaseContainer {};
 			InfiniteScrollingContainer* _trackContainer {};

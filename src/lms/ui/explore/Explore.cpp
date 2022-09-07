@@ -19,17 +19,8 @@
 
 #include "Explore.hpp"
 
+#include <Wt/WApplication.h>
 #include <Wt/WStackedWidget.h>
-#include <Wt/WTemplate.h>
-#include <Wt/WText.h>
-
-#include "services/database/Artist.hpp"
-#include "services/database/Release.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/Track.hpp"
-#include "utils/Logger.hpp"
-
-#include "LmsApplication.hpp"
 
 #include "ArtistsView.hpp"
 #include "ArtistView.hpp"
@@ -43,215 +34,96 @@
 
 namespace UserInterface {
 
-namespace {
+	namespace {
 
-void
-handleContentsPathChange(Wt::WStackedWidget* stack)
-{
-	enum Idx
-	{
-		IdxArtists = 0,
-		IdxArtist,
-		IdxTrackLists,
-		IdxTrackList,
-		IdxReleases,
-		IdxRelease,
-		IdxSearch,
-		IdxTracks,
-	};
-
-	static const std::map<std::string, int> indexes =
-	{
-		{ "/artists",		IdxArtists },
-		{ "/artist",		IdxArtist },
-		{ "/tracklists",	IdxTrackLists },
-		{ "/tracklist",		IdxTrackList },
-		{ "/releases",		IdxReleases },
-		{ "/release",		IdxRelease },
-		{ "/search",		IdxSearch },
-		{ "/tracks",		IdxTracks },
-	};
-
-	for (const auto& index : indexes)
-	{
-		if (wApp->internalPathMatches(index.first))
+		void
+		handleContentsPathChange(Wt::WStackedWidget* stack)
 		{
-			stack->setCurrentIndex(index.second);
-			return;
+			enum Idx
+			{
+				IdxArtists = 0,
+				IdxArtist,
+				IdxTrackLists,
+				IdxTrackList,
+				IdxReleases,
+				IdxRelease,
+				IdxSearch,
+				IdxTracks,
+			};
+
+			static const std::map<std::string, int> indexes =
+			{
+				{ "/artists",		IdxArtists },
+				{ "/artist",		IdxArtist },
+				{ "/tracklists",	IdxTrackLists },
+				{ "/tracklist",		IdxTrackList },
+				{ "/releases",		IdxReleases },
+				{ "/release",		IdxRelease },
+				{ "/search",		IdxSearch },
+				{ "/tracks",		IdxTracks },
+			};
+
+			for (const auto& index : indexes)
+			{
+				if (wApp->internalPathMatches(index.first))
+				{
+					stack->setCurrentIndex(index.second);
+					return;
+				}
+			}
 		}
-	}
-}
 
-} // namespace
+	} // namespace
 
-Explore::Explore(Filters* filters)
-: Wt::WTemplate {Wt::WString::tr("Lms.Explore.template")}
-, _filters {filters}
-{
-	addFunction("tr", &Functions::tr);
-
-	// Contents
-	Wt::WStackedWidget* contentsStack {bindNew<Wt::WStackedWidget>("contents")};
-	contentsStack->setOverflow(Wt::Overflow::Visible); // wt makes it hidden by default
-
-	// same order as enum Idx
-	auto artists = std::make_unique<Artists>(*_filters);
-	contentsStack->addWidget(std::move(artists));
-
-	auto artist = std::make_unique<Artist>(_filters);
-	artist->artistsAction.connect(this, &Explore::handleArtistsAction);
-	artist->tracksAction.connect(this, &Explore::handleTracksAction);
-	contentsStack->addWidget(std::move(artist));
-
-	auto trackLists {std::make_unique<TrackLists>(*_filters)};
-	TrackLists* trackListsPtr {trackLists.get()};
-	trackLists->trackListAction.connect(this, &Explore::handleTrackListAction);
-	contentsStack->addWidget(std::move(trackLists));
-
-	auto trackList {std::make_unique<TrackList>(*_filters)};
-	TrackList* trackListPtr {trackList.get()};
-	trackList->trackListAction.connect(this, &Explore::handleTrackListAction);
-	trackList->tracksAction.connect(this, &Explore::handleTracksAction);
-	contentsStack->addWidget(std::move(trackList));
-
-	trackListPtr->trackListDeleted.connect(trackListsPtr, &TrackLists::onTrackListDeleted);
-
-	auto releases = std::make_unique<Releases>(*_filters);
-	releases->releasesAction.connect(this, &Explore::handleReleasesAction);
-	contentsStack->addWidget(std::move(releases));
-
-	auto release = std::make_unique<Release>(_filters);
-	release->releasesAction.connect(this, &Explore::handleReleasesAction);
-	release->tracksAction.connect(this, &Explore::handleTracksAction);
-	contentsStack->addWidget(std::move(release));
-
-	auto search = std::make_unique<SearchView>(_filters);
-	search->tracksAction.connect(this, &Explore::handleTracksAction);
-	_search = search.get();
-	contentsStack->addWidget(std::move(search));
-
-	auto tracks = std::make_unique<Tracks>(*_filters);
-	tracks->tracksAction.connect(this, &Explore::handleTracksAction);
-	contentsStack->addWidget(std::move(tracks));
-
-	wApp->internalPathChanged().connect(this, [=]
+	Explore::Explore(Filters& filters, PlayQueue& playQueue)
+		: Wt::WTemplate {Wt::WString::tr("Lms.Explore.template")}
+	, _playQueueController {filters, playQueue}
 	{
+		addFunction("tr", &Functions::tr);
+
+		// Contents
+		Wt::WStackedWidget* contentsStack {bindNew<Wt::WStackedWidget>("contents")};
+		contentsStack->setOverflow(Wt::Overflow::Visible); // wt makes it hidden by default
+
+		// same order as enum Idx
+		auto artists = std::make_unique<Artists>(filters);
+		contentsStack->addWidget(std::move(artists));
+
+		auto artist = std::make_unique<Artist>(filters, _playQueueController);
+		contentsStack->addWidget(std::move(artist));
+
+		auto trackLists {std::make_unique<TrackLists>(filters)};
+		contentsStack->addWidget(std::move(trackLists));
+
+		auto trackList {std::make_unique<TrackList>(filters, _playQueueController)};
+		trackList->trackListDeleted.connect(trackLists.get(), &TrackLists::onTrackListDeleted);
+		contentsStack->addWidget(std::move(trackList));
+
+		auto releases = std::make_unique<Releases>(filters, _playQueueController);
+		contentsStack->addWidget(std::move(releases));
+
+		auto release = std::make_unique<Release>(filters, _playQueueController);
+		contentsStack->addWidget(std::move(release));
+
+		auto search = std::make_unique<SearchView>(filters, _playQueueController);
+		_search = search.get();
+		contentsStack->addWidget(std::move(search));
+
+		auto tracks = std::make_unique<Tracks>(filters, _playQueueController);
+		contentsStack->addWidget(std::move(tracks));
+
+		wApp->internalPathChanged().connect(this, [=]
+		{
+			handleContentsPathChange(contentsStack);
+		});
+
 		handleContentsPathChange(contentsStack);
-	});
-
-	handleContentsPathChange(contentsStack);
-}
-
-void
-Explore::search(const Wt::WString& searchText)
-{
-	_search->refreshView(searchText);
-}
-
-static
-std::vector<Database::TrackId>
-getArtistsTracks(Database::Session& session, const std::vector<Database::ArtistId>& artistsId, const std::vector<Database::ClusterId>& clusters, std::size_t maxTrackCount)
-{
-	assert(maxTrackCount);
-
-	std::vector<Database::TrackId> res;
-
-	auto transaction {session.createSharedTransaction()};
-
-	for (const Database::ArtistId artistId : artistsId)
-	{
-		Database::Track::FindParameters params;
-		params.setArtist(artistId);
-		params.setSortMethod(Database::TrackSortMethod::DateDescAndRelease);
-		params.setClusters(clusters);
-		params.setRange({0, maxTrackCount - res.size()});
-
-		const auto tracks {Database::Track::find(session, params)};
-
-		res.reserve(res.size() + tracks.results.size());
-		res.insert(std::end(res), std::cbegin(tracks.results), std::cend(tracks.results));
-
-		if (res.size() == maxTrackCount)
-			break;
 	}
 
-	return res;
-}
-
-static
-std::vector<Database::TrackId>
-getReleasesTracks(Database::Session& session, const std::vector<Database::ReleaseId>& releasesId, const std::vector<Database::ClusterId>& clusters, std::size_t maxTrackCount)
-{
-	using namespace Database;
-	assert(maxTrackCount);
-
-	std::vector<TrackId> res;
-
-	auto transaction {session.createSharedTransaction()};
-
-	for (const ReleaseId releaseId : releasesId)
+	void
+	Explore::search(const Wt::WString& searchText)
 	{
-		Database::Track::FindParameters params;
-		params.setRelease(releaseId);
-		params.setSortMethod(Database::TrackSortMethod::Release);
-		params.setClusters(clusters);
-		params.setRange({0, maxTrackCount - res.size()});
-
-		const auto tracks {Database::Track::find(session, params)};
-
-		res.reserve(res.size() + tracks.results.size());
-		res.insert(std::end(res), std::cbegin(tracks.results), std::cend(tracks.results));
-
-		if (res.size() == maxTrackCount)
-			break;
+		_search->refreshView(searchText);
 	}
-
-	return res;
-}
-
-static
-std::vector<Database::TrackId>
-getTrackListTracks(Database::Session& session, Database::TrackListId trackListId, const std::vector<Database::ClusterId>& clusters, std::size_t maxTrackCount)
-{
-	using namespace Database;
-	assert(maxTrackCount);
-
-	auto transaction {session.createSharedTransaction()};
-
-	Database::Track::FindParameters params;
-	params.setTrackList(trackListId);
-	params.setClusters(clusters);
-	params.setRange({0, maxTrackCount});
-	params.setSortMethod(TrackSortMethod::TrackList);
-	params.setDistinct(false);
-
-	return Database::Track::find(session, params).results;
-}
-
-void
-Explore::handleArtistsAction(PlayQueueAction action, const std::vector<Database::ArtistId>& artistsId)
-{
-	tracksAction.emit(action, getArtistsTracks(LmsApp->getDbSession(), artistsId, _filters->getClusterIds(), _maxTrackCount));
-}
-
-void
-Explore::handleReleasesAction(PlayQueueAction action, const std::vector<Database::ReleaseId>& releasesId)
-{
-	tracksAction.emit(action, getReleasesTracks(LmsApp->getDbSession(), releasesId, _filters->getClusterIds(), _maxTrackCount));
-}
-
-void
-Explore::handleTrackListAction(PlayQueueAction action, Database::TrackListId trackListId)
-{
-	tracksAction.emit(action, getTrackListTracks(LmsApp->getDbSession(), trackListId, _filters->getClusterIds(), _maxTrackCount));
-}
-
-void
-Explore::handleTracksAction(PlayQueueAction action, const std::vector<Database::TrackId>& tracksId)
-{
-	// consider things are already filtered here, and _maxTrackCount honored playqueue side...
-	tracksAction.emit(action, tracksId);
-}
 
 } // namespace UserInterface
-

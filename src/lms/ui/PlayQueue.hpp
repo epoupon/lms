@@ -27,8 +27,8 @@
 #include <Wt/WText.h>
 
 #include "services/database/Object.hpp"
+#include "services/database/TrackId.hpp"
 #include "services/database/TrackListId.hpp"
-#include "PlayQueueAction.hpp"
 
 #include "common/Template.hpp"
 
@@ -53,7 +53,10 @@ class PlayQueue : public Template
 	public:
 		PlayQueue();
 
-		void processTracks(PlayQueueAction action, const std::vector<Database::TrackId>& trackIds);
+		void play(const std::vector<Database::TrackId>& trackIds);
+		void playShuffled(const std::vector<Database::TrackId>& trackIds);
+		void playOrAddLast(const std::vector<Database::TrackId>& trackIds); // play if queue empty, otherwise just add last
+		void playAtIndex(const std::vector<Database::TrackId>& trackIds, std::size_t index);
 
 		// play the next track in the queue
 		void playNext();
@@ -70,6 +73,7 @@ class PlayQueue : public Template
 		constexpr std::size_t getCapacity() const { return _capacity; }
 
 	private:
+		void notifyAddedTracks(std::size_t nbAddedTracks) const;
 		Database::ObjectPtr<Database::TrackList> getTrackList() const;
 		bool isFull() const;
 

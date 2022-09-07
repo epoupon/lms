@@ -27,20 +27,17 @@
 #include "ArtistCollector.hpp"
 #include "ReleaseCollector.hpp"
 #include "TrackCollector.hpp"
-#include "PlayQueueAction.hpp"
 
 namespace UserInterface
 {
-
 	class InfiniteScrollingContainer;
 	class Filters;
+	class PlayQueueController;
 
 	class SearchView : public Wt::WTemplate
 	{
 		public:
-			SearchView(Filters* filters);
-
-			PlayQueueActionTrackSignal tracksAction;
+			SearchView(Filters& filters, PlayQueueController& playQueueController);
 
 			void refreshView(const Wt::WString& searchText);
 
@@ -74,7 +71,7 @@ namespace UserInterface
 			void addSomeReleases();
 			void addSomeTracks();
 
-			Filters* _filters {};
+			PlayQueueController&	_playQueueController;
 			ArtistCollector		_artistCollector;
 			ReleaseCollector	_releaseCollector;
 			TrackCollector		_trackCollector;

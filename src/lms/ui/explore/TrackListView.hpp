@@ -23,20 +23,17 @@
 #include "services/database/Types.hpp"
 
 #include "common/Template.hpp"
-#include "PlayQueueAction.hpp"
 
 namespace UserInterface
 {
 	class Filters;
 	class InfiniteScrollingContainer;
+	class PlayQueueController;
 
 	class TrackList : public Template
 	{
 		public:
-			TrackList(Filters& filters);
-
-			PlayQueueActionTrackListSignal trackListAction;
-			PlayQueueActionTrackSignal tracksAction;
+			TrackList(Filters& filters, PlayQueueController& playQueueController);
 
 			Wt::Signal<Database::TrackListId> trackListDeleted;
 
@@ -48,6 +45,7 @@ namespace UserInterface
 			static constexpr std::size_t _maxCount {8000};
 
 			Filters&					_filters;
+			PlayQueueController&		_playQueueController;
 			Database::TrackListId		_trackListId;
 			InfiniteScrollingContainer* _container {};
 	};

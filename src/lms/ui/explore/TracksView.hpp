@@ -22,20 +22,18 @@
 #include "services/database/Types.hpp"
 
 #include "common/Template.hpp"
-#include "PlayQueueAction.hpp"
 #include "TrackCollector.hpp"
 
 namespace UserInterface
 {
 	class Filters;
 	class InfiniteScrollingContainer;
+	class PlayQueueController;
 
 	class Tracks : public Template
 	{
 		public:
-			Tracks(Filters& filters);
-
-			PlayQueueActionTrackSignal tracksAction;
+			Tracks(Filters& filters, PlayQueueController& playQueueController);
 
 		private:
 			void refreshView();
@@ -48,6 +46,7 @@ namespace UserInterface
 			static constexpr std::size_t _batchSize {6};
 			static constexpr std::size_t _maxCount {8000};
 
+			PlayQueueController&		_playQueueController;
 			Wt::WWidget*				_currentActiveItem {};
 			InfiniteScrollingContainer* _container {};
 			TrackCollector				_trackCollector;

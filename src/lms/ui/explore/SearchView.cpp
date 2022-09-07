@@ -35,12 +35,12 @@ using namespace Database;
 
 namespace UserInterface
 {
-	SearchView::SearchView(Filters* filters)
+	SearchView::SearchView(Filters& filters, PlayQueueController& playQueueController)
 	: Wt::WTemplate {Wt::WString::tr("Lms.Explore.Search.template")}
-	, _filters {filters}
-	, _artistCollector {*filters, ArtistCollector::Mode::Search, getMaxCount(Mode::Artist)}
-	, _releaseCollector {*filters, ReleaseCollector::Mode::Search, getMaxCount(Mode::Release)}
-	, _trackCollector {*filters, TrackCollector::Mode::Search, getMaxCount(Mode::Track)}
+	, _playQueueController {playQueueController}
+	, _artistCollector {filters, ArtistCollector::Mode::Search, getMaxCount(Mode::Artist)}
+	, _releaseCollector {filters, ReleaseCollector::Mode::Search, getMaxCount(Mode::Release)}
+	, _trackCollector {filters, TrackCollector::Mode::Search, getMaxCount(Mode::Track)}
 	{
 		addFunction("tr", &Wt::WTemplate::Functions::tr);
 
@@ -53,7 +53,7 @@ namespace UserInterface
 		_tracks = bindNew<InfiniteScrollingContainer>("tracks");
 		_tracks->onRequestElements.connect([this] { addSomeTracks(); });
 
-		_filters->updated().connect([=]
+		filters.updated().connect([=]
 		{
 			refreshView();
 		});
@@ -152,7 +152,7 @@ namespace UserInterface
 			for (const TrackId trackId : trackIds.results)
 			{
 				const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)};
-				_tracks->add(TrackListHelpers::createEntry(track, tracksAction));
+				_tracks->add(TrackListHelpers::createEntry(track, _playQueueController));
 			}
 		}
 

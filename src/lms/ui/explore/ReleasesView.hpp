@@ -22,20 +22,18 @@
 #include "services/database/Types.hpp"
 
 #include "common/Template.hpp"
-#include "PlayQueueAction.hpp"
 #include "ReleaseCollector.hpp"
 
 namespace UserInterface
 {
 	class Filters;
 	class InfiniteScrollingContainer;
+	class PlayQueueController;
 
 	class Releases : public Template
 	{
 		public:
-			Releases(Filters& filters);
-
-			PlayQueueActionReleaseSignal releasesAction;
+			Releases(Filters& filters, PlayQueueController& playQueueController);
 
 		private:
 			void refreshView();
@@ -48,6 +46,7 @@ namespace UserInterface
 			static constexpr std::size_t _batchSize {_maxItemsPerLine};
 			static constexpr std::size_t _maxCount {_maxItemsPerLine * 500};
 
+			PlayQueueController&		_playQueueController;
 			Wt::WWidget*				_currentActiveItem {};
 			InfiniteScrollingContainer* _container {};
 			ReleaseCollector			_releaseCollector;

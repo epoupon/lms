@@ -502,8 +502,9 @@ LmsApplication::createHome()
 	Wt::WStackedWidget* mainStack {main->bindNew<Wt::WStackedWidget>("contents")};
 	mainStack->setOverflow(Wt::Overflow::Visible); // wt makes it hidden by default
 
-	Explore* explore {mainStack->addNew<Explore>(filters)};
-	_playQueue = mainStack->addNew<PlayQueue>();
+	std::unique_ptr<PlayQueue> playQueue {std::make_unique<PlayQueue>()};
+	Explore* explore {mainStack->addNew<Explore>(*filters, *playQueue)};
+	_playQueue = mainStack->addWidget(std::move(playQueue));
 	mainStack->addNew<SettingsView>();
 
 	searchEdit->enterPressed().connect([=]
@@ -525,11 +526,7 @@ LmsApplication::createHome()
 		mainStack->addNew<UserView>();
 	}
 
-	explore->setMaxTrackCountForAction(_playQueue->getCapacity());
-	explore->tracksAction.connect([this] (PlayQueueAction action, const std::vector<Database::TrackId>& trackIds)
-	{
-		_playQueue->processTracks(action, trackIds);
-	});
+	explore->getPlayQueueController().setMaxTrackCountToEnqueue(_playQueue->getCapacity());
 
 	// Events from MediaPlayer
 	_mediaPlayer->playNext.connect([this]
