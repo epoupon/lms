@@ -120,7 +120,6 @@ namespace UserInterface
 	{
 		const std::vector<Database::TrackId> tracks {getArtistsTracks(LmsApp->getDbSession(), artistIds, _filters.getClusterIds(), _maxTrackCountToEnqueue)};
 		processCommand(command, tracks);
-
 	}
 
 	void

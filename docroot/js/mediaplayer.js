@@ -76,7 +76,6 @@ LMS.mediaplayer = function () {
 			_applyAudioTrackParameters(_pendingTrackParameters);
 			_pendingTrackParameters = null;
 		}
-
 	}
 
 	let _updateControls = function() {

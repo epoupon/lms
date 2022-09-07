@@ -31,7 +31,6 @@ namespace MetaData
 	std::unique_ptr<IParser>
 	createParser(ParserType parserType, ParserReadStyle parserReadStyle)
 	{
-
 		switch (parserType)
 		{
 			case ParserType::TagLib:
