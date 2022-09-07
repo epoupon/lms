@@ -130,6 +130,7 @@
 <message id="Lms.Explore.recently-modified">最近更改</message>
 <message id="Lms.Explore.recently-played">最近播放</message>
 <message id="Lms.Explore.releases">专辑</message>
+<message id="Lms.Explore.search">搜索</message>
 <message id="Lms.Explore.star">收藏</message>
 <message id="Lms.Explore.starred">已收藏</message>
 <message id="Lms.Explore.tracklists">播放列表</message>
@@ -196,6 +197,7 @@
 <message id="Lms.Settings.replaygain-mode.release">专辑</message>
 <message id="Lms.Settings.replaygain-preamp">ReplayGain 放大器</message>
 <message id="Lms.Settings.replaygain-preamp-no-rg-info">ReplayGain 放大器 (如果没有信息)</message>
+
 
 
 

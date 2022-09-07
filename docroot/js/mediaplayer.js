@@ -16,58 +16,112 @@ const Mode = {
 Object.freeze(Mode);
 
 LMS.mediaplayer = function () {
+	let _root = {};
+	let _elems = {};
+	let _offset = 0;
+	let _trackId = null;
+	let _duration = 0;
+	let _audioNativeSrc;
+	let _audioTranscodeSrc;
+	let _settings = {};
+	let _playedDuration = 0;
+	let _lastStartPlaying = null;
+	let _audioIsInit = false;
+	let _pendingTrackParameters = null;
+	let _gainNode = null;
+	let _audioCtx = null;
 
-	var _root = {};
-	var _elems = {};
-	var _offset = 0;
-	var _trackId = null;
-	var _duration = 0;
-	var _audioNativeSrc;
-	var _audioTranscodeSrc;
-	var _settings = {};
-	var _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-	var _gainNode = _audioCtx.createGain();
-	var _playedDuration = 0;
-	var _lastStartPlaying = null;
+	let _unlock = function() {
+		document.removeEventListener("touchstart", _unlock);
+		document.removeEventListener("touchend", _unlock);
+		document.removeEventListener("click", _unlock);
+		_initAudioCtx();
+	};
 
-	var _updateControls = function() {
+	document.addEventListener("touchstart", _unlock);
+	document.addEventListener("touchend", _unlock);
+	document.addEventListener("click", _unlock);
+
+	let _initAudioCtx = function() {
+		if (_audioIsInit) {
+			_audioCtx.resume(); // not sure of this
+			return;
+		}
+
+		_audioIsInit = true;
+
+		_audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+		_gainNode = _audioCtx.createGain();
+		source = _audioCtx.createMediaElementSource(_elems.audio);
+		source.connect(_gainNode);
+		_gainNode.connect(_audioCtx.destination);
+		_audioCtx.resume(); // not sure of this
+
+		if ("mediaSession" in navigator) {
+			navigator.mediaSession.setActionHandler("play", function() {
+				_playPause();
+			});
+			navigator.mediaSession.setActionHandler("pause", function() {
+				_playPause();
+			});
+			navigator.mediaSession.setActionHandler("previoustrack", function() {
+				_playPrevious();
+			});
+			navigator.mediaSession.setActionHandler("nexttrack", function() {
+				_playNext();
+			});
+		}
+
+		if (_pendingTrackParameters != null) {
+			_applyAudioTrackParameters(_pendingTrackParameters);
+			_pendingTrackParameters = null;
+		}
+	}
+
+	let _updateControls = function() {
 		const pauseClass = "fa-pause";
 		const playClass = "fa-play";
 
 		if (_elems.audio.paused) {
 			_elems.playpause.firstElementChild.classList.remove(pauseClass);
 			_elems.playpause.firstElementChild.classList.add(playClass);
+			if ("mediaSession" in navigator) {
+				navigator.mediaSession.playbackState = "paused";
+			}
 		}
 		else {
 			_elems.playpause.firstElementChild.classList.remove(playClass);
 			_elems.playpause.firstElementChild.classList.add(pauseClass);
+			if ("mediaSession" in navigator) {
+				navigator.mediaSession.playbackState = "playing";
+			}
 		}
 	}
 
-	var _startTimer = function() {
+	let _startTimer = function() {
 		if (_lastStartPlaying == null)
 			Wt.emit(_root, "scrobbleListenNow", _trackId);
 		_lastStartPlaying = Date.now();
 	}
 
-	var _stopTimer = function() {
+	let _stopTimer = function() {
 		if (_lastStartPlaying != null) {
 			_playedDuration += Date.now() - _lastStartPlaying;
 		}
 	}
 
-	var _resetTimer = function() {
+	let _resetTimer = function() {
 		if (_lastStartPlaying != null)
 			Wt.emit(_root, "scrobbleListenFinished", _trackId, _playedDuration);
 		_playedDuration = 0;
 		_lastStartPlaying = null;
 	}
 
-	var _durationToString = function (duration) {
-		var minutes = parseInt(duration / 60, 10);
-		var seconds = parseInt(duration, 10) % 60;
+	let _durationToString = function (duration) {
+		let minutes = parseInt(duration / 60, 10);
+		let seconds = parseInt(duration, 10) % 60;
 
-		var res = "";
+		let res = "";
 
 		res += minutes + ":";
 		res += (seconds  < 10 ? "0" + seconds : seconds);
@@ -75,21 +129,15 @@ LMS.mediaplayer = function () {
 		return res;
 	}
 
-	var _playTrack = function() {
-		var playPromise = _elems.audio.play();
-
-		if (playPromise !== undefined) {
-			playPromise.then(_ => {
-				// Automatic playback started
-			})
-			.catch(error => {
-				// Auto-play was prevented
-			});
-		}
+	let _playTrack = function() {
+		_elems.audio.play()
+			.then(_ => {})
+			.catch(error => { console.log("Cannot play audio: " + error); });
 	}
 
-	var _playPause = function() {
-		_audioCtx.resume();
+	let _playPause = function() {
+		_initAudioCtx();
+
 		if (_elems.audio.paused && _elems.audio.children.length > 0) {
 			_playTrack();
 		}
@@ -97,25 +145,17 @@ LMS.mediaplayer = function () {
 			_elems.audio.pause();
 	}
 
-	var _playPrevious = function() {
-		_audioCtx.resume();
-		_requestPreviousTrack();
-	}
-
-	var _playNext = function() {
-		_audioCtx.resume();
-		_requestNextTrack();
-	}
-
-	var _requestPreviousTrack = function() {
+	let _playPrevious = function() {
+		_initAudioCtx();
 		Wt.emit(_root, "playPrevious");
 	}
 
-	var _requestNextTrack = function() {
+	let _playNext = function() {
+		_initAudioCtx();
 		Wt.emit(_root, "playNext");
 	}
 
-	var _initVolume = function() {
+	let _initVolume = function() {
 		if (typeof(Storage) !== "undefined" && localStorage.volume) {
 			_elems.volumeslider.value = Number(localStorage.volume);
 		}
@@ -123,7 +163,7 @@ LMS.mediaplayer = function () {
 		_setVolume(_elems.volumeslider.value);
 	}
 
-	var _initDefaultSettings = function(defaultSettings) {
+	let _initDefaultSettings = function(defaultSettings) {
 		if (typeof(Storage) !== "undefined" && localStorage.settings) {
 			_settings = Object.assign(defaultSettings, JSON.parse(localStorage.settings));
 		}
@@ -134,7 +174,7 @@ LMS.mediaplayer = function () {
 		Wt.emit(_root, "settingsLoaded", JSON.stringify(_settings));
 	}
 
-	var _setVolume = function(volume) {
+	let _setVolume = function(volume) {
 		_elems.lastvolume = _elems.audio.volume;
 
 		_elems.audio.volume = volume;
@@ -162,11 +202,11 @@ LMS.mediaplayer = function () {
 		}
 	}
 
-	var _setReplayGain = function (replayGain) {
+	let _setReplayGain = function (replayGain) {
 		_gainNode.gain.value = Math.pow(10, (_settings.replayGain.preAmpGain + replayGain) / 20);
 	}
 
-	var init = function(root, defaultSettings) {
+	let init = function(root, defaultSettings) {
 		_root = root;
 
 		_elems.audio = document.getElementById("lms-mp-audio");
@@ -181,10 +221,6 @@ LMS.mediaplayer = function () {
 		_elems.volumeslider = document.getElementById("lms-mp-volume-slider");
 		_elems.transcodingActive = document.getElementById("lms-transcoding-active");
 
-		var source = _audioCtx.createMediaElementSource(_elems.audio);
-		source.connect(_gainNode);
-		_gainNode.connect(_audioCtx.destination);
-
 		_elems.playpause.addEventListener("click", function() {
 			_playPause();
 		});
@@ -196,7 +232,7 @@ LMS.mediaplayer = function () {
 			_playNext();
 		});
 		_elems.seek.addEventListener("change", function() {
-			_audioCtx.resume();
+			_initAudioCtx();
 			let mode = _getAudioMode();
 			if (!mode)
 				return;
@@ -285,30 +321,21 @@ LMS.mediaplayer = function () {
 				event.preventDefault();
 		});
 
-		if ('mediaSession' in navigator) {
-			navigator.mediaSession.setActionHandler("previoustrack", function() {
-				_requestPreviousTrack();
-			});
-			navigator.mediaSession.setActionHandler("nexttrack", function() {
-				_requestNextTrack();
-			});
-		}
-
 	}
 
-	var _removeAudioSources = function() {
+	let _removeAudioSources = function() {
 		while ( _elems.audio.lastElementChild) {
 			_elems.audio.removeChild( _elems.audio.lastElementChild);
 		}
 	}
 
-	var _addAudioSource = function(audioSrc) {
+	let _addAudioSource = function(audioSrc) {
 		let source = document.createElement('source');
 		source.src = audioSrc;
 		_elems.audio.appendChild(source);
 	}
 
-	var _getAudioMode = function() {
+	let _getAudioMode = function() {
 		if (_elems.audio.currentSrc) {
 			if (_elems.audio.currentSrc.includes("format"))
 				return Mode.Transcode;
@@ -319,7 +346,7 @@ LMS.mediaplayer = function () {
 			return undefined;
 	}
 
-	var loadTrack = function(params, autoplay) {
+	let loadTrack = function(params, autoplay) {
 		_stopTimer();
 		_resetTimer();
 
@@ -343,15 +370,24 @@ LMS.mediaplayer = function () {
 		}
 		_elems.audio.load();
 
-		_setReplayGain(params.replayGain);
-
 		_elems.curtime.innerHTML = _durationToString(_offset);
 		_elems.duration.innerHTML = _durationToString(_duration);
 
+		if (!_audioIsInit) {
+			_pendingTrackParameters = params;
+			return;
+		}
+
+		_applyAudioTrackParameters(params);
+
 		if (autoplay && _audioCtx.state == "running")
 			_playTrack();
+	}
 
-		if ('mediaSession' in navigator) {
+	let _applyAudioTrackParameters = function(params)
+	{
+		_setReplayGain(params.replayGain);
+		if ("mediaSession" in navigator) {
 			navigator.mediaSession.metadata = new MediaMetadata({
 				title: params.title,
 				artist: params.artist,
@@ -361,11 +397,11 @@ LMS.mediaplayer = function () {
 		}
 	}
 
-	var stop = function() {
+	let stop = function() {
 		_elems.audio.pause();
 	}
 
-	var setSettings = function(settings) {
+	let setSettings = function(settings) {
 		_settings = settings;
 
 		if (typeof(Storage) !== "undefined") {

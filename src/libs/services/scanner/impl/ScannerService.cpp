@@ -31,7 +31,7 @@
 #include "services/database/Track.hpp"
 #include "services/database/TrackArtistLink.hpp"
 #include "services/database/TrackFeatures.hpp"
-#include "metadata/TagLibParser.hpp"
+#include "metadata/IParser.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "utils/Exception.hpp"
 #include "utils/IConfig.hpp"
@@ -255,15 +255,28 @@ createScannerService(Db& db, Recommendation::IRecommendationService& recommendat
 	return std::make_unique<ScannerService>(db, recommendationService);
 }
 
+MetaData::ParserReadStyle
+getParserReadStyle()
+{
+	std::string_view readStyle {Service<IConfig>::get()->getString("scanner-parser-read-style", "accurate")};
+
+	if (readStyle == "fast")
+		return MetaData::ParserReadStyle::Fast;
+	else if (readStyle == "average")
+		return MetaData::ParserReadStyle::Average;
+	else if (readStyle == "accurate")
+		return MetaData::ParserReadStyle::Accurate;
+
+	throw LmsException {"Invalid value for 'scanner-parser-read-style'"};
+}
+
 ScannerService::ScannerService(Db& db, Recommendation::IRecommendationService& recommendationService)
 : _recommendationService {recommendationService}
 , _skipDuplicateRecordingMBID {Service<IConfig>::get()->getBool("scanner-skip-duplicate-recording-mbid", false)}
 , _dbSession {db}
+, _metadataParser {MetaData::createParser(MetaData::ParserType::TagLib, getParserReadStyle())} // For now, always use TagLib
 {
 	LMS_LOG(DBUPDATER, INFO) << "skipDuplicateRecordingMBID = " << _skipDuplicateRecordingMBID;
-
-	// For now, always use TagLib
-	_metadataParser = std::make_unique<MetaData::TagLibParser>();
 
 	_ioService.setThreadCount(1);
 

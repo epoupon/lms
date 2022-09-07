@@ -26,17 +26,19 @@
 #include "utils/Logger.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"
-#include "Filters.hpp"
+#include "explore/Filters.hpp"
+#include "explore/PlayQueueController.hpp"
+#include "explore/TrackListHelpers.hpp"
 #include "LmsApplication.hpp"
-#include "TrackListHelpers.hpp"
 
 using namespace Database;
 
 namespace UserInterface {
 
-Tracks::Tracks(Filters& filters)
-: Template {Wt::WString::tr("Lms.Explore.Tracks.template")},
-_trackCollector {filters, _defaultMode, _maxCount}
+Tracks::Tracks(Filters& filters, PlayQueueController& playQueueController)
+: Template {Wt::WString::tr("Lms.Explore.Tracks.template")}
+, _playQueueController {playQueueController}
+, _trackCollector {filters, _defaultMode, _maxCount}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 	addFunction("id", &Wt::WTemplate::Functions::id);
@@ -69,18 +71,18 @@ _trackCollector {filters, _defaultMode, _maxCount}
 	bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
 		->clicked().connect([=]
 		{
-			tracksAction.emit(PlayQueueAction::Play, getAllTracks());
+			_playQueueController.processCommand(PlayQueueController::Command::Play, getAllTracks());
 		});
 
 	bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
 		->clicked().connect([=]
 		{
-			tracksAction.emit(PlayQueueAction::PlayShuffled, getAllTracks());
+			_playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, getAllTracks());
 		});
 	bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
 		->clicked().connect([=]
 		{
-			tracksAction.emit(PlayQueueAction::PlayLast, getAllTracks());
+			_playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, getAllTracks());
 		});
 
 	_container = bindNew<InfiniteScrollingContainer>("tracks");
@@ -122,7 +124,7 @@ Tracks::addSome()
 	for (const TrackId trackId : trackIds.results)
 	{
 		if (const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)})
-			_container->add(TrackListHelpers::createEntry(track, tracksAction));
+			_container->add(TrackListHelpers::createEntry(track, _playQueueController));
 	}
 
 	_container->setHasMore(trackIds.moreResults);

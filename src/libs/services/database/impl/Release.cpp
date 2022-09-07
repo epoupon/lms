@@ -264,7 +264,7 @@ Release::find(Session& session, const FindParameters& params)
 }
 
 std::optional<std::size_t>
-Release::getTotalTrack(void) const
+Release::getTotalTrack() const
 {
 	assert(session());
 
@@ -276,7 +276,7 @@ Release::getTotalTrack(void) const
 }
 
 std::optional<std::size_t>
-Release::getTotalDisc(void) const
+Release::getTotalDisc() const
 {
 	assert(session());
 
@@ -285,6 +285,18 @@ Release::getTotalDisc(void) const
 		.bind(getId());
 
 	return (res > 0) ? std::make_optional<std::size_t>(res) : std::nullopt;
+}
+
+std::size_t
+Release::getDiscCount() const
+{
+	assert(session());
+	int res {session()->query<int>("SELECT COUNT(DISTINCT disc_number) FROM track t")
+		.join("release r ON r.id = t.release_id")
+		.where("r.id = ?")
+		.bind(getId())};
+
+	return res;
 }
 
 std::optional<int>

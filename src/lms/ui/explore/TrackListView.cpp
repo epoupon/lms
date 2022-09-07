@@ -30,12 +30,13 @@
 #include "utils/String.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"
+#include "explore/Filters.hpp"
+#include "explore/PlayQueueController.hpp"
+#include "explore/TrackListHelpers.hpp"
 #include "resource/DownloadResource.hpp"
-#include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
 #include "ModalManager.hpp"
-#include "TrackListHelpers.hpp"
 #include "Utils.hpp"
 
 using namespace Database;
@@ -52,9 +53,10 @@ namespace
 
 namespace UserInterface
 {
-	TrackList::TrackList(Filters& filters)
+	TrackList::TrackList(Filters& filters, PlayQueueController& playQueueController)
 	: Template {Wt::WString::tr("Lms.Explore.TrackList.template")}
-	, _filters {filters}
+	, _filters {_filters}
+	, _playQueueController {playQueueController}
 	{
 		addFunction("tr", &Wt::WTemplate::Functions::tr);
 		addFunction("id", &Wt::WTemplate::Functions::id);
@@ -64,7 +66,7 @@ namespace UserInterface
 			refreshView();
 		});
 
-		_filters.updated().connect([this]
+		filters.updated().connect([this]
 		{
 			refreshView();
 		});
@@ -88,6 +90,7 @@ namespace UserInterface
 		if (!trackList)
 			throw TrackListNotFoundException {};
 
+		LmsApp->setTitle(std::string {trackList->getName()});
 		_trackListId = *trackListId;
 
 		clear();
@@ -119,19 +122,19 @@ namespace UserInterface
 		bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
 			->clicked().connect([=]
 			{
-				trackListAction.emit(PlayQueueAction::Play, *trackListId);
+				_playQueueController.processCommand(PlayQueueController::Command::Play, *trackListId);
 			});
 
 		bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
 			->clicked().connect([=]
 			{
-				trackListAction.emit(PlayQueueAction::PlayShuffled, *trackListId);
+				_playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, *trackListId);
 			});
 
 		bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
 			->clicked().connect([=]
 			{
-				trackListAction.emit(PlayQueueAction::PlayLast, *trackListId);
+				_playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, *trackListId);
 			});
 
 		bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
@@ -196,7 +199,7 @@ namespace UserInterface
 		for (const TrackId trackId : trackIds.results)
 		{
 			if (const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)})
-				_container->add(TrackListHelpers::createEntry(track, tracksAction));
+				_container->add(TrackListHelpers::createEntry(track, _playQueueController));
 		}
 
 		_container->setHasMore(trackIds.moreResults && _container->getCount() < _maxCount);

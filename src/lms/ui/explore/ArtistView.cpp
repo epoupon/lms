@@ -39,6 +39,7 @@
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
+#include "PlayQueueController.hpp"
 #include "ReleaseListHelpers.hpp"
 #include "TrackListHelpers.hpp"
 #include "Utils.hpp"
@@ -47,9 +48,10 @@ using namespace Database;
 
 namespace UserInterface {
 
-Artist::Artist(Filters* filters)
+Artist::Artist(Filters& filters, PlayQueueController& controller)
 : Template {Wt::WString::tr("Lms.Explore.Artist.template")}
 , _filters {filters}
+, _playQueueController {controller}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 	addFunction("id", &Wt::WTemplate::Functions::id);
@@ -59,7 +61,7 @@ Artist::Artist(Filters* filters)
 		refreshView();
 	});
 
-	filters->updated().connect([this]
+	filters.updated().connect([this]
 	{
 		refreshView();
 	});
@@ -109,6 +111,7 @@ Artist::refreshView()
 	if (!artist)
 		throw ArtistNotFoundException {};
 
+	LmsApp->setTitle(artist->getName());
 	_artistId = *artistId;
 
 	std::size_t sectionCount{};
@@ -139,7 +142,7 @@ Artist::refreshView()
 				Wt::WInteractWidget* entry {clusterContainers->addWidget(Utils::createCluster(clusterId))};
 				entry->clicked().connect([=]
 				{
-					_filters->add(clusterId);
+					_filters.add(clusterId);
 				});
 			}
 		}
@@ -150,18 +153,18 @@ Artist::refreshView()
 	bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
 		->clicked().connect([=]
 		{
-			artistsAction.emit(PlayQueueAction::Play, {_artistId});
+			_playQueueController.processCommand(PlayQueueController::Command::Play, {_artistId});
 		});
 
 	bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
 		->clicked().connect([=]
 		{
-			artistsAction.emit(PlayQueueAction::PlayShuffled, {_artistId});
+			_playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, {_artistId});
 		});
 	bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
 		->clicked().connect([=]
 		{
-			artistsAction.emit(PlayQueueAction::PlayLast, {_artistId});
+			_playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, {_artistId});
 		});
 	bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
 		->setLink(Wt::WLink {std::make_unique<DownloadArtistResource>(*artistId)});
@@ -287,7 +290,7 @@ Artist::addSomeReleases(InfiniteScrollingContainer& releaseContainer, EnumSet<Da
 	const Range range {static_cast<std::size_t>(releaseContainer.getCount()), _releasesBatchSize};
 
 	Release::FindParameters params;
-	params.setClusters(_filters->getClusterIds());
+	params.setClusters(_filters.getClusterIds());
 	params.setArtist(_artistId, linkTypes, excludedLinkTypes);
 	params.setRange(range);
 	params.setSortMethod(ReleaseSortMethod::DateDesc);
@@ -314,7 +317,7 @@ Artist::addSomeNonReleaseTracks()
 	const Range range {static_cast<std::size_t>(_trackContainer->getCount()), _tracksBatchSize};
 
 	Track::FindParameters params;
-	params.setClusters(_filters->getClusterIds());
+	params.setClusters(_filters.getClusterIds());
 	params.setArtist(_artistId);
 	params.setRange(range);
 	params.setSortMethod(TrackSortMethod::Name);
@@ -332,7 +335,7 @@ Artist::addSomeNonReleaseTracks()
 		}
 
 		const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)};
-		_trackContainer->add(TrackListHelpers::createEntry(track, tracksAction));
+		_trackContainer->add(TrackListHelpers::createEntry(track, _playQueueController));
 
 		areTracksAdded = true;
 	}

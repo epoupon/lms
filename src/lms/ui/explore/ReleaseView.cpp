@@ -34,20 +34,22 @@
 
 #include "common/Template.hpp"
 #include "resource/DownloadResource.hpp"
-#include "Filters.hpp"
+#include "explore/Filters.hpp"
+#include "explore/PlayQueueController.hpp"
+#include "explore/ReleaseListHelpers.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
 #include "MediaPlayer.hpp"
-#include "ReleaseListHelpers.hpp"
 #include "Utils.hpp"
 
 using namespace Database;
 
 namespace UserInterface {
 
-Release::Release(Filters* filters)
+Release::Release(Filters& filters, PlayQueueController& playQueueController)
 : Template {Wt::WString::tr("Lms.Explore.Release.template")}
 , _filters {filters}
+, _playQueueController {playQueueController}
 {
 	addFunction("tr", &Wt::WTemplate::Functions::tr);
 	addFunction("id", &Wt::WTemplate::Functions::id);
@@ -57,7 +59,7 @@ Release::Release(Filters* filters)
 		refreshView();
 	});
 
-	filters->updated().connect([this]
+	_filters.updated().connect([this]
 	{
 		refreshView();
 	});
@@ -106,6 +108,8 @@ Release::refreshView()
 	if (!release)
 		throw ReleaseNotFoundException {};
 
+	LmsApp->setTitle(release->getName());
+
 	refreshCopyright(release);
 	refreshLinks(release);
 	refreshSimilarReleases(similarReleasesIds);
@@ -145,7 +149,7 @@ Release::refreshView()
 				Wt::WInteractWidget* entry {clusterContainers->addWidget(Utils::createCluster(clusterId))};
 				entry->clicked().connect([=]
 				{
-					_filters->add(clusterId);
+					_filters.add(clusterId);
 				});
 			}
 		}
@@ -154,19 +158,19 @@ Release::refreshView()
 	bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
 		->clicked().connect([=]
 		{
-			releasesAction.emit(PlayQueueAction::Play, {*releaseId});
+			_playQueueController.processCommand(PlayQueueController::Command::Play, {*releaseId});
 		});
 
 	bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
 		->clicked().connect([=]
 		{
-			releasesAction.emit(PlayQueueAction::PlayShuffled, {*releaseId});
+			_playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, {*releaseId});
 		});
 
 	bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
 		->clicked().connect([=]
 		{
-			releasesAction.emit(PlayQueueAction::PlayLast, {*releaseId});
+			_playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, {*releaseId});
 		});
 
 	bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
@@ -195,7 +199,8 @@ Release::refreshView()
 
 	const bool variousArtists {release->hasVariousArtists()};
 	const auto totalDisc {release->getTotalDisc()};
-	const bool isReleaseMultiDisc {totalDisc && *totalDisc > 1};
+	const std::size_t discCount {release->getDiscCount()};
+	const bool isReleaseMultiDisc {(discCount > 1) || (totalDisc && *totalDisc > 1)};
 
 	// Expect to be called in asc order
 	std::map<std::size_t, Wt::WContainerWidget*> trackContainers;
@@ -235,7 +240,7 @@ Release::refreshView()
 	Database::Track::FindParameters params;
 	params.setRelease(*releaseId);
 	params.setSortMethod(Database::TrackSortMethod::Release);
-	params.setClusters(_filters->getClusterIds());
+	params.setClusters(_filters.getClusterIds());
 
 	const auto tracks {Database::Track::find(LmsApp->getDbSession(), params)};
 	for (const Database::TrackId trackId : tracks.results)
@@ -282,7 +287,7 @@ Release::refreshView()
 		Wt::WPushButton* playBtn {entry->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.template.play-btn"), Wt::TextFormat::XHTML)};
 		playBtn->clicked().connect([=]
 		{
-			tracksAction.emit(PlayQueueAction::Play, {trackId});
+			_playQueueController.playTrackInRelease(trackId);
 		});
 
 		{
@@ -290,7 +295,7 @@ Release::refreshView()
 			entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
 				->clicked().connect([=]
 				{
-					tracksAction.emit(PlayQueueAction::PlayLast, {trackId});
+					_playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, {trackId});
 				});
 
 			auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), trackId); }};

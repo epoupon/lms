@@ -118,59 +118,62 @@ readParameterAs(const Wt::Http::Request& request, const std::string& parameterNa
 	return res;
 }
 
-struct TranscodeParameters
+namespace
 {
-	std::filesystem::path file;
-	Av::TranscodeParameters transcodeParameters;
-};
-
-static
-std::optional<TranscodeParameters>
-readTranscodeParameters(const Wt::Http::Request& request)
-{
-	TranscodeParameters parameters;
-
-	// mandatory parameters
-	const std::optional<Database::TrackId> trackId {readParameterAs<Database::TrackId::ValueType>(request, "trackid")};
-	const auto format {readParameterAs<Database::AudioFormat>(request, "format")};
-	const auto bitrate {readParameterAs<Database::Bitrate>(request, "bitrate")};
-
-	if (!trackId || !format || !bitrate)
-		return std::nullopt;
-
-	const std::optional<Av::Format> avFormat {AudioFormatToAvFormat(*format)};
-	if (!avFormat)
-		return std::nullopt;
-
-	// optional parameter
-	std::size_t offset {readParameterAs<std::size_t>(request, "offset").value_or(0)};
-
-	std::filesystem::path trackPath;
+	struct TranscodeParameters
 	{
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+		Av::InputFileParameters inputFileParameters;
+		Av::TranscodeParameters transcodeParameters;
+	};
 
-		const Database::Track::pointer track {Database::Track::find(LmsApp->getDbSession(), *trackId)};
-		if (!track)
-		{
-			LOG(ERROR) << "Missing track";
+	std::optional<TranscodeParameters>
+	readTranscodeParameters(const Wt::Http::Request& request)
+	{
+		TranscodeParameters parameters;
+
+		// mandatory parameters
+		const std::optional<Database::TrackId> trackId {readParameterAs<Database::TrackId::ValueType>(request, "trackid")};
+		const auto format {readParameterAs<Database::AudioFormat>(request, "format")};
+		const auto bitrate {readParameterAs<Database::Bitrate>(request, "bitrate")};
+
+		if (!trackId || !format || !bitrate)
 			return std::nullopt;
-		}
-
-		parameters.file = track->getPath();
 
 		if (!Database::isAudioBitrateAllowed(*bitrate))
 		{
 			LOG(ERROR) << "Bitrate '" << *bitrate << "' is not allowed";
 			return std::nullopt;
 		}
+
+		const std::optional<Av::Format> avFormat {AudioFormatToAvFormat(*format)};
+		if (!avFormat)
+			return std::nullopt;
+
+		// optional parameter
+		std::size_t offset {readParameterAs<std::size_t>(request, "offset").value_or(0)};
+
+		std::filesystem::path trackPath;
+		{
+			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+			const Database::Track::pointer track {Database::Track::find(LmsApp->getDbSession(), *trackId)};
+			if (!track)
+			{
+				LOG(ERROR) << "Missing track";
+				return std::nullopt;
+			}
+
+			parameters.inputFileParameters.trackPath = track->getPath();
+			parameters.inputFileParameters.duration = track->getDuration();
+		}
+
+		parameters.transcodeParameters.stripMetadata = true;
+		parameters.transcodeParameters.format = *avFormat;
+		parameters.transcodeParameters.bitrate = *bitrate;
+		parameters.transcodeParameters.offset = std::chrono::seconds {offset};
+
+		return parameters;
 	}
-
-	parameters.transcodeParameters.stripMetadata = true;
-	parameters.transcodeParameters.format = *avFormat;
-	parameters.transcodeParameters.bitrate = *bitrate;
-	parameters.transcodeParameters.offset = std::chrono::seconds {offset};
-
-	return parameters;
 }
 
 void
@@ -186,7 +189,7 @@ AudioTranscodeResource::handleRequest(const Wt::Http::Request& request,
 		{
 			const std::optional<TranscodeParameters>& parameters {readTranscodeParameters(request)};
 			if (parameters)
-				resourceHandler = Av::createTranscodeResourceHandler(parameters->file, parameters->transcodeParameters);
+				resourceHandler = Av::createTranscodeResourceHandler(parameters->inputFileParameters, parameters->transcodeParameters, false /* estimate content length */);
 		}
 		else
 		{

@@ -20,8 +20,11 @@
 
 #include <Wt/WDate.h>
 
+#include "metadata/IParser.hpp"
+
 namespace MetaData::Utils
 {
 	Wt::WDate parseDate(const std::string& dateStr);
+	std::string_view readStyleToString(ParserReadStyle readStyle);
 }
 

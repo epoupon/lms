@@ -85,6 +85,11 @@ template<>
 std::optional<std::string>
 readAs(std::string_view str);
 
+template<>
+[[nodiscard]]
+std::optional<bool>
+readAs(std::string_view str);
+
 [[nodiscard]]
 std::string
 replaceInString(std::string_view str, const std::string& from, const std::string& to);

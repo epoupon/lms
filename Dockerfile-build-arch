@@ -13,7 +13,7 @@ ARG BUILD_PACKAGES="\
 	taglib \
 	wt"
 
-RUN	pacman -Syy
+RUN	pacman -Syu --noconfirm
 RUN pacman -S --noconfirm ${BUILD_PACKAGES}
 
 # LMS

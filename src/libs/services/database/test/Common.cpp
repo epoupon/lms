@@ -207,5 +207,3 @@ TEST_F(DatabaseFixture, Common_subRange)
 	}
 }
 
-
-

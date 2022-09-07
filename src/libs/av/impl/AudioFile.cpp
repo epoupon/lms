@@ -178,7 +178,7 @@ AudioFile::getBestStream() const
 }
 
 bool
-AudioFile::hasAttachedPictures(void) const
+AudioFile::hasAttachedPictures() const
 {
 	for (std::size_t i = 0; i < _context->nb_streams; ++i)
 	{

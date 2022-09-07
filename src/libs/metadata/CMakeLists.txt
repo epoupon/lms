@@ -5,6 +5,7 @@ endif()
 
 add_library(lmsmetadata SHARED
 	impl/AvFormatParser.cpp
+	impl/Factory.cpp
 	impl/TagLibParser.cpp
 	impl/Utils.cpp
 	)

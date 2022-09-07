@@ -54,8 +54,9 @@ userTranscodeFormatToAvFormat(AudioFormat format)
 
 struct StreamParameters
 {
-	std::filesystem::path trackPath;
+	Av::InputFileParameters inputFileParameters;
 	std::optional<Av::TranscodeParameters> transcodeParameters;
+	bool estimateContentLength {};
 };
 
 static
@@ -68,8 +69,11 @@ getStreamParameters(RequestContext& context)
 	// Optional params
 	std::optional<std::size_t> maxBitRate {getParameterAs<std::size_t>(context.parameters, "maxBitRate")};
 	std::optional<std::string> format {getParameterAs<std::string>(context.parameters, "format")};
+	bool estimateContentLength {getParameterAs<bool>(context.parameters, "estimateContentLength").value_or(false)};
 
 	StreamParameters parameters;
+
+	parameters.estimateContentLength = estimateContentLength;
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
@@ -78,7 +82,8 @@ getStreamParameters(RequestContext& context)
 		if (!track)
 			throw RequestedDataNotFoundError {};
 
-		parameters.trackPath = track->getPath();
+		parameters.inputFileParameters.trackPath = track->getPath();
+		parameters.inputFileParameters.duration = track->getDuration();
 	}
 
 	{
@@ -155,9 +160,9 @@ handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http
 		{
 			StreamParameters streamParameters {getStreamParameters(context)};
 			if (streamParameters.transcodeParameters)
-				resourceHandler = Av::createTranscodeResourceHandler(streamParameters.trackPath, *streamParameters.transcodeParameters);
+				resourceHandler = Av::createTranscodeResourceHandler(streamParameters.inputFileParameters, *streamParameters.transcodeParameters, streamParameters.estimateContentLength);
 			else
-				resourceHandler = createFileResourceHandler(streamParameters.trackPath);
+				resourceHandler = createFileResourceHandler(streamParameters.inputFileParameters.trackPath);
 		}
 		else
 		{

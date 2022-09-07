@@ -27,7 +27,6 @@
 #include "services/database/Types.hpp"
 
 #include "common/Template.hpp"
-#include "PlayQueueAction.hpp"
 
 namespace Database
 {
@@ -43,8 +42,6 @@ namespace UserInterface
 	{
 		public:
 			TrackLists(Filters& filters);
-
-			PlayQueueActionTrackListSignal trackListAction;
 
 			void onTrackListDeleted(Database::TrackListId trackListId);
 

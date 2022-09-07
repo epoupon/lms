@@ -20,12 +20,19 @@
 #pragma once
 
 #include <chrono>
+#include <filesystem>
 #include <optional>
 
 #include "Types.hpp"
 
 namespace Av
 {
+	struct InputFileParameters
+	{
+		std::filesystem::path trackPath;
+		std::chrono::milliseconds duration;
+	};
+
 	struct TranscodeParameters
 	{
 		Format						format;

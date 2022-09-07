@@ -133,9 +133,9 @@
 
 <message id="Lms.Explore.recently-played">Riprodotti di recente</message>
 <message id="Lms.Explore.releases">Album</message>
+<message id="Lms.Explore.search">Ricerca</message>
 <message id="Lms.Explore.star">Aggiungi ai preferiti</message>
 <message id="Lms.Explore.starred">Preferiti</message>
-
 <message id="Lms.Explore.tracks">Tracce</message>
 <message id="Lms.Explore.type">Tipo</message>
 <message id="Lms.Explore.unstar">Rimuovi dai preferiti</message>
@@ -202,6 +202,7 @@
 <message id="Lms.Settings.replaygain-mode.release">Album</message>
 <message id="Lms.Settings.replaygain-preamp">Preamplificazione ReplayGain</message>
 <message id="Lms.Settings.replaygain-preamp-no-rg-info">Preamplificazione ReplayGain (se non è disponibile nessuna informazione)</message>
+
 
 
 

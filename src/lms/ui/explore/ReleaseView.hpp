@@ -20,8 +20,8 @@
 #pragma once
 
 #include "services/database/Object.hpp"
+#include "services/database/ReleaseId.hpp"
 #include "common/Template.hpp"
-#include "PlayQueueAction.hpp"
 
 namespace Database
 {
@@ -31,15 +31,12 @@ namespace Database
 namespace UserInterface
 {
 	class Filters;
-
+	class PlayQueueController;
 
 	class Release : public Template
 	{
 		public:
-			Release(Filters* filters);
-
-			PlayQueueActionReleaseSignal releasesAction;
-			PlayQueueActionTrackSignal tracksAction;
+			Release(Filters& filters, PlayQueueController& playQueueController);
 
 		private:
 			void refreshView();
@@ -48,7 +45,8 @@ namespace UserInterface
 			void refreshLinks(const Database::ObjectPtr<Database::Release>& release);
 			void refreshSimilarReleases(const std::vector<Database::ReleaseId>& similarReleasesId);
 
-			Filters* _filters {};
+			Filters&				_filters;
+			PlayQueueController&	_playQueueController;
 	};
 } // namespace UserInterface
 

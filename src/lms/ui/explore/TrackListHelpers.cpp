@@ -20,7 +20,6 @@
 #include "TrackListHelpers.hpp"
 
 #include <Wt/WAnchor.h>
-#include <Wt/WContainerWidget.h>
 #include <Wt/WImage.h>
 #include <Wt/WPushButton.h>
 
@@ -29,10 +28,10 @@
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
-#include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 
 #include "common/Template.hpp"
+#include "explore/PlayQueueController.hpp"
 #include "resource/DownloadResource.hpp"
 #include "resource/CoverResource.hpp"
 #include "LmsApplication.hpp"
@@ -44,7 +43,7 @@ using namespace Database;
 namespace UserInterface::TrackListHelpers
 {
 	std::unique_ptr<Wt::WWidget>
-	createEntry(const Database::ObjectPtr<Database::Track>& track, PlayQueueActionTrackSignal& tracksAction)
+	createEntry(const Database::ObjectPtr<Database::Track>& track, PlayQueueController& playQueueController)
 	{
 		auto entry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Tracks.template.entry"))};
 		auto* entryPtr {entry.get()};
@@ -74,16 +73,16 @@ namespace UserInterface::TrackListHelpers
 		entry->bindString("duration", Utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
 		Wt::WPushButton* playBtn {entry->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.template.play-btn"), Wt::TextFormat::XHTML)};
-		playBtn->clicked().connect([trackId, &tracksAction]
+		playBtn->clicked().connect([trackId, &playQueueController]
 		{
-			tracksAction.emit(PlayQueueAction::Play, {trackId});
+			playQueueController.processCommand(PlayQueueController::Command::Play, {trackId});
 		});
 
 		entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML);
 		entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
-			->clicked().connect([=, &tracksAction]
+			->clicked().connect([=, &playQueueController]
 			{
-				tracksAction.emit(PlayQueueAction::PlayLast, {trackId});
+				playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, {trackId});
 			});
 
 		{

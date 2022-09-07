@@ -591,6 +591,15 @@ CREATE TABLE IF NOT EXISTS "track_artist_link_backup" (
 		session.getDboSession().execute("ALTER TABLE tracklist ADD last_modified_date_time TEXT");
 	}
 
+	static
+	void
+	migrateFromV36(Session& session)
+	{
+		// Increased precision for track durations (now in milliseconds instead of secodns)
+		// Just increment the scan version of the settings to make the next scheduled scan rescan everything
+		ScanSettings::get(session).modify()->incScanVersion();
+	}
+
 	void
 	doDbMigration(Session& session)
 	{
@@ -633,6 +642,7 @@ CREATE TABLE IF NOT EXISTS "track_artist_link_backup" (
 			{33, migrateFromV33},
 			{34, migrateFromV34},
 			{35, migrateFromV35},
+			{36, migrateFromV36},
 		};
 
 		while (1)

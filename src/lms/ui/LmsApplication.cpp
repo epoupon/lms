@@ -64,6 +64,48 @@
 
 namespace UserInterface {
 
+static
+std::shared_ptr<Wt::WMessageResourceBundle>
+createMessageResourceBundle()
+{
+	const std::string appRoot {Wt::WApplication::appRoot()};
+
+	auto res {std::make_shared<Wt::WMessageResourceBundle>()};
+	res->use(appRoot + "admin-database");
+	res->use(appRoot + "admin-initwizard");
+	res->use(appRoot + "admin-scannercontroller");
+	res->use(appRoot + "admin-user");
+	res->use(appRoot + "admin-users");
+	res->use(appRoot + "artist");
+	res->use(appRoot + "artists");
+	res->use(appRoot + "error");
+	res->use(appRoot + "explore");
+	res->use(appRoot + "login");
+	res->use(appRoot + "main");
+	res->use(appRoot + "mediaplayer");
+	res->use(appRoot + "messages");
+	res->use(appRoot + "misc");
+	res->use(appRoot + "notifications");
+	res->use(appRoot + "playqueue");
+	res->use(appRoot + "release");
+	res->use(appRoot + "releases");
+	res->use(appRoot + "search");
+	res->use(appRoot + "settings");
+	res->use(appRoot + "tracklist");
+	res->use(appRoot + "tracklists");
+	res->use(appRoot + "tracks");
+
+	return res;
+}
+
+static
+std::shared_ptr<Wt::WMessageResourceBundle>
+getOrCreateMessageBundle()
+{
+	static std::shared_ptr<Wt::WMessageResourceBundle> res {createMessageResourceBundle()};
+	return res;
+}
+
 static constexpr const char* defaultPath {"/releases"};
 
 std::unique_ptr<Wt::WApplication>
@@ -169,32 +211,8 @@ LmsApplication::init()
 	useStyleSheet("resources/font-awesome/css/font-awesome.min.css");
 	require("js/mediaplayer.js");
 
-	setTitle("LMS");
-
-	// Add a resource bundle
-	messageResourceBundle().use(appRoot() + "admin-database");
-	messageResourceBundle().use(appRoot() + "admin-initwizard");
-	messageResourceBundle().use(appRoot() + "admin-scannercontroller");
-	messageResourceBundle().use(appRoot() + "admin-user");
-	messageResourceBundle().use(appRoot() + "admin-users");
-	messageResourceBundle().use(appRoot() + "artist");
-	messageResourceBundle().use(appRoot() + "artists");
-	messageResourceBundle().use(appRoot() + "error");
-	messageResourceBundle().use(appRoot() + "explore");
-	messageResourceBundle().use(appRoot() + "login");
-	messageResourceBundle().use(appRoot() + "main");
-	messageResourceBundle().use(appRoot() + "mediaplayer");
-	messageResourceBundle().use(appRoot() + "messages");
-	messageResourceBundle().use(appRoot() + "misc");
-	messageResourceBundle().use(appRoot() + "notifications");
-	messageResourceBundle().use(appRoot() + "playqueue");
-	messageResourceBundle().use(appRoot() + "release");
-	messageResourceBundle().use(appRoot() + "releases");
-	messageResourceBundle().use(appRoot() + "search");
-	messageResourceBundle().use(appRoot() + "settings");
-	messageResourceBundle().use(appRoot() + "tracklist");
-	messageResourceBundle().use(appRoot() + "tracklists");
-	messageResourceBundle().use(appRoot() + "tracks");
+	setTitle();
+	setLocalizedStrings(getOrCreateMessageBundle());
 
 	// Handle Media Scanner events and other session events
 	enableUpdates(true);
@@ -360,21 +378,22 @@ handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
 		std::string path;
 		int index;
 		bool admin;
+		std::optional<Wt::WString> title;
 	} views[] =
 	{
-		{ "/artists",		IdxExplore,		false },
-		{ "/artist",		IdxExplore,		false },
-		{ "/releases",		IdxExplore,		false },
-		{ "/release",		IdxExplore,		false },
-		{ "/search",		IdxExplore,		false },
-		{ "/tracks",		IdxExplore,		false },
-		{ "/tracklists",	IdxExplore,		false },
-		{ "/tracklist",		IdxExplore,		false },
-		{ "/playqueue",		IdxPlayQueue,		false },
-		{ "/settings",		IdxSettings,		false },
-		{ "/admin/database",	IdxAdminDatabase,	true },
-		{ "/admin/users",	IdxAdminUsers,		true },
-		{ "/admin/user",	IdxAdminUser,		true },
+		{ "/artists",			IdxExplore,			false,	Wt::WString::tr("Lms.Explore.artists") },
+		{ "/artist",			IdxExplore,			false,	std::nullopt },
+		{ "/releases",			IdxExplore,			false,	Wt::WString::tr("Lms.Explore.releases") },
+		{ "/release",			IdxExplore,			false,	std::nullopt },
+		{ "/search",			IdxExplore,			false,	Wt::WString::tr("Lms.Explore.search") },
+		{ "/tracks",			IdxExplore,			false,	Wt::WString::tr("Lms.Explore.tracks") },
+		{ "/tracklists",		IdxExplore,			false,	Wt::WString::tr("Lms.Explore.tracklists") },
+		{ "/tracklist",			IdxExplore,			false,	std::nullopt },
+		{ "/playqueue",			IdxPlayQueue,		false,	Wt::WString::tr("Lms.PlayQueue.playqueue") },
+		{ "/settings",			IdxSettings,		false,	Wt::WString::tr("Lms.Settings.settings") },
+		{ "/admin/database",	IdxAdminDatabase,	true,	Wt::WString::tr("Lms.Admin.Database.database") },
+		{ "/admin/users",		IdxAdminUsers,		true,	Wt::WString::tr("Lms.Admin.Users.users") },
+		{ "/admin/user",		IdxAdminUser,		true,	std::nullopt },
 	};
 
 	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
@@ -388,6 +407,8 @@ handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
 				break;
 
 			stack.setCurrentIndex(view.index);
+			if (view.title)
+				LmsApp->setTitle(*view.title);
 			return;
 		}
 	}
@@ -481,8 +502,9 @@ LmsApplication::createHome()
 	Wt::WStackedWidget* mainStack {main->bindNew<Wt::WStackedWidget>("contents")};
 	mainStack->setOverflow(Wt::Overflow::Visible); // wt makes it hidden by default
 
-	Explore* explore {mainStack->addNew<Explore>(filters)};
-	_playQueue = mainStack->addNew<PlayQueue>();
+	std::unique_ptr<PlayQueue> playQueue {std::make_unique<PlayQueue>()};
+	Explore* explore {mainStack->addNew<Explore>(*filters, *playQueue)};
+	_playQueue = mainStack->addWidget(std::move(playQueue));
 	mainStack->addNew<SettingsView>();
 
 	searchEdit->enterPressed().connect([=]
@@ -504,11 +526,7 @@ LmsApplication::createHome()
 		mainStack->addNew<UserView>();
 	}
 
-	explore->setMaxTrackCountForAction(_playQueue->getCapacity());
-	explore->tracksAction.connect([this] (PlayQueueAction action, const std::vector<Database::TrackId>& trackIds)
-	{
-		_playQueue->processTracks(action, trackIds);
-	});
+	explore->getPlayQueueController().setMaxTrackCountToEnqueue(_playQueue->getCapacity());
 
 	// Events from MediaPlayer
 	_mediaPlayer->playNext.connect([this]
@@ -597,6 +615,15 @@ void
 LmsApplication::post(std::function<void()> func)
 {
 	Wt::WServer::instance()->post(LmsApp->sessionId(), std::move(func));
+}
+
+void
+LmsApplication::setTitle(const Wt::WString& title)
+{
+	if (title.empty())
+		WApplication::setTitle("LMS");
+	else
+		WApplication::setTitle(title);
 }
 
 void

@@ -58,7 +58,7 @@ WhereClause::Or(const WhereClause& otherClause)
 }
 
 std::string
-WhereClause::get(void) const
+WhereClause::get() const
 {
 	if (!_clause.empty())
 		return "WHERE " + _clause;
@@ -176,7 +176,7 @@ FromClause::get() const
 }
 
 std::string
-SqlQuery::get(void) const
+SqlQuery::get() const
 {
 	std::ostringstream oss;
 

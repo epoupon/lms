@@ -25,8 +25,7 @@
 
 #include <Wt/WDate.h>
 
-#include "metadata/AvFormatParser.hpp"
-#include "metadata/TagLibParser.hpp"
+#include "metadata/IParser.hpp"
 #include "utils/StreamLogger.hpp"
 
 std::ostream& operator<<(std::ostream& os, const MetaData::Artist& artist)
@@ -69,7 +68,7 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 	}
 	const auto end {std::chrono::steady_clock::now()};
 
-	std::cout << "Parsing time: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000. << "ms" << std::endl;
+	std::cout << "Parsing time: " << std::fixed << std::setprecision(2) << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000. << "ms" << std::endl;
 
 	std::cout << "Track metadata:" << std::endl;
 
@@ -117,7 +116,7 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 		}
 	}
 
-	std::cout << "Duration: " << track->duration.count() / 1000 << "s" << std::endl;
+	std::cout << "Duration: " << std::fixed << std::setprecision(2) << track->duration.count() / 1000. << "s" << std::endl;
 
 	if (track->trackNumber)
 		std::cout << "Track: " << *track->trackNumber << std::endl;
@@ -184,14 +183,14 @@ int main(int argc, char *argv[])
 
 			{
 				std::cout << "Using av:" << std::endl;
-				MetaData::AvFormatParser parser;
-				parse(parser, file);
+				auto parser {MetaData::createParser(MetaData::ParserType::AvFormat, MetaData::ParserReadStyle::Accurate)};
+				parse(*parser, file);
 			}
 
 			{
 				std::cout << "Using TagLib:" << std::endl;
-				MetaData::TagLibParser parser;
-				parse(parser, file);
+				auto parser {MetaData::createParser(MetaData::ParserType::TagLib, MetaData::ParserReadStyle::Accurate)};
+				parse(*parser, file);
 			}
 		}
 	}

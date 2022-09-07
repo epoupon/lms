@@ -416,38 +416,46 @@ PlayQueue::enqueueTracks(const std::vector<Database::TrackId>& trackIds)
 }
 
 void
-PlayQueue::processTracks(PlayQueueAction action, const std::vector<Database::TrackId>& trackIds)
+PlayQueue::play(const std::vector<Database::TrackId>& trackIds)
 {
-	std::size_t nbAddedTracks {};
+	playAtIndex(trackIds, 0);
+}
 
-	switch (action)
-	{
-		case PlayQueueAction::PlayLast:
-			nbAddedTracks = enqueueTracks(trackIds);
-			if (!_trackPos)
-				loadTrack(0, true);
-			break;
+void
+PlayQueue::playShuffled(const std::vector<Database::TrackId>& trackIds)
+{
+	clearTracks();
+	std::vector<Database::TrackId> shuffledTrackIds {trackIds};
+	Random::shuffleContainer(shuffledTrackIds);
+	const std::size_t nbAddedTracks {enqueueTracks(shuffledTrackIds)};
+	loadTrack(0, true);
 
-		case PlayQueueAction::Play:
-			clearTracks();
-			nbAddedTracks = enqueueTracks(trackIds);
-			loadTrack(0, true);
+	notifyAddedTracks(nbAddedTracks);
+}
 
-			break;
+void
+PlayQueue::playOrAddLast(const std::vector<Database::TrackId>& trackIds)
+{
+	const std::size_t nbAddedTracks {enqueueTracks(trackIds)};
+	if (!_trackPos)
+		loadTrack(0, true);
 
-		case PlayQueueAction::PlayShuffled:
-		{
-			clearTracks();
-			{
-				std::vector<Database::TrackId> shuffledTrackIds {trackIds};
-				Random::shuffleContainer(shuffledTrackIds);
-				nbAddedTracks = enqueueTracks(shuffledTrackIds);
-			}
-			loadTrack(0, true);
-			break;
-		}
-	}
+	notifyAddedTracks(nbAddedTracks);
+}
 
+void
+PlayQueue::playAtIndex(const std::vector<Database::TrackId>& trackIds, std::size_t index)
+{
+	clearTracks();
+	const std::size_t nbAddedTracks {enqueueTracks(trackIds)};
+	loadTrack(index, true);
+
+	notifyAddedTracks(nbAddedTracks);
+}
+
+void
+PlayQueue::notifyAddedTracks(std::size_t nbAddedTracks) const
+{
 	if (nbAddedTracks > 0)
 		LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.PlayQueue.playqueue"), Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", nbAddedTracks).arg(nbAddedTracks), std::chrono::seconds {2});
 

@@ -107,6 +107,7 @@ class Release : public Object<Release, ReleaseId>
 		std::optional<UUID>		getMBID() const		{ return UUID::fromString(_MBID); }
 		std::optional<std::size_t>	getTotalTrack() const;
 		std::optional<std::size_t>	getTotalDisc() const;
+		std::size_t					getDiscCount() const; // may not be total disc (if incomplete for example)
 		std::chrono::milliseconds	getDuration() const;
 		Wt::WDateTime				getLastWritten() const;
 

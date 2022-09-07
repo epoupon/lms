@@ -20,34 +20,25 @@
 #pragma once
 
 #include <Wt/WTemplate.h>
-
-#include "services/database/Types.hpp"
-#include "PlayQueueAction.hpp"
+#include "PlayQueueController.hpp"
 
 namespace UserInterface
 {
 	class Filters;
 	class SearchView;
+	class PlayQueue;
 
 	class Explore : public Wt::WTemplate
 	{
 		public:
-			Explore(Filters* filters);
+			Explore(Filters& filters, PlayQueue& playQueue);
 
 			void search(const Wt::WString& searchText);
-
-			PlayQueueActionTrackSignal tracksAction;
-			void setMaxTrackCountForAction(std::size_t maxTrackCount) { _maxTrackCount = maxTrackCount; }
+			PlayQueueController& getPlayQueueController() { return _playQueueController; }
 
 		private:
-			void handleArtistsAction(PlayQueueAction action, const std::vector<Database::ArtistId>& artistsId);
-			void handleReleasesAction(PlayQueueAction action, const std::vector<Database::ReleaseId>& releasesId);
-			void handleTrackListAction(PlayQueueAction action, Database::TrackListId trackiListId);
-			void handleTracksAction(PlayQueueAction action, const std::vector<Database::TrackId>& tracksId);
-
-			Filters* _filters {};
+			PlayQueueController _playQueueController;
 			SearchView* _search {};
-			std::size_t _maxTrackCount {};
 	};
 } // namespace UserInterface
 

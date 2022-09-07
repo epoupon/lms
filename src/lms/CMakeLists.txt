@@ -32,6 +32,7 @@ add_executable(lms
 	ui/explore/DatabaseCollectorBase.cpp
 	ui/explore/Explore.cpp
 	ui/explore/Filters.cpp
+	ui/explore/PlayQueueController.cpp
 	ui/explore/ReleaseCollector.cpp
 	ui/explore/ReleaseListHelpers.cpp
 	ui/explore/ReleasesView.cpp

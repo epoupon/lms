@@ -23,15 +23,19 @@
 
 #include <Wt/WWidget.h>
 #include "services/database/Object.hpp"
-#include "PlayQueueAction.hpp"
 
 namespace Database
 {
 	class Track;
 }
 
+namespace UserInterface
+{
+	class PlayQueueController;
+}
+
 namespace UserInterface::TrackListHelpers
 {
-	std::unique_ptr<Wt::WWidget> createEntry(const Database::ObjectPtr<Database::Track>& track, PlayQueueActionTrackSignal& tracksAction);
+	std::unique_ptr<Wt::WWidget> createEntry(const Database::ObjectPtr<Database::Track>& track, PlayQueueController& playQueueController);
 } // namespace UserInterface
 

@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "metadata/TagLibParser.hpp"
+#include "TagLibParser.hpp"
 
 #include <taglib/apetag.h>
 #include <taglib/asffile.h>
@@ -33,7 +33,10 @@
 #include <taglib/vorbisfile.h>
 #include <taglib/wavpackfile.h>
 
+#include "utils/IConfig.hpp"
+#include "utils/Exception.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Service.hpp"
 #include "utils/String.hpp"
 #include "Utils.hpp"
 
@@ -143,6 +146,26 @@ getAlbum(const TagLib::PropertyMap& properties)
 		return Album {std::move(albumName.front()), {}};
 	else
 		return Album {std::move(albumName.front()), albumMBID.front()};
+}
+
+static
+TagLib::AudioProperties::ReadStyle
+readStyleToTagLibReadStyle(ParserReadStyle readStyle)
+{
+	switch (readStyle)
+	{
+		case ParserReadStyle::Fast: return TagLib::AudioProperties::ReadStyle::Fast;
+		case ParserReadStyle::Average: return TagLib::AudioProperties::ReadStyle::Average;
+		case ParserReadStyle::Accurate: return TagLib::AudioProperties::ReadStyle::Accurate;
+	}
+
+	throw LmsException {"Cannot convert read style"};
+}
+
+
+TagLibParser::TagLibParser(ParserReadStyle readStyle)
+	: _readStyle {readStyleToTagLibReadStyle(readStyle)}
+{
 }
 
 void
@@ -267,7 +290,7 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 {
 	TagLib::FileRef f {p.string().c_str(),
 		true, // read audio properties
-		TagLib::AudioProperties::Fast}; // TODO parametrize this
+		_readStyle};
 
 	if (f.isNull())
 	{
@@ -286,7 +309,7 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 	{
 		const TagLib::AudioProperties *properties {f.audioProperties() };
 
-		track.duration = std::chrono::milliseconds {properties->length() * 1000};
+		track.duration = std::chrono::milliseconds {properties->lengthInMilliseconds()};
 
 		MetaData::AudioStream audioStream {static_cast<unsigned>(properties->bitrate() * 1000)};
 		track.audioStreams = {std::move(audioStream)};

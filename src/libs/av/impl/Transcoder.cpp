@@ -30,7 +30,7 @@
 
 namespace Av {
 
-#define LOG(sev)	LMS_LOG(TRANSCODE, sev) << "[" << _id << "] - "
+#define LOG(sev)	LMS_LOG(TRANSCODE, sev) << "[" << _debugId << "] - "
 
 static std::atomic<size_t>		globalId {};
 static std::filesystem::path	ffmpegPath;
@@ -43,10 +43,10 @@ Transcoder::init()
 		throw Exception {"File '" + ffmpegPath.string() + "' does not exist!"};
 }
 
-Transcoder::Transcoder(const std::filesystem::path& filePath, const TranscodeParameters& parameters)
-:  _id {globalId++}
-, _filePath {filePath}
-, _parameters {parameters}
+Transcoder::Transcoder(const InputFileParameters& inputFileParameters, const TranscodeParameters& transcodeParameters)
+:  _debugId {globalId++}
+, _inputFileParameters {inputFileParameters}
+, _transcodeParameters {transcodeParameters}
 {
 	start();
 }
@@ -61,17 +61,17 @@ Transcoder::start()
 
 	try
 	{
-		if (!std::filesystem::exists(_filePath))
-			throw Exception {"File '" + _filePath.string() + "' does not exist!"};
-		else if (!std::filesystem::is_regular_file( _filePath) )
-			throw Exception {"File '" + _filePath.string() + "' is not regular!"};
+		if (!std::filesystem::exists(_inputFileParameters.trackPath))
+			throw Exception {"File '" + _inputFileParameters.trackPath.string() + "' does not exist!"};
+		else if (!std::filesystem::is_regular_file( _inputFileParameters.trackPath) )
+			throw Exception {"File '" + _inputFileParameters.trackPath.string() + "' is not regular!"};
 	}
 	catch (const std::filesystem::filesystem_error& e)
 	{
-		throw Exception {"File error '" + _filePath.string() + "': " + e.what()};
+		throw Exception {"File error '" + _inputFileParameters.trackPath.string() + "': " + e.what()};
 	}
 
-	LOG(INFO) << "Transcoding file '" << _filePath.string() << "'";
+	LOG(INFO) << "Transcoding file '" << _inputFileParameters.trackPath.string() << "'";
 
 	std::vector<std::string> args;
 
@@ -90,22 +90,22 @@ Transcoder::start()
 		args.emplace_back("-ss");
 
 		std::ostringstream oss;
-		oss << std::fixed << std::showpoint << std::setprecision(3) << (_parameters.offset.count() / float {1000});
+		oss << std::fixed << std::showpoint << std::setprecision(3) << (_transcodeParameters.offset.count() / float {1000});
 		args.emplace_back(oss.str());
 	}
 
 	// Input file
 	args.emplace_back("-i");
-	args.emplace_back(_filePath.string());
+	args.emplace_back(_inputFileParameters.trackPath.string());
 
 	// Stream mapping, if set
-	if (_parameters.stream)
+	if (_transcodeParameters.stream)
 	{
 		args.emplace_back("-map");
-		args.emplace_back("0:" + std::to_string(*_parameters.stream));
+		args.emplace_back("0:" + std::to_string(*_transcodeParameters.stream));
 	}
 
-	if (_parameters.stripMetadata)
+	if (_transcodeParameters.stripMetadata)
 	{
 		// Strip metadata
 		args.emplace_back("-map_metadata");
@@ -117,10 +117,10 @@ Transcoder::start()
 
 	// Output bitrates
 	args.emplace_back("-b:a");
-	args.emplace_back(std::to_string(_parameters.bitrate));
+	args.emplace_back(std::to_string(_transcodeParameters.bitrate));
 
 	// Codecs and formats
-	switch (_parameters.format)
+	switch (_transcodeParameters.format)
 	{
 		case Format::MP3:
 			args.emplace_back("-f");
@@ -156,10 +156,10 @@ Transcoder::start()
 			break;
 
 		default:
-			throw Exception {"Unhandled format (" + std::to_string(static_cast<int>(_parameters.format)) + ")"};
+			throw Exception {"Unhandled format (" + std::to_string(static_cast<int>(_transcodeParameters.format)) + ")"};
 	}
 
-	_outputMimeType = formatToMimetype(_parameters.format);
+	_outputMimeType = formatToMimetype(_transcodeParameters.format);
 
 	args.emplace_back("pipe:1");
 
