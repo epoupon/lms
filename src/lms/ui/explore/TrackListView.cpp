@@ -55,7 +55,7 @@ namespace UserInterface
 {
 	TrackList::TrackList(Filters& filters, PlayQueueController& playQueueController)
 	: Template {Wt::WString::tr("Lms.Explore.TrackList.template")}
-	, _filters {_filters}
+	, _filters {filters}
 	, _playQueueController {playQueueController}
 	{
 		addFunction("tr", &Wt::WTemplate::Functions::tr);
@@ -66,7 +66,7 @@ namespace UserInterface
 			refreshView();
 		});
 
-		filters.updated().connect([this]
+		_filters.updated().connect([this]
 		{
 			refreshView();
 		});
