@@ -52,7 +52,7 @@ LMS.mediaplayer = function () {
 
 		_audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 		_gainNode = _audioCtx.createGain();
-		source = _audioCtx.createMediaElementSource(_elems.audio);
+		let source = _audioCtx.createMediaElementSource(_elems.audio);
 		source.connect(_gainNode);
 		_gainNode.connect(_audioCtx.destination);
 		_audioCtx.resume(); // not sure of this
