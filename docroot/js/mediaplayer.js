@@ -38,10 +38,6 @@ LMS.mediaplayer = function () {
 		_initAudioCtx();
 	};
 
-	document.addEventListener("touchstart", _unlock);
-	document.addEventListener("touchend", _unlock);
-	document.addEventListener("click", _unlock);
-
 	let _initAudioCtx = function() {
 		if (_audioIsInit) {
 			_audioCtx.resume(); // not sure of this
@@ -321,6 +317,9 @@ LMS.mediaplayer = function () {
 				event.preventDefault();
 		});
 
+		document.addEventListener("touchstart", _unlock);
+		document.addEventListener("touchend", _unlock);
+		document.addEventListener("click", _unlock);
 	}
 
 	let _removeAudioSources = function() {
