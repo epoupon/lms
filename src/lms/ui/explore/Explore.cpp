@@ -93,10 +93,9 @@ namespace UserInterface {
 		contentsStack->addWidget(std::move(artist));
 
 		auto trackLists {std::make_unique<TrackLists>(filters)};
-		contentsStack->addWidget(std::move(trackLists));
-
 		auto trackList {std::make_unique<TrackList>(filters, _playQueueController)};
 		trackList->trackListDeleted.connect(trackLists.get(), &TrackLists::onTrackListDeleted);
+		contentsStack->addWidget(std::move(trackLists));
 		contentsStack->addWidget(std::move(trackList));
 
 		auto releases = std::make_unique<Releases>(filters, _playQueueController);
