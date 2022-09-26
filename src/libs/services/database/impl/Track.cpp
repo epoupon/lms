@@ -45,8 +45,12 @@ createQuery(Session& session, const Track::FindParameters& params)
 
 	auto query {session.getDboSession().query<TrackId>(params.distinct ? "SELECT DISTINCT t.id FROM track t" : "SELECT t.id FROM track t")};
 
+	assert(params.keywords.empty() || params.name.empty());
 	for (std::string_view keyword : params.keywords)
 		query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + Utils::escapeLikeKeyword(keyword) + "%");
+
+	if (!params.name.empty())
+		query.where("t.name = ?").bind(params.name);
 
 	if (params.writtenAfter.isValid())
 		query.where("t.file_last_write > ?").bind(params.writtenAfter);
@@ -80,11 +84,15 @@ createQuery(Session& session, const Track::FindParameters& params)
 		query.where(oss.str());
 	}
 
-	if (params.artist.isValid())
+	if (params.artist.isValid() || !params.artistName.empty())
 	{
 		query.join("artist a ON a.id = t_a_l.artist_id")
-				.join("track_artist_link t_a_l ON t_a_l.track_id = t.id")
-				.where("a.id = ?").bind(params.artist);
+				.join("track_artist_link t_a_l ON t_a_l.track_id = t.id");
+
+		if (params.artist.isValid())
+			query.where("a.id = ?").bind(params.artist);
+		if (!params.artistName.empty())
+			query.where("a.name = ?").bind(params.artistName);
 
 		if (!params.trackArtistLinkTypes.empty())
 		{
@@ -109,6 +117,11 @@ createQuery(Session& session, const Track::FindParameters& params)
 		query.where("t.release_id IS NULL");
 	else if (params.release.isValid())
 		query.where("t.release_id = ?").bind(params.release);
+	else if (!params.releaseName.empty())
+	{
+		query.join("release r ON t.release_id = r.id");
+		query.where("r.name = ?").bind(params.releaseName);
+	}
 
 	if (params.trackList.isValid())
 	{
@@ -116,6 +129,9 @@ createQuery(Session& session, const Track::FindParameters& params)
 		query.join("tracklist_entry t_l_e ON t.id = t_l_e.track_id");
 		query.where("t_l.id = ?").bind(params.trackList);
 	}
+
+	if (params.trackNumber)
+		query.where("t.track_number = ?").bind(*params.trackNumber);
 
 	switch (params.sortMethod)
 	{
@@ -280,19 +296,6 @@ Track::find(Session& session, const FindParameters& parameters)
 	auto query {createQuery(session, parameters)};
 
 	return Utils::execQuery(query, parameters.range);
-}
-
-RangeResults<TrackId>
-Track::findByNameAndReleaseName(Session& session, std::string_view trackName, std::string_view releaseName)
-{
-	session.checkSharedLocked();
-
-	auto query {session.getDboSession().query<TrackId>("SELECT t.id from track t")
-		.join("release r ON t.release_id = r.id")
-		.where("t.name = ?").bind(trackName)
-		.where("r.name = ?").bind(releaseName)};
-
-	return Utils::execQuery(query, Range {});
 }
 
 RangeResults<TrackId>

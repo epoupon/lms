@@ -36,6 +36,7 @@
 #include "utils/IConfig.hpp"
 #include "utils/http/IClient.hpp"
 #include "utils/Service.hpp"
+#include "ListensParser.hpp"
 
 #include "Utils.hpp"
 
@@ -142,127 +143,54 @@ namespace
 	}
 
 	Database::TrackId
-	tryMatchListen(Database::Session& session, const Wt::Json::Object& metadata)
+	tryGetMatchingTrack(Database::Session& session, const ListensParser::Entry& listen)
 	{
 		using namespace Database;
 
-		//LOG(DEBUG) << "Trying to match track' " << Wt::Json::serialize(metadata) << "'";
+		auto transaction {session.createSharedTransaction()};
 
-		// first try to get the associated track using MBIDs, and then fallback on names
-		if (metadata.type("additional_info") == Wt::Json::Type::Object)
+		// first try to match using recording MBID, and then fallback on possibly ambiguous info
+		if (listen.recordingMBID)
 		{
-			const Wt::Json::Object& additionalInfo = metadata.get("additional_info");
-			if (std::optional<UUID> recordingMBID {UUID::fromString(additionalInfo.get("recording_mbid").orIfNull(""))})
+			const auto tracks {Track::findByRecordingMBID(session, *listen.recordingMBID)};
+			// if duplicated files, do not record it (let the user correct its database)
+			if (tracks.size() == 1)
 			{
-				const auto tracks {Track::findByRecordingMBID(session, *recordingMBID)};
-				// if duplicated files, do not record it (let the user correct its database)
-				if (tracks.size() == 1)
-					return tracks.front()->getId();
+				LOG(DEBUG) << "Matched listen '" << listen << "' using recording MBID";
+				return tracks.front()->getId();
+			}
+			else if (tracks.size() > 1)
+			{
+				LOG(DEBUG) << "Too many matches for listen '" << listen << "' using recording MBID!";
+				return {};
 			}
 		}
 
-		// these fields are mandatory
-		const std::string trackName {static_cast<std::string>(metadata.get("track_name"))};
-		const std::string releaseName {static_cast<std::string>(metadata.get("release_name"))};
+		assert(!listen.trackName.empty() && !listen.artistName.empty());
 
-		auto tracks {Track::findByNameAndReleaseName(session, trackName, releaseName)};
-		if (tracks.results.size() > 1)
-		{
-			tracks.results.erase(std::remove_if(std::begin(tracks.results), std::end(tracks.results),
-				[&](const TrackId trackId)
-				{
-					const Track::pointer track {Track::find(session, trackId)};
+		// TODO check release MBID?
+		Track::FindParameters params;
+		params.setName(listen.trackName);
+		params.setReleaseName(listen.releaseName);
+		params.setArtistName(listen.artistName);
+		if (listen.trackNumber)
+			params.setTrackNumber(*listen.trackNumber);
 
-					if (std::string artistName {metadata.get("artist_name").orIfNull("")}; !artistName.empty())
-					{
-						const auto& artists {track->getArtists({TrackArtistLinkType::Artist})};
-						if (std::none_of(std::begin(artists), std::end(artists), [&](const Artist::pointer& artist) { return artist->getName() == artistName; }))
-							return true;
-					}
-					if (metadata.type("additional_info") == Wt::Json::Type::Object)
-					{
-						const Wt::Json::Object& additionalInfo = metadata.get("additional_info");
-						if (track->getTrackNumber())
-						{
-							int otherTrackNumber {additionalInfo.get("tracknumber").orIfNull(-1)};
-							if (otherTrackNumber > 0 && static_cast<std::size_t>(otherTrackNumber) != *track->getTrackNumber())
-								return true;
-						}
-
-						if (auto releaseMBID {track->getRelease()->getMBID()})
-						{
-							if (std::optional<UUID> otherReleaseMBID {UUID::fromString(additionalInfo.get("release_mbid").orIfNull(""))})
-							{
-								if (otherReleaseMBID->getAsString() != releaseMBID->getAsString())
-									return true;
-							}
-						}
-					}
-
-					return false;
-				}), std::end(tracks.results));
-		}
-
+		const auto tracks {Track::find(session, params)};
+		// conservative behavior: in case of multiple matches: reject
 		if (tracks.results.size() == 1)
+		{
+			LOG(DEBUG) << "Matched listen '" << listen << "' using metadata";
 			return tracks.results.front();
+		}
+		else if (tracks.results.size() > 1)
+		{
+			LOG(DEBUG) << "Too many matches for listen '" << listen << "' using metadata";
+			return {};
+		}
 
+		LOG(DEBUG) << "No match for listen '" << listen << "'";
 		return {};
-	}
-
-	struct ParseGetListensResult
-	{
-		Wt::WDateTime oldestEntry;
-		std::size_t listenCount{};
-		std::vector<Scrobbling::TimedListen> matchedListens;
-	};
-	ParseGetListensResult
-	parseGetListens(Database::Session& session, std::string_view msgBody, Database::UserId userId)
-	{
-		ParseGetListensResult result;
-
-		try
-		{
-			Wt::Json::Object root;
-			Wt::Json::parse(std::string {msgBody}, root);
-
-			const Wt::Json::Object& payload = root.get("payload");
-			const Wt::Json::Array& listens = payload.get("listens");
-
-			LOG(DEBUG) << "Got " << listens.size() << " listens";
-
-			if (listens.empty())
-				return result;
-
-			auto transaction {session.createSharedTransaction()};
-
-			for (const Wt::Json::Value& value : listens)
-			{
-				const Wt::Json::Object& listen = value;
-				const Wt::WDateTime listenedAt {Wt::WDateTime::fromTime_t(static_cast<int>(listen.get("listened_at")))};
-				const Wt::Json::Object& metadata = listen.get("track_metadata");
-
-				if (!listenedAt.isValid())
-				{
-					LOG(ERROR) << "bad listened_at field!";
-					continue;
-				}
-
-				result.listenCount++;
-				if (!result.oldestEntry.isValid())
-					result.oldestEntry = listenedAt;
-				else if (listenedAt < result.oldestEntry)
-					result.oldestEntry = listenedAt;
-
-				if (Database::TrackId trackId {tryMatchListen(session, metadata)}; trackId.isValid())
-					result.matchedListens.emplace_back(Scrobbling::TimedListen {{userId, trackId}, listenedAt});
-			}
-		}
-		catch (const Wt::WException& error)
-		{
-			LOG(ERROR) << "Cannot parse 'get-listens' result: " << error.what();
-		}
-
-		return result;
 	}
 }
 
@@ -619,16 +547,30 @@ namespace Scrobbling::ListenBrainz
 	{
 		Database::Session& session {_db.getTLSSession()};
 
-		const ParseGetListensResult parseResult {parseGetListens(session, msgBody, context.userId)};
+		context.maxDateTime = {}; // invalidate to break in case no more listens are fetched
+		std::vector<ListensParser::Entry> parsedListens {ListensParser::parse(msgBody)};
+		context.fetchedListenCount += parsedListens.size();
 
-		context.fetchedListenCount += parseResult.listenCount;
-		context.matchedListenCount += parseResult.matchedListens.size();
-		context.maxDateTime = parseResult.oldestEntry;
-
-		for (const TimedListen& listen : parseResult.matchedListens)
+		for (const ListensParser::Entry& parsedListen : parsedListens)
 		{
-			if (saveListen(listen, Database::ScrobblingState::Synchronized))
-				context.importedListenCount++;
+			// update oldest listen for the next query
+			if (!parsedListen.listenedAt.isValid())
+			{
+				LOG(DEBUG) << "Skipping entry due to invalid listenedAt";
+				continue;
+			}
+
+			if (!context.maxDateTime.isValid() || context.maxDateTime > parsedListen.listenedAt)
+				context.maxDateTime = parsedListen.listenedAt;
+
+			if (const Database::TrackId trackId {tryGetMatchingTrack(session, parsedListen)}; trackId.isValid())
+			{
+				context.matchedListenCount++;
+
+				const Scrobbling::TimedListen listen {{context.userId, trackId}, parsedListen.listenedAt};
+				if (saveListen(listen, Database::ScrobblingState::Synchronized))
+					context.importedListenCount++;
+			}
 		}
 	}
 } // namespace Scrobbling::ListenBrainz

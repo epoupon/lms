@@ -84,18 +84,18 @@ TEST_F(DatabaseFixture, Release_singleTrack)
 
 		{
 			auto transaction {session.createUniqueTransaction()};
-			auto tracks {Track::findByNameAndReleaseName(session, "MyTrackName", "MyReleaseName")};
+			auto tracks {Track::find(session, Track::FindParameters{}.setName("MyTrackName").setReleaseName("MyReleaseName"))};
 			ASSERT_EQ(tracks.results.size(), 1);
 			EXPECT_EQ(tracks.results.front(), track.getId());
 		}
 		{
 			auto transaction {session.createUniqueTransaction()};
-			auto tracks {Track::findByNameAndReleaseName(session, "MyTrackName", "MyReleaseFoo")};
+			auto tracks {Track::find(session, Track::FindParameters{}.setName("MyTrackName").setReleaseName("MyReleaseFoo"))};
 			EXPECT_EQ(tracks.results.size(), 0);
 		}
 		{
 			auto transaction {session.createUniqueTransaction()};
-			auto tracks {Track::findByNameAndReleaseName(session, "MyTrackFoo", "MyReleaseName")};
+			auto tracks {Track::find(session, Track::FindParameters{}.setName("MyTrackFoo").setReleaseName("MyReleaseName"))};
 			EXPECT_EQ(tracks.results.size(), 0);
 		}
 	}

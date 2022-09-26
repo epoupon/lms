@@ -3,6 +3,7 @@ add_library(lmsscrobbling SHARED
 	impl/internal/InternalScrobbler.cpp
 	impl/listenbrainz/FeedbacksSynchronizer.cpp
 	impl/listenbrainz/ListenBrainzScrobbler.cpp
+	impl/listenbrainz/ListensParser.cpp
 	impl/listenbrainz/ListensSynchronizer.cpp
 	impl/listenbrainz/Utils.cpp
 	impl/ScrobblingService.cpp
@@ -27,3 +28,6 @@ target_link_libraries(lmsscrobbling PUBLIC
 
 install(TARGETS lmsscrobbling DESTINATION lib)
 
+if(BUILD_TESTING)
+	add_subdirectory(test)
+endif()
