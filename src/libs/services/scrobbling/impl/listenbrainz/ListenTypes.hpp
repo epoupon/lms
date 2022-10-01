@@ -19,19 +19,24 @@
 
 #pragma once
 
-#include "ListenTypes.hpp"
+#include <string>
+#include <ostream>
+#include <Wt/WDateTime.h>
+
+#include "utils/UUID.hpp"
 
 namespace Scrobbling::ListenBrainz
 {
-	class ListensParser
+	struct Listen
 	{
-		public:
-			struct Result
-			{
-				std::size_t listenCount;		// may be > than listens.size()
-				std::vector<Listen> listens;	// successfully parsed listens
-			};
-
-			static Result parse(std::string_view msgBody);
+		std::string trackName;
+		std::string releaseName;
+		std::string artistName;
+		std::optional<UUID> recordingMBID;
+		std::optional<UUID> releaseMBID;
+		std::optional<unsigned> trackNumber;
+		Wt::WDateTime listenedAt;
 	};
+
+	std::ostream& operator<<(std::ostream& os, const Listen& listen);
 } // Scrobbling::ListenBrainz

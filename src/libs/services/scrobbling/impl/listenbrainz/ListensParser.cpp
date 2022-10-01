@@ -31,44 +31,44 @@ namespace
 {
 	using namespace Scrobbling::ListenBrainz;
 
-	ListensParser::Entry
-	parseListen(const Wt::Json::Object& listen)
+	Listen
+	parseListen(const Wt::Json::Object& listenObject)
 	{
-		ListensParser::Entry entry;
+		Listen listen;
 
 		// Mandatory fields
-		const Wt::Json::Object& metadata = listen.get("track_metadata");
-		entry.trackName = static_cast<std::string>(metadata.get("track_name"));
-		entry.artistName = static_cast<std::string>(metadata.get("artist_name"));
+		const Wt::Json::Object& metadata = listenObject.get("track_metadata");
+		listen.trackName = static_cast<std::string>(metadata.get("track_name"));
+		listen.artistName = static_cast<std::string>(metadata.get("artist_name"));
 
 		// Optional fields
-		entry.releaseName = static_cast<std::string>(metadata.get("release_name").orIfNull(""));
-		if (listen.type("listened_at") == Wt::Json::Type::Number)
-			entry.listenedAt = Wt::WDateTime::fromTime_t(static_cast<int>(listen.get("listened_at")));
-		if (!entry.listenedAt.isValid())
+		listen.releaseName = static_cast<std::string>(metadata.get("release_name").orIfNull(""));
+		if (listenObject.type("listened_at") == Wt::Json::Type::Number)
+			listen.listenedAt = Wt::WDateTime::fromTime_t(static_cast<int>(listenObject.get("listened_at")));
+		if (!listen.listenedAt.isValid())
 			LOG(ERROR) << "Invalid or missing 'listened_at' field!";
 
 		if (metadata.type("additional_info") == Wt::Json::Type::Object)
 		{
 			const Wt::Json::Object& additionalInfo = metadata.get("additional_info");
-			entry.recordingMBID = UUID::fromString(additionalInfo.get("recording_mbid").orIfNull(""));
-			entry.releaseMBID = UUID::fromString(additionalInfo.get("release_mbid").orIfNull(""));
+			listen.recordingMBID = UUID::fromString(additionalInfo.get("recording_mbid").orIfNull(""));
+			listen.releaseMBID = UUID::fromString(additionalInfo.get("release_mbid").orIfNull(""));
 
 			int trackNumber {additionalInfo.get("tracknumber").orIfNull(-1)};
 			if (trackNumber > 0)
-				entry.trackNumber = trackNumber;
+				listen.trackNumber = trackNumber;
 		}
 
-		return entry;
+		return listen;
 	}
 } // namespace
 
 namespace Scrobbling::ListenBrainz
 {
-	std::vector<ListensParser::Entry>
+	ListensParser::Result
 	ListensParser::parse(std::string_view msgBody)
 	{
-		std::vector<Entry> entries;
+		Result result;
 
 		try
 		{
@@ -79,16 +79,17 @@ namespace Scrobbling::ListenBrainz
 			const Wt::Json::Array& listens = payload.get("listens");
 
 			LOG(DEBUG) << "Parsing " << listens.size() << " listens...";
+			result.listenCount = listens.size();
 
 			if (listens.empty())
-				return entries;
+				return result;
 
 			for (const Wt::Json::Value& value : listens)
 			{
 				try
 				{
 					const Wt::Json::Object& listen = value;
-					entries.push_back(parseListen(listen));
+					result.listens.push_back(parseListen(listen));
 				}
 				catch (const Wt::WException& error)
 				{
@@ -101,22 +102,6 @@ namespace Scrobbling::ListenBrainz
 			LOG(ERROR) << "Cannot parse 'listens': " << error.what();
 		}
 
-		return entries;
-	}
-
-	std::ostream&
-	operator<<(std::ostream& os, const ListensParser::Entry& entry)
-	{
-		os << "track name = '" << entry.trackName << "', artistName = '" << entry.artistName << "'";
-		if (entry.listenedAt.isValid())
-			os << ", listenedAt = " << entry.listenedAt.toString();
-		if (!entry.releaseName.empty())
-			os << ", releaseName = '" << entry.releaseName << "'";
-		if (entry.trackNumber)
-			os << ", trackNumber = " << *entry.trackNumber;
-		if (entry.recordingMBID)
-			os << ", recordingMBID = '" << entry.recordingMBID->getAsString() << "'";
-
-		return os;
+		return result;
 	}
 } // Scrobbling::ListenBrainz

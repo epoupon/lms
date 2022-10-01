@@ -143,7 +143,7 @@ namespace
 	}
 
 	Database::TrackId
-	tryGetMatchingTrack(Database::Session& session, const ListensParser::Entry& listen)
+	tryGetMatchingTrack(Database::Session& session, const Listen& listen)
 	{
 		using namespace Database;
 
@@ -216,13 +216,13 @@ namespace Scrobbling::ListenBrainz
 	}
 
 	void
-	ListensSynchronizer::enqueListenNow(const Listen& listen)
+	ListensSynchronizer::enqueListenNow(const Scrobbling::Listen& listen)
 	{
 		enqueListen(listen, {});
 	}
 
 	void
-	ListensSynchronizer::enqueListen(const Listen& listen, const Wt::WDateTime& timePoint)
+	ListensSynchronizer::enqueListen(const Scrobbling::Listen& listen, const Wt::WDateTime& timePoint)
 	{
 		Http::ClientPOSTRequestParameters request;
 		request.relativeUrl = "/1/submit-listens";
@@ -548,10 +548,10 @@ namespace Scrobbling::ListenBrainz
 		Database::Session& session {_db.getTLSSession()};
 
 		context.maxDateTime = {}; // invalidate to break in case no more listens are fetched
-		std::vector<ListensParser::Entry> parsedListens {ListensParser::parse(msgBody)};
-		context.fetchedListenCount += parsedListens.size();
+		ListensParser::Result result {ListensParser::parse(msgBody)};
+		context.fetchedListenCount += result.listenCount;
 
-		for (const ListensParser::Entry& parsedListen : parsedListens)
+		for (const Listen& parsedListen : result.listens)
 		{
 			// update oldest listen for the next query
 			if (!parsedListen.listenedAt.isValid())
