@@ -1,7 +1,9 @@
 
 add_library(lmsscrobbling SHARED
 	impl/internal/InternalScrobbler.cpp
+	impl/listenbrainz/FeedbacksParser.cpp
 	impl/listenbrainz/FeedbacksSynchronizer.cpp
+	impl/listenbrainz/FeedbackTypes.cpp
 	impl/listenbrainz/ListenBrainzScrobbler.cpp
 	impl/listenbrainz/ListenTypes.cpp
 	impl/listenbrainz/ListensParser.cpp

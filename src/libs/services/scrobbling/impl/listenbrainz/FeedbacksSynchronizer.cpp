@@ -30,11 +30,12 @@
 #include "services/database/StarredTrack.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
-#include "services/scrobbling/Exception.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/http/IClient.hpp"
 #include "utils/Service.hpp"
 
+#include "Exception.hpp"
+#include "FeedbacksParser.hpp"
 #include "Utils.hpp"
 
 using namespace Scrobbling::ListenBrainz;
@@ -42,24 +43,6 @@ using namespace Database;
 
 namespace
 {
-	class Exception : public Scrobbling::Exception
-	{
-		public:
-			using Scrobbling::Exception::Exception;
-	};
-
-	class ParseErrorException : public Exception
-	{
-		public:
-			using Exception::Exception;
-	};
-
-	class MBIDNotFoundException : public Exception
-	{
-		public:
-			MBIDNotFoundException() : Exception {"MBID not found"} {}
-	};
-
 	std::optional<std::size_t>
 	parseTotalFeedbackCount(std::string_view msgBody)
 	{
@@ -75,75 +58,6 @@ namespace
 			LOG(ERROR) << "Cannot parse listen count response: " << e.what();
 			return std::nullopt;
 		}
-	}
-
-	Feedback
-	parseFeedback(const Wt::Json::Object& feedbackObj)
-	{
-		try
-		{
-			const std::optional<UUID> recordingMBID {UUID::fromString(static_cast<std::string>(feedbackObj.get("recording_mbid")))};
-			if (!recordingMBID)
-				throw MBIDNotFoundException {};
-
-			return Feedback
-			{
-				Wt::WDateTime::fromTime_t(static_cast<int>(feedbackObj.get("created"))),
-				*recordingMBID,
-				static_cast<FeedbackType>(static_cast<int>(feedbackObj.get("score")))
-			};
-		}
-		catch (const Wt::WException& e)
-		{
-			LOG(DEBUG) << "Cannot parse feedback: " << e.what();
-			throw Exception {};
-		}
-	}
-
-	struct GetFeedbacksResult
-	{
-		std::size_t totalFeedbackCount{};
-		std::vector<Feedback> feedbacks;
-	};
-
-	GetFeedbacksResult
-	parseGetFeedbacks(std::string_view msgBody)
-	{
-		GetFeedbacksResult res;
-
-		try
-		{
-			Wt::Json::Object root;
-			Wt::Json::parse(std::string {msgBody}, root);
-
-			const Wt::Json::Array& feedbacks = root.get("feedback");
-
-			LOG(DEBUG) << "Got " << feedbacks.size() << " feedbacks";
-
-			if (feedbacks.empty())
-				return res;
-
-			res.totalFeedbackCount += feedbacks.size();
-
-			for (const Wt::Json::Value& value : feedbacks)
-			{
-				try
-				{
-					res.feedbacks.push_back(parseFeedback(value));
-				}
-				catch (const Exception &e)
-				{
-					LOG(DEBUG) << "Cannot parse feedback: " << e.what() << ", skipping";
-				}
-			}
-		}
-		catch (const Wt::WException& error)
-		{
-			LOG(ERROR) << "Cannot parse 'get-feedback' result: " << error.what();
-			throw ParseErrorException {error.what()};
-		}
-
-		return res;
 	}
 }
 
@@ -493,23 +407,16 @@ namespace Scrobbling::ListenBrainz
 				std::string msgBodyCopy {msgBody};
 				_strand.dispatch([this, msgBodyCopy, &context]
 				{
-					try
-					{
-						const std::size_t fetchedFeedbackCount {processGetFeedbacks(msgBodyCopy, context)};
-						if (fetchedFeedbackCount == 0 // no more thing available on server
-								|| context.fetchedFeedbackCount >= context.feedbackCount // we may miss something, but we will get it next time
-								|| context.fetchedFeedbackCount >= _maxSyncFeedbackCount)
-						{
-							onSyncEnded(context);
-						}
-						else
-						{
-							enqueGetFeedbacks(context);
-						}
-					}
-					catch (const Exception& e)
+					const std::size_t fetchedFeedbackCount {processGetFeedbacks(msgBodyCopy, context)};
+					if (fetchedFeedbackCount == 0 // no more thing available on server
+							|| context.fetchedFeedbackCount >= context.feedbackCount // we may miss something, but we will get it next time
+							|| context.fetchedFeedbackCount >= _maxSyncFeedbackCount)
 					{
 						onSyncEnded(context);
+					}
+					else
+					{
+						enqueGetFeedbacks(context);
 					}
 				});
 			};
@@ -524,17 +431,17 @@ namespace Scrobbling::ListenBrainz
 	std::size_t
 	FeedbacksSynchronizer::processGetFeedbacks(std::string_view msgBody, UserContext& context)
 	{
-		const GetFeedbacksResult parseResult {parseGetFeedbacks(msgBody)};
+		const FeedbacksParser::Result parseResult {FeedbacksParser::parse(msgBody)};
 
-		LOG(DEBUG) << "Parsed " << parseResult.totalFeedbackCount << " feedbacks, found " << parseResult.feedbacks.size() << " usable entries";
-		context.fetchedFeedbackCount += parseResult.totalFeedbackCount;
+		LOG(DEBUG) << "Parsed " << parseResult.feedbackCount << " feedbacks, found " << parseResult.feedbacks.size() << " usable entries";
+		context.fetchedFeedbackCount += parseResult.feedbackCount;
 
 		for (const Feedback& feedback : parseResult.feedbacks)
 		{
 			tryImportFeedback(feedback, context);
 		}
 
-		return parseResult.totalFeedbackCount;
+		return parseResult.feedbackCount;
 	}
 
 	void
@@ -550,11 +457,12 @@ namespace Scrobbling::ListenBrainz
 			const std::vector<Track::pointer> tracks {Track::findByRecordingMBID(session, feedback.recordingMBID)};
 			if (tracks.size() > 1)
 			{
-				LOG(DEBUG) << "Duplicate recording MBIDs found for '" << feedback.recordingMBID.getAsString() << "', using first entry found";
+				LOG(DEBUG) << "Too many matches for feedback '" << feedback << "': duplicate recording MBIDs found";
+				return;
 			}
 			else if (tracks.empty())
 			{
-				LOG(DEBUG) << "No track found for recording MBID '" << feedback.recordingMBID.getAsString() << "'";
+				LOG(DEBUG) << "Cannot match feedback '" << feedback << "': no track found for this recording MBID";
 				return;
 			}
 
@@ -571,6 +479,8 @@ namespace Scrobbling::ListenBrainz
 
 		if (needImport)
 		{
+			LOG(DEBUG) << "Importing feedback '" << feedback << "'";
+
 			auto transaction {session.createUniqueTransaction()};
 
 			const Track::pointer track {Track::find(session, trackId)};
@@ -583,11 +493,13 @@ namespace Scrobbling::ListenBrainz
 
 			StarredTrack::pointer starredTrack {session.create<StarredTrack>(track, user, Database::Scrobbler::ListenBrainz)};
 			starredTrack.modify()->setScrobblingState(ScrobblingState::Synchronized);
+			starredTrack.modify()->setDateTime(feedback.created);
 
 			context.importedFeedbackCount++;
 		}
 		else
 		{
+			LOG(DEBUG) << "No need to import feedback '" << feedback << "', already imported";
 			context.matchedFeedbackCount++;
 		}
 	}

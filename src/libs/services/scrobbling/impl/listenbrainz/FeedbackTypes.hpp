@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <ostream>
+#include <Wt/WDateTime.h>
 #include "utils/UUID.hpp"
 
 namespace Scrobbling::ListenBrainz
@@ -37,4 +39,7 @@ namespace Scrobbling::ListenBrainz
 		UUID			recordingMBID;
 		FeedbackType	score;
 	};
+
+	std::ostream& operator<<(std::ostream& os, const Feedback& feedback);
+
 } // Scrobbling::ListenBrainz

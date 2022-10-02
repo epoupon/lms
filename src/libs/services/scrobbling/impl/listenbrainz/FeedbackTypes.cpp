@@ -17,23 +17,14 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <string_view>
-
-#include "ListenTypes.hpp"
+#include "FeedbackTypes.hpp"
 
 namespace Scrobbling::ListenBrainz
 {
-	class ListensParser
+	std::ostream&
+	operator<<(std::ostream& os, const Feedback& feedback)
 	{
-		public:
-			struct Result
-			{
-				std::size_t listenCount {};		// may be > than listens.size()
-				std::vector<Listen> listens;	// successfully parsed listens
-			};
-
-			static Result parse(std::string_view msgBody);
-	};
+		os << "created = '" << feedback.created.toString() << "', recording MBID = '" << feedback.recordingMBID.getAsString() << "', score = " << static_cast<int>(feedback.score);
+		return os;
+	}
 } // Scrobbling::ListenBrainz
