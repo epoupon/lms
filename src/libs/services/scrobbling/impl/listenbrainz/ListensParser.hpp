@@ -28,7 +28,7 @@ namespace Scrobbling::ListenBrainz
 		public:
 			struct Result
 			{
-				std::size_t listenCount;		// may be > than listens.size()
+				std::size_t listenCount {};		// may be > than listens.size()
 				std::vector<Listen> listens;	// successfully parsed listens
 			};
 
