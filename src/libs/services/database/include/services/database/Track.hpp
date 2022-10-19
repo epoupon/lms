@@ -21,10 +21,12 @@
 
 #include <chrono>
 #include <filesystem>
+#include <iostream>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include <Wt/WDateTime.h>
@@ -163,8 +165,8 @@ class Track : public Object<Track, TrackId>
 		std::optional<float>		getReleaseReplayGain() const	{ return _releaseReplayGain; }
 
 		// no artistLinkTypes means get all
-		std::vector<ObjectPtr<Artist>>	getArtists(EnumSet<TrackArtistLinkType> artistLinkTypes) const;
-		std::vector<ArtistId>				getArtistIds(EnumSet<TrackArtistLinkType> artistLinkTypes) const;
+		std::vector<ObjectPtr<Artist>>	getArtists(EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
+		std::vector<ArtistId>				getArtistIds(EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
 		std::vector<ObjectPtr<TrackArtistLink>>	getArtistLinks() const;
 		ObjectPtr<Release>				getRelease() const		{ return _release; }
 		std::vector<ObjectPtr<Cluster>>	getClusters() const;
@@ -236,6 +238,16 @@ class Track : public Object<Track, TrackId>
 		Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks;
 		Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> 	_clusters;
 };
+
+namespace Debug
+{
+	struct TrackInfo
+	{
+		Session& session;
+		TrackId trackId;
+	};
+	std::ostream& operator<<(std::ostream& os, const TrackInfo& trackInfo);
+}
 
 } // namespace database
 

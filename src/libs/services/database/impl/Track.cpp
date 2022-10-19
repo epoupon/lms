@@ -520,5 +520,33 @@ Track::getClusterGroups(const std::vector<ClusterType::pointer>& clusterTypes, s
 	return res;
 }
 
+namespace Debug
+{
+	std::ostream&
+	operator<<(std::ostream& os, const TrackInfo& trackInfo)
+	{
+		auto transaction {trackInfo.session.createSharedTransaction()};
+
+		const Track::pointer track {Track::find(trackInfo.session, trackInfo.trackId)};
+		if (track)
+		{
+			os << track->getName();
+
+			if (const Release::pointer release {track->getRelease()})
+				os << " [" << release->getName() << "]";
+			for (auto artist : track->getArtists({TrackArtistLinkType::Artist}))
+				os << " - " << artist->getName();
+			for (auto cluster : track->getClusters())
+				os << " {" + cluster->getType()->getName() << "-" << cluster->getName() << "}";
+		}
+		else
+		{
+			os << "*unknown*";
+		}
+
+		return os;
+	}
+}
+
 } // namespace Database
 

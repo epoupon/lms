@@ -59,9 +59,9 @@ class LmsApplication : public Wt::WApplication
 		static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationManager& appManager);
 		static LmsApplication* instance();
 
-
 		// Session application data
 		std::shared_ptr<CoverResource> getCoverResource() { return _coverResource; }
+		Database::Db& getDb();
 		Database::Session& getDbSession(); // always thread safe
 
 		Database::ObjectPtr<Database::User>	getUser();

@@ -4,6 +4,10 @@ add_library(lmsrecommendation SHARED
 	impl/features/FeaturesEngineCache.cpp
 	impl/features/FeaturesEngine.cpp
 	impl/features/FeaturesDefs.cpp
+	impl/playlist-constraints/ConsecutiveArtists.cpp
+	impl/playlist-constraints/ConsecutiveReleases.cpp
+	impl/playlist-constraints/DuplicateTracks.cpp
+	impl/PlaylistGeneratorService.cpp
 	impl/RecommendationService.cpp
 	)
 

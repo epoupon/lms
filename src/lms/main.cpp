@@ -32,6 +32,7 @@
 #include "services/cover/ICoverService.hpp"
 #include "services/database/Db.hpp"
 #include "services/database/Session.hpp"
+#include "services/recommendation/IPlaylistGeneratorService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scanner/IScannerService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
@@ -258,6 +259,7 @@ int main(int argc, char* argv[])
 		Image::init(argv[0]);
 		Service<Cover::ICoverService> coverService {Cover::createCoverService(database, argv[0], server.appRoot() + "/images/unknown-cover.jpg")};
 		Service<Recommendation::IRecommendationService> recommendationService {Recommendation::createRecommendationService(database)};
+		Service<Recommendation::IPlaylistGeneratorService> playlistGeneratorService {Recommendation::createPlaylistGeneratorService(database, *recommendationService.get())};
 		Service<Scanner::IScannerService> scannerService {Scanner::createScannerService(database, *recommendationService)};
 
 		scannerService->getEvents().scanComplete.connect([&]
