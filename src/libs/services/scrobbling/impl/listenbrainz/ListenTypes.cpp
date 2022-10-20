@@ -17,29 +17,23 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <ostream>
-#include <Wt/WDateTime.h>
-#include "utils/UUID.hpp"
+#include "ListenTypes.hpp"
 
 namespace Scrobbling::ListenBrainz
 {
-	// See https://listenbrainz.readthedocs.io/en/production/dev/feedback-json/#feedback-json-doc
-	enum class FeedbackType
+	std::ostream&
+	operator<<(std::ostream& os, const Listen& listen)
 	{
-		Love = 1,
-		Hate = -1,
-		Erase = 0,
-	};
+		os << "track name = '" << listen.trackName << "', artistName = '" << listen.artistName << "'";
+		if (listen.listenedAt.isValid())
+			os << ", listenedAt = " << listen.listenedAt.toString();
+		if (!listen.releaseName.empty())
+			os << ", releaseName = '" << listen.releaseName << "'";
+		if (listen.trackNumber)
+			os << ", trackNumber = " << *listen.trackNumber;
+		if (listen.recordingMBID)
+			os << ", recordingMBID = '" << listen.recordingMBID->getAsString() << "'";
 
-	struct Feedback
-	{
-		Wt::WDateTime	created;
-		UUID			recordingMBID;
-		FeedbackType	score;
-	};
-
-	std::ostream& operator<<(std::ostream& os, const Feedback& feedback);
-
+		return os;
+	}
 } // Scrobbling::ListenBrainz

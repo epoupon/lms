@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,18 +17,18 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <gtest/gtest.h>
+
+#include "utils/Logger.hpp"
+#include "utils/Service.hpp"
 #include "utils/StreamLogger.hpp"
 
-StreamLogger::StreamLogger(std::ostream& os, EnumSet<Severity> severities)
-: _os {os}
-, _severities {severities}
+int main(int argc, char **argv)
 {
-}
+	// log to stdout
+	Service<Logger> logger {std::make_unique<StreamLogger>(std::cout, EnumSet<Severity> {Severity::FATAL, Severity::ERROR})};
 
-void
-StreamLogger::processLog(const Log& log)
-{
-	if (_severities.contains(log.getSeverity()))
-		_os << "[" << getSeverityName(log.getSeverity()) << "] [" << getModuleName(log.getModule()) << "] " << log.getMessage() << std::endl;
+	::testing::InitGoogleTest(&argc, argv);
+	return RUN_ALL_TESTS();
 }
 

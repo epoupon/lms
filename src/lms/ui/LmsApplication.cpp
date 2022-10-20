@@ -133,6 +133,12 @@ LmsApplication::instance()
 	return reinterpret_cast<LmsApplication*>(Wt::WApplication::instance());
 }
 
+Database::Db&
+LmsApplication::getDb()
+{
+	return _db;
+}
+
 Database::Session&
 LmsApplication::getDbSession()
 {

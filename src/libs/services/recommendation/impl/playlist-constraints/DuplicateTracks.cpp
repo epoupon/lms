@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2022 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,18 +17,17 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "utils/StreamLogger.hpp"
+#include "DuplicateTracks.hpp"
 
-StreamLogger::StreamLogger(std::ostream& os, EnumSet<Severity> severities)
-: _os {os}
-, _severities {severities}
-{
-}
+#include <algorithm>
 
-void
-StreamLogger::processLog(const Log& log)
+namespace Recommendation::PlaylistGeneratorConstraint
 {
-	if (_severities.contains(log.getSeverity()))
-		_os << "[" << getSeverityName(log.getSeverity()) << "] [" << getModuleName(log.getModule()) << "] " << log.getMessage() << std::endl;
-}
+	float
+	DuplicateTracks::computeScore(const std::vector<Database::TrackId>& trackIds, std::size_t trackIndex)
+	{
+		const auto count {std::count(std::cbegin(trackIds), std::cend(trackIds), trackIds[trackIndex])};
+		return count == 1 ? 0 : 1000;
+	}
+} // namespace Recommendation
 

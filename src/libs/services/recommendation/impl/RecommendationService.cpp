@@ -59,7 +59,7 @@ namespace Recommendation
 	}
 
 	TrackContainer
-	RecommendationService::findSimilarTracksFromTrackList(Database::TrackListId trackListId, std::size_t maxCount) const
+	RecommendationService::findSimilarTracks(Database::TrackListId trackListId, std::size_t maxCount) const
 	{
 		TrackContainer res;
 

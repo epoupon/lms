@@ -17,18 +17,28 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "utils/StreamLogger.hpp"
+#pragma once
 
-StreamLogger::StreamLogger(std::ostream& os, EnumSet<Severity> severities)
-: _os {os}
-, _severities {severities}
+#include <memory>
+#include "services/database/TrackListId.hpp"
+#include "services/database/Types.hpp"
+#include "services/recommendation/Types.hpp"
+
+namespace Database
 {
+	class Db;
 }
 
-void
-StreamLogger::processLog(const Log& log)
+namespace Recommendation
 {
-	if (_severities.contains(log.getSeverity()))
-		_os << "[" << getSeverityName(log.getSeverity()) << "] [" << getModuleName(log.getModule()) << "] " << log.getMessage() << std::endl;
-}
+	class IRecommendationService;
+	class IPlaylistGeneratorService
+	{
+		public:
+			// extend an existing playlist with similar tracks (but use playlist contraints)
+			virtual TrackContainer extendPlaylist(Database::TrackListId tracklistId, std::size_t maxCount) const = 0;
+	};
+
+	std::unique_ptr<IPlaylistGeneratorService> createPlaylistGeneratorService(Database::Db& db, IRecommendationService& recommandationService);
+} // ns Recommendation
 

@@ -20,6 +20,9 @@
 #pragma once
 
 #include <cassert>
+#include <cstdint>
+#include <initializer_list>
+#include <limits>
 #include <type_traits>
 
 template <typename T, typename underlying_type = std::uint32_t>
@@ -47,13 +50,13 @@ class EnumSet
 
 		constexpr void insert(T value)
 		{
-			assert(static_cast<size_t>(value) < sizeof(_bitfield) * 8);
+			assert(static_cast<std::size_t>(value) < sizeof(_bitfield) * 8);
 			_bitfield |= (underlying_type{ 1 } << static_cast<underlying_type>(value));
 		}
 
 		constexpr void erase(T value)
 		{
-			assert(static_cast<size_t>(value) < sizeof(_bitfield) * 8);
+			assert(static_cast<std::size_t>(value) < sizeof(_bitfield) * 8);
 			_bitfield &= ~(underlying_type{ 1 } << static_cast<underlying_type>(value));
 		}
 
@@ -64,7 +67,7 @@ class EnumSet
 
 		constexpr bool contains(T value) const
 		{
-			assert(static_cast<size_t>(value) < sizeof(_bitfield) * 8);
+			assert(static_cast<std::size_t>(value) < sizeof(_bitfield) * 8);
 			return _bitfield & (underlying_type{ 1 } << static_cast<underlying_type>(value));
 		}
 

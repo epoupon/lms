@@ -65,6 +65,7 @@ TEST_F(DatabaseFixture, Artist_singleTrack)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
+		track.get().modify()->setName("MyTrackName");
 		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
 	}
 
@@ -88,6 +89,23 @@ TEST_F(DatabaseFixture, Artist_singleTrack)
 		ASSERT_EQ(track->getArtists({TrackArtistLinkType::Artist}).size(), 1);
 		EXPECT_TRUE(track->getArtists({TrackArtistLinkType::ReleaseArtist}).empty());
 		EXPECT_EQ(track->getArtists({}).size(), 1);
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+		auto tracks {Track::find(session, Track::FindParameters{}.setName("MyTrackName").setArtistName("MyArtist"))};
+		ASSERT_EQ(tracks.results.size(), 1);
+		EXPECT_EQ(tracks.results.front(), track.getId());
+	}
+	{
+		auto transaction {session.createUniqueTransaction()};
+		auto tracks {Track::find(session, Track::FindParameters{}.setName("MyTrackName").setArtistName("MyArtistFoo"))};
+		EXPECT_EQ(tracks.results.size(), 0);
+	}
+	{
+		auto transaction {session.createUniqueTransaction()};
+		auto tracks {Track::find(session, Track::FindParameters{}.setName("MyTrackNameFoo").setArtistName("MyArtist"))};
+		EXPECT_EQ(tracks.results.size(), 0);
 	}
 }
 

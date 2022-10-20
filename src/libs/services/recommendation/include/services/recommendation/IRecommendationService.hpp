@@ -40,13 +40,12 @@ namespace Recommendation
 			virtual void load(bool forceReload, const ProgressCallback& progressCallback = {}) = 0;
 			virtual void cancelLoad() = 0;  // wait for cancel done
 
-			virtual TrackContainer findSimilarTracksFromTrackList(Database::TrackListId tracklistId, std::size_t maxCount) const = 0;
+			virtual TrackContainer findSimilarTracks(Database::TrackListId tracklistId, std::size_t maxCount) const = 0;
 			virtual TrackContainer findSimilarTracks(const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) const = 0;
 			virtual ReleaseContainer getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const = 0;
 			virtual ArtistContainer getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const = 0;
 	};
 
 	std::unique_ptr<IRecommendationService> createRecommendationService(Database::Db& db);
-
 } // ns Recommendation
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2022 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,18 +17,26 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "utils/StreamLogger.hpp"
+#pragma once
 
-StreamLogger::StreamLogger(std::ostream& os, EnumSet<Severity> severities)
-: _os {os}
-, _severities {severities}
+#include <string>
+#include <ostream>
+#include <Wt/WDateTime.h>
+
+#include "utils/UUID.hpp"
+
+namespace Scrobbling::ListenBrainz
 {
-}
+	struct Listen
+	{
+		std::string trackName;
+		std::string releaseName;
+		std::string artistName;
+		std::optional<UUID> recordingMBID;
+		std::optional<UUID> releaseMBID;
+		std::optional<unsigned> trackNumber;
+		Wt::WDateTime listenedAt;
+	};
 
-void
-StreamLogger::processLog(const Log& log)
-{
-	if (_severities.contains(log.getSeverity()))
-		_os << "[" << getSeverityName(log.getSeverity()) << "] [" << getModuleName(log.getModule()) << "] " << log.getMessage() << std::endl;
-}
-
+	std::ostream& operator<<(std::ostream& os, const Listen& listen);
+} // Scrobbling::ListenBrainz

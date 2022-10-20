@@ -32,10 +32,6 @@
 
 #include "common/Template.hpp"
 
-namespace Similarity
-{
-	class Finder;
-}
 
 namespace Database
 {
@@ -73,14 +69,17 @@ class PlayQueue : public Template
 		constexpr std::size_t getCapacity() const { return _capacity; }
 
 	private:
+		void initTrackLists();
+
 		void notifyAddedTracks(std::size_t nbAddedTracks) const;
-		Database::ObjectPtr<Database::TrackList> getTrackList() const;
+		Database::ObjectPtr<Database::TrackList> getQueue() const;
 		bool isFull() const;
 
 		void clearTracks();
 		std::size_t enqueueTracks(const std::vector<Database::TrackId>& trackIds);
 		void addSome();
 		void addEntry(const Database::ObjectPtr<Database::TrackListEntry>& entry);
+		void enqueueRadioTracksIfNeeded();
 		void enqueueRadioTracks();
 		void updateInfo();
 		void updateCurrentTrack(bool selected);
@@ -90,8 +89,6 @@ class PlayQueue : public Template
 		void loadTrack(std::size_t pos, bool play);
 		void stop();
 
-		void addRadioTrackFromSimilarity(std::shared_ptr<Similarity::Finder> similarityFinder);
-		void addRadioTrackFromClusters();
 		std::optional<float> getReplayGain(std::size_t pos, const Database::ObjectPtr<Database::Track>& track) const;
 		void saveAsTrackList();
 
@@ -102,7 +99,7 @@ class PlayQueue : public Template
 		static inline constexpr std::size_t _batchSize {12};
 
 		bool _mediaPlayerSettingsLoaded {};
-		Database::TrackListId _tracklistId {};
+		Database::TrackListId _queueId {};
 		InfiniteScrollingContainer* _entriesContainer {};
 		Wt::WText* _nbTracks {};
 		Wt::WText* _duration {};
