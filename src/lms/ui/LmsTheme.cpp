@@ -16,9 +16,6 @@ namespace UserInterface
 	LmsTheme::init(Wt::WApplication* app) const
 	{
 		app->require("js/bootstrap.bundle.min.js");
-		Wt::WString v = app->metaHeader(Wt::MetaHeaderType::Meta, "viewport");
-		if (v.empty())
-			app->addMetaHeader("viewport", "width=device-width, initial-scale=1, user-scalable=no");
 	}
 
 	std::string
