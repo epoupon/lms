@@ -207,9 +207,9 @@ class Track : public Object<Track, TrackId>
 		Track(const std::filesystem::path& p);
 		static pointer create(Session& session, const std::filesystem::path& p);
 
-		static const std::size_t _maxNameLength = 128;
-		static const std::size_t _maxCopyrightLength = 128;
-		static const std::size_t _maxCopyrightURLLength = 128;
+		static constexpr std::size_t _maxNameLength {128};
+		static constexpr std::size_t _maxCopyrightLength {128};
+		static constexpr std::size_t _maxCopyrightURLLength {128};
 
 		int						_scanVersion {};
 		int						_trackNumber {};

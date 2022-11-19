@@ -112,7 +112,7 @@ class Artist : public Object<Artist, ArtistId>
 			}
 
 	private:
-		static const std::size_t _maxNameLength = 128;
+		static constexpr std::size_t _maxNameLength {128};
 
 		friend class Session;
 		// Create
