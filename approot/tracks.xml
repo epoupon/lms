@@ -77,7 +77,7 @@
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					<div class="container-fluid d-grid gap-1">
+					<div class="container-fluid d-grid gap-2">
 						${<if-has-clusters>}
 						<div class="row align-items-center">
 							<div class="col-4">
@@ -88,7 +88,7 @@
 							</div>
 						</div>
 						${</if-has-clusters>}
-						${artist-table class="d-grid gap-1"}
+						${artist-table class="d-grid gap-2"}
 						<div class="row align-items-center">
 							<div class="col-4">
 								${tr:Lms.Explore.duration}
