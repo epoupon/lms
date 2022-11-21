@@ -22,10 +22,17 @@
 #include <iomanip>
 #include <sstream>
 
+#include <Wt/WAnchor.h>
 #include <Wt/WText.h>
 
+#include "services/database/Artist.hpp"
 #include "services/database/Cluster.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/ScanSettings.hpp"
 #include "services/database/Session.hpp"
+#include "services/database/Track.hpp"
+#include "services/database/TrackList.hpp"
+#include "explore/Filters.hpp"
 #include "LmsApplication.hpp"
 
 namespace UserInterface::Utils
@@ -111,5 +118,124 @@ namespace UserInterface::Utils
 		res->setInline(true);
 
 		return res;
+	}
+
+	std::unique_ptr<Wt::WContainerWidget>
+	createArtistContainer(const std::vector<Database::ArtistId>& artistIds)
+	{
+		using namespace Database;
+
+		std::unique_ptr<Wt::WContainerWidget> artistContainer {std::make_unique<Wt::WContainerWidget>()};
+
+		bool firstArtist {true};
+
+		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+		for (const ArtistId artistId : artistIds)
+		{
+			const Artist::pointer artist {Artist::find(LmsApp->getDbSession(), artistId)};
+			if (!artist)
+				continue;
+
+			if (!firstArtist)
+				artistContainer->addNew<Wt::WText>(" · ");
+
+			auto anchor {createArtistAnchor(artist)};
+			anchor->addStyleClass("link-success text-decoration-none"); // hack
+			artistContainer->addWidget(std::move(anchor));
+			firstArtist = false;
+		}
+
+		return artistContainer;
+	}
+
+	Wt::WLink
+	createArtistLink(Database::Artist::pointer artist)
+	{
+		if (const auto mbid {artist->getMBID()})
+			return Wt::WLink {Wt::LinkType::InternalPath, "/artist/mbid/" + std::string {mbid->getAsString()}};
+		else
+			return Wt::WLink {Wt::LinkType::InternalPath, "/artist/" + artist->getId().toString()};
+	}
+
+	std::unique_ptr<Wt::WAnchor>
+	createArtistAnchor(Database::Artist::pointer artist, bool setText)
+	{
+		auto res = std::make_unique<Wt::WAnchor>(createArtistLink(artist));
+
+		if (setText)
+		{
+			res->setTextFormat(Wt::TextFormat::Plain);
+			res->setText(Wt::WString::fromUTF8(artist->getName()));
+			res->setToolTip(Wt::WString::fromUTF8(artist->getName()), Wt::TextFormat::Plain);
+		}
+
+		return res;
+	}
+
+	Wt::WLink
+	createReleaseLink(Database::Release::pointer release)
+	{
+		if (const auto mbid {release->getMBID()})
+			return Wt::WLink {Wt::LinkType::InternalPath, "/release/mbid/" + std::string {mbid->getAsString()}};
+		else
+			return Wt::WLink {Wt::LinkType::InternalPath, "/release/" + release->getId().toString()};
+	}
+
+	std::unique_ptr<Wt::WAnchor>
+	createReleaseAnchor(Database::Release::pointer release, bool setText)
+	{
+		auto res = std::make_unique<Wt::WAnchor>(createReleaseLink(release));
+
+		if (setText)
+		{
+			res->setTextFormat(Wt::TextFormat::Plain);
+			res->setText(Wt::WString::fromUTF8(release->getName()));
+			res->setToolTip(Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);
+		}
+
+		return res;
+	}
+
+	std::unique_ptr<Wt::WAnchor>
+	createTrackListAnchor(Database::TrackList::pointer trackList, bool setText)
+	{
+		Wt::WLink link {Wt::LinkType::InternalPath, "/tracklist/" + trackList->getId().toString()};
+		auto res {std::make_unique<Wt::WAnchor>(link)};
+
+		if (setText)
+		{
+			const Wt::WString name {Wt::WString::fromUTF8(std::string {trackList->getName()})};
+			res->setTextFormat(Wt::TextFormat::Plain);
+			res->setText(name);
+			res->setToolTip(name, Wt::TextFormat::Plain);
+		}
+
+		return res;
+	}
+
+	std::unique_ptr<Wt::WContainerWidget>
+	createClustersForTrack(Database::Track::pointer track, Filters& filters)
+	{
+		using namespace Database;
+
+		std::unique_ptr<Wt::WContainerWidget> clusterContainer {std::make_unique<Wt::WContainerWidget>()};
+
+		const auto clusterTypes {ScanSettings::get(LmsApp->getDbSession())->getClusterTypes()};
+		const auto clusterGroups {track->getClusterGroups(clusterTypes, 3)};
+
+		for (const auto& clusters : clusterGroups)
+		{
+			for (const Cluster::pointer& cluster : clusters)
+			{
+				const ClusterId clusterId {cluster->getId()};
+				Wt::WInteractWidget* entry {clusterContainer->addWidget(Utils::createCluster(clusterId))};
+				entry->clicked().connect([&filters, clusterId]
+				{
+					filters.add(clusterId);
+				});
+			}
+		}
+
+		return clusterContainer;
 	}
 }

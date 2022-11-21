@@ -23,6 +23,7 @@ extern "C"
 {
 #define __STDC_CONSTANT_MACROS
 #include <libavcodec/avcodec.h>
+#include <libavcodec/codec_par.h>
 #include <libavformat/avformat.h>
 #include <libavutil/error.h>
 }
@@ -38,7 +39,7 @@ static std::string averror_to_string(int error)
 {
 	std::array<char, 128> buf = {0};
 
-	if (av_strerror(error, buf.data(), buf.size()) == 0)
+	if (::av_strerror(error, buf.data(), buf.size()) == 0)
 		return &buf[0];
 	else
 		return "Unknown error";
@@ -104,7 +105,7 @@ getMetaDataFromDictionnary(AVDictionary* dictionnary, AudioFile::MetadataMap& re
 		return;
 
 	AVDictionaryEntry *tag = NULL;
-	while ((tag = av_dict_get(dictionnary, "", tag, AV_DICT_IGNORE_SUFFIX)))
+	while ((tag = ::av_dict_get(dictionnary, "", tag, AV_DICT_IGNORE_SUFFIX)))
 	{
 		res[StringUtils::stringToUpper(tag->key)] = tag->value;
 	}
@@ -140,31 +141,18 @@ AudioFile::getStreamInfo() const
 
 	for (std::size_t i {}; i < _context->nb_streams; ++i)
 	{
-		AVStream* avstream { _context->streams[i]};
-
-		// Skip attached pics
-		if (avstream->disposition & AV_DISPOSITION_ATTACHED_PIC)
-			continue;
-
-		if (!avstream->codecpar)
-		{
-			LMS_LOG(AV, ERROR) << "Skipping stream " << i << " since no codecpar is set";
-			continue;
-		}
-
-		if (avstream->codecpar->codec_type != AVMEDIA_TYPE_AUDIO)
-			continue;
-
-		res.push_back( {i, static_cast<std::size_t>(avstream->codecpar->bit_rate)} );
+		std::optional<StreamInfo> streamInfo {getStreamInfo(i)};
+		if (streamInfo)
+			res.emplace_back(std::move(*streamInfo));
 	}
 
 	return res;
 }
 
 std::optional<std::size_t>
-AudioFile::getBestStream() const
+AudioFile::getBestStreamIndex() const
 {
-	int res = av_find_best_stream(_context,
+	int res = ::av_find_best_stream(_context,
 		AVMEDIA_TYPE_AUDIO,
 		-1,	// Auto
 		-1,	// Auto
@@ -173,6 +161,18 @@ AudioFile::getBestStream() const
 
 	if (res < 0)
 		return std::nullopt;
+
+	return res;
+}
+
+std::optional<StreamInfo>
+AudioFile::getBestStreamInfo() const
+{
+	std::optional<StreamInfo> res;
+
+	std::optional<std::size_t> bestStreamIndex {getBestStreamIndex()};
+	if (bestStreamIndex)
+		res = getStreamInfo(*bestStreamIndex);
 
 	return res;
 }
@@ -238,10 +238,39 @@ AudioFile::visitAttachedPictures(std::function<void(const Picture&)> func) const
 	}
 }
 
-std::optional<AudioFileFormat>
-guessMediaFileFormat(const std::filesystem::path& file)
+std::optional<StreamInfo>
+AudioFile::getStreamInfo(std::size_t streamIndex) const
 {
-	const AVOutputFormat* format {av_guess_format(NULL,file.string().c_str(),NULL)};
+	std::optional<StreamInfo> res;
+
+	AVStream* avstream { _context->streams[streamIndex]};
+	assert(avstream);
+
+	if (avstream->disposition & AV_DISPOSITION_ATTACHED_PIC)
+		return res;
+
+	if (!avstream->codecpar)
+	{
+		LMS_LOG(AV, ERROR) << "Skipping stream " << streamIndex << " since no codecpar is set";
+		return res;
+	}
+
+	if (avstream->codecpar->codec_type != AVMEDIA_TYPE_AUDIO)
+		return res;
+
+	res.emplace();
+	res->index = streamIndex;
+	res->bitrate = static_cast<std::size_t>(avstream->codecpar->bit_rate);
+	res->codec = ::avcodec_get_name(avstream->codecpar->codec_id);
+	assert(!res->codec.empty());
+
+	return res;
+}
+
+std::optional<AudioFileFormat>
+guessAudioFileFormat(const std::filesystem::path& file)
+{
+	const AVOutputFormat* format {::av_guess_format(NULL, file.string().c_str(), NULL)};
 	if (!format || !format->name)
 		return {};
 

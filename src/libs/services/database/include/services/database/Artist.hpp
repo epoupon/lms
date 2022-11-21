@@ -33,6 +33,7 @@
 #include "services/database/ReleaseId.hpp"
 #include "services/database/Types.hpp"
 #include "services/database/UserId.hpp"
+#include "services/database/TrackId.hpp"
 #include "utils/EnumSet.hpp"
 #include "utils/UUID.hpp"
 
@@ -61,6 +62,7 @@ class Artist : public Object<Artist, ArtistId>
 			Wt::WDateTime						writtenAfter;
 			UserId								starringUser;	// only artists starred by this user
 			std::optional<Scrobbler>			scrobbler;		// and for this scrobbler
+			TrackId								track;		// artists involved in this track
 
 			FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
 			FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
@@ -69,6 +71,7 @@ class Artist : public Object<Artist, ArtistId>
 			FindParameters& setRange(Range _range) {range = _range; return *this; }
 			FindParameters& setWrittenAfter(const Wt::WDateTime& _after) { writtenAfter = _after; return *this; }
 			FindParameters& setStarringUser(UserId _user, Scrobbler _scrobbler) { starringUser = _user; scrobbler = _scrobbler; return *this; }
+			FindParameters& setTrack(TrackId _track) { track = _track; return *this; }
 		};
 
 		Artist() = default;

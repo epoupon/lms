@@ -37,6 +37,7 @@ namespace UserInterface {
 
 Tracks::Tracks(Filters& filters, PlayQueueController& playQueueController)
 : Template {Wt::WString::tr("Lms.Explore.Tracks.template")}
+, _filters {filters}
 , _playQueueController {playQueueController}
 , _trackCollector {filters, _defaultMode, _maxCount}
 {
@@ -124,7 +125,7 @@ Tracks::addSome()
 	for (const TrackId trackId : trackIds.results)
 	{
 		if (const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)})
-			_container->add(TrackListHelpers::createEntry(track, _playQueueController));
+			_container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
 	}
 
 	_container->setHasMore(trackIds.moreResults);

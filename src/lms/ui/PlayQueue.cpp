@@ -500,9 +500,9 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 	if (release)
 	{
 		entry->setCondition("if-has-release", true);
-		entry->bindWidget("release", LmsApplication::createReleaseAnchor(release));
+		entry->bindWidget("release", Utils::createReleaseAnchor(release));
 		{
-			Wt::WAnchor* anchor {entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false))};
+			Wt::WAnchor* anchor {entry->bindWidget("cover", Utils::createReleaseAnchor(release, false))};
 			auto cover {Utils::createCover(release->getId(), CoverResource::Size::Small)};
 			cover->addStyleClass("Lms-cover-track Lms-cover-anchor"); // HACK
 			anchor->setImage(std::move(cover));

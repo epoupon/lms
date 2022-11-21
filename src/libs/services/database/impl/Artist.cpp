@@ -94,7 +94,10 @@ createQuery(Session& session, const Artist::FindParameters& params)
 	session.checkSharedLocked();
 
 	auto query {session.getDboSession().query<ArtistId>("SELECT DISTINCT a.id FROM artist a")};
-	if (params.sortMethod == ArtistSortMethod::LastWritten || params.writtenAfter.isValid() || params.linkType)
+	if (params.sortMethod == ArtistSortMethod::LastWritten
+			|| params.writtenAfter.isValid()
+			|| params.linkType
+			|| params.track.isValid())
 	{
 		query.join("track t ON t.id = t_a_l.track_id");
 		query.join("track_artist_link t_a_l ON t_a_l.artist_id = a.id");
@@ -155,6 +158,11 @@ createQuery(Session& session, const Artist::FindParameters& params)
 		oss << " GROUP BY t.id,a.id HAVING COUNT(DISTINCT c.id) = " << params.clusters.size() << ")";
 
 		query.where(oss.str());
+	}
+
+	if (params.track.isValid())
+	{
+		query.where("t.id = ?").bind(params.track);
 	}
 
 	switch (params.sortMethod)

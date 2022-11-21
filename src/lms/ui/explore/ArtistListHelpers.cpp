@@ -21,7 +21,7 @@
 #include <Wt/WAnchor.h>
 
 #include "services/database/Artist.hpp"
-#include "LmsApplication.hpp"
+#include "Utils.hpp"
 
 namespace UserInterface::ArtistListHelpers
 {
@@ -29,7 +29,7 @@ namespace UserInterface::ArtistListHelpers
 	createEntry(const Database::ObjectPtr<Database::Artist>& artist)
 	{
 		auto res {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artists.template.entry"))};
-		res->bindWidget("name", LmsApplication::createArtistAnchor(artist));
+		res->bindWidget("name", Utils::createArtistAnchor(artist));
 
 		return res;
 	}

@@ -23,6 +23,7 @@
 
 #include <Wt/WWidget.h>
 #include "services/database/Object.hpp"
+#include "services/database/TrackId.hpp"
 
 namespace Database
 {
@@ -32,10 +33,12 @@ namespace Database
 namespace UserInterface
 {
 	class PlayQueueController;
+	class Filters;
 }
 
 namespace UserInterface::TrackListHelpers
 {
-	std::unique_ptr<Wt::WWidget> createEntry(const Database::ObjectPtr<Database::Track>& track, PlayQueueController& playQueueController);
+	void showTrackInfoModal(Database::TrackId trackId, Filters& filters);
+	std::unique_ptr<Wt::WWidget> createEntry(const Database::ObjectPtr<Database::Track>& track, PlayQueueController& playQueueController, Filters& filters);
 } // namespace UserInterface
 

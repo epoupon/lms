@@ -37,6 +37,7 @@
 #include "explore/Filters.hpp"
 #include "explore/PlayQueueController.hpp"
 #include "explore/ReleaseListHelpers.hpp"
+#include "explore/TrackListHelpers.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
 #include "MediaPlayer.hpp"
@@ -270,7 +271,7 @@ Release::refreshView()
 			{
 				if (!firstArtist)
 					artistsContainer->addNew<Wt::WText>(" · ");
-				auto anchor {LmsApplication::createArtistAnchor(artist)};
+				auto anchor {Utils::createArtistAnchor(artist)};
 				anchor->addStyleClass("link-success text-decoration-none"); // hack
 				artistsContainer->addWidget(std::move(anchor));
 				firstArtist = false;
@@ -319,6 +320,9 @@ Release::refreshView()
 
 			entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
 				->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
+
+			entry->bindNew<Wt::WPushButton>("track-info", Wt::WString::tr("Lms.Explore.track-info"))
+				->clicked().connect([=] { TrackListHelpers::showTrackInfoModal(trackId, _filters); });
 		}
 
 		entry->bindString("duration", Utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
@@ -361,7 +365,7 @@ Release::refreshReleaseArtists(const Database::Release::pointer& release)
 		for (const auto& artist : artists)
 		{
 			Wt::WTemplate* artistTemplate {artistsContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry-release-artist"))};
-			artistTemplate->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
+			artistTemplate->bindWidget("artist", Utils::createArtistAnchor(artist));
 		}
 	}
 }

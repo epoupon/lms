@@ -46,6 +46,7 @@ namespace UserInterface
 			static constexpr std::size_t _batchSize {6};
 			static constexpr std::size_t _maxCount {8000};
 
+			Filters&					_filters;
 			PlayQueueController&		_playQueueController;
 			Wt::WWidget*				_currentActiveItem {};
 			InfiniteScrollingContainer* _container {};

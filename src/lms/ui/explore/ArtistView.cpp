@@ -335,7 +335,7 @@ Artist::addSomeNonReleaseTracks()
 		}
 
 		const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)};
-		_trackContainer->add(TrackListHelpers::createEntry(track, _playQueueController));
+		_trackContainer->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
 
 		areTracksAdded = true;
 	}

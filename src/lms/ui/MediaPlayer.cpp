@@ -42,6 +42,7 @@
 #include "utils/Utils.hpp"
 
 #include "LmsApplication.hpp"
+#include "Utils.hpp"
 
 namespace UserInterface {
 
@@ -155,7 +156,7 @@ replayGainPreAmpGainFromString(const std::string& str)
 	if (!value)
 		return std::nullopt;
 
-	return Utils::clamp(*value, (double)MediaPlayer::Settings::ReplayGain::minPreAmpGain, (double)MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
+	return ::Utils::clamp(*value, (double)MediaPlayer::Settings::ReplayGain::minPreAmpGain, (double)MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
 }
 
 static MediaPlayer::Settings settingsfromJSString(const std::string& strSettings)
@@ -281,7 +282,7 @@ MediaPlayer::loadTrack(Database::TrackId trackId, bool play, float replayGain)
 		{
 			_artist->setTextFormat(Wt::TextFormat::Plain);
 			_artist->setText(Wt::WString::fromUTF8(artists.front()->getName()));
-			_artist->setLink(LmsApp->createArtistLink(artists.front()));
+			_artist->setLink(Utils::createArtistLink(artists.front()));
 		}
 		else
 		{
@@ -293,7 +294,7 @@ MediaPlayer::loadTrack(Database::TrackId trackId, bool play, float replayGain)
 		{
 			_release->setTextFormat(Wt::TextFormat::Plain);
 			_release->setText(Wt::WString::fromUTF8(track->getRelease()->getName()));
-			_release->setLink(LmsApp->createReleaseLink(track->getRelease()));
+			_release->setLink(Utils::createReleaseLink(track->getRelease()));
 		}
 		else
 		{

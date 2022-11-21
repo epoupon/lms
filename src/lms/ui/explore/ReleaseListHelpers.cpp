@@ -26,7 +26,6 @@
 #include "services/database/Artist.hpp"
 #include "services/database/Release.hpp"
 
-#include "LmsApplication.hpp"
 #include "Utils.hpp"
 
 using namespace Database;
@@ -39,11 +38,11 @@ namespace UserInterface::ReleaseListHelpers
 	{
 		auto entry {std::make_unique<Wt::WTemplate>(Wt::WString::tr(templateKey))};
 
-		entry->bindWidget("release-name", LmsApplication::createReleaseAnchor(release));
+		entry->bindWidget("release-name", Utils::createReleaseAnchor(release));
 		entry->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 		{
-			Wt::WAnchor* anchor {entry->bindWidget("cover", LmsApplication::createReleaseAnchor(release, false))};
+			Wt::WAnchor* anchor {entry->bindWidget("cover", Utils::createReleaseAnchor(release, false))};
 			auto cover {Utils::createCover(release->getId(), CoverResource::Size::Large)};
 			cover->addStyleClass("Lms-cover-release Lms-cover-anchor");
 			anchor->setImage(std::move(cover));
@@ -62,7 +61,7 @@ namespace UserInterface::ReleaseListHelpers
 		else if (artists.size() == 1 && !isSameArtist)
 		{
 			entry->setCondition("if-has-artist", true);
-			entry->bindWidget("artist-name", LmsApplication::createArtistAnchor(artists.front()));
+			entry->bindWidget("artist-name", Utils::createArtistAnchor(artists.front()));
 		}
 
 		if (showYear)

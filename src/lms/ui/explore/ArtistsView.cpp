@@ -137,7 +137,7 @@ Artists::refreshArtistLinkTypes()
 		if (!usedLinkTypes.contains(linkType))
 			return;
 
-		linkTypeModel->add(Wt::WString::tr(std::string {stringKey}), linkType);
+		linkTypeModel->add(Wt::WString::trn(std::string {stringKey}, 2), linkType);
 	}};
 
 	linkTypeModel->clear();

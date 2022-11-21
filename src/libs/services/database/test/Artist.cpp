@@ -92,20 +92,26 @@ TEST_F(DatabaseFixture, Artist_singleTrack)
 	}
 
 	{
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createSharedTransaction()};
 		auto tracks {Track::find(session, Track::FindParameters{}.setName("MyTrackName").setArtistName("MyArtist"))};
 		ASSERT_EQ(tracks.results.size(), 1);
 		EXPECT_EQ(tracks.results.front(), track.getId());
 	}
 	{
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createSharedTransaction()};
 		auto tracks {Track::find(session, Track::FindParameters{}.setName("MyTrackName").setArtistName("MyArtistFoo"))};
 		EXPECT_EQ(tracks.results.size(), 0);
 	}
 	{
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createSharedTransaction()};
 		auto tracks {Track::find(session, Track::FindParameters{}.setName("MyTrackNameFoo").setArtistName("MyArtist"))};
 		EXPECT_EQ(tracks.results.size(), 0);
+	}
+	{
+		auto transaction {session.createSharedTransaction()};
+		auto artists {Artist::find(session, Artist::FindParameters{}.setTrack(track->getId()))};
+		ASSERT_EQ(artists.results.size(), 1);
+		EXPECT_EQ(artists.results.front(), artist.getId());
 	}
 }
 
@@ -198,7 +204,7 @@ TEST_F(DatabaseFixture, Artist_singleTrackMultiArtists)
 	}
 
 	{
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createSharedTransaction()};
 
 		auto tracks {Track::find(session, Track::FindParameters {}.setArtist(artist1->getId()))};
 		ASSERT_EQ(tracks.results.size(), 1);
