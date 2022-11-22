@@ -23,7 +23,6 @@ extern "C"
 {
 #define __STDC_CONSTANT_MACROS
 #include <libavcodec/avcodec.h>
-#include <libavcodec/codec_par.h>
 #include <libavformat/avformat.h>
 #include <libavutil/error.h>
 }
