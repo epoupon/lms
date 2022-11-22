@@ -136,6 +136,7 @@
 <message id="Lms.Explore.recently-added">Recently added</message>
 <message id="Lms.Explore.recently-modified">Recently modified</message>
 <message id="Lms.Explore.recently-played">Recently played</message>
+<message id="Lms.Explore.release-info">Release information</message>
 <message id="Lms.Explore.releases">Albums</message>
 <message id="Lms.Explore.search">Search</message>
 <message id="Lms.Explore.star">Star</message>
@@ -161,6 +162,10 @@
 <message id="Lms.Explore.Artists.linktype-composer">
 	<plural case="0">Composer</plural>
 	<plural case="1">Composers</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-conductor">
+	<plural case="0">Conductor</plural>
+	<plural case="1">Conductors</plural>
 </message>
 <message id="Lms.Explore.Artists.linktype-lyricist">
 	<plural case="0">Lyricist</plural>

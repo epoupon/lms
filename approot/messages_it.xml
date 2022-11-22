@@ -136,6 +136,7 @@
 <message id="Lms.Explore.recently-added">Aggiunti di recente</message>
 
 <message id="Lms.Explore.recently-played">Riprodotti di recente</message>
+
 <message id="Lms.Explore.releases">Album</message>
 <message id="Lms.Explore.search">Ricerca</message>
 <message id="Lms.Explore.star">Aggiungi ai preferiti</message>
@@ -154,6 +155,10 @@
 
 <!--Explore:Artists-->
 <message id="Lms.Explore.Artists.linktype-all">Tutti gli artisti</message>
+
+
+
+
 
 
 

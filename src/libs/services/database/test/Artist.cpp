@@ -372,9 +372,46 @@ TEST_F(DatabaseFixture, Artist_nonReleaseTracks)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		const auto tracks {Track::find(session, Track::FindParameters {}.setArtist(artist->getId()).setNonRelease(true))};
+		const auto tracks {Track::find(session, Track::FindParameters {}.setArtist(artist.getId()).setNonRelease(true))};
 		ASSERT_EQ(tracks.results.size(), 1);
 		EXPECT_EQ(tracks.results.front(), track2.getId());
+	}
+
+}
+
+TEST_F(DatabaseFixture, Artist_findByRelease)
+{
+	ScopedArtist artist {session, "artist"};
+	ScopedTrack track {session, "MyTrack"};
+	ScopedRelease release{session, "MyRelease"};
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		const auto artists {Artist::find(session, Artist::FindParameters {}.setRelease(release.getId()))};
+		EXPECT_EQ(artists.results.size(), 0);
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+		TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		const auto artists {Artist::find(session, Artist::FindParameters {}.setRelease(release.getId()))};
+		EXPECT_EQ(artists.results.size(), 0);
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+		track.get().modify()->setRelease(release.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		const auto artists {Artist::find(session, Artist::FindParameters {}.setRelease(release.getId()))};
+		ASSERT_EQ(artists.results.size(), 1);
+		EXPECT_EQ(artists.results.front(), artist.getId());
 	}
 }
 

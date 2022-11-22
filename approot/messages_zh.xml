@@ -136,6 +136,7 @@
 <message id="Lms.Explore.recently-added">最近添加</message>
 <message id="Lms.Explore.recently-modified">最近更改</message>
 <message id="Lms.Explore.recently-played">最近播放</message>
+
 <message id="Lms.Explore.releases">专辑</message>
 <message id="Lms.Explore.search">搜索</message>
 <message id="Lms.Explore.star">收藏</message>
@@ -155,6 +156,10 @@
 <!--Explore:Artists-->
 <message id="Lms.Explore.Artists.linktype-all">所有歌手</message>
 <message id="Lms.Explore.Artists.linktype-artist">音轨歌手</message>
+
+
+
+
 
 
 

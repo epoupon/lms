@@ -136,6 +136,7 @@
 <message id="Lms.Explore.recently-added">Ajoutés récemment</message>
 <message id="Lms.Explore.recently-modified">Modifiés récemment</message>
 <message id="Lms.Explore.recently-played">Joués récemment</message>
+<message id="Lms.Explore.release-info">Informations sur l'album</message>
 <message id="Lms.Explore.releases">Albums</message>
 <message id="Lms.Explore.search">Rechercher</message>
 <message id="Lms.Explore.star">Ajouter aux favoris</message>
@@ -161,6 +162,10 @@
 <message id="Lms.Explore.Artists.linktype-composer">
 	<plural case="0">Compositeur</plural>
 	<plural case="1">Compositeurs</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-conductor">
+	<plural case="0">Chef d'orchestre</plural>
+	<plural case="1">Chefs d'orchestre</plural>
 </message>
 <message id="Lms.Explore.Artists.linktype-lyricist">
 	<plural case="0">Parolier</plural>

@@ -97,7 +97,8 @@ createQuery(Session& session, const Artist::FindParameters& params)
 	if (params.sortMethod == ArtistSortMethod::LastWritten
 			|| params.writtenAfter.isValid()
 			|| params.linkType
-			|| params.track.isValid())
+			|| params.track.isValid()
+			|| params.release.isValid())
 	{
 		query.join("track t ON t.id = t_a_l.track_id");
 		query.join("track_artist_link t_a_l ON t_a_l.artist_id = a.id");
@@ -161,9 +162,10 @@ createQuery(Session& session, const Artist::FindParameters& params)
 	}
 
 	if (params.track.isValid())
-	{
 		query.where("t.id = ?").bind(params.track);
-	}
+
+	if (params.release.isValid())
+		query.where("t.release_id = ?").bind(params.release);
 
 	switch (params.sortMethod)
 	{

@@ -69,13 +69,14 @@ namespace UserInterface::TrackListHelpers
 				return;
 
 			std::unique_ptr<Wt::WContainerWidget> artistContainer {Utils::createArtistContainer(artistIds.results)};
-			auto artistsEntry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Tracks.template.track-info.artists"))};
+			auto artistsEntry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.template.info.artists"))};
 			artistsEntry->bindString("type", Wt::WString::trn(type, artistContainer->count()));
 			artistsEntry->bindWidget("artist-container", std::move(artistContainer));
 			artistTable->addWidget(std::move(artistsEntry));
 		};
 
 		addArtists(TrackArtistLinkType::Composer, "Lms.Explore.Artists.linktype-composer");
+		addArtists(TrackArtistLinkType::Conductor, "Lms.Explore.Artists.linktype-conductor");
 		addArtists(TrackArtistLinkType::Lyricist, "Lms.Explore.Artists.linktype-lyricist");
 		addArtists(TrackArtistLinkType::Mixer, "Lms.Explore.Artists.linktype-mixer");
 		addArtists(TrackArtistLinkType::Remixer, "Lms.Explore.Artists.linktype-remixer");
