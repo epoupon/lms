@@ -376,7 +376,6 @@ TEST_F(DatabaseFixture, Artist_nonReleaseTracks)
 		ASSERT_EQ(tracks.results.size(), 1);
 		EXPECT_EQ(tracks.results.front(), track2.getId());
 	}
-
 }
 
 TEST_F(DatabaseFixture, Artist_findByRelease)
