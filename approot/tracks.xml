@@ -57,6 +57,7 @@
 					<li>${play-last class="dropdown-item"}</li>
 					<li>${star class="dropdown-item"}</li>
 					<li>${download class="dropdown-item"}</li>
+					<li>${track-info class="dropdown-item"}</li>
 				</ul>
 			</div>
 		</div>
@@ -65,6 +66,65 @@
 
 <message id="Lms.Explore.Tracks.template.entry-artist">
 	${artist class="text-decoration-none link-secondary"}
+</message>
+
+<message id="Lms.Explore.Tracks.template.track-info">
+	<div class="modal fade" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">${tr:Lms.Explore.track-info}</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="container-fluid d-grid gap-2">
+						${<if-has-clusters>}
+						<div class="row align-items-center">
+							<div class="col-4 col-sm-3">
+								${tr:Lms.clusters}
+							</div>
+							<div class="col">
+								${clusters}
+							</div>
+						</div>
+						${</if-has-clusters>}
+						${artist-table class="d-grid gap-2"}
+						<div class="row align-items-center">
+							<div class="col-4 col-sm-3">
+								${tr:Lms.Explore.duration}
+							</div>
+							<div class="col">
+								${duration}
+							</div>
+						</div>
+						${<if-has-codec>}
+						<div class="row align-items-center">
+							<div class="col-4 col-sm-3">
+								${tr:Lms.Explore.codec}
+							</div>
+							<div class="col">
+								${codec}
+							</div>
+						</div>
+						${</if-has-codec>}
+						${<if-has-bitrate>}
+						<div class="row align-items-center">
+							<div class="col-4 col-sm-3">
+								${tr:Lms.Explore.bitrate}
+							</div>
+							<div class="col">
+								${bitrate}
+							</div>
+						</div>
+						${</if-has-bitrate>}
+					</div>
+				</div>
+				<div class="modal-footer">
+					${ok-btn class="btn btn-primary"}
+				</div>
+			</div>
+		</div>
+	</div>
 </message>
 
 </messages>

@@ -43,11 +43,14 @@ namespace Av
 			std::chrono::milliseconds			getDuration() const override;
 			MetadataMap							getMetaData() const override;
 			std::vector<StreamInfo>				getStreamInfo() const override;
-			std::optional<std::size_t>			getBestStream() const override;
+			std::optional<StreamInfo>			getBestStreamInfo() const override;
+			std::optional<std::size_t>			getBestStreamIndex() const override;
 			bool								hasAttachedPictures() const override;
 			void								visitAttachedPictures(std::function<void(const Picture&)> func) const override;
 
 		private:
+			std::optional<StreamInfo>			getStreamInfo(std::size_t streamIndex) const;
+
 			const std::filesystem::path	_p;
 			AVFormatContext* _context {};
 	};

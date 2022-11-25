@@ -41,6 +41,7 @@ Filters::showDialog()
 	auto dialog {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.template.add-filter"))};
 	Wt::WWidget* dialogPtr {dialog.get()};
 	dialog->addFunction("tr", &Wt::WTemplate::Functions::tr);
+	dialog->addFunction("id", &Wt::WTemplate::Functions::id);
 
 	Wt::WComboBox* typeCombo {dialog->bindNew<Wt::WComboBox>("type")};
 	Wt::WComboBox* valueCombo {dialog->bindNew<Wt::WComboBox>("value")};

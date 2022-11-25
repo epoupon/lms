@@ -136,7 +136,7 @@ namespace UserInterface
 		const TrackListId trackListId {trackList->getId()};
 
 		WTemplate* entry {_container->addNew<Template>(Wt::WString::tr("Lms.Explore.TrackLists.template.entry"))};
-		entry->bindWidget("name", LmsApplication::createTrackListAnchor(trackList));
+		entry->bindWidget("name", Utils::createTrackListAnchor(trackList));
 
 		assert(_trackListWidgets.find(trackListId) == std::cend(_trackListWidgets));
 		_trackListWidgets.emplace(trackListId, entry);

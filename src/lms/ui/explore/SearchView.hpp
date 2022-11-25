@@ -72,6 +72,7 @@ namespace UserInterface
 			void addSomeTracks();
 
 			PlayQueueController&	_playQueueController;
+			Filters&			_filters;
 			ArtistCollector		_artistCollector;
 			ReleaseCollector	_releaseCollector;
 			TrackCollector		_trackCollector;

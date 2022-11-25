@@ -7,6 +7,7 @@
 <message id="Lms.administration">Administration</message>
 <message id="Lms.apply">Appliquer</message>
 <message id="Lms.cancel">Annuler</message>
+<message id="Lms.clusters">Tags</message>
 <message id="Lms.create">Créer</message>
 <message id="Lms.delete">Supprimer</message>
 <message id="Lms.discard">Annuler</message>
@@ -15,6 +16,7 @@
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Quitter</message>
 <message id="Lms.not-a-directory">N'est pas un répertoire</message>
+<message id="Lms.ok">Ok</message>
 <message id="Lms.password">Mot de passe</message>
 <message id="Lms.password-bad-login-combination">Mauvaise combinaison login / mot de passe</message>
 <message id="Lms.password-client-throttled">Trop de tentatives de connexion, veuillez réessayer plus tard</message>
@@ -58,7 +60,6 @@
 <message id="Lms.Admin.Database.scan-launched">Scan lancé !</message>
 <message id="Lms.Admin.Database.scan-options">Options </message>
 <message id="Lms.Admin.Database.settings-saved">Nouveaux paramètres sauvegardés !</message>
-<message id="Lms.Admin.Database.tags">Tags</message>
 <message id="Lms.Admin.Database.update-period">Périodicité des mises à jour</message>
 <message id="Lms.Admin.Database.update-start-time">Heure de départ de la mise à jour</message>
 <message id="Lms.Admin.Database.weekly">Toutes les semaines</message>
@@ -119,7 +120,10 @@
 <message id="Lms.Explore.add-filter">Ajouter filtre</message>
 <message id="Lms.Explore.all">Tous</message>
 <message id="Lms.Explore.artists">Artistes</message>
+<message id="Lms.Explore.bitrate">Bitrate</message>
+<message id="Lms.Explore.codec">Codec</message>
 <message id="Lms.Explore.download">Télécharger</message>
+<message id="Lms.Explore.duration">Durée</message>
 <message id="Lms.Explore.filter-added">Filtre ajouté</message>
 <message id="Lms.Explore.filters">Filtres</message>
 <message id="Lms.Explore.most-played">Plus joués</message>
@@ -132,10 +136,12 @@
 <message id="Lms.Explore.recently-added">Ajoutés récemment</message>
 <message id="Lms.Explore.recently-modified">Modifiés récemment</message>
 <message id="Lms.Explore.recently-played">Joués récemment</message>
+<message id="Lms.Explore.release-info">Informations sur l'album</message>
 <message id="Lms.Explore.releases">Albums</message>
 <message id="Lms.Explore.search">Rechercher</message>
 <message id="Lms.Explore.star">Ajouter aux favoris</message>
 <message id="Lms.Explore.starred">Favoris</message>
+<message id="Lms.Explore.track-info">Informations sur la piste</message>
 <message id="Lms.Explore.tracklists">Playlists</message>
 <message id="Lms.Explore.tracks">Pistes</message>
 <message id="Lms.Explore.type">Type</message>
@@ -149,13 +155,38 @@
 
 <!--Explore:Artists-->
 <message id="Lms.Explore.Artists.linktype-all">Tous les artistes</message>
-<message id="Lms.Explore.Artists.linktype-artist">Artistes de piste</message>
-<message id="Lms.Explore.Artists.linktype-composer">Compositeurs</message>
-<message id="Lms.Explore.Artists.linktype-lyricist">Paroliers</message>
-<message id="Lms.Explore.Artists.linktype-mixer">Mixers</message>
-<message id="Lms.Explore.Artists.linktype-producer">Producteurs</message>
-<message id="Lms.Explore.Artists.linktype-releaseartist">Artistes d'album</message>
-<message id="Lms.Explore.Artists.linktype-remixer">Remixers</message>
+<message id="Lms.Explore.Artists.linktype-artist">
+	<plural case="0">Artiste de piste</plural>
+	<plural case="1">Artistes de piste</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-composer">
+	<plural case="0">Compositeur</plural>
+	<plural case="1">Compositeurs</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-conductor">
+	<plural case="0">Chef d'orchestre</plural>
+	<plural case="1">Chefs d'orchestre</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-lyricist">
+	<plural case="0">Parolier</plural>
+	<plural case="1">Paroliers</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-mixer">
+	<plural case="0">Mixeur</plural>
+	<plural case="1">Mixeurs</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-producer">
+	<plural case="0">Producteur</plural>
+	<plural case="1">Producteurs</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-releaseartist">
+	<plural case="0">Artiste d'album</plural>
+	<plural case="1">Artistes d'album</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-remixer">
+	<plural case="0">Remixeur</plural>
+	<plural case="1">Remixeurs</plural>
+</message>
 
 <!--Explore:Release-->
 <message id="Lms.Explore.Release.similar-releases">Albums similaires</message>

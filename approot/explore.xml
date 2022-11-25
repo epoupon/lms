@@ -41,4 +41,16 @@
 	</div>
 </message>
 
+<message id="Lms.Explore.template.info.artists">
+	<div class="row align-items-center">
+		<div class="col-4 col-sm-3">
+			${type}
+		</div>
+		<div class="col">
+			${artist-container data-bs-dismiss="modal"}
+		</div>
+	</div>
+</message>
+
+
 </messages>

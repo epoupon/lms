@@ -7,14 +7,16 @@
 <message id="Lms.administration">管理</message>
 <message id="Lms.apply">应用</message>
 <message id="Lms.cancel">取消</message>
+<message id="Lms.clusters">标签</message>
 <message id="Lms.create">新建</message>
-<message id="Lms.del">删除</message>
+<message id="Lms.delete">删除</message>
 <message id="Lms.discard">撤销</message>
 <message id="Lms.edit">编辑</message>
 <message id="Lms.loading">加载中...</message>
 <message id="Lms.login">登陆</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> 注销</message>
 <message id="Lms.not-a-directory">不是一个目录</message>
+
 <message id="Lms.password">密码</message>
 <message id="Lms.password-bad-login-combination">用户名或密码无效</message>
 <message id="Lms.password-client-throttled">登录已被限制，请稍后再试</message>
@@ -26,7 +28,10 @@
 <message id="Lms.passwords-dont-match">密码不匹配</message>
 <message id="Lms.quit-other-session">另一个会话已打开，重新打开这一个？</message>
 <message id="Lms.save">保存</message>
-<message id="Lms.track-count">{1} 个音轨</message>
+
+
+
+
 <message id="Lms.user">用户</message>
 
 <!--Errors-->
@@ -55,7 +60,6 @@
 <message id="Lms.Admin.Database.scan-launched">扫描已完成！</message>
 <message id="Lms.Admin.Database.scan-options">扫描选项</message>
 <message id="Lms.Admin.Database.settings-saved">新设置已保存！</message>
-<message id="Lms.Admin.Database.tags">标签</message>
 <message id="Lms.Admin.Database.update-period">更新周期</message>
 <message id="Lms.Admin.Database.update-start-time">更新开始时间</message>
 <message id="Lms.Admin.Database.weekly">每周</message>
@@ -116,7 +120,10 @@
 <message id="Lms.Explore.add-filter">添加过滤器</message>
 <message id="Lms.Explore.all">全部</message>
 <message id="Lms.Explore.artists">歌手</message>
+
+
 <message id="Lms.Explore.download">下载</message>
+
 <message id="Lms.Explore.filter-added">过滤器已添加</message>
 <message id="Lms.Explore.filters">过滤器</message>
 <message id="Lms.Explore.most-played">播放最多</message>
@@ -129,10 +136,12 @@
 <message id="Lms.Explore.recently-added">最近添加</message>
 <message id="Lms.Explore.recently-modified">最近更改</message>
 <message id="Lms.Explore.recently-played">最近播放</message>
+
 <message id="Lms.Explore.releases">专辑</message>
 <message id="Lms.Explore.search">搜索</message>
 <message id="Lms.Explore.star">收藏</message>
 <message id="Lms.Explore.starred">已收藏</message>
+
 <message id="Lms.Explore.tracklists">播放列表</message>
 <message id="Lms.Explore.tracks">音轨</message>
 <message id="Lms.Explore.type">类型</message>
@@ -147,12 +156,37 @@
 <!--Explore:Artists-->
 <message id="Lms.Explore.Artists.linktype-all">所有歌手</message>
 <message id="Lms.Explore.Artists.linktype-artist">音轨歌手</message>
-<message id="Lms.Explore.Artists.linktype-composer">作曲</message>
-<message id="Lms.Explore.Artists.linktype-lyricist">作词</message>
-<message id="Lms.Explore.Artists.linktype-mixer">混响</message>
-<message id="Lms.Explore.Artists.linktype-producer">制作人</message>
-<message id="Lms.Explore.Artists.linktype-releaseartist">专辑歌手</message>
-<message id="Lms.Explore.Artists.linktype-remixer">混音师</message>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <!--Explore:Release-->
 <message id="Lms.Explore.Release.similar-releases">相似专辑</message>
@@ -171,7 +205,10 @@
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">清除</message>
 <message id="Lms.PlayQueue.create-tracklist">创建新播放列表</message>
-<message id="Lms.PlayQueue.nb-tracks-added">已添加 {1} 音轨</message>
+
+
+
+
 <message id="Lms.PlayQueue.playqueue">播放队列</message>
 <message id="Lms.PlayQueue.playqueue-full">播放队列已满！</message>
 <message id="Lms.PlayQueue.radio-mode">广播模式</message>

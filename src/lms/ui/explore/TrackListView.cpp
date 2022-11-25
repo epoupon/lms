@@ -199,7 +199,7 @@ namespace UserInterface
 		for (const TrackId trackId : trackIds.results)
 		{
 			if (const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)})
-				_container->add(TrackListHelpers::createEntry(track, _playQueueController));
+				_container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
 		}
 
 		_container->setHasMore(trackIds.moreResults && _container->getCount() < _maxCount);

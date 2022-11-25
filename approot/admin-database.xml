@@ -44,12 +44,12 @@
 			</div>
 		</div>
 		<div class="col-12">
-			<label class="form-label" for="${id:tags}">
-				${tr:Lms.Admin.Database.tags}
+			<label class="form-label" for="${id:clusters}">
+				${tr:Lms.clusters}
 			</label>
-			${tags class="form-control"}
+			${clusters class="form-control"}
 			<div class="invalid-feedback">
-				${tags-info}
+				${clusters-info}
 			</div>
 		</div>
 		<div class="col-12">

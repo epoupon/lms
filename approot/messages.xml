@@ -7,6 +7,7 @@
 <message id="Lms.administration">Administration</message>
 <message id="Lms.apply">Apply</message>
 <message id="Lms.cancel">Cancel</message>
+<message id="Lms.clusters">Tags</message>
 <message id="Lms.create">Create</message>
 <message id="Lms.delete">Delete</message>
 <message id="Lms.discard">Discard</message>
@@ -15,6 +16,7 @@
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Logout</message>
 <message id="Lms.not-a-directory">Not a directory</message>
+<message id="Lms.ok">Ok</message>
 <message id="Lms.password">Password</message>
 <message id="Lms.password-bad-login-combination">Bad login / password combination</message>
 <message id="Lms.password-client-throttled">Login throttled, please try again later</message>
@@ -58,7 +60,6 @@
 <message id="Lms.Admin.Database.scan-launched">Scan launched!</message>
 <message id="Lms.Admin.Database.scan-options">Scan options</message>
 <message id="Lms.Admin.Database.settings-saved">New settings saved!</message>
-<message id="Lms.Admin.Database.tags">Tags</message>
 <message id="Lms.Admin.Database.update-period">Update period</message>
 <message id="Lms.Admin.Database.update-start-time">Update start time</message>
 <message id="Lms.Admin.Database.weekly">Weekly</message>
@@ -119,7 +120,10 @@
 <message id="Lms.Explore.add-filter">Add filter</message>
 <message id="Lms.Explore.all">All</message>
 <message id="Lms.Explore.artists">Artists</message>
+<message id="Lms.Explore.bitrate">Bitrate</message>
+<message id="Lms.Explore.codec">Codec</message>
 <message id="Lms.Explore.download">Download</message>
+<message id="Lms.Explore.duration">Duration</message>
 <message id="Lms.Explore.filter-added">Filter added</message>
 <message id="Lms.Explore.filters">Filters</message>
 <message id="Lms.Explore.most-played">Most played</message>
@@ -132,10 +136,12 @@
 <message id="Lms.Explore.recently-added">Recently added</message>
 <message id="Lms.Explore.recently-modified">Recently modified</message>
 <message id="Lms.Explore.recently-played">Recently played</message>
+<message id="Lms.Explore.release-info">Release information</message>
 <message id="Lms.Explore.releases">Albums</message>
 <message id="Lms.Explore.search">Search</message>
 <message id="Lms.Explore.star">Star</message>
 <message id="Lms.Explore.starred">Starred</message>
+<message id="Lms.Explore.track-info">Track information</message>
 <message id="Lms.Explore.tracklists">Playlists</message>
 <message id="Lms.Explore.tracks">Tracks</message>
 <message id="Lms.Explore.type">Type</message>
@@ -149,13 +155,38 @@
 
 <!--Explore:Artists-->
 <message id="Lms.Explore.Artists.linktype-all">All artists</message>
-<message id="Lms.Explore.Artists.linktype-artist">Track artists</message>
-<message id="Lms.Explore.Artists.linktype-composer">Composers</message>
-<message id="Lms.Explore.Artists.linktype-lyricist">Lyricists</message>
-<message id="Lms.Explore.Artists.linktype-mixer">Mixers</message>
-<message id="Lms.Explore.Artists.linktype-producer">Producers</message>
-<message id="Lms.Explore.Artists.linktype-releaseartist">Album artists</message>
-<message id="Lms.Explore.Artists.linktype-remixer">Remixers</message>
+<message id="Lms.Explore.Artists.linktype-artist">
+	<plural case="0">Track artist</plural>
+	<plural case="1">Track artists</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-composer">
+	<plural case="0">Composer</plural>
+	<plural case="1">Composers</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-conductor">
+	<plural case="0">Conductor</plural>
+	<plural case="1">Conductors</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-lyricist">
+	<plural case="0">Lyricist</plural>
+	<plural case="1">Lyricists</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-mixer">
+	<plural case="0">Mixer</plural>
+	<plural case="1">Mixers</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-producer">
+	<plural case="0">Producer</plural>
+	<plural case="1">Producers</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-releaseartist">
+	<plural case="0">Album artists</plural>
+	<plural case="1">Album artist</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-remixer">
+	<plural case="0">Remixers</plural>
+	<plural case="1">Remixer</plural>
+</message>
 
 <!--Explore:Release-->
 <message id="Lms.Explore.Release.similar-releases">Similar albums</message>

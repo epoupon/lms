@@ -23,6 +23,8 @@
 #include <Wt/WImage.h>
 #include <Wt/WPushButton.h>
 
+#include "av/IAudioFile.hpp"
+#include "services/database/Artist.hpp"
 #include "services/database/Cluster.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/ScanSettings.hpp"
@@ -37,14 +39,87 @@
 #include "explore/Filters.hpp"
 #include "explore/PlayQueueController.hpp"
 #include "explore/ReleaseListHelpers.hpp"
+#include "explore/TrackListHelpers.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
 #include "MediaPlayer.hpp"
+#include "ModalManager.hpp"
 #include "Utils.hpp"
 
 using namespace Database;
 
 namespace UserInterface {
+
+void
+showReleaseInfoModal(Database::ReleaseId releaseId)
+{
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+
+	const Database::Release::pointer release {Database::Release::find(LmsApp->getDbSession(), releaseId)};
+	if (!release)
+		return;
+
+	auto releaseInfo {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Release.template.release-info"))};
+	Wt::WWidget* releaseInfoPtr {releaseInfo.get()};
+	releaseInfo->addFunction("tr", &Wt::WTemplate::Functions::tr);
+
+	Wt::WContainerWidget* artistTable {releaseInfo->bindNew<Wt::WContainerWidget>("artist-table")};
+
+	auto addArtists = [&](TrackArtistLinkType linkType, const char* type)
+	{
+		Artist::FindParameters params;
+		params.setRelease(releaseId);
+		params.setLinkType(linkType);
+		const auto artistIds {Artist::find(LmsApp->getDbSession(), params)};
+		if (artistIds.results.empty())
+			return;
+
+		std::unique_ptr<Wt::WContainerWidget> artistContainer {Utils::createArtistContainer(artistIds.results)};
+		auto artistsEntry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.template.info.artists"))};
+		artistsEntry->bindString("type", Wt::WString::trn(type, artistContainer->count()));
+		artistsEntry->bindWidget("artist-container", std::move(artistContainer));
+		artistTable->addWidget(std::move(artistsEntry));
+	};
+
+	addArtists(TrackArtistLinkType::Composer, "Lms.Explore.Artists.linktype-composer");
+	addArtists(TrackArtistLinkType::Conductor, "Lms.Explore.Artists.linktype-conductor");
+	addArtists(TrackArtistLinkType::Lyricist, "Lms.Explore.Artists.linktype-lyricist");
+	addArtists(TrackArtistLinkType::Mixer, "Lms.Explore.Artists.linktype-mixer");
+	addArtists(TrackArtistLinkType::Remixer, "Lms.Explore.Artists.linktype-remixer");
+	addArtists(TrackArtistLinkType::Producer, "Lms.Explore.Artists.linktype-producer");
+
+	// TODO: save in DB and mean all this
+	for (TrackId trackId : Track::find(LmsApp->getDbSession(), Track::FindParameters {}.setRelease(releaseId).setRange(Range {0, 1})).results)
+	{
+		const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)};
+		if (!track)
+			continue;
+
+		if (const auto audioFile {Av::parseAudioFile(track->getPath())})
+		{
+			const std::optional<Av::StreamInfo> audioStream {audioFile->getBestStreamInfo()};
+			if (audioStream)
+			{
+				releaseInfo->setCondition("if-has-codec", true);
+				releaseInfo->bindString("codec", audioStream->codec);
+				if (audioStream->bitrate)
+				{
+					releaseInfo->setCondition("if-has-bitrate", true);
+					releaseInfo->bindString("bitrate", std::to_string(audioStream->bitrate / 1000) + " kbps");
+					break;
+				}
+			}
+		}
+	}
+
+	Wt::WPushButton* okBtn {releaseInfo->bindNew<Wt::WPushButton>("ok-btn", Wt::WString::tr("Lms.ok"))};
+	okBtn->clicked().connect([=]
+	{
+		LmsApp->getModalManager().dispose(releaseInfoPtr);
+	});
+
+	LmsApp->getModalManager().show(std::move(releaseInfo));
+}
 
 Release::Release(Filters& filters, PlayQueueController& playQueueController)
 : Template {Wt::WString::tr("Lms.Explore.Release.template")}
@@ -176,6 +251,12 @@ Release::refreshView()
 	bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
 		->setLink(Wt::WLink {std::make_unique<DownloadReleaseResource>(*releaseId)});
 
+	bindNew<Wt::WPushButton>("release-info", Wt::WString::tr("Lms.Explore.release-info"))
+		->clicked().connect([=]
+		{
+			showReleaseInfoModal(*releaseId);
+		});
+
 	{
 		auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), *releaseId); }};
 
@@ -270,7 +351,7 @@ Release::refreshView()
 			{
 				if (!firstArtist)
 					artistsContainer->addNew<Wt::WText>(" · ");
-				auto anchor {LmsApplication::createArtistAnchor(artist)};
+				auto anchor {Utils::createArtistAnchor(artist)};
 				anchor->addStyleClass("link-success text-decoration-none"); // hack
 				artistsContainer->addWidget(std::move(anchor));
 				firstArtist = false;
@@ -319,6 +400,9 @@ Release::refreshView()
 
 			entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
 				->setLink(Wt::WLink {std::make_unique<DownloadTrackResource>(trackId)});
+
+			entry->bindNew<Wt::WPushButton>("track-info", Wt::WString::tr("Lms.Explore.track-info"))
+				->clicked().connect([=] { TrackListHelpers::showTrackInfoModal(trackId, _filters); });
 		}
 
 		entry->bindString("duration", Utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
@@ -361,7 +445,7 @@ Release::refreshReleaseArtists(const Database::Release::pointer& release)
 		for (const auto& artist : artists)
 		{
 			Wt::WTemplate* artistTemplate {artistsContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry-release-artist"))};
-			artistTemplate->bindWidget("artist", LmsApplication::createArtistAnchor(artist));
+			artistTemplate->bindWidget("artist", Utils::createArtistAnchor(artist));
 		}
 	}
 }

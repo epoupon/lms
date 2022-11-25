@@ -7,6 +7,7 @@
 <message id="Lms.administration">Amministrazione</message>
 <message id="Lms.apply">Applica</message>
 <message id="Lms.cancel">Annulla</message>
+<message id="Lms.clusters">Tags</message>
 <message id="Lms.create">Crea</message>
 <message id="Lms.del">Elimina</message>
 <message id="Lms.discard">Annulla</message>
@@ -15,6 +16,7 @@
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Logout</message>
 <message id="Lms.not-a-directory">Non è una directory</message>
+
 <message id="Lms.password">Password</message>
 <message id="Lms.password-bad-login-combination">Errata combinazione di Login / Password </message>
 <message id="Lms.password-client-throttled">Superati i tentativi di accesso, riprova più tardi</message>
@@ -58,7 +60,6 @@
 <message id="Lms.Admin.Database.scan-launched">Scansione avviata!</message>
 <message id="Lms.Admin.Database.scan-options">Impostazioni scansione</message>
 <message id="Lms.Admin.Database.settings-saved">Impostazioni salvate!</message>
-<message id="Lms.Admin.Database.tags">Tags</message>
 <message id="Lms.Admin.Database.update-period">Frequenza di aggiornamento</message>
 <message id="Lms.Admin.Database.update-start-time">Orario di aggiornamento</message>
 <message id="Lms.Admin.Database.weekly">Settimanale</message>
@@ -119,7 +120,10 @@
 <message id="Lms.Explore.add-filter">Aggiungi filtro</message>
 <message id="Lms.Explore.all">Tutti</message>
 <message id="Lms.Explore.artists">Artisti</message>
+
+
 <message id="Lms.Explore.download">Download</message>
+
 <message id="Lms.Explore.filter-added">Filtro aggiunto</message>
 <message id="Lms.Explore.filters">Filtri</message>
 <message id="Lms.Explore.most-played">Più ascoltati</message>
@@ -132,10 +136,13 @@
 <message id="Lms.Explore.recently-added">Aggiunti di recente</message>
 
 <message id="Lms.Explore.recently-played">Riprodotti di recente</message>
+
 <message id="Lms.Explore.releases">Album</message>
 <message id="Lms.Explore.search">Ricerca</message>
 <message id="Lms.Explore.star">Aggiungi ai preferiti</message>
 <message id="Lms.Explore.starred">Preferiti</message>
+
+
 <message id="Lms.Explore.tracks">Tracce</message>
 <message id="Lms.Explore.type">Tipo</message>
 <message id="Lms.Explore.unstar">Rimuovi dai preferiti</message>
@@ -148,13 +155,38 @@
 
 <!--Explore:Artists-->
 <message id="Lms.Explore.Artists.linktype-all">Tutti gli artisti</message>
-<message id="Lms.Explore.Artists.linktype-artist">Artisti tracce</message>
-<message id="Lms.Explore.Artists.linktype-composer">Compositori</message>
-<message id="Lms.Explore.Artists.linktype-lyricist">Scrittori</message>
-<message id="Lms.Explore.Artists.linktype-mixer">Mixers</message>
-<message id="Lms.Explore.Artists.linktype-producer">Produttori</message>
-<message id="Lms.Explore.Artists.linktype-releaseartist">Artisti album</message>
-<message id="Lms.Explore.Artists.linktype-remixer">Remixers</message>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <!--Explore:Release-->
 <message id="Lms.Explore.Release.similar-releases">Album simili</message>

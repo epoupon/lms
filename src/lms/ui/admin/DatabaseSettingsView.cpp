@@ -53,7 +53,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 		static inline constexpr Field UpdatePeriodField {"update-period"};
 		static inline constexpr Field UpdateStartTimeField {"update-start-time"};
 		static inline constexpr Field RecommendationEngineTypeField {"recommendation-engine-type"};
-		static inline constexpr Field TagsField {"tags"};
+		static inline constexpr Field ClustersField {"clusters"};
 
 		using UpdatePeriodModel = ValueStringModel<ScanSettings::UpdatePeriod>;
 
@@ -65,7 +65,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			addField(UpdatePeriodField);
 			addField(UpdateStartTimeField);
 			addField(RecommendationEngineTypeField);
-			addField(TagsField);
+			addField(ClustersField);
 
 			auto dirValidator {createDirectoryValidator()};
 			dirValidator->setMandatory(true);
@@ -114,7 +114,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			{
 				std::vector<std::string> names;
 				std::transform(clusterTypes.begin(), clusterTypes.end(), std::back_inserter(names),  [](auto clusterType) { return clusterType->getName(); });
-				setValue(TagsField, StringUtils::joinStrings(names, " "));
+				setValue(ClustersField, StringUtils::joinStrings(names, " "));
 			}
 		}
 
@@ -138,7 +138,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			if (recommendationEngineTypeRow)
 				scanSettings.modify()->setRecommendationEngineType(_recommendationEngineTypeModel->getValue(*recommendationEngineTypeRow));
 
-			auto clusterTypes {StringUtils::splitStringCopy(valueText(TagsField).toUTF8(), " ")};
+			auto clusterTypes {StringUtils::splitStringCopy(valueText(ClustersField).toUTF8(), " ")};
 			scanSettings.modify()->setClusterTypes(LmsApp->getDbSession(), std::set<std::string>(clusterTypes.begin(), clusterTypes.end()));
 		}
 
@@ -215,8 +215,8 @@ DatabaseSettingsView::refreshView()
 	recommendationEngineType->setModel(model->recommendationEngineTypeModel());
 	t->setFormWidget(DatabaseSettingsModel::RecommendationEngineTypeField, std::move(recommendationEngineType));
 
-	// Tags
-	t->setFormWidget(DatabaseSettingsModel::TagsField, std::make_unique<Wt::WLineEdit>());
+	// Clusters
+	t->setFormWidget(DatabaseSettingsModel::ClustersField, std::make_unique<Wt::WLineEdit>());
 
 	// Buttons
 	Wt::WPushButton *saveBtn = t->bindWidget("apply-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.apply")));

@@ -134,7 +134,7 @@ class Release : public Object<Release, ReleaseId>
 		Release(const std::string& name, const std::optional<UUID>& MBID = {});
 		static pointer create(Session& session, const std::string& name, const std::optional<UUID>& MBID = {});
 
-		static const std::size_t _maxNameLength {128};
+		static constexpr std::size_t _maxNameLength {128};
 
 		std::string	_name;
 		std::string	_MBID;

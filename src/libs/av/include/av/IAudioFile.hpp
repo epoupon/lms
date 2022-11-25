@@ -37,13 +37,14 @@ namespace Av
 	{
 		std::string			mimeType;
 		const std::byte*	data {};
-		std::size_t			dataSize;
+		std::size_t			dataSize {};
 	};
 
 	struct StreamInfo
 	{
-		size_t			id;
-		std::size_t     bitrate;
+		size_t			index {};
+		std::size_t     bitrate {};
+		std::string 	codec;
 	};
 
 	class IAudioFile
@@ -57,7 +58,8 @@ namespace Av
 			virtual std::chrono::milliseconds	getDuration() const = 0;
 			virtual MetadataMap					getMetaData() const = 0;
 			virtual std::vector<StreamInfo>		getStreamInfo() const = 0;
-			virtual std::optional<std::size_t>	getBestStream() const = 0; // none if failure/unknown
+			virtual std::optional<StreamInfo>	getBestStreamInfo() const = 0; // none if failure/unknown
+			virtual std::optional<std::size_t>	getBestStreamIndex() const = 0; // none if failure/unknown
 			virtual bool 						hasAttachedPictures() const = 0;
 			virtual void 						visitAttachedPictures(std::function<void(const Picture&)> func) const = 0;
 	};
