@@ -31,25 +31,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes build-essential cmake libboost-all-dev libconfig++-dev libavcodec-dev libavutil-dev libavformat-dev libstb-dev libtag1-dev libpam0g-dev libgtest-dev
-
-      - name: Configure (cpp)
-        if: ${{ matrix.language == 'cpp' }}
-        run: |
           export WT_VERSION=4.7.2
-          export WT_INSTALL_PREFIX=${LGTM_WORKSPACE}/wt-${WT_VERSION}
-          cmake -DCMAKE_PREFIX_PATH=${WT_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE=Release
-
-      - name: After Prepare (cpp)
-        if: ${{ matrix.language == 'cpp' }}
-        run: |
-          export WT_VERSION=4.7.2 && echo "WT_VERSION=$WT_VERSION" >> $GITHUB_ENV
-          export WT_INSTALL_PREFIX=${LGTM_WORKSPACE}/wt-${WT_VERSION} && echo "WT_INSTALL_PREFIX=$WT_INSTALL_PREFIX" >> $GITHUB_ENV
+          export WT_INSTALL_PREFIX=/usr
           pushd ${LGTM_WORKSPACE}
           git clone https://github.com/emweb/wt.git ${LGTM_WORKSPACE}/wt
-          pushd ${LGTM_WORKSPACE}/wt
           git checkout ${WT_VERSION}
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${WT_INSTALL_PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF
-          make install
+          make
+          sudo make install
           popd
 
       - name: Initialize CodeQL
