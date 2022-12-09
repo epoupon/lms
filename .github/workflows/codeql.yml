@@ -30,7 +30,7 @@ jobs:
         if: ${{ matrix.language == 'cpp' }}
         run: |
           sudo apt-get update
-          sudo apt-get install --yes build-essential cmake libboost-all-dev libconfig++-dev libavcodec-dev libavutil-dev libavformat-dev libstb-dev libtag1-dev libpam0g-dev
+          sudo apt-get install --yes build-essential cmake libboost-all-dev libconfig++-dev libavcodec-dev libavutil-dev libavformat-dev libstb-dev libtag1-dev libpam0g-dev libgtest-dev
 
       - name: Configure (cpp)
         if: ${{ matrix.language == 'cpp' }}
