@@ -115,17 +115,21 @@ joinStrings(const std::vector<std::string>& strings, const std::string& delimite
 	return boost::algorithm::join(strings, delimiter);
 }
 
-std::string
+std::string_view
 stringTrim(std::string_view str, std::string_view whitespaces)
 {
+	std::string_view res;
+
 	const auto strBegin = str.find_first_not_of(whitespaces);
-	if (strBegin == std::string_view::npos)
-		return ""; // no content
+	if (strBegin != std::string_view::npos)
+	{
+		const auto strEnd {str.find_last_not_of(whitespaces)};
+		const auto strRange {strEnd - strBegin + 1};
 
-	const auto strEnd = str.find_last_not_of(whitespaces);
-	const auto strRange = strEnd - strBegin + 1;
+		res = str.substr(strBegin, strRange);
+	}
 
-	return std::string {str.substr(strBegin, strRange)};
+	return res;
 }
 
 std::string
