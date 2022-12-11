@@ -66,6 +66,9 @@ stringToUpper(const std::string& str);
 std::string
 bufferToString(const std::vector<unsigned char>& data);
 
+void
+capitalize(std::string& str);
+
 template<typename T>
 [[nodiscard]]
 std::optional<T> readAs(std::string_view str)

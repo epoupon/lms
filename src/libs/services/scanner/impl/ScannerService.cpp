@@ -837,6 +837,12 @@ ScannerService::scanAudioFile(const std::filesystem::path& file, bool forceScan,
 	for (const Artist::pointer& mixer : getOrCreateArtists(_dbSession, trackInfo->mixerArtists, true))
 		track.modify()->addArtistLink(TrackArtistLink::create(_dbSession, track, mixer, TrackArtistLinkType::Mixer));
 
+	for (const auto& [role, performers] : trackInfo->performerArtists)
+	{
+		for (const Artist::pointer& performer : getOrCreateArtists(_dbSession, performers, true))
+			track.modify()->addArtistLink(TrackArtistLink::create(_dbSession, track, performer, TrackArtistLinkType::Performer, role));
+	}
+
 	for (const Artist::pointer& producer : getOrCreateArtists(_dbSession, trackInfo->producerArtists, true))
 		track.modify()->addArtistLink(TrackArtistLink::create(_dbSession, track, producer, TrackArtistLinkType::Producer));
 

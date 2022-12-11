@@ -80,7 +80,7 @@
 					<div class="container-fluid d-grid gap-2">
 						${<if-has-clusters>}
 						<div class="row align-items-center">
-							<div class="col-4 col-sm-3">
+							<div class="col-4">
 								${tr:Lms.clusters}
 							</div>
 							<div class="col">
@@ -90,7 +90,7 @@
 						${</if-has-clusters>}
 						${artist-table class="d-grid gap-2"}
 						<div class="row align-items-center">
-							<div class="col-4 col-sm-3">
+							<div class="col-4">
 								${tr:Lms.Explore.duration}
 							</div>
 							<div class="col">
@@ -99,7 +99,7 @@
 						</div>
 						${<if-has-codec>}
 						<div class="row align-items-center">
-							<div class="col-4 col-sm-3">
+							<div class="col-4">
 								${tr:Lms.Explore.codec}
 							</div>
 							<div class="col">
@@ -109,7 +109,7 @@
 						${</if-has-codec>}
 						${<if-has-bitrate>}
 						<div class="row align-items-center">
-							<div class="col-4 col-sm-3">
+							<div class="col-4">
 								${tr:Lms.Explore.bitrate}
 							</div>
 							<div class="col">

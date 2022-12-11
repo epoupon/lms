@@ -146,6 +146,7 @@ getPerformerArtists(const TagLib::PropertyMap& properties,
 		for (std::string_view entry : artistNames)
 		{
 			Utils::PerformerArtist performer {Utils::extractPerformerAndRole(entry)};
+			StringUtils::capitalize(performer.role);
 			performers[performer.role].push_back(std::move(performer.artist));
 		}
 	}
@@ -159,7 +160,10 @@ getPerformerArtists(const TagLib::PropertyMap& properties,
 				std::string performerStr {key.to8Bit(true)};
 				std::string role;
 				if (const std::size_t rolePos {performerStr.find(':')}; rolePos != std::string::npos)
-					role = performerStr.substr(rolePos + 1, performerStr.size() - rolePos + 1);
+				{
+					role = StringUtils::stringToLower(performerStr.substr(rolePos + 1, performerStr.size() - rolePos + 1));
+					StringUtils::capitalize(role);
+				}
 
 				for (const auto& value : values)
 					performers[role].push_back(Artist {value.to8Bit(true)});

@@ -175,6 +175,10 @@
 	<plural case="0">Mixer</plural>
 	<plural case="1">Mixers</plural>
 </message>
+<message id="Lms.Explore.Artists.linktype-performer">
+	<plural case="0">Performer</plural>
+	<plural case="1">Performers</plural>
+</message>
 <message id="Lms.Explore.Artists.linktype-producer">
 	<plural case="0">Producer</plural>
 	<plural case="1">Producers</plural>

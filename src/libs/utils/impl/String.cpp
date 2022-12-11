@@ -179,6 +179,21 @@ bufferToString(const std::vector<unsigned char>& data)
 	return oss.str();
 }
 
+void
+capitalize(std::string& str)
+{
+	for (auto it {std::begin(str)}; it != std::end(str); ++it)
+	{
+		if (std::isspace(*it))
+			continue;
+
+		if (std::isalpha(*it))
+			*it = std::toupper(*it);
+
+		break;
+	}
+}
+
 std::string
 replaceInString(std::string_view str, const std::string& from, const std::string& to)
 {
