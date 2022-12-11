@@ -232,7 +232,7 @@ Response::writeJSON(std::ostream& os)
 	{
 		Json::Object res;
 
-		auto valueToJsonValue {[](const Node::Value& value) -> Json::Value
+		auto valueToJsonValue {[](const Node::ValueType& value) -> Json::Value
 		{
 			if (std::holds_alternative<std::string>(value))
 				return Json::Value {std::get<std::string>(value)};
