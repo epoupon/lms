@@ -145,7 +145,7 @@ Artists::refreshArtistLinkTypes()
 	// add default one first (none)
 	linkTypeModel->add(Wt::WString::tr("Lms.Explore.Artists.linktype-all"), std::nullopt);
 
-	// TODO: sort by translated strins
+	// TODO: sort by translated strings
 	addTypeIfUsed(TrackArtistLinkType::Artist, "Lms.Explore.Artists.linktype-artist");
 	addTypeIfUsed(TrackArtistLinkType::ReleaseArtist, "Lms.Explore.Artists.linktype-releaseartist");
 	addTypeIfUsed(TrackArtistLinkType::Composer, "Lms.Explore.Artists.linktype-composer");

@@ -87,7 +87,7 @@
 
 <message id="Lms.Explore.Release.template.release-info">
 	<div class="modal fade" tabindex="-1">
-		<div class="modal-dialog">
+		<div class="modal-dialog modal-dialog-scrollable">
 			<div class="modal-content">
 				<div class="modal-header">
 					<h5 class="modal-title">${tr:Lms.Explore.release-info}</h5>

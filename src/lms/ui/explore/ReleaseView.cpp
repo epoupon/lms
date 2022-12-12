@@ -19,6 +19,7 @@
 
 #include "ReleaseView.hpp"
 
+#include <map>
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
 #include <Wt/WPushButton.h>
@@ -65,7 +66,6 @@ showReleaseInfoModal(Database::ReleaseId releaseId)
 	releaseInfo->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	Wt::WContainerWidget* artistTable {releaseInfo->bindNew<Wt::WContainerWidget>("artist-table")};
-
 	std::map<Wt::WString, std::set<ArtistId>> artistMap;
 
 	auto addArtists = [&](TrackArtistLinkType linkType, const char* type)
@@ -91,7 +91,7 @@ showReleaseInfoModal(Database::ReleaseId releaseId)
 		if (links.results.empty())
 			return;
 
-		for (TrackArtistLinkId linkId : links.results)
+		for (const TrackArtistLinkId linkId : links.results)
 		{
 			const TrackArtistLink::pointer link {TrackArtistLink::find(LmsApp->getDbSession(), linkId)};
 			if (!link)

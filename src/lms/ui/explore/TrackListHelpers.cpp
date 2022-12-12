@@ -19,6 +19,7 @@
 
 #include "TrackListHelpers.hpp"
 
+#include <map>
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
 #include <Wt/WPushButton.h>
@@ -26,9 +27,10 @@
 #include "av/IAudioFile.hpp"
 #include "services/database/Artist.hpp"
 #include "services/database/Release.hpp"
-#include "services/scrobbling/IScrobblingService.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
+#include "services/database/TrackArtistLink.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
 
 #include "common/Template.hpp"
@@ -58,6 +60,7 @@ namespace UserInterface::TrackListHelpers
 		trackInfo->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 		Wt::WContainerWidget* artistTable {trackInfo->bindNew<Wt::WContainerWidget>("artist-table")};
+		std::map<Wt::WString, std::set<ArtistId>> artistMap;
 
 		auto addArtists = [&](TrackArtistLinkType linkType, const char* type)
 		{
@@ -68,11 +71,28 @@ namespace UserInterface::TrackListHelpers
 			if (artistIds.results.empty())
 				return;
 
-			std::unique_ptr<Wt::WContainerWidget> artistContainer {Utils::createArtistContainer(artistIds.results)};
-			auto artistsEntry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.template.info.artists"))};
-			artistsEntry->bindString("type", Wt::WString::trn(type, artistContainer->count()));
-			artistsEntry->bindWidget("artist-container", std::move(artistContainer));
-			artistTable->addWidget(std::move(artistsEntry));
+			Wt::WString typeStr {Wt::WString::trn(type, artistIds.results.size())};;
+			for (ArtistId artistId : artistIds.results)
+				artistMap[typeStr].insert(artistId);
+		};
+
+		auto addPerformerArtists = [&]
+		{
+			TrackArtistLink::FindParameters params;
+			params.setTrack(trackId);
+			params.setLinkType(TrackArtistLinkType::Performer);
+			const auto links {TrackArtistLink::find(LmsApp->getDbSession(), params)};
+			if (links.results.empty())
+				return;
+
+			for (const TrackArtistLinkId linkId : links.results)
+			{
+				const TrackArtistLink::pointer link {TrackArtistLink::find(LmsApp->getDbSession(), linkId)};
+				if (!link)
+					continue;
+
+				artistMap[std::string {link->getSubType()}].insert(link->getArtist()->getId());
+			}
 		};
 
 		addArtists(TrackArtistLinkType::Composer, "Lms.Explore.Artists.linktype-composer");
@@ -81,6 +101,16 @@ namespace UserInterface::TrackListHelpers
 		addArtists(TrackArtistLinkType::Mixer, "Lms.Explore.Artists.linktype-mixer");
 		addArtists(TrackArtistLinkType::Remixer, "Lms.Explore.Artists.linktype-remixer");
 		addArtists(TrackArtistLinkType::Producer, "Lms.Explore.Artists.linktype-producer");
+		addPerformerArtists();
+
+		for (const auto& [role, artistIds] : artistMap)
+		{
+			std::unique_ptr<Wt::WContainerWidget> artistContainer {Utils::createArtistContainer(std::vector (std::cbegin(artistIds), std::cend(artistIds)))};
+			auto artistsEntry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.template.info.artists"))};
+			artistsEntry->bindString("type", role);
+			artistsEntry->bindWidget("artist-container", std::move(artistContainer));
+			artistTable->addWidget(std::move(artistsEntry));
+		}
 
 		if (const auto audioFile {Av::parseAudioFile(track->getPath())})
 		{
