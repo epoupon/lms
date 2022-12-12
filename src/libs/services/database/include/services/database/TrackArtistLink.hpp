@@ -43,7 +43,6 @@ namespace Database
 	class TrackArtistLink : public Object<TrackArtistLink, TrackArtistLinkId>
 	{
 		public:
-
 			struct FindParameters
 			{
 				Range								range;
