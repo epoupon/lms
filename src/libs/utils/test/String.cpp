@@ -118,3 +118,32 @@ TEST(StringUtils, readAs)
 	EXPECT_EQ(StringUtils::readAs<bool>("foo"), std::nullopt);
 	EXPECT_EQ(StringUtils::readAs<bool>(""), std::nullopt);
 }
+
+TEST(StrinUtils, capitalize)
+{
+	struct TestCase
+	{
+		std::string input;
+		std::string expectedOutput;
+	};
+
+	TestCase tests[]
+	{
+		{"", ""},
+		{"C", "C"},
+		{"c", "C"},
+		{" c", " C"},
+		{" cc", " Cc"},
+		{"(c", "(c"},
+		{"1c", "1c"},
+		{"&c", "&c"},
+		{"c c", "C c"}
+	};
+
+	for (const TestCase& test : tests)
+	{
+		std::string str {test.input};
+		StringUtils::capitalize(str);
+		EXPECT_EQ(str, test.expectedOutput) << " str was '" << test.input << "'";
+	}
+}

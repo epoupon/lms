@@ -43,7 +43,7 @@
 
 <message id="Lms.Explore.template.info.artists">
 	<div class="row align-items-center">
-		<div class="col-4 col-sm-3">
+		<div class="col-4">
 			${type}
 		</div>
 		<div class="col">

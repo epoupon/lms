@@ -54,8 +54,7 @@ DownloadResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Resp
 		std::shared_ptr<Zip::Zipper> zipper;
 
 		// First, see if this request is for a continuation
-		Wt::Http::ResponseContinuation *continuation = request.continuation();
-		if (continuation)
+		if (Wt::Http::ResponseContinuation *continuation {request.continuation()})
 			zipper = Wt::cpp17::any_cast<std::shared_ptr<Zip::Zipper>>(continuation->data());
 		else
 		{

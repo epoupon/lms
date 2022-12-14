@@ -467,7 +467,7 @@ CREATE TABLE "starred_track" (
 				return itScrobbler->second;
 
 			auto query {session.getDboSession().query<Scrobbler>("SELECT scrobbler FROM user WHERE id = ?").bind(userId)};
-			auto [itInserted, inserted] {userScrobblers.emplace(userId, query.resultValue())};
+			[[maybe_unused]] auto [itInserted, inserted] {userScrobblers.emplace(userId, query.resultValue())};
 			assert(inserted);
 			return itInserted->second;
 		}};
@@ -600,6 +600,17 @@ CREATE TABLE IF NOT EXISTS "track_artist_link_backup" (
 		ScanSettings::get(session).modify()->incScanVersion();
 	}
 
+	static
+	void
+	migrateFromV37(Session& session)
+	{
+		// Support Performer tags (via subtypes)
+		session.getDboSession().execute("ALTER TABLE track_artist_link ADD subtype TEXT");
+
+		// Just increment the scan version of the settings to make the next scheduled scan rescan everything
+		ScanSettings::get(session).modify()->incScanVersion();
+	}
+
 	void
 	doDbMigration(Session& session)
 	{
@@ -643,6 +654,7 @@ CREATE TABLE IF NOT EXISTS "track_artist_link_backup" (
 			{34, migrateFromV34},
 			{35, migrateFromV35},
 			{36, migrateFromV36},
+			{37, migrateFromV37},
 		};
 
 		while (1)

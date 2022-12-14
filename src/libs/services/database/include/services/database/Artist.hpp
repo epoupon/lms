@@ -87,7 +87,6 @@ class Artist : public Object<Artist, ArtistId>
 		static RangeResults<ArtistId>	findAllOrphans(Session& session, Range range); // No track related
 		static bool						exists(Session& session, ArtistId id);
 
-
 		// Accessors
 		const std::string&	getName() const { return _name; }
 		const std::string&	getSortName() const { return _sortName; }

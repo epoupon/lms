@@ -71,5 +71,51 @@ namespace MetaData::Utils
 
 		throw LmsException {"Unknown read style"};
 	}
+
+	PerformerArtist
+	extractPerformerAndRole(std::string_view entry)
+	{
+		std::string_view artistName;
+		std::string_view role;
+
+		std::size_t roleBegin {};
+		std::size_t roleEnd {};
+		std::size_t count {};
+
+		for (std::size_t i {}; i < entry.size(); ++i)
+		{
+			std::size_t currentIndex {entry.size() - i - 1};
+			const char c {entry[currentIndex]};
+
+			if (std::isspace(c))
+				continue;
+
+			if (c == ')')
+			{
+				if (count++ == 0)
+					roleEnd = currentIndex;
+			}
+			else if (c == '(')
+			{
+				if (count == 0)
+					break;
+
+				if (--count == 0)
+				{
+					roleBegin = currentIndex + 1;
+					role = StringUtils::stringTrim(entry.substr(roleBegin, roleEnd - roleBegin));
+					artistName = StringUtils::stringTrim(entry.substr(0, currentIndex));
+					break;
+				}
+			}
+			else if (count == 0)
+				break;
+		}
+
+		if (!roleEnd || !roleBegin)
+			artistName = StringUtils::stringTrim(entry);
+
+		return PerformerArtist {Artist {artistName}, std::string {role}};
+	}
 }
 

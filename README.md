@@ -1,16 +1,15 @@
 # LMS - Lightweight Music Server
 
-[![Last Release](https://img.shields.io/github/v/release/epoupon/lms?logo=github&label=latest)](https://github.com/epoupon/lms/releases) [![Build](https://img.shields.io/github/workflow/status/epoupon/lms/Build?logo=github)](https://github.com/epoupon/lms/actions) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/epoupon/lms.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/epoupon/lms/context:cpp)
+[![Last Release](https://img.shields.io/github/v/release/epoupon/lms?logo=github&label=latest)](https://github.com/epoupon/lms/releases) [![Build](https://img.shields.io/github/workflow/status/epoupon/lms/Build?logo=github)](https://github.com/epoupon/lms/actions)
 
 _LMS_ is a self-hosted music streaming software: access your music collection from anywhere using a web interface!
 
 A [demo instance](http://lms-demo.poupon.dev) is available. Note the administration panel is not available.
 
 ## Main features
-* Low memory requirements: the demo instance runs on a _Raspberry Pi Zero W_
 * Recommendation engine
 * Audio transcode for maximum interoperability and low bandwith requirements
-* Multi-value tags: artists, genres, composers, lyricists, moods, ...
+* Multi-value tags: `artist`, `genre`, `composer`, `lyricist`, `mood`, `performer`, ...
 * [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) support to handle duplicated artist and release names
 * [ListenBrainz](https://listenbrainz.org) support for:
   * Scrobbling and synchronizing listens

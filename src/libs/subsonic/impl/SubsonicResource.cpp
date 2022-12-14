@@ -993,10 +993,9 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 	// Mandatory params
 	const auto artistId {getParameterAs<ArtistId>(context.parameters, "id")};
 	const auto releaseId {getParameterAs<ReleaseId>(context.parameters, "id")};
-	const auto trackId {getParameterAs<TrackId>(context.parameters, "id")};
 	const auto root {getParameterAs<RootId>(context.parameters, "id")};
 
-	if (!root && !artistId && !releaseId && !trackId)
+	if (!root && !artistId && !releaseId)
 		throw BadParameterGenericError {"id"};
 
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
@@ -1013,10 +1012,10 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 		directoryNode.setAttribute("id", idToString(RootId {}));
 		directoryNode.setAttribute("name", "Music");
 
-		auto artistIds {Artist::find(context.dbSession, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::BySortName))};
-		for (const ArtistId artistId : artistIds.results)
+		auto rootArtistIds {Artist::find(context.dbSession, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::BySortName))};
+		for (const ArtistId rootArtistId : rootArtistIds.results)
 		{
-			const Artist::pointer artist {Artist::find(context.dbSession, artistId)};
+			const Artist::pointer artist {Artist::find(context.dbSession, rootArtistId)};
 			directoryNode.addArrayChild("child", artistToResponseNode(artist, context.dbSession, user, false /* no id3 */));
 		}
 	}
@@ -1030,10 +1029,10 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 
 		directoryNode.setAttribute("name", makeNameFilesystemCompatible(artist->getName()));
 
-		const auto releases {Release::find(context.dbSession, Release::FindParameters {}.setArtist(*artistId))};
-		for (const ReleaseId releaseId : releases.results)
+		const auto artistReleases {Release::find(context.dbSession, Release::FindParameters {}.setArtist(*artistId))};
+		for (const ReleaseId artistReleaseId : artistReleases.results)
 		{
-			const Release::pointer release {Release::find(context.dbSession, releaseId)};
+			const Release::pointer release {Release::find(context.dbSession, artistReleaseId)};
 			directoryNode.addArrayChild("child", releaseToResponseNode(release, context.dbSession, user, false /* no id3 */));
 		}
 	}

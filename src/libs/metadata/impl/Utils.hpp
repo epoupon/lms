@@ -18,6 +18,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
+#include <string_view>
 #include <Wt/WDate.h>
 
 #include "metadata/IParser.hpp"
@@ -26,5 +29,14 @@ namespace MetaData::Utils
 {
 	Wt::WDate parseDate(const std::string& dateStr);
 	std::string_view readStyleToString(ParserReadStyle readStyle);
+
+	struct PerformerArtist
+	{
+		Artist artist;
+		std::string role;
+	};
+
+	// format is "artist name (role)"
+	PerformerArtist extractPerformerAndRole(std::string_view entry);
 }
 

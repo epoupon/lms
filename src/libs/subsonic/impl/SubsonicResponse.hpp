@@ -206,9 +206,9 @@ class Response
 				void setVersionAttribute(ProtocolVersion version);
 
 				friend class Response;
-				using Value = std::variant<std::string, bool, long long>;
-				std::map<std::string, Value> _attributes;
-				std::optional<Value> _value;
+				using ValueType = std::variant<std::string, bool, long long>;
+				std::map<std::string, ValueType> _attributes;
+				std::optional<ValueType> _value;
 				std::map<std::string, std::vector<Node>> _children;
 				std::map<std::string, std::vector<Node>> _childrenArrays;
 		};
