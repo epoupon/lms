@@ -354,7 +354,7 @@ namespace Scrobbling::ListenBrainz
 		auto itContext {_userContexts.find(userId)};
 		if (itContext == std::cend(_userContexts))
 		{
-			auto [itNewContext, inserted] {_userContexts.emplace(userId, userId)};
+			[[maybe_unused]] auto [itNewContext, inserted] {_userContexts.emplace(userId, userId)};
 			itContext = itNewContext;
 		}
 
@@ -366,7 +366,7 @@ namespace Scrobbling::ListenBrainz
 	{
 		return std::any_of(std::cbegin(_userContexts), std::cend(_userContexts), [](const auto& contextEntry)
 				{
-					const auto& [userId, context] {contextEntry};
+					[[maybe_unused]] const auto& [userId, context] {contextEntry};
 					return context.syncing;
 				});
 	}

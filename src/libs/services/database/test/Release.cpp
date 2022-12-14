@@ -39,9 +39,11 @@ TEST_F(DatabaseFixture, Release)
 		EXPECT_EQ(Release::getCount(session), 1);
 		EXPECT_TRUE(Release::exists(session, release.getId()));
 
-		auto releases {Release::findOrphans(session, Range {})};
-		ASSERT_EQ(releases.results.size(), 1);
-		EXPECT_EQ(releases.results.front(), release.getId());
+		{
+			auto releases {Release::findOrphans(session, Range {})};
+			ASSERT_EQ(releases.results.size(), 1);
+			EXPECT_EQ(releases.results.front(), release.getId());
+		}
 
 		{
 			auto releases {Release::find(session, Release::FindParameters {})};

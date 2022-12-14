@@ -467,7 +467,7 @@ CREATE TABLE "starred_track" (
 				return itScrobbler->second;
 
 			auto query {session.getDboSession().query<Scrobbler>("SELECT scrobbler FROM user WHERE id = ?").bind(userId)};
-			auto [itInserted, inserted] {userScrobblers.emplace(userId, query.resultValue())};
+			[[maybe_unused]] auto [itInserted, inserted] {userScrobblers.emplace(userId, query.resultValue())};
 			assert(inserted);
 			return itInserted->second;
 		}};

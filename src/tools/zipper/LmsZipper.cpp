@@ -66,7 +66,6 @@ int main(int argc, char* argv[])
 		Zip::SizeType nbTotalWrittenBytes {};
 		while (!zipper.isComplete())
 		{
-			//std::array<std::byte, Zipper::minOutputBufferSize> buffer;
 			std::array<std::byte, 65536> buffer;
 
 			const Zip::SizeType nbWrittenBytes {zipper.writeSome(buffer.data(), buffer.size())};

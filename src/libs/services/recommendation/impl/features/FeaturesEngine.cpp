@@ -410,7 +410,7 @@ FeaturesEngine::load(const SOM::Network& network, const TrackPositions& trackPos
 				auto itArtists {_artistMatrix.find(artistLink->getType())};
 				if (itArtists == std::cend(_artistMatrix))
 				{
-					auto [it, inserted] = _artistMatrix.try_emplace(artistLink->getType(), ArtistMatrix {width, height});
+					[[maybe_unused]] auto [it, inserted] = _artistMatrix.try_emplace(artistLink->getType(), ArtistMatrix {width, height});
 					assert(inserted);
 					itArtists = it;
 				}

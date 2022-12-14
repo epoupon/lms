@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #include "services/scrobbling/Exception.hpp"
 
 namespace Scrobbling::ListenBrainz

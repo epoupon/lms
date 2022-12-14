@@ -23,7 +23,6 @@
 #include <Wt/Json/Object.h>
 #include <Wt/Json/Value.h>
 #include <Wt/Json/Parser.h>
-//#include <Wt/Json/Serializer.h>
 
 #include "services/scrobbling/Exception.hpp"
 #include "Exception.hpp"

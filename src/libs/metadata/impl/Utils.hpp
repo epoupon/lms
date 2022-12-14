@@ -18,6 +18,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #include <string_view>
 #include <Wt/WDate.h>
 
