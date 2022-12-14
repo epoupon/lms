@@ -24,6 +24,7 @@
 #include <map>
 #include <optional>
 #include <set>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -43,6 +44,8 @@ namespace MetaData
 		Artist(std::string_view _name) : name {_name} {}
 		Artist(std::string_view _name, std::optional<std::string> _sortName, std::optional<UUID> _musicBrainzArtistID) : name {_name}, sortName {_sortName}, musicBrainzArtistID {_musicBrainzArtistID} {}
 	};
+
+	using PerformerContainer = std::map<std::string /*role*/, std::vector<Artist>>;
 
 	struct Album
 	{
@@ -83,6 +86,7 @@ namespace MetaData
 		std::vector<Artist>		composerArtists;
 		std::vector<Artist>		lyricistArtists;
 		std::vector<Artist>		mixerArtists;
+		PerformerContainer		performerArtists;
 		std::vector<Artist>		producerArtists;
 		std::vector<Artist>		remixerArtists;
 	};

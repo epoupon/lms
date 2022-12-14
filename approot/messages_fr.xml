@@ -175,6 +175,10 @@
 	<plural case="0">Mixeur</plural>
 	<plural case="1">Mixeurs</plural>
 </message>
+<message id="Lms.Explore.Artists.linktype-performer">
+	<plural case="0">Interprète</plural>
+	<plural case="1">Interprètes</plural>
+</message>
 <message id="Lms.Explore.Artists.linktype-producer">
 	<plural case="0">Producteur</plural>
 	<plural case="1">Producteurs</plural>

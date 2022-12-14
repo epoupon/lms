@@ -62,7 +62,6 @@ TEST(MetaData, parseDate)
 		{ "1995-05/09",	Wt::WDate {} },					// invalid mixup separators
 	};
 
-
 	for (const TestCase& testCase : testCases)
 	{
 		const Wt::WDate parsed {parseDate(testCase.str)};
@@ -70,5 +69,49 @@ TEST(MetaData, parseDate)
 		EXPECT_EQ(parsed.year(), testCase.result.year()) << " str was '" << testCase.str << "'";
 		EXPECT_EQ(parsed.month(), testCase.result.month()) << " str was '" << testCase.str << "'";
 		EXPECT_EQ(parsed.day(), testCase.result.day()) << " str was '" << testCase.str << "'";
+	}
+}
+
+TEST(MetaData, extractPerformerAndRole)
+{
+	using namespace MetaData::Utils;
+
+	struct TestCase
+	{
+		std::string	str;
+		std::string expectedArtistName;
+		std::string expectedRole;
+	} testCases []
+	{
+		{ "", "", "" },
+		{ "(myrole)", "", "myrole" },
+		{ "(my role)", "", "my role" },
+		{ " ( my role ) ", "", "my role" },
+		{ " (()) ", "", "()" },
+		{ ")", ")", "" },
+		{ "(", "(", "" },
+		{ "artist name (my role)", "artist name", "my role" },
+		{ "artist name ()", "artist name", "" },
+		{ "artist name (  )", "artist name", "" },
+		{ "artist (subname) name", "artist (subname) name", "" },
+		{ " artist name  ( my role  )", "artist name", "my role" },
+		{ "artist name (artist subname) (my role)", "artist name (artist subname)", "my role" },
+		{ "artist name", "artist name", "" },
+		{ "  artist name  ", "artist name", "" },
+		{ "artist name (", "artist name (", "" },
+		{ "artist name )", "artist name )", "" },
+		{ "artist name (()", "artist name (", "" },
+		{ "artist name (())", "artist name", "()" },
+		{ "artist name ( () )", "artist name", "()" },
+		{ "artist name (drums (drum set))", "artist name", "drums (drum set)" },
+		{ "artist name (  drums (drum set) )", "artist name", "drums (drum set)" },
+	};
+
+	for (const TestCase& testCase : testCases)
+	{
+		PerformerArtist performer {extractPerformerAndRole(testCase.str)};
+
+		EXPECT_EQ(performer.artist.name, testCase.expectedArtistName) << " str was '" << testCase.str << "'";
+		EXPECT_EQ(performer.role, testCase.expectedRole) << " str was '" << testCase.str << "'";
 	}
 }

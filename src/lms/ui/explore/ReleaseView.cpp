@@ -19,6 +19,7 @@
 
 #include "ReleaseView.hpp"
 
+#include <map>
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
 #include <Wt/WPushButton.h>
@@ -30,6 +31,7 @@
 #include "services/database/ScanSettings.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
+#include "services/database/TrackArtistLink.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Logger.hpp"
@@ -64,6 +66,7 @@ showReleaseInfoModal(Database::ReleaseId releaseId)
 	releaseInfo->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	Wt::WContainerWidget* artistTable {releaseInfo->bindNew<Wt::WContainerWidget>("artist-table")};
+	std::map<Wt::WString, std::set<ArtistId>> artistMap;
 
 	auto addArtists = [&](TrackArtistLinkType linkType, const char* type)
 	{
@@ -74,11 +77,28 @@ showReleaseInfoModal(Database::ReleaseId releaseId)
 		if (artistIds.results.empty())
 			return;
 
-		std::unique_ptr<Wt::WContainerWidget> artistContainer {Utils::createArtistContainer(artistIds.results)};
-		auto artistsEntry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.template.info.artists"))};
-		artistsEntry->bindString("type", Wt::WString::trn(type, artistContainer->count()));
-		artistsEntry->bindWidget("artist-container", std::move(artistContainer));
-		artistTable->addWidget(std::move(artistsEntry));
+		Wt::WString typeStr {Wt::WString::trn(type, artistIds.results.size())};;
+		for (ArtistId artistId : artistIds.results)
+			artistMap[typeStr].insert(artistId);
+	};
+
+	auto addPerformerArtists = [&]
+	{
+		TrackArtistLink::FindParameters params;
+		params.setRelease(releaseId);
+		params.setLinkType(TrackArtistLinkType::Performer);
+		const auto links {TrackArtistLink::find(LmsApp->getDbSession(), params)};
+		if (links.results.empty())
+			return;
+
+		for (const TrackArtistLinkId linkId : links.results)
+		{
+			const TrackArtistLink::pointer link {TrackArtistLink::find(LmsApp->getDbSession(), linkId)};
+			if (!link)
+				continue;
+
+			artistMap[std::string {link->getSubType()}].insert(link->getArtist()->getId());
+		}
 	};
 
 	addArtists(TrackArtistLinkType::Composer, "Lms.Explore.Artists.linktype-composer");
@@ -87,6 +107,17 @@ showReleaseInfoModal(Database::ReleaseId releaseId)
 	addArtists(TrackArtistLinkType::Mixer, "Lms.Explore.Artists.linktype-mixer");
 	addArtists(TrackArtistLinkType::Remixer, "Lms.Explore.Artists.linktype-remixer");
 	addArtists(TrackArtistLinkType::Producer, "Lms.Explore.Artists.linktype-producer");
+	addPerformerArtists();
+
+	for (const auto& [role, artistIds] : artistMap)
+	{
+		std::unique_ptr<Wt::WContainerWidget> artistContainer {Utils::createArtistContainer(std::vector (std::cbegin(artistIds), std::cend(artistIds)))};
+		auto artistsEntry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.template.info.artists"))};
+		artistsEntry->bindString("type", role);
+		artistsEntry->bindWidget("artist-container", std::move(artistContainer));
+		artistTable->addWidget(std::move(artistsEntry));
+	}
+
 
 	// TODO: save in DB and mean all this
 	for (TrackId trackId : Track::find(LmsApp->getDbSession(), Track::FindParameters {}.setRelease(releaseId).setRange(Range {0, 1})).results)

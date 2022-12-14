@@ -133,6 +133,48 @@ getArtists(const TagLib::PropertyMap& properties,
 }
 
 static
+PerformerContainer
+getPerformerArtists(const TagLib::PropertyMap& properties,
+		const std::vector<std::string_view>& artistTagNames)
+{
+	PerformerContainer performers;
+
+	// picard stores like this: (see https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html#performer)
+	// PERFORMER: artist (role)
+	if (const std::vector<std::string> artistNames {getPropertyValuesFirstMatchAs<std::string>(properties, artistTagNames)}; !artistNames.empty())
+	{
+		for (std::string_view entry : artistNames)
+		{
+			Utils::PerformerArtist performer {Utils::extractPerformerAndRole(entry)};
+			StringUtils::capitalize(performer.role);
+			performers[performer.role].push_back(std::move(performer.artist));
+		}
+	}
+	// PERFORMER:role (MP3)
+	else
+	{
+		for (const auto& [key, values] : properties)
+		{
+			if (key.startsWith("PERFORMER"))
+			{
+				std::string performerStr {key.to8Bit(true)};
+				std::string role;
+				if (const std::size_t rolePos {performerStr.find(':')}; rolePos != std::string::npos)
+				{
+					role = StringUtils::stringToLower(performerStr.substr(rolePos + 1, performerStr.size() - rolePos + 1));
+					StringUtils::capitalize(role);
+				}
+
+				for (const auto& value : values)
+					performers[role].push_back(Artist {value.to8Bit(true)});
+			}
+		}
+	}
+
+	return performers;
+}
+
+static
 std::optional<Album>
 getAlbum(const TagLib::PropertyMap& properties)
 {
@@ -140,7 +182,7 @@ getAlbum(const TagLib::PropertyMap& properties)
 	if (albumName.empty())
 		return std::nullopt;
 
-	const std::vector<UUID> albumMBID {getPropertyValuesFirstMatchAs<UUID>(properties, {"MUSICBRAINZ_ALBUMID", "MUSICBRAINZ ALBUM ID"})};
+	const std::vector<UUID> albumMBID {getPropertyValuesFirstMatchAs<UUID>(properties, {"MUSICBRAINZ_ALBUMID", "MUSICBRAINZ ALBUM ID", "MUSICBRAINZ/ALBUM ID"})};
 
 	if (albumMBID.empty())
 		return Album {std::move(albumName.front()), {}};
@@ -187,12 +229,14 @@ TagLibParser::processTag(Track& track, const std::string& tag, const TagLib::Str
 	if (tag == "TITLE")
 		track.title = value;
 	else if (tag == "MUSICBRAINZ_RELEASETRACKID"
-			|| tag == "MUSICBRAINZ RELEASE TRACK ID")
+			|| tag == "MUSICBRAINZ RELEASE TRACK ID"
+			|| tag == "MUSICBRAINZ/RELEASE TRACK ID")
 	{
 		track.trackMBID = UUID::fromString(value);
 	}
 	else if (tag == "MUSICBRAINZ_TRACKID"
-			|| tag == "MUSICBRAINZ TRACK ID")
+			|| tag == "MUSICBRAINZ TRACK ID"
+			|| tag == "MUSICBRAINZ/TRACK ID")
 		track.recordingMBID = UUID::fromString(value);
 	else if (tag == "ACOUSTID_ID")
 		track.acoustID = UUID::fromString(value);
@@ -416,23 +460,19 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 			track.hasCover = true;
 	}
 
-	for (const auto& property : properties)
-	{
-		const std::string tag {property.first.upper().to8Bit(true)};
-		const TagLib::StringList& values {property.second};
-
-		processTag(track, tag, values, debug);
-	}
+	for (const auto& [tag, values] : properties)
+		processTag(track, tag.upper().to8Bit(true), values, debug);
 
 	track.album = getAlbum(properties);
-	track.artists = getArtists(properties, {"ARTISTS", "ARTIST"}, {"ARTISTSORT"}, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID"});
-	track.albumArtists = getArtists(properties, {"ALBUMARTISTS", "ALBUMARTIST"}, {"ALBUMARTISTSSORT", "ALBUMARTISTSORT"}, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID"});
+	track.artists = getArtists(properties, {"ARTISTS", "ARTIST"}, {"ARTISTSORT"}, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID", "MUSICBRAINZ/ARTIST ID"});
+	track.albumArtists = getArtists(properties, {"ALBUMARTISTS", "ALBUMARTIST"}, {"ALBUMARTISTSSORT", "ALBUMARTISTSORT"}, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID", "MUSICBRAINZ/ALBUM ARTIST ID"});
 	track.conductorArtists = getArtists(properties, {"CONDUCTORS", "CONDUCTOR"}, {"CONDUCTORSSORT", "CONDUCTORSORT"}, {});
 	track.composerArtists = getArtists(properties, {"COMPOSERS", "COMPOSER"}, {"COMPOSERSSORT", "COMPOSERSORT"}, {});
 	track.lyricistArtists = getArtists(properties, {"LYRICISTS", "LYRICIST"}, {"LYRICISTSSORT", "LYRICISTSORT"}, {});
 	track.mixerArtists = getArtists(properties, {"MIXERS", "MIXER"}, {"MIXERSSORT", "MIXERSORT"}, {});
 	track.producerArtists = getArtists(properties, {"PRODUCERS", "PRODUCER"}, {"PRODUCERSSORT", "PRODUCERSORT"}, {});
 	track.remixerArtists = getArtists(properties, {"REMIXERS", "REMIXER", "ModifiedBy"}, {"REMIXERSSORT", "REMIXERSORT"}, {});
+	track.performerArtists = getPerformerArtists(properties, {"PERFORMERS", "PERFORMER"});
 
 	return track;
 }

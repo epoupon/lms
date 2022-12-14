@@ -24,36 +24,78 @@
 #include "services/database/Track.hpp"
 
 #include "IdTypeTraits.hpp"
+#include "Utils.hpp"
 
-namespace Database {
-
-TrackArtistLink::TrackArtistLink(ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type)
-: _type {type},
-_track {getDboPtr(track)},
-_artist {getDboPtr(artist)}
+namespace Database
 {
-}
 
-TrackArtistLink::pointer
-TrackArtistLink::create(Session& session, ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type)
-{
-	session.checkUniqueLocked();
+	static
+	Wt::Dbo::Query<TrackArtistLinkId>
+	createQuery(Session& session, const TrackArtistLink::FindParameters& params)
+	{
+		session.checkSharedLocked();
 
-	TrackArtistLink::pointer res {session.getDboSession().add(std::make_unique<TrackArtistLink>(track, artist, type))};
-	session.getDboSession().flush();
+		auto query {session.getDboSession().query<TrackArtistLinkId>("SELECT DISTINCT t_a_l.id FROM track_artist_link t_a_l")};
 
-	return res;
-}
+		if (params.linkType)
+			query.where("t_a_l.type = ?").bind(*params.linkType);
 
-EnumSet<TrackArtistLinkType>
-TrackArtistLink::findUsedTypes(Session& session)
-{
-	session.checkSharedLocked();
+		if (params.track.isValid()	|| params.release.isValid())
+			query.join("track t ON t.id = t_a_l.track_id");
 
-	auto res {session.getDboSession().query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link").resultList()};
+		if (params.track.isValid())
+			query.where("t.id = ?").bind(params.track);
 
-	return EnumSet<TrackArtistLinkType>(std::begin(res), std::end(res));
-}
+		if (params.release.isValid())
+			query.where("t.release_id = ?").bind(params.release);
 
+		return query;
+	}
+
+	TrackArtistLink::TrackArtistLink(ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type, std::string_view subType)
+	: _type {type}
+	, _subType {subType}
+	, _track {getDboPtr(track)}
+	, _artist {getDboPtr(artist)}
+	{
+	}
+
+	TrackArtistLink::pointer
+	TrackArtistLink::create(Session& session, ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type, std::string_view subType)
+	{
+		session.checkUniqueLocked();
+
+		TrackArtistLink::pointer res {session.getDboSession().add(std::make_unique<TrackArtistLink>(track, artist, type, subType))};
+		session.getDboSession().flush();
+
+		return res;
+	}
+
+	TrackArtistLink::pointer
+	TrackArtistLink::find(Session& session, TrackArtistLinkId id)
+	{
+		session.checkSharedLocked();
+		return session.getDboSession().find<TrackArtistLink>().where("id = ?").bind(id).resultValue();
+	}
+
+	RangeResults<TrackArtistLinkId>
+	TrackArtistLink::find(Session& session, const FindParameters& params)
+	{
+		session.checkSharedLocked();
+
+		auto query {createQuery(session, params)};
+		return Utils::execQuery(query, params.range);
+	}
+
+
+	EnumSet<TrackArtistLinkType>
+	TrackArtistLink::findUsedTypes(Session& session)
+	{
+		session.checkSharedLocked();
+
+		auto res {session.getDboSession().query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link").resultList()};
+
+		return EnumSet<TrackArtistLinkType>(std::begin(res), std::end(res));
+	}
 }
 

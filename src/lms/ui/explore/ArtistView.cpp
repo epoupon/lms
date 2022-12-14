@@ -114,19 +114,14 @@ Artist::refreshView()
 	LmsApp->setTitle(artist->getName());
 	_artistId = *artistId;
 
-	std::size_t sectionCount{};
-
-	if (refreshReleases())
-		sectionCount++;
-	if (refreshAppearsOnReleases())
-		sectionCount++;
-	if (refreshNonReleaseTracks())
-		sectionCount++;
+	bool setReleaseTitle {};
+	refreshReleases();
+	setReleaseTitle |= refreshAppearsOnReleases();
+	setReleaseTitle |= refreshNonReleaseTracks();
 	refreshLinks(artist);
 	refreshSimilarArtists(similarArtistIds);
 
-	if (sectionCount > 1)
-		setCondition("if-section-titles", true);
+	setCondition("if-release-title", setReleaseTitle);
 
 	Wt::WContainerWidget* clusterContainers {bindNew<Wt::WContainerWidget>("clusters")};
 

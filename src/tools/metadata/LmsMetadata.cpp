@@ -52,8 +52,6 @@ std::ostream& operator<<(std::ostream& os, const MetaData::Album& album)
 	return os;
 }
 
-
-
 void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 {
 	using namespace MetaData;
@@ -90,6 +88,16 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 
 	for (const Artist& artist : track->mixerArtists)
 		std::cout << "Mixer: " << artist << std::endl;
+
+	for (const auto& [role, artists] : track->performerArtists)
+	{
+		std::cout << "Performer";
+		if (!role.empty())
+			std::cout << " (" << role << ")";
+		std::cout << ":" << std::endl;
+		for (const Artist& artist : artists)
+			std::cout << "\t" << artist << std::endl;
+	}
 
 	for (const Artist& artist : track->producerArtists)
 		std::cout << "Producer: " << artist << std::endl;

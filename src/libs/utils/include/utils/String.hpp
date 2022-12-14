@@ -44,7 +44,7 @@ std::string
 joinStrings(const std::vector<std::string>& strings, const std::string& delimiter);
 
 [[nodiscard]]
-std::string
+std::string_view
 stringTrim(std::string_view str, std::string_view whitespaces = " \t");
 
 [[nodiscard]]
@@ -65,6 +65,9 @@ stringToUpper(const std::string& str);
 [[nodiscard]]
 std::string
 bufferToString(const std::vector<unsigned char>& data);
+
+void
+capitalize(std::string& str);
 
 template<typename T>
 [[nodiscard]]
