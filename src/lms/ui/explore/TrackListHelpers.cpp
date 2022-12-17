@@ -103,6 +103,13 @@ namespace UserInterface::TrackListHelpers
 		addArtists(TrackArtistLinkType::Producer, "Lms.Explore.Artists.linktype-producer");
 		addPerformerArtists();
 
+		if (auto itRolelessPerformers {artistMap.find("")}; itRolelessPerformers != std::cend(artistMap))
+		{
+			Wt::WString performersStr {Wt::WString::trn("Lms.Explore.Artists.linktype-performer", itRolelessPerformers->second.size())};
+			artistMap[performersStr] = std::move(itRolelessPerformers->second);
+			artistMap.erase(itRolelessPerformers);
+		}
+
 		for (const auto& [role, artistIds] : artistMap)
 		{
 			std::unique_ptr<Wt::WContainerWidget> artistContainer {Utils::createArtistContainer(std::vector (std::cbegin(artistIds), std::cend(artistIds)))};

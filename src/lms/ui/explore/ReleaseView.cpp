@@ -77,7 +77,7 @@ showReleaseInfoModal(Database::ReleaseId releaseId)
 		if (artistIds.results.empty())
 			return;
 
-		Wt::WString typeStr {Wt::WString::trn(type, artistIds.results.size())};;
+		Wt::WString typeStr {Wt::WString::trn(type, artistIds.results.size())};
 		for (ArtistId artistId : artistIds.results)
 			artistMap[typeStr].insert(artistId);
 	};
@@ -108,6 +108,13 @@ showReleaseInfoModal(Database::ReleaseId releaseId)
 	addArtists(TrackArtistLinkType::Remixer, "Lms.Explore.Artists.linktype-remixer");
 	addArtists(TrackArtistLinkType::Producer, "Lms.Explore.Artists.linktype-producer");
 	addPerformerArtists();
+
+	if (auto itRolelessPerformers {artistMap.find("")}; itRolelessPerformers != std::cend(artistMap))
+	{
+		Wt::WString performersStr {Wt::WString::trn("Lms.Explore.Artists.linktype-performer", itRolelessPerformers->second.size())};
+		artistMap[performersStr] = std::move(itRolelessPerformers->second);
+		artistMap.erase(itRolelessPerformers);
+	}
 
 	for (const auto& [role, artistIds] : artistMap)
 	{
