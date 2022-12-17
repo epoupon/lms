@@ -140,6 +140,7 @@ getPerformerArtists(const TagLib::PropertyMap& properties,
 	PerformerContainer performers;
 
 	// picard stores like this: (see https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html#performer)
+	// We may hit both styles for the same track
 	// PERFORMER: artist (role)
 	if (const std::vector<std::string> artistNames {getPropertyValuesFirstMatchAs<std::string>(properties, artistTagNames)}; !artistNames.empty())
 	{
@@ -151,23 +152,20 @@ getPerformerArtists(const TagLib::PropertyMap& properties,
 		}
 	}
 	// PERFORMER:role (MP3)
-	else
+	for (const auto& [key, values] : properties)
 	{
-		for (const auto& [key, values] : properties)
+		if (key.startsWith("PERFORMER:"))
 		{
-			if (key.startsWith("PERFORMER"))
+			std::string performerStr {key.to8Bit(true)};
+			std::string role;
+			if (const std::size_t rolePos {performerStr.find(':')}; rolePos != std::string::npos)
 			{
-				std::string performerStr {key.to8Bit(true)};
-				std::string role;
-				if (const std::size_t rolePos {performerStr.find(':')}; rolePos != std::string::npos)
-				{
-					role = StringUtils::stringToLower(performerStr.substr(rolePos + 1, performerStr.size() - rolePos + 1));
-					StringUtils::capitalize(role);
-				}
-
-				for (const auto& value : values)
-					performers[role].push_back(Artist {value.to8Bit(true)});
+				role = StringUtils::stringToLower(performerStr.substr(rolePos + 1, performerStr.size() - rolePos + 1));
+				StringUtils::capitalize(role);
 			}
+
+			for (const auto& value : values)
+				performers[role].push_back(Artist {value.to8Bit(true)});
 		}
 	}
 
