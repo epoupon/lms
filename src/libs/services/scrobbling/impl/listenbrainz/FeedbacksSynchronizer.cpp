@@ -19,6 +19,7 @@
 
 #include "ListenBrainzScrobbler.hpp"
 
+#include <tuple>
 #include <boost/asio/bind_executor.hpp>
 #include <Wt/Json/Array.h>
 #include <Wt/Json/Object.h>
@@ -234,8 +235,7 @@ namespace Scrobbling::ListenBrainz
 		auto itContext {_userContexts.find(userId)};
 		if (itContext == std::cend(_userContexts))
 		{
-			[[maybe_unused]] auto [itNewContext, inserted] {_userContexts.emplace(userId, userId)};
-			itContext = itNewContext;
+			std::tie(itContext, std::ignore) = _userContexts.emplace(userId, userId);
 		}
 
 		return itContext->second;
@@ -246,8 +246,7 @@ namespace Scrobbling::ListenBrainz
 	{
 		return std::any_of(std::cbegin(_userContexts), std::cend(_userContexts), [](const auto& contextEntry)
 				{
-					[[maybe_unused]] const auto& [userId, context] {contextEntry};
-					return context.syncing;
+					return contextEntry.second.syncing;
 				});
 	}
 

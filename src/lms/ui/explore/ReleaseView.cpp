@@ -118,7 +118,6 @@ showReleaseInfoModal(Database::ReleaseId releaseId)
 		artistTable->addWidget(std::move(artistsEntry));
 	}
 
-
 	// TODO: save in DB and mean all this
 	for (TrackId trackId : Track::find(LmsApp->getDbSession(), Track::FindParameters {}.setRelease(releaseId).setRange(Range {0, 1})).results)
 	{
