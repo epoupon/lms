@@ -179,19 +179,6 @@ Transcoder::start()
 }
 
 void
-Transcoder::asyncWaitForData(WaitCallback cb)
-{
-	assert(_childProcess);
-
-	LOG(DEBUG) << "Want to wait for data";
-
-	_childProcess->asyncWaitForData([cb = std::move(cb)]
-	{
-		cb();
-	});
-}
-
-void
 Transcoder::asyncRead(std::byte* buffer, std::size_t bufferSize, ReadCallback readCallback)
 {
 	assert(_childProcess);

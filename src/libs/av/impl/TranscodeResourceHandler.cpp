@@ -46,6 +46,8 @@ namespace Av
 	{
 		if (_estimatedContentLength)
 			LMS_LOG(TRANSCODE, DEBUG) << "Estimated content length = " << *_estimatedContentLength;
+		else
+			LMS_LOG(TRANSCODE, DEBUG) << "Not using estimated content length";
 	}
 
 	Wt::Http::ResponseContinuation*
@@ -58,8 +60,8 @@ namespace Av
 		if (_bytesReadyCount > 0)
 		{
 			response.out().write(reinterpret_cast<const char *>(&_buffer[0]), _bytesReadyCount);
-			_bytesReadyCount = 0;
 			_totalServedByteCount += _bytesReadyCount;
+			_bytesReadyCount = 0;
 		}
 
 		if (!_transcoder.finished())

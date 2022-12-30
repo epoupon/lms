@@ -40,9 +40,6 @@ namespace Av
 			Transcoder(Transcoder&&) = delete;
 			Transcoder& operator=(Transcoder&&) = delete;
 
-			using WaitCallback = std::function<void()>;
-			void			asyncWaitForData(WaitCallback cb);
-
 			// non blocking calls
 			using ReadCallback = std::function<void(std::size_t nbReadBytes)>;
 			void			asyncRead(std::byte* buffer, std::size_t bufferSize, ReadCallback);

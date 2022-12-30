@@ -40,12 +40,10 @@ class ChildProcess : public IChildProcess
 
 	private:
 		void		asyncRead(std::byte* data, std::size_t bufferSize, ReadCallback callback) override;
-		void		asyncWaitForData(WaitCallback cb) override;
 		std::size_t	readSome(std::byte* data, std::size_t bufferSize) override;
-		bool		finished() override;
+		bool		finished() const override;
 
 		void	kill();
-		void	drain();
 		bool	wait(bool block); // return true if waited
 
 		using FileDescriptor = boost::asio::posix::stream_descriptor;
