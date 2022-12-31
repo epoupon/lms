@@ -127,7 +127,7 @@ RUN \
 	PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" ./waf configure \
 		--mode=release \
 		--lightweight=libav,libsamplerate,taglib,yaml \
-		--ignore-algos=LPC,Spline,CubicSpline \
+		--ignore-algos=LPC,Spline,CubicSpline,NoveltyCurve,NoveltyCurveFixedBpmEstimator,SuperFluxNovelty,SuperFluxPeaks,VectorRealAccumulator,VectorRealToTensor,TensorToPool,TensorNormalize,NSGConstantQStreaming,NSGIConstantQ,PredominantPitchMelodia,PitchMelodia,MultiPitchMelodia,PitchContoursMonoMelody,PitchContourSegmentation,TonicIndianArtMusic,AudioWriter,MonoWriter,AudioOnsetsMarker,ChromaCrossSimilarity,CoverSongSimilarity,CrossSimilarityMatrix,FadeDetection,HarmonicMask,HarmonicModelAnal,HpsModelAnal,HprModelAnal,FreesoundExtractor \
 		--fft=KISS \
 		--with-example streaming_extractor_music \
 		--prefix=${PREFIX} && \
