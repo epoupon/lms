@@ -224,9 +224,7 @@ LmsApplication::init()
 	enableUpdates(true);
 
 	if (_authenticatedUser)
-	{
 		onUserLoggedIn();
-	}
 	else if (Service<::Auth::IPasswordService>::exists())
 		processPasswordAuth();
 }
@@ -507,6 +505,11 @@ LmsApplication::createHome()
 	{
 		_mediaPlayer->stop();
 	});
+	_playQueue->trackCountChanged.connect([this] (std::size_t trackCount)
+	{
+		_mediaPlayer->onPlayQueueUpdated(trackCount);
+	});
+	_mediaPlayer->onPlayQueueUpdated(_playQueue->getCount());
 
 	const bool isAdmin {getUserType() == Database::UserType::ADMIN};
 	if (isAdmin)

@@ -101,7 +101,9 @@ class MediaPlayer : public Wt::WTemplate
 		void stop();
 
 		std::optional<Settings>	getSettings() const { return _settings; }
-		void			setSettings(const Settings& settings);
+		void					setSettings(const Settings& settings);
+
+		void					onPlayQueueUpdated(std::size_t trackCount);
 
 		// Signals
 		Wt::JSignal<> 					playPrevious;
@@ -123,9 +125,10 @@ class MediaPlayer : public Wt::WTemplate
 
 		Wt::JSignal<std::string> 	_settingsLoaded;
 
-		Wt::WText*		_title {};
-		Wt::WAnchor*	_release {};
-		Wt::WAnchor*	_artist {};
+		Wt::WText*			_title {};
+		Wt::WAnchor*		_release {};
+		Wt::WAnchor*		_artist {};
+		Wt::WPushButton*	_playQueue {};
 };
 
 } // namespace UserInterface

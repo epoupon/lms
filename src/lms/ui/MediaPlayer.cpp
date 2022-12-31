@@ -210,12 +210,9 @@ MediaPlayer::MediaPlayer()
 	_title = bindNew<Wt::WText>("title");
 	_artist = bindNew<Wt::WAnchor>("artist");
 	_release = bindNew<Wt::WAnchor>("release");
-
-	{
-		Wt::WPushButton* playQueueBtn {bindNew<Wt::WPushButton>("playqueue-btn", Wt::WString::tr("Lms.MediaPlayer.template.playqueue-btn"), Wt::TextFormat::XHTML)};
-		playQueueBtn->setLink(Wt::WLink {Wt::LinkType::InternalPath, "/playqueue"});
-		playQueueBtn->setToolTip(tr("Lms.PlayQueue.playqueue"));
-	}
+	_playQueue = bindNew<Wt::WPushButton>("playqueue-btn", Wt::WString::tr("Lms.MediaPlayer.template.playqueue-btn").arg(0), Wt::TextFormat::XHTML);
+	_playQueue->setLink(Wt::WLink {Wt::LinkType::InternalPath, "/playqueue"});
+	_playQueue->setToolTip(tr("Lms.PlayQueue.playqueue"));
 
 	_settingsLoaded.connect([this](const std::string& settings)
 	{
@@ -328,6 +325,12 @@ MediaPlayer::setSettings(const Settings& settings)
 		LMS_LOG(UI, DEBUG) << "Running js = '" << oss.str() << "'";
 		doJavaScript(oss.str());
 	}
+}
+
+void
+MediaPlayer::onPlayQueueUpdated(std::size_t trackCount)
+{
+	_playQueue->setText(Wt::WString::tr("Lms.MediaPlayer.template.playqueue-btn").arg(trackCount));
 }
 
 } // namespace UserInterface

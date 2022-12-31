@@ -44,6 +44,10 @@
 	</div>
 </message>
 
-<message id="Lms.MediaPlayer.template.playqueue-btn"><i class="fa fa-fw fa-th-list"/></message>
+<message id="Lms.MediaPlayer.template.playqueue-btn">
+	<span>
+		<i class="fa fa-fw fa-th-list d-inline"/><div class="d-none d-sm-inline ms-2 small">{1}</div>
+	</span>
+</message>
 
 </messages>
