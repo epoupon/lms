@@ -26,12 +26,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install Packages (cpp)
-        if: ${{ matrix.language == 'cpp' }}
+      - if: matrix.language == 'cpp'
+        name: Install dependencies (cpp)
         run: |
           sudo apt-get update
           sudo apt-get install --yes build-essential cmake libboost-all-dev libconfig++-dev libavcodec-dev libavutil-dev libavformat-dev libstb-dev libtag1-dev libpam0g-dev libgtest-dev
-          export WT_VERSION=4.7.2
+          export WT_VERSION=4.9.0
           export WT_INSTALL_PREFIX=/usr
           git clone https://github.com/emweb/wt.git /tmp/wt
           pushd /tmp/wt
@@ -47,7 +47,12 @@ jobs:
           languages: ${{ matrix.language }}
           queries: +security-and-quality
 
-      - name: Build
+      - if: matrix.language == 'javascript'
+        name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+
+      - if: matrix.language == 'cpp'
+        name: Build
         run: |
           mkdir -p build
           cd build
