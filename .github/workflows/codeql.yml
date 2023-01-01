@@ -37,7 +37,7 @@ jobs:
           pushd wt
           git checkout ${WT_VERSION}
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${WT_INSTALL_PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF
-          make
+          make -j$(nproc)
           sudo make install
           popd
 
