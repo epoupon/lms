@@ -337,7 +337,6 @@ handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
 
 	LMS_LOG(UI, DEBUG) << "Internal path changed to '" << wApp->internalPath() << "'";
 
-	LmsApp->doJavaScript(R"($('.navbar-nav a.active').removeClass('active'); $('.navbar-nav a[href="' + location.pathname + '"]').closest('a').addClass('active');)");
 	for (const auto& view : views)
 	{
 		if (wApp->internalPathMatches(view.path))
@@ -348,6 +347,8 @@ handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
 			stack.setCurrentIndex(view.index);
 			if (view.title)
 				LmsApp->setTitle(*view.title);
+
+			LmsApp->doJavaScript(LmsApp->javaScriptClass() + ".updateActiveNav('" + view.path +"')");
 			return;
 		}
 	}
@@ -396,9 +397,21 @@ LmsApplication::createHome()
 	_coverResource = std::make_shared<CoverResource>();
 
 	declareJavaScriptFunction("onLoadCover", "function(id) { id.className += \" Lms-cover-loaded\"}");
+	declareJavaScriptFunction("updateActiveNav",
+R"(function(current) {
+	const menuItems = document.querySelectorAll('.nav-item a[href]:not([href=""])');
+    for (const menuItem of menuItems) {
+        if (menuItem.getAttribute("href").indexOf(current) !== -1) {
+            menuItem.classList.add('active');
+        }
+		else {
+            menuItem.classList.remove('active');
+		}
+
+    }
+})");
 
 	Wt::WTemplate* main {root()->addWidget(std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.main.template")))};
-
 	main->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
 	Template* navbar {main->bindNew<Template>("navbar", Wt::WString::tr("Lms.main.template.navbar"))};
