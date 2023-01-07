@@ -66,7 +66,11 @@ class PlayQueue : public Template
 		// Signal emitted when track is unselected (has to be stopped)
 		Wt::Signal<> trackUnselected;
 
+		// Signal emitted when track count changed
+		Wt::Signal<std::size_t> trackCountChanged;
+
 		constexpr std::size_t getCapacity() const { return _capacity; }
+		std::size_t getCount();
 
 	private:
 		void initTrackLists();

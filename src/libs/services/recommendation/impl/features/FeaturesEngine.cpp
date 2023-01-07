@@ -194,7 +194,6 @@ FeaturesEngine::loadFromTraining(const TrainSettings& trainSettings, const Progr
 			[this] { return _loadCancelled; });
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Training network DONE";
 
-
 	LMS_LOG(RECOMMENDATION, DEBUG) << "Classifying tracks...";
 	TrackPositions trackPositions;
 	for (std::size_t i {}; i < samples.size(); ++i)
@@ -351,7 +350,7 @@ FeaturesEngine::load(bool forceReload, const ProgressCallback& progressCallback)
 	trainSettings.featureSettingsMap = getDefaultTrainFeatureSettings();
 
 	loadFromTraining(trainSettings, progressCallback);
-	if (!_loadCancelled)
+	if (!_loadCancelled && _network)
 		toCache().write();
 }
 

@@ -1169,48 +1169,102 @@ handleGetArtistsRequest(RequestContext& context)
 }
 
 static
-Response
-handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
+std::vector<TrackId>
+findSimilarSongs(RequestContext& context, ArtistId artistId, std::size_t count)
 {
-	// Mandatory params
-	const ArtistId artistId {getMandatoryParameterAs<ArtistId>(context.parameters, "id")};
+	// API says: "Returns a random collection of songs from the given artist and similar artists"
+	const std::size_t similarArtistCount {count / 5};
+	std::vector<ArtistId> artistIds {Service<Recommendation::IRecommendationService>::get()->getSimilarArtists(artistId, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, similarArtistCount)};
+	artistIds.push_back(artistId);
 
-	// Optional params
-	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").value_or(50)};
-
-	const auto similarArtistIds {Service<Recommendation::IRecommendationService>::get()->getSimilarArtists(artistId, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, 5)};
+	const std::size_t meanTrackCountPerArtist {(count / artistIds.size()) + 1};
 
 	auto transaction {context.dbSession.createSharedTransaction()};
 
-	const Artist::pointer artist {Artist::find(context.dbSession, artistId)};
-	if (!artist)
-		throw RequestedDataNotFoundError {};
+	std::vector<TrackId> tracks;
+	tracks.reserve(count);
 
-	const User::pointer user {User::find(context.dbSession, context.userId)};
-	if (!user)
-		throw UserNotAuthorizedError {};
-
-	// "Returns a random collection of songs from the given artist and similar artists"
-	const auto trackResults {Track::find(context.dbSession, Track::FindParameters {}
-													.setArtist(artist->getId())
-													.setRange({0, count / 2})
-													.setSortMethod(TrackSortMethod::Random))};
-
-	std::vector<TrackId> tracks {trackResults.results};
-
-	for (const ArtistId similarArtistId : similarArtistIds)
+	for (const ArtistId id : artistIds)
 	{
-		const auto similarArtistTracks {Track::find(context.dbSession, Track::FindParameters {}
-												.setArtist(similarArtistId)
-												.setRange({0, (count / 2) / 5})
-												.setSortMethod(TrackSortMethod::Random))};
+		Track::FindParameters params;
+		params.setArtist(id);
+		params.setRange({0, meanTrackCountPerArtist});
+		params.setSortMethod(TrackSortMethod::Random);
 
+		const auto artistTracks {Track::find(context.dbSession, params)};
 		tracks.insert(std::end(tracks),
-							std::begin(similarArtistTracks.results),
-							std::end(similarArtistTracks.results));
+				std::begin(artistTracks.results),
+				std::end(artistTracks.results));
 	}
 
+	return tracks;
+}
+
+static
+std::vector<TrackId>
+findSimilarSongs(RequestContext& context, ReleaseId releaseId, std::size_t count)
+{
+	// API says: "Returns a random collection of songs from the given artist and similar artists"
+	// so let's extend this for release
+	const std::size_t similarReleaseCount {count / 5};
+	std::vector<ReleaseId> releaseIds {Service<Recommendation::IRecommendationService>::get()->getSimilarReleases(releaseId, similarReleaseCount)};
+	releaseIds.push_back(releaseId);
+
+	const std::size_t meanTrackCountPerRelease {(count / releaseIds.size()) + 1};
+
+	auto transaction {context.dbSession.createSharedTransaction()};
+
+	std::vector<TrackId> tracks;
+	tracks.reserve(count);
+
+	for (const ReleaseId id : releaseIds)
+	{
+		Track::FindParameters params;
+		params.setRelease(id);
+		params.setRange({0, meanTrackCountPerRelease});
+		params.setSortMethod(TrackSortMethod::Random);
+
+		const auto releaseTracks {Track::find(context.dbSession, params)};
+		tracks.insert(std::end(tracks),
+				std::begin(releaseTracks.results),
+				std::end(releaseTracks.results));
+	}
+
+	return tracks;
+}
+
+static
+std::vector<TrackId>
+findSimilarSongs(RequestContext&, TrackId trackId, std::size_t count)
+{
+	return Service<Recommendation::IRecommendationService>::get()->findSimilarTracks({trackId}, count);
+}
+
+static
+Response
+handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
+{
+	// Optional params
+	std::size_t count {getParameterAs<std::size_t>(context.parameters, "count").value_or(50)};
+
+	std::vector<TrackId> tracks;
+
+	if (const auto artistId {getParameterAs<ArtistId>(context.parameters, "id")})
+		tracks = findSimilarSongs(context, *artistId, count);
+	else if (const auto releaseId {getParameterAs<ReleaseId>(context.parameters, "id")})
+		tracks = findSimilarSongs(context, *releaseId, count);
+	else if (const auto trackId {getParameterAs<TrackId>(context.parameters, "id")})
+		tracks = findSimilarSongs(context, *trackId, count);
+	else
+		throw BadParameterGenericError {"id"};
+
 	Random::shuffleContainer(tracks);
+
+	auto transaction {context.dbSession.createSharedTransaction()};
+
+	User::pointer user {User::find(context.dbSession, context.userId)};
+	if (!user)
+		throw UserNotAuthorizedError {};
 
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& similarSongsNode {response.createNode(id3 ? "similarSongs2" : "similarSongs")};
@@ -1445,7 +1499,12 @@ Response
 handleSearchRequestCommon(RequestContext& context, bool id3)
 {
 	// Mandatory params
-	std::string query {getMandatoryParameterAs<std::string>(context.parameters, "query")};
+	std::string queryString {getMandatoryParameterAs<std::string>(context.parameters, "query")};
+	std::string_view query {queryString};
+
+	// Symfonium adds extra ""
+	if (context.clientInfo.name == "Symfonium")
+		query = StringUtils::stringTrim(query, "\"");
 
 	std::vector<std::string_view> keywords {StringUtils::splitString(query, " ")};
 
@@ -1466,6 +1525,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& searchResult2Node {response.createNode(id3 ? "searchResult3" : "searchResult2")};
 
+	if (artistCount > 0)
 	{
 		Artist::FindParameters params;
 		params.setKeywords(keywords);
@@ -1480,6 +1540,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 		}
 	}
 
+	if (albumCount > 0)
 	{
 		Release::FindParameters params;
 		params.setKeywords(keywords);
@@ -1494,6 +1555,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 		}
 	}
 
+	if (songCount > 0)
 	{
 		Track::FindParameters params;
 		params.setKeywords(keywords);
@@ -2051,6 +2113,9 @@ ClientInfo
 SubsonicResource::getClientInfo(const Wt::Http::ParameterMap& parameters)
 {
 	ClientInfo res;
+
+	if (hasParameter(parameters, "t"))
+		throw TokenAuthenticationNotSupportedForLDAPUsersError {};
 
 	// Mandatory parameters
 	res.name = getMandatoryParameterAs<std::string>(parameters, "c");

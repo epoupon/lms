@@ -1,6 +1,6 @@
 # LMS - Lightweight Music Server
 
-[![Last Release](https://img.shields.io/github/v/release/epoupon/lms?logo=github&label=latest)](https://github.com/epoupon/lms/releases) [![Build](https://img.shields.io/github/workflow/status/epoupon/lms/Build?logo=github)](https://github.com/epoupon/lms/actions)
+[![Last Release](https://img.shields.io/github/v/release/epoupon/lms?logo=github&label=latest)](https://github.com/epoupon/lms/releases)
 
 _LMS_ is a self-hosted music streaming software: access your music collection from anywhere using a web interface!
 

@@ -114,15 +114,15 @@ LMS.mediaplayer = function () {
 	}
 
 	let _durationToString = function (duration) {
-		let minutes = parseInt(duration / 60, 10);
-		let seconds = parseInt(duration, 10) % 60;
-
-		let res = "";
-
-		res += minutes + ":";
-		res += (seconds  < 10 ? "0" + seconds : seconds);
-
-		return res;
+		const seconds = parseInt(duration, 10);
+		const h = Math.floor(seconds / 3600);
+		const m = Math.floor((seconds % 3600) / 60);
+		const s = Math.round(seconds % 60);
+		return [
+			h,
+			m > 9 ? m : (h ? '0' + m : m || '0'),
+			s > 9 ? s : '0' + s
+		].filter(Boolean).join(':');
 	}
 
 	let _playTrack = function() {

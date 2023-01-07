@@ -44,7 +44,7 @@ namespace
 	{
 		public:
 			SystemException(int err, const std::string& errMsg)
-				: ChildProcessException {errMsg + ": " + strerror(err)}
+				: ChildProcessException {errMsg + ": " + ::strerror(err)}
 			{}
 
 			SystemException(boost::system::error_code ec, const std::string& errMsg)
@@ -117,42 +117,36 @@ ChildProcess::ChildProcess(boost::asio::io_context& ioContext, const std::filesy
 
 ChildProcess::~ChildProcess()
 {
-	if (!_waited)
+	LMS_LOG(CHILDPROCESS, DEBUG) << "Closing child process...";
 	{
-		LMS_LOG(CHILDPROCESS, DEBUG) << "Closing child process...";
-		{
-			boost::system::error_code closeError;
-			_childStdout.close(closeError);
-			if (closeError)
-				LMS_LOG(CHILDPROCESS, ERROR) << "Closed failed: " << closeError.message();
-		}
-		kill();
-		wait(true);
+		boost::system::error_code closeError;
+		_childStdout.close(closeError);
+		if (closeError)
+			LMS_LOG(CHILDPROCESS, ERROR) << "Closed failed: " << closeError.message();
 	}
-}
 
-void
-ChildProcess::drain()
-{
-	char buf[128];
+	if (!_finished)
+		kill();
 
-	while (boost::asio::read(_childStdout, boost::asio::buffer(buf)) > 0)
-		LMS_LOG(CHILDPROCESS, DEBUG) << "drained some bytes" << std::endl;
+	wait(true);
 }
 
 void
 ChildProcess::kill()
 {
+	// process may already have finished
 	LMS_LOG(CHILDPROCESS, DEBUG) << "Killing child process...";
-	::kill(_childPID, SIGKILL);
+	if (::kill(_childPID, SIGKILL) == -1)
+		LMS_LOG(CHILDPROCESS, DEBUG) << "Kill failed: " << ::strerror(errno);
 }
 
 bool
 ChildProcess::wait(bool block)
 {
-	int wstatus {};
+	assert(!_waited);
 
-	pid_t pid {waitpid(_childPID, &wstatus, block ? 0 : WNOHANG)};
+	int wstatus {};
+	const pid_t pid {waitpid(_childPID, &wstatus, block ? 0 : WNOHANG)};
 
 	if (pid == -1)
 		throw SystemException {errno, "waitpid failed!"};
@@ -160,17 +154,21 @@ ChildProcess::wait(bool block)
 		return false;
 
 	if (WIFEXITED(wstatus))
+	{
 		_exitCode = WEXITSTATUS(wstatus);
+		LMS_LOG(CHILDPROCESS, DEBUG) << "Exit code = " << *_exitCode;
+	}
 
 	_waited = true;
 	return true;
 }
 
-
 void
 ChildProcess::asyncRead(std::byte* data, std::size_t bufferSize, ReadCallback callback)
 {
 	assert(!finished());
+
+	LMS_LOG(CHILDPROCESS, DEBUG) << "Async read, bufferSize = " << bufferSize;
 
 	boost::asio::async_read(_childStdout, boost::asio::buffer(data, bufferSize),
 		[this, callback {std::move(callback)}](const boost::system::error_code& error, std::size_t bytesTransferred)
@@ -180,31 +178,18 @@ ChildProcess::asyncRead(std::byte* data, std::size_t bufferSize, ReadCallback ca
 			ReadResult readResult {ReadResult::Success};
 			if (error)
 			{
-				_finished = true;
-
-				if (error == boost::asio::error::eof)
-					readResult = ReadResult::EndOfFile;
-				else
+				if (error != boost::asio::error::eof)
+				{
+					// forbidden to read any captured param here as the ChildProcess instance may already have been killed
 					return;
+				}
+
+				readResult = ReadResult::EndOfFile;
+				_finished = true;
 			}
 
 			callback(readResult, bytesTransferred);
 		});
-}
-
-void
-ChildProcess::asyncWaitForData(WaitCallback cb)
-{
-	LMS_LOG(CHILDPROCESS, DEBUG) << "Async wait requested";
-	assert(!finished());
-
-	_childStdout.async_wait(boost::asio::posix::stream_descriptor::wait_read,
-			[cb {std::move(cb)}](const boost::system::error_code& ec)
-	{
-		LMS_LOG(CHILDPROCESS, DEBUG) << "Wait CB, error = " << ec.message();
-		if (!ec)
-			cb();
-	});
 }
 
 std::size_t
@@ -220,7 +205,7 @@ ChildProcess::readSome(std::byte* data, std::size_t bufferSize)
 }
 
 bool
-ChildProcess::finished()
+ChildProcess::finished() const
 {
 	return _finished;
 }

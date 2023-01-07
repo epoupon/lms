@@ -209,10 +209,6 @@
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">Cancella</message>
 
-<message id="Lms.PlayQueue.nb-tracks-added">
-	<plural case="0">Aggiunta {1} traccia</plural>
-	<plural case="1">Aggiunte {1} tracce</plural>
-</message>
 <message id="Lms.PlayQueue.playqueue">Coda di riproduzione</message>
 <message id="Lms.PlayQueue.playqueue-full">Coda di riproduzione piena!</message>
 <message id="Lms.PlayQueue.radio-mode">Modalità radio</message>

@@ -343,6 +343,13 @@ PlayQueue::playNext()
 	loadTrack(*_trackPos + 1, true);
 }
 
+std::size_t
+PlayQueue::getCount()
+{
+	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+	return getQueue()->getCount();
+}
+
 void
 PlayQueue::initTrackLists()
 {
@@ -373,9 +380,10 @@ PlayQueue::updateInfo()
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 	const Database::TrackList::pointer queue {getQueue()};
-	const auto trackCount {queue->getCount()};
+	const std::size_t trackCount {queue->getCount()};
 	_nbTracks->setText(Wt::WString::trn("Lms.track-count", trackCount).arg(trackCount));
 	_duration->setText(Utils::durationToString(queue->getDuration()));
+	trackCountChanged.emit(trackCount);
 }
 
 void
@@ -435,40 +443,24 @@ PlayQueue::playShuffled(const std::vector<Database::TrackId>& trackIds)
 	clearTracks();
 	std::vector<Database::TrackId> shuffledTrackIds {trackIds};
 	Random::shuffleContainer(shuffledTrackIds);
-	const std::size_t nbAddedTracks {enqueueTracks(shuffledTrackIds)};
+	enqueueTracks(shuffledTrackIds);
 	loadTrack(0, true);
-
-	notifyAddedTracks(nbAddedTracks);
 }
 
 void
 PlayQueue::playOrAddLast(const std::vector<Database::TrackId>& trackIds)
 {
-	const std::size_t nbAddedTracks {enqueueTracks(trackIds)};
+	enqueueTracks(trackIds);
 	if (!_trackPos)
 		loadTrack(0, true);
-
-	notifyAddedTracks(nbAddedTracks);
 }
 
 void
 PlayQueue::playAtIndex(const std::vector<Database::TrackId>& trackIds, std::size_t index)
 {
 	clearTracks();
-	const std::size_t nbAddedTracks {enqueueTracks(trackIds)};
+	enqueueTracks(trackIds);
 	loadTrack(index, true);
-
-	notifyAddedTracks(nbAddedTracks);
-}
-
-void
-PlayQueue::notifyAddedTracks(std::size_t nbAddedTracks) const
-{
-	if (nbAddedTracks > 0)
-		LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.PlayQueue.playqueue"), Wt::WString::trn("Lms.PlayQueue.nb-tracks-added", nbAddedTracks).arg(nbAddedTracks), std::chrono::seconds {2});
-
-	if (isFull())
-		LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.PlayQueue.playqueue"), Wt::WString::tr("Lms.PlayQueue.playqueue-full"), std::chrono::seconds {2});
 }
 
 void

@@ -77,7 +77,7 @@ showReleaseInfoModal(Database::ReleaseId releaseId)
 		if (artistIds.results.empty())
 			return;
 
-		Wt::WString typeStr {Wt::WString::trn(type, artistIds.results.size())};;
+		Wt::WString typeStr {Wt::WString::trn(type, artistIds.results.size())};
 		for (ArtistId artistId : artistIds.results)
 			artistMap[typeStr].insert(artistId);
 	};
@@ -109,6 +109,13 @@ showReleaseInfoModal(Database::ReleaseId releaseId)
 	addArtists(TrackArtistLinkType::Producer, "Lms.Explore.Artists.linktype-producer");
 	addPerformerArtists();
 
+	if (auto itRolelessPerformers {artistMap.find("")}; itRolelessPerformers != std::cend(artistMap))
+	{
+		Wt::WString performersStr {Wt::WString::trn("Lms.Explore.Artists.linktype-performer", itRolelessPerformers->second.size())};
+		artistMap[performersStr] = std::move(itRolelessPerformers->second);
+		artistMap.erase(itRolelessPerformers);
+	}
+
 	for (const auto& [role, artistIds] : artistMap)
 	{
 		std::unique_ptr<Wt::WContainerWidget> artistContainer {Utils::createArtistContainer(std::vector (std::cbegin(artistIds), std::cend(artistIds)))};
@@ -117,7 +124,6 @@ showReleaseInfoModal(Database::ReleaseId releaseId)
 		artistsEntry->bindWidget("artist-container", std::move(artistContainer));
 		artistTable->addWidget(std::move(artistsEntry));
 	}
-
 
 	// TODO: save in DB and mean all this
 	for (TrackId trackId : Track::find(LmsApp->getDbSession(), Track::FindParameters {}.setRelease(releaseId).setRange(Range {0, 1})).results)
