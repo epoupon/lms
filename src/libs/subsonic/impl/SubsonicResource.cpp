@@ -2114,6 +2114,9 @@ SubsonicResource::getClientInfo(const Wt::Http::ParameterMap& parameters)
 {
 	ClientInfo res;
 
+	if (hasParameter(parameters, "t"))
+		throw TokenAuthenticationNotSupportedForLDAPUsersError {};
+
 	// Mandatory parameters
 	res.name = getMandatoryParameterAs<std::string>(parameters, "c");
 	res.version = getMandatoryParameterAs<ProtocolVersion>(parameters, "v");

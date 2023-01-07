@@ -48,6 +48,7 @@ class Error
 			ClientMustUpgrade = 20,
 			ServerMustUpgrade = 30,
 			WrongUsernameOrPassword = 40,
+			TokenAuthenticationNotSupportedForLDAPUsers = 41,
 			UserNotAuthorized = 50,
 			RequestedDataNotFound = 70,
 		};
@@ -103,6 +104,14 @@ class WrongUsernameOrPasswordError : public Error
 		WrongUsernameOrPasswordError() : Error {Code::WrongUsernameOrPassword} {}
 	private:
 		std::string getMessage() const override { return "Wrong username or password."; }
+};
+
+class TokenAuthenticationNotSupportedForLDAPUsersError : public Error
+{
+	public:
+		TokenAuthenticationNotSupportedForLDAPUsersError() : Error {Code::TokenAuthenticationNotSupportedForLDAPUsers} {}
+	private:
+		std::string getMessage() const override { return "Token authentication not supported for LDAP users."; }
 };
 
 class UserNotAuthorizedError : public Error

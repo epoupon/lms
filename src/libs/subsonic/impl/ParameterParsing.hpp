@@ -80,5 +80,12 @@ namespace API::Subsonic
 
 		return *res;
 	}
+
+	inline
+	bool
+	hasParameter(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
+	{
+		return parameterMap.find(param) != std::cend(parameterMap);
+	}
 }
 
