@@ -1525,6 +1525,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
 	Response::Node& searchResult2Node {response.createNode(id3 ? "searchResult3" : "searchResult2")};
 
+	if (artistCount > 0)
 	{
 		Artist::FindParameters params;
 		params.setKeywords(keywords);
@@ -1539,6 +1540,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 		}
 	}
 
+	if (albumCount > 0)
 	{
 		Release::FindParameters params;
 		params.setKeywords(keywords);
@@ -1553,6 +1555,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 		}
 	}
 
+	if (songCount > 0)
 	{
 		Track::FindParameters params;
 		params.setKeywords(keywords);
