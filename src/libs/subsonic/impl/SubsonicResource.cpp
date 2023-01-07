@@ -1499,7 +1499,12 @@ Response
 handleSearchRequestCommon(RequestContext& context, bool id3)
 {
 	// Mandatory params
-	std::string query {getMandatoryParameterAs<std::string>(context.parameters, "query")};
+	std::string queryString {getMandatoryParameterAs<std::string>(context.parameters, "query")};
+	std::string_view query {queryString};
+
+	// Symfonium adds extra ""
+	if (context.clientInfo.name == "Symfonium")
+		query = StringUtils::stringTrim(query, "\"");
 
 	std::vector<std::string_view> keywords {StringUtils::splitString(query, " ")};
 
