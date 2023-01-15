@@ -142,6 +142,13 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			scanSettings.modify()->setClusterTypes(LmsApp->getDbSession(), std::set<std::string>(clusterTypes.begin(), clusterTypes.end()));
 		}
 
+		static ScanSettings::RecommendationEngineType getCurrentRecommendationEngine()
+		{
+			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+			const ScanSettings::pointer scanSettings {ScanSettings::get(LmsApp->getDbSession())};
+			return scanSettings->getRecommendationEngineType();
+		}
+
 	private:
 		void initializeModels()
 		{
@@ -211,6 +218,9 @@ DatabaseSettingsView::refreshView()
 	t->setFormWidget(DatabaseSettingsModel::UpdateStartTimeField, std::move(updateStartTime));
 
 	// recommendation engine type
+	// Hide the settings if the engine is set to clusters, as we don't want users to switch to acoustic features (currently broken)
+	// Otherwise, give the user a way to switch back to clusters
+	t->setCondition("if-has-recommendation-engine", model->getCurrentRecommendationEngine() == ScanSettings::RecommendationEngineType::Features);
 	auto recommendationEngineType {std::make_unique<Wt::WComboBox>()};
 	recommendationEngineType->setModel(model->recommendationEngineTypeModel());
 	t->setFormWidget(DatabaseSettingsModel::RecommendationEngineTypeField, std::move(recommendationEngineType));

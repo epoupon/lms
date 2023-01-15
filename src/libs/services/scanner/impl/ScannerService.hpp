@@ -77,8 +77,6 @@ namespace Scanner
 			void scan(bool force);
 
 			void scanMediaDirectory( const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats);
-			bool fetchTrackFeatures(Database::TrackId trackId, const UUID& MBID);
-			void fetchTrackFeatures(ScanStats& stats);
 
 			// Helpers
 			void refreshScanSettings();

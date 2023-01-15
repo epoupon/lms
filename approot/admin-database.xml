@@ -34,6 +34,7 @@
 			</div>
 		</div>
 		<legend>${tr:Lms.Admin.Database.scan-options}</legend>
+		${<if-has-recommendation-engine>}
 		<div class="col-lg-6">
 			<label class="form-label" for="${id:recommendation-engine-type}">
 				${tr:Lms.Admin.Database.recommendation-engine-type}
@@ -43,6 +44,7 @@
 				${recommendation-engine-type-info}
 			</div>
 		</div>
+		${</if-has-recommendation-engine>}
 		<div class="col-12">
 			<label class="form-label" for="${id:clusters}">
 				${tr:Lms.clusters}

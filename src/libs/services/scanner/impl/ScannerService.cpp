@@ -38,7 +38,6 @@
 #include "utils/Logger.hpp"
 #include "utils/Path.hpp"
 #include "utils/UUID.hpp"
-#include "AcousticBrainzUtils.hpp"
 
 using namespace Database;
 
@@ -526,7 +525,6 @@ ScannerService::scan(bool forceScan)
 	if (!_abortScan)
 	{
 		checkDuplicatedAudioFiles(stats);
-		fetchTrackFeatures(stats);
 		reloadSimilarityEngine(stats);
 	}
 
@@ -558,85 +556,6 @@ ScannerService::scan(bool forceScan)
 		_curState = State::NotScheduled;
 		_currentScanStepStats.reset();
 	}
-}
-
-bool
-ScannerService::fetchTrackFeatures(TrackId trackId, const UUID& recordingMBID)
-{
-	std::map<std::string, double> features;
-
-	LMS_LOG(DBUPDATER, INFO) << "Fetching low level features for recording '" << recordingMBID.getAsString() << "'";
-	const std::string data {AcousticBrainz::extractLowLevelFeatures(recordingMBID)};
-	if (data.empty())
-	{
-		LMS_LOG(DBUPDATER, ERROR) << "Track " << trackId.getValue() << ", recording MBID = '" << recordingMBID.getAsString() << "': cannot extract features using AcousticBrainz";
-		return false;
-	}
-
-	{
-		auto uniqueTransaction {_dbSession.createUniqueTransaction()};
-
-		Track::pointer track {Track::find(_dbSession, trackId)};
-		if (!track)
-			return false;
-
-		_dbSession.create<TrackFeatures>(track, data);
-	}
-
-	return true;
-}
-
-void
-ScannerService::fetchTrackFeatures(ScanStats& stats)
-{
-	if (_recommendationServiceType != ScanSettings::RecommendationEngineType::Features)
-		return;
-
-	ScanStepStats stepStats{stats.startTime, ScanProgressStep::FetchingTrackFeatures};
-
-	LMS_LOG(DBUPDATER, INFO) << "Fetching missing track features...";
-
-	struct TrackInfo
-	{
-		TrackId id;
-		UUID recordingMBID;
-	};
-
-	const auto tracksToFetch {[&]()
-	{
-		std::vector<TrackInfo> res;
-
-		auto transaction {_dbSession.createSharedTransaction()};
-
-		auto trackIds {Track::findWithRecordingMBIDAndMissingFeatures(_dbSession, Range {})};
-		for (const TrackId trackId : trackIds.results)
-		{
-			const Track::pointer track {Track::find(_dbSession, trackId)};
-			res.emplace_back(TrackInfo {track->getId(), *track->getRecordingMBID()});
-		}
-
-		return res;
-	}()};
-
-	stepStats.totalElems = tracksToFetch.size();
-	notifyInProgress(stepStats);
-
-	LMS_LOG(DBUPDATER, INFO) << "Found " << tracksToFetch.size() << " track(s) to fetch!";
-
-	for (const TrackInfo& trackToFetch : tracksToFetch)
-	{
-		if (_abortScan)
-			return;
-
-		if (fetchTrackFeatures(trackToFetch.id, trackToFetch.recordingMBID))
-			stats.featuresFetched++;
-
-		stepStats.processedElems++;
-		notifyInProgressIfNeeded(stepStats);
-	}
-
-	notifyInProgress(stepStats);
-	LMS_LOG(DBUPDATER, INFO) << "Track features fetched!";
 }
 
 void
