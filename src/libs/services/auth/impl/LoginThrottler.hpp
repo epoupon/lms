@@ -19,8 +19,7 @@
 
 #pragma once
 
-#include <shared_mutex>
-#include <string>
+#include <chrono>
 #include <unordered_map>
 
 #include <Wt/WDateTime.h>
@@ -44,8 +43,15 @@ namespace Auth
 			void removeOutdatedEntries();
 
 			const std::size_t _maxEntries;
+			static constexpr std::size_t _maxBadConsecutiveAttemptCount {5};
+			static constexpr std::chrono::seconds _throttlingDuration {3};
 
-			std::unordered_map<boost::asio::ip::address, Wt::WDateTime>	_attemptsInfo;
+			struct AttemptInfo
+			{
+				Wt::WDateTime nextAttempt;
+				std::size_t badConsecutiveAttemptCount{};
+			};
+			std::unordered_map<boost::asio::ip::address, AttemptInfo>	_attemptsInfo;
 	};
 } // Auth
 

@@ -54,7 +54,7 @@ LoginThrottler::removeOutdatedEntries()
 
 	for (auto it {std::begin(_attemptsInfo)}; it != std::end(_attemptsInfo); )
 	{
-		if (it->second <= now)
+		if (it->second.nextAttempt <= now)
 			it = _attemptsInfo.erase(it);
 		else
 			++it;
@@ -65,7 +65,6 @@ void
 LoginThrottler::onBadClientAttempt(const boost::asio::ip::address& address)
 {
 	const boost::asio::ip::address clientAddress {getAddressToThrottle(address)};
-
 	const Wt::WDateTime now {Wt::WDateTime::currentDateTime()};
 
 	if (_attemptsInfo.size() >= _maxEntries)
@@ -73,9 +72,25 @@ LoginThrottler::onBadClientAttempt(const boost::asio::ip::address& address)
 	if (_attemptsInfo.size() >= _maxEntries)
 		_attemptsInfo.erase(Random::pickRandom(_attemptsInfo));
 
-	_attemptsInfo[address] = now.addSecs(3);
+	AttemptInfo& attemptInfo {_attemptsInfo[address]};
+	if (attemptInfo.nextAttempt.isValid())
+	{
+		assert(attemptInfo.nextAttempt <= now); // should not be called if throttled
+		attemptInfo = {};
+	}
 
-	LMS_LOG(AUTH, DEBUG) << "Registering bad attempt for '" << clientAddress.to_string() << "'";
+	attemptInfo.badConsecutiveAttemptCount += 1;
+
+	LMS_LOG(AUTH, DEBUG) << "Registering bad attempt for '" << clientAddress.to_string() << "', consecutive bad attempts count = " << attemptInfo.badConsecutiveAttemptCount;
+	if (attemptInfo.badConsecutiveAttemptCount >= _maxBadConsecutiveAttemptCount)
+	{
+		LMS_LOG(AUTH, DEBUG) << "Throttling '" << clientAddress.to_string() << "'";
+		attemptInfo.nextAttempt = now.addMSecs(std::chrono::duration_cast<std::chrono::milliseconds>(_throttlingDuration).count());
+	}
+	else
+	{
+		attemptInfo.nextAttempt = {};
+	}
 }
 
 void
@@ -95,7 +110,10 @@ LoginThrottler::isClientThrottled(const boost::asio::ip::address& address) const
 	if (it == _attemptsInfo.end())
 		return false;
 
-	return it->second > Wt::WDateTime::currentDateTime();
+	if (!it->second.nextAttempt.isValid())
+		return false;
+
+	return it->second.nextAttempt > Wt::WDateTime::currentDateTime();
 }
 
 } // Auth
