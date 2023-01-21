@@ -44,8 +44,6 @@ namespace UserInterface
 	void
 	ModalManager::show(std::unique_ptr<Wt::WWidget> modalWidget)
 	{
-		assert(count() == 0);
-
 		LMS_LOG(UI, DEBUG) << "Want to show, id = " << modalWidget->id();
 
 		std::ostringstream oss;
