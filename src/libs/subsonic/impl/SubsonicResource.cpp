@@ -1883,8 +1883,8 @@ handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/,
 	if (!trackId && !releaseId)
 		throw BadParameterGenericError {"id"};
 
-	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(256)};
-	size = Utils::clamp(size, std::size_t {32}, std::size_t {1024});
+	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(1024)};
+	size = Utils::clamp(size, std::size_t {32}, std::size_t {2048});
 
 	std::shared_ptr<Image::IEncodedImage> cover;
 	if (trackId)
@@ -2016,7 +2016,7 @@ static std::unordered_map<std::string, MediaRetrievalHandlerFunc> mediaRetrieval
 	// Media retrieval
 	{"/download",		Stream::handleDownload},
 	{"/stream",			Stream::handleStream},
-	{"/getCoverArt",		handleGetCoverArt},
+	{"/getCoverArt",	handleGetCoverArt},
 };
 
 

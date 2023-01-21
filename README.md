@@ -8,24 +8,24 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
 
 ## Main features
 * Recommendation engine
-* Audio transcode for maximum interoperability and low bandwith requirements
-* Multi-value tags: `artist`, `genre`, `composer`, `lyricist`, `mood`, `performer`, ...
+* Audio transcoding for maximum interoperability and reduced bandwith requirements
+* Multi-value tags: `genre`, `albumgenre`, `mood`, `albummood`, `albumgrouping`, ...
+* Artist relationships: `composer`, `conductor`, `lyricist`, `mixer`, `performer`, `producer`, `remixer`
 * [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) support to handle duplicated artist and release names
 * [ListenBrainz](https://listenbrainz.org) support for:
   * Scrobbling and synchronizing listens
   * Synchronizing 'love' feedbacks
 * ReplayGain support
-* User management, with several authentication backends, see [Deployment](INSTALL.md#deployment)
+* User management, with several [authentication backends](INSTALL.md#authentication-backend)
 * Subsonic API
 
 ## Music discovery
 _LMS_ provides several ways to help you find the music you like:
-* Tag-based filters (ex: _Rock_, _Metal_ and _Aggressive_, _Electronic_ and _Relaxed_, ...)
+* Tag-based filters (ex: "_Rock_", "_Metal_ and _Aggressive_", "_Electronic_ and _Relaxed_", ...)
 * Recommendations for similar artists and albums
-* Radio mode, based on what is in the current playqueue
+* Radio mode, with endless filling of the play queue with tracks similar to what is there
 * Searches in album, artist and track names (including sort names)
 * Starred Albums/Artists/Tracks
-* Various tags to help you filter your music: _mood_, _albummood_, _albumgenre_, _albumgrouping_, ...
 * Random/Starred/Most played/Recently played/Recently added for Artist/Albums/Tracks, allowing you to search for things like:
   * Recently added _Electronic_ artists
   * Random _Metal_ and _Aggressive_ albums
@@ -33,17 +33,8 @@ _LMS_ provides several ways to help you find the music you like:
   * Starred _Jazz_ albums
   * ...
 
-The recommendation engine uses two different sources:
-1. Tags that are present in the audio files
-2. Acoustic similarities of the audio files, using a trained [Self-Organizing Map](https://en.wikipedia.org/wiki/Self-organizing_map)
-
-__Notes on the self-organizing map__:
-* training the map requires significant computation time on large collections (ex: half an hour for 40k tracks using a Core i5)
-* audio acoustic data is pulled from [AcousticBrainz](https://acousticbrainz.org/). Therefore your audio files _must_ contain the [recording](https://musicbrainz.org/doc/Recording) [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier).
-* to enable the audio similarity source, you have to enable it first in the administration panel.
-
 ## Subsonic API
-The API version implemented is 1.16.0 and has been tested on _Android_ using _Subsonic Player_, _Ultrasonic_ and _DSub_.
+The API version implemented is 1.16.0 and has been tested on _Android_ using _Subsonic Player_, _Ultrasonic_, _Symfonium_, and _DSub_.
 Since _LMS_ uses metadata tags to organize music, a compatibility mode is used to browse the collection when using the directory browsing commands.
 The Subsonic API is enabled by default.
 
@@ -53,8 +44,10 @@ __Note__: since _LMS_ may store hashed and salted passwords or may forward authe
 _LMS_ relies exclusively on tags to organize your music collection.
 
 ### Filtering
-You can specify the tags you want to be used to filter your collection. By default, `GENRE`, `ALBUMGROUPING`, `MOOD` and `ALBUMMOOD` tags are used.
+You can specify the tags you want to use to filter your collection. By default, `genre`, `albumgrouping`, `mood` and `albummood` tags are used.
 In the administration  panel, you can set whatever tags you want, even custom tags.
+
+__Note__: you can use the `lms-metadata` tool to have an idea of the tags parsed by _LMS_ using [TagLib](https://github.com/taglib/taglib).
 
 ### Multiple album artists
 _LMS_ requires the `ALBUMARTISTS` and `ALBUMARTISTSSORT` tags to properly handle multiple album artists on the same album. As they are a custom tags, you may need to setup your favorite tagger to add them.
@@ -69,12 +62,6 @@ $setmulti(albumartistssort,%_albumartists_sort%)
 * Play/pause: <kbd>Space</bbd>
 * Previous track: <kbd>Ctrl</kbd> + <kbd>Left</kbd>
 * Next track: <kbd>Ctrl</kbd> + <kbd>Right</kbd>
-
-## Security considerations
-_Wt_ (the web framework used) has some [built-in security measures](https://www.webtoolkit.eu/wt/features#security), but _LMS_ also has some too:
-* to mitigate brute force login attempts, _LMS_ uses an internal login throttler based on the client IP address. The `Client-IP` or `X-Forwarded-For` headers are used to determine the real IP adress, so make sure to properly configure your reverse proxy to filter or even erase the values (see example in [INSTALL.md](INSTALL.md)).
-* all passwords are stored hashed and salted using [bcrypt](https://fr.wikipedia.org/wiki/Bcrypt)
-* all the resources relative to the music collection (tracks, covers, etc.) are private to an anthenticated session
 
 ## Installation
 See [INSTALL.md](INSTALL.md) file.
