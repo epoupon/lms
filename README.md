@@ -8,7 +8,7 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
 
 ## Main features
 * Recommendation engine
-* Audio transcode for maximum interoperability and low bandwith requirements
+* Audio transcoding for maximum interoperability and reduced bandwith requirements
 * Multi-value tags: `genre`, `albumgenre`, `mood`, `albummood`, `albumgrouping`, ...
 * Artist relationships: `composer`, `conductor`, `lyricist`, `mixer`, `performer`, `producer`, `remixer`
 * [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) support to handle duplicated artist and release names
@@ -21,12 +21,11 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
 
 ## Music discovery
 _LMS_ provides several ways to help you find the music you like:
-* Tag-based filters (ex: _Rock_, _Metal_ and _Aggressive_, _Electronic_ and _Relaxed_, ...)
+* Tag-based filters (ex: "_Rock_", "_Metal_ and _Aggressive_", "_Electronic_ and _Relaxed_", ...)
 * Recommendations for similar artists and albums
 * Radio mode, with endless filling of the play queue with tracks similar to what is there
 * Searches in album, artist and track names (including sort names)
 * Starred Albums/Artists/Tracks
-* Various tags to help you filter your music: _mood_, _albummood_, _albumgenre_, _albumgrouping_, ...
 * Random/Starred/Most played/Recently played/Recently added for Artist/Albums/Tracks, allowing you to search for things like:
   * Recently added _Electronic_ artists
   * Random _Metal_ and _Aggressive_ albums
@@ -63,12 +62,6 @@ $setmulti(albumartistssort,%_albumartists_sort%)
 * Play/pause: <kbd>Space</bbd>
 * Previous track: <kbd>Ctrl</kbd> + <kbd>Left</kbd>
 * Next track: <kbd>Ctrl</kbd> + <kbd>Right</kbd>
-
-## Security considerations
-_Wt_ (the web framework used) has some [built-in security measures](https://www.webtoolkit.eu/wt/features#security), but _LMS_ also has some too:
-* to mitigate brute force login attempts, _LMS_ uses an internal login throttler based on the client IP address. The `Client-IP` or `X-Forwarded-For` headers are used to determine the real IP adress, so make sure to properly configure your reverse proxy to filter or even erase the values (see example in [INSTALL.md](INSTALL.md)).
-* all passwords are stored hashed and salted using [bcrypt](https://fr.wikipedia.org/wiki/Bcrypt)
-* all the resources relative to the music collection (tracks, covers, etc.) are private to an anthenticated session
 
 ## Installation
 See [INSTALL.md](INSTALL.md) file.

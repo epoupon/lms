@@ -105,7 +105,7 @@ You can define which authentication backend to be used thanks to the `authentica
 * `internal` (default): _LMS_ uses an internal database to store users and their associated passwords (salted and hashed using [Bcrypt](https://en.wikipedia.org/wiki/Bcrypt)). Only the admin user can create, edit or remove other users.
 * `PAM`: the user/password authentication request is forwarded to PAM (see the default [PAM configuration file](conf/pam/lms) provided).
 * `http-headers`: _LMS_ uses a configurable HTTP header field, typically set by a reverse proxy to handle [SSO](https://en.wikipedia.org/wiki/Single_sign-on), to extract the login name. You can customize the field to be used using the `http-headers-login-field` option.
-__Note__: the first created user is the admin user
+__Note__: the first created user is the admin user.
 #### `internal` backend: reset admin password
 Open the the database file located in `/var/lms/lms.db` using `sqlite3`:
 ```sh
@@ -158,6 +158,7 @@ server {
     }
 }
 ```
+__Note__: to mitigate brute force login attempts, _LMS_ uses an internal login throttler based on the client IP address. The `Client-IP` or `X-Forwarded-For` headers are used to determine the real IP adress, so make sure to properly configure your reverse proxy to filter or even erase the values.
 # Run
 ```sh
 systemctl start lms
