@@ -16,7 +16,7 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
   * Scrobbling and synchronizing listens
   * Synchronizing 'love' feedbacks
 * ReplayGain support
-* User management, with several authentication backends, see [Deployment](INSTALL.md#deployment)
+* User management, with several [authentication backends](INSTALL.md#authentication-backend)
 * Subsonic API
 
 ## Music discovery
