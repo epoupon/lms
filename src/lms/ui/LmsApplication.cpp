@@ -401,7 +401,7 @@ LmsApplication::createHome()
 R"(function(current) {
 	const menuItems = document.querySelectorAll('.nav-item a[href]:not([href=""])');
     for (const menuItem of menuItems) {
-        if (menuItem.getAttribute("href").indexOf(current) !== -1) {
+        if (menuItem.getAttribute("href") === current) {
             menuItem.classList.add('active');
         }
 		else {
