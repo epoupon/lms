@@ -7,7 +7,6 @@ ARG BUILD_PACKAGES="\
 	cmake \
 	lld \
 	curl \
-	stb \
 	pkgconfig"
 
 RUN	apk add --no-cache ${BUILD_PACKAGES}
@@ -20,6 +19,7 @@ ARG	LMS_BUILD_PACKAGES=" \
 	ffmpeg-dev \
 	libconfig-dev \
 	taglib-dev \
+	stb \
 	wt-dev \
 	gtest-dev"
 
