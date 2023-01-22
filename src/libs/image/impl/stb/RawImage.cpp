@@ -25,8 +25,8 @@
 #define STBIR_DEFAULT_FILTER_DOWNSAMPLE   STBIR_FILTER_MITCHELL
 #define STBIR_DEFAULT_FILTER_UPSAMPLE   STBIR_FILTER_CATMULLROM
 
-#include <stb/stb_image.h>
-#include <stb/stb_image_resize.h>
+#include <stb_image.h>
+#include <stb_image_resize.h>
 
 #include "JPEGImage.hpp"
 
