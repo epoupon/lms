@@ -76,7 +76,7 @@
 <message id="Lms.Admin.ScannerController.last-scan-status">{1} fichiers scannés en {2} le {3} ({4} erreurs, {5} duplicatas)</message>
 <message id="Lms.Admin.ScannerController.no-audio-track">Pas de piste audio</message>
 <message id="Lms.Admin.ScannerController.same-hash">Hash dupliqué</message>
-<message id="Lms.Admin.ScannerController.same-mbid">Recording MBID dupliqué</message>
+<message id="Lms.Admin.ScannerController.same-mbid">Track MBID dupliqué</message>
 <message id="Lms.Admin.ScannerController.scan-now">Lancer un scan</message>
 <message id="Lms.Admin.ScannerController.scanner">Scanner</message>
 <message id="Lms.Admin.ScannerController.status">Statut</message>

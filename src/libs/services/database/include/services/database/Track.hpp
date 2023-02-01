@@ -114,7 +114,7 @@ class Track : public Object<Track, TrackId>
 
 		static RangeResults<TrackId>	find(Session& session, const FindParameters& parameters);
 		static RangeResults<PathResult>	findPaths(Session& session, Range range);
-		static RangeResults<TrackId>	findRecordingMBIDDuplicates(Session& session, Range range);
+		static RangeResults<TrackId>	findTrackMBIDDuplicates(Session& session, Range range);
 		static RangeResults<TrackId>	findWithRecordingMBIDAndMissingFeatures(Session& session, Range range);
 
 		// Accessors

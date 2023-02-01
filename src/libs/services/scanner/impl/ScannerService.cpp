@@ -987,14 +987,14 @@ ScannerService::checkDuplicatedAudioFiles(ScanStats& stats)
 
 	auto transaction {_dbSession.createSharedTransaction()};
 
-	const RangeResults<TrackId> tracks = Track::findRecordingMBIDDuplicates(_dbSession, Range {});
+	const RangeResults<TrackId> tracks = Track::findTrackMBIDDuplicates(_dbSession, Range {});
 	for (const TrackId trackId : tracks.results)
 	{
 		const Track::pointer track {Track::find(_dbSession, trackId)};
-		if (auto recordingMBID {track->getRecordingMBID()})
+		if (auto trackMBID {track->getTrackMBID()})
 		{
-			LMS_LOG(DBUPDATER, INFO) << "Found duplicated recording MBID [" << recordingMBID->getAsString() << "], file: " << track->getPath().string() << " - " << track->getName();
-			stats.duplicates.emplace_back(ScanDuplicate {track->getId(), DuplicateReason::SameRecordingMBID});
+			LMS_LOG(DBUPDATER, INFO) << "Found duplicated track MBID [" << trackMBID->getAsString() << "], file: " << track->getPath().string() << " - " << track->getName();
+			stats.duplicates.emplace_back(ScanDuplicate {track->getId(), DuplicateReason::SameTrackMBID});
 		}
 	}
 

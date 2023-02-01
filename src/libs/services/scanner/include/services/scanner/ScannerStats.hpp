@@ -39,7 +39,7 @@ namespace Scanner
 	enum class DuplicateReason
 	{
 		SameHash,
-		SameRecordingMBID,
+		SameTrackMBID,
 	};
 
 	struct ScanError
