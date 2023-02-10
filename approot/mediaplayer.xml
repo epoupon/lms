@@ -3,9 +3,8 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.MediaPlayer.template">
-<audio  id="lms-mp-audio" controls>
-
-</audio>
+	<audio id="lms-mp-audio">
+	</audio>
 
 	<div class="container">
 		<div class="p-1 my-1 position-relative">
