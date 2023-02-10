@@ -330,8 +330,8 @@ LMS.mediaplayer = function () {
 
 	let _addAudioSource = function(audioSrc) {
 		let source = document.createElement('source');
-		let a = document.createElement('audio');
-		if (!!(a.canPlayType && a.canPlayType('audio/ogg; codecs="vorbis"').replace(/no/, ''))) {
+		let acodec = document.createElement('audio');
+		if (!!(acodec.canPlayType && acodec.canPlayType('audio/ogg; codecs="vorbis"').replace(/no/, ''))) {
 			source.type= 'audio/ogg';
 		} else {
 			source.type= 'audio/mpeg';
