@@ -25,7 +25,7 @@
 #include <map>
 #include <unordered_map>
 
-#include <Wt/WLocalDateTime.h>
+#include <Wt/WDateTime.h>
 
 #include "services/auth/IPasswordService.hpp"
 #include "services/auth/IEnvService.hpp"

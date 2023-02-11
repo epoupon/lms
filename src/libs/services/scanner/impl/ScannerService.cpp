@@ -22,8 +22,6 @@
 #include <ctime>
 #include <boost/asio/placeholders.hpp>
 
-#include <Wt/WLocalDateTime.h>
-
 #include "services/database/Artist.hpp"
 #include "services/database/Cluster.hpp"
 #include "services/database/Release.hpp"
@@ -389,7 +387,7 @@ ScannerService::scheduleNextScan()
 
 	refreshScanSettings();
 
-	const Wt::WDateTime now {Wt::WLocalDateTime::currentServerDateTime().toUTC()};
+	const Wt::WDateTime now {Wt::WDateTime::currentDateTime()};
 
 	Wt::WDateTime nextScanDateTime;
 	switch (_updatePeriod)
@@ -502,7 +500,7 @@ ScannerService::scan(bool forceScan)
 	}
 
 	ScanStats stats;
-	stats.startTime = Wt::WLocalDateTime::currentDateTime().toUTC();
+	stats.startTime = Wt::WDateTime::currentDateTime();
 
 	LMS_LOG(UI, INFO) << "New scan started!";
 
@@ -534,7 +532,7 @@ ScannerService::scan(bool forceScan)
 
 	if (!_abortScan)
 	{
-		stats.stopTime = Wt::WLocalDateTime::currentDateTime().toUTC();
+		stats.stopTime = Wt::WDateTime::currentDateTime();
 		{
 			std::unique_lock lock {_statusMutex};
 
@@ -777,7 +775,7 @@ ScannerService::scanAudioFile(const std::filesystem::path& file, bool forceScan,
 	track.modify()->setLastWriteTime(lastWriteTime);
 	track.modify()->setName(title);
 	track.modify()->setDuration(trackInfo->duration);
-	track.modify()->setAddedTime(Wt::WLocalDateTime::currentServerDateTime().toUTC());
+	track.modify()->setAddedTime(Wt::WDateTime::currentDateTime());
 	track.modify()->setTrackNumber(trackInfo->trackNumber ? *trackInfo->trackNumber : 0);
 	track.modify()->setDiscNumber(trackInfo->discNumber ? *trackInfo->discNumber : 0);
 	track.modify()->setTotalTrack(trackInfo->totalTrack);
