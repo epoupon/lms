@@ -33,8 +33,6 @@ namespace UserInterface
 			std::string getUrl(Database::TrackId trackId) const;
 
 		private:
-			static constexpr std::size_t _chunkSize {262144};
-
 			void handleRequest(const Wt::Http::Request& request,
 					Wt::Http::Response& response) override;
 	};
