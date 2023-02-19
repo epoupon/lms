@@ -237,30 +237,35 @@ ScannerController::refreshContents()
 
 			switch (status.currentScanStepStats->currentStep)
 			{
-				case Scanner::ScanProgressStep::ChekingForMissingFiles:
+				case Scanner::ScanStep::CheckingForDuplicateFiles:
+					_stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-checking-for-duplicate-files")
+						.arg(status.currentScanStepStats->processedElems));
+					break;
+
+				case Scanner::ScanStep::ChekingForMissingFiles:
 					_stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-checking-for-missing-files")
 						.arg(status.currentScanStepStats->progress()));
 					break;
 
-				case Scanner::ScanProgressStep::DiscoveringFiles:
+				case Scanner::ScanStep::DiscoveringFiles:
 					_stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-discovering-files")
 						.arg(status.currentScanStepStats->processedElems));
 						break;
 
-				case Scanner::ScanProgressStep::ScanningFiles:
+				case Scanner::ScanStep::ScanningFiles:
 					_stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-scanning-files")
 						.arg(status.currentScanStepStats->processedElems)
 						.arg(status.currentScanStepStats->totalElems)
 						.arg(status.currentScanStepStats->progress()));
 					break;
 
-				case Scanner::ScanProgressStep::FetchingTrackFeatures:
+				case Scanner::ScanStep::FetchingTrackFeatures:
 					_stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-fetching-track-features")
 						.arg(status.currentScanStepStats->processedElems)
 						.arg(status.currentScanStepStats->totalElems)
 						.arg(status.currentScanStepStats->progress()));
 					break;
-				case Scanner::ScanProgressStep::ReloadingSimilarityEngine:
+				case Scanner::ScanStep::ReloadingSimilarityEngine:
 					_stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-reloading-similarity-engine")
 						.arg(status.currentScanStepStats->progress()));
 					break;
