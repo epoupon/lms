@@ -2,6 +2,10 @@
 add_library(lmsscanner SHARED
 	impl/ScannerService.cpp
 	impl/ScannerStats.cpp
+	impl/ScanStepCheckDuplicatedDbFiles.cpp
+	impl/ScanStepDiscoverFiles.cpp
+	impl/ScanStepRemoveOrphanDbFiles.cpp
+	impl/ScanStepScanFiles.cpp
 	)
 
 target_include_directories(lmsscanner INTERFACE

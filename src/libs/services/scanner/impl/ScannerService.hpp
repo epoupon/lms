@@ -30,14 +30,13 @@
 
 #include <boost/asio/system_timer.hpp>
 
-#include "services/database/Types.hpp"
-#include "services/database/ScanSettings.hpp"
+#include "services/database/Db.hpp"
 #include "services/database/Session.hpp"
-#include "metadata/IParser.hpp"
+#include "services/database/Types.hpp"
 #include "services/scanner/IScannerService.hpp"
 #include "utils/Path.hpp"
-
-class UUID;
+#include "IScanStep.hpp"
+#include "ScannerSettings.hpp"
 
 namespace Recommendation
 {
@@ -80,27 +79,24 @@ namespace Scanner
 
 			// Helpers
 			void refreshScanSettings();
+			ScannerSettings readSettings();
 
-			void countAllFiles(ScanStats& stats);
-			void removeMissingTracks(ScanStats& stats);
-			void removeOrphanEntries();
-			void checkDuplicatedAudioFiles(ScanStats& stats);
-			void scanAudioFile(const std::filesystem::path& file, bool forceScan, ScanStats& stats);
 			void notifyInProgressIfNeeded(const ScanStepStats& stats);
 			void notifyInProgress(const ScanStepStats& stats);
 			void reloadSimilarityEngine(ScanStats& stats);
 
 			Recommendation::IRecommendationService&	_recommendationService;
 
+			std::vector<std::unique_ptr<IScanStep>>	_scanSteps;
+
 			std::mutex								_controlMutex;
-			std::atomic<bool>						_abortScan {};
+			bool									_abortScan {};
 			Wt::WIOService							_ioService;
 			boost::asio::system_timer				_scheduleTimer {_ioService};
-			const bool								_skipDuplicateRecordingMBID {};
 			Events									_events;
 			std::chrono::system_clock::time_point	_lastScanInProgressEmit {};
+			Database::Db&							_db;
 			Database::Session						_dbSession;
-			std::unique_ptr<MetaData::IParser>		_metadataParser;
 
 			mutable std::shared_mutex			_statusMutex;
 			State								_curState {State::NotScheduled};
@@ -108,13 +104,7 @@ namespace Scanner
 			std::optional<ScanStepStats> 		_currentScanStepStats;
 			Wt::WDateTime						_nextScheduledScan;
 
-			// Current scan settings
-			std::size_t				_scanVersion {};
-			Wt::WTime				_startTime;
-			Database::ScanSettings::UpdatePeriod 	_updatePeriod {Database::ScanSettings::UpdatePeriod::Never};
-			std::vector<std::filesystem::path>		_fileExtensions;
-			std::filesystem::path					_mediaDirectory;
-			Database::ScanSettings::RecommendationEngineType _recommendationServiceType;
+			ScannerSettings						_settings;
 	};
 } // Scanner
 
