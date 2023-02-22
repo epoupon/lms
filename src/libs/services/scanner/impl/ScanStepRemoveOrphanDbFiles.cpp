@@ -78,7 +78,7 @@ namespace Scanner
 				if (_abortScan)
 					return;
 
-				if (!checkFile(trackPath.path, _settings.mediaDirectory))
+				if (!checkFile(trackPath.path))
 					tracksToRemove.push_back(trackPath.trackId);
 
 				context.currentStepStats.processedElems++;
@@ -166,7 +166,7 @@ namespace Scanner
 	}
 
 	bool
-	ScanStepRemoveOrphanDbFiles::checkFile(const std::filesystem::path& p, const std::filesystem::path& mediaDirectory)
+	ScanStepRemoveOrphanDbFiles::checkFile(const std::filesystem::path& p)
 	{
 		try
 		{
@@ -179,7 +179,7 @@ namespace Scanner
 				return false;
 			}
 
-			if (!PathUtils::isPathInRootPath(p, mediaDirectory, &excludeDirFileName))
+			if (!PathUtils::isPathInRootPath(p, _settings.mediaDirectory, &excludeDirFileName))
 			{
 				LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': out of media directory";
 				return false;

@@ -283,28 +283,48 @@ namespace Scanner
 
 		Track::pointer track {Track::findByPath(dbSession, file) };
 
-		// Skip duplicate track MBID
-		if (trackInfo->trackMBID && _settings.skipDuplicateMBID)
+		if (trackInfo->trackMBID && (!track || _settings.skipDuplicateMBID))
 		{
-			for (Track::pointer otherTrack : Track::findByMBID(dbSession, *trackInfo->trackMBID))
+			std::vector<Track::pointer> duplicateTracks {Track::findByMBID(dbSession, *trackInfo->trackMBID)};
+
+			if (!track)
 			{
-				// Skip ourselves
-				if (track && track->getId() == otherTrack->getId())
-					continue;
-
-				// Skip if the other track found does not exists, as it may have been moved to the current scanned file
-				std::error_code ec;
-				if (!std::filesystem::exists(otherTrack->getPath(), ec))
-					continue;
-
-				LMS_LOG(DBUPDATER, DEBUG) << "Skipped '" << file.string() << "' (similar MBID in '" << otherTrack->getPath().string() << "')";
-				// As this MBID already exists, just remove what we just scanned
-				if (track)
+				// find for existing MBIDs as the file may have just been moved
+				const auto duplicateTracks {Track::findByMBID(dbSession, *trackInfo->trackMBID)};
+				if (duplicateTracks.size() == 1)
 				{
-					track.remove();
-					stats.deletions++;
+					Track::pointer otherTrack {duplicateTracks.front()};
+					std::error_code ec;
+					if (!std::filesystem::exists(otherTrack->getPath(), ec))
+					{
+						LMS_LOG(DBUPDATER, DEBUG) << "Considering track '" << file.string() << "' moved from '" << otherTrack->getPath() << "'";
+						track = otherTrack;
+					}
 				}
-				return;
+			}
+
+			// Skip duplicate track MBID
+			if (_settings.skipDuplicateMBID)
+			{
+				for (Track::pointer otherTrack : duplicateTracks)
+				{
+					// Skip ourselves
+					if (track && track->getId() == otherTrack->getId())
+						continue;
+
+					// Skip if duplicate files no longer in media root: as it will be removed later, we will end up with no file
+					if (!PathUtils::isPathInRootPath(file, _settings.mediaDirectory, &excludeDirFileName))
+						continue;
+
+					LMS_LOG(DBUPDATER, DEBUG) << "Skipped '" << file.string() << "' (similar MBID in '" << otherTrack->getPath().string() << "')";
+					// As this MBID already exists, just remove what we just scanned
+					if (track)
+					{
+						track.remove();
+						stats.deletions++;
+					}
+					return;
+				}
 			}
 		}
 
@@ -313,7 +333,7 @@ namespace Scanner
 		// - the duration is not null
 		if (trackInfo->audioStreams.empty())
 		{
-			LMS_LOG(DBUPDATER, INFO) << "Skipped '" << file.string() << "' (no audio stream found)";
+			LMS_LOG(DBUPDATER, DEBUG) << "Skipped '" << file.string() << "' (no audio stream found)";
 
 			// If Track exists here, delete it!
 			if (track)
@@ -326,7 +346,7 @@ namespace Scanner
 		}
 		if (trackInfo->duration == std::chrono::milliseconds::zero())
 		{
-			LMS_LOG(DBUPDATER, INFO) << "Skipped '" << file.string() << "' (duration is 0)";
+			LMS_LOG(DBUPDATER, DEBUG) << "Skipped '" << file.string() << "' (duration is 0)";
 
 			// If Track exists here, delete it!
 			if (track)
@@ -354,12 +374,12 @@ namespace Scanner
 		if (!track)
 		{
 			track = dbSession.create<Track>(file);
-			LMS_LOG(DBUPDATER, INFO) << "Adding '" << file.string() << "'";
+			LMS_LOG(DBUPDATER, DEBUG) << "Adding '" << file.string() << "'";
 			stats.additions++;
 		}
 		else
 		{
-			LMS_LOG(DBUPDATER, INFO) << "Updating '" << file.string() << "'";
+			LMS_LOG(DBUPDATER, DEBUG) << "Updating '" << file.string() << "'";
 
 			stats.updates++;
 		}

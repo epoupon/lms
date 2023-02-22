@@ -39,6 +39,6 @@ namespace Scanner
 			void removeOrphanClusters();
 			void removeOrphanArtists();
 			void removeOrphanReleases();
-			bool checkFile(const std::filesystem::path& p, const std::filesystem::path& mediaDirectory);
+			bool checkFile(const std::filesystem::path& p);
 	};
 }
