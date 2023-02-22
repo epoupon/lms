@@ -126,6 +126,7 @@ class Track : public Object<Track, TrackId>
 		void setTotalDisc(std::optional<int> totalDisc)			{ _totalDisc = totalDisc ? *totalDisc : 0; }
 		void setDiscSubtitle(const std::string& name)			{ _discSubtitle = name; }
 		void setName(const std::string& name)				{ _name = std::string(name, 0, _maxNameLength); }
+		void setPath(const std::filesystem::path& filePath) 		{ _filePath = filePath; }
 		void setDuration(std::chrono::milliseconds duration)		{ _duration = duration; }
 		void setLastWriteTime(Wt::WDateTime time)			{ _fileLastWrite = time; }
 		void setAddedTime(Wt::WDateTime time)				{ _fileAdded = time; }

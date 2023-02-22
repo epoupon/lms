@@ -287,19 +287,16 @@ namespace Scanner
 		{
 			std::vector<Track::pointer> duplicateTracks {Track::findByMBID(dbSession, *trackInfo->trackMBID)};
 
-			if (!track)
+			// find for existing MBIDs as the file may have just been moved
+			if (!track && duplicateTracks.size() == 1)
 			{
-				// find for existing MBIDs as the file may have just been moved
-				const auto duplicateTracks {Track::findByMBID(dbSession, *trackInfo->trackMBID)};
-				if (duplicateTracks.size() == 1)
+				Track::pointer otherTrack {duplicateTracks.front()};
+				std::error_code ec;
+				if (!std::filesystem::exists(otherTrack->getPath(), ec))
 				{
-					Track::pointer otherTrack {duplicateTracks.front()};
-					std::error_code ec;
-					if (!std::filesystem::exists(otherTrack->getPath(), ec))
-					{
-						LMS_LOG(DBUPDATER, DEBUG) << "Considering track '" << file.string() << "' moved from '" << otherTrack->getPath() << "'";
-						track = otherTrack;
-					}
+					LMS_LOG(DBUPDATER, DEBUG) << "Considering track '" << file.string() << "' moved from '" << otherTrack->getPath() << "'";
+					track = otherTrack;
+					track.modify()->setPath(file);
 				}
 			}
 
