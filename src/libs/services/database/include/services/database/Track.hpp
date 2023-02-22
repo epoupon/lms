@@ -110,6 +110,7 @@ class Track : public Object<Track, TrackId>
 		static pointer 					find(Session& session, TrackId id);
 		static bool						exists(Session& session, TrackId id);
 		static std::vector<pointer>		findByRecordingMBID(Session& session, const UUID& MBID);
+		static std::vector<pointer>		findByMBID(Session& session, const UUID& MBID);
 		static RangeResults<TrackId>	findSimilarTracks(Session& session, const std::vector<TrackId>& trackIds, Range range);
 
 		static RangeResults<TrackId>	find(Session& session, const FindParameters& parameters);

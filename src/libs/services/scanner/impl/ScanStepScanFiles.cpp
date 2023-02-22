@@ -283,16 +283,22 @@ namespace Scanner
 
 		Track::pointer track {Track::findByPath(dbSession, file) };
 
-		// Skip duplicate recording MBID
-		if (trackInfo->recordingMBID && _settings.skipDuplicateRecordingMBID)
+		// Skip duplicate track MBID
+		if (trackInfo->trackMBID && _settings.skipDuplicateMBID)
 		{
-			for (Track::pointer otherTrack : Track::findByRecordingMBID(dbSession, *trackInfo->recordingMBID))
+			for (Track::pointer otherTrack : Track::findByMBID(dbSession, *trackInfo->trackMBID))
 			{
+				// Skip ourselves
 				if (track && track->getId() == otherTrack->getId())
 					continue;
 
-				LMS_LOG(DBUPDATER, DEBUG) << "Skipped '" << file.string() << "' (similar recording MBID in '" << otherTrack->getPath().string() << "')";
-				// This recording MBID already exists, just remove what we just scanned
+				// Skip if the other track found does not exists, as it may have been moved to the current scanned file
+				std::error_code ec;
+				if (!std::filesystem::exists(otherTrack->getPath(), ec))
+					continue;
+
+				LMS_LOG(DBUPDATER, DEBUG) << "Skipped '" << file.string() << "' (similar MBID in '" << otherTrack->getPath().string() << "')";
+				// As this MBID already exists, just remove what we just scanned
 				if (track)
 				{
 					track.remove();

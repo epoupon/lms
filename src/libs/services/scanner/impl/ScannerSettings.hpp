@@ -36,7 +36,7 @@ namespace Scanner
 		std::vector<std::filesystem::path>					supportedExtensions;
 		Database::ScanSettings::RecommendationEngineType	recommendationServiceType;
 		std::filesystem::path								mediaDirectory;
-		bool												skipDuplicateRecordingMBID {};
+		bool												skipDuplicateMBID {};
 		std::set<std::string>								clusterTypeNames;
 
 		bool operator==(const ScannerSettings& rhs) const
@@ -47,7 +47,7 @@ namespace Scanner
 				&& supportedExtensions == rhs.supportedExtensions
 				&& recommendationServiceType == rhs.recommendationServiceType
 				&& mediaDirectory == rhs.mediaDirectory
-				&& skipDuplicateRecordingMBID == rhs.skipDuplicateRecordingMBID
+				&& skipDuplicateMBID == rhs.skipDuplicateMBID
 				&& clusterTypeNames == rhs.clusterTypeNames;
 		}
 	};

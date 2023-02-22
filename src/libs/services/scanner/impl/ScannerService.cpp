@@ -336,7 +336,7 @@ ScannerService::refreshScanSettings()
 		return;
 
 	LMS_LOG(DBUPDATER, DEBUG) << "Scanner settings updated";
-	LMS_LOG(DBUPDATER, DEBUG) << "skipDuplicateRecordingMBID = " << newSettings.skipDuplicateRecordingMBID;
+	LMS_LOG(DBUPDATER, DEBUG) << "skipDuplicateMBID = " << newSettings.skipDuplicateMBID;
 	LMS_LOG(DBUPDATER, DEBUG) << "Using scan settings version " << newSettings.scanVersion;
 
 	_settings = std::move(newSettings);
@@ -366,7 +366,7 @@ ScannerService::readSettings()
 {
 	ScannerSettings newSettings;
 
-	newSettings.skipDuplicateRecordingMBID = Service<IConfig>::get()->getBool("scanner-skip-duplicate-recording-mbid", false);
+	newSettings.skipDuplicateMBID = Service<IConfig>::get()->getBool("scanner-skip-duplicate-mbid", false);
 	{
 		auto transaction {_dbSession.createSharedTransaction()};
 
