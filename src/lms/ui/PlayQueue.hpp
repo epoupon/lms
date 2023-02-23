@@ -69,7 +69,7 @@ class PlayQueue : public Template
 		// Signal emitted when track count changed
 		Wt::Signal<std::size_t> trackCountChanged;
 
-		constexpr std::size_t getCapacity() const { return _capacity; }
+		std::size_t getCapacity() const { return _capacity; }
 		std::size_t getCount();
 
 	private:
@@ -99,7 +99,7 @@ class PlayQueue : public Template
 		void exportToNewTrackList(const Wt::WString& name);
 		void exportToTrackList(Database::TrackListId trackList);
 
-		static inline constexpr std::size_t _capacity {1000};
+		const std::size_t _capacity;
 		static inline constexpr std::size_t _batchSize {12};
 
 		bool _mediaPlayerSettingsLoaded {};

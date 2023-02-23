@@ -215,7 +215,6 @@
 
 
 <message id="Lms.PlayQueue.playqueue">播放队列</message>
-<message id="Lms.PlayQueue.playqueue-full">播放队列已满！</message>
 <message id="Lms.PlayQueue.radio-mode">广播模式</message>
 <message id="Lms.PlayQueue.repeat">循环播放</message>
 <message id="Lms.PlayQueue.replace-tracklist">替换现有播放列表</message>

@@ -211,7 +211,6 @@
 <message id="Lms.PlayQueue.clear">Cancella</message>
 
 <message id="Lms.PlayQueue.playqueue">Coda di riproduzione</message>
-<message id="Lms.PlayQueue.playqueue-full">Coda di riproduzione piena!</message>
 <message id="Lms.PlayQueue.radio-mode">Modalità radio</message>
 <message id="Lms.PlayQueue.repeat">Ripeti</message>
 

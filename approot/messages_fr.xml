@@ -211,7 +211,6 @@
 <message id="Lms.PlayQueue.clear">Effacer</message>
 <message id="Lms.PlayQueue.create-tracklist">Créer une nouvelle liste de lecture</message>
 <message id="Lms.PlayQueue.playqueue">Liste de lecture</message>
-<message id="Lms.PlayQueue.playqueue-full">Liste de lecture pleine!</message>
 <message id="Lms.PlayQueue.radio-mode">Mode radio</message>
 <message id="Lms.PlayQueue.repeat">Repéter</message>
 <message id="Lms.PlayQueue.replace-tracklist">Remplacer une liste de lecture existante</message>

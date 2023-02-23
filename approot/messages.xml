@@ -211,7 +211,6 @@
 <message id="Lms.PlayQueue.clear">Clear</message>
 <message id="Lms.PlayQueue.create-tracklist">Create new playlist</message>
 <message id="Lms.PlayQueue.playqueue">Play Queue</message>
-<message id="Lms.PlayQueue.playqueue-full">Play Queue full!</message>
 <message id="Lms.PlayQueue.radio-mode">Radio mode</message>
 <message id="Lms.PlayQueue.repeat">Repeat</message>
 <message id="Lms.PlayQueue.replace-tracklist">Replace existing playlist</message>
