@@ -24,7 +24,7 @@
 #include <iomanip>
 
 #include <Wt/Http/Response.h>
-#include <Wt/WLocalDateTime.h>
+#include <Wt/WDateTime.h>
 
 #include "services/database/Artist.hpp"
 #include "services/database/Release.hpp"
@@ -178,7 +178,7 @@ createZipper(const std::vector<Database::Track::pointer>& tracks)
 		files.emplace(fileName, track->getPath());
 	}
 
-	return std::make_unique<Zip::Zipper>(files, Wt::WLocalDateTime::currentDateTime().toUTC());
+	return std::make_unique<Zip::Zipper>(files, Wt::WDateTime::currentDateTime());
 }
 
 DownloadArtistResource::DownloadArtistResource(Database::ArtistId artistId)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2023 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,21 +19,18 @@
 
 #pragma once
 
-#include <Wt/WResource.h>
+#include "ScanStepBase.hpp"
 
-#include "services/database/TrackId.hpp"
-
-namespace UserInterface
+namespace Scanner
 {
-	class AudioFileResource : public Wt::WResource
+	class ScanStepCheckDuplicatedDbFiles : public ScanStepBase
 	{
 		public:
-			~AudioFileResource();
-
-			std::string getUrl(Database::TrackId trackId) const;
+			using ScanStepBase::ScanStepBase;
 
 		private:
-			void handleRequest(const Wt::Http::Request& request,
-					Wt::Http::Response& response) override;
+			std::string_view getStepName() const override { return "Checking for duplicated files"; }
+			ScanStep getStep() const override { return ScanStep::CheckingForDuplicateFiles; }
+			void process(ScanContext& context) override;
 	};
-} // namespace UserInterface
+}

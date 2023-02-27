@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2023 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,21 +19,27 @@
 
 #pragma once
 
-#include <Wt/WResource.h>
+#include <string_view>
 
-#include "services/database/TrackId.hpp"
+#include "services/scanner/ScannerStats.hpp"
 
-namespace UserInterface
+namespace Scanner
 {
-	class AudioFileResource : public Wt::WResource
+	class IScanStep
 	{
 		public:
-			~AudioFileResource();
+			virtual ~IScanStep() = default;
 
-			std::string getUrl(Database::TrackId trackId) const;
+			virtual ScanStep getStep() const = 0;
+			virtual std::string_view getStepName() const = 0;
 
-		private:
-			void handleRequest(const Wt::Http::Request& request,
-					Wt::Http::Response& response) override;
+			struct ScanContext
+			{
+				const std::filesystem::path directory;
+				const bool forceScan;
+				ScanStats stats;
+				ScanStepStats currentStepStats;
+			};
+			virtual void process(ScanContext& context) = 0;
 	};
-} // namespace UserInterface
+}

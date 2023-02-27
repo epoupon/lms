@@ -39,7 +39,7 @@ namespace Scanner
 	enum class DuplicateReason
 	{
 		SameHash,
-		SameRecordingMBID,
+		SameTrackMBID,
 	};
 
 	struct ScanError
@@ -57,11 +57,12 @@ namespace Scanner
 		DuplicateReason		reason;
 	};
 
-	enum class ScanProgressStep : unsigned
+	enum class ScanStep
 	{
-		ChekingForMissingFiles = 0,
 		DiscoveringFiles,
 		ScanningFiles,
+		ChekingForMissingFiles,
+		CheckingForDuplicateFiles,
 		FetchingTrackFeatures,
 		ReloadingSimilarityEngine,
 	};
@@ -72,7 +73,7 @@ namespace Scanner
 	{
 		Wt::WDateTime   startTime;
 
-		ScanProgressStep currentStep;
+		ScanStep currentStep;
 
 		std::size_t	totalElems {};
 		std::size_t	processedElems {};

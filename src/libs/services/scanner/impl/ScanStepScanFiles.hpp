@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2023 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,21 +19,25 @@
 
 #pragma once
 
-#include <Wt/WResource.h>
+#include <filesystem>
 
-#include "services/database/TrackId.hpp"
+#include "metadata/IParser.hpp"
+#include "ScanStepBase.hpp"
 
-namespace UserInterface
+namespace Scanner
 {
-	class AudioFileResource : public Wt::WResource
+	class ScanStepScanFiles : public ScanStepBase
 	{
 		public:
-			~AudioFileResource();
-
-			std::string getUrl(Database::TrackId trackId) const;
+			ScanStepScanFiles(InitParams& initParams);
 
 		private:
-			void handleRequest(const Wt::Http::Request& request,
-					Wt::Http::Response& response) override;
+			ScanStep getStep() const override { return ScanStep::ScanningFiles; }
+			std::string_view getStepName() const override { return "Scanning files"; }
+			void process(ScanContext& context) override;
+
+			void scanAudioFile(const std::filesystem::path& file, ScanContext& context);
+
+			std::unique_ptr<MetaData::IParser>			_metadataParser;
 	};
-} // namespace UserInterface
+}

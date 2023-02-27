@@ -36,6 +36,7 @@
 #include "services/database/User.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "services/recommendation/IPlaylistGeneratorService.hpp"
+#include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"
 #include "utils/Service.hpp"
@@ -117,6 +118,7 @@ namespace
 
 PlayQueue::PlayQueue()
 : Template {Wt::WString::tr("Lms.PlayQueue.template")}
+, _capacity {Service<IConfig>::get()->getULong("playqueue-max-entry-count", 1000)}
 {
 	initTrackLists();
 

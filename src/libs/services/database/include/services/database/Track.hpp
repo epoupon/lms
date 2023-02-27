@@ -110,11 +110,12 @@ class Track : public Object<Track, TrackId>
 		static pointer 					find(Session& session, TrackId id);
 		static bool						exists(Session& session, TrackId id);
 		static std::vector<pointer>		findByRecordingMBID(Session& session, const UUID& MBID);
+		static std::vector<pointer>		findByMBID(Session& session, const UUID& MBID);
 		static RangeResults<TrackId>	findSimilarTracks(Session& session, const std::vector<TrackId>& trackIds, Range range);
 
 		static RangeResults<TrackId>	find(Session& session, const FindParameters& parameters);
 		static RangeResults<PathResult>	findPaths(Session& session, Range range);
-		static RangeResults<TrackId>	findRecordingMBIDDuplicates(Session& session, Range range);
+		static RangeResults<TrackId>	findTrackMBIDDuplicates(Session& session, Range range);
 		static RangeResults<TrackId>	findWithRecordingMBIDAndMissingFeatures(Session& session, Range range);
 
 		// Accessors
@@ -125,6 +126,7 @@ class Track : public Object<Track, TrackId>
 		void setTotalDisc(std::optional<int> totalDisc)			{ _totalDisc = totalDisc ? *totalDisc : 0; }
 		void setDiscSubtitle(const std::string& name)			{ _discSubtitle = name; }
 		void setName(const std::string& name)				{ _name = std::string(name, 0, _maxNameLength); }
+		void setPath(const std::filesystem::path& filePath) 		{ _filePath = filePath; }
 		void setDuration(std::chrono::milliseconds duration)		{ _duration = duration; }
 		void setLastWriteTime(Wt::WDateTime time)			{ _fileLastWrite = time; }
 		void setAddedTime(Wt::WDateTime time)				{ _fileAdded = time; }

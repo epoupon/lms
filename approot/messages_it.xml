@@ -76,13 +76,14 @@
 <message id="Lms.Admin.ScannerController.last-scan-status">Scansionati {1} files in {2} su {3} ({4} errori, {5} duplicati)</message>
 <message id="Lms.Admin.ScannerController.no-audio-track">Nessuna traccia audio</message>
 <message id="Lms.Admin.ScannerController.same-hash">Hash doppio</message>
-<message id="Lms.Admin.ScannerController.same-mbid">Recording MBID doppio</message>
+<message id="Lms.Admin.ScannerController.same-mbid">Track MBID doppio</message>
 <message id="Lms.Admin.ScannerController.scan-now">Scansiona ora</message>
 <message id="Lms.Admin.ScannerController.scanner">Scanner</message>
 <message id="Lms.Admin.ScannerController.status">Stato</message>
 <message id="Lms.Admin.ScannerController.status-not-scheduled">Non pianificato</message>
 <message id="Lms.Admin.ScannerController.status-scheduled">Pianificato il {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">Scansione: passo {1}/{2}</message>
+
 <message id="Lms.Admin.ScannerController.step-checking-for-missing-files">Controllo file... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-discovering-files">File trovati: {1} files</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Recupero metadati da AcousticBrainz: {1}/{2} tracce ({3}%)...</message>
@@ -210,7 +211,6 @@
 <message id="Lms.PlayQueue.clear">Cancella</message>
 
 <message id="Lms.PlayQueue.playqueue">Coda di riproduzione</message>
-<message id="Lms.PlayQueue.playqueue-full">Coda di riproduzione piena!</message>
 <message id="Lms.PlayQueue.radio-mode">Modalità radio</message>
 <message id="Lms.PlayQueue.repeat">Ripeti</message>
 

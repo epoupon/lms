@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,21 +19,33 @@
 
 #pragma once
 
-#include <Wt/WResource.h>
+#include <tuple>
 
-#include "services/database/TrackId.hpp"
-
-namespace UserInterface
+namespace Utils
 {
-	class AudioFileResource : public Wt::WResource
+	namespace Details
 	{
-		public:
-			~AudioFileResource();
+		template<int... Is>
+		struct Seq { };
 
-			std::string getUrl(Database::TrackId trackId) const;
+		template<int N, int... Is>
+		struct GenSeq : GenSeq<N - 1, N - 1, Is...> { };
 
-		private:
-			void handleRequest(const Wt::Http::Request& request,
-					Wt::Http::Response& response) override;
-	};
-} // namespace UserInterface
+		template<int... Is>
+		struct GenSeq<0, Is...> : Seq<Is...> { };
+
+	    template<typename T, typename Func, int... Is>
+	    void forEachTypeInTuple(T&& t, Func f, Seq<Is...>)
+	    {
+	        auto l = { (f(std::get<Is>(t)), 0)... };
+	    }
+	}
+
+	template<typename... Ts, typename Func>
+	void forEachTypeInTuple(std::tuple<Ts...> const& t, Func f)
+	{
+	    Details::forEachTypeInTuple(t, f, Details::GenSeq<sizeof...(Ts)>());
+	}
+}
+
+

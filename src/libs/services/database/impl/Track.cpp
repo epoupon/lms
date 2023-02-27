@@ -210,6 +210,18 @@ Track::exists(Session& session, TrackId id)
 }
 
 std::vector<Track::pointer>
+Track::findByMBID(Session& session, const UUID& mbid)
+{
+	session.checkSharedLocked();
+
+	auto res {session.getDboSession().find<Track>()
+		.where("mbid = ?").bind(std::string {mbid.getAsString()})
+		.resultList()};
+
+	return std::vector<Track::pointer>(res.begin(), res.end());
+}
+
+std::vector<Track::pointer>
 Track::findByRecordingMBID(Session& session, const UUID& mbid)
 {
 	session.checkSharedLocked();
@@ -247,12 +259,12 @@ Track::findPaths(Session& session, Range range)
 }
 
 RangeResults<TrackId>
-Track::findRecordingMBIDDuplicates(Session& session, Range range)
+Track::findTrackMBIDDuplicates(Session& session, Range range)
 {
 	session.checkSharedLocked();
 
-	auto query {session.getDboSession().query<TrackId>( "SELECT track.id FROM track WHERE recording_mbid in (SELECT recording_mbid FROM track WHERE recording_mbid <> '' GROUP BY recording_mbid HAVING COUNT (*) > 1)")
-		.orderBy("track.release_id,track.disc_number,track.track_number,track.recording_mbid")};
+	auto query {session.getDboSession().query<TrackId>( "SELECT track.id FROM track WHERE mbid in (SELECT mbid FROM track WHERE mbid <> '' GROUP BY mbid HAVING COUNT (*) > 1)")
+		.orderBy("track.release_id,track.disc_number,track.track_number,track.mbid")};
 
 	return Utils::execQuery(query, range);
 }

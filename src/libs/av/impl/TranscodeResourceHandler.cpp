@@ -56,6 +56,7 @@ namespace Av
 		if (_estimatedContentLength)
 			response.setContentLength(*_estimatedContentLength);
 		response.setMimeType(_transcoder.getOutputMimeType());
+		LMS_LOG(TRANSCODE, DEBUG) << "Set mime type to " << _transcoder.getOutputMimeType();
 
 		if (_bytesReadyCount > 0)
 		{

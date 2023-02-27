@@ -266,7 +266,7 @@ namespace Zip
 			if (lastModifiedTime.isValid())
 				fileContext.lastModifiedTime = lastModifiedTime;
 			else
-				fileContext.lastModifiedTime = getLastWriteTime(filePath);
+				fileContext.lastModifiedTime = PathUtils::getLastWriteTime(filePath);
 
 			_files[filename] = std::move(fileContext);
 

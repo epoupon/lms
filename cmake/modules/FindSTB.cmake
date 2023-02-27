@@ -1,4 +1,4 @@
-find_path(STB_INCLUDE_DIR stb/stb_image.h)
+find_path(STB_INCLUDE_DIR stb_image.h PATH_SUFFIXES stb)
 
 include(FindPackageHandleStandardArgs)
 

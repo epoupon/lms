@@ -1,5 +1,5 @@
 FROM --platform=$BUILDPLATFORM tonistiigi/xx AS xx
-FROM --platform=$BUILDPLATFORM alpine:3.16
+FROM --platform=$BUILDPLATFORM alpine:3.17
 
 ARG BUILD_PACKAGES="\
 	clang \
@@ -19,6 +19,7 @@ ARG	LMS_BUILD_PACKAGES=" \
 	ffmpeg-dev \
 	libconfig-dev \
 	taglib-dev \
+	stb \
 	wt-dev \
 	gtest-dev"
 
@@ -26,17 +27,6 @@ COPY --from=xx / /
 
 ARG TARGETPLATFORM
 RUN	xx-apk add --no-scripts --no-cache ${LMS_BUILD_PACKAGES}
-
-ARG	PREFIX="/tmp/install"
-
-# STB
-ARG	STB_VERSION=af1a5bc352164740c1cc1354942b1c6b72eacb8a
-RUN \
-	DIR=/tmp/stb && mkdir -p ${DIR} && cd ${DIR} && \
-	curl -sLO https://github.com/nothings/stb/archive/${STB_VERSION}.tar.gz && \
-	tar -x --strip-components=1 -f ${STB_VERSION}.tar.gz && \
-	mkdir -p ${PREFIX}/include/stb && \
-	cp ./*.h ${PREFIX}/include/stb
 
 # LMS
 COPY . /tmp/lms/

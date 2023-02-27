@@ -95,6 +95,15 @@ AudioFileResource::handleRequest(const Wt::Http::Request& request,
 			return;
 
 		fileResourceHandler = createFileResourceHandler(*trackPath);
+
+		const auto guessedAudioFormat {Av::guessAudioFileFormat(*trackPath)};
+		if (guessedAudioFormat)
+		{
+			LOG(DEBUG) << "Set mime type to " << guessedAudioFormat->mimeType;
+			response.setMimeType(guessedAudioFormat->mimeType);
+		}
+		else
+			response.setMimeType("application/octet-stream");
 	}
 	else
 	{
