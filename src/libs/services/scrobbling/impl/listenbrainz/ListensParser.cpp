@@ -51,6 +51,7 @@ namespace
 		if (metadata.type("additional_info") == Wt::Json::Type::Object)
 		{
 			const Wt::Json::Object& additionalInfo = metadata.get("additional_info");
+			listen.trackMBID = UUID::fromString(additionalInfo.get("track_mbid").orIfNull(""));
 			listen.recordingMBID = UUID::fromString(additionalInfo.get("recording_mbid").orIfNull(""));
 			listen.releaseMBID = UUID::fromString(additionalInfo.get("release_mbid").orIfNull(""));
 

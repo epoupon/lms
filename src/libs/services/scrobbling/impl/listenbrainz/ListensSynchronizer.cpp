@@ -150,7 +150,23 @@ namespace
 
 		auto transaction {session.createSharedTransaction()};
 
-		// first try to match using recording MBID, and then fallback on possibly ambiguous info
+		// first try to match using track MBID, and then fallback on possibly ambiguous info
+		if (listen.trackMBID)
+		{
+			const auto tracks {Track::findByMBID(session, *listen.trackMBID)};
+			// if duplicated files, do not record it (let the user correct its database)
+			if (tracks.size() == 1)
+			{
+				LOG(DEBUG) << "Matched listen '" << listen << "' using track MBID";
+				return tracks.front()->getId();
+			}
+			else if (tracks.size() > 1)
+			{
+				LOG(DEBUG) << "Too many matches for listen '" << listen << "' using track MBID!";
+				return {};
+			}
+		}
+
 		if (listen.recordingMBID)
 		{
 			const auto tracks {Track::findByRecordingMBID(session, *listen.recordingMBID)};
@@ -282,7 +298,7 @@ namespace Scrobbling::ListenBrainz
 		using namespace Database;
 
 		Session& session {_db.getTLSSession()};
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createUniqueTransaction()}; // TODO: unique only if needed
 
 		Database::Listen::pointer dbListen {Database::Listen::find(session, listen.userId, listen.trackId, Database::Scrobbler::ListenBrainz, listen.listenedAt)};
 		if (!dbListen)
