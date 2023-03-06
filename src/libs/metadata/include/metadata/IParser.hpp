@@ -39,18 +39,27 @@ namespace MetaData
 	{
 		std::string name;
 		std::optional<std::string> sortName;
-		std::optional<UUID> musicBrainzArtistID;
+		std::optional<UUID> artistMBID;
 
 		Artist(std::string_view _name) : name {_name} {}
-		Artist(std::string_view _name, std::optional<std::string> _sortName, std::optional<UUID> _musicBrainzArtistID) : name {_name}, sortName {_sortName}, musicBrainzArtistID {_musicBrainzArtistID} {}
+		Artist(std::string_view _name, std::optional<std::string> _sortName, std::optional<UUID> _artistMBID) : name {_name}, sortName {std::move(_sortName)}, artistMBID {std::move(_artistMBID)} {}
 	};
 
 	using PerformerContainer = std::map<std::string /*role*/, std::vector<Artist>>;
 
-	struct Album
+	struct Release
 	{
-		std::string name;
-		std::optional<UUID> musicBrainzAlbumID;
+		std::string					name;
+		std::vector<Artist>			releaseArtists;
+		std::optional<UUID> 		releaseMBID;
+		std::optional<std::size_t>	totalDisc;
+	};
+
+	struct Disc
+	{
+		std::string					subtitle;
+		std::optional<float>        replayGain;
+		std::optional<std::size_t>  totalTrack;
 	};
 
 	struct AudioStream
@@ -61,34 +70,30 @@ namespace MetaData
 	struct Track
 	{
 		std::vector<Artist>			artists;
-		std::vector<Artist>			albumArtists;
 		std::string					title;
 		std::optional<UUID>			trackMBID;
 		std::optional<UUID>			recordingMBID;
-		std::optional<Album>		album;
+		std::optional<Release>		release;
+		std::optional<Disc>			disc;
 		Clusters					clusters;
 		std::chrono::milliseconds 	duration;
 		std::optional<std::size_t>	trackNumber;
-		std::optional<std::size_t>	totalTrack;
 		std::optional<std::size_t>	discNumber;
-		std::optional<std::size_t>	totalDisc;
 		Wt::WDate					date;
 		Wt::WDate					originalDate;
 		bool						hasCover {};
 		std::vector<AudioStream>	audioStreams;
-		std::optional<UUID>		acoustID;
-		std::string				copyright;
-		std::string				copyrightURL;
-		std::optional<float>	trackReplayGain;
-		std::optional<float>	albumReplayGain;
-		std::string				discSubtitle;
-		std::vector<Artist>		conductorArtists;
-		std::vector<Artist>		composerArtists;
-		std::vector<Artist>		lyricistArtists;
-		std::vector<Artist>		mixerArtists;
-		PerformerContainer		performerArtists;
-		std::vector<Artist>		producerArtists;
-		std::vector<Artist>		remixerArtists;
+		std::optional<UUID>			acoustID;
+		std::string					copyright;
+		std::string					copyrightURL;
+		std::optional<float>		replayGain;
+		std::vector<Artist>			conductorArtists;
+		std::vector<Artist>			composerArtists;
+		std::vector<Artist>			lyricistArtists;
+		std::vector<Artist>			mixerArtists;
+		PerformerContainer			performerArtists;
+		std::vector<Artist>			producerArtists;
+		std::vector<Artist>			remixerArtists;
 	};
 
 	class IParser

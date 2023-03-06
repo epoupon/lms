@@ -187,7 +187,6 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseTotalDiscTrack)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		EXPECT_FALSE(release1->getTotalTrack());
 		EXPECT_FALSE(release1->getTotalDisc());
 	}
 
@@ -201,7 +200,6 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseTotalDiscTrack)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		EXPECT_FALSE(release1->getTotalTrack());
 		EXPECT_FALSE(release1->getTotalDisc());
 	}
 
@@ -209,14 +207,14 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseTotalDiscTrack)
 		auto transaction {session.createUniqueTransaction()};
 
 		track1.get().modify()->setTotalTrack(36);
-		track1.get().modify()->setTotalDisc(6);
+		release1.get().modify()->setTotalDisc(6);
 	}
 
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		ASSERT_TRUE(release1->getTotalTrack());
-		EXPECT_EQ(*release1->getTotalTrack(), 36);
+		ASSERT_TRUE(track1->getTotalTrack());
+		EXPECT_EQ(*track1->getTotalTrack(), 36);
 		ASSERT_TRUE(release1->getTotalDisc());
 		EXPECT_EQ(*release1->getTotalDisc(), 6);
 	}
@@ -227,14 +225,14 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseTotalDiscTrack)
 
 		track2.get().modify()->setRelease(release1.get());
 		track2.get().modify()->setTotalTrack(37);
-		track2.get().modify()->setTotalDisc(67);
+		release1.get().modify()->setTotalDisc(67);
 	}
 
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		ASSERT_TRUE(release1->getTotalTrack());
-		EXPECT_EQ(*release1->getTotalTrack(), 37);
+		ASSERT_TRUE(track1->getTotalTrack());
+		EXPECT_EQ(*track1->getTotalTrack(), 36);
 		ASSERT_TRUE(release1->getTotalDisc());
 		EXPECT_EQ(*release1->getTotalDisc(), 67);
 	}
@@ -243,7 +241,6 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseTotalDiscTrack)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		EXPECT_FALSE(release2->getTotalTrack());
 		EXPECT_FALSE(release2->getTotalDisc());
 	}
 
@@ -253,17 +250,17 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseTotalDiscTrack)
 
 		track3.get().modify()->setRelease(release2.get());
 		track3.get().modify()->setTotalTrack(7);
-		track3.get().modify()->setTotalDisc(5);
+		release2.get().modify()->setTotalDisc(5);
 	}
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		ASSERT_TRUE(release1->getTotalTrack());
-		EXPECT_EQ(*release1->getTotalTrack(), 37);
+		ASSERT_TRUE(track1->getTotalTrack());
+		EXPECT_EQ(*track1->getTotalTrack(), 36);
 		ASSERT_TRUE(release1->getTotalDisc());
-		EXPECT_EQ(*release1->getTotalDisc(), 67);
-		ASSERT_TRUE(release2->getTotalTrack());
-		EXPECT_EQ(*release2->getTotalTrack(), 7);
+		EXPECT_EQ(*release2->getTotalDisc(), 5);
+		ASSERT_TRUE(track3->getTotalTrack());
+		EXPECT_EQ(*track3->getTotalTrack(), 7);
 		ASSERT_TRUE(release2->getTotalDisc());
 		EXPECT_EQ(*release2->getTotalDisc(), 5);
 	}
@@ -482,7 +479,7 @@ TEST_F(DatabaseFixture, Release_getDiscCount)
 	}
 	{
 		auto transaction {session.createSharedTransaction()};
-		EXPECT_EQ(release.get()->getDiscCount(), 1);
+		EXPECT_EQ(release.get()->getDiscCount(), 0);
 	}
 	{
 		auto transaction {session.createUniqueTransaction()};

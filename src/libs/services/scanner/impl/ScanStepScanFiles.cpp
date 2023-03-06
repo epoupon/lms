@@ -42,8 +42,8 @@ namespace
 	{
 		Artist::pointer artist {session.create<Artist>(artistInfo.name)};
 
-		if (artistInfo.musicBrainzArtistID)
-			artist.modify()->setMBID(*artistInfo.musicBrainzArtistID);
+		if (artistInfo.artistMBID)
+			artist.modify()->setMBID(*artistInfo.artistMBID);
 		if (artistInfo.sortName)
 			artist.modify()->setSortName(*artistInfo.sortName);
 
@@ -76,9 +76,9 @@ namespace
 			Artist::pointer artist;
 
 			// First try to get by MBID
-			if (artistInfo.musicBrainzArtistID)
+			if (artistInfo.artistMBID)
 			{
-				artist = Artist::find(session, *artistInfo.musicBrainzArtistID);
+				artist = Artist::find(session, *artistInfo.artistMBID);
 				if (!artist)
 					artist = createArtist(session, artistInfo);
 				else
@@ -115,45 +115,49 @@ namespace
 		return artists;
 	}
 
+	void
+	updateReleaseIfNeeded(Release::pointer release, const MetaData::Release& releaseInfo)
+	{
+		if (release->getName() != releaseInfo.name)
+			release.modify()->setName(releaseInfo.name);
+		if (release->getTotalDisc() != releaseInfo.totalDisc)
+			release.modify()->setTotalDisc(releaseInfo.totalDisc);
+	}
+
 	Release::pointer
-	getOrCreateRelease(Session& session, const MetaData::Album& album)
+	getOrCreateRelease(Session& session, const MetaData::Release& releaseInfo)
 	{
 		Release::pointer release;
 
 		// First try to get by MBID
-		if (album.musicBrainzAlbumID)
+		if (releaseInfo.releaseMBID)
 		{
-			release = Release::find(session, *album.musicBrainzAlbumID);
+			release = Release::find(session, *releaseInfo.releaseMBID);
 			if (!release)
-			{
-				release = session.create<Release>(album.name, album.musicBrainzAlbumID);
-			}
-			else if (release->getName() != album.name)
-			{
-				// Name may have been updated
-				release.modify()->setName(album.name);
-			}
+				release = session.create<Release>(releaseInfo.name, releaseInfo.releaseMBID);
 
+			updateReleaseIfNeeded(release, releaseInfo);
 			return release;
 		}
 
 		// Fall back on release name (collisions may occur)
-		if (!album.name.empty())
+		if (!releaseInfo.name.empty())
 		{
-			for (const Release::pointer& sameNamedRelease : Release::find(session, album.name))
+			for (const Release::pointer& sameNamedRelease : Release::find(session, releaseInfo.name))
 			{
 				// do not fallback on properly tagged releases
-				if (!sameNamedRelease->getMBID())
-				{
-					release = sameNamedRelease;
-					break;
-				}
+				if (sameNamedRelease->getMBID())
+					continue;
+
+				release = sameNamedRelease;
+				break;
 			}
 
 			// No release found with the same name and without MBID -> creating
 			if (!release)
-				release = session.create<Release>(album.name);
+				release = session.create<Release>(releaseInfo.name);
 
+			updateReleaseIfNeeded(release, releaseInfo);
 			return release;
 		}
 
@@ -389,8 +393,11 @@ namespace Scanner
 		for (const Artist::pointer& artist : getOrCreateArtists(dbSession, trackInfo->artists, false))
 			track.modify()->addArtistLink(TrackArtistLink::create(dbSession, track, artist, TrackArtistLinkType::Artist));
 
-		for (const Artist::pointer& releaseArtist : getOrCreateArtists(dbSession, trackInfo->albumArtists, false))
-			track.modify()->addArtistLink(TrackArtistLink::create(dbSession, track, releaseArtist, TrackArtistLinkType::ReleaseArtist));
+		if (trackInfo->release)
+		{
+			for (const Artist::pointer& releaseArtist : getOrCreateArtists(dbSession, trackInfo->release->releaseArtists, false))
+				track.modify()->addArtistLink(TrackArtistLink::create(dbSession, track, releaseArtist, TrackArtistLinkType::ReleaseArtist));
+		}
 
 		// Allow fallbacks on artists with the same name even if they have MBID, since there is no tag to indicate the MBID of these artists
 		// We could ask MusicBrainz to get all the information, but that would heavily slow down the import process
@@ -419,10 +426,13 @@ namespace Scanner
 			track.modify()->addArtistLink(TrackArtistLink::create(dbSession, track, remixer, TrackArtistLinkType::Remixer));
 
 		track.modify()->setScanVersion(_settings.scanVersion);
-		if (trackInfo->album)
-			track.modify()->setRelease(getOrCreateRelease(dbSession, *trackInfo->album));
+		if (trackInfo->release)
+			track.modify()->setRelease(getOrCreateRelease(dbSession, *trackInfo->release));
 		else
 			track.modify()->setRelease({});
+		track.modify()->setTotalTrack(trackInfo->disc ? trackInfo->disc->totalTrack : std::nullopt);
+		track.modify()->setReleaseReplayGain(trackInfo->disc ? trackInfo->disc->replayGain : std::nullopt);
+		track.modify()->setDiscSubtitle(trackInfo->disc ? trackInfo->disc->subtitle : "");
 		track.modify()->setClusters(getOrCreateClusters(dbSession, trackInfo->clusters));
 		track.modify()->setLastWriteTime(lastWriteTime);
 		track.modify()->setName(title);
@@ -430,9 +440,6 @@ namespace Scanner
 		track.modify()->setAddedTime(Wt::WDateTime::currentDateTime());
 		track.modify()->setTrackNumber(trackInfo->trackNumber ? *trackInfo->trackNumber : 0);
 		track.modify()->setDiscNumber(trackInfo->discNumber ? *trackInfo->discNumber : 0);
-		track.modify()->setTotalTrack(trackInfo->totalTrack);
-		track.modify()->setTotalDisc(trackInfo->totalDisc);
-		track.modify()->setDiscSubtitle(trackInfo->discSubtitle);
 		track.modify()->setDate(trackInfo->date);
 		track.modify()->setOriginalDate(trackInfo->originalDate);
 
@@ -447,7 +454,6 @@ namespace Scanner
 		track.modify()->setHasCover(trackInfo->hasCover);
 		track.modify()->setCopyright(trackInfo->copyright);
 		track.modify()->setCopyrightURL(trackInfo->copyrightURL);
-		track.modify()->setTrackReplayGain(trackInfo->trackReplayGain);
-		track.modify()->setReleaseReplayGain(trackInfo->albumReplayGain);
+		track.modify()->setTrackReplayGain(trackInfo->replayGain);
 	}
 }

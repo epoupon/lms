@@ -611,6 +611,48 @@ CREATE TABLE IF NOT EXISTS "track_artist_link_backup" (
 		ScanSettings::get(session).modify()->incScanVersion();
 	}
 
+	static
+	void
+	migrateFromV38(Session& session)
+	{
+		// migrate release-specific tags from Track to Release
+		session.getDboSession().execute("ALTER TABLE release ADD total_disc INTEGER");
+
+		session.getDboSession().execute(R"(
+CREATE TABLE IF NOT EXISTS "track_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "scan_version" integer not null,
+  "track_number" integer,
+  "disc_number" integer,
+  "total_track" integer,
+  "disc_subtitle" text not null,
+  "name" text not null,
+  "duration" integer,
+  "date" text,
+  "original_date" text,
+  "file_path" text not null,
+  "file_last_write" text,
+  "file_added" text,
+  "has_cover" boolean not null,
+  "mbid" text not null,
+  "recording_mbid" text not null,
+  "copyright" text not null,
+  "copyright_url" text not null,
+  "track_replay_gain" real,
+  "release_replay_gain" real,
+  "release_id" bigint,
+  constraint "fk_track_release" foreign key ("release_id") references "release" ("id") on delete cascade deferrable initially deferred
+);
+))");
+		session.getDboSession().execute("INSERT INTO track_backup SELECT id, version, scan_version, track_number, disc_number, total_track, disc_subtitle, name, duration, date, original_date, file_path, file_last_write, file_added, has_cover, mbid, recording_mbid, copyright, copyright_url, track_replay_gain, release_replay_gain, release_id FROM track");
+		session.getDboSession().execute("DROP TABLE track");
+		session.getDboSession().execute("ALTER TABLE track_backup RENAME TO track");
+
+		// Just increment the scan version of the settings to make the next scheduled scan rescan everything
+		ScanSettings::get(session).modify()->incScanVersion();
+	}
+
 	void
 	doDbMigration(Session& session)
 	{
@@ -655,6 +697,7 @@ CREATE TABLE IF NOT EXISTS "track_artist_link_backup" (
 			{35, migrateFromV35},
 			{36, migrateFromV36},
 			{37, migrateFromV37},
+			{38, migrateFromV38},
 		};
 
 		while (1)

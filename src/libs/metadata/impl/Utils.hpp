@@ -27,7 +27,7 @@
 
 namespace MetaData::Utils
 {
-	Wt::WDate parseDate(const std::string& dateStr);
+	Wt::WDate parseDate(std::string_view dateStr);
 	std::string_view readStyleToString(ParserReadStyle readStyle);
 
 	struct PerformerArtist

@@ -28,7 +28,6 @@
 #include <Wt/WStackedWidget.h>
 #include <Wt/WTemplateFormView.h>
 
-#include "services/database/Cluster.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"

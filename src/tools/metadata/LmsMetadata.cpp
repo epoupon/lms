@@ -29,12 +29,14 @@
 #include "metadata/IParser.hpp"
 #include "utils/StreamLogger.hpp"
 
-std::ostream& operator<<(std::ostream& os, const MetaData::Artist& artist)
+static
+std::ostream&
+operator<<(std::ostream& os, const MetaData::Artist& artist)
 {
 	os << artist.name;
 
-	if (artist.musicBrainzArtistID)
-		os << " (" << artist.musicBrainzArtistID->getAsString() << ")";
+	if (artist.artistMBID)
+		os << " (" << artist.artistMBID->getAsString() << ")";
 
 	if (artist.sortName)
 		os << " '" << *artist.sortName << "'";
@@ -42,12 +44,36 @@ std::ostream& operator<<(std::ostream& os, const MetaData::Artist& artist)
 	return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const MetaData::Album& album)
+static
+std::ostream&
+operator<<(std::ostream& os, const MetaData::Release& release)
 {
-	os << album.name;
+	os << release.name;
 
-	if (album.musicBrainzAlbumID)
-		os << " (" << album.musicBrainzAlbumID->getAsString() << ")";
+	if (release.releaseMBID)
+		os << " (" << release.releaseMBID->getAsString() << ")" << std::endl;
+
+	if (release.totalDisc)
+		std::cout << "\tTotalDisc: " << *release.totalDisc << std::endl;
+
+	for (const MetaData::Artist& artist : release.releaseArtists)
+		std::cout << "\tAlbum artist: " << artist << std::endl;
+
+	return os;
+}
+
+static
+std::ostream&
+operator<<(std::ostream& os, const MetaData::Disc& disc)
+{
+	if (!disc.subtitle.empty())
+		os << disc.subtitle << std::endl;
+
+	if (disc.totalTrack)
+		std::cout << "\tTotalTrack: " << *disc.totalTrack << std::endl;
+
+	if (disc.replayGain)
+		std::cout << "\tDisc replay gain: " << *disc.replayGain << std::endl;
 
 	return os;
 }
@@ -73,9 +99,6 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 
 	for (const Artist& artist : track->artists)
 		std::cout << "Artist: " << artist << std::endl;
-
-	for (const Artist& artist : track->albumArtists)
-		std::cout << "Album artist: " << artist << std::endl;
 
 	for (const Artist& artist : track->conductorArtists)
 		std::cout << "Conductor: " << artist << std::endl;
@@ -105,8 +128,11 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 	for (const Artist& artist : track->remixerArtists)
 		std::cout << "Remixer: " << artist << std::endl;
 
-	if (track->album)
-		std::cout << "Album: " << *track->album << std::endl;
+	if (track->release)
+		std::cout << "Release: " << *track->release;
+
+	if (track->disc)
+		std::cout << "Disc: " << *track->disc;
 
 	std::cout << "Title: " << track->title << std::endl;
 
@@ -130,17 +156,8 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 	if (track->trackNumber)
 		std::cout << "Track: " << *track->trackNumber << std::endl;
 
-	if (track->totalTrack)
-		std::cout << "TotalTrack: " << *track->totalTrack << std::endl;
-
 	if (track->discNumber)
 		std::cout << "Disc: " << *track->discNumber << std::endl;
-
-	if (!track->discSubtitle.empty())
-		std::cout << "Disc Subtitle: " << track->discSubtitle << std::endl;
-
-	if (track->totalDisc)
-		std::cout << "TotalDisc: " << *track->totalDisc << std::endl;
 
 	if (track->date.isValid())
 		std::cout << "Date: " << track->date.toString("yyyy-MM-dd") << std::endl;
@@ -153,11 +170,8 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 	for (const auto& audioStream : track->audioStreams)
 		std::cout << "Audio stream: " << audioStream.bitRate << " bps" << std::endl;
 
-	if (track->trackReplayGain)
-		std::cout << "Track replay gain: " << *track->trackReplayGain << std::endl;
-
-	if (track->albumReplayGain)
-		std::cout << "Album replay gain: " << *track->albumReplayGain << std::endl;
+	if (track->replayGain)
+		std::cout << "Track replay gain: " << *track->replayGain << std::endl;
 
 	if (track->acoustID)
 		std::cout << "AcoustID: " << track->acoustID->getAsString() << std::endl;

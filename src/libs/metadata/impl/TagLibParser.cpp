@@ -19,6 +19,8 @@
 
 #include "TagLibParser.hpp"
 
+#include <map>
+
 #include <taglib/apetag.h>
 #include <taglib/asffile.h>
 #include <taglib/id3v2tag.h>
@@ -43,23 +45,30 @@
 namespace MetaData
 {
 
+// TODO use string_views here for values
+using TagMap = std::map<std::string, std::vector<std::string>>;
+
 template<typename T>
 std::vector<T>
-getPropertyValuesFirstMatchAs(const TagLib::PropertyMap& properties, const std::vector<std::string_view>& keys)
+getPropertyValuesFirstMatchAs(const TagMap& tags, const std::vector<std::string_view>& keys)
 {
 	std::vector<T> res;
 
 	for (std::string_view key : keys)
 	{
-		const TagLib::StringList& values {properties[std::string {key}]};
-		if (values.isEmpty())
+		const auto itValues {tags.find(std::string {key})};
+		if (itValues == std::cend(tags))
+			continue;
+
+		const std::vector<std::string>& values {itValues->second};
+		if (values.empty())
 			continue;
 
 		res.reserve(values.size());
 
 		for (const auto& value : values)
 		{
-			auto val {StringUtils::readAs<T>(StringUtils::stringTrim(value.to8Bit(true)))};
+			std::optional<T> val {StringUtils::readAs<T>(value)};
 			if (!val)
 				continue;
 
@@ -74,33 +83,31 @@ getPropertyValuesFirstMatchAs(const TagLib::PropertyMap& properties, const std::
 
 template <typename T>
 std::vector<T>
-getPropertyValuesAs(const TagLib::PropertyMap& properties, const std::string& key)
+getPropertyValuesAs(const TagMap& tags, const std::string& key)
 {
-	return getPropertyValuesFirstMatchAs<T>(properties, {std::move(key)});
+	return getPropertyValuesFirstMatchAs<T>(tags, {key});
 }
 
 static
-std::vector<std::string>
-splitAndTrimString(const std::string& str, std::string_view delimiters)
+std::vector<std::string_view>
+splitAndTrimString(std::string_view str, std::string_view delimiters)
 {
-	std::vector<std::string> res;
-
 	std::vector<std::string_view> strings {StringUtils::splitString(str, delimiters)};
-	for (std::string_view s : strings)
-		res.emplace_back(StringUtils::stringTrim(s));
+	for (std::string_view& s : strings)
+		s = StringUtils::stringTrim(s);
 
-	return res;
+	return strings;
 }
 
 static
 std::vector<Artist>
-getArtists(const TagLib::PropertyMap& properties,
+getArtists(const TagMap& tags,
 		const std::vector<std::string_view>& artistTagNames,
 		const std::vector<std::string_view>& artistSortTagNames,
 		const std::vector<std::string_view>& artistMBIDTagNames
 		)
 {
-	const std::vector<std::string> artistNames {getPropertyValuesFirstMatchAs<std::string>(properties, artistTagNames)};
+	const std::vector<std::string> artistNames {getPropertyValuesFirstMatchAs<std::string>(tags, artistTagNames)};
 	if (artistNames.empty())
 		return {};
 
@@ -110,7 +117,7 @@ getArtists(const TagLib::PropertyMap& properties,
 		[&](const std::string& name) { return Artist {name}; });
 
 	{
-		const std::vector<std::string> artistSortNames {getPropertyValuesFirstMatchAs<std::string>(properties, artistSortTagNames)};
+		const std::vector<std::string> artistSortNames {getPropertyValuesFirstMatchAs<std::string>(tags, artistSortTagNames)};
 		if (artistSortNames.size() == artists.size())
 		{
 			for (std::size_t i {}; i < artistSortNames.size(); ++i)
@@ -119,12 +126,12 @@ getArtists(const TagLib::PropertyMap& properties,
 	}
 
 	{
-		const std::vector<UUID> artistsMBID {getPropertyValuesFirstMatchAs<UUID>(properties, artistMBIDTagNames)};
+		const std::vector<UUID> artistsMBID {getPropertyValuesFirstMatchAs<UUID>(tags, artistMBIDTagNames)};
 
 		if (artistNames.size() == artistsMBID.size())
 		{
 			for (std::size_t i {}; i < artistsMBID.size(); ++i)
-				artists[i].musicBrainzArtistID = artistsMBID[i];
+				artists[i].artistMBID = artistsMBID[i];
 		}
 	}
 
@@ -134,7 +141,7 @@ getArtists(const TagLib::PropertyMap& properties,
 
 static
 PerformerContainer
-getPerformerArtists(const TagLib::PropertyMap& properties,
+getPerformerArtists(const TagMap& tags,
 		const std::vector<std::string_view>& artistTagNames)
 {
 	PerformerContainer performers;
@@ -142,7 +149,7 @@ getPerformerArtists(const TagLib::PropertyMap& properties,
 	// picard stores like this: (see https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html#performer)
 	// We may hit both styles for the same track
 	// PERFORMER: artist (role)
-	if (const std::vector<std::string> artistNames {getPropertyValuesFirstMatchAs<std::string>(properties, artistTagNames)}; !artistNames.empty())
+	if (const std::vector<std::string> artistNames {getPropertyValuesFirstMatchAs<std::string>(tags, artistTagNames)}; !artistNames.empty())
 	{
 		for (std::string_view entry : artistNames)
 		{
@@ -152,11 +159,11 @@ getPerformerArtists(const TagLib::PropertyMap& properties,
 		}
 	}
 	// PERFORMER:role (MP3)
-	for (const auto& [key, values] : properties)
+	for (const auto& [key, values] : tags)
 	{
-		if (key.startsWith("PERFORMER:"))
+		if (key.find("PERFORMER:") == 0)
 		{
-			std::string performerStr {key.to8Bit(true)};
+			std::string performerStr {key};
 			std::string role;
 			if (const std::size_t rolePos {performerStr.find(':')}; rolePos != std::string::npos)
 			{
@@ -165,7 +172,7 @@ getPerformerArtists(const TagLib::PropertyMap& properties,
 			}
 
 			for (const auto& value : values)
-				performers[role].push_back(Artist {value.to8Bit(true)});
+				performers[role].push_back(Artist {value});
 		}
 	}
 
@@ -173,19 +180,23 @@ getPerformerArtists(const TagLib::PropertyMap& properties,
 }
 
 static
-std::optional<Album>
-getAlbum(const TagLib::PropertyMap& properties)
+std::optional<Release>
+getRelease(const TagMap& tags)
 {
-	std::vector<std::string> albumName {getPropertyValuesAs<std::string>(properties, "ALBUM")};
-	if (albumName.empty())
-		return std::nullopt;
+	std::optional<Release> release;
 
-	const std::vector<UUID> albumMBID {getPropertyValuesFirstMatchAs<UUID>(properties, {"MUSICBRAINZ_ALBUMID", "MUSICBRAINZ ALBUM ID", "MUSICBRAINZ/ALBUM ID"})};
+	std::vector<std::string> releaseName {getPropertyValuesAs<std::string>(tags, "ALBUM")};
+	if (releaseName.empty())
+		return release;
 
-	if (albumMBID.empty())
-		return Album {std::move(albumName.front()), {}};
-	else
-		return Album {std::move(albumName.front()), albumMBID.front()};
+	const std::vector<UUID> releaseMBID {getPropertyValuesFirstMatchAs<UUID>(tags, {"MUSICBRAINZ_ALBUMID", "MUSICBRAINZ ALBUM ID", "MUSICBRAINZ/ALBUM ID"})};
+
+	release.emplace();
+	release->name = std::move(releaseName.front());
+	if (!releaseMBID.empty())
+		release->releaseMBID = releaseMBID.front();
+
+	return release;
 }
 
 static
@@ -202,27 +213,28 @@ readStyleToTagLibReadStyle(ParserReadStyle readStyle)
 	throw LmsException {"Cannot convert read style"};
 }
 
-
 TagLibParser::TagLibParser(ParserReadStyle readStyle)
 	: _readStyle {readStyleToTagLibReadStyle(readStyle)}
 {
 }
 
 void
-TagLibParser::processTag(Track& track, const std::string& tag, const TagLib::StringList& values, bool debug)
+TagLibParser::processTag(Track& track, const std::string& tag, const std::vector<std::string>& values, bool debug)
 {
 	if (debug)
-	{
-		std::vector<std::string> strs;
-		std::transform(values.begin(), values.end(), std::back_inserter(strs), [](const auto& value) { return value.to8Bit(true); });
+		std::cout << "[" << tag << "] = " << StringUtils::joinStrings(values, "*SEP*") << std::endl;
 
-		std::cout << "[" << tag << "] = " << StringUtils::joinStrings(strs, "*SEP*") << std::endl;
-	}
-
-	if (tag.empty() || values.isEmpty() || values.front().isEmpty())
+	if (tag.empty() || values.empty())
 		return;
 
-	std::string value {StringUtils::stringTrim(values.front().to8Bit(true))};
+	auto getOrCreateDisc = [&]() -> Disc&
+	{
+		if (!track.disc)
+			track.disc.emplace();
+		return *track.disc;
+	};
+
+	std::string_view value {values.front()};
 
 	if (tag == "TITLE")
 		track.title = value;
@@ -240,29 +252,26 @@ TagLibParser::processTag(Track& track, const std::string& tag, const TagLib::Str
 		track.acoustID = UUID::fromString(value);
 	else if (tag == "TRACKTOTAL")
 	{
-		auto totalTrack = StringUtils::readAs<std::size_t>(value);
-		if (totalTrack)
-			track.totalTrack = totalTrack;
+		getOrCreateDisc().totalTrack = StringUtils::readAs<std::size_t>(value);
 	}
 	else if (tag == "TRACKNUMBER")
 	{
 		// Expecting 'Number/Total'
-		std::vector<std::string> strings {splitAndTrimString(value, "/")};
+		std::vector<std::string_view> strings {splitAndTrimString(value, "/")};
 
 		if (!strings.empty())
 		{
 			track.trackNumber = StringUtils::readAs<std::size_t>(strings[0]);
 
 			// Lower priority than TRACKTOTAL
-			if (strings.size() > 1 && !track.totalTrack)
-				track.totalTrack = StringUtils::readAs<std::size_t>(strings[1]);
+			if (strings.size() > 1 && !getOrCreateDisc().totalTrack)
+				getOrCreateDisc().totalTrack = StringUtils::readAs<std::size_t>(strings[1]);
 		}
 	}
 	else if (tag == "DISCTOTAL")
 	{
-		auto totalDisc = StringUtils::readAs<std::size_t>(value);
-		if (totalDisc)
-			track.totalDisc = totalDisc;
+		if (track.release)
+			track.release->totalDisc = StringUtils::readAs<std::size_t>(value);
 	}
 	else if (tag == "DISCNUMBER")
 	{
@@ -273,8 +282,8 @@ TagLibParser::processTag(Track& track, const std::string& tag, const TagLib::Str
 			track.discNumber = StringUtils::readAs<std::size_t>(strings[0]);
 
 			// Lower priority than DISCTOTAL
-			if (strings.size() > 1 && !track.totalDisc)
-				track.totalDisc = StringUtils::readAs<std::size_t>(strings[1]);
+			if (strings.size() > 1 && track.release && !track.release->totalDisc)
+				track.release->totalDisc = StringUtils::readAs<std::size_t>(strings[1]);
 		}
 	}
 	else if (tag == "DATE")
@@ -306,24 +315,55 @@ TagLibParser::processTag(Track& track, const std::string& tag, const TagLib::Str
 	else if (tag == "COPYRIGHTURL")
 		track.copyrightURL = value;
 	else if (tag == "REPLAYGAIN_ALBUM_GAIN")
-		track.albumReplayGain = StringUtils::readAs<float>(value);
+		getOrCreateDisc().replayGain = StringUtils::readAs<float>(value);
 	else if (tag == "REPLAYGAIN_TRACK_GAIN")
-		track.trackReplayGain = StringUtils::readAs<float>(value);
+		track.replayGain = StringUtils::readAs<float>(value);
 	else if (tag == "DISCSUBTITLE" || tag == "SETSUBTITLE")
-		track.discSubtitle = value;
+		getOrCreateDisc().subtitle = value;
 	else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 	{
 		std::set<std::string> clusterNames;
 		for (const auto& valueList : values)
 		{
-			const auto splittedValues {splitAndTrimString(valueList.to8Bit(true), "/,;")};
+			const std::vector<std::string_view> splittedValues {splitAndTrimString(valueList, "/,;")};
 
-			for (const auto& value : splittedValues)
-				clusterNames.insert(value);
+			for (std::string_view value : splittedValues)
+				clusterNames.insert(std::string {value});
 		}
 
 		if (!clusterNames.empty())
 			track.clusters[tag] = clusterNames;
+	}
+}
+
+static
+TagMap
+constructTagMap(const TagLib::PropertyMap& properties)
+{
+	TagMap tagMap;
+
+	for (const auto& [propertyName, propertyValues] : properties)
+	{
+		std::vector<std::string>& values {tagMap[propertyName.upper().to8Bit(true)]};
+		for (const TagLib::String& propertyValue : propertyValues)
+		{
+			std::string trimedValue {StringUtils::stringTrim(propertyValue.to8Bit(true))};
+			if (!trimedValue.empty())
+				values.emplace_back(std::move(trimedValue));
+		}
+	}
+
+	return tagMap;
+}
+
+static
+void
+mergeTagMaps(TagMap& dst, TagMap&& src)
+{
+	for (auto&& [tag, values] : src)
+	{
+		if (dst.find(tag) == std::cend(dst))
+			dst[tag] = std::move(values);
 	}
 }
 
@@ -357,21 +397,14 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 		track.audioStreams = {std::move(audioStream)};
 	}
 
-	TagLib::PropertyMap properties {f.file()->properties()};
+	TagMap tags {constructTagMap(f.file()->properties())};
 
 	auto getAPETags = [&](const TagLib::APE::Tag* apeTag)
 	{
 		if (!apeTag)
 			return;
 
-		for (const auto& [name, values] : apeTag->properties())
-		{
-			if (debug)
-				std::cout << "APE property: '" << name << "'" << std::endl;
-
-			if (!properties.contains(name))
-				properties.insert(name, values);
-		}
+		mergeTagMaps(tags, constructTagMap(apeTag->properties()));
 	};
 
 	// Not that good embedded pictures handling
@@ -387,23 +420,23 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 
 			for (const auto& [name, attributeList] : tag->attributeListMap())
 			{
-				if (name.to8Bit().find("WM/") == 0 || properties.contains(name))
+				std::string strName {name.to8Bit(true)};
+				if (strName.find("WM/") == 0 || tags.find(strName) != std::cend(tags))
 					continue;
 
-				TagLib::StringList stringAttributeList;
+				std::vector<std::string> attributes;
 				for (const auto& attribute : attributeList)
 				{
 					if (attribute.type() == TagLib::ASF::Attribute::AttributeTypes::UnicodeType)
-						stringAttributeList.append(attribute.toString());
+						attributes.emplace_back(attribute.toString().to8Bit(true));
 				}
 
-				if (!stringAttributeList.isEmpty())
+				if (!attributes.empty())
 				{
 					if (debug)
 						std::cout << "ASF property: '" << name << "'" << std::endl;
 
-					if (!properties.contains(name))
-						properties.insert(name, stringAttributeList);
+					tags[strName] = std::move(attributes);
 				}
 			}
 		}
@@ -418,7 +451,7 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 			if (!frameListMap["APIC"].isEmpty())
 				track.hasCover = true;
 			if (!frameListMap["TSST"].isEmpty())
-				properties.insert("DISCSUBTITLE", frameListMap["TSST"].front()->toString());
+				tags["DISCSUBTITLE"] = {frameListMap["TSST"].front()->toString().to8Bit(true)};
 		}
 
 		getAPETags(mp3File->APETag());
@@ -458,19 +491,20 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 			track.hasCover = true;
 	}
 
-	for (const auto& [tag, values] : properties)
-		processTag(track, tag.upper().to8Bit(true), values, debug);
+	track.release = getRelease(tags);
+	if (track.release)
+		track.release->releaseArtists = getArtists(tags, {"ALBUMARTISTS", "ALBUMARTIST"}, {"ALBUMARTISTSSORT", "ALBUMARTISTSORT"}, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID", "MUSICBRAINZ/ALBUM ARTIST ID"});
+	track.artists = getArtists(tags, {"ARTISTS", "ARTIST"}, {"ARTISTSORT"}, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID", "MUSICBRAINZ/ARTIST ID"});
+	track.conductorArtists = getArtists(tags, {"CONDUCTORS", "CONDUCTOR"}, {"CONDUCTORSSORT", "CONDUCTORSORT"}, {});
+	track.composerArtists = getArtists(tags, {"COMPOSERS", "COMPOSER"}, {"COMPOSERSSORT", "COMPOSERSORT"}, {});
+	track.lyricistArtists = getArtists(tags, {"LYRICISTS", "LYRICIST"}, {"LYRICISTSSORT", "LYRICISTSORT"}, {});
+	track.mixerArtists = getArtists(tags, {"MIXERS", "MIXER"}, {"MIXERSSORT", "MIXERSORT"}, {});
+	track.producerArtists = getArtists(tags, {"PRODUCERS", "PRODUCER"}, {"PRODUCERSSORT", "PRODUCERSORT"}, {});
+	track.remixerArtists = getArtists(tags, {"REMIXERS", "REMIXER", "ModifiedBy"}, {"REMIXERSSORT", "REMIXERSORT"}, {});
+	track.performerArtists = getPerformerArtists(tags, {"PERFORMERS", "PERFORMER"});
 
-	track.album = getAlbum(properties);
-	track.artists = getArtists(properties, {"ARTISTS", "ARTIST"}, {"ARTISTSORT"}, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID", "MUSICBRAINZ/ARTIST ID"});
-	track.albumArtists = getArtists(properties, {"ALBUMARTISTS", "ALBUMARTIST"}, {"ALBUMARTISTSSORT", "ALBUMARTISTSORT"}, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID", "MUSICBRAINZ/ALBUM ARTIST ID"});
-	track.conductorArtists = getArtists(properties, {"CONDUCTORS", "CONDUCTOR"}, {"CONDUCTORSSORT", "CONDUCTORSORT"}, {});
-	track.composerArtists = getArtists(properties, {"COMPOSERS", "COMPOSER"}, {"COMPOSERSSORT", "COMPOSERSORT"}, {});
-	track.lyricistArtists = getArtists(properties, {"LYRICISTS", "LYRICIST"}, {"LYRICISTSSORT", "LYRICISTSORT"}, {});
-	track.mixerArtists = getArtists(properties, {"MIXERS", "MIXER"}, {"MIXERSSORT", "MIXERSORT"}, {});
-	track.producerArtists = getArtists(properties, {"PRODUCERS", "PRODUCER"}, {"PRODUCERSSORT", "PRODUCERSORT"}, {});
-	track.remixerArtists = getArtists(properties, {"REMIXERS", "REMIXER", "ModifiedBy"}, {"REMIXERSSORT", "REMIXERSORT"}, {});
-	track.performerArtists = getPerformerArtists(properties, {"PERFORMERS", "PERFORMER"});
+	for (const auto& [tag, values] : tags)
+		processTag(track, tag, values, debug);
 
 	return track;
 }

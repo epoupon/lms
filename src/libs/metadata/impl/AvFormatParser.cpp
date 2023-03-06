@@ -66,23 +66,25 @@ findFirstValueOfAs(const Av::IAudioFile::MetadataMap& metadataMap, std::initiali
 
 
 static
-std::optional<Album>
-getAlbum(const Av::IAudioFile::MetadataMap& metadataMap)
+std::optional<Release>
+getRelease(const Av::IAudioFile::MetadataMap& metadataMap)
 {
-	std::optional<Album> res;
+	std::optional<Release> res;
 
-	auto album {findFirstValueOfAs<std::string>(metadataMap, {"ALBUM"})};
-	if (!album)
+	std::optional<std::string> releaseName {findFirstValueOfAs<std::string>(metadataMap, {"ALBUM"})};
+	if (!releaseName)
 		return res;
 
-	auto albumMBID {findFirstValueOfAs<UUID>(metadataMap, {"MUSICBRAINZ ALBUM ID", "MUSICBRAINZ_ALBUMID", "MUSICBRAINZ/ALBUM ID"})};
+	res.emplace();
+	res->name = *releaseName;
+	res->releaseMBID = findFirstValueOfAs<UUID>(metadataMap, {"MUSICBRAINZ ALBUM ID", "MUSICBRAINZ_ALBUMID", "MUSICBRAINZ/ALBUM ID"});
 
-	return Album{*album, albumMBID};
+	return res;
 }
 
 static
 std::vector<Artist>
-getAlbumArtists(const Av::IAudioFile::MetadataMap& metadataMap)
+getReleaseArtists(const Av::IAudioFile::MetadataMap& metadataMap)
 {
 	std::vector<Artist> res;
 
@@ -151,6 +153,18 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 
 		const Av::IAudioFile::MetadataMap metadataMap {mediaFile->getMetaData()};
 
+		track.artists = getArtists(metadataMap);
+		track.release = getRelease(metadataMap);
+		if (track.release)
+			track.release->releaseArtists = getReleaseArtists(metadataMap);
+
+		auto getOrCreateDisc = [&]() -> Disc&
+		{
+			if (!track.disc)
+				track.disc.emplace();
+			return *track.disc;
+		};
+
 		for (const auto& [tag, value] : metadataMap)
 		{
 			if (debug)
@@ -167,7 +181,7 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 					track.trackNumber = StringUtils::readAs<std::size_t>(strings[0]);
 
 					if (strings.size() > 1)
-						track.totalTrack = StringUtils::readAs<std::size_t>(strings[1]);
+						getOrCreateDisc().totalTrack = StringUtils::readAs<std::size_t>(strings[1]);
 				}
 			}
 			else if (tag == "DISC")
@@ -178,8 +192,8 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 				{
 					track.discNumber = StringUtils::readAs<std::size_t>(strings[0]);
 
-					if (strings.size() > 1)
-						track.totalDisc = StringUtils::readAs<std::size_t>(strings[1]);
+					if (strings.size() > 1 && track.release)
+						track.release->totalDisc = StringUtils::readAs<std::size_t>(strings[1]);
 				}
 			}
 			else if (tag == "DATE"
@@ -211,7 +225,7 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 					|| tag == "DISCSUBTITLE"
 					|| tag == "SETSUBTITLE")
 			{
-				track.discSubtitle = value;
+				getOrCreateDisc().subtitle = value;
 			}
 			else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 			{
@@ -227,10 +241,6 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 				}
 			}
 		}
-
-		track.artists = getArtists(metadataMap);
-		track.album = getAlbum(metadataMap);
-		track.albumArtists = getAlbumArtists(metadataMap);
 	}
 	catch(Av::Exception& e)
 	{

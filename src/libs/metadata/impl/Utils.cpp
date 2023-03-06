@@ -28,7 +28,7 @@
 namespace MetaData::Utils
 {
 	Wt::WDate
-	parseDate(const std::string& dateStr)
+	parseDate(std::string_view dateStr)
 	{
 		static constexpr const char* formats[]
 		{
@@ -39,7 +39,7 @@ namespace MetaData::Utils
 		for (const char* format : formats)
 		{
 			std::tm tm = {};
-			std::stringstream ss {dateStr};
+			std::istringstream ss {std::string {dateStr}}; // TODO, remove extra copy here
 			ss >> std::get_time(&tm, format);
 			if (ss.fail())
 				continue;

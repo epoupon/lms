@@ -48,7 +48,7 @@ std::string_view
 stringTrim(std::string_view str, std::string_view whitespaces = " \t");
 
 [[nodiscard]]
-std::string
+std::string_view
 stringTrimEnd(std::string_view str, std::string_view whitespaces = " \t");
 
 [[nodiscard]]

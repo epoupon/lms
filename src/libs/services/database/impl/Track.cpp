@@ -361,30 +361,6 @@ Track::setClusters(const std::vector<ObjectPtr<Cluster>>& clusters)
 		_clusters.insert(getDboPtr(cluster));
 }
 
-std::optional<std::size_t>
-Track::getTrackNumber() const
-{
-	return (_trackNumber > 0) ? std::make_optional<std::size_t>(_trackNumber) : std::nullopt;
-}
-
-std::optional<std::size_t>
-Track::getTotalTrack() const
-{
-	return (_totalTrack > 0) ? std::make_optional<std::size_t>(_totalTrack) : std::nullopt;
-}
-
-std::optional<std::size_t>
-Track::getDiscNumber() const
-{
-	return (_discNumber > 0) ? std::make_optional<std::size_t>(_discNumber) : std::nullopt;
-}
-
-std::optional<std::size_t>
-Track::getTotalDisc() const
-{
-	return (_totalDisc > 0) ? std::make_optional<std::size_t>(_totalDisc) : std::nullopt;
-}
-
 std::optional<int>
 Track::getYear() const
 {
