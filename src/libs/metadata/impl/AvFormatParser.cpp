@@ -77,7 +77,7 @@ getRelease(const Av::IAudioFile::MetadataMap& metadataMap)
 
 	res.emplace();
 	res->name = *releaseName;
-	res->releaseMBID = findFirstValueOfAs<UUID>(metadataMap, {"MUSICBRAINZ ALBUM ID", "MUSICBRAINZ_ALBUMID", "MUSICBRAINZ/ALBUM ID"});
+	res->mbid = findFirstValueOfAs<UUID>(metadataMap, {"MUSICBRAINZ ALBUM ID", "MUSICBRAINZ_ALBUMID", "MUSICBRAINZ/ALBUM ID"});
 
 	return res;
 }
@@ -149,20 +149,20 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 		track.duration = mediaFile->getDuration();
 		track.hasCover = mediaFile->hasAttachedPictures();
 
-		MetaData::Clusters clusters;
+		MetaData::Tags tags;
 
 		const Av::IAudioFile::MetadataMap metadataMap {mediaFile->getMetaData()};
 
 		track.artists = getArtists(metadataMap);
 		track.release = getRelease(metadataMap);
 		if (track.release)
-			track.release->releaseArtists = getReleaseArtists(metadataMap);
+			track.release->artists = getReleaseArtists(metadataMap);
 
-		auto getOrCreateDisc = [&]() -> Disc&
+		auto getOrCreateMedium = [&]() -> Medium&
 		{
-			if (!track.disc)
-				track.disc.emplace();
-			return *track.disc;
+			if (!track.medium)
+				track.medium.emplace();
+			return *track.medium;
 		};
 
 		for (const auto& [tag, value] : metadataMap)
@@ -178,10 +178,10 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 				const std::vector<std::string_view> strings {StringUtils::splitString(value, "/") };
 				if (strings.size() > 0)
 				{
-					track.trackNumber = StringUtils::readAs<std::size_t>(strings[0]);
+					track.position = StringUtils::readAs<std::size_t>(strings[0]);
 
 					if (strings.size() > 1)
-						getOrCreateDisc().totalTrack = StringUtils::readAs<std::size_t>(strings[1]);
+						getOrCreateMedium().trackCount = StringUtils::readAs<std::size_t>(strings[1]);
 				}
 			}
 			else if (tag == "DISC")
@@ -190,10 +190,10 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 				const std::vector<std::string_view> strings {StringUtils::splitString(value, "/")};
 				if (strings.size() > 0)
 				{
-					track.discNumber = StringUtils::readAs<std::size_t>(strings[0]);
+					getOrCreateMedium().position = StringUtils::readAs<std::size_t>(strings[0]);
 
 					if (strings.size() > 1 && track.release)
-						track.release->totalDisc = StringUtils::readAs<std::size_t>(strings[1]);
+						track.release->mediumCount = StringUtils::readAs<std::size_t>(strings[1]);
 				}
 			}
 			else if (tag == "DATE"
@@ -214,18 +214,22 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 			else if (tag == "MUSICBRAINZ RELEASE TRACK ID"
 					|| tag == "MUSICBRAINZ_RELEASETRACKID")
 			{
-				track.trackMBID = UUID::fromString(value);
+				track.mbid = UUID::fromString(value);
 			}
 			else if (tag == "MUSICBRAINZ_TRACKID"
 					|| tag == "MUSICBRAINZ/TRACK ID")
 			{
 				track.recordingMBID = UUID::fromString(value);
 			}
+			else if (tag == "MEDIA")
+			{
+				getOrCreateMedium().type = value;
+			}
 			else if (tag == "TSST"
 					|| tag == "DISCSUBTITLE"
 					|| tag == "SETSUBTITLE")
 			{
-				getOrCreateDisc().subtitle = value;
+				getOrCreateMedium().name = value;
 			}
 			else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 			{
@@ -237,7 +241,7 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 					std::transform(std::cbegin(clusterNames), std::cend(clusterNames),
 							std::inserter(values, std::begin(values)),
 							[](std::string_view clusterName) { return std::string {clusterName}; });
-					track.clusters[tag] = std::move(values);
+					track.tags[tag] = std::move(values);
 				}
 			}
 		}

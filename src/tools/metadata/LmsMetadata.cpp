@@ -35,8 +35,8 @@ operator<<(std::ostream& os, const MetaData::Artist& artist)
 {
 	os << artist.name;
 
-	if (artist.artistMBID)
-		os << " (" << artist.artistMBID->getAsString() << ")";
+	if (artist.mbid)
+		os << " (" << artist.mbid->getAsString() << ")";
 
 	if (artist.sortName)
 		os << " '" << *artist.sortName << "'";
@@ -50,30 +50,36 @@ operator<<(std::ostream& os, const MetaData::Release& release)
 {
 	os << release.name;
 
-	if (release.releaseMBID)
-		os << " (" << release.releaseMBID->getAsString() << ")" << std::endl;
+	if (release.mbid)
+		os << " (" << release.mbid->getAsString() << ")" << std::endl;
 
-	if (release.totalDisc)
-		std::cout << "\tTotalDisc: " << *release.totalDisc << std::endl;
+	if (release.mediumCount)
+		std::cout << "\tMediumCount: " << *release.mediumCount << std::endl;
 
-	for (const MetaData::Artist& artist : release.releaseArtists)
-		std::cout << "\tAlbum artist: " << artist << std::endl;
+	for (const MetaData::Artist& artist : release.artists)
+		std::cout << "\tRelease artist: " << artist << std::endl;
 
 	return os;
 }
 
 static
 std::ostream&
-operator<<(std::ostream& os, const MetaData::Disc& disc)
+operator<<(std::ostream& os, const MetaData::Medium& medium)
 {
-	if (!disc.subtitle.empty())
-		os << disc.subtitle << std::endl;
+	if (!medium.name.empty())
+		os << medium.name << std::endl;
 
-	if (disc.totalTrack)
-		std::cout << "\tTotalTrack: " << *disc.totalTrack << std::endl;
+	if (medium.position)
+		os << "\tPosition: " << *medium.position << std::endl;
 
-	if (disc.replayGain)
-		std::cout << "\tDisc replay gain: " << *disc.replayGain << std::endl;
+	if (!medium.type.empty())
+		os << "\tType: " << medium.type << std::endl;
+
+	if (medium.trackCount)
+		std::cout << "\tTrackCount: " << *medium.trackCount << std::endl;
+
+	if (medium.replayGain)
+		std::cout << "\tReplay gain: " << *medium.replayGain << std::endl;
 
 	return os;
 }
@@ -131,33 +137,30 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 	if (track->release)
 		std::cout << "Release: " << *track->release;
 
-	if (track->disc)
-		std::cout << "Disc: " << *track->disc;
+	if (track->medium)
+		std::cout << "Medium: " << *track->medium;
 
 	std::cout << "Title: " << track->title << std::endl;
 
-	if (track->trackMBID)
-		std::cout << "track MBID = " << track->trackMBID->getAsString() << std::endl;
+	if (track->mbid)
+		std::cout << "Track MBID = " << track->mbid->getAsString() << std::endl;
 
 	if (track->recordingMBID)
-		std::cout << "recording MBID = " << track->recordingMBID->getAsString() << std::endl;
+		std::cout << "Recording MBID = " << track->recordingMBID->getAsString() << std::endl;
 
-	for (const auto& cluster : track->clusters)
+	for (const auto& [tag, values] : track->tags)
 	{
-		std::cout << "Cluster: " << cluster.first << std::endl;
-		for (const auto& name : cluster.second)
+		std::cout << "Tag: " << tag << std::endl;
+		for (const auto& value : values)
 		{
-			std::cout << "\t" << name << std::endl;
+			std::cout << "\t" << value << std::endl;
 		}
 	}
 
 	std::cout << "Duration: " << std::fixed << std::setprecision(2) << track->duration.count() / 1000. << "s" << std::endl;
 
-	if (track->trackNumber)
-		std::cout << "Track: " << *track->trackNumber << std::endl;
-
-	if (track->discNumber)
-		std::cout << "Disc: " << *track->discNumber << std::endl;
+	if (track->position)
+		std::cout << "Position: " << *track->position << std::endl;
 
 	if (track->date.isValid())
 		std::cout << "Date: " << track->date.toString("yyyy-MM-dd") << std::endl;

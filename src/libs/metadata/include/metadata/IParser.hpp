@@ -33,16 +33,16 @@
 
 namespace MetaData
 {
-	using Clusters = std::map<std::string /* type */, std::set<std::string> /* names */>;
+	using Tags = std::map<std::string /* type */, std::set<std::string> /* names */>;
 
 	struct Artist
 	{
-		std::string name;
-		std::optional<std::string> sortName;
-		std::optional<UUID> artistMBID;
+		std::string					name;
+		std::optional<std::string>	sortName;
+		std::optional<UUID>			mbid;
 
 		Artist(std::string_view _name) : name {_name} {}
-		Artist(std::string_view _name, std::optional<std::string> _sortName, std::optional<UUID> _artistMBID) : name {_name}, sortName {std::move(_sortName)}, artistMBID {std::move(_artistMBID)} {}
+		Artist(std::string_view _name, std::optional<std::string> _sortName, std::optional<UUID> _mbid) : name {_name}, sortName {std::move(_sortName)}, mbid {std::move(_mbid)} {}
 	};
 
 	using PerformerContainer = std::map<std::string /*role*/, std::vector<Artist>>;
@@ -50,16 +50,18 @@ namespace MetaData
 	struct Release
 	{
 		std::string					name;
-		std::vector<Artist>			releaseArtists;
-		std::optional<UUID> 		releaseMBID;
-		std::optional<std::size_t>	totalDisc;
+		std::vector<Artist>			artists;
+		std::optional<UUID> 		mbid;
+		std::optional<std::size_t>	mediumCount;
 	};
 
-	struct Disc
+	struct Medium
 	{
-		std::string					subtitle;
+		std::optional<std::size_t>	position;
+		std::string					type;
+		std::string					name;
 		std::optional<float>        replayGain;
-		std::optional<std::size_t>  totalTrack;
+		std::optional<std::size_t>  trackCount;
 	};
 
 	struct AudioStream
@@ -71,14 +73,13 @@ namespace MetaData
 	{
 		std::vector<Artist>			artists;
 		std::string					title;
-		std::optional<UUID>			trackMBID;
+		std::optional<UUID>			mbid;
 		std::optional<UUID>			recordingMBID;
 		std::optional<Release>		release;
-		std::optional<Disc>			disc;
-		Clusters					clusters;
+		std::optional<Medium>		medium;
+		Tags						tags;
 		std::chrono::milliseconds 	duration;
-		std::optional<std::size_t>	trackNumber;
-		std::optional<std::size_t>	discNumber;
+		std::optional<std::size_t>	position; // in medium
 		Wt::WDate					date;
 		Wt::WDate					originalDate;
 		bool						hasCover {};

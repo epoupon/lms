@@ -131,7 +131,7 @@ getArtists(const TagMap& tags,
 		if (artistNames.size() == artistsMBID.size())
 		{
 			for (std::size_t i {}; i < artistsMBID.size(); ++i)
-				artists[i].artistMBID = artistsMBID[i];
+				artists[i].mbid = artistsMBID[i];
 		}
 	}
 
@@ -194,7 +194,7 @@ getRelease(const TagMap& tags)
 	release.emplace();
 	release->name = std::move(releaseName.front());
 	if (!releaseMBID.empty())
-		release->releaseMBID = releaseMBID.front();
+		release->mbid = releaseMBID.front();
 
 	return release;
 }
@@ -227,11 +227,11 @@ TagLibParser::processTag(Track& track, const std::string& tag, const std::vector
 	if (tag.empty() || values.empty())
 		return;
 
-	auto getOrCreateDisc = [&]() -> Disc&
+	auto getOrCreateMedium = [&]() -> Medium&
 	{
-		if (!track.disc)
-			track.disc.emplace();
-		return *track.disc;
+		if (!track.medium)
+			track.medium.emplace();
+		return *track.medium;
 	};
 
 	std::string_view value {values.front()};
@@ -242,7 +242,7 @@ TagLibParser::processTag(Track& track, const std::string& tag, const std::vector
 			|| tag == "MUSICBRAINZ RELEASE TRACK ID"
 			|| tag == "MUSICBRAINZ/RELEASE TRACK ID")
 	{
-		track.trackMBID = UUID::fromString(value);
+		track.mbid = UUID::fromString(value);
 	}
 	else if (tag == "MUSICBRAINZ_TRACKID"
 			|| tag == "MUSICBRAINZ TRACK ID"
@@ -252,7 +252,7 @@ TagLibParser::processTag(Track& track, const std::string& tag, const std::vector
 		track.acoustID = UUID::fromString(value);
 	else if (tag == "TRACKTOTAL")
 	{
-		getOrCreateDisc().totalTrack = StringUtils::readAs<std::size_t>(value);
+		getOrCreateMedium().trackCount = StringUtils::readAs<std::size_t>(value);
 	}
 	else if (tag == "TRACKNUMBER")
 	{
@@ -261,17 +261,17 @@ TagLibParser::processTag(Track& track, const std::string& tag, const std::vector
 
 		if (!strings.empty())
 		{
-			track.trackNumber = StringUtils::readAs<std::size_t>(strings[0]);
+			track.position = StringUtils::readAs<std::size_t>(strings[0]);
 
 			// Lower priority than TRACKTOTAL
-			if (strings.size() > 1 && !getOrCreateDisc().totalTrack)
-				getOrCreateDisc().totalTrack = StringUtils::readAs<std::size_t>(strings[1]);
+			if (strings.size() > 1 && !getOrCreateMedium().trackCount)
+				getOrCreateMedium().trackCount = StringUtils::readAs<std::size_t>(strings[1]);
 		}
 	}
 	else if (tag == "DISCTOTAL")
 	{
 		if (track.release)
-			track.release->totalDisc = StringUtils::readAs<std::size_t>(value);
+			track.release->mediumCount = StringUtils::readAs<std::size_t>(value);
 	}
 	else if (tag == "DISCNUMBER")
 	{
@@ -279,11 +279,11 @@ TagLibParser::processTag(Track& track, const std::string& tag, const std::vector
 		std::vector<std::string_view> strings {StringUtils::splitString(value, "/")};
 		if (!strings.empty())
 		{
-			track.discNumber = StringUtils::readAs<std::size_t>(strings[0]);
+			getOrCreateMedium().position = StringUtils::readAs<std::size_t>(strings[0]);
 
 			// Lower priority than DISCTOTAL
-			if (strings.size() > 1 && track.release && !track.release->totalDisc)
-				track.release->totalDisc = StringUtils::readAs<std::size_t>(strings[1]);
+			if (strings.size() > 1 && track.release && !track.release->mediumCount)
+				track.release->mediumCount = StringUtils::readAs<std::size_t>(strings[1]);
 		}
 	}
 	else if (tag == "DATE")
@@ -315,24 +315,25 @@ TagLibParser::processTag(Track& track, const std::string& tag, const std::vector
 	else if (tag == "COPYRIGHTURL")
 		track.copyrightURL = value;
 	else if (tag == "REPLAYGAIN_ALBUM_GAIN")
-		getOrCreateDisc().replayGain = StringUtils::readAs<float>(value);
+		getOrCreateMedium().replayGain = StringUtils::readAs<float>(value);
 	else if (tag == "REPLAYGAIN_TRACK_GAIN")
 		track.replayGain = StringUtils::readAs<float>(value);
 	else if (tag == "DISCSUBTITLE" || tag == "SETSUBTITLE")
-		getOrCreateDisc().subtitle = value;
+		getOrCreateMedium().name = value;
+	else if (tag == "MEDIA")
+		getOrCreateMedium().type = value;
 	else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 	{
 		std::set<std::string> clusterNames;
-		for (const auto& valueList : values)
+		for (std::string_view valueList : values)
 		{
 			const std::vector<std::string_view> splittedValues {splitAndTrimString(valueList, "/,;")};
-
 			for (std::string_view value : splittedValues)
 				clusterNames.insert(std::string {value});
 		}
 
 		if (!clusterNames.empty())
-			track.clusters[tag] = clusterNames;
+			track.tags[tag] = std::move(clusterNames);
 	}
 }
 
@@ -493,7 +494,7 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 
 	track.release = getRelease(tags);
 	if (track.release)
-		track.release->releaseArtists = getArtists(tags, {"ALBUMARTISTS", "ALBUMARTIST"}, {"ALBUMARTISTSSORT", "ALBUMARTISTSORT"}, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID", "MUSICBRAINZ/ALBUM ARTIST ID"});
+		track.release->artists = getArtists(tags, {"ALBUMARTISTS", "ALBUMARTIST"}, {"ALBUMARTISTSSORT", "ALBUMARTISTSORT"}, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID", "MUSICBRAINZ/ALBUM ARTIST ID"});
 	track.artists = getArtists(tags, {"ARTISTS", "ARTIST"}, {"ARTISTSORT"}, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID", "MUSICBRAINZ/ARTIST ID"});
 	track.conductorArtists = getArtists(tags, {"CONDUCTORS", "CONDUCTOR"}, {"CONDUCTORSSORT", "CONDUCTORSORT"}, {});
 	track.composerArtists = getArtists(tags, {"COMPOSERS", "COMPOSER"}, {"COMPOSERSSORT", "COMPOSERSORT"}, {});
