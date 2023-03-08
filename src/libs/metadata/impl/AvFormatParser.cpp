@@ -94,7 +94,7 @@ getReleaseArtists(const Av::IAudioFile::MetadataMap& metadataMap)
 
 	auto mbid {findFirstValueOfAs<UUID>(metadataMap, {"MUSICBRAINZ ALBUM ARTIST ID", "MUSICBRAINZ/ALBUM ARTIST ID"})};
 
-	return {Artist {*name, std::nullopt, mbid} };
+	return {Artist {mbid, *name, std::nullopt} };
 }
 
 static
@@ -118,9 +118,9 @@ getArtists(const Av::IAudioFile::MetadataMap& metadataMap)
 	for (std::size_t i {}; i < artistNames.size(); ++i)
 	{
 		if (artistMBIDs && artistNames.size() == artistMBIDs->size())
-			artists.emplace_back(Artist {artistNames[i], std::nullopt, (*artistMBIDs)[i]});
+			artists.emplace_back(Artist {(*artistMBIDs)[i], artistNames[i], std::nullopt});
 		else
-			artists.emplace_back(Artist {artistNames[i], std::nullopt, {}});
+			artists.emplace_back(Artist {std::nullopt, artistNames[i], std::nullopt});
 	}
 
 	return artists;

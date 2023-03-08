@@ -37,31 +37,31 @@ namespace MetaData
 
 	struct Artist
 	{
+		std::optional<UUID>			mbid;
 		std::string					name;
 		std::optional<std::string>	sortName;
-		std::optional<UUID>			mbid;
 
 		Artist(std::string_view _name) : name {_name} {}
-		Artist(std::string_view _name, std::optional<std::string> _sortName, std::optional<UUID> _mbid) : name {_name}, sortName {std::move(_sortName)}, mbid {std::move(_mbid)} {}
+		Artist(std::optional<UUID> _mbid, std::string_view _name, std::optional<std::string> _sortName) : mbid {std::move(_mbid)}, name {_name}, sortName {std::move(_sortName)} {}
 	};
 
 	using PerformerContainer = std::map<std::string /*role*/, std::vector<Artist>>;
 
 	struct Release
 	{
+		std::optional<UUID> 		mbid;
 		std::string					name;
 		std::vector<Artist>			artists;
-		std::optional<UUID> 		mbid;
 		std::optional<std::size_t>	mediumCount;
 	};
 
 	struct Medium
 	{
-		std::optional<std::size_t>	position;
 		std::string					type;
 		std::string					name;
-		std::optional<float>        replayGain;
+		std::optional<std::size_t>	position; // in release
 		std::optional<std::size_t>  trackCount;
+		std::optional<float>        replayGain;
 	};
 
 	struct AudioStream
@@ -71,15 +71,14 @@ namespace MetaData
 
 	struct Track
 	{
-		std::vector<Artist>			artists;
-		std::string					title;
 		std::optional<UUID>			mbid;
 		std::optional<UUID>			recordingMBID;
-		std::optional<Release>		release;
+		std::string					title;
 		std::optional<Medium>		medium;
+		std::optional<std::size_t>	position; // in medium
+		std::optional<Release>		release;
 		Tags						tags;
 		std::chrono::milliseconds 	duration;
-		std::optional<std::size_t>	position; // in medium
 		Wt::WDate					date;
 		Wt::WDate					originalDate;
 		bool						hasCover {};
@@ -88,6 +87,7 @@ namespace MetaData
 		std::string					copyright;
 		std::string					copyrightURL;
 		std::optional<float>		replayGain;
+		std::vector<Artist>			artists;
 		std::vector<Artist>			conductorArtists;
 		std::vector<Artist>			composerArtists;
 		std::vector<Artist>			lyricistArtists;
