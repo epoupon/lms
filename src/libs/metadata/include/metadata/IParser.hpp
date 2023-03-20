@@ -35,6 +35,8 @@ namespace MetaData
 {
 	using Tags = std::map<std::string /* type */, std::set<std::string> /* names */>;
 
+	// Very simplified version of https://musicbrainz.org/doc/MusicBrainz_Database/Schema
+
 	struct Artist
 	{
 		std::optional<UUID>			mbid;
@@ -59,6 +61,7 @@ namespace MetaData
 	{
 		std::string					type;
 		std::string					name;
+		std::optional<Release>		release;
 		std::optional<std::size_t>	position; // in release
 		std::optional<std::size_t>  trackCount;
 		std::optional<float>        replayGain;
@@ -76,7 +79,6 @@ namespace MetaData
 		std::string					title;
 		std::optional<Medium>		medium;
 		std::optional<std::size_t>	position; // in medium
-		std::optional<Release>		release;
 		Tags						tags;
 		std::chrono::milliseconds 	duration;
 		Wt::WDate					date;

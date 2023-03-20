@@ -393,9 +393,9 @@ namespace Scanner
 		for (const Artist::pointer& artist : getOrCreateArtists(dbSession, trackInfo->artists, false))
 			track.modify()->addArtistLink(TrackArtistLink::create(dbSession, track, artist, TrackArtistLinkType::Artist));
 
-		if (trackInfo->release)
+		if (trackInfo->medium && trackInfo->medium->release)
 		{
-			for (const Artist::pointer& releaseArtist : getOrCreateArtists(dbSession, trackInfo->release->artists, false))
+			for (const Artist::pointer& releaseArtist : getOrCreateArtists(dbSession, trackInfo->medium->release->artists, false))
 				track.modify()->addArtistLink(TrackArtistLink::create(dbSession, track, releaseArtist, TrackArtistLinkType::ReleaseArtist));
 		}
 
@@ -426,8 +426,8 @@ namespace Scanner
 			track.modify()->addArtistLink(TrackArtistLink::create(dbSession, track, remixer, TrackArtistLinkType::Remixer));
 
 		track.modify()->setScanVersion(_settings.scanVersion);
-		if (trackInfo->release)
-			track.modify()->setRelease(getOrCreateRelease(dbSession, *trackInfo->release));
+		if (trackInfo->medium && trackInfo->medium->release)
+			track.modify()->setRelease(getOrCreateRelease(dbSession, *trackInfo->medium->release));
 		else
 			track.modify()->setRelease({});
 		track.modify()->setTotalTrack(trackInfo->medium ? trackInfo->medium->trackCount : std::nullopt);

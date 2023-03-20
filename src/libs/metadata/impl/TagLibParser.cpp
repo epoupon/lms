@@ -82,10 +82,29 @@ getPropertyValuesFirstMatchAs(const TagMap& tags, const std::vector<std::string_
 }
 
 template <typename T>
+std::optional<T>
+getPropertyValueFirstMatchAs(const TagMap& tags, const std::vector<std::string_view>& keys)
+{
+	std::optional<T> res;
+	std::vector<T> values {getPropertyValuesFirstMatchAs<T>(tags, keys)};
+	if (!values.empty())
+		res = std::move(values.front());
+
+	return res;
+}
+
+template <typename T>
 std::vector<T>
 getPropertyValuesAs(const TagMap& tags, const std::string& key)
 {
 	return getPropertyValuesFirstMatchAs<T>(tags, {key});
+}
+
+template <typename T>
+std::optional<T>
+getPropertyValueAs(const TagMap& tags, const std::string& key)
+{
+	return getPropertyValueFirstMatchAs<T>(tags, {key});
 }
 
 static
@@ -185,18 +204,68 @@ getRelease(const TagMap& tags)
 {
 	std::optional<Release> release;
 
-	std::vector<std::string> releaseName {getPropertyValuesAs<std::string>(tags, "ALBUM")};
-	if (releaseName.empty())
+	auto releaseName {getPropertyValueAs<std::string>(tags, "ALBUM")};
+	if (!releaseName)
 		return release;
 
-	const std::vector<UUID> releaseMBID {getPropertyValuesFirstMatchAs<UUID>(tags, {"MUSICBRAINZ_ALBUMID", "MUSICBRAINZ ALBUM ID", "MUSICBRAINZ/ALBUM ID"})};
-
 	release.emplace();
-	release->name = std::move(releaseName.front());
-	if (!releaseMBID.empty())
-		release->mbid = releaseMBID.front();
+	release->name = std::move(*releaseName);
+	release->mbid = getPropertyValueFirstMatchAs<UUID>(tags, {"MUSICBRAINZ_ALBUMID", "MUSICBRAINZ ALBUM ID", "MUSICBRAINZ/ALBUM ID"});
+	release->artists = getArtists(tags, {"ALBUMARTISTS", "ALBUMARTIST"}, {"ALBUMARTISTSSORT", "ALBUMARTISTSORT"}, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID", "MUSICBRAINZ/ALBUM ARTIST ID"});
+	release->mediumCount = getPropertyValueAs<std::size_t>(tags, "DISCTOTAL");
+	if (!release->mediumCount)
+	{
+		// mediumCount may be encoded as "position/count"
+		if (const auto value {getPropertyValueAs<std::string>(tags, "DISCNUMBER")})
+		{
+			// Expecting 'Number/Total'
+			const std::vector<std::string_view> strings {StringUtils::splitString(*value, "/") };
+			if (strings.size() == 2)
+				release->mediumCount = StringUtils::readAs<std::size_t>(strings[1]);
+		}
+	}
 
 	return release;
+}
+
+static
+std::optional<Medium>
+getMedium(const TagMap& tags)
+{
+	std::optional<Medium> medium;
+	medium.emplace();
+
+	medium->type = getPropertyValueAs<std::string>(tags, "MEDIA").value_or("");
+	medium->name = getPropertyValueFirstMatchAs<std::string>(tags, {"DISCSUBTITLE", "SETSUBTITLE"}).value_or("");
+	medium->trackCount = getPropertyValueAs<std::size_t>(tags, "TRACKTOTAL");
+	if (!medium->trackCount)
+	{
+		// totalTracks may be encoded as "position/count"
+		if (const auto value {getPropertyValueAs<std::string>(tags, "TRACKNUMBER")})
+		{
+			// Expecting 'Number/Total'
+			const std::vector<std::string_view> strings {StringUtils::splitString(*value, "/") };
+			if (strings.size() == 2)
+				medium->trackCount = StringUtils::readAs<std::size_t>(strings[1]);
+		}
+
+	}
+	// Expecting 'Number[/Total]'
+	medium->position = getPropertyValueAs<std::size_t>(tags, "DISCNUMBER");
+	medium->release = getRelease(tags);
+	medium->replayGain = getPropertyValueAs<float>(tags, "REPLAYGAIN_ALBUM_GAIN");
+
+	if (medium->type.empty()
+			&& medium->name.empty()
+			&& !medium->trackCount
+			&& !medium->position
+			&& !medium->release
+			&& !medium->replayGain)
+	{
+		medium.reset();
+	}
+
+	return medium;
 }
 
 static
@@ -227,13 +296,6 @@ TagLibParser::processTag(Track& track, const std::string& tag, const std::vector
 	if (tag.empty() || values.empty())
 		return;
 
-	auto getOrCreateMedium = [&]() -> Medium&
-	{
-		if (!track.medium)
-			track.medium.emplace();
-		return *track.medium;
-	};
-
 	std::string_view value {values.front()};
 
 	if (tag == "TITLE")
@@ -250,41 +312,10 @@ TagLibParser::processTag(Track& track, const std::string& tag, const std::vector
 		track.recordingMBID = UUID::fromString(value);
 	else if (tag == "ACOUSTID_ID")
 		track.acoustID = UUID::fromString(value);
-	else if (tag == "TRACKTOTAL")
-	{
-		getOrCreateMedium().trackCount = StringUtils::readAs<std::size_t>(value);
-	}
 	else if (tag == "TRACKNUMBER")
 	{
 		// Expecting 'Number/Total'
-		std::vector<std::string_view> strings {splitAndTrimString(value, "/")};
-
-		if (!strings.empty())
-		{
-			track.position = StringUtils::readAs<std::size_t>(strings[0]);
-
-			// Lower priority than TRACKTOTAL
-			if (strings.size() > 1 && !getOrCreateMedium().trackCount)
-				getOrCreateMedium().trackCount = StringUtils::readAs<std::size_t>(strings[1]);
-		}
-	}
-	else if (tag == "DISCTOTAL")
-	{
-		if (track.release)
-			track.release->mediumCount = StringUtils::readAs<std::size_t>(value);
-	}
-	else if (tag == "DISCNUMBER")
-	{
-		// Expecting 'Number/Total'
-		std::vector<std::string_view> strings {StringUtils::splitString(value, "/")};
-		if (!strings.empty())
-		{
-			getOrCreateMedium().position = StringUtils::readAs<std::size_t>(strings[0]);
-
-			// Lower priority than DISCTOTAL
-			if (strings.size() > 1 && track.release && !track.release->mediumCount)
-				track.release->mediumCount = StringUtils::readAs<std::size_t>(strings[1]);
-		}
+		track.position = StringUtils::readAs<std::size_t>(value);
 	}
 	else if (tag == "DATE")
 	{
@@ -314,14 +345,8 @@ TagLibParser::processTag(Track& track, const std::string& tag, const std::vector
 		track.copyright = value;
 	else if (tag == "COPYRIGHTURL")
 		track.copyrightURL = value;
-	else if (tag == "REPLAYGAIN_ALBUM_GAIN")
-		getOrCreateMedium().replayGain = StringUtils::readAs<float>(value);
 	else if (tag == "REPLAYGAIN_TRACK_GAIN")
 		track.replayGain = StringUtils::readAs<float>(value);
-	else if (tag == "DISCSUBTITLE" || tag == "SETSUBTITLE")
-		getOrCreateMedium().name = value;
-	else if (tag == "MEDIA")
-		getOrCreateMedium().type = value;
 	else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 	{
 		std::set<std::string> clusterNames;
@@ -395,7 +420,7 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 		track.duration = std::chrono::milliseconds {properties->lengthInMilliseconds()};
 
 		MetaData::AudioStream audioStream {static_cast<unsigned>(properties->bitrate() * 1000)};
-		track.audioStreams = {std::move(audioStream)};
+		track.audioStreams = {audioStream};
 	}
 
 	TagMap tags {constructTagMap(f.file()->properties())};
@@ -492,9 +517,7 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 			track.hasCover = true;
 	}
 
-	track.release = getRelease(tags);
-	if (track.release)
-		track.release->artists = getArtists(tags, {"ALBUMARTISTS", "ALBUMARTIST"}, {"ALBUMARTISTSSORT", "ALBUMARTISTSORT"}, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID", "MUSICBRAINZ/ALBUM ARTIST ID"});
+	track.medium = getMedium(tags);
 	track.artists = getArtists(tags, {"ARTISTS", "ARTIST"}, {"ARTISTSORT"}, {"MUSICBRAINZ_ARTISTID", "MUSICBRAINZ ARTIST ID", "MUSICBRAINZ/ARTIST ID"});
 	track.conductorArtists = getArtists(tags, {"CONDUCTORS", "CONDUCTOR"}, {"CONDUCTORSSORT", "CONDUCTORSORT"}, {});
 	track.composerArtists = getArtists(tags, {"COMPOSERS", "COMPOSER"}, {"COMPOSERSSORT", "COMPOSERSORT"}, {});

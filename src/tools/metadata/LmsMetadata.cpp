@@ -67,7 +67,8 @@ std::ostream&
 operator<<(std::ostream& os, const MetaData::Medium& medium)
 {
 	if (!medium.name.empty())
-		os << medium.name << std::endl;
+		os << medium.name;
+	os << std::endl;
 
 	if (medium.position)
 		os << "\tPosition: " << *medium.position << std::endl;
@@ -80,6 +81,9 @@ operator<<(std::ostream& os, const MetaData::Medium& medium)
 
 	if (medium.replayGain)
 		std::cout << "\tReplay gain: " << *medium.replayGain << std::endl;
+
+	if (medium.release)
+		std::cout << "Release: " << *medium.release << std::endl;
 
 	return os;
 }
@@ -101,7 +105,7 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 
 	std::cout << "Parsing time: " << std::fixed << std::setprecision(2) << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000. << "ms" << std::endl;
 
-	std::cout << "Track metadata:" << std::endl;
+	std::cout << "Parsed metadata:" << std::endl;
 
 	for (const Artist& artist : track->artists)
 		std::cout << "Artist: " << artist << std::endl;
@@ -133,9 +137,6 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 
 	for (const Artist& artist : track->remixerArtists)
 		std::cout << "Remixer: " << artist << std::endl;
-
-	if (track->release)
-		std::cout << "Release: " << *track->release;
 
 	if (track->medium)
 		std::cout << "Medium: " << *track->medium;

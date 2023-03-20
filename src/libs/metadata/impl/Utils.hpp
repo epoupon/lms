@@ -38,5 +38,6 @@ namespace MetaData::Utils
 
 	// format is "artist name (role)"
 	PerformerArtist extractPerformerAndRole(std::string_view entry);
+
 }
 
