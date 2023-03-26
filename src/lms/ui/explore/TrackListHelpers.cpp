@@ -31,6 +31,7 @@
 #include "services/database/Track.hpp"
 #include "services/database/TrackArtistLink.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
+#include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 
 #include "common/Template.hpp"
@@ -159,6 +160,16 @@ namespace UserInterface::TrackListHelpers
 
 		const Release::pointer release {track->getRelease()};
 		const TrackId trackId {track->getId()};
+
+		const auto artists {track->getArtistIds({TrackArtistLinkType::Artist})};
+		LMS_LOG(UI, DEBUG) << "Found " << artists.size() << " artists!";
+		if (!artists.empty())
+		{
+			entry->setCondition("if-has-artists", true);
+			Wt::WContainerWidget* artistsContainer {entry->bindWidget("artists", Utils::createArtistContainer(artists))};
+			if (track->getRelease())
+				artistsContainer->addNew<Wt::WText>(" — ");
+		}
 
 		if (track->getRelease())
 		{

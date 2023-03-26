@@ -377,22 +377,11 @@ Release::refreshView()
 
 		entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
-		const auto artists {track->getArtists({TrackArtistLinkType::Artist})};
+		const auto artists {track->getArtistIds({TrackArtistLinkType::Artist})};
 		if (variousArtists && !artists.empty())
 		{
 			entry->setCondition("if-has-artists", true);
-
-			Wt::WContainerWidget* artistsContainer {entry->bindNew<Wt::WContainerWidget>("artists")};
-			bool firstArtist {true};
-			for (const auto& artist : artists)
-			{
-				if (!firstArtist)
-					artistsContainer->addNew<Wt::WText>(" · ");
-				auto anchor {Utils::createArtistAnchor(artist)};
-				anchor->addStyleClass("link-success text-decoration-none"); // hack
-				artistsContainer->addWidget(std::move(anchor));
-				firstArtist = false;
-			}
+			entry->bindWidget("artists", Utils::createArtistContainer(artists));
 		}
 
 		auto trackNumber {track->getTrackNumber()};

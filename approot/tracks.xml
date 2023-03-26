@@ -44,7 +44,10 @@
 		</div>
 		<div class="p-2 flex-fill text-truncate">
 			<div class="d-block text-truncate">${name}</div>
-			${<if-has-release>}${release class="text-decoration-none link-success text-truncate"}${</if-has-release>}
+			<div class="text-truncate">
+				${<if-has-artists>}${artists class="d-none d-sm-inline"}${</if-has-artists>}
+				${<if-has-release>}${release class="d-inline text-decoration-none link-success"}${</if-has-release>}
+			</div>
 		</div>
 		<div class="p-2 d-none d-sm-block text-muted">
 			${duration}
@@ -62,10 +65,6 @@
 			</div>
 		</div>
 	</div>
-</message>
-
-<message id="Lms.Explore.Tracks.template.entry-artist">
-	${artist class="text-decoration-none link-secondary"}
 </message>
 
 <message id="Lms.Explore.Tracks.template.track-info">

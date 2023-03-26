@@ -401,9 +401,8 @@ Track::getArtists(EnumSet<TrackArtistLinkType> linkTypes) const
 		oss << " AND t_a_l.type IN (";
 
 		bool first {true};
-		for (TrackArtistLinkType type : linkTypes)
+		for ([[maybe_unused]] TrackArtistLinkType type : linkTypes)
 		{
-			(void) type;
 			if (!first)
 				oss << ", ";
 			oss << "?";
@@ -430,7 +429,7 @@ Track::getArtistIds(EnumSet<TrackArtistLinkType> linkTypes) const
 
 	std::ostringstream oss;
 	oss <<
-		"SELECT a.id from artist a"
+		"SELECT DISTINCT a.id from artist a"
 		" INNER JOIN track_artist_link t_a_l ON a.id = t_a_l.artist_id"
 		" INNER JOIN track t ON t.id = t_a_l.track_id";
 
@@ -439,9 +438,8 @@ Track::getArtistIds(EnumSet<TrackArtistLinkType> linkTypes) const
 		oss << " AND t_a_l.type IN (";
 
 		bool first {true};
-		for (TrackArtistLinkType type : linkTypes)
+		for ([[maybe_unused]] TrackArtistLinkType type : linkTypes)
 		{
-			(void) type;
 			if (!first)
 				oss << ", ";
 			oss << "?";
@@ -450,14 +448,14 @@ Track::getArtistIds(EnumSet<TrackArtistLinkType> linkTypes) const
 		oss << ")";
 	}
 
-	Wt::Dbo::Query<ArtistId> query {session()->query<ArtistId>(oss.str())
-		.where("t.id = ?").bind(getId())};
-
+	auto query {session()->query<ArtistId>(oss.str())};
 	for (TrackArtistLinkType type : linkTypes)
 		query.bind(type);
 
-	Wt::Dbo::collection<ArtistId> res = query;
-	return std::vector<ArtistId>(std::begin(res), std::end(res));
+	query.where("t.id = ?").bind(getId());
+
+	auto res {query.resultList()};
+	return std::vector<ArtistId>(std::cbegin(res), std::cend(res));
 }
 
 std::vector<TrackArtistLink::pointer>
