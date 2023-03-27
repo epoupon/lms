@@ -32,7 +32,7 @@
 
 <message id="Lms.PlayQueue.template.entry">
 	<div class="d-flex align-items-center rounded Lms-bg-dark-hover mb-2">
-		<div class="p-1 Lms-cover-small">
+		<div class="p-1">
 			${cover}
 		</div>
 		<div class="p-2 flex-fill text-truncate">

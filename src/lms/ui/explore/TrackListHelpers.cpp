@@ -166,9 +166,8 @@ namespace UserInterface::TrackListHelpers
 		if (!artists.empty())
 		{
 			entry->setCondition("if-has-artists", true);
-			Wt::WContainerWidget* artistsContainer {entry->bindWidget("artists", Utils::createArtistContainer(artists))};
-			if (track->getRelease())
-				artistsContainer->addNew<Wt::WText>(" — ");
+			entry->bindWidget("artists", Utils::createArtistContainer(artists));
+			entry->bindWidget("artists-md", Utils::createArtistContainer(artists));
 		}
 
 		if (track->getRelease())
@@ -196,6 +195,11 @@ namespace UserInterface::TrackListHelpers
 		});
 
 		entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML);
+		entry->bindNew<Wt::WPushButton>("play", Wt::WString::tr("Lms.Explore.play"))
+			->clicked().connect([trackId, &playQueueController]
+		{
+			playQueueController.processCommand(PlayQueueController::Command::Play, {trackId});
+		});
 		entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
 			->clicked().connect([=, &playQueueController]
 			{

@@ -39,24 +39,32 @@
 
 <message id="Lms.Explore.Tracks.template.entry">
 	<div class="d-flex align-items-center rounded Lms-bg-dark-hover mb-2">
-		<div class="p-1 Lms-cover-small">
+		<div class="p-1">
 			${cover}
 		</div>
 		<div class="p-2 flex-fill text-truncate">
-			<div class="d-block text-truncate">${name}</div>
-			<div class="text-truncate">
-				${<if-has-artists>}${artists class="d-none d-sm-inline"}${</if-has-artists>}
-				${<if-has-release>}${release class="d-inline text-decoration-none link-success"}${</if-has-release>}
+			<div class="row">
+				<div class="col-12 col-md-6 col-lg-4">
+					<div class="d-block text-truncate">${name}</div>
+					${<if-has-artists>}${artists class="d-block d-md-none text-truncate"}${</if-has-artists>}
+				</div>
+				<div class="col-md-6 col-lg-4">
+					${<if-has-artists>}${artists-md class="d-none d-md-block text-truncate"}${</if-has-artists>}
+				</div>
+				<div class="col-lg-4">
+					${<if-has-release>}${release class="d-none d-lg-block text-truncate text-decoration-none link-success"}${</if-has-release>}
+				</div>
 			</div>
 		</div>
 		<div class="p-2 d-none d-sm-block text-muted">
 			${duration}
 		</div>
 		<div class="p-2 d-flex">
-			${play-btn class="btn btn-sm btn-outline-secondary border-0"}
+			${play-btn class="d-none d-sm-block btn btn-sm btn-outline-secondary border-0"}
 			<div class="dropdown d-inline-block">
 				${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-sm btn-outline-secondary border-0"}
 				<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
+					<li>${play class="dropdown-item"}</li>
 					<li>${play-last class="dropdown-item"}</li>
 					<li>${star class="dropdown-item"}</li>
 					<li>${download class="dropdown-item"}</li>
