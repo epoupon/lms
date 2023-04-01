@@ -28,6 +28,7 @@
 #include <Wt/WStackedWidget.h>
 #include <Wt/WTemplateFormView.h>
 
+#include "services/database/Artist.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
@@ -489,6 +490,15 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 
 	entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
+	const auto artists {track->getArtistIds({Database::TrackArtistLinkType::Artist})};
+	LMS_LOG(UI, DEBUG) << "Found " << artists.size() << " artists!";
+	if (!artists.empty())
+	{
+		entry->setCondition("if-has-artists", true);
+		entry->bindWidget("artists", Utils::createArtistContainer(artists));
+		entry->bindWidget("artists-md", Utils::createArtistContainer(artists));
+	}
+
 	const auto release {track->getRelease()};
 	if (release)
 	{
@@ -542,6 +552,13 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 	});
 
 	entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML);
+	entry->bindNew<Wt::WPushButton>("play", Wt::WString::tr("Lms.Explore.play"))
+		->clicked().connect([=]
+		{
+			const std::optional<std::size_t> pos {_entriesContainer->getIndexOf(*entry)};
+			if (pos)
+				loadTrack(*pos, true);
+		});
 
 	auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), trackId); }};
 
