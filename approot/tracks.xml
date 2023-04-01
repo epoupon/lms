@@ -37,26 +37,31 @@
 	${tracks}
 </message>
 
+<message id="Lms.Explore.Tracks.template.entry-container">
+	${elements class="Lms-row-container"}
+	${loading-indicator}
+</message>
+
 <message id="Lms.Explore.Tracks.template.entry">
-	<div class="d-flex align-items-center rounded Lms-bg-dark-hover mb-2">
+	<div class="d-flex align-items-center mb-2">
 		<div class="p-1">
 			${cover}
 		</div>
-		<div class="p-2 flex-fill text-truncate">
-			<div class="row">
-				<div class="col-12 col-md-6 col-lg-4">
+		<div class="row align-items-center flex-fill overflow-hidden">
+			<div class="col-12 col-md-6 col-lg-4">
+				<div class="p-2 overflow-hidden">
 					<div class="d-block text-truncate">${name}</div>
 					${<if-has-artists>}${artists class="d-block d-md-none text-truncate"}${</if-has-artists>}
 				</div>
-				<div class="col-md-6 col-lg-4">
-					${<if-has-artists>}${artists-md class="d-none d-md-block text-truncate"}${</if-has-artists>}
-				</div>
-				<div class="col-lg-4">
-					${<if-has-release>}${release class="d-none d-lg-block text-truncate text-decoration-none link-success"}${</if-has-release>}
-				</div>
+			</div>
+			<div class="col-md-6 col-lg-4">
+				${<if-has-artists>}${artists-md class="d-none d-md-block text-truncate"}${</if-has-artists>}
+			</div>
+			<div class="col-lg-4 text-truncate">
+				${<if-has-release>}${release class="d-none d-lg-inline text-truncate text-decoration-none link-success"}${</if-has-release>}
 			</div>
 		</div>
-		<div class="p-2 d-none d-sm-block text-muted">
+		<div class="p-2 d-none d-sm-block text-muted text-center Lms-tracks-entry-duration">
 			${duration}
 		</div>
 		<div class="p-2 d-flex">

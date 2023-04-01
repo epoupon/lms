@@ -86,7 +86,7 @@ Tracks::Tracks(Filters& filters, PlayQueueController& playQueueController)
 			_playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, getAllTracks());
 		});
 
-	_container = bindNew<InfiniteScrollingContainer>("tracks");
+	_container = bindNew<InfiniteScrollingContainer>("tracks", Wt::WString::tr("Lms.Explore.Tracks.template.entry-container"));
 	_container->onRequestElements.connect([this]
 	{
 		addSome();

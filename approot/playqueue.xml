@@ -30,8 +30,13 @@
 	${entries}
 </message>
 
+<message id="Lms.PlayQueue.template.entry-container">
+	${elements class="Lms-row-container"}
+	${loading-indicator}
+</message>
+
 <message id="Lms.PlayQueue.template.entry">
-	<div class="d-flex align-items-center rounded Lms-bg-dark-hover mb-2">
+	<div class="d-flex align-items-center mb-2">
 		<div class="p-1">
 			${cover}
 		</div>

@@ -1,5 +1,9 @@
 /* Generic rules */
 
+:root {
+	--lms-striped-bg: #022f3a;
+}
+
 .link-success {
 	transition: color 0.15s ease;
 }
@@ -14,6 +18,19 @@
 
 .Lms-bg-dark-hover:hover {
 	background-color: var(--bs-dark);
+}
+
+.Lms-row-container {
+	--lms-striped-bg: #022f3a;
+	--lms-hover-bg: var(--bs-dark);
+}
+
+.Lms-row-container > :nth-child(odd) {
+	background-color: var(--lms-striped-bg);
+}
+
+.Lms-row-container > *:hover {
+	background-color: var(--lms-hover-bg);
 }
 
 /* Specific rules */
@@ -32,7 +49,7 @@ body {
 }
 
 .Lms-entry-playing {
-	background-color: var(--bs-dark);
+	background-color: #0d4655!important;
 }
 
 .Lms-cover {
@@ -143,4 +160,12 @@ body {
 	content: "";
 	display: block;
 	padding-bottom: 100%;
+}
+
+.Lms-tracks-entry-position{
+	width: 2.1rem;
+}
+
+.Lms-tracks-entry-duration {
+	width: 4rem;
 }

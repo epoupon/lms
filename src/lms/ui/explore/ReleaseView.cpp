@@ -382,6 +382,7 @@ Release::refreshView()
 		{
 			entry->setCondition("if-has-artists", true);
 			entry->bindWidget("artists", Utils::createArtistContainer(artists));
+			entry->bindWidget("artists-md", Utils::createArtistContainer(artists));
 		}
 
 		auto trackNumber {track->getTrackNumber()};
@@ -399,6 +400,11 @@ Release::refreshView()
 
 		{
 			entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML);
+			entry->bindNew<Wt::WPushButton>("play", Wt::WString::tr("Lms.Explore.play"))
+				->clicked().connect([=]
+				{
+					_playQueueController.playTrackInRelease(trackId);
+				});
 			entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
 				->clicked().connect([=]
 				{

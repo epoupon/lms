@@ -136,7 +136,7 @@ PlayQueue::PlayQueue()
 		saveAsTrackList();
 	});
 
-	_entriesContainer = bindNew<InfiniteScrollingContainer>("entries");
+	_entriesContainer = bindNew<InfiniteScrollingContainer>("entries", Wt::WString::tr("Lms.PlayQueue.template.entry-container"));
 	_entriesContainer->onRequestElements.connect([this]
 	{
 		addSome();
