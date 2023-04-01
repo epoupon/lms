@@ -163,9 +163,9 @@ body {
 }
 
 .Lms-tracks-entry-position{
-	width: 2.1rem;
+	min-width: 2.1rem;
 }
 
 .Lms-tracks-entry-duration {
-	width: 4rem;
+	min-width: 4rem;
 }
