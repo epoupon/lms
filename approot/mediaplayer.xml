@@ -34,7 +34,7 @@
 				</span>
 			</div>
 			<div class="p-2 d-none d-sm-block text-muted text-nowrap">
-				<span id="lms-transcoding-active" title="${tr:Lms.Player.transcoding-active}" class="p-2" style="visibility:hidden"><i class="fa fa-fw fa-info-circle" aria-hidden="true"></i></span>
+				<span id="lms-transcoding-active" title="${tr:Lms.Player.transcoding-active}" class="p-2" style="display:none"><i class="fa fa-fw fa-info-circle" aria-hidden="true"></i></span>
 				<span id="lms-mp-curtime">--</span> / <span id="lms-mp-duration">--</span>
 			</div>
 			<div class="p-2 d-none d-md-flex align-items-center Lms-player-volume-container">
