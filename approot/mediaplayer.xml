@@ -27,7 +27,11 @@
 			</div>
 			<div class="flex-fill text-center text-truncate">
 				${title class="d-block text-truncate"}
-				${release class="text-decoration-none text-truncate link-success"}
+				${artist class="d-inline text-decoration-none text-truncate link-success"}
+				<span class="d-none d-md-inline">
+					${separator}
+					${release class="text-decoration-none text-truncate link-success"}
+				</span>
 			</div>
 			<div class="p-2 d-none d-sm-block text-muted text-nowrap">
 				<span id="lms-transcoding-active" title="${tr:Lms.Player.transcoding-active}" class="p-2" style="visibility:hidden"><i class="fa fa-fw fa-info-circle" aria-hidden="true"></i></span>

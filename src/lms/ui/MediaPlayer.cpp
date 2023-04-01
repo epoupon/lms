@@ -210,6 +210,7 @@ MediaPlayer::MediaPlayer()
 	_title = bindNew<Wt::WText>("title");
 	_artist = bindNew<Wt::WAnchor>("artist");
 	_release = bindNew<Wt::WAnchor>("release");
+	_separator = bindNew<Wt::WText>("separator");
 	_playQueue = bindNew<Wt::WPushButton>("playqueue-btn", Wt::WString::tr("Lms.MediaPlayer.template.playqueue-btn").arg(0), Wt::TextFormat::XHTML);
 	_playQueue->setLink(Wt::WLink {Wt::LinkType::InternalPath, "/playqueue"});
 	_playQueue->setToolTip(tr("Lms.PlayQueue.playqueue"));
@@ -275,6 +276,8 @@ MediaPlayer::loadTrack(Database::TrackId trackId, bool play, float replayGain)
 		_title->setTextFormat(Wt::TextFormat::Plain);
 		_title->setText(Wt::WString::fromUTF8(track->getName()));
 
+		bool needSeparator {true};
+
 		if (!artists.empty())
 		{
 			_artist->setTextFormat(Wt::TextFormat::Plain);
@@ -285,6 +288,7 @@ MediaPlayer::loadTrack(Database::TrackId trackId, bool play, float replayGain)
 		{
 			_artist->setText("");
 			_artist->setLink({});
+			needSeparator = false;
 		}
 
 		if (track->getRelease())
@@ -297,7 +301,13 @@ MediaPlayer::loadTrack(Database::TrackId trackId, bool play, float replayGain)
 		{
 			_release->setText("");
 			_release->setLink({});
+			needSeparator = false;
 		}
+
+		if (needSeparator)
+			_separator->setText(" — ");
+		else
+			_separator->setText("");
 	}
 
 	LMS_LOG(UI, DEBUG) << "Running js = '" << oss.str() << "'";
