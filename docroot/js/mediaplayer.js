@@ -271,10 +271,10 @@ LMS.mediaplayer = function () {
 
 		_elems.audio.addEventListener("canplay", function() {
 			if (_getAudioMode() == Mode.Transcode) {
-				_elems.transcodingActive.style.visibility = "visible";
+				_elems.transcodingActive.style.display = "inline";
 			}
 			else {
-				_elems.transcodingActive.style.visibility = "hidden";
+				_elems.transcodingActive.style.display = "none";
 			}
 		});
 

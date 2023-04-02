@@ -93,6 +93,18 @@ TEST_F(DatabaseFixture, Artist_singleTrack)
 
 	{
 		auto transaction {session.createSharedTransaction()};
+
+		auto artists {track->getArtistIds({TrackArtistLinkType::Artist})};
+		ASSERT_EQ(artists.size(), 1);
+		EXPECT_EQ(artists.front(), artist.getId());
+
+		ASSERT_EQ(track->getArtistIds({TrackArtistLinkType::Artist}).size(), 1);
+		EXPECT_TRUE(track->getArtistIds({TrackArtistLinkType::ReleaseArtist}).empty());
+		EXPECT_EQ(track->getArtistIds({}).size(), 1);
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
 		auto tracks {Track::find(session, Track::FindParameters{}.setName("MyTrackName").setArtistName("MyArtist"))};
 		ASSERT_EQ(tracks.results.size(), 1);
 		EXPECT_EQ(tracks.results.front(), track.getId());

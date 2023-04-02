@@ -31,6 +31,7 @@
 #include "services/database/Track.hpp"
 #include "services/database/TrackArtistLink.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
+#include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 
 #include "common/Template.hpp"
@@ -160,6 +161,15 @@ namespace UserInterface::TrackListHelpers
 		const Release::pointer release {track->getRelease()};
 		const TrackId trackId {track->getId()};
 
+		const auto artists {track->getArtistIds({TrackArtistLinkType::Artist})};
+		LMS_LOG(UI, DEBUG) << "Found " << artists.size() << " artists!";
+		if (!artists.empty())
+		{
+			entry->setCondition("if-has-artists", true);
+			entry->bindWidget("artists", Utils::createArtistContainer(artists));
+			entry->bindWidget("artists-md", Utils::createArtistContainer(artists));
+		}
+
 		if (track->getRelease())
 		{
 			entry->setCondition("if-has-release", true);
@@ -185,6 +195,11 @@ namespace UserInterface::TrackListHelpers
 		});
 
 		entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML);
+		entry->bindNew<Wt::WPushButton>("play", Wt::WString::tr("Lms.Explore.play"))
+			->clicked().connect([trackId, &playQueueController]
+		{
+			playQueueController.processCommand(PlayQueueController::Command::Play, {trackId});
+		});
 		entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
 			->clicked().connect([=, &playQueueController]
 			{

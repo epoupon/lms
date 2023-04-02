@@ -248,7 +248,6 @@ getMedium(const TagMap& tags)
 			if (strings.size() == 2)
 				medium->trackCount = StringUtils::readAs<std::size_t>(strings[1]);
 		}
-
 	}
 	// Expecting 'Number[/Total]'
 	medium->position = getPropertyValueAs<std::size_t>(tags, "DISCNUMBER");
