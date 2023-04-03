@@ -33,24 +33,38 @@
 
 namespace MetaData
 {
-	using Clusters = std::map<std::string /* type */, std::set<std::string> /* names */>;
+	using Tags = std::map<std::string /* type */, std::set<std::string> /* names */>;
+
+	// Very simplified version of https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 
 	struct Artist
 	{
-		std::string name;
-		std::optional<std::string> sortName;
-		std::optional<UUID> musicBrainzArtistID;
+		std::optional<UUID>			mbid;
+		std::string					name;
+		std::optional<std::string>	sortName;
 
 		Artist(std::string_view _name) : name {_name} {}
-		Artist(std::string_view _name, std::optional<std::string> _sortName, std::optional<UUID> _musicBrainzArtistID) : name {_name}, sortName {_sortName}, musicBrainzArtistID {_musicBrainzArtistID} {}
+		Artist(std::optional<UUID> _mbid, std::string_view _name, std::optional<std::string> _sortName) : mbid {std::move(_mbid)}, name {_name}, sortName {std::move(_sortName)} {}
 	};
 
 	using PerformerContainer = std::map<std::string /*role*/, std::vector<Artist>>;
 
-	struct Album
+	struct Release
 	{
-		std::string name;
-		std::optional<UUID> musicBrainzAlbumID;
+		std::optional<UUID> 		mbid;
+		std::string					name;
+		std::vector<Artist>			artists;
+		std::optional<std::size_t>	mediumCount;
+	};
+
+	struct Medium
+	{
+		std::string					type;
+		std::string					name;
+		std::optional<Release>		release;
+		std::optional<std::size_t>	position; // in release
+		std::optional<std::size_t>  trackCount;
+		std::optional<float>        replayGain;
 	};
 
 	struct AudioStream
@@ -60,35 +74,29 @@ namespace MetaData
 
 	struct Track
 	{
-		std::vector<Artist>			artists;
-		std::vector<Artist>			albumArtists;
-		std::string					title;
-		std::optional<UUID>			trackMBID;
+		std::optional<UUID>			mbid;
 		std::optional<UUID>			recordingMBID;
-		std::optional<Album>		album;
-		Clusters					clusters;
+		std::string					title;
+		std::optional<Medium>		medium;
+		std::optional<std::size_t>	position; // in medium
+		Tags						tags;
 		std::chrono::milliseconds 	duration;
-		std::optional<std::size_t>	trackNumber;
-		std::optional<std::size_t>	totalTrack;
-		std::optional<std::size_t>	discNumber;
-		std::optional<std::size_t>	totalDisc;
 		Wt::WDate					date;
 		Wt::WDate					originalDate;
 		bool						hasCover {};
 		std::vector<AudioStream>	audioStreams;
-		std::optional<UUID>		acoustID;
-		std::string				copyright;
-		std::string				copyrightURL;
-		std::optional<float>	trackReplayGain;
-		std::optional<float>	albumReplayGain;
-		std::string				discSubtitle;
-		std::vector<Artist>		conductorArtists;
-		std::vector<Artist>		composerArtists;
-		std::vector<Artist>		lyricistArtists;
-		std::vector<Artist>		mixerArtists;
-		PerformerContainer		performerArtists;
-		std::vector<Artist>		producerArtists;
-		std::vector<Artist>		remixerArtists;
+		std::optional<UUID>			acoustID;
+		std::string					copyright;
+		std::string					copyrightURL;
+		std::optional<float>		replayGain;
+		std::vector<Artist>			artists;
+		std::vector<Artist>			conductorArtists;
+		std::vector<Artist>			composerArtists;
+		std::vector<Artist>			lyricistArtists;
+		std::vector<Artist>			mixerArtists;
+		PerformerContainer			performerArtists;
+		std::vector<Artist>			producerArtists;
+		std::vector<Artist>			remixerArtists;
 	};
 
 	class IParser

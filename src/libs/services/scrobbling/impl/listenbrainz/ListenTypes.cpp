@@ -31,6 +31,8 @@ namespace Scrobbling::ListenBrainz
 			os << ", releaseName = '" << listen.releaseName << "'";
 		if (listen.trackNumber)
 			os << ", trackNumber = " << *listen.trackNumber;
+		if (listen.trackMBID)
+			os << ", trackMBID = '" << listen.trackMBID->getAsString() << "'";
 		if (listen.recordingMBID)
 			os << ", recordingMBID = '" << listen.recordingMBID->getAsString() << "'";
 

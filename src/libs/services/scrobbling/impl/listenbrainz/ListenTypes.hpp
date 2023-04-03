@@ -33,6 +33,7 @@ namespace Scrobbling::ListenBrainz
 		std::string releaseName;
 		std::string artistName;
 		std::optional<UUID> recordingMBID;
+		std::optional<UUID> trackMBID;
 		std::optional<UUID> releaseMBID;
 		std::optional<unsigned> trackNumber;
 		Wt::WDateTime listenedAt;

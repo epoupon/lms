@@ -132,10 +132,10 @@ stringTrim(std::string_view str, std::string_view whitespaces)
 	return res;
 }
 
-std::string
+std::string_view
 stringTrimEnd(std::string_view str, std::string_view whitespaces)
 {
-	return std::string {str.substr(0, str.find_last_not_of(whitespaces) + 1)};
+	return str.substr(0, str.find_last_not_of(whitespaces) + 1);
 }
 
 std::string

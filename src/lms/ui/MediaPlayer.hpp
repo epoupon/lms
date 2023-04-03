@@ -127,6 +127,7 @@ class MediaPlayer : public Wt::WTemplate
 
 		Wt::WText*			_title {};
 		Wt::WAnchor*		_release {};
+		Wt::WText*			_separator {};
 		Wt::WAnchor*		_artist {};
 		Wt::WPushButton*	_playQueue {};
 };

@@ -97,34 +97,37 @@ class Release : public Object<Release, ReleaseId>
 		// size is the max number of cluster per cluster type
 		std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ObjectPtr<ClusterType>>& clusterTypes, std::size_t size) const;
 
-		// Utility functions
+		// Utility functions (if all tracks have the same values, which is legit to not be the case)
 		std::optional<int>			getReleaseYear(bool originalDate = false) const;
 		std::optional<std::string>	getCopyright() const;
 		std::optional<std::string>	getCopyrightURL() const;
 
 		// Accessors
-		const std::string&		getName() const		{ return _name; }
-		std::optional<UUID>		getMBID() const		{ return UUID::fromString(_MBID); }
-		std::optional<std::size_t>	getTotalTrack() const;
-		std::optional<std::size_t>	getTotalDisc() const;
+		const std::string&			getName() const		{ return _name; }
+		std::optional<UUID>			getMBID() const		{ return UUID::fromString(_MBID); }
+		std::optional<std::size_t>	getTotalDisc() const { return _totalDisc; }
 		std::size_t					getDiscCount() const; // may not be total disc (if incomplete for example)
 		std::chrono::milliseconds	getDuration() const;
 		Wt::WDateTime				getLastWritten() const;
 
-		// Get the artists of this release
-		std::vector<ObjectPtr<Artist> > getArtists(TrackArtistLinkType type = TrackArtistLinkType::Artist) const;
-		std::vector<ObjectPtr<Artist> > getReleaseArtists() const { return getArtists(TrackArtistLinkType::ReleaseArtist); }
-		bool hasVariousArtists() const;
-		std::vector<pointer>		getSimilarReleases(std::optional<std::size_t> offset = {}, std::optional<std::size_t> count = {}) const;
+		// Setters
+		void setName(std::string_view name)							{ _name = name; }
+		void setMBID(const std::optional<UUID>& mbid)				{ _MBID = mbid ? mbid->getAsString() : ""; }
+		void setTotalDisc(std::optional<int> totalDisc)				{ _totalDisc = totalDisc; }
 
-		void setName(std::string_view name)		{ _name = name; }
-		void setMBID(const std::optional<UUID>& mbid)	{ _MBID = mbid ? mbid->getAsString() : ""; }
+		// Get the artists of this release
+		std::vector<ObjectPtr<Artist>>	getArtists(TrackArtistLinkType type = TrackArtistLinkType::Artist) const;
+		std::vector<ObjectPtr<Artist>>	getReleaseArtists() const { return getArtists(TrackArtistLinkType::ReleaseArtist); }
+		bool							hasVariousArtists() const;
+		std::vector<pointer>			getSimilarReleases(std::optional<std::size_t> offset = {}, std::optional<std::size_t> count = {}) const;
+
 
 		template<class Action>
 			void persist(Action& a)
 			{
-				Wt::Dbo::field(a, _name, "name");
-				Wt::Dbo::field(a, _MBID, "mbid");
+				Wt::Dbo::field(a, _name,				"name");
+				Wt::Dbo::field(a, _MBID,				"mbid");
+				Wt::Dbo::field(a, _totalDisc,			"total_disc");
 
 				Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "release");
 			}
@@ -136,8 +139,9 @@ class Release : public Object<Release, ReleaseId>
 
 		static constexpr std::size_t _maxNameLength {128};
 
-		std::string	_name;
-		std::string	_MBID;
+		std::string				_name;
+		std::string				_MBID;
+		std::optional<int>		_totalDisc {};
 
 		Wt::Dbo::collection<Wt::Dbo::ptr<Track>>	_tracks; // Tracks in the release
 };

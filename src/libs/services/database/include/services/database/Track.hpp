@@ -119,60 +119,57 @@ class Track : public Object<Track, TrackId>
 		static RangeResults<TrackId>	findWithRecordingMBIDAndMissingFeatures(Session& session, Range range);
 
 		// Accessors
-		void setScanVersion(std::size_t version)			{ _scanVersion = version; }
-		void setTrackNumber(int num)					{ _trackNumber = num; }
-		void setDiscNumber(int num)					{ _discNumber = num; }
-		void setTotalTrack(std::optional<int> totalTrack)		{ _totalTrack = totalTrack ? *totalTrack : 0; }
-		void setTotalDisc(std::optional<int> totalDisc)			{ _totalDisc = totalDisc ? *totalDisc : 0; }
+		void setScanVersion(std::size_t version)				{ _scanVersion = version; }
+		void setTrackNumber(std::optional<int> num)				{ _trackNumber = num; }
+		void setDiscNumber(std::optional<int> num)				{ _discNumber = num; }
+		void setTotalTrack(std::optional<int> totalTrack)		{ _totalTrack = totalTrack; }
 		void setDiscSubtitle(const std::string& name)			{ _discSubtitle = name; }
-		void setName(const std::string& name)				{ _name = std::string(name, 0, _maxNameLength); }
-		void setPath(const std::filesystem::path& filePath) 		{ _filePath = filePath; }
-		void setDuration(std::chrono::milliseconds duration)		{ _duration = duration; }
-		void setLastWriteTime(Wt::WDateTime time)			{ _fileLastWrite = time; }
-		void setAddedTime(Wt::WDateTime time)				{ _fileAdded = time; }
-		void setDate(const Wt::WDate& date)							{ _date = date; }
-		void setOriginalDate(const Wt::WDate& date)					{ _originalDate = date; }
-		void setHasCover(bool hasCover)					{ _hasCover = hasCover; }
-		void setTrackMBID(const std::optional<UUID>& MBID)			{ _trackMBID = MBID ? MBID->getAsString() : ""; }
-		void setRecordingMBID(const std::optional<UUID>& MBID)		{ _recordingMBID = MBID ? MBID->getAsString() : ""; }
+		void setName(const std::string& name)					{ _name = std::string(name, 0, _maxNameLength); }
+		void setPath(const std::filesystem::path& filePath) 	{ _filePath = filePath; }
+		void setDuration(std::chrono::milliseconds duration)	{ _duration = duration; }
+		void setLastWriteTime(Wt::WDateTime time)				{ _fileLastWrite = time; }
+		void setAddedTime(Wt::WDateTime time)					{ _fileAdded = time; }
+		void setDate(const Wt::WDate& date)						{ _date = date; }
+		void setOriginalDate(const Wt::WDate& date)				{ _originalDate = date; }
+		void setHasCover(bool hasCover)							{ _hasCover = hasCover; }
+		void setTrackMBID(const std::optional<UUID>& MBID)		{ _trackMBID = MBID ? MBID->getAsString() : ""; }
+		void setRecordingMBID(const std::optional<UUID>& MBID)	{ _recordingMBID = MBID ? MBID->getAsString() : ""; }
 		void setCopyright(const std::string& copyright)			{ _copyright = std::string(copyright, 0, _maxCopyrightLength); }
-		void setCopyrightURL(const std::string& copyrightURL)		{ _copyrightURL = std::string(copyrightURL, 0, _maxCopyrightURLLength); }
-		void setTrackReplayGain(std::optional<float> replayGain)			{ _trackReplayGain = replayGain; }
-		void setReleaseReplayGain(std::optional<float> replayGain)			{ _releaseReplayGain = replayGain; }
+		void setCopyrightURL(const std::string& copyrightURL)	{ _copyrightURL = std::string(copyrightURL, 0, _maxCopyrightURLLength); }
+		void setTrackReplayGain(std::optional<float> replayGain)		{ _trackReplayGain = replayGain; }
+		void setReleaseReplayGain(std::optional<float> replayGain)		{ _releaseReplayGain = replayGain; } // may be by disc!
 		void clearArtistLinks();
 		void addArtistLink(const ObjectPtr<TrackArtistLink>& artistLink);
 		void setRelease(ObjectPtr<Release> release)			{ _release = getDboPtr(release); }
 		void setClusters(const std::vector<ObjectPtr<Cluster>>& clusters );
 
 		std::size_t 				getScanVersion() const		{ return _scanVersion; }
-		std::optional<std::size_t>	getTrackNumber() const;
-		std::optional<std::size_t>	getTotalTrack() const;
-		std::optional<std::size_t>	getDiscNumber() const;
+		std::optional<std::size_t>	getTrackNumber() const		{ return _trackNumber; }
+		std::optional<std::size_t>	getTotalTrack() const		{ return _totalTrack; }
+		std::optional<std::size_t>	getDiscNumber() const		{ return _discNumber; }
 		const std::string&			getDiscSubtitle() const { return _discSubtitle; }
-		std::optional<std::size_t>	getTotalDisc() const;
 		std::string 				getName() const			{ return _name; }
 		std::filesystem::path		getPath() const			{ return _filePath; }
 		std::chrono::milliseconds	getDuration() const		{ return _duration; }
 		const Wt::WDateTime&		getLastWritten() const	{ return _fileLastWrite; }
 		std::optional<int>			getYear() const;
 		std::optional<int>			getOriginalYear() const;
-		Wt::WDateTime				getLastWriteTime() const	{ return _fileLastWrite; }
-		Wt::WDateTime				getAddedTime() const		{ return _fileAdded; }
-		bool						hasCover() const		{ return _hasCover; }
+		Wt::WDateTime				getLastWriteTime() const		{ return _fileLastWrite; }
+		Wt::WDateTime				getAddedTime() const			{ return _fileAdded; }
+		bool						hasCover() const				{ return _hasCover; }
 		std::optional<UUID>			getTrackMBID() const			{ return UUID::fromString(_trackMBID); }
-		std::optional<UUID>			getRecordingMBID() const			{ return UUID::fromString(_recordingMBID); }
+		std::optional<UUID>			getRecordingMBID() const		{ return UUID::fromString(_recordingMBID); }
 		std::optional<std::string>	getCopyright() const;
 		std::optional<std::string>	getCopyrightURL() const;
-		std::optional<float>		getTrackReplayGain() const	{ return _trackReplayGain; }
+		std::optional<float>		getTrackReplayGain() const		{ return _trackReplayGain; }
 		std::optional<float>		getReleaseReplayGain() const	{ return _releaseReplayGain; }
-
 		// no artistLinkTypes means get all
-		std::vector<ObjectPtr<Artist>>	getArtists(EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
-		std::vector<ArtistId>				getArtistIds(EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
+		std::vector<ObjectPtr<Artist>>			getArtists(EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
+		std::vector<ArtistId>					getArtistIds(EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
 		std::vector<ObjectPtr<TrackArtistLink>>	getArtistLinks() const;
-		ObjectPtr<Release>				getRelease() const		{ return _release; }
-		std::vector<ObjectPtr<Cluster>>	getClusters() const;
-		std::vector<ClusterId>				getClusterIds() const;
+		ObjectPtr<Release>						getRelease() const		{ return _release; }
+		std::vector<ObjectPtr<Cluster>>			getClusters() const;
+		std::vector<ClusterId>					getClusterIds() const;
 
 		std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ObjectPtr<ClusterType>>& clusterTypes, std::size_t size) const;
 
@@ -182,9 +179,8 @@ class Track : public Object<Track, TrackId>
 				Wt::Dbo::field(a, _scanVersion,		"scan_version");
 				Wt::Dbo::field(a, _trackNumber,		"track_number");
 				Wt::Dbo::field(a, _discNumber,		"disc_number");
-				Wt::Dbo::field(a, _discSubtitle,	"disc_subtitle");
-				Wt::Dbo::field(a, _totalTrack,		"total_track");
-				Wt::Dbo::field(a, _totalDisc,		"total_disc");
+				Wt::Dbo::field(a, _totalTrack,		"total_track"); // here in Track since Release does not have concept of "disc" (yet?)
+				Wt::Dbo::field(a, _discSubtitle,	"disc_subtitle"); // here in Track since Release does not have concept of "disc" (yet?)
 				Wt::Dbo::field(a, _name,			"name");
 				Wt::Dbo::field(a, _duration,		"duration");
 				Wt::Dbo::field(a, _date,			"date");
@@ -198,7 +194,7 @@ class Track : public Object<Track, TrackId>
 				Wt::Dbo::field(a, _copyright,		"copyright");
 				Wt::Dbo::field(a, _copyrightURL,	"copyright_url");
 				Wt::Dbo::field(a, _trackReplayGain,	"track_replay_gain");
-				Wt::Dbo::field(a, _releaseReplayGain,	"release_replay_gain");
+				Wt::Dbo::field(a, _releaseReplayGain,	"release_replay_gain"); // here in Track since Release does not have concept of "disc" (yet?)
 				Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "track");
 				Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
@@ -214,14 +210,11 @@ class Track : public Object<Track, TrackId>
 		static constexpr std::size_t _maxCopyrightURLLength {128};
 
 		int						_scanVersion {};
-		int						_trackNumber {};
-		int						_discNumber {};
+		std::optional<int>		_trackNumber {};
+		std::optional<int>		_discNumber {};
+		std::optional<int>		_totalTrack {};
 		std::string				_discSubtitle;
-		int						_totalTrack {};
-		int						_totalDisc {};
 		std::string				_name;
-		std::string				_artistName;
-		std::string				_releaseName;
 		std::chrono::duration<int, std::milli>	_duration {};
 		Wt::WDate				_date;
 		Wt::WDate				_originalDate;
@@ -236,9 +229,9 @@ class Track : public Object<Track, TrackId>
 		std::optional<float>	_trackReplayGain;
 		std::optional<float>	_releaseReplayGain;
 
-		Wt::Dbo::ptr<Release>				_release;
-		Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks;
-		Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> 	_clusters;
+		Wt::Dbo::ptr<Release>								_release;
+		Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>>	_trackArtistLinks;
+		Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>>			_clusters;
 };
 
 namespace Debug

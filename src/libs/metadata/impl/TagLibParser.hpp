@@ -38,7 +38,7 @@ class TagLibParser : public IParser
 
 	private:
 		std::optional<Track> parse(const std::filesystem::path& p, bool debug = false) override;
-		void processTag(Track& track, const std::string& tag, const TagLib::StringList& values, bool debug);
+		void processTag(Track& track, const std::string& tag, const std::vector<std::string>& values, bool debug);
 
 		const TagLib::AudioProperties::ReadStyle _readStyle;
 };

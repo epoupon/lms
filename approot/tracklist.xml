@@ -21,6 +21,11 @@
 	${tracks}
 </message>
 
+<message id="Lms.Explore.TrackList.template.entry-container">
+	${elements class="Lms-row-container"}
+	${loading-indicator}
+</message>
+
 <message id="Lms.Explore.TrackList.template.delete-tracklist">
 	<div class="modal fade" tabindex="-1">
 		<div class="modal-dialog">

@@ -174,7 +174,7 @@ namespace UserInterface
 				LmsApp->getModalManager().show(std::move(modal));
 			});
 
-		_container = bindNew<InfiniteScrollingContainer>("tracks");
+		_container = bindNew<InfiniteScrollingContainer>("tracks", Wt::WString::tr("Lms.Explore.TrackList.template.entry-container"));
 		_container->onRequestElements.connect([this]
 		{
 			addSome();

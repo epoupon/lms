@@ -51,30 +51,38 @@
 
 <message id="Lms.Explore.Release.template.entry-disc">
 	<h4>${disc-title}</h4>
-	${tracks class="d-grid gap-1"}
+	${tracks class="d-grid gap-1 Lms-row-container"}
 </message>
 
 <message id="Lms.Explore.Release.template.entry-nodisc">
-	${tracks class="d-grid gap-1"}
+	${tracks class="d-grid gap-1 Lms-row-container"}
 </message>
 
 <message id="Lms.Explore.Release.template.entry">
-	<div class="d-flex align-items-center rounded Lms-bg-dark-hover">
-		<div class="p-2 text-muted text-end" style="min-width: 2.1rem;">
+	<div class="d-flex align-items-center">
+		<div class="p-2 text-muted text-end Lms-tracks-entry-position">
 			${<if-has-track-number>}${track-number}${</if-has-track-number>}
 		</div>
-		<div class="p-2 flex-fill">
-			${name}
-			${<if-has-artists>}${artists}${</if-has-artists>}
+		<div class="row align-items-center flex-fill overflow-hidden">
+			<div class="col-12 col-md-6">
+				<div class="p-2">
+					${name}
+					${<if-has-artists>}${artists class="d-block d-md-none"}${</if-has-artists>}
+				</div>
+			</div>
+			<div class="col-md-6">
+				${<if-has-artists>}${artists-md class="d-none d-md-block"}${</if-has-artists>}
+			</div>
 		</div>
-		<div class="p-2 d-none d-sm-block text-muted">
+		<div class="p-2 d-none d-sm-block text-muted text-center Lms-tracks-entry-duration">
 			${duration}
 		</div>
 		<div class="p-2 d-flex">
-			${play-btn class="btn btn-sm btn-outline-secondary border-0"}
+			${play-btn class="d-none d-sm-block btn btn-sm btn-outline-secondary border-0"}
 			<div class="dropdown d-inline-block">
 				${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-sm btn-outline-secondary border-0"}
 				<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
+					<li>${play class="dropdown-item"}</li>
 					<li>${play-last class="dropdown-item"}</li>
 					<li>${star class="dropdown-item"}</li>
 					<li>${download class="dropdown-item"}</li>

@@ -263,30 +263,6 @@ Release::find(Session& session, const FindParameters& params)
 	return Utils::execQuery(query, params.range);
 }
 
-std::optional<std::size_t>
-Release::getTotalTrack() const
-{
-	assert(session());
-
-	int res = session()->query<int>("SELECT COALESCE(MAX(total_track),0) FROM track t INNER JOIN release r ON r.id = t.release_id")
-		.where("r.id = ?")
-		.bind(getId());
-
-	return (res > 0) ? std::make_optional<std::size_t>(res) : std::nullopt;
-}
-
-std::optional<std::size_t>
-Release::getTotalDisc() const
-{
-	assert(session());
-
-	int res = session()->query<int>("SELECT COALESCE(MAX(total_disc),0) FROM track t INNER JOIN release r ON r.id = t.release_id")
-		.where("r.id = ?")
-		.bind(getId());
-
-	return (res > 0) ? std::make_optional<std::size_t>(res) : std::nullopt;
-}
-
 std::size_t
 Release::getDiscCount() const
 {
