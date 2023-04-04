@@ -46,6 +46,46 @@ operator<<(std::ostream& os, const MetaData::Artist& artist)
 
 static
 std::ostream&
+operator<<(std::ostream& os, MetaData::Release::PrimaryType type)
+{
+	switch (type)
+	{
+		case MetaData::Release::PrimaryType::Album:		os << "Album"; break;
+		case MetaData::Release::PrimaryType::Single:	os << "Single"; break;
+		case MetaData::Release::PrimaryType::EP:		os << "EP"; break;
+		case MetaData::Release::PrimaryType::Broadcast:	os << "Broadcast"; break;
+		case MetaData::Release::PrimaryType::Other:		os << "Other"; break;
+		default:
+														os << "??";
+	}
+	return os;
+}
+
+static
+std::ostream&
+operator<<(std::ostream& os, MetaData::Release::SecondaryType type)
+{
+	switch (type)
+	{
+		case MetaData::Release::SecondaryType::Compilation:		os << "Compilation"; break;
+		case MetaData::Release::SecondaryType::Soundtrack:		os << "Soundtrack"; break;
+		case MetaData::Release::SecondaryType::Spokenword:		os << "Spokenword"; break;
+		case MetaData::Release::SecondaryType::Interview:		os << "Interview"; break;
+		case MetaData::Release::SecondaryType::Audiobook:		os << "Audiobook"; break;
+		case MetaData::Release::SecondaryType::AudioDrama:		os << "Audio drama"; break;
+		case MetaData::Release::SecondaryType::Live:			os << "Live"; break;
+		case MetaData::Release::SecondaryType::Remix:			os << "Remix"; break;
+		case MetaData::Release::SecondaryType::DJMix:			os << "DJ-mix"; break;
+		case MetaData::Release::SecondaryType::Mixtape_Street:	os << "Mixtape/Street"; break;
+		case MetaData::Release::SecondaryType::Demo:			os << "Mixtape/Demo"; break;
+		default:
+																os << "??";
+	}
+	return os;
+}
+
+static
+std::ostream&
 operator<<(std::ostream& os, const MetaData::Release& release)
 {
 	os << release.name;
@@ -58,6 +98,13 @@ operator<<(std::ostream& os, const MetaData::Release& release)
 
 	for (const MetaData::Artist& artist : release.artists)
 		std::cout << "\tRelease artist: " << artist << std::endl;
+
+	if (release.primaryType)
+	{
+		std::cout << "\tPrimary type: " << *release.primaryType << std::endl;
+		for (MetaData::Release::SecondaryType type : release.secondaryTypes)
+			std::cout << "\tSecondary type:" << type << std::endl;
+	}
 
 	return os;
 }

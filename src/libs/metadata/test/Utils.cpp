@@ -115,3 +115,60 @@ TEST(MetaData, extractPerformerAndRole)
 		EXPECT_EQ(performer.role, testCase.expectedRole) << " str was '" << testCase.str << "'";
 	}
 }
+
+TEST(MetaData, primaryReleaseTypes)
+{
+	using namespace MetaData;
+
+	struct TestCase
+	{
+		std::string	str;
+		std::optional<Release::PrimaryType> result;
+	} testCases []
+	{
+		{ "", 			std::nullopt },
+		{ "album",		Release::PrimaryType::Album },
+		{ "Album",		Release::PrimaryType::Album },
+		{ " Album", 	Release::PrimaryType::Album },
+		{ "Album ", 	Release::PrimaryType::Album },
+		{ "ep",			Release::PrimaryType::EP },
+		{ " ep ",		Release::PrimaryType::EP },
+		{ "broadcast",	Release::PrimaryType::Broadcast },
+		{ "single",		Release::PrimaryType::Single },
+		{ "other",		Release::PrimaryType::Other },
+	};
+
+	for (const TestCase& testCase : testCases)
+	{
+		std::optional<Release::PrimaryType> parsed {StringUtils::readAs<Release::PrimaryType>(testCase.str)};
+
+		EXPECT_EQ(parsed, testCase.result) << " str was '" << testCase.str << "'";
+	}
+}
+
+TEST(MetaData, secondaryReleaseTypes)
+{
+	using namespace MetaData;
+
+	struct TestCase
+	{
+		std::string	str;
+		std::optional<Release::SecondaryType> result;
+	} testCases []
+	{
+		{ "", 				std::nullopt },
+		{ "compilation",	Release::SecondaryType::Compilation },
+		{ " compilation ",	Release::SecondaryType::Compilation },
+		{ "soundtrack",		Release::SecondaryType::Soundtrack },
+		{ "live", 			Release::SecondaryType::Live },
+		{ "demo", 			Release::SecondaryType::Demo },
+	};
+
+	for (const TestCase& testCase : testCases)
+	{
+		std::optional<Release::SecondaryType> parsed {StringUtils::readAs<Release::SecondaryType>(testCase.str)};
+
+		EXPECT_EQ(parsed, testCase.result) << " str was '" << testCase.str << "'";
+	}
+}
+

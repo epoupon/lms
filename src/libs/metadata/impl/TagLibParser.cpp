@@ -225,6 +225,13 @@ getRelease(const TagMap& tags)
 		}
 	}
 
+	release->primaryType = getPropertyValueFirstMatchAs<MetaData::Release::PrimaryType>(tags, {"MUSICBRAINZ_ALBUMTYPE", "RELEASETYPE", "MUSICBRAINZ ALBUM TYPE", "MUSICBRAINZ/ALBUM TYPE"});
+	if (release->primaryType)
+	{
+		const auto secondaryTypes {getPropertyValuesFirstMatchAs<MetaData::Release::SecondaryType>(tags, {"MUSICBRAINZ_ALBUMTYPE", "RELEASETYPE", "MUSICBRAINZ ALBUM TYPE", "MUSICBRAINZ/ALBUM TYPE"})};
+		release->secondaryTypes.assign(std::cbegin(secondaryTypes), std::cend(secondaryTypes));
+	}
+
 	return release;
 }
 
@@ -445,7 +452,7 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 
 			for (const auto& [name, attributeList] : tag->attributeListMap())
 			{
-				std::string strName {name.to8Bit(true)};
+				std::string strName {StringUtils::stringToUpper(name.to8Bit(true))};
 				if (strName.find("WM/") == 0 || tags.find(strName) != std::cend(tags))
 					continue;
 
@@ -461,7 +468,7 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 					if (debug)
 						std::cout << "ASF property: '" << name << "'" << std::endl;
 
-					tags[strName] = std::move(attributes);
+					tags.emplace(strName, std::move(attributes));
 				}
 			}
 		}

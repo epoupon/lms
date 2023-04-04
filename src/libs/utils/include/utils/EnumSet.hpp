@@ -44,6 +44,13 @@ class EnumSet
 		template <typename It>
 		constexpr EnumSet(It begin, It end)
 		{
+			assign(begin, end);
+		}
+
+		template <typename It>
+		constexpr void assign(It begin, It end)
+		{
+			clear();
 			for (It it {begin}; it != end; ++it)
 				insert(*it);
 		}
@@ -69,6 +76,11 @@ class EnumSet
 		{
 			assert(static_cast<std::size_t>(value) < sizeof(_bitfield) * 8);
 			return _bitfield & (underlying_type{ 1 } << static_cast<underlying_type>(value));
+		}
+
+		constexpr void clear()
+		{
+			_bitfield = 0;
 		}
 
 		class iterator
