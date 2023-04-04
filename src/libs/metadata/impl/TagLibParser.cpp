@@ -50,7 +50,7 @@ using TagMap = std::map<std::string, std::vector<std::string>>;
 
 template<typename T>
 std::vector<T>
-getPropertyValuesFirstMatchAs(const TagMap& tags, const std::vector<std::string_view>& keys)
+getPropertyValuesFirstMatchAs(const TagMap& tags, std::initializer_list<std::string_view> keys)
 {
 	std::vector<T> res;
 
@@ -83,7 +83,7 @@ getPropertyValuesFirstMatchAs(const TagMap& tags, const std::vector<std::string_
 
 template <typename T>
 std::optional<T>
-getPropertyValueFirstMatchAs(const TagMap& tags, const std::vector<std::string_view>& keys)
+getPropertyValueFirstMatchAs(const TagMap& tags, std::initializer_list<std::string_view> keys)
 {
 	std::optional<T> res;
 	std::vector<T> values {getPropertyValuesFirstMatchAs<T>(tags, keys)};
@@ -95,14 +95,14 @@ getPropertyValueFirstMatchAs(const TagMap& tags, const std::vector<std::string_v
 
 template <typename T>
 std::vector<T>
-getPropertyValuesAs(const TagMap& tags, const std::string& key)
+getPropertyValuesAs(const TagMap& tags, std::string_view key)
 {
 	return getPropertyValuesFirstMatchAs<T>(tags, {key});
 }
 
 template <typename T>
 std::optional<T>
-getPropertyValueAs(const TagMap& tags, const std::string& key)
+getPropertyValueAs(const TagMap& tags, std::string_view key)
 {
 	return getPropertyValueFirstMatchAs<T>(tags, {key});
 }
@@ -121,22 +121,22 @@ splitAndTrimString(std::string_view str, std::string_view delimiters)
 static
 std::vector<Artist>
 getArtists(const TagMap& tags,
-		const std::vector<std::string_view>& artistTagNames,
-		const std::vector<std::string_view>& artistSortTagNames,
-		const std::vector<std::string_view>& artistMBIDTagNames
+		std::initializer_list<std::string_view> artistTagNames,
+		std::initializer_list<std::string_view> artistSortTagNames,
+		std::initializer_list<std::string_view> artistMBIDTagNames
 		)
 {
-	const std::vector<std::string> artistNames {getPropertyValuesFirstMatchAs<std::string>(tags, artistTagNames)};
+	const std::vector<std::string_view> artistNames {getPropertyValuesFirstMatchAs<std::string_view>(tags, artistTagNames)};
 	if (artistNames.empty())
 		return {};
 
 	std::vector<Artist> artists;
 	artists.reserve(artistNames.size());
 	std::transform(std::cbegin(artistNames), std::cend(artistNames), std::back_inserter(artists),
-		[&](const std::string& name) { return Artist {name}; });
+		[&](std::string_view name) { return Artist {name}; });
 
 	{
-		const std::vector<std::string> artistSortNames {getPropertyValuesFirstMatchAs<std::string>(tags, artistSortTagNames)};
+		const std::vector<std::string_view> artistSortNames {getPropertyValuesFirstMatchAs<std::string_view>(tags, artistSortTagNames)};
 		if (artistSortNames.size() == artists.size())
 		{
 			for (std::size_t i {}; i < artistSortNames.size(); ++i)
@@ -161,14 +161,14 @@ getArtists(const TagMap& tags,
 static
 PerformerContainer
 getPerformerArtists(const TagMap& tags,
-		const std::vector<std::string_view>& artistTagNames)
+		std::initializer_list<std::string_view> artistTagNames)
 {
 	PerformerContainer performers;
 
 	// picard stores like this: (see https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html#performer)
 	// We may hit both styles for the same track
 	// PERFORMER: artist (role)
-	if (const std::vector<std::string> artistNames {getPropertyValuesFirstMatchAs<std::string>(tags, artistTagNames)}; !artistNames.empty())
+	if (const std::vector<std::string_view> artistNames {getPropertyValuesFirstMatchAs<std::string_view>(tags, artistTagNames)}; !artistNames.empty())
 	{
 		for (std::string_view entry : artistNames)
 		{
@@ -216,7 +216,7 @@ getRelease(const TagMap& tags)
 	if (!release->mediumCount)
 	{
 		// mediumCount may be encoded as "position/count"
-		if (const auto value {getPropertyValueAs<std::string>(tags, "DISCNUMBER")})
+		if (const auto value {getPropertyValueAs<std::string_view>(tags, "DISCNUMBER")})
 		{
 			// Expecting 'Number/Total'
 			const std::vector<std::string_view> strings {StringUtils::splitString(*value, "/") };
@@ -248,7 +248,7 @@ getMedium(const TagMap& tags)
 	if (!medium->trackCount)
 	{
 		// totalTracks may be encoded as "position/count"
-		if (const auto value {getPropertyValueAs<std::string>(tags, "TRACKNUMBER")})
+		if (const auto value {getPropertyValueAs<std::string_view>(tags, "TRACKNUMBER")})
 		{
 			// Expecting 'Number/Total'
 			const std::vector<std::string_view> strings {StringUtils::splitString(*value, "/") };
