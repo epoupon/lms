@@ -159,6 +159,8 @@ namespace StringUtils
 			return MetaData::Release::SecondaryType::Soundtrack;
 		else if (iequals(str, "live"))
 			return MetaData::Release::SecondaryType::Live;
+		else if (iequals(str, "demo"))
+			return MetaData::Release::SecondaryType::Demo;
 
 		return std::nullopt;
 	}
