@@ -133,7 +133,7 @@ Response::createFailedResponse(ProtocolVersion protocolVersion, const Error& err
 	responseNode.setAttribute("type", "lms"); // non standard field to ease client hacks
 
 	Node& errorNode {responseNode.createChild("error")};
-	errorNode.setAttribute("code", std::to_string(static_cast<int>(error.getCode())));
+	errorNode.setAttribute("code", static_cast<int>(error.getCode()));
 	errorNode.setAttribute("message", error.getMessage());
 
 	return response;
