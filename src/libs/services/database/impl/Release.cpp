@@ -28,6 +28,7 @@
 #include "services/database/User.hpp"
 #include "utils/Logger.hpp"
 #include "SqlQuery.hpp"
+#include "EnumSetTraits.hpp"
 #include "IdTypeTraits.hpp"
 #include "Utils.hpp"
 

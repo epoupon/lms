@@ -198,6 +198,23 @@
 <message id="Lms.Explore.Release.copyright">版权所有</message>
 <message id="Lms.Explore.Release.disc">唱片 {1}</message>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">删除播放列表？</message>
 
@@ -210,10 +227,6 @@
 <!--Playqueue-->
 <message id="Lms.PlayQueue.clear">清除</message>
 <message id="Lms.PlayQueue.create-tracklist">创建新播放列表</message>
-
-
-
-
 <message id="Lms.PlayQueue.playqueue">播放队列</message>
 <message id="Lms.PlayQueue.radio-mode">广播模式</message>
 <message id="Lms.PlayQueue.repeat">循环播放</message>

@@ -115,6 +115,67 @@ namespace
 		return artists;
 	}
 
+	ReleaseTypePrimary convertReleaseTypePrimary(MetaData::Release::PrimaryType type)
+	{
+		switch (type)
+		{
+			case MetaData::Release::PrimaryType::Album:		return ReleaseTypePrimary::Album;
+			case MetaData::Release::PrimaryType::Single:	return ReleaseTypePrimary::Single;
+			case MetaData::Release::PrimaryType::EP:		return ReleaseTypePrimary::EP;
+			case MetaData::Release::PrimaryType::Broadcast:	return ReleaseTypePrimary::Broadcast;
+			case MetaData::Release::PrimaryType::Other:		return ReleaseTypePrimary::Other;
+		}
+
+		return ReleaseTypePrimary::Other;
+	}
+
+	EnumSet<ReleaseTypeSecondary> convertReleaseTypesSecondary(EnumSet<MetaData::Release::SecondaryType> types)
+	{
+		EnumSet<ReleaseTypeSecondary> res;
+
+		for (MetaData::Release::SecondaryType type : types)
+		{
+			switch (type)
+			{
+				case MetaData::Release::SecondaryType::Compilation:
+					res.insert(ReleaseTypeSecondary::Compilation);
+					break;
+				case MetaData::Release::SecondaryType::Soundtrack:
+					res.insert(ReleaseTypeSecondary::Soundtrack);
+					break;
+				case MetaData::Release::SecondaryType::Spokenword:
+					res.insert(ReleaseTypeSecondary::Spokenword);
+					break;
+				case MetaData::Release::SecondaryType::Interview:
+					res.insert(ReleaseTypeSecondary::Interview);
+					break;
+				case MetaData::Release::SecondaryType::Audiobook:
+					res.insert(ReleaseTypeSecondary::Audiobook);
+					break;
+				case MetaData::Release::SecondaryType::AudioDrama:
+					res.insert(ReleaseTypeSecondary::AudioDrama);
+					break;
+				case MetaData::Release::SecondaryType::Live:
+					res.insert(ReleaseTypeSecondary::Live);
+					break;
+				case MetaData::Release::SecondaryType::Remix:
+					res.insert(ReleaseTypeSecondary::Remix);
+					break;
+				case MetaData::Release::SecondaryType::DJMix:
+					res.insert(ReleaseTypeSecondary::DJMix);
+					break;
+				case MetaData::Release::SecondaryType::Mixtape_Street:
+					res.insert(ReleaseTypeSecondary::Mixtape_Street);
+					break;
+				case MetaData::Release::SecondaryType::Demo:
+					res.insert(ReleaseTypeSecondary::Demo);
+					break;
+			}
+		}
+
+		return res;
+	}
+
 	void
 	updateReleaseIfNeeded(Release::pointer release, const MetaData::Release& releaseInfo)
 	{
@@ -122,6 +183,15 @@ namespace
 			release.modify()->setName(releaseInfo.name);
 		if (release->getTotalDisc() != releaseInfo.mediumCount)
 			release.modify()->setTotalDisc(releaseInfo.mediumCount);
+		if (releaseInfo.primaryType)
+		{
+			const ReleaseTypePrimary primaryType {convertReleaseTypePrimary(*releaseInfo.primaryType)};
+			if (release->getPrimaryType() != primaryType)
+				release.modify()->setPrimaryType(primaryType);
+		}
+		const EnumSet<ReleaseTypeSecondary> secondaryTypes {convertReleaseTypesSecondary(releaseInfo.secondaryTypes)};
+		if (release->getSecondaryTypes() != secondaryTypes)
+			release.modify()->setSecondaryTypes(secondaryTypes);
 	}
 
 	Release::pointer
