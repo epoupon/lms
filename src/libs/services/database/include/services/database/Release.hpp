@@ -61,6 +61,8 @@ class Release : public Object<Release, ReleaseId>
 			ArtistId						artist;						// only releases that involved this user
 			EnumSet<TrackArtistLinkType>	trackArtistLinkTypes; 			//    and for these link types
 			EnumSet<TrackArtistLinkType>	excludedTrackArtistLinkTypes; 	//    but not for these link types
+			std::optional<ReleaseTypePrimary> primaryType;				// if, set, matching this primary type
+			EnumSet<ReleaseTypeSecondary>	secondaryTypes;				// Matching all this (if any)
 
 			FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
 			FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }

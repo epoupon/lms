@@ -40,13 +40,26 @@
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
 #include "PlayQueueController.hpp"
-#include "ReleaseListHelpers.hpp"
+#include "ReleaseHelpers.hpp"
 #include "TrackListHelpers.hpp"
 #include "Utils.hpp"
 
 using namespace Database;
 
 namespace UserInterface {
+
+bool
+Artist::ReleaseType::operator<(const ReleaseType& other) const
+{
+	if (!primaryType && other.primaryType)
+		return false;
+	else if (primaryType && !other.primaryType)
+		return true;
+	else if (*primaryType == *other.primaryType)
+		return secondaryTypes.getBitfield() < other.secondaryTypes.getBitfield();
+	else
+		return static_cast<int>(*primaryType) < static_cast<int>(*other.primaryType);
+}
 
 Artist::Artist(Filters& filters, PlayQueueController& controller)
 : Template {Wt::WString::tr("Lms.Explore.Artist.template")}
@@ -114,14 +127,11 @@ Artist::refreshView()
 	LmsApp->setTitle(artist->getName());
 	_artistId = *artistId;
 
-	bool setReleaseTitle {};
 	refreshReleases();
-	setReleaseTitle |= refreshAppearsOnReleases();
-	setReleaseTitle |= refreshNonReleaseTracks();
+	refreshAppearsOnReleases();
+	refreshNonReleaseTracks();
 	refreshLinks(artist);
 	refreshSimilarArtists(similarArtistIds);
-
-	setCondition("if-release-title", setReleaseTitle);
 
 	Wt::WContainerWidget* clusterContainers {bindNew<Wt::WContainerWidget>("clusters")};
 
@@ -184,25 +194,57 @@ Artist::refreshView()
 	}
 }
 
-bool
+void
 Artist::refreshReleases()
 {
-	_releaseContainer = bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
-	_releaseContainer->onRequestElements.connect(this, [this]
+	_releaseContainers.clear();
+
+	Release::FindParameters params;
+	params.setClusters(_filters.getClusterIds());
+	params.setArtist(_artistId, {TrackArtistLinkType::ReleaseArtist}, {});
+	params.setSortMethod(ReleaseSortMethod::DateDesc);
+
+	const auto releases {Release::find(LmsApp->getDbSession(), params)};
+	if (!releases.results.empty())
 	{
-		addSomeReleases(*_releaseContainer, {TrackArtistLinkType::ReleaseArtist}, {});
-	});
+		// first pass: gather all ids and sort by type
+		for (const ReleaseId releaseId : releases.results)
+		{
+			const Database::Release::pointer release {Database::Release::find(LmsApp->getDbSession(), releaseId)};
 
-	const bool added {addSomeReleases(*_releaseContainer, {TrackArtistLinkType::ReleaseArtist}, {})};
-	setCondition("if-has-releases", added);
+			ReleaseType releaseType {release->getPrimaryType(), release->getSecondaryTypes()};
+			_releaseContainers[releaseType].releases.push_back(releaseId);
+		}
 
-	return added;
+		// second pass: construct widgets
+		Wt::WContainerWidget* releaseContainers {bindNew<Wt::WContainerWidget>("release-containers")};
+		for (auto& [releaseType, releases] : _releaseContainers)
+		{
+			Wt::WTemplate* releaseContainer {releaseContainers->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artist.template.release-container"))};
+
+			if (releaseType.primaryType)
+				releaseContainer->bindString("release-type", ReleaseHelpers::buildReleaseTypeString(*releaseType.primaryType, releaseType.secondaryTypes));
+			else
+				releaseContainer->bindString("release-type", Wt::WString::tr("Lms.Explore.releases")); // fallback when not tagged with MB
+
+			releases.container = releaseContainer->bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
+			releases.container->onRequestElements.connect(this, [this, &releases]
+			{
+				addSomeReleases(releases);
+			});
+			releases.container->setHasMore(true);
+		}
+	}
+	else
+	{
+		bindEmpty("release-containers");
+	}
 }
 
-bool
+void
 Artist::refreshAppearsOnReleases()
 {
-	const EnumSet<TrackArtistLinkType> types
+	constexpr EnumSet<TrackArtistLinkType> types
 	{
 		TrackArtistLinkType::Artist,
 		TrackArtistLinkType::Arranger,
@@ -216,18 +258,33 @@ Artist::refreshAppearsOnReleases()
 		TrackArtistLinkType::Writer,
 	};
 
-	_appearsOnReleaseContainer = bindNew<InfiniteScrollingContainer>("appears-on-releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
-	_appearsOnReleaseContainer->onRequestElements.connect(this, [=]
-	{
-		addSomeReleases(*_appearsOnReleaseContainer, types, {TrackArtistLinkType::ReleaseArtist});
-	});
+	_appearsOnReleaseContainer = {};
 
-	const bool added {addSomeReleases(*_appearsOnReleaseContainer, types, {TrackArtistLinkType::ReleaseArtist})};
-	setCondition("if-has-appears-on-releases", added);
-	return added;
+	Release::FindParameters params;
+	params.setClusters(_filters.getClusterIds());
+	params.setArtist(_artistId, types, {TrackArtistLinkType::ReleaseArtist});
+	params.setSortMethod(ReleaseSortMethod::DateDesc);
+
+	const auto releases {Release::find(LmsApp->getDbSession(), params)};
+	if (!releases.results.empty())
+	{
+		Wt::WTemplate* releaseContainer  {bindNew<Wt::WTemplate>("appears-on-releases", Wt::WString::tr("Lms.Explore.Artist.template.release-container"))};
+		releaseContainer->bindString("release-type", Wt::WString::tr("Lms.Explore.Artist.appears-on"));
+		_appearsOnReleaseContainer.releases = releases.results;
+		_appearsOnReleaseContainer.container = releaseContainer->bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
+		_appearsOnReleaseContainer.container->onRequestElements.connect(this, [this, &releases]
+		{
+			addSomeReleases(_appearsOnReleaseContainer);
+		});
+		_appearsOnReleaseContainer.container->setHasMore(true);
+	}
+	else
+	{
+		bindEmpty("appears-on-releases");
+	}
 }
 
-bool
+void
 Artist::refreshNonReleaseTracks()
 {
 	setCondition("if-has-non-release-tracks", true);
@@ -239,7 +296,6 @@ Artist::refreshNonReleaseTracks()
 
 	const bool added {addSomeNonReleaseTracks()};
 	setCondition("if-has-non-release-tracks", added);
-	return added;
 }
 
 void
@@ -272,35 +328,24 @@ Artist::refreshLinks(const Database::Artist::pointer& artist)
 	}
 }
 
-bool
-Artist::addSomeReleases(InfiniteScrollingContainer& releaseContainer, EnumSet<Database::TrackArtistLinkType> linkTypes, EnumSet<Database::TrackArtistLinkType> excludedLinkTypes)
+void
+Artist::addSomeReleases(ReleaseContainer& releaseContainer)
 {
-	bool areArtistsAdded{};
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-	const Database::Artist::pointer artist {Database::Artist::find(LmsApp->getDbSession(), _artistId)};
-	if (!artist)
-		return areArtistsAdded;
-
-	const Range range {static_cast<std::size_t>(releaseContainer.getCount()), _releasesBatchSize};
-
-	Release::FindParameters params;
-	params.setClusters(_filters.getClusterIds());
-	params.setArtist(_artistId, linkTypes, excludedLinkTypes);
-	params.setRange(range);
-	params.setSortMethod(ReleaseSortMethod::DateDesc);
-
-	const auto releases {Release::find(LmsApp->getDbSession(), params)};
-	for (const ReleaseId releaseId : releases.results)
+	if (const Database::Artist::pointer artist {Database::Artist::find(LmsApp->getDbSession(), _artistId)})
 	{
-		const Database::Release::pointer release {Database::Release::find(LmsApp->getDbSession(), releaseId)};
-		releaseContainer.add(ReleaseListHelpers::createEntryForArtist(release, artist));
-		areArtistsAdded = true;
+		for (std::size_t i {static_cast<std::size_t>(releaseContainer.container->getCount())}; i < releaseContainer.releases.size(); ++i)
+		{
+			const Database::Release::pointer release {Database::Release::find(LmsApp->getDbSession(), releaseContainer.releases[i])};
+			releaseContainer.container->add(ReleaseListHelpers::createEntryForArtist(release, artist));
+		}
+		releaseContainer.container->setHasMore(releaseContainer.container->getCount() < releaseContainer.releases.size());
 	}
-
-	releaseContainer.setHasMore(releases.moreResults);
-
-	return areArtistsAdded;
+	else
+	{
+		releaseContainer.container->setHasMore(false);
+	}
 }
 
 bool

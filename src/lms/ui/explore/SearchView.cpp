@@ -28,7 +28,7 @@
 #include "ArtistListHelpers.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
-#include "ReleaseListHelpers.hpp"
+#include "ReleaseHelpers.hpp"
 #include "TrackListHelpers.hpp"
 
 using namespace Database;

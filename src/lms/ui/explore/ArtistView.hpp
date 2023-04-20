@@ -19,8 +19,10 @@
 
 #pragma once
 
+#include <map>
 #include "services/database/ArtistId.hpp"
 #include "services/database/Object.hpp"
+#include "services/database/ReleaseId.hpp"
 #include "services/database/Types.hpp"
 #include "utils/EnumSet.hpp"
 #include "common/Template.hpp"
@@ -44,13 +46,14 @@ namespace UserInterface
 
 		private:
 			void refreshView();
-			bool refreshReleases();
-			bool refreshAppearsOnReleases();
-			bool refreshNonReleaseTracks();
+			void refreshReleases();
+			void refreshAppearsOnReleases();
+			void refreshNonReleaseTracks();
 			void refreshSimilarArtists(const std::vector<Database::ArtistId>& similarArtistsId);
 			void refreshLinks(const Database::ObjectPtr<Database::Artist>& artist);
 
-			bool addSomeReleases(InfiniteScrollingContainer& container, EnumSet<Database::TrackArtistLinkType> linkTypes, EnumSet<Database::TrackArtistLinkType> excludedLinkTypes);
+			struct ReleaseContainer;
+			void addSomeReleases(ReleaseContainer& releaseContainer);
 			bool addSomeNonReleaseTracks();
 			static constexpr std::size_t _releasesBatchSize {6};
 			static constexpr std::size_t _tracksBatchSize {6};
@@ -58,8 +61,22 @@ namespace UserInterface
 
 			Filters&					_filters;
 			PlayQueueController&		_playQueueController;
-			InfiniteScrollingContainer* _releaseContainer {};
-			InfiniteScrollingContainer* _appearsOnReleaseContainer {};
+
+			struct ReleaseType
+			{
+				std::optional<Database::ReleaseTypePrimary> primaryType;
+				EnumSet<Database::ReleaseTypeSecondary> secondaryTypes;
+
+				bool operator<(const ReleaseType& other) const;
+			};
+
+			struct ReleaseContainer
+			{
+				InfiniteScrollingContainer* container {};
+				std::vector<Database::ReleaseId> releases;
+			};
+			std::map<ReleaseType, ReleaseContainer> _releaseContainers;
+			ReleaseContainer			_appearsOnReleaseContainer {};
 			InfiniteScrollingContainer* _trackContainer {};
 			Database::ArtistId			_artistId {};
 	};

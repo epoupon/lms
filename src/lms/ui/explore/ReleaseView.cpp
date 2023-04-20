@@ -40,7 +40,7 @@
 #include "resource/DownloadResource.hpp"
 #include "explore/Filters.hpp"
 #include "explore/PlayQueueController.hpp"
-#include "explore/ReleaseListHelpers.hpp"
+#include "explore/ReleaseHelpers.hpp"
 #include "explore/TrackListHelpers.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
@@ -51,43 +51,6 @@
 using namespace Database;
 
 namespace UserInterface {
-
-Wt::WString
-buildReleaseTypeString(ReleaseTypePrimary primaryType, EnumSet<ReleaseTypeSecondary> secondaryTypes)
-{
-	Wt::WString res;
-
-	switch (primaryType)
-	{
-		case ReleaseTypePrimary::Album:			res = Wt::WString::tr("Lms.Explore.Release.type-primary-album"); break;
-		case ReleaseTypePrimary::Broadcast:		res = Wt::WString::tr("Lms.Explore.Release.type-primary-broadcast"); break;
-		case ReleaseTypePrimary::EP:			res = Wt::WString::tr("Lms.Explore.Release.type-primary-ep"); break;
-		case ReleaseTypePrimary::Single:		res = Wt::WString::tr("Lms.Explore.Release.type-primary-single"); break;
-		case ReleaseTypePrimary::Other:			res = Wt::WString::tr("Lms.Explore.Release.type-primary-other"); break;
-	}
-
-	for (ReleaseTypeSecondary secondaryType : secondaryTypes)
-	{
-		res += Wt::WString {" · "};
-
-		switch (secondaryType)
-		{
-			case ReleaseTypeSecondary::Compilation:		res += Wt::WString::tr("Lms.Explore.Release.type-secondary-compilation"); break;
-			case ReleaseTypeSecondary::Spokenword:		res += Wt::WString::tr("Lms.Explore.Release.type-secondary-spokenword"); break;
-			case ReleaseTypeSecondary::Soundtrack:		res += Wt::WString::tr("Lms.Explore.Release.type-secondary-soundtrack"); break;
-			case ReleaseTypeSecondary::Interview: 		res += Wt::WString::tr("Lms.Explore.Release.type-secondary-interview"); break;
-			case ReleaseTypeSecondary::Audiobook: 		res += Wt::WString::tr("Lms.Explore.Release.type-secondary-audiobook"); break;
-			case ReleaseTypeSecondary::AudioDrama: 		res += Wt::WString::tr("Lms.Explore.Release.type-secondary-audiodrama"); break;
-			case ReleaseTypeSecondary::Live: 			res += Wt::WString::tr("Lms.Explore.Release.type-secondary-live"); break;
-			case ReleaseTypeSecondary::Remix: 			res += Wt::WString::tr("Lms.Explore.Release.type-secondary-remix"); break;
-			case ReleaseTypeSecondary::DJMix: 			res += Wt::WString::tr("Lms.Explore.Release.type-secondary-djmix"); break;
-			case ReleaseTypeSecondary::Mixtape_Street: 	res += Wt::WString::tr("Lms.Explore.Release.type-secondary-mixtape-street"); break;
-			case ReleaseTypeSecondary::Demo: 			res += Wt::WString::tr("Lms.Explore.Release.type-secondary-demo"); break;
-		}
-	}
-
-	return res;
-}
 
 void
 showReleaseInfoModal(Database::ReleaseId releaseId)
@@ -105,7 +68,7 @@ showReleaseInfoModal(Database::ReleaseId releaseId)
 	if (auto primaryReleaseType {release->getPrimaryType()})
 	{
 		releaseInfo->setCondition("if-has-release-type", true);
-		releaseInfo->bindString("release-type", buildReleaseTypeString(*primaryReleaseType, release->getSecondaryTypes()));
+		releaseInfo->bindString("release-type", ReleaseHelpers::buildReleaseTypeString(*primaryReleaseType, release->getSecondaryTypes()));
 	}
 
 	std::map<Wt::WString, std::set<ArtistId>> artistMap;
