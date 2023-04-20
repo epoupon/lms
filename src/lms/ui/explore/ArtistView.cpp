@@ -228,7 +228,7 @@ Artist::refreshReleases()
 				releaseContainer->bindString("release-type", Wt::WString::tr("Lms.Explore.releases")); // fallback when not tagged with MB
 
 			releases.container = releaseContainer->bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
-			releases.container->onRequestElements.connect(this, [this, &releases]
+			releases.container->onRequestElements.connect(this, [this, &releases = releases]
 			{
 				addSomeReleases(releases);
 			});
