@@ -20,6 +20,7 @@
 #pragma once
 
 #include <map>
+#include <optional>
 #include "services/database/ArtistId.hpp"
 #include "services/database/Object.hpp"
 #include "services/database/ReleaseId.hpp"
