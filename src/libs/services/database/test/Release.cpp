@@ -507,3 +507,26 @@ TEST_F(DatabaseFixture, Release_getDiscCount)
 		EXPECT_EQ(release.get()->getDiscCount(), 2);
 	}
 }
+
+TEST_F(DatabaseFixture, Release_releaseType)
+{
+	ScopedRelease release {session, "MyRelease"};
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		EXPECT_EQ(release.get()->getPrimaryType(), std::nullopt);
+		EXPECT_EQ(release.get()->getSecondaryTypes(), EnumSet<ReleaseTypeSecondary> {});
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+		release.get().modify()->setPrimaryType({ ReleaseTypePrimary::Album });
+		release.get().modify()->setSecondaryTypes({ ReleaseTypeSecondary::Compilation });
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		EXPECT_EQ(release.get()->getPrimaryType(), ReleaseTypePrimary::Album);
+		EXPECT_TRUE(release.get()->getSecondaryTypes().contains(ReleaseTypeSecondary::Compilation));
+	}
+}

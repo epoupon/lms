@@ -20,14 +20,8 @@
 			</ul>
 		</div>
 	</div>
-	${<if-has-releases>}
-	${<if-release-title>}<h3>${tr:Lms.Explore.releases}</h3>${</if-release-title>}
-	${releases class="mb-3"}
-	${</if-has-releases>}
-	${<if-has-appears-on-releases>}
-	<h3>${tr:Lms.Explore.Artist.appears-on}</h3>
-	${appears-on-releases class="mb-3"}
-	${</if-has-appears-on-releases>}
+	${release-containers}
+	${appears-on-releases}
 	${<if-has-non-release-tracks>}
 	<h3>${tr:Lms.Explore.tracks}</h3>
 	${tracks class="mb-3"}
@@ -36,6 +30,13 @@
 	<h3>${tr:Lms.Explore.Artist.similar-artists}</h3>
 	${similar-artists class="d-grid gap-3"}
 	${</if-has-similar-artists>}
+</message>
+
+<message id="Lms.Explore.Artist.template.release-container">
+	<div class="mb-3">
+		<h3>${release-type}</h3>
+		${releases}
+	</div>
 </message>
 
 </messages>

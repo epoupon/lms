@@ -31,9 +31,11 @@ class EnumSet
 	static_assert(std::is_enum<T>::value);
 	static_assert(std::is_same<underlying_type, std::uint64_t>::value || std::is_same<underlying_type, std::uint32_t>::value);
 
-	using index_type = std::uint_fast8_t;
+	using IndexType = std::uint_fast8_t;
 
 	public:
+		using ValueType = underlying_type;
+
 		EnumSet() = default;
 		constexpr EnumSet(std::initializer_list<T> values)
 		{
@@ -44,6 +46,13 @@ class EnumSet
 		template <typename It>
 		constexpr EnumSet(It begin, It end)
 		{
+			assign(begin, end);
+		}
+
+		template <typename It>
+		constexpr void assign(It begin, It end)
+		{
+			clear();
 			for (It it {begin}; it != end; ++it)
 				insert(*it);
 		}
@@ -69,6 +78,11 @@ class EnumSet
 		{
 			assert(static_cast<std::size_t>(value) < sizeof(_bitfield) * 8);
 			return _bitfield & (underlying_type{ 1 } << static_cast<underlying_type>(value));
+		}
+
+		constexpr void clear()
+		{
+			_bitfield = 0;
 		}
 
 		class iterator
@@ -100,14 +114,14 @@ class EnumSet
 			private:
 				friend class EnumSet;
 
-				constexpr iterator(const EnumSet& _container, index_type _index)
+				constexpr iterator(const EnumSet& _container, IndexType _index)
 					: _container {_container}
 					, _index {_index}
 				{
 				}
 
 				const EnumSet& _container;
-				index_type _index;
+				IndexType _index;
 		};
 
 		constexpr iterator begin() const
@@ -120,25 +134,45 @@ class EnumSet
 			return iterator {*this, npos};
 		}
 
-	private:
-		static_assert(std::numeric_limits<index_type>::max() >= sizeof(underlying_type) * 8);
-		enum : index_type { npos = sizeof(underlying_type) * 8 };
+		constexpr underlying_type getBitfield() const
+		{
+			return _bitfield;
+		}
 
-		constexpr index_type getFirstBitSetIndex(index_type start = {}) const
+		constexpr void setBitfield(underlying_type bitfield)
+		{
+			_bitfield = bitfield;
+		}
+
+		constexpr bool operator==(const EnumSet other) const
+		{
+			return _bitfield == other._bitfield;
+		}
+
+		constexpr bool operator!=(const EnumSet other) const
+		{
+			return _bitfield != other._bitfield;
+		}
+
+	private:
+		static_assert(std::numeric_limits<IndexType>::max() >= sizeof(underlying_type) * 8);
+		enum : IndexType { npos = sizeof(underlying_type) * 8 };
+
+		constexpr IndexType getFirstBitSetIndex(IndexType start = {}) const
 		{
 			assert(start < npos);
 
 			// return npos if no bit found
-			index_type res {countTrailingZero(_bitfield >> start)};
+			IndexType res {countTrailingZero(_bitfield >> start)};
 			if (res == npos)
 				return res;
 
 			return res + start;
 		}
 
-		static constexpr index_type countTrailingZero(underlying_type bitField)
+		static constexpr IndexType countTrailingZero(underlying_type bitField)
 		{
-			index_type res {};
+			IndexType res {};
 
 			while (res < (sizeof(underlying_type) * 8) && (bitField & 1) == 0)
 			{
@@ -154,5 +188,3 @@ class EnumSet
 
 		underlying_type _bitfield{};
 };
-
-

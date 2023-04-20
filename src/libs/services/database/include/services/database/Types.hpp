@@ -191,5 +191,30 @@ namespace Database
 		Playlist,  // user controlled playlists
 		Internal,  // internal usage (current playqueue, history, ...)
 	};
+
+	// as defined in https://musicbrainz.org/doc/Release_Group/Type
+	enum class ReleaseTypePrimary
+	{
+		Album,
+		Single,
+		EP,
+		Broadcast,
+		Other,
+	};
+
+	enum class ReleaseTypeSecondary
+	{
+		Compilation,
+		Soundtrack,
+		Spokenword,
+		Interview,
+		Audiobook,
+		AudioDrama,
+		Live,
+		Remix,
+		DJMix,
+		Mixtape_Street,
+		Demo,
+	};
 }
 

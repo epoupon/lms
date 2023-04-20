@@ -1,8 +1,9 @@
 include(GoogleTest)
 
 add_executable(test-utils
-	String.cpp
+	EnumSet.cpp
 	RecursiveSharedMutex.cpp
+	String.cpp
 	Utils.cpp
 	)
 

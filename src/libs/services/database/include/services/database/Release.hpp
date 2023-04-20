@@ -61,6 +61,8 @@ class Release : public Object<Release, ReleaseId>
 			ArtistId						artist;						// only releases that involved this user
 			EnumSet<TrackArtistLinkType>	trackArtistLinkTypes; 			//    and for these link types
 			EnumSet<TrackArtistLinkType>	excludedTrackArtistLinkTypes; 	//    but not for these link types
+			std::optional<ReleaseTypePrimary> primaryType;				// if, set, matching this primary type
+			EnumSet<ReleaseTypeSecondary>	secondaryTypes;				// Matching all this (if any)
 
 			FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
 			FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
@@ -109,11 +111,15 @@ class Release : public Object<Release, ReleaseId>
 		std::size_t					getDiscCount() const; // may not be total disc (if incomplete for example)
 		std::chrono::milliseconds	getDuration() const;
 		Wt::WDateTime				getLastWritten() const;
+		std::optional<ReleaseTypePrimary> getPrimaryType() const { return _primaryType; }
+		EnumSet<ReleaseTypeSecondary> getSecondaryTypes() const { return _secondaryTypes; }
 
 		// Setters
 		void setName(std::string_view name)							{ _name = name; }
 		void setMBID(const std::optional<UUID>& mbid)				{ _MBID = mbid ? mbid->getAsString() : ""; }
 		void setTotalDisc(std::optional<int> totalDisc)				{ _totalDisc = totalDisc; }
+		void setPrimaryType(std::optional<ReleaseTypePrimary> type)	{ _primaryType = type; }
+		void setSecondaryTypes(EnumSet<ReleaseTypeSecondary> types)	{ _secondaryTypes = types; }
 
 		// Get the artists of this release
 		std::vector<ObjectPtr<Artist>>	getArtists(TrackArtistLinkType type = TrackArtistLinkType::Artist) const;
@@ -128,6 +134,8 @@ class Release : public Object<Release, ReleaseId>
 				Wt::Dbo::field(a, _name,				"name");
 				Wt::Dbo::field(a, _MBID,				"mbid");
 				Wt::Dbo::field(a, _totalDisc,			"total_disc");
+				Wt::Dbo::field(a, _primaryType,			"primary_type");
+				Wt::Dbo::field(a, _secondaryTypes,		"secondary_types");
 
 				Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "release");
 			}
@@ -139,9 +147,11 @@ class Release : public Object<Release, ReleaseId>
 
 		static constexpr std::size_t _maxNameLength {128};
 
-		std::string				_name;
-		std::string				_MBID;
-		std::optional<int>		_totalDisc {};
+		std::string							_name;
+		std::string							_MBID;
+		std::optional<int>					_totalDisc {};
+		std::optional<ReleaseTypePrimary>	_primaryType;
+		EnumSet<ReleaseTypeSecondary>		_secondaryTypes;
 
 		Wt::Dbo::collection<Wt::Dbo::ptr<Track>>	_tracks; // Tracks in the release
 };

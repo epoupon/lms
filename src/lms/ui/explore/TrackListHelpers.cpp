@@ -60,7 +60,6 @@ namespace UserInterface::TrackListHelpers
 		Wt::WWidget* trackInfoPtr {trackInfo.get()};
 		trackInfo->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-		Wt::WContainerWidget* artistTable {trackInfo->bindNew<Wt::WContainerWidget>("artist-table")};
 		std::map<Wt::WString, std::set<ArtistId>> artistMap;
 
 		auto addArtists = [&](TrackArtistLinkType linkType, const char* type)
@@ -111,13 +110,19 @@ namespace UserInterface::TrackListHelpers
 			artistMap.erase(itRolelessPerformers);
 		}
 
-		for (const auto& [role, artistIds] : artistMap)
+		if (!artistMap.empty())
 		{
-			std::unique_ptr<Wt::WContainerWidget> artistContainer {Utils::createArtistContainer(std::vector (std::cbegin(artistIds), std::cend(artistIds)))};
-			auto artistsEntry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.template.info.artists"))};
-			artistsEntry->bindString("type", role);
-			artistsEntry->bindWidget("artist-container", std::move(artistContainer));
-			artistTable->addWidget(std::move(artistsEntry));
+			trackInfo->setCondition("if-has-artist", true);
+			Wt::WContainerWidget* artistTable {trackInfo->bindNew<Wt::WContainerWidget>("artist-table")};
+
+			for (const auto& [role, artistIds] : artistMap)
+			{
+				std::unique_ptr<Wt::WContainerWidget> artistContainer {Utils::createArtistContainer(std::vector (std::cbegin(artistIds), std::cend(artistIds)))};
+				auto artistsEntry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.template.info.artists"))};
+				artistsEntry->bindString("type", role);
+				artistsEntry->bindWidget("artist-container", std::move(artistContainer));
+				artistTable->addWidget(std::move(artistsEntry));
+			}
 		}
 
 		if (const auto audioFile {Av::parseAudioFile(track->getPath())})

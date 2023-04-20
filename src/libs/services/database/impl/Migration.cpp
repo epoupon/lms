@@ -653,6 +653,18 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
 		ScanSettings::get(session).modify()->incScanVersion();
 	}
 
+	static
+	void
+	migrateFromV39(Session& session)
+	{
+		// add release type
+		session.getDboSession().execute("ALTER TABLE release ADD primary_type INTEGER");
+		session.getDboSession().execute("ALTER TABLE release ADD secondary_types INTEGER");
+
+		// Just increment the scan version of the settings to make the next scheduled scan rescan everything
+		ScanSettings::get(session).modify()->incScanVersion();
+	}
+
 	void
 	doDbMigration(Session& session)
 	{
@@ -698,6 +710,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
 			{36, migrateFromV36},
 			{37, migrateFromV37},
 			{38, migrateFromV38},
+			{39, migrateFromV39},
 		};
 
 		while (1)

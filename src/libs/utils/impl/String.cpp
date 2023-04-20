@@ -64,6 +64,13 @@ readAs(std::string_view str)
 }
 
 template<>
+std::optional<std::string_view>
+readAs(std::string_view str)
+{
+	return str;
+}
+
+template<>
 std::optional<bool>
 readAs(std::string_view str)
 {
