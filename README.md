@@ -11,6 +11,7 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
 * Audio transcoding for maximum interoperability and reduced bandwith requirements
 * Multi-value tags: `genre`, `albumgenre`, `mood`, `albummood`, `albumgrouping`, ...
 * Artist relationships: `composer`, `conductor`, `lyricist`, `mixer`, `performer`, `producer`, `remixer`
+* [Release types](https://musicbrainz.org/doc/Release_Group/Type): `album`, `single`, `EP`, `compilation`, `live`, ...
 * [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) support to handle duplicated artist and release names
 * [ListenBrainz](https://listenbrainz.org) support for:
   * Scrobbling and synchronizing listens
