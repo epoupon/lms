@@ -28,6 +28,7 @@
 #include "utils/Logger.hpp"
 #include "SqlQuery.hpp"
 #include "Utils.hpp"
+#include "EnumSetTraits.hpp"
 #include "IdTypeTraits.hpp"
 
 namespace Database

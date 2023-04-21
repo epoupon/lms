@@ -29,6 +29,7 @@
 #include <vector>
 
 #include <Wt/WDate.h>
+#include "utils/EnumSet.hpp"
 #include "utils/UUID.hpp"
 
 namespace MetaData
@@ -51,10 +52,37 @@ namespace MetaData
 
 	struct Release
 	{
+		// see https://musicbrainz.org/doc/Release_Group/Type
+		enum class PrimaryType
+		{
+			Album,
+			Single,
+			EP,
+			Broadcast,
+			Other
+		};
+
+		enum class SecondaryType
+		{
+			Compilation,
+			Soundtrack,
+			Spokenword,
+			Interview,
+			Audiobook,
+			AudioDrama,
+			Live,
+			Remix,
+			DJMix,
+			Mixtape_Street,
+			Demo,
+		};
+
 		std::optional<UUID> 		mbid;
 		std::string					name;
 		std::vector<Artist>			artists;
 		std::optional<std::size_t>	mediumCount;
+		std::optional<PrimaryType>	primaryType;
+		EnumSet<SecondaryType>		secondaryTypes;
 	};
 
 	struct Medium

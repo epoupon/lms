@@ -197,6 +197,23 @@
 <message id="Lms.Explore.Release.similar-releases">Similar albums</message>
 <message id="Lms.Explore.Release.copyright">Copyright</message>
 <message id="Lms.Explore.Release.disc">Disc {1}</message>
+<message id="Lms.Explore.Release.type">Type</message>
+<message id="Lms.Explore.Release.type-primary-album">Album</message>
+<message id="Lms.Explore.Release.type-primary-broadcast">Broadcast</message>
+<message id="Lms.Explore.Release.type-primary-ep">EP</message>
+<message id="Lms.Explore.Release.type-primary-other">Other</message>
+<message id="Lms.Explore.Release.type-primary-single">Single</message>
+<message id="Lms.Explore.Release.type-secondary-audiobook">Audiobook</message>
+<message id="Lms.Explore.Release.type-secondary-audiodrama">Audio drama</message>
+<message id="Lms.Explore.Release.type-secondary-compilation">Compilation</message>
+<message id="Lms.Explore.Release.type-secondary-demo">Demo</message>
+<message id="Lms.Explore.Release.type-secondary-djmix">DJ-mix</message>
+<message id="Lms.Explore.Release.type-secondary-interview">Interview</message>
+<message id="Lms.Explore.Release.type-secondary-live">Live</message>
+<message id="Lms.Explore.Release.type-secondary-mixtape-street">Mixtape/Street</message>
+<message id="Lms.Explore.Release.type-secondary-remix">Remix</message>
+<message id="Lms.Explore.Release.type-secondary-soundtrack">Soundtrack</message>
+<message id="Lms.Explore.Release.type-secondary-spokenword">Spokenword</message>
 
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">Delete playlist?</message>

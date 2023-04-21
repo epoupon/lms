@@ -40,6 +40,7 @@
 #include "services/database/TrackList.hpp"
 #include "services/database/TrackFeatures.hpp"
 #include "services/database/User.hpp"
+#include "EnumSetTraits.hpp"
 #include "Migration.hpp"
 
 namespace Database

@@ -119,3 +119,50 @@ namespace MetaData::Utils
 	}
 }
 
+namespace StringUtils
+{
+	static bool iequals(std::string_view a, std::string_view b)
+	{
+		return std::equal(std::cbegin(a), std::cend(a),
+				std::cbegin(b), std::cend(b),
+				[](char a, char b) { return tolower(a) == tolower(b);}
+				);
+	}
+
+	template<>
+	std::optional<MetaData::Release::PrimaryType> readAs(std::string_view str)
+	{
+		str = stringTrim(str);
+
+		if (iequals(str, "album"))
+			return MetaData::Release::PrimaryType::Album;
+		else if (iequals(str, "single"))
+			return MetaData::Release::PrimaryType::Single;
+		else if (iequals(str, "EP"))
+			return MetaData::Release::PrimaryType::EP;
+		else if (iequals(str, "broadcast"))
+			return MetaData::Release::PrimaryType::Broadcast;
+		else if (iequals(str, "other"))
+			return MetaData::Release::PrimaryType::Other;
+
+		return std::nullopt;
+	}
+
+	template<>
+	std::optional<MetaData::Release::SecondaryType> readAs(std::string_view str)
+	{
+		str = stringTrim(str);
+
+		if (iequals(str, "compilation"))
+			return MetaData::Release::SecondaryType::Compilation;
+		else if (iequals(str, "soundtrack"))
+			return MetaData::Release::SecondaryType::Soundtrack;
+		else if (iequals(str, "live"))
+			return MetaData::Release::SecondaryType::Live;
+		else if (iequals(str, "demo"))
+			return MetaData::Release::SecondaryType::Demo;
+
+		return std::nullopt;
+	}
+}
+

@@ -90,6 +90,11 @@ readAs(std::string_view str);
 
 template<>
 [[nodiscard]]
+std::optional<std::string_view>
+readAs(std::string_view str);
+
+template<>
+[[nodiscard]]
 std::optional<bool>
 readAs(std::string_view str);
 

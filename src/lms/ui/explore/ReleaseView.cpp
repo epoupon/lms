@@ -40,7 +40,7 @@
 #include "resource/DownloadResource.hpp"
 #include "explore/Filters.hpp"
 #include "explore/PlayQueueController.hpp"
-#include "explore/ReleaseListHelpers.hpp"
+#include "explore/ReleaseHelpers.hpp"
 #include "explore/TrackListHelpers.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
@@ -65,7 +65,12 @@ showReleaseInfoModal(Database::ReleaseId releaseId)
 	Wt::WWidget* releaseInfoPtr {releaseInfo.get()};
 	releaseInfo->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	Wt::WContainerWidget* artistTable {releaseInfo->bindNew<Wt::WContainerWidget>("artist-table")};
+	if (auto primaryReleaseType {release->getPrimaryType()})
+	{
+		releaseInfo->setCondition("if-has-release-type", true);
+		releaseInfo->bindString("release-type", ReleaseHelpers::buildReleaseTypeString(*primaryReleaseType, release->getSecondaryTypes()));
+	}
+
 	std::map<Wt::WString, std::set<ArtistId>> artistMap;
 
 	auto addArtists = [&](TrackArtistLinkType linkType, const char* type)
@@ -116,13 +121,19 @@ showReleaseInfoModal(Database::ReleaseId releaseId)
 		artistMap.erase(itRolelessPerformers);
 	}
 
-	for (const auto& [role, artistIds] : artistMap)
+	if (!artistMap.empty())
 	{
-		std::unique_ptr<Wt::WContainerWidget> artistContainer {Utils::createArtistContainer(std::vector (std::cbegin(artistIds), std::cend(artistIds)))};
-		auto artistsEntry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.template.info.artists"))};
-		artistsEntry->bindString("type", role);
-		artistsEntry->bindWidget("artist-container", std::move(artistContainer));
-		artistTable->addWidget(std::move(artistsEntry));
+		releaseInfo->setCondition("if-has-artist", true);
+		Wt::WContainerWidget* artistTable {releaseInfo->bindNew<Wt::WContainerWidget>("artist-table")};
+
+		for (const auto& [role, artistIds] : artistMap)
+		{
+			std::unique_ptr<Wt::WContainerWidget> artistContainer {Utils::createArtistContainer(std::vector (std::cbegin(artistIds), std::cend(artistIds)))};
+			auto artistsEntry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.template.info.artists"))};
+			artistsEntry->bindString("type", role);
+			artistsEntry->bindWidget("artist-container", std::move(artistContainer));
+			artistTable->addWidget(std::move(artistsEntry));
+		}
 	}
 
 	// TODO: save in DB and mean all this

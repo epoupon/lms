@@ -100,7 +100,9 @@
 							</div>
 						</div>
 						${</if-has-clusters>}
+						${<if-has-artist>}
 						${artist-table class="d-grid gap-2"}
+						${</if-has-artist>}
 						<div class="row align-items-center">
 							<div class="col-4">
 								${tr:Lms.Explore.duration}

@@ -28,7 +28,7 @@
 #include "common/Template.hpp"
 #include "explore/Filters.hpp"
 #include "explore/PlayQueueController.hpp"
-#include "explore/ReleaseListHelpers.hpp"
+#include "explore/ReleaseHelpers.hpp"
 #include "LmsApplication.hpp"
 
 using namespace Database;

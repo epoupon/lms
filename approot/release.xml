@@ -103,7 +103,19 @@
 				</div>
 				<div class="modal-body">
 					<div class="container-fluid d-grid gap-2">
+						${<if-has-release-type>}
+						<div class="row align-items-center">
+							<div class="col-4">
+								${tr:Lms.Explore.Release.type}
+							</div>
+							<div class="col">
+								${release-type}
+							</div>
+						</div>
+						${</if-has-release-type>}
+						${<if-has-artist>}
 						${artist-table class="d-grid gap-2"}
+						${</if-has-artist>}
 						${<if-has-codec>}
 						<div class="row align-items-center">
 							<div class="col-4">
