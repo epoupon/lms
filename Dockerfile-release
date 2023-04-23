@@ -30,7 +30,10 @@ ARG	BUILD_PACKAGES=" \
 	boost-dev \
 	libconfig-dev \
 	taglib-dev \
-	gtest-dev"
+	gtest-dev \
+	eigen-dev \
+	yaml-dev \
+	python3"
 
 RUN	apk add --no-cache --update ${BUILD_PACKAGES}
 
@@ -72,7 +75,7 @@ RUN \
 	--enable-protocol=file,pipe \
 	--enable-filter=aresample \
 	--extra-libs=-ldl && \
-	make && \
+	make -j $(nproc) && \
 	make install && \
 	make distclean
 
@@ -86,7 +89,7 @@ RUN \
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
 	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF && \
-	make && \
+	make -j $(nproc) && \
 	make install
 
 # STB
@@ -98,12 +101,45 @@ RUN \
 	mkdir -p ${PREFIX}/include/stb && \
 	cp ./*.h ${PREFIX}/include/stb
 
+# libsamplerate
+ARG LIBSAMPLERATE_VERSION=0.2.2
+RUN \
+	DIR=/tmp/libsamplerate && mkdir -p ${DIR} && cd ${DIR} && \
+	curl -sLO https://github.com/libsndfile/libsamplerate/archive/${LIBSAMPLERATE_VERSION}.tar.gz && \
+	tar -x --strip-components=1 -f ${LIBSAMPLERATE_VERSION}.tar.gz
+
+RUN \
+	DIR=/tmp/libsamplerate/build && mkdir -p ${DIR} && cd ${DIR} && \
+	cmake /tmp/libsamplerate -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_PREFIX_PATH=${PREFIX} && \
+	make -j $(nproc) && \
+	make install
+
+# Essentia
+ARG ESSENTIA_VERSION=e422eb7681a9063d2681c3540d91add1119f21c0
+RUN \
+	DIR=/tmp/essentia && mkdir -p ${DIR} && cd ${DIR} && \
+	curl -sLO https://github.com/MTG/essentia/archive/${ESSENTIA_VERSION}.tar.gz && \
+	tar -x --strip-components=1 -f ${ESSENTIA_VERSION}.tar.gz
+
+RUN \
+	DIR=/tmp/essentia && mkdir -p ${DIR} && cd ${DIR} && \
+	chmod +x ./waf && \
+	PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" ./waf configure \
+		--mode=release \
+		--lightweight=libav,libsamplerate,taglib,yaml \
+		--ignore-algos=LPC,Spline,CubicSpline,NoveltyCurve,NoveltyCurveFixedBpmEstimator,SuperFluxNovelty,SuperFluxPeaks,VectorRealAccumulator,VectorRealToTensor,TensorToPool,TensorNormalize,NSGConstantQStreaming,NSGIConstantQ,PredominantPitchMelodia,PitchMelodia,MultiPitchMelodia,PitchContoursMonoMelody,PitchContourSegmentation,TonicIndianArtMusic,AudioWriter,MonoWriter,AudioOnsetsMarker,ChromaCrossSimilarity,CoverSongSimilarity,CrossSimilarityMatrix,FadeDetection,HarmonicMask,HarmonicModelAnal,HpsModelAnal,HprModelAnal,FreesoundExtractor \
+		--fft=KISS \
+		--with-example streaming_extractor_music \
+		--prefix=${PREFIX} && \
+	PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" ./waf -j $(nproc) && \
+	./waf install
+
 # LMS
 COPY . /tmp/lms/
 RUN \
 	DIR=/tmp/lms/build && mkdir -p ${DIR} && cd ${DIR} && \
 	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake /tmp/lms/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_PREFIX_PATH=${PREFIX} && \
-	LD_LIBRARY_PATH=${PREFIX}/lib VERBOSE=1 make && \
+	LD_LIBRARY_PATH=${PREFIX}/lib VERBOSE=1 make -j $(nproc) && \
 	LD_LIBRARY_PATH=${PREFIX}/lib make test && \
 	make install && \
 	mkdir -p ${PREFIX}/etc/ && \
@@ -112,7 +148,7 @@ RUN \
 # Now copy all the stuff installed in a new folder (/tmp/fakeroot/)
 RUN \
 	mkdir -p /tmp/fakeroot/bin && \
-	for bin in ${PREFIX}/bin/ffmpeg ${PREFIX}/bin/lms*; \
+	for bin in ${PREFIX}/bin/ffmpeg ${PREFIX}/bin/essentia_streaming_extractor_music ${PREFIX}/bin/lms*; \
 	do \
 		strip --strip-all $bin && \
 		cp $bin /tmp/fakeroot/bin/; \
@@ -150,7 +186,9 @@ ARG	RUNTIME_PACKAGES=" \
 	boost-system \
 	boost-thread \
 	libconfig++ \
-	taglib"
+	taglib \
+	eigen \
+	yaml"
 
 ARG	LMS_USER=lms
 ARG	LMS_GROUP=lms
