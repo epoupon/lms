@@ -272,7 +272,7 @@ Artist::refreshAppearsOnReleases()
 		releaseContainer->bindString("release-type", Wt::WString::tr("Lms.Explore.Artist.appears-on"));
 		_appearsOnReleaseContainer.releases = releases.results;
 		_appearsOnReleaseContainer.container = releaseContainer->bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
-		_appearsOnReleaseContainer.container->onRequestElements.connect(this, [this, &releases]
+		_appearsOnReleaseContainer.container->onRequestElements.connect(this, [this]
 		{
 			addSomeReleases(_appearsOnReleaseContainer);
 		});

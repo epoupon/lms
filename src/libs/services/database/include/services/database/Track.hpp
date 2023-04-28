@@ -56,7 +56,7 @@ class TrackArtistLink;
 class TrackStats;
 class User;
 
-class Track : public Object<Track, TrackId>
+class Track final : public Object<Track, TrackId>
 {
 	public:
 		struct FindParameters

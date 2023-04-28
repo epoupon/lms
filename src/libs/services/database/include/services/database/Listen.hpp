@@ -38,7 +38,7 @@ class Session;
 class Track;
 class User;
 
-class Listen : public Object<Listen, ListenId>
+class Listen final : public Object<Listen, ListenId>
 {
 	public:
 		Listen() = default;

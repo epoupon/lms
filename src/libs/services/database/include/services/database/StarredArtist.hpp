@@ -34,7 +34,7 @@ namespace Database
 	class Session;
 	class User;
 
-	class StarredArtist : public Object<StarredArtist, StarredArtistId>
+	class StarredArtist final : public Object<StarredArtist, StarredArtistId>
 	{
 		public:
 			StarredArtist() = default;

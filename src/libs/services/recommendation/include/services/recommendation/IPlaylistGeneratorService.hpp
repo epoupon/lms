@@ -35,6 +35,8 @@ namespace Recommendation
 	class IPlaylistGeneratorService
 	{
 		public:
+			virtual ~IPlaylistGeneratorService() = default;
+
 			// extend an existing playlist with similar tracks (but use playlist contraints)
 			virtual TrackContainer extendPlaylist(Database::TrackListId tracklistId, std::size_t maxCount) const = 0;
 	};

@@ -36,7 +36,7 @@ namespace Database {
 class AuthToken;
 class Session;
 
-class User : public Object<User, UserId>
+class User final : public Object<User, UserId>
 {
 	public:
 		struct PasswordHash

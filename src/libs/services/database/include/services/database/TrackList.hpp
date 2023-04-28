@@ -45,7 +45,7 @@ class Track;
 class TrackListEntry;
 class User;
 
-class TrackList : public Object<TrackList, TrackListId>
+class TrackList final : public Object<TrackList, TrackListId>
 {
 	public:
 		TrackList() = default;

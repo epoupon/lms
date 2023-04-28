@@ -44,7 +44,6 @@ namespace UserInterface {
 
 using namespace Database;
 
-
 class DatabaseSettingsModel : public Wt::WFormModel
 {
 	public:
@@ -69,7 +68,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 			auto dirValidator {createDirectoryValidator()};
 			dirValidator->setMandatory(true);
-			setValidator(MediaDirectoryField, move(dirValidator));
+			setValidator(MediaDirectoryField, std::move(dirValidator));
 
 			setValidator(UpdatePeriodField, createMandatoryValidator());
 			setValidator(UpdateStartTimeField, createMandatoryValidator());
