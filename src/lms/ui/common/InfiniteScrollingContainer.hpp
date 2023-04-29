@@ -46,6 +46,7 @@ namespace UserInterface
 			}
 
 			void remove(Wt::WWidget& widget);
+			void remove(std::size_t first, std::size_t last);
 
 			Wt::WWidget*				getWidget(std::size_t pos) const;
 			std::optional<std::size_t>	getIndexOf(Wt::WWidget& widget) const;

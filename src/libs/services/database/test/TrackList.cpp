@@ -479,3 +479,43 @@ TEST_F(DatabaseFixture, SingleTrackListSingleTrackWithCluster)
 		EXPECT_EQ(trackLists.results.front(), trackList1.getId());
 	}
 }
+
+TEST_F(DatabaseFixture, SingleTrackList_getEntries)
+{
+	ScopedUser user {session, "MyUser"};
+	ScopedTrackList trackList {session, "MyTrackList", TrackListType::Playlist, false, user.lockAndGet()};
+	ScopedTrack track1 {session, "MyTrack"};
+	ScopedTrack track2 {session, "MyTrack"};
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+		session.create<TrackListEntry>(track1.get(), trackList.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		auto entries {trackList.get()->getEntries()};
+		ASSERT_EQ(entries.size(), 1);
+		EXPECT_EQ(entries.front()->getTrack()->getId(), track1.getId());
+	}
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+		session.create<TrackListEntry>(track2.get(), trackList.get());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		auto entries {trackList.get()->getEntries()};
+		ASSERT_EQ(entries.size(), 2);
+		EXPECT_EQ(entries[0]->getTrack()->getId(), track1.getId());
+		EXPECT_EQ(entries[1]->getTrack()->getId(), track2.getId());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		auto entries {trackList.get()->getEntries(Range {1, 1})};
+		ASSERT_EQ(entries.size(), 1);
+		EXPECT_EQ(entries[0]->getTrack()->getId(), track2.getId());
+	}
+}

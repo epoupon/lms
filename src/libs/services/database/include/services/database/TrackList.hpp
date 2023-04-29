@@ -90,7 +90,7 @@ class TrackList final : public Object<TrackList, TrackListId>
 		bool										isEmpty() const;
 		std::size_t									getCount() const;
 		ObjectPtr<TrackListEntry>					getEntry(std::size_t pos) const;
-		std::vector<ObjectPtr<TrackListEntry>>		getEntries(std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {}) const;
+		std::vector<ObjectPtr<TrackListEntry>>		getEntries(std::optional<Range> range = {}) const;
 		ObjectPtr<TrackListEntry>					getEntryByTrackAndDateTime(ObjectPtr<Track> track, const Wt::WDateTime& dateTime) const;
 
 		std::vector<ObjectPtr<Artist>>				getArtists(const std::vector<ClusterId>& clusters, std::optional<TrackArtistLinkType> linkType, ArtistSortMethod sortMethod, std::optional<Range> range, bool& moreResults) const;
@@ -144,7 +144,7 @@ class TrackList final : public Object<TrackList, TrackListId>
 		Wt::Dbo::collection<Wt::Dbo::ptr<TrackListEntry>> _entries;
 };
 
-class TrackListEntry : public Object<TrackListEntry, TrackListEntryId>
+class TrackListEntry final : public Object<TrackListEntry, TrackListEntryId>
 {
 	public:
 		TrackListEntry() = default;

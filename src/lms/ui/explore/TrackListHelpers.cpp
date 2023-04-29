@@ -205,6 +205,11 @@ namespace UserInterface::TrackListHelpers
 		{
 			playQueueController.processCommand(PlayQueueController::Command::Play, {trackId});
 		});
+		entry->bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"))
+			->clicked().connect([=, &playQueueController]
+			{
+				playQueueController.processCommand(PlayQueueController::Command::PlayNext, {trackId});
+			});
 		entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
 			->clicked().connect([=, &playQueueController]
 			{

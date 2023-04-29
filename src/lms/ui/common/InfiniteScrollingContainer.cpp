@@ -65,6 +65,22 @@ namespace UserInterface
 		_elements->removeWidget(&widget);
 	}
 
+	void
+	InfiniteScrollingContainer::remove(std::size_t first, std::size_t last)
+	{
+		assert(last >= first);
+		assert(last < static_cast<std::size_t>(_elements->count()));
+
+		// remove from end as API is quite uneffective (minimize moves)
+		std::size_t i {last};
+		while (Wt::WWidget* widget {_elements->widget(i)})
+		{
+			_elements->removeWidget(widget);
+			if (i-- == first)
+				break;
+		}
+	}
+
 	Wt::WWidget*
 	InfiniteScrollingContainer::getWidget(std::size_t pos) const
 	{

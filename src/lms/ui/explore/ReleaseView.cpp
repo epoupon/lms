@@ -290,6 +290,12 @@ Release::refreshView()
 			_playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, {*releaseId});
 		});
 
+	bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
+		{
+			_playQueueController.processCommand(PlayQueueController::Command::PlayNext, {*releaseId});
+		});
+
 	bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
 		->clicked().connect([=]
 		{
@@ -415,6 +421,11 @@ Release::refreshView()
 				->clicked().connect([=]
 				{
 					_playQueueController.playTrackInRelease(trackId);
+				});
+			entry->bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"))
+				->clicked().connect([=]
+				{
+					_playQueueController.processCommand(PlayQueueController::Command::PlayNext, {trackId});
 				});
 			entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
 				->clicked().connect([=]

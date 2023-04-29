@@ -40,6 +40,7 @@ namespace UserInterface
 			enum class Command
 			{
 				Play,
+				PlayNext,
 				PlayOrAddLast,
 				PlayShuffled,
 			};

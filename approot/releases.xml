@@ -28,6 +28,7 @@
 			${play-btn class="btn btn-primary"}
 			<button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"/>
 			<ul class="dropdown-menu">
+				<li>${play-next class="dropdown-item"}</li>
 				<li>${play-last class="dropdown-item"}</li>
 				<li>${play-shuffled class="dropdown-item"}</li>
 			</ul>

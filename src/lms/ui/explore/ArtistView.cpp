@@ -166,6 +166,11 @@ Artist::refreshView()
 		{
 			_playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, {_artistId});
 		});
+	bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
+		{
+			_playQueueController.processCommand(PlayQueueController::Command::PlayNext, {_artistId});
+		});
 	bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
 		->clicked().connect([=]
 		{

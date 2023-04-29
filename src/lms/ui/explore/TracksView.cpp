@@ -80,6 +80,11 @@ Tracks::Tracks(Filters& filters, PlayQueueController& playQueueController)
 		{
 			_playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, getAllTracks());
 		});
+	bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
+		{
+			_playQueueController.processCommand(PlayQueueController::Command::PlayNext, getAllTracks());
+		});
 	bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
 		->clicked().connect([=]
 		{
