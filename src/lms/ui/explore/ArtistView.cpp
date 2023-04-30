@@ -108,11 +108,16 @@ Artist::refreshView()
 	if (!wApp->internalPathMatches("/artist/"))
 		return;
 
+	const auto artistId {extractArtistIdFromInternalPath()};
+
+	// consider everything is up to date is the same artist is being rendered
+	if (artistId && *artistId == _artistId)
+		return;
+
 	clear();
 	_artistId = {};
 	_trackContainer = nullptr;
 
-	const auto artistId {extractArtistIdFromInternalPath()};
 	if (!artistId)
 		throw ArtistNotFoundException {};
 
@@ -177,22 +182,22 @@ Artist::refreshView()
 			_playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, {_artistId});
 		});
 	bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
-		->setLink(Wt::WLink {std::make_unique<DownloadArtistResource>(*artistId)});
+		->setLink(Wt::WLink {std::make_unique<DownloadArtistResource>(_artistId)});
 
 	{
-		auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), *artistId); }};
+		auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), _artistId); }};
 
 		Wt::WPushButton* starBtn {bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
 		starBtn->clicked().connect([=]
 		{
 			if (isStarred())
 			{
-				Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), *artistId);
+				Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), _artistId);
 				starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
 			}
 			else
 			{
-				Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), *artistId);
+				Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), _artistId);
 				starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
 			}
 		});
