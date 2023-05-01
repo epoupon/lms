@@ -108,9 +108,8 @@ Tracks::Tracks(Filters& filters, PlayQueueController& playQueueController)
 void
 Tracks::refreshView()
 {
-	_container->clear();
+	_container->reset();
 	_trackCollector.reset();
-	addSome();
 }
 
 void
@@ -132,8 +131,6 @@ Tracks::addSome()
 		if (const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)})
 			_container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
 	}
-
-	_container->setHasMore(trackIds.moreResults);
 }
 
 std::vector<Database::TrackId>

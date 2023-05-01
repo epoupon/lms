@@ -107,9 +107,8 @@ Releases::Releases(Filters& filters, PlayQueueController& playQueueController)
 void
 Releases::refreshView()
 {
-	_container->clear();
+	_container->reset();
 	_releaseCollector.reset();
-	addSome();
 }
 
 void
@@ -133,8 +132,6 @@ Releases::addSome()
 				_container->add(ReleaseListHelpers::createEntry(release));
 		}
 	}
-
-	_container->setHasMore(releaseIds.moreResults);
 }
 
 std::vector<ReleaseId>

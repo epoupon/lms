@@ -158,7 +158,7 @@ PlayQueue::PlayQueue()
 			for (const Database::TrackListEntry::pointer& entry : entries)
 				LmsApp->getDbSession().create<Database::TrackListEntry>(entry->getTrack(), queue);
 		}
-		_entriesContainer->clear();
+		_entriesContainer->reset();
 		addSome();
 	});
 
@@ -233,7 +233,6 @@ PlayQueue::PlayQueue()
 	});
 
 	updateInfo();
-	addSome();
 }
 
 bool
@@ -269,7 +268,7 @@ PlayQueue::clearTracks()
 		getQueue().modify()->clear();
 	}
 
-	_entriesContainer->clear();
+	_entriesContainer->reset();
 	_trackPos.reset();
 	updateInfo();
 }
@@ -436,6 +435,7 @@ PlayQueue::enqueueTracks(const std::vector<Database::TrackId>& trackIds)
 
 	updateInfo();
 	addSome();
+	_entriesContainer->setHasMore();
 }
 
 std::vector<Database::TrackId>
@@ -462,7 +462,7 @@ PlayQueue::getAndClearNextTracks()
 	}
 	else
 	{
-		_entriesContainer->clear();
+		_entriesContainer->reset();
 	}
 
 	return tracks;
@@ -517,8 +517,6 @@ PlayQueue::addSome()
 	const auto tracklistEntries {queue->getEntries(Database::Range {_entriesContainer->getCount(), _batchSize})};
 	for (const Database::TrackListEntry::pointer& tracklistEntry : tracklistEntries)
 		addEntry(tracklistEntry);
-
-	_entriesContainer->setHasMore(_entriesContainer->getCount() < queue->getCount());
 }
 
 void

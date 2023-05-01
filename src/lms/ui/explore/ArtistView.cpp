@@ -242,7 +242,6 @@ Artist::refreshReleases()
 			{
 				addSomeReleases(releases);
 			});
-			releases.container->setHasMore(true);
 		}
 	}
 	else
@@ -286,7 +285,6 @@ Artist::refreshAppearsOnReleases()
 		{
 			addSomeReleases(_appearsOnReleaseContainer);
 		});
-		_appearsOnReleaseContainer.container->setHasMore(true);
 	}
 	else
 	{
@@ -350,11 +348,6 @@ Artist::addSomeReleases(ReleaseContainer& releaseContainer)
 			const Database::Release::pointer release {Database::Release::find(LmsApp->getDbSession(), releaseContainer.releases[i])};
 			releaseContainer.container->add(ReleaseListHelpers::createEntryForArtist(release, artist));
 		}
-		releaseContainer.container->setHasMore(releaseContainer.container->getCount() < releaseContainer.releases.size());
-	}
-	else
-	{
-		releaseContainer.container->setHasMore(false);
 	}
 }
 
@@ -374,23 +367,16 @@ Artist::addSomeNonReleaseTracks()
 	params.setNonRelease(true);
 
 	const auto tracks {Track::find(LmsApp->getDbSession(), params)};
-	bool moreResults {tracks.moreResults};
-
 	for (const TrackId trackId : tracks.results)
 	{
 		if (_trackContainer->getCount() == _tracksMaxCount)
-		{
-			moreResults = false;
 			break;
-		}
 
 		const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)};
 		_trackContainer->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
 
 		areTracksAdded = true;
 	}
-
-	_trackContainer->setHasMore(moreResults);
 
 	return areTracksAdded;
 }

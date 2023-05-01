@@ -179,8 +179,6 @@ namespace UserInterface
 		{
 			addSome();
 		});
-
-		addSome();
 	}
 
 	void
@@ -201,8 +199,6 @@ namespace UserInterface
 			if (const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)})
 				_container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
 		}
-
-		_container->setHasMore(trackIds.moreResults && _container->getCount() < _maxCount);
 	}
 } // namespace UserInterface
 

@@ -102,9 +102,8 @@ Artists::Artists(Filters& filters)
 void
 Artists::refreshView()
 {
-	_container->clear();
+	_container->reset();
 	_artistCollector.reset();
-	addSome();
 }
 
 void
@@ -171,8 +170,6 @@ Artists::addSome()
 				_container->add(ArtistListHelpers::createEntry(artist));
 		}
 	}
-
-	_container->setHasMore(artistIds.moreResults);
 }
 
 } // namespace UserInterface

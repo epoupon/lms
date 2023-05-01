@@ -19,6 +19,7 @@
 
 #include "InfiniteScrollingContainer.hpp"
 
+#include <cassert>
 #include "LoadingIndicator.hpp"
 
 namespace UserInterface
@@ -28,14 +29,20 @@ namespace UserInterface
 		, _elements {bindNew<Wt::WContainerWidget>("elements")}
 		, _loadingIndicator {bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator())}
 	{
-		hideLoadingIndicator();
+		reset();
 	}
 
 	void
 	InfiniteScrollingContainer::clear()
 	{
+		assert(false);
+	}
+
+	void
+	InfiniteScrollingContainer::reset()
+	{
 		_elements->clear();
-		hideLoadingIndicator();
+		setHasMore(true);
 	}
 
 	std::size_t
@@ -48,6 +55,12 @@ namespace UserInterface
 	InfiniteScrollingContainer::add(std::unique_ptr<Wt::WWidget> result)
 	{
 		return _elements->addWidget(std::move(result));
+	}
+
+	void
+	InfiniteScrollingContainer::setHasMore()
+	{
+		setHasMore(true);
 	}
 
 	void
@@ -103,7 +116,9 @@ namespace UserInterface
 			if (!visible)
 				return;
 
+			const auto previousCount {_elements->count()};
 			onRequestElements.emit();
+			setHasMore(previousCount != _elements->count());
 		});
 	}
 
