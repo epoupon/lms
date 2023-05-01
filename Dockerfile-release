@@ -72,7 +72,7 @@ RUN \
 	--enable-protocol=file,pipe \
 	--enable-filter=aresample \
 	--extra-libs=-ldl && \
-	make && \
+	make -j$(nproc) && \
 	make install && \
 	make distclean
 
@@ -86,7 +86,7 @@ RUN \
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
 	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF && \
-	make && \
+	make -j$(nproc) && \
 	make install
 
 # STB
@@ -103,7 +103,7 @@ COPY . /tmp/lms/
 RUN \
 	DIR=/tmp/lms/build && mkdir -p ${DIR} && cd ${DIR} && \
 	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake /tmp/lms/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_PREFIX_PATH=${PREFIX} && \
-	LD_LIBRARY_PATH=${PREFIX}/lib VERBOSE=1 make && \
+	LD_LIBRARY_PATH=${PREFIX}/lib VERBOSE=1 make -j$(nproc) && \
 	LD_LIBRARY_PATH=${PREFIX}/lib make test && \
 	make install && \
 	mkdir -p ${PREFIX}/etc/ && \
