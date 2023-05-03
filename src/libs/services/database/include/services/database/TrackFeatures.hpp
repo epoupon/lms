@@ -42,7 +42,7 @@ using FeatureName = std::string;
 using FeatureValues  = std::vector<double>;
 using FeatureValuesMap = std::unordered_map<FeatureName, FeatureValues>;
 
-class TrackFeatures : public Object<TrackFeatures, TrackFeaturesId>
+class TrackFeatures final : public Object<TrackFeatures, TrackFeaturesId>
 {
 	public:
 		TrackFeatures() = default;

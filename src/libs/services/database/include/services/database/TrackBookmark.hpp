@@ -37,7 +37,7 @@ class Session;
 class Track;
 class User;
 
-class TrackBookmark : public Object<TrackBookmark, TrackBookmarkId>
+class TrackBookmark final : public Object<TrackBookmark, TrackBookmarkId>
 {
 	public:
 		TrackBookmark () = default;

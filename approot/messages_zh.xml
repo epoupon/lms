@@ -132,6 +132,7 @@
 <message id="Lms.Explore.musicbrainz-release">MusicBrainz 专辑</message>
 <message id="Lms.Explore.play">播放</message>
 <message id="Lms.Explore.play-last">最后播放</message>
+
 <message id="Lms.Explore.play-shuffled">随机播放</message>
 <message id="Lms.Explore.random">随机</message>
 <message id="Lms.Explore.recently-added">最近添加</message>

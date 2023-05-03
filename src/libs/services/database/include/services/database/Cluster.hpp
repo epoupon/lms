@@ -38,7 +38,7 @@ class ClusterType;
 class ScanSettings;
 class Session;
 
-class Cluster : public Object<Cluster, ClusterId>
+class Cluster final : public Object<Cluster, ClusterId>
 {
 	public:
 		Cluster() = default;
@@ -81,7 +81,7 @@ class Cluster : public Object<Cluster, ClusterId>
 };
 
 
-class ClusterType : public Object<ClusterType, ClusterTypeId>
+class ClusterType final : public Object<ClusterType, ClusterTypeId>
 {
 	public:
 		ClusterType() = default;

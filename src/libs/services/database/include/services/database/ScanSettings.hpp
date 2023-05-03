@@ -35,7 +35,7 @@ namespace Database {
 class ClusterType;
 class Session;
 
-class ScanSettings : public Object<ScanSettings, ScanSettingsId>
+class ScanSettings final : public Object<ScanSettings, ScanSettingsId>
 {
 	public:
 		// Do not modify values (just add)

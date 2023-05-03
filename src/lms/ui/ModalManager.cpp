@@ -60,7 +60,7 @@ namespace UserInterface
 
 		doJavaScript(oss.str());
 
-		addWidget(move(modalWidget));
+		addWidget(std::move(modalWidget));
 	}
 
 	void

@@ -506,7 +506,7 @@ R"(function(current) {
 
 	_mediaPlayer->playbackEnded.connect([this]
 	{
-		_playQueue->playNext();
+		_playQueue->onPlaybackEnded();
 	});
 
 	_playQueue->trackSelected.connect([this] (Database::TrackId trackId, bool play, float replayGain)

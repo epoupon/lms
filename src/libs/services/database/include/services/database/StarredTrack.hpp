@@ -35,7 +35,7 @@ namespace Database
 	class Session;
 	class User;
 
-	class StarredTrack : public Object<StarredTrack, StarredTrackId>
+	class StarredTrack final : public Object<StarredTrack, StarredTrackId>
 	{
 		public:
 			StarredTrack() = default;

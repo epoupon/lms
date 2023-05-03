@@ -158,7 +158,7 @@ PlayQueue::PlayQueue()
 			for (const Database::TrackListEntry::pointer& entry : entries)
 				LmsApp->getDbSession().create<Database::TrackListEntry>(entry->getTrack(), queue);
 		}
-		_entriesContainer->clear();
+		_entriesContainer->reset();
 		addSome();
 	});
 
@@ -233,7 +233,6 @@ PlayQueue::PlayQueue()
 	});
 
 	updateInfo();
-	addSome();
 }
 
 bool
@@ -269,7 +268,8 @@ PlayQueue::clearTracks()
 		getQueue().modify()->clear();
 	}
 
-	_entriesContainer->clear();
+	_entriesContainer->reset();
+	_trackPos.reset();
 	updateInfo();
 }
 
@@ -278,6 +278,7 @@ PlayQueue::stop()
 {
 	updateCurrentTrack(false);
 	_trackPos.reset();
+	_isTrackSelected = false;
 	trackUnselected.emit();
 }
 
@@ -318,6 +319,7 @@ PlayQueue::loadTrack(std::size_t pos, bool play)
 
 	enqueueRadioTracksIfNeeded();
 	updateCurrentTrack(true);
+	_isTrackSelected = true;
 	trackSelected.emit(trackId, play, replayGain ? *replayGain : 0);
 }
 
@@ -343,6 +345,12 @@ PlayQueue::playNext()
 	}
 
 	loadTrack(*_trackPos + 1, true);
+}
+
+void
+PlayQueue::onPlaybackEnded()
+{
+	playNext();
 }
 
 std::size_t
@@ -401,11 +409,9 @@ PlayQueue::updateCurrentTrack(bool selected)
 	entry->toggleStyleClass("Lms-entry-playing", selected);
 }
 
-std::size_t
+void
 PlayQueue::enqueueTracks(const std::vector<Database::TrackId>& trackIds)
 {
-	std::size_t nbTracksQueued {};
-
 	{
 		auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
 
@@ -415,28 +421,65 @@ PlayQueue::enqueueTracks(const std::vector<Database::TrackId>& trackIds)
 		std::size_t nbTracksToEnqueue {queueSize + trackIds.size() > getCapacity() ? getCapacity() - queueSize : trackIds.size()};
 		for (const Database::TrackId trackId : trackIds)
 		{
+			if (nbTracksToEnqueue == 0)
+				break;
+
 			Database::Track::pointer track {Database::Track::find(LmsApp->getDbSession(), trackId)};
 			if (!track)
 				continue;
 
-			if (nbTracksQueued == nbTracksToEnqueue)
-				break;
-
 			LmsApp->getDbSession().create<Database::TrackListEntry>(track, queue);
-			nbTracksQueued++;
+			nbTracksToEnqueue--;
 		}
 	}
 
 	updateInfo();
 	addSome();
+	_entriesContainer->setHasMore();
+}
 
-	return nbTracksQueued;
+std::vector<Database::TrackId>
+PlayQueue::getAndClearNextTracks()
+{
+	std::vector<Database::TrackId> tracks;
+
+	auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+
+	Database::TrackList::pointer queue {getQueue()};
+	std::vector<Database::TrackListEntry::pointer> entries {queue->getEntries(Database::Range {_trackPos ? *_trackPos + 1 : 0, getCapacity()})};
+	tracks.reserve(entries.size());
+	for (Database::TrackListEntry::pointer entry : entries)
+	{
+		tracks.push_back(entry->getTrack()->getId());
+		entry.remove();
+	}
+
+	if (_trackPos)
+	{
+		// entries may have been cleared
+		if (*_trackPos + 1 < _entriesContainer->getCount())
+			_entriesContainer->remove(*_trackPos + 1, _entriesContainer->getCount() - 1);
+	}
+	else
+	{
+		_entriesContainer->reset();
+	}
+
+	return tracks;
 }
 
 void
 PlayQueue::play(const std::vector<Database::TrackId>& trackIds)
 {
 	playAtIndex(trackIds, 0);
+}
+
+void
+PlayQueue::playNext(const std::vector<Database::TrackId>& trackIds)
+{
+	std::vector<Database::TrackId> nextTracks {getAndClearNextTracks()};
+	nextTracks.insert(std::cbegin(nextTracks), std::cbegin(trackIds), std::cend(trackIds));
+	playOrAddLast(nextTracks);
 }
 
 void
@@ -453,7 +496,7 @@ void
 PlayQueue::playOrAddLast(const std::vector<Database::TrackId>& trackIds)
 {
 	enqueueTracks(trackIds);
-	if (!_trackPos)
+	if (!_isTrackSelected)
 		loadTrack(0, true);
 }
 
@@ -471,11 +514,9 @@ PlayQueue::addSome()
 	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
 	const Database::TrackList::pointer queue {getQueue()};
-	const auto tracklistEntries {queue->getEntries(_entriesContainer->getCount(), _batchSize)};
+	const auto tracklistEntries {queue->getEntries(Database::Range {_entriesContainer->getCount(), _batchSize})};
 	for (const Database::TrackListEntry::pointer& tracklistEntry : tracklistEntries)
 		addEntry(tracklistEntry);
-
-	_entriesContainer->setHasMore(_entriesContainer->getCount() < queue->getCount());
 }
 
 void
@@ -491,7 +532,6 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 	entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
 	const auto artists {track->getArtistIds({Database::TrackArtistLinkType::Artist})};
-	LMS_LOG(UI, DEBUG) << "Found " << artists.size() << " artists!";
 	if (!artists.empty())
 	{
 		entry->setCondition("if-has-artists", true);
@@ -544,6 +584,8 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 			const std::optional<std::size_t> pos {_entriesContainer->getIndexOf(*entry)};
 			if (pos && *_trackPos >= *pos)
 				(*_trackPos)--;
+			else if (*_trackPos >= _entriesContainer->getCount())
+				_trackPos.reset();
 		}
 
 		_entriesContainer->remove(*entry);

@@ -49,7 +49,7 @@ class Track;
 class TrackArtistLink;
 class User;
 
-class Artist : public Object<Artist, ArtistId>
+class Artist final : public Object<Artist, ArtistId>
 {
 	public:
 		struct FindParameters

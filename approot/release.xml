@@ -21,8 +21,9 @@
 				${play-btn class="btn btn-primary"}
 				<button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"/>
 				<ul class="dropdown-menu">
-					<li>${play-shuffled class="dropdown-item"}</li>
+					<li>${play-next class="dropdown-item"}</li>
 					<li>${play-last class="dropdown-item"}</li>
+					<li>${play-shuffled class="dropdown-item"}</li>
 					<li>${star class="dropdown-item"}</li>
 					${<if-has-mbid>}
 					<li><a href="${mbid-link}" target="_blank" class="dropdown-item">${tr:Lms.Explore.musicbrainz-release}</a></li>
@@ -82,7 +83,8 @@
 			<div class="dropdown d-inline-block">
 				${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-sm btn-outline-secondary border-0"}
 				<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
-					<li>${play class="dropdown-item"}</li>
+					<li class="d-block d-sm-none">${play class="dropdown-item"}</li>
+					<li>${play-next class="dropdown-item"}</li>
 					<li>${play-last class="dropdown-item"}</li>
 					<li>${star class="dropdown-item"}</li>
 					<li>${download class="dropdown-item"}</li>

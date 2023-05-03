@@ -34,7 +34,6 @@ using namespace Database;
 
 namespace UserInterface
 {
-
 	TrackLists::TrackLists(Filters& filters)
 	: Template {Wt::WString::tr("Lms.Explore.TrackLists.template")}
 	, _filters {filters}
@@ -92,9 +91,8 @@ namespace UserInterface
 	void
 	TrackLists::refreshView()
 	{
-		_container->clear();
+		_container->reset();
 		_trackListWidgets.clear();
-		addSome();
 	}
 
 	void
@@ -126,8 +124,6 @@ namespace UserInterface
 			if (const TrackList::pointer trackList {TrackList::find(LmsApp->getDbSession(), trackListId)})
 				addTracklist(trackList);
 		}
-
-		_container->setHasMore(trackListIds.moreResults && _container->getCount() <= _maxCount);
 	}
 
 	void

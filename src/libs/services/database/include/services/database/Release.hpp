@@ -45,7 +45,7 @@ class Session;
 class Track;
 class User;
 
-class Release : public Object<Release, ReleaseId>
+class Release final : public Object<Release, ReleaseId>
 {
 	public:
 		struct FindParameters

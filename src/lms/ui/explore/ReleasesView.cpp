@@ -79,6 +79,11 @@ Releases::Releases(Filters& filters, PlayQueueController& playQueueController)
 		{
 			_playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, getAllReleases());
 		});
+	bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
+		{
+			_playQueueController.processCommand(PlayQueueController::Command::PlayNext, getAllReleases());
+		});
 	bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
 		->clicked().connect([=]
 		{
@@ -102,9 +107,8 @@ Releases::Releases(Filters& filters, PlayQueueController& playQueueController)
 void
 Releases::refreshView()
 {
-	_container->clear();
+	_container->reset();
 	_releaseCollector.reset();
-	addSome();
 }
 
 void
@@ -128,8 +132,6 @@ Releases::addSome()
 				_container->add(ReleaseListHelpers::createEntry(release));
 		}
 	}
-
-	_container->setHasMore(releaseIds.moreResults);
 }
 
 std::vector<ReleaseId>

@@ -217,9 +217,15 @@ Release::refreshView()
 	if (!wApp->internalPathMatches("/release/"))
 		return;
 
-	clear();
-
 	const auto releaseId {extractReleaseIdFromInternalPath()};
+
+	// consider everything is up to date is the same release is being rendered
+	if (releaseId && *releaseId == _releaseId)
+		return;
+
+	clear();
+	_releaseId = {};
+
 	if (!releaseId)
 		throw ReleaseNotFoundException {};
 
@@ -232,6 +238,7 @@ Release::refreshView()
 		throw ReleaseNotFoundException {};
 
 	LmsApp->setTitle(release->getName());
+	_releaseId = *releaseId;
 
 	refreshCopyright(release);
 	refreshLinks(release);
@@ -281,44 +288,50 @@ Release::refreshView()
 	bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
 		->clicked().connect([=]
 		{
-			_playQueueController.processCommand(PlayQueueController::Command::Play, {*releaseId});
+			_playQueueController.processCommand(PlayQueueController::Command::Play, {_releaseId});
 		});
 
 	bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
 		->clicked().connect([=]
 		{
-			_playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, {*releaseId});
+			_playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, {_releaseId});
+		});
+
+	bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
+		{
+			_playQueueController.processCommand(PlayQueueController::Command::PlayNext, {_releaseId});
 		});
 
 	bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
 		->clicked().connect([=]
 		{
-			_playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, {*releaseId});
+			_playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, {_releaseId});
 		});
 
 	bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
-		->setLink(Wt::WLink {std::make_unique<DownloadReleaseResource>(*releaseId)});
+		->setLink(Wt::WLink {std::make_unique<DownloadReleaseResource>(_releaseId)});
 
 	bindNew<Wt::WPushButton>("release-info", Wt::WString::tr("Lms.Explore.release-info"))
 		->clicked().connect([=]
 		{
-			showReleaseInfoModal(*releaseId);
+			showReleaseInfoModal(_releaseId);
 		});
 
 	{
-		auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), *releaseId); }};
+		auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), _releaseId); }};
 
 		Wt::WPushButton* starBtn {bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
 		starBtn->clicked().connect([=]
 		{
 			if (isStarred())
 			{
-				Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), *releaseId);
+				Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), _releaseId);
 				starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
 			}
 			else
 			{
-				Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), *releaseId);
+				Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), _releaseId);
 				starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
 			}
 		});
@@ -367,7 +380,7 @@ Release::refreshView()
 	};
 
 	Database::Track::FindParameters params;
-	params.setRelease(*releaseId);
+	params.setRelease(_releaseId);
 	params.setSortMethod(Database::TrackSortMethod::Release);
 	params.setClusters(_filters.getClusterIds());
 
@@ -415,6 +428,11 @@ Release::refreshView()
 				->clicked().connect([=]
 				{
 					_playQueueController.playTrackInRelease(trackId);
+				});
+			entry->bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"))
+				->clicked().connect([=]
+				{
+					_playQueueController.processCommand(PlayQueueController::Command::PlayNext, {trackId});
 				});
 			entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
 				->clicked().connect([=]

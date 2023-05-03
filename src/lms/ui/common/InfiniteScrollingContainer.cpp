@@ -19,6 +19,7 @@
 
 #include "InfiniteScrollingContainer.hpp"
 
+#include <cassert>
 #include "LoadingIndicator.hpp"
 
 namespace UserInterface
@@ -28,14 +29,20 @@ namespace UserInterface
 		, _elements {bindNew<Wt::WContainerWidget>("elements")}
 		, _loadingIndicator {bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator())}
 	{
-		hideLoadingIndicator();
+		reset();
 	}
 
 	void
 	InfiniteScrollingContainer::clear()
 	{
+		assert(false);
+	}
+
+	void
+	InfiniteScrollingContainer::reset()
+	{
 		_elements->clear();
-		hideLoadingIndicator();
+		setHasMore(true);
 	}
 
 	std::size_t
@@ -51,6 +58,12 @@ namespace UserInterface
 	}
 
 	void
+	InfiniteScrollingContainer::setHasMore()
+	{
+		setHasMore(true);
+	}
+
+	void
 	InfiniteScrollingContainer::setHasMore(bool hasMore)
 	{
 		if (hasMore)
@@ -63,6 +76,22 @@ namespace UserInterface
 	InfiniteScrollingContainer::remove(Wt::WWidget& widget)
 	{
 		_elements->removeWidget(&widget);
+	}
+
+	void
+	InfiniteScrollingContainer::remove(std::size_t first, std::size_t last)
+	{
+		assert(last >= first);
+		assert(last < static_cast<std::size_t>(_elements->count()));
+
+		// remove from end as API is quite uneffective (minimize moves)
+		std::size_t i {last};
+		while (Wt::WWidget* widget {_elements->widget(i)})
+		{
+			_elements->removeWidget(widget);
+			if (i-- == first)
+				break;
+		}
 	}
 
 	Wt::WWidget*
@@ -87,7 +116,9 @@ namespace UserInterface
 			if (!visible)
 				return;
 
+			const auto previousCount {_elements->count()};
 			onRequestElements.emit();
+			setHasMore(previousCount != _elements->count());
 		});
 	}
 

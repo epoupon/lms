@@ -32,7 +32,7 @@ namespace Database
 	class Session;
 
 	class User;
-	class AuthToken : public Object<AuthToken, AuthTokenId>
+	class AuthToken final : public Object<AuthToken, AuthTokenId>
 	{
 		public:
 			AuthToken() = default;

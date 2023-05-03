@@ -149,7 +149,7 @@ TrackList::getEntry(std::size_t pos) const
 {
 	TrackListEntry::pointer res;
 
-	auto entries = getEntries(pos, 1);
+	auto entries = getEntries(Range {pos, 1});
 	if (!entries.empty())
 		res = entries.front();
 
@@ -157,7 +157,7 @@ TrackList::getEntry(std::size_t pos) const
 }
 
 std::vector<TrackListEntry::pointer>
-TrackList::getEntries(std::optional<std::size_t> offset, std::optional<std::size_t> size) const
+TrackList::getEntries(std::optional<Range> range) const
 {
 	assert(session());
 
@@ -165,8 +165,8 @@ TrackList::getEntries(std::optional<std::size_t> offset, std::optional<std::size
 		session()->find<TrackListEntry>()
 		.where("tracklist_id = ?").bind(getId())
 		.orderBy("id")
-		.limit(size ? static_cast<int>(*size) : -1)
-		.offset(offset ? static_cast<int>(*offset) : -1)
+		.limit(range ? static_cast<int>(range->size) + 1 : -1)
+		.offset(range ? static_cast<int>(range->offset) : -1)
 		.resultList()};
 
 	return std::vector<TrackListEntry::pointer>(entries.begin(), entries.end());
@@ -671,7 +671,7 @@ TrackListEntry::TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> trac
 TrackListEntry::pointer
 TrackListEntry::create(Session& session, ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime)
 {
-	return session.getDboSession().add(std::unique_ptr<TrackListEntry>( new TrackListEntry {track, tracklist, dateTime}));
+	return session.getDboSession().add(std::unique_ptr<TrackListEntry> {new TrackListEntry {track, tracklist, dateTime}});
 }
 
 void

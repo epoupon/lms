@@ -108,11 +108,16 @@ Artist::refreshView()
 	if (!wApp->internalPathMatches("/artist/"))
 		return;
 
+	const auto artistId {extractArtistIdFromInternalPath()};
+
+	// consider everything is up to date is the same artist is being rendered
+	if (artistId && *artistId == _artistId)
+		return;
+
 	clear();
 	_artistId = {};
 	_trackContainer = nullptr;
 
-	const auto artistId {extractArtistIdFromInternalPath()};
 	if (!artistId)
 		throw ArtistNotFoundException {};
 
@@ -166,28 +171,33 @@ Artist::refreshView()
 		{
 			_playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, {_artistId});
 		});
+	bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"), Wt::TextFormat::Plain)
+		->clicked().connect([=]
+		{
+			_playQueueController.processCommand(PlayQueueController::Command::PlayNext, {_artistId});
+		});
 	bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
 		->clicked().connect([=]
 		{
 			_playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, {_artistId});
 		});
 	bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
-		->setLink(Wt::WLink {std::make_unique<DownloadArtistResource>(*artistId)});
+		->setLink(Wt::WLink {std::make_unique<DownloadArtistResource>(_artistId)});
 
 	{
-		auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), *artistId); }};
+		auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), _artistId); }};
 
 		Wt::WPushButton* starBtn {bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
 		starBtn->clicked().connect([=]
 		{
 			if (isStarred())
 			{
-				Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), *artistId);
+				Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), _artistId);
 				starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
 			}
 			else
 			{
-				Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), *artistId);
+				Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), _artistId);
 				starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
 			}
 		});
@@ -232,7 +242,6 @@ Artist::refreshReleases()
 			{
 				addSomeReleases(releases);
 			});
-			releases.container->setHasMore(true);
 		}
 	}
 	else
@@ -272,11 +281,10 @@ Artist::refreshAppearsOnReleases()
 		releaseContainer->bindString("release-type", Wt::WString::tr("Lms.Explore.Artist.appears-on"));
 		_appearsOnReleaseContainer.releases = releases.results;
 		_appearsOnReleaseContainer.container = releaseContainer->bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
-		_appearsOnReleaseContainer.container->onRequestElements.connect(this, [this, &releases]
+		_appearsOnReleaseContainer.container->onRequestElements.connect(this, [this]
 		{
 			addSomeReleases(_appearsOnReleaseContainer);
 		});
-		_appearsOnReleaseContainer.container->setHasMore(true);
 	}
 	else
 	{
@@ -340,11 +348,6 @@ Artist::addSomeReleases(ReleaseContainer& releaseContainer)
 			const Database::Release::pointer release {Database::Release::find(LmsApp->getDbSession(), releaseContainer.releases[i])};
 			releaseContainer.container->add(ReleaseListHelpers::createEntryForArtist(release, artist));
 		}
-		releaseContainer.container->setHasMore(releaseContainer.container->getCount() < releaseContainer.releases.size());
-	}
-	else
-	{
-		releaseContainer.container->setHasMore(false);
 	}
 }
 
@@ -364,23 +367,16 @@ Artist::addSomeNonReleaseTracks()
 	params.setNonRelease(true);
 
 	const auto tracks {Track::find(LmsApp->getDbSession(), params)};
-	bool moreResults {tracks.moreResults};
-
 	for (const TrackId trackId : tracks.results)
 	{
 		if (_trackContainer->getCount() == _tracksMaxCount)
-		{
-			moreResults = false;
 			break;
-		}
 
 		const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)};
 		_trackContainer->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
 
 		areTracksAdded = true;
 	}
-
-	_trackContainer->setHasMore(moreResults);
 
 	return areTracksAdded;
 }

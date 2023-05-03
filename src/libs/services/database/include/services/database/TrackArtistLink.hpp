@@ -35,12 +35,11 @@ LMS_DECLARE_IDTYPE(TrackArtistLinkId)
 
 namespace Database
 {
-
 	class Artist;
 	class Session;
 	class Track;
 
-	class TrackArtistLink : public Object<TrackArtistLink, TrackArtistLinkId>
+	class TrackArtistLink final : public Object<TrackArtistLink, TrackArtistLinkId>
 	{
 		public:
 			struct FindParameters

@@ -50,6 +50,7 @@ class PlayQueue : public Template
 		PlayQueue();
 
 		void play(const std::vector<Database::TrackId>& trackIds);
+		void playNext(const std::vector<Database::TrackId>& trackIds);
 		void playShuffled(const std::vector<Database::TrackId>& trackIds);
 		void playOrAddLast(const std::vector<Database::TrackId>& trackIds); // play if queue empty, otherwise just add last
 		void playAtIndex(const std::vector<Database::TrackId>& trackIds, std::size_t index);
@@ -69,6 +70,8 @@ class PlayQueue : public Template
 		// Signal emitted when track count changed
 		Wt::Signal<std::size_t> trackCountChanged;
 
+		void onPlaybackEnded();
+
 		std::size_t getCapacity() const { return _capacity; }
 		std::size_t getCount();
 
@@ -80,7 +83,8 @@ class PlayQueue : public Template
 		bool isFull() const;
 
 		void clearTracks();
-		std::size_t enqueueTracks(const std::vector<Database::TrackId>& trackIds);
+		void enqueueTracks(const std::vector<Database::TrackId>& trackIds);
+		std::vector<Database::TrackId> getAndClearNextTracks();
 		void addSome();
 		void addEntry(const Database::ObjectPtr<Database::TrackListEntry>& entry);
 		void enqueueRadioTracksIfNeeded();
@@ -110,6 +114,7 @@ class PlayQueue : public Template
 		Wt::WCheckBox* _repeatBtn {};
 		Wt::WCheckBox* _radioBtn {};
 		std::optional<std::size_t> _trackPos;	// current track position, if set
+		bool _isTrackSelected {};
 };
 
 } // namespace UserInterface

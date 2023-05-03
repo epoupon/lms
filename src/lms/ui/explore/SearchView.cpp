@@ -88,9 +88,9 @@ namespace UserInterface
 	void
 	SearchView::refreshView()
 	{
-		_artists->clear();
-		_releases->clear();
-		_tracks->clear();
+		_artists->reset();
+		_releases->reset();
+		_tracks->reset();
 
 		addSomeArtists();
 		addSomeReleases();
@@ -104,7 +104,6 @@ namespace UserInterface
 
 		const Range range {_artists->getCount(), getBatchSize(Mode::Artist)};
 		const RangeResults<ArtistId> artistIds {_artistCollector.get(range)};
-
 		{
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
@@ -114,8 +113,6 @@ namespace UserInterface
 				_artists->add(ArtistListHelpers::createEntry(artist));
 			}
 		}
-
-		_artists->setHasMore(artistIds.moreResults);
 	}
 
 	void
@@ -125,7 +122,6 @@ namespace UserInterface
 
 		const Range range {_releases->getCount(), getBatchSize(Mode::Release)};
 		const RangeResults<ReleaseId> releaseIds {_releaseCollector.get(range)};
-
 		{
 			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
@@ -135,8 +131,6 @@ namespace UserInterface
 				_releases->add(ReleaseListHelpers::createEntry(release));
 			}
 		}
-
-		_releases->setHasMore(releaseIds.moreResults);
 	}
 
 	void
@@ -156,8 +150,6 @@ namespace UserInterface
 				_tracks->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
 			}
 		}
-
-		_tracks->setHasMore(trackIds.moreResults);
 	}
 } // namespace UserInterface
 

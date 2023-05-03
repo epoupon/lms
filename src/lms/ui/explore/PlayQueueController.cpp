@@ -138,6 +138,9 @@ namespace UserInterface
 			case Command::Play:
 				_playQueue.play(trackIds);
 				break;
+			case Command::PlayNext:
+				_playQueue.playNext(trackIds);
+				break;
 			case Command::PlayShuffled:
 				_playQueue.playShuffled(trackIds);
 				break;
