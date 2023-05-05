@@ -55,7 +55,8 @@ namespace
 			listen.recordingMBID = UUID::fromString(additionalInfo.get("recording_mbid").orIfNull(""));
 			listen.releaseMBID = UUID::fromString(additionalInfo.get("release_mbid").orIfNull(""));
 
-			int trackNumber {additionalInfo.get("tracknumber").orIfNull(-1)};
+			// tracknumber should be an integer but some players encode as strings
+			int trackNumber {additionalInfo.get("tracknumber").toNumber().orIfNull(-1)};
 			if (trackNumber > 0)
 				listen.trackNumber = trackNumber;
 		}
