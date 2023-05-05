@@ -119,7 +119,7 @@ TEST(StringUtils, readAs)
 	EXPECT_EQ(StringUtils::readAs<bool>(""), std::nullopt);
 }
 
-TEST(StrinUtils, capitalize)
+TEST(StringUtils, capitalize)
 {
 	struct TestCase
 	{
