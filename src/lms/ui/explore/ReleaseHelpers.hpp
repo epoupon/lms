@@ -20,7 +20,9 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 
+#include <Wt/WString.h>
 #include <Wt/WTemplate.h>
 #include "services/database/Object.hpp"
 #include "services/database/Types.hpp"
