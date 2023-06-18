@@ -41,4 +41,5 @@ namespace UserInterface::ReleaseListHelpers
 namespace UserInterface::ReleaseHelpers
 {
 	Wt::WString buildReleaseTypeString(Database::ReleaseTypePrimary primaryType, EnumSet<Database::ReleaseTypeSecondary> secondaryTypes);
+	Wt::WString buildReleaseYearString(std::optional<int> year, std::optional<int> originalYear);
 }

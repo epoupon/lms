@@ -212,7 +212,7 @@ Artist::refreshReleases()
 	Release::FindParameters params;
 	params.setClusters(_filters.getClusterIds());
 	params.setArtist(_artistId, {TrackArtistLinkType::ReleaseArtist}, {});
-	params.setSortMethod(ReleaseSortMethod::DateDesc);
+	params.setSortMethod(ReleaseSortMethod::OriginalDateDesc);
 
 	const auto releases {Release::find(LmsApp->getDbSession(), params)};
 	if (!releases.results.empty())
@@ -272,7 +272,7 @@ Artist::refreshAppearsOnReleases()
 	Release::FindParameters params;
 	params.setClusters(_filters.getClusterIds());
 	params.setArtist(_artistId, types, {TrackArtistLinkType::ReleaseArtist});
-	params.setSortMethod(ReleaseSortMethod::DateDesc);
+	params.setSortMethod(ReleaseSortMethod::OriginalDateDesc);
 
 	const auto releases {Release::find(LmsApp->getDbSession(), params)};
 	if (!releases.results.empty())
