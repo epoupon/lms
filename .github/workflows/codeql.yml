@@ -30,7 +30,7 @@ jobs:
         name: Install dependencies (cpp)
         run: |
           sudo apt-get update
-          sudo apt-get install --yes build-essential cmake libboost-all-dev libconfig++-dev libavcodec-dev libavutil-dev libavformat-dev libstb-dev libtag1-dev libpam0g-dev libgtest-dev
+          sudo apt-get install --yes build-essential cmake libboost-all-dev libconfig++-dev libavcodec-dev libavutil-dev libavformat-dev libstb-dev libtag1-dev libpam0g-dev libgtest-dev libarchive-dev
           export WT_VERSION=4.9.0
           export WT_INSTALL_PREFIX=/usr
           git clone https://github.com/emweb/wt.git /tmp/wt

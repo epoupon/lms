@@ -21,6 +21,7 @@ pkg_check_modules(Taglib REQUIRED IMPORTED_TARGET taglib)
 pkg_check_modules(Config++ REQUIRED IMPORTED_TARGET libconfig++)
 pkg_check_modules(GraphicsMagick++ IMPORTED_TARGET GraphicsMagick++)
 pkg_check_modules(LIBAV IMPORTED_TARGET libavcodec libavutil libavformat)
+pkg_check_modules(Archive REQUIRED IMPORTED_TARGET libarchive)
 find_package(PAM)
 find_package(STB)
 
