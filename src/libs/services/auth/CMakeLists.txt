@@ -24,7 +24,6 @@ target_link_libraries(lmsauth PRIVATE
 	)
 
 target_link_libraries(lmsauth PUBLIC
-	pthread
 	Boost::system
 	Wt::Wt
 	)
