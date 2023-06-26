@@ -126,8 +126,6 @@ FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::
 	}
 
 	LMS_LOG(UTILS, DEBUG) << "Job complete!";
+	return nullptr;
 }
-
-
-
 
