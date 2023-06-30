@@ -26,7 +26,8 @@
 #include "services/database/ReleaseId.hpp"
 #include "services/database/TrackId.hpp"
 #include "services/database/TrackListId.hpp"
-#include "utils/Zipper.hpp"
+#include "utils/IZipper.hpp"
+#include "utils/ZipperResourceHandlerCreator.hpp"
 
 namespace UserInterface
 {
@@ -39,7 +40,7 @@ namespace UserInterface
 
 		private:
 			void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
-			virtual std::unique_ptr<Zip::Zipper> createZipper() = 0;
+			virtual std::unique_ptr<Zip::IZipper> createZipper() = 0;
 	};
 
 	class DownloadArtistResource : public DownloadResource
@@ -48,7 +49,7 @@ namespace UserInterface
 			DownloadArtistResource(Database::ArtistId artistId);
 
 		private:
-			std::unique_ptr<Zip::Zipper> createZipper() override;
+			std::unique_ptr<Zip::IZipper> createZipper() override;
 			Database::ArtistId _artistId;
 	};
 
@@ -58,7 +59,7 @@ namespace UserInterface
 			DownloadReleaseResource(Database::ReleaseId releaseId);
 
 		private:
-			std::unique_ptr<Zip::Zipper> createZipper() override;
+			std::unique_ptr<Zip::IZipper> createZipper() override;
 			Database::ReleaseId _releaseId;
 	};
 
@@ -68,7 +69,7 @@ namespace UserInterface
 			DownloadTrackResource(Database::TrackId trackId);
 
 		private:
-			std::unique_ptr<Zip::Zipper> createZipper() override;
+			std::unique_ptr<Zip::IZipper> createZipper() override;
 			Database::TrackId _trackId;
 	};
 
@@ -78,7 +79,7 @@ namespace UserInterface
 			DownloadTrackListResource(Database::TrackListId trackListId);
 
 		private:
-			std::unique_ptr<Zip::Zipper> createZipper() override;
+			std::unique_ptr<Zip::IZipper> createZipper() override;
 			Database::TrackListId _trackListId;
 	};
 } // namespace UserInterface

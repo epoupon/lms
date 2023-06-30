@@ -28,6 +28,7 @@ ARG	BUILD_PACKAGES=" \
 	zlib-dev \
 	openssl-dev \
 	boost-dev \
+	libarchive-dev \
 	libconfig-dev \
 	taglib-dev \
 	gtest-dev"
@@ -149,6 +150,7 @@ ARG	RUNTIME_PACKAGES=" \
 	boost-program_options \
 	boost-system \
 	boost-thread \
+	libarchive \
 	libconfig++ \
 	taglib"
 

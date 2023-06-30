@@ -17,6 +17,7 @@ ARG	LMS_BUILD_PACKAGES=" \
 	musl-dev \
 	boost-dev \
 	ffmpeg-dev \
+	libarchive-dev \
 	libconfig-dev \
 	taglib-dev \
 	stb \
