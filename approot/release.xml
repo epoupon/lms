@@ -15,7 +15,7 @@
 			<h2>${name}</h2>
 			${<if-has-release-artists>}${artists}${</if-has-release-artists>}
 			${<if-has-various-release-artists>}<div class="text-secondary">${tr:Lms.Explore.various-artists}</div>${</if-has-various-release-artists>}
-			<div class="small text-muted">${<if-has-year>}${year}${<if-has-orig-year>} (${orig-year})${</if-has-orig-year>} · ${</if-has-year>}${duration}</div>
+			<div class="small text-muted">${<if-has-year>}${year} · ${</if-has-year>}${duration}</div>
 			${clusters class="mb-2"}
 			<div class="btn-group">
 				${play-btn class="btn btn-primary"}

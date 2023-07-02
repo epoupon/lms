@@ -530,3 +530,73 @@ TEST_F(DatabaseFixture, Release_releaseType)
 		EXPECT_TRUE(release.get()->getSecondaryTypes().contains(ReleaseTypeSecondary::Compilation));
 	}
 }
+
+TEST_F(DatabaseFixture, ReleaseSortOrder)
+{
+	ScopedRelease release1 {session, "MyRelease1"};
+	const Wt::WDate release1Date {Wt::WDate {2000, 2, 3}};
+	const Wt::WDate release1OriginalDate {Wt::WDate {1993, 4, 5}};
+
+	ScopedRelease release2 {session, "MyRelease2"};
+	const Wt::WDate release2Date {Wt::WDate {1994, 2, 3}};
+
+	ScopedTrack track1 {session, "MyTrack1"};
+	ScopedTrack track2 {session, "MyTrack2"};
+
+	ASSERT_LT(release2Date, release1Date);
+	ASSERT_GT(release2Date, release1OriginalDate);
+
+	{
+		auto transaction {session.createUniqueTransaction()};
+
+		track1.get().modify()->setRelease(release1.get());
+		track1.get().modify()->setOriginalDate(release1OriginalDate);
+		track1.get().modify()->setDate(release1Date);
+
+		track2.get().modify()->setRelease(release2.get());
+		track2.get().modify()->setDate(release2Date);
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		const auto releases {Release::find(session, Release::FindParameters {}.setSortMethod(ReleaseSortMethod::Name) )};
+		ASSERT_EQ(releases.results.size(), 2);
+		EXPECT_EQ(releases.results.front(), release1.getId());
+		EXPECT_EQ(releases.results.back(), release2.getId());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		const auto releases {Release::find(session, Release::FindParameters {}.setSortMethod(ReleaseSortMethod::Random) )};
+		ASSERT_EQ(releases.results.size(), 2);
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		const auto releases {Release::find(session, Release::FindParameters {}.setSortMethod(ReleaseSortMethod::Date) )};
+		ASSERT_EQ(releases.results.size(), 2);
+		EXPECT_EQ(releases.results.front(), release2.getId());
+		EXPECT_EQ(releases.results.back(), release1.getId());
+	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		const auto releases {Release::find(session, Release::FindParameters {}.setSortMethod(ReleaseSortMethod::OriginalDate) )};
+		ASSERT_EQ(releases.results.size(), 2);
+		EXPECT_EQ(releases.results.front(), release1.getId());
+		EXPECT_EQ(releases.results.back(), release2.getId());
+	}
+	{
+		auto transaction {session.createSharedTransaction()};
+
+		const auto releases {Release::find(session, Release::FindParameters {}.setSortMethod(ReleaseSortMethod::OriginalDateDesc) )};
+		ASSERT_EQ(releases.results.size(), 2);
+		EXPECT_EQ(releases.results.front(), release2.getId());
+		EXPECT_EQ(releases.results.back(), release1.getId());
+	}
+}
+

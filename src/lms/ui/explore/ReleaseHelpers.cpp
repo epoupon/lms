@@ -66,19 +66,11 @@ namespace UserInterface::ReleaseListHelpers
 
 		if (showYear)
 		{
-			if (std::optional<int> year {release->getReleaseYear()})
+			Wt::WString year {ReleaseHelpers::buildReleaseYearString(release->getReleaseYear(), release->getReleaseYear(true))};
+			if (!year.empty())
 			{
 				entry->setCondition("if-has-year", true);
-
-				std::string strYear {std::to_string(*year)};
-
-				std::optional<int> originalYear {release->getReleaseYear(true)};
-				if (originalYear && *originalYear != *year)
-				{
-					strYear += " (" + std::to_string(*originalYear) + ")";
-				}
-
-				entry->bindString("year", strYear, Wt::TextFormat::Plain);
+				entry->bindString("year", year, Wt::TextFormat::Plain);
 			}
 		}
 
@@ -139,6 +131,22 @@ namespace UserInterface::ReleaseHelpers
 				case ReleaseTypeSecondary::Demo: 			res += Wt::WString::tr("Lms.Explore.Release.type-secondary-demo"); break;
 			}
 		}
+
+		return res;
+	}
+
+	Wt::WString buildReleaseYearString(std::optional<int> year, std::optional<int> originalYear)
+	{
+		Wt::WString res;
+
+		// Year can be here, but originalYear can't be here without year (enforced by scanner)
+		if (!year)
+			return res;
+
+		if (originalYear && *originalYear != *year)
+			res = std::to_string(*originalYear) + " (" + std::to_string(*year) + ")";
+		else
+			res = std::to_string(*year);
 
 		return res;
 	}

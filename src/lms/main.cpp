@@ -207,6 +207,12 @@ int main(int argc, char* argv[])
 		Service<IConfig> config {createConfig(configFilePath)};
 		Service<Logger> logger {std::make_unique<WtLogger>()};
 
+		// use system locale. libarchive relies on this to write filenames
+		if (char *locale {::setlocale(LC_ALL, "")})
+			LMS_LOG(MAIN, INFO) << "locale set to '" << locale << "'";
+		else
+			LMS_LOG(MAIN, WARNING) << "Cannot set locale from system";
+
 		// Make sure the working directory exists
 		std::filesystem::create_directories(config->getPath("working-dir"));
 		std::filesystem::create_directories(config->getPath("working-dir") / "cache");

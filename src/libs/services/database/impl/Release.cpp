@@ -41,6 +41,9 @@ createQuery(Session& session, const Release::FindParameters& params)
 	auto query {session.getDboSession().query<ReleaseId>("SELECT DISTINCT r.id from release r")};
 
 	if (params.sortMethod == ReleaseSortMethod::LastWritten
+			|| params.sortMethod == ReleaseSortMethod::Date
+			|| params.sortMethod == ReleaseSortMethod::OriginalDate
+			|| params.sortMethod == ReleaseSortMethod::OriginalDateDesc
 			|| params.writtenAfter.isValid()
 			|| params.dateRange
 			|| params.artist.isValid())
@@ -160,8 +163,11 @@ createQuery(Session& session, const Release::FindParameters& params)
 		case ReleaseSortMethod::Date:
 			query.orderBy("t.date, r.name COLLATE NOCASE");
 			break;
-		case ReleaseSortMethod::DateDesc:
-			query.orderBy("t.date DESC, r.name COLLATE NOCASE");
+		case ReleaseSortMethod::OriginalDate:
+			query.orderBy("CASE WHEN t.original_date IS NULL THEN t.date ELSE t.original_date END, t.date, r.name COLLATE NOCASE");
+			break;
+		case ReleaseSortMethod::OriginalDateDesc:
+			query.orderBy("CASE WHEN t.original_date IS NULL THEN t.date ELSE t.original_date END DESC, t.date, r.name COLLATE NOCASE");
 			break;
 		case ReleaseSortMethod::StarredDateDesc:
 			assert(params.starringUser.isValid());

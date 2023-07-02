@@ -48,7 +48,6 @@ FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::
 		{
 			LMS_LOG(UTILS, ERROR) << "Cannot open file stream for '" << _path.string() << "'";
 			response.setStatus(404);
-			_isFinished = true;
 			return {};
 		}
 		else
@@ -71,7 +70,6 @@ FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::
 			response.addHeader("Content-Range", contentRange.str());
 
 			LMS_LOG(UTILS, DEBUG) << "Range not satisfiable";
-			_isFinished = true;
 			return {};
 		}
 
@@ -101,7 +99,6 @@ FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::
 	else if (!ifs)
 	{
 		LMS_LOG(UTILS, ERROR) << "Cannot reopen file stream for '" << _path.string() << "'";
-		_isFinished = true;
 		return {};
 	}
 
@@ -128,11 +125,7 @@ FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::
 		return response.createContinuation();
 	}
 
-	_isFinished = true;
 	LMS_LOG(UTILS, DEBUG) << "Job complete!";
-
-	return {};
+	return nullptr;
 }
-
-
 

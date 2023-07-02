@@ -36,6 +36,7 @@ namespace Av
 
 		private:
 			Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& reponse) override;
+			void abort() override {};
 
 			static constexpr std::size_t _chunkSize {32768};
 			std::optional<std::size_t> _estimatedContentLength;

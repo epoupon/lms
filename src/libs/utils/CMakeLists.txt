@@ -1,6 +1,7 @@
 add_library(lmsutils SHARED
 	impl/http/Client.cpp
 	impl/http/SendQueue.cpp
+	impl/ArchiveZipper.cpp
 	impl/ChildProcess.cpp
 	impl/ChildProcessManager.cpp
 	impl/Config.cpp
@@ -15,7 +16,6 @@ add_library(lmsutils SHARED
 	impl/String.cpp
 	impl/UUID.cpp
 	impl/WtLogger.cpp
-	impl/Zipper.cpp
 	)
 
 target_include_directories(lmsutils INTERFACE
@@ -28,6 +28,7 @@ target_include_directories(lmsutils PRIVATE
 
 target_link_libraries(lmsutils PRIVATE
 	PkgConfig::Config++
+	PkgConfig::Archive
 	)
 
 target_link_libraries(lmsutils PUBLIC

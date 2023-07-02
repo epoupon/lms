@@ -107,6 +107,7 @@ TEST(Listenbrainz, parseListens_multiArtists)
 	ListensParser::Result result {ListensParser::parse(R"({"payload":{"count":1,"latest_listen_ts":1664106427,"listens":[{"inserted_at":1664106427,"listened_at":1664106427,"recording_msid":"b1dad0df-329b-443d-bacf-cdbebdddbfd0","track_metadata":{"additional_info":{"artist_mbids":["04ce0202-043d-4cbe-8f09-8abaf3b80c71","79311c51-9748-49df-baa1-d925fd29f4e8"],"artist_msid":null,"listening_from":"LMS","recording_mbid":"a5f380bc-0a85-4a9f-88db-d41bb9aa2a4b","recording_msid":"b1dad0df-329b-443d-bacf-cdbebdddbfd0","release_mbid":"147b4669-3d20-43f8-89c0-ba1da8b87dd3","release_msid":null,"track_mbid":"a20dd067-29b6-3d38-a0be-eeb86b4671c1","tracknumber":1},"artist_name":"Gloom","release_name":"Demovibes 9: Party, people going","track_name":"Stargazer of Disgrace"},"user_name":"epoupon"}],"user_id":"epoupon"}})")};
 	EXPECT_EQ(result.listenCount, 1);
 	ASSERT_EQ(result.listens.size(), 1);
+	EXPECT_EQ(result.listens[0].trackNumber, 1);
 }
 
 TEST(Listenbrainz, parseListens_minPayload)
@@ -120,4 +121,15 @@ TEST(Listenbrainz, parseListens_minPayload)
 	EXPECT_EQ(result.listens[0].releaseName, "");
 	EXPECT_FALSE(result.listens[0].recordingMBID.has_value());
 	EXPECT_FALSE(result.listens[0].releaseMBID.has_value());
+	EXPECT_EQ(result.listens[0].trackNumber, std::nullopt);
 }
+
+TEST(Listenbrainz, parseListens_stringInsteadOfInt)
+{
+	ListensParser::Result result {ListensParser::parse(R"({"payload":{"count":1,"latest_listen_ts":1683298766,"listens":[{"inserted_at":1683299849,"listened_at":1683298766,"recording_msid":"3841ad1c-f674-491c-b855-f10a82ea38fe","track_metadata":{"additional_info":{"albumartist":"Various Artists","artist_mbids":["80ccfede-c258-4575-a7ad-c982e9932e0f"],"date":"2002-06-10","discnumber":"1","duration":190,"isrc":"USAM10200204","media_player":"foobar2000","media_player_version":"1.6.16","recording_msid":"3841ad1c-f674-491c-b855-f10a82ea38fe","release_group_mbid":"25f44677-2ecd-33fb-8454-9a9776496e3c","release_mbid":"bddad4c6-e9e1-4218-b9d2-b02a5a778a7d","submission_client":"foobar2000","submission_client_version":"1.3.2","totaldiscs":"1","totaltracks":"18","track_mbid":"08b1a5c1-c845-3d3b-9aa4-560a1af7f28c","tracknumber":"4"},"artist_name":"Sheryl Crow","mbid_mapping":{"artist_mbids":["80ccfede-c258-4575-a7ad-c982e9932e0f"],"artists":[{"artist_credit_name":"Sheryl Crow","artist_mbid":"80ccfede-c258-4575-a7ad-c982e9932e0f","join_phrase":""}],"caa_id":22039936498,"caa_release_mbid":"f10b4b40-4db1-4b9a-a223-06915fa06b3c","recording_mbid":"7ca21c82-1345-44df-b7ac-035a6e05d4ed","recording_name":"Strong Enough","release_mbid":"f10b4b40-4db1-4b9a-a223-06915fa06b3c"},"release_name":"The Very Best of MTV Unplugged","track_name":"Strong Enough"},"user_name":"awesomeuser"}],"user_id":"awesomeuser"}})")};
+
+	EXPECT_EQ(result.listenCount, 1);
+	ASSERT_EQ(result.listens.size(), 1);
+	EXPECT_EQ(result.listens[0].trackNumber, 4);
+}
+

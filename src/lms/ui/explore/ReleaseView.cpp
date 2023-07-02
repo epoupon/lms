@@ -246,18 +246,11 @@ Release::refreshView()
 
 	bindString("name", Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);
 
-	std::optional<int> year {release->getReleaseYear()};
-	if (year)
+	Wt::WString year {ReleaseHelpers::buildReleaseYearString(release->getReleaseYear(), release->getReleaseYear(true))};
+	if (!year.empty())
 	{
 		setCondition("if-has-year", true);
-		bindInt("year", *year);
-
-		std::optional<int> originalYear {release->getReleaseYear(true)};
-		if (originalYear && *originalYear != *year)
-		{
-			setCondition("if-has-orig-year", true);
-			bindInt("orig-year", *originalYear);
-		}
+		bindString("year", year, Wt::TextFormat::Plain);
 	}
 
 	bindString("duration", Utils::durationToString(release->getDuration()), Wt::TextFormat::Plain);

@@ -19,16 +19,36 @@
 
 #pragma once
 
-#include <Wt/Http/Request.h>
-#include <Wt/Http/Response.h>
+#include <filesystem>
+#include <memory>
+#include <vector>
 
-// Helper class to serve a resource (must be saved as continuation data if not complete)
-class IResourceHandler
+#include "Exception.hpp"
+
+namespace Zip
 {
-	public:
-		virtual ~IResourceHandler() = default;
+	struct Entry
+	{
+		std::string fileName;
+		std::filesystem::path filePath;
+	};
+	using EntryContainer = std::vector<Entry>;
 
-		[[nodiscard]] virtual Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) = 0;
-		virtual void abort() = 0;
-};
+	class Exception : public LmsException
+	{
+		using LmsException::LmsException;
+	};
+
+	class IZipper
+	{
+		public:
+			virtual ~IZipper() = default;
+
+			virtual std::uint64_t writeSome(std::ostream& output) = 0;
+			virtual bool isComplete() const = 0;
+			virtual void abort() = 0;
+	};
+
+	std::unique_ptr<IZipper> createArchiveZipper(const EntryContainer& entries);
+} // namespace Zip
 
