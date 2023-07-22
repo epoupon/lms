@@ -311,7 +311,7 @@ MediaPlayer::loadTrack(Database::TrackId trackId, bool play, float replayGain)
 	}
 
 	LMS_LOG(UI, DEBUG) << "Running js = '" << oss.str() << "'";
-	wApp->doJavaScript(oss.str());
+	doJavaScript(oss.str());
 
 	_trackIdLoaded = trackId;
 	trackLoaded.emit(*_trackIdLoaded);
@@ -320,7 +320,7 @@ MediaPlayer::loadTrack(Database::TrackId trackId, bool play, float replayGain)
 void
 MediaPlayer::stop()
 {
-	wApp->doJavaScript("LMS.mediaplayer.stop()");
+	doJavaScript("LMS.mediaplayer.stop()");
 }
 
 void
