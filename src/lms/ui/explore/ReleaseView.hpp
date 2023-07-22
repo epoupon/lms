@@ -48,6 +48,7 @@ namespace UserInterface
 			Filters&				_filters;
 			PlayQueueController&	_playQueueController;
 			Database::ReleaseId		_releaseId;
+			bool					_needForceRefresh {};
 	};
 } // namespace UserInterface
 

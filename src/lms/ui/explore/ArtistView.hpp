@@ -80,6 +80,7 @@ namespace UserInterface
 			ReleaseContainer			_appearsOnReleaseContainer {};
 			InfiniteScrollingContainer* _trackContainer {};
 			Database::ArtistId			_artistId {};
+			bool						_needForceRefresh {};
 	};
 } // namespace UserInterface
 
