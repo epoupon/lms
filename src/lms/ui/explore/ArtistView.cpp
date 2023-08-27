@@ -76,6 +76,7 @@ Artist::Artist(Filters& filters, PlayQueueController& controller)
 
 	filters.updated().connect([this]
 	{
+		_needForceRefresh = true;
 		refreshView();
 	});
 
@@ -111,12 +112,13 @@ Artist::refreshView()
 	const auto artistId {extractArtistIdFromInternalPath()};
 
 	// consider everything is up to date is the same artist is being rendered
-	if (artistId && *artistId == _artistId)
+	if (!_needForceRefresh && artistId && *artistId == _artistId)
 		return;
 
 	clear();
 	_artistId = {};
 	_trackContainer = nullptr;
+	_needForceRefresh = false;
 
 	if (!artistId)
 		throw ArtistNotFoundException {};

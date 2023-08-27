@@ -184,6 +184,7 @@ Release::Release(Filters& filters, PlayQueueController& playQueueController)
 
 	_filters.updated().connect([this]
 	{
+		_needForceRefresh = true;
 		refreshView();
 	});
 
@@ -220,11 +221,12 @@ Release::refreshView()
 	const auto releaseId {extractReleaseIdFromInternalPath()};
 
 	// consider everything is up to date is the same release is being rendered
-	if (releaseId && *releaseId == _releaseId)
+	if (!_needForceRefresh && releaseId && *releaseId == _releaseId)
 		return;
 
 	clear();
 	_releaseId = {};
+	_needForceRefresh = false;
 
 	if (!releaseId)
 		throw ReleaseNotFoundException {};
