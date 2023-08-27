@@ -1,5 +1,5 @@
 FROM --platform=$BUILDPLATFORM tonistiigi/xx AS xx
-FROM --platform=$BUILDPLATFORM alpine:3.17
+FROM --platform=$BUILDPLATFORM alpine:3.18
 
 ARG BUILD_PACKAGES="\
 	clang \

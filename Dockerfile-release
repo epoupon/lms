@@ -1,4 +1,4 @@
-FROM	alpine:3.17 AS build
+FROM	alpine:3.18 AS build
 
 WORKDIR	/tmp/workdir
 
@@ -78,7 +78,7 @@ RUN \
 	make distclean
 
 # WT
-ARG	WT_VERSION=4.9.1
+ARG	WT_VERSION=4.10.0
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/emweb/wt/archive/${WT_VERSION}.tar.gz && \
@@ -133,7 +133,7 @@ RUN \
 	rm -rf /tmp/fakeroot/share/Wt/resources/themes
 
 ## Release Stage
-FROM		alpine:3.17 AS release
+FROM		alpine:3.18 AS release
 LABEL		maintainer="Emeric Poupon <itmfr@yahoo.fr>"
 
 ARG	RUNTIME_PACKAGES=" \
@@ -144,7 +144,7 @@ ARG	RUNTIME_PACKAGES=" \
 	libogg \
 	opus \
 	libvorbis \
-	lame \
+	lame-libs \
 	zlib \
 	boost-filesystem \
 	boost-program_options \
