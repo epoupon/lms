@@ -78,6 +78,7 @@ namespace UserInterface
 				Artist::FindParameters params;
 				params.setClusters(getFilters().getClusterIds());
 				params.setKeywords(getSearchKeywords());
+				params.setLinkType(_linkType);
 				params.setSortMethod(ArtistSortMethod::BySortName);
 				params.setRange(range);
 

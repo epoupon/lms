@@ -42,7 +42,6 @@ namespace UserInterface
 			void refreshView();
 			void refreshView(ArtistCollector::Mode mode);
 			void refreshView(std::optional<Database::TrackArtistLinkType> linkType);
-			void refreshArtistLinkTypes();
 			void addSome();
 
 			static constexpr std::size_t _batchSize {30};

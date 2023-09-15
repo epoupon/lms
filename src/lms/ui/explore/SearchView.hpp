@@ -19,11 +19,14 @@
 
 #pragma once
 
+#include <optional>
 #include <unordered_map>
 
+#include <Wt/WComboBox.h>
 #include <Wt/WStackedWidget.h>
 #include <Wt/WTemplate.h>
 
+#include "services/database/Types.hpp"
 #include "ArtistCollector.hpp"
 #include "ReleaseCollector.hpp"
 #include "TrackCollector.hpp"
@@ -67,6 +70,7 @@ namespace UserInterface
 			std::size_t getMaxCount(Mode mode) const;
 
 			void refreshView();
+			void refreshView(std::optional<Database::TrackArtistLinkType> linkType);
 			void addSomeArtists();
 			void addSomeReleases();
 			void addSomeTracks();
@@ -77,9 +81,11 @@ namespace UserInterface
 			ReleaseCollector	_releaseCollector;
 			TrackCollector		_trackCollector;
 
-			InfiniteScrollingContainer* _artists;
-			InfiniteScrollingContainer* _releases;
-			InfiniteScrollingContainer* _tracks;
+			InfiniteScrollingContainer* _artists {};
+			InfiniteScrollingContainer* _releases {};
+			InfiniteScrollingContainer* _tracks {};
+
+			Wt::WComboBox* _artistLinkType {};
 
 			std::vector<InfiniteScrollingContainer*> _results;
 	};
