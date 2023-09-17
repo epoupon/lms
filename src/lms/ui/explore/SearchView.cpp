@@ -66,6 +66,12 @@ namespace UserInterface
 		{
 			refreshView();
 		});
+
+		LmsApp->getScannerEvents().scanComplete.connect(this, [this](const Scanner::ScanStats& stats)
+		{
+			if (stats.nbChanges())
+				_artistLinkType->setModel(ArtistListHelpers::createArtistLinkTypesModel());
+		});
 	}
 
 	std::size_t
