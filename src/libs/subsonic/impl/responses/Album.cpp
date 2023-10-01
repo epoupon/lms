@@ -70,7 +70,7 @@ namespace API::Subsonic
         }
         else if (!artists.empty())
         {
-            albumNode.setAttribute("artist", utils::joinArtistNames(artists));
+            albumNode.setAttribute("artist", Utils::joinArtistNames(artists));
 
             if (artists.size() == 1)
             {

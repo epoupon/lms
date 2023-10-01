@@ -47,17 +47,20 @@
 #include "utils/String.hpp"
 #include "utils/Utils.hpp"
 
+#include "entrypoints/Bookmark.hpp"
+#include "entrypoints/Scan.hpp"
+#include "entrypoints/Stream.hpp"
+#include "entrypoints/UserManagement.hpp"
 #include "responses/Artist.hpp"
 #include "responses/Album.hpp"
 #include "responses/Song.hpp"
-#include "Bookmark.hpp"
 #include "ParameterParsing.hpp"
 #include "ProtocolVersion.hpp"
 #include "RequestContext.hpp"
-#include "Scan.hpp"
-#include "Stream.hpp"
 #include "SubsonicId.hpp"
 #include "SubsonicResponse.hpp"
+#include "Utils.hpp"
+
 
 using namespace Database;
 
@@ -75,36 +78,12 @@ createSubsonicResource(Database::Db& db)
 	return std::make_unique<SubsonicResource>(db);
 }
 
-static
-void
-checkSetPasswordImplemented()
-{
-	Auth::IPasswordService* passwordService {Service<Auth::IPasswordService>::get()};
-	if (!passwordService || !passwordService->canSetPasswords())
-		throw NotImplementedGenericError {};
-}
 
 static
 std::string
 makeNameFilesystemCompatible(const std::string& name)
 {
 	return StringUtils::replaceInString(name, "/", "_");
-}
-
-static
-std::string
-decodePasswordIfNeeded(const std::string& password)
-{
-	if (password.find("enc:") == 0)
-	{
-		auto decodedPassword {StringUtils::stringFromHex(password.substr(4))};
-		if (!decodedPassword)
-			return password; // fallback on plain password
-
-		return *decodedPassword;
-	}
-
-	return password;
 }
 
 static
@@ -163,18 +142,6 @@ std::string parameterMapToDebugString(const Wt::Http::ParameterMap& parameterMap
 
 static
 void
-checkUserIsMySelfOrAdmin(RequestContext& context, const std::string& username)
-{
-	User::pointer currentUser {User::find(context.dbSession, context.userId)};
-	if (!currentUser)
-		throw RequestedDataNotFoundError {};
-
-	if (currentUser->getLoginName() != username	&& !currentUser->isAdmin())
-		throw UserNotAuthorizedError {};
-}
-
-static
-void
 checkUserTypeIsAllowed(RequestContext& context, EnumSet<Database::UserType> allowedUserTypes)
 {
 	auto transaction {context.dbSession.createSharedTransaction()};
@@ -201,76 +168,9 @@ clusterToResponseNode(const Cluster::pointer& cluster)
 }
 
 static
-Response::Node
-userToResponseNode(const User::pointer& user)
-{
-	Response::Node userNode;
-
-	userNode.setAttribute("username", user->getLoginName());
-	userNode.setAttribute("scrobblingEnabled", true);
-	userNode.setAttribute("adminRole", user->isAdmin());
-	userNode.setAttribute("settingsRole", true);
-	userNode.setAttribute("downloadRole", true);
-	userNode.setAttribute("uploadRole", false);
-	userNode.setAttribute("playlistRole", true);
-	userNode.setAttribute("coverArtRole", false);
-	userNode.setAttribute("commentRole", false);
-	userNode.setAttribute("podcastRole", false);
-	userNode.setAttribute("streamRole", true);
-	userNode.setAttribute("jukeboxRole", false);
-	userNode.setAttribute("shareRole", false);
-
-	Response::Node folder;
-	folder.setValue("0");
-	userNode.addArrayChild("folder", std::move(folder));
-
-	return userNode;
-}
-
-static
 Response
 handlePingRequest(RequestContext& context)
 {
-	return Response::createOkResponse(context.serverProtocolVersion);
-}
-
-static
-Response
-handleChangePassword(RequestContext& context)
-{
-	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
-	std::string password {decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(context.parameters, "password"))};
-
-	try
-	{
-		Database::UserId userId;
-		{
-			auto transaction {context.dbSession.createSharedTransaction()};
-
-			checkUserIsMySelfOrAdmin(context, username);
-
-			User::pointer user {User::find(context.dbSession, username)};
-			if (!user)
-				throw UserNotAuthorizedError {};
-
-			userId = user->getId();
-		}
-
-		Service<Auth::IPasswordService>::get()->setPassword(userId, password);
-	}
-	catch (const Auth::PasswordMustMatchLoginNameException&)
-	{
-		throw PasswordMustMatchLoginNameGenericError {};
-	}
-	catch (const Auth::PasswordTooWeakException&)
-	{
-		throw PasswordTooWeakGenericError {};
-	}
-	catch (const Auth::Exception& authException)
-	{
-		throw UserNotAuthorizedError {};
-	}
-
 	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
@@ -326,57 +226,6 @@ handleCreatePlaylistRequest(RequestContext& context)
 
 static
 Response
-handleCreateUserRequest(RequestContext& context)
-{
-	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
-	std::string password {decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(context.parameters, "password"))};
-	// Just ignore all the other fields as we don't handle them
-
-	Database::UserId userId;
-	{
-		auto transaction {context.dbSession.createUniqueTransaction()};
-
-		User::pointer user {User::find(context.dbSession, username)};
-		if (user)
-			throw UserAlreadyExistsGenericError {};
-
-		user = context.dbSession.create<User>(username);
-		userId = user->getId();
-	}
-
-	auto removeCreatedUser {[&]()
-	{
-		auto transaction {context.dbSession.createUniqueTransaction()};
-		User::pointer user {User::find(context.dbSession, userId)};
-		if (user)
-			user.remove();
-	}};
-
-	try
-	{
-		Service<Auth::IPasswordService>::get()->setPassword(userId, password);
-	}
-	catch (const Auth::PasswordMustMatchLoginNameException&)
-	{
-		removeCreatedUser();
-		throw PasswordMustMatchLoginNameGenericError {};
-	}
-	catch (const Auth::PasswordTooWeakException&)
-	{
-		removeCreatedUser();
-		throw PasswordTooWeakGenericError {};
-	}
-	catch (const Auth::Exception& exception)
-	{
-		removeCreatedUser();
-		throw UserNotAuthorizedError {};
-	}
-
-	return Response::createOkResponse(context.serverProtocolVersion);
-}
-
-static
-Response
 handleDeletePlaylistRequest(RequestContext& context)
 {
 	TrackListId id {getMandatoryParameterAs<TrackListId>(context.parameters, "id")};
@@ -396,27 +245,6 @@ handleDeletePlaylistRequest(RequestContext& context)
 	}
 
 	tracklist.remove();
-
-	return Response::createOkResponse(context.serverProtocolVersion);
-}
-
-static
-Response
-handleDeleteUserRequest(RequestContext& context)
-{
-	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
-
-	auto transaction {context.dbSession.createUniqueTransaction()};
-
-	User::pointer user {User::find(context.dbSession, username)};
-	if (!user)
-		throw RequestedDataNotFoundError {};
-
-	// cannot delete ourself
-	if (user->getId() == context.userId)
-		throw UserNotAuthorizedError {};
-
-	user.remove();
 
 	return Response::createOkResponse(context.serverProtocolVersion);
 }
@@ -1203,45 +1031,6 @@ handleGetSongsByGenreRequest(RequestContext& context)
 
 static
 Response
-handleGetUserRequest(RequestContext& context)
-{
-	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
-
-	auto transaction {context.dbSession.createSharedTransaction()};
-
-	checkUserIsMySelfOrAdmin(context, username);
-
-	const User::pointer user {User::find(context.dbSession, username)};
-	if (!user)
-		throw RequestedDataNotFoundError {};
-
-	Response response {Response::createOkResponse(context.serverProtocolVersion)};
-	response.addNode("user", userToResponseNode(user));
-
-	return response;
-}
-
-static
-Response
-handleGetUsersRequest(RequestContext& context)
-{
-	auto transaction {context.dbSession.createSharedTransaction()};
-
-	Response response {Response::createOkResponse(context.serverProtocolVersion)};
-	Response::Node& usersNode {response.createNode("users")};
-
-	const auto userIds {User::find(context.dbSession, User::FindParameters {})};
-	for (const UserId userId : userIds.results)
-	{
-		const User::pointer user {User::find(context.dbSession, userId)};
-		usersNode.addArrayChild("user", userToResponseNode(user));
-	}
-
-	return response;
-}
-
-static
-Response
 handleSearchRequestCommon(RequestContext& context, bool id3)
 {
 	// Mandatory params
@@ -1435,49 +1224,6 @@ handleScrobble(RequestContext& context)
 
 static
 Response
-handleUpdateUserRequest(RequestContext& context)
-{
-	std::string username {getMandatoryParameterAs<std::string>(context.parameters, "username")};
-	std::optional<std::string> password {getParameterAs<std::string>(context.parameters, "password")};
-
-	UserId userId;
-	{
-		auto transaction {context.dbSession.createSharedTransaction()};
-
-		User::pointer user {User::find(context.dbSession, username)};
-		if (!user)
-			throw RequestedDataNotFoundError {};
-
-		userId = user->getId();
-	}
-
-	if (password)
-	{
-		checkSetPasswordImplemented();
-
-		try
-		{
-			Service<::Auth::IPasswordService>()->setPassword(userId, decodePasswordIfNeeded(*password));
-		}
-		catch (const Auth::PasswordMustMatchLoginNameException&)
-		{
-			throw PasswordMustMatchLoginNameGenericError {};
-		}
-		catch (const Auth::PasswordTooWeakException&)
-		{
-			throw PasswordTooWeakGenericError {};
-		}
-		catch (const Auth::Exception&)
-		{
-			throw UserNotAuthorizedError {};
-		}
-	}
-
-	return Response::createOkResponse(context.serverProtocolVersion);
-}
-
-static
-Response
 handleUpdatePlaylistRequest(RequestContext& context)
 {
 	// Mandatory params
@@ -1554,7 +1300,7 @@ handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/,
 		throw BadParameterGenericError {"id"};
 
 	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(1024)};
-	size = Utils::clamp(size, std::size_t {32}, std::size_t {2048});
+	size = ::Utils::clamp(size, std::size_t {32}, std::size_t {2048});
 
 	std::shared_ptr<Image::IEncodedImage> cover;
 	if (trackId)
@@ -1663,10 +1409,10 @@ static const std::unordered_map<std::string_view, RequestEntryPointInfo> request
 	// User management
 	{"/getUser",			{handleGetUserRequest}},
 	{"/getUsers",		{handleGetUsersRequest,			{UserType::ADMIN}}},
-	{"/createUser",		{handleCreateUserRequest,		{UserType::ADMIN}, &checkSetPasswordImplemented}},
+	{"/createUser",		{handleCreateUserRequest,		{UserType::ADMIN}, &Utils::checkSetPasswordImplemented}},
 	{"/updateUser",		{handleUpdateUserRequest,		{UserType::ADMIN}}},
 	{"/deleteUser",		{handleDeleteUserRequest,		{UserType::ADMIN}}},
-	{"/changePassword",	{handleChangePassword,			{UserType::REGULAR, UserType::ADMIN}, &checkSetPasswordImplemented}},
+	{"/changePassword",	{handleChangePassword,			{UserType::REGULAR, UserType::ADMIN}, &Utils::checkSetPasswordImplemented}},
 
 	// Bookmarks
 	{"/getBookmarks",	{handleGetBookmarks}},

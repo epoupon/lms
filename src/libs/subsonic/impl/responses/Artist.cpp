@@ -33,7 +33,7 @@ namespace API::Subsonic
 
     using namespace Database;
 
-    namespace utils
+    namespace Utils
     {
         std::string joinArtistNames(const std::vector<Artist::pointer>& artists)
         {

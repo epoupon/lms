@@ -17,25 +17,26 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include <string>
-#include <vector>
-#include "services/database/Object.hpp"
-#include "SubsonicResponse.hpp"
-
-namespace Database
-{
-    class Artist;
-    class User;
-    class Session;
-}
+#include "ParameterParsing.hpp"
 
 namespace API::Subsonic
 {
-    namespace Utils
+    bool hasParameter(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
     {
-        std::string joinArtistNames(const std::vector<Database::ObjectPtr<Database::Artist>>& artists);
+        return parameterMap.find(param) != std::cend(parameterMap);
     }
-    Response::Node createArtistNode(const Database::ObjectPtr<Database::Artist>& artist, Database::Session& session, const Database::ObjectPtr<Database::User>& user, bool id3);
+
+    std::string decodePasswordIfNeeded(const std::string& password)
+    {
+        if (password.find("enc:") == 0)
+        {
+            auto decodedPassword{ StringUtils::stringFromHex(password.substr(4)) };
+            if (!decodedPassword)
+                return password; // fallback on plain password
+
+            return *decodedPassword;
+        }
+
+        return password;
+    }
 }

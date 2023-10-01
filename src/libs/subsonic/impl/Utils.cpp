@@ -17,16 +17,18 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "Utils.hpp"
 
-#include <string>
-
-#include "RequestContext.hpp"
+#include "utils/Service.hpp"
+#include "services/auth/IPasswordService.hpp"
 #include "SubsonicResponse.hpp"
 
-namespace API::Subsonic
+namespace API::Subsonic::Utils
 {
-    Response handleGetBookmarks(RequestContext& context);
-    Response handleCreateBookmark(RequestContext& context);
-    Response handleDeleteBookmark(RequestContext& context);
+    void checkSetPasswordImplemented()
+    {
+        Auth::IPasswordService* passwordService{ Service<Auth::IPasswordService>::get() };
+        if (!passwordService || !passwordService->canSetPasswords())
+            throw NotImplementedGenericError{};
+    }
 }

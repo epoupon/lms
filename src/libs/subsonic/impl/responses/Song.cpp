@@ -130,7 +130,7 @@ namespace API::Subsonic
         const std::vector<Artist::pointer>& artists{ track->getArtists({TrackArtistLinkType::Artist}) };
         if (!artists.empty())
         {
-            trackResponse.setAttribute("artist", utils::joinArtistNames(artists));
+            trackResponse.setAttribute("artist", Utils::joinArtistNames(artists));
 
             if (artists.size() == 1)
                 trackResponse.setAttribute("artistId", idToString(artists.front()->getId()));

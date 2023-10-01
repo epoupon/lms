@@ -1,16 +1,20 @@
 
 add_library(lmssubsonic SHARED
+	impl/entrypoints/Bookmark.cpp
+	impl/entrypoints/Scan.cpp
+	impl/entrypoints/Stream.cpp
+	impl/entrypoints/UserManagement.cpp
 	impl/responses/Album.cpp
 	impl/responses/Artist.cpp
 	impl/responses/Bookmark.cpp
 	impl/responses/Song.cpp
+	impl/responses/User.cpp
 	impl/ProtocolVersion.cpp
-	impl/Bookmark.cpp
-	impl/Scan.cpp
-	impl/Stream.cpp
+	impl/ParameterParsing.cpp
 	impl/SubsonicId.cpp
 	impl/SubsonicResource.cpp
 	impl/SubsonicResponse.cpp
+	impl/Utils.cpp
 	)
 
 target_include_directories(lmssubsonic INTERFACE
