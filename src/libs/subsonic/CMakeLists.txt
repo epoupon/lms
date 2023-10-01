@@ -1,5 +1,7 @@
 
 add_library(lmssubsonic SHARED
+	impl/responses/Album.cpp
+	impl/responses/Artist.cpp
 	impl/ProtocolVersion.cpp
 	impl/Scan.cpp
 	impl/Stream.cpp
@@ -13,6 +15,7 @@ target_include_directories(lmssubsonic INTERFACE
 	)
 
 target_include_directories(lmssubsonic PRIVATE
+	impl
 	include
 	)
 

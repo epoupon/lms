@@ -29,94 +29,67 @@
 #define QUOTEME(x) QUOTEME_1(x)
 #define QUOTEME_1(x) #x
 
-namespace StringUtils {
-
-[[nodiscard]]
-std::vector<std::string>
-splitStringCopy(std::string_view string, std::string_view separators);
-
-[[nodiscard]]
-std::vector<std::string_view>
-splitString(std::string_view string, std::string_view separators);
-
-[[nodiscard]]
-std::string
-joinStrings(const std::vector<std::string>& strings, const std::string& delimiter);
-
-[[nodiscard]]
-std::string_view
-stringTrim(std::string_view str, std::string_view whitespaces = " \t");
-
-[[nodiscard]]
-std::string_view
-stringTrimEnd(std::string_view str, std::string_view whitespaces = " \t");
-
-[[nodiscard]]
-std::string
-stringToLower(std::string_view str);
-
-void
-stringToLower(std::string& str);
-
-[[nodiscard]]
-std::string
-stringToUpper(const std::string& str);
-
-[[nodiscard]]
-std::string
-bufferToString(const std::vector<unsigned char>& data);
-
-void
-capitalize(std::string& str);
-
-template<typename T>
-[[nodiscard]]
-std::optional<T> readAs(std::string_view str)
+namespace Wt
 {
-	T res;
-
-	std::istringstream iss {std::string {str}};
-	iss >> res;
-	if (iss.fail())
-		return std::nullopt;
-
-	return res;
+	class WDate;
+	class WDateTime;
 }
 
-template<>
-[[nodiscard]]
-std::optional<std::string>
-readAs(std::string_view str);
+namespace StringUtils {
 
-template<>
-[[nodiscard]]
-std::optional<std::string_view>
-readAs(std::string_view str);
+	[[nodiscard]] std::vector<std::string> splitStringCopy(std::string_view string, std::string_view separators);
 
-template<>
-[[nodiscard]]
-std::optional<bool>
-readAs(std::string_view str);
+	[[nodiscard]] std::vector<std::string_view> splitString(std::string_view string, std::string_view separators);
 
-[[nodiscard]]
-std::string
-replaceInString(std::string_view str, const std::string& from, const std::string& to);
+	[[nodiscard]] std::string joinStrings(const std::vector<std::string>& strings, const std::string& delimiter);
 
-[[nodiscard]]
-std::string
-jsEscape(const std::string& str);
+	[[nodiscard]] std::string_view stringTrim(std::string_view str, std::string_view whitespaces = " \t");
 
-[[nodiscard]]
-std::string
-escapeString(std::string_view str, std::string_view charsToEscape, char escapeChar);
+	[[nodiscard]] std::string_view stringTrimEnd(std::string_view str, std::string_view whitespaces = " \t");
 
-[[nodiscard]]
-bool
-stringEndsWith(const std::string& str, const std::string& ending);
+	[[nodiscard]] std::string stringToLower(std::string_view str);
 
-[[nodiscard]]
-std::optional<std::string>
-stringFromHex(const std::string& str);
+	void stringToLower(std::string& str);
+
+	[[nodiscard]] std::string stringToUpper(const std::string& str);
+
+	[[nodiscard]] std::string bufferToString(const std::vector<unsigned char>& data);
+
+	void capitalize(std::string& str);
+
+	template<typename T>
+	[[nodiscard]] std::optional<T> readAs(std::string_view str)
+	{
+		T res;
+
+		std::istringstream iss{ std::string {str} };
+		iss >> res;
+		if (iss.fail())
+			return std::nullopt;
+
+		return res;
+	}
+
+	template<>
+	[[nodiscard]] std::optional<std::string> readAs(std::string_view str);
+
+	template<>
+	[[nodiscard]] std::optional<std::string_view> readAs(std::string_view str);
+
+	template<>
+	[[nodiscard]] std::optional<bool> readAs(std::string_view str);
+
+	[[nodiscard]] std::string replaceInString(std::string_view str, const std::string& from, const std::string& to);
+
+	[[nodiscard]] std::string jsEscape(const std::string& str);
+
+	[[nodiscard]] std::string escapeString(std::string_view str, std::string_view charsToEscape, char escapeChar);
+
+	[[nodiscard]] bool stringEndsWith(const std::string& str, const std::string& ending);
+
+	[[nodiscard]] std::optional<std::string> stringFromHex(const std::string& str);
+
+	[[nodiscard]] std::string toISO8601String(const Wt::WDateTime& dateTime);
+	[[nodiscard]] std::string toISO8601String(const Wt::WDate& date);
 
 } // StringUtils
-

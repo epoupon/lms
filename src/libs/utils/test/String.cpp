@@ -19,6 +19,9 @@
 
 #include <gtest/gtest.h>
 
+#include <Wt/WDateTime.h>
+#include <Wt/WDate.h>
+#include <Wt/WTime.h>
 #include "utils/String.hpp"
 
 TEST(StringUtils, splitString)
@@ -146,4 +149,16 @@ TEST(StringUtils, capitalize)
 		StringUtils::capitalize(str);
 		EXPECT_EQ(str, test.expectedOutput) << " str was '" << test.input << "'";
 	}
+}
+
+TEST(Stringutils, date)
+{
+	const Wt::WDate date{ 2020, 01, 03 };
+	EXPECT_EQ(StringUtils::toISO8601String(date), "2020-01-03");
+}
+
+TEST(Stringutils, dateTime)
+{
+	const Wt::WDateTime dateTime{ Wt::WDate {2020, 01, 03 }, Wt::WTime{9, 8, 11, 75} };
+	EXPECT_EQ(StringUtils::toISO8601String(dateTime), "2020-01-03T09:08:11.075");
 }

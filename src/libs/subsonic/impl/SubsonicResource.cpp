@@ -21,7 +21,6 @@
 
 #include <atomic>
 #include <ctime>
-#include <iomanip>
 #include <map>
 #include <unordered_map>
 
@@ -54,6 +53,9 @@
 #include "Stream.hpp"
 #include "SubsonicId.hpp"
 #include "SubsonicResponse.hpp"
+
+#include "responses/Artist.hpp"
+#include "responses/Album.hpp"
 
 using namespace Database;
 
@@ -185,25 +187,6 @@ checkUserTypeIsAllowed(RequestContext& context, EnumSet<Database::UserType> allo
 
 static
 std::string
-getArtistNames(const std::vector<Artist::pointer>& artists)
-{
-	if (artists.size() == 1)
-		return artists.front()->getName();
-
-	std::vector<std::string> names;
-	names.resize(artists.size());
-
-	std::transform(std::cbegin(artists), std::cend(artists), std::begin(names),
-			[](const Artist::pointer& artist)
-			{
-				return artist->getName();
-			});
-
-	return StringUtils::joinStrings(names, ", ");
-}
-
-static
-std::string
 getTrackPath(const Track::pointer& track)
 {
 	std::string path;
@@ -255,17 +238,6 @@ formatToSuffix(AudioFormat format)
 }
 
 static
-std::string
-dateTimeToCreatedString(const Wt::WDateTime& dateTime)
-{
-		const std::time_t t {dateTime.toTime_t()};
-		std::tm gmTime;
-		std::ostringstream oss;
-		oss << std::put_time(::gmtime_r(&t, &gmTime), "%FT%T");
-		return oss.str();
-}
-
-static
 Response::Node
 trackToResponseNode(const Track::pointer& track, Session& dbSession, const User::pointer& user)
 {
@@ -303,7 +275,7 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 	const std::vector<Artist::pointer>& artists {track->getArtists({TrackArtistLinkType::Artist})};
 	if (!artists.empty())
 	{
-		trackResponse.setAttribute("artist", getArtistNames(artists));
+		trackResponse.setAttribute("artist", utils::joinArtistNames(artists));
 
 		if (artists.size() == 1)
 			trackResponse.setAttribute("artistId", idToString(artists.front()->getId()));
@@ -318,7 +290,7 @@ trackToResponseNode(const Track::pointer& track, Session& dbSession, const User:
 
 	trackResponse.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count());
 	trackResponse.setAttribute("type", "music");
-	trackResponse.setAttribute("created", dateTimeToCreatedString(track->getLastWritten()));
+	trackResponse.setAttribute("created", StringUtils::toISO8601String(track->getLastWritten()));
 
 	if (Service<Scrobbling::IScrobblingService>::get()->isStarred(user->getId(), track->getId()))
 		trackResponse.setAttribute("starred", reportedStarredDate);
@@ -349,71 +321,6 @@ trackBookmarkToResponseNode(const TrackBookmark::pointer& trackBookmark)
 	trackBookmarkNode.setAttribute("username", trackBookmark->getUser()->getLoginName());
 
 	return trackBookmarkNode;
-}
-
-static
-Response::Node
-releaseToResponseNode(const Release::pointer& release, Session& dbSession, const User::pointer& user, bool id3)
-{
-	Response::Node albumNode;
-
-	if (id3)
-	{
-		albumNode.setAttribute("name", release->getName());
-		albumNode.setAttribute("songCount", release->getTracksCount());
-		albumNode.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(release->getDuration()).count());
-	}
-	else
-	{
-		albumNode.setAttribute("title", release->getName());
-		albumNode.setAttribute("isDir", true);
-	}
-
-	albumNode.setAttribute("created", dateTimeToCreatedString(release->getLastWritten()));
-	albumNode.setAttribute("id", idToString(release->getId()));
-	albumNode.setAttribute("coverArt", idToString(release->getId()));
-	if (const Wt::WDate  releaseDate {release->getReleaseDate()}; releaseDate.isValid())
-		albumNode.setAttribute("year", releaseDate.year());
-
-	auto artists {release->getReleaseArtists()};
-	if (artists.empty())
-		artists = release->getArtists();
-
-	if (artists.empty() && !id3)
-	{
-		albumNode.setAttribute("parent", idToString(RootId {}));
-	}
-	else if (!artists.empty())
-	{
-		albumNode.setAttribute("artist", getArtistNames(artists));
-
-		if (artists.size() == 1)
-		{
-			albumNode.setAttribute(id3 ? "artistId" : "parent", idToString(artists.front()->getId()));
-		}
-		else
-		{
-			if (!id3)
-				albumNode.setAttribute("parent", idToString(RootId {}));
-		}
-	}
-
-	if (id3)
-	{
-		// Report the first GENRE for this track
-		ClusterType::pointer clusterType{ClusterType::find(dbSession, genreClusterName)};
-		if (clusterType)
-		{
-			auto clusters{release->getClusterGroups({clusterType}, 1)};
-			if (!clusters.empty() && !clusters.front().empty())
-				albumNode.setAttribute("genre", clusters.front().front()->getName());
-		}
-	}
-
-	if (Service<Scrobbling::IScrobblingService>::get()->isStarred(user->getId(), release->getId()))
-		albumNode.setAttribute("starred", reportedStarredDate);
-
-	return albumNode;
 }
 
 static
@@ -816,7 +723,7 @@ handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
 	for (const ReleaseId releaseId : releases.results)
 	{
 		const Release::pointer release {Release::find(context.dbSession, releaseId)};
-		albumListNode.addArrayChild("album", releaseToResponseNode(release, context.dbSession, user, id3));
+		albumListNode.addArrayChild("album", createAlbumNode(release, context.dbSession, user, id3));
 	}
 
 	return response;
@@ -854,16 +761,16 @@ handleGetAlbumRequest(RequestContext& context)
 		throw UserNotAuthorizedError {};
 
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
-	Response::Node releaseNode {releaseToResponseNode(release, context.dbSession, user, true /* id3 */)};
+	Response::Node albumNode {createAlbumNode(release, context.dbSession, user, true /* id3 */)};
 
 	const auto tracks {Track::find(context.dbSession, Track::FindParameters {}.setRelease(id).setSortMethod(TrackSortMethod::Release))};
 	for (const TrackId trackId : tracks.results)
 	{
 		const Track::pointer track {Track::find(context.dbSession, trackId)};
-		releaseNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
+		albumNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
 	}
 
-	response.addNode("album", std::move(releaseNode));
+	response.addNode("album", std::move(albumNode));
 
 	return response;
 }
@@ -915,7 +822,7 @@ handleGetArtistRequest(RequestContext& context)
 	for (const ReleaseId releaseId : releases.results)
 	{
 		const Release::pointer release {Release::find(context.dbSession, releaseId)};
-		artistNode.addArrayChild("album", releaseToResponseNode(release, context.dbSession, user, true /* id3 */));
+		artistNode.addArrayChild("album", createAlbumNode(release, context.dbSession, user, true /* id3 */));
 	}
 
 	response.addNode("artist", std::move(artistNode));
@@ -1029,7 +936,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 		for (const ReleaseId artistReleaseId : artistReleases.results)
 		{
 			const Release::pointer release {Release::find(context.dbSession, artistReleaseId)};
-			directoryNode.addArrayChild("child", releaseToResponseNode(release, context.dbSession, user, false /* no id3 */));
+			directoryNode.addArrayChild("child", createAlbumNode(release, context.dbSession, user, false /* no id3 */));
 		}
 	}
 	else if (releaseId)
@@ -1311,7 +1218,7 @@ handleGetStarredRequestCommon(RequestContext& context, bool id3)
 	for (const ReleaseId releaseId : scrobbling.getStarredReleases(context.userId, {} /* clusters */, Range {}).results)
 	{
 		if (auto release {Release::find(context.dbSession, releaseId)})
-			starredNode.addArrayChild("album", releaseToResponseNode(release, context.dbSession, user, id3));
+			starredNode.addArrayChild("album", createAlbumNode(release, context.dbSession, user, id3));
 	}
 
 	for (const TrackId trackId : scrobbling.getStarredTracks(context.userId, {} /* clusters */, Range {}).results)
@@ -1547,7 +1454,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 		for (const ReleaseId releaseId : releaseIds.results)
 		{
 			const auto release {Release::find(context.dbSession, releaseId)};
-			searchResult2Node.addArrayChild("album", releaseToResponseNode(release, context.dbSession, user, id3));
+			searchResult2Node.addArrayChild("album", createAlbumNode(release, context.dbSession, user, id3));
 		}
 	}
 
