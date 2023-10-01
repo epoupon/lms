@@ -39,7 +39,6 @@
 #include "services/database/User.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
-#include "services/cover/ICoverService.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Random.hpp"
@@ -47,9 +46,9 @@
 #include "utils/String.hpp"
 #include "utils/Utils.hpp"
 
-#include "entrypoints/Bookmark.hpp"
+#include "entrypoints/Bookmarks.hpp"
+#include "entrypoints/MediaRetrieval.hpp"
 #include "entrypoints/Scan.hpp"
-#include "entrypoints/Stream.hpp"
 #include "entrypoints/UserManagement.hpp"
 #include "responses/Artist.hpp"
 #include "responses/Album.hpp"
@@ -1288,30 +1287,6 @@ handleNotImplemented(RequestContext&)
 	throw NotImplementedGenericError {};
 }
 
-static
-void
-handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/, Wt::Http::Response& response)
-{
-	// Mandatory params
-	const auto trackId {getParameterAs<TrackId>(context.parameters, "id")};
-	const auto releaseId {getParameterAs<ReleaseId>(context.parameters, "id")};
-
-	if (!trackId && !releaseId)
-		throw BadParameterGenericError {"id"};
-
-	std::size_t size {getParameterAs<std::size_t>(context.parameters, "size").value_or(1024)};
-	size = ::Utils::clamp(size, std::size_t {32}, std::size_t {2048});
-
-	std::shared_ptr<Image::IEncodedImage> cover;
-	if (trackId)
-		cover = Service<Cover::ICoverService>::get()->getFromTrack(*trackId, size);
-	else if (releaseId)
-		cover = Service<Cover::ICoverService>::get()->getFromRelease(*releaseId, size);
-
-	response.out().write(reinterpret_cast<const char*>(cover->getData()), cover->getDataSize());
-	response.setMimeType(std::string {cover->getMimeType()});
-}
-
 using RequestHandlerFunc = std::function<Response(RequestContext& context)>;
 using CheckImplementedFunc = std::function<void()>;
 struct RequestEntryPointInfo
@@ -1430,8 +1405,8 @@ using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::
 static std::unordered_map<std::string, MediaRetrievalHandlerFunc> mediaRetrievalHandlers
 {
 	// Media retrieval
-	{"/download",		Stream::handleDownload},
-	{"/stream",			Stream::handleStream},
+	{"/download",		handleDownload},
+	{"/stream",			handleStream},
 	{"/getCoverArt",	handleGetCoverArt},
 };
 

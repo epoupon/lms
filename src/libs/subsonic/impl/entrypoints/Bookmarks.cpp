@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Bookmark.hpp"
+#include "Bookmarks.hpp"
 
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
