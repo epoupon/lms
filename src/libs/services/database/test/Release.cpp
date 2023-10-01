@@ -350,8 +350,8 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseDate)
 		track1A.get().modify()->setOriginalDate(release1OriginalDate);
 		track1B.get().modify()->setOriginalDate(release1OriginalDate);
 
-		EXPECT_EQ(release1.get()->getReleaseYear(), release1Date.year());
-		EXPECT_EQ(release1.get()->getReleaseYear(true), release1OriginalDate.year());
+		EXPECT_EQ(release1.get()->getReleaseDate(), release1Date);
+		EXPECT_EQ(release1.get()->getOriginalReleaseDate(), release1OriginalDate);
 	}
 
 	{

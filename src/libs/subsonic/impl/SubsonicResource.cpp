@@ -57,13 +57,10 @@
 
 using namespace Database;
 
-static const std::string	genreClusterName {"GENRE"};
-static const std::string	reportedStarredDate {"2000-01-01T00:00:00"};
-static const std::string	reportedDummyDate {"2000-01-01T00:00:00"};
+static const std::string_view	genreClusterName {"GENRE"};
+static const std::string_view	reportedStarredDate {"2000-01-01T00:00:00"};
+static const std::string_view	reportedDummyDate {"2000-01-01T00:00:00"};
 static const unsigned long long	reportedDummyDateULong {946684800000ULL}; // 2000-01-01T00:00:00 UTC
-
-
-
 
 namespace API::Subsonic
 {
@@ -375,9 +372,8 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 	albumNode.setAttribute("created", dateTimeToCreatedString(release->getLastWritten()));
 	albumNode.setAttribute("id", idToString(release->getId()));
 	albumNode.setAttribute("coverArt", idToString(release->getId()));
-	auto releaseYear {release->getReleaseYear()};
-	if (releaseYear)
-		albumNode.setAttribute("year", *releaseYear);
+	if (const Wt::WDate  releaseDate {release->getReleaseDate()}; releaseDate.isValid())
+		albumNode.setAttribute("year", releaseDate.year());
 
 	auto artists {release->getReleaseArtists()};
 	if (artists.empty())
@@ -405,10 +401,10 @@ releaseToResponseNode(const Release::pointer& release, Session& dbSession, const
 	if (id3)
 	{
 		// Report the first GENRE for this track
-		ClusterType::pointer clusterType {ClusterType::find(dbSession, genreClusterName)};
+		ClusterType::pointer clusterType{ClusterType::find(dbSession, genreClusterName)};
 		if (clusterType)
 		{
-			auto clusters {release->getClusterGroups({clusterType}, 1)};
+			auto clusters{release->getClusterGroups({clusterType}, 1)};
 			if (!clusters.empty() && !clusters.front().empty())
 				albumNode.setAttribute("genre", clusters.front().front()->getName());
 		}
@@ -1905,7 +1901,7 @@ struct RequestEntryPointInfo
 	CheckImplementedFunc		checkFunc {};
 };
 
-static const std::unordered_map<std::string, RequestEntryPointInfo> requestEntryPoints
+static const std::unordered_map<std::string_view, RequestEntryPointInfo> requestEntryPoints
 {
 	// System
 	{"/ping",		{handlePingRequest}},

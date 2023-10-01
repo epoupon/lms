@@ -109,8 +109,8 @@ getReleasePathName(Database::Release::pointer release)
 {
 	std::string releaseName;
 
-	if (auto releaseYear {release->getReleaseYear()})
-		releaseName += std::to_string(*releaseYear) + " - ";
+	if (const Wt::WDate releaseDate {release->getReleaseDate()}; releaseDate.isValid())
+		releaseName += std::to_string(releaseDate.year()) + " - ";
 	releaseName += StringUtils::replaceInString(release->getName(), "/", "_");
 
 	return releaseName;

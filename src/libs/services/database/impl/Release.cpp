@@ -287,8 +287,20 @@ Release::getDiscCount() const
 	return res;
 }
 
-std::optional<int>
-Release::getReleaseYear(bool original) const
+Wt::WDate
+Release::getReleaseDate() const
+{
+	return getReleaseDate(false);
+}
+
+Wt::WDate
+Release::getOriginalReleaseDate() const
+{
+	return getReleaseDate(true);
+}
+
+Wt::WDate
+Release::getReleaseDate(bool original) const
 {
 	assert(session());
 
@@ -301,16 +313,11 @@ Release::getReleaseYear(bool original) const
 		.bind(getId())
 		.resultList()};
 
-	// various dates => no date
+	// various dates => invalid date
 	if (dates.empty() || dates.size() > 1)
-		return std::nullopt;
+		return {};
 
-	auto date {dates.front().year()};
-
-	if (date > 0)
-		return date;
-
-	return std::nullopt;
+	return dates.front();
 }
 
 std::optional<std::string>

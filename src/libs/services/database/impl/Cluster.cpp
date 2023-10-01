@@ -149,11 +149,11 @@ ClusterType::findUsed(Session& session, Range range)
 }
 
 ClusterType::pointer
-ClusterType::find(Session& session, const std::string& name)
+ClusterType::find(Session& session, std::string_view name)
 {
 	session.checkSharedLocked();
 
-	return session.getDboSession().find<ClusterType>().where("name = ?").bind(name).resultValue();
+	return session.getDboSession().find<ClusterType>().where("name = ?").bind(std::string {name}).resultValue();
 }
 
 ClusterType::pointer

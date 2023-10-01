@@ -89,7 +89,7 @@ class ClusterType final : public Object<ClusterType, ClusterTypeId>
 		// Getters
 		static std::size_t					getCount(Session& session);
 		static RangeResults<ClusterTypeId>	find(Session& session, Range range);
-		static pointer 						find(Session& session, const std::string& name);
+		static pointer 						find(Session& session, std::string_view name);
 		static pointer						find(Session& session, ClusterTypeId id);
 		static RangeResults<ClusterTypeId>	findOrphans(Session& session, Range range);
 		static RangeResults<ClusterTypeId>	findUsed(Session& session, Range range);

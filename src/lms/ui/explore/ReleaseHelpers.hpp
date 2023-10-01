@@ -24,6 +24,7 @@
 
 #include <Wt/WString.h>
 #include <Wt/WTemplate.h>
+#include <Wt/WDate.h>
 #include "services/database/Object.hpp"
 #include "services/database/Types.hpp"
 #include "utils/EnumSet.hpp"
@@ -43,5 +44,5 @@ namespace UserInterface::ReleaseListHelpers
 namespace UserInterface::ReleaseHelpers
 {
 	Wt::WString buildReleaseTypeString(Database::ReleaseTypePrimary primaryType, EnumSet<Database::ReleaseTypeSecondary> secondaryTypes);
-	Wt::WString buildReleaseYearString(std::optional<int> year, std::optional<int> originalYear);
+	Wt::WString buildReleaseYearString(const Wt::WDate& releaseDate, const Wt::WDate& originalReleaseDate);
 }

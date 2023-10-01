@@ -100,7 +100,8 @@ class Release final : public Object<Release, ReleaseId>
 		std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ObjectPtr<ClusterType>>& clusterTypes, std::size_t size) const;
 
 		// Utility functions (if all tracks have the same values, which is legit to not be the case)
-		std::optional<int>			getReleaseYear(bool originalDate = false) const;
+		Wt::WDate					getReleaseDate() const;
+		Wt::WDate					getOriginalReleaseDate() const;
 		std::optional<std::string>	getCopyright() const;
 		std::optional<std::string>	getCopyrightURL() const;
 
@@ -144,6 +145,8 @@ class Release final : public Object<Release, ReleaseId>
 		friend class Session;
 		Release(const std::string& name, const std::optional<UUID>& MBID = {});
 		static pointer create(Session& session, const std::string& name, const std::optional<UUID>& MBID = {});
+
+		Wt::WDate						getReleaseDate(bool original) const;
 
 		static constexpr std::size_t _maxNameLength {128};
 
