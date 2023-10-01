@@ -48,6 +48,7 @@
 
 #include "entrypoints/AlbumSongLists.hpp"
 #include "entrypoints/Bookmarks.hpp"
+#include "entrypoints/MediaAnnotation.hpp"
 #include "entrypoints/MediaLibraryScanning.hpp"
 #include "entrypoints/MediaRetrieval.hpp"
 #include "entrypoints/Searching.hpp"
@@ -783,107 +784,6 @@ handleGetPlaylistsRequest(RequestContext& context)
 	}
 
 	return response;
-}
-
-struct StarParameters
-{
-	std::vector<ArtistId> artistIds;
-	std::vector<ReleaseId> releaseIds;
-	std::vector<TrackId> trackIds;
-};
-
-static
-StarParameters
-getStarParameters(const Wt::Http::ParameterMap& parameters)
-{
-	StarParameters res;
-
-	// TODO handle parameters for legacy file browsing
-	res.trackIds = getMultiParametersAs<TrackId>(parameters, "id");
-	res.artistIds = getMultiParametersAs<ArtistId>(parameters, "artistId");
-	res.releaseIds = getMultiParametersAs<ReleaseId>(parameters, "albumId");
-
-	return res;
-}
-
-static
-Response
-handleStarRequest(RequestContext& context)
-{
-	StarParameters params {getStarParameters(context.parameters)};
-
-	for (const ArtistId id : params.artistIds)
-		Service<Scrobbling::IScrobblingService>::get()->star(context.userId, id);
-
-	for (const ReleaseId id : params.releaseIds)
-		Service<Scrobbling::IScrobblingService>::get()->star(context.userId, id);
-
-	for (const TrackId id : params.trackIds)
-		Service<Scrobbling::IScrobblingService>::get()->star(context.userId, id);
-
-	return Response::createOkResponse(context.serverProtocolVersion);
-}
-
-static
-Response
-handleUnstarRequest(RequestContext& context)
-{
-	StarParameters params {getStarParameters(context.parameters)};
-
-	for (const ArtistId id : params.artistIds)
-		Service<Scrobbling::IScrobblingService>::get()->unstar(context.userId, id);
-
-	for (const ReleaseId id : params.releaseIds)
-		Service<Scrobbling::IScrobblingService>::get()->unstar(context.userId, id);
-
-	for (const TrackId id : params.trackIds)
-		Service<Scrobbling::IScrobblingService>::get()->unstar(context.userId, id);
-
-	return Response::createOkResponse(context.serverProtocolVersion);
-}
-
-static
-Response
-handleScrobble(RequestContext& context)
-{
-	const std::vector<TrackId> ids {getMandatoryMultiParametersAs<TrackId>(context.parameters, "id")};
-	const std::vector<unsigned long> times {getMultiParametersAs<unsigned long>(context.parameters, "time")};
-	const bool submission{getParameterAs<bool>(context.parameters, "submission").value_or(true)};
-
-	// playing now => no time to be provided
-	if (!submission && !times.empty())
-		throw BadParameterGenericError {"time"};
-
-	// playing now => only one at a time
-	if (!submission && ids.size() > 1)
-		throw BadParameterGenericError {"id"};
-
-	// if multiple submissions, must have times
-	if (ids.size() > 1 && ids.size() != times.size())
-		throw BadParameterGenericError {"time"};
-
-	if (!submission)
-	{
-		Service<Scrobbling::IScrobblingService>::get()->listenStarted({context.userId, ids.front()});
-	}
-	else
-	{
-		if (times.empty())
-		{
-			Service<Scrobbling::IScrobblingService>::get()->listenFinished({context.userId, ids.front()});
-		}
-		else
-		{
-			for (std::size_t i {}; i < ids.size(); ++i)
-			{
-				const TrackId trackId {ids[i]};
-				const unsigned long time {times[i]};
-				Service<Scrobbling::IScrobblingService>::get()->addTimedListen({{context.userId, trackId}, Wt::WDateTime::fromTime_t(static_cast<std::time_t>(time / 1000))});
-			}
-		}
-	}
-
-	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
