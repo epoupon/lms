@@ -56,6 +56,7 @@
 
 #include "responses/Artist.hpp"
 #include "responses/Album.hpp"
+#include "responses/Song.hpp"
 
 using namespace Database;
 
@@ -183,128 +184,6 @@ checkUserTypeIsAllowed(RequestContext& context, EnumSet<Database::UserType> allo
 
 	if (!allowedUserTypes.contains(currentUser->getType()))
 		throw UserNotAuthorizedError {};
-}
-
-static
-std::string
-getTrackPath(const Track::pointer& track)
-{
-	std::string path;
-
-	// The track path has to be relative from the root
-
-	const auto release {track->getRelease()};
-	if (release)
-	{
-		auto artists {release->getReleaseArtists()};
-		if (artists.empty())
-			artists = release->getArtists();
-
-		if (artists.size() > 1)
-			path = "Various Artists/";
-		else if (artists.size() == 1)
-			path = makeNameFilesystemCompatible(artists.front()->getName()) + "/";
-
-		path += makeNameFilesystemCompatible(track->getRelease()->getName()) + "/";
-	}
-
-	if (track->getDiscNumber())
-		path += std::to_string(*track->getDiscNumber()) + "-";
-	if (track->getTrackNumber())
-		path += std::to_string(*track->getTrackNumber()) + "-";
-
-	path += makeNameFilesystemCompatible(track->getName());
-
-	if (track->getPath().has_extension())
-		path += track->getPath().extension();
-
-	return path;
-}
-
-static
-std::string_view
-formatToSuffix(AudioFormat format)
-{
-	switch (format)
-	{
-		case AudioFormat::MP3:			return "mp3";
-		case AudioFormat::OGG_OPUS:		return "opus";
-		case AudioFormat::MATROSKA_OPUS:	return "mka";
-		case AudioFormat::OGG_VORBIS:		return "ogg";
-		case AudioFormat::WEBM_VORBIS:		return "webm";
-	}
-
-	return "";
-}
-
-static
-Response::Node
-trackToResponseNode(const Track::pointer& track, Session& dbSession, const User::pointer& user)
-{
-	Response::Node trackResponse;
-
-	trackResponse.setAttribute("id", idToString(track->getId()));
-	trackResponse.setAttribute("isDir", false);
-	trackResponse.setAttribute("title", track->getName());
-	if (track->getTrackNumber())
-		trackResponse.setAttribute("track", *track->getTrackNumber());
-	if (track->getDiscNumber())
-		trackResponse.setAttribute("discNumber", *track->getDiscNumber());
-	if (track->getYear())
-		trackResponse.setAttribute("year", *track->getYear());
-
-	trackResponse.setAttribute("path", getTrackPath(track));
-	{
-		std::error_code ec;
-		const auto fileSize {std::filesystem::file_size(track->getPath(), ec)};
-		if (!ec)
-			trackResponse.setAttribute("size", fileSize);
-	}
-
-	if (track->getPath().has_extension())
-	{
-		auto extension {track->getPath().extension()};
-		trackResponse.setAttribute("suffix", extension.string().substr(1));
-	}
-
-	if (user->getSubsonicTranscodeEnable())
-		trackResponse.setAttribute("transcodedSuffix", formatToSuffix(user->getSubsonicTranscodeFormat()));
-
-	trackResponse.setAttribute("coverArt", idToString(track->getId()));
-
-	const std::vector<Artist::pointer>& artists {track->getArtists({TrackArtistLinkType::Artist})};
-	if (!artists.empty())
-	{
-		trackResponse.setAttribute("artist", utils::joinArtistNames(artists));
-
-		if (artists.size() == 1)
-			trackResponse.setAttribute("artistId", idToString(artists.front()->getId()));
-	}
-
-	if (track->getRelease())
-	{
-		trackResponse.setAttribute("album", track->getRelease()->getName());
-		trackResponse.setAttribute("albumId", idToString(track->getRelease()->getId()));
-		trackResponse.setAttribute("parent", idToString(track->getRelease()->getId()));
-	}
-
-	trackResponse.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count());
-	trackResponse.setAttribute("type", "music");
-	trackResponse.setAttribute("created", StringUtils::toISO8601String(track->getLastWritten()));
-
-	if (Service<Scrobbling::IScrobblingService>::get()->isStarred(user->getId(), track->getId()))
-		trackResponse.setAttribute("starred", reportedStarredDate);
-
-	// Report the first GENRE for this track
-	ClusterType::pointer clusterType {ClusterType::find(dbSession, genreClusterName)};
-	if (clusterType)
-	{
-		auto clusters {track->getClusterGroups({clusterType}, 1)};
-		if (!clusters.empty() && !clusters.front().empty())
-			trackResponse.setAttribute("genre", clusters.front().front()->getName());
-	}
-
-	return trackResponse;
 }
 
 static
@@ -593,7 +472,7 @@ handleGetRandomSongsRequest(RequestContext& context)
 	for (const TrackId trackId : trackIds.results)
 	{
 		const Track::pointer track {Track::find(context.dbSession, trackId)};
-		randomSongsNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
+		randomSongsNode.addArrayChild("song", createSongNode(track, context.dbSession, user));
 	}
 
 	return response;
@@ -746,7 +625,7 @@ handleGetAlbumRequest(RequestContext& context)
 	for (const TrackId trackId : tracks.results)
 	{
 		const Track::pointer track {Track::find(context.dbSession, trackId)};
-		albumNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
+		albumNode.addArrayChild("song", createSongNode(track, context.dbSession, user));
 	}
 
 	response.addNode("album", std::move(albumNode));
@@ -772,7 +651,7 @@ handleGetSongRequest(RequestContext& context)
 		throw UserNotAuthorizedError {};
 
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
-	response.addNode("song", trackToResponseNode(track, context.dbSession, user));
+	response.addNode("song", createSongNode(track, context.dbSession, user));
 
 	return response;
 }
@@ -932,7 +811,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 		for (const TrackId trackId : tracks.results)
 		{
 			const Track::pointer track {Track::find(context.dbSession, trackId)};
-			directoryNode.addArrayChild("child", trackToResponseNode(track, context.dbSession, user));
+			directoryNode.addArrayChild("child", createSongNode(track, context.dbSession, user));
 		}
 	}
 	else
@@ -1153,7 +1032,7 @@ handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
 	for (const TrackId trackId : tracks)
 	{
 		const Track::pointer track {Track::find(context.dbSession, trackId)};
-		similarSongsNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
+		similarSongsNode.addArrayChild("song", createSongNode(track, context.dbSession, user));
 	}
 
 	return response;
@@ -1203,7 +1082,7 @@ handleGetStarredRequestCommon(RequestContext& context, bool id3)
 	for (const TrackId trackId : scrobbling.getStarredTracks(context.userId, {} /* clusters */, Range {}).results)
 	{
 		if (auto track {Track::find(context.dbSession, trackId)})
-			starredNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
+			starredNode.addArrayChild("song", createSongNode(track, context.dbSession, user));
 	}
 
 	return response;
@@ -1263,7 +1142,7 @@ handleGetPlaylistRequest(RequestContext& context)
 
 	auto entries {tracklist->getEntries()};
 	for (const TrackListEntry::pointer& entry : entries)
-		playlistNode.addArrayChild("entry", trackToResponseNode(entry->getTrack(), context.dbSession, user));
+		playlistNode.addArrayChild("entry", createSongNode(entry->getTrack(), context.dbSession, user));
 
 	response.addNode("playlist", playlistNode );
 
@@ -1331,7 +1210,7 @@ handleGetSongsByGenreRequest(RequestContext& context)
 	for (const TrackId trackId : trackIds.results)
 	{
 		const Track::pointer track {Track::find(context.dbSession, trackId)};
-		songsByGenreNode.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
+		songsByGenreNode.addArrayChild("song", createSongNode(track, context.dbSession, user));
 	}
 
 	return response;
@@ -1447,7 +1326,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 		for (const TrackId trackId : trackIds.results)
 		{
 			const auto track {Track::find(context.dbSession, trackId)};
-			searchResult2Node.addArrayChild("song", trackToResponseNode(track, context.dbSession, user));
+			searchResult2Node.addArrayChild("song", createSongNode(track, context.dbSession, user));
 		}
 	}
 
@@ -1690,7 +1569,7 @@ handleGetBookmarks(RequestContext& context)
 	{
 		const TrackBookmark::pointer bookmark {TrackBookmark::find(context.dbSession, bookmarkId)};
 		Response::Node bookmarkNode {trackBookmarkToResponseNode(bookmark)};
-		bookmarkNode.addArrayChild("entry", trackToResponseNode(bookmark->getTrack(), context.dbSession, user));
+		bookmarkNode.addArrayChild("entry", createSongNode(bookmark->getTrack(), context.dbSession, user));
 
 		bookmarksNode.addArrayChild("bookmark", std::move(bookmarkNode));
 	}
