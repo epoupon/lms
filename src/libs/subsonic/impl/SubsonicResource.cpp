@@ -51,6 +51,7 @@
 #include "entrypoints/MediaAnnotation.hpp"
 #include "entrypoints/MediaLibraryScanning.hpp"
 #include "entrypoints/MediaRetrieval.hpp"
+#include "entrypoints/Playlists.hpp"
 #include "entrypoints/Searching.hpp"
 #include "entrypoints/UserManagement.hpp"
 #include "responses/Artist.hpp"
@@ -176,80 +177,7 @@ handlePingRequest(RequestContext& context)
 	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
-static
-Response
-handleCreatePlaylistRequest(RequestContext& context)
-{
-	// Optional params
-	const auto id {getParameterAs<TrackListId>(context.parameters, "playlistId")};
-	auto name {getParameterAs<std::string>(context.parameters, "name")};
 
-	std::vector<TrackId> trackIds {getMultiParametersAs<TrackId>(context.parameters, "songId")};
-
-	if (!name && !id)
-		throw RequiredParameterMissingError {"name or id"};
-
-	auto transaction {context.dbSession.createUniqueTransaction()};
-
-	User::pointer user {User::find(context.dbSession, context.userId)};
-	if (!user)
-		throw UserNotAuthorizedError {};
-
-	TrackList::pointer tracklist;
-	if (id)
-	{
-		tracklist = TrackList::find(context.dbSession, *id);
-		if (!tracklist
-			|| tracklist->getUser() != user
-			|| tracklist->getType() != TrackListType::Playlist)
-		{
-			throw RequestedDataNotFoundError {};
-		}
-
-		if (name)
-			tracklist.modify()->setName(*name);
-	}
-	else
-	{
-		tracklist = context.dbSession.create<TrackList>(*name, TrackListType::Playlist, false, user);
-	}
-
-	for (const TrackId trackId : trackIds)
-	{
-		Track::pointer track {Track::find(context.dbSession, trackId)};
-		if (!track)
-			continue;
-
-		context.dbSession.create<TrackListEntry>(track, tracklist);
-	}
-
-	return Response::createOkResponse(context.serverProtocolVersion);
-}
-
-static
-Response
-handleDeletePlaylistRequest(RequestContext& context)
-{
-	TrackListId id {getMandatoryParameterAs<TrackListId>(context.parameters, "id")};
-
-	auto transaction {context.dbSession.createUniqueTransaction()};
-
-	User::pointer user {User::find(context.dbSession, context.userId)};
-	if (!user)
-		throw UserNotAuthorizedError {};
-
-	TrackList::pointer tracklist {TrackList::find(context.dbSession, id)};
-	if (!tracklist
-		|| tracklist->getUser() != user
-		|| tracklist->getType() != TrackListType::Playlist)
-	{
-		throw RequestedDataNotFoundError {};
-	}
-
-	tracklist.remove();
-
-	return Response::createOkResponse(context.serverProtocolVersion);
-}
 
 static
 Response
@@ -715,134 +643,6 @@ Response
 handleGetSimilarSongs2Request(RequestContext& context)
 {
 	return handleGetSimilarSongsRequestCommon(context, true /* id3 */);
-}
-
-static
-Response::Node
-tracklistToResponseNode(const TrackList::pointer& tracklist, Session&)
-{
-	Response::Node playlistNode;
-
-	playlistNode.setAttribute("id", idToString(tracklist->getId()));
-	playlistNode.setAttribute("name", tracklist->getName());
-	playlistNode.setAttribute("songCount", tracklist->getCount());
-	playlistNode.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(tracklist->getDuration()).count());
-	playlistNode.setAttribute("public", tracklist->isPublic());
-	playlistNode.setAttribute("created", reportedDummyDate);
-	playlistNode.setAttribute("owner", tracklist->getUser()->getLoginName());
-
-	return playlistNode;
-}
-
-static
-Response
-handleGetPlaylistRequest(RequestContext& context)
-{
-	// Mandatory params
-	TrackListId trackListId {getMandatoryParameterAs<TrackListId>(context.parameters, "id")};
-
-	auto transaction {context.dbSession.createSharedTransaction()};
-
-	User::pointer user {User::find(context.dbSession, context.userId)};
-	if (!user)
-		throw UserNotAuthorizedError {};
-
-	TrackList::pointer tracklist {TrackList::find(context.dbSession, trackListId)};
-	if (!tracklist)
-		throw RequestedDataNotFoundError {};
-
-	Response response {Response::createOkResponse(context.serverProtocolVersion)};
-	Response::Node playlistNode {tracklistToResponseNode(tracklist, context.dbSession)};
-
-	auto entries {tracklist->getEntries()};
-	for (const TrackListEntry::pointer& entry : entries)
-		playlistNode.addArrayChild("entry", createSongNode(entry->getTrack(), context.dbSession, user));
-
-	response.addNode("playlist", playlistNode );
-
-	return response;
-}
-
-static
-Response
-handleGetPlaylistsRequest(RequestContext& context)
-{
-	auto transaction {context.dbSession.createSharedTransaction()};
-
-	Response response {Response::createOkResponse(context.serverProtocolVersion)};
-	Response::Node& playlistsNode {response.createNode("playlists")};
-
-	TrackList::FindParameters params;
-	params.setUser(context.userId);
-	params.setType(TrackListType::Playlist);
-
-	auto tracklistIds {TrackList::find(context.dbSession, params)};
-	for (const TrackListId trackListId : tracklistIds.results)
-	{
-		const TrackList::pointer trackList {TrackList::find(context.dbSession, trackListId)};
-		playlistsNode.addArrayChild("playlist", tracklistToResponseNode(trackList, context.dbSession));
-	}
-
-	return response;
-}
-
-static
-Response
-handleUpdatePlaylistRequest(RequestContext& context)
-{
-	// Mandatory params
-	TrackListId id {getMandatoryParameterAs<TrackListId>(context.parameters, "playlistId")};
-
-	// Optional parameters
-	auto name {getParameterAs<std::string>(context.parameters, "name")};
-	auto isPublic {getParameterAs<bool>(context.parameters, "public")};
-
-	std::vector<TrackId> trackIdsToAdd {getMultiParametersAs<TrackId>(context.parameters, "songIdToAdd")};
-	std::vector<std::size_t> trackPositionsToRemove {getMultiParametersAs<std::size_t>(context.parameters, "songIndexToRemove")};
-
-	auto transaction {context.dbSession.createUniqueTransaction()};
-
-	User::pointer user {User::find(context.dbSession, context.userId)};
-	if (!user)
-		throw UserNotAuthorizedError {};
-
-	TrackList::pointer tracklist {TrackList::find(context.dbSession, id)};
-	if (!tracklist
-		|| tracklist->getUser() != user
-		|| tracklist->getType() != TrackListType::Playlist)
-	{
-		throw RequestedDataNotFoundError {};
-	}
-
-	if (name)
-		tracklist.modify()->setName(*name);
-
-	if (isPublic)
-		tracklist.modify()->setIsPublic(*isPublic);
-
-	{
-		// Remove from end to make indexes stable
-		std::sort(std::begin(trackPositionsToRemove), std::end(trackPositionsToRemove), std::greater<std::size_t>());
-
-		for (std::size_t trackPositionToRemove : trackPositionsToRemove)
-		{
-			auto entry {tracklist->getEntry(trackPositionToRemove)};
-			if (entry)
-				entry.remove();
-		}
-	}
-
-	// Add tracks
-	for (const TrackId trackIdToAdd : trackIdsToAdd)
-	{
-		Track::pointer track {Track::find(context.dbSession, trackIdToAdd)};
-		if (!track)
-			continue;
-
-		context.dbSession.create<TrackListEntry>(track, tracklist);
-	}
-
-	return Response::createOkResponse(context.serverProtocolVersion);
 }
 
 static
