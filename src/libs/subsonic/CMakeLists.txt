@@ -2,8 +2,10 @@
 add_library(lmssubsonic SHARED
 	impl/responses/Album.cpp
 	impl/responses/Artist.cpp
+	impl/responses/Bookmark.cpp
 	impl/responses/Song.cpp
 	impl/ProtocolVersion.cpp
+	impl/Bookmark.cpp
 	impl/Scan.cpp
 	impl/Stream.cpp
 	impl/SubsonicId.cpp

@@ -46,6 +46,11 @@
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 #include "utils/Utils.hpp"
+
+#include "responses/Artist.hpp"
+#include "responses/Album.hpp"
+#include "responses/Song.hpp"
+#include "Bookmark.hpp"
 #include "ParameterParsing.hpp"
 #include "ProtocolVersion.hpp"
 #include "RequestContext.hpp"
@@ -53,10 +58,6 @@
 #include "Stream.hpp"
 #include "SubsonicId.hpp"
 #include "SubsonicResponse.hpp"
-
-#include "responses/Artist.hpp"
-#include "responses/Album.hpp"
-#include "responses/Song.hpp"
 
 using namespace Database;
 
@@ -184,22 +185,6 @@ checkUserTypeIsAllowed(RequestContext& context, EnumSet<Database::UserType> allo
 
 	if (!allowedUserTypes.contains(currentUser->getType()))
 		throw UserNotAuthorizedError {};
-}
-
-static
-Response::Node
-trackBookmarkToResponseNode(const TrackBookmark::pointer& trackBookmark)
-{
-	Response::Node trackBookmarkNode;
-
-	trackBookmarkNode.setAttribute("position", trackBookmark->getOffset().count());
-	if (!trackBookmark->getComment().empty())
-		trackBookmarkNode.setAttribute("comment", trackBookmark->getComment());
-	trackBookmarkNode.setAttribute("created", reportedDummyDate);
-	trackBookmarkNode.setAttribute("changed", reportedDummyDate);
-	trackBookmarkNode.setAttribute("username", trackBookmark->getUser()->getLoginName());
-
-	return trackBookmarkNode;
 }
 
 static
@@ -1546,82 +1531,6 @@ handleUpdatePlaylistRequest(RequestContext& context)
 
 		context.dbSession.create<TrackListEntry>(track, tracklist);
 	}
-
-	return Response::createOkResponse(context.serverProtocolVersion);
-}
-
-static
-Response
-handleGetBookmarks(RequestContext& context)
-{
-	auto transaction {context.dbSession.createSharedTransaction()};
-
-	User::pointer user {User::find(context.dbSession, context.userId)};
-	if (!user)
-		throw UserNotAuthorizedError {};
-
-	const auto bookmarkIds {TrackBookmark::find(context.dbSession, user->getId(), Range {})};
-
-	Response response {Response::createOkResponse(context.serverProtocolVersion)};
-	Response::Node& bookmarksNode {response.createNode("bookmarks")};
-
-	for (const TrackBookmarkId bookmarkId : bookmarkIds.results)
-	{
-		const TrackBookmark::pointer bookmark {TrackBookmark::find(context.dbSession, bookmarkId)};
-		Response::Node bookmarkNode {trackBookmarkToResponseNode(bookmark)};
-		bookmarkNode.addArrayChild("entry", createSongNode(bookmark->getTrack(), context.dbSession, user));
-
-		bookmarksNode.addArrayChild("bookmark", std::move(bookmarkNode));
-	}
-
-	return response ;
-}
-
-static
-Response
-handleCreateBookmark(RequestContext& context)
-{
-	// Mandatory params
-	TrackId trackId {getMandatoryParameterAs<TrackId>(context.parameters, "id")};
-	unsigned long position {getMandatoryParameterAs<unsigned long>(context.parameters, "position")};
-	const std::optional<std::string> comment {getParameterAs<std::string>(context.parameters, "comment")};
-
-	auto transaction {context.dbSession.createUniqueTransaction()};
-
-	const User::pointer user {User::find(context.dbSession, context.userId)};
-	if (!user)
-		throw UserNotAuthorizedError {};
-
-	const Track::pointer track {Track::find(context.dbSession, trackId)};
-	if (!track)
-		throw RequestedDataNotFoundError {};
-
-	// Replace any existing bookmark
-	auto bookmark {TrackBookmark::find(context.dbSession, user->getId(), trackId)};
-	if (!bookmark)
-		bookmark = context.dbSession.create<TrackBookmark>(user, track);
-
-	bookmark.modify()->setOffset(std::chrono::milliseconds {position});
-	if (comment)
-		bookmark.modify()->setComment(*comment);
-
-	return Response::createOkResponse(context.serverProtocolVersion);
-}
-
-static
-Response
-handleDeleteBookmark(RequestContext& context)
-{
-	// Mandatory params
-	TrackId trackId {getMandatoryParameterAs<TrackId>(context.parameters, "id")};
-
-	auto transaction {context.dbSession.createUniqueTransaction()};
-
-	auto bookmark {TrackBookmark::find(context.dbSession, context.userId, trackId)};
-	if (!bookmark)
-		throw RequestedDataNotFoundError {};
-
-	bookmark.remove();
 
 	return Response::createOkResponse(context.serverProtocolVersion);
 }

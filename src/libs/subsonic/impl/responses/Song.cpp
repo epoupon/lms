@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "responses/Song.hpp"
+
 #include <string_view>
 
 #include "services/database/Artist.hpp"
@@ -28,7 +30,6 @@
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 #include "responses/Artist.hpp"
-#include "responses/Song.hpp"
 #include "SubsonicId.hpp"
 
 namespace API::Subsonic

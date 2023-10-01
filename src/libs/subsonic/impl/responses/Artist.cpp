@@ -18,6 +18,7 @@
  */
 
 #include "responses/Artist.hpp"
+
 #include "services/database/Artist.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/User.hpp"

@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "responses/Album.hpp"
+
 #include "services/database/Cluster.hpp"
 #include "services/database/Artist.hpp"
 #include "services/database/Release.hpp"
@@ -25,7 +27,6 @@
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 
-#include "responses/Album.hpp"
 #include "responses/Artist.hpp"
 #include "SubsonicId.hpp"
 
