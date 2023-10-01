@@ -17,12 +17,20 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "responses/Genre.hpp"
 
-#include <string>
+#include "services/database/Cluster.hpp"
 
-namespace API::Subsonic::Utils
+namespace API::Subsonic
 {
-    void checkSetPasswordImplemented();
-    std::string makeNameFilesystemCompatible(const std::string& name);
+	Response::Node createGenreNode(const Database::Cluster::pointer& cluster)
+	{
+		Response::Node clusterNode;
+
+		clusterNode.setValue(cluster->getName());
+		clusterNode.setAttribute("songCount", cluster->getTracksCount());
+		clusterNode.setAttribute("albumCount", cluster->getReleasesCount());
+
+		return clusterNode;
+	}
 }

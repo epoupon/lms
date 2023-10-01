@@ -2,6 +2,7 @@
 add_library(lmssubsonic SHARED
 	impl/entrypoints/AlbumSongLists.cpp
 	impl/entrypoints/Bookmarks.cpp
+	impl/entrypoints/Browsing.cpp
 	impl/entrypoints/MediaAnnotation.cpp
 	impl/entrypoints/MediaLibraryScanning.cpp
 	impl/entrypoints/MediaRetrieval.cpp
@@ -11,6 +12,7 @@ add_library(lmssubsonic SHARED
 	impl/responses/Album.cpp
 	impl/responses/Artist.cpp
 	impl/responses/Bookmark.cpp
+	impl/responses/Genre.cpp
 	impl/responses/Playlist.cpp
 	impl/responses/Song.cpp
 	impl/responses/User.cpp

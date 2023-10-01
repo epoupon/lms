@@ -31,6 +31,7 @@
 #include "utils/String.hpp"
 #include "responses/Artist.hpp"
 #include "SubsonicId.hpp"
+#include "Utils.hpp"
 
 namespace API::Subsonic
 {
@@ -54,11 +55,6 @@ namespace API::Subsonic
             return "";
         }
 
-        std::string makeNameFilesystemCompatible(std::string_view name)
-        {
-            return StringUtils::replaceInString(name, "/", "_");
-        }
-
         std::string getTrackPath(const Track::pointer& track)
         {
             std::string path;
@@ -75,9 +71,9 @@ namespace API::Subsonic
                 if (artists.size() > 1)
                     path = "Various Artists/";
                 else if (artists.size() == 1)
-                    path = makeNameFilesystemCompatible(artists.front()->getName()) + "/";
+                    path = Utils::makeNameFilesystemCompatible(artists.front()->getName()) + "/";
 
-                path += makeNameFilesystemCompatible(track->getRelease()->getName()) + "/";
+                path += Utils::makeNameFilesystemCompatible(track->getRelease()->getName()) + "/";
             }
 
             if (track->getDiscNumber())
@@ -85,7 +81,7 @@ namespace API::Subsonic
             if (track->getTrackNumber())
                 path += std::to_string(*track->getTrackNumber()) + "-";
 
-            path += makeNameFilesystemCompatible(track->getName());
+            path += Utils::makeNameFilesystemCompatible(track->getName());
 
             if (track->getPath().has_extension())
                 path += track->getPath().extension();

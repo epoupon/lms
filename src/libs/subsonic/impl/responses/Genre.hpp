@@ -19,10 +19,17 @@
 
 #pragma once
 
-#include <string>
+#include "services/database/Cluster.hpp"
 
-namespace API::Subsonic::Utils
+#include "services/database/Object.hpp"
+#include "SubsonicResponse.hpp"
+
+namespace Database
 {
-    void checkSetPasswordImplemented();
-    std::string makeNameFilesystemCompatible(const std::string& name);
+    class Cluster;
+}
+
+namespace API::Subsonic
+{
+    Response::Node createGenreNode(const Database::ObjectPtr<Database::Cluster>& cluster);
 }

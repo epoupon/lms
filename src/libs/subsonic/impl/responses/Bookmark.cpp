@@ -21,7 +21,6 @@
 
 #include "services/database/TrackBookmark.hpp"
 #include "services/database/User.hpp"
-#include "SubsonicResponse.hpp"
 
 namespace API::Subsonic
 {
