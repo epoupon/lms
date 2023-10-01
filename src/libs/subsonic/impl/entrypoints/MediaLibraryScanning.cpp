@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Scan.hpp"
+#include "MediaLibraryScanning.hpp"
 
 #include "services/scanner/IScannerService.hpp"
 #include "utils/Service.hpp"
@@ -26,44 +26,43 @@ namespace API::Subsonic::Scan
 {
 	using namespace Scanner;
 
-	static
-	Response::Node
-	createStatusResponseNode()
+	namespace
 	{
-		Response::Node statusResponse;
-
-		const IScannerService::Status scanStatus {Service<IScannerService>::get()->getStatus()};
-
-		statusResponse.setAttribute("scanning", scanStatus.currentState == IScannerService::State::InProgress);
-		if (scanStatus.currentState == IScannerService::State::InProgress)
+		Response::Node
+			createStatusResponseNode()
 		{
-			std::size_t count{};
+			Response::Node statusResponse;
 
-			if (scanStatus.currentScanStepStats && scanStatus.currentScanStepStats->currentStep == ScanStep::ScanningFiles)
-				count = scanStatus.currentScanStepStats->processedElems;
+			const IScannerService::Status scanStatus{ Service<IScannerService>::get()->getStatus() };
 
-			statusResponse.setAttribute("count", count);
+			statusResponse.setAttribute("scanning", scanStatus.currentState == IScannerService::State::InProgress);
+			if (scanStatus.currentState == IScannerService::State::InProgress)
+			{
+				std::size_t count{};
+
+				if (scanStatus.currentScanStepStats && scanStatus.currentScanStepStats->currentStep == ScanStep::ScanningFiles)
+					count = scanStatus.currentScanStepStats->processedElems;
+
+				statusResponse.setAttribute("count", count);
+			}
+
+			return statusResponse;
 		}
-
-		return statusResponse;
 	}
 
-
-	Response
-	handleGetScanStatus(RequestContext& context)
+	Response handleGetScanStatus(RequestContext& context)
 	{
-		Response response {Response::createOkResponse(context.serverProtocolVersion)};
+		Response response{ Response::createOkResponse(context.serverProtocolVersion) };
 		response.addNode("scanStatus", createStatusResponseNode());
 
 		return response;
 	}
 
-	Response
-	handleStartScan(RequestContext& context)
+	Response handleStartScan(RequestContext& context)
 	{
 		Service<IScannerService>::get()->requestImmediateScan(false);
 
-		Response response {Response::createOkResponse(context.serverProtocolVersion)};
+		Response response{ Response::createOkResponse(context.serverProtocolVersion) };
 		response.addNode("scanStatus", createStatusResponseNode());
 
 		return response;
