@@ -26,6 +26,7 @@ namespace Database
 {
     class Release;
     class User;
+    class Session;
 }
 
 namespace API::Subsonic

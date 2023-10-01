@@ -19,11 +19,19 @@
 
 #include "responses/Artist.hpp"
 #include "services/database/Artist.hpp"
+#include "services/database/Release.hpp"
+#include "services/database/User.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
+#include "utils/Service.hpp"
+
+#include "SubsonicId.hpp"
 
 namespace API::Subsonic
 {
+    static const std::string_view reportedDummyStarredDate{ "2000-01-01T00:00:00" };
+
     using namespace Database;
-    
+
     namespace utils
     {
         std::string joinArtistNames(const std::vector<Artist::pointer>& artists)
@@ -42,5 +50,24 @@ namespace API::Subsonic
 
             return StringUtils::joinStrings(names, ", ");
         }
+    }
+
+    Response::Node createArtistNode(const Artist::pointer& artist, Session& session, const User::pointer& user, bool id3)
+    {
+        Response::Node artistNode;
+
+        artistNode.setAttribute("id", idToString(artist->getId()));
+        artistNode.setAttribute("name", artist->getName());
+
+        if (id3)
+        {
+            const auto releases{ Release::find(session, Release::FindParameters {}.setArtist(artist->getId())) };
+            artistNode.setAttribute("albumCount", releases.results.size());
+        }
+
+        if (Service<Scrobbling::IScrobblingService>::get()->isStarred(user->getId(), artist->getId()))
+            artistNode.setAttribute("starred", reportedDummyStarredDate); // TODO handle date/time
+
+        return artistNode;
     }
 }

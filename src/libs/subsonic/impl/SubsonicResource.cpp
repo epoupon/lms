@@ -325,27 +325,6 @@ trackBookmarkToResponseNode(const TrackBookmark::pointer& trackBookmark)
 
 static
 Response::Node
-artistToResponseNode(const Artist::pointer& artist, Session& session, const User::pointer& user, bool id3)
-{
-	Response::Node artistNode;
-
-	artistNode.setAttribute("id", idToString(artist->getId()));
-	artistNode.setAttribute("name", artist->getName());
-
-	if (id3)
-	{
-		const auto releases {Release::find(session, Release::FindParameters {}.setArtist(artist->getId()))};
-		artistNode.setAttribute("albumCount", releases.results.size());
-	}
-
-	if (Service<Scrobbling::IScrobblingService>::get()->isStarred(user->getId(), artist->getId()))
-		artistNode.setAttribute("starred", reportedStarredDate);
-
-	return artistNode;
-}
-
-static
-Response::Node
 clusterToResponseNode(const Cluster::pointer& cluster)
 {
 	Response::Node clusterNode;
@@ -816,7 +795,7 @@ handleGetArtistRequest(RequestContext& context)
 		throw UserNotAuthorizedError {};
 
 	Response response {Response::createOkResponse(context.serverProtocolVersion)};
-	Response::Node artistNode {artistToResponseNode(artist, context.dbSession, user, true /* id3 */)};
+	Response::Node artistNode {createArtistNode(artist, context.dbSession, user, true /* id3 */)};
 
 	const auto releases {Release::find(context.dbSession, Release::FindParameters {}.setArtist(artist->getId()))};
 	for (const ReleaseId releaseId : releases.results)
@@ -868,7 +847,7 @@ handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
 		{
 			const Artist::pointer similarArtist {Artist::find(context.dbSession, similarArtistId)};
 			if (similarArtist)
-				artistInfoNode.addArrayChild("similarArtist", artistToResponseNode(similarArtist, context.dbSession, user, id3));
+				artistInfoNode.addArrayChild("similarArtist", createArtistNode(similarArtist, context.dbSession, user, id3));
 		}
 	}
 
@@ -919,7 +898,7 @@ handleGetMusicDirectoryRequest(RequestContext& context)
 		for (const ArtistId rootArtistId : rootArtistIds.results)
 		{
 			const Artist::pointer artist {Artist::find(context.dbSession, rootArtistId)};
-			directoryNode.addArrayChild("child", artistToResponseNode(artist, context.dbSession, user, false /* no id3 */));
+			directoryNode.addArrayChild("child", createArtistNode(artist, context.dbSession, user, false /* no id3 */));
 		}
 	}
 	else if (artistId)
@@ -1029,7 +1008,7 @@ handleGetArtistsRequestCommon(RequestContext& context, bool id3)
 		indexNode.setAttribute("name", std::string {sortChar});
 
 		for (const Artist::pointer& artist :artists)
-			indexNode.addArrayChild("artist", artistToResponseNode(artist, context.dbSession, user, id3));
+			indexNode.addArrayChild("artist", createArtistNode(artist, context.dbSession, user, id3));
 	}
 
 	return response;
@@ -1212,7 +1191,7 @@ handleGetStarredRequestCommon(RequestContext& context, bool id3)
 	for (const ArtistId artistId : scrobbling.getStarredArtists(context.userId, {} /* clusters */, std::nullopt /* linkType */, ArtistSortMethod::BySortName, Range {}).results)
 	{
 		if (auto artist {Artist::find(context.dbSession, artistId)})
-			starredNode.addArrayChild("artist", artistToResponseNode(artist, context.dbSession, user, id3));
+			starredNode.addArrayChild("artist", createArtistNode(artist, context.dbSession, user, id3));
 	}
 
 	for (const ReleaseId releaseId : scrobbling.getStarredReleases(context.userId, {} /* clusters */, Range {}).results)
@@ -1439,7 +1418,7 @@ handleSearchRequestCommon(RequestContext& context, bool id3)
 		for (const ArtistId artistId : artistIds.results)
 		{
 			const auto artist {Artist::find(context.dbSession, artistId)};
-			searchResult2Node.addArrayChild("artist", artistToResponseNode(artist, context.dbSession, user, id3));
+			searchResult2Node.addArrayChild("artist", createArtistNode(artist, context.dbSession, user, id3));
 		}
 	}
 

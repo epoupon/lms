@@ -28,6 +28,7 @@ namespace Database
 {
     class Artist;
     class User;
+    class session;
 }
 
 namespace API::Subsonic
@@ -36,4 +37,5 @@ namespace API::Subsonic
     {
         std::string joinArtistNames(const std::vector<Database::ObjectPtr<Database::Artist>>& artists);
     }
+    Response::Node createArtistNode(const Database::ObjectPtr<Database::Artist>& artist, Database::Session& session, const Database::ObjectPtr<Database::User>& user, bool id3);
 }

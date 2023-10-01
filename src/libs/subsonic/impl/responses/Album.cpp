@@ -31,7 +31,7 @@
 
 namespace API::Subsonic
 {
-    static const std::string_view	reportedDummyStarredDate {"2000-01-01T00:00:00"};
+    static const std::string_view reportedDummyStarredDate{ "2000-01-01T00:00:00" };
 
     using namespace Database;
 
