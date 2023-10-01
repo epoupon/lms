@@ -1,5 +1,6 @@
 
 add_library(lmssubsonic SHARED
+	impl/entrypoints/AlbumSongLists.cpp
 	impl/entrypoints/Bookmarks.cpp
 	impl/entrypoints/MediaLibraryScanning.cpp
 	impl/entrypoints/MediaRetrieval.cpp
