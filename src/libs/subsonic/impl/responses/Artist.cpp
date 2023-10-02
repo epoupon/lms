@@ -68,12 +68,13 @@ namespace API::Subsonic
         if (const Wt::WDateTime dateTime{ Service<Scrobbling::IScrobblingService>::get()->getStarredDateTime(user->getId(), artist->getId()) }; dateTime.isValid())
             artistNode.setAttribute("starred", StringUtils::toISO8601String(dateTime));
 
-        // OpenSubsonic specific field
+        // OpenSubsonic specific fields (must always be set)
         {
             std::optional<UUID> mbid {artist->getMBID()};
             artistNode.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
         }
-
+        artistNode.setAttribute("sortName", artist->getSortName());
+        
         return artistNode;
     }
 }
