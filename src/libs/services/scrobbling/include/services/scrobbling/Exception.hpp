@@ -23,9 +23,9 @@
 
 namespace Scrobbling
 {
-	class Exception : public LmsException
-	{
-		public:
-			using LmsException::LmsException;
-	};
+    class Exception : public LmsException
+    {
+    public:
+        using LmsException::LmsException;
+    };
 }

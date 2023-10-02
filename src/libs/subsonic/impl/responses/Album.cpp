@@ -32,8 +32,6 @@
 
 namespace API::Subsonic
 {
-    static const std::string_view reportedDummyStarredDate{ "2000-01-01T00:00:00" };
-
     using namespace Database;
 
     Response::Node createAlbumNode(const Release::pointer& release, Session& dbSession, const User::pointer& user, bool id3)
@@ -95,8 +93,8 @@ namespace API::Subsonic
             }
         }
 
-        if (Service<Scrobbling::IScrobblingService>::get()->isStarred(user->getId(), release->getId()))
-            albumNode.setAttribute("starred", reportedDummyStarredDate); // TODO report correct date/time
+        if (const Wt::WDateTime dateTime{ Service<Scrobbling::IScrobblingService>::get()->getStarredDateTime(user->getId(), release->getId()) }; dateTime.isValid())
+            albumNode.setAttribute("starred", StringUtils::toISO8601String(dateTime)); // TODO report correct date/time
 
         return albumNode;
     }

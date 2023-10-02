@@ -37,272 +37,264 @@
 
 namespace Scrobbling
 {
-	using namespace Database;
+    using namespace Database;
 
-	std::unique_ptr<IScrobblingService>
-	createScrobblingService(boost::asio::io_context& ioContext, Db& db)
-	{
-		return std::make_unique<ScrobblingService>(ioContext, db);
-	}
+    std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_context& ioContext, Db& db)
+    {
+        return std::make_unique<ScrobblingService>(ioContext, db);
+    }
 
-	ScrobblingService::ScrobblingService(boost::asio::io_context& ioContext, Db& db)
-		: _db {db}
-	{
-		LMS_LOG(SCROBBLING, INFO) << "Starting service...";
-		_scrobblers.emplace(Scrobbler::Internal, std::make_unique<InternalScrobbler>(_db));
-		_scrobblers.emplace(Scrobbler::ListenBrainz, std::make_unique<ListenBrainz::Scrobbler>(ioContext, _db));
-		LMS_LOG(SCROBBLING, INFO) << "Service started!";
-	}
+    ScrobblingService::ScrobblingService(boost::asio::io_context& ioContext, Db& db)
+        : _db{ db }
+    {
+        LMS_LOG(SCROBBLING, INFO) << "Starting service...";
+        _scrobblers.emplace(Scrobbler::Internal, std::make_unique<InternalScrobbler>(_db));
+        _scrobblers.emplace(Scrobbler::ListenBrainz, std::make_unique<ListenBrainz::Scrobbler>(ioContext, _db));
+        LMS_LOG(SCROBBLING, INFO) << "Service started!";
+    }
 
-	ScrobblingService::~ScrobblingService()
-	{
-		LMS_LOG(SCROBBLING, INFO) << "Service stopped!";
-	}
+    ScrobblingService::~ScrobblingService()
+    {
+        LMS_LOG(SCROBBLING, INFO) << "Service stopped!";
+    }
 
-	void
-	ScrobblingService::listenStarted(const Listen& listen)
-	{
-		if (std::optional<Scrobbler> scrobbler {getUserScrobbler(listen.userId)})
-			_scrobblers[*scrobbler]->listenStarted(listen);
-	}
+    void ScrobblingService::listenStarted(const Listen& listen)
+    {
+        if (std::optional<Scrobbler> scrobbler{ getUserScrobbler(listen.userId) })
+            _scrobblers[*scrobbler]->listenStarted(listen);
+    }
 
-	void
-	ScrobblingService::listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration)
-	{
-		if (std::optional<Scrobbler> scrobbler {getUserScrobbler(listen.userId)})
-			_scrobblers[*scrobbler]->listenFinished(listen, duration);
-	}
+    void ScrobblingService::listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration)
+    {
+        if (std::optional<Scrobbler> scrobbler{ getUserScrobbler(listen.userId) })
+            _scrobblers[*scrobbler]->listenFinished(listen, duration);
+    }
 
-	void
-	ScrobblingService::addTimedListen(const TimedListen& listen)
-	{
-		if (std::optional<Scrobbler> scrobbler {getUserScrobbler(listen.userId)})
-			_scrobblers[*scrobbler]->addTimedListen(listen);
-	}
+    void ScrobblingService::addTimedListen(const TimedListen& listen)
+    {
+        if (std::optional<Scrobbler> scrobbler{ getUserScrobbler(listen.userId) })
+            _scrobblers[*scrobbler]->addTimedListen(listen);
+    }
 
-	std::optional<Scrobbler>
-	ScrobblingService::getUserScrobbler(UserId userId)
-	{
-		std::optional<Scrobbler> scrobbler;
+    std::optional<Scrobbler> ScrobblingService::getUserScrobbler(UserId userId)
+    {
+        std::optional<Scrobbler> scrobbler;
 
-		Session& session {_db.getTLSSession()};
-		auto transaction {session.createSharedTransaction()};
-		if (const User::pointer user {User::find(session, userId)})
-			scrobbler = user->getScrobbler();
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createSharedTransaction() };
+        if (const User::pointer user{ User::find(session, userId) })
+            scrobbler = user->getScrobbler();
 
-		return scrobbler;
-	}
+        return scrobbler;
+    }
 
-	ScrobblingService::ArtistContainer
-	ScrobblingService::getRecentArtists(UserId userId, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range)
-	{
-		ArtistContainer res;
+    ScrobblingService::ArtistContainer ScrobblingService::getRecentArtists(UserId userId, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range)
+    {
+        ArtistContainer res;
 
-		auto scrobbler {getUserScrobbler(userId)};
-		if (!scrobbler)
-			return res;
+        auto scrobbler{ getUserScrobbler(userId) };
+        if (!scrobbler)
+            return res;
 
-		Session& session {_db.getTLSSession()};
-		auto transaction {session.createSharedTransaction()};
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createSharedTransaction() };
 
-		res = Database::Listen::getRecentArtists(session, userId, *scrobbler, clusterIds, linkType, range);
-		return res;
-	}
+        res = Database::Listen::getRecentArtists(session, userId, *scrobbler, clusterIds, linkType, range);
+        return res;
+    }
 
-	ScrobblingService::ReleaseContainer
-	ScrobblingService::getRecentReleases(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
-	{
-		ReleaseContainer res;
+    ScrobblingService::ReleaseContainer ScrobblingService::getRecentReleases(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
+    {
+        ReleaseContainer res;
 
-		auto scrobbler {getUserScrobbler(userId)};
-		if (!scrobbler)
-			return res;
+        auto scrobbler{ getUserScrobbler(userId) };
+        if (!scrobbler)
+            return res;
 
-		Session& session {_db.getTLSSession()};
-		auto transaction {session.createSharedTransaction()};
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createSharedTransaction() };
 
-		res = Database::Listen::getRecentReleases(session, userId, *scrobbler, clusterIds, range);
-		return res;
-	}
+        res = Database::Listen::getRecentReleases(session, userId, *scrobbler, clusterIds, range);
+        return res;
+    }
 
-	ScrobblingService::TrackContainer
-	ScrobblingService::getRecentTracks(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
-	{
-		TrackContainer res;
+    ScrobblingService::TrackContainer ScrobblingService::getRecentTracks(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
+    {
+        TrackContainer res;
 
-		auto scrobbler {getUserScrobbler(userId)};
-		if (!scrobbler)
-			return res;
+        auto scrobbler{ getUserScrobbler(userId) };
+        if (!scrobbler)
+            return res;
 
-		Session& session {_db.getTLSSession()};
-		auto transaction {session.createSharedTransaction()};
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createSharedTransaction() };
 
-		res = Database::Listen::getRecentTracks(session, userId, *scrobbler, clusterIds, range);
-		return res;
-	}
+        res = Database::Listen::getRecentTracks(session, userId, *scrobbler, clusterIds, range);
+        return res;
+    }
 
-	// Top
-	ScrobblingService::ArtistContainer
-	ScrobblingService::getTopArtists(UserId userId, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range)
-	{
-		ArtistContainer res;
+    // Top
+    ScrobblingService::ArtistContainer ScrobblingService::getTopArtists(UserId userId, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range)
+    {
+        ArtistContainer res;
 
-		auto scrobbler {getUserScrobbler(userId)};
-		if (!scrobbler)
-			return res;
+        auto scrobbler{ getUserScrobbler(userId) };
+        if (!scrobbler)
+            return res;
 
-		Session& session {_db.getTLSSession()};
-		auto transaction {session.createSharedTransaction()};
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createSharedTransaction() };
 
-		res = Database::Listen::getTopArtists(session, userId, *scrobbler, clusterIds, linkType, range);
-		return res;
-	}
+        res = Database::Listen::getTopArtists(session, userId, *scrobbler, clusterIds, linkType, range);
+        return res;
+    }
 
-	ScrobblingService::ReleaseContainer
-	ScrobblingService::getTopReleases(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
-	{
-		ReleaseContainer res;
+    ScrobblingService::ReleaseContainer ScrobblingService::getTopReleases(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
+    {
+        ReleaseContainer res;
 
-		auto scrobbler {getUserScrobbler(userId)};
-		if (!scrobbler)
-			return res;
+        auto scrobbler{ getUserScrobbler(userId) };
+        if (!scrobbler)
+            return res;
 
-		Session& session {_db.getTLSSession()};
-		auto transaction {session.createSharedTransaction()};
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createSharedTransaction() };
 
-		res = Database::Listen::getTopReleases(session, userId, *scrobbler, clusterIds, range);
-		return res;
-	}
+        res = Database::Listen::getTopReleases(session, userId, *scrobbler, clusterIds, range);
+        return res;
+    }
 
-	ScrobblingService::TrackContainer
-	ScrobblingService::getTopTracks(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
-	{
-		TrackContainer res;
+    ScrobblingService::TrackContainer ScrobblingService::getTopTracks(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
+    {
+        TrackContainer res;
 
-		auto scrobbler {getUserScrobbler(userId)};
-		if (!scrobbler)
-			return res;
+        auto scrobbler{ getUserScrobbler(userId) };
+        if (!scrobbler)
+            return res;
 
-		Session& session {_db.getTLSSession()};
-		auto transaction {session.createSharedTransaction()};
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createSharedTransaction() };
 
-		res = Database::Listen::getTopTracks(session, userId, *scrobbler, clusterIds, range);
-		return res;
-	}
+        res = Database::Listen::getTopTracks(session, userId, *scrobbler, clusterIds, range);
+        return res;
+    }
 
-	void
-	ScrobblingService::star(UserId userId, ArtistId artistId)
-	{
-		star<Artist, ArtistId, StarredArtist>(userId, artistId);
-	}
+    void ScrobblingService::star(UserId userId, ArtistId artistId)
+    {
+        star<Artist, ArtistId, StarredArtist>(userId, artistId);
+    }
 
-	void
-	ScrobblingService::unstar(UserId userId, ArtistId artistId)
-	{
-		unstar<Artist, ArtistId, StarredArtist>(userId, artistId);
-	}
+    void ScrobblingService::unstar(UserId userId, ArtistId artistId)
+    {
+        unstar<Artist, ArtistId, StarredArtist>(userId, artistId);
+    }
 
-	bool
-	ScrobblingService::isStarred(UserId userId, ArtistId artistId)
-	{
-		return isStarred<Artist, ArtistId, StarredArtist>(userId, artistId);
-	}
+    bool ScrobblingService::isStarred(UserId userId, ArtistId artistId)
+    {
+        return isStarred<Artist, ArtistId, StarredArtist>(userId, artistId);
+    }
 
-	ScrobblingService::ArtistContainer
-	ScrobblingService::getStarredArtists(UserId userId, const std::vector<ClusterId>& clusterIds,
-										std::optional<TrackArtistLinkType> linkType,
-										ArtistSortMethod sortMethod,
-										Range range)
-	{
-		auto scrobbler {getUserScrobbler(userId)};
-		if (!scrobbler)
-			return {};
+    Wt::WDateTime ScrobblingService::getStarredDateTime(UserId userId, ArtistId artistId)
+    {
+        return getStarredDateTime<Artist, ArtistId, StarredArtist>(userId, artistId);
+    }
 
-		Artist::FindParameters params;
-		params.setStarringUser(userId, *scrobbler);
-		params.setClusters(clusterIds);
-		params.setLinkType(linkType);
-		params.setSortMethod(sortMethod);
-		params.setRange(range);
+    ScrobblingService::ArtistContainer ScrobblingService::getStarredArtists(UserId userId, const std::vector<ClusterId>& clusterIds,
+        std::optional<TrackArtistLinkType> linkType,
+        ArtistSortMethod sortMethod,
+        Range range)
+    {
+        auto scrobbler{ getUserScrobbler(userId) };
+        if (!scrobbler)
+            return {};
 
-		Session& session {_db.getTLSSession()};
-		auto transaction {session.createSharedTransaction()};
+        Artist::FindParameters params;
+        params.setStarringUser(userId, *scrobbler);
+        params.setClusters(clusterIds);
+        params.setLinkType(linkType);
+        params.setSortMethod(sortMethod);
+        params.setRange(range);
 
-		return Artist::find(session, params);
-	}
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createSharedTransaction() };
 
-	void
-	ScrobblingService::star(UserId userId, ReleaseId releaseId)
-	{
-		star<Release, ReleaseId, StarredRelease>(userId, releaseId);
-	}
+        return Artist::find(session, params);
+    }
 
-	void
-	ScrobblingService::unstar(UserId userId, ReleaseId releaseId)
-	{
-		unstar<Release, ReleaseId, StarredRelease>(userId, releaseId);
-	}
+    void ScrobblingService::star(UserId userId, ReleaseId releaseId)
+    {
+        star<Release, ReleaseId, StarredRelease>(userId, releaseId);
+    }
 
-	bool
-	ScrobblingService::isStarred(UserId userId, ReleaseId releaseId)
-	{
-		return isStarred<Release, ReleaseId, StarredRelease>(userId, releaseId);
-	}
+    void ScrobblingService::unstar(UserId userId, ReleaseId releaseId)
+    {
+        unstar<Release, ReleaseId, StarredRelease>(userId, releaseId);
+    }
 
-	ScrobblingService::ReleaseContainer
-	ScrobblingService::getStarredReleases(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
-	{
-		auto scrobbler {getUserScrobbler(userId)};
-		if (!scrobbler)
-			return {};
+    bool ScrobblingService::isStarred(UserId userId, ReleaseId releaseId)
+    {
+        return isStarred<Release, ReleaseId, StarredRelease>(userId, releaseId);
+    }
 
-		Release::FindParameters params;
-		params.setStarringUser(userId, *scrobbler);
-		params.setClusters(clusterIds);
-		params.setSortMethod(ReleaseSortMethod::StarredDateDesc);
-		params.setRange(range);
+    Wt::WDateTime ScrobblingService::getStarredDateTime(UserId userId, ReleaseId releaseId)
+    {
+        return getStarredDateTime<Release, ReleaseId, StarredRelease>(userId, releaseId);
+    }
 
-		Session& session {_db.getTLSSession()};
-		auto transaction {session.createSharedTransaction()};
+    ScrobblingService::ReleaseContainer ScrobblingService::getStarredReleases(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
+    {
+        auto scrobbler{ getUserScrobbler(userId) };
+        if (!scrobbler)
+            return {};
 
-		return Release::find(session, params);
-	}
+        Release::FindParameters params;
+        params.setStarringUser(userId, *scrobbler);
+        params.setClusters(clusterIds);
+        params.setSortMethod(ReleaseSortMethod::StarredDateDesc);
+        params.setRange(range);
 
-	void
-	ScrobblingService::star(UserId userId, TrackId trackId)
-	{
-		star<Track, TrackId, StarredTrack>(userId, trackId);
-	}
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createSharedTransaction() };
 
-	void
-	ScrobblingService::unstar(UserId userId, TrackId trackId)
-	{
-		unstar<Track, TrackId, StarredTrack>(userId, trackId);
-	}
+        return Release::find(session, params);
+    }
 
-	bool
-	ScrobblingService::isStarred(UserId userId, TrackId trackId)
-	{
-		return isStarred<Track, TrackId, StarredTrack>(userId, trackId);
-	}
+    void ScrobblingService::star(UserId userId, TrackId trackId)
+    {
+        star<Track, TrackId, StarredTrack>(userId, trackId);
+    }
 
-	ScrobblingService::TrackContainer
-	ScrobblingService::getStarredTracks(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
-	{
-		auto scrobbler {getUserScrobbler(userId)};
-		if (!scrobbler)
-			return {};
+    void ScrobblingService::unstar(UserId userId, TrackId trackId)
+    {
+        unstar<Track, TrackId, StarredTrack>(userId, trackId);
+    }
 
-		Track::FindParameters params;
-		params.setStarringUser(userId, *scrobbler);
-		params.setClusters(clusterIds);
-		params.setSortMethod(TrackSortMethod::StarredDateDesc);
-		params.setRange(range);
+    bool ScrobblingService::isStarred(UserId userId, TrackId trackId)
+    {
+        return isStarred<Track, TrackId, StarredTrack>(userId, trackId);
+    }
 
-		Session& session {_db.getTLSSession()};
-		auto transaction {session.createSharedTransaction()};
+    Wt::WDateTime ScrobblingService::getStarredDateTime(UserId userId, TrackId trackId)
+    {
+        return getStarredDateTime<Track, TrackId, StarredTrack>(userId, trackId);
+    }
 
-		return Track::find(session, params);
-	}
+    ScrobblingService::TrackContainer ScrobblingService::getStarredTracks(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
+    {
+        auto scrobbler{ getUserScrobbler(userId) };
+        if (!scrobbler)
+            return {};
+
+        Track::FindParameters params;
+        params.setStarringUser(userId, *scrobbler);
+        params.setClusters(clusterIds);
+        params.setSortMethod(TrackSortMethod::StarredDateDesc);
+        params.setRange(range);
+
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createSharedTransaction() };
+
+        return Track::find(session, params);
+    }
 } // ns Scrobbling
 

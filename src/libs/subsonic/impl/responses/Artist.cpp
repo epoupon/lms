@@ -24,13 +24,12 @@
 #include "services/database/User.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
+#include "utils/String.hpp"
 
 #include "SubsonicId.hpp"
 
 namespace API::Subsonic
 {
-    static const std::string_view reportedDummyStarredDate{ "2000-01-01T00:00:00" };
-
     using namespace Database;
 
     namespace Utils
@@ -66,8 +65,8 @@ namespace API::Subsonic
             artistNode.setAttribute("albumCount", releases.results.size());
         }
 
-        if (Service<Scrobbling::IScrobblingService>::get()->isStarred(user->getId(), artist->getId()))
-            artistNode.setAttribute("starred", reportedDummyStarredDate); // TODO handle date/time
+        if (const Wt::WDateTime dateTime{ Service<Scrobbling::IScrobblingService>::get()->getStarredDateTime(user->getId(), artist->getId()) }; dateTime.isValid())
+            artistNode.setAttribute("starred", StringUtils::toISO8601String(dateTime));
 
         return artistNode;
     }

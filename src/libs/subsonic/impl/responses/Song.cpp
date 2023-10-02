@@ -37,8 +37,6 @@ namespace API::Subsonic
 {
     using namespace Database;
 
-    static const std::string_view reportedDummyStarredDate{ "2000-01-01T00:00:00" };
-
     namespace
     {
         std::string_view formatToSuffix(AudioFormat format)
@@ -143,8 +141,8 @@ namespace API::Subsonic
         trackResponse.setAttribute("type", "music");
         trackResponse.setAttribute("created", StringUtils::toISO8601String(track->getLastWritten()));
 
-        if (Service<Scrobbling::IScrobblingService>::get()->isStarred(user->getId(), track->getId()))
-            trackResponse.setAttribute("starred", reportedDummyStarredDate); // TODO handle date/time
+        if (const Wt::WDateTime dateTime{ Service<Scrobbling::IScrobblingService>::get()->getStarredDateTime(user->getId(), track->getId()) }; dateTime.isValid())
+            trackResponse.setAttribute("starred", StringUtils::toISO8601String(dateTime));
 
         // Report the first GENRE for this track
         ClusterType::pointer clusterType{ ClusterType::find(dbSession, "GENRE") };

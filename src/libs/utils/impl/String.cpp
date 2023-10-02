@@ -288,11 +288,13 @@ namespace StringUtils
 
     std::string toISO8601String(const Wt::WDateTime& dateTime)
     {
+        // assume UTC
         return dateTime.toString("yyyy-MM-ddThh:mm:ss.zzz", false).toUTF8();
     }
 
     std::string toISO8601String(const Wt::WDate& date)
     {
+        // assume UTC
         return date.toString("yyyy-MM-dd").toUTF8();
     }
 } // StringUtils
