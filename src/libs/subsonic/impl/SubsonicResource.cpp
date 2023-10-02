@@ -54,378 +54,364 @@ using namespace Database;
 
 namespace API::Subsonic
 {
+    std::unique_ptr<Wt::WResource> createSubsonicResource(Database::Db& db)
+    {
+        return std::make_unique<SubsonicResource>(db);
+    }
 
-std::unique_ptr<Wt::WResource>
-createSubsonicResource(Database::Db& db)
-{
-	return std::make_unique<SubsonicResource>(db);
-}
+    namespace
+    {
+        std::unordered_map<std::string, ProtocolVersion> readConfigProtocolVersions()
+        {
+            std::unordered_map<std::string, ProtocolVersion> res;
 
-static
-std::unordered_map<std::string, ProtocolVersion>
-readConfigProtocolVersions()
-{
-	std::unordered_map<std::string, ProtocolVersion> res;
+            Service<IConfig>::get()->visitStrings("api-subsonic-report-old-server-protocol",
+                [&](std::string_view client)
+                {
+                    res.emplace(std::string{ client }, ProtocolVersion{ 1, 12, 0 });
+                }, { "DSub" });
 
-	Service<IConfig>::get()->visitStrings("api-subsonic-report-old-server-protocol",
-			[&](std::string_view client)
-			{
-				res.emplace(std::string {client}, ProtocolVersion {1, 12, 0});
-			}, {"DSub"});
+            return res;
+        }
 
-	return res;
-}
 
-SubsonicResource::SubsonicResource(Db& db)
-: _serverProtocolVersionsByClient {readConfigProtocolVersions()}
-, _db {db}
-{
-}
+        std::string parameterMapToDebugString(const Wt::Http::ParameterMap& parameterMap)
+        {
+            auto censorValue = [](const std::string& type, const std::string& value) -> std::string
+                {
+                    if (type == "p" || type == "password")
+                        return "*REDACTED*";
+                    else
+                        return value;
+                };
 
-static
-std::string parameterMapToDebugString(const Wt::Http::ParameterMap& parameterMap)
-{
-	auto censorValue = [](const std::string& type, const std::string& value) -> std::string
-	{
-		if (type == "p" || type == "password")
-			return "*REDACTED*";
-		else
-			return value;
-	};
+            std::string res;
 
-	std::string res;
+            for (const auto& params : parameterMap)
+            {
+                res += "{" + params.first + "=";
+                if (params.second.size() == 1)
+                {
+                    res += censorValue(params.first, params.second.front());
+                }
+                else
+                {
+                    res += "{";
+                    for (const std::string& param : params.second)
+                        res += censorValue(params.first, param) + ",";
+                    res += "}";
+                }
+                res += "}, ";
+            }
 
-	for (const auto& params : parameterMap)
-	{
-		res += "{" + params.first + "=";
-		if (params.second.size() == 1)
-		{
-			res += censorValue(params.first, params.second.front());
-		}
-		else
-		{
-			res += "{";
-			for (const std::string& param : params.second)
-				res += censorValue(params.first, param) + ",";
-			res += "}";
-		}
-		res += "}, ";
-	}
+            return res;
+        }
 
-	return res;
-}
+        void checkUserTypeIsAllowed(RequestContext& context, EnumSet<Database::UserType> allowedUserTypes)
+        {
+            auto transaction{ context.dbSession.createSharedTransaction() };
 
-static
-void
-checkUserTypeIsAllowed(RequestContext& context, EnumSet<Database::UserType> allowedUserTypes)
-{
-	auto transaction {context.dbSession.createSharedTransaction()};
+            User::pointer currentUser{ User::find(context.dbSession, context.userId) };
+            if (!currentUser)
+                throw RequestedDataNotFoundError{};
 
-	User::pointer currentUser {User::find(context.dbSession, context.userId)};
-	if (!currentUser)
-		throw RequestedDataNotFoundError {};
+            if (!allowedUserTypes.contains(currentUser->getType()))
+                throw UserNotAuthorizedError{};
+        }
 
-	if (!allowedUserTypes.contains(currentUser->getType()))
-		throw UserNotAuthorizedError {};
-}
+        Response handlePingRequest(RequestContext& context)
+        {
+            return Response::createOkResponse(context.serverProtocolVersion);
+        }
 
-static
-Response
-handlePingRequest(RequestContext& context)
-{
-	return Response::createOkResponse(context.serverProtocolVersion);
-}
+        Response handleGetLicenseRequest(RequestContext& context)
+        {
+            Response response{ Response::createOkResponse(context.serverProtocolVersion) };
 
-static
-Response
-handleGetLicenseRequest(RequestContext& context)
-{
-	Response response {Response::createOkResponse(context.serverProtocolVersion)};
+            Response::Node& licenseNode{ response.createNode("license") };
+            licenseNode.setAttribute("licenseExpires", "2025-09-03T14:46:43");
+            licenseNode.setAttribute("email", "foo@bar.com");
+            licenseNode.setAttribute("valid", true);
 
-	Response::Node& licenseNode {response.createNode("license")};
-	licenseNode.setAttribute("licenseExpires", "2025-09-03T14:46:43");
-	licenseNode.setAttribute("email", "foo@bar.com");
-	licenseNode.setAttribute("valid", true);
+            return response;
+        }
 
-	return response;
-}
+        Response handleNotImplemented(RequestContext&)
+        {
+            throw NotImplementedGenericError{};
+        }
 
-static
-Response
-handleNotImplemented(RequestContext&)
-{
-	throw NotImplementedGenericError {};
-}
 
-using RequestHandlerFunc = std::function<Response(RequestContext& context)>;
-using CheckImplementedFunc = std::function<void()>;
-struct RequestEntryPointInfo
-{
-	RequestHandlerFunc			func;
-	EnumSet<UserType>			allowedUserTypes {UserType::DEMO, UserType::REGULAR, UserType::ADMIN};
-	CheckImplementedFunc		checkFunc {};
-};
+        using RequestHandlerFunc = std::function<Response(RequestContext& context)>;
+        using CheckImplementedFunc = std::function<void()>;
+        struct RequestEntryPointInfo
+        {
+            RequestHandlerFunc      func;
+            EnumSet<UserType>       allowedUserTypes{ UserType::DEMO, UserType::REGULAR, UserType::ADMIN };
+            CheckImplementedFunc    checkFunc{};
+        };
 
-static const std::unordered_map<std::string_view, RequestEntryPointInfo> requestEntryPoints
-{
-	// System
-	{"/ping",		{handlePingRequest}},
-	{"/getLicense",		{handleGetLicenseRequest}},
+        static const std::unordered_map<std::string_view, RequestEntryPointInfo> requestEntryPoints
+        {
+            // System
+            {"/ping",                   {handlePingRequest}},
+            {"/getLicense",             {handleGetLicenseRequest}},
 
-	// Browsing
-	{"/getMusicFolders",	{handleGetMusicFoldersRequest}},
-	{"/getIndexes",		{handleGetIndexesRequest}},
-	{"/getMusicDirectory",	{handleGetMusicDirectoryRequest}},
-	{"/getGenres",		{handleGetGenresRequest}},
-	{"/getArtists",		{handleGetArtistsRequest}},
-	{"/getArtist",		{handleGetArtistRequest}},
-	{"/getAlbum",		{handleGetAlbumRequest}},
-	{"/getSong",		{handleGetSongRequest}},
-	{"/getVideos",		{handleNotImplemented}},
-	{"/getArtistInfo",	{handleGetArtistInfoRequest}},
-	{"/getArtistInfo2",	{handleGetArtistInfo2Request}},
-	{"/getAlbumInfo",	{handleNotImplemented}},
-	{"/getAlbumInfo2",	{handleNotImplemented}},
-	{"/getSimilarSongs",	{handleGetSimilarSongsRequest}},
-	{"/getSimilarSongs2",	{handleGetSimilarSongs2Request}},
-	{"/getTopSongs",		{handleNotImplemented}},
+            // Browsing
+            {"/getMusicFolders",        {handleGetMusicFoldersRequest}},
+            {"/getIndexes",             {handleGetIndexesRequest}},
+            {"/getMusicDirectory",      {handleGetMusicDirectoryRequest}},
+            {"/getGenres",              {handleGetGenresRequest}},
+            {"/getArtists",             {handleGetArtistsRequest}},
+            {"/getArtist",              {handleGetArtistRequest}},
+            {"/getAlbum",               {handleGetAlbumRequest}},
+            {"/getSong",                {handleGetSongRequest}},
+            {"/getVideos",              {handleNotImplemented}},
+            {"/getArtistInfo",          {handleGetArtistInfoRequest}},
+            {"/getArtistInfo2",         {handleGetArtistInfo2Request}},
+            {"/getAlbumInfo",	        {handleNotImplemented}},
+            {"/getAlbumInfo2",          {handleNotImplemented}},
+            {"/getSimilarSongs",        {handleGetSimilarSongsRequest}},
+            {"/getSimilarSongs2",       {handleGetSimilarSongs2Request}},
+            {"/getTopSongs",            {handleNotImplemented}},
 
-	// Album/song lists
-	{"/getAlbumList",	{handleGetAlbumListRequest}},
-	{"/getAlbumList2",	{handleGetAlbumList2Request}},
-	{"/getRandomSongs",	{handleGetRandomSongsRequest}},
-	{"/getSongsByGenre",	{handleGetSongsByGenreRequest}},
-	{"/getNowPlaying",	{handleNotImplemented}},
-	{"/getStarred",		{handleGetStarredRequest}},
-	{"/getStarred2",		{handleGetStarred2Request}},
+            // Album/song lists
+            {"/getAlbumList",           {handleGetAlbumListRequest}},
+            {"/getAlbumList2",          {handleGetAlbumList2Request}},
+            {"/getRandomSongs",         {handleGetRandomSongsRequest}},
+            {"/getSongsByGenre",        {handleGetSongsByGenreRequest}},
+            {"/getNowPlaying",          {handleNotImplemented}},
+            {"/getStarred",             {handleGetStarredRequest}},
+            {"/getStarred2",            {handleGetStarred2Request}},
 
-	// Searching
-	{"/search",		{handleNotImplemented}},
-	{"/search2",		{handleSearch2Request}},
-	{"/search3",		{handleSearch3Request}},
+            // Searching
+            {"/search",                 {handleNotImplemented}},
+            {"/search2",                {handleSearch2Request}},
+            {"/search3",                {handleSearch3Request}},
 
-	// Playlists
-	{"/getPlaylists",	{handleGetPlaylistsRequest}},
-	{"/getPlaylist",		{handleGetPlaylistRequest}},
-	{"/createPlaylist",	{handleCreatePlaylistRequest}},
-	{"/updatePlaylist",	{handleUpdatePlaylistRequest}},
-	{"/deletePlaylist",	{handleDeletePlaylistRequest}},
+            // Playlists
+            {"/getPlaylists",           {handleGetPlaylistsRequest}},
+            {"/getPlaylist",            {handleGetPlaylistRequest}},
+            {"/createPlaylist",         {handleCreatePlaylistRequest}},
+            {"/updatePlaylist",         {handleUpdatePlaylistRequest}},
+            {"/deletePlaylist",         {handleDeletePlaylistRequest}},
 
-	// Media retrieval
-	{"/hls",				{handleNotImplemented}},
-	{"/getCaptions",		{handleNotImplemented}},
-	{"/getLyrics",		{handleNotImplemented}},
-	{"/getAvatar",		{handleNotImplemented}},
+            // Media retrieval
+            {"/hls",                    {handleNotImplemented}},
+            {"/getCaptions",            {handleNotImplemented}},
+            {"/getLyrics",              {handleNotImplemented}},
+            {"/getAvatar",              {handleNotImplemented}},
 
-	// Media annotation
-	{"/star",			{handleStarRequest}},
-	{"/unstar",			{handleUnstarRequest}},
-	{"/setRating",		{handleNotImplemented}},
-	{"/scrobble",		{handleScrobble}},
+            // Media annotation
+            {"/star",                   {handleStarRequest}},
+            {"/unstar",                 {handleUnstarRequest}},
+            {"/setRating",              {handleNotImplemented}},
+            {"/scrobble",               {handleScrobble}},
 
-	// Sharing
-	{"/getShares",		{handleNotImplemented}},
-	{"/createShares",	{handleNotImplemented}},
-	{"/updateShare",		{handleNotImplemented}},
-	{"/deleteShare",		{handleNotImplemented}},
+            // Sharing
+            {"/getShares",              {handleNotImplemented}},
+            {"/createShares",           {handleNotImplemented}},
+            {"/updateShare",            {handleNotImplemented}},
+            {"/deleteShare",            {handleNotImplemented}},
 
-	// Podcast
-	{"/getPodcasts",			{handleNotImplemented}},
-	{"/getNewestPodcasts",		{handleNotImplemented}},
-	{"/refreshPodcasts",		{handleNotImplemented}},
-	{"/createPodcastChannel",	{handleNotImplemented}},
-	{"/deletePodcastChannel",	{handleNotImplemented}},
-	{"/deletePodcastEpisode",	{handleNotImplemented}},
-	{"/downloadPodcastEpisode",	{handleNotImplemented}},
+            // Podcast
+            {"/getPodcasts",            {handleNotImplemented}},
+            {"/getNewestPodcasts",      {handleNotImplemented}},
+            {"/refreshPodcasts",        {handleNotImplemented}},
+            {"/createPodcastChannel",   {handleNotImplemented}},
+            {"/deletePodcastChannel",   {handleNotImplemented}},
+            {"/deletePodcastEpisode",   {handleNotImplemented}},
+            {"/downloadPodcastEpisode", {handleNotImplemented}},
 
-	// Jukebox
-	{"/jukeboxControl",	{handleNotImplemented}},
+            // Jukebox
+            {"/jukeboxControl",	        {handleNotImplemented}},
 
-	// Internet radio
-	{"/getInternetRadioStations",	{handleNotImplemented}},
-	{"/createInternetRadioStation",	{handleNotImplemented}},
-	{"/updateInternetRadioStation",	{handleNotImplemented}},
-	{"/deleteInternetRadioStation",	{handleNotImplemented}},
+            // Internet radio
+            {"/getInternetRadioStations",	{handleNotImplemented}},
+            {"/createInternetRadioStation",	{handleNotImplemented}},
+            {"/updateInternetRadioStation",	{handleNotImplemented}},
+            {"/deleteInternetRadioStation",	{handleNotImplemented}},
 
-	// Chat
-	{"/getChatMessages",	{handleNotImplemented}},
-	{"/addChatMessages",	{handleNotImplemented}},
+            // Chat
+            {"/getChatMessages",    {handleNotImplemented}},
+            {"/addChatMessages",    {handleNotImplemented}},
 
-	// User management
-	{"/getUser",			{handleGetUserRequest}},
-	{"/getUsers",		{handleGetUsersRequest,			{UserType::ADMIN}}},
-	{"/createUser",		{handleCreateUserRequest,		{UserType::ADMIN}, &Utils::checkSetPasswordImplemented}},
-	{"/updateUser",		{handleUpdateUserRequest,		{UserType::ADMIN}}},
-	{"/deleteUser",		{handleDeleteUserRequest,		{UserType::ADMIN}}},
-	{"/changePassword",	{handleChangePassword,			{UserType::REGULAR, UserType::ADMIN}, &Utils::checkSetPasswordImplemented}},
+            // User management
+            {"/getUser",            {handleGetUserRequest}},
+            {"/getUsers",           {handleGetUsersRequest,     {UserType::ADMIN}}},
+            {"/createUser",         {handleCreateUserRequest,   {UserType::ADMIN},                      &Utils::checkSetPasswordImplemented}},
+            {"/updateUser",         {handleUpdateUserRequest,   {UserType::ADMIN}}},
+            {"/deleteUser",         {handleDeleteUserRequest,   {UserType::ADMIN}}},
+            {"/changePassword",     {handleChangePassword,      {UserType::REGULAR, UserType::ADMIN},   &Utils::checkSetPasswordImplemented}},
 
-	// Bookmarks
-	{"/getBookmarks",	{handleGetBookmarks}},
-	{"/createBookmark",	{handleCreateBookmark}},
-	{"/deleteBookmark",	{handleDeleteBookmark}},
-	{"/getPlayQueue",	{handleNotImplemented}},
-	{"/savePlayQueue",	{handleNotImplemented}},
+            // Bookmarks
+            {"/getBookmarks",       {handleGetBookmarks}},
+            {"/createBookmark",     {handleCreateBookmark}},
+            {"/deleteBookmark",     {handleDeleteBookmark}},
+            {"/getPlayQueue",       {handleNotImplemented}},
+            {"/savePlayQueue",      {handleNotImplemented}},
 
-	// Media library scanning
-	{"/getScanStatus",	{Scan::handleGetScanStatus,		{UserType::ADMIN}}},
-	{"/startScan",		{Scan::handleStartScan,			{UserType::ADMIN}}},
-};
+            // Media library scanning
+            {"/getScanStatus",      {Scan::handleGetScanStatus, {UserType::ADMIN}}},
+            {"/startScan",          {Scan::handleStartScan,     {UserType::ADMIN}}},
+        };
 
-using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::Http::Request&, Wt::Http::Response&)>;
-static std::unordered_map<std::string, MediaRetrievalHandlerFunc> mediaRetrievalHandlers
-{
-	// Media retrieval
-	{"/download",		handleDownload},
-	{"/stream",			handleStream},
-	{"/getCoverArt",	handleGetCoverArt},
-};
+        using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::Http::Request&, Wt::Http::Response&)>;
+        static std::unordered_map<std::string, MediaRetrievalHandlerFunc> mediaRetrievalHandlers
+        {
+            // Media retrieval
+            {"/download",       handleDownload},
+            {"/stream",         handleStream},
+            {"/getCoverArt",    handleGetCoverArt},
+        };
+    }
 
-void
-SubsonicResource::handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response)
-{
-	static std::atomic<std::size_t> curRequestId {};
 
-	const std::size_t requestId {curRequestId++};
+    SubsonicResource::SubsonicResource(Db& db)
+        : _serverProtocolVersionsByClient{ readConfigProtocolVersions() }
+        , _db{ db }
+    {
+    }
 
-	LMS_LOG(API_SUBSONIC, DEBUG) << "Handling request " << requestId << " '" << request.pathInfo() << "', continuation = " << (request.continuation() ? "true" : "false") << ", params = " << parameterMapToDebugString(request.getParameterMap());
+    void SubsonicResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
+    {
+        static std::atomic<std::size_t> curRequestId{};
 
-	std::string requestPath {request.pathInfo()};
-	if (StringUtils::stringEndsWith(requestPath, ".view"))
-		requestPath.resize(requestPath.length() - 5);
+        const std::size_t requestId{ curRequestId++ };
 
-	// Optional parameters
-	const ResponseFormat format {getParameterAs<std::string>(request.getParameterMap(), "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml};
+        LMS_LOG(API_SUBSONIC, DEBUG) << "Handling request " << requestId << " '" << request.pathInfo() << "', continuation = " << (request.continuation() ? "true" : "false") << ", params = " << parameterMapToDebugString(request.getParameterMap());
 
-	ProtocolVersion protocolVersion {defaultServerProtocolVersion};
+        std::string requestPath{ request.pathInfo() };
+        if (StringUtils::stringEndsWith(requestPath, ".view"))
+            requestPath.resize(requestPath.length() - 5);
 
-	try
-	{
-		// We need to parse client a soon as possible to make sure to answer with the right protocol version
-		protocolVersion = getServerProtocolVersion(getMandatoryParameterAs<std::string>(request.getParameterMap(), "c"));
-		RequestContext requestContext {buildRequestContext(request)};
+        // Optional parameters
+        const ResponseFormat format{ getParameterAs<std::string>(request.getParameterMap(), "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml };
 
-		auto itEntryPoint {requestEntryPoints.find(requestPath)};
-		if (itEntryPoint != requestEntryPoints.end())
-		{
-			if (itEntryPoint->second.checkFunc)
-				itEntryPoint->second.checkFunc();
+        ProtocolVersion protocolVersion{ defaultServerProtocolVersion };
 
-			checkUserTypeIsAllowed(requestContext, itEntryPoint->second.allowedUserTypes);
+        try
+        {
+            // We need to parse client a soon as possible to make sure to answer with the right protocol version
+            protocolVersion = getServerProtocolVersion(getMandatoryParameterAs<std::string>(request.getParameterMap(), "c"));
+            RequestContext requestContext{ buildRequestContext(request) };
 
-			Response resp {(itEntryPoint->second.func)(requestContext)};
+            auto itEntryPoint{ requestEntryPoints.find(requestPath) };
+            if (itEntryPoint != requestEntryPoints.end())
+            {
+                if (itEntryPoint->second.checkFunc)
+                    itEntryPoint->second.checkFunc();
 
-			resp.write(response.out(), format);
-			response.setMimeType(ResponseFormatToMimeType(format));
+                checkUserTypeIsAllowed(requestContext, itEntryPoint->second.allowedUserTypes);
 
-			LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId << " '" << requestPath << "' handled!";
-			return;
-		}
+                Response resp{ (itEntryPoint->second.func)(requestContext) };
 
-		auto itStreamHandler {mediaRetrievalHandlers.find(requestPath)};
-		if (itStreamHandler != mediaRetrievalHandlers.end())
-		{
-			itStreamHandler->second(requestContext, request, response);
-			LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId  << " '" << requestPath << "' handled!";
-			return;
-		}
+                resp.write(response.out(), format);
+                response.setMimeType(ResponseFormatToMimeType(format));
 
-		LMS_LOG(API_SUBSONIC, ERROR) << "Unhandled command '" << requestPath << "'";
-		throw UnknownEntryPointGenericError {};
-	}
-	catch (const Error& e)
-	{
-		LMS_LOG(API_SUBSONIC, ERROR) << "Error while processing request '" << requestPath << "'"
-			<< ", params = [" << parameterMapToDebugString(request.getParameterMap()) << "]"
-			<< ", code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'";
-		Response resp {Response::createFailedResponse(protocolVersion, e)};
-		resp.write(response.out(), format);
-		response.setMimeType(ResponseFormatToMimeType(format));
-	}
-}
+                LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId << " '" << requestPath << "' handled!";
+                return;
+            }
 
-ProtocolVersion
-SubsonicResource::getServerProtocolVersion(const std::string& clientName) const
-{
-	auto it {_serverProtocolVersionsByClient.find(clientName)};
-	if (it == std::cend(_serverProtocolVersionsByClient))
-		return defaultServerProtocolVersion;
+            auto itStreamHandler{ mediaRetrievalHandlers.find(requestPath) };
+            if (itStreamHandler != mediaRetrievalHandlers.end())
+            {
+                itStreamHandler->second(requestContext, request, response);
+                LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId << " '" << requestPath << "' handled!";
+                return;
+            }
 
-	return it->second;
-}
+            LMS_LOG(API_SUBSONIC, ERROR) << "Unhandled command '" << requestPath << "'";
+            throw UnknownEntryPointGenericError{};
+        }
+        catch (const Error& e)
+        {
+            LMS_LOG(API_SUBSONIC, ERROR) << "Error while processing request '" << requestPath << "'"
+                << ", params = [" << parameterMapToDebugString(request.getParameterMap()) << "]"
+                << ", code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'";
+            Response resp{ Response::createFailedResponse(protocolVersion, e) };
+            resp.write(response.out(), format);
+            response.setMimeType(ResponseFormatToMimeType(format));
+        }
+    }
 
-void
-SubsonicResource::checkProtocolVersion(ProtocolVersion client, ProtocolVersion server)
-{
-	if (client.major > server.major)
-		throw ServerMustUpgradeError {};
-	if (client.major < server.major)
-		throw ClientMustUpgradeError {};
-	if (client.minor > server.minor)
-		throw ServerMustUpgradeError {};
-	else if (client.minor == server.minor)
-	{
-		if (client.patch > server.patch)
-			throw ServerMustUpgradeError {};
-	}
-}
+    ProtocolVersion SubsonicResource::getServerProtocolVersion(const std::string& clientName) const
+    {
+        auto it{ _serverProtocolVersionsByClient.find(clientName) };
+        if (it == std::cend(_serverProtocolVersionsByClient))
+            return defaultServerProtocolVersion;
 
-ClientInfo
-SubsonicResource::getClientInfo(const Wt::Http::ParameterMap& parameters)
-{
-	ClientInfo res;
+        return it->second;
+    }
 
-	if (hasParameter(parameters, "t"))
-		throw TokenAuthenticationNotSupportedForLDAPUsersError {};
+    void SubsonicResource::checkProtocolVersion(ProtocolVersion client, ProtocolVersion server)
+    {
+        if (client.major > server.major)
+            throw ServerMustUpgradeError{};
+        if (client.major < server.major)
+            throw ClientMustUpgradeError{};
+        if (client.minor > server.minor)
+            throw ServerMustUpgradeError{};
+        else if (client.minor == server.minor)
+        {
+            if (client.patch > server.patch)
+                throw ServerMustUpgradeError{};
+        }
+    }
 
-	// Mandatory parameters
-	res.name = getMandatoryParameterAs<std::string>(parameters, "c");
-	res.version = getMandatoryParameterAs<ProtocolVersion>(parameters, "v");
-	res.user = getMandatoryParameterAs<std::string>(parameters, "u");
-	res.password = decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(parameters, "p"));
+    ClientInfo SubsonicResource::getClientInfo(const Wt::Http::ParameterMap& parameters)
+    {
+        ClientInfo res;
 
-	return res;
-}
+        if (hasParameter(parameters, "t"))
+            throw TokenAuthenticationNotSupportedForLDAPUsersError{};
 
-RequestContext
-SubsonicResource::buildRequestContext(const Wt::Http::Request& request)
-{
-	const Wt::Http::ParameterMap& parameters {request.getParameterMap()};
-	const ClientInfo clientInfo {getClientInfo(parameters)};
-	const Database::UserId userId {authenticateUser(request, clientInfo)};
+        // Mandatory parameters
+        res.name = getMandatoryParameterAs<std::string>(parameters, "c");
+        res.version = getMandatoryParameterAs<ProtocolVersion>(parameters, "v");
+        res.user = getMandatoryParameterAs<std::string>(parameters, "u");
+        res.password = decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(parameters, "p"));
 
-	return {parameters, _db.getTLSSession(), userId, clientInfo, getServerProtocolVersion(clientInfo.name)};
-}
+        return res;
+    }
 
-Database::UserId
-SubsonicResource::authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo)
-{
-	if (auto *authEnvService {Service<::Auth::IEnvService>::get()})
-	{
-		const auto checkResult {authEnvService->processRequest(request)};
-		if (checkResult.state != ::Auth::IEnvService::CheckResult::State::Granted)
-			throw UserNotAuthorizedError {};
+    RequestContext SubsonicResource::buildRequestContext(const Wt::Http::Request& request)
+    {
+        const Wt::Http::ParameterMap& parameters{ request.getParameterMap() };
+        const ClientInfo clientInfo{ getClientInfo(parameters) };
+        const Database::UserId userId{ authenticateUser(request, clientInfo) };
 
-		return *checkResult.userId;
-	}
-	else if (auto *authPasswordService {Service<::Auth::IPasswordService>::get()})
-	{
-		const auto checkResult {authPasswordService->checkUserPassword(boost::asio::ip::address::from_string(request.clientAddress()),
-																			clientInfo.user, clientInfo.password)};
+        return { parameters, _db.getTLSSession(), userId, clientInfo, getServerProtocolVersion(clientInfo.name) };
+    }
 
-		switch (checkResult.state)
-		{
-			case Auth::IPasswordService::CheckResult::State::Granted:
-				return *checkResult.userId;
-				break;
-			case Auth::IPasswordService::CheckResult::State::Denied:
-				throw WrongUsernameOrPasswordError {};
-			case Auth::IPasswordService::CheckResult::State::Throttled:
-				throw LoginThrottledGenericError {};
-		}
-	}
+    Database::UserId SubsonicResource::authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo)
+    {
+        if (auto * authEnvService{ Service<::Auth::IEnvService>::get() })
+        {
+            const auto checkResult{ authEnvService->processRequest(request) };
+            if (checkResult.state != ::Auth::IEnvService::CheckResult::State::Granted)
+                throw UserNotAuthorizedError{};
 
-	throw InternalErrorGenericError {"No service avalaible to authenticate user"};
-}
+            return *checkResult.userId;
+        }
+        else if (auto * authPasswordService{ Service<::Auth::IPasswordService>::get() })
+        {
+            const auto checkResult{ authPasswordService->checkUserPassword(boost::asio::ip::address::from_string(request.clientAddress()), clientInfo.user, clientInfo.password) };
+
+            switch (checkResult.state)
+            {
+            case Auth::IPasswordService::CheckResult::State::Granted:
+                return *checkResult.userId;
+                break;
+            case Auth::IPasswordService::CheckResult::State::Denied:
+                throw WrongUsernameOrPasswordError{};
+            case Auth::IPasswordService::CheckResult::State::Throttled:
+                throw LoginThrottledGenericError{};
+            }
+        }
+
+        throw InternalErrorGenericError{ "No service avalaible to authenticate user" };
+    }
 
 } // namespace api::subsonic
 

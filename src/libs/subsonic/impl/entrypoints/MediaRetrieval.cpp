@@ -37,164 +37,164 @@ using namespace Database;
 
 namespace API::Subsonic
 {
-	namespace {
-		Av::Format userTranscodeFormatToAvFormat(AudioFormat format)
-		{
-			switch (format)
-			{
-			case AudioFormat::MP3:			return Av::Format::MP3;
-			case AudioFormat::OGG_OPUS:		return Av::Format::OGG_OPUS;
-			case AudioFormat::MATROSKA_OPUS:	return Av::Format::MATROSKA_OPUS;
-			case AudioFormat::OGG_VORBIS:		return Av::Format::OGG_VORBIS;
-			case AudioFormat::WEBM_VORBIS:		return Av::Format::WEBM_VORBIS;
-			default:				return Av::Format::OGG_OPUS;
-			}
-		}
+    namespace {
+        Av::Format userTranscodeFormatToAvFormat(AudioFormat format)
+        {
+            switch (format)
+            {
+            case AudioFormat::MP3:			return Av::Format::MP3;
+            case AudioFormat::OGG_OPUS:		return Av::Format::OGG_OPUS;
+            case AudioFormat::MATROSKA_OPUS:	return Av::Format::MATROSKA_OPUS;
+            case AudioFormat::OGG_VORBIS:		return Av::Format::OGG_VORBIS;
+            case AudioFormat::WEBM_VORBIS:		return Av::Format::WEBM_VORBIS;
+            default:				return Av::Format::OGG_OPUS;
+            }
+        }
 
-		struct StreamParameters
-		{
-			Av::InputFileParameters inputFileParameters;
-			std::optional<Av::TranscodeParameters> transcodeParameters;
-			bool estimateContentLength{};
-		};
+        struct StreamParameters
+        {
+            Av::InputFileParameters inputFileParameters;
+            std::optional<Av::TranscodeParameters> transcodeParameters;
+            bool estimateContentLength{};
+        };
 
-		StreamParameters getStreamParameters(RequestContext& context)
-		{
-			// Mandatory params
-			const TrackId id{ getMandatoryParameterAs<TrackId>(context.parameters, "id") };
+        StreamParameters getStreamParameters(RequestContext& context)
+        {
+            // Mandatory params
+            const TrackId id{ getMandatoryParameterAs<TrackId>(context.parameters, "id") };
 
-			// Optional params
-			std::optional<std::size_t> maxBitRate{ getParameterAs<std::size_t>(context.parameters, "maxBitRate") };
-			std::optional<std::string> format{ getParameterAs<std::string>(context.parameters, "format") };
-			bool estimateContentLength{ getParameterAs<bool>(context.parameters, "estimateContentLength").value_or(false) };
+            // Optional params
+            std::optional<std::size_t> maxBitRate{ getParameterAs<std::size_t>(context.parameters, "maxBitRate") };
+            std::optional<std::string> format{ getParameterAs<std::string>(context.parameters, "format") };
+            bool estimateContentLength{ getParameterAs<bool>(context.parameters, "estimateContentLength").value_or(false) };
 
-			StreamParameters parameters;
+            StreamParameters parameters;
 
-			parameters.estimateContentLength = estimateContentLength;
+            parameters.estimateContentLength = estimateContentLength;
 
-			auto transaction{ context.dbSession.createSharedTransaction() };
+            auto transaction{ context.dbSession.createSharedTransaction() };
 
-			{
-				auto track{ Track::find(context.dbSession, id) };
-				if (!track)
-					throw RequestedDataNotFoundError{};
+            {
+                auto track{ Track::find(context.dbSession, id) };
+                if (!track)
+                    throw RequestedDataNotFoundError{};
 
-				parameters.inputFileParameters.trackPath = track->getPath();
-				parameters.inputFileParameters.duration = track->getDuration();
-			}
+                parameters.inputFileParameters.trackPath = track->getPath();
+                parameters.inputFileParameters.duration = track->getDuration();
+            }
 
-			{
-				const User::pointer user{ User::find(context.dbSession, context.userId) };
-				if (!user)
-					throw UserNotAuthorizedError{};
+            {
+                const User::pointer user{ User::find(context.dbSession, context.userId) };
+                if (!user)
+                    throw UserNotAuthorizedError{};
 
-				// format = "raw" => no transcode. Other format values will be ignored
-				const bool transcode{ (!format || (*format != "raw")) && user->getSubsonicTranscodeEnable() };
-				if (transcode)
-				{
-					std::size_t bitRate{ user->getSubsonicTranscodeBitrate() / 1000 };
+                // format = "raw" => no transcode. Other format values will be ignored
+                const bool transcode{ (!format || (*format != "raw")) && user->getSubsonicTranscodeEnable() };
+                if (transcode)
+                {
+                    std::size_t bitRate{ user->getSubsonicTranscodeBitrate() / 1000 };
 
-					// "If set to zero, no limit is imposed"
-					if (maxBitRate && *maxBitRate != 0)
-						bitRate = Utils::clamp(*maxBitRate, std::size_t{ 48 }, bitRate);
+                    // "If set to zero, no limit is imposed"
+                    if (maxBitRate && *maxBitRate != 0)
+                        bitRate = Utils::clamp(*maxBitRate, std::size_t{ 48 }, bitRate);
 
-					Av::TranscodeParameters transcodeParameters;
+                    Av::TranscodeParameters transcodeParameters;
 
-					transcodeParameters.bitrate = bitRate * 1000;
-					transcodeParameters.format = userTranscodeFormatToAvFormat(user->getSubsonicTranscodeFormat());
-					transcodeParameters.stripMetadata = false; // We want clients to use metadata (offline use, replay gain, etc.)
+                    transcodeParameters.bitrate = bitRate * 1000;
+                    transcodeParameters.format = userTranscodeFormatToAvFormat(user->getSubsonicTranscodeFormat());
+                    transcodeParameters.stripMetadata = false; // We want clients to use metadata (offline use, replay gain, etc.)
 
-					parameters.transcodeParameters = std::move(transcodeParameters);
-				}
-			}
+                    parameters.transcodeParameters = std::move(transcodeParameters);
+                }
+            }
 
-			return parameters;
-		}
-	}
+            return parameters;
+        }
+    }
 
-	void handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response)
-	{
-		std::shared_ptr<IResourceHandler> resourceHandler;
+    void handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response)
+    {
+        std::shared_ptr<IResourceHandler> resourceHandler;
 
-		Wt::Http::ResponseContinuation* continuation{ request.continuation() };
-		if (!continuation)
-		{
-			// Mandatory params
-			Database::TrackId id{ getMandatoryParameterAs<Database::TrackId>(context.parameters, "id") };
+        Wt::Http::ResponseContinuation* continuation{ request.continuation() };
+        if (!continuation)
+        {
+            // Mandatory params
+            Database::TrackId id{ getMandatoryParameterAs<Database::TrackId>(context.parameters, "id") };
 
-			std::filesystem::path trackPath;
-			{
-				auto transaction{ context.dbSession.createSharedTransaction() };
+            std::filesystem::path trackPath;
+            {
+                auto transaction{ context.dbSession.createSharedTransaction() };
 
-				auto track{ Track::find(context.dbSession, id) };
-				if (!track)
-					throw RequestedDataNotFoundError{};
+                auto track{ Track::find(context.dbSession, id) };
+                if (!track)
+                    throw RequestedDataNotFoundError{};
 
-				trackPath = track->getPath();
-			}
+                trackPath = track->getPath();
+            }
 
-			resourceHandler = createFileResourceHandler(trackPath);
-		}
-		else
-		{
-			resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(continuation->data());
-		}
+            resourceHandler = createFileResourceHandler(trackPath);
+        }
+        else
+        {
+            resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(continuation->data());
+        }
 
-		continuation = resourceHandler->processRequest(request, response);
-		if (continuation)
-			continuation->setData(resourceHandler);
-	}
+        continuation = resourceHandler->processRequest(request, response);
+        if (continuation)
+            continuation->setData(resourceHandler);
+    }
 
-	void handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response)
-	{
-		std::shared_ptr<IResourceHandler> resourceHandler;
+    void handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response)
+    {
+        std::shared_ptr<IResourceHandler> resourceHandler;
 
-		try
-		{
-			Wt::Http::ResponseContinuation* continuation = request.continuation();
-			if (!continuation)
-			{
-				StreamParameters streamParameters{ getStreamParameters(context) };
-				if (streamParameters.transcodeParameters)
-					resourceHandler = Av::createTranscodeResourceHandler(streamParameters.inputFileParameters, *streamParameters.transcodeParameters, streamParameters.estimateContentLength);
-				else
-					resourceHandler = createFileResourceHandler(streamParameters.inputFileParameters.trackPath);
-			}
-			else
-			{
-				resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(continuation->data());
-			}
+        try
+        {
+            Wt::Http::ResponseContinuation* continuation = request.continuation();
+            if (!continuation)
+            {
+                StreamParameters streamParameters{ getStreamParameters(context) };
+                if (streamParameters.transcodeParameters)
+                    resourceHandler = Av::createTranscodeResourceHandler(streamParameters.inputFileParameters, *streamParameters.transcodeParameters, streamParameters.estimateContentLength);
+                else
+                    resourceHandler = createFileResourceHandler(streamParameters.inputFileParameters.trackPath);
+            }
+            else
+            {
+                resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(continuation->data());
+            }
 
-			continuation = resourceHandler->processRequest(request, response);
-			if (continuation)
-				continuation->setData(resourceHandler);
-		}
-		catch (const Av::Exception& e)
-		{
-			LMS_LOG(API_SUBSONIC, ERROR) << "Caught Av exception: " << e.what();
-		}
-	}
+            continuation = resourceHandler->processRequest(request, response);
+            if (continuation)
+                continuation->setData(resourceHandler);
+        }
+        catch (const Av::Exception& e)
+        {
+            LMS_LOG(API_SUBSONIC, ERROR) << "Caught Av exception: " << e.what();
+        }
+    }
 
-	void handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/, Wt::Http::Response& response)
-	{
-		// Mandatory params
-		const auto trackId{ getParameterAs<TrackId>(context.parameters, "id") };
-		const auto releaseId{ getParameterAs<ReleaseId>(context.parameters, "id") };
+    void handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/, Wt::Http::Response& response)
+    {
+        // Mandatory params
+        const auto trackId{ getParameterAs<TrackId>(context.parameters, "id") };
+        const auto releaseId{ getParameterAs<ReleaseId>(context.parameters, "id") };
 
-		if (!trackId && !releaseId)
-			throw BadParameterGenericError{ "id" };
+        if (!trackId && !releaseId)
+            throw BadParameterGenericError{ "id" };
 
-		std::size_t size{ getParameterAs<std::size_t>(context.parameters, "size").value_or(1024) };
-		size = ::Utils::clamp(size, std::size_t{ 32 }, std::size_t{ 2048 });
+        std::size_t size{ getParameterAs<std::size_t>(context.parameters, "size").value_or(1024) };
+        size = ::Utils::clamp(size, std::size_t{ 32 }, std::size_t{ 2048 });
 
-		std::shared_ptr<Image::IEncodedImage> cover;
-		if (trackId)
-			cover = Service<Cover::ICoverService>::get()->getFromTrack(*trackId, size);
-		else if (releaseId)
-			cover = Service<Cover::ICoverService>::get()->getFromRelease(*releaseId, size);
+        std::shared_ptr<Image::IEncodedImage> cover;
+        if (trackId)
+            cover = Service<Cover::ICoverService>::get()->getFromTrack(*trackId, size);
+        else if (releaseId)
+            cover = Service<Cover::ICoverService>::get()->getFromRelease(*releaseId, size);
 
-		response.out().write(reinterpret_cast<const char*>(cover->getData()), cover->getDataSize());
-		response.setMimeType(std::string{ cover->getMimeType() });
-	}
+        response.out().write(reinterpret_cast<const char*>(cover->getData()), cover->getDataSize());
+        response.setMimeType(std::string{ cover->getMimeType() });
+    }
 
 } // namespace API::Subsonic

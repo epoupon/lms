@@ -30,28 +30,28 @@
 
 namespace Database
 {
-	class Db;
+    class Db;
 }
 
 namespace API::Subsonic
 {
 
-	class SubsonicResource final : public Wt::WResource
-	{
-		public:
-			SubsonicResource(Database::Db& db);
+    class SubsonicResource final : public Wt::WResource
+    {
+        public:
+            SubsonicResource(Database::Db& db);
 
-		private:
-			void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) override;
-			ProtocolVersion getServerProtocolVersion(const std::string& clientName) const;
+        private:
+            void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) override;
+            ProtocolVersion getServerProtocolVersion(const std::string& clientName) const;
 
-			static void checkProtocolVersion(ProtocolVersion client, ProtocolVersion server);
-			ClientInfo getClientInfo(const Wt::Http::ParameterMap& parameters);
-			RequestContext buildRequestContext(const Wt::Http::Request& request);
-			Database::UserId authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo);
+            static void checkProtocolVersion(ProtocolVersion client, ProtocolVersion server);
+            ClientInfo getClientInfo(const Wt::Http::ParameterMap& parameters);
+            RequestContext buildRequestContext(const Wt::Http::Request& request);
+            Database::UserId authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo);
 
-			const std::unordered_map<std::string, ProtocolVersion> _serverProtocolVersionsByClient;
-			Database::Db& _db;
-	};
+            const std::unordered_map<std::string, ProtocolVersion> _serverProtocolVersionsByClient;
+            Database::Db& _db;
+    };
 
 } // namespace

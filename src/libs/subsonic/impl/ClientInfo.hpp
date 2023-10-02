@@ -24,11 +24,11 @@
 
 namespace API::Subsonic
 {
-	struct ClientInfo
-	{
-		std::string name;
-		std::string user;
-		std::string password;
-		ProtocolVersion version;
-	};
+    struct ClientInfo
+    {
+        std::string name;
+        std::string user;
+        std::string password;
+        ProtocolVersion version;
+    };
 }
