@@ -153,6 +153,12 @@ namespace API::Subsonic
                 trackResponse.setAttribute("genre", clusters.front().front()->getName());
         }
 
+        // OpenSubsonic specific field
+        {
+            std::optional<UUID> mbid {track->getTrackMBID()};
+            trackResponse.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
+        }
+
         return trackResponse;
     }
 }

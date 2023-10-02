@@ -81,20 +81,23 @@ namespace API::Subsonic
             }
         }
 
-        if (id3)
+        // Report the first GENRE for this track
+        ClusterType::pointer clusterType{ ClusterType::find(dbSession, "GENRE") };
+        if (clusterType)
         {
-            // Report the first GENRE for this track
-            ClusterType::pointer clusterType{ ClusterType::find(dbSession, "GENRE") };
-            if (clusterType)
-            {
-                auto clusters{ release->getClusterGroups({clusterType}, 1) };
-                if (!clusters.empty() && !clusters.front().empty())
-                    albumNode.setAttribute("genre", clusters.front().front()->getName());
-            }
+            auto clusters{ release->getClusterGroups({clusterType}, 1) };
+            if (!clusters.empty() && !clusters.front().empty())
+                albumNode.setAttribute("genre", clusters.front().front()->getName());
         }
 
         if (const Wt::WDateTime dateTime{ Service<Scrobbling::IScrobblingService>::get()->getStarredDateTime(user->getId(), release->getId()) }; dateTime.isValid())
             albumNode.setAttribute("starred", StringUtils::toISO8601String(dateTime)); // TODO report correct date/time
+
+        // OpenSubsonic specific field
+        {
+            std::optional<UUID> mbid {release->getMBID()};
+            albumNode.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
+        }
 
         return albumNode;
     }
