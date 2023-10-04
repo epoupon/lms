@@ -56,17 +56,17 @@ namespace API::Subsonic
         {
             switch (type)
             {
-                case TrackArtistLinkType::Arranger: return "arranger";
-                case TrackArtistLinkType::Artist: return "artist";
-                case TrackArtistLinkType::Composer: return "composer";
-                case TrackArtistLinkType::Conductor: return "conductor";
-                case TrackArtistLinkType::Lyricist: return "lyricist";
-                case TrackArtistLinkType::Mixer: return "mixer";
-                case TrackArtistLinkType::Performer: return "performer";
-                case TrackArtistLinkType::Producer: return "producrer";
-                case TrackArtistLinkType::ReleaseArtist: return "albumartist";
-                case TrackArtistLinkType::Remixer: return "remixer";
-                case TrackArtistLinkType::Writer: return "writer";
+            case TrackArtistLinkType::Arranger: return "arranger";
+            case TrackArtistLinkType::Artist: return "artist";
+            case TrackArtistLinkType::Composer: return "composer";
+            case TrackArtistLinkType::Conductor: return "conductor";
+            case TrackArtistLinkType::Lyricist: return "lyricist";
+            case TrackArtistLinkType::Mixer: return "mixer";
+            case TrackArtistLinkType::Performer: return "performer";
+            case TrackArtistLinkType::Producer: return "producrer";
+            case TrackArtistLinkType::ReleaseArtist: return "albumartist";
+            case TrackArtistLinkType::Remixer: return "remixer";
+            case TrackArtistLinkType::Writer: return "writer";
             }
 
             return "unknown";
@@ -75,7 +75,7 @@ namespace API::Subsonic
 
     Response::Node createArtistNode(const Artist::pointer& artist, Session& session, const User::pointer& user, bool id3)
     {
-        Response::Node artistNode;
+        Response::Node artistNode{ createArtistNode(artist) };
 
         artistNode.setAttribute("id", idToString(artist->getId()));
         artistNode.setAttribute("name", artist->getName());
@@ -91,17 +91,27 @@ namespace API::Subsonic
 
         // OpenSubsonic specific fields (must always be set)
         {
-            std::optional<UUID> mbid {artist->getMBID()};
+            std::optional<UUID> mbid{ artist->getMBID() };
             artistNode.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
         }
 
         artistNode.setAttribute("sortName", artist->getSortName());
-        
+
         // roles
         Response::Node roles;
-        artistNode.createArrayValue("roles");
+        artistNode.createEmptyArrayValue("roles");
         for (const TrackArtistLinkType linkType : TrackArtistLink::findUsedTypes(session, artist->getId()))
             artistNode.addArrayValue("roles", Utils::toString(linkType));
+
+        return artistNode;
+    }
+
+    Response::Node createArtistNode(const Artist::pointer& artist)
+    {
+        Response::Node artistNode;
+
+        artistNode.setAttribute("id", idToString(artist->getId()));
+        artistNode.setAttribute("name", artist->getName());
 
         return artistNode;
     }

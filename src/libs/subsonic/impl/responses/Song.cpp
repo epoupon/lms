@@ -25,11 +25,13 @@
 #include "services/database/Cluster.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/Track.hpp"
+#include "services/database/TrackArtistLink.hpp"
 #include "services/database/User.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 #include "responses/Artist.hpp"
+#include "responses/Contributor.hpp"
 #include "SubsonicId.hpp"
 #include "Utils.hpp"
 
@@ -157,6 +159,14 @@ namespace API::Subsonic
         {
             std::optional<UUID> mbid {track->getTrackMBID()};
             trackResponse.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
+        }
+
+        trackResponse.createEmptyArrayChild("contributors");
+        for (const TrackArtistLinkId linkId : TrackArtistLink::find(dbSession, TrackArtistLink::FindParameters{}.setTrack(track->getId())).results)
+        {
+            TrackArtistLink::pointer link{ TrackArtistLink::find(dbSession, linkId) };
+            if (link)
+                trackResponse.addArrayChild("contributors", createContributorNode(link));
         }
 
         return trackResponse;

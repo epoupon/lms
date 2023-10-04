@@ -73,6 +73,15 @@ namespace API::Subsonic
         _children[key].emplace_back(std::move(node));
     }
 
+    void Response::Node::createEmptyArrayChild(const std::string& key)
+    {
+        if (_value)
+            throw LmsException{ "Node already has a value" };
+
+        _childrenArrays.emplace(key, std::vector<Node>{});
+
+    }
+
     void Response::Node::addArrayChild(const std::string& key, Node node)
     {
         if (_value)
@@ -81,7 +90,7 @@ namespace API::Subsonic
         _childrenArrays[key].emplace_back(std::move(node));
     }
 
-    void Response::Node::createArrayValue(const std::string& key)
+    void Response::Node::createEmptyArrayValue(const std::string& key)
     {
         if (_value)
             throw LmsException{ "Node already has a value" };

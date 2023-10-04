@@ -209,8 +209,9 @@ namespace API::Subsonic
             Node& createArrayChild(const std::string& key);
 
             void addChild(const std::string& key, Node node);
+            void createEmptyArrayChild(const std::string& key);
             void addArrayChild(const std::string& key, Node node);
-            void createArrayValue(const std::string& key);
+            void createEmptyArrayValue(const std::string& key);
             void addArrayValue(const std::string& key, std::string_view value);
 
         private:

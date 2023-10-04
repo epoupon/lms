@@ -17,28 +17,24 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "responses/Contributor.hpp"
 
-#include <string>
-#include <vector>
 #include "services/database/Object.hpp"
-#include "services/database/Types.hpp"
+#include "services/database/TrackArtistLink.hpp"
 #include "SubsonicResponse.hpp"
-
-namespace Database
-{
-    class Artist;
-    class User;
-    class Session;
-}
+#include "responses/Artist.hpp"
 
 namespace API::Subsonic
 {
-    namespace Utils
+    Response::Node createContributorNode(const Database::ObjectPtr<Database::TrackArtistLink>& trackArtistLink)
     {
-        std::string joinArtistNames(const std::vector<Database::ObjectPtr<Database::Artist>>& artists);
-        std::string_view toString(Database::TrackArtistLinkType type);
+        Response::Node contributorNode;
+
+        contributorNode.setAttribute("role", Utils::toString(trackArtistLink->getType()));
+        if (!trackArtistLink->getSubType().empty())
+            contributorNode.setAttribute("subRole", trackArtistLink->getSubType());
+        contributorNode.addChild("artist", createArtistNode(trackArtistLink->getArtist()));
+
+        return contributorNode;
     }
-    Response::Node createArtistNode(const Database::ObjectPtr<Database::Artist>& artist, Database::Session& session, const Database::ObjectPtr<Database::User>& user, bool id3);
-    Response::Node createArtistNode(const Database::ObjectPtr<Database::Artist>& artist); // only minimal info
 }
