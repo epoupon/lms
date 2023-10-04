@@ -211,8 +211,8 @@ namespace API::Subsonic
             void addChild(const std::string& key, Node node);
             void createEmptyArrayChild(std::string_view key);
             void addArrayChild(std::string_view key, Node node);
-            void createEmptyArrayValue(const std::string& key);
-            void addArrayValue(const std::string& key, std::string_view value);
+            void createEmptyArrayValue(std::string_view key);
+            void addArrayValue(std::string_view key, std::string_view value);
 
         private:
             void setVersionAttribute(ProtocolVersion version);

@@ -147,17 +147,17 @@ namespace API::Subsonic
             trackResponse.setAttribute("starred", StringUtils::toISO8601String(dateTime));
 
         // Report the first GENRE for this track
-        ClusterType::pointer clusterType{ ClusterType::find(dbSession, "GENRE") };
-        if (clusterType)
+        ClusterType::pointer genreClusterType{ ClusterType::find(dbSession, "GENRE") };
+        if (genreClusterType)
         {
-            auto clusters{ track->getClusterGroups({clusterType}, 1) };
+            auto clusters{ track->getClusterGroups({genreClusterType}, 1) };
             if (!clusters.empty() && !clusters.front().empty())
                 trackResponse.setAttribute("genre", clusters.front().front()->getName());
         }
 
         // OpenSubsonic specific fields (must always be set)
         {
-            std::optional<UUID> mbid {track->getRecordingMBID()};
+            std::optional<UUID> mbid{ track->getRecordingMBID() };
             trackResponse.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
         }
 
@@ -172,7 +172,7 @@ namespace API::Subsonic
                 // Don't report artists nor release artists as they are set in dedicated fields
                 if (link && link->getType() != TrackArtistLinkType::Artist && link->getType() != TrackArtistLinkType::ReleaseArtist)
                     trackResponse.addArrayChild("contributors", createContributorNode(link));
-        }
+            }
         }
 
         auto addArtistLinks{ [&](std::string_view nodeName, TrackArtistLinkType type)
@@ -193,6 +193,29 @@ namespace API::Subsonic
 
         addArtistLinks("artists", TrackArtistLinkType::Artist);
         addArtistLinks("albumartists", TrackArtistLinkType::ReleaseArtist);
+
+        auto addClusters{ [&](std::string_view field, std::string_view clusterTypeName)
+        {
+            trackResponse.createEmptyArrayValue(field);
+
+            ClusterType::pointer clusterType{ ClusterType::find(dbSession, clusterTypeName) };
+            if (clusterType)
+            {
+                Cluster::FindParameters params;
+                params.setTrack(track->getId());
+                params.setClusterType(clusterType->getId());
+
+                for (const ClusterId clusterId : Cluster::find(dbSession, params).results)
+                {
+                    Cluster::pointer cluster {Cluster::find(dbSession, clusterId)};
+                    if (cluster)
+                    trackResponse.addArrayValue(field, cluster->getName());
+                }
+            }
+        } };
+
+        addClusters("genres", "GENRE");
+        addClusters("moods", "MOOD");
 
         return trackResponse;
     }
