@@ -179,6 +179,15 @@ TEST_F(DatabaseFixture, Artist_singleTracktMultiRoles)
 		tracks = Track::find(session, Track::FindParameters {}.setArtist(artist.getId(), {TrackArtistLinkType::Composer}));
 		EXPECT_EQ(tracks.results.size(), 0);
 	}
+
+	{
+		auto transaction {session.createSharedTransaction()};
+		EnumSet<TrackArtistLinkType> types{ TrackArtistLink::findUsedTypes(session, artist.getId()) };
+		EXPECT_TRUE(types.contains(TrackArtistLinkType::ReleaseArtist));
+		EXPECT_TRUE(types.contains(TrackArtistLinkType::Artist));
+		EXPECT_TRUE(types.contains(TrackArtistLinkType::Writer));
+		EXPECT_FALSE(types.contains(TrackArtistLinkType::Composer));
+	}
 }
 
 TEST_F(DatabaseFixture, Artist_singleTrackMultiArtists)

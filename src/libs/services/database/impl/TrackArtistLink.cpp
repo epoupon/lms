@@ -28,74 +28,84 @@
 
 namespace Database
 {
+    namespace
+    {
+        Wt::Dbo::Query<TrackArtistLinkId> createQuery(Session& session, const TrackArtistLink::FindParameters& params)
+        {
+            session.checkSharedLocked();
 
-	static
-	Wt::Dbo::Query<TrackArtistLinkId>
-	createQuery(Session& session, const TrackArtistLink::FindParameters& params)
-	{
-		session.checkSharedLocked();
+            auto query{ session.getDboSession().query<TrackArtistLinkId>("SELECT DISTINCT t_a_l.id FROM track_artist_link t_a_l") };
 
-		auto query {session.getDboSession().query<TrackArtistLinkId>("SELECT DISTINCT t_a_l.id FROM track_artist_link t_a_l")};
+            if (params.linkType)
+                query.where("t_a_l.type = ?").bind(*params.linkType);
 
-		if (params.linkType)
-			query.where("t_a_l.type = ?").bind(*params.linkType);
+            if (params.track.isValid() || params.release.isValid())
+                query.join("track t ON t.id = t_a_l.track_id");
 
-		if (params.track.isValid()	|| params.release.isValid())
-			query.join("track t ON t.id = t_a_l.track_id");
+            if (params.artist.isValid())
+                query.join("artist a ON a.id = t_a_l.artist_id");
 
-		if (params.track.isValid())
-			query.where("t.id = ?").bind(params.track);
+            if (params.release.isValid())
+                query.where("t.release_id = ?").bind(params.release);
 
-		if (params.release.isValid())
-			query.where("t.release_id = ?").bind(params.release);
+            if (params.track.isValid())
+                query.where("t.id = ?").bind(params.track);
 
-		return query;
-	}
+            return query;
+        }
+    }
 
-	TrackArtistLink::TrackArtistLink(ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type, std::string_view subType)
-	: _type {type}
-	, _subType {subType}
-	, _track {getDboPtr(track)}
-	, _artist {getDboPtr(artist)}
-	{
-	}
+    TrackArtistLink::TrackArtistLink(ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type, std::string_view subType)
+        : _type{ type }
+        , _subType{ subType }
+        , _track{ getDboPtr(track) }
+        , _artist{ getDboPtr(artist) }
+    {
+    }
 
-	TrackArtistLink::pointer
-	TrackArtistLink::create(Session& session, ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type, std::string_view subType)
-	{
-		session.checkUniqueLocked();
+    TrackArtistLink::pointer TrackArtistLink::create(Session& session, ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type, std::string_view subType)
+    {
+        session.checkUniqueLocked();
 
-		TrackArtistLink::pointer res {session.getDboSession().add(std::make_unique<TrackArtistLink>(track, artist, type, subType))};
-		session.getDboSession().flush();
+        TrackArtistLink::pointer res{ session.getDboSession().add(std::make_unique<TrackArtistLink>(track, artist, type, subType)) };
+        session.getDboSession().flush();
 
-		return res;
-	}
+        return res;
+    }
 
-	TrackArtistLink::pointer
-	TrackArtistLink::find(Session& session, TrackArtistLinkId id)
-	{
-		session.checkSharedLocked();
-		return session.getDboSession().find<TrackArtistLink>().where("id = ?").bind(id).resultValue();
-	}
+    TrackArtistLink::pointer TrackArtistLink::find(Session& session, TrackArtistLinkId id)
+    {
+        session.checkSharedLocked();
+        return session.getDboSession().find<TrackArtistLink>().where("id = ?").bind(id).resultValue();
+    }
 
-	RangeResults<TrackArtistLinkId>
-	TrackArtistLink::find(Session& session, const FindParameters& params)
-	{
-		session.checkSharedLocked();
+    RangeResults<TrackArtistLinkId> TrackArtistLink::find(Session& session, const FindParameters& params)
+    {
+        session.checkSharedLocked();
 
-		auto query {createQuery(session, params)};
-		return Utils::execQuery(query, params.range);
-	}
+        auto query{ createQuery(session, params) };
+        return Utils::execQuery(query, params.range);
+    }
 
+    EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session)
+    {
+        session.checkSharedLocked();
 
-	EnumSet<TrackArtistLinkType>
-	TrackArtistLink::findUsedTypes(Session& session)
-	{
-		session.checkSharedLocked();
+        auto res{ session.getDboSession().query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link").resultList() };
 
-		auto res {session.getDboSession().query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link").resultList()};
+        return EnumSet<TrackArtistLinkType>(std::begin(res), std::end(res));
+    }
 
-		return EnumSet<TrackArtistLinkType>(std::begin(res), std::end(res));
-	}
+    EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session, ArtistId artistId)
+    {
+        session.checkSharedLocked();
+
+        auto res{ session.getDboSession()
+            .query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link")
+            .where("artist_id = ?").bind(artistId)
+            .resultList() };
+
+        return EnumSet<TrackArtistLinkType>(std::begin(res), std::end(res));
+    }
 }
 

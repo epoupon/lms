@@ -307,7 +307,7 @@ namespace API::Subsonic
                 Response resp{ (itEntryPoint->second.func)(requestContext) };
 
                 resp.write(response.out(), format);
-                response.setMimeType(ResponseFormatToMimeType(format));
+                response.setMimeType(std::string{ ResponseFormatToMimeType(format) });
 
                 LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId << " '" << requestPath << "' handled!";
                 return;
@@ -331,7 +331,7 @@ namespace API::Subsonic
                 << ", code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'";
             Response resp{ Response::createFailedResponse(protocolVersion, e) };
             resp.write(response.out(), format);
-            response.setMimeType(ResponseFormatToMimeType(format));
+            response.setMimeType(std::string{ ResponseFormatToMimeType(format) });
         }
     }
 

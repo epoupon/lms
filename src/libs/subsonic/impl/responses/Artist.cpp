@@ -21,6 +21,7 @@
 
 #include "services/database/Artist.hpp"
 #include "services/database/Release.hpp"
+#include "services/database/TrackArtistLink.hpp"
 #include "services/database/User.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
@@ -50,6 +51,26 @@ namespace API::Subsonic
 
             return StringUtils::joinStrings(names, ", ");
         }
+
+        std::string_view toString(TrackArtistLinkType type)
+        {
+            switch (type)
+            {
+                case TrackArtistLinkType::Arranger: return "arranger";
+                case TrackArtistLinkType::Artist: return "artist";
+                case TrackArtistLinkType::Composer: return "composer";
+                case TrackArtistLinkType::Conductor: return "conductor";
+                case TrackArtistLinkType::Lyricist: return "lyricist";
+                case TrackArtistLinkType::Mixer: return "mixer";
+                case TrackArtistLinkType::Performer: return "performer";
+                case TrackArtistLinkType::Producer: return "producrer";
+                case TrackArtistLinkType::ReleaseArtist: return "albumartist";
+                case TrackArtistLinkType::Remixer: return "remixer";
+                case TrackArtistLinkType::Writer: return "writer";
+            }
+
+            return "unknown";
+        }
     }
 
     Response::Node createArtistNode(const Artist::pointer& artist, Session& session, const User::pointer& user, bool id3)
@@ -73,8 +94,15 @@ namespace API::Subsonic
             std::optional<UUID> mbid {artist->getMBID()};
             artistNode.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
         }
+
         artistNode.setAttribute("sortName", artist->getSortName());
         
+        // roles
+        Response::Node roles;
+        artistNode.createArrayValue("roles");
+        for (const TrackArtistLinkType linkType : TrackArtistLink::findUsedTypes(session, artist->getId()))
+            artistNode.addArrayValue("roles", Utils::toString(linkType));
+
         return artistNode;
     }
 }

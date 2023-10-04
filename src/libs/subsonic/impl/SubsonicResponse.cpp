@@ -33,8 +33,7 @@
 
 namespace API::Subsonic
 {
-
-    std::string ResponseFormatToMimeType(ResponseFormat format)
+    std::string_view ResponseFormatToMimeType(ResponseFormat format)
     {
         switch (format)
         {
@@ -47,7 +46,7 @@ namespace API::Subsonic
 
     void Response::Node::setValue(std::string_view value)
     {
-        if (!_children.empty() || !_childrenArrays.empty())
+        if (!_children.empty() || !_childrenArrays.empty() || !_childrenValues.empty())
             throw LmsException{ "Node already has children" };
 
         _value = std::string{ value };
@@ -55,7 +54,7 @@ namespace API::Subsonic
 
     void Response::Node::setValue(long long value)
     {
-        if (!_children.empty() || !_childrenArrays.empty())
+        if (!_children.empty() || !_childrenArrays.empty() || !_childrenValues.empty())
             throw LmsException{ "Node already has children" };
 
         _value = value;
@@ -82,6 +81,21 @@ namespace API::Subsonic
         _childrenArrays[key].emplace_back(std::move(node));
     }
 
+    void Response::Node::createArrayValue(const std::string& key)
+    {
+        if (_value)
+            throw LmsException{ "Node already has a value" };
+
+        _childrenValues.emplace(key, std::vector<std::string>{});
+    }
+
+    void Response::Node::addArrayValue(const std::string& key, std::string_view value)
+    {
+        if (_value)
+            throw LmsException{ "Node already has a value" };
+
+        _childrenValues[key].push_back(std::string{ value });
+    }
 
     Response::Node& Response::Node::createChild(const std::string& key)
     {
@@ -236,21 +250,28 @@ namespace API::Subsonic
                 }
                 else
                 {
-                    for (auto itChildNode : node._children)
+                    for (const auto& [key, childNodes] : node._children)
                     {
-                        for (const Response::Node& childNode : itChildNode.second)
-                            res[itChildNode.first] = nodeToJsonObject(childNode);
+                        for (const Response::Node& childNode : childNodes)
+                            res[key] = nodeToJsonObject(childNode);
                     }
 
-                    for (auto itChildArrayNode : node._childrenArrays)
+                    for (const auto& [key, childArrayNodes] : node._childrenArrays)
                     {
-                        const std::vector<Response::Node>& childArrayNodes{ itChildArrayNode.second };
-
                         Json::Array array;
                         for (const Response::Node& childNode : childArrayNodes)
                             array.emplace_back(nodeToJsonObject(childNode));
 
-                        res[itChildArrayNode.first] = std::move(array);
+                        res[key] = std::move(array);
+                    }
+
+                    for (const auto& [key, childValues] : node._childrenValues)
+                    {
+                        Json::Array array;
+                        for (const std::string& childValue : childValues)
+                            array.emplace_back(Json::Value{ childValue });
+
+                        res[key] = std::move(array);
                     }
                 }
 

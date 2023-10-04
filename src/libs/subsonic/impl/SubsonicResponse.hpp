@@ -36,7 +36,7 @@ namespace API::Subsonic
         json,
     };
 
-    std::string ResponseFormatToMimeType(ResponseFormat format);
+    std::string_view ResponseFormatToMimeType(ResponseFormat format);
 
     class Error
     {
@@ -202,7 +202,7 @@ namespace API::Subsonic
                     _attributes[std::string{ key }] = static_cast<long long>(value);
             }
 
-            // A Node has either a value or some children
+            // A Node has either a single value or an array of values or some children
             void setValue(std::string_view value);
             void setValue(long long value);
             Node& createChild(const std::string& key);
@@ -210,6 +210,8 @@ namespace API::Subsonic
 
             void addChild(const std::string& key, Node node);
             void addArrayChild(const std::string& key, Node node);
+            void createArrayValue(const std::string& key);
+            void addArrayValue(const std::string& key, std::string_view value);
 
         private:
             void setVersionAttribute(ProtocolVersion version);
@@ -220,6 +222,7 @@ namespace API::Subsonic
             std::optional<ValueType> _value;
             std::map<std::string, std::vector<Node>> _children;
             std::map<std::string, std::vector<Node>> _childrenArrays;
+            std::map<std::string, std::vector<std::string>> _childrenValues;
         };
 
         static Response createOkResponse(ProtocolVersion protocolVersion);
