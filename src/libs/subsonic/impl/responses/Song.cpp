@@ -157,7 +157,7 @@ namespace API::Subsonic
 
         // OpenSubsonic specific fields (must always be set)
         {
-            std::optional<UUID> mbid {track->getTrackMBID()};
+            std::optional<UUID> mbid {track->getRecordingMBID()};
             trackResponse.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
         }
 
