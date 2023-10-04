@@ -162,13 +162,37 @@ namespace API::Subsonic
         }
 
         trackResponse.createEmptyArrayChild("contributors");
-        for (const TrackArtistLinkId linkId : TrackArtistLink::find(dbSession, TrackArtistLink::FindParameters{}.setTrack(track->getId())).results)
         {
-            TrackArtistLink::pointer link{ TrackArtistLink::find(dbSession, linkId) };
-            // Don't report artists nor release artists as they are set in dedicated fields
-            if (link && link->getType() != TrackArtistLinkType::Artist && link->getType() != TrackArtistLinkType::ReleaseArtist)
-                trackResponse.addArrayChild("contributors", createContributorNode(link));
+            TrackArtistLink::FindParameters params;
+            params.setTrack(track->getId());
+
+            for (const TrackArtistLinkId linkId : TrackArtistLink::find(dbSession, params).results)
+            {
+                TrackArtistLink::pointer link{ TrackArtistLink::find(dbSession, linkId) };
+                // Don't report artists nor release artists as they are set in dedicated fields
+                if (link && link->getType() != TrackArtistLinkType::Artist && link->getType() != TrackArtistLinkType::ReleaseArtist)
+                    trackResponse.addArrayChild("contributors", createContributorNode(link));
         }
+        }
+
+        auto addArtistLinks{ [&](std::string_view nodeName, TrackArtistLinkType type)
+        {
+            trackResponse.createEmptyArrayChild(nodeName);
+
+            TrackArtistLink::FindParameters params;
+            params.setTrack(track->getId());
+            params.setLinkType(type);
+
+            for (const TrackArtistLinkId linkId : TrackArtistLink::find(dbSession, params).results)
+            {
+                TrackArtistLink::pointer link{ TrackArtistLink::find(dbSession, linkId) };
+                if (link)
+                    trackResponse.addArrayChild(nodeName, createArtistNode(link->getArtist()));
+            }
+        } };
+
+        addArtistLinks("artists", TrackArtistLinkType::Artist);
+        addArtistLinks("albumartists", TrackArtistLinkType::ReleaseArtist);
 
         return trackResponse;
     }
