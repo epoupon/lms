@@ -26,8 +26,9 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
-#include "services/database/Object.hpp"
 #include "services/database/ClusterId.hpp"
+#include "services/database/Object.hpp"
+#include "services/database/Release.hpp"
 #include "services/database/TrackId.hpp"
 #include "services/database/Types.hpp"
 
@@ -46,10 +47,12 @@ namespace Database {
             Range           range;
             ClusterTypeId   clusterType;	// if non empty, clusters that belong to this cluster type
             TrackId         track;		    // if set, clusters involved in this track
+            ReleaseId       release;        // if set, clusters involved in this release
 
             FindParameters& setRange(Range _range) { range = _range; return *this; }
             FindParameters& setClusterType(ClusterTypeId _clusterType) { clusterType = _clusterType; return *this; }
             FindParameters& setTrack(TrackId _track) { track = _track; return *this; }
+            FindParameters& setRelease(ReleaseId _release) { release = _release; return *this; }
         };
 
         Cluster() = default;

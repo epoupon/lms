@@ -98,6 +98,29 @@ namespace API::Subsonic
             std::optional<UUID> mbid {release->getMBID()};
             albumNode.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
         }
+
+        auto addClusters{ [&](std::string_view field, std::string_view clusterTypeName)
+        {
+            albumNode.createEmptyArrayValue(field);
+
+            ClusterType::pointer clusterType{ ClusterType::find(dbSession, clusterTypeName) };
+            if (clusterType)
+            {
+                Cluster::FindParameters params;
+                params.setRelease(release->getId());
+                params.setClusterType(clusterType->getId());
+
+                for (const ClusterId clusterId : Cluster::find(dbSession, params).results)
+                {
+                    Cluster::pointer cluster {Cluster::find(dbSession, clusterId)};
+                    if (cluster)
+                    albumNode.addArrayValue(field, cluster->getName());
+                }
+            }
+        } };
+
+        addClusters("genres", "GENRE");
+        addClusters("moods", "MOOD");
         
         return albumNode;
     }

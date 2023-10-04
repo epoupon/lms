@@ -38,12 +38,16 @@ namespace Database
 
             auto query{ session.getDboSession().query<ClusterId>("SELECT DISTINCT c.id FROM cluster c") };
 
-            if (params.track.isValid())
+            if (params.track.isValid() || params.release.isValid())
             {
                 query.join("track_cluster t_c ON t_c.cluster_id = c.id");
                 query.join("track t ON t.id = t_c.track_id");
-                query.where("t.id = ?").bind(params.track);
             }
+
+            if (params.track.isValid())
+                query.where("t.id = ?").bind(params.track);
+            if (params.release.isValid())
+                query.where("t.release_id = ?").bind(params.release);
 
             if (params.clusterType.isValid())
                 query.where("c.cluster_type_id = ?").bind(params.clusterType);

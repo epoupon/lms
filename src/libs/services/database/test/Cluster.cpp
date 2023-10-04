@@ -317,6 +317,14 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
     {
         auto transaction{ session.createSharedTransaction() };
 
+        auto clusters{ Cluster::find(session, Cluster::FindParameters{}.setRelease(release.getId())) };
+        ASSERT_EQ(clusters.results.size(), 1);
+        EXPECT_EQ(clusters.results.front(), cluster.getId());
+    }
+
+    {
+        auto transaction{ session.createSharedTransaction() };
+
         auto releases{ Release::find(session, Release::FindParameters {}.setClusters({cluster.getId()})) };
         ASSERT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results.front(), release.getId());
