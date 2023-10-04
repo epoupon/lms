@@ -125,6 +125,11 @@ namespace API::Subsonic
         albumNode.createEmptyArrayChild("artists");
         for (const Artist::pointer& artist :  release->getReleaseArtists() )
             albumNode.addArrayChild("artists", createArtistNode(artist));
+
+        {
+            const Wt::WDate originalReleaseDate{release->getOriginalReleaseDate()};
+            albumNode.setAttribute("originalReleaseDate", originalReleaseDate.isValid() ? StringUtils::toISO8601String(originalReleaseDate) : "");
+        }
         
         return albumNode;
     }
