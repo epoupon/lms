@@ -34,6 +34,43 @@ namespace API::Subsonic
 {
     using namespace Database;
 
+    namespace
+    {
+        std::string_view toString(ReleaseTypePrimary releaseType)
+        {
+            switch (releaseType)
+            {
+            case ReleaseTypePrimary::Album: return "album";
+            case ReleaseTypePrimary::Broadcast: return "broadcast";
+            case ReleaseTypePrimary::EP: return "ep";
+            case ReleaseTypePrimary::Single: return "single";
+            case ReleaseTypePrimary::Other: return "other";
+            }
+
+            return "unknown";
+        }
+
+        std::string_view toString(ReleaseTypeSecondary releaseType)
+        {
+            switch (releaseType)
+            {
+            case ReleaseTypeSecondary::Audiobook: return "audiobook";
+            case ReleaseTypeSecondary::AudioDrama: return "audiodrama";
+            case ReleaseTypeSecondary::Compilation: return "compilation";
+            case ReleaseTypeSecondary::Demo: return "demo";
+            case ReleaseTypeSecondary::DJMix: return "djmix";
+            case ReleaseTypeSecondary::Interview: return "interview";
+            case ReleaseTypeSecondary::Live: return "live";
+            case ReleaseTypeSecondary::Mixtape_Street: return "mixtapestreet";
+            case ReleaseTypeSecondary::Remix: return "remix";
+            case ReleaseTypeSecondary::Soundtrack: return "soundtrack";
+            case ReleaseTypeSecondary::Spokenword: return "soundtrack";
+            }
+
+            return "unknown";
+        }
+    }
+
     Response::Node createAlbumNode(const Release::pointer& release, Session& dbSession, const User::pointer& user, bool id3)
     {
         Response::Node albumNode;
@@ -132,7 +169,12 @@ namespace API::Subsonic
         }
 
         albumNode.setAttribute("isCompilation", release->getSecondaryTypes().contains(ReleaseTypeSecondary::Compilation));
-        
+        albumNode.createEmptyArrayValue("releaseTypes");
+        if (auto releaseType{ release->getPrimaryType() })
+            albumNode.addArrayValue("releaseTypes", toString(*releaseType));
+        for (const ReleaseTypeSecondary releaseType : release->getSecondaryTypes())
+            albumNode.addArrayValue("releaseTypes", toString(releaseType));
+
         return albumNode;
     }
 }
