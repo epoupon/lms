@@ -121,6 +121,10 @@ namespace API::Subsonic
 
         addClusters("genres", "GENRE");
         addClusters("moods", "MOOD");
+
+        albumNode.createEmptyArrayChild("artists");
+        for (const Artist::pointer& artist :  release->getReleaseArtists() )
+            albumNode.addArrayChild("artists", createArtistNode(artist));
         
         return albumNode;
     }
