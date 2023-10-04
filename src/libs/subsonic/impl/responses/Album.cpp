@@ -130,6 +130,8 @@ namespace API::Subsonic
             const Wt::WDate originalReleaseDate{release->getOriginalReleaseDate()};
             albumNode.setAttribute("originalReleaseDate", originalReleaseDate.isValid() ? StringUtils::toISO8601String(originalReleaseDate) : "");
         }
+
+        albumNode.setAttribute("isCompilation", release->getSecondaryTypes().contains(ReleaseTypeSecondary::Compilation));
         
         return albumNode;
     }
