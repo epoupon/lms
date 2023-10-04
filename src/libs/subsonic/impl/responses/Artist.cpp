@@ -63,7 +63,7 @@ namespace API::Subsonic
             case TrackArtistLinkType::Lyricist: return "lyricist";
             case TrackArtistLinkType::Mixer: return "mixer";
             case TrackArtistLinkType::Performer: return "performer";
-            case TrackArtistLinkType::Producer: return "producrer";
+            case TrackArtistLinkType::Producer: return "producer";
             case TrackArtistLinkType::ReleaseArtist: return "albumartist";
             case TrackArtistLinkType::Remixer: return "remixer";
             case TrackArtistLinkType::Writer: return "writer";

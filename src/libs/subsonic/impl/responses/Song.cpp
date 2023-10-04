@@ -165,7 +165,8 @@ namespace API::Subsonic
         for (const TrackArtistLinkId linkId : TrackArtistLink::find(dbSession, TrackArtistLink::FindParameters{}.setTrack(track->getId())).results)
         {
             TrackArtistLink::pointer link{ TrackArtistLink::find(dbSession, linkId) };
-            if (link)
+            // Don't report artists nor release artists as they are set in dedicated fields
+            if (link && link->getType() != TrackArtistLinkType::Artist && link->getType() != TrackArtistLinkType::ReleaseArtist)
                 trackResponse.addArrayChild("contributors", createContributorNode(link));
         }
 
