@@ -209,23 +209,29 @@ namespace API::Subsonic
                         res.put_value(std::get<std::string>(value));
                     else if (std::holds_alternative<bool>(value))
                         res.put_value(std::get<bool>(value));
+                    else if (std::holds_alternative<float>(value))
+                        res.put_value(std::get<float>(value));
                     else if (std::holds_alternative<long long>(value))
                         res.put_value(std::get<long long>(value));
                 }
                 else
                 {
-                    for (auto itChildNode : node._children)
+                    for (const auto& [key, childNodes] : node._children)
                     {
-                        for (const Response::Node& childNode : itChildNode.second)
-                            res.add_child(itChildNode.first, nodeToPropertyTree(childNode));
+                        for (const Response::Node& childNode : childNodes)
+                            res.add_child(key, nodeToPropertyTree(childNode));
                     }
 
-                    for (auto itChildArrayNode : node._childrenArrays)
+                    for (const auto& [key, childArrayNodes] : node._childrenArrays)
                     {
-                        const std::vector<Response::Node>& childArrayNodes{ itChildArrayNode.second };
-
                         for (const Response::Node& childNode : childArrayNodes)
-                            res.add_child(itChildArrayNode.first, nodeToPropertyTree(childNode));
+                            res.add_child(key, nodeToPropertyTree(childNode));
+                    }
+
+                    for (const auto& [key, childArrayValues] : node._childrenValues)
+                    {
+                        for (const std::string& value : childArrayValues)
+                            res.add_child(key, boost::property_tree::ptree{ value });
                     }
                 }
 
