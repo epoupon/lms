@@ -31,6 +31,7 @@ namespace API::Subsonic
     };
 
     static inline constexpr ProtocolVersion defaultServerProtocolVersion{ 1, 16, 0 };
+    static inline constexpr std::string_view serverVersion{ "1" };
 }
 
 namespace StringUtils

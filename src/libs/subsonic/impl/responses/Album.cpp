@@ -132,7 +132,7 @@ namespace API::Subsonic
 
         // OpenSubsonic specific fields (must always be set)
         {
-            std::optional<UUID> mbid {release->getMBID()};
+            std::optional<UUID> mbid{ release->getMBID() };
             albumNode.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
         }
 
@@ -149,9 +149,9 @@ namespace API::Subsonic
 
                 for (const ClusterId clusterId : Cluster::find(dbSession, params).results)
                 {
-                    Cluster::pointer cluster {Cluster::find(dbSession, clusterId)};
+                    Cluster::pointer cluster{ Cluster::find(dbSession, clusterId) };
                     if (cluster)
-                    albumNode.addArrayValue(field, cluster->getName());
+                        albumNode.addArrayValue(field, cluster->getName());
                 }
             }
         } };
@@ -160,11 +160,11 @@ namespace API::Subsonic
         addClusters("moods", "MOOD");
 
         albumNode.createEmptyArrayChild("artists");
-        for (const Artist::pointer& artist :  release->getReleaseArtists() )
+        for (const Artist::pointer& artist : release->getReleaseArtists())
             albumNode.addArrayChild("artists", createArtistNode(artist));
 
         {
-            const Wt::WDate originalReleaseDate{release->getOriginalReleaseDate()};
+            const Wt::WDate originalReleaseDate{ release->getOriginalReleaseDate() };
             albumNode.setAttribute("originalReleaseDate", originalReleaseDate.isValid() ? StringUtils::toISO8601String(originalReleaseDate) : "");
         }
 

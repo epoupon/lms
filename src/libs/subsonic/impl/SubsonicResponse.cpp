@@ -130,7 +130,11 @@ namespace API::Subsonic
 
         responseNode.setAttribute("status", "ok");
         responseNode.setVersionAttribute(protocolVersion);
-        responseNode.setAttribute("type", "lms"); // non standard field to ease client hacks
+
+        // OpenSubsonic mandatory fields
+        responseNode.setAttribute("type", "lms");
+        responseNode.setAttribute("serverVersion", serverVersion);
+        responseNode.setAttribute("openSubsonic", true);
 
         return response;
     }
