@@ -179,7 +179,10 @@ namespace API::Subsonic
         // disc titles
         albumNode.createEmptyArrayChild("discTitles");
         for (const DiscInfo& discInfo : release->getDiscs())
-            albumNode.addArrayChild("discTitles", createDiscTitle(discInfo));
+        {
+            if (!discInfo.name.empty())
+                albumNode.addArrayChild("discTitles", createDiscTitle(discInfo));
+        }
 
         return albumNode;
     }
