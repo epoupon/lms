@@ -32,6 +32,7 @@
 #include "utils/String.hpp"
 #include "responses/Artist.hpp"
 #include "responses/Contributor.hpp"
+#include "responses/ReplayGain.hpp"
 #include "SubsonicId.hpp"
 #include "Utils.hpp"
 
@@ -216,6 +217,8 @@ namespace API::Subsonic
 
         addClusters("genres", "GENRE");
         addClusters("moods", "MOOD");
+
+        trackResponse.addChild("replayGain", createReplayGainNode(track));
 
         return trackResponse;
     }

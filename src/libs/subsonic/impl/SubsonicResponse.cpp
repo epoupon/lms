@@ -195,6 +195,8 @@ namespace API::Subsonic
                         res.put("<xmlattr>." + itAttribute.first, std::get<std::string>(itAttribute.second));
                     else if (std::holds_alternative<bool>(itAttribute.second))
                         res.put("<xmlattr>." + itAttribute.first, std::get<bool>(itAttribute.second));
+                    else if (std::holds_alternative<float>(itAttribute.second))
+                        res.put("<xmlattr>." + itAttribute.first, std::get<float>(itAttribute.second));
                     else if (std::holds_alternative<long long>(itAttribute.second))
                         res.put("<xmlattr>." + itAttribute.first, std::get<long long>(itAttribute.second));
                 }
@@ -248,6 +250,8 @@ namespace API::Subsonic
                         return Json::Value {std::get<std::string>(value)};
                     else if (std::holds_alternative<bool>(value))
                         return Json::Value {std::get<bool>(value)};
+                    else if (std::holds_alternative<float>(value))
+                        return Json::Value{ std::get<float>(value) };
                     else if (std::holds_alternative<long long>(value))
                         return Json::Value {std::get<long long>(value)};
 

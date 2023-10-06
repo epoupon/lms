@@ -198,8 +198,12 @@ namespace API::Subsonic
             {
                 if constexpr (std::is_same<bool, T>::value)
                     _attributes[std::string{ key }] = value;
-                else
+                else if constexpr (std::is_floating_point<T>::value)
+                    _attributes[std::string{ key }] = static_cast<float>(value);
+                else if constexpr (std::is_integral<T>::value)
                     _attributes[std::string{ key }] = static_cast<long long>(value);
+                else
+                    static_assert("Unhandled type");
             }
 
             // A Node has either a single value or an array of values or some children
@@ -218,7 +222,7 @@ namespace API::Subsonic
             void setVersionAttribute(ProtocolVersion version);
 
             friend class Response;
-            using ValueType = std::variant<std::string, bool, long long>;
+            using ValueType = std::variant<std::string, bool, float, long long>;
             std::map<std::string, ValueType> _attributes;
             std::optional<ValueType> _value;
             std::map<std::string, std::vector<Node>> _children;
