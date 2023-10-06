@@ -83,6 +83,12 @@ namespace Database
 		static DateRange fromYearRange(int from, int to);
 	};
 
+	struct DiscInfo
+	{
+		std::size_t position;
+		std::string name;
+	};
+
 	enum class ArtistSortMethod
 	{
 		None,

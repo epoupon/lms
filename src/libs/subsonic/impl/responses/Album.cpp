@@ -28,6 +28,7 @@
 #include "utils/String.hpp"
 
 #include "responses/Artist.hpp"
+#include "responses/DiscTitle.hpp"
 #include "SubsonicId.hpp"
 
 namespace API::Subsonic
@@ -174,6 +175,11 @@ namespace API::Subsonic
             albumNode.addArrayValue("releaseTypes", toString(*releaseType));
         for (const ReleaseTypeSecondary releaseType : release->getSecondaryTypes())
             albumNode.addArrayValue("releaseTypes", toString(releaseType));
+
+        // disc titles
+        albumNode.createEmptyArrayChild("discTitles");
+        for (const DiscInfo& discInfo : release->getDiscs())
+            albumNode.addArrayChild("discTitles", createDiscTitle(discInfo));
 
         return albumNode;
     }
