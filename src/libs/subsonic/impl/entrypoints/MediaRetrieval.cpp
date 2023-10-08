@@ -65,7 +65,8 @@ namespace API::Subsonic
 
             // Optional params
             std::optional<std::size_t> maxBitRate{ getParameterAs<std::size_t>(context.parameters, "maxBitRate") };
-            std::optional<std::string> format{ getParameterAs<std::string>(context.parameters, "format") };
+            const std::optional<std::string> format{ getParameterAs<std::string>(context.parameters, "format") };
+            const std::optional<std::size_t> timeOffset{ getParameterAs<std::size_t>(context.parameters, "timeOffset") };
             bool estimateContentLength{ getParameterAs<bool>(context.parameters, "estimateContentLength").value_or(false) };
 
             StreamParameters parameters;
@@ -75,7 +76,7 @@ namespace API::Subsonic
             auto transaction{ context.dbSession.createSharedTransaction() };
 
             {
-                auto track{ Track::find(context.dbSession, id) };
+                const auto track{ Track::find(context.dbSession, id) };
                 if (!track)
                     throw RequestedDataNotFoundError{};
 
@@ -103,6 +104,7 @@ namespace API::Subsonic
                     transcodeParameters.bitrate = bitRate * 1000;
                     transcodeParameters.format = userTranscodeFormatToAvFormat(user->getSubsonicTranscodeFormat());
                     transcodeParameters.stripMetadata = false; // We want clients to use metadata (offline use, replay gain, etc.)
+                    transcodeParameters.offset = std::chrono::seconds{ timeOffset ? *timeOffset : 0 };
 
                     parameters.transcodeParameters = std::move(transcodeParameters);
                 }
