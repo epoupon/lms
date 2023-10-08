@@ -132,6 +132,9 @@ namespace API::Subsonic
             albumNode.setAttribute("starred", StringUtils::toISO8601String(dateTime)); // TODO report correct date/time
 
         // OpenSubsonic specific fields (must always be set)
+        if (!id3)
+            albumNode.setAttribute("mediaType", "album");
+
         {
             std::optional<UUID> mbid{ release->getMBID() };
             albumNode.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");

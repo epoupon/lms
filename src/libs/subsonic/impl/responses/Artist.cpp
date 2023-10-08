@@ -90,6 +90,9 @@ namespace API::Subsonic
             artistNode.setAttribute("starred", StringUtils::toISO8601String(dateTime));
 
         // OpenSubsonic specific fields (must always be set)
+        if (!id3)
+            artistNode.setAttribute("mediaType", "artist");
+
         {
             std::optional<UUID> mbid{ artist->getMBID() };
             artistNode.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
