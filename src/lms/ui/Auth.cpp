@@ -21,12 +21,12 @@
 
 #include <iomanip>
 
+#include <Wt/Http/Cookie.h>
 #include <Wt/WEnvironment.h>
+#include <Wt/WCheckBox.h>
 #include <Wt/WFormModel.h>
 #include <Wt/WLineEdit.h>
-#include <Wt/WCheckBox.h>
 #include <Wt/WPushButton.h>
-#include <Wt/WRandom.h>
 
 #include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/IPasswordService.hpp"
@@ -50,15 +50,11 @@ void
 createAuthToken(Database::UserId userId, const Wt::WDateTime& expiry)
 {
 	const std::string secret {Service<::Auth::IAuthTokenService>::get()->createAuthToken(userId, expiry)};
+	Wt::Http::Cookie cookie{ authCookieName, secret, expiry };
+	cookie.setSecure(LmsApp->environment().urlScheme() == "https");
 
-	LmsApp->setCookie(authCookieName,
-			secret,
-			expiry.toTime_t() - Wt::WDateTime::currentDateTime().toTime_t(),
-			"",
-			"",
-			LmsApp->environment().urlScheme() == "https");
+	LmsApp->setCookie(cookie);
 }
-
 
 std::optional<Database::UserId>
 processAuthToken(const Wt::WEnvironment& env)
@@ -72,8 +68,12 @@ processAuthToken(const Wt::WEnvironment& env)
 	{
 		case ::Auth::IAuthTokenService::AuthTokenProcessResult::State::Denied:
 		case ::Auth::IAuthTokenService::AuthTokenProcessResult::State::Throttled:
-			LmsApp->setCookie(authCookieName, std::string {}, 0, "", "", env.urlScheme() == "https");
+		{
+			Wt::Http::Cookie cookie{ authCookieName };
+			cookie.setSecure(LmsApp->environment().urlScheme() == "https");
+			LmsApp->removeCookie(cookie);
 			return std::nullopt;
+		}
 
 		case ::Auth::IAuthTokenService::AuthTokenProcessResult::State::Granted:
 			createAuthToken(res.authTokenInfo->userId, res.authTokenInfo->expiry);

@@ -491,7 +491,7 @@ TagLibParser::parse(const std::filesystem::path& p, bool debug)
 	//MP4
 	else if (TagLib::MP4::File* mp4File {dynamic_cast<TagLib::MP4::File*>(f.file())})
 	{
-		auto& coverItem {mp4File->tag()->itemListMap()["covr"]};
+		TagLib::MP4::Item coverItem {mp4File->tag()->item("covr")};
 		TagLib::MP4::CoverArtList coverArtList {coverItem.toCoverArtList()};
 		if (!coverArtList.isEmpty())
 			track.hasCover = true;
