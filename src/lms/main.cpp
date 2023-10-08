@@ -277,9 +277,14 @@ int main(int argc, char* argv[])
 
 		Service<Scrobbling::IScrobblingService> scrobblingService {Scrobbling::createScrobblingService(ioContext, database)};
 
+		std::unique_ptr<Wt::WResource> subsonicResource;
+
 		// bind API resources
 		if (config->getBool("api-subsonic", true))
-			server.addResource(API::Subsonic::createSubsonicResource(database), "/rest");
+		{
+			subsonicResource = API::Subsonic::createSubsonicResource(database);
+			server.addResource(subsonicResource.get(), "/rest");
+		}
 
 		// bind UI entry point
 		server.addEntryPoint(Wt::EntryPointType::Application,
