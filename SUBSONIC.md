@@ -5,7 +5,8 @@ The Subsonic API is enabled by default.
 
 __Note__: since _LMS_ may store hashed and salted passwords or may forward authentication requests to external services, it cannot handle the __token authentication__ method. You may need to check your client to make sure to use the __password__ authentication method.
 
-## OpenSubsonic API
+# OpenSubsonic API
+## Extra fields
 The following extra fields are implemented:
 * `Album` response:
   * `musicBrainzId`
@@ -29,4 +30,5 @@ The following extra fields are implemented:
   * `sortName`
   * `roles`
 
-The timeOffset parameter
+## Supported extensions
+* [Transcode offset](https://opensubsonic.netlify.app/docs/extensions/transcodeoffset/)
