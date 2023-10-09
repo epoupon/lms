@@ -79,7 +79,6 @@ namespace API::Subsonic
             throw LmsException{ "Node already has a value" };
 
         _childrenArrays.emplace(key, std::vector<Node>{});
-
     }
 
     void Response::Node::addArrayChild(std::string_view key, Node node)
