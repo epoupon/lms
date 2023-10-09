@@ -19,6 +19,7 @@
 
 #include "SubsonicResponse.hpp"
 
+#include <cassert>
 #include <Wt/Json/Array.h>
 #include <Wt/Json/Object.h>
 #include <Wt/Json/Value.h>
@@ -46,17 +47,13 @@ namespace API::Subsonic
 
     void Response::Node::setValue(std::string_view value)
     {
-        if (!_children.empty() || !_childrenArrays.empty() || !_childrenValues.empty())
-            throw LmsException{ "Node already has children" };
-
+        assert(_children.empty() && _childrenArrays.empty() && _childrenValues.empty());
         _value = std::string{ value };
     }
 
     void Response::Node::setValue(long long value)
     {
-        if (!_children.empty() || !_childrenArrays.empty() || !_childrenValues.empty())
-            throw LmsException{ "Node already has children" };
-
+        assert(_children.empty() && _childrenArrays.empty() && _childrenValues.empty());
         _value = value;
     }
 
@@ -67,42 +64,42 @@ namespace API::Subsonic
 
     void Response::Node::addChild(const std::string& key, Node node)
     {
-        if (_value)
-            throw LmsException{ "Node already has a value" };
-
+        assert(!_value);
         _children[key].emplace_back(std::move(node));
     }
 
     void Response::Node::createEmptyArrayChild(std::string_view key)
     {
-        if (_value)
-            throw LmsException{ "Node already has a value" };
-
+        assert(!_value);
         _childrenArrays.emplace(key, std::vector<Node>{});
     }
 
     void Response::Node::addArrayChild(std::string_view key, Node node)
     {
-        if (_value)
-            throw LmsException{ "Node already has a value" };
-
+        assert(!_value);
         _childrenArrays[std::string{ key }].emplace_back(std::move(node));
     }
 
     void Response::Node::createEmptyArrayValue(std::string_view key)
     {
-        if (_value)
-            throw LmsException{ "Node already has a value" };
-
-        _childrenValues.emplace(key, std::vector<std::string>{});
+        assert (!_value);
+        _childrenValues.emplace(key, ValuesType{});
     }
 
     void Response::Node::addArrayValue(std::string_view key, std::string_view value)
     {
-        if (_value)
-            throw LmsException{ "Node already has a value" };
+        assert(!_value);
+        auto& values{ _childrenValues[std::string{ key }] };
+        values.push_back(std::string{ value });
+        assert(std::all_of(std::cbegin(values) + 1, std::cend(values), [&](const ValueType& value) {return value.index() == values.front().index();}));
+    }
 
-        _childrenValues[std::string{ key }].push_back(std::string{ value });
+    void Response::Node::addArrayValue(std::string_view key, long long value)
+    {
+        assert(!_value);
+        auto& values {_childrenValues[std::string{ key }]};
+        values.push_back(value);
+        assert(std::all_of(std::cbegin(values) + 1, std::cend(values), [&](const ValueType& value) {return value.index() == values.front().index();}));
     }
 
     Response::Node& Response::Node::createChild(const std::string& key)
@@ -184,7 +181,7 @@ namespace API::Subsonic
 
     void Response::writeXML(std::ostream& os)
     {
-        std::function<boost::property_tree::ptree(const Response::Node&)> nodeToPropertyTree = [&](const Response::Node& node)
+        std::function<boost::property_tree::ptree(const Node&)> nodeToPropertyTree = [&](const Node& node)
             {
                 boost::property_tree::ptree res;
 
@@ -200,37 +197,39 @@ namespace API::Subsonic
                         res.put("<xmlattr>." + itAttribute.first, std::get<long long>(itAttribute.second));
                 }
 
+                auto valueToPropertyTree = [](const Node::ValueType& value)
+                {
+                    boost::property_tree::ptree res;
+                    std::visit([&](const auto& rawValue)
+                    {
+                        res.put_value(rawValue);
+                    }, value);
+
+                    return res;
+                };
+
                 if (node._value)
                 {
-                    const auto& value{ *node._value };
-
-                    if (std::holds_alternative<std::string>(value))
-                        res.put_value(std::get<std::string>(value));
-                    else if (std::holds_alternative<bool>(value))
-                        res.put_value(std::get<bool>(value));
-                    else if (std::holds_alternative<float>(value))
-                        res.put_value(std::get<float>(value));
-                    else if (std::holds_alternative<long long>(value))
-                        res.put_value(std::get<long long>(value));
+                    res = valueToPropertyTree(*node._value);
                 }
                 else
                 {
                     for (const auto& [key, childNodes] : node._children)
                     {
-                        for (const Response::Node& childNode : childNodes)
+                        for (const Node& childNode : childNodes)
                             res.add_child(key, nodeToPropertyTree(childNode));
                     }
 
                     for (const auto& [key, childArrayNodes] : node._childrenArrays)
                     {
-                        for (const Response::Node& childNode : childArrayNodes)
+                        for (const Node& childNode : childArrayNodes)
                             res.add_child(key, nodeToPropertyTree(childNode));
                     }
 
                     for (const auto& [key, childArrayValues] : node._childrenValues)
                     {
-                        for (const std::string& value : childArrayValues)
-                            res.add_child(key, boost::property_tree::ptree{ value });
+                        for (const Response::Node::ValueType& value : childArrayValues)
+                            res.add_child(key, valueToPropertyTree(value));
                     }
                 }
 
@@ -251,16 +250,12 @@ namespace API::Subsonic
 
                 auto valueToJsonValue{ [](const Node::ValueType& value) -> Json::Value
                 {
-                    if (std::holds_alternative<std::string>(value))
-                        return Json::Value {std::get<std::string>(value)};
-                    else if (std::holds_alternative<bool>(value))
-                        return Json::Value {std::get<bool>(value)};
-                    else if (std::holds_alternative<float>(value))
-                        return Json::Value{ std::get<float>(value) };
-                    else if (std::holds_alternative<long long>(value))
-                        return Json::Value {std::get<long long>(value)};
-
-                    throw LmsException("Unexpected value type");
+                    Json::Value res;
+                    std::visit([&](const auto& rawValue)
+                    {
+                        res = Json::Value{ rawValue };
+                    }, value);
+                    return res;
                 } };
 
                 for (auto itAttribute : node._attributes)
@@ -290,8 +285,8 @@ namespace API::Subsonic
                     for (const auto& [key, childValues] : node._childrenValues)
                     {
                         Json::Array array;
-                        for (const std::string& childValue : childValues)
-                            array.emplace_back(Json::Value{ childValue });
+                        for (const Node::ValueType& childValue : childValues)
+                            array.emplace_back(valueToJsonValue(childValue));
 
                         res[key] = std::move(array);
                     }

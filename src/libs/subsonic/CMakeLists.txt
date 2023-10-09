@@ -8,6 +8,7 @@ add_library(lmssubsonic SHARED
 	impl/entrypoints/MediaRetrieval.cpp
 	impl/entrypoints/Playlists.cpp
 	impl/entrypoints/Searching.cpp
+	impl/entrypoints/System.cpp
 	impl/entrypoints/UserManagement.cpp
 	impl/responses/Album.cpp
 	impl/responses/Artist.cpp

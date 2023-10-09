@@ -18,7 +18,7 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
   * Synchronizing 'love' feedbacks
 * ReplayGain support
 * User management, with several [authentication backends](INSTALL.md#authentication-backend)
-* [Subsonic API](http://www.subsonic.org/pages/api.jsp) / [OpenSubsonic API](https://opensubsonic.netlify.app/docs/opensubsonic-api/)
+* [Subsonic API](http://www.subsonic.org/pages/api.jsp) / [OpenSubsonic API](https://opensubsonic.netlify.app/docs/opensubsonic-api/) support
 
 ## Music discovery
 _LMS_ provides several ways to help you find the music you like:

@@ -217,6 +217,7 @@ namespace API::Subsonic
             void addArrayChild(std::string_view key, Node node);
             void createEmptyArrayValue(std::string_view key);
             void addArrayValue(std::string_view key, std::string_view value);
+            void addArrayValue(std::string_view key, long long value);
 
         private:
             void setVersionAttribute(ProtocolVersion version);
@@ -227,7 +228,9 @@ namespace API::Subsonic
             std::optional<ValueType> _value;
             std::map<std::string, std::vector<Node>> _children;
             std::map<std::string, std::vector<Node>> _childrenArrays;
-            std::map<std::string, std::vector<std::string>> _childrenValues;
+
+            using ValuesType = std::vector<ValueType>;
+            std::map<std::string, ValuesType> _childrenValues;
         };
 
         static Response createOkResponse(ProtocolVersion protocolVersion);

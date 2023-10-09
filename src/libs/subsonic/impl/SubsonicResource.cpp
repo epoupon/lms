@@ -42,6 +42,7 @@
 #include "entrypoints/MediaRetrieval.hpp"
 #include "entrypoints/Playlists.hpp"
 #include "entrypoints/Searching.hpp"
+#include "entrypoints/System.hpp"
 #include "entrypoints/UserManagement.hpp"
 #include "ParameterParsing.hpp"
 #include "ProtocolVersion.hpp"
@@ -119,28 +120,10 @@ namespace API::Subsonic
                 throw UserNotAuthorizedError{};
         }
 
-        Response handlePingRequest(RequestContext& context)
-        {
-            return Response::createOkResponse(context.serverProtocolVersion);
-        }
-
-        Response handleGetLicenseRequest(RequestContext& context)
-        {
-            Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-
-            Response::Node& licenseNode{ response.createNode("license") };
-            licenseNode.setAttribute("licenseExpires", "2025-09-03T14:46:43");
-            licenseNode.setAttribute("email", "foo@bar.com");
-            licenseNode.setAttribute("valid", true);
-
-            return response;
-        }
-
         Response handleNotImplemented(RequestContext&)
         {
             throw NotImplementedGenericError{};
         }
-
 
         using RequestHandlerFunc = std::function<Response(RequestContext& context)>;
         using CheckImplementedFunc = std::function<void()>;
@@ -154,8 +137,9 @@ namespace API::Subsonic
         static const std::unordered_map<std::string_view, RequestEntryPointInfo> requestEntryPoints
         {
             // System
-            {"/ping",                   {handlePingRequest}},
-            {"/getLicense",             {handleGetLicenseRequest}},
+            {"/ping",                       {handlePingRequest}},
+            {"/getLicense",                 {handleGetLicenseRequest}},
+            {"/getOpenSubsonicExtensions",  {handleGetOpenSubsonicExtensions}},
 
             // Browsing
             {"/getMusicFolders",        {handleGetMusicFoldersRequest}},

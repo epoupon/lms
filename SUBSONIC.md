@@ -6,6 +6,8 @@ The Subsonic API is enabled by default.
 __Note__: since _LMS_ may store hashed and salted passwords or may forward authentication requests to external services, it cannot handle the __token authentication__ method. You may need to check your client to make sure to use the __password__ authentication method.
 
 # OpenSubsonic API
+OpenSubsonic is an initiative to patch and extend the legacy Subsonic API. You'll find more details in the [official documentation](https://opensubsonic.netlify.app/)
+
 ## Extra fields
 The following extra fields are implemented:
 * `Album` response:
