@@ -17,17 +17,18 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "responses/ItemGenre.hpp"
 
-#include "services/database/Object.hpp"
-#include "SubsonicResponse.hpp"
-
-namespace Database
-{
-    class Cluster;
-}
+#include "services/database/Cluster.hpp"
 
 namespace API::Subsonic
 {
-    Response::Node createGenreNode(const Database::ObjectPtr<Database::Cluster>& cluster);
+    Response::Node createItemGenreNode(const Database::Cluster::pointer& cluster)
+    {
+        Response::Node genreNode;
+
+        genreNode.setAttribute("name", cluster->getName());
+
+        return genreNode;
+    }
 }

@@ -29,5 +29,5 @@ namespace Database
 
 namespace API::Subsonic
 {
-    Response::Node createGenreNode(const Database::ObjectPtr<Database::Cluster>& cluster);
+    Response::Node createItemGenreNode(const Database::ObjectPtr<Database::Cluster>& cluster);
 }

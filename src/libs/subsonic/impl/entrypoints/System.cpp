@@ -24,7 +24,7 @@ namespace API::Subsonic
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
 
         {
-            Response::Node& transcodeOffsetNode{ response.createNode("openSubsonicExtensions") };
+            Response::Node& transcodeOffsetNode{ response.createArrayNode("openSubsonicExtensions") };
             transcodeOffsetNode.setAttribute("name", "transcodeOffset");
             transcodeOffsetNode.addArrayValue("versions", 1);
         }

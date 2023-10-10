@@ -18,9 +18,9 @@ The following extra fields are implemented:
   * `moods`
   * `originalReleaseDate`
   * `isCompilation`
-  * `discTitles`
+  * `discTitles`: discs with no subtitle are omitted
 * `Child` response:
-  * `musicBrainzId`: note this is actually the recording MBID
+  * `musicBrainzId`: note this is actually the recording MBID when this response refers to a song
   * `genres`
   * `artists`
   * `albumArtists`

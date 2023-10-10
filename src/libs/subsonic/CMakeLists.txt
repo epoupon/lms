@@ -15,6 +15,7 @@ add_library(lmssubsonic SHARED
 	impl/responses/Bookmark.cpp
 	impl/responses/Contributor.cpp
 	impl/responses/DiscTitle.cpp
+	impl/responses/ItemGenre.cpp
 	impl/responses/Genre.cpp
 	impl/responses/Playlist.cpp
 	impl/responses/ReplayGain.cpp

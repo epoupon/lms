@@ -29,6 +29,7 @@
 
 #include "responses/Artist.hpp"
 #include "responses/DiscTitle.hpp"
+#include "responses/ItemGenre.hpp"
 #include "SubsonicId.hpp"
 
 namespace API::Subsonic
@@ -160,8 +161,27 @@ namespace API::Subsonic
             }
         } };
 
-        addClusters("genres", "GENRE");
         addClusters("moods", "MOOD");
+
+        // Genres
+        {
+            albumNode.createEmptyArrayChild("genres");
+
+            ClusterType::pointer clusterType{ ClusterType::find(dbSession, "GENRE") };
+            if (clusterType)
+            {
+                Cluster::FindParameters params;
+                params.setRelease(release->getId());
+                params.setClusterType(clusterType->getId());
+
+                for (const ClusterId clusterId : Cluster::find(dbSession, params).results)
+                {
+                    Cluster::pointer cluster{ Cluster::find(dbSession, clusterId) };
+                    if (cluster)
+                        albumNode.addArrayChild("genres", createItemGenreNode(cluster));
+                }
+            }
+        }
 
         albumNode.createEmptyArrayChild("artists");
         for (const Artist::pointer& artist : release->getReleaseArtists())

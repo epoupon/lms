@@ -32,6 +32,7 @@
 #include "utils/String.hpp"
 #include "responses/Artist.hpp"
 #include "responses/Contributor.hpp"
+#include "responses/ItemGenre.hpp"
 #include "responses/ReplayGain.hpp"
 #include "SubsonicId.hpp"
 #include "Utils.hpp"
@@ -212,13 +213,32 @@ namespace API::Subsonic
                 {
                     Cluster::pointer cluster {Cluster::find(dbSession, clusterId)};
                     if (cluster)
-                    trackResponse.addArrayValue(field, cluster->getName());
+                        trackResponse.addArrayValue(field, cluster->getName());
                 }
             }
         } };
 
-        addClusters("genres", "GENRE");
         addClusters("moods", "MOOD");
+
+        // Genres
+        {
+            trackResponse.createEmptyArrayChild("genres");
+
+            ClusterType::pointer clusterType{ ClusterType::find(dbSession, "GENRE") };
+            if (clusterType)
+            {
+                Cluster::FindParameters params;
+                params.setTrack(track->getId());
+                params.setClusterType(clusterType->getId());
+
+                for (const ClusterId clusterId : Cluster::find(dbSession, params).results)
+                {
+                    Cluster::pointer cluster{ Cluster::find(dbSession, clusterId) };
+                    if (cluster)
+                        trackResponse.addArrayChild("genres", createItemGenreNode(cluster));
+                }
+            }
+        }
 
         trackResponse.addChild("replayGain", createReplayGainNode(track));
 

@@ -176,7 +176,6 @@ namespace API::Subsonic
             }
 
             return response;
-
         }
     } // namespace
 
