@@ -18,7 +18,7 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
   * Synchronizing 'love' feedbacks
 * ReplayGain support
 * User management, with several [authentication backends](INSTALL.md#authentication-backend)
-* [Subsonic API](http://www.subsonic.org/pages/api.jsp) / [OpenSubsonic API](https://opensubsonic.netlify.app/docs/opensubsonic-api/) support
+* [Subsonic/OpenSubsonic API](SUBSONIC.md) support
 
 ## Music discovery
 _LMS_ provides several ways to help you find the music you like:
@@ -33,9 +33,6 @@ _LMS_ provides several ways to help you find the music you like:
   * Most played _Relaxed_ tracks
   * Starred _Jazz_ albums
   * ...
-
-## Subsonic API
-See [Subsonic API](SUBSONIC.md) dedicated page.
 
 ## About tags
 _LMS_ relies exclusively on tags to organize your music collection.
