@@ -21,6 +21,7 @@
 
 #include <chrono>
 #include <string>
+#include <string_view>
 
 #include <Wt/WContainerWidget.h>
 #include <Wt/WImage.h>
@@ -58,6 +59,7 @@ namespace UserInterface::Utils
 	std::unique_ptr<Wt::WInteractWidget> createCluster(Database::ClusterId clusterId, bool canDelete = false);
 
 	std::unique_ptr<Wt::WContainerWidget> createArtistContainer(const std::vector<Database::ArtistId>& artists);
+	std::unique_ptr<Wt::WContainerWidget> createArtistContainer(std::string_view displayName, const std::vector<Database::ArtistId>& artists);
 
 	Wt::WLink createArtistLink(Database::ObjectPtr<Database::Artist> artist);
 	std::unique_ptr<Wt::WAnchor> createArtistAnchor(Database::ObjectPtr<Database::Artist> artist, bool setText = true);

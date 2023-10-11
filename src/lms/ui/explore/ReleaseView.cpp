@@ -482,27 +482,26 @@ Release::refreshReleaseArtists(const Database::Release::pointer& release)
 {
 	std::vector<ObjectPtr<Artist>> artists;
 
-	artists = release->getReleaseArtists();
-	if (artists.empty())
+	Artist::FindParameters params;
+	params.setRelease(release->getId());
+	params.setLinkType(TrackArtistLinkType::ReleaseArtist);
+
+	const auto releaseArtists {Artist::find(LmsApp->getDbSession(), params)};
+	if (!releaseArtists.results.empty())
 	{
+		bindWidget("artists", Utils::createArtistContainer(release->getArtistDisplayName(), releaseArtists.results));
+	}
+	else
+	{
+		// TODO, if single track artist, put it, else put "Various Artists"
+		/*
 		artists = release->getArtists(TrackArtistLinkType::Artist);
 		if (artists.size() > 1)
 		{
 			setCondition("if-has-various-release-artists", true);
 			return;
 		}
-	}
-
-	if (!artists.empty())
-	{
-		setCondition("if-has-release-artists", true);
-
-		Wt::WContainerWidget* artistsContainer {bindNew<Wt::WContainerWidget>("artists")};
-		for (const auto& artist : artists)
-		{
-			Wt::WTemplate* artistTemplate {artistsContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry-release-artist"))};
-			artistTemplate->bindWidget("artist", Utils::createArtistAnchor(artist));
-		}
+		*/
 	}
 }
 

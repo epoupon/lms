@@ -138,6 +138,7 @@ class Track final : public Object<Track, TrackId>
 		void setCopyrightURL(const std::string& copyrightURL)	{ _copyrightURL = std::string(copyrightURL, 0, _maxCopyrightURLLength); }
 		void setTrackReplayGain(std::optional<float> replayGain)		{ _trackReplayGain = replayGain; }
 		void setReleaseReplayGain(std::optional<float> replayGain)		{ _releaseReplayGain = replayGain; } // may be by disc!
+		void setArtistDisplayName(std::string_view name)		{ _artistDisplayName = name; }
 		void clearArtistLinks();
 		void addArtistLink(const ObjectPtr<TrackArtistLink>& artistLink);
 		void setRelease(ObjectPtr<Release> release)			{ _release = getDboPtr(release); }
@@ -163,6 +164,7 @@ class Track final : public Object<Track, TrackId>
 		std::optional<std::string>	getCopyrightURL() const;
 		std::optional<float>		getTrackReplayGain() const		{ return _trackReplayGain; }
 		std::optional<float>		getReleaseReplayGain() const	{ return _releaseReplayGain; }
+		std::string_view			getArtistDisplayName() const	{ return _artistDisplayName; }
 		// no artistLinkTypes means get all
 		std::vector<ObjectPtr<Artist>>			getArtists(EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
 		std::vector<ArtistId>					getArtistIds(EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
@@ -195,6 +197,7 @@ class Track final : public Object<Track, TrackId>
 				Wt::Dbo::field(a, _copyrightURL,	"copyright_url");
 				Wt::Dbo::field(a, _trackReplayGain,	"track_replay_gain");
 				Wt::Dbo::field(a, _releaseReplayGain,	"release_replay_gain"); // here in Track since Release does not have concept of "disc" (yet?)
+				Wt::Dbo::field(a, _artistDisplayName,	"artist_display_name");
 				Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
 				Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "track");
 				Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
@@ -228,6 +231,7 @@ class Track final : public Object<Track, TrackId>
 		std::string				_copyrightURL;
 		std::optional<float>	_trackReplayGain;
 		std::optional<float>	_releaseReplayGain;
+		std::string				_artistDisplayName;
 
 		Wt::Dbo::ptr<Release>								_release;
 		Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>>	_trackArtistLinks;

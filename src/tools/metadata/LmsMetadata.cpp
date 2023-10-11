@@ -96,6 +96,9 @@ operator<<(std::ostream& os, const MetaData::Release& release)
 	if (release.mediumCount)
 		std::cout << "\tMediumCount: " << *release.mediumCount << std::endl;
 
+	if (!release.artistDisplayName.empty())
+		std::cout << "\tDisplay artist: " << release.artistDisplayName << std::endl;
+
 	for (const MetaData::Artist& artist : release.artists)
 		std::cout << "\tRelease artist: " << artist << std::endl;
 
@@ -153,6 +156,9 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 	std::cout << "Parsing time: " << std::fixed << std::setprecision(2) << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000. << "ms" << std::endl;
 
 	std::cout << "Parsed metadata:" << std::endl;
+
+	if (!track->artistDisplayName.empty())
+		std::cout << "Display artist: " << track->artistDisplayName << std::endl;
 
 	for (const Artist& artist : track->artists)
 		std::cout << "Artist: " << artist << std::endl;

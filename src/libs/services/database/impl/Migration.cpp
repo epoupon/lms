@@ -665,6 +665,18 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
 		ScanSettings::get(session).modify()->incScanVersion();
 	}
 
+	static
+	void
+	migrateFromV40(Session& session)
+	{
+		// add artist_display_name in Release and Track
+		session.getDboSession().execute("ALTER TABLE release ADD artist_display_name TEXT");
+		session.getDboSession().execute("ALTER TABLE track ADD artist_display_name TEXT");
+
+		// Just increment the scan version of the settings to make the next scheduled scan rescan everything
+		ScanSettings::get(session).modify()->incScanVersion();
+	}
+
 	void
 	doDbMigration(Session& session)
 	{
@@ -711,6 +723,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
 			{37, migrateFromV37},
 			{38, migrateFromV38},
 			{39, migrateFromV39},
+			{40, migrateFromV40},
 		};
 
 		while (1)

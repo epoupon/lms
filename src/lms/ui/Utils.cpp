@@ -148,6 +148,12 @@ namespace UserInterface::Utils
 		return artistContainer;
 	}
 
+	std::unique_ptr<Wt::WContainerWidget> createArtistContainer(std::string_view displayName, const std::vector<Database::ArtistId>& artists)
+	{
+
+
+	}
+
 	Wt::WLink
 	createArtistLink(Database::Artist::pointer artist)
 	{

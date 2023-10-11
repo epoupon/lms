@@ -189,9 +189,11 @@ namespace
 			if (release->getPrimaryType() != primaryType)
 				release.modify()->setPrimaryType(primaryType);
 		}
-		const EnumSet<ReleaseTypeSecondary> secondaryTypes {convertReleaseTypesSecondary(releaseInfo.secondaryTypes)};
+		const EnumSet<ReleaseTypeSecondary> secondaryTypes{ convertReleaseTypesSecondary(releaseInfo.secondaryTypes) };
 		if (release->getSecondaryTypes() != secondaryTypes)
 			release.modify()->setSecondaryTypes(secondaryTypes);
+		if (release->getArtistDisplayName() != releaseInfo.artistDisplayName)
+			release.modify()->setArtistDisplayName(releaseInfo.artistDisplayName);
 	}
 
 	Release::pointer
@@ -525,5 +527,6 @@ namespace Scanner
 		track.modify()->setCopyright(trackInfo->copyright);
 		track.modify()->setCopyrightURL(trackInfo->copyrightURL);
 		track.modify()->setTrackReplayGain(trackInfo->replayGain);
+		track.modify()->setArtistDisplayName(trackInfo->artistDisplayName);
 	}
 }
