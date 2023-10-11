@@ -149,8 +149,7 @@ namespace API::Subsonic
             trackResponse.setAttribute("starred", StringUtils::toISO8601String(dateTime));
 
         // Report the first GENRE for this track
-        ClusterType::pointer genreClusterType{ ClusterType::find(dbSession, "GENRE") };
-        if (genreClusterType)
+        if (ClusterType::pointer genreClusterType{ ClusterType::find(dbSession, "GENRE") })
         {
             auto clusters{ track->getClusterGroups({genreClusterType}, 1) };
             if (!clusters.empty() && !clusters.front().empty())

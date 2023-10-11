@@ -121,8 +121,7 @@ namespace API::Subsonic
         }
 
         // Report the first GENRE for this track
-        ClusterType::pointer clusterType{ ClusterType::find(dbSession, "GENRE") };
-        if (clusterType)
+        if (ClusterType::pointer clusterType{ ClusterType::find(dbSession, "GENRE") })
         {
             auto clusters{ release->getClusterGroups({clusterType}, 1) };
             if (!clusters.empty() && !clusters.front().empty())
