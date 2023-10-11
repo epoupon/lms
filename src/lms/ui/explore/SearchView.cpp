@@ -48,6 +48,14 @@ namespace UserInterface
 		_artists = bindNew<InfiniteScrollingContainer>("artists", Wt::WString::tr("Lms.Explore.Artists.template.container"));
 		_artists->onRequestElements.connect([this] { addSomeArtists(); });
 
+		_artistLinkType = bindNew<Wt::WComboBox>("link-type");
+		_artistLinkType->setModel(ArtistListHelpers::createArtistLinkTypesModel());
+		_artistLinkType->changed().connect([this]
+		{
+			const std::optional<TrackArtistLinkType> linkType {static_cast<ArtistLinkTypesModel*>(_artistLinkType->model().get())->getValue(_artistLinkType->currentIndex())};
+			refreshView(linkType);
+		});
+
 		_releases = bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
 		_releases->onRequestElements.connect([this] { addSomeReleases(); });
 
@@ -57,6 +65,12 @@ namespace UserInterface
 		filters.updated().connect([=]
 		{
 			refreshView();
+		});
+
+		LmsApp->getScannerEvents().scanComplete.connect(this, [this](const Scanner::ScanStats& stats)
+		{
+			if (stats.nbChanges())
+				_artistLinkType->setModel(ArtistListHelpers::createArtistLinkTypesModel());
 		});
 	}
 
@@ -74,6 +88,13 @@ namespace UserInterface
 		auto it {_maxCounts.find(mode)};
 		assert(it != _maxCounts.cend());
 		return it->second;
+	}
+
+	void
+	SearchView::refreshView(std::optional<TrackArtistLinkType> linkType)
+	{
+		_artistCollector.setArtistLinkType(linkType);
+		refreshView();
 	}
 
 	void

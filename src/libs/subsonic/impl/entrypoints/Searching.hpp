@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2023 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,14 +19,11 @@
 
 #pragma once
 
-#include <Wt/Http/Request.h>
-#include <Wt/Http/Response.h>
-
 #include "RequestContext.hpp"
+#include "SubsonicResponse.hpp"
 
-namespace API::Subsonic::Stream
+namespace API::Subsonic
 {
-	void handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
-	void handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
+    Response handleSearch2Request(RequestContext& context);
+    Response handleSearch3Request(RequestContext& context);
 }
-

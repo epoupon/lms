@@ -23,18 +23,20 @@
 
 namespace API::Subsonic
 {
-	struct ProtocolVersion
-	{
-		unsigned major {};
-		unsigned minor {};
-		unsigned patch {};
-	};
+    struct ProtocolVersion
+    {
+        unsigned major{};
+        unsigned minor{};
+        unsigned patch{};
+    };
 
-	static inline constexpr ProtocolVersion defaultServerProtocolVersion {1, 16, 0};
+    static inline constexpr ProtocolVersion defaultServerProtocolVersion{ 1, 16, 0 };
+    static inline constexpr std::string_view serverVersion{ "1" };
 }
 
 namespace StringUtils
 {
-	template<> std::optional<API::Subsonic::ProtocolVersion> readAs(std::string_view str);
+    template<>
+    std::optional<API::Subsonic::ProtocolVersion> readAs(std::string_view str);
 }
 

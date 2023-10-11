@@ -18,7 +18,7 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
   * Synchronizing 'love' feedbacks
 * ReplayGain support
 * User management, with several [authentication backends](INSTALL.md#authentication-backend)
-* Subsonic API
+* [Subsonic/OpenSubsonic API](SUBSONIC.md) support
 
 ## Music discovery
 _LMS_ provides several ways to help you find the music you like:
@@ -33,13 +33,6 @@ _LMS_ provides several ways to help you find the music you like:
   * Most played _Relaxed_ tracks
   * Starred _Jazz_ albums
   * ...
-
-## Subsonic API
-The API version implemented is 1.16.0 and has been tested on _Android_ using _Subsonic Player_, _Ultrasonic_, _Symfonium_, and _DSub_.
-Since _LMS_ uses metadata tags to organize music, a compatibility mode is used to browse the collection when using the directory browsing commands.
-The Subsonic API is enabled by default.
-
-__Note__: since _LMS_ may store hashed and salted passwords or may forward authentication requests to external services, it cannot handle the __token authentication__ method. You may need to check your client to make sure to use the __password__ authentication method.
 
 ## About tags
 _LMS_ relies exclusively on tags to organize your music collection.

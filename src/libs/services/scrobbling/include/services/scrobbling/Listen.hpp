@@ -26,15 +26,15 @@
 
 namespace Scrobbling
 {
-	struct Listen
-	{
-		Database::UserId userId {};
-		Database::TrackId trackId {};
-	};
+    struct Listen
+    {
+        Database::UserId userId{};
+        Database::TrackId trackId{};
+    };
 
-	struct TimedListen : public Listen
-	{
-		Wt::WDateTime listenedAt;
-	};
+    struct TimedListen : public Listen
+    {
+        Wt::WDateTime listenedAt;
+    };
 } // ns Scrobbling
 

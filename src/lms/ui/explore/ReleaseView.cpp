@@ -248,7 +248,7 @@ Release::refreshView()
 
 	bindString("name", Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);
 
-	Wt::WString year {ReleaseHelpers::buildReleaseYearString(release->getReleaseYear(), release->getReleaseYear(true))};
+	Wt::WString year {ReleaseHelpers::buildReleaseYearString(release->getReleaseDate(), release->getOriginalReleaseDate())};
 	if (!year.empty())
 	{
 		setCondition("if-has-year", true);

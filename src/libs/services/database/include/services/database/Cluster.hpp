@@ -26,100 +26,114 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
-#include "services/database/Object.hpp"
 #include "services/database/ClusterId.hpp"
+#include "services/database/Object.hpp"
+#include "services/database/Release.hpp"
 #include "services/database/TrackId.hpp"
 #include "services/database/Types.hpp"
 
 namespace Database {
 
-class Track;
-class ClusterType;
-class ScanSettings;
-class Session;
+    class Track;
+    class ClusterType;
+    class ScanSettings;
+    class Session;
 
-class Cluster final : public Object<Cluster, ClusterId>
-{
-	public:
-		Cluster() = default;
+    class Cluster final : public Object<Cluster, ClusterId>
+    {
+    public:
+        struct FindParameters
+        {
+            Range           range;
+            ClusterTypeId   clusterType;	// if non empty, clusters that belong to this cluster type
+            TrackId         track;		    // if set, clusters involved in this track
+            ReleaseId       release;        // if set, clusters involved in this release
 
-		// Find utility
-		static std::size_t				getCount(Session& session);
-		static RangeResults<ClusterId>	find(Session& session, Range range);
-		static pointer					find(Session& session, ClusterId id);
-		static RangeResults<ClusterId>	findOrphans(Session& session, Range range);
+            FindParameters& setRange(Range _range) { range = _range; return *this; }
+            FindParameters& setClusterType(ClusterTypeId _clusterType) { clusterType = _clusterType; return *this; }
+            FindParameters& setTrack(TrackId _track) { track = _track; return *this; }
+            FindParameters& setRelease(ReleaseId _release) { release = _release; return *this; }
+        };
 
-		// Accessors
-		const std::string&				getName() const		{ return _name; }
-		ObjectPtr<ClusterType>			getType() const	{ return _clusterType; }
-		std::size_t						getTracksCount() const		{ return _tracks.size(); }
-		RangeResults<TrackId>			getTracks(Range range) const;
-		std::size_t						getReleasesCount() const;
+        Cluster() = default;
 
-		void addTrack(ObjectPtr<Track> track);
+        // Find utility
+        static std::size_t				getCount(Session& session);
+        static RangeResults<ClusterId>	find(Session& session, const FindParameters& range);
+        static pointer					find(Session& session, ClusterId id);
+        static RangeResults<ClusterId>	findOrphans(Session& session, Range range);
 
-		template<class Action>
-		void persist(Action& a)
-		{
-			Wt::Dbo::field(a, _name,	"name");
+        // Accessors
+        const std::string& getName() const { return _name; }
+        ObjectPtr<ClusterType>			getType() const { return _clusterType; }
+        std::size_t						getTracksCount() const { return _tracks.size(); }
+        RangeResults<TrackId>			getTracks(Range range) const;
+        std::size_t						getReleasesCount() const;
 
-			Wt::Dbo::belongsTo(a, _clusterType, "cluster_type", Wt::Dbo::OnDeleteCascade);
-			Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
-		}
+        void addTrack(ObjectPtr<Track> track);
 
-	private:
-		friend class Session;
-		Cluster(ObjectPtr<ClusterType> type, std::string_view name);
-		static pointer create(Session& session, ObjectPtr<ClusterType> type, std::string_view name);
+        template<class Action>
+        void persist(Action& a)
+        {
+            Wt::Dbo::field(a, _name, "name");
 
-		static const std::size_t _maxNameLength = 128;
+            Wt::Dbo::belongsTo(a, _clusterType, "cluster_type", Wt::Dbo::OnDeleteCascade);
+            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
+        }
 
-		std::string	_name;
+    private:
+        friend class Session;
+        Cluster(ObjectPtr<ClusterType> type, std::string_view name);
+        static pointer create(Session& session, ObjectPtr<ClusterType> type, std::string_view name);
 
-		Wt::Dbo::ptr<ClusterType> _clusterType;
-		Wt::Dbo::collection< Wt::Dbo::ptr<Track> > _tracks;
-};
+        static const std::size_t _maxNameLength = 128;
+
+        std::string	_name;
+
+        Wt::Dbo::ptr<ClusterType> _clusterType;
+        Wt::Dbo::collection< Wt::Dbo::ptr<Track> > _tracks;
+    };
 
 
-class ClusterType final : public Object<ClusterType, ClusterTypeId>
-{
-	public:
-		ClusterType() = default;
+    class ClusterType final : public Object<ClusterType, ClusterTypeId>
+    {
+    public:
+        ClusterType() = default;
 
-		// Getters
-		static std::size_t					getCount(Session& session);
-		static RangeResults<ClusterTypeId>	find(Session& session, Range range);
-		static pointer 						find(Session& session, const std::string& name);
-		static pointer						find(Session& session, ClusterTypeId id);
-		static RangeResults<ClusterTypeId>	findOrphans(Session& session, Range range);
-		static RangeResults<ClusterTypeId>	findUsed(Session& session, Range range);
+        // Getters
+        static std::size_t					getCount(Session& session);
+        static RangeResults<ClusterTypeId>	find(Session& session, Range range);
+        static pointer 						find(Session& session, std::string_view name);
+        static pointer						find(Session& session, ClusterTypeId id);
+        static RangeResults<ClusterTypeId>	findOrphans(Session& session, Range range);
+        static RangeResults<ClusterTypeId>	findUsed(Session& session, Range range);
 
-		static void remove(Session& session, const std::string& name);
+        static void remove(Session& session, const std::string& name);
 
-		// Accessors
-		const std::string&				getName() const { return _name; }
-		std::vector<Cluster::pointer>	getClusters() const;
-		Cluster::pointer				getCluster(const std::string& name) const;
+        // Accessors
+        const std::string& getName() const { return _name; }
+        std::vector<Cluster::pointer>	getClusters() const;
+        Cluster::pointer				getCluster(const std::string& name) const;
 
-		template<class Action>
-		void persist(Action& a)
-		{
-			Wt::Dbo::field(a, _name,	"name");
-			Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToOne, "cluster_type");
-			Wt::Dbo::belongsTo(a, _scanSettings, "scan_settings", Wt::Dbo::OnDeleteCascade);
-		}
+        template<class Action>
+        void persist(Action& a)
+        {
+            Wt::Dbo::field(a, _name, "name");
+            Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToOne, "cluster_type");
+            Wt::Dbo::belongsTo(a, _scanSettings, "scan_settings", Wt::Dbo::OnDeleteCascade);
+        }
 
-	private:
-		friend class Session;
-		ClusterType(std::string_view name);
-		static pointer create(Session& session, const std::string& name);
+    private:
+        friend class Session;
+        ClusterType(std::string_view name);
+        static pointer create(Session& session, const std::string& name);
 
-		static const std::size_t _maxNameLength = 128;
+        static const std::size_t _maxNameLength = 128;
 
-		std::string     _name;
-		Wt::Dbo::collection< Wt::Dbo::ptr<Cluster> > _clusters;
-		Wt::Dbo::ptr<ScanSettings> _scanSettings;
-};
+        std::string     _name;
+        Wt::Dbo::collection< Wt::Dbo::ptr<Cluster> > _clusters;
+        Wt::Dbo::ptr<ScanSettings> _scanSettings;
+    };
 
 } // namespace Database
 

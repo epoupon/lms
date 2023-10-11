@@ -29,18 +29,18 @@
 
 namespace Database
 {
-	class Session;
+    class Session;
 }
 
 namespace API::Subsonic
 {
-	struct RequestContext
-	{
-		const Wt::Http::ParameterMap& parameters;
-		Database::Session& dbSession;
-		Database::UserId userId;
-		ClientInfo clientInfo;
-		ProtocolVersion serverProtocolVersion;
-	};
+    struct RequestContext
+    {
+        const Wt::Http::ParameterMap& parameters;
+        Database::Session& dbSession;
+        Database::UserId userId;
+        ClientInfo clientInfo;
+        ProtocolVersion serverProtocolVersion;
+    };
 }
 

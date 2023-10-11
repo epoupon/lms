@@ -27,279 +27,275 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string.hpp>
 
-namespace StringUtils {
+#include <Wt/WDateTime.h>
+#include <Wt/WDate.h>
 
-bool
-readList(const std::string& str, const std::string& separators, std::list<std::string>& results)
+namespace StringUtils
 {
-	std::string curStr;
 
-	for (char c : str)
-	{
-		if (separators.find(c) != std::string::npos) {
-			if (!curStr.empty()) {
-				results.push_back(curStr);
-				curStr.clear();
-			}
-		}
-		else {
-			if (curStr.empty() && std::isspace(c))
-				continue;
+    bool readList(const std::string& str, const std::string& separators, std::list<std::string>& results)
+    {
+        std::string curStr;
 
-			curStr.push_back(c);
-		}
-	}
+        for (char c : str)
+        {
+            if (separators.find(c) != std::string::npos) {
+                if (!curStr.empty()) {
+                    results.push_back(curStr);
+                    curStr.clear();
+                }
+            }
+            else {
+                if (curStr.empty() && std::isspace(c))
+                    continue;
 
-	if (!curStr.empty())
-		results.push_back(curStr);
+                curStr.push_back(c);
+            }
+        }
 
-	return !str.empty();
-}
+        if (!curStr.empty())
+            results.push_back(curStr);
 
-template<>
-std::optional<std::string>
-readAs(std::string_view str)
-{
-	return std::string {str};
-}
+        return !str.empty();
+    }
 
-template<>
-std::optional<std::string_view>
-readAs(std::string_view str)
-{
-	return str;
-}
+    template<>
+    std::optional<std::string> readAs(std::string_view str)
+    {
+        return std::string{ str };
+    }
 
-template<>
-std::optional<bool>
-readAs(std::string_view str)
-{
-	if (str == "1" || str == "true")
-		return true;
-	else if (str == "0" || str == "false")
-		return false;
+    template<>
+    std::optional<std::string_view> readAs(std::string_view str)
+    {
+        return str;
+    }
 
-	return std::nullopt;
-}
+    template<>
+    std::optional<bool> readAs(std::string_view str)
+    {
+        if (str == "1" || str == "true")
+            return true;
+        else if (str == "0" || str == "false")
+            return false;
 
-std::vector<std::string>
-splitStringCopy(std::string_view string, std::string_view separators)
-{
-	std::string str {stringTrim(string, separators)};
+        return std::nullopt;
+    }
 
-	std::vector<std::string> res;
-	boost::algorithm::split(res, str, boost::is_any_of(separators), boost::token_compress_on);
+    std::vector<std::string> splitStringCopy(std::string_view string, std::string_view separators)
+    {
+        std::string str{ stringTrim(string, separators) };
 
-	return res;
-}
+        std::vector<std::string> res;
+        boost::algorithm::split(res, str, boost::is_any_of(separators), boost::token_compress_on);
 
-std::vector<std::string_view>
-splitString(std::string_view str, std::string_view separators)
-{
-	std::vector<std::string_view> res;
+        return res;
+    }
 
-	std::string_view::size_type strBegin {};
+    std::vector<std::string_view> splitString(std::string_view str, std::string_view separators)
+    {
+        std::vector<std::string_view> res;
 
-	while ((strBegin = str.find_first_not_of(separators, strBegin)) != std::string_view::npos)
-	{
-		auto strEnd {str.find_first_of(separators, strBegin + 1)};
-		if (strEnd == std::string_view::npos)
-		{
-			res.push_back(str.substr(strBegin, str.size() - strBegin));
-			break;
-		}
+        std::string_view::size_type strBegin{};
 
-		res.push_back(str.substr(strBegin, strEnd - strBegin));
-		strBegin = strEnd + 1;
-	}
+        while ((strBegin = str.find_first_not_of(separators, strBegin)) != std::string_view::npos)
+        {
+            auto strEnd{ str.find_first_of(separators, strBegin + 1) };
+            if (strEnd == std::string_view::npos)
+            {
+                res.push_back(str.substr(strBegin, str.size() - strBegin));
+                break;
+            }
 
-	return res;
-}
+            res.push_back(str.substr(strBegin, strEnd - strBegin));
+            strBegin = strEnd + 1;
+        }
 
-std::string
-joinStrings(const std::vector<std::string>& strings, const std::string& delimiter)
-{
-	return boost::algorithm::join(strings, delimiter);
-}
+        return res;
+    }
 
-std::string_view
-stringTrim(std::string_view str, std::string_view whitespaces)
-{
-	std::string_view res;
+    std::string joinStrings(const std::vector<std::string>& strings, const std::string& delimiter)
+    {
+        return boost::algorithm::join(strings, delimiter);
+    }
 
-	const auto strBegin = str.find_first_not_of(whitespaces);
-	if (strBegin != std::string_view::npos)
-	{
-		const auto strEnd {str.find_last_not_of(whitespaces)};
-		const auto strRange {strEnd - strBegin + 1};
+    std::string_view stringTrim(std::string_view str, std::string_view whitespaces)
+    {
+        std::string_view res;
 
-		res = str.substr(strBegin, strRange);
-	}
+        const auto strBegin = str.find_first_not_of(whitespaces);
+        if (strBegin != std::string_view::npos)
+        {
+            const auto strEnd{ str.find_last_not_of(whitespaces) };
+            const auto strRange{ strEnd - strBegin + 1 };
 
-	return res;
-}
+            res = str.substr(strBegin, strRange);
+        }
 
-std::string_view
-stringTrimEnd(std::string_view str, std::string_view whitespaces)
-{
-	return str.substr(0, str.find_last_not_of(whitespaces) + 1);
-}
+        return res;
+    }
 
-std::string
-stringToLower(std::string_view str)
-{
-	std::string res;
-	res.reserve(str.size());
+    std::string_view stringTrimEnd(std::string_view str, std::string_view whitespaces)
+    {
+        return str.substr(0, str.find_last_not_of(whitespaces) + 1);
+    }
 
-	std::transform(std::cbegin(str), std::cend(str), std::back_inserter(res), [](unsigned char c) { return std::tolower(c);});
+    std::string stringToLower(std::string_view str)
+    {
+        std::string res;
+        res.reserve(str.size());
 
-	return res;
-}
+        std::transform(std::cbegin(str), std::cend(str), std::back_inserter(res), [](unsigned char c) { return std::tolower(c);});
 
-void
-stringToLower(std::string& str)
-{
-	std::transform(std::cbegin(str), std::cend(str), std::begin(str), [](unsigned char c) { return std::tolower(c);});
-}
+        return res;
+    }
 
-std::string
-stringToUpper(const std::string& str)
-{
-	std::string res;
-	res.reserve(str.size());
+    void stringToLower(std::string& str)
+    {
+        std::transform(std::cbegin(str), std::cend(str), std::begin(str), [](unsigned char c) { return std::tolower(c);});
+    }
 
-	std::transform(std::cbegin(str), std::cend(str), std::back_inserter(res), [](char c) { return std::toupper(c);});
+    std::string stringToUpper(const std::string& str)
+    {
+        std::string res;
+        res.reserve(str.size());
 
-	return res;
-}
+        std::transform(std::cbegin(str), std::cend(str), std::back_inserter(res), [](char c) { return std::toupper(c);});
 
-std::string
-bufferToString(const std::vector<unsigned char>& data)
-{
-	std::ostringstream oss;
+        return res;
+    }
 
-	for (unsigned char c : data)
-	{
-		oss << std::setw(2) << std::setfill('0') << std::hex << (int)c;
-	}
+    std::string bufferToString(const std::vector<unsigned char>& data)
+    {
+        std::ostringstream oss;
 
-	return oss.str();
-}
+        for (unsigned char c : data)
+        {
+            oss << std::setw(2) << std::setfill('0') << std::hex << (int)c;
+        }
 
-void
-capitalize(std::string& str)
-{
-	for (auto it {std::begin(str)}; it != std::end(str); ++it)
-	{
-		if (std::isspace(*it))
-			continue;
+        return oss.str();
+    }
 
-		if (std::isalpha(*it))
-			*it = std::toupper(*it);
+    void capitalize(std::string& str)
+    {
+        for (auto it{ std::begin(str) }; it != std::end(str); ++it)
+        {
+            if (std::isspace(*it))
+                continue;
 
-		break;
-	}
-}
+            if (std::isalpha(*it))
+                *it = std::toupper(*it);
 
-std::string
-replaceInString(std::string_view str, const std::string& from, const std::string& to)
-{
-	std::string res {str};
-	size_t pos = 0;
+            break;
+        }
+    }
 
-	while ((pos = res.find(from, pos)) != std::string::npos)
-	{
-		res.replace(pos, from.length(), to);
-		pos += to.length();
-	}
+    std::string replaceInString(std::string_view str, const std::string& from, const std::string& to)
+    {
+        std::string res{ str };
+        size_t pos = 0;
 
-	return res;
-}
+        while ((pos = res.find(from, pos)) != std::string::npos)
+        {
+            res.replace(pos, from.length(), to);
+            pos += to.length();
+        }
 
-std::string
-jsEscape(const std::string& str)
-{
-	static const std::unordered_map<char, std::string_view> escapeMap
-	{
-		{ '\\', "\\\\" },
-		{ '\n', "\\n" },
-		{ '\r', "\\r" },
-		{ '\t', "\\t" },
-		{ '"', "\\\"" },
-		{ '\'', "\\\'" },
-	};
+        return res;
+    }
 
-	std::string escaped;
-	escaped.reserve(str.length());
+    std::string jsEscape(const std::string& str)
+    {
+        static const std::unordered_map<char, std::string_view> escapeMap
+        {
+            { '\\', "\\\\" },
+            { '\n', "\\n" },
+            { '\r', "\\r" },
+            { '\t', "\\t" },
+            { '"', "\\\"" },
+            { '\'', "\\\'" },
+        };
 
-	for (const char c : str)
-	{
-		auto it {escapeMap.find(c)};
-		if (it == std::cend(escapeMap))
-		{
-			escaped += c;
-			continue;
-		}
+        std::string escaped;
+        escaped.reserve(str.length());
 
-		escaped += it->second;
-	}
+        for (const char c : str)
+        {
+            auto it{ escapeMap.find(c) };
+            if (it == std::cend(escapeMap))
+            {
+                escaped += c;
+                continue;
+            }
 
-	return escaped;
-}
+            escaped += it->second;
+        }
 
-std::string
-escapeString(std::string_view str, std::string_view charsToEscape, char escapeChar)
-{
-	std::string res;
-	res.reserve(str.size());
+        return escaped;
+    }
 
-	for (const char c : str)
-	{
-		if (std::any_of(std::cbegin(charsToEscape), std::cend(charsToEscape), [c](char charToEscape) { return c == charToEscape; }))
-			res += escapeChar;
+    std::string escapeString(std::string_view str, std::string_view charsToEscape, char escapeChar)
+    {
+        std::string res;
+        res.reserve(str.size());
 
-		res += c;
-	}
+        for (const char c : str)
+        {
+            if (std::any_of(std::cbegin(charsToEscape), std::cend(charsToEscape), [c](char charToEscape) { return c == charToEscape; }))
+                res += escapeChar;
 
-	return res;
-}
+            res += c;
+        }
 
-bool
-stringEndsWith(const std::string& str, const std::string& ending)
-{
-	return boost::algorithm::ends_with(str, ending);
-}
+        return res;
+    }
 
-std::optional<std::string>
-stringFromHex(const std::string& str)
-{
-	static const char lut[] {"0123456789ABCDEF"};
+    bool stringEndsWith(const std::string& str, const std::string& ending)
+    {
+        return boost::algorithm::ends_with(str, ending);
+    }
 
-	if (str.length() % 2 != 0)
-		return std::nullopt;
+    std::optional<std::string> stringFromHex(const std::string& str)
+    {
+        static const char lut[]{ "0123456789ABCDEF" };
 
-	std::string res;
-	res.reserve(str.length() / 2);
+        if (str.length() % 2 != 0)
+            return std::nullopt;
 
-	auto it {std::cbegin(str)};
-	while (it != std::cend(str))
-	{
-		unsigned val {};
+        std::string res;
+        res.reserve(str.length() / 2);
 
-		auto itHigh {std::lower_bound(std::cbegin(lut), std::cend(lut), std::toupper(*(it++)))};
-		auto itLow {std::lower_bound(std::cbegin(lut), std::cend(lut), std::toupper(*(it++)))};
+        auto it{ std::cbegin(str) };
+        while (it != std::cend(str))
+        {
+            unsigned val{};
 
-		if (itHigh == std::cend(lut) || itLow == std::cend(lut))
-			return {};
+            auto itHigh{ std::lower_bound(std::cbegin(lut), std::cend(lut), std::toupper(*(it++))) };
+            auto itLow{ std::lower_bound(std::cbegin(lut), std::cend(lut), std::toupper(*(it++))) };
 
-		val = std::distance(std::cbegin(lut), itHigh) << 4;
-		val += std::distance(std::cbegin(lut), itLow );
+            if (itHigh == std::cend(lut) || itLow == std::cend(lut))
+                return {};
 
-		res.push_back(static_cast<char>(val));
-	}
+            val = std::distance(std::cbegin(lut), itHigh) << 4;
+            val += std::distance(std::cbegin(lut), itLow);
 
-	return res;
-}
+            res.push_back(static_cast<char>(val));
+        }
 
+        return res;
+    }
+
+    std::string toISO8601String(const Wt::WDateTime& dateTime)
+    {
+        // assume UTC
+        return dateTime.toString("yyyy-MM-ddThh:mm:ss.zzz", false).toUTF8();
+    }
+
+    std::string toISO8601String(const Wt::WDate& date)
+    {
+        // assume UTC
+        return date.toString("yyyy-MM-dd").toUTF8();
+    }
 } // StringUtils
 

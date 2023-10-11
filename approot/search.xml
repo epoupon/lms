@@ -16,7 +16,14 @@
 	</ul>
 	<div class="tab-content" id="myTabContent">
 		<div class="tab-pane show active" id="releases" role="tabpanel" aria-labelledby="releases-tab">${releases}</div>
-		<div class="tab-pane" id="artists" role="tabpanel" aria-labelledby="artists-tab">${artists}</div>
+		<div class="tab-pane" id="artists" role="tabpanel" aria-labelledby="artists-tab">
+			<div class="row mb-3">
+				<div class="col-lg-3">
+					${link-type class="form-select"}
+				</div>
+			</div>
+			${artists}
+		</div>
 		<div class="tab-pane" id="tracks" role="tabpanel" aria-labelledby="tracks-tab">${tracks}</div>
 	</div>
 </message>
