@@ -82,7 +82,7 @@ namespace API::Subsonic
 
     void Response::Node::createEmptyArrayValue(std::string_view key)
     {
-        assert (!_value);
+        assert(!_value);
         _childrenValues.emplace(key, ValuesType{});
     }
 
@@ -97,7 +97,7 @@ namespace API::Subsonic
     void Response::Node::addArrayValue(std::string_view key, long long value)
     {
         assert(!_value);
-        auto& values {_childrenValues[std::string{ key }]};
+        auto& values{ _childrenValues[std::string{ key }] };
         values.push_back(value);
         assert(std::all_of(std::cbegin(values) + 1, std::cend(values), [&](const ValueType& value) {return value.index() == values.front().index();}));
     }
@@ -121,32 +121,33 @@ namespace API::Subsonic
 
     Response Response::createOkResponse(ProtocolVersion protocolVersion)
     {
+        return createResponseCommon(protocolVersion);
+    }
+
+    Response Response::createFailedResponse(ProtocolVersion protocolVersion, const Error& error)
+    {
+        return createResponseCommon(protocolVersion, &error);
+    }
+
+    Response Response::createResponseCommon(ProtocolVersion protocolVersion, const Error* error)
+    {
         Response response;
         Node& responseNode{ response._root.createChild("subsonic-response") };
 
-        responseNode.setAttribute("status", "ok");
+        responseNode.setAttribute("status", error ? "failed" : "ok");
         responseNode.setVersionAttribute(protocolVersion);
+
+        if (error)
+        {
+            Node& errorNode{ responseNode.createChild("error") };
+            errorNode.setAttribute("code", static_cast<int>(error->getCode()));
+            errorNode.setAttribute("message", error->getMessage());
+        }
 
         // OpenSubsonic mandatory fields
         responseNode.setAttribute("type", "lms");
         responseNode.setAttribute("serverVersion", serverVersion);
         responseNode.setAttribute("openSubsonic", true);
-
-        return response;
-    }
-
-    Response Response::createFailedResponse(ProtocolVersion protocolVersion, const Error& error)
-    {
-        Response response;
-        Node& responseNode{ response._root.createChild("subsonic-response") };
-
-        responseNode.setAttribute("status", "failed");
-        responseNode.setVersionAttribute(protocolVersion);
-        responseNode.setAttribute("type", "lms"); // non standard field to ease client hacks
-
-        Node& errorNode{ responseNode.createChild("error") };
-        errorNode.setAttribute("code", static_cast<int>(error.getCode()));
-        errorNode.setAttribute("message", error.getMessage());
 
         return response;
     }
@@ -198,15 +199,15 @@ namespace API::Subsonic
                 }
 
                 auto valueToPropertyTree = [](const Node::ValueType& value)
-                {
-                    boost::property_tree::ptree res;
-                    std::visit([&](const auto& rawValue)
                     {
-                        res.put_value(rawValue);
-                    }, value);
+                        boost::property_tree::ptree res;
+                        std::visit([&](const auto& rawValue)
+                            {
+                                res.put_value(rawValue);
+                            }, value);
 
-                    return res;
-                };
+                        return res;
+                    };
 
                 if (node._value)
                 {
@@ -300,4 +301,3 @@ namespace API::Subsonic
     }
 
 } // namespace
-

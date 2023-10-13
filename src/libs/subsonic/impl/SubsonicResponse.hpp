@@ -249,6 +249,7 @@ namespace API::Subsonic
         void write(std::ostream& os, ResponseFormat format);
 
     private:
+        static Response createResponseCommon(ProtocolVersion protocolVersion, const Error* error = nullptr);
         void writeJSON(std::ostream& os);
         void writeXML(std::ostream& os);
 
