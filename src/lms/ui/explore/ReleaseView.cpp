@@ -128,7 +128,7 @@ showReleaseInfoModal(Database::ReleaseId releaseId)
 
 		for (const auto& [role, artistIds] : artistMap)
 		{
-			std::unique_ptr<Wt::WContainerWidget> artistContainer {Utils::createArtistContainer(std::vector (std::cbegin(artistIds), std::cend(artistIds)))};
+			std::unique_ptr<Wt::WContainerWidget> artistContainer {Utils::createArtistAnchorList(std::vector (std::cbegin(artistIds), std::cend(artistIds)))};
 			auto artistsEntry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.template.info.artists"))};
 			artistsEntry->bindString("type", role);
 			artistsEntry->bindWidget("artist-container", std::move(artistContainer));
@@ -400,8 +400,8 @@ Release::refreshView()
 		if (variousArtists && !artists.empty())
 		{
 			entry->setCondition("if-has-artists", true);
-			entry->bindWidget("artists", Utils::createArtistContainer(artists));
-			entry->bindWidget("artists-md", Utils::createArtistContainer(artists));
+			entry->bindWidget("artists", Utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
+			entry->bindWidget("artists-md", Utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(),artists));
 		}
 
 		auto trackNumber {track->getTrackNumber()};
@@ -480,28 +480,11 @@ Release::refreshView()
 void
 Release::refreshReleaseArtists(const Database::Release::pointer& release)
 {
-	std::vector<ObjectPtr<Artist>> artists;
-
-	Artist::FindParameters params;
-	params.setRelease(release->getId());
-	params.setLinkType(TrackArtistLinkType::ReleaseArtist);
-
-	const auto releaseArtists {Artist::find(LmsApp->getDbSession(), params)};
-	if (!releaseArtists.results.empty())
+	auto container{ Utils::createArtistsAnchorsForRelease(release) };
+	if (container)
 	{
-		bindWidget("artists", Utils::createArtistContainer(release->getArtistDisplayName(), releaseArtists.results));
-	}
-	else
-	{
-		// TODO, if single track artist, put it, else put "Various Artists"
-		/*
-		artists = release->getArtists(TrackArtistLinkType::Artist);
-		if (artists.size() > 1)
-		{
-			setCondition("if-has-various-release-artists", true);
-			return;
-		}
-		*/
+		setCondition("if-has-release-artists", true);
+		bindWidget("artists", std::move(container));
 	}
 }
 

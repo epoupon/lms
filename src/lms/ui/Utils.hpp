@@ -58,8 +58,9 @@ namespace UserInterface::Utils
 
 	std::unique_ptr<Wt::WInteractWidget> createCluster(Database::ClusterId clusterId, bool canDelete = false);
 
-	std::unique_ptr<Wt::WContainerWidget> createArtistContainer(const std::vector<Database::ArtistId>& artists);
-	std::unique_ptr<Wt::WContainerWidget> createArtistContainer(std::string_view displayName, const std::vector<Database::ArtistId>& artists);
+	std::unique_ptr<Wt::WContainerWidget> createArtistAnchorList(const std::vector<Database::ArtistId>& artistIds, std::string_view cssAnchorClass = "link-success");
+	std::unique_ptr<Wt::WContainerWidget> createArtistDisplayNameWithAnchors(std::string_view displayName, const std::vector<Database::ArtistId>& artistIds, std::string_view cssAnchorClass = "link-success");
+	std::unique_ptr<Wt::WContainerWidget> createArtistsAnchorsForRelease(Database::ObjectPtr<Database::Release> release, Database::ArtistId omitIfMatchThisArtist = {}, std::string_view cssAnchorClass = "link-success");
 
 	Wt::WLink createArtistLink(Database::ObjectPtr<Database::Artist> artist);
 	std::unique_ptr<Wt::WAnchor> createArtistAnchor(Database::ObjectPtr<Database::Artist> artist, bool setText = true);
