@@ -31,18 +31,18 @@
 
 namespace Database
 {
-	class Artist;
-	class Release;
+    class Artist;
+    class Release;
 }
 
 namespace UserInterface::ReleaseListHelpers
 {
-	std::unique_ptr<Wt::WTemplate> createEntry(const Database::ObjectPtr<Database::Release>& release);
-	std::unique_ptr<Wt::WTemplate> createEntryForArtist(const Database::ObjectPtr<Database::Release>& release, const Database::ObjectPtr<Database::Artist>& artist);
+    std::unique_ptr<Wt::WTemplate> createEntry(const Database::ObjectPtr<Database::Release>& release);
+    std::unique_ptr<Wt::WTemplate> createEntryForArtist(const Database::ObjectPtr<Database::Release>& release, const Database::ObjectPtr<Database::Artist>& artist);
 } // namespace UserInterface
 
 namespace UserInterface::ReleaseHelpers
 {
-	Wt::WString buildReleaseTypeString(Database::ReleaseTypePrimary primaryType, EnumSet<Database::ReleaseTypeSecondary> secondaryTypes);
-	Wt::WString buildReleaseYearString(const Wt::WDate& releaseDate, const Wt::WDate& originalReleaseDate);
+    Wt::WString buildReleaseTypeString(Database::ReleaseTypePrimary primaryType, EnumSet<Database::ReleaseTypeSecondary> secondaryTypes);
+    Wt::WString buildReleaseYearString(const Wt::WDate& releaseDate, const Wt::WDate& originalReleaseDate);
 }

@@ -134,11 +134,12 @@ namespace API::Subsonic
                 trackResponse.setAttribute("artistId", idToString(artists.front()->getId()));
         }
 
-        if (track->getRelease())
+        Release::pointer release{ track->getRelease() };
+        if (release)
         {
-            trackResponse.setAttribute("album", track->getRelease()->getName());
-            trackResponse.setAttribute("albumId", idToString(track->getRelease()->getId()));
-            trackResponse.setAttribute("parent", idToString(track->getRelease()->getId()));
+            trackResponse.setAttribute("album", release->getName());
+            trackResponse.setAttribute("albumId", idToString(release->getId()));
+            trackResponse.setAttribute("parent", idToString(release->getId()));
         }
 
         trackResponse.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count());
@@ -195,7 +196,11 @@ namespace API::Subsonic
         } };
 
         addArtistLinks("artists", TrackArtistLinkType::Artist);
+        trackResponse.setAttribute("displayArtist", track->getArtistDisplayName());
+
         addArtistLinks("albumartists", TrackArtistLinkType::ReleaseArtist);
+        if (release)
+            trackResponse.setAttribute("displayAlbumArtist", release->getArtistDisplayName());
 
         auto addClusters{ [&](std::string_view field, std::string_view clusterTypeName)
         {

@@ -79,6 +79,7 @@ namespace MetaData
 
 		std::optional<UUID> 		mbid;
 		std::string					name;
+		std::string					artistDisplayName;
 		std::vector<Artist>			artists;
 		std::optional<std::size_t>	mediumCount;
 		std::optional<PrimaryType>	primaryType;
@@ -117,6 +118,7 @@ namespace MetaData
 		std::string					copyright;
 		std::string					copyrightURL;
 		std::optional<float>		replayGain;
+		std::string					artistDisplayName;
 		std::vector<Artist>			artists;
 		std::vector<Artist>			conductorArtists;
 		std::vector<Artist>			composerArtists;

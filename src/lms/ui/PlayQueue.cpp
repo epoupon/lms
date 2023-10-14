@@ -535,8 +535,8 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 	if (!artists.empty())
 	{
 		entry->setCondition("if-has-artists", true);
-		entry->bindWidget("artists", Utils::createArtistContainer(artists));
-		entry->bindWidget("artists-md", Utils::createArtistContainer(artists));
+		entry->bindWidget("artists", Utils::createArtistAnchorList(artists));
+		entry->bindWidget("artists-md", Utils::createArtistAnchorList(artists));
 	}
 
 	const auto release {track->getRelease()};

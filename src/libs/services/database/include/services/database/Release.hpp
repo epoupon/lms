@@ -113,6 +113,7 @@ namespace Database
         Wt::WDateTime                       getLastWritten() const;
         std::optional<ReleaseTypePrimary>   getPrimaryType() const { return _primaryType; }
         EnumSet<ReleaseTypeSecondary>       getSecondaryTypes() const { return _secondaryTypes; }
+        std::string_view                    getArtistDisplayName() const { return _artistDisplayName; }
         std::size_t                         getTracksCount() const;
 
         // Setters
@@ -121,6 +122,7 @@ namespace Database
         void setTotalDisc(std::optional<int> totalDisc) { _totalDisc = totalDisc; }
         void setPrimaryType(std::optional<ReleaseTypePrimary> type) { _primaryType = type; }
         void setSecondaryTypes(EnumSet<ReleaseTypeSecondary> types) { _secondaryTypes = types; }
+        void setArtistDisplayName(std::string_view name) { _artistDisplayName = name; }
 
         // Get the artists of this release
         std::vector<ObjectPtr<Artist>>  getArtists(TrackArtistLinkType type = TrackArtistLinkType::Artist) const;
@@ -137,7 +139,7 @@ namespace Database
             Wt::Dbo::field(a, _totalDisc, "total_disc");
             Wt::Dbo::field(a, _primaryType, "primary_type");
             Wt::Dbo::field(a, _secondaryTypes, "secondary_types");
-
+            Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
             Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "release");
         }
 
@@ -155,6 +157,7 @@ namespace Database
         std::optional<int>                  _totalDisc{};
         std::optional<ReleaseTypePrimary>   _primaryType;
         EnumSet<ReleaseTypeSecondary>       _secondaryTypes;
+        std::string                         _artistDisplayName;
 
         Wt::Dbo::collection<Wt::Dbo::ptr<Track>>    _tracks; // Tracks in the release
     };
