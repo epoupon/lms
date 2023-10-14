@@ -14,6 +14,7 @@ The following extra fields are implemented:
   * `musicBrainzId`
   * `genres`
   * `artists`
+  * `displayArtist`
   * `releaseTypes`
   * `moods`
   * `originalReleaseDate`
@@ -23,7 +24,9 @@ The following extra fields are implemented:
   * `musicBrainzId`: note this is actually the recording MBID when this response refers to a song
   * `genres`
   * `artists`
+  * `displayArtist`
   * `albumArtists`
+  * `displayAlbumArtist`
   * `contributors`
   * `moods`
   * `replayGain`
