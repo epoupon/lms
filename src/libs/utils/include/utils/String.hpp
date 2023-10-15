@@ -55,6 +55,8 @@ namespace StringUtils {
 
     [[nodiscard]] std::string bufferToString(const std::vector<unsigned char>& data);
 
+    [[nodiscard]] bool stringCaseInsensitiveEqual(std::string_view strA, std::string_view strB);
+
     void capitalize(std::string& str);
 
     template<typename T>

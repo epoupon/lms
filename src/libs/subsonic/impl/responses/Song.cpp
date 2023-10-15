@@ -120,8 +120,7 @@ namespace API::Subsonic
             trackResponse.setAttribute("suffix", extension.string().substr(1));
         }
 
-        if (user->getSubsonicTranscodeEnable())
-            trackResponse.setAttribute("transcodedSuffix", formatToSuffix(user->getSubsonicTranscodeFormat()));
+        trackResponse.setAttribute("transcodedSuffix", formatToSuffix(user->getSubsonicDefaultTranscodeFormat()));
 
         trackResponse.setAttribute("coverArt", idToString(track->getId()));
 

@@ -177,6 +177,20 @@ namespace StringUtils
         return oss.str();
     }
 
+    bool stringCaseInsensitiveEqual(std::string_view strA, std::string_view strB)
+    {
+        if (strA.size() != strB.size())
+            return false;
+        
+        for (std::size_t i{}; i < strA.size(); ++i)
+        {
+            if (std::tolower(strA[i]) != std::tolower(strB[i]))
+                return false;
+        }
+
+        return true;
+    }
+
     void capitalize(std::string& str)
     {
         for (auto it{ std::begin(str) }; it != std::end(str); ++it)

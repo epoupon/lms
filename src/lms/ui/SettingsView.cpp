@@ -160,15 +160,13 @@ class SettingsModel : public Wt::WFormModel
 			}
 
 			{
-				user.modify()->setSubsonicTranscodeEnable(Wt::asNumber(value(SubsonicTranscodeEnableField)));
-
 				auto subsonicTranscodeBitrateRow {_transcodeBitrateModel->getRowFromString(valueText(SubsonicTranscodeBitrateField))};
 				if (subsonicTranscodeBitrateRow)
-					user.modify()->setSubsonicTranscodeBitrate(_transcodeBitrateModel->getValue(*subsonicTranscodeBitrateRow));
+					user.modify()->setSubsonicDefaultTranscodeBitrate(_transcodeBitrateModel->getValue(*subsonicTranscodeBitrateRow));
 
 				auto subsonicTranscodeFormatRow {_transcodeFormatModel->getRowFromString(valueText(SubsonicTranscodeFormatField))};
 				if (subsonicTranscodeFormatRow)
-					user.modify()->setSubsonicTranscodeFormat(_transcodeFormatModel->getValue(*subsonicTranscodeFormatRow));
+					user.modify()->setSubsonicDefaultTranscodeFormat(_transcodeFormatModel->getValue(*subsonicTranscodeFormatRow));
 
 				auto subsonicArtistListModeRow {_subsonicArtistListModeModel->getRowFromString(valueText(SubsonicArtistListModeField))};
 				if (subsonicArtistListModeRow)
@@ -224,19 +222,12 @@ class SettingsModel : public Wt::WFormModel
 				setValue(ReplayGainPreAmpGainIfNoInfoField, settings.replayGain.preAmpGainIfNoInfo);
 			}
 
-			setValue(SubsonicTranscodeEnableField, LmsApp->getUser()->getSubsonicTranscodeEnable());
 			{
-				const bool usesTranscode {LmsApp->getUser()->getSubsonicTranscodeEnable()};
-				setReadOnly(SubsonicTranscodeFormatField, !usesTranscode);
-				setReadOnly(SubsonicTranscodeBitrateField, !usesTranscode);
-			}
-
-			{
-				auto subsonicTranscodeBitrateRow {_transcodeBitrateModel->getRowFromValue(user->getSubsonicTranscodeBitrate())};
+				auto subsonicTranscodeBitrateRow {_transcodeBitrateModel->getRowFromValue(user->getSubsonicDefaultTranscodeBitrate())};
 				if (subsonicTranscodeBitrateRow)
 					setValue(SubsonicTranscodeBitrateField, _transcodeBitrateModel->getString(*subsonicTranscodeBitrateRow));
 
-				auto subsonicTranscodeFormatRow {_transcodeFormatModel->getRowFromValue(user->getSubsonicTranscodeFormat())};
+				auto subsonicTranscodeFormatRow {_transcodeFormatModel->getRowFromValue(user->getSubsonicDefaultTranscodeFormat())};
 				if (subsonicTranscodeFormatRow)
 					setValue(SubsonicTranscodeFormatField, _transcodeFormatModel->getString(*subsonicTranscodeFormatRow));
 
@@ -482,11 +473,6 @@ SettingsView::refreshView()
 	{
 		t->setCondition("if-has-subsonic-api", Service<IConfig>::get()->getBool("api-subsonic", true));
 
-		// Transcode
-		auto transcode {std::make_unique<Wt::WCheckBox>()};
-		auto* transcodeRaw {transcode.get()};
-		t->setFormWidget(SettingsModel::SubsonicTranscodeEnableField, std::move(transcode));
-
 		// Format
 		auto transcodeFormat {std::make_unique<Wt::WComboBox>()};
 		transcodeFormat->setModel(model->getTranscodeFormatModel());
@@ -501,15 +487,6 @@ SettingsView::refreshView()
 		auto artistListMode {std::make_unique<Wt::WComboBox>()};
 		artistListMode->setModel(model->getSubsonicArtistListModeModel());
 		t->setFormWidget(SettingsModel::SubsonicArtistListModeField, std::move(artistListMode));
-
-		transcodeRaw->changed().connect([=]
-		{
-			const bool enable {transcodeRaw->checkState() == Wt::CheckState::Checked};
-			model->setReadOnly(SettingsModel::SubsonicTranscodeFormatField, !enable);
-			model->setReadOnly(SettingsModel::SubsonicTranscodeBitrateField, !enable);
-			t->updateModel(model.get());
-			t->updateView(model.get());
-		});
 	}
 
 	// Scrobbling
