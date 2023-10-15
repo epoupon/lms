@@ -19,6 +19,7 @@
 
 #include "MediaRetrieval.hpp"
 
+#include "av/IAudioFile.hpp"
 #include "av/TranscodeParameters.hpp"
 #include "av/TranscodeResourceHandlerCreator.hpp"
 #include "av/Types.hpp"
@@ -99,26 +100,40 @@ namespace API::Subsonic
                 parameters.inputFileParameters.duration = track->getDuration();
             }
 
-            if (format != "raw") // raw => no transcode
+            if (format == "raw") // raw => no transcode
+                return parameters;
+
+            const auto audioFile{ Av::parseAudioFile(parameters.inputFileParameters.trackPath) };
+
+            // check if transcode is really needed or not
+            // same format as requested, bitrate is lower than requested => no need to transcode
+            if (const auto streamInfo{ audioFile->getBestStreamInfo() })
             {
-                const User::pointer user{ User::find(context.dbSession, context.userId) };
-                if (!user)
-                    throw UserNotAuthorizedError{};
-
-                Av::TranscodeParameters& transcodeParameters{ parameters.transcodeParameters.emplace() };
-
-                transcodeParameters.stripMetadata = false; // We want clients to use metadata (offline use, replay gain, etc.)
-                transcodeParameters.offset = std::chrono::seconds{ timeOffset };
-
-                if (std::optional<Av::Format> requestedFormat{ subsonicStreamFormatToAvFormat(format) })
-                    transcodeParameters.format = *requestedFormat;
-                else
-                    transcodeParameters.format = userTranscodeFormatToAvFormat(user->getSubsonicDefaultTranscodeFormat());
-
-                transcodeParameters.bitrate = user->getSubsonicDefaultTranscodeBitrate();
-                if (maxBitRate != 0)
-                    transcodeParameters.bitrate = Utils::clamp(transcodeParameters.bitrate, std::size_t{ 48 }, maxBitRate);
+                // assume reported codec is "mp3", "opus", "vorbis", etc.
+                if (StringUtils::stringCaseInsensitiveEqual(streamInfo->codec, format) && (maxBitRate == 0 || (streamInfo->bitrate / 1000) <= maxBitRate))
+                {
+                    LMS_LOG(API_SUBSONIC, DEBUG) << "stream parameters are compatible with actual file: no transcode";
+                    return parameters;
+                }
             }
+
+            const User::pointer user{ User::find(context.dbSession, context.userId) };
+            if (!user)
+                throw UserNotAuthorizedError{};
+
+            Av::TranscodeParameters& transcodeParameters{ parameters.transcodeParameters.emplace() };
+
+            transcodeParameters.stripMetadata = false; // We want clients to use metadata (offline use, replay gain, etc.)
+            transcodeParameters.offset = std::chrono::seconds{ timeOffset };
+
+            if (std::optional<Av::Format> requestedFormat{ subsonicStreamFormatToAvFormat(format) })
+                transcodeParameters.format = *requestedFormat;
+            else
+                transcodeParameters.format = userTranscodeFormatToAvFormat(user->getSubsonicDefaultTranscodeFormat());
+
+            transcodeParameters.bitrate = user->getSubsonicDefaultTranscodeBitrate();
+            if (maxBitRate != 0)
+                transcodeParameters.bitrate = Utils::clamp(transcodeParameters.bitrate, std::size_t{ 48000 }, maxBitRate * 1000);
 
             return parameters;
         }
