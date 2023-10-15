@@ -131,11 +131,11 @@ namespace UserInterface::ReleaseHelpers
         if (!releaseDate.isValid())
             return res;
 
-        if (originalReleaseDate.isValid() && originalReleaseDate != releaseDate)
+        if (originalReleaseDate.isValid() && originalReleaseDate.year() != releaseDate.year())
             res = std::to_string(originalReleaseDate.year()) + " (" + std::to_string(releaseDate.year()) + ")";
         else
             res = std::to_string(releaseDate.year());
 
         return res;
     }
-} // namespace UserInterface::ReleaseHelpers}
+} // namespace UserInterface::ReleaseHelpers
