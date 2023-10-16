@@ -133,6 +133,32 @@ namespace Scrobbling
         return res;
     }
 
+    Wt::WDateTime ScrobblingService::getLastListenDateTime(Database::UserId userId, Database::ReleaseId releaseId)
+    {
+        auto scrobbler{ getUserScrobbler(userId) };
+        if (!scrobbler)
+            return {};
+
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createSharedTransaction() };
+
+        const Database::Listen::pointer listen{ Database::Listen::getMostRecentListen(session, userId, *scrobbler, releaseId) };
+        return listen ? listen->getDateTime() : Wt::WDateTime{};
+    }
+
+    Wt::WDateTime ScrobblingService::getLastListenDateTime(Database::UserId userId, Database::TrackId trackId)
+    {
+        auto scrobbler{ getUserScrobbler(userId) };
+        if (!scrobbler)
+            return {};
+
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createSharedTransaction() };
+
+        const Database::Listen::pointer listen{ Database::Listen::getMostRecentListen(session, userId, *scrobbler, trackId) };
+        return listen ? listen->getDateTime() : Wt::WDateTime{};
+    }
+
     // Top
     ScrobblingService::ArtistContainer ScrobblingService::getTopArtists(UserId userId, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range)
     {

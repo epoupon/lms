@@ -139,6 +139,11 @@ namespace API::Subsonic
             albumNode.setAttribute("mediaType", "album");
 
         {
+            const Wt::WDateTime dateTime{ Service<Scrobbling::IScrobblingService>::get()->getLastListenDateTime(user->getId(), release->getId()) };
+            albumNode.setAttribute("played", dateTime.isValid() ? StringUtils::toISO8601String(dateTime) : "");
+        }
+
+        {
             std::optional<UUID> mbid{ release->getMBID() };
             albumNode.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
         }

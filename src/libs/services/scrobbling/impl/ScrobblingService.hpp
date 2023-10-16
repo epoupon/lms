@@ -52,6 +52,9 @@ namespace Scrobbling
             const std::vector<Database::ClusterId>& clusterIds,
             Database::Range range) override;
 
+        Wt::WDateTime getLastListenDateTime(Database::UserId userId, Database::ReleaseId releaseId) override;
+        Wt::WDateTime getLastListenDateTime(Database::UserId userId, Database::TrackId trackId) override;
+
         ArtistContainer getTopArtists(Database::UserId userId,
             const std::vector<Database::ClusterId>& clusterIds,
             std::optional<Database::TrackArtistLinkType> linkType,

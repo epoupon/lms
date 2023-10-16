@@ -163,6 +163,11 @@ namespace API::Subsonic
         trackResponse.setAttribute("mediaType", "song");
 
         {
+            const Wt::WDateTime dateTime{ Service<Scrobbling::IScrobblingService>::get()->getLastListenDateTime(user->getId(), track->getId()) };
+            trackResponse.setAttribute("played", dateTime.isValid() ? StringUtils::toISO8601String(dateTime) : "");
+        }
+
+        {
             std::optional<UUID> mbid{ track->getRecordingMBID() };
             trackResponse.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
         }
