@@ -124,9 +124,10 @@ namespace API::Subsonic
         }
 
         // Report the first GENRE for this track
-        if (ClusterType::pointer clusterType{ ClusterType::find(dbSession, "GENRE") })
+        const ClusterType::pointer genreClusterType{ ClusterType::find(dbSession, "GENRE") };
+        if (genreClusterType)
         {
-            auto clusters{ release->getClusterGroups({clusterType}, 1) };
+            auto clusters{ release->getClusterGroups({genreClusterType}, 1) };
             if (!clusters.empty() && !clusters.front().empty())
                 albumNode.setAttribute("genre", clusters.front().front()->getName());
         }
@@ -173,13 +174,11 @@ namespace API::Subsonic
         // Genres
         {
             albumNode.createEmptyArrayChild("genres");
-
-            ClusterType::pointer clusterType{ ClusterType::find(dbSession, "GENRE") };
-            if (clusterType)
+            if (genreClusterType)
             {
                 Cluster::FindParameters params;
                 params.setRelease(release->getId());
-                params.setClusterType(clusterType->getId());
+                params.setClusterType(genreClusterType->getId());
 
                 for (const ClusterId clusterId : Cluster::find(dbSession, params).results)
                 {

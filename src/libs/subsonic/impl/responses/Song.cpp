@@ -152,7 +152,8 @@ namespace API::Subsonic
             trackResponse.setAttribute("starred", StringUtils::toISO8601String(dateTime));
 
         // Report the first GENRE for this track
-        if (ClusterType::pointer genreClusterType{ ClusterType::find(dbSession, "GENRE") })
+        const ClusterType::pointer genreClusterType{ ClusterType::find(dbSession, "GENRE") };
+        if (genreClusterType)
         {
             auto clusters{ track->getClusterGroups({genreClusterType}, 1) };
             if (!clusters.empty() && !clusters.front().empty())
@@ -235,12 +236,11 @@ namespace API::Subsonic
         {
             trackResponse.createEmptyArrayChild("genres");
 
-            ClusterType::pointer clusterType{ ClusterType::find(dbSession, "GENRE") };
-            if (clusterType)
+            if (genreClusterType)
             {
                 Cluster::FindParameters params;
                 params.setTrack(track->getId());
-                params.setClusterType(clusterType->getId());
+                params.setClusterType(genreClusterType->getId());
 
                 for (const ClusterId clusterId : Cluster::find(dbSession, params).results)
                 {
