@@ -114,7 +114,7 @@ namespace API::Subsonic
 
             if (artists.size() == 1)
             {
-                albumNode.setAttribute(id3 ? "artistId" : "parent", idToString(artists.front()->getId()));
+                albumNode.setAttribute(id3 ? Response::Node::Key{ "artistId" } : Response::Node::Key{ "parent" }, idToString(artists.front()->getId()));
             }
             else
             {
@@ -140,7 +140,7 @@ namespace API::Subsonic
 
         {
             const Wt::WDateTime dateTime{ Service<Scrobbling::IScrobblingService>::get()->getLastListenDateTime(user->getId(), release->getId()) };
-            albumNode.setAttribute("played", dateTime.isValid() ? StringUtils::toISO8601String(dateTime) : "");
+            albumNode.setAttribute("played", dateTime.isValid() ? StringUtils::toISO8601String(dateTime) : std::string{ "" });
         }
 
         {
@@ -148,7 +148,7 @@ namespace API::Subsonic
             albumNode.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
         }
 
-        auto addClusters{ [&](std::string_view field, std::string_view clusterTypeName)
+        auto addClusters{ [&](Response::Node::Key field, std::string_view clusterTypeName)
         {
             albumNode.createEmptyArrayValue(field);
 

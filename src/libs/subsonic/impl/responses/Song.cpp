@@ -186,7 +186,7 @@ namespace API::Subsonic
             }
         }
 
-        auto addArtistLinks{ [&](std::string_view nodeName, TrackArtistLinkType type)
+        auto addArtistLinks{ [&](Response::Node::Key nodeName, TrackArtistLinkType type)
         {
             trackResponse.createEmptyArrayChild(nodeName);
 
@@ -209,7 +209,7 @@ namespace API::Subsonic
         if (release)
             trackResponse.setAttribute("displayAlbumArtist", release->getArtistDisplayName());
 
-        auto addClusters{ [&](std::string_view field, std::string_view clusterTypeName)
+        auto addClusters{ [&](Response::Node::Key field, std::string_view clusterTypeName)
         {
             trackResponse.createEmptyArrayValue(field);
 
