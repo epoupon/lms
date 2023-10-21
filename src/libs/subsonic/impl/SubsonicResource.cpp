@@ -288,12 +288,11 @@ namespace API::Subsonic
 
                 checkUserTypeIsAllowed(requestContext, itEntryPoint->second.allowedUserTypes);
 
-                Response resp{ (itEntryPoint->second.func)(requestContext) };
+                const Response resp{ (itEntryPoint->second.func)(requestContext) };
 
-                LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId << " '" << requestPath << "' handled!";
                 resp.write(response.out(), format);
                 response.setMimeType(std::string{ ResponseFormatToMimeType(format) });
-                LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId << " '" << requestPath << "' written!";
+                LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId << " '" << requestPath << "' handled!";
 
                 return;
             }

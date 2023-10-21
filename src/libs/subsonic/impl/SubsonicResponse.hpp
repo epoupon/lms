@@ -259,7 +259,7 @@ namespace API::Subsonic
         Node& createNode(Node::Key key);
         Node& createArrayNode(Node::Key key);
 
-        void write(std::ostream& os, ResponseFormat format);
+        void write(std::ostream& os, ResponseFormat format) const;
 
     private:
         static Response createResponseCommon(ProtocolVersion protocolVersion, const Error* error = nullptr);
@@ -272,8 +272,8 @@ namespace API::Subsonic
             void serializeEscapedString(std::ostream&, std::string_view str);
         };
 
-        void writeJSON(std::ostream& os);
-        void writeXML(std::ostream& os);
+        void writeJSON(std::ostream& os) const;
+        void writeXML(std::ostream& os) const;
 
         Response() = default;
         Node _root;

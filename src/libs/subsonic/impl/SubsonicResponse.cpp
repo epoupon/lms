@@ -170,7 +170,7 @@ namespace API::Subsonic
         return _root._children["subsonic-response"].createArrayChild(key);
     }
 
-    void Response::write(std::ostream& os, ResponseFormat format)
+    void Response::write(std::ostream& os, ResponseFormat format) const
     {
         switch (format)
         {
@@ -183,7 +183,7 @@ namespace API::Subsonic
         }
     }
 
-    void Response::writeXML(std::ostream& os)
+    void Response::writeXML(std::ostream& os) const
     {
         std::function<boost::property_tree::ptree(const Node&)> nodeToPropertyTree = [&](const Node& node)
             {
@@ -285,7 +285,6 @@ namespace API::Subsonic
                 first = false;
             }
 
-
             for (const auto& [key, childArrayNodes] : node._childrenArrays)
             {
                 if (!first)
@@ -370,7 +369,7 @@ namespace API::Subsonic
         os << '\"';
     }
 
-    void Response::writeJSON(std::ostream& os)
+    void Response::writeJSON(std::ostream& os) const
     {
         JsonSerializer serializer;
         serializer.serializeNode(os, _root);
