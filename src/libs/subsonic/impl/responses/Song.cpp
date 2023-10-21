@@ -221,34 +221,23 @@ namespace API::Subsonic
                 params.setTrack(track->getId());
                 params.setClusterType(clusterType->getId());
 
-                for (const ClusterId clusterId : Cluster::find(dbSession, params).results)
-                {
-                    Cluster::pointer cluster {Cluster::find(dbSession, clusterId)};
-                    if (cluster)
-                        trackResponse.addArrayValue(field, cluster->getName());
-                }
+                for (const auto& cluster : Cluster::find(dbSession, params).results)
+                    trackResponse.addArrayValue(field, std::get<std::string>(cluster));
             }
         } };
 
         addClusters("moods", "MOOD");
 
         // Genres
+        trackResponse.createEmptyArrayChild("genres");
+        if (genreClusterType)
         {
-            trackResponse.createEmptyArrayChild("genres");
+            Cluster::FindParameters params;
+            params.setTrack(track->getId());
+            params.setClusterType(genreClusterType->getId());
 
-            if (genreClusterType)
-            {
-                Cluster::FindParameters params;
-                params.setTrack(track->getId());
-                params.setClusterType(genreClusterType->getId());
-
-                for (const ClusterId clusterId : Cluster::find(dbSession, params).results)
-                {
-                    Cluster::pointer cluster{ Cluster::find(dbSession, clusterId) };
-                    if (cluster)
-                        trackResponse.addArrayChild("genres", createItemGenreNode(cluster));
-                }
-            }
+            for (const auto& cluster : Cluster::find(dbSession, params).results)
+                trackResponse.addArrayChild("genres", createItemGenreNode(std::get<std::string>(cluster)));
         }
 
         trackResponse.addChild("replayGain", createReplayGainNode(track));

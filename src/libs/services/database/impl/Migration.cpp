@@ -672,7 +672,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
 
             if (version == LMS_DATABASE_VERSION)
             {
-                LMS_LOG(DB, DEBUG) << "Lms database version " << LMS_DATABASE_VERSION << ": up to date!";
+                LMS_LOG(DB, INFO) << "Lms database version " << LMS_DATABASE_VERSION << ": up to date!";
                 return;
             }
             else if (version > LMS_DATABASE_VERSION)
@@ -683,13 +683,15 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
             if (version < migrationFunctions.begin()->first)
                 throw LmsException{ outdatedMsg };
 
-            LMS_LOG(DB, INFO) << "Migrating database from version " << version << "...";
+            LMS_LOG(DB, INFO) << "Migrating database from version " << version << " to " << version + 1 << "...";
 
             auto itMigrationFunc{ migrationFunctions.find(version) };
             assert(itMigrationFunc != std::cend(migrationFunctions));
             itMigrationFunc->second(session);
 
             VersionInfo::get(session).modify()->setVersion(++version);
+
+            LMS_LOG(DB, INFO) << "Migration complete to version " << version;
         }
     }
 }

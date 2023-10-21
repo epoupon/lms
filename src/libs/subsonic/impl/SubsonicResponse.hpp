@@ -225,9 +225,9 @@ namespace API::Subsonic
             Node& createChild(Key key);
             Node& createArrayChild(Key key);
 
-            void addChild(Key key, Node node);
+            void addChild(Key key, Node&& node);
             void createEmptyArrayChild(Key key);
-            void addArrayChild(Key key, Node node);
+            void addArrayChild(Key key, Node&& node);
             void createEmptyArrayValue(Key key);
             void addArrayValue(Key key, std::string_view value);
             void addArrayValue(Key key, long long value);
@@ -255,7 +255,7 @@ namespace API::Subsonic
         Response(Response&&) = default;
         Response& operator=(Response&&) = default;
 
-        void addNode(Node::Key key, Node node);
+        void addNode(Node::Key key, Node&& node);
         Node& createNode(Node::Key key);
         Node& createArrayNode(Node::Key key);
 

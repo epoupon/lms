@@ -75,7 +75,7 @@ namespace API::Subsonic
         for (const TrackListEntry::pointer& entry : entries)
             playlistNode.addArrayChild("entry", createSongNode(entry->getTrack(), context.dbSession, user));
 
-        response.addNode("playlist", playlistNode);
+        response.addNode("playlist", std::move(playlistNode));
 
         return response;
     }

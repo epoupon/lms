@@ -58,7 +58,7 @@ namespace API::Subsonic
         _attributes[key] = std::string{ value };
     }
 
-    void Response::Node::addChild(Key key, Node node)
+    void Response::Node::addChild(Key key, Node&& node)
     {
         assert(!_value);
         assert(_children.find(key) == std::cend(_children));
@@ -72,7 +72,7 @@ namespace API::Subsonic
         _childrenArrays.emplace(key, std::vector<Node>{});
     }
 
-    void Response::Node::addArrayChild(Key key, Node node)
+    void Response::Node::addArrayChild(Key key, Node&& node)
     {
         assert(!_value);
         assert(_children.find(key) == std::cend(_children));
@@ -155,7 +155,7 @@ namespace API::Subsonic
         return response;
     }
 
-    void Response::addNode(Node::Key key, Node node)
+    void Response::addNode(Node::Key key, Node&& node)
     {
         return _root._children["subsonic-response"].addChild(key, std::move(node));
     }
@@ -266,7 +266,7 @@ namespace API::Subsonic
             if (!first)
                 os << ',';
 
-            os << "value:";
+            os << "\"value\":";
             serializeValue(os, *node._value);
 
             first = false;

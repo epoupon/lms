@@ -133,7 +133,7 @@ namespace API::Subsonic
         }
 
         if (const Wt::WDateTime dateTime{ Service<Scrobbling::IScrobblingService>::get()->getStarredDateTime(user->getId(), release->getId()) }; dateTime.isValid())
-            albumNode.setAttribute("starred", StringUtils::toISO8601String(dateTime)); // TODO report correct date/time
+            albumNode.setAttribute("starred", StringUtils::toISO8601String(dateTime));
 
         // OpenSubsonic specific fields (must always be set)
         if (!id3)
@@ -160,33 +160,23 @@ namespace API::Subsonic
                 params.setRelease(release->getId());
                 params.setClusterType(clusterType->getId());
 
-                for (const ClusterId clusterId : Cluster::find(dbSession, params).results)
-                {
-                    Cluster::pointer cluster{ Cluster::find(dbSession, clusterId) };
-                    if (cluster)
-                        albumNode.addArrayValue(field, cluster->getName());
-                }
+                for (const auto& cluster : Cluster::find(dbSession, params).results)
+                    albumNode.addArrayValue(field, std::get<std::string>(cluster));
             }
         } };
 
         addClusters("moods", "MOOD");
 
         // Genres
+        albumNode.createEmptyArrayChild("genres");
+        if (genreClusterType)
         {
-            albumNode.createEmptyArrayChild("genres");
-            if (genreClusterType)
-            {
-                Cluster::FindParameters params;
-                params.setRelease(release->getId());
-                params.setClusterType(genreClusterType->getId());
+            Cluster::FindParameters params;
+            params.setRelease(release->getId());
+            params.setClusterType(genreClusterType->getId());
 
-                for (const ClusterId clusterId : Cluster::find(dbSession, params).results)
-                {
-                    Cluster::pointer cluster{ Cluster::find(dbSession, clusterId) };
-                    if (cluster)
-                        albumNode.addArrayChild("genres", createItemGenreNode(cluster));
-                }
-            }
+            for (const auto& cluster : Cluster::find(dbSession, params).results)
+                albumNode.addArrayChild("genres", createItemGenreNode(std::get<std::string>(cluster)));
         }
 
         albumNode.createEmptyArrayChild("artists");
