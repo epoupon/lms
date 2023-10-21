@@ -53,7 +53,6 @@ namespace Database
     {
     public:
         Session(Db& database);
-        ~Session();
 
         [[nodiscard]] UniqueTransaction createUniqueTransaction();
         [[nodiscard]] SharedTransaction createSharedTransaction();
