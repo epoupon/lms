@@ -54,7 +54,7 @@ namespace API::Subsonic
             std::size_t count{ getParameterAs<std::size_t>(context.parameters, "count").value_or(20) };
 
             Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-            Response::Node& artistInfoNode{ response.createNode(id3 ? "artistInfo2" : "artistInfo") };
+            Response::Node& artistInfoNode{ response.createNode(id3 ? Response::Node::Key{ "artistInfo2" } : Response::Node::Key{ "artistInfo" }) };
 
             {
                 auto transaction{ context.dbSession.createSharedTransaction() };
@@ -236,7 +236,7 @@ namespace API::Subsonic
                 throw UserNotAuthorizedError{};
 
             Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-            Response::Node& similarSongsNode{ response.createNode(id3 ? "similarSongs2" : "similarSongs") };
+            Response::Node& similarSongsNode{ response.createNode(id3 ? Response::Node::Key{ "similarSongs2" } : Response::Node::Key{ "similarSongs" }) };
             for (const TrackId trackId : tracks)
             {
                 const Track::pointer track{ Track::find(context.dbSession, trackId) };

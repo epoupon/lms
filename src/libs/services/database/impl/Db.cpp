@@ -26,73 +26,94 @@
 #include "services/database/User.hpp"
 #include "utils/Logger.hpp"
 
-namespace Database {
-
-// Session living class handling the database and the login
-Db::Db(const std::filesystem::path& dbPath, std::size_t connectionCount)
+namespace Database
 {
-	LMS_LOG(DB, INFO) << "Creating connection pool on file " << dbPath.string();
+    namespace
+    {
+        class Connection : public Wt::Dbo::backend::Sqlite3
+        {
+        public:
+            Connection(const std::filesystem::path& dbPath)
+                : Wt::Dbo::backend::Sqlite3{ dbPath.string() }
+                , _dbPath{ dbPath }
+            {
+                prepare();
+            }
 
-	std::unique_ptr<Wt::Dbo::backend::Sqlite3> connection {std::make_unique<Wt::Dbo::backend::Sqlite3>(dbPath.string())};
-//	connection->setProperty("show-queries", "true");
-	connection->executeSql("pragma journal_mode=WAL");
-	connection->executeSql("pragma synchronous=normal");
+        private:
+            Connection(const Connection&) = delete;
+            Connection& operator=(const Connection&) = delete;
 
-	auto connectionPool = std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), connectionCount);
-	connectionPool->setTimeout(std::chrono::seconds(10));
+            std::unique_ptr<SqlConnection> clone() const override
+            {
+                return std::make_unique<Connection>(_dbPath);
+            }
 
-	_connectionPool = std::move(connectionPool);
-}
+            void prepare()
+            {
+                LMS_LOG(DB, DEBUG) << "Setting per-connection settings...";
+                executeSql("pragma journal_mode=WAL");
+                executeSql("pragma synchronous=normal");
+                executeSql("pragma analysis_limit=1000"); // to help make analyze command faster
+                LMS_LOG(DB, DEBUG) << "Setting per-connection settings done!";
+            }
 
-Db::~Db()
-{
-	LMS_LOG(DB, DEBUG) << "Optimizing db...";
-	executeSql("pragma optimize");
-	LMS_LOG(DB, DEBUG) << "Optimizing db DONE";
-}
+            std::filesystem::path _dbPath;
+        };
+    }
 
-void
-Db::executeSql(const std::string& sql)
-{
-	ScopedConnection connection {*_connectionPool};
-	connection->executeSql(sql);
-}
+    // Session living class handling the database and the login
+    Db::Db(const std::filesystem::path& dbPath, std::size_t connectionCount)
+    {
+        LMS_LOG(DB, INFO) << "Creating connection pool on file " << dbPath.string();
 
-Session&
-Db::getTLSSession()
-{
-	static thread_local Session* tlsSession {};
+        auto connection{ std::make_unique<Connection>(dbPath.string()) };
+        //	connection->setProperty("show-queries", "true");
 
-	if (!tlsSession)
-	{
-		auto newSession {std::make_unique<Session>(*this)};
-		tlsSession = newSession.get();
+        auto connectionPool{ std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), connectionCount) };
+        connectionPool->setTimeout(std::chrono::seconds{ 10 });
 
-		{
-			std::scoped_lock lock {_tlsSessionsMutex};
-			_tlsSessions.push_back(std::move(newSession));
-		}
-	}
+        _connectionPool = std::move(connectionPool);
+    }
 
-	return *tlsSession;
-}
+    void Db::executeSql(const std::string& sql)
+    {
+        ScopedConnection connection{ *_connectionPool };
+        connection->executeSql(sql);
+    }
 
-Db::ScopedConnection::ScopedConnection(Wt::Dbo::SqlConnectionPool& pool)
-: _connectionPool {pool}
-, _connection {_connectionPool.getConnection()}
-{
-}
+    Session& Db::getTLSSession()
+    {
+        static thread_local Session* tlsSession{};
 
-Db::ScopedConnection::~ScopedConnection()
-{
-	_connectionPool.returnConnection(std::move(_connection));
-}
+        if (!tlsSession)
+        {
+            auto newSession{ std::make_unique<Session>(*this) };
+            tlsSession = newSession.get();
 
-Wt::Dbo::SqlConnection* Db::ScopedConnection::operator->() const
-{
-	return _connection.get();
-}
+            {
+                std::scoped_lock lock{ _tlsSessionsMutex };
+                _tlsSessions.push_back(std::move(newSession));
+            }
+        }
+
+        return *tlsSession;
+    }
+
+    Db::ScopedConnection::ScopedConnection(Wt::Dbo::SqlConnectionPool& pool)
+        : _connectionPool{ pool }
+        , _connection{ _connectionPool.getConnection() }
+    {
+    }
+
+    Db::ScopedConnection::~ScopedConnection()
+    {
+        _connectionPool.returnConnection(std::move(_connection));
+    }
+
+    Wt::Dbo::SqlConnection* Db::ScopedConnection::operator->() const
+    {
+        return _connection.get();
+    }
 
 } // namespace Database
-
-

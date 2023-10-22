@@ -21,6 +21,7 @@
 
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <vector>
 
 #include <Wt/Dbo/Dbo.h>
@@ -58,10 +59,12 @@ namespace Database {
         Cluster() = default;
 
         // Find utility
-        static std::size_t				getCount(Session& session);
-        static RangeResults<ClusterId>	find(Session& session, const FindParameters& range);
-        static pointer					find(Session& session, ClusterId id);
-        static RangeResults<ClusterId>	findOrphans(Session& session, Range range);
+        // As clusters only have a name, this is an optim to directly get the cluster names
+        using ClusterFindResult = std::tuple<ClusterId, std::string>;
+        static std::size_t				        getCount(Session& session);
+        static RangeResults<ClusterFindResult>	find(Session& session, const FindParameters& range);
+        static pointer					        find(Session& session, ClusterId id);
+        static RangeResults<ClusterId>      	findOrphans(Session& session, Range range);
 
         // Accessors
         const std::string& getName() const { return _name; }

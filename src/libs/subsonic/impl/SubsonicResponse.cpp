@@ -20,12 +20,8 @@
 #include "SubsonicResponse.hpp"
 
 #include <cassert>
-#include <Wt/Json/Array.h>
-#include <Wt/Json/Object.h>
-#include <Wt/Json/Value.h>
-#include <Wt/Json/Serializer.h>
-
-#include <boost/property_tree/json_parser.hpp>
+#include <cmath>
+#include <climits>
 #include <boost/property_tree/xml_parser.hpp>
 
 #include "utils/Exception.hpp"
@@ -57,59 +53,66 @@ namespace API::Subsonic
         _value = value;
     }
 
-    void Response::Node::setAttribute(std::string_view key, std::string_view value)
+    void Response::Node::setAttribute(Key key, std::string_view value)
     {
-        _attributes[std::string{ key }] = std::string{ value };
+        _attributes[key] = std::string{ value };
     }
 
-    void Response::Node::addChild(const std::string& key, Node node)
+    void Response::Node::addChild(Key key, Node&& node)
     {
         assert(!_value);
-        _children[key].emplace_back(std::move(node));
+        assert(_children.find(key) == std::cend(_children));
+        _children[key] = std::move(node);
     }
 
-    void Response::Node::createEmptyArrayChild(std::string_view key)
+    void Response::Node::createEmptyArrayChild(Key key)
     {
         assert(!_value);
+        assert(_children.find(key) == std::cend(_children));
         _childrenArrays.emplace(key, std::vector<Node>{});
     }
 
-    void Response::Node::addArrayChild(std::string_view key, Node node)
+    void Response::Node::addArrayChild(Key key, Node&& node)
     {
         assert(!_value);
-        _childrenArrays[std::string{ key }].emplace_back(std::move(node));
+        assert(_children.find(key) == std::cend(_children));
+        _childrenArrays[key].emplace_back(std::move(node));
     }
 
-    void Response::Node::createEmptyArrayValue(std::string_view key)
+    void Response::Node::createEmptyArrayValue(Key key)
     {
         assert(!_value);
+        assert(_children.find(key) == std::cend(_children));
         _childrenValues.emplace(key, ValuesType{});
     }
 
-    void Response::Node::addArrayValue(std::string_view key, std::string_view value)
+    void Response::Node::addArrayValue(Key key, std::string_view value)
     {
         assert(!_value);
-        auto& values{ _childrenValues[std::string{ key }] };
+        assert(_children.find(key) == std::cend(_children));
+        auto& values{ _childrenValues[key] };
         values.push_back(std::string{ value });
         assert(std::all_of(std::cbegin(values) + 1, std::cend(values), [&](const ValueType& value) {return value.index() == values.front().index();}));
     }
 
-    void Response::Node::addArrayValue(std::string_view key, long long value)
+    void Response::Node::addArrayValue(Key key, long long value)
     {
         assert(!_value);
-        auto& values{ _childrenValues[std::string{ key }] };
+        auto& values{ _childrenValues[key] };
         values.push_back(value);
         assert(std::all_of(std::cbegin(values) + 1, std::cend(values), [&](const ValueType& value) {return value.index() == values.front().index();}));
     }
 
-    Response::Node& Response::Node::createChild(const std::string& key)
+    Response::Node& Response::Node::createChild(Key key)
     {
-        _children[key].emplace_back();
-        return _children[key].back();
+        assert(!_value);
+        return _children[key];
     }
 
-    Response::Node& Response::Node::createArrayChild(const std::string& key)
+    Response::Node& Response::Node::createArrayChild(Key key)
     {
+        assert(!_value);
+        assert(_children.find(key) == std::cend(_children));
         _childrenArrays[key].emplace_back();
         return _childrenArrays[key].back();
     }
@@ -152,22 +155,22 @@ namespace API::Subsonic
         return response;
     }
 
-    void Response::addNode(const std::string& key, Node node)
+    void Response::addNode(Node::Key key, Node&& node)
     {
-        return _root._children["subsonic-response"].front().addChild(key, std::move(node));
+        return _root._children["subsonic-response"].addChild(key, std::move(node));
     }
 
-    Response::Node& Response::createNode(const std::string& key)
+    Response::Node& Response::createNode(Node::Key key)
     {
-        return _root._children["subsonic-response"].front().createChild(key);
+        return _root._children["subsonic-response"].createChild(key);
     }
 
-    Response::Node& Response::createArrayNode(const std::string& key)
+    Response::Node& Response::createArrayNode(Node::Key key)
     {
-        return _root._children["subsonic-response"].front().createArrayChild(key);
+        return _root._children["subsonic-response"].createArrayChild(key);
     }
 
-    void Response::write(std::ostream& os, ResponseFormat format)
+    void Response::write(std::ostream& os, ResponseFormat format) const
     {
         switch (format)
         {
@@ -180,22 +183,22 @@ namespace API::Subsonic
         }
     }
 
-    void Response::writeXML(std::ostream& os)
+    void Response::writeXML(std::ostream& os) const
     {
         std::function<boost::property_tree::ptree(const Node&)> nodeToPropertyTree = [&](const Node& node)
             {
                 boost::property_tree::ptree res;
 
-                for (auto itAttribute : node._attributes)
+                for (const auto& [key, value] : node._attributes)
                 {
-                    if (std::holds_alternative<std::string>(itAttribute.second))
-                        res.put("<xmlattr>." + itAttribute.first, std::get<std::string>(itAttribute.second));
-                    else if (std::holds_alternative<bool>(itAttribute.second))
-                        res.put("<xmlattr>." + itAttribute.first, std::get<bool>(itAttribute.second));
-                    else if (std::holds_alternative<float>(itAttribute.second))
-                        res.put("<xmlattr>." + itAttribute.first, std::get<float>(itAttribute.second));
-                    else if (std::holds_alternative<long long>(itAttribute.second))
-                        res.put("<xmlattr>." + itAttribute.first, std::get<long long>(itAttribute.second));
+                    if (std::holds_alternative<std::string>(value))
+                        res.put("<xmlattr>." + std::string{ key.get() }, std::get<std::string>(value));
+                    else if (std::holds_alternative<bool>(value))
+                        res.put("<xmlattr>." + std::string{ key.get() }, std::get<bool>(value));
+                    else if (std::holds_alternative<float>(value))
+                        res.put("<xmlattr>." + std::string{ key.get() }, std::get<float>(value));
+                    else if (std::holds_alternative<long long>(value))
+                        res.put("<xmlattr>." + std::string{ key.get() }, std::get<long long>(value));
                 }
 
                 auto valueToPropertyTree = [](const Node::ValueType& value)
@@ -215,22 +218,21 @@ namespace API::Subsonic
                 }
                 else
                 {
-                    for (const auto& [key, childNodes] : node._children)
+                    for (const auto& [key, childNode] : node._children)
                     {
-                        for (const Node& childNode : childNodes)
-                            res.add_child(key, nodeToPropertyTree(childNode));
+                        res.add_child(std::string{ key.get() }, nodeToPropertyTree(childNode));
                     }
 
                     for (const auto& [key, childArrayNodes] : node._childrenArrays)
                     {
                         for (const Node& childNode : childArrayNodes)
-                            res.add_child(key, nodeToPropertyTree(childNode));
+                            res.add_child(std::string{ key.get() }, nodeToPropertyTree(childNode));
                     }
 
                     for (const auto& [key, childArrayValues] : node._childrenValues)
                     {
                         for (const Response::Node::ValueType& value : childArrayValues)
-                            res.add_child(key, valueToPropertyTree(value));
+                            res.add_child(std::string{ key.get() }, valueToPropertyTree(value));
                     }
                 }
 
@@ -241,63 +243,136 @@ namespace API::Subsonic
         boost::property_tree::write_xml(os, root);
     }
 
-    void Response::writeJSON(std::ostream& os)
+    void Response::JsonSerializer::serializeNode(std::ostream& os, const Response::Node& node)
     {
-        namespace Json = Wt::Json;
+        os << '{';
 
-        std::function<Json::Object(const Response::Node&)> nodeToJsonObject = [&](const Response::Node& node)
+        bool first{ true };
+
+        for (const auto& [key, value] : node._attributes)
+        {
+            if (!first)
+                os << ',';
+
+            serializeEscapedString(os, key.get());
+            os << ':';
+            serializeValue(os, value);
+
+            first = false;
+        }
+
+        if (node._value)
+        {
+            if (!first)
+                os << ',';
+
+            os << "\"value\":";
+            serializeValue(os, *node._value);
+
+            first = false;
+        }
+        else
+        {
+            for (const auto& [key, childNode] : node._children)
             {
-                Json::Object res;
+                if (!first)
+                    os << ',';
 
-                auto valueToJsonValue{ [](const Node::ValueType& value) -> Json::Value
+                serializeEscapedString(os, key.get());
+                os << ':';
+                serializeNode(os, childNode);
+
+                first = false;
+            }
+
+            for (const auto& [key, childArrayNodes] : node._childrenArrays)
+            {
+                if (!first)
+                    os << ',';
+
+                serializeEscapedString(os, key.get());
+                os << ":[";
+
+                bool firstChild{ true };
+                for (const Response::Node& childNode : childArrayNodes)
                 {
-                    Json::Value res;
-                    std::visit([&](const auto& rawValue)
-                    {
-                        res = Json::Value{ rawValue };
-                    }, value);
-                    return res;
-                } };
+                    if (!firstChild)
+                        os << ",";
 
-                for (auto itAttribute : node._attributes)
-                    res[itAttribute.first] = valueToJsonValue(itAttribute.second);
-
-                if (node._value)
-                {
-                    res["value"] = valueToJsonValue(*node._value);
+                    serializeNode(os, childNode);
+                    firstChild = false;
                 }
-                else
+                os << ']';
+
+                first = false;
+            }
+
+            for (const auto& [key, childValues] : node._childrenValues)
+            {
+                if (!first)
+                    os << ',';
+
+                serializeEscapedString(os, key.get());
+                os << ":[";
+
+                bool firstChild{ true };
+                for (const Node::ValueType& childValue : childValues)
                 {
-                    for (const auto& [key, childNodes] : node._children)
-                    {
-                        for (const Response::Node& childNode : childNodes)
-                            res[key] = nodeToJsonObject(childNode);
-                    }
+                    if (!firstChild)
+                        os << ",";
 
-                    for (const auto& [key, childArrayNodes] : node._childrenArrays)
-                    {
-                        Json::Array array;
-                        for (const Response::Node& childNode : childArrayNodes)
-                            array.emplace_back(nodeToJsonObject(childNode));
+                    serializeValue(os, childValue);
 
-                        res[key] = std::move(array);
-                    }
-
-                    for (const auto& [key, childValues] : node._childrenValues)
-                    {
-                        Json::Array array;
-                        for (const Node::ValueType& childValue : childValues)
-                            array.emplace_back(valueToJsonValue(childValue));
-
-                        res[key] = std::move(array);
-                    }
+                    firstChild = false;
                 }
+                os << ']';
 
-                return res;
-            };
+                first = false;
+            }
+        }
 
-        Json::Object root{ nodeToJsonObject(_root) };
-        os << Json::serialize(root);
+        os << '}';
+    }
+
+    void Response::JsonSerializer::serializeValue(std::ostream& os, const Node::ValueType& value)
+    {
+        if (std::holds_alternative<std::string>(value))
+        {
+            serializeEscapedString(os, std::get<std::string>(value));
+        }
+        else if (std::holds_alternative<bool>(value))
+        {
+            os << (std::get<bool>(value) ? "true" : "false");
+        }
+        else if (std::holds_alternative<float>(value))
+        {
+            const float d{ std::get<float>(value) };
+            if (std::isnan(d) || std::fabs(d) == std::numeric_limits<float>::infinity())
+                os << "null";
+            else
+                os << d;
+        }
+        else if (std::holds_alternative<long long>(value))
+        {
+            os << std::get<long long>(value);
+        }
+        else
+        {
+            assert(false);
+        }
+    }
+
+    void Response::JsonSerializer::serializeEscapedString(std::ostream& os, std::string_view str)
+    {
+        os << '\"';
+        StringUtils::writeJSEscapedString(os, str);
+        os << '\"';
+    }
+
+    void Response::writeJSON(std::ostream& os) const
+    {
+        JsonSerializer serializer;
+        serializer.serializeNode(os, _root);
     }
 
 } // namespace

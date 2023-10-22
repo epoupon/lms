@@ -191,17 +191,30 @@ namespace API::Subsonic
         class Node
         {
         public:
-            void setAttribute(std::string_view key, std::string_view value);
+            class Key
+            {
+            public:
+                template<std::size_t N>
+                constexpr Key(const char (&str)[N]) : _str{ str } {}
+                constexpr std::string_view get() const { return _str; }
+
+                bool constexpr operator<(const Key& other) const { return _str < other._str; }
+
+            private:
+                const std::string_view _str;
+            };
+
+            void setAttribute(Key key, std::string_view value);
 
             template <typename T, std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
-            void setAttribute(std::string_view key, T value)
+            void setAttribute(Key key, T value)
             {
                 if constexpr (std::is_same<bool, T>::value)
-                    _attributes[std::string{ key }] = value;
+                    _attributes[key] = value;
                 else if constexpr (std::is_floating_point<T>::value)
-                    _attributes[std::string{ key }] = static_cast<float>(value);
+                    _attributes[key] = static_cast<float>(value);
                 else if constexpr (std::is_integral<T>::value)
-                    _attributes[std::string{ key }] = static_cast<long long>(value);
+                    _attributes[key] = static_cast<long long>(value);
                 else
                     static_assert("Unhandled type");
             }
@@ -209,28 +222,28 @@ namespace API::Subsonic
             // A Node has either a single value or an array of values or some children
             void setValue(std::string_view value);
             void setValue(long long value);
-            Node& createChild(const std::string& key);
-            Node& createArrayChild(const std::string& key);
+            Node& createChild(Key key);
+            Node& createArrayChild(Key key);
 
-            void addChild(const std::string& key, Node node);
-            void createEmptyArrayChild(std::string_view key);
-            void addArrayChild(std::string_view key, Node node);
-            void createEmptyArrayValue(std::string_view key);
-            void addArrayValue(std::string_view key, std::string_view value);
-            void addArrayValue(std::string_view key, long long value);
+            void addChild(Key key, Node&& node);
+            void createEmptyArrayChild(Key key);
+            void addArrayChild(Key key, Node&& node);
+            void createEmptyArrayValue(Key key);
+            void addArrayValue(Key key, std::string_view value);
+            void addArrayValue(Key key, long long value);
 
         private:
             void setVersionAttribute(ProtocolVersion version);
 
             friend class Response;
             using ValueType = std::variant<std::string, bool, float, long long>;
-            std::map<std::string, ValueType> _attributes;
+            std::map<Key, ValueType> _attributes;
             std::optional<ValueType> _value;
-            std::map<std::string, std::vector<Node>> _children;
-            std::map<std::string, std::vector<Node>> _childrenArrays;
+            std::map<Key, Node> _children;
+            std::map<Key, std::vector<Node>> _childrenArrays;
 
             using ValuesType = std::vector<ValueType>;
-            std::map<std::string, ValuesType> _childrenValues;
+            std::map<Key, ValuesType> _childrenValues;
         };
 
         static Response createOkResponse(ProtocolVersion protocolVersion);
@@ -242,16 +255,25 @@ namespace API::Subsonic
         Response(Response&&) = default;
         Response& operator=(Response&&) = default;
 
-        void addNode(const std::string& key, Node node);
-        Node& createNode(const std::string& key);
-        Node& createArrayNode(const std::string& key);
+        void addNode(Node::Key key, Node&& node);
+        Node& createNode(Node::Key key);
+        Node& createArrayNode(Node::Key key);
 
-        void write(std::ostream& os, ResponseFormat format);
+        void write(std::ostream& os, ResponseFormat format) const;
 
     private:
         static Response createResponseCommon(ProtocolVersion protocolVersion, const Error* error = nullptr);
-        void writeJSON(std::ostream& os);
-        void writeXML(std::ostream& os);
+
+        class JsonSerializer
+        {
+            public:
+            void serializeNode(std::ostream& os, const Node& node);
+            void serializeValue(std::ostream& os, const Node::ValueType& node);
+            void serializeEscapedString(std::ostream&, std::string_view str);
+        };
+
+        void writeJSON(std::ostream& os) const;
+        void writeXML(std::ostream& os) const;
 
         Response() = default;
         Node _root;

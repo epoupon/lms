@@ -60,7 +60,7 @@ DatabaseFixture::SetUpTestCase()
 	{
 		Database::Session s {_tmpDb->getDb()};
 		s.prepareTables();
-		s.optimize();
+		s.analyze();
 
 		// remove default created entries
 		{

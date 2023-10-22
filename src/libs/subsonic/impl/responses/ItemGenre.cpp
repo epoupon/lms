@@ -23,11 +23,11 @@
 
 namespace API::Subsonic
 {
-    Response::Node createItemGenreNode(const Database::Cluster::pointer& cluster)
+    Response::Node createItemGenreNode(std::string_view name)
     {
         Response::Node genreNode;
 
-        genreNode.setAttribute("name", cluster->getName());
+        genreNode.setAttribute("name", name);
 
         return genreNode;
     }

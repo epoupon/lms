@@ -238,7 +238,10 @@ int main(int argc, char* argv[])
 		{
 			Database::Session session {database};
 			session.prepareTables();
-			session.optimize();
+
+			 // force optimize in case scanner aborted during a large import:
+			 // queries may be too slow to even be able to relaunch a scan sing the web interface
+			session.analyze();
 		}
 
 		UserInterface::LmsApplicationManager appManager;

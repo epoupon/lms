@@ -299,8 +299,7 @@ ScannerService::scan(bool forceScan)
 
 	LMS_LOG(DBUPDATER, INFO) << "Scan " << (_abortScan ? "aborted" : "complete") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), features fetched = " << stats.featuresFetched << ",  duplicates = " << stats.duplicates.size();
 
-	// TODO make it a scan step
-	_dbSession.optimize();
+	_dbSession.analyze();
 
 	if (!_abortScan)
 	{

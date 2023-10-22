@@ -654,7 +654,6 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
             {41, migrateFromV41},
         };
 
-        while (1)
         {
             auto uniqueTransaction{ session.createUniqueTransaction() };
 
@@ -670,26 +669,24 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
                 throw LmsException{ outdatedMsg };
             }
 
-            if (version == LMS_DATABASE_VERSION)
-            {
-                LMS_LOG(DB, DEBUG) << "Lms database version " << LMS_DATABASE_VERSION << ": up to date!";
-                return;
-            }
-            else if (version > LMS_DATABASE_VERSION)
-            {
+            if (version > LMS_DATABASE_VERSION)
                 throw LmsException{ "Server binary outdated, please upgrade it to handle this database" };
-            }
 
             if (version < migrationFunctions.begin()->first)
                 throw LmsException{ outdatedMsg };
 
-            LMS_LOG(DB, INFO) << "Migrating database from version " << version << "...";
+            while (version < LMS_DATABASE_VERSION)
+            {
+                LMS_LOG(DB, INFO) << "Migrating database from version " << version << " to " << version + 1 << "...";
 
-            auto itMigrationFunc{ migrationFunctions.find(version) };
-            assert(itMigrationFunc != std::cend(migrationFunctions));
-            itMigrationFunc->second(session);
+                auto itMigrationFunc{ migrationFunctions.find(version) };
+                assert(itMigrationFunc != std::cend(migrationFunctions));
+                itMigrationFunc->second(session);
 
-            VersionInfo::get(session).modify()->setVersion(++version);
+                VersionInfo::get(session).modify()->setVersion(++version);
+
+                LMS_LOG(DB, INFO) << "Migration complete to version " << version;
+            }
         }
     }
 }

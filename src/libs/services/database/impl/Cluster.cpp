@@ -32,11 +32,11 @@ namespace Database
 {
     namespace
     {
-        Wt::Dbo::Query<ClusterId> createQuery(Session& session, const Cluster::FindParameters& params)
+        Wt::Dbo::Query<Cluster::ClusterFindResult> createQuery(Session& session, const Cluster::FindParameters& params)
         {
             session.checkSharedLocked();
 
-            auto query{ session.getDboSession().query<ClusterId>("SELECT DISTINCT c.id FROM cluster c") };
+            auto query{ session.getDboSession().query<Cluster::ClusterFindResult>("SELECT DISTINCT c.id,c.name FROM cluster c") };
 
             if (params.track.isValid() || params.release.isValid())
             {
@@ -74,7 +74,7 @@ namespace Database
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM cluster");
     }
 
-    RangeResults<ClusterId> Cluster::find(Session& session, const FindParameters& params)
+    RangeResults<Cluster::ClusterFindResult> Cluster::find(Session& session, const FindParameters& params)
     {
         session.checkSharedLocked();
         auto query{ createQuery(session, params) };
