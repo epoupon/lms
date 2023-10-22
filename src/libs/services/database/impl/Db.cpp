@@ -26,18 +26,49 @@
 #include "services/database/User.hpp"
 #include "utils/Logger.hpp"
 
-namespace Database {
+namespace Database
+{
+    namespace
+    {
+        class Connection : public Wt::Dbo::backend::Sqlite3
+        {
+        public:
+            Connection(const std::filesystem::path& dbPath)
+                : Wt::Dbo::backend::Sqlite3{ dbPath.string() }
+                , _dbPath{ dbPath }
+            {
+                prepare();
+            }
+
+        private:
+            Connection(const Connection&) = delete;
+            Connection& operator=(const Connection&) = delete;
+
+            std::unique_ptr<SqlConnection> clone() const override
+            {
+                return std::make_unique<Connection>(_dbPath);
+            }
+
+            void prepare()
+            {
+                LMS_LOG(DB, DEBUG) << "Setting per-connection settings...";
+                executeSql("pragma journal_mode=WAL");
+                executeSql("pragma synchronous=normal");
+                executeSql("pragma analysis_limit=1000"); // to help make analyze command faster
+                LMS_LOG(DB, DEBUG) << "Setting per-connection settings done!";
+            }
+
+            std::filesystem::path _dbPath;
+        };
+    }
 
     // Session living class handling the database and the login
     Db::Db(const std::filesystem::path& dbPath, std::size_t connectionCount)
     {
         LMS_LOG(DB, INFO) << "Creating connection pool on file " << dbPath.string();
 
-        auto connection{ std::make_unique<Wt::Dbo::backend::Sqlite3>(dbPath.string()) };
+        auto connection{ std::make_unique<Connection>(dbPath.string()) };
         //	connection->setProperty("show-queries", "true");
-        connection->executeSql("pragma journal_mode=WAL");
-        connection->executeSql("pragma synchronous=normal");
-        connection->executeSql("pragma analysis_limit=1000"); // to help make analyze command faster
 
         auto connectionPool{ std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), connectionCount) };
         connectionPool->setTimeout(std::chrono::seconds{ 10 });
@@ -86,5 +117,3 @@ namespace Database {
     }
 
 } // namespace Database
-
-
