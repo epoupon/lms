@@ -241,6 +241,8 @@
 <message id="Lms.Settings.audio">音频</message>
 <message id="Lms.Settings.audio-settings-are-local">这些音频设置仅保存在您的本地浏览器！</message>
 <message id="Lms.Settings.change-password">更改密码</message>
+
+
 <message id="Lms.Settings.demo-cannot-save">使用演示账号时不能保存！</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> 设置</message>
 <message id="Lms.Settings.password-bad">无效密码</message>
@@ -265,7 +267,6 @@
 <message id="Lms.Settings.subsonic-api">Subsonic 应用程序接口</message>
 <message id="Lms.Settings.transcode">转码</message>
 <message id="Lms.Settings.transcode-bitrate">转码比特率</message>
-<message id="Lms.Settings.transcode-enable">开启转码</message>
 <message id="Lms.Settings.transcode-format">转码格式</message>
 <message id="Lms.Settings.transcode-format.matroska_opus">Matroska/Opus</message>
 <message id="Lms.Settings.transcode-format.mp3">MP3</message>

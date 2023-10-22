@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "services/database/Object.hpp"
+#include <string_view>
 #include "SubsonicResponse.hpp"
 
 namespace Database
@@ -29,5 +29,5 @@ namespace Database
 
 namespace API::Subsonic
 {
-    Response::Node createItemGenreNode(const Database::ObjectPtr<Database::Cluster>& cluster);
+    Response::Node createItemGenreNode(std::string_view name);
 }

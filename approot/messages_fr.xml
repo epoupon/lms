@@ -241,6 +241,8 @@
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">Ces paramètres audio sont locaux à votre navigateur !</message>
 <message id="Lms.Settings.change-password">Changement de mot de passe</message>
+<message id="Lms.Settings.default-transcode-bitrate">Bitrate par defaut du transcodage</message>
+<message id="Lms.Settings.default-transcode-format">Format par defaut du transcodage</message>
 <message id="Lms.Settings.demo-cannot-save">Impossible de sauvegarder en utilisant un compte de démo !</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Paramètres</message>
 <message id="Lms.Settings.password-bad">Mauvais mot de passe</message>
@@ -265,7 +267,6 @@
 <message id="Lms.Settings.subsonic-api">API Subsonic</message>
 <message id="Lms.Settings.transcode">Transcodage</message>
 <message id="Lms.Settings.transcode-bitrate">Bitrate du transcodage</message>
-<message id="Lms.Settings.transcode-enable">Activer le transcodage</message>
 <message id="Lms.Settings.transcode-format">Format du transcodage</message>
 <message id="Lms.Settings.transcode-format.matroska_opus">Matroska/Opus</message>
 <message id="Lms.Settings.transcode-format.mp3">MP3</message>

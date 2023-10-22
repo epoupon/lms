@@ -120,25 +120,28 @@ namespace API::Subsonic
             trackResponse.setAttribute("suffix", extension.string().substr(1));
         }
 
-        if (user->getSubsonicTranscodeEnable())
-            trackResponse.setAttribute("transcodedSuffix", formatToSuffix(user->getSubsonicTranscodeFormat()));
+        trackResponse.setAttribute("transcodedSuffix", formatToSuffix(user->getSubsonicDefaultTranscodeFormat()));
 
         trackResponse.setAttribute("coverArt", idToString(track->getId()));
 
         const std::vector<Artist::pointer>& artists{ track->getArtists({TrackArtistLinkType::Artist}) };
         if (!artists.empty())
         {
-            trackResponse.setAttribute("artist", Utils::joinArtistNames(artists));
+            if (!track->getArtistDisplayName().empty())
+                trackResponse.setAttribute("artist", track->getArtistDisplayName());
+            else
+                trackResponse.setAttribute("artist", Utils::joinArtistNames(artists));
 
             if (artists.size() == 1)
                 trackResponse.setAttribute("artistId", idToString(artists.front()->getId()));
         }
 
-        if (track->getRelease())
+        Release::pointer release{ track->getRelease() };
+        if (release)
         {
-            trackResponse.setAttribute("album", track->getRelease()->getName());
-            trackResponse.setAttribute("albumId", idToString(track->getRelease()->getId()));
-            trackResponse.setAttribute("parent", idToString(track->getRelease()->getId()));
+            trackResponse.setAttribute("album", release->getName());
+            trackResponse.setAttribute("albumId", idToString(release->getId()));
+            trackResponse.setAttribute("parent", idToString(release->getId()));
         }
 
         trackResponse.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count());
@@ -149,7 +152,8 @@ namespace API::Subsonic
             trackResponse.setAttribute("starred", StringUtils::toISO8601String(dateTime));
 
         // Report the first GENRE for this track
-        if (ClusterType::pointer genreClusterType{ ClusterType::find(dbSession, "GENRE") })
+        const ClusterType::pointer genreClusterType{ ClusterType::find(dbSession, "GENRE") };
+        if (genreClusterType)
         {
             auto clusters{ track->getClusterGroups({genreClusterType}, 1) };
             if (!clusters.empty() && !clusters.front().empty())
@@ -158,6 +162,11 @@ namespace API::Subsonic
 
         // OpenSubsonic specific fields (must always be set)
         trackResponse.setAttribute("mediaType", "song");
+
+        {
+            const Wt::WDateTime dateTime{ Service<Scrobbling::IScrobblingService>::get()->getLastListenDateTime(user->getId(), track->getId()) };
+            trackResponse.setAttribute("played", dateTime.isValid() ? StringUtils::toISO8601String(dateTime) : "");
+        }
 
         {
             std::optional<UUID> mbid{ track->getRecordingMBID() };
@@ -178,7 +187,7 @@ namespace API::Subsonic
             }
         }
 
-        auto addArtistLinks{ [&](std::string_view nodeName, TrackArtistLinkType type)
+        auto addArtistLinks{ [&](Response::Node::Key nodeName, TrackArtistLinkType type)
         {
             trackResponse.createEmptyArrayChild(nodeName);
 
@@ -195,9 +204,13 @@ namespace API::Subsonic
         } };
 
         addArtistLinks("artists", TrackArtistLinkType::Artist);
-        addArtistLinks("albumartists", TrackArtistLinkType::ReleaseArtist);
+        trackResponse.setAttribute("displayArtist", track->getArtistDisplayName());
 
-        auto addClusters{ [&](std::string_view field, std::string_view clusterTypeName)
+        addArtistLinks("albumartists", TrackArtistLinkType::ReleaseArtist);
+        if (release)
+            trackResponse.setAttribute("displayAlbumArtist", release->getArtistDisplayName());
+
+        auto addClusters{ [&](Response::Node::Key field, std::string_view clusterTypeName)
         {
             trackResponse.createEmptyArrayValue(field);
 
@@ -208,35 +221,23 @@ namespace API::Subsonic
                 params.setTrack(track->getId());
                 params.setClusterType(clusterType->getId());
 
-                for (const ClusterId clusterId : Cluster::find(dbSession, params).results)
-                {
-                    Cluster::pointer cluster {Cluster::find(dbSession, clusterId)};
-                    if (cluster)
-                        trackResponse.addArrayValue(field, cluster->getName());
-                }
+                for (const auto& cluster : Cluster::find(dbSession, params).results)
+                    trackResponse.addArrayValue(field, std::get<std::string>(cluster));
             }
         } };
 
         addClusters("moods", "MOOD");
 
         // Genres
+        trackResponse.createEmptyArrayChild("genres");
+        if (genreClusterType)
         {
-            trackResponse.createEmptyArrayChild("genres");
+            Cluster::FindParameters params;
+            params.setTrack(track->getId());
+            params.setClusterType(genreClusterType->getId());
 
-            ClusterType::pointer clusterType{ ClusterType::find(dbSession, "GENRE") };
-            if (clusterType)
-            {
-                Cluster::FindParameters params;
-                params.setTrack(track->getId());
-                params.setClusterType(clusterType->getId());
-
-                for (const ClusterId clusterId : Cluster::find(dbSession, params).results)
-                {
-                    Cluster::pointer cluster{ Cluster::find(dbSession, clusterId) };
-                    if (cluster)
-                        trackResponse.addArrayChild("genres", createItemGenreNode(cluster));
-                }
-            }
+            for (const auto& cluster : Cluster::find(dbSession, params).results)
+                trackResponse.addArrayChild("genres", createItemGenreNode(std::get<std::string>(cluster)));
         }
 
         trackResponse.addChild("replayGain", createReplayGainNode(track));

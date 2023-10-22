@@ -177,6 +177,20 @@ namespace StringUtils
         return oss.str();
     }
 
+    bool stringCaseInsensitiveEqual(std::string_view strA, std::string_view strB)
+    {
+        if (strA.size() != strB.size())
+            return false;
+        
+        for (std::size_t i{}; i < strA.size(); ++i)
+        {
+            if (std::tolower(strA[i]) != std::tolower(strB[i]))
+                return false;
+        }
+
+        return true;
+    }
+
     void capitalize(std::string& str)
     {
         for (auto it{ std::begin(str) }; it != std::end(str); ++it)
@@ -205,7 +219,7 @@ namespace StringUtils
         return res;
     }
 
-    std::string jsEscape(const std::string& str)
+    std::string jsEscape(std::string_view str)
     {
         static const std::unordered_map<char, std::string_view> escapeMap
         {
@@ -233,6 +247,28 @@ namespace StringUtils
         }
 
         return escaped;
+    }
+
+    void writeJSEscapedString(std::ostream& os, std::string_view str)
+    {
+        static constexpr std::pair<char, std::string_view> charsToEscape[]
+        {
+            {'\\', "\\\\" },
+            { '\n', "\\n" },
+            { '\r', "\\r" },
+            { '\t', "\\t" },
+            { '"', "\\\"" },
+            { '\'', "\\\'" },
+        };
+
+        for (const char c : str)
+        {
+            auto itEntry{ std::find_if(std::cbegin(charsToEscape), std::cend(charsToEscape), [=](const auto& entry) { return entry.first == c;}) };
+            if (itEntry != std::cend(charsToEscape))
+                os << itEntry->second;
+            else
+                os << c;
+        }
     }
 
     std::string escapeString(std::string_view str, std::string_view charsToEscape, char escapeChar)

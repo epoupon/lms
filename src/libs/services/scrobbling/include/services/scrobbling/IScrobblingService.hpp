@@ -69,6 +69,9 @@ namespace Scrobbling
             const std::vector<Database::ClusterId>& clusterIds,
             Database::Range range) = 0;
 
+        virtual Wt::WDateTime getLastListenDateTime(Database::UserId userId, Database::ReleaseId releaseId) = 0;
+        virtual Wt::WDateTime getLastListenDateTime(Database::UserId userId, Database::TrackId trackId) = 0;
+
         // Top
         virtual ArtistContainer getTopArtists(Database::UserId userId,
             const std::vector<Database::ClusterId>& clusterIds,

@@ -117,7 +117,7 @@ namespace UserInterface::TrackListHelpers
 
 			for (const auto& [role, artistIds] : artistMap)
 			{
-				std::unique_ptr<Wt::WContainerWidget> artistContainer {Utils::createArtistContainer(std::vector (std::cbegin(artistIds), std::cend(artistIds)))};
+				std::unique_ptr<Wt::WContainerWidget> artistContainer {Utils::createArtistAnchorList(std::vector (std::cbegin(artistIds), std::cend(artistIds)))};
 				auto artistsEntry {std::make_unique<Template>(Wt::WString::tr("Lms.Explore.template.info.artists"))};
 				artistsEntry->bindString("type", role);
 				artistsEntry->bindWidget("artist-container", std::move(artistContainer));
@@ -171,8 +171,8 @@ namespace UserInterface::TrackListHelpers
 		if (!artists.empty())
 		{
 			entry->setCondition("if-has-artists", true);
-			entry->bindWidget("artists", Utils::createArtistContainer(artists));
-			entry->bindWidget("artists-md", Utils::createArtistContainer(artists));
+			entry->bindWidget("artists", Utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
+			entry->bindWidget("artists-md", Utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
 		}
 
 		if (track->getRelease())

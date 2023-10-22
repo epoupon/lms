@@ -28,8 +28,7 @@ namespace API::Subsonic::Scan
 
     namespace
     {
-        Response::Node
-            createStatusResponseNode()
+        Response::Node createStatusResponseNode()
         {
             Response::Node statusResponse;
 

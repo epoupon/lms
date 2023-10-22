@@ -133,7 +133,7 @@ namespace API::Subsonic
                 throw NotImplementedGenericError{};
 
             Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-            Response::Node& albumListNode{ response.createNode(id3 ? "albumList2" : "albumList") };
+            Response::Node& albumListNode{ response.createNode(id3 ? Response::Node::Key{ "albumList2" } : Response::Node::Key{ "albumList" }) };
 
             for (const ReleaseId releaseId : releases.results)
             {
@@ -153,7 +153,7 @@ namespace API::Subsonic
                 throw UserNotAuthorizedError{};
 
             Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-            Response::Node& starredNode{ response.createNode(id3 ? "starred2" : "starred") };
+            Response::Node& starredNode{ response.createNode(id3 ? Response::Node::Key{ "starred2" } : Response::Node::Key{ "starred" }) };
 
             Scrobbling::IScrobblingService& scrobbling{ *Service<Scrobbling::IScrobblingService>::get() };
 

@@ -241,6 +241,8 @@
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">Queste impostazioni sono salvate localmente su questo dispositivo!</message>
 <message id="Lms.Settings.change-password">Cambia password</message>
+
+
 <message id="Lms.Settings.demo-cannot-save">Non posso salvare le impostazioni utilizzando l'account demo!</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Impostazioni</message>
 <message id="Lms.Settings.password-bad">Password errata</message>
@@ -265,7 +267,6 @@
 <message id="Lms.Settings.subsonic-api">Subsonic API</message>
 <message id="Lms.Settings.transcode">Transcodifica</message>
 <message id="Lms.Settings.transcode-bitrate">Bitrate transcodifica</message>
-<message id="Lms.Settings.transcode-enable">Abilita transcodifica</message>
 <message id="Lms.Settings.transcode-format">Formato di transcodifica</message>
 <message id="Lms.Settings.transcode-format.matroska_opus">Matroska/Opus</message>
 <message id="Lms.Settings.transcode-format.mp3">MP3</message>

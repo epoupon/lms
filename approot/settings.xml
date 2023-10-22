@@ -74,20 +74,9 @@
 		</div>
 		${<if-has-subsonic-api>}
 			<legend>${tr:Lms.Settings.subsonic-api}</legend>
-			<div class="col-12">
-				<div class="form-check">
-					${subsonic-transcode-enable class="form-check-input"}
-					<label class="form-check-label" for="${id:subsonic-transcode-enable}">
-						${tr:Lms.Settings.transcode-enable class="form-control"}
-					</label>
-					<div class="invalid-feedback">
-						${subsonic-transcode-enable-info}
-					</div>
-				</div>
-			</div>
 			<div class="col-lg-6">
 				<label class="form-label" for="${id:subsonic-transcode-format}">
-					${tr:Lms.Settings.transcode-format}
+					${tr:Lms.Settings.default-transcode-format}
 				</label>
 				${subsonic-transcode-format class="form-control"}
 				<div class="invalid-feedback">
@@ -95,8 +84,8 @@
 				</div>
 			</div>
 			<div class="col-lg-6">
-				<label class="col-lg-3 form-label" for="${id:subsonic-transcode-bitrate}">
-					${tr:Lms.Settings.transcode-bitrate}
+				<label class="form-label" for="${id:subsonic-transcode-bitrate}">
+					${tr:Lms.Settings.default-transcode-bitrate}
 				</label>
 				<div class="input-group mb-3">
 					${subsonic-transcode-bitrate class="form-control"}

@@ -210,6 +210,7 @@ getRelease(const TagMap& tags)
 
 	release.emplace();
 	release->name = std::move(*releaseName);
+	release->artistDisplayName = getPropertyValueAs<std::string_view>(tags, "ALBUMARTIST").value_or("");
 	release->mbid = getPropertyValueFirstMatchAs<UUID>(tags, {"MUSICBRAINZ_ALBUMID", "MUSICBRAINZ ALBUM ID", "MUSICBRAINZ/ALBUM ID"});
 	release->artists = getArtists(tags, {"ALBUMARTISTS", "ALBUMARTIST"}, {"ALBUMARTISTSSORT", "ALBUMARTISTSORT"}, {"MUSICBRAINZ_ALBUMARTISTID", "MUSICBRAINZ ALBUM ARTIST ID", "MUSICBRAINZ/ALBUM ARTIST ID"});
 	release->mediumCount = getPropertyValueAs<std::size_t>(tags, "DISCTOTAL");
@@ -353,6 +354,8 @@ TagLibParser::processTag(Track& track, const std::string& tag, const std::vector
 		track.copyrightURL = value;
 	else if (tag == "REPLAYGAIN_TRACK_GAIN")
 		track.replayGain = StringUtils::readAs<float>(value);
+	else if (tag == "ARTIST")
+		track.artistDisplayName = value;
 	else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
 	{
 		std::set<std::string> clusterNames;

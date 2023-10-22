@@ -48,13 +48,17 @@ TEST_F(DatabaseFixture, Cluster)
             EXPECT_EQ(Cluster::getCount(session), 1);
             EXPECT_EQ(cluster->getType()->getId(), clusterType.getId());
 
-            auto clusters{ Cluster::find(session, Cluster::FindParameters {}) };
-            ASSERT_EQ(clusters.results.size(), 1);
-            EXPECT_EQ(clusters.results.front(), cluster.getId());
+            {
+                const auto clusters{ Cluster::find(session, Cluster::FindParameters {}) };
+                ASSERT_EQ(clusters.results.size(), 1);
+                EXPECT_EQ(std::get<ClusterId>(clusters.results.front()), cluster.getId());
+            }
 
-            clusters = Cluster::findOrphans(session, Range{});
-            ASSERT_EQ(clusters.results.size(), 1);
-            EXPECT_EQ(clusters.results.front(), cluster.getId());
+            {
+                const auto clusters{ Cluster::findOrphans(session, Range{}) };
+                ASSERT_EQ(clusters.results.size(), 1);
+                EXPECT_EQ(clusters.results.front(), cluster.getId());
+            }
 
             auto clusterTypes{ ClusterType::find(session, Range {}) };
             ASSERT_EQ(clusterTypes.results.size(), 1);
@@ -114,7 +118,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
         auto transaction{ session.createSharedTransaction() };
         auto clusters{ Cluster::find(session, Cluster::FindParameters {}.setTrack(track.getId())) };
         ASSERT_EQ(clusters.results.size(), 1);
-        EXPECT_EQ(clusters.results.front(), cluster1.getId());
+        EXPECT_EQ(std::get<ClusterId>(clusters.results.front()), cluster1.getId());
     }
 
     {
@@ -317,9 +321,9 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto clusters{ Cluster::find(session, Cluster::FindParameters{}.setRelease(release.getId())) };
+        const auto clusters{ Cluster::find(session, Cluster::FindParameters{}.setRelease(release.getId())) };
         ASSERT_EQ(clusters.results.size(), 1);
-        EXPECT_EQ(clusters.results.front(), cluster.getId());
+        EXPECT_EQ(std::get<ClusterId>(clusters.results.front()), cluster.getId());
     }
 
     {
@@ -1106,5 +1110,3 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleReleasesMultiClusters)
         }
     }
 }
-
-
