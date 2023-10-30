@@ -365,7 +365,7 @@ namespace API::Subsonic
     void Response::JsonSerializer::serializeEscapedString(std::ostream& os, std::string_view str)
     {
         os << '\"';
-        StringUtils::writeJSEscapedString(os, str);
+        StringUtils::writeJsonEscapedString(os, str);
         os << '\"';
     }
 
