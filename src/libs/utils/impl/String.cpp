@@ -52,7 +52,6 @@ namespace StringUtils
             { '\r', "\\r" },
             { '\t', "\\t" },
             { '"', "\\\"" },
-            { '\'', "\\\'" },
         };
 
         template <std::size_t N>
