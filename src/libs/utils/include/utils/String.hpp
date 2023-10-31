@@ -84,7 +84,9 @@ namespace StringUtils {
     [[nodiscard]] std::string replaceInString(std::string_view str, const std::string& from, const std::string& to);
 
     [[nodiscard]] std::string jsEscape(std::string_view str);
+    [[nodiscard]] std::string jsonEscape(std::string_view str);
     void writeJSEscapedString(std::ostream& os, std::string_view str);
+    void writeJsonEscapedString(std::ostream& os, std::string_view str);
 
     [[nodiscard]] std::string escapeString(std::string_view str, std::string_view charsToEscape, char escapeChar);
 

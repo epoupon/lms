@@ -47,20 +47,23 @@ namespace Database {
 
         struct FindParameters
         {
-            std::optional<Scrobbler>		scrobbler;
-            Range							range;
+            std::optional<ScrobblingBackend>	scrobblingBackend;
+            std::optional<FeedbackBackend>	    feedbackBackend;
+            Range							    range;
 
-            FindParameters& setScrobbler(Scrobbler _scrobbler) { scrobbler = _scrobbler; return *this; }
+            FindParameters& setFeedbackBackend(FeedbackBackend _feedbackBackend) { feedbackBackend = _feedbackBackend; return *this; }
+            FindParameters& setScrobblingBackend(ScrobblingBackend _scrobblingBackend) { scrobblingBackend = _scrobblingBackend; return *this; }
             FindParameters& setRange(Range _range) { range = _range; return *this; }
         };
 
-        static inline const std::size_t             MinNameLength{ 3 };
-        static inline const std::size_t             MaxNameLength{ 15 };
-        static inline const AudioFormat             defaultSubsonicTranscodeFormat{ AudioFormat::OGG_OPUS };
-        static inline const Bitrate                 defaultSubsonicTranscodeBitrate{ 128000 };
-        static inline const UITheme                 defaultUITheme{ UITheme::Dark };
-        static inline const SubsonicArtistListMode  defaultSubsonicArtistListMode{ SubsonicArtistListMode::AllArtists };
-        static inline const Scrobbler               defaultScrobbler{ Scrobbler::Internal };
+        static inline constexpr std::size_t             MinNameLength{ 3 };
+        static inline constexpr std::size_t             MaxNameLength{ 15 };
+        static inline constexpr AudioFormat             defaultSubsonicTranscodeFormat{ AudioFormat::OGG_OPUS };
+        static inline constexpr Bitrate                 defaultSubsonicTranscodeBitrate{ 128000 };
+        static inline constexpr UITheme                 defaultUITheme{ UITheme::Dark };
+        static inline constexpr SubsonicArtistListMode  defaultSubsonicArtistListMode{ SubsonicArtistListMode::AllArtists };
+        static inline constexpr ScrobblingBackend       defaultScrobblingBackend{ ScrobblingBackend::Internal };
+        static inline constexpr FeedbackBackend         defaultFeedbackBackend{ FeedbackBackend::Internal };
 
         User() = default;
 
@@ -88,7 +91,8 @@ namespace Database {
         void setUITheme(UITheme uiTheme) { _uiTheme = uiTheme; }
         void clearAuthTokens();
         void setSubsonicArtistListMode(SubsonicArtistListMode mode) { _subsonicArtistListMode = mode; }
-        void setScrobbler(Scrobbler scrobbler) { _scrobbler = scrobbler; }
+        void setFeedbackBackend(FeedbackBackend feedbackBackend) { _feedbackBackend = feedbackBackend; }
+        void setScrobblingBackend(ScrobblingBackend scrobblingBackend) { _scrobblingBackend = scrobblingBackend; }
         void setListenBrainzToken(const std::optional<UUID>& MBID) { _listenbrainzToken = MBID ? MBID->getAsString() : ""; }
 
         // read
@@ -102,7 +106,8 @@ namespace Database {
         bool                    isRadioSet() const { return _radio; }
         UITheme                 getUITheme() const { return _uiTheme; }
         SubsonicArtistListMode  getSubsonicArtistListMode() const { return _subsonicArtistListMode; }
-        Scrobbler               getScrobbler() const { return _scrobbler; }
+        FeedbackBackend         getFeedbackBackend() const { return _feedbackBackend; }
+        ScrobblingBackend       getScrobblingBackend() const { return _scrobblingBackend; }
         std::optional<UUID>     getListenBrainzToken() const { return UUID::fromString(_listenbrainzToken); }
 
         template<class Action>
@@ -117,7 +122,8 @@ namespace Database {
             Wt::Dbo::field(a, _subsonicDefaultTranscodeBitrate, "subsonic_default_transcode_bitrate");
             Wt::Dbo::field(a, _subsonicArtistListMode, "subsonic_artist_list_mode");
             Wt::Dbo::field(a, _uiTheme, "ui_theme");
-            Wt::Dbo::field(a, _scrobbler, "scrobbler");
+            Wt::Dbo::field(a, _feedbackBackend, "feedback_backend");
+            Wt::Dbo::field(a, _scrobblingBackend, "scrobbling_backend");
             Wt::Dbo::field(a, _listenbrainzToken, "listenbrainz_token");
 
             // UI player settings
@@ -138,7 +144,8 @@ namespace Database {
         std::string     _passwordHash;
         Wt::WDateTime   _lastLogin;
         UITheme         _uiTheme{ defaultUITheme };
-        Scrobbler       _scrobbler{ defaultScrobbler };
+        FeedbackBackend _feedbackBackend{ defaultFeedbackBackend };
+        ScrobblingBackend _scrobblingBackend{ defaultScrobblingBackend };
         std::string     _listenbrainzToken; // Musicbrainz Identifier
 
         // Admin defined settings

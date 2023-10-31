@@ -57,11 +57,11 @@ createQuery(Session& session, const Track::FindParameters& params)
 
 	if (params.starringUser.isValid())
 	{
-		assert(params.scrobbler);
+		assert(params.feedbackBackend);
 		query.join("starred_track s_t ON s_t.track_id = t.id")
 			.where("s_t.user_id = ?").bind(params.starringUser)
-			.where("s_t.scrobbler = ?").bind(*params.scrobbler)
-			.where("s_t.scrobbling_state <> ?").bind(ScrobblingState::PendingRemove);
+			.where("s_t.backend = ?").bind(*params.feedbackBackend)
+			.where("s_t.sync_state <> ?").bind(SyncState::PendingRemove);
 	}
 
 	if (!params.clusters.empty())

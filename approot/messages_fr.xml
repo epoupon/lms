@@ -240,10 +240,14 @@
 <!--Settings-->
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">Ces paramètres audio sont locaux à votre navigateur !</message>
+<message id="Lms.Settings.backend.internal">Interne</message>
+<message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
+<message id="Lms.Settings.backend.listenbrainz-token">Jeton d'API ListenBrainz</message>
 <message id="Lms.Settings.change-password">Changement de mot de passe</message>
 <message id="Lms.Settings.default-transcode-bitrate">Bitrate par defaut du transcodage</message>
 <message id="Lms.Settings.default-transcode-format">Format par defaut du transcodage</message>
 <message id="Lms.Settings.demo-cannot-save">Impossible de sauvegarder en utilisant un compte de démo !</message>
+<message id="Lms.Settings.feedback">Feedback</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Paramètres</message>
 <message id="Lms.Settings.password-bad">Mauvais mot de passe</message>
 <message id="Lms.Settings.password-must-fill-old-password">L'ancien mot de passe doit être renseigné</message>
@@ -255,10 +259,7 @@
 <message id="Lms.Settings.replaygain-preamp">Pre-amplification ReplayGain</message>
 <message id="Lms.Settings.replaygain-preamp-no-rg-info">Pre-amplification ReplayGain (si pas d'info)</message>
 <message id="Lms.Settings.scrobbling">Scrobbling</message>
-<message id="Lms.Settings.scrobbling.scrobbler">Scrobbler</message>
-<message id="Lms.Settings.scrobbling.scrobbler.internal">Interne</message>
-<message id="Lms.Settings.scrobbling.scrobbler.listenbrainz">ListenBrainz</message>
-<message id="Lms.Settings.scrobbling.listenbrainz-token">Jeton ListenBrainz</message>
+<message id="Lms.Settings.services">Services</message>
 <message id="Lms.Settings.settings">Paramètres</message>
 <message id="Lms.Settings.subsonic-artist-list-mode">Mode de listage des artistes</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.all-artists">Tous les artistes</message>

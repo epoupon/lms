@@ -160,13 +160,19 @@ namespace Database
 	void visitAllowedAudioBitrates(std::function<void(Bitrate)>);
 	bool isAudioBitrateAllowed(Bitrate bitrate);
 
-	enum class Scrobbler
+	enum class ScrobblingBackend
 	{
 		Internal		= 0,
 		ListenBrainz	= 1,
 	};
 
-	enum class ScrobblingState
+	enum class FeedbackBackend
+	{
+		Internal		= 0,
+		ListenBrainz	= 1,
+	};
+
+	enum class SyncState
 	{
 		PendingAdd		= 0,
 		Synchronized	= 1,

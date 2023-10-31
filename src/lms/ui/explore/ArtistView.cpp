@@ -28,7 +28,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
-#include "services/scrobbling/IScrobblingService.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
@@ -187,19 +187,19 @@ Artist::refreshView()
 		->setLink(Wt::WLink {std::make_unique<DownloadArtistResource>(_artistId)});
 
 	{
-		auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), _artistId); }};
+		auto isStarred {[=] { return Service<Feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), _artistId); }};
 
 		Wt::WPushButton* starBtn {bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
 		starBtn->clicked().connect([=]
 		{
 			if (isStarred())
 			{
-				Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), _artistId);
+				Service<Feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), _artistId);
 				starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
 			}
 			else
 			{
-				Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), _artistId);
+				Service<Feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), _artistId);
 				starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
 			}
 		});

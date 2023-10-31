@@ -17,9 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ListenBrainzScrobbler.hpp"
+#include "ListensSynchronizer.hpp"
 
-#include <tuple>
 #include <boost/asio/bind_executor.hpp>
 #include <Wt/Json/Array.h>
 #include <Wt/Json/Object.h>
@@ -248,14 +247,14 @@ namespace Scrobbling::ListenBrainz
 		{
 			const TimedListen timedListen {listen, timePoint};
 			// We want the listen to be sent again later in case of failure, so we just save it as pending send
-			saveListen(timedListen, Database::ScrobblingState::PendingAdd);
+			saveListen(timedListen, Database::SyncState::PendingAdd);
 
 			request.priority = Http::ClientRequestParameters::Priority::Normal;
 			request.onSuccessFunc = [=](std::string_view)
 			{
 				_strand.dispatch([=]
 				{
-					if (saveListen(timedListen, Database::ScrobblingState::Synchronized))
+					if (saveListen(timedListen, Database::SyncState::Synchronized))
 					{
 						UserContext& context {getUserContext(listen.userId)};
 						if (context.listenCount)
@@ -293,14 +292,14 @@ namespace Scrobbling::ListenBrainz
 	}
 
 	bool
-	ListensSynchronizer::saveListen(const TimedListen& listen, Database::ScrobblingState scrobblingState)
+	ListensSynchronizer::saveListen(const TimedListen& listen, Database::SyncState scrobblingState)
 	{
 		using namespace Database;
 
 		Session& session {_db.getTLSSession()};
 		auto transaction {session.createUniqueTransaction()}; // TODO: unique only if needed
 
-		Database::Listen::pointer dbListen {Database::Listen::find(session, listen.userId, listen.trackId, Database::Scrobbler::ListenBrainz, listen.listenedAt)};
+		Database::Listen::pointer dbListen {Database::Listen::find(session, listen.userId, listen.trackId, Database::ScrobblingBackend::ListenBrainz, listen.listenedAt)};
 		if (!dbListen)
 		{
 			const User::pointer user {User::find(session, listen.userId)};
@@ -311,18 +310,18 @@ namespace Scrobbling::ListenBrainz
 			if (!track)
 				return false;
 
-			dbListen = session.create<Database::Listen>(user, track, Database::Scrobbler::ListenBrainz, listen.listenedAt);
-			dbListen.modify()->setScrobblingState(scrobblingState);
+			dbListen = session.create<Database::Listen>(user, track, Database::ScrobblingBackend::ListenBrainz, listen.listenedAt);
+			dbListen.modify()->setSyncState(scrobblingState);
 
 			LOG(DEBUG) << "LISTEN CREATED for user " << user->getLoginName() << ", track '" << track->getName() << "' AT " << listen.listenedAt.toString();
 
 			return true;
 		}
 
-		if (dbListen->getScrobblingState() == scrobblingState)
+		if (dbListen->getSyncState() == scrobblingState)
 			return false;
 
-		dbListen.modify()->setScrobblingState(scrobblingState);
+		dbListen.modify()->setSyncState(scrobblingState);
 		return true;
 	}
 
@@ -337,8 +336,8 @@ namespace Scrobbling::ListenBrainz
 			auto transaction {session.createUniqueTransaction()};
 
 			Database::Listen::FindParameters params;
-			params.setScrobbler(Database::Scrobbler::ListenBrainz)
-					.setScrobblingState(Database::ScrobblingState::PendingAdd)
+			params.setScrobblingBackend(Database::ScrobblingBackend::ListenBrainz)
+					.setSyncState(Database::SyncState::PendingAdd)
 					.setRange(Database::Range {0, 100}); // don't flood too much?
 
 			const Database::RangeResults results {Database::Listen::find(session, params)};
@@ -423,7 +422,7 @@ namespace Scrobbling::ListenBrainz
 		{
 			Database::Session& session {_db.getTLSSession()};
 			auto transaction {session.createSharedTransaction()};
-			userIds = Database::User::find(_db.getTLSSession(), Database::User::FindParameters{}.setScrobbler(Database::Scrobbler::ListenBrainz));
+			userIds = Database::User::find(_db.getTLSSession(), Database::User::FindParameters{}.setScrobblingBackend(Database::ScrobblingBackend::ListenBrainz));
 		}
 
 		for (const Database::UserId userId : userIds.results)
@@ -583,7 +582,7 @@ namespace Scrobbling::ListenBrainz
 				context.matchedListenCount++;
 
 				const Scrobbling::TimedListen listen {{context.userId, trackId}, parsedListen.listenedAt};
-				if (saveListen(listen, Database::ScrobblingState::Synchronized))
+				if (saveListen(listen, Database::SyncState::Synchronized))
 					context.importedListenCount++;
 			}
 		}

@@ -29,14 +29,14 @@ namespace
 {
     using namespace Database;
 
-    Wt::Dbo::Query<ArtistId> createArtistsQuery(Wt::Dbo::Session& session, UserId userId, Scrobbler scrobbler, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType)
+    Wt::Dbo::Query<ArtistId> createArtistsQuery(Wt::Dbo::Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType)
     {
         auto query{ session.query<ArtistId>("SELECT a.id from artist a")
                         .join("track t ON t.id = t_a_l.track_id")
                         .join("track_artist_link t_a_l ON t_a_l.artist_id = a.id")
                         .join("listen l ON l.track_id = t.id")
                         .where("l.user_id = ?").bind(userId)
-                        .where("l.scrobbler = ?").bind(scrobbler) };
+                        .where("l.backend = ?").bind(backend) };
 
         if (linkType)
             query.where("t_a_l.type = ?").bind(*linkType);
@@ -66,13 +66,13 @@ namespace
         return query;
     }
 
-    Wt::Dbo::Query<ReleaseId> createReleasesQuery(Wt::Dbo::Session& session, UserId userId, Scrobbler scrobbler, const std::vector<ClusterId>& clusterIds)
+    Wt::Dbo::Query<ReleaseId> createReleasesQuery(Wt::Dbo::Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds)
     {
         auto query{ session.query<ReleaseId>("SELECT r.id from release r")
                         .join("track t ON t.release_id = r.id")
                         .join("listen l ON l.track_id = t.id")
                         .where("l.user_id = ?").bind(userId)
-                        .where("l.scrobbler = ?").bind(scrobbler) };
+                        .where("l.backend = ?").bind(backend) };
 
         if (!clusterIds.empty())
         {
@@ -98,12 +98,12 @@ namespace
         return query;
     }
 
-    Wt::Dbo::Query<TrackId> createTracksQuery(Wt::Dbo::Session& session, UserId userId, Scrobbler scrobbler, const std::vector<ClusterId>& clusterIds)
+    Wt::Dbo::Query<TrackId> createTracksQuery(Wt::Dbo::Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds)
     {
         auto query{ session.query<TrackId>("SELECT t.id from track t")
                     .join("listen l ON l.track_id = t.id")
                     .where("l.user_id = ?").bind(userId)
-                    .where("l.scrobbler = ?").bind(scrobbler) };
+                    .where("l.backend = ?").bind(backend) };
 
         if (!clusterIds.empty())
         {
@@ -131,16 +131,16 @@ namespace
 
 namespace Database
 {
-    Listen::Listen(ObjectPtr<User> user, ObjectPtr<Track> track, Scrobbler scrobbler, const Wt::WDateTime& dateTime)
+    Listen::Listen(ObjectPtr<User> user, ObjectPtr<Track> track, ScrobblingBackend backend, const Wt::WDateTime& dateTime)
         : _dateTime{ Wt::WDateTime::fromTime_t(dateTime.toTime_t()) }
-        , _scrobbler{ scrobbler }
+        , _backend{ backend }
         , _user{ getDboPtr(user) }
         , _track{ getDboPtr(track) }
     {}
 
-    Listen::pointer Listen::create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track, Scrobbler scrobbler, const Wt::WDateTime& dateTime)
+    Listen::pointer Listen::create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track, ScrobblingBackend backend, const Wt::WDateTime& dateTime)
     {
-        return session.getDboSession().add(std::unique_ptr<Listen> {new Listen{ user, track, scrobbler, dateTime }});
+        return session.getDboSession().add(std::unique_ptr<Listen> {new Listen{ user, track, backend, dateTime }});
     }
 
     std::size_t Listen::getCount(Session& session)
@@ -165,30 +165,30 @@ namespace Database
         if (parameters.user.isValid())
             query.where("user_id = ?").bind(parameters.user);
 
-        if (parameters.scrobbler)
-            query.where("scrobbler = ?").bind(*parameters.scrobbler);
+        if (parameters.backend)
+            query.where("backend = ?").bind(*parameters.backend);
 
-        if (parameters.scrobblingState)
-            query.where("scrobbling_state = ?").bind(*parameters.scrobblingState);
+        if (parameters.syncState)
+            query.where("sync_state = ?").bind(*parameters.syncState);
 
         return Utils::execQuery(query, parameters.range);
     }
 
-    Listen::pointer Listen::find(Session& session, UserId userId, TrackId trackId, Scrobbler scrobbler, const Wt::WDateTime& dateTime)
+    Listen::pointer Listen::find(Session& session, UserId userId, TrackId trackId, ScrobblingBackend backend, const Wt::WDateTime& dateTime)
     {
         session.checkSharedLocked();
 
         return session.getDboSession().find<Listen>()
             .where("user_id = ?").bind(userId)
             .where("track_id = ?").bind(trackId)
-            .where("scrobbler = ?").bind(scrobbler)
+            .where("backend = ?").bind(backend)
             .where("date_time = ?").bind(Wt::WDateTime::fromTime_t(dateTime.toTime_t()))
             .resultValue();
     }
 
-    RangeResults<ArtistId> Listen::getTopArtists(Session& session, UserId userId, Scrobbler scrobbler, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range)
+    RangeResults<ArtistId> Listen::getTopArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range)
     {
-        auto query{ createArtistsQuery(session.getDboSession(), userId, scrobbler, clusterIds, linkType) };
+        auto query{ createArtistsQuery(session.getDboSession(), userId, backend, clusterIds, linkType) };
 
         auto collection{ query
             .orderBy("COUNT(a.id) DESC")
@@ -197,72 +197,72 @@ namespace Database
         return Utils::execQuery(query, range);
     }
 
-    RangeResults<ReleaseId> Listen::getTopReleases(Session& session, UserId userId, Scrobbler scrobbler, const std::vector<ClusterId>& clusterIds, Range range)
+    RangeResults<ReleaseId> Listen::getTopReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range)
     {
-        auto query{ createReleasesQuery(session.getDboSession(), userId, scrobbler, clusterIds)
+        auto query{ createReleasesQuery(session.getDboSession(), userId, backend, clusterIds)
                         .orderBy("COUNT(r.id) DESC")
                         .groupBy("r.id") };
 
         return Utils::execQuery(query, range);
     }
 
-    RangeResults<TrackId> Listen::getTopTracks(Session& session, UserId userId, Scrobbler scrobbler, const std::vector<ClusterId>& clusterIds, Range range)
+    RangeResults<TrackId> Listen::getTopTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range)
     {
-        auto query{ createTracksQuery(session.getDboSession(), userId, scrobbler, clusterIds)
+        auto query{ createTracksQuery(session.getDboSession(), userId, backend, clusterIds)
                         .orderBy("COUNT(t.id) DESC")
                         .groupBy("t.id") };
 
         return Utils::execQuery(query, range);
     }
 
-    RangeResults<ArtistId> Listen::getRecentArtists(Session& session, UserId userId, Scrobbler scrobbler, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range)
+    RangeResults<ArtistId> Listen::getRecentArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range)
     {
-        auto query{ createArtistsQuery(session.getDboSession(), userId, scrobbler, clusterIds, linkType)
+        auto query{ createArtistsQuery(session.getDboSession(), userId, backend, clusterIds, linkType)
                         .groupBy("a.id").having("l.date_time = MAX(l.date_time)")
                         .orderBy("l.date_time DESC") };
 
         return Utils::execQuery(query, range);
     }
 
-    RangeResults<ReleaseId> Listen::getRecentReleases(Session& session, UserId userId, Scrobbler scrobbler, const std::vector<ClusterId>& clusterIds, Range range)
+    RangeResults<ReleaseId> Listen::getRecentReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range)
     {
-        auto query{ createReleasesQuery(session.getDboSession(), userId, scrobbler, clusterIds)
+        auto query{ createReleasesQuery(session.getDboSession(), userId, backend, clusterIds)
                         .groupBy("r.id").having("l.date_time = MAX(l.date_time)")
                         .orderBy("l.date_time DESC") };
 
         return Utils::execQuery(query, range);
     }
 
-    RangeResults<TrackId> Listen::getRecentTracks(Session& session, UserId userId, Scrobbler scrobbler, const std::vector<ClusterId>& clusterIds, Range range)
+    RangeResults<TrackId> Listen::getRecentTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range)
     {
-        auto query{ createTracksQuery(session.getDboSession(), userId, scrobbler, clusterIds)
+        auto query{ createTracksQuery(session.getDboSession(), userId, backend, clusterIds)
                         .groupBy("t.id").having("l.date_time = MAX(l.date_time)")
                         .orderBy("l.date_time DESC") };
 
         return Utils::execQuery(query, range);
     }
 
-    Listen::pointer Listen::getMostRecentListen(Session& session, UserId userId, Scrobbler scrobbler, ReleaseId releaseId)
+    Listen::pointer Listen::getMostRecentListen(Session& session, UserId userId, ScrobblingBackend backend, ReleaseId releaseId)
     {
         // TODO not pending remove?
         return session.getDboSession().query<Wt::Dbo::ptr<Listen>>("SELECT l from listen l")
             .join("track t ON l.track_id = t.id")
             .where("t.release_id = ?").bind(releaseId)
             .where("l.user_id = ?").bind(userId)
-            .where("l.scrobbler = ?").bind(scrobbler)
+            .where("l.backend = ?").bind(backend)
             .orderBy("l.date_time DESC")
             .limit(1)
             .resultValue();
     }
 
-    Listen::pointer Listen::getMostRecentListen(Session& session, UserId userId, Scrobbler scrobbler, TrackId trackId)
+    Listen::pointer Listen::getMostRecentListen(Session& session, UserId userId, ScrobblingBackend backend, TrackId trackId)
     {
         // TODO not pending remove?
         return session.getDboSession().query<Wt::Dbo::ptr<Listen>>("SELECT l from listen l")
             .join("track t ON track_id = t.id")
             .where("t.id = ?").bind(trackId)
             .where("l.user_id = ?").bind(userId)
-            .where("l.scrobbler = ?").bind(scrobbler)
+            .where("l.backend = ?").bind(backend)
             .orderBy("l.date_time DESC")
             .limit(1)
             .resultValue();

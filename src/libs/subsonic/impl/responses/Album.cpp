@@ -23,6 +23,7 @@
 #include "services/database/Artist.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/User.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
@@ -132,7 +133,7 @@ namespace API::Subsonic
                 albumNode.setAttribute("genre", clusters.front().front()->getName());
         }
 
-        if (const Wt::WDateTime dateTime{ Service<Scrobbling::IScrobblingService>::get()->getStarredDateTime(user->getId(), release->getId()) }; dateTime.isValid())
+        if (const Wt::WDateTime dateTime{ Service<Feedback::IFeedbackService>::get()->getStarredDateTime(user->getId(), release->getId()) }; dateTime.isValid())
             albumNode.setAttribute("starred", StringUtils::toISO8601String(dateTime));
 
         // OpenSubsonic specific fields (must always be set)

@@ -61,7 +61,7 @@ class Artist final : public Object<Artist, ArtistId>
 			Range								range;
 			Wt::WDateTime						writtenAfter;
 			UserId								starringUser;	// only artists starred by this user
-			std::optional<Scrobbler>			scrobbler;		// and for this scrobbler
+			std::optional<FeedbackBackend>		feedbackBackend; // and for this feedback backend
 			TrackId								track;		// artists involved in this track
 			ReleaseId							release;	// artists involved in this release
 
@@ -71,7 +71,7 @@ class Artist final : public Object<Artist, ArtistId>
 			FindParameters& setSortMethod(ArtistSortMethod _sortMethod) {sortMethod = _sortMethod; return *this; }
 			FindParameters& setRange(Range _range) {range = _range; return *this; }
 			FindParameters& setWrittenAfter(const Wt::WDateTime& _after) { writtenAfter = _after; return *this; }
-			FindParameters& setStarringUser(UserId _user, Scrobbler _scrobbler) { starringUser = _user; scrobbler = _scrobbler; return *this; }
+			FindParameters& setStarringUser(UserId _user, FeedbackBackend _feedbackBackend) { starringUser = _user; feedbackBackend = _feedbackBackend; return *this; }
 			FindParameters& setTrack(TrackId _track) { track = _track; return *this; }
 			FindParameters& setRelease(ReleaseId _release) { release = _release; return *this; }
 		};

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Emeric Poupon
+ * Copyright (C) 2023 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,35 +19,17 @@
 
 #pragma once
 
-#include <chrono>
-#include <memory>
-#include <optional>
-
 #include "services/database/StarredArtistId.hpp"
 #include "services/database/StarredReleaseId.hpp"
 #include "services/database/StarredTrackId.hpp"
-#include "services/scrobbling/Listen.hpp"
 
-namespace Database
+namespace Feedback
 {
-    class Session;
-    class TrackList;
-    class User;
-}
-
-namespace Scrobbling
-{
-    class IScrobbler
+    class IFeedbackBackend
     {
     public:
-        virtual ~IScrobbler() = default;
+        virtual ~IFeedbackBackend() = default;
 
-        // Listens
-        virtual void listenStarted(const Listen& listen) = 0;
-        virtual void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) = 0;
-        virtual void addTimedListen(const TimedListen& listen) = 0;
-
-        // Feedbacks
         virtual void onStarred(Database::StarredArtistId) = 0;
         virtual void onUnstarred(Database::StarredArtistId) = 0;
         virtual void onStarred(Database::StarredReleaseId) = 0;
@@ -56,7 +38,6 @@ namespace Scrobbling
         virtual void onUnstarred(Database::StarredTrackId) = 0;
     };
 
-    std::unique_ptr<IScrobbler> createScrobbler(std::string_view backendName);
+    std::unique_ptr<IFeedbackBackend> createFeedbackBackend(std::string_view backendName);
 
-} // ns Scrobbling
-
+} // ns Feedback

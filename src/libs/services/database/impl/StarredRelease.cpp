@@ -29,47 +29,42 @@
 
 namespace Database
 {
-	StarredRelease::StarredRelease(ObjectPtr<Release> release, ObjectPtr<User> user, Scrobbler scrobbler)
-		: _scrobbler {scrobbler}
-		, _release {getDboPtr(release)}
-		, _user {getDboPtr(user)}
-	{
-	}
+    StarredRelease::StarredRelease(ObjectPtr<Release> release, ObjectPtr<User> user, FeedbackBackend backend)
+        : _backend{ backend }
+        , _release{ getDboPtr(release) }
+        , _user{ getDboPtr(user) }
+    {
+    }
 
-	StarredRelease::pointer
-	StarredRelease::create(Session& session, ObjectPtr<Release> release, ObjectPtr<User> user, Scrobbler scrobbler)
-	{
-		return session.getDboSession().add(std::unique_ptr<StarredRelease>{new StarredRelease{release, user, scrobbler}});
-	}
+    StarredRelease::pointer StarredRelease::create(Session& session, ObjectPtr<Release> release, ObjectPtr<User> user, FeedbackBackend backend)
+    {
+        return session.getDboSession().add(std::unique_ptr<StarredRelease>{new StarredRelease{ release, user, backend }});
+    }
 
-	std::size_t
-	StarredRelease::getCount(Session& session)
-	{
-		session.checkSharedLocked();
-		return session.getDboSession().query<int>("SELECT COUNT(*) FROM starred_release");
-	}
+    std::size_t StarredRelease::getCount(Session& session)
+    {
+        session.checkSharedLocked();
+        return session.getDboSession().query<int>("SELECT COUNT(*) FROM starred_release");
+    }
 
-	StarredRelease::pointer
-	StarredRelease::find(Session& session, StarredReleaseId id)
-	{
-		session.checkSharedLocked();
-		return session.getDboSession().find<StarredRelease>().where("id = ?").bind(id).resultValue();
-	}
+    StarredRelease::pointer StarredRelease::find(Session& session, StarredReleaseId id)
+    {
+        session.checkSharedLocked();
+        return session.getDboSession().find<StarredRelease>().where("id = ?").bind(id).resultValue();
+    }
 
-	StarredRelease::pointer
-	StarredRelease::find(Session& session, ReleaseId releaseId, UserId userId, Scrobbler scrobbler)
-	{
-		session.checkSharedLocked();
-		return session.getDboSession().find<StarredRelease>()
-			.where("release_id = ?").bind(releaseId)
-			.where("user_id = ?").bind(userId)
-			.where("scrobbler = ?").bind(scrobbler)
-			.resultValue();
-	}
+    StarredRelease::pointer StarredRelease::find(Session& session, ReleaseId releaseId, UserId userId, FeedbackBackend backend)
+    {
+        session.checkSharedLocked();
+        return session.getDboSession().find<StarredRelease>()
+            .where("release_id = ?").bind(releaseId)
+            .where("user_id = ?").bind(userId)
+            .where("backend = ?").bind(backend)
+            .resultValue();
+    }
 
-	void
-	StarredRelease::setDateTime(const Wt::WDateTime& dateTime)
-	{
-		_dateTime = Utils::normalizeDateTime(dateTime);
-	}
+    void StarredRelease::setDateTime(const Wt::WDateTime& dateTime)
+    {
+        _dateTime = Utils::normalizeDateTime(dateTime);
+    }
 }

@@ -57,6 +57,7 @@ target_link_libraries(lms PRIVATE
 	lmsav
 	lmsauth
 	lmsdatabase
+	lmsfeedback
 	lmsrecommendation
 	lmsscanner
 	lmsscrobbling

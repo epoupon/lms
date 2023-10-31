@@ -21,7 +21,7 @@
 
 #include <algorithm>
 #include <iomanip>
-#include <unordered_map>
+#include <utility>
 
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/join.hpp>
@@ -32,6 +32,63 @@
 
 namespace StringUtils
 {
+
+    namespace
+    {
+        constexpr std::pair<char, std::string_view> jsEscapeChars[]
+        {
+            { '\\', "\\\\" },
+            { '\n', "\\n" },
+            { '\r', "\\r" },
+            { '\t', "\\t" },
+            { '"', "\\\"" },
+            { '\'', "\\\'" },
+        };
+
+        constexpr std::pair<char, std::string_view> jsonEscapeChars[]
+        {
+            { '\\', "\\\\" },
+            { '\n', "\\n" },
+            { '\r', "\\r" },
+            { '\t', "\\t" },
+            { '"', "\\\"" },
+            { '\'', "\\\'" },
+        };
+
+        template <std::size_t N>
+        std::string escape(std::string_view str, const std::pair<char, std::string_view>(&charsToEscape)[N])
+        {
+            std::string escaped;
+            escaped.reserve(str.length());
+
+            for (const char c : str)
+            {
+                auto it{ std::find_if(std::cbegin(charsToEscape), std::cend(charsToEscape), [c](const auto& entry) { return entry.first == c; }) };
+                if (it == std::cend(charsToEscape))
+                {
+                    escaped += c;
+                    continue;
+                }
+
+                escaped += it->second;
+            }
+
+            return escaped;
+        }
+
+        template <std::size_t N>
+        void writeEscapedString(std::ostream& os, std::string_view str, const std::pair<char, std::string_view>(&charsToEscape)[N])
+        {
+            for (const char c : str)
+            {
+                auto itEntry{ std::find_if(std::cbegin(charsToEscape), std::cend(charsToEscape), [=](const auto& entry) { return entry.first == c;}) };
+                if (itEntry != std::cend(charsToEscape))
+                    os << itEntry->second;
+                else
+                    os << c;
+            }
+        }
+    }
 
     bool readList(const std::string& str, const std::string& separators, std::list<std::string>& results)
     {
@@ -221,54 +278,22 @@ namespace StringUtils
 
     std::string jsEscape(std::string_view str)
     {
-        static const std::unordered_map<char, std::string_view> escapeMap
-        {
-            { '\\', "\\\\" },
-            { '\n', "\\n" },
-            { '\r', "\\r" },
-            { '\t', "\\t" },
-            { '"', "\\\"" },
-            { '\'', "\\\'" },
-        };
-
-        std::string escaped;
-        escaped.reserve(str.length());
-
-        for (const char c : str)
-        {
-            auto it{ escapeMap.find(c) };
-            if (it == std::cend(escapeMap))
-            {
-                escaped += c;
-                continue;
-            }
-
-            escaped += it->second;
-        }
-
-        return escaped;
+        return escape(str, jsEscapeChars);
     }
 
     void writeJSEscapedString(std::ostream& os, std::string_view str)
     {
-        static constexpr std::pair<char, std::string_view> charsToEscape[]
-        {
-            {'\\', "\\\\" },
-            { '\n', "\\n" },
-            { '\r', "\\r" },
-            { '\t', "\\t" },
-            { '"', "\\\"" },
-            { '\'', "\\\'" },
-        };
+        writeEscapedString(os, str, jsEscapeChars);
+    }
+    
+    std::string jsonEscape(std::string_view str)
+    {
+        return escape(str, jsonEscapeChars);
+    }
 
-        for (const char c : str)
-        {
-            auto itEntry{ std::find_if(std::cbegin(charsToEscape), std::cend(charsToEscape), [=](const auto& entry) { return entry.first == c;}) };
-            if (itEntry != std::cend(charsToEscape))
-                os << itEntry->second;
-            else
-                os << c;
-        }
+    void writeJsonEscapedString(std::ostream& os, std::string_view str)
+    {
+        writeEscapedString(os, str, jsonEscapeChars);
     }
 
     std::string escapeString(std::string_view str, std::string_view charsToEscape, char escapeChar)

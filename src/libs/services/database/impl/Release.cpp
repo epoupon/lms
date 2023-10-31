@@ -64,11 +64,11 @@ namespace Database
 
         if (params.starringUser.isValid())
         {
-            assert(params.scrobbler);
+            assert(params.feedbackBackend);
             query.join("starred_release s_r ON s_r.release_id = r.id")
                 .where("s_r.user_id = ?").bind(params.starringUser)
-                .where("s_r.scrobbler = ?").bind(*params.scrobbler)
-                .where("s_r.scrobbling_state <> ?").bind(ScrobblingState::PendingRemove);
+                .where("s_r.backend = ?").bind(*params.feedbackBackend)
+                .where("s_r.sync_state <> ?").bind(SyncState::PendingRemove);
         }
 
         if (params.artist.isValid())

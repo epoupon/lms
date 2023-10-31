@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Emeric Poupon
+ * Copyright (C) 2019 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,14 +17,15 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "FeedbackTypes.hpp"
+#pragma once
 
-namespace Scrobbling::ListenBrainz
+#include "utils/Exception.hpp"
+
+namespace Feedback
 {
-	std::ostream&
-	operator<<(std::ostream& os, const Feedback& feedback)
-	{
-		os << "created = '" << feedback.created.toString() << "', recording MBID = '" << feedback.recordingMBID.getAsString() << "', score = " << static_cast<int>(feedback.score);
-		return os;
-	}
-} // Scrobbling::ListenBrainz
+    class Exception : public LmsException
+    {
+    public:
+        using LmsException::LmsException;
+    };
+}

@@ -19,34 +19,42 @@
 
 #pragma once
 
-#include "IScrobbler.hpp"
+#include <string>
+#include <optional>
+#include <boost/asio/io_context.hpp>
+
+#include "IScrobblingBackend.hpp"
+#include "ListensSynchronizer.hpp"
 
 namespace Database
 {
     class Db;
 }
 
-namespace Scrobbling
+namespace Scrobbling::ListenBrainz
 {
-    class InternalScrobbler final : public IScrobbler
+    class ListenBrainzBackend final : public IScrobblingBackend
     {
     public:
-        InternalScrobbler(Database::Db& db);
+        ListenBrainzBackend(boost::asio::io_context& ioContext, Database::Db& db);
+        ~ListenBrainzBackend() override;
 
     private:
-        // IScrobbler
+        ListenBrainzBackend(const ListenBrainzBackend&) = delete;
+        ListenBrainzBackend& operator=(const ListenBrainzBackend&) = delete;
+
         void listenStarted(const Listen& listen) override;
         void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
         void addTimedListen(const TimedListen& listen) override;
 
-        void onStarred(Database::StarredArtistId) override;
-        void onUnstarred(Database::StarredArtistId) override;
-        void onStarred(Database::StarredReleaseId) override;
-        void onUnstarred(Database::StarredReleaseId) override;
-        void onStarred(Database::StarredTrackId) override;
-        void onUnstarred(Database::StarredTrackId) override;
+        // Submit listens
+        void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
 
-        Database::Db& _db;
+        boost::asio::io_context&        _ioContext;
+        Database::Db&                   _db;
+        std::string                     _baseAPIUrl;
+        std::unique_ptr<Http::IClient>  _client;
+        ListensSynchronizer             _listensSynchronizer;
     };
-} // Scrobbling
+} // Scrobbling::ListenBrainz
 

@@ -32,8 +32,8 @@
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/TrackArtistLink.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
-#include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Logger.hpp"
 
 #include "common/Template.hpp"
@@ -314,19 +314,19 @@ Release::refreshView()
 		});
 
 	{
-		auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), _releaseId); }};
+		auto isStarred {[=] { return Service<Feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), _releaseId); }};
 
 		Wt::WPushButton* starBtn {bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
 		starBtn->clicked().connect([=]
 		{
 			if (isStarred())
 			{
-				Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), _releaseId);
+				Service<Feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), _releaseId);
 				starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
 			}
 			else
 			{
-				Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), _releaseId);
+				Service<Feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), _releaseId);
 				starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
 			}
 		});
@@ -435,7 +435,7 @@ Release::refreshView()
 					_playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, {trackId});
 				});
 
-			auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), trackId); }};
+			auto isStarred {[=] { return Service<Feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), trackId); }};
 
 			Wt::WPushButton* starBtn {entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
 			starBtn->clicked().connect([=]
@@ -444,12 +444,12 @@ Release::refreshView()
 
 				if (isStarred())
 				{
-					Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), trackId);
+					Service<Feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), trackId);
 					starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
 				}
 				else
 				{
-					Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), trackId);
+					Service<Feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), trackId);
 					starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
 				}
 			});

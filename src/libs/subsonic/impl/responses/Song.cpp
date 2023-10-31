@@ -27,6 +27,7 @@
 #include "services/database/Track.hpp"
 #include "services/database/TrackArtistLink.hpp"
 #include "services/database/User.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
@@ -148,7 +149,7 @@ namespace API::Subsonic
         trackResponse.setAttribute("type", "music");
         trackResponse.setAttribute("created", StringUtils::toISO8601String(track->getLastWritten()));
 
-        if (const Wt::WDateTime dateTime{ Service<Scrobbling::IScrobblingService>::get()->getStarredDateTime(user->getId(), track->getId()) }; dateTime.isValid())
+        if (const Wt::WDateTime dateTime{ Service<Feedback::IFeedbackService>::get()->getStarredDateTime(user->getId(), track->getId()) }; dateTime.isValid())
             trackResponse.setAttribute("starred", StringUtils::toISO8601String(dateTime));
 
         // Report the first GENRE for this track

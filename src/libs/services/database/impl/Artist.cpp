@@ -133,11 +133,11 @@ createQuery(Session& session, const Artist::FindParameters& params)
 
 	if (params.starringUser.isValid())
 	{
-		assert(params.scrobbler);
+		assert(params.feedbackBackend);
 		query.join("starred_artist s_a ON s_a.artist_id = a.id")
 			.where("s_a.user_id = ?").bind(params.starringUser)
-			.where("s_a.scrobbler = ?").bind(*params.scrobbler)
-			.where("s_a.scrobbling_state <> ?").bind(ScrobblingState::PendingRemove);
+			.where("s_a.backend = ?").bind(*params.feedbackBackend)
+			.where("s_a.sync_state <> ?").bind(SyncState::PendingRemove);
 	}
 
 	if (!params.clusters.empty())

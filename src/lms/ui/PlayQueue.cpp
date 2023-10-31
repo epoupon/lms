@@ -34,7 +34,7 @@
 #include "services/database/Track.hpp"
 #include "services/database/TrackList.hpp"
 #include "services/database/User.hpp"
-#include "services/scrobbling/IScrobblingService.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IPlaylistGeneratorService.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Logger.hpp"
@@ -602,7 +602,7 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 				loadTrack(*pos, true);
 		});
 
-	auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), trackId); }};
+	auto isStarred {[=] { return Service<Feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), trackId); }};
 
 	Wt::WPushButton* starBtn {entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
 	starBtn->clicked().connect([=]
@@ -611,12 +611,12 @@ PlayQueue::addEntry(const Database::TrackListEntry::pointer& tracklistEntry)
 
 		if (isStarred())
 		{
-			Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), trackId);
+			Service<Feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), trackId);
 			starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
 		}
 		else
 		{
-			Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), trackId);
+			Service<Feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), trackId);
 			starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
 		}
 	});

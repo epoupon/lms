@@ -52,7 +52,7 @@ namespace Scrobbling::ListenBrainz
 
 		private:
 			void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
-			bool saveListen(const TimedListen& listen, Database::ScrobblingState scrobblinState);
+			bool saveListen(const TimedListen& listen, Database::SyncState scrobblinState);
 
 			void enquePendingListens();
 

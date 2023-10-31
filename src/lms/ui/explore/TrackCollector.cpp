@@ -25,6 +25,7 @@
 #include "services/database/Track.hpp"
 #include "services/database/TrackList.hpp"
 #include "services/database/User.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
 #include "Filters.hpp"
@@ -37,7 +38,9 @@ namespace UserInterface
 	RangeResults<TrackId>
 	TrackCollector::get(Range range)
 	{
-		Scrobbling::IScrobblingService& scrobbling {*Service<Scrobbling::IScrobblingService>::get()};
+		Feedback::IFeedbackService& feedbackService{*Service<Feedback::IFeedbackService>::get()};
+		Scrobbling::IScrobblingService& scrobblingService {*Service<Scrobbling::IScrobblingService>::get()};
+		
 		range = getActualRange(range);
 
 		RangeResults<TrackId> tracks;
@@ -48,15 +51,15 @@ namespace UserInterface
 				break;
 
 			case Mode::Starred:
-				tracks = scrobbling.getStarredTracks(LmsApp->getUserId(), getFilters().getClusterIds(), range);
+				tracks = feedbackService.getStarredTracks(LmsApp->getUserId(), getFilters().getClusterIds(), range);
 				break;
 
 			case TrackCollector::Mode::RecentlyPlayed:
-				tracks = scrobbling.getRecentTracks(LmsApp->getUserId(), getFilters().getClusterIds(), range);
+				tracks = scrobblingService.getRecentTracks(LmsApp->getUserId(), getFilters().getClusterIds(), range);
 				break;
 
 			case Mode::MostPlayed:
-				tracks = scrobbling.getTopTracks(LmsApp->getUserId(), getFilters().getClusterIds(), range);
+				tracks = scrobblingService.getTopTracks(LmsApp->getUserId(), getFilters().getClusterIds(), range);
 				break;
 
 			case Mode::RecentlyAdded:

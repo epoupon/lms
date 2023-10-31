@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,27 +19,29 @@
 
 #pragma once
 
-#include <ostream>
-#include <Wt/WDateTime.h>
-#include "utils/UUID.hpp"
+#include "IFeedbackBackend.hpp"
 
-namespace Scrobbling::ListenBrainz
+namespace Database
 {
-	// See https://listenbrainz.readthedocs.io/en/production/dev/feedback-json/#feedback-json-doc
-	enum class FeedbackType
-	{
-		Love = 1,
-		Hate = -1,
-		Erase = 0,
-	};
+    class Db;
+}
 
-	struct Feedback
-	{
-		Wt::WDateTime	created;
-		UUID			recordingMBID;
-		FeedbackType	score;
-	};
+namespace Feedback
+{
+    class InternalBackend final : public IFeedbackBackend
+    {
+    public:
+        InternalBackend(Database::Db& db);
 
-	std::ostream& operator<<(std::ostream& os, const Feedback& feedback);
+    private:
+        void onStarred(Database::StarredArtistId) override;
+        void onUnstarred(Database::StarredArtistId) override;
+        void onStarred(Database::StarredReleaseId) override;
+        void onUnstarred(Database::StarredReleaseId) override;
+        void onStarred(Database::StarredTrackId) override;
+        void onUnstarred(Database::StarredTrackId) override;
 
-} // Scrobbling::ListenBrainz
+        Database::Db& _db;
+    };
+} // Feedback
+

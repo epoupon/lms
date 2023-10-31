@@ -57,7 +57,7 @@ namespace Database
             Wt::WDateTime                       writtenAfter;
             std::optional<DateRange>            dateRange;
             UserId                              starringUser;				// only releases starred by this user
-            std::optional<Scrobbler>            scrobbler;					//    and for this scrobbler
+            std::optional<FeedbackBackend>      feedbackBackend;		    //    and for this backend
             ArtistId                            artist;						// only releases that involved this user
             EnumSet<TrackArtistLinkType>        trackArtistLinkTypes; 			//    and for these link types
             EnumSet<TrackArtistLinkType>        excludedTrackArtistLinkTypes; 	//    but not for these link types
@@ -70,7 +70,7 @@ namespace Database
             FindParameters& setRange(Range _range) { range = _range; return *this; }
             FindParameters& setWrittenAfter(const Wt::WDateTime& _after) { writtenAfter = _after; return *this; }
             FindParameters& setDateRange(const std::optional<DateRange>& _dateRange) { dateRange = _dateRange; return *this; }
-            FindParameters& setStarringUser(UserId _user, Scrobbler _scrobbler) { starringUser = _user; scrobbler = _scrobbler; return *this; }
+            FindParameters& setStarringUser(UserId _user, FeedbackBackend _feedbackBackend) { starringUser = _user; feedbackBackend = _feedbackBackend; return *this; }
             FindParameters& setArtist(ArtistId _artist, EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {}, EnumSet<TrackArtistLinkType> _excludedTrackArtistLinkTypes = {})
             {
                 artist = _artist;
@@ -104,7 +104,7 @@ namespace Database
         std::optional<std::string>  getCopyrightURL() const;
 
         // Accessors
-        const std::string&                  getName() const { return _name; }
+        const std::string& getName() const { return _name; }
         std::optional<UUID>                 getMBID() const { return UUID::fromString(_MBID); }
         std::optional<std::size_t>          getTotalDisc() const { return _totalDisc; }
         std::size_t                         getDiscCount() const; // may not be total disc (if incomplete for example)

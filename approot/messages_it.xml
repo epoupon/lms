@@ -9,7 +9,7 @@
 <message id="Lms.cancel">Annulla</message>
 <message id="Lms.clusters">Tags</message>
 <message id="Lms.create">Crea</message>
-<message id="Lms.del">Elimina</message>
+<message id="Lms.delete">Elimina</message>
 <message id="Lms.discard">Annulla</message>
 <message id="Lms.edit">Modifica</message>
 <message id="Lms.loading">Caricamento...</message>
@@ -240,10 +240,14 @@
 <!--Settings-->
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">Queste impostazioni sono salvate localmente su questo dispositivo!</message>
+
+
+
 <message id="Lms.Settings.change-password">Cambia password</message>
 
 
 <message id="Lms.Settings.demo-cannot-save">Non posso salvare le impostazioni utilizzando l'account demo!</message>
+
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Impostazioni</message>
 <message id="Lms.Settings.password-bad">Password errata</message>
 <message id="Lms.Settings.password-must-fill-old-password">Devi inserire la password attuale</message>
@@ -254,9 +258,6 @@
 <message id="Lms.Settings.replaygain-mode.release">Album</message>
 <message id="Lms.Settings.replaygain-preamp">Preamplificazione ReplayGain</message>
 <message id="Lms.Settings.replaygain-preamp-no-rg-info">Preamplificazione ReplayGain (se non è disponibile nessuna informazione)</message>
-
-
-
 
 
 

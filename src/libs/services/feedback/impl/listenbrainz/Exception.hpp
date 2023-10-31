@@ -19,22 +19,13 @@
 
 #pragma once
 
-#include <string_view>
+#include "services/feedback/Exception.hpp"
 
-#include "FeedbackTypes.hpp"
-
-namespace Scrobbling::ListenBrainz
+namespace Feedback::ListenBrainz
 {
-	class FeedbacksParser
+	class Exception : public ::Feedback::Exception
 	{
 		public:
-			struct Result
-			{
-				std::size_t feedbackCount {}; // >= feedbacks.size()
-				std::vector<Feedback> feedbacks;
-			};
-
-			static Result parse(std::string_view msgBody);
+			using ::Feedback::Exception::Exception;
 	};
-
-} // Scrobbling::ListenBrainz
+}

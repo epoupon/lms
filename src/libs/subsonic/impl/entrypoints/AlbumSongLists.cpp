@@ -25,6 +25,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "responses/Album.hpp"
 #include "responses/Artist.hpp"
@@ -49,7 +50,8 @@ namespace API::Subsonic
             const Range range{ offset, size };
 
             RangeResults<ReleaseId> releases;
-            Scrobbling::IScrobblingService& scrobbling{ *Service<Scrobbling::IScrobblingService>::get() };
+            Scrobbling::IScrobblingService& scrobblingService{ *Service<Scrobbling::IScrobblingService>::get() };
+            Feedback::IFeedbackService& feedbackService{ *Service<Feedback::IFeedbackService>::get() };
 
             auto transaction{ context.dbSession.createSharedTransaction() };
 
@@ -101,7 +103,7 @@ namespace API::Subsonic
             }
             else if (type == "frequent")
             {
-                releases = scrobbling.getTopReleases(context.userId, {}, range);
+                releases = scrobblingService.getTopReleases(context.userId, {}, range);
             }
             else if (type == "newest")
             {
@@ -123,11 +125,11 @@ namespace API::Subsonic
             }
             else if (type == "recent")
             {
-                releases = scrobbling.getRecentReleases(context.userId, {}, range);
+                releases = scrobblingService.getRecentReleases(context.userId, {}, range);
             }
             else if (type == "starred")
             {
-                releases = scrobbling.getStarredReleases(context.userId, {}, range);
+                releases = feedbackService.getStarredReleases(context.userId, {}, range);
             }
             else
                 throw NotImplementedGenericError{};
@@ -155,21 +157,21 @@ namespace API::Subsonic
             Response response{ Response::createOkResponse(context.serverProtocolVersion) };
             Response::Node& starredNode{ response.createNode(id3 ? Response::Node::Key{ "starred2" } : Response::Node::Key{ "starred" }) };
 
-            Scrobbling::IScrobblingService& scrobbling{ *Service<Scrobbling::IScrobblingService>::get() };
+            Feedback::IFeedbackService& feedbackService{ *Service<Feedback::IFeedbackService>::get() };
 
-            for (const ArtistId artistId : scrobbling.getStarredArtists(context.userId, {} /* clusters */, std::nullopt /* linkType */, ArtistSortMethod::BySortName, Range{}).results)
+            for (const ArtistId artistId : feedbackService.getStarredArtists(context.userId, {} /* clusters */, std::nullopt /* linkType */, ArtistSortMethod::BySortName, Range{}).results)
             {
                 if (auto artist{ Artist::find(context.dbSession, artistId) })
                     starredNode.addArrayChild("artist", createArtistNode(artist, context.dbSession, user, id3));
             }
 
-            for (const ReleaseId releaseId : scrobbling.getStarredReleases(context.userId, {} /* clusters */, Range{}).results)
+            for (const ReleaseId releaseId : feedbackService.getStarredReleases(context.userId, {} /* clusters */, Range{}).results)
             {
                 if (auto release{ Release::find(context.dbSession, releaseId) })
                     starredNode.addArrayChild("album", createAlbumNode(release, context.dbSession, user, id3));
             }
 
-            for (const TrackId trackId : scrobbling.getStarredTracks(context.userId, {} /* clusters */, Range{}).results)
+            for (const TrackId trackId : feedbackService.getStarredTracks(context.userId, {} /* clusters */, Range{}).results)
             {
                 if (auto track{ Track::find(context.dbSession, trackId) })
                     starredNode.addArrayChild("song", createSongNode(track, context.dbSession, user));
