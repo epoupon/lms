@@ -40,13 +40,19 @@ namespace Database
                 prepare();
             }
 
+            Connection(const Connection& other)
+                : Wt::Dbo::backend::Sqlite3{ other }
+                , _dbPath{ other._dbPath }
+            {
+                prepare();
+            }
+
         private:
-            Connection(const Connection&) = delete;
             Connection& operator=(const Connection&) = delete;
 
             std::unique_ptr<SqlConnection> clone() const override
             {
-                return std::make_unique<Connection>(_dbPath);
+                return std::make_unique<Connection>(*this);
             }
 
             void prepare()
@@ -68,7 +74,7 @@ namespace Database
         LMS_LOG(DB, INFO) << "Creating connection pool on file " << dbPath.string();
 
         auto connection{ std::make_unique<Connection>(dbPath.string()) };
-        //	connection->setProperty("show-queries", "true");
+        // connection->setProperty("show-queries", "true");
 
         auto connectionPool{ std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), connectionCount) };
         connectionPool->setTimeout(std::chrono::seconds{ 10 });
