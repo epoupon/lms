@@ -327,7 +327,7 @@ Track::findSimilarTracks(Session& session, const std::vector<TrackId>& tracks, R
 	auto query {session.getDboSession().query<TrackId>(
 			"SELECT t.id FROM track t"
 			" INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
-					" AND t_c.cluster_id IN (SELECT c.id FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id WHERE t_c.track_id IN (" + oss.str() + "))"
+					" AND t_c.cluster_id IN (SELECT DISTINCT c.id FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id WHERE t_c.track_id IN (" + oss.str() + "))"
 					" AND t.id NOT IN (" + oss.str() + ")")
 		.groupBy("t.id")
 		.orderBy("COUNT(*) DESC, RANDOM()")};

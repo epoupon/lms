@@ -223,7 +223,7 @@ Artist::findSimilarArtists(EnumSet<TrackArtistLinkType> artistLinkTypes, Range r
 			" INNER JOIN track t ON t.id = t_a_l.track_id"
 			" INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
 				" WHERE "
-					" t_c.cluster_id IN (SELECT c.id from cluster c"
+					" t_c.cluster_id IN (SELECT DISTINCT c.id from cluster c"
 											" INNER JOIN track t ON c.id = t_c.cluster_id"
 											" INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
 											" INNER JOIN artist a ON a.id = t_a_l.artist_id"

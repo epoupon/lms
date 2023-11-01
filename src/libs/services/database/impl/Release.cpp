@@ -382,12 +382,18 @@ namespace Database
     {
         assert(session());
 
+        // Select the similar releases using the 5 most used clusters of the release
         auto res{ session()->query<Wt::Dbo::ptr<Release>>(
                 "SELECT r FROM release r"
                 " INNER JOIN track t ON t.release_id = r.id"
                 " INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
                     " WHERE "
-                        " t_c.cluster_id IN (SELECT c.id from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN release r ON r.id = t.release_id WHERE r.id = ?)"
+                        " t_c.cluster_id IN "
+                        "(SELECT DISTINCT c.id FROM cluster c"
+                         " INNER JOIN track t ON c.id = t_c.cluster_id"
+                         " INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
+                         " INNER JOIN release r ON r.id = t.release_id"
+                         " WHERE r.id = ?)"
                         " AND r.id <> ?"
                     )
             .bind(getId())
