@@ -90,6 +90,8 @@ namespace Recommendation
 			if (itEngine == std::cend(_engines))
 				continue;
 
+			LMS_LOG(RECOMMENDATION, DEBUG) << "Trying engine '" << engineTypeToString(engineType) << "' to get similar tracks";
+
 			const IEngine& engine {*itEngine->second};
 			res = engine.findSimilarTracks(trackIds, maxCount);
 			if (!res.empty())
@@ -113,6 +115,8 @@ namespace Recommendation
 			auto itEngine {_engines.find(engineType)};
 			if (itEngine == std::cend(_engines))
 				continue;
+
+			LMS_LOG(RECOMMENDATION, DEBUG) << "Trying engine '" << engineTypeToString(engineType) << "' to get similar releases";
 
 			const IEngine& engine {*itEngine->second};
 			res = engine.getSimilarReleases(releaseId, maxCount);
@@ -140,7 +144,7 @@ namespace Recommendation
 			if (itEngine == std::cend(_engines))
 				continue;
 
-			LMS_LOG(RECOMMENDATION, DEBUG) << "Trying engine '" << engineTypeToString(engineType) << "'";
+			LMS_LOG(RECOMMENDATION, DEBUG) << "Trying engine '" << engineTypeToString(engineType) << "' to get similar artists";
 
 			const IEngine& engine {*itEngine->second};
 			res = engine.getSimilarArtists(artistId, linkTypes, maxCount);
