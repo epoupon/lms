@@ -167,7 +167,6 @@ namespace UserInterface::TrackListHelpers
 		const TrackId trackId {track->getId()};
 
 		const auto artists {track->getArtistIds({TrackArtistLinkType::Artist})};
-		LMS_LOG(UI, DEBUG) << "Found " << artists.size() << " artists!";
 		if (!artists.empty())
 		{
 			entry->setCondition("if-has-artists", true);
