@@ -147,6 +147,7 @@ namespace Database
             _session.execute("CREATE INDEX IF NOT EXISTS track_mbid_idx ON track(mbid)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_recording_mbid_idx ON track(recording_mbid)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_release_idx ON track(release_id)");
+            _session.execute("CREATE INDEX IF NOT EXISTS track_file_last_write_idx ON track(file_last_write)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_date_idx ON track(date)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_original_date_idx ON track(original_date)");
             _session.execute("CREATE INDEX IF NOT EXISTS tracklist_name_idx ON tracklist(name)");
