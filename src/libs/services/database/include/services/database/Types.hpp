@@ -46,7 +46,7 @@ namespace Database
 	{
 		Range range;
 		std::vector<T> results;
-		bool moreResults;
+		bool moreResults{};
 
 		RangeResults getSubRange(Range subRange)
 		{

@@ -38,9 +38,12 @@ namespace UserInterface
         Feedback::IFeedbackService& feedbackService{ *Service<Feedback::IFeedbackService>::get() };
         Scrobbling::IScrobblingService& scrobblingService{ *Service<Scrobbling::IScrobblingService>::get() };
 
-        range = getActualRange(range);
-
         RangeResults<ArtistId> artists;
+
+        range = getActualRange(range);
+        if (range.size == 0)
+            return artists;
+
         switch (getMode())
         {
         case Mode::Random:
@@ -76,11 +79,11 @@ namespace UserInterface
 
         case Mode::Search:
         {
+            // do not sort results as we search in both name and sort names, sorting may be very long
             Artist::FindParameters params;
             params.setClusters(getFilters().getClusterIds());
             params.setKeywords(getSearchKeywords());
             params.setLinkType(_linkType);
-            params.setSortMethod(ArtistSortMethod::BySortName);
             params.setRange(range);
 
             {

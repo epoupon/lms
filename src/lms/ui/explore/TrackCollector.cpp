@@ -41,9 +41,11 @@ namespace UserInterface
 		Feedback::IFeedbackService& feedbackService{*Service<Feedback::IFeedbackService>::get()};
 		Scrobbling::IScrobblingService& scrobblingService {*Service<Scrobbling::IScrobblingService>::get()};
 		
-		range = getActualRange(range);
-
 		RangeResults<TrackId> tracks;
+		range = getActualRange(range);
+		if (range.size == 0)
+			return tracks;
+
 		switch (getMode())
 		{
 			case Mode::Random:
