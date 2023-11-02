@@ -73,7 +73,7 @@ namespace API::Subsonic
         }
     }
 
-    Response::Node createArtistNode(const Artist::pointer& artist, Session& session, const User::pointer& user, bool id3)
+    Response::Node createArtistNode(RequestContext& context, const Artist::pointer& artist, const User::pointer& user, bool id3)
     {
         Response::Node artistNode{ createArtistNode(artist) };
 
@@ -82,7 +82,7 @@ namespace API::Subsonic
 
         if (id3)
         {
-            const auto releases{ Release::find(session, Release::FindParameters {}.setArtist(artist->getId())) };
+            const auto releases{ Release::find(context.dbSession, Release::FindParameters {}.setArtist(artist->getId())) };
             artistNode.setAttribute("albumCount", releases.results.size());
         }
 
@@ -90,21 +90,24 @@ namespace API::Subsonic
             artistNode.setAttribute("starred", StringUtils::toISO8601String(dateTime));
 
         // OpenSubsonic specific fields (must always be set)
-        if (!id3)
-            artistNode.setAttribute("mediaType", "artist");
-
+        if (context.enableOpenSubsonic)
         {
-            std::optional<UUID> mbid{ artist->getMBID() };
-            artistNode.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
+            if (!id3)
+                artistNode.setAttribute("mediaType", "artist");
+
+            {
+                std::optional<UUID> mbid{ artist->getMBID() };
+                artistNode.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
+            }
+
+            artistNode.setAttribute("sortName", artist->getSortName());
+
+            // roles
+            Response::Node roles;
+            artistNode.createEmptyArrayValue("roles");
+            for (const TrackArtistLinkType linkType : TrackArtistLink::findUsedTypes(context.dbSession, artist->getId()))
+                artistNode.addArrayValue("roles", Utils::toString(linkType));
         }
-
-        artistNode.setAttribute("sortName", artist->getSortName());
-
-        // roles
-        Response::Node roles;
-        artistNode.createEmptyArrayValue("roles");
-        for (const TrackArtistLinkType linkType : TrackArtistLink::findUsedTypes(session, artist->getId()))
-            artistNode.addArrayValue("roles", Utils::toString(linkType));
 
         return artistNode;
     }

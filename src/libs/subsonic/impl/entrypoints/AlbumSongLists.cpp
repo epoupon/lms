@@ -37,8 +37,9 @@ namespace API::Subsonic
 {
     using namespace Database;
 
-    namespace {
-        Response handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
+    namespace
+    {
+        Response handleGetAlbumListRequestCommon(RequestContext& context, bool id3)
         {
             // Mandatory params
             const std::string type{ getMandatoryParameterAs<std::string>(context.parameters, "type") };
@@ -140,7 +141,7 @@ namespace API::Subsonic
             for (const ReleaseId releaseId : releases.results)
             {
                 const Release::pointer release{ Release::find(context.dbSession, releaseId) };
-                albumListNode.addArrayChild("album", createAlbumNode(release, context.dbSession, user, id3));
+                albumListNode.addArrayChild("album", createAlbumNode(context, release, user, id3));
             }
 
             return response;
@@ -162,19 +163,19 @@ namespace API::Subsonic
             for (const ArtistId artistId : feedbackService.getStarredArtists(context.userId, {} /* clusters */, std::nullopt /* linkType */, ArtistSortMethod::BySortName, Range{}).results)
             {
                 if (auto artist{ Artist::find(context.dbSession, artistId) })
-                    starredNode.addArrayChild("artist", createArtistNode(artist, context.dbSession, user, id3));
+                    starredNode.addArrayChild("artist", createArtistNode(context, artist, user, id3));
             }
 
             for (const ReleaseId releaseId : feedbackService.getStarredReleases(context.userId, {} /* clusters */, Range{}).results)
             {
                 if (auto release{ Release::find(context.dbSession, releaseId) })
-                    starredNode.addArrayChild("album", createAlbumNode(release, context.dbSession, user, id3));
+                    starredNode.addArrayChild("album", createAlbumNode(context, release, user, id3));
             }
 
             for (const TrackId trackId : feedbackService.getStarredTracks(context.userId, {} /* clusters */, Range{}).results)
             {
                 if (auto track{ Track::find(context.dbSession, trackId) })
-                    starredNode.addArrayChild("song", createSongNode(track, context.dbSession, user));
+                    starredNode.addArrayChild("song", createSongNode(context, track, user));
             }
 
             return response;
@@ -211,7 +212,7 @@ namespace API::Subsonic
         for (const TrackId trackId : trackIds.results)
         {
             const Track::pointer track{ Track::find(context.dbSession, trackId) };
-            randomSongsNode.addArrayChild("song", createSongNode(track, context.dbSession, user));
+            randomSongsNode.addArrayChild("song", createSongNode(context, track, user));
         }
 
         return response;
@@ -253,7 +254,7 @@ namespace API::Subsonic
         for (const TrackId trackId : trackIds.results)
         {
             const Track::pointer track{ Track::find(context.dbSession, trackId) };
-            songsByGenreNode.addArrayChild("song", createSongNode(track, context.dbSession, user));
+            songsByGenreNode.addArrayChild("song", createSongNode(context, track, user));
         }
 
         return response;

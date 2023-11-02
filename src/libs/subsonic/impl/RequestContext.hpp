@@ -41,6 +41,7 @@ namespace API::Subsonic
         Database::UserId userId;
         ClientInfo clientInfo;
         ProtocolVersion serverProtocolVersion;
+        bool enableOpenSubsonic{ true };
     };
 }
 

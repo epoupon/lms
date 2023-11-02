@@ -82,7 +82,7 @@ namespace API::Subsonic
                 {
                     const Artist::pointer similarArtist{ Artist::find(context.dbSession, similarArtistId) };
                     if (similarArtist)
-                        artistInfoNode.addArrayChild("similarArtist", createArtistNode(similarArtist, context.dbSession, user, id3));
+                        artistInfoNode.addArrayChild("similarArtist", createArtistNode(context, similarArtist, user, id3));
                 }
             }
 
@@ -166,7 +166,7 @@ namespace API::Subsonic
                         throw UserNotAuthorizedError{};
 
                     if (const Artist::pointer artist{ Artist::find(context.dbSession, artistId) })
-                        indexNode.addArrayChild("artist", createArtistNode(artist, context.dbSession, user, id3));
+                        indexNode.addArrayChild("artist", createArtistNode(context, artist, user, id3));
                 }
             }
 
@@ -268,7 +268,7 @@ namespace API::Subsonic
             for (const TrackId trackId : tracks)
             {
                 const Track::pointer track{ Track::find(context.dbSession, trackId) };
-                similarSongsNode.addArrayChild("song", createSongNode(track, context.dbSession, user));
+                similarSongsNode.addArrayChild("song", createSongNode(context, track, user));
             }
 
             return response;
@@ -321,7 +321,7 @@ namespace API::Subsonic
             for (const ArtistId rootArtistId : rootArtistIds.results)
             {
                 const Artist::pointer artist{ Artist::find(context.dbSession, rootArtistId) };
-                directoryNode.addArrayChild("child", createArtistNode(artist, context.dbSession, user, false /* no id3 */));
+                directoryNode.addArrayChild("child", createArtistNode(context, artist, user, false /* no id3 */));
             }
         }
         else if (artistId)
@@ -338,7 +338,7 @@ namespace API::Subsonic
             for (const ReleaseId artistReleaseId : artistReleases.results)
             {
                 const Release::pointer release{ Release::find(context.dbSession, artistReleaseId) };
-                directoryNode.addArrayChild("child", createAlbumNode(release, context.dbSession, user, false /* no id3 */));
+                directoryNode.addArrayChild("child", createAlbumNode(context, release, user, false /* no id3 */));
             }
         }
         else if (releaseId)
@@ -355,7 +355,7 @@ namespace API::Subsonic
             for (const TrackId trackId : tracks.results)
             {
                 const Track::pointer track{ Track::find(context.dbSession, trackId) };
-                directoryNode.addArrayChild("child", createSongNode(track, context.dbSession, user));
+                directoryNode.addArrayChild("child", createSongNode(context, track, user));
             }
         }
         else
@@ -405,13 +405,13 @@ namespace API::Subsonic
             throw UserNotAuthorizedError{};
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-        Response::Node artistNode{ createArtistNode(artist, context.dbSession, user, true /* id3 */) };
+        Response::Node artistNode{ createArtistNode(context, artist, user, true /* id3 */) };
 
         const auto releases{ Release::find(context.dbSession, Release::FindParameters {}.setArtist(artist->getId())) };
         for (const ReleaseId releaseId : releases.results)
         {
             const Release::pointer release{ Release::find(context.dbSession, releaseId) };
-            artistNode.addArrayChild("album", createAlbumNode(release, context.dbSession, user, true /* id3 */));
+            artistNode.addArrayChild("album", createAlbumNode(context, release, user, true /* id3 */));
         }
 
         response.addNode("artist", std::move(artistNode));
@@ -435,13 +435,13 @@ namespace API::Subsonic
             throw UserNotAuthorizedError{};
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-        Response::Node albumNode{ createAlbumNode(release, context.dbSession, user, true /* id3 */) };
+        Response::Node albumNode{ createAlbumNode(context, release, user, true /* id3 */) };
 
         const auto tracks{ Track::find(context.dbSession, Track::FindParameters {}.setRelease(id).setSortMethod(TrackSortMethod::Release)) };
         for (const TrackId trackId : tracks.results)
         {
             const Track::pointer track{ Track::find(context.dbSession, trackId) };
-            albumNode.addArrayChild("song", createSongNode(track, context.dbSession, user));
+            albumNode.addArrayChild("song", createSongNode(context, track, user));
         }
 
         response.addNode("album", std::move(albumNode));
@@ -465,7 +465,7 @@ namespace API::Subsonic
             throw UserNotAuthorizedError{};
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-        response.addNode("song", createSongNode(track, context.dbSession, user));
+        response.addNode("song", createSongNode(context, track, user));
 
         return response;
     }

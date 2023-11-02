@@ -77,7 +77,7 @@ namespace API::Subsonic
                 for (const ArtistId artistId : artistIds.results)
                 {
                     const auto artist{ Artist::find(context.dbSession, artistId) };
-                    searchResult2Node.addArrayChild("artist", createArtistNode(artist, context.dbSession, user, id3));
+                    searchResult2Node.addArrayChild("artist", createArtistNode(context, artist, user, id3));
                 }
             }
 
@@ -92,7 +92,7 @@ namespace API::Subsonic
                 for (const ReleaseId releaseId : releaseIds.results)
                 {
                     const auto release{ Release::find(context.dbSession, releaseId) };
-                    searchResult2Node.addArrayChild("album", createAlbumNode(release, context.dbSession, user, id3));
+                    searchResult2Node.addArrayChild("album", createAlbumNode(context, release, user, id3));
                 }
             }
 
@@ -106,7 +106,7 @@ namespace API::Subsonic
                 for (const TrackId trackId : trackIds.results)
                 {
                     const auto track{ Track::find(context.dbSession, trackId) };
-                    searchResult2Node.addArrayChild("song", createSongNode(track, context.dbSession, user));
+                    searchResult2Node.addArrayChild("song", createSongNode(context, track, user));
                 }
             }
 
