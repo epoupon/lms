@@ -159,12 +159,12 @@ namespace Recommendation
 	}
 
 	static
-	Database::ScanSettings::RecommendationEngineType
-	getRecommendationEngineType(Database::Session& session)
+	Database::ScanSettings::SimilarityEngineType
+	getSimilarityEngineType(Database::Session& session)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		return Database::ScanSettings::get(session)->getRecommendationEngineType();
+		return Database::ScanSettings::get(session)->getSimilarityEngineType();
 	}
 
 	void
@@ -184,19 +184,23 @@ namespace Recommendation
 				_engines.clear();
 			}
 
-			switch (getRecommendationEngineType(_db.getTLSSession()))
+			switch (getSimilarityEngineType(_db.getTLSSession()))
 			{
-				case ScanSettings::RecommendationEngineType::Clusters:
+				case ScanSettings::SimilarityEngineType::Clusters:
 					_enginePriorities = {EngineType::Clusters};
 					enginesToLoad.try_emplace(EngineType::Clusters, createClustersEngine(_db));
 					break;
 
-				case ScanSettings::RecommendationEngineType::Features:
+				case ScanSettings::SimilarityEngineType::Features:
 					_enginePriorities = {EngineType::Features, EngineType::Clusters};
 
 					// not same order since clusters is faster to load
 					enginesToLoad.try_emplace(EngineType::Clusters, createClustersEngine(_db));
 					enginesToLoad.try_emplace(EngineType::Features, createFeaturesEngine(_db));
+					break;
+
+				case ScanSettings::SimilarityEngineType::None:
+					_enginePriorities.clear();
 					break;
 			}
 

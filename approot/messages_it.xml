@@ -53,13 +53,13 @@
 <message id="Lms.Admin.Database.never">Mai</message>
 <message id="Lms.Admin.Database.path">Cartella dei file multimediali</message>
 
-<message id="Lms.Admin.Database.recommendation-engine-type">Modalità di raccomandazione brani consigliati</message>
-<message id="Lms.Admin.Database.recommendation-engine-type.clusters">Basata sui tag</message>
-<message id="Lms.Admin.Database.recommendation-engine-type.features">Basata sull'analisi acustica</message>
 <message id="Lms.Admin.Database.scan-complete">Scansione completata: {1} file totali, {2} aggiunti, {3} aggiornati, {4} eliminati, {5} duplicati, {6} errati</message>
 <message id="Lms.Admin.Database.scan-launched">Scansione avviata!</message>
 <message id="Lms.Admin.Database.scan-options">Impostazioni scansione</message>
 <message id="Lms.Admin.Database.settings-saved">Impostazioni salvate!</message>
+
+
+
 <message id="Lms.Admin.Database.update-period">Frequenza di aggiornamento</message>
 <message id="Lms.Admin.Database.update-start-time">Orario di aggiornamento</message>
 <message id="Lms.Admin.Database.weekly">Settimanale</message>

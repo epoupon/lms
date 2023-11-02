@@ -51,7 +51,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 		static inline constexpr Field MediaDirectoryField {"media-directory"};
 		static inline constexpr Field UpdatePeriodField {"update-period"};
 		static inline constexpr Field UpdateStartTimeField {"update-start-time"};
-		static inline constexpr Field RecommendationEngineTypeField {"recommendation-engine-type"};
+		static inline constexpr Field SimilarityEngineTypeField {"similarity-engine-type"};
 		static inline constexpr Field ClustersField {"clusters"};
 
 		using UpdatePeriodModel = ValueStringModel<ScanSettings::UpdatePeriod>;
@@ -63,7 +63,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			addField(MediaDirectoryField);
 			addField(UpdatePeriodField);
 			addField(UpdateStartTimeField);
-			addField(RecommendationEngineTypeField);
+			addField(SimilarityEngineTypeField);
 			addField(ClustersField);
 
 			auto dirValidator {createDirectoryValidator()};
@@ -72,7 +72,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 			setValidator(UpdatePeriodField, createMandatoryValidator());
 			setValidator(UpdateStartTimeField, createMandatoryValidator());
-			setValidator(RecommendationEngineTypeField, createMandatoryValidator());
+			setValidator(SimilarityEngineTypeField, createMandatoryValidator());
 
 			// populate the model with initial data
 			loadData();
@@ -80,7 +80,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 		std::shared_ptr<UpdatePeriodModel> updatePeriodModel() { return _updatePeriodModel; }
 		std::shared_ptr<Wt::WAbstractItemModel> updateStartTimeModel() { return _updateStartTimeModel; }
-		std::shared_ptr<Wt::WAbstractItemModel> recommendationEngineTypeModel() { return _recommendationEngineTypeModel; }
+		std::shared_ptr<Wt::WAbstractItemModel> similarityEngineTypeModel() { return _similarityEngineTypeModel; }
 
 		void loadData()
 		{
@@ -104,9 +104,9 @@ class DatabaseSettingsModel : public Wt::WFormModel
 				setReadOnly(DatabaseSettingsModel::UpdateStartTimeField, true);
 			}
 
-			auto recommendationEngineTypeRow {_recommendationEngineTypeModel->getRowFromValue(scanSettings->getRecommendationEngineType())};
-			if (recommendationEngineTypeRow)
-				setValue(RecommendationEngineTypeField, _recommendationEngineTypeModel->getString(*recommendationEngineTypeRow));
+			auto similarityEngineTypeRow {_similarityEngineTypeModel->getRowFromValue(scanSettings->getSimilarityEngineType())};
+			if (similarityEngineTypeRow)
+				setValue(SimilarityEngineTypeField, _similarityEngineTypeModel->getString(*similarityEngineTypeRow));
 
 			auto clusterTypes {scanSettings->getClusterTypes()};
 			if (!clusterTypes.empty())
@@ -133,19 +133,12 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			if (startTimeRow)
 				scanSettings.modify()->setUpdateStartTime(_updateStartTimeModel->getValue(*startTimeRow));
 
-			auto recommendationEngineTypeRow {_recommendationEngineTypeModel->getRowFromString(valueText(RecommendationEngineTypeField))};
-			if (recommendationEngineTypeRow)
-				scanSettings.modify()->setRecommendationEngineType(_recommendationEngineTypeModel->getValue(*recommendationEngineTypeRow));
+			auto similarityEngineTypeRow {_similarityEngineTypeModel->getRowFromString(valueText(SimilarityEngineTypeField))};
+			if (similarityEngineTypeRow)
+				scanSettings.modify()->setSimilarityEngineType(_similarityEngineTypeModel->getValue(*similarityEngineTypeRow));
 
 			auto clusterTypes {StringUtils::splitStringCopy(valueText(ClustersField).toUTF8(), " ")};
 			scanSettings.modify()->setClusterTypes(LmsApp->getDbSession(), std::set<std::string>(clusterTypes.begin(), clusterTypes.end()));
-		}
-
-		static ScanSettings::RecommendationEngineType getCurrentRecommendationEngine()
-		{
-			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-			const ScanSettings::pointer scanSettings {ScanSettings::get(LmsApp->getDbSession())};
-			return scanSettings->getRecommendationEngineType();
 		}
 
 	private:
@@ -165,14 +158,14 @@ class DatabaseSettingsModel : public Wt::WFormModel
 				_updateStartTimeModel->add(time.toString(), time);
 			}
 
-			_recommendationEngineTypeModel = std::make_shared<ValueStringModel<ScanSettings::RecommendationEngineType>>();
-			_recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.clusters"), ScanSettings::RecommendationEngineType::Clusters);
-			_recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.features"), ScanSettings::RecommendationEngineType::Features);
+			_similarityEngineTypeModel = std::make_shared<ValueStringModel<ScanSettings::SimilarityEngineType>>();
+			_similarityEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.similarity-engine-type.clusters"), ScanSettings::SimilarityEngineType::Clusters);
+			_similarityEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.similarity-engine-type.none"), ScanSettings::SimilarityEngineType::None);
 		}
 
 		std::shared_ptr<UpdatePeriodModel>											_updatePeriodModel;
 		std::shared_ptr<ValueStringModel<Wt::WTime>>								_updateStartTimeModel;
-		std::shared_ptr<ValueStringModel<ScanSettings::RecommendationEngineType>>	_recommendationEngineTypeModel;
+		std::shared_ptr<ValueStringModel<ScanSettings::SimilarityEngineType>>	_similarityEngineTypeModel;
 };
 
 DatabaseSettingsView::DatabaseSettingsView()
@@ -216,13 +209,10 @@ DatabaseSettingsView::refreshView()
 	updateStartTime->setModel(model->updateStartTimeModel());
 	t->setFormWidget(DatabaseSettingsModel::UpdateStartTimeField, std::move(updateStartTime));
 
-	// recommendation engine type
-	// Hide the settings if the engine is set to clusters, as we don't want users to switch to acoustic features (currently broken)
-	// Otherwise, give the user a way to switch back to clusters
-	t->setCondition("if-has-recommendation-engine", model->getCurrentRecommendationEngine() == ScanSettings::RecommendationEngineType::Features);
-	auto recommendationEngineType {std::make_unique<Wt::WComboBox>()};
-	recommendationEngineType->setModel(model->recommendationEngineTypeModel());
-	t->setFormWidget(DatabaseSettingsModel::RecommendationEngineTypeField, std::move(recommendationEngineType));
+	// Similarity engine type
+	auto similarityEngineType {std::make_unique<Wt::WComboBox>()};
+	similarityEngineType->setModel(model->similarityEngineTypeModel());
+	t->setFormWidget(DatabaseSettingsModel::SimilarityEngineTypeField, std::move(similarityEngineType));
 
 	// Clusters
 	t->setFormWidget(DatabaseSettingsModel::ClustersField, std::make_unique<Wt::WLineEdit>());

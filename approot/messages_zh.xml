@@ -53,13 +53,13 @@
 <message id="Lms.Admin.Database.never">从不</message>
 <message id="Lms.Admin.Database.path">媒体根目录</message>
 <message id="Lms.Admin.Database.path-help">包含 <code>.lmsignore</code> 文件的目录将会被跳过</message>
-<message id="Lms.Admin.Database.recommendation-engine-type">推荐引擎</message>
-<message id="Lms.Admin.Database.recommendation-engine-type.clusters">基于标签</message>
-<message id="Lms.Admin.Database.recommendation-engine-type.features">基于音频分析</message>
 <message id="Lms.Admin.Database.scan-complete">扫描完成：总文件 {1}，添加文件 {2}，更新文件 {3}，删除文件 {4}，重复文件 {5}，错误文件 {6}</message>
 <message id="Lms.Admin.Database.scan-launched">扫描已完成！</message>
 <message id="Lms.Admin.Database.scan-options">扫描选项</message>
 <message id="Lms.Admin.Database.settings-saved">新设置已保存！</message>
+
+
+
 <message id="Lms.Admin.Database.update-period">更新周期</message>
 <message id="Lms.Admin.Database.update-start-time">更新开始时间</message>
 <message id="Lms.Admin.Database.weekly">每周</message>
