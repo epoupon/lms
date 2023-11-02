@@ -307,6 +307,10 @@ namespace Scanner
 
 				context.currentStepStats.processedElems++;
 				_progressCallback(context.currentStepStats);
+
+				// optimize the database during scan (if we import a very large database, it may be too late to do it once at end)
+				if ((context.stats.nbChanges() % 5'000) == 0)
+					_db.getTLSSession().optimize();
 			}
 
 			return true;

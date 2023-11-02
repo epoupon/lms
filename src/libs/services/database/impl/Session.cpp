@@ -187,4 +187,14 @@ namespace Database
         LMS_LOG(DB, INFO) << "Database Analyze complete";
     }
 
+    void Session::optimize()
+    {
+        LMS_LOG(DB, INFO) << "Optimizing database...";
+        {
+            auto uniqueTransaction{ createUniqueTransaction() };
+            _session.execute("PRAGMA optimize");
+        }
+        LMS_LOG(DB, INFO) << "Database optimizing complete";
+    }
+
 } // namespace Database
