@@ -66,7 +66,7 @@ namespace Database
                 LMS_LOG(DB, DEBUG) << "Setting per-connection settings...";
                 executeSql("pragma journal_mode=WAL");
                 executeSql("pragma synchronous=normal");
-                executeSql("pragma analysis_limit=1000"); // to help make analyze command faster
+                executeSql("pragma analysis_limit=2000"); // to help make analyze command faster, 1000 does not seem to be enough to speed up all queries
                 LMS_LOG(DB, DEBUG) << "Setting per-connection settings done!";
             }
 
