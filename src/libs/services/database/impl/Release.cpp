@@ -125,13 +125,12 @@ namespace Database
             std::ostringstream oss;
             oss << "r.id IN (SELECT DISTINCT r.id FROM release r"
                 " INNER JOIN track t ON t.release_id = r.id"
-                " INNER JOIN cluster c ON c.id = t_c.cluster_id"
                 " INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
 
             WhereClause clusterClause;
             for (const ClusterId clusterId : params.clusters)
             {
-                clusterClause.Or(WhereClause("c.id = ?"));
+                clusterClause.Or(WhereClause("t_c.cluster_id = ?"));
                 query.bind(clusterId);
             }
 

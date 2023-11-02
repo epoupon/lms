@@ -154,6 +154,51 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
     }
 }
 
+TEST_F(DatabaseFixture, Cluster_singleTrackWithSeveralClusters)
+{
+    ScopedTrack track{ session, "MyTrack" };
+    ScopedClusterType clusterType{ session, "MyClusterType" };
+
+    ScopedCluster cluster1{ session, clusterType.lockAndGet(), "MyCluster1" };
+    ScopedCluster cluster2{ session, clusterType.lockAndGet(), "MyCluster2" };
+
+    const std::vector<ClusterId> clusterIds{ cluster1.getId(), cluster2.getId() };
+
+    {
+        auto transaction{ session.createSharedTransaction() };
+
+        const auto tracks{ Track::find(session, Track::FindParameters{}.setClusters(clusterIds)) };
+        EXPECT_TRUE(tracks.results.empty());
+    }
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+
+        cluster1.get().modify()->addTrack(track.get());
+    }
+
+    {
+        auto transaction{ session.createSharedTransaction() };
+
+        const auto tracks{ Track::find(session, Track::FindParameters{}.setClusters(clusterIds)) };
+        EXPECT_TRUE(tracks.results.empty());
+    }
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+
+        cluster2.get().modify()->addTrack(track.get());
+    }
+
+    {
+        auto transaction{ session.createSharedTransaction() };
+
+        const auto tracks{ Track::find(session, Track::FindParameters{}.setClusters(clusterIds)) };
+        ASSERT_FALSE(tracks.results.empty());
+        EXPECT_EQ(tracks.results.front(), track.getId());
+    }
+}
+
 TEST_F(DatabaseFixture, Cluster_multiTracks)
 {
     std::list<ScopedTrack> tracks;
