@@ -140,7 +140,6 @@ namespace Database
             _session.execute("CREATE INDEX IF NOT EXISTS release_name_idx ON release(name)");
             _session.execute("CREATE INDEX IF NOT EXISTS release_name_nocase_idx ON release(name COLLATE NOCASE)");
             _session.execute("CREATE INDEX IF NOT EXISTS release_mbid_idx ON release(mbid)");
-            _session.execute("CREATE INDEX IF NOT EXISTS track_file_last_write_idx ON track(file_last_write)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_path_idx ON track(file_path)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_name_idx ON track(name)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_name_nocase_idx ON track(name COLLATE NOCASE)");
