@@ -47,6 +47,12 @@ namespace Database
                 prepare();
             }
 
+            ~Connection()
+            {
+                // make use of per-connection usage stats to optimize
+                optimize();
+            }
+
         private:
             Connection& operator=(const Connection&) = delete;
 
@@ -62,6 +68,13 @@ namespace Database
                 executeSql("pragma synchronous=normal");
                 executeSql("pragma analysis_limit=1000"); // to help make analyze command faster
                 LMS_LOG(DB, DEBUG) << "Setting per-connection settings done!";
+            }
+
+            void optimize()
+            {
+                LMS_LOG(DB, DEBUG) << "connection close: Running pragma optimize...";
+                executeSql("pragma optimize");
+                LMS_LOG(DB, DEBUG) << "connection close: pragma optimize complete";
             }
 
             std::filesystem::path _dbPath;
