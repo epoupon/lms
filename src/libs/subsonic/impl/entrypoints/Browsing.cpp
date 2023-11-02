@@ -26,6 +26,7 @@
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
+#include "utils/Logger.hpp"
 #include "utils/Random.hpp"
 #include "utils/Service.hpp"
 #include "responses/Album.hpp"
@@ -94,52 +95,79 @@ namespace API::Subsonic
 
             Response::Node& artistsNode{ response.createNode(id3 ? "artists" : "indexes") };
             artistsNode.setAttribute("ignoredArticles", "");
-            artistsNode.setAttribute("lastModified", reportedDummyDateULong);
-
-            auto transaction{ context.dbSession.createSharedTransaction() };
-
-            User::pointer user{ User::find(context.dbSession, context.userId) };
-            if (!user)
-                throw UserNotAuthorizedError{};
+            artistsNode.setAttribute("lastModified", reportedDummyDateULong); // TODO report last file write?
 
             Artist::FindParameters parameters;
-            parameters.setSortMethod(ArtistSortMethod::BySortName);
-            switch (user->getSubsonicArtistListMode())
             {
-            case SubsonicArtistListMode::AllArtists:
-                break;
-            case SubsonicArtistListMode::ReleaseArtists:
-                parameters.setLinkType(TrackArtistLinkType::ReleaseArtist);
-                break;
-            case SubsonicArtistListMode::TrackArtists:
-                parameters.setLinkType(TrackArtistLinkType::Artist);
-                break;
+                auto transaction{ context.dbSession.createSharedTransaction() };
+
+                User::pointer user{ User::find(context.dbSession, context.userId) };
+                if (!user)
+                    throw UserNotAuthorizedError{};
+
+                parameters.setSortMethod(ArtistSortMethod::BySortName);
+                switch (user->getSubsonicArtistListMode())
+                {
+                case SubsonicArtistListMode::AllArtists:
+                    break;
+                case SubsonicArtistListMode::ReleaseArtists:
+                    parameters.setLinkType(TrackArtistLinkType::ReleaseArtist);
+                    break;
+                case SubsonicArtistListMode::TrackArtists:
+                    parameters.setLinkType(TrackArtistLinkType::Artist);
+                    break;
+                }
             }
 
-            std::map<char, std::vector<Artist::pointer>> artistsSortedByFirstChar;
-            const RangeResults<ArtistId> artists{ Artist::find(context.dbSession, parameters) };
-            for (const ArtistId artistId : artists.results)
+            // This endpoint does not scale: make sort lived transactions in order not to block the whole application
+
+            // first pass: dispatch the artists by first letter
+            LMS_LOG(API_SUBSONIC, DEBUG) << "GetArtists: fetching all artists...";
+            std::map<char, std::vector<ArtistId>> artistsSortedByFirstChar;
+            std::size_t currentArtistOffset{0};
+            constexpr std::size_t batchSize{ 100 };
+            bool hasMoreArtists{ true };
+            while (hasMoreArtists)
             {
-                const Artist::pointer artist{ Artist::find(context.dbSession, artistId) };
-                const std::string& sortName{ artist->getSortName() };
+                auto transaction{ context.dbSession.createSharedTransaction() };
 
-                char sortChar;
-                if (sortName.empty() || !std::isalpha(sortName[0]))
-                    sortChar = '?';
-                else
-                    sortChar = std::toupper(sortName[0]);
+                parameters.setRange(Range{ currentArtistOffset, batchSize });
+                const RangeResults<ArtistId> artists{ Artist::find(context.dbSession, parameters) };
+                for (const ArtistId artistId : artists.results)
+                {
+                    const Artist::pointer artist{ Artist::find(context.dbSession, artistId) };
+                    std::string_view sortName{ artist->getSortName() };
 
-                artistsSortedByFirstChar[sortChar].push_back(artist);
+                    char sortChar;
+                    if (sortName.empty() || !std::isalpha(sortName[0]))
+                        sortChar = '?';
+                    else
+                        sortChar = std::toupper(sortName[0]);
+
+                    artistsSortedByFirstChar[sortChar].push_back(artistId);
+                }
+
+                hasMoreArtists = artists.moreResults;
+                currentArtistOffset += artists.results.size();
             }
 
-
-            for (const auto& [sortChar, artists] : artistsSortedByFirstChar)
+            // second pass: add each artist
+            LMS_LOG(API_SUBSONIC, DEBUG) << "GetArtists: constructing response...";
+            for (const auto& [sortChar, artistIds] : artistsSortedByFirstChar)
             {
                 Response::Node& indexNode{ artistsNode.createArrayChild("index") };
                 indexNode.setAttribute("name", std::string{ sortChar });
 
-                for (const Artist::pointer& artist : artists)
-                    indexNode.addArrayChild("artist", createArtistNode(artist, context.dbSession, user, id3));
+                for (const ArtistId artistId : artistIds)
+                {
+                    auto transaction{ context.dbSession.createSharedTransaction() };
+                    User::pointer user{ User::find(context.dbSession, context.userId) };
+                    if (!user)
+                        throw UserNotAuthorizedError{};
+
+                    if (const Artist::pointer artist{ Artist::find(context.dbSession, artistId) })
+                        indexNode.addArrayChild("artist", createArtistNode(artist, context.dbSession, user, id3));
+                }
             }
 
             return response;
