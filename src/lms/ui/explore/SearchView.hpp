@@ -33,62 +33,61 @@
 
 namespace UserInterface
 {
-	class InfiniteScrollingContainer;
-	class Filters;
-	class PlayQueueController;
+    class InfiniteScrollingContainer;
+    class Filters;
+    class PlayQueueController;
 
-	class SearchView : public Wt::WTemplate
-	{
-		public:
-			SearchView(Filters& filters, PlayQueueController& playQueueController);
+    class SearchView : public Wt::WTemplate
+    {
+    public:
+        SearchView(Filters& filters, PlayQueueController& playQueueController);
 
-			void refreshView(const Wt::WString& searchText);
+        void refreshView(const Wt::WString& searchText);
 
-		private:
-			// same order as in the menu
-			enum class Mode
-			{
-				Artist,
-				Release,
-				Track,
-			};
+    private:
+        // same order as in the menu
+        enum class Mode
+        {
+            Artist,
+            Release,
+            Track,
+        };
 
-			static constexpr Mode _defaultMode {Mode::Release};
-			static inline std::unordered_map<Mode, std::size_t> _batchSizes
-			{
-				{Mode::Artist, 6},
-				{Mode::Release, 6},
-				{Mode::Track, 6},
-			};
-			static inline std::unordered_map<Mode, std::size_t> _maxCounts
-			{
-				{Mode::Artist, 1000},
-				{Mode::Release, 504},
-				{Mode::Track, 500},
-			};
-			std::size_t getBatchSize(Mode mode) const;
-			std::size_t getMaxCount(Mode mode) const;
+        static constexpr Mode _defaultMode{ Mode::Release };
+        static inline std::unordered_map<Mode, std::size_t> _batchSizes
+        {
+            {Mode::Artist, 6},
+            {Mode::Release, 6},
+            {Mode::Track, 6},
+        };
+        static inline std::unordered_map<Mode, std::size_t> _maxCounts
+        {
+            {Mode::Artist, 1000},
+            {Mode::Release, 504},
+            {Mode::Track, 500},
+        };
+        std::size_t getBatchSize(Mode mode) const;
+        std::size_t getMaxCount(Mode mode) const;
 
-			void refreshView();
-			void refreshView(std::optional<Database::TrackArtistLinkType> linkType);
-			void addSomeArtists();
-			void addSomeReleases();
-			void addSomeTracks();
+        void refreshView();
+        void refreshView(std::optional<Database::TrackArtistLinkType> linkType);
+        void addSomeArtists();
+        void addSomeReleases();
+        void addSomeTracks();
 
-			PlayQueueController&	_playQueueController;
-			Filters&			_filters;
-			ArtistCollector		_artistCollector;
-			ReleaseCollector	_releaseCollector;
-			TrackCollector		_trackCollector;
+        PlayQueueController& _playQueueController;
+        Filters& _filters;
+        ArtistCollector		_artistCollector;
+        ReleaseCollector	_releaseCollector;
+        TrackCollector		_trackCollector;
+        Wt::WStackedWidget* _stack{};
+        Wt::WWidget*        _currentActiveItem {};
+        InfiniteScrollingContainer* _artists{};
+        InfiniteScrollingContainer* _releases{};
+        InfiniteScrollingContainer* _tracks{};
 
-			InfiniteScrollingContainer* _artists {};
-			InfiniteScrollingContainer* _releases {};
-			InfiniteScrollingContainer* _tracks {};
-
-			Wt::WComboBox* _artistLinkType {};
-
-			std::vector<InfiniteScrollingContainer*> _results;
-	};
+        Wt::WComboBox* _artistLinkType{};
+    };
 
 } // namespace UserInterface
 
