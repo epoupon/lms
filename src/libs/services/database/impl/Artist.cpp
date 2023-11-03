@@ -99,7 +99,8 @@ createQuery(Session& session, const Artist::FindParameters& params)
 			|| params.writtenAfter.isValid()
 			|| params.linkType
 			|| params.track.isValid()
-			|| params.release.isValid())
+			|| params.release.isValid()
+			|| params.clusters.size() == 1)
 	{
 		query.join("track t ON t.id = t_a_l.track_id");
 		query.join("track_artist_link t_a_l ON t_a_l.artist_id = a.id");
@@ -140,7 +141,12 @@ createQuery(Session& session, const Artist::FindParameters& params)
 			.where("s_a.sync_state <> ?").bind(SyncState::PendingRemove);
 	}
 
-	if (!params.clusters.empty())
+	if(params.clusters.size() == 1)
+	{
+		query.join("track_cluster t_c ON t_c.track_id = t.id")
+			.where("t_c.cluster_id = ?").bind(params.clusters.front());
+	}
+	else if (params.clusters.size() > 1)
 	{
 		std::ostringstream oss;
 		oss << "a.id IN (SELECT DISTINCT a.id FROM artist a"

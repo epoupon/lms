@@ -79,7 +79,6 @@ namespace UserInterface
 
         case Mode::Search:
         {
-            // do not sort results as we search in both name and sort names, sorting may be very long
             Artist::FindParameters params;
             params.setClusters(getFilters().getClusterIds());
             params.setKeywords(getSearchKeywords());

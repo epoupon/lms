@@ -45,7 +45,8 @@ namespace Database
             || params.sortMethod == ReleaseSortMethod::OriginalDateDesc
             || params.writtenAfter.isValid()
             || params.dateRange
-            || params.artist.isValid())
+            || params.artist.isValid()
+            || params.clusters.size() == 1)
         {
             query.join("track t ON t.release_id = r.id");
         }
@@ -120,7 +121,12 @@ namespace Database
             }
         }
 
-        if (!params.clusters.empty())
+        if (params.clusters.size() == 1)
+        {
+            query.join("track_cluster t_c ON t_c.track_id = t.id")
+                .where("t_c.cluster_id = ?").bind(params.clusters.front());
+        }
+        else if (params.clusters.size() > 1)
         {
             std::ostringstream oss;
             oss << "r.id IN (SELECT DISTINCT r.id FROM release r"

@@ -83,7 +83,6 @@ namespace UserInterface
             Release::FindParameters params;
             params.setClusters(getFilters().getClusterIds());
             params.setKeywords(getSearchKeywords());
-            params.setSortMethod(ReleaseSortMethod::Name);
             params.setRange(range);
 
             {

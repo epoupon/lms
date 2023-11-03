@@ -64,7 +64,13 @@ namespace Database
                     .where("s_t.sync_state <> ?").bind(SyncState::PendingRemove);
             }
 
-            if (!params.clusters.empty())
+            if (params.clusters.size() == 1)
+            {
+                // optim
+                query.join("track_cluster t_c ON t_c.track_id = t.id")
+                    .where("t_c.cluster_id = ?").bind(params.clusters.front());
+            }
+            else if (params.clusters.size() > 1)
             {
                 std::ostringstream oss;
                 oss << "t.id IN (SELECT DISTINCT t.id FROM track t"
