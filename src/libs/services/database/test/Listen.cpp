@@ -291,7 +291,7 @@ TEST_F(DatabaseFixture, Listen_getTopReleases)
     const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
     ScopedRelease release{ session, "MyRelease" };
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createUniqueTransaction() };
         track.get().modify()->setRelease(release.get());
     }
 
@@ -333,7 +333,7 @@ TEST_F(DatabaseFixture, Listen_getTopReleases_multi)
     ScopedRelease release2{ session, "MyRelease2" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createUniqueTransaction() };
         track1.get().modify()->setRelease(release1.get());
         track2.get().modify()->setRelease(release2.get());
     }
@@ -381,7 +381,7 @@ TEST_F(DatabaseFixture, Listen_getTopReleases_cluster)
     ScopedRelease release{ session, "MyRelease" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createUniqueTransaction() };
         track.get().modify()->setRelease(release.get());
     }
 
@@ -652,7 +652,7 @@ TEST_F(DatabaseFixture, Listen_getRecentReleases)
     ScopedRelease release{ session, "MyRelease" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createUniqueTransaction() };
         track.get().modify()->setRelease(release.get());
     }
 
@@ -692,7 +692,7 @@ TEST_F(DatabaseFixture, Listen_getMostRecentRelease)
     ScopedRelease release{ session, "MyRelease" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createUniqueTransaction() };
         track.get().modify()->setRelease(release.get());
     }
 
@@ -746,7 +746,7 @@ TEST_F(DatabaseFixture, Listen_getRecentReleases_multi)
     ScopedRelease release2{ session, "MyRelease2" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createUniqueTransaction() };
         track1.get().modify()->setRelease(release1.get());
         track2.get().modify()->setRelease(release2.get());
     }
@@ -806,7 +806,7 @@ TEST_F(DatabaseFixture, Listen_getRecentReleases_cluster)
     ScopedRelease release{ session, "MyRelease" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createUniqueTransaction() };
         track.get().modify()->setRelease(release.get());
     }
     {
@@ -871,6 +871,71 @@ TEST_F(DatabaseFixture, Listen_getRecentTracks)
         EXPECT_EQ(tracks.moreResults, false);
         EXPECT_EQ(tracks.results.size(), 0);
     }
+}
+
+TEST_F(DatabaseFixture, Listen_getCount_track)
+{
+    ScopedTrack track{ session, "MyTrack" };
+    ScopedUser user{ session, "MyUser" };
+
+    {
+        auto transaction{ session.createSharedTransaction() };
+
+        const std::size_t count{ Listen::getCount(session, user->getId(), ScrobblingBackend::Internal, track.getId()) };
+        EXPECT_EQ(count, 0);
+    }
+
+    const Wt::WDateTime dateTime1{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
+
+    {
+        auto transaction{ session.createSharedTransaction() };
+
+        const std::size_t count{ Listen::getCount(session, user->getId(), ScrobblingBackend::Internal, track.getId()) };
+        EXPECT_EQ(count, 1);
+    }
+}
+
+TEST_F(DatabaseFixture, Listen_getCount_release)
+{
+    ScopedTrack track1{ session, "MyTrack" };
+    ScopedTrack track2{ session, "MyTrack" };
+    ScopedUser user{ session, "MyUser" };
+    ScopedRelease release{ session, "MyRelease" };
+
+    auto getReleaseListenCount{ [&]
+    {
+        auto transaction{ session.createSharedTransaction() };
+        return Listen::getCount(session, user->getId(), ScrobblingBackend::Internal, release.getId());
+    } };
+
+    EXPECT_EQ(getReleaseListenCount(), 0);
+
+    const Wt::WDateTime dateTime1{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+    ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
+
+    EXPECT_EQ(getReleaseListenCount(), 0);
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+        track1.get().modify()->setRelease(release.get());
+    }
+
+    EXPECT_EQ(getReleaseListenCount(), 1);
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+        track2.get().modify()->setRelease(release.get());
+    }
+
+    EXPECT_EQ(getReleaseListenCount(), 0);
+    ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
+    EXPECT_EQ(getReleaseListenCount(), 1);
+    ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
+    EXPECT_EQ(getReleaseListenCount(), 1);
+
+    ScopedListen listen4{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
+    EXPECT_EQ(getReleaseListenCount(), 2);
 }
 
 TEST_F(DatabaseFixture, Listen_getMostRecentTrack)

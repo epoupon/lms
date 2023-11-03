@@ -23,6 +23,7 @@
 
 #include "services/database/Artist.hpp"
 #include "services/database/Cluster.hpp"
+#include "services/database/Listen.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/TrackArtistLink.hpp"
@@ -106,7 +107,7 @@ namespace API::Subsonic
             trackResponse.setAttribute("discNumber", *track->getDiscNumber());
         if (track->getYear())
             trackResponse.setAttribute("year", *track->getYear());
-
+        trackResponse.setAttribute("playCount", Listen::getCount(context.dbSession, user->getId(), user->getScrobblingBackend(), track->getId()));
         trackResponse.setAttribute("path", getTrackPath(track));
         {
             std::error_code ec;

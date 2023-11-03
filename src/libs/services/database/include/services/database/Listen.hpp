@@ -71,10 +71,13 @@ namespace Database
         static RangeResults<ReleaseId>  getRecentReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range = {});
         static RangeResults<TrackId>    getRecentTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range = {});
 
+        static std::size_t              getCount(Session& session, UserId userId, ScrobblingBackend backend, TrackId trackId);
+        static std::size_t              getCount(Session& session, UserId userId, ScrobblingBackend backend, ReleaseId trackId);
+
         static pointer          getMostRecentListen(Session& session, UserId userId, ScrobblingBackend backend, ReleaseId releaseId);
         static pointer          getMostRecentListen(Session& session, UserId userId, ScrobblingBackend backend, TrackId releaseId);
 
-        SyncState         getSyncState() const { return _syncState; }
+        SyncState               getSyncState() const { return _syncState; }
         ObjectPtr<User>         getUser() const { return _user; }
         ObjectPtr<Track>        getTrack() const { return _track; }
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
