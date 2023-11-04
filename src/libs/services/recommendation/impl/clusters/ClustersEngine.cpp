@@ -44,7 +44,7 @@ namespace Recommendation {
         Session& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createSharedTransaction() };
 
-        const auto similarTrackIds{ Track::findSimilarTracks(dbSession, trackIds, Range {0, maxCount}) };
+        const auto similarTrackIds{ Track::findSimilarTrackIds(dbSession, trackIds, Range {0, maxCount}) };
         return std::move(similarTrackIds.results);
     }
 

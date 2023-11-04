@@ -194,7 +194,7 @@ namespace API::Subsonic
                 params.setRange({ 0, meanTrackCountPerArtist });
                 params.setSortMethod(TrackSortMethod::Random);
 
-                const auto artistTracks{ Track::find(context.dbSession, params) };
+                const auto artistTracks{ Track::findIds(context.dbSession, params) };
                 tracks.insert(std::end(tracks),
                     std::begin(artistTracks.results),
                     std::end(artistTracks.results));
@@ -225,7 +225,7 @@ namespace API::Subsonic
                 params.setRange({ 0, meanTrackCountPerRelease });
                 params.setSortMethod(TrackSortMethod::Random);
 
-                const auto releaseTracks{ Track::find(context.dbSession, params) };
+                const auto releaseTracks{ Track::findIds(context.dbSession, params) };
                 tracks.insert(std::end(tracks),
                     std::begin(releaseTracks.results),
                     std::end(releaseTracks.results));
@@ -349,11 +349,8 @@ namespace API::Subsonic
             directoryNode.setAttribute("name", Utils::makeNameFilesystemCompatible(release->getName()));
 
             const auto tracks{ Track::find(context.dbSession, Track::FindParameters {}.setRelease(*releaseId).setSortMethod(TrackSortMethod::Release)) };
-            for (const TrackId trackId : tracks.results)
-            {
-                const Track::pointer track{ Track::find(context.dbSession, trackId) };
+            for (const Track::pointer& track : tracks.results)
                 directoryNode.addArrayChild("child", createSongNode(context, track, user));
-            }
         }
         else
             throw BadParameterGenericError{ "id" };
@@ -432,11 +429,8 @@ namespace API::Subsonic
         Response::Node albumNode{ createAlbumNode(context, release, user, true /* id3 */) };
 
         const auto tracks{ Track::find(context.dbSession, Track::FindParameters {}.setRelease(id).setSortMethod(TrackSortMethod::Release)) };
-        for (const TrackId trackId : tracks.results)
-        {
-            const Track::pointer track{ Track::find(context.dbSession, trackId) };
+        for (const Track::pointer& track : tracks.results)
             albumNode.addArrayChild("song", createSongNode(context, track, user));
-        }
 
         response.addNode("album", std::move(albumNode));
 

@@ -86,8 +86,7 @@ namespace API::Subsonic
                 params.setKeywords(keywords);
                 params.setRange({ albumOffset, albumCount });
 
-                RangeResults<Release::pointer> releases{ Release::find(context.dbSession, params) };
-                for (const Release::pointer& release : releases.results)
+                for (const Release::pointer& release : Release::find(context.dbSession, params).results)
                     searchResult2Node.addArrayChild("album", createAlbumNode(context, release, user, id3));
             }
 
@@ -97,12 +96,8 @@ namespace API::Subsonic
                 params.setKeywords(keywords);
                 params.setRange({ songOffset, songCount });
 
-                RangeResults<TrackId> trackIds{ Track::find(context.dbSession, params) };
-                for (const TrackId trackId : trackIds.results)
-                {
-                    const auto track{ Track::find(context.dbSession, trackId) };
+                for (const Track::pointer& track : Track::find(context.dbSession, params).results)
                     searchResult2Node.addArrayChild("song", createSongNode(context, track, user));
-                }
             }
 
             return response;

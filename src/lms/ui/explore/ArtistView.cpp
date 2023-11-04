@@ -369,12 +369,12 @@ Artist::addSomeNonReleaseTracks()
 	params.setNonRelease(true);
 
 	const auto tracks {Track::find(LmsApp->getDbSession(), params)};
-	for (const TrackId trackId : tracks.results)
+	for (const Track::pointer& track : tracks.results)
 	{
+		// TODO handle this with range
 		if (_trackContainer->getCount() == _tracksMaxCount)
 			break;
 
-		const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)};
 		_trackContainer->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
 
 		areTracksAdded = true;

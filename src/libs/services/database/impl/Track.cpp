@@ -39,11 +39,12 @@ namespace Database
 {
     namespace
     {
-        Wt::Dbo::Query<TrackId> createQuery(Session& session, const Track::FindParameters& params)
+        template <typename ResultType>
+        Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Track::FindParameters& params)
         {
             session.checkSharedLocked();
 
-            auto query{ session.getDboSession().query<TrackId>(params.distinct ? "SELECT DISTINCT t.id FROM track t" : "SELECT t.id FROM track t") };
+            auto query{ session.getDboSession().query<ResultType>(params.distinct ? "SELECT DISTINCT " + std::string{ itemToSelect } + " FROM track t" : "SELECT t.id FROM track t") };
 
             assert(params.keywords.empty() || params.name.empty());
             for (std::string_view keyword : params.keywords)
@@ -168,6 +169,21 @@ namespace Database
 
             return query;
         }
+        
+        template <typename ResultType>
+        Wt::Dbo::Query<ResultType> createQuery(Session& session, const Track::FindParameters& params)
+        {
+            std::string_view itemToSelect;
+            
+            if constexpr (std::is_same_v<ResultType, TrackId>)
+                itemToSelect = "t.id";
+            else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<Track>>)
+                itemToSelect = "t";
+            else
+                static_assert("Unhandled type");
+
+            return createQuery<ResultType>(session, itemToSelect, params);
+        }
     }
 
     Track::Track(const std::filesystem::path& p)
@@ -257,7 +273,7 @@ namespace Database
         return res;
     }
 
-    RangeResults<TrackId> Track::findTrackMBIDDuplicates(Session& session, Range range)
+    RangeResults<TrackId> Track::findIdsTrackMBIDDuplicates(Session& session, Range range)
     {
         session.checkSharedLocked();
 
@@ -267,7 +283,7 @@ namespace Database
         return Utils::execQuery(query, range);
     }
 
-    RangeResults<TrackId> Track::findWithRecordingMBIDAndMissingFeatures(Session& session, Range range)
+    RangeResults<TrackId> Track::findIdsWithRecordingMBIDAndMissingFeatures(Session& session, Range range)
     {
         session.checkSharedLocked();
 
@@ -295,16 +311,23 @@ namespace Database
         return std::vector<ClusterId>(res.begin(), res.end());
     }
 
-    RangeResults<TrackId> Track::find(Session& session, const FindParameters& parameters)
+    RangeResults<TrackId> Track::findIds(Session& session, const FindParameters& parameters)
     {
         session.checkSharedLocked();
 
-        auto query{ createQuery(session, parameters) };
-
+        auto query{ createQuery<TrackId>(session, parameters) };
         return Utils::execQuery(query, parameters.range);
     }
 
-    RangeResults<TrackId> Track::findSimilarTracks(Session& session, const std::vector<TrackId>& tracks, Range range)
+    RangeResults<Track::pointer> Track::find(Session& session, const FindParameters& parameters)
+    {
+        session.checkSharedLocked();
+
+        auto query{ createQuery<Wt::Dbo::ptr<Track>>(session, parameters) };
+        return Utils::execQuery(query, parameters.range);
+    }
+
+    RangeResults<TrackId> Track::findSimilarTrackIds(Session& session, const std::vector<TrackId>& tracks, Range range)
     {
         assert(!tracks.empty());
         session.checkSharedLocked();

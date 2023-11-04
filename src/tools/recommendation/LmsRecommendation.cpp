@@ -38,14 +38,12 @@
 
 using namespace Database;
 
-static
-void
-dumpTracksRecommendation(Session session, Recommendation::IRecommendationService& recommendationService, unsigned maxSimilarityCount)
+static void dumpTracksRecommendation(Session session, Recommendation::IRecommendationService& recommendationService, unsigned maxSimilarityCount)
 {
     const RangeResults<TrackId> trackIds{ [&]
         {
             auto transaction {session.createSharedTransaction()};
-            return Track::find(session, Track::FindParameters {});
+            return Track::findIds(session, Track::FindParameters{});
         }() };
 
     std::cout << "*** Tracks (" << trackIds.results.size() << ") ***" << std::endl;
@@ -74,9 +72,7 @@ dumpTracksRecommendation(Session session, Recommendation::IRecommendationService
     }
 }
 
-static
-void
-dumpReleasesRecommendation(Session session, Recommendation::IRecommendationService& recommendationService, unsigned maxSimilarityCount)
+static void dumpReleasesRecommendation(Session session, Recommendation::IRecommendationService& recommendationService, unsigned maxSimilarityCount)
 {
     const RangeResults<ReleaseId> releaseIds{ std::invoke([&]
         {
@@ -101,9 +97,7 @@ dumpReleasesRecommendation(Session session, Recommendation::IRecommendationServi
     }
 }
 
-static
-void
-dumpArtistsRecommendation(Session session, Recommendation::IRecommendationService& recommendationService, unsigned maxSimilarityCount)
+static void dumpArtistsRecommendation(Session session, Recommendation::IRecommendationService& recommendationService, unsigned maxSimilarityCount)
 {
     const RangeResults<ArtistId> artistIds = std::invoke([&]()
         {
@@ -129,7 +123,6 @@ dumpArtistsRecommendation(Session session, Recommendation::IRecommendationServic
         }
     }
 }
-
 
 int main(int argc, char* argv[])
 {

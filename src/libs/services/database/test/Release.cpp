@@ -78,7 +78,7 @@ TEST_F(DatabaseFixture, Release_singleTrack)
             auto transaction{ session.createSharedTransaction() };
             EXPECT_TRUE(Release::findOrphanIds(session, Range{}).results.empty());
 
-            const auto tracks{ Track::find(session, Track::FindParameters {}.setRelease(release.getId())) };
+            const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release.getId())) };
             ASSERT_EQ(tracks.results.size(), 1);
             EXPECT_EQ(tracks.results.front(), track.getId());
         }
@@ -92,18 +92,18 @@ TEST_F(DatabaseFixture, Release_singleTrack)
 
         {
             auto transaction{ session.createUniqueTransaction() };
-            auto tracks{ Track::find(session, Track::FindParameters{}.setName("MyTrackName").setReleaseName("MyReleaseName")) };
+            auto tracks{ Track::findIds(session, Track::FindParameters{}.setName("MyTrackName").setReleaseName("MyReleaseName")) };
             ASSERT_EQ(tracks.results.size(), 1);
             EXPECT_EQ(tracks.results.front(), track.getId());
         }
         {
             auto transaction{ session.createUniqueTransaction() };
-            auto tracks{ Track::find(session, Track::FindParameters{}.setName("MyTrackName").setReleaseName("MyReleaseFoo")) };
+            auto tracks{ Track::findIds(session, Track::FindParameters{}.setName("MyTrackName").setReleaseName("MyReleaseFoo")) };
             EXPECT_EQ(tracks.results.size(), 0);
         }
         {
             auto transaction{ session.createUniqueTransaction() };
-            auto tracks{ Track::find(session, Track::FindParameters{}.setName("MyTrackFoo").setReleaseName("MyReleaseName")) };
+            auto tracks{ Track::findIds(session, Track::FindParameters{}.setName("MyTrackFoo").setReleaseName("MyReleaseName")) };
             EXPECT_EQ(tracks.results.size(), 0);
         }
     }
@@ -111,7 +111,7 @@ TEST_F(DatabaseFixture, Release_singleTrack)
     {
         auto transaction{ session.createUniqueTransaction() };
 
-        const auto tracks{ Track::find(session, Track::FindParameters {}.setRelease(release.getId())) };
+        const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release.getId())) };
         EXPECT_TRUE(tracks.results.empty());
 
         auto releases{ Release::findOrphanIds(session, Range {}) };
@@ -285,8 +285,8 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseFirstTrack)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        EXPECT_TRUE(Track::find(session, Track::FindParameters{}.setRelease(release1.getId())).results.empty());
-        EXPECT_TRUE(Track::find(session, Track::FindParameters{}.setRelease(release2.getId())).results.empty());
+        EXPECT_TRUE(Track::findIds(session, Track::FindParameters{}.setRelease(release1.getId())).results.empty());
+        EXPECT_TRUE(Track::findIds(session, Track::FindParameters{}.setRelease(release2.getId())).results.empty());
     }
 
     {
@@ -310,13 +310,13 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseFirstTrack)
         auto transaction{ session.createSharedTransaction() };
 
         {
-            const auto tracks{ Track::find(session, Track::FindParameters {}.setRelease(release1.getId()).setSortMethod(TrackSortMethod::Release)) };
+            const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release1.getId()).setSortMethod(TrackSortMethod::Release)) };
             ASSERT_FALSE(tracks.results.empty());
             EXPECT_EQ(tracks.results.front(), track1A.getId());
         }
 
         {
-            const auto tracks{ Track::find(session, Track::FindParameters {}.setRelease(release2.getId()).setSortMethod(TrackSortMethod::Release)) };
+            const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release2.getId()).setSortMethod(TrackSortMethod::Release)) };
             ASSERT_FALSE(tracks.results.empty());
             EXPECT_EQ(tracks.results.front(), track2B.getId());
         }

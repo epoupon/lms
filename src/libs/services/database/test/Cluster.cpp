@@ -133,11 +133,11 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Track::find(session, Track::FindParameters {}.setClusters({cluster1.getId()})) };
+        auto tracks{ Track::findIds(session, Track::FindParameters {}.setClusters({cluster1.getId()})) };
         ASSERT_EQ(tracks.results.size(), 1);
         EXPECT_EQ(tracks.results.front(), track.getId());
 
-        tracks = Track::find(session, Track::FindParameters{}.setClusters({ cluster2.getId() }));
+        tracks = Track::findIds(session, Track::FindParameters{}.setClusters({ cluster2.getId() }));
         EXPECT_TRUE(tracks.results.empty());
     }
 
@@ -167,7 +167,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrackWithSeveralClusters)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        const auto tracks{ Track::find(session, Track::FindParameters{}.setClusters(clusterIds)) };
+        const auto tracks{ Track::findIds(session, Track::FindParameters{}.setClusters(clusterIds)) };
         EXPECT_TRUE(tracks.results.empty());
     }
 
@@ -180,7 +180,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrackWithSeveralClusters)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        const auto tracks{ Track::find(session, Track::FindParameters{}.setClusters(clusterIds)) };
+        const auto tracks{ Track::findIds(session, Track::FindParameters{}.setClusters(clusterIds)) };
         EXPECT_TRUE(tracks.results.empty());
     }
 
@@ -193,7 +193,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrackWithSeveralClusters)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        const auto tracks{ Track::find(session, Track::FindParameters{}.setClusters(clusterIds)) };
+        const auto tracks{ Track::findIds(session, Track::FindParameters{}.setClusters(clusterIds)) };
         ASSERT_FALSE(tracks.results.empty());
         EXPECT_EQ(tracks.results.front(), track.getId());
     }
@@ -550,7 +550,7 @@ TEST_F(DatabaseFixture, MultipleTracksSingleClusterSimilarity)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        const auto similarTracks{ Track::findSimilarTracks(session, {tracks.front().getId()}, Range {}) };
+        const auto similarTracks{ Track::findSimilarTrackIds(session, {tracks.front().getId()}, Range {}) };
         EXPECT_EQ(similarTracks.results.size(), tracks.size() - 1);
         for (const TrackId similarTrackId : similarTracks.results)
         {
@@ -591,14 +591,14 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleClustersSimilarity)
         auto transaction{ session.createSharedTransaction() };
 
         {
-            auto similarTracks{ Track::findSimilarTracks(session, {tracks.back().getId()}, Range {0, 4}) };
+            auto similarTracks{ Track::findSimilarTrackIds(session, {tracks.back().getId()}, Range {0, 4}) };
             EXPECT_EQ(similarTracks.results.size(), 4);
             for (const TrackId similarTrackId : similarTracks.results)
                 EXPECT_TRUE(std::find_if(std::next(std::cbegin(tracks), 5), std::next(std::cend(tracks), -1), [&](const auto& track) { return similarTrackId == track.getId(); }) != std::cend(tracks));
         }
 
         {
-            auto similarTracks{ Track::findSimilarTracks(session, {tracks.front().getId()}, Range {}) };
+            auto similarTracks{ Track::findSimilarTrackIds(session, {tracks.front().getId()}, Range {}) };
             EXPECT_EQ(similarTracks.results.size(), tracks.size() - 1);
             for (const TrackId similarTrackId : similarTracks.results)
                 EXPECT_TRUE(std::find_if(std::next(std::cbegin(tracks), 1), std::cend(tracks), [&](const auto& track) { return similarTrackId == track.getId(); }) != std::cend(tracks));

@@ -204,16 +204,13 @@ namespace API::Subsonic
         if (!user)
             throw UserNotAuthorizedError{};
 
-        const auto trackIds{ Track::find(context.dbSession, Track::FindParameters {}.setSortMethod(TrackSortMethod::Random).setRange({0, size})) };
+        const auto tracks{ Track::find(context.dbSession, Track::FindParameters {}.setSortMethod(TrackSortMethod::Random).setRange({0, size})) };
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
 
         Response::Node& randomSongsNode{ response.createNode("randomSongs") };
-        for (const TrackId trackId : trackIds.results)
-        {
-            const Track::pointer track{ Track::find(context.dbSession, trackId) };
+        for (const Track::pointer& track : tracks.results)
             randomSongsNode.addArrayChild("song", createSongNode(context, track, user));
-        }
 
         return response;
     }
@@ -250,12 +247,9 @@ namespace API::Subsonic
         params.setClusters({ cluster->getId() });
         params.setRange({ offset, size });
 
-        auto trackIds{ Track::find(context.dbSession, params) };
-        for (const TrackId trackId : trackIds.results)
-        {
-            const Track::pointer track{ Track::find(context.dbSession, trackId) };
+        const auto tracks{ Track::find(context.dbSession, params) };
+        for (const Track::pointer& track : tracks.results)
             songsByGenreNode.addArrayChild("song", createSongNode(context, track, user));
-        }
 
         return response;
     }

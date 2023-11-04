@@ -37,7 +37,7 @@ TEST_F(DatabaseFixture, StarredTrack)
         EXPECT_FALSE(starredTrack);
         EXPECT_EQ(StarredTrack::getCount(session), 0);
 
-        auto tracks {Track::find(session, Track::FindParameters {})};
+        auto tracks {Track::findIds(session, Track::FindParameters {})};
         EXPECT_EQ(tracks.results.size(), 1);
     }
 
@@ -53,13 +53,13 @@ TEST_F(DatabaseFixture, StarredTrack)
     {
         auto transaction {session.createSharedTransaction()};
 
-        auto tracks {Track::find(session, Track::FindParameters {})};
+        auto tracks {Track::findIds(session, Track::FindParameters {})};
         EXPECT_EQ(tracks.results.size(), 1);
 
-        tracks = Track::find(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal));
+        tracks = Track::findIds(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal));
         EXPECT_EQ(tracks.results.size(), 1);
 
-        tracks = Track::find(session, Track::FindParameters {}.setStarringUser(user2.getId(), FeedbackBackend::Internal));
+        tracks = Track::findIds(session, Track::FindParameters {}.setStarringUser(user2.getId(), FeedbackBackend::Internal));
         EXPECT_EQ(tracks.results.size(), 0);
     }
 }
@@ -73,11 +73,11 @@ TEST_F(DatabaseFixture, Starredtrack_PendingDestroy)
     {
         auto transaction {session.createUniqueTransaction()};
 
-        auto tracks {Track::find(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal))};
+        auto tracks {Track::findIds(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal))};
         EXPECT_EQ(tracks.results.size(), 1);
 
         starredTrack.get().modify()->setSyncState(SyncState::PendingRemove);
-        tracks = Track::find(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal));
+        tracks = Track::findIds(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal));
         EXPECT_EQ(tracks.results.size(), 0);
     }
 }
@@ -96,7 +96,7 @@ TEST_F(DatabaseFixture, StarredTrack_dateTime)
     {
         auto transaction {session.createSharedTransaction()};
 
-        auto tracks {Track::find(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal))};
+        auto tracks {Track::findIds(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal))};
         EXPECT_EQ(tracks.results.size(), 2);
     }
 
@@ -106,7 +106,7 @@ TEST_F(DatabaseFixture, StarredTrack_dateTime)
         starredTrack1.get().modify()->setDateTime(dateTime);
         starredTrack2.get().modify()->setDateTime(dateTime.addSecs(-1));
 
-        auto tracks {Track::find(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(TrackSortMethod::StarredDateDesc))};
+        auto tracks {Track::findIds(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(TrackSortMethod::StarredDateDesc))};
         ASSERT_EQ(tracks.results.size(), 2);
         EXPECT_EQ(tracks.results[0], starredTrack1->getTrack()->getId());
         EXPECT_EQ(tracks.results[1], starredTrack2->getTrack()->getId());
@@ -117,7 +117,7 @@ TEST_F(DatabaseFixture, StarredTrack_dateTime)
         starredTrack1.get().modify()->setDateTime(dateTime);
         starredTrack2.get().modify()->setDateTime(dateTime.addSecs(1));
 
-        auto tracks {Track::find(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(TrackSortMethod::StarredDateDesc))};
+        auto tracks {Track::findIds(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(TrackSortMethod::StarredDateDesc))};
         ASSERT_EQ(tracks.results.size(), 2);
         EXPECT_EQ(tracks.results[0], starredTrack2->getTrack()->getId());
         EXPECT_EQ(tracks.results[1], starredTrack1->getTrack()->getId());

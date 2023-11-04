@@ -21,11 +21,10 @@
 
 #include <chrono>
 #include <filesystem>
-#include <iostream>
+#include <ostream>
 #include <optional>
 #include <string>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -111,12 +110,13 @@ class Track final : public Object<Track, TrackId>
 		static bool						exists(Session& session, TrackId id);
 		static std::vector<pointer>		findByRecordingMBID(Session& session, const UUID& MBID);
 		static std::vector<pointer>		findByMBID(Session& session, const UUID& MBID);
-		static RangeResults<TrackId>	findSimilarTracks(Session& session, const std::vector<TrackId>& trackIds, Range range);
+		static RangeResults<TrackId>	findSimilarTrackIds(Session& session, const std::vector<TrackId>& trackIds, Range range);
 
-		static RangeResults<TrackId>	find(Session& session, const FindParameters& parameters);
+		static RangeResults<TrackId>	findIds(Session& session, const FindParameters& parameters);
+		static RangeResults<pointer>	find(Session& session, const FindParameters& parameters);
 		static RangeResults<PathResult>	findPaths(Session& session, Range range);
-		static RangeResults<TrackId>	findTrackMBIDDuplicates(Session& session, Range range);
-		static RangeResults<TrackId>	findWithRecordingMBIDAndMissingFeatures(Session& session, Range range);
+		static RangeResults<TrackId>	findIdsTrackMBIDDuplicates(Session& session, Range range);
+		static RangeResults<TrackId>	findIdsWithRecordingMBIDAndMissingFeatures(Session& session, Range range);
 
 		// Accessors
 		void setScanVersion(std::size_t version)				{ _scanVersion = version; }

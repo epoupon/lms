@@ -179,7 +179,7 @@ namespace Feedback
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createSharedTransaction() };
 
-        return Track::find(session, params);
+        return Track::findIds(session, params);
     }
 } // ns Feedback
 

@@ -110,6 +110,7 @@ namespace API::Subsonic
         trackResponse.setAttribute("playCount", Listen::getCount(context.dbSession, user->getId(), user->getScrobblingBackend(), track->getId()));
         trackResponse.setAttribute("path", getTrackPath(track));
         {
+            // TODO, store this in DB
             std::error_code ec;
             const auto fileSize{ std::filesystem::file_size(track->getPath(), ec) };
             if (!ec)
