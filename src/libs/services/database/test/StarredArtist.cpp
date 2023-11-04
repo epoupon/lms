@@ -37,7 +37,7 @@ TEST_F(DatabaseFixture, StarredArtist)
         EXPECT_FALSE(starredArtist);
         EXPECT_EQ(StarredArtist::getCount(session), 0);
 
-        auto artists{ Artist::find(session, Artist::FindParameters {}) };
+        auto artists{ Artist::findIds(session, Artist::FindParameters {}) };
         EXPECT_EQ(artists.results.size(), 1);
     }
 
@@ -53,13 +53,13 @@ TEST_F(DatabaseFixture, StarredArtist)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Artist::find(session, Artist::FindParameters {}) };
+        auto artists{ Artist::findIds(session, Artist::FindParameters {}) };
         EXPECT_EQ(artists.results.size(), 1);
 
-        artists = Artist::find(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal));
+        artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal));
         EXPECT_EQ(artists.results.size(), 1);
 
-        artists = Artist::find(session, Artist::FindParameters{}.setStarringUser(user2.getId(), FeedbackBackend::Internal));
+        artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user2.getId(), FeedbackBackend::Internal));
         EXPECT_EQ(artists.results.size(), 0);
     }
 }
@@ -73,11 +73,11 @@ TEST_F(DatabaseFixture, StarredArtist_PendingDestroy)
     {
         auto transaction{ session.createUniqueTransaction() };
 
-        auto artists{ Artist::find(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
+        auto artists{ Artist::findIds(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
         EXPECT_EQ(artists.results.size(), 1);
 
         starredArtist.get().modify()->setSyncState(SyncState::PendingRemove);
-        artists = Artist::find(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal));
+        artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal));
         EXPECT_EQ(artists.results.size(), 0);
     }
 }
@@ -106,7 +106,7 @@ TEST_F(DatabaseFixture, StarredArtist_dateTime)
         starredArtist1.get().modify()->setDateTime(dateTime);
         starredArtist2.get().modify()->setDateTime(dateTime.addSecs(-1));
 
-        auto artists{ Artist::find(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ArtistSortMethod::StarredDateDesc)) };
+        auto artists{ Artist::findIds(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ArtistSortMethod::StarredDateDesc)) };
         ASSERT_EQ(artists.results.size(), 2);
         EXPECT_EQ(artists.results[0], starredArtist1->getArtist()->getId());
         EXPECT_EQ(artists.results[1], starredArtist2->getArtist()->getId());
@@ -117,7 +117,7 @@ TEST_F(DatabaseFixture, StarredArtist_dateTime)
         starredArtist1.get().modify()->setDateTime(dateTime);
         starredArtist2.get().modify()->setDateTime(dateTime.addSecs(1));
 
-        auto artists{ Artist::find(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ArtistSortMethod::StarredDateDesc)) };
+        auto artists{ Artist::findIds(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ArtistSortMethod::StarredDateDesc)) };
         ASSERT_EQ(artists.results.size(), 2);
         EXPECT_EQ(artists.results[0], starredArtist2->getArtist()->getId());
         EXPECT_EQ(artists.results[1], starredArtist1->getArtist()->getId());

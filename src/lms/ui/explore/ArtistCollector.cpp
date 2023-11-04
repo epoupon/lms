@@ -72,7 +72,7 @@ namespace UserInterface
 
             {
                 auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
-                artists = Artist::find(LmsApp->getDbSession(), params);
+                artists = Artist::findIds(LmsApp->getDbSession(), params);
             }
             break;
         }
@@ -87,7 +87,7 @@ namespace UserInterface
 
             {
                 auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
-                artists = Artist::find(LmsApp->getDbSession(), params);
+                artists = Artist::findIds(LmsApp->getDbSession(), params);
             }
             break;
         }
@@ -102,7 +102,7 @@ namespace UserInterface
 
             {
                 auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
-                artists = Artist::find(LmsApp->getDbSession(), params);
+                artists = Artist::findIds(LmsApp->getDbSession(), params);
             }
             break;
         }
@@ -128,7 +128,7 @@ namespace UserInterface
 
             {
                 auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
-                _randomArtists = Artist::find(LmsApp->getDbSession(), params);
+                _randomArtists = Artist::findIds(LmsApp->getDbSession(), params);
             }
         }
 

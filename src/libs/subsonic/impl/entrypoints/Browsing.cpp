@@ -132,10 +132,9 @@ namespace API::Subsonic
                 auto transaction{ context.dbSession.createSharedTransaction() };
 
                 parameters.setRange(Range{ currentArtistOffset, batchSize });
-                const RangeResults<ArtistId> artists{ Artist::find(context.dbSession, parameters) };
-                for (const ArtistId artistId : artists.results)
+                const auto artists{ Artist::find(context.dbSession, parameters) };
+                for (const Artist::pointer& artist : artists.results)
                 {
-                    const Artist::pointer artist{ Artist::find(context.dbSession, artistId) };
                     std::string_view sortName{ artist->getSortName() };
 
                     char sortChar;
@@ -144,7 +143,7 @@ namespace API::Subsonic
                     else
                         sortChar = std::toupper(sortName[0]);
 
-                    artistsSortedByFirstChar[sortChar].push_back(artistId);
+                    artistsSortedByFirstChar[sortChar].push_back(artist->getId());
                 }
 
                 hasMoreArtists = artists.moreResults;
@@ -317,12 +316,9 @@ namespace API::Subsonic
             directoryNode.setAttribute("id", idToString(RootId{}));
             directoryNode.setAttribute("name", "Music");
 
-            auto rootArtistIds{ Artist::find(context.dbSession, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::BySortName)) };
-            for (const ArtistId rootArtistId : rootArtistIds.results)
-            {
-                const Artist::pointer artist{ Artist::find(context.dbSession, rootArtistId) };
+            const auto rootArtistIds{ Artist::find(context.dbSession, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::BySortName)) };
+            for (const Artist::pointer& artist : rootArtistIds.results)
                 directoryNode.addArrayChild("child", createArtistNode(context, artist, user, false /* no id3 */));
-            }
         }
         else if (artistId)
         {

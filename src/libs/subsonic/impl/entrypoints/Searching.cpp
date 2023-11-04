@@ -72,12 +72,8 @@ namespace API::Subsonic
                 params.setKeywords(keywords);
                 params.setRange({ artistOffset, artistCount });
 
-                RangeResults<ArtistId> artistIds{ Artist::find(context.dbSession, params) };
-                for (const ArtistId artistId : artistIds.results)
-                {
-                    const auto artist{ Artist::find(context.dbSession, artistId) };
+                for (const Artist::pointer& artist : Artist::find(context.dbSession, params).results)
                     searchResult2Node.addArrayChild("artist", createArtistNode(context, artist, user, id3));
-                }
             }
 
             if (albumCount > 0)

@@ -67,7 +67,7 @@ namespace UserInterface::TrackListHelpers
 			Artist::FindParameters params;
 			params.setTrack(trackId);
 			params.setLinkType(linkType);
-			const auto artistIds {Artist::find(LmsApp->getDbSession(), params)};
+			const auto artistIds {Artist::findIds(LmsApp->getDbSession(), params)};
 			if (artistIds.results.empty())
 				return;
 

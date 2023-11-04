@@ -137,7 +137,7 @@ namespace Scanner
 		Session& session {_db.getTLSSession()};
 		auto transaction {session.createUniqueTransaction()};
 
-		auto artistIds {Artist::findAllOrphans(session, Range {})};
+		auto artistIds {Artist::findOrphanIds(session, Range {})};
 		for (const ArtistId artistId : artistIds.results)
 		{
 			Artist::pointer artist {Artist::find(session, artistId)};

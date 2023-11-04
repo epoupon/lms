@@ -416,7 +416,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiClusters)
         EXPECT_TRUE(ClusterType::findOrphans(session, Range{}).results.empty());
         EXPECT_EQ(Cluster::findOrphans(session, Range{}).results.size(), 2);
         EXPECT_TRUE(Release::findOrphanIds(session, Range{}).results.empty());
-        EXPECT_TRUE(Artist::findAllOrphans(session, Range{}).results.empty());
+        EXPECT_TRUE(Artist::findOrphanIds(session, Range{}).results.empty());
     }
 
     {
@@ -428,12 +428,12 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiClusters)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Artist::find(session, Artist::FindParameters {}.setClusters({cluster1.getId()})) };
+        auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters({cluster1.getId()})) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
 
-        EXPECT_TRUE(Artist::find(session, Artist::FindParameters{}.setClusters({ cluster2.getId() })).results.empty());
-        EXPECT_TRUE(Artist::find(session, Artist::FindParameters{}.setClusters({ cluster3.getId() })).results.empty());
+        EXPECT_TRUE(Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster2.getId() })).results.empty());
+        EXPECT_TRUE(Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster3.getId() })).results.empty());
 
         cluster2.get().modify()->addTrack(track.get());
     }
@@ -441,19 +441,19 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiClusters)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Artist::find(session, Artist::FindParameters {}.setClusters({cluster1.getId()})) };
+        auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters({cluster1.getId()})) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
 
-        artists = Artist::find(session, Artist::FindParameters{}.setClusters({ cluster2.getId() }));
+        artists = Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster2.getId() }));
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
 
-        artists = Artist::find(session, Artist::FindParameters{}.setClusters({ cluster1.getId() }));
+        artists = Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster1.getId() }));
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
 
-        EXPECT_TRUE(Artist::find(session, Artist::FindParameters{}.setClusters({ cluster3.getId() })).results.empty());
+        EXPECT_TRUE(Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster3.getId() })).results.empty());
     }
 }
 
@@ -476,13 +476,13 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiRolesMultiClusters)
         auto transaction{ session.createSharedTransaction() };
         EXPECT_TRUE(Cluster::findOrphans(session, Range{}).results.empty());
         EXPECT_TRUE(Release::findOrphanIds(session, Range{}).results.empty());
-        EXPECT_TRUE(Artist::findAllOrphans(session, Range{}).results.empty());
+        EXPECT_TRUE(Artist::findOrphanIds(session, Range{}).results.empty());
     }
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Artist::find(session, Artist::FindParameters {}.setClusters({cluster.getId()})) };
+        auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters({cluster.getId()})) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
     }
@@ -515,7 +515,7 @@ TEST_F(DatabaseFixture, MultiTracksSingleArtistMultiClusters)
     {
         auto transaction{ session.createSharedTransaction() };
         EXPECT_TRUE(Cluster::findOrphans(session, Range{}).results.empty());
-        EXPECT_TRUE(Artist::findAllOrphans(session, Range{}).results.empty());
+        EXPECT_TRUE(Artist::findOrphanIds(session, Range{}).results.empty());
     }
 
     {
@@ -524,7 +524,7 @@ TEST_F(DatabaseFixture, MultiTracksSingleArtistMultiClusters)
         std::vector<ClusterId> clusterIds;
         std::transform(std::cbegin(clusters), std::cend(clusters), std::back_inserter(clusterIds), [](const ScopedCluster& cluster) { return cluster.getId(); });
 
-        auto artists{ Artist::find(session, Artist::FindParameters {}.setClusters(clusterIds)) };
+        auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters(clusterIds)) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
     }
@@ -627,14 +627,14 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistSingleCluster)
 
         EXPECT_TRUE(Cluster::findOrphans(session, Range{}).results.empty());
         EXPECT_TRUE(ClusterType::findOrphans(session, Range{}).results.empty());
-        EXPECT_TRUE(Artist::findAllOrphans(session, Range{}).results.empty());
+        EXPECT_TRUE(Artist::findOrphanIds(session, Range{}).results.empty());
         EXPECT_TRUE(Release::findOrphanIds(session, Range{}).results.empty());
     }
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Artist::find(session, Artist::FindParameters {}.setClusters({cluster.getId()})) };
+        auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters({cluster.getId()})) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
 
@@ -1027,9 +1027,9 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleArtistsMultiClusters)
 
     {
         auto transaction{ session.createSharedTransaction() };
-        EXPECT_TRUE(artist1->findSimilarArtists().results.empty());
-        EXPECT_TRUE(artist2->findSimilarArtists().results.empty());
-        EXPECT_TRUE(artist3->findSimilarArtists().results.empty());
+        EXPECT_TRUE(artist1->findSimilarArtistIds().results.empty());
+        EXPECT_TRUE(artist2->findSimilarArtistIds().results.empty());
+        EXPECT_TRUE(artist3->findSimilarArtistIds().results.empty());
     }
 
     std::list<ScopedTrack> tracks;
@@ -1061,35 +1061,35 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleArtistsMultiClusters)
         auto transaction{ session.createSharedTransaction() };
 
         {
-            auto artists{ artist1->findSimilarArtists() };
+            auto artists{ artist1->findSimilarArtistIds() };
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist2.getId());
         }
 
         {
-            auto artists{ artist1->findSimilarArtists({TrackArtistLinkType::Artist}) };
+            auto artists{ artist1->findSimilarArtistIds({TrackArtistLinkType::Artist}) };
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist2.getId());
         }
 
         {
-            auto artists{ artist1->findSimilarArtists({TrackArtistLinkType::ReleaseArtist}) };
+            auto artists{ artist1->findSimilarArtistIds({TrackArtistLinkType::ReleaseArtist}) };
             EXPECT_EQ(artists.results.empty(), 1);
         }
 
         {
-            auto artists{ artist1->findSimilarArtists({TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}) };
+            auto artists{ artist1->findSimilarArtistIds({TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}) };
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist2.getId());
         }
 
         {
-            auto artists{ artist1->findSimilarArtists({TrackArtistLinkType::Composer}) };
+            auto artists{ artist1->findSimilarArtistIds({TrackArtistLinkType::Composer}) };
             EXPECT_TRUE(artists.results.empty());
         }
 
         {
-            auto artists{ artist2->findSimilarArtists() };
+            auto artists{ artist2->findSimilarArtistIds() };
             ASSERT_EQ(artists.results.size(), 2);
             EXPECT_EQ(artists.results[0], artist1.getId());
             EXPECT_EQ(artists.results[1], artist3.getId());

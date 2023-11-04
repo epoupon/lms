@@ -79,7 +79,7 @@ namespace UserInterface
                     Artist::FindParameters params;
                     params.setRelease(releaseId);
                     params.setLinkType(linkType);
-                    const auto artistIds{ Artist::find(LmsApp->getDbSession(), params) };
+                    const auto artistIds{ Artist::findIds(LmsApp->getDbSession(), params) };
                     if (artistIds.results.empty())
                         return;
 

@@ -102,7 +102,7 @@ static void dumpArtistsRecommendation(Session session, Recommendation::IRecommen
     const RangeResults<ArtistId> artistIds = std::invoke([&]()
         {
             auto transaction{ session.createSharedTransaction() };
-            return Artist::find(session, Artist::FindParameters{});
+            return Artist::findIds(session, Artist::FindParameters{});
         });
 
     std::cout << "*** Artists ***" << std::endl;

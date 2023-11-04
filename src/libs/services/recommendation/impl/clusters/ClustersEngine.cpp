@@ -104,7 +104,7 @@ namespace Recommendation {
         if (!artist)
             return {};
 
-        const auto similarArtistIds{ artist->findSimilarArtists(artistLinkTypes, Range {0, maxCount}) };
+        const auto similarArtistIds{ artist->findSimilarArtistIds(artistLinkTypes, Range {0, maxCount}) };
         return std::move(similarArtistIds.results);
     }
 

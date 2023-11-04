@@ -103,7 +103,7 @@ namespace Feedback
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createSharedTransaction() };
 
-        return Artist::find(session, params);
+        return Artist::findIds(session, params);
     }
 
     void FeedbackService::star(UserId userId, ReleaseId releaseId)
