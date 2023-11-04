@@ -19,10 +19,12 @@
 
 #include "responses/Album.hpp"
 
-#include "services/database/Cluster.hpp"
 #include "services/database/Artist.hpp"
+#include "services/database/Cluster.hpp"
+#include "services/database/Listen.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/User.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
@@ -73,7 +75,7 @@ namespace API::Subsonic
         }
     }
 
-    Response::Node createAlbumNode(const Release::pointer& release, Session& dbSession, const User::pointer& user, bool id3)
+    Response::Node createAlbumNode(RequestContext& context, const Release::pointer& release, const User::pointer& user, bool id3)
     {
         Response::Node albumNode;
 
@@ -123,8 +125,10 @@ namespace API::Subsonic
             }
         }
 
+        albumNode.setAttribute("playCount", Listen::getCount(context.dbSession, user->getId(), user->getScrobblingBackend(), release->getId()));
+
         // Report the first GENRE for this track
-        const ClusterType::pointer genreClusterType{ ClusterType::find(dbSession, "GENRE") };
+        const ClusterType::pointer genreClusterType{ ClusterType::find(context.dbSession, "GENRE") };
         if (genreClusterType)
         {
             auto clusters{ release->getClusterGroups({genreClusterType}, 1) };
@@ -132,8 +136,11 @@ namespace API::Subsonic
                 albumNode.setAttribute("genre", clusters.front().front()->getName());
         }
 
-        if (const Wt::WDateTime dateTime{ Service<Scrobbling::IScrobblingService>::get()->getStarredDateTime(user->getId(), release->getId()) }; dateTime.isValid())
+        if (const Wt::WDateTime dateTime{ Service<Feedback::IFeedbackService>::get()->getStarredDateTime(user->getId(), release->getId()) }; dateTime.isValid())
             albumNode.setAttribute("starred", StringUtils::toISO8601String(dateTime));
+
+        if (!context.enableOpenSubsonic)
+            return albumNode;
 
         // OpenSubsonic specific fields (must always be set)
         if (!id3)
@@ -153,14 +160,14 @@ namespace API::Subsonic
         {
             albumNode.createEmptyArrayValue(field);
 
-            ClusterType::pointer clusterType{ ClusterType::find(dbSession, clusterTypeName) };
+            ClusterType::pointer clusterType{ ClusterType::find(context.dbSession, clusterTypeName) };
             if (clusterType)
             {
                 Cluster::FindParameters params;
                 params.setRelease(release->getId());
                 params.setClusterType(clusterType->getId());
 
-                for (const auto& cluster : Cluster::find(dbSession, params).results)
+                for (const auto& cluster : Cluster::find(context.dbSession, params).results)
                     albumNode.addArrayValue(field, std::get<std::string>(cluster));
             }
         } };
@@ -175,7 +182,7 @@ namespace API::Subsonic
             params.setRelease(release->getId());
             params.setClusterType(genreClusterType->getId());
 
-            for (const auto& cluster : Cluster::find(dbSession, params).results)
+            for (const auto& cluster : Cluster::find(context.dbSession, params).results)
                 albumNode.addArrayChild("genres", createItemGenreNode(std::get<std::string>(cluster)));
         }
 

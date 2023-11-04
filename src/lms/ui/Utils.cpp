@@ -191,7 +191,7 @@ namespace UserInterface::Utils
         params.setRelease(release->getId());
         params.setLinkType(TrackArtistLinkType::ReleaseArtist);
 
-        if (const auto releaseArtists{ Artist::find(LmsApp->getDbSession(), params) }; !releaseArtists.results.empty())
+        if (const auto releaseArtists{ Artist::findIds(LmsApp->getDbSession(), params) }; !releaseArtists.results.empty())
         {
             if (releaseArtists.results.size() == 1 && releaseArtists.results.front() == omitIfMatchThisArtist)
                 return {};
@@ -200,7 +200,7 @@ namespace UserInterface::Utils
         }
 
         params.setLinkType(TrackArtistLinkType::Artist);
-        const auto artists{ Artist::find(LmsApp->getDbSession(), params) };
+        const auto artists{ Artist::findIds(LmsApp->getDbSession(), params) };
         if (artists.results.size() == 1)
         {
             if (artists.results.front() == omitIfMatchThisArtist)

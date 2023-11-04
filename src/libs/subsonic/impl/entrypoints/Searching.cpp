@@ -70,30 +70,20 @@ namespace API::Subsonic
             {
                 Artist::FindParameters params;
                 params.setKeywords(keywords);
-                params.setSortMethod(ArtistSortMethod::BySortName);
                 params.setRange({ artistOffset, artistCount });
 
-                RangeResults<ArtistId> artistIds{ Artist::find(context.dbSession, params) };
-                for (const ArtistId artistId : artistIds.results)
-                {
-                    const auto artist{ Artist::find(context.dbSession, artistId) };
-                    searchResult2Node.addArrayChild("artist", createArtistNode(artist, context.dbSession, user, id3));
-                }
+                for (const Artist::pointer& artist : Artist::find(context.dbSession, params).results)
+                    searchResult2Node.addArrayChild("artist", createArtistNode(context, artist, user, id3));
             }
 
             if (albumCount > 0)
             {
                 Release::FindParameters params;
                 params.setKeywords(keywords);
-                params.setSortMethod(ReleaseSortMethod::Name);
                 params.setRange({ albumOffset, albumCount });
 
-                RangeResults<ReleaseId> releaseIds{ Release::find(context.dbSession, params) };
-                for (const ReleaseId releaseId : releaseIds.results)
-                {
-                    const auto release{ Release::find(context.dbSession, releaseId) };
-                    searchResult2Node.addArrayChild("album", createAlbumNode(release, context.dbSession, user, id3));
-                }
+                for (const Release::pointer& release : Release::find(context.dbSession, params).results)
+                    searchResult2Node.addArrayChild("album", createAlbumNode(context, release, user, id3));
             }
 
             if (songCount > 0)
@@ -102,12 +92,8 @@ namespace API::Subsonic
                 params.setKeywords(keywords);
                 params.setRange({ songOffset, songCount });
 
-                RangeResults<TrackId> trackIds{ Track::find(context.dbSession, params) };
-                for (const TrackId trackId : trackIds.results)
-                {
-                    const auto track{ Track::find(context.dbSession, trackId) };
-                    searchResult2Node.addArrayChild("song", createSongNode(track, context.dbSession, user));
-                }
+                for (const Track::pointer& track : Track::find(context.dbSession, params).results)
+                    searchResult2Node.addArrayChild("song", createSongNode(context, track, user));
             }
 
             return response;

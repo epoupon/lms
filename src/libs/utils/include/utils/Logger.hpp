@@ -43,6 +43,7 @@ enum class Module
     DB,
     DBUPDATER,
     FEATURE,
+    FEEDBACK,
     HTTP,
     MAIN,
     METADATA,

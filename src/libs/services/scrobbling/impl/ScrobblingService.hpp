@@ -24,7 +24,7 @@
 #include <unordered_map>
 
 #include "services/scrobbling/IScrobblingService.hpp"
-#include "IScrobbler.hpp"
+#include "IScrobblingBackend.hpp"
 
 namespace Scrobbling
 {
@@ -39,70 +39,21 @@ namespace Scrobbling
         void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
         void addTimedListen(const TimedListen& listen) override;
 
-        ArtistContainer getRecentArtists(Database::UserId userId,
-            const std::vector<Database::ClusterId>& clusterIds,
-            std::optional<Database::TrackArtistLinkType> linkType,
-            Database::Range range) override;
-
-        ReleaseContainer getRecentReleases(Database::UserId userId,
-            const std::vector<Database::ClusterId>& clusterIds,
-            Database::Range range) override;
-
-        TrackContainer getRecentTracks(Database::UserId userId,
-            const std::vector<Database::ClusterId>& clusterIds,
-            Database::Range range) override;
+        ArtistContainer getRecentArtists(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, std::optional<Database::TrackArtistLinkType> linkType,Database::Range range) override;
+        ReleaseContainer getRecentReleases(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds,Database::Range range) override;
+        TrackContainer getRecentTracks(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) override;
 
         Wt::WDateTime getLastListenDateTime(Database::UserId userId, Database::ReleaseId releaseId) override;
         Wt::WDateTime getLastListenDateTime(Database::UserId userId, Database::TrackId trackId) override;
 
-        ArtistContainer getTopArtists(Database::UserId userId,
-            const std::vector<Database::ClusterId>& clusterIds,
-            std::optional<Database::TrackArtistLinkType> linkType,
-            Database::Range range) override;
+        ArtistContainer getTopArtists(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, std::optional<Database::TrackArtistLinkType> linkType, Database::Range range) override;
+        ReleaseContainer getTopReleases(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) override;
+        TrackContainer getTopTracks(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) override;
 
-        ReleaseContainer getTopReleases(Database::UserId userId,
-            const std::vector<Database::ClusterId>& clusterIds,
-            Database::Range range) override;
-
-        TrackContainer getTopTracks(Database::UserId userId,
-            const std::vector<Database::ClusterId>& clusterIds,
-            Database::Range range) override;
-
-        void star(Database::UserId userId, Database::ArtistId artistId) override;
-        void unstar(Database::UserId userId, Database::ArtistId artistId) override;
-        bool isStarred(Database::UserId userId, Database::ArtistId artistId) override;
-        Wt::WDateTime getStarredDateTime(Database::UserId userId, Database::ArtistId artistId) override;
-        ArtistContainer	getStarredArtists(Database::UserId userId,
-            const std::vector<Database::ClusterId>& clusterIds,
-            std::optional<Database::TrackArtistLinkType> linkType,
-            Database::ArtistSortMethod sortMethod,
-            Database::Range range) override;
-
-        void star(Database::UserId userId, Database::ReleaseId releaseId) override;
-        void unstar(Database::UserId userId, Database::ReleaseId releaseId) override;
-        bool isStarred(Database::UserId userId, Database::ReleaseId releasedId) override;
-        Wt::WDateTime getStarredDateTime(Database::UserId userId, Database::ReleaseId releasedId) override;
-        ReleaseContainer getStarredReleases(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) override;
-
-        void star(Database::UserId userId, Database::TrackId trackId) override;
-        void unstar(Database::UserId userId, Database::TrackId trackId) override;
-        bool isStarred(Database::UserId userId, Database::TrackId trackId) override;
-        Wt::WDateTime getStarredDateTime(Database::UserId userId, Database::TrackId trackId) override;
-        TrackContainer getStarredTracks(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) override;
-
-        std::optional<Database::Scrobbler> getUserScrobbler(Database::UserId userId);
-
-        template <typename ObjType, typename ObjIdType, typename StarredObjType>
-        void star(Database::UserId userId, ObjIdType id);
-        template <typename ObjType, typename ObjIdType, typename StarredObjType>
-        void unstar(Database::UserId userId, ObjIdType id);
-        template <typename ObjType, typename ObjIdType, typename StarredObjType>
-        bool isStarred(Database::UserId userId, ObjIdType id);
-        template <typename ObjType, typename ObjIdType, typename StarredObjType>
-        Wt::WDateTime getStarredDateTime(Database::UserId userId, ObjIdType id);
+        std::optional<Database::ScrobblingBackend> getUserBackend(Database::UserId userId);
 
         Database::Db& _db;
-        std::unordered_map<Database::Scrobbler, std::unique_ptr<IScrobbler>> _scrobblers;
+        std::unordered_map<Database::ScrobblingBackend, std::unique_ptr<IScrobblingBackend>> _scrobblingBackends;
     };
 
 } // ns Scrobbling

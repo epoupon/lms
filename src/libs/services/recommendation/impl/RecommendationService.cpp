@@ -90,6 +90,8 @@ namespace Recommendation
 			if (itEngine == std::cend(_engines))
 				continue;
 
+			LMS_LOG(RECOMMENDATION, DEBUG) << "Trying engine '" << engineTypeToString(engineType) << "' to get similar tracks";
+
 			const IEngine& engine {*itEngine->second};
 			res = engine.findSimilarTracks(trackIds, maxCount);
 			if (!res.empty())
@@ -113,6 +115,8 @@ namespace Recommendation
 			auto itEngine {_engines.find(engineType)};
 			if (itEngine == std::cend(_engines))
 				continue;
+
+			LMS_LOG(RECOMMENDATION, DEBUG) << "Trying engine '" << engineTypeToString(engineType) << "' to get similar releases";
 
 			const IEngine& engine {*itEngine->second};
 			res = engine.getSimilarReleases(releaseId, maxCount);
@@ -140,7 +144,7 @@ namespace Recommendation
 			if (itEngine == std::cend(_engines))
 				continue;
 
-			LMS_LOG(RECOMMENDATION, DEBUG) << "Trying engine '" << engineTypeToString(engineType) << "'";
+			LMS_LOG(RECOMMENDATION, DEBUG) << "Trying engine '" << engineTypeToString(engineType) << "' to get similar artists";
 
 			const IEngine& engine {*itEngine->second};
 			res = engine.getSimilarArtists(artistId, linkTypes, maxCount);
@@ -155,12 +159,12 @@ namespace Recommendation
 	}
 
 	static
-	Database::ScanSettings::RecommendationEngineType
-	getRecommendationEngineType(Database::Session& session)
+	Database::ScanSettings::SimilarityEngineType
+	getSimilarityEngineType(Database::Session& session)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		return Database::ScanSettings::get(session)->getRecommendationEngineType();
+		return Database::ScanSettings::get(session)->getSimilarityEngineType();
 	}
 
 	void
@@ -180,19 +184,23 @@ namespace Recommendation
 				_engines.clear();
 			}
 
-			switch (getRecommendationEngineType(_db.getTLSSession()))
+			switch (getSimilarityEngineType(_db.getTLSSession()))
 			{
-				case ScanSettings::RecommendationEngineType::Clusters:
+				case ScanSettings::SimilarityEngineType::Clusters:
 					_enginePriorities = {EngineType::Clusters};
 					enginesToLoad.try_emplace(EngineType::Clusters, createClustersEngine(_db));
 					break;
 
-				case ScanSettings::RecommendationEngineType::Features:
+				case ScanSettings::SimilarityEngineType::Features:
 					_enginePriorities = {EngineType::Features, EngineType::Clusters};
 
 					// not same order since clusters is faster to load
 					enginesToLoad.try_emplace(EngineType::Clusters, createClustersEngine(_db));
 					enginesToLoad.try_emplace(EngineType::Features, createFeaturesEngine(_db));
+					break;
+
+				case ScanSettings::SimilarityEngineType::None:
+					_enginePriorities.clear();
 					break;
 			}
 

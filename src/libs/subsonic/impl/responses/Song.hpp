@@ -31,5 +31,5 @@ namespace Database
 
 namespace API::Subsonic
 {
-    Response::Node createSongNode(const Database::ObjectPtr<Database::Track>& track, Database::Session& session, const Database::ObjectPtr<Database::User>& user);
+    Response::Node createSongNode(RequestContext& context, const Database::ObjectPtr<Database::Track>& track, const Database::ObjectPtr<Database::User>& user);
 }

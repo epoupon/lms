@@ -12,7 +12,7 @@ namespace API::Subsonic
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
 
         Response::Node& licenseNode{ response.createNode("license") };
-        licenseNode.setAttribute("licenseExpires", "2025-09-03T14:46:43");
+        licenseNode.setAttribute("licenseExpires", "2035-09-03T14:46:43");
         licenseNode.setAttribute("email", "foo@bar.com");
         licenseNode.setAttribute("valid", true);
 

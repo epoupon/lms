@@ -49,10 +49,10 @@ TEST_F(DatabaseFixture, SingleTrackListSingleTrack)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		auto tracks {Track::find(session, Track::FindParameters {}.setTrackList(trackList1.getId()))};
+		auto tracks {Track::findIds(session, Track::FindParameters {}.setTrackList(trackList1.getId()))};
 		EXPECT_EQ(tracks.results.size(), 0);
 
-		tracks = Track::find(session, Track::FindParameters {}.setTrackList(trackList2.getId()));
+		tracks = Track::findIds(session, Track::FindParameters {}.setTrackList(trackList2.getId()));
 		EXPECT_EQ(tracks.results.size(), 0);
 	}
 
@@ -65,11 +65,11 @@ TEST_F(DatabaseFixture, SingleTrackListSingleTrack)
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		auto tracks {Track::find(session, Track::FindParameters {}.setTrackList(trackList1.getId()))};
+		auto tracks {Track::findIds(session, Track::FindParameters {}.setTrackList(trackList1.getId()))};
 		ASSERT_EQ(tracks.results.size(), 1);
 		EXPECT_EQ(tracks.results.front(), track.getId());
 
-		tracks = Track::find(session, Track::FindParameters {}.setTrackList(trackList2.getId()));
+		tracks = Track::findIds(session, Track::FindParameters {}.setTrackList(trackList2.getId()));
 		EXPECT_EQ(tracks.results.size(), 0);
 	}
 }

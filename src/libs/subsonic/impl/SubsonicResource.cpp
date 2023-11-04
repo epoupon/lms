@@ -75,6 +75,18 @@ namespace API::Subsonic
             return res;
         }
 
+        std::unordered_set<std::string> readOpenSubsonicDisabledClients()
+        {
+            std::unordered_set<std::string> res;
+
+            Service<IConfig>::get()->visitStrings("api-open-subsonic-disabled-clients",
+                [&](std::string_view client)
+                {
+                    res.emplace(std::string{ client });
+                }, { "DSub" });
+
+            return res;
+        }
 
         std::string parameterMapToDebugString(const Wt::Http::ParameterMap& parameterMap)
         {
@@ -253,6 +265,7 @@ namespace API::Subsonic
 
     SubsonicResource::SubsonicResource(Db& db)
         : _serverProtocolVersionsByClient{ readConfigProtocolVersions() }
+        , _openSubsonicDisabledClients{ readOpenSubsonicDisabledClients() }
         , _db{ db }
     {
     }
@@ -273,13 +286,13 @@ namespace API::Subsonic
         const ResponseFormat format{ getParameterAs<std::string>(request.getParameterMap(), "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml };
 
         ProtocolVersion protocolVersion{ defaultServerProtocolVersion };
-
+        
         try
         {
             // We need to parse client a soon as possible to make sure to answer with the right protocol version
             protocolVersion = getServerProtocolVersion(getMandatoryParameterAs<std::string>(request.getParameterMap(), "c"));
             RequestContext requestContext{ buildRequestContext(request) };
-
+            
             auto itEntryPoint{ requestEntryPoints.find(requestPath) };
             if (itEntryPoint != requestEntryPoints.end())
             {
@@ -364,8 +377,9 @@ namespace API::Subsonic
         const Wt::Http::ParameterMap& parameters{ request.getParameterMap() };
         const ClientInfo clientInfo{ getClientInfo(parameters) };
         const Database::UserId userId{ authenticateUser(request, clientInfo) };
+        bool enableOpenSubsonic{ _openSubsonicDisabledClients.find(clientInfo.name) == std::cend(_openSubsonicDisabledClients) };
 
-        return { parameters, _db.getTLSSession(), userId, clientInfo, getServerProtocolVersion(clientInfo.name) };
+        return { parameters, _db.getTLSSession(), userId, clientInfo, getServerProtocolVersion(clientInfo.name), enableOpenSubsonic };
     }
 
     Database::UserId SubsonicResource::authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo)

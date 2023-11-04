@@ -140,13 +140,13 @@ namespace Database
             _session.execute("CREATE INDEX IF NOT EXISTS release_name_idx ON release(name)");
             _session.execute("CREATE INDEX IF NOT EXISTS release_name_nocase_idx ON release(name COLLATE NOCASE)");
             _session.execute("CREATE INDEX IF NOT EXISTS release_mbid_idx ON release(mbid)");
-            _session.execute("CREATE INDEX IF NOT EXISTS track_file_last_write_idx ON track(file_last_write)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_path_idx ON track(file_path)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_name_idx ON track(name)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_name_nocase_idx ON track(name COLLATE NOCASE)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_mbid_idx ON track(mbid)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_recording_mbid_idx ON track(recording_mbid)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_release_idx ON track(release_id)");
+            _session.execute("CREATE INDEX IF NOT EXISTS track_file_last_write_idx ON track(file_last_write)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_date_idx ON track(date)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_original_date_idx ON track(original_date)");
             _session.execute("CREATE INDEX IF NOT EXISTS tracklist_name_idx ON tracklist(name)");
@@ -158,15 +158,16 @@ namespace Database
             _session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_artist_type_idx ON track_artist_link(artist_id,type)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_bookmark_user_idx ON track_bookmark(user_id)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_bookmark_user_track_idx ON track_bookmark(user_id,track_id)");
-            _session.execute("CREATE INDEX IF NOT EXISTS listen_scrobbler_idx ON listen(scrobbler)");
-            _session.execute("CREATE INDEX IF NOT EXISTS listen_user_scrobbler_idx ON listen(user_id,scrobbler)");
-            _session.execute("CREATE INDEX IF NOT EXISTS listen_user_track_scrobbler_date_time_idx ON listen(user_id,track_id,scrobbler,date_time)");
-            _session.execute("CREATE INDEX IF NOT EXISTS starred_artist_user_scrobbler_idx ON starred_artist(user_id,scrobbler)");
-            _session.execute("CREATE INDEX IF NOT EXISTS starred_artist_artist_user_scrobbler_idx ON starred_artist(artist_id,user_id,scrobbler)");
-            _session.execute("CREATE INDEX IF NOT EXISTS starred_release_user_scrobbler_idx ON starred_release(user_id,scrobbler)");
-            _session.execute("CREATE INDEX IF NOT EXISTS starred_release_release_user_scrobbler_idx ON starred_release(release_id,user_id,scrobbler)");
-            _session.execute("CREATE INDEX IF NOT EXISTS starred_track_user_scrobbler_idx ON starred_track(user_id,scrobbler)");
-            _session.execute("CREATE INDEX IF NOT EXISTS starred_track_track_user_scrobbler_idx ON starred_track(track_id,user_id,scrobbler)");
+            _session.execute("CREATE INDEX IF NOT EXISTS listen_backend_idx ON listen(backend)");
+            _session.execute("CREATE INDEX IF NOT EXISTS listen_user_backend_idx ON listen(user_id,backend)");
+            _session.execute("CREATE INDEX IF NOT EXISTS listen_track_user_backend_idx ON listen(track_id,user_id,backend)");
+            _session.execute("CREATE INDEX IF NOT EXISTS listen_user_track_backend_date_time_idx ON listen(user_id,track_id,backend,date_time)");
+            _session.execute("CREATE INDEX IF NOT EXISTS starred_artist_user_backend_idx ON starred_artist(user_id,backend)");
+            _session.execute("CREATE INDEX IF NOT EXISTS starred_artist_artist_user_backend_idx ON starred_artist(artist_id,user_id,backend)");
+            _session.execute("CREATE INDEX IF NOT EXISTS starred_release_user_backend_idx ON starred_release(user_id,backend)");
+            _session.execute("CREATE INDEX IF NOT EXISTS starred_release_release_user_backend_idx ON starred_release(release_id,user_id,backend)");
+            _session.execute("CREATE INDEX IF NOT EXISTS starred_track_user_backend_idx ON starred_track(user_id,backend)");
+            _session.execute("CREATE INDEX IF NOT EXISTS starred_track_track_user_backend_idx ON starred_track(track_id,user_id,backend)");
         }
 
         // Initial settings tables
@@ -185,6 +186,16 @@ namespace Database
             _session.execute("ANALYZE");
         }
         LMS_LOG(DB, INFO) << "Database Analyze complete";
+    }
+
+    void Session::optimize()
+    {
+        LMS_LOG(DB, INFO) << "Optimizing database...";
+        {
+            auto uniqueTransaction{ createUniqueTransaction() };
+            _session.execute("PRAGMA optimize");
+        }
+        LMS_LOG(DB, INFO) << "Database optimizing complete";
     }
 
 } // namespace Database

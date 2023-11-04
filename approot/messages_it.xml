@@ -9,7 +9,7 @@
 <message id="Lms.cancel">Annulla</message>
 <message id="Lms.clusters">Tags</message>
 <message id="Lms.create">Crea</message>
-<message id="Lms.del">Elimina</message>
+<message id="Lms.delete">Elimina</message>
 <message id="Lms.discard">Annulla</message>
 <message id="Lms.edit">Modifica</message>
 <message id="Lms.loading">Caricamento...</message>
@@ -53,13 +53,13 @@
 <message id="Lms.Admin.Database.never">Mai</message>
 <message id="Lms.Admin.Database.path">Cartella dei file multimediali</message>
 
-<message id="Lms.Admin.Database.recommendation-engine-type">Modalità di raccomandazione brani consigliati</message>
-<message id="Lms.Admin.Database.recommendation-engine-type.clusters">Basata sui tag</message>
-<message id="Lms.Admin.Database.recommendation-engine-type.features">Basata sull'analisi acustica</message>
 <message id="Lms.Admin.Database.scan-complete">Scansione completata: {1} file totali, {2} aggiunti, {3} aggiornati, {4} eliminati, {5} duplicati, {6} errati</message>
 <message id="Lms.Admin.Database.scan-launched">Scansione avviata!</message>
 <message id="Lms.Admin.Database.scan-options">Impostazioni scansione</message>
 <message id="Lms.Admin.Database.settings-saved">Impostazioni salvate!</message>
+
+
+
 <message id="Lms.Admin.Database.update-period">Frequenza di aggiornamento</message>
 <message id="Lms.Admin.Database.update-start-time">Orario di aggiornamento</message>
 <message id="Lms.Admin.Database.weekly">Settimanale</message>
@@ -240,10 +240,14 @@
 <!--Settings-->
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">Queste impostazioni sono salvate localmente su questo dispositivo!</message>
+
+
+
 <message id="Lms.Settings.change-password">Cambia password</message>
 
 
 <message id="Lms.Settings.demo-cannot-save">Non posso salvare le impostazioni utilizzando l'account demo!</message>
+
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Impostazioni</message>
 <message id="Lms.Settings.password-bad">Password errata</message>
 <message id="Lms.Settings.password-must-fill-old-password">Devi inserire la password attuale</message>
@@ -254,9 +258,6 @@
 <message id="Lms.Settings.replaygain-mode.release">Album</message>
 <message id="Lms.Settings.replaygain-preamp">Preamplificazione ReplayGain</message>
 <message id="Lms.Settings.replaygain-preamp-no-rg-info">Preamplificazione ReplayGain (se non è disponibile nessuna informazione)</message>
-
-
-
 
 
 

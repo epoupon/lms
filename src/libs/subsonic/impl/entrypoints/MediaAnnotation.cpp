@@ -24,6 +24,7 @@
 #include "services/database/ArtistId.hpp"
 #include "services/database/ReleaseId.hpp"
 #include "services/database/TrackId.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
 #include "ParameterParsing.hpp"
@@ -60,13 +61,13 @@ namespace API::Subsonic
         StarParameters params{ getStarParameters(context.parameters) };
 
         for (const ArtistId id : params.artistIds)
-            Service<Scrobbling::IScrobblingService>::get()->star(context.userId, id);
+            Service<Feedback::IFeedbackService>::get()->star(context.userId, id);
 
         for (const ReleaseId id : params.releaseIds)
-            Service<Scrobbling::IScrobblingService>::get()->star(context.userId, id);
+            Service<Feedback::IFeedbackService>::get()->star(context.userId, id);
 
         for (const TrackId id : params.trackIds)
-            Service<Scrobbling::IScrobblingService>::get()->star(context.userId, id);
+            Service<Feedback::IFeedbackService>::get()->star(context.userId, id);
 
         return Response::createOkResponse(context.serverProtocolVersion);
     }
@@ -76,13 +77,13 @@ namespace API::Subsonic
         StarParameters params{ getStarParameters(context.parameters) };
 
         for (const ArtistId id : params.artistIds)
-            Service<Scrobbling::IScrobblingService>::get()->unstar(context.userId, id);
+            Service<Feedback::IFeedbackService>::get()->unstar(context.userId, id);
 
         for (const ReleaseId id : params.releaseIds)
-            Service<Scrobbling::IScrobblingService>::get()->unstar(context.userId, id);
+            Service<Feedback::IFeedbackService>::get()->unstar(context.userId, id);
 
         for (const TrackId id : params.trackIds)
-            Service<Scrobbling::IScrobblingService>::get()->unstar(context.userId, id);
+            Service<Feedback::IFeedbackService>::get()->unstar(context.userId, id);
 
         return Response::createOkResponse(context.serverProtocolVersion);
     }

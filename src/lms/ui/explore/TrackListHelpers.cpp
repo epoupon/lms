@@ -30,7 +30,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/TrackArtistLink.hpp"
-#include "services/scrobbling/IScrobblingService.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 
@@ -67,7 +67,7 @@ namespace UserInterface::TrackListHelpers
 			Artist::FindParameters params;
 			params.setTrack(trackId);
 			params.setLinkType(linkType);
-			const auto artistIds {Artist::find(LmsApp->getDbSession(), params)};
+			const auto artistIds {Artist::findIds(LmsApp->getDbSession(), params)};
 			if (artistIds.results.empty())
 				return;
 
@@ -167,7 +167,6 @@ namespace UserInterface::TrackListHelpers
 		const TrackId trackId {track->getId()};
 
 		const auto artists {track->getArtistIds({TrackArtistLinkType::Artist})};
-		LMS_LOG(UI, DEBUG) << "Found " << artists.size() << " artists!";
 		if (!artists.empty())
 		{
 			entry->setCondition("if-has-artists", true);
@@ -217,7 +216,7 @@ namespace UserInterface::TrackListHelpers
 			});
 
 		{
-			auto isStarred {[=] { return Service<Scrobbling::IScrobblingService>::get()->isStarred(LmsApp->getUserId(), trackId); }};
+			auto isStarred {[=] { return Service<Feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), trackId); }};
 
 			Wt::WPushButton* starBtn {entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"))};
 			starBtn->clicked().connect([=]
@@ -226,12 +225,12 @@ namespace UserInterface::TrackListHelpers
 
 				if (isStarred())
 				{
-					Service<Scrobbling::IScrobblingService>::get()->unstar(LmsApp->getUserId(), trackId);
+					Service<Feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), trackId);
 					starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
 				}
 				else
 				{
-					Service<Scrobbling::IScrobblingService>::get()->star(LmsApp->getUserId(), trackId);
+					Service<Feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), trackId);
 					starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
 				}
 			});

@@ -25,6 +25,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "responses/Album.hpp"
 #include "responses/Artist.hpp"
@@ -36,8 +37,9 @@ namespace API::Subsonic
 {
     using namespace Database;
 
-    namespace {
-        Response handleGetAlbumListRequestCommon(const RequestContext& context, bool id3)
+    namespace
+    {
+        Response handleGetAlbumListRequestCommon(RequestContext& context, bool id3)
         {
             // Mandatory params
             const std::string type{ getMandatoryParameterAs<std::string>(context.parameters, "type") };
@@ -49,7 +51,8 @@ namespace API::Subsonic
             const Range range{ offset, size };
 
             RangeResults<ReleaseId> releases;
-            Scrobbling::IScrobblingService& scrobbling{ *Service<Scrobbling::IScrobblingService>::get() };
+            Scrobbling::IScrobblingService& scrobblingService{ *Service<Scrobbling::IScrobblingService>::get() };
+            Feedback::IFeedbackService& feedbackService{ *Service<Feedback::IFeedbackService>::get() };
 
             auto transaction{ context.dbSession.createSharedTransaction() };
 
@@ -63,11 +66,11 @@ namespace API::Subsonic
                 params.setSortMethod(ReleaseSortMethod::Name);
                 params.setRange(range);
 
-                releases = Release::find(context.dbSession, params);
+                releases = Release::findIds(context.dbSession, params);
             }
             else if (type == "alphabeticalByArtist")
             {
-                releases = Release::findOrderedByArtist(context.dbSession, range);
+                releases = Release::findIdsOrderedByArtist(context.dbSession, range);
             }
             else if (type == "byGenre")
             {
@@ -83,7 +86,7 @@ namespace API::Subsonic
                         params.setSortMethod(ReleaseSortMethod::Name);
                         params.setRange(range);
 
-                        releases = Release::find(context.dbSession, params);
+                        releases = Release::findIds(context.dbSession, params);
                     }
                 }
             }
@@ -97,11 +100,11 @@ namespace API::Subsonic
                 params.setRange(range);
                 params.setDateRange(DateRange::fromYearRange(fromYear, toYear));
 
-                releases = Release::find(context.dbSession, params);
+                releases = Release::findIds(context.dbSession, params);
             }
             else if (type == "frequent")
             {
-                releases = scrobbling.getTopReleases(context.userId, {}, range);
+                releases = scrobblingService.getTopReleases(context.userId, {}, range);
             }
             else if (type == "newest")
             {
@@ -109,7 +112,7 @@ namespace API::Subsonic
                 params.setSortMethod(ReleaseSortMethod::LastWritten);
                 params.setRange(range);
 
-                releases = Release::find(context.dbSession, params);
+                releases = Release::findIds(context.dbSession, params);
             }
             else if (type == "random")
             {
@@ -119,15 +122,15 @@ namespace API::Subsonic
                 params.setSortMethod(ReleaseSortMethod::Random);
                 params.setRange({ 0, size });
 
-                releases = Release::find(context.dbSession, params);
+                releases = Release::findIds(context.dbSession, params);
             }
             else if (type == "recent")
             {
-                releases = scrobbling.getRecentReleases(context.userId, {}, range);
+                releases = scrobblingService.getRecentReleases(context.userId, {}, range);
             }
             else if (type == "starred")
             {
-                releases = scrobbling.getStarredReleases(context.userId, {}, range);
+                releases = feedbackService.getStarredReleases(context.userId, {}, range);
             }
             else
                 throw NotImplementedGenericError{};
@@ -138,7 +141,7 @@ namespace API::Subsonic
             for (const ReleaseId releaseId : releases.results)
             {
                 const Release::pointer release{ Release::find(context.dbSession, releaseId) };
-                albumListNode.addArrayChild("album", createAlbumNode(release, context.dbSession, user, id3));
+                albumListNode.addArrayChild("album", createAlbumNode(context, release, user, id3));
             }
 
             return response;
@@ -155,24 +158,24 @@ namespace API::Subsonic
             Response response{ Response::createOkResponse(context.serverProtocolVersion) };
             Response::Node& starredNode{ response.createNode(id3 ? Response::Node::Key{ "starred2" } : Response::Node::Key{ "starred" }) };
 
-            Scrobbling::IScrobblingService& scrobbling{ *Service<Scrobbling::IScrobblingService>::get() };
+            Feedback::IFeedbackService& feedbackService{ *Service<Feedback::IFeedbackService>::get() };
 
-            for (const ArtistId artistId : scrobbling.getStarredArtists(context.userId, {} /* clusters */, std::nullopt /* linkType */, ArtistSortMethod::BySortName, Range{}).results)
+            for (const ArtistId artistId : feedbackService.getStarredArtists(context.userId, {} /* clusters */, std::nullopt /* linkType */, ArtistSortMethod::BySortName, Range{}).results)
             {
                 if (auto artist{ Artist::find(context.dbSession, artistId) })
-                    starredNode.addArrayChild("artist", createArtistNode(artist, context.dbSession, user, id3));
+                    starredNode.addArrayChild("artist", createArtistNode(context, artist, user, id3));
             }
 
-            for (const ReleaseId releaseId : scrobbling.getStarredReleases(context.userId, {} /* clusters */, Range{}).results)
+            for (const ReleaseId releaseId : feedbackService.getStarredReleases(context.userId, {} /* clusters */, Range{}).results)
             {
                 if (auto release{ Release::find(context.dbSession, releaseId) })
-                    starredNode.addArrayChild("album", createAlbumNode(release, context.dbSession, user, id3));
+                    starredNode.addArrayChild("album", createAlbumNode(context, release, user, id3));
             }
 
-            for (const TrackId trackId : scrobbling.getStarredTracks(context.userId, {} /* clusters */, Range{}).results)
+            for (const TrackId trackId : feedbackService.getStarredTracks(context.userId, {} /* clusters */, Range{}).results)
             {
                 if (auto track{ Track::find(context.dbSession, trackId) })
-                    starredNode.addArrayChild("song", createSongNode(track, context.dbSession, user));
+                    starredNode.addArrayChild("song", createSongNode(context, track, user));
             }
 
             return response;
@@ -201,16 +204,13 @@ namespace API::Subsonic
         if (!user)
             throw UserNotAuthorizedError{};
 
-        const auto trackIds{ Track::find(context.dbSession, Track::FindParameters {}.setSortMethod(TrackSortMethod::Random).setRange({0, size})) };
+        const auto tracks{ Track::find(context.dbSession, Track::FindParameters {}.setSortMethod(TrackSortMethod::Random).setRange({0, size})) };
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
 
         Response::Node& randomSongsNode{ response.createNode("randomSongs") };
-        for (const TrackId trackId : trackIds.results)
-        {
-            const Track::pointer track{ Track::find(context.dbSession, trackId) };
-            randomSongsNode.addArrayChild("song", createSongNode(track, context.dbSession, user));
-        }
+        for (const Track::pointer& track : tracks.results)
+            randomSongsNode.addArrayChild("song", createSongNode(context, track, user));
 
         return response;
     }
@@ -247,12 +247,9 @@ namespace API::Subsonic
         params.setClusters({ cluster->getId() });
         params.setRange({ offset, size });
 
-        auto trackIds{ Track::find(context.dbSession, params) };
-        for (const TrackId trackId : trackIds.results)
-        {
-            const Track::pointer track{ Track::find(context.dbSession, trackId) };
-            songsByGenreNode.addArrayChild("song", createSongNode(track, context.dbSession, user));
-        }
+        const auto tracks{ Track::find(context.dbSession, params) };
+        for (const Track::pointer& track : tracks.results)
+            songsByGenreNode.addArrayChild("song", createSongNode(context, track, user));
 
         return response;
     }

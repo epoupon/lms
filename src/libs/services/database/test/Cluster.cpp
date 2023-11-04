@@ -133,11 +133,11 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Track::find(session, Track::FindParameters {}.setClusters({cluster1.getId()})) };
+        auto tracks{ Track::findIds(session, Track::FindParameters {}.setClusters({cluster1.getId()})) };
         ASSERT_EQ(tracks.results.size(), 1);
         EXPECT_EQ(tracks.results.front(), track.getId());
 
-        tracks = Track::find(session, Track::FindParameters{}.setClusters({ cluster2.getId() }));
+        tracks = Track::findIds(session, Track::FindParameters{}.setClusters({ cluster2.getId() }));
         EXPECT_TRUE(tracks.results.empty());
     }
 
@@ -151,6 +151,51 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
         auto clusterIds{ track->getClusterIds() };
         ASSERT_EQ(clusterIds.size(), 1);
         EXPECT_EQ(clusterIds.front(), cluster1.getId());
+    }
+}
+
+TEST_F(DatabaseFixture, Cluster_singleTrackWithSeveralClusters)
+{
+    ScopedTrack track{ session, "MyTrack" };
+    ScopedClusterType clusterType{ session, "MyClusterType" };
+
+    ScopedCluster cluster1{ session, clusterType.lockAndGet(), "MyCluster1" };
+    ScopedCluster cluster2{ session, clusterType.lockAndGet(), "MyCluster2" };
+
+    const std::vector<ClusterId> clusterIds{ cluster1.getId(), cluster2.getId() };
+
+    {
+        auto transaction{ session.createSharedTransaction() };
+
+        const auto tracks{ Track::findIds(session, Track::FindParameters{}.setClusters(clusterIds)) };
+        EXPECT_TRUE(tracks.results.empty());
+    }
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+
+        cluster1.get().modify()->addTrack(track.get());
+    }
+
+    {
+        auto transaction{ session.createSharedTransaction() };
+
+        const auto tracks{ Track::findIds(session, Track::FindParameters{}.setClusters(clusterIds)) };
+        EXPECT_TRUE(tracks.results.empty());
+    }
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+
+        cluster2.get().modify()->addTrack(track.get());
+    }
+
+    {
+        auto transaction{ session.createSharedTransaction() };
+
+        const auto tracks{ Track::findIds(session, Track::FindParameters{}.setClusters(clusterIds)) };
+        ASSERT_FALSE(tracks.results.empty());
+        EXPECT_EQ(tracks.results.front(), track.getId());
     }
 }
 
@@ -329,7 +374,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Release::find(session, Release::FindParameters {}.setClusters({cluster.getId()})) };
+        const auto releases{ Release::findIds(session, Release::FindParameters {}.setClusters({cluster.getId()})) };
         ASSERT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results.front(), release.getId());
     }
@@ -337,7 +382,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Release::find(session, Release::FindParameters {}.setClusters({unusedCluster.getId()})) };
+        const auto releases{ Release::findIds(session, Release::FindParameters {}.setClusters({unusedCluster.getId()})) };
         EXPECT_EQ(releases.results.size(), 0);
     }
 
@@ -370,8 +415,8 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiClusters)
         auto transaction{ session.createSharedTransaction() };
         EXPECT_TRUE(ClusterType::findOrphans(session, Range{}).results.empty());
         EXPECT_EQ(Cluster::findOrphans(session, Range{}).results.size(), 2);
-        EXPECT_TRUE(Release::findOrphans(session, Range{}).results.empty());
-        EXPECT_TRUE(Artist::findAllOrphans(session, Range{}).results.empty());
+        EXPECT_TRUE(Release::findOrphanIds(session, Range{}).results.empty());
+        EXPECT_TRUE(Artist::findOrphanIds(session, Range{}).results.empty());
     }
 
     {
@@ -383,12 +428,12 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiClusters)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Artist::find(session, Artist::FindParameters {}.setClusters({cluster1.getId()})) };
+        auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters({cluster1.getId()})) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
 
-        EXPECT_TRUE(Artist::find(session, Artist::FindParameters{}.setClusters({ cluster2.getId() })).results.empty());
-        EXPECT_TRUE(Artist::find(session, Artist::FindParameters{}.setClusters({ cluster3.getId() })).results.empty());
+        EXPECT_TRUE(Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster2.getId() })).results.empty());
+        EXPECT_TRUE(Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster3.getId() })).results.empty());
 
         cluster2.get().modify()->addTrack(track.get());
     }
@@ -396,19 +441,19 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiClusters)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Artist::find(session, Artist::FindParameters {}.setClusters({cluster1.getId()})) };
+        auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters({cluster1.getId()})) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
 
-        artists = Artist::find(session, Artist::FindParameters{}.setClusters({ cluster2.getId() }));
+        artists = Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster2.getId() }));
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
 
-        artists = Artist::find(session, Artist::FindParameters{}.setClusters({ cluster1.getId() }));
+        artists = Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster1.getId() }));
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
 
-        EXPECT_TRUE(Artist::find(session, Artist::FindParameters{}.setClusters({ cluster3.getId() })).results.empty());
+        EXPECT_TRUE(Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster3.getId() })).results.empty());
     }
 }
 
@@ -430,14 +475,14 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiRolesMultiClusters)
     {
         auto transaction{ session.createSharedTransaction() };
         EXPECT_TRUE(Cluster::findOrphans(session, Range{}).results.empty());
-        EXPECT_TRUE(Release::findOrphans(session, Range{}).results.empty());
-        EXPECT_TRUE(Artist::findAllOrphans(session, Range{}).results.empty());
+        EXPECT_TRUE(Release::findOrphanIds(session, Range{}).results.empty());
+        EXPECT_TRUE(Artist::findOrphanIds(session, Range{}).results.empty());
     }
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Artist::find(session, Artist::FindParameters {}.setClusters({cluster.getId()})) };
+        auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters({cluster.getId()})) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
     }
@@ -470,7 +515,7 @@ TEST_F(DatabaseFixture, MultiTracksSingleArtistMultiClusters)
     {
         auto transaction{ session.createSharedTransaction() };
         EXPECT_TRUE(Cluster::findOrphans(session, Range{}).results.empty());
-        EXPECT_TRUE(Artist::findAllOrphans(session, Range{}).results.empty());
+        EXPECT_TRUE(Artist::findOrphanIds(session, Range{}).results.empty());
     }
 
     {
@@ -479,7 +524,7 @@ TEST_F(DatabaseFixture, MultiTracksSingleArtistMultiClusters)
         std::vector<ClusterId> clusterIds;
         std::transform(std::cbegin(clusters), std::cend(clusters), std::back_inserter(clusterIds), [](const ScopedCluster& cluster) { return cluster.getId(); });
 
-        auto artists{ Artist::find(session, Artist::FindParameters {}.setClusters(clusterIds)) };
+        auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters(clusterIds)) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
     }
@@ -505,7 +550,7 @@ TEST_F(DatabaseFixture, MultipleTracksSingleClusterSimilarity)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        const auto similarTracks{ Track::findSimilarTracks(session, {tracks.front().getId()}, Range {}) };
+        const auto similarTracks{ Track::findSimilarTrackIds(session, {tracks.front().getId()}, Range {}) };
         EXPECT_EQ(similarTracks.results.size(), tracks.size() - 1);
         for (const TrackId similarTrackId : similarTracks.results)
         {
@@ -546,14 +591,14 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleClustersSimilarity)
         auto transaction{ session.createSharedTransaction() };
 
         {
-            auto similarTracks{ Track::findSimilarTracks(session, {tracks.back().getId()}, Range {0, 4}) };
+            auto similarTracks{ Track::findSimilarTrackIds(session, {tracks.back().getId()}, Range {0, 4}) };
             EXPECT_EQ(similarTracks.results.size(), 4);
             for (const TrackId similarTrackId : similarTracks.results)
                 EXPECT_TRUE(std::find_if(std::next(std::cbegin(tracks), 5), std::next(std::cend(tracks), -1), [&](const auto& track) { return similarTrackId == track.getId(); }) != std::cend(tracks));
         }
 
         {
-            auto similarTracks{ Track::findSimilarTracks(session, {tracks.front().getId()}, Range {}) };
+            auto similarTracks{ Track::findSimilarTrackIds(session, {tracks.front().getId()}, Range {}) };
             EXPECT_EQ(similarTracks.results.size(), tracks.size() - 1);
             for (const TrackId similarTrackId : similarTracks.results)
                 EXPECT_TRUE(std::find_if(std::next(std::cbegin(tracks), 1), std::cend(tracks), [&](const auto& track) { return similarTrackId == track.getId(); }) != std::cend(tracks));
@@ -582,22 +627,22 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistSingleCluster)
 
         EXPECT_TRUE(Cluster::findOrphans(session, Range{}).results.empty());
         EXPECT_TRUE(ClusterType::findOrphans(session, Range{}).results.empty());
-        EXPECT_TRUE(Artist::findAllOrphans(session, Range{}).results.empty());
-        EXPECT_TRUE(Release::findOrphans(session, Range{}).results.empty());
+        EXPECT_TRUE(Artist::findOrphanIds(session, Range{}).results.empty());
+        EXPECT_TRUE(Release::findOrphanIds(session, Range{}).results.empty());
     }
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Artist::find(session, Artist::FindParameters {}.setClusters({cluster.getId()})) };
+        auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters({cluster.getId()})) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
 
-        auto releases{ Release::find(session, Release::FindParameters {}.setArtist(artist.getId())) };
+        auto releases{ Release::findIds(session, Release::FindParameters {}.setArtist(artist.getId())) };
         ASSERT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results.front(), release.getId());
 
-        releases = Release::find(session, Release::FindParameters{}.setArtist(artist.getId()).setClusters({ cluster.getId() }));
+        releases = Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId()).setClusters({ cluster.getId() }));
         ASSERT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results.front(), release.getId());
     }
@@ -624,11 +669,11 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistMultiClusters)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Release::find(session, Release::FindParameters {}.setArtist(artist.getId())) };
+        auto releases{ Release::findIds(session, Release::FindParameters {}.setArtist(artist.getId())) };
         ASSERT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results.front(), release.getId());
 
-        releases = Release::find(session, Release::FindParameters{}.setArtist(artist.getId()).setClusters({ cluster1.getId(), cluster2.getId() }));
+        releases = Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId()).setClusters({ cluster1.getId(), cluster2.getId() }));
         ASSERT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results.front(), release.getId());
     }
@@ -982,9 +1027,9 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleArtistsMultiClusters)
 
     {
         auto transaction{ session.createSharedTransaction() };
-        EXPECT_TRUE(artist1->findSimilarArtists().results.empty());
-        EXPECT_TRUE(artist2->findSimilarArtists().results.empty());
-        EXPECT_TRUE(artist3->findSimilarArtists().results.empty());
+        EXPECT_TRUE(artist1->findSimilarArtistIds().results.empty());
+        EXPECT_TRUE(artist2->findSimilarArtistIds().results.empty());
+        EXPECT_TRUE(artist3->findSimilarArtistIds().results.empty());
     }
 
     std::list<ScopedTrack> tracks;
@@ -1016,35 +1061,35 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleArtistsMultiClusters)
         auto transaction{ session.createSharedTransaction() };
 
         {
-            auto artists{ artist1->findSimilarArtists() };
+            auto artists{ artist1->findSimilarArtistIds() };
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist2.getId());
         }
 
         {
-            auto artists{ artist1->findSimilarArtists({TrackArtistLinkType::Artist}) };
+            auto artists{ artist1->findSimilarArtistIds({TrackArtistLinkType::Artist}) };
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist2.getId());
         }
 
         {
-            auto artists{ artist1->findSimilarArtists({TrackArtistLinkType::ReleaseArtist}) };
+            auto artists{ artist1->findSimilarArtistIds({TrackArtistLinkType::ReleaseArtist}) };
             EXPECT_EQ(artists.results.empty(), 1);
         }
 
         {
-            auto artists{ artist1->findSimilarArtists({TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}) };
+            auto artists{ artist1->findSimilarArtistIds({TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}) };
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist2.getId());
         }
 
         {
-            auto artists{ artist1->findSimilarArtists({TrackArtistLinkType::Composer}) };
+            auto artists{ artist1->findSimilarArtistIds({TrackArtistLinkType::Composer}) };
             EXPECT_TRUE(artists.results.empty());
         }
 
         {
-            auto artists{ artist2->findSimilarArtists() };
+            auto artists{ artist2->findSimilarArtistIds() };
             ASSERT_EQ(artists.results.size(), 2);
             EXPECT_EQ(artists.results[0], artist1.getId());
             EXPECT_EQ(artists.results[1], artist3.getId());

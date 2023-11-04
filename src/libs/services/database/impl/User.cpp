@@ -53,8 +53,10 @@ namespace Database {
 
         auto query{ session.getDboSession().query<UserId>("SELECT id FROM user") };
 
-        if (params.scrobbler)
-            query.where("scrobbler = ?").bind(*params.scrobbler);
+        if (params.scrobblingBackend)
+            query.where("scrobbling_backend = ?").bind(*params.scrobblingBackend);
+        if (params.feedbackBackend)
+            query.where("feedback_backend = ?").bind(*params.feedbackBackend);
 
         return Utils::execQuery(query, params.range);
     }

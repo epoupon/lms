@@ -31,5 +31,5 @@ namespace Database
 
 namespace API::Subsonic
 {
-    Response::Node createAlbumNode(const Database::ObjectPtr<Database::Release>& release, Database::Session& dbSession, const Database::ObjectPtr<Database::User>& user, bool id3);
+    Response::Node createAlbumNode(RequestContext& context, const Database::ObjectPtr<Database::Release>& release, const Database::ObjectPtr<Database::User>& user, bool id3);
 }

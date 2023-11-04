@@ -43,7 +43,7 @@ dumpTrackCovers(Database::Session& session, Image::ImageSize width)
 	RangeResults<Database::TrackId> trackIds;
 	{
 		auto transaction {session.createSharedTransaction()};
-		trackIds = Database::Track::find(session, Database::Track::FindParameters {});
+		trackIds = Database::Track::findIds(session, Database::Track::FindParameters {});
 	}
 
 	for (const Database::TrackId trackId : trackIds.results)

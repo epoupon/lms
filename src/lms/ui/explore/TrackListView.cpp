@@ -39,166 +39,158 @@
 #include "ModalManager.hpp"
 #include "Utils.hpp"
 
-using namespace Database;
-
-namespace
-{
-	static
-	std::optional<TrackListId>
-	extractTrackListIdFromInternalPath()
-	{
-		return StringUtils::readAs<TrackListId::ValueType>(wApp->internalPathNextPart("/tracklist/"));
-	}
-}
-
 namespace UserInterface
 {
-	TrackList::TrackList(Filters& filters, PlayQueueController& playQueueController)
-	: Template {Wt::WString::tr("Lms.Explore.TrackList.template")}
-	, _filters {filters}
-	, _playQueueController {playQueueController}
-	{
-		addFunction("tr", &Wt::WTemplate::Functions::tr);
-		addFunction("id", &Wt::WTemplate::Functions::id);
+    using namespace Database;
 
-		wApp->internalPathChanged().connect(this, [this]
-		{
-			refreshView();
-		});
+    namespace
+    {
+        std::optional<TrackListId> extractTrackListIdFromInternalPath()
+        {
+            return StringUtils::readAs<TrackListId::ValueType>(wApp->internalPathNextPart("/tracklist/"));
+        }
+    }
 
-		_filters.updated().connect([this]
-		{
-			refreshView();
-		});
+    TrackList::TrackList(Filters& filters, PlayQueueController& playQueueController)
+        : Template{ Wt::WString::tr("Lms.Explore.TrackList.template") }
+        , _filters{ filters }
+        , _playQueueController{ playQueueController }
+    {
+        addFunction("tr", &Wt::WTemplate::Functions::tr);
+        addFunction("id", &Wt::WTemplate::Functions::id);
 
-		refreshView();
-	}
+        wApp->internalPathChanged().connect(this, [this]
+            {
+                refreshView();
+            });
 
-	void
-	TrackList::refreshView()
-	{
-		if (!wApp->internalPathMatches("/tracklist/"))
-			return;
+        _filters.updated().connect([this]
+            {
+                refreshView();
+            });
 
-		const std::optional<TrackListId> trackListId {extractTrackListIdFromInternalPath()};
-		if (!trackListId)
-			throw TrackListNotFoundException {};
+        refreshView();
+    }
 
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+    void TrackList::refreshView()
+    {
+        if (!wApp->internalPathMatches("/tracklist/"))
+            return;
 
-		const Database::TrackList::pointer trackList {Database::TrackList::find(LmsApp->getDbSession(), *trackListId)};
-		if (!trackList)
-			throw TrackListNotFoundException {};
+        const std::optional<TrackListId> trackListId{ extractTrackListIdFromInternalPath() };
+        if (!trackListId)
+            throw TrackListNotFoundException{};
 
-		LmsApp->setTitle(std::string {trackList->getName()});
-		_trackListId = *trackListId;
+        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
 
-		clear();
+        const Database::TrackList::pointer trackList{ Database::TrackList::find(LmsApp->getDbSession(), *trackListId) };
+        if (!trackList)
+            throw TrackListNotFoundException{};
 
-		bindString("name", std::string {trackList->getName()}, Wt::TextFormat::Plain);
-		bindString("duration", Utils::durationToString(trackList->getDuration()));
-		const auto trackCount {trackList->getCount()};
-		bindString("track-count", Wt::WString::trn("Lms.track-count", trackCount).arg(trackCount));
+        LmsApp->setTitle(std::string{ trackList->getName() });
+        _trackListId = *trackListId;
 
-		Wt::WContainerWidget* clusterContainers {bindNew<Wt::WContainerWidget>("clusters")};
-		{
-			const auto clusterTypes {ScanSettings::get(LmsApp->getDbSession())->getClusterTypes()};
-			const auto clusterGroups {trackList->getClusterGroups(clusterTypes, 3)};
+        clear();
 
-			for (const auto& clusters : clusterGroups)
-			{
-				for (const Database::Cluster::pointer& cluster : clusters)
-				{
-					const ClusterId clusterId {cluster->getId()};
-					Wt::WInteractWidget* entry {clusterContainers->addWidget(Utils::createCluster(clusterId))};
-					entry->clicked().connect([=]
-					{
-						_filters.add(clusterId);
-					});
-				}
-			}
-		}
+        bindString("name", std::string{ trackList->getName() }, Wt::TextFormat::Plain);
+        bindString("duration", Utils::durationToString(trackList->getDuration()));
+        const auto trackCount{ trackList->getCount() };
+        bindString("track-count", Wt::WString::trn("Lms.track-count", trackCount).arg(trackCount));
 
-		bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
-			->clicked().connect([=]
-			{
-				_playQueueController.processCommand(PlayQueueController::Command::Play, *trackListId);
-			});
+        Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
+        {
+            const auto clusterTypes{ ScanSettings::get(LmsApp->getDbSession())->getClusterTypes() };
+            const auto clusterGroups{ trackList->getClusterGroups(clusterTypes, 3) };
 
-		bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
-			->clicked().connect([=]
-			{
-				_playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, *trackListId);
-			});
+            for (const auto& clusters : clusterGroups)
+            {
+                for (const Database::Cluster::pointer& cluster : clusters)
+                {
+                    const ClusterId clusterId{ cluster->getId() };
+                    Wt::WInteractWidget* entry{ clusterContainers->addWidget(Utils::createCluster(clusterId)) };
+                    entry->clicked().connect([=]
+                        {
+                            _filters.add(clusterId);
+                        });
+                }
+            }
+        }
 
-		bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
-			->clicked().connect([=]
-			{
-				_playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, *trackListId);
-			});
+        bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
+            ->clicked().connect([=]
+                {
+                    _playQueueController.processCommand(PlayQueueController::Command::Play, *trackListId);
+                });
 
-		bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
-			->setLink(Wt::WLink {std::make_unique<DownloadTrackListResource>(*trackListId)});
+        bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
+            ->clicked().connect([=]
+                {
+                    _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, *trackListId);
+                });
 
-		bindNew<Wt::WPushButton>("delete", Wt::WString::tr("Lms.delete"))
-			->clicked().connect([=]
-			{
-				auto modal {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.TrackList.template.delete-tracklist"))};
-				modal->addFunction("tr", &Wt::WTemplate::Functions::tr);
-				Wt::WWidget* modalPtr {modal.get()};
+        bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
+            ->clicked().connect([=]
+                {
+                    _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, *trackListId);
+                });
 
-				auto* delBtn {modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.delete"))};
-				delBtn->clicked().connect([=]
-				{
-					{
-						auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+        bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
+            ->setLink(Wt::WLink{ std::make_unique<DownloadTrackListResource>(*trackListId) });
 
-						Database::TrackList::pointer trackList {Database::TrackList::find(LmsApp->getDbSession(), *trackListId)};
-						if (trackList)
-							trackList.remove();
-					}
+        bindNew<Wt::WPushButton>("delete", Wt::WString::tr("Lms.delete"))
+            ->clicked().connect([=]
+                {
+                    auto modal{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.TrackList.template.delete-tracklist")) };
+                    modal->addFunction("tr", &Wt::WTemplate::Functions::tr);
+                    Wt::WWidget* modalPtr{ modal.get() };
 
-					clear();
-					trackListDeleted.emit(*trackListId);
-					LmsApp->setInternalPath("/tracklists", true);
+                    auto* delBtn{ modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.delete")) };
+                    delBtn->clicked().connect([=]
+                        {
+                            {
+                                auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
 
-					LmsApp->getModalManager().dispose(modalPtr);
-				});
+                                Database::TrackList::pointer trackList{ Database::TrackList::find(LmsApp->getDbSession(), *trackListId) };
+                                if (trackList)
+                                    trackList.remove();
+                            }
 
-				auto* cancelBtn {modal->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel"))};
-				cancelBtn->clicked().connect([=]
-				{
-					LmsApp->getModalManager().dispose(modalPtr);
-				});
+                            clear();
+                            trackListDeleted.emit(*trackListId);
+                            LmsApp->setInternalPath("/tracklists", true);
 
-				LmsApp->getModalManager().show(std::move(modal));
-			});
+                            LmsApp->getModalManager().dispose(modalPtr);
+                        });
 
-		_container = bindNew<InfiniteScrollingContainer>("tracks", Wt::WString::tr("Lms.Explore.TrackList.template.entry-container"));
-		_container->onRequestElements.connect([this]
-		{
-			addSome();
-		});
-	}
+                    auto* cancelBtn{ modal->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel")) };
+                    cancelBtn->clicked().connect([=]
+                        {
+                            LmsApp->getModalManager().dispose(modalPtr);
+                        });
 
-	void
-	TrackList::addSome()
-	{
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+                    LmsApp->getModalManager().show(std::move(modal));
+                });
 
-		Database::Track::FindParameters params;
-		params.setClusters(_filters.getClusterIds());
-		params.setTrackList(_trackListId);
-		params.setSortMethod(Database::TrackSortMethod::TrackList);
-		params.setRange({static_cast<std::size_t>(_container->getCount()), _batchSize});
-		params.setDistinct(false);
+        _container = bindNew<InfiniteScrollingContainer>("tracks", Wt::WString::tr("Lms.Explore.TrackList.template.entry-container"));
+        _container->onRequestElements.connect([this]
+            {
+                addSome();
+            });
+    }
 
-		const auto trackIds {Database::Track::find(LmsApp->getDbSession(), params)};
-		for (const TrackId trackId : trackIds.results)
-		{
-			if (const Track::pointer track {Track::find(LmsApp->getDbSession(), trackId)})
-				_container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
-		}
-	}
+    void TrackList::addSome()
+    {
+        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+
+        Database::Track::FindParameters params;
+        params.setClusters(_filters.getClusterIds());
+        params.setTrackList(_trackListId);
+        params.setSortMethod(Database::TrackSortMethod::TrackList);
+        params.setRange({ static_cast<std::size_t>(_container->getCount()), _batchSize });
+        params.setDistinct(false);
+
+        for (const Track::pointer& track : Database::Track::find(LmsApp->getDbSession(), params).results)
+            _container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
+    }
 } // namespace UserInterface
 

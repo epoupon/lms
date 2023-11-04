@@ -27,20 +27,21 @@
 
 class UUID
 {
-	public:
-		static std::optional<UUID> fromString(std::string_view str);
+public:
+    static std::optional<UUID> fromString(std::string_view str);
+    static UUID generate();
 
-		std::string_view getAsString() const { return _value; }
+    std::string_view getAsString() const { return _value; }
 
-	private:
-		UUID(std::string_view value);
-		std::string _value;
+private:
+    UUID(std::string_view value);
+    std::string _value;
 };
 
 namespace StringUtils
 {
-	template <>
-	std::optional<UUID>
-	readAs(std::string_view str);
+    template <>
+    std::optional<UUID>
+        readAs(std::string_view str);
 }
 

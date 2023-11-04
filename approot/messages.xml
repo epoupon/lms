@@ -53,13 +53,13 @@
 <message id="Lms.Admin.Database.never">Never</message>
 <message id="Lms.Admin.Database.path">Media root directory</message>
 <message id="Lms.Admin.Database.path-help">Directories containing a <code>.lmsignore</code> file are skipped</message>
-<message id="Lms.Admin.Database.recommendation-engine-type">Recommendation engine</message>
-<message id="Lms.Admin.Database.recommendation-engine-type.clusters">Tags based</message>
-<message id="Lms.Admin.Database.recommendation-engine-type.features">Audio analysis based</message>
 <message id="Lms.Admin.Database.scan-complete">Scan complete: {1} total files, {2} additions, {3} updates, {4} deletions, {5} duplicates, {6} errors</message>
 <message id="Lms.Admin.Database.scan-launched">Scan launched!</message>
 <message id="Lms.Admin.Database.scan-options">Scan options</message>
 <message id="Lms.Admin.Database.settings-saved">New settings saved!</message>
+<message id="Lms.Admin.Database.similarity-engine-type">Similarity engine</message>
+<message id="Lms.Admin.Database.similarity-engine-type.clusters">Tag-based</message>
+<message id="Lms.Admin.Database.similarity-engine-type.none">None</message>
 <message id="Lms.Admin.Database.update-period">Update period</message>
 <message id="Lms.Admin.Database.update-start-time">Update start time</message>
 <message id="Lms.Admin.Database.weekly">Weekly</message>
@@ -240,10 +240,14 @@
 <!--Settings-->
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">These audio settings are local to your browser!</message>
+<message id="Lms.Settings.backend.internal">Internal</message>
+<message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
+<message id="Lms.Settings.backend.listenbrainz-token">ListenBrainz API token</message>
 <message id="Lms.Settings.change-password">Change password</message>
 <message id="Lms.Settings.default-transcode-bitrate">Default transcode bitrate</message>
 <message id="Lms.Settings.default-transcode-format">Default transcode format</message>
 <message id="Lms.Settings.demo-cannot-save">Cannot save using a demo account!</message>
+<message id="Lms.Settings.feedback">Feedback</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Settings</message>
 <message id="Lms.Settings.password-bad">Bad password</message>
 <message id="Lms.Settings.password-must-fill-old-password">Old password must be filled in</message>
@@ -255,10 +259,7 @@
 <message id="Lms.Settings.replaygain-preamp">ReplayGain preamp</message>
 <message id="Lms.Settings.replaygain-preamp-no-rg-info">ReplayGain preamp (if no info)</message>
 <message id="Lms.Settings.scrobbling">Scrobbling</message>
-<message id="Lms.Settings.scrobbling.scrobbler">Scrobbler</message>
-<message id="Lms.Settings.scrobbling.scrobbler.internal">Internal</message>
-<message id="Lms.Settings.scrobbling.scrobbler.listenbrainz">ListenBrainz</message>
-<message id="Lms.Settings.scrobbling.listenbrainz-token">ListenBrainz token</message>
+<message id="Lms.Settings.services">Services</message>
 <message id="Lms.Settings.settings">Settings</message>
 <message id="Lms.Settings.subsonic-artist-list-mode">Artist list mode</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.all-artists">All artists</message>

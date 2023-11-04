@@ -35,7 +35,7 @@ TEST_F(DatabaseFixture, Listen_getAll)
         EXPECT_EQ(Listen::getCount(session), 0);
     }
 
-    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 1}} };
+    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 1}} };
 
     {
         auto transaction{ session.createSharedTransaction() };
@@ -45,7 +45,7 @@ TEST_F(DatabaseFixture, Listen_getAll)
 
     {
         auto transaction{ session.createUniqueTransaction() };
-        ScopedListen listen2{ session, user.get(), track.get(), Scrobbler::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{13, 0, 1}} };
+        ScopedListen listen2{ session, user.get(), track.get(), ScrobblingBackend::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{13, 0, 1}} };
 
         EXPECT_EQ(Listen::getCount(session), 2);
     }
@@ -61,12 +61,12 @@ TEST_F(DatabaseFixture, Listen_get)
 {
     ScopedTrack track{ session, "MyTrack" };
     ScopedUser user{ session, "MyUser" };
-    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 1}} };
+    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 1}} };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto listens{ Listen::find(session, Listen::FindParameters{}.setUser(user->getId()).setScrobbler(Scrobbler::ListenBrainz)) };
+        auto listens{ Listen::find(session, Listen::FindParameters{}.setUser(user->getId()).setScrobblingBackend(ScrobblingBackend::ListenBrainz)) };
         EXPECT_EQ(listens.results.size(), 0);
     }
 
@@ -74,18 +74,18 @@ TEST_F(DatabaseFixture, Listen_get)
         auto transaction{ session.createSharedTransaction() };
 
         {
-            auto listens{ Listen::find(session, Listen::FindParameters{}.setUser(user->getId()).setScrobbler(Scrobbler::Internal)) };
+            auto listens{ Listen::find(session, Listen::FindParameters{}.setUser(user->getId()).setScrobblingBackend(ScrobblingBackend::Internal)) };
             EXPECT_EQ(listens.moreResults, false);
             ASSERT_EQ(listens.results.size(), 1);
             EXPECT_EQ(listens.results.front(), listen->getId());
         }
 
         {
-            auto listens{ Listen::find(session, Listen::FindParameters{}.setUser(user->getId()).setScrobbler(Scrobbler::Internal).setScrobblingState(ScrobblingState::PendingAdd)) };
+            auto listens{ Listen::find(session, Listen::FindParameters{}.setUser(user->getId()).setScrobblingBackend(ScrobblingBackend::Internal).setSyncState(SyncState::PendingAdd)) };
             EXPECT_EQ(listens.results.size(), 1);
         }
         {
-            auto listens{ Listen::find(session, Listen::FindParameters{}.setUser(user->getId()).setScrobbler(Scrobbler::Internal).setScrobblingState(ScrobblingState::Synchronized)) };
+            auto listens{ Listen::find(session, Listen::FindParameters{}.setUser(user->getId()).setScrobblingBackend(ScrobblingBackend::Internal).setSyncState(SyncState::Synchronized)) };
             EXPECT_EQ(listens.results.size(), 0);
         }
     }
@@ -95,14 +95,14 @@ TEST_F(DatabaseFixture, Listen_get_multi)
 {
     ScopedTrack track{ session, "MyTrack" };
     ScopedUser user{ session, "MyUser" };
-    ScopedListen listen3{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 3}} };
-    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 1}} };
-    ScopedListen listen2{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 2}} };
+    ScopedListen listen3{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 3}} };
+    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 1}} };
+    ScopedListen listen2{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 2}} };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto listens{ Listen::find(session, Listen::FindParameters{}.setUser(user->getId()).setScrobbler(Scrobbler::Internal)) };
+        auto listens{ Listen::find(session, Listen::FindParameters{}.setUser(user->getId()).setScrobblingBackend(ScrobblingBackend::Internal)) };
         ASSERT_EQ(listens.results.size(), 3);
         EXPECT_EQ(listens.results[0], listen1.getId());
         EXPECT_EQ(listens.results[1], listen2.getId());
@@ -118,26 +118,26 @@ TEST_F(DatabaseFixture, Listen_get_byDateTime)
     const Wt::WDateTime dateTime2{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 2} };
     ASSERT_GT(dateTime2, dateTime1);
 
-    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime1 };
-    ScopedListen listen2{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime2 };
+    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
+    ScopedListen listen2{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime2 };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
         {
-            Listen::pointer listen{ Listen::find(session, user.getId(), track.getId(), Scrobbler::Internal, dateTime1) };
+            Listen::pointer listen{ Listen::find(session, user.getId(), track.getId(), ScrobblingBackend::Internal, dateTime1) };
             ASSERT_TRUE(listen);
             EXPECT_EQ(listen->getId(), listen1.getId());
         }
 
         {
-            Listen::pointer listen{ Listen::find(session, user.getId(), track.getId(), Scrobbler::Internal, dateTime2) };
+            Listen::pointer listen{ Listen::find(session, user.getId(), track.getId(), ScrobblingBackend::Internal, dateTime2) };
             ASSERT_TRUE(listen);
             EXPECT_EQ(listen->getId(), listen2.getId());
         }
 
         {
-            Listen::pointer listen{ Listen::find(session, user.getId(), track.getId(), Scrobbler::Internal, dateTime2.addSecs(56)) };
+            Listen::pointer listen{ Listen::find(session, user.getId(), track.getId(), ScrobblingBackend::Internal, dateTime2.addSecs(56)) };
             EXPECT_FALSE(listen);
         }
     }
@@ -148,19 +148,19 @@ TEST_F(DatabaseFixture, Listen_getTopArtists)
     ScopedTrack track1{ session, "MyTrack" };
     ScopedUser user{ session, "MyUser" };
     const Wt::WDateTime dateTime1{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
-    ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), Scrobbler::Internal, dateTime1 };
+    ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getTopArtists(session, user->getId(), Scrobbler::Internal, {}, std::nullopt) };
+        auto artists{ Listen::getTopArtists(session, user->getId(), ScrobblingBackend::Internal, {}, std::nullopt) };
         EXPECT_EQ(artists.results.size(), 0);
         EXPECT_EQ(artists.moreResults, false);
     }
 
     ScopedTrack track2{ session, "MyTrack2" };
     ScopedArtist artist1{ session, "MyArtist1" };
-    ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), Scrobbler::Internal, dateTime1.addSecs(1) };
+    ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime1.addSecs(1) };
 
     {
         auto transaction{ session.createUniqueTransaction() };
@@ -171,20 +171,20 @@ TEST_F(DatabaseFixture, Listen_getTopArtists)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getTopArtists(session, user->getId(), Scrobbler::Internal, {}, std::nullopt) };
+        auto artists{ Listen::getTopArtists(session, user->getId(), ScrobblingBackend::Internal, {}, std::nullopt) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results[0], artist1->getId());
     }
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getTopArtists(session, user->getId(), Scrobbler::ListenBrainz, {}, std::nullopt) };
+        auto artists{ Listen::getTopArtists(session, user->getId(), ScrobblingBackend::ListenBrainz, {}, std::nullopt) };
         ASSERT_EQ(artists.results.size(), 0);
     }
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getTopArtists(session, user->getId(), Scrobbler::Internal, {}, TrackArtistLinkType::Producer) };
+        auto artists{ Listen::getTopArtists(session, user->getId(), ScrobblingBackend::Internal, {}, TrackArtistLinkType::Producer) };
         EXPECT_EQ(artists.results.size(), 0);
     }
     {
@@ -194,7 +194,7 @@ TEST_F(DatabaseFixture, Listen_getTopArtists)
         {
             auto transaction{ session.createSharedTransaction() };
 
-            auto artists{ Listen::getTopArtists(session, user->getId(), Scrobbler::Internal, {cluster->getId()}, std::nullopt) };
+            auto artists{ Listen::getTopArtists(session, user->getId(), ScrobblingBackend::Internal, {cluster->getId()}, std::nullopt) };
             EXPECT_EQ(artists.results.size(), 0);
         }
     }
@@ -218,24 +218,24 @@ TEST_F(DatabaseFixture, Listen_getTopArtists_multi)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getTopArtists(session, user->getId(), Scrobbler::Internal, {}, std::nullopt) };
+        auto artists{ Listen::getTopArtists(session, user->getId(), ScrobblingBackend::Internal, {}, std::nullopt) };
         EXPECT_EQ(artists.results.size(), 0);
     }
 
-    ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), Scrobbler::Internal, dateTime.addSecs(1) };
+    ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime.addSecs(1) };
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getTopArtists(session, user->getId(), Scrobbler::Internal, {}, std::nullopt) };
+        auto artists{ Listen::getTopArtists(session, user->getId(), ScrobblingBackend::Internal, {}, std::nullopt) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results[0], artist1->getId());
     }
-    ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), Scrobbler::Internal, dateTime.addSecs(2) };
-    ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), Scrobbler::Internal, dateTime.addSecs(3) };
+    ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime.addSecs(2) };
+    ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime.addSecs(3) };
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getTopArtists(session, user->getId(), Scrobbler::Internal, {}, std::nullopt) };
+        auto artists{ Listen::getTopArtists(session, user->getId(), ScrobblingBackend::Internal, {}, std::nullopt) };
         ASSERT_EQ(artists.results.size(), 2);
         EXPECT_EQ(artists.results[0], artist2->getId());
         EXPECT_EQ(artists.results[1], artist1->getId());
@@ -243,7 +243,7 @@ TEST_F(DatabaseFixture, Listen_getTopArtists_multi)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getTopArtists(session, user->getId(), Scrobbler::Internal, {}, std::nullopt, Range {0, 1}) };
+        auto artists{ Listen::getTopArtists(session, user->getId(), ScrobblingBackend::Internal, {}, std::nullopt, Range {0, 1}) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.moreResults, true);
         EXPECT_EQ(artists.results[0], artist2->getId());
@@ -256,7 +256,7 @@ TEST_F(DatabaseFixture, Listen_getTopArtists_cluster)
     ScopedUser user{ session, "MyUser" };
     ScopedArtist artist{ session, "MyArtist" };
     const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
-    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
     ScopedClusterType clusterType{ session, "MyType" };
     ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
 
@@ -268,7 +268,7 @@ TEST_F(DatabaseFixture, Listen_getTopArtists_cluster)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getTopArtists(session, user->getId(), Scrobbler::Internal, {cluster.getId()}, std::nullopt) };
+        auto artists{ Listen::getTopArtists(session, user->getId(), ScrobblingBackend::Internal, {cluster.getId()}, std::nullopt) };
         ASSERT_EQ(artists.results.size(), 0);
     }
     {
@@ -278,7 +278,7 @@ TEST_F(DatabaseFixture, Listen_getTopArtists_cluster)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getTopArtists(session, user->getId(), Scrobbler::Internal, {cluster.getId()}, std::nullopt) };
+        auto artists{ Listen::getTopArtists(session, user->getId(), ScrobblingBackend::Internal, {cluster.getId()}, std::nullopt) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results[0], artist.getId());
     }
@@ -291,24 +291,24 @@ TEST_F(DatabaseFixture, Listen_getTopReleases)
     const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
     ScopedRelease release{ session, "MyRelease" };
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createUniqueTransaction() };
         track.get().modify()->setRelease(release.get());
     }
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getTopReleases(session, user->getId(), Scrobbler::Internal, {}) };
+        auto releases{ Listen::getTopReleases(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(releases.moreResults, false);
         EXPECT_EQ(releases.results.size(), 0);
     }
 
-    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getTopReleases(session, user->getId(), Scrobbler::Internal, {}) };
+        auto releases{ Listen::getTopReleases(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(releases.moreResults, false);
         ASSERT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results[0], release.getId());
@@ -316,7 +316,7 @@ TEST_F(DatabaseFixture, Listen_getTopReleases)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getTopReleases(session, user->getId(), Scrobbler::ListenBrainz, {}) };
+        auto releases{ Listen::getTopReleases(session, user->getId(), ScrobblingBackend::ListenBrainz, {}) };
         EXPECT_EQ(releases.moreResults, false);
         EXPECT_EQ(releases.results.size(), 0);
     }
@@ -328,12 +328,12 @@ TEST_F(DatabaseFixture, Listen_getTopReleases_multi)
     ScopedTrack track2{ session, "MyTrack" };
     ScopedUser user{ session, "MyUser" };
     const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
-    ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime };
     ScopedRelease release1{ session, "MyRelease1" };
     ScopedRelease release2{ session, "MyRelease2" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createUniqueTransaction() };
         track1.get().modify()->setRelease(release1.get());
         track2.get().modify()->setRelease(release2.get());
     }
@@ -341,28 +341,28 @@ TEST_F(DatabaseFixture, Listen_getTopReleases_multi)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getTopReleases(session, user->getId(), Scrobbler::Internal, {}) };
+        auto releases{ Listen::getTopReleases(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(releases.moreResults, false);
         ASSERT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results[0], release1.getId());
     }
-    ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), Scrobbler::Internal, dateTime };
-    ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime };
+    ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime };
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getTopReleases(session, user->getId(), Scrobbler::Internal, {}) };
+        auto releases{ Listen::getTopReleases(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(releases.moreResults, false);
         ASSERT_EQ(releases.results.size(), 2);
         EXPECT_EQ(releases.results[0], release2.getId());
         EXPECT_EQ(releases.results[1], release1.getId());
     }
-    ScopedListen listen4{ session, user.lockAndGet(), track1.lockAndGet(), Scrobbler::Internal, dateTime };
-    ScopedListen listen5{ session, user.lockAndGet(), track1.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen4{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime };
+    ScopedListen listen5{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime };
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getTopReleases(session, user->getId(), Scrobbler::Internal, {}) };
+        auto releases{ Listen::getTopReleases(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(releases.moreResults, false);
         ASSERT_EQ(releases.results.size(), 2);
         EXPECT_EQ(releases.results[0], release1.getId());
@@ -375,20 +375,20 @@ TEST_F(DatabaseFixture, Listen_getTopReleases_cluster)
     ScopedTrack track{ session, "MyTrack" };
     ScopedUser user{ session, "MyUser" };
     const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
-    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
     ScopedClusterType clusterType{ session, "MyType" };
     ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
     ScopedRelease release{ session, "MyRelease" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createUniqueTransaction() };
         track.get().modify()->setRelease(release.get());
     }
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getTopReleases(session, user->getId(), Scrobbler::Internal, {cluster.getId()}) };
+        auto releases{ Listen::getTopReleases(session, user->getId(), ScrobblingBackend::Internal, {cluster.getId()}) };
         EXPECT_EQ(releases.results.size(), 0);
     }
     {
@@ -399,7 +399,7 @@ TEST_F(DatabaseFixture, Listen_getTopReleases_cluster)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getTopReleases(session, user->getId(), Scrobbler::Internal, {cluster.getId()}) };
+        auto releases{ Listen::getTopReleases(session, user->getId(), ScrobblingBackend::Internal, {cluster.getId()}) };
         EXPECT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results[0], release.getId());
     }
@@ -414,17 +414,17 @@ TEST_F(DatabaseFixture, Listen_getTopTracks)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Listen::getTopTracks(session, user->getId(), Scrobbler::Internal, {}) };
+        auto tracks{ Listen::getTopTracks(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(tracks.moreResults, false);
         ASSERT_EQ(tracks.results.size(), 0);
     }
 
-    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Listen::getTopTracks(session, user->getId(), Scrobbler::Internal, {}) };
+        auto tracks{ Listen::getTopTracks(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(tracks.moreResults, false);
         ASSERT_EQ(tracks.results.size(), 1);
         EXPECT_EQ(tracks.results[0], track.getId());
@@ -432,7 +432,7 @@ TEST_F(DatabaseFixture, Listen_getTopTracks)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Listen::getTopTracks(session, user->getId(), Scrobbler::ListenBrainz, {}) };
+        auto tracks{ Listen::getTopTracks(session, user->getId(), ScrobblingBackend::ListenBrainz, {}) };
         EXPECT_EQ(tracks.moreResults, false);
         EXPECT_EQ(tracks.results.size(), 0);
     }
@@ -444,33 +444,33 @@ TEST_F(DatabaseFixture, Listen_getTopTrack_multi)
     ScopedTrack track2{ session, "MyTrack2" };
     ScopedUser user{ session, "MyUser" };
     const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
-    ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Listen::getTopTracks(session, user->getId(), Scrobbler::Internal, {}) };
+        auto tracks{ Listen::getTopTracks(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(tracks.moreResults, false);
         ASSERT_EQ(tracks.results.size(), 1);
         EXPECT_EQ(tracks.results[0], track1.getId());
     }
-    ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), Scrobbler::Internal, dateTime };
-    ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime };
+    ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime };
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Listen::getTopTracks(session, user->getId(), Scrobbler::Internal, {}) };
+        auto tracks{ Listen::getTopTracks(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(tracks.moreResults, false);
         ASSERT_EQ(tracks.results.size(), 2);
         EXPECT_EQ(tracks.results[0], track2.getId());
         EXPECT_EQ(tracks.results[1], track1.getId());
     }
-    ScopedListen listen4{ session, user.lockAndGet(), track1.lockAndGet(), Scrobbler::Internal, dateTime };
-    ScopedListen listen5{ session, user.lockAndGet(), track1.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen4{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime };
+    ScopedListen listen5{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime };
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Listen::getTopTracks(session, user->getId(), Scrobbler::Internal, {}) };
+        auto tracks{ Listen::getTopTracks(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(tracks.moreResults, false);
         ASSERT_EQ(tracks.results.size(), 2);
         EXPECT_EQ(tracks.results[0], track1.getId());
@@ -483,14 +483,14 @@ TEST_F(DatabaseFixture, Listen_getTopTracks_cluster)
     ScopedTrack track{ session, "MyTrack" };
     ScopedUser user{ session, "MyUser" };
     const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
-    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
     ScopedClusterType clusterType{ session, "MyType" };
     ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Listen::getTopTracks(session, user->getId(), Scrobbler::Internal, {cluster.getId()}) };
+        auto tracks{ Listen::getTopTracks(session, user->getId(), ScrobblingBackend::Internal, {cluster.getId()}) };
         EXPECT_EQ(tracks.results.size(), 0);
     }
     {
@@ -501,7 +501,7 @@ TEST_F(DatabaseFixture, Listen_getTopTracks_cluster)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Listen::getTopTracks(session, user->getId(), Scrobbler::Internal, {cluster.getId()}) };
+        auto tracks{ Listen::getTopTracks(session, user->getId(), ScrobblingBackend::Internal, {cluster.getId()}) };
         EXPECT_EQ(tracks.results.size(), 1);
         EXPECT_EQ(tracks.results[0], track.getId());
     }
@@ -521,31 +521,31 @@ TEST_F(DatabaseFixture, Listen_getRecentArtists)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getRecentArtists(session, user->getId(), Scrobbler::Internal, {}, std::nullopt) };
+        auto artists{ Listen::getRecentArtists(session, user->getId(), ScrobblingBackend::Internal, {}, std::nullopt) };
         EXPECT_EQ(artists.results.size(), 0);
         EXPECT_EQ(artists.moreResults, false);
     }
 
     const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
-    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getRecentArtists(session, user->getId(), Scrobbler::Internal, {}, std::nullopt) };
+        auto artists{ Listen::getRecentArtists(session, user->getId(), ScrobblingBackend::Internal, {}, std::nullopt) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results[0], artist->getId());
     }
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getRecentArtists(session, user->getId(), Scrobbler::ListenBrainz, {}, std::nullopt) };
+        auto artists{ Listen::getRecentArtists(session, user->getId(), ScrobblingBackend::ListenBrainz, {}, std::nullopt) };
         ASSERT_EQ(artists.results.size(), 0);
     }
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getRecentArtists(session, user->getId(), Scrobbler::Internal, {}, TrackArtistLinkType::Producer) };
+        auto artists{ Listen::getRecentArtists(session, user->getId(), ScrobblingBackend::Internal, {}, TrackArtistLinkType::Producer) };
         EXPECT_EQ(artists.results.size(), 0);
     }
     {
@@ -555,7 +555,7 @@ TEST_F(DatabaseFixture, Listen_getRecentArtists)
         {
             auto transaction{ session.createSharedTransaction() };
 
-            auto artists{ Listen::getRecentArtists(session, user->getId(), Scrobbler::Internal, {cluster->getId()}, std::nullopt) };
+            auto artists{ Listen::getRecentArtists(session, user->getId(), ScrobblingBackend::Internal, {cluster->getId()}, std::nullopt) };
             EXPECT_EQ(artists.results.size(), 0);
         }
     }
@@ -579,32 +579,32 @@ TEST_F(DatabaseFixture, Listen_getRecentArtists_multi)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getRecentArtists(session, user->getId(), Scrobbler::Internal, {}, std::nullopt) };
+        auto artists{ Listen::getRecentArtists(session, user->getId(), ScrobblingBackend::Internal, {}, std::nullopt) };
         EXPECT_EQ(artists.results.size(), 0);
     }
 
-    ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), Scrobbler::Internal, dateTime.addSecs(1) };
+    ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime.addSecs(1) };
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getRecentArtists(session, user->getId(), Scrobbler::Internal, {}, std::nullopt) };
+        auto artists{ Listen::getRecentArtists(session, user->getId(), ScrobblingBackend::Internal, {}, std::nullopt) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results[0], artist1->getId());
     }
-    ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), Scrobbler::Internal, dateTime.addSecs(2) };
+    ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime.addSecs(2) };
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getRecentArtists(session, user->getId(), Scrobbler::Internal, {}, std::nullopt) };
+        auto artists{ Listen::getRecentArtists(session, user->getId(), ScrobblingBackend::Internal, {}, std::nullopt) };
         ASSERT_EQ(artists.results.size(), 2);
         EXPECT_EQ(artists.results[0], artist2->getId());
         EXPECT_EQ(artists.results[1], artist1->getId());
     }
-    ScopedListen listen3{ session, user.lockAndGet(), track1.lockAndGet(), Scrobbler::Internal, dateTime.addSecs(-1) };
+    ScopedListen listen3{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime.addSecs(-1) };
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getRecentArtists(session, user->getId(), Scrobbler::Internal, {}, std::nullopt, Range {0, 1}) };
+        auto artists{ Listen::getRecentArtists(session, user->getId(), ScrobblingBackend::Internal, {}, std::nullopt, Range {0, 1}) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.moreResults, true);
         EXPECT_EQ(artists.results[0], artist2->getId());
@@ -617,7 +617,7 @@ TEST_F(DatabaseFixture, Listen_getRecentArtists_cluster)
     ScopedUser user{ session, "MyUser" };
     ScopedArtist artist{ session, "MyArtist" };
     const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
-    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
     ScopedClusterType clusterType{ session, "MyType" };
     ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
 
@@ -629,7 +629,7 @@ TEST_F(DatabaseFixture, Listen_getRecentArtists_cluster)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getRecentArtists(session, user->getId(), Scrobbler::Internal, {cluster.getId()}, std::nullopt) };
+        auto artists{ Listen::getRecentArtists(session, user->getId(), ScrobblingBackend::Internal, {cluster.getId()}, std::nullopt) };
         ASSERT_EQ(artists.results.size(), 0);
     }
     {
@@ -639,7 +639,7 @@ TEST_F(DatabaseFixture, Listen_getRecentArtists_cluster)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto artists{ Listen::getRecentArtists(session, user->getId(), Scrobbler::Internal, {cluster.getId()}, std::nullopt) };
+        auto artists{ Listen::getRecentArtists(session, user->getId(), ScrobblingBackend::Internal, {cluster.getId()}, std::nullopt) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results[0], artist.getId());
     }
@@ -652,25 +652,25 @@ TEST_F(DatabaseFixture, Listen_getRecentReleases)
     ScopedRelease release{ session, "MyRelease" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createUniqueTransaction() };
         track.get().modify()->setRelease(release.get());
     }
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getRecentReleases(session, user->getId(), Scrobbler::Internal, {}) };
+        auto releases{ Listen::getRecentReleases(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(releases.moreResults, false);
         ASSERT_EQ(releases.results.size(), 0);
     }
 
     const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
-    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getRecentReleases(session, user->getId(), Scrobbler::Internal, {}) };
+        auto releases{ Listen::getRecentReleases(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(releases.moreResults, false);
         ASSERT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results[0], release.getId());
@@ -678,7 +678,7 @@ TEST_F(DatabaseFixture, Listen_getRecentReleases)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getRecentReleases(session, user->getId(), Scrobbler::ListenBrainz, {}) };
+        auto releases{ Listen::getRecentReleases(session, user->getId(), ScrobblingBackend::ListenBrainz, {}) };
         EXPECT_EQ(releases.moreResults, false);
         EXPECT_EQ(releases.results.size(), 0);
     }
@@ -692,46 +692,46 @@ TEST_F(DatabaseFixture, Listen_getMostRecentRelease)
     ScopedRelease release{ session, "MyRelease" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createUniqueTransaction() };
         track.get().modify()->setRelease(release.get());
     }
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        const auto listen{ Listen::getMostRecentListen(session, user->getId(), Scrobbler::Internal, release.getId()) };
+        const auto listen{ Listen::getMostRecentListen(session, user->getId(), ScrobblingBackend::Internal, release.getId()) };
         EXPECT_FALSE(listen);
     }
 
     const Wt::WDateTime dateTime1{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
-    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime1 };
+    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        const auto listen{ Listen::getMostRecentListen(session, user->getId(), Scrobbler::Internal, release.getId()) };
+        const auto listen{ Listen::getMostRecentListen(session, user->getId(), ScrobblingBackend::Internal, release.getId()) };
         EXPECT_TRUE(listen);
         EXPECT_EQ(listen->getDateTime(), dateTime1);
     }
 
     const Wt::WDateTime dateTime2{ Wt::WDate {1999, 1, 2}, Wt::WTime {12,0, 1} };
-    ScopedListen listen2{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime2 };
+    ScopedListen listen2{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime2 };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        const auto listen{ Listen::getMostRecentListen(session, user->getId(), Scrobbler::Internal, release.getId()) };
+        const auto listen{ Listen::getMostRecentListen(session, user->getId(), ScrobblingBackend::Internal, release.getId()) };
         EXPECT_TRUE(listen);
         EXPECT_EQ(listen->getDateTime(), dateTime1);
     }
 
     const Wt::WDateTime dateTime3{ Wt::WDate {2001, 1, 2}, Wt::WTime {12,0, 1} };
-    ScopedListen listen3{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime3 };
+    ScopedListen listen3{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime3 };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        const auto listen{ Listen::getMostRecentListen(session, user->getId(), Scrobbler::Internal, release.getId()) };
+        const auto listen{ Listen::getMostRecentListen(session, user->getId(), ScrobblingBackend::Internal, release.getId()) };
         EXPECT_TRUE(listen);
         EXPECT_EQ(listen->getDateTime(), dateTime3);
     }
@@ -746,50 +746,50 @@ TEST_F(DatabaseFixture, Listen_getRecentReleases_multi)
     ScopedRelease release2{ session, "MyRelease2" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createUniqueTransaction() };
         track1.get().modify()->setRelease(release1.get());
         track2.get().modify()->setRelease(release2.get());
     }
 
     const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
-    ScopedListen listen1{ session, user.lockAndGet(), track2.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen1{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getRecentReleases(session, user->getId(), Scrobbler::Internal, {}) };
+        auto releases{ Listen::getRecentReleases(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(releases.moreResults, false);
         ASSERT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results[0], release2.getId());
     }
 
-    ScopedListen listen2{ session, user.lockAndGet(), track1.lockAndGet(), Scrobbler::Internal, dateTime.addSecs(1) };
+    ScopedListen listen2{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime.addSecs(1) };
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getRecentReleases(session, user->getId(), Scrobbler::Internal, {}) };
+        auto releases{ Listen::getRecentReleases(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(releases.moreResults, false);
         ASSERT_EQ(releases.results.size(), 2);
         EXPECT_EQ(releases.results[0], release1.getId());
         EXPECT_EQ(releases.results[1], release2.getId());
     }
 
-    ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), Scrobbler::Internal, dateTime.addSecs(2) };
+    ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime.addSecs(2) };
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getRecentReleases(session, user->getId(), Scrobbler::Internal, {}) };
+        auto releases{ Listen::getRecentReleases(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(releases.moreResults, false);
         ASSERT_EQ(releases.results.size(), 2);
         EXPECT_EQ(releases.results[0], release2.getId());
         EXPECT_EQ(releases.results[1], release1.getId());
     }
 
-    ScopedListen listen4{ session, user.lockAndGet(), track1.lockAndGet(), Scrobbler::Internal, dateTime.addSecs(-1) };
+    ScopedListen listen4{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime.addSecs(-1) };
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getRecentReleases(session, user->getId(), Scrobbler::Internal, {}) };
+        auto releases{ Listen::getRecentReleases(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(releases.moreResults, false);
         ASSERT_EQ(releases.results.size(), 2);
         EXPECT_EQ(releases.results[0], release2.getId());
@@ -806,23 +806,23 @@ TEST_F(DatabaseFixture, Listen_getRecentReleases_cluster)
     ScopedRelease release{ session, "MyRelease" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createUniqueTransaction() };
         track.get().modify()->setRelease(release.get());
     }
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getRecentReleases(session, user->getId(), Scrobbler::Internal, {cluster.getId()}) };
+        auto releases{ Listen::getRecentReleases(session, user->getId(), ScrobblingBackend::Internal, {cluster.getId()}) };
         EXPECT_EQ(releases.results.size(), 0);
     }
 
     const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
-    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getRecentReleases(session, user->getId(), Scrobbler::Internal, {cluster.getId()}) };
+        auto releases{ Listen::getRecentReleases(session, user->getId(), ScrobblingBackend::Internal, {cluster.getId()}) };
         EXPECT_EQ(releases.results.size(), 0);
     }
 
@@ -833,7 +833,7 @@ TEST_F(DatabaseFixture, Listen_getRecentReleases_cluster)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Listen::getRecentReleases(session, user->getId(), Scrobbler::Internal, {cluster.getId()}) };
+        auto releases{ Listen::getRecentReleases(session, user->getId(), ScrobblingBackend::Internal, {cluster.getId()}) };
         EXPECT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results[0], release.getId());
     }
@@ -847,18 +847,18 @@ TEST_F(DatabaseFixture, Listen_getRecentTracks)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Listen::getRecentTracks(session, user->getId(), Scrobbler::Internal, {}) };
+        auto tracks{ Listen::getRecentTracks(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(tracks.moreResults, false);
         ASSERT_EQ(tracks.results.size(), 0);
     }
 
     const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
-    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Listen::getRecentTracks(session, user->getId(), Scrobbler::Internal, {}) };
+        auto tracks{ Listen::getRecentTracks(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(tracks.moreResults, false);
         ASSERT_EQ(tracks.results.size(), 1);
         EXPECT_EQ(tracks.results[0], track.getId());
@@ -867,10 +867,75 @@ TEST_F(DatabaseFixture, Listen_getRecentTracks)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Listen::getRecentTracks(session, user->getId(), Scrobbler::ListenBrainz, {}) };
+        auto tracks{ Listen::getRecentTracks(session, user->getId(), ScrobblingBackend::ListenBrainz, {}) };
         EXPECT_EQ(tracks.moreResults, false);
         EXPECT_EQ(tracks.results.size(), 0);
     }
+}
+
+TEST_F(DatabaseFixture, Listen_getCount_track)
+{
+    ScopedTrack track{ session, "MyTrack" };
+    ScopedUser user{ session, "MyUser" };
+
+    {
+        auto transaction{ session.createSharedTransaction() };
+
+        const std::size_t count{ Listen::getCount(session, user->getId(), ScrobblingBackend::Internal, track.getId()) };
+        EXPECT_EQ(count, 0);
+    }
+
+    const Wt::WDateTime dateTime1{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
+
+    {
+        auto transaction{ session.createSharedTransaction() };
+
+        const std::size_t count{ Listen::getCount(session, user->getId(), ScrobblingBackend::Internal, track.getId()) };
+        EXPECT_EQ(count, 1);
+    }
+}
+
+TEST_F(DatabaseFixture, Listen_getCount_release)
+{
+    ScopedTrack track1{ session, "MyTrack" };
+    ScopedTrack track2{ session, "MyTrack" };
+    ScopedUser user{ session, "MyUser" };
+    ScopedRelease release{ session, "MyRelease" };
+
+    auto getReleaseListenCount{ [&]
+    {
+        auto transaction{ session.createSharedTransaction() };
+        return Listen::getCount(session, user->getId(), ScrobblingBackend::Internal, release.getId());
+    } };
+
+    EXPECT_EQ(getReleaseListenCount(), 0);
+
+    const Wt::WDateTime dateTime1{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+    ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
+
+    EXPECT_EQ(getReleaseListenCount(), 0);
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+        track1.get().modify()->setRelease(release.get());
+    }
+
+    EXPECT_EQ(getReleaseListenCount(), 1);
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+        track2.get().modify()->setRelease(release.get());
+    }
+
+    EXPECT_EQ(getReleaseListenCount(), 0);
+    ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
+    EXPECT_EQ(getReleaseListenCount(), 1);
+    ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
+    EXPECT_EQ(getReleaseListenCount(), 1);
+
+    ScopedListen listen4{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
+    EXPECT_EQ(getReleaseListenCount(), 2);
 }
 
 TEST_F(DatabaseFixture, Listen_getMostRecentTrack)
@@ -881,39 +946,39 @@ TEST_F(DatabaseFixture, Listen_getMostRecentTrack)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto listen{ Listen::getMostRecentListen(session, user->getId(), Scrobbler::Internal, track.getId()) };
+        auto listen{ Listen::getMostRecentListen(session, user->getId(), ScrobblingBackend::Internal, track.getId()) };
         EXPECT_FALSE(listen);
     }
 
     const Wt::WDateTime dateTime1{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
-    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime1 };
+    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto listen{ Listen::getMostRecentListen(session, user->getId(), Scrobbler::Internal, track.getId()) };
+        auto listen{ Listen::getMostRecentListen(session, user->getId(), ScrobblingBackend::Internal, track.getId()) };
         EXPECT_TRUE(listen);
         EXPECT_EQ(listen->getDateTime(), dateTime1);
     }
 
     const Wt::WDateTime dateTime2{ Wt::WDate {1999, 1, 2}, Wt::WTime {12,0, 1} };
-    ScopedListen listen2{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime2 };
+    ScopedListen listen2{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime2 };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto listen{ Listen::getMostRecentListen(session, user->getId(), Scrobbler::Internal, track.getId()) };
+        auto listen{ Listen::getMostRecentListen(session, user->getId(), ScrobblingBackend::Internal, track.getId()) };
         EXPECT_TRUE(listen);
         EXPECT_EQ(listen->getDateTime(), dateTime1);
     }
 
     const Wt::WDateTime dateTime3{ Wt::WDate {2001, 1, 2}, Wt::WTime {12,0, 1} };
-    ScopedListen listen3{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime3 };
+    ScopedListen listen3{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime3 };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto listen{ Listen::getMostRecentListen(session, user->getId(), Scrobbler::Internal, track.getId()) };
+        auto listen{ Listen::getMostRecentListen(session, user->getId(), ScrobblingBackend::Internal, track.getId()) };
         EXPECT_TRUE(listen);
         EXPECT_EQ(listen->getDateTime(), dateTime3);
     }
@@ -926,44 +991,44 @@ TEST_F(DatabaseFixture, Listen_getRecentTracks_multi)
     ScopedUser user{ session, "MyUser" };
 
     const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
-    ScopedListen listen1{ session, user.lockAndGet(), track2.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen1{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Listen::getRecentTracks(session, user->getId(), Scrobbler::Internal, {}) };
+        auto tracks{ Listen::getRecentTracks(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(tracks.moreResults, false);
         ASSERT_EQ(tracks.results.size(), 1);
         EXPECT_EQ(tracks.results[0], track2.getId());
     }
 
-    ScopedListen listen2{ session, user.lockAndGet(), track1.lockAndGet(), Scrobbler::Internal, dateTime.addSecs(1) };
+    ScopedListen listen2{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime.addSecs(1) };
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Listen::getRecentTracks(session, user->getId(), Scrobbler::Internal, {}) };
+        auto tracks{ Listen::getRecentTracks(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(tracks.moreResults, false);
         ASSERT_EQ(tracks.results.size(), 2);
         EXPECT_EQ(tracks.results[0], track1.getId());
         EXPECT_EQ(tracks.results[1], track2.getId());
     }
 
-    ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), Scrobbler::Internal, dateTime.addSecs(2) };
+    ScopedListen listen3{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime.addSecs(2) };
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Listen::getRecentTracks(session, user->getId(), Scrobbler::Internal, {}) };
+        auto tracks{ Listen::getRecentTracks(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(tracks.moreResults, false);
         ASSERT_EQ(tracks.results.size(), 2);
         EXPECT_EQ(tracks.results[0], track2.getId());
         EXPECT_EQ(tracks.results[1], track1.getId());
     }
 
-    ScopedListen listen4{ session, user.lockAndGet(), track1.lockAndGet(), Scrobbler::Internal, dateTime.addSecs(-1) };
+    ScopedListen listen4{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime.addSecs(-1) };
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Listen::getRecentTracks(session, user->getId(), Scrobbler::Internal, {}) };
+        auto tracks{ Listen::getRecentTracks(session, user->getId(), ScrobblingBackend::Internal, {}) };
         EXPECT_EQ(tracks.moreResults, false);
         ASSERT_EQ(tracks.results.size(), 2);
         EXPECT_EQ(tracks.results[0], track2.getId());
@@ -976,14 +1041,14 @@ TEST_F(DatabaseFixture, Listen_getRecentTracks_cluster)
     ScopedTrack track{ session, "MyTrack" };
     ScopedUser user{ session, "MyUser" };
     const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
-    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), Scrobbler::Internal, dateTime };
+    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
     ScopedClusterType clusterType{ session, "MyType" };
     ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Listen::getRecentTracks(session, user->getId(), Scrobbler::Internal, {cluster.getId()}) };
+        auto tracks{ Listen::getRecentTracks(session, user->getId(), ScrobblingBackend::Internal, {cluster.getId()}) };
         EXPECT_EQ(tracks.results.size(), 0);
     }
     {
@@ -994,7 +1059,7 @@ TEST_F(DatabaseFixture, Listen_getRecentTracks_cluster)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto tracks{ Listen::getRecentTracks(session, user->getId(), Scrobbler::Internal, {cluster.getId()}) };
+        auto tracks{ Listen::getRecentTracks(session, user->getId(), ScrobblingBackend::Internal, {cluster.getId()}) };
         EXPECT_EQ(tracks.results.size(), 1);
         EXPECT_EQ(tracks.results[0], track.getId());
     }

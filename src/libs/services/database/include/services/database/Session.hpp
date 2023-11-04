@@ -61,6 +61,7 @@ namespace Database
         void checkSharedLocked();
 
         void analyze();
+        void optimize();
 
         void prepareTables(); // need to run only once at startup
 

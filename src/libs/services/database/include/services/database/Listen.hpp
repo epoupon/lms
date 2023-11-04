@@ -46,47 +46,50 @@ namespace Database
         struct FindParameters
         {
             UserId							user;
-            std::optional<Scrobbler>		scrobbler;
-            std::optional<ScrobblingState>	scrobblingState;
+            std::optional<ScrobblingBackend>		backend;
+            std::optional<SyncState>	syncState;
             Range							range;
 
             FindParameters& setUser(UserId _user) { user = _user; return *this; }
-            FindParameters& setScrobbler(Scrobbler _scrobbler) { scrobbler = _scrobbler; return *this; }
-            FindParameters& setScrobblingState(ScrobblingState _scrobblingState) { scrobblingState = _scrobblingState; return *this; }
+            FindParameters& setScrobblingBackend(ScrobblingBackend _backend) { backend = _backend; return *this; }
+            FindParameters& setSyncState(SyncState _syncState) { syncState = _syncState; return *this; }
             FindParameters& setRange(Range _range) { range = _range; return *this; }
         };
 
         // Accessors
         static std::size_t              getCount(Session& session);
         static pointer                  find(Session& session, ListenId id);
-        static pointer                  find(Session& session, UserId userId, TrackId trackId, Scrobbler scrobbler, const Wt::WDateTime& dateTime);
+        static pointer                  find(Session& session, UserId userId, TrackId trackId, ScrobblingBackend backend, const Wt::WDateTime& dateTime);
         static RangeResults<ListenId>   find(Session& session, const FindParameters& parameters);
 
         // Stats
-        static RangeResults<ArtistId>   getTopArtists(Session& session, UserId userId, Scrobbler scrobbler, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range = {});
-        static RangeResults<ReleaseId>  getTopReleases(Session& session, UserId userId, Scrobbler scrobbler, const std::vector<ClusterId>& clusterIds, Range range = {});
-        static RangeResults<TrackId>    getTopTracks(Session& session, UserId userId, Scrobbler scrobbler, const std::vector<ClusterId>& clusterIds, Range range = {});
+        static RangeResults<ArtistId>   getTopArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range = {});
+        static RangeResults<ReleaseId>  getTopReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range = {});
+        static RangeResults<TrackId>    getTopTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range = {});
 
-        static RangeResults<ArtistId>   getRecentArtists(Session& session, UserId userId, Scrobbler scrobbler, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range = {});
-        static RangeResults<ReleaseId>  getRecentReleases(Session& session, UserId userId, Scrobbler scrobbler, const std::vector<ClusterId>& clusterIds, Range range = {});
-        static RangeResults<TrackId>    getRecentTracks(Session& session, UserId userId, Scrobbler scrobbler, const std::vector<ClusterId>& clusterIds, Range range = {});
+        static RangeResults<ArtistId>   getRecentArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range = {});
+        static RangeResults<ReleaseId>  getRecentReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range = {});
+        static RangeResults<TrackId>    getRecentTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range = {});
 
-        static pointer          getMostRecentListen(Session& session, UserId userId, Scrobbler scrobbler, ReleaseId releaseId);
-        static pointer          getMostRecentListen(Session& session, UserId userId, Scrobbler scrobbler, TrackId releaseId);
+        static std::size_t              getCount(Session& session, UserId userId, ScrobblingBackend backend, TrackId trackId);
+        static std::size_t              getCount(Session& session, UserId userId, ScrobblingBackend backend, ReleaseId trackId);
 
-        ScrobblingState         getScrobblingState() const { return _scrobblingState; }
+        static pointer          getMostRecentListen(Session& session, UserId userId, ScrobblingBackend backend, ReleaseId releaseId);
+        static pointer          getMostRecentListen(Session& session, UserId userId, ScrobblingBackend backend, TrackId releaseId);
+
+        SyncState               getSyncState() const { return _syncState; }
         ObjectPtr<User>         getUser() const { return _user; }
         ObjectPtr<Track>        getTrack() const { return _track; }
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
 
-        void			setScrobblingState(ScrobblingState state) { _scrobblingState = state; }
+        void			setSyncState(SyncState state) { _syncState = state; }
 
         template<class Action>
         void persist(Action& a)
         {
             Wt::Dbo::field(a, _dateTime, "date_time");
-            Wt::Dbo::field(a, _scrobbler, "scrobbler");
-            Wt::Dbo::field(a, _scrobblingState, "scrobbling_state");
+            Wt::Dbo::field(a, _backend, "backend"); // TODO rename
+            Wt::Dbo::field(a, _syncState, "sync_state"); // TODO rename
 
             Wt::Dbo::belongsTo(a, _track, "track", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
@@ -94,12 +97,12 @@ namespace Database
 
     private:
         friend class Session;
-        Listen(ObjectPtr<User> user, ObjectPtr<Track> track, Scrobbler scrobbler, const Wt::WDateTime& dateTime);
-        static pointer create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track, Scrobbler scrobbler, const Wt::WDateTime& dateTime);
+        Listen(ObjectPtr<User> user, ObjectPtr<Track> track, ScrobblingBackend backend, const Wt::WDateTime& dateTime);
+        static pointer create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track, ScrobblingBackend backend, const Wt::WDateTime& dateTime);
 
-        Wt::WDateTime		_dateTime;
-        Scrobbler			_scrobbler;
-        ScrobblingState		_scrobblingState{ ScrobblingState::PendingAdd };
+        Wt::WDateTime       _dateTime;
+        ScrobblingBackend   _backend;
+        SyncState           _syncState{ SyncState::PendingAdd };
 
         Wt::Dbo::ptr<User>	_user;
         Wt::Dbo::ptr<Track>	_track;

@@ -23,10 +23,12 @@
 
 #include "services/database/Artist.hpp"
 #include "services/database/Cluster.hpp"
+#include "services/database/Listen.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/TrackArtistLink.hpp"
 #include "services/database/User.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
@@ -92,7 +94,7 @@ namespace API::Subsonic
         }
     }
 
-    Response::Node createSongNode(const Track::pointer& track, Session& dbSession, const User::pointer& user)
+    Response::Node createSongNode(RequestContext& context, const Track::pointer& track, const User::pointer& user)
     {
         Response::Node trackResponse;
 
@@ -105,9 +107,10 @@ namespace API::Subsonic
             trackResponse.setAttribute("discNumber", *track->getDiscNumber());
         if (track->getYear())
             trackResponse.setAttribute("year", *track->getYear());
-
+        trackResponse.setAttribute("playCount", Listen::getCount(context.dbSession, user->getId(), user->getScrobblingBackend(), track->getId()));
         trackResponse.setAttribute("path", getTrackPath(track));
         {
+            // TODO, store this in DB
             std::error_code ec;
             const auto fileSize{ std::filesystem::file_size(track->getPath(), ec) };
             if (!ec)
@@ -148,11 +151,11 @@ namespace API::Subsonic
         trackResponse.setAttribute("type", "music");
         trackResponse.setAttribute("created", StringUtils::toISO8601String(track->getLastWritten()));
 
-        if (const Wt::WDateTime dateTime{ Service<Scrobbling::IScrobblingService>::get()->getStarredDateTime(user->getId(), track->getId()) }; dateTime.isValid())
+        if (const Wt::WDateTime dateTime{ Service<Feedback::IFeedbackService>::get()->getStarredDateTime(user->getId(), track->getId()) }; dateTime.isValid())
             trackResponse.setAttribute("starred", StringUtils::toISO8601String(dateTime));
 
         // Report the first GENRE for this track
-        const ClusterType::pointer genreClusterType{ ClusterType::find(dbSession, "GENRE") };
+        const ClusterType::pointer genreClusterType{ ClusterType::find(context.dbSession, "GENRE") };
         if (genreClusterType)
         {
             auto clusters{ track->getClusterGroups({genreClusterType}, 1) };
@@ -161,6 +164,9 @@ namespace API::Subsonic
         }
 
         // OpenSubsonic specific fields (must always be set)
+        if (!context.enableOpenSubsonic)
+            return trackResponse;
+
         trackResponse.setAttribute("mediaType", "song");
 
         {
@@ -178,9 +184,9 @@ namespace API::Subsonic
             TrackArtistLink::FindParameters params;
             params.setTrack(track->getId());
 
-            for (const TrackArtistLinkId linkId : TrackArtistLink::find(dbSession, params).results)
+            for (const TrackArtistLinkId linkId : TrackArtistLink::find(context.dbSession, params).results)
             {
-                TrackArtistLink::pointer link{ TrackArtistLink::find(dbSession, linkId) };
+                TrackArtistLink::pointer link{ TrackArtistLink::find(context.dbSession, linkId) };
                 // Don't report artists nor release artists as they are set in dedicated fields
                 if (link && link->getType() != TrackArtistLinkType::Artist && link->getType() != TrackArtistLinkType::ReleaseArtist)
                     trackResponse.addArrayChild("contributors", createContributorNode(link));
@@ -195,9 +201,9 @@ namespace API::Subsonic
             params.setTrack(track->getId());
             params.setLinkType(type);
 
-            for (const TrackArtistLinkId linkId : TrackArtistLink::find(dbSession, params).results)
+            for (const TrackArtistLinkId linkId : TrackArtistLink::find(context.dbSession, params).results)
             {
-                TrackArtistLink::pointer link{ TrackArtistLink::find(dbSession, linkId) };
+                TrackArtistLink::pointer link{ TrackArtistLink::find(context.dbSession, linkId) };
                 if (link)
                     trackResponse.addArrayChild(nodeName, createArtistNode(link->getArtist()));
             }
@@ -214,14 +220,14 @@ namespace API::Subsonic
         {
             trackResponse.createEmptyArrayValue(field);
 
-            ClusterType::pointer clusterType{ ClusterType::find(dbSession, clusterTypeName) };
+            ClusterType::pointer clusterType{ ClusterType::find(context.dbSession, clusterTypeName) };
             if (clusterType)
             {
                 Cluster::FindParameters params;
                 params.setTrack(track->getId());
                 params.setClusterType(clusterType->getId());
 
-                for (const auto& cluster : Cluster::find(dbSession, params).results)
+                for (const auto& cluster : Cluster::find(context.dbSession, params).results)
                     trackResponse.addArrayValue(field, std::get<std::string>(cluster));
             }
         } };
@@ -236,7 +242,7 @@ namespace API::Subsonic
             params.setTrack(track->getId());
             params.setClusterType(genreClusterType->getId());
 
-            for (const auto& cluster : Cluster::find(dbSession, params).results)
+            for (const auto& cluster : Cluster::find(context.dbSession, params).results)
                 trackResponse.addArrayChild("genres", createItemGenreNode(std::get<std::string>(cluster)));
         }
 

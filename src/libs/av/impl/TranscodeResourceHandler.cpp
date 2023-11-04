@@ -56,10 +56,12 @@ namespace Av
 		if (_estimatedContentLength)
 			response.setContentLength(*_estimatedContentLength);
 		response.setMimeType(_transcoder.getOutputMimeType());
-		LMS_LOG(TRANSCODE, DEBUG) << "Set mime type to " << _transcoder.getOutputMimeType();
+		LMS_LOG(TRANSCODE, DEBUG) << "Transcoder finished = " << _transcoder.finished() << ", total served bytes = " << _totalServedByteCount << ", mime type = " << _transcoder.getOutputMimeType();
 
 		if (_bytesReadyCount > 0)
 		{
+			LMS_LOG(TRANSCODE, DEBUG) << "Writing " << _bytesReadyCount << " bytes back to client";
+
 			response.out().write(reinterpret_cast<const char *>(&_buffer[0]), _bytesReadyCount);
 			_totalServedByteCount += _bytesReadyCount;
 			_bytesReadyCount = 0;
@@ -71,6 +73,8 @@ namespace Av
 			continuation->waitForMoreData();
 			_transcoder.asyncRead(_buffer.data(), _buffer.size(), [=](std::size_t nbBytesRead)
 			{
+				LMS_LOG(TRANSCODE, DEBUG) << "Have " << nbBytesRead << " more bytes to send back";
+
 				assert(_bytesReadyCount == 0);
 				_bytesReadyCount = nbBytesRead;
 				continuation->haveMoreData();

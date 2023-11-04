@@ -19,6 +19,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_set>
 #include <unordered_map>
 
 #include <Wt/WResource.h>
@@ -51,6 +52,7 @@ namespace API::Subsonic
             Database::UserId authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo);
 
             const std::unordered_map<std::string, ProtocolVersion> _serverProtocolVersionsByClient;
+            const std::unordered_set<std::string> _openSubsonicDisabledClients;
             Database::Db& _db;
     };
 

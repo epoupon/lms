@@ -25,6 +25,7 @@
 #include "services/database/Track.hpp"
 #include "services/database/TrackList.hpp"
 #include "services/database/User.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
 #include "Filters.hpp"
@@ -32,101 +33,102 @@
 
 namespace UserInterface
 {
-	using namespace Database;
+    using namespace Database;
 
-	RangeResults<TrackId>
-	TrackCollector::get(Range range)
-	{
-		Scrobbling::IScrobblingService& scrobbling {*Service<Scrobbling::IScrobblingService>::get()};
-		range = getActualRange(range);
+    RangeResults<TrackId> TrackCollector::get(Range range)
+    {
+        Feedback::IFeedbackService& feedbackService{ *Service<Feedback::IFeedbackService>::get() };
+        Scrobbling::IScrobblingService& scrobblingService{ *Service<Scrobbling::IScrobblingService>::get() };
 
-		RangeResults<TrackId> tracks;
-		switch (getMode())
-		{
-			case Mode::Random:
-				tracks = getRandomTracks(range);
-				break;
+        RangeResults<TrackId> tracks;
+        range = getActualRange(range);
+        if (range.size == 0)
+            return tracks;
 
-			case Mode::Starred:
-				tracks = scrobbling.getStarredTracks(LmsApp->getUserId(), getFilters().getClusterIds(), range);
-				break;
+        switch (getMode())
+        {
+        case Mode::Random:
+            tracks = getRandomTracks(range);
+            break;
 
-			case TrackCollector::Mode::RecentlyPlayed:
-				tracks = scrobbling.getRecentTracks(LmsApp->getUserId(), getFilters().getClusterIds(), range);
-				break;
+        case Mode::Starred:
+            tracks = feedbackService.getStarredTracks(LmsApp->getUserId(), getFilters().getClusterIds(), range);
+            break;
 
-			case Mode::MostPlayed:
-				tracks = scrobbling.getTopTracks(LmsApp->getUserId(), getFilters().getClusterIds(), range);
-				break;
+        case TrackCollector::Mode::RecentlyPlayed:
+            tracks = scrobblingService.getRecentTracks(LmsApp->getUserId(), getFilters().getClusterIds(), range);
+            break;
 
-			case Mode::RecentlyAdded:
-			{
-				Track::FindParameters params;
-				params.setClusters(getFilters().getClusterIds());
-				params.setSortMethod(TrackSortMethod::LastWritten);
-				params.setRange(range);
+        case Mode::MostPlayed:
+            tracks = scrobblingService.getTopTracks(LmsApp->getUserId(), getFilters().getClusterIds(), range);
+            break;
 
-				{
-					auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-					tracks = Track::find(LmsApp->getDbSession(), params);
-				}
-				break;
-			}
+        case Mode::RecentlyAdded:
+        {
+            Track::FindParameters params;
+            params.setClusters(getFilters().getClusterIds());
+            params.setSortMethod(TrackSortMethod::LastWritten);
+            params.setRange(range);
 
-			case Mode::Search:
-			{
-				Track::FindParameters params;
-				params.setClusters(getFilters().getClusterIds());
-				params.setKeywords(getSearchKeywords());
-				params.setRange(range);
+            {
+                auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                tracks = Track::findIds(LmsApp->getDbSession(), params);
+            }
+            break;
+        }
 
-				{
-					auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-					tracks = Track::find(LmsApp->getDbSession(), params);
-				}
-				break;
-			}
+        case Mode::Search:
+        {
+            Track::FindParameters params;
+            params.setClusters(getFilters().getClusterIds());
+            params.setKeywords(getSearchKeywords());
+            params.setRange(range);
 
-			case Mode::All:
-			{
-				Track::FindParameters params;
-				params.setClusters(getFilters().getClusterIds());
-				params.setRange(range);
+            {
+                auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                tracks = Track::findIds(LmsApp->getDbSession(), params);
+            }
+            break;
+        }
 
-				{
-					auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-					tracks = Track::find(LmsApp->getDbSession(), params);
-				}
-				break;
-			}
-		}
+        case Mode::All:
+        {
+            Track::FindParameters params;
+            params.setClusters(getFilters().getClusterIds());
+            params.setRange(range);
 
-		if (range.offset + range.size == getMaxCount())
-			tracks.moreResults = false;
+            {
+                auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                tracks = Track::findIds(LmsApp->getDbSession(), params);
+            }
+            break;
+        }
+        }
 
-		return tracks;
-	}
+        if (range.offset + range.size == getMaxCount())
+            tracks.moreResults = false;
 
-	RangeResults<TrackId>
-	TrackCollector::getRandomTracks(Range range)
-	{
-		assert(getMode() == Mode::Random);
+        return tracks;
+    }
 
-		if (!_randomTracks)
-		{
-			Track::FindParameters params;
-			params.setClusters(getFilters().getClusterIds());
-			params.setSortMethod(TrackSortMethod::Random);
-			params.setRange({0, getMaxCount()});
+    RangeResults<TrackId> TrackCollector::getRandomTracks(Range range)
+    {
+        assert(getMode() == Mode::Random);
 
-			{
-				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-				_randomTracks = Track::find(LmsApp->getDbSession(), params);
-			}
-		}
+        if (!_randomTracks)
+        {
+            Track::FindParameters params;
+            params.setClusters(getFilters().getClusterIds());
+            params.setSortMethod(TrackSortMethod::Random);
+            params.setRange({ 0, getMaxCount() });
 
-		return _randomTracks->getSubRange(range);
-	}
+            {
+                auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                _randomTracks = Track::findIds(LmsApp->getDbSession(), params);
+            }
+        }
+
+        return _randomTracks->getSubRange(range);
+    }
 
 } // ns UserInterface
-

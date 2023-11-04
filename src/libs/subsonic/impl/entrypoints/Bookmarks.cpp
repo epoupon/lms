@@ -49,7 +49,7 @@ namespace API::Subsonic
         {
             const TrackBookmark::pointer bookmark{ TrackBookmark::find(context.dbSession, bookmarkId) };
             Response::Node bookmarkNode{ createBookmarkNode(bookmark) };
-            bookmarkNode.addArrayChild("entry", createSongNode(bookmark->getTrack(), context.dbSession, user));
+            bookmarkNode.addArrayChild("entry", createSongNode(context, bookmark->getTrack(), user));
 
             bookmarksNode.addArrayChild("bookmark", std::move(bookmarkNode));
         }

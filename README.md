@@ -4,7 +4,7 @@
 
 _LMS_ is a self-hosted music streaming software: access your music collection from anywhere using a web interface!
 
-A [demo instance](http://lms-demo.poupon.dev) is available. Note the administration panel is not available.
+A [demo instance](http://lms-demo.poupon.dev) is available. Note the administration settings are not available.
 
 ## Main features
 * Recommendation engine
@@ -34,12 +34,14 @@ _LMS_ provides several ways to help you find the music you like:
   * Starred _Jazz_ albums
   * ...
 
+__Note__: depending on your database size and/or your hardware, the tag-based recommendation engine may significantly slow down the user interface. You can disable it in the administration settings.
+
 ## About tags
 _LMS_ relies exclusively on tags to organize your music collection.
 
 ### Filtering
 You can specify the tags you want to use to filter your collection. By default, `genre`, `albumgrouping`, `mood` and `albummood` tags are used.
-In the administration  panel, you can set whatever tags you want, even custom tags.
+In the administration settings, you can set whatever tags you want, even custom tags.
 
 __Note__: you can use the `lms-metadata` tool to have an idea of the tags parsed by _LMS_ using [TagLib](https://github.com/taglib/taglib).
 

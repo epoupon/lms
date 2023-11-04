@@ -21,11 +21,10 @@
 
 #include <chrono>
 #include <filesystem>
-#include <iostream>
+#include <ostream>
 #include <optional>
 #include <string>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -61,23 +60,23 @@ class Track final : public Object<Track, TrackId>
 	public:
 		struct FindParameters
 		{
-			std::vector<ClusterId>			clusters;		// if non empty, tracks that belong to these clusters
-			std::vector<std::string_view>	keywords;		// if non empty, name must match all of these keywords
-			std::string						name;			// if non empty, must match this name
-			TrackSortMethod					sortMethod {TrackSortMethod::None};
-			Range							range;
-			Wt::WDateTime					writtenAfter;
-			UserId							starringUser;	// only tracks starred by this user
-			std::optional<Scrobbler>		scrobbler;		// and for this scrobbler
-			ArtistId						artist;			// only tracks that involve this artist
-			std::string						artistName;		// only tracks that involve this artist name
-			EnumSet<TrackArtistLinkType>	trackArtistLinkTypes; 		//    and for these link types
-			bool							nonRelease {};	// only tracks that do not belong to a release
-			ReleaseId						release;		// matching this release
-			std::string						releaseName;	// matching this release name
-			TrackListId						trackList;		// matching this trackList
-			std::optional<int>				trackNumber;	// matching this track number
-			bool							distinct {true};
+			std::vector<ClusterId>				clusters;		// if non empty, tracks that belong to these clusters
+			std::vector<std::string_view>		keywords;		// if non empty, name must match all of these keywords
+			std::string							name;			// if non empty, must match this name
+			TrackSortMethod						sortMethod {TrackSortMethod::None};
+			Range								range;
+			Wt::WDateTime						writtenAfter;
+			UserId								starringUser;	// only tracks starred by this user
+			std::optional<FeedbackBackend>		feedbackBackend;	// and for this feedback backend
+			ArtistId							artist;			// only tracks that involve this artist
+			std::string							artistName;		// only tracks that involve this artist name
+			EnumSet<TrackArtistLinkType>		trackArtistLinkTypes; 		//    and for these link types
+			bool								nonRelease {};	// only tracks that do not belong to a release
+			ReleaseId							release;		// matching this release
+			std::string							releaseName;	// matching this release name
+			TrackListId							trackList;		// matching this trackList
+			std::optional<int>					trackNumber;	// matching this track number
+			bool								distinct {true};
 
 			FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
 			FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
@@ -85,7 +84,7 @@ class Track final : public Object<Track, TrackId>
 			FindParameters& setSortMethod(TrackSortMethod _method) { sortMethod = _method; return *this; }
 			FindParameters& setRange(Range _range) { range = _range; return *this; }
 			FindParameters& setWrittenAfter(const Wt::WDateTime& _after) { writtenAfter = _after; return *this; }
-			FindParameters& setStarringUser(UserId _user, Scrobbler _scrobbler) { starringUser = _user; scrobbler = _scrobbler; return *this; }
+			FindParameters& setStarringUser(UserId _user, FeedbackBackend _feedbackBackend) { starringUser = _user; feedbackBackend = _feedbackBackend; return *this; }
 			FindParameters& setArtist(ArtistId _artist, EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {}) { artist = _artist; trackArtistLinkTypes = _trackArtistLinkTypes; return *this; }
 			FindParameters& setArtistName(std::string_view _artistName, EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {}) { artistName = _artistName; trackArtistLinkTypes = _trackArtistLinkTypes; return *this; }
 			FindParameters& setNonRelease(bool _nonRelease) { nonRelease = _nonRelease; return *this; }
@@ -111,12 +110,13 @@ class Track final : public Object<Track, TrackId>
 		static bool						exists(Session& session, TrackId id);
 		static std::vector<pointer>		findByRecordingMBID(Session& session, const UUID& MBID);
 		static std::vector<pointer>		findByMBID(Session& session, const UUID& MBID);
-		static RangeResults<TrackId>	findSimilarTracks(Session& session, const std::vector<TrackId>& trackIds, Range range);
+		static RangeResults<TrackId>	findSimilarTrackIds(Session& session, const std::vector<TrackId>& trackIds, Range range);
 
-		static RangeResults<TrackId>	find(Session& session, const FindParameters& parameters);
+		static RangeResults<TrackId>	findIds(Session& session, const FindParameters& parameters);
+		static RangeResults<pointer>	find(Session& session, const FindParameters& parameters);
 		static RangeResults<PathResult>	findPaths(Session& session, Range range);
-		static RangeResults<TrackId>	findTrackMBIDDuplicates(Session& session, Range range);
-		static RangeResults<TrackId>	findWithRecordingMBIDAndMissingFeatures(Session& session, Range range);
+		static RangeResults<TrackId>	findIdsTrackMBIDDuplicates(Session& session, Range range);
+		static RangeResults<TrackId>	findIdsWithRecordingMBIDAndMissingFeatures(Session& session, Range range);
 
 		// Accessors
 		void setScanVersion(std::size_t version)				{ _scanVersion = version; }

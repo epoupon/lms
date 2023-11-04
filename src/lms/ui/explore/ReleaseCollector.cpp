@@ -19,12 +19,10 @@
 
 #include "ReleaseCollector.hpp"
 
-#include <algorithm>
-
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
-#include "services/database/TrackList.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
 #include "Filters.hpp"
@@ -32,104 +30,104 @@
 
 namespace UserInterface
 {
-	using namespace Database;
+    using namespace Database;
 
-	RangeResults<ReleaseId>
-	ReleaseCollector::get(Database::Range range)
-	{
-		Scrobbling::IScrobblingService& scrobbling {*Service<Scrobbling::IScrobblingService>::get()};
+    RangeResults<ReleaseId> ReleaseCollector::get(Database::Range range)
+    {
+        Feedback::IFeedbackService& feedbackService{ *Service<Feedback::IFeedbackService>::get() };
+        Scrobbling::IScrobblingService& scrobblingService{ *Service<Scrobbling::IScrobblingService>::get() };
 
-		range = getActualRange(range);
+        RangeResults<ReleaseId> releases;
+        range = getActualRange(range);
+        if (range.size == 0)
+            return releases;
 
-		RangeResults<ReleaseId> releases;
-		switch (getMode())
-		{
-			case Mode::Random:
-				releases = getRandomReleases(range);
-				break;
+        switch (getMode())
+        {
+        case Mode::Random:
+            releases = getRandomReleases(range);
+            break;
 
-			case Mode::Starred:
-				releases = scrobbling.getStarredReleases(LmsApp->getUserId(), getFilters().getClusterIds(), range);
-				break;
+        case Mode::Starred:
+            releases = feedbackService.getStarredReleases(LmsApp->getUserId(), getFilters().getClusterIds(), range);
+            break;
 
-			case ReleaseCollector::Mode::RecentlyPlayed:
-				releases = scrobbling.getRecentReleases(LmsApp->getUserId(), getFilters().getClusterIds(), range);
-				break;
+        case ReleaseCollector::Mode::RecentlyPlayed:
+            releases = scrobblingService.getRecentReleases(LmsApp->getUserId(), getFilters().getClusterIds(), range);
+            break;
 
-			case Mode::MostPlayed:
-				releases = scrobbling.getTopReleases(LmsApp->getUserId(), getFilters().getClusterIds(), range);
-				break;
+        case Mode::MostPlayed:
+            releases = scrobblingService.getTopReleases(LmsApp->getUserId(), getFilters().getClusterIds(), range);
+            break;
 
-			case Mode::RecentlyAdded:
-			{
-				Release::FindParameters params;
-				params.setClusters(getFilters().getClusterIds());
-				params.setSortMethod(ReleaseSortMethod::LastWritten);
-				params.setRange(range);
+        case Mode::RecentlyAdded:
+        {
+            Release::FindParameters params;
+            params.setClusters(getFilters().getClusterIds());
+            params.setSortMethod(ReleaseSortMethod::LastWritten);
+            params.setRange(range);
 
-				{
-					auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-					releases = Release::find(LmsApp->getDbSession(), params);
-				}
-				break;
-			}
+            {
+                auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                releases = Release::findIds(LmsApp->getDbSession(), params);
+            }
+            break;
+        }
 
-			case Mode::Search:
-			{
-				Release::FindParameters params;
-				params.setClusters(getFilters().getClusterIds());
-				params.setKeywords(getSearchKeywords());
-				params.setSortMethod(ReleaseSortMethod::Name);
-				params.setRange(range);
+        case Mode::Search:
+        {
+            Release::FindParameters params;
+            params.setClusters(getFilters().getClusterIds());
+            params.setKeywords(getSearchKeywords());
+            params.setRange(range);
 
-				{
-					auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-					releases = Release::find(LmsApp->getDbSession(), params);
-				}
-				break;
-			}
+            {
+                auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                releases = Release::findIds(LmsApp->getDbSession(), params);
+            }
+            break;
+        }
 
-			case Mode::All:
-			{
-				Release::FindParameters params;
-				params.setClusters(getFilters().getClusterIds());
-				params.setSortMethod(ReleaseSortMethod::Name);
-				params.setRange(range);
+        case Mode::All:
+        {
+            Release::FindParameters params;
+            params.setClusters(getFilters().getClusterIds());
+            params.setSortMethod(ReleaseSortMethod::Name);
+            params.setRange(range);
 
-				{
-					auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-					releases = Release::find(LmsApp->getDbSession(), params);
-				}
-				break;
-			}
-		}
+            {
+                auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                releases = Release::findIds(LmsApp->getDbSession(), params);
+            }
+            break;
+        }
+        }
 
-		if (range.offset + range.size == getMaxCount())
-			releases.moreResults = false;
+        if (range.offset + range.size == getMaxCount())
+            releases.moreResults = false;
 
-		return releases;
-	}
+        return releases;
+    }
 
-	RangeResults<ReleaseId>
-	ReleaseCollector::getRandomReleases(Range range)
-	{
-		assert(getMode() == Mode::Random);
+    RangeResults<ReleaseId> ReleaseCollector::getRandomReleases(Range range)
+    {
+        assert(getMode() == Mode::Random);
 
-		if (!_randomReleases)
-		{
-			Release::FindParameters params;
-			params.setClusters(getFilters().getClusterIds());
-			params.setSortMethod(ReleaseSortMethod::Random);
-			params.setRange({0, getMaxCount()});
+        if (!_randomReleases)
+        {
+            Release::FindParameters params;
+            params.setClusters(getFilters().getClusterIds());
+            params.setSortMethod(ReleaseSortMethod::Random);
+            params.setRange({ 0, getMaxCount() });
 
-			{
-				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
-				_randomReleases = Release::find(LmsApp->getDbSession(), params);
-			}
-		}
+            {
+                auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                _randomReleases = Release::findIds(LmsApp->getDbSession(), params);
+            }
+        }
 
-		return _randomReleases->getSubRange(range);
-	}
+        return _randomReleases->getSubRange(range);
+    }
 
 } // ns UserInterface
 

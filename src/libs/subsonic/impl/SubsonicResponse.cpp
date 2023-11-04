@@ -148,6 +148,7 @@ namespace API::Subsonic
         }
 
         // OpenSubsonic mandatory fields
+        // No big deal to send them even for legacy clients
         responseNode.setAttribute("type", "lms");
         responseNode.setAttribute("serverVersion", serverVersion);
         responseNode.setAttribute("openSubsonic", true);

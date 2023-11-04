@@ -39,6 +39,6 @@ namespace API::Subsonic
         std::string joinArtistNames(const std::vector<Database::ObjectPtr<Database::Artist>>& artists);
         std::string_view toString(Database::TrackArtistLinkType type);
     }
-    Response::Node createArtistNode(const Database::ObjectPtr<Database::Artist>& artist, Database::Session& session, const Database::ObjectPtr<Database::User>& user, bool id3);
+    Response::Node createArtistNode(RequestContext& context, const Database::ObjectPtr<Database::Artist>& artist, const Database::ObjectPtr<Database::User>& user, bool id3);
     Response::Node createArtistNode(const Database::ObjectPtr<Database::Artist>& artist); // only minimal info
 }

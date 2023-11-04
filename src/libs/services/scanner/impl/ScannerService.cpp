@@ -381,7 +381,7 @@ ScannerService::readSettings()
 			std::transform(std::cbegin(fileExtensions), std::end(fileExtensions), std::back_inserter(newSettings.supportedExtensions),
 				[](const std::filesystem::path& extension) { return std::filesystem::path{ StringUtils::stringToLower(extension.string()) }; });
 		}
-		newSettings.recommendationServiceType = scanSettings->getRecommendationEngineType();
+		newSettings.similarityServiceType = scanSettings->getSimilarityEngineType();
 		newSettings.mediaDirectory = scanSettings->getMediaDirectory();
 
 		const auto clusterTypes = scanSettings->getClusterTypes();

@@ -3,29 +3,29 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.Search.template">
-	<ul class="nav nav-pills mb-3" id="myTab" role="tablist">
-		<li class="nav-item" role="presentation">
-			<button class="nav-link active" id="releases-tab" data-bs-toggle="tab" data-bs-target="#releases" type="button" role="tab" aria-controls="releases" aria-selected="true">${tr:Lms.Explore.releases}</button>
-		</li>
-		<li class="nav-item" role="presentation">
-			<button class="nav-link" id="artists-tab" data-bs-toggle="tab" data-bs-target="#artists" type="button" role="tab" aria-controls="artists" aria-selected="false">${tr:Lms.Explore.artists}</button>
-		</li>
-		<li class="nav-item" role="presentation">
-			<button class="nav-link" id="tracks-tab" data-bs-toggle="tab" data-bs-target="#tracks" type="button" role="tab" aria-controls="tracks" aria-selected="false">${tr:Lms.Explore.tracks}</button>
-		</li>
-	</ul>
-	<div class="tab-content" id="myTabContent">
-		<div class="tab-pane show active" id="releases" role="tabpanel" aria-labelledby="releases-tab">${releases}</div>
-		<div class="tab-pane" id="artists" role="tabpanel" aria-labelledby="artists-tab">
-			<div class="row mb-3">
-				<div class="col-lg-3">
-					${link-type class="form-select"}
-				</div>
-			</div>
-			${artists}
-		</div>
-		<div class="tab-pane" id="tracks" role="tabpanel" aria-labelledby="tracks-tab">${tracks}</div>
+	<div class="mb-3">
+		<ul class="nav nav-pills mb-3">
+			<li class="nav-item">
+				${releases class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${artists class="nav-link"}
+			</li>
+			<li class="nav-item">
+				${tracks class="nav-link"}
+			</li>
+		</ul>
 	</div>
+	${results}
+</message>
+
+<message id="Lms.Explore.Search.template.artists">
+	<div class="row mb-3">
+		<div class="col-lg-3">
+			${link-type class="form-select"}
+		</div>
+	</div>
+	${artists}
 </message>
 
 </messages>

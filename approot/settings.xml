@@ -28,9 +28,9 @@
 			</div>
 		</div>
 		<div class="col-lg-4">
-			<label class="form-label"  for="${id:transcode-bitrate}">
+			<label class="form-label" for="${id:transcode-bitrate}">
 				${tr:Lms.Settings.transcode-bitrate}
-;			</label>
+			</label>
 			<div class="input-group mb-3">
 				${transcode-bitrate class="form-control"}
 				<span class="input-group-text">kbps</span>
@@ -105,19 +105,28 @@
 				</div>
 			</div>
 			${</if-has-subsonic-api>}
-		<legend>${tr:Lms.Settings.scrobbling}</legend>
+		<legend>${tr:Lms.Settings.services}</legend>
 		<div class="col-lg-6">
-			<label class="form-label" for="${id:scrobbler}">
-				${tr:Lms.Settings.scrobbling.scrobbler}
+			<label class="form-label" for="${id:scrobbling-backend}">
+				${tr:Lms.Settings.scrobbling}
 			</label>
-			${scrobbler class="form-control"}
+			${scrobbling-backend class="form-control"}
 			<div class="invalid-feedback">
-				${scrobbler-info class="help-block"}
+				${scrobbling-backend-info class="help-block"}
 			</div>
 		</div>
 		<div class="col-lg-6">
+			<label class="form-label" for="${id:feedback-backend}">
+				${tr:Lms.Settings.feedback}
+			</label>
+			${feedback-backend class="form-control"}
+			<div class="invalid-feedback">
+				${feedback-backend-info class="help-block"}
+			</div>
+		</div>
+		<div class="col-lg-12">
 			<label class="form-label" for="${id:listenbrainz-token}">
-				${tr:Lms.Settings.scrobbling.listenbrainz-token}
+				${tr:Lms.Settings.backend.listenbrainz-token}
 			</label>
 			${listenbrainz-token class="form-control"}
 			<div class="invalid-feedback">

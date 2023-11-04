@@ -173,7 +173,7 @@ ChildProcess::asyncRead(std::byte* data, std::size_t bufferSize, ReadCallback ca
 	boost::asio::async_read(_childStdout, boost::asio::buffer(data, bufferSize),
 		[this, callback {std::move(callback)}](const boost::system::error_code& error, std::size_t bytesTransferred)
 		{
-			LMS_LOG(CHILDPROCESS, DEBUG) << "Async read cb - ec = '" << error.message() << "', bytesTransferred = " << bytesTransferred;
+			LMS_LOG(CHILDPROCESS, DEBUG) << "Async read cb - ec = '" << error.message() << "' (" << error.value() << "), bytesTransferred = " << bytesTransferred;
 
 			ReadResult readResult {ReadResult::Success};
 			if (error)

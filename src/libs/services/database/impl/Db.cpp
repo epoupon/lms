@@ -40,13 +40,25 @@ namespace Database
                 prepare();
             }
 
+            Connection(const Connection& other)
+                : Wt::Dbo::backend::Sqlite3{ other }
+                , _dbPath{ other._dbPath }
+            {
+                prepare();
+            }
+
+            ~Connection()
+            {
+                // make use of per-connection usage stats to optimize
+                optimize();
+            }
+
         private:
-            Connection(const Connection&) = delete;
             Connection& operator=(const Connection&) = delete;
 
             std::unique_ptr<SqlConnection> clone() const override
             {
-                return std::make_unique<Connection>(_dbPath);
+                return std::make_unique<Connection>(*this);
             }
 
             void prepare()
@@ -54,8 +66,15 @@ namespace Database
                 LMS_LOG(DB, DEBUG) << "Setting per-connection settings...";
                 executeSql("pragma journal_mode=WAL");
                 executeSql("pragma synchronous=normal");
-                executeSql("pragma analysis_limit=1000"); // to help make analyze command faster
+                executeSql("pragma analysis_limit=2000"); // to help make analyze command faster, 1000 does not seem to be enough to speed up all queries
                 LMS_LOG(DB, DEBUG) << "Setting per-connection settings done!";
+            }
+
+            void optimize()
+            {
+                LMS_LOG(DB, DEBUG) << "connection close: Running pragma optimize...";
+                executeSql("pragma optimize");
+                LMS_LOG(DB, DEBUG) << "connection close: pragma optimize complete";
             }
 
             std::filesystem::path _dbPath;
@@ -68,7 +87,7 @@ namespace Database
         LMS_LOG(DB, INFO) << "Creating connection pool on file " << dbPath.string();
 
         auto connection{ std::make_unique<Connection>(dbPath.string()) };
-        //	connection->setProperty("show-queries", "true");
+        // connection->setProperty("show-queries", "true");
 
         auto connectionPool{ std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), connectionCount) };
         connectionPool->setTimeout(std::chrono::seconds{ 10 });

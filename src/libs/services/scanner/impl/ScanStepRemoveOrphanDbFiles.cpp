@@ -137,7 +137,7 @@ namespace Scanner
 		Session& session {_db.getTLSSession()};
 		auto transaction {session.createUniqueTransaction()};
 
-		auto artistIds {Artist::findAllOrphans(session, Range {})};
+		auto artistIds {Artist::findOrphanIds(session, Range {})};
 		for (const ArtistId artistId : artistIds.results)
 		{
 			Artist::pointer artist {Artist::find(session, artistId)};
@@ -153,10 +153,11 @@ namespace Scanner
 
 		LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan releases...";
 
+		// TODO, by batch
 		Session& session {_db.getTLSSession()};
 		auto transaction {session.createUniqueTransaction()};
 
-		auto releases {Release::findOrphans(session, Range {})};
+		auto releases {Release::findOrphanIds(session, Range {})};
 		for (const ReleaseId releaseId : releases.results)
 		{
 			Release::pointer release {Release::find(session, releaseId)};
