@@ -335,11 +335,8 @@ namespace API::Subsonic
             directoryNode.setAttribute("name", Utils::makeNameFilesystemCompatible(artist->getName()));
 
             const auto artistReleases{ Release::find(context.dbSession, Release::FindParameters {}.setArtist(*artistId)) };
-            for (const ReleaseId artistReleaseId : artistReleases.results)
-            {
-                const Release::pointer release{ Release::find(context.dbSession, artistReleaseId) };
+            for (const Release::pointer& release : artistReleases.results)
                 directoryNode.addArrayChild("child", createAlbumNode(context, release, user, false /* no id3 */));
-            }
         }
         else if (releaseId)
         {
@@ -408,11 +405,8 @@ namespace API::Subsonic
         Response::Node artistNode{ createArtistNode(context, artist, user, true /* id3 */) };
 
         const auto releases{ Release::find(context.dbSession, Release::FindParameters {}.setArtist(artist->getId())) };
-        for (const ReleaseId releaseId : releases.results)
-        {
-            const Release::pointer release{ Release::find(context.dbSession, releaseId) };
+        for (const Release::pointer& release : releases.results)
             artistNode.addArrayChild("album", createAlbumNode(context, release, user, true /* id3 */));
-        }
 
         response.addNode("artist", std::move(artistNode));
 

@@ -141,7 +141,7 @@ namespace Feedback
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createSharedTransaction() };
 
-        return Release::find(session, params);
+        return Release::findIds(session, params);
     }
 
     void FeedbackService::star(UserId userId, TrackId trackId)

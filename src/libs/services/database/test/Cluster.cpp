@@ -374,7 +374,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Release::find(session, Release::FindParameters {}.setClusters({cluster.getId()})) };
+        const auto releases{ Release::findIds(session, Release::FindParameters {}.setClusters({cluster.getId()})) };
         ASSERT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results.front(), release.getId());
     }
@@ -382,7 +382,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Release::find(session, Release::FindParameters {}.setClusters({unusedCluster.getId()})) };
+        const auto releases{ Release::findIds(session, Release::FindParameters {}.setClusters({unusedCluster.getId()})) };
         EXPECT_EQ(releases.results.size(), 0);
     }
 
@@ -415,7 +415,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiClusters)
         auto transaction{ session.createSharedTransaction() };
         EXPECT_TRUE(ClusterType::findOrphans(session, Range{}).results.empty());
         EXPECT_EQ(Cluster::findOrphans(session, Range{}).results.size(), 2);
-        EXPECT_TRUE(Release::findOrphans(session, Range{}).results.empty());
+        EXPECT_TRUE(Release::findOrphanIds(session, Range{}).results.empty());
         EXPECT_TRUE(Artist::findAllOrphans(session, Range{}).results.empty());
     }
 
@@ -475,7 +475,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiRolesMultiClusters)
     {
         auto transaction{ session.createSharedTransaction() };
         EXPECT_TRUE(Cluster::findOrphans(session, Range{}).results.empty());
-        EXPECT_TRUE(Release::findOrphans(session, Range{}).results.empty());
+        EXPECT_TRUE(Release::findOrphanIds(session, Range{}).results.empty());
         EXPECT_TRUE(Artist::findAllOrphans(session, Range{}).results.empty());
     }
 
@@ -628,7 +628,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistSingleCluster)
         EXPECT_TRUE(Cluster::findOrphans(session, Range{}).results.empty());
         EXPECT_TRUE(ClusterType::findOrphans(session, Range{}).results.empty());
         EXPECT_TRUE(Artist::findAllOrphans(session, Range{}).results.empty());
-        EXPECT_TRUE(Release::findOrphans(session, Range{}).results.empty());
+        EXPECT_TRUE(Release::findOrphanIds(session, Range{}).results.empty());
     }
 
     {
@@ -638,11 +638,11 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistSingleCluster)
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
 
-        auto releases{ Release::find(session, Release::FindParameters {}.setArtist(artist.getId())) };
+        auto releases{ Release::findIds(session, Release::FindParameters {}.setArtist(artist.getId())) };
         ASSERT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results.front(), release.getId());
 
-        releases = Release::find(session, Release::FindParameters{}.setArtist(artist.getId()).setClusters({ cluster.getId() }));
+        releases = Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId()).setClusters({ cluster.getId() }));
         ASSERT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results.front(), release.getId());
     }
@@ -669,11 +669,11 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistMultiClusters)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Release::find(session, Release::FindParameters {}.setArtist(artist.getId())) };
+        auto releases{ Release::findIds(session, Release::FindParameters {}.setArtist(artist.getId())) };
         ASSERT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results.front(), release.getId());
 
-        releases = Release::find(session, Release::FindParameters{}.setArtist(artist.getId()).setClusters({ cluster1.getId(), cluster2.getId() }));
+        releases = Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId()).setClusters({ cluster1.getId(), cluster2.getId() }));
         ASSERT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results.front(), release.getId());
     }

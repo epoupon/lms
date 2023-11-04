@@ -19,12 +19,9 @@
 
 #include "ReleaseCollector.hpp"
 
-#include <algorithm>
-
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
-#include "services/database/TrackList.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
@@ -35,8 +32,7 @@ namespace UserInterface
 {
     using namespace Database;
 
-    RangeResults<ReleaseId>
-        ReleaseCollector::get(Database::Range range)
+    RangeResults<ReleaseId> ReleaseCollector::get(Database::Range range)
     {
         Feedback::IFeedbackService& feedbackService{ *Service<Feedback::IFeedbackService>::get() };
         Scrobbling::IScrobblingService& scrobblingService{ *Service<Scrobbling::IScrobblingService>::get() };
@@ -73,7 +69,7 @@ namespace UserInterface
 
             {
                 auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
-                releases = Release::find(LmsApp->getDbSession(), params);
+                releases = Release::findIds(LmsApp->getDbSession(), params);
             }
             break;
         }
@@ -87,7 +83,7 @@ namespace UserInterface
 
             {
                 auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
-                releases = Release::find(LmsApp->getDbSession(), params);
+                releases = Release::findIds(LmsApp->getDbSession(), params);
             }
             break;
         }
@@ -101,7 +97,7 @@ namespace UserInterface
 
             {
                 auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
-                releases = Release::find(LmsApp->getDbSession(), params);
+                releases = Release::findIds(LmsApp->getDbSession(), params);
             }
             break;
         }
@@ -113,8 +109,7 @@ namespace UserInterface
         return releases;
     }
 
-    RangeResults<ReleaseId>
-        ReleaseCollector::getRandomReleases(Range range)
+    RangeResults<ReleaseId> ReleaseCollector::getRandomReleases(Range range)
     {
         assert(getMode() == Mode::Random);
 
@@ -127,7 +122,7 @@ namespace UserInterface
 
             {
                 auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
-                _randomReleases = Release::find(LmsApp->getDbSession(), params);
+                _randomReleases = Release::findIds(LmsApp->getDbSession(), params);
             }
         }
 

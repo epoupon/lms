@@ -70,7 +70,6 @@ namespace API::Subsonic
             {
                 Artist::FindParameters params;
                 params.setKeywords(keywords);
-                params.setSortMethod(ArtistSortMethod::BySortName);
                 params.setRange({ artistOffset, artistCount });
 
                 RangeResults<ArtistId> artistIds{ Artist::find(context.dbSession, params) };
@@ -85,15 +84,11 @@ namespace API::Subsonic
             {
                 Release::FindParameters params;
                 params.setKeywords(keywords);
-                params.setSortMethod(ReleaseSortMethod::Name);
                 params.setRange({ albumOffset, albumCount });
 
-                RangeResults<ReleaseId> releaseIds{ Release::find(context.dbSession, params) };
-                for (const ReleaseId releaseId : releaseIds.results)
-                {
-                    const auto release{ Release::find(context.dbSession, releaseId) };
+                RangeResults<Release::pointer> releases{ Release::find(context.dbSession, params) };
+                for (const Release::pointer& release : releases.results)
                     searchResult2Node.addArrayChild("album", createAlbumNode(context, release, user, id3));
-                }
             }
 
             if (songCount > 0)

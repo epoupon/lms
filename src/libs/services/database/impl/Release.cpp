@@ -34,152 +34,170 @@
 
 namespace Database
 {
-
-    Wt::Dbo::Query<ReleaseId> createQuery(Session& session, const Release::FindParameters& params)
+    namespace
     {
-        auto query{ session.getDboSession().query<ReleaseId>("SELECT DISTINCT r.id from release r") };
-
-        if (params.sortMethod == ReleaseSortMethod::LastWritten
-            || params.sortMethod == ReleaseSortMethod::Date
-            || params.sortMethod == ReleaseSortMethod::OriginalDate
-            || params.sortMethod == ReleaseSortMethod::OriginalDateDesc
-            || params.writtenAfter.isValid()
-            || params.dateRange
-            || params.artist.isValid()
-            || params.clusters.size() == 1)
+        template <typename ResultType>
+        Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Release::FindParameters& params)
         {
-            query.join("track t ON t.release_id = r.id");
-        }
+            auto query{ session.getDboSession().query<ResultType>("SELECT DISTINCT " + std::string{ itemToSelect } + " from release r") };
 
-        if (params.writtenAfter.isValid())
-            query.where("t.file_last_write > ?").bind(params.writtenAfter);
-
-        if (params.dateRange)
-        {
-            query.where("t.date >= ?").bind(params.dateRange->begin);
-            query.where("t.date <= ?").bind(params.dateRange->end);
-        }
-
-        for (std::string_view keyword : params.keywords)
-            query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + Utils::escapeLikeKeyword(keyword) + "%");
-
-        if (params.starringUser.isValid())
-        {
-            assert(params.feedbackBackend);
-            query.join("starred_release s_r ON s_r.release_id = r.id")
-                .where("s_r.user_id = ?").bind(params.starringUser)
-                .where("s_r.backend = ?").bind(*params.feedbackBackend)
-                .where("s_r.sync_state <> ?").bind(SyncState::PendingRemove);
-        }
-
-        if (params.artist.isValid())
-        {
-            query.join("artist a ON a.id = t_a_l.artist_id")
-                .join("track_artist_link t_a_l ON t_a_l.track_id = t.id")
-                .where("a.id = ?").bind(params.artist);
-
-            if (!params.trackArtistLinkTypes.empty())
+            if (params.sortMethod == ReleaseSortMethod::LastWritten
+                || params.sortMethod == ReleaseSortMethod::Date
+                || params.sortMethod == ReleaseSortMethod::OriginalDate
+                || params.sortMethod == ReleaseSortMethod::OriginalDateDesc
+                || params.writtenAfter.isValid()
+                || params.dateRange
+                || params.artist.isValid()
+                || params.clusters.size() == 1)
             {
-                std::ostringstream oss;
-
-                bool first{ true };
-                for (TrackArtistLinkType linkType : params.trackArtistLinkTypes)
-                {
-                    if (!first)
-                        oss << " OR ";
-                    oss << "t_a_l.type = ?";
-                    query.bind(linkType);
-
-                    first = false;
-                }
-                query.where(oss.str());
+                query.join("track t ON t.release_id = r.id");
             }
 
-            if (!params.excludedTrackArtistLinkTypes.empty())
+            if (params.writtenAfter.isValid())
+                query.where("t.file_last_write > ?").bind(params.writtenAfter);
+
+            if (params.dateRange)
+            {
+                query.where("t.date >= ?").bind(params.dateRange->begin);
+                query.where("t.date <= ?").bind(params.dateRange->end);
+            }
+
+            for (std::string_view keyword : params.keywords)
+                query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + Utils::escapeLikeKeyword(keyword) + "%");
+
+            if (params.starringUser.isValid())
+            {
+                assert(params.feedbackBackend);
+                query.join("starred_release s_r ON s_r.release_id = r.id")
+                    .where("s_r.user_id = ?").bind(params.starringUser)
+                    .where("s_r.backend = ?").bind(*params.feedbackBackend)
+                    .where("s_r.sync_state <> ?").bind(SyncState::PendingRemove);
+            }
+
+            if (params.artist.isValid())
+            {
+                query.join("artist a ON a.id = t_a_l.artist_id")
+                    .join("track_artist_link t_a_l ON t_a_l.track_id = t.id")
+                    .where("a.id = ?").bind(params.artist);
+
+                if (!params.trackArtistLinkTypes.empty())
+                {
+                    std::ostringstream oss;
+
+                    bool first{ true };
+                    for (TrackArtistLinkType linkType : params.trackArtistLinkTypes)
+                    {
+                        if (!first)
+                            oss << " OR ";
+                        oss << "t_a_l.type = ?";
+                        query.bind(linkType);
+
+                        first = false;
+                    }
+                    query.where(oss.str());
+                }
+
+                if (!params.excludedTrackArtistLinkTypes.empty())
+                {
+                    std::ostringstream oss;
+                    oss << "r.id NOT IN (SELECT DISTINCT r.id FROM release r"
+                        " INNER JOIN artist a ON a.id = t_a_l.artist_id"
+                        " INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id"
+                        " INNER JOIN track t ON t.release_id = r.id"
+                        " WHERE (a.id = ? AND (";
+
+                    query.bind(params.artist);
+
+                    bool first{ true };
+                    for (const TrackArtistLinkType linkType : params.excludedTrackArtistLinkTypes)
+                    {
+                        if (!first)
+                            oss << " OR ";
+                        oss << "t_a_l.type = ?";
+                        query.bind(linkType);
+
+                        first = false;
+                    }
+                    oss << ")))";
+                    query.where(oss.str());
+                }
+            }
+
+            if (params.clusters.size() == 1)
+            {
+                query.join("track_cluster t_c ON t_c.track_id = t.id")
+                    .where("t_c.cluster_id = ?").bind(params.clusters.front());
+            }
+            else if (params.clusters.size() > 1)
             {
                 std::ostringstream oss;
-                oss << "r.id NOT IN (SELECT DISTINCT r.id FROM release r"
-                    " INNER JOIN artist a ON a.id = t_a_l.artist_id"
-                    " INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id"
+                oss << "r.id IN (SELECT DISTINCT r.id FROM release r"
                     " INNER JOIN track t ON t.release_id = r.id"
-                    " WHERE (a.id = ? AND (";
+                    " INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
 
-                query.bind(params.artist);
-
-                bool first{ true };
-                for (const TrackArtistLinkType linkType : params.excludedTrackArtistLinkTypes)
+                WhereClause clusterClause;
+                for (const ClusterId clusterId : params.clusters)
                 {
-                    if (!first)
-                        oss << " OR ";
-                    oss << "t_a_l.type = ?";
-                    query.bind(linkType);
-
-                    first = false;
+                    clusterClause.Or(WhereClause("t_c.cluster_id = ?"));
+                    query.bind(clusterId);
                 }
-                oss << ")))";
+
+                oss << " " << clusterClause.get();
+                oss << " GROUP BY t.id HAVING COUNT(*) = " << params.clusters.size() << ")";
+
                 query.where(oss.str());
             }
-        }
 
-        if (params.clusters.size() == 1)
-        {
-            query.join("track_cluster t_c ON t_c.track_id = t.id")
-                .where("t_c.cluster_id = ?").bind(params.clusters.front());
-        }
-        else if (params.clusters.size() > 1)
-        {
-            std::ostringstream oss;
-            oss << "r.id IN (SELECT DISTINCT r.id FROM release r"
-                " INNER JOIN track t ON t.release_id = r.id"
-                " INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
+            if (params.primaryType)
+                query.where("primary_type = ?").bind(*params.primaryType);
+            if (!params.secondaryTypes.empty())
+                query.where("secondary_type = ?").bind(params.secondaryTypes);
 
-            WhereClause clusterClause;
-            for (const ClusterId clusterId : params.clusters)
+            switch (params.sortMethod)
             {
-                clusterClause.Or(WhereClause("t_c.cluster_id = ?"));
-                query.bind(clusterId);
+            case ReleaseSortMethod::None:
+                break;
+            case ReleaseSortMethod::Name:
+                query.orderBy("r.name COLLATE NOCASE");
+                break;
+            case ReleaseSortMethod::Random:
+                query.orderBy("RANDOM()");
+                break;
+            case ReleaseSortMethod::LastWritten:
+                query.orderBy("t.file_last_write DESC");
+                break;
+            case ReleaseSortMethod::Date:
+                query.orderBy("t.date, r.name COLLATE NOCASE");
+                break;
+            case ReleaseSortMethod::OriginalDate:
+                query.orderBy("CASE WHEN t.original_date IS NULL THEN t.date ELSE t.original_date END, t.date, r.name COLLATE NOCASE");
+                break;
+            case ReleaseSortMethod::OriginalDateDesc:
+                query.orderBy("CASE WHEN t.original_date IS NULL THEN t.date ELSE t.original_date END DESC, t.date, r.name COLLATE NOCASE");
+                break;
+            case ReleaseSortMethod::StarredDateDesc:
+                assert(params.starringUser.isValid());
+                query.orderBy("s_r.date_time DESC");
+                break;
             }
 
-            oss << " " << clusterClause.get();
-            oss << " GROUP BY t.id HAVING COUNT(*) = " << params.clusters.size() << ")";
-
-            query.where(oss.str());
+            return query;
         }
 
-        if (params.primaryType)
-            query.where("primary_type = ?").bind(*params.primaryType);
-        if (!params.secondaryTypes.empty())
-            query.where("secondary_type = ?").bind(params.secondaryTypes);
-
-        switch (params.sortMethod)
+        template <typename ResultType>
+        Wt::Dbo::Query<ResultType> createQuery(Session& session, const Release::FindParameters& params)
         {
-        case ReleaseSortMethod::None:
-            break;
-        case ReleaseSortMethod::Name:
-            query.orderBy("r.name COLLATE NOCASE");
-            break;
-        case ReleaseSortMethod::Random:
-            query.orderBy("RANDOM()");
-            break;
-        case ReleaseSortMethod::LastWritten:
-            query.orderBy("t.file_last_write DESC");
-            break;
-        case ReleaseSortMethod::Date:
-            query.orderBy("t.date, r.name COLLATE NOCASE");
-            break;
-        case ReleaseSortMethod::OriginalDate:
-            query.orderBy("CASE WHEN t.original_date IS NULL THEN t.date ELSE t.original_date END, t.date, r.name COLLATE NOCASE");
-            break;
-        case ReleaseSortMethod::OriginalDateDesc:
-            query.orderBy("CASE WHEN t.original_date IS NULL THEN t.date ELSE t.original_date END DESC, t.date, r.name COLLATE NOCASE");
-            break;
-        case ReleaseSortMethod::StarredDateDesc:
-            assert(params.starringUser.isValid());
-            query.orderBy("s_r.date_time DESC");
-            break;
-        }
+            std::string_view itemToSelect;
+            
+            if constexpr (std::is_same_v<ResultType, ReleaseId>)
+                itemToSelect = "r.id";
+            else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<Release>>)
+                itemToSelect = "r";
+            else
+                static_assert("Unhandled type");
 
-        return query;
+            return createQuery<ResultType>(session, itemToSelect, params);
+        }
     }
 
     Release::Release(const std::string& name, const std::optional<UUID>& MBID)
@@ -238,7 +256,7 @@ namespace Database
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM release");
     }
 
-    RangeResults<ReleaseId> Release::findOrderedByArtist(Session& session, Range range)
+    RangeResults<ReleaseId> Release::findIdsOrderedByArtist(Session& session, Range range)
     {
         session.checkSharedLocked();
 
@@ -253,7 +271,7 @@ namespace Database
         return Utils::execQuery(query, range);
     }
 
-    RangeResults<ReleaseId> Release::findOrphans(Session& session, Range range)
+    RangeResults<ReleaseId> Release::findOrphanIds(Session& session, Range range)
     {
         session.checkSharedLocked();
 
@@ -261,12 +279,19 @@ namespace Database
         return Utils::execQuery(query, range);
     }
 
-    RangeResults<ReleaseId> Release::find(Session& session, const FindParameters& params)
+    RangeResults<Release::pointer> Release::find(Session& session, const FindParameters& params)
     {
         session.checkSharedLocked();
 
-        auto query{ createQuery(session, params) };
+        auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, params) };
+        return Utils::execQuery(query, params.range);
+    }
 
+    RangeResults<ReleaseId> Release::findIds(Session& session, const FindParameters& params)
+    {
+        session.checkSharedLocked();
+
+        auto query{ createQuery<ReleaseId>(session, params) };
         return Utils::execQuery(query, params.range);
     }
 

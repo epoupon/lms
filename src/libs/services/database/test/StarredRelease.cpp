@@ -96,7 +96,7 @@ TEST_F(DatabaseFixture, StarredRelease_dateTime)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        auto releases{ Release::find(session, Release::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
+        auto releases{ Release::findIds(session, Release::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
         EXPECT_EQ(releases.results.size(), 2);
     }
 
@@ -106,7 +106,7 @@ TEST_F(DatabaseFixture, StarredRelease_dateTime)
         starredRelease1.get().modify()->setDateTime(dateTime);
         starredRelease2.get().modify()->setDateTime(dateTime.addSecs(-1));
 
-        auto releases{ Release::find(session, Release::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ReleaseSortMethod::StarredDateDesc)) };
+        auto releases{ Release::findIds(session, Release::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ReleaseSortMethod::StarredDateDesc)) };
         ASSERT_EQ(releases.results.size(), 2);
         EXPECT_EQ(releases.results[0], starredRelease1->getRelease()->getId());
         EXPECT_EQ(releases.results[1], starredRelease2->getRelease()->getId());
@@ -117,7 +117,7 @@ TEST_F(DatabaseFixture, StarredRelease_dateTime)
         starredRelease1.get().modify()->setDateTime(dateTime);
         starredRelease2.get().modify()->setDateTime(dateTime.addSecs(1));
 
-        auto releases{ Release::find(session, Release::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ReleaseSortMethod::StarredDateDesc)) };
+        auto releases{ Release::findIds(session, Release::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ReleaseSortMethod::StarredDateDesc)) };
         ASSERT_EQ(releases.results.size(), 2);
         EXPECT_EQ(releases.results[0], starredRelease2->getRelease()->getId());
         EXPECT_EQ(releases.results[1], starredRelease1->getRelease()->getId());

@@ -66,11 +66,11 @@ namespace API::Subsonic
                 params.setSortMethod(ReleaseSortMethod::Name);
                 params.setRange(range);
 
-                releases = Release::find(context.dbSession, params);
+                releases = Release::findIds(context.dbSession, params);
             }
             else if (type == "alphabeticalByArtist")
             {
-                releases = Release::findOrderedByArtist(context.dbSession, range);
+                releases = Release::findIdsOrderedByArtist(context.dbSession, range);
             }
             else if (type == "byGenre")
             {
@@ -86,7 +86,7 @@ namespace API::Subsonic
                         params.setSortMethod(ReleaseSortMethod::Name);
                         params.setRange(range);
 
-                        releases = Release::find(context.dbSession, params);
+                        releases = Release::findIds(context.dbSession, params);
                     }
                 }
             }
@@ -100,7 +100,7 @@ namespace API::Subsonic
                 params.setRange(range);
                 params.setDateRange(DateRange::fromYearRange(fromYear, toYear));
 
-                releases = Release::find(context.dbSession, params);
+                releases = Release::findIds(context.dbSession, params);
             }
             else if (type == "frequent")
             {
@@ -112,7 +112,7 @@ namespace API::Subsonic
                 params.setSortMethod(ReleaseSortMethod::LastWritten);
                 params.setRange(range);
 
-                releases = Release::find(context.dbSession, params);
+                releases = Release::findIds(context.dbSession, params);
             }
             else if (type == "random")
             {
@@ -122,7 +122,7 @@ namespace API::Subsonic
                 params.setSortMethod(ReleaseSortMethod::Random);
                 params.setRange({ 0, size });
 
-                releases = Release::find(context.dbSession, params);
+                releases = Release::findIds(context.dbSession, params);
             }
             else if (type == "recent")
             {

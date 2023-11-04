@@ -153,10 +153,11 @@ namespace Scanner
 
 		LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan releases...";
 
+		// TODO, by batch
 		Session& session {_db.getTLSSession()};
 		auto transaction {session.createUniqueTransaction()};
 
-		auto releases {Release::findOrphans(session, Range {})};
+		auto releases {Release::findOrphanIds(session, Range {})};
 		for (const ReleaseId releaseId : releases.results)
 		{
 			Release::pointer release {Release::find(session, releaseId)};

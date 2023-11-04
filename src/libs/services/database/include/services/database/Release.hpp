@@ -88,9 +88,10 @@ namespace Database
         static pointer                  find(Session& session, const UUID& MBID);
         static std::vector<pointer>     find(Session& session, const std::string& name);
         static pointer                  find(Session& session, ReleaseId id);
-        static RangeResults<ReleaseId>  find(Session& session, const FindParameters& parameters);
-        static RangeResults<ReleaseId>  findOrphans(Session& session, Range range); // no track related
-        static RangeResults<ReleaseId>  findOrderedByArtist(Session& session, Range range);
+        static RangeResults<pointer>    find(Session& session, const FindParameters& parameters);
+        static RangeResults<ReleaseId>  findIds(Session& session, const FindParameters& parameters);
+        static RangeResults<ReleaseId>  findOrphanIds(Session& session, Range range); // not track related
+        static RangeResults<ReleaseId>  findIdsOrderedByArtist(Session& session, Range range);
 
         // Get the cluster of the tracks that belong to this release
         // Each clusters are grouped by cluster type, sorted by the number of occurence (max to min)

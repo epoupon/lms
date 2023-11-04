@@ -216,7 +216,7 @@ Artist::refreshReleases()
 	params.setArtist(_artistId, {TrackArtistLinkType::ReleaseArtist}, {});
 	params.setSortMethod(ReleaseSortMethod::OriginalDateDesc);
 
-	const auto releases {Release::find(LmsApp->getDbSession(), params)};
+	const auto releases {Release::findIds(LmsApp->getDbSession(), params)};
 	if (!releases.results.empty())
 	{
 		// first pass: gather all ids and sort by type
@@ -276,7 +276,7 @@ Artist::refreshAppearsOnReleases()
 	params.setArtist(_artistId, types, {TrackArtistLinkType::ReleaseArtist});
 	params.setSortMethod(ReleaseSortMethod::OriginalDateDesc);
 
-	const auto releases {Release::find(LmsApp->getDbSession(), params)};
+	const auto releases {Release::findIds(LmsApp->getDbSession(), params)};
 	if (!releases.results.empty())
 	{
 		Wt::WTemplate* releaseContainer  {bindNew<Wt::WTemplate>("appears-on-releases", Wt::WString::tr("Lms.Explore.Artist.template.release-container"))};

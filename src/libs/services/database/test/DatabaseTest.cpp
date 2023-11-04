@@ -42,14 +42,14 @@ TEST_F(DatabaseFixture, MultiTracksSingleArtistSingleRelease)
 
 	{
 		auto transaction {session.createSharedTransaction()};
-		EXPECT_TRUE(Release::findOrphans(session, Range {}).results.empty());
+		EXPECT_TRUE(Release::findOrphanIds(session, Range {}).results.empty());
 		EXPECT_TRUE(Artist::findAllOrphans(session, Range {}).results.empty());
 	}
 
 	{
 		auto transaction {session.createSharedTransaction()};
 
-		auto releases {Release::find(session, Release::FindParameters {}.setArtist(artist.getId()))};
+		auto releases {Release::findIds(session, Release::FindParameters {}.setArtist(artist.getId()))};
 		ASSERT_EQ(releases.results.size(), 1);
 		EXPECT_EQ(releases.results.front(), release.getId());
 
@@ -74,7 +74,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtist)
 	{
 		auto transaction {session.createUniqueTransaction()};
 
-		auto releases {Release::find(session, Release::FindParameters {}.setArtist(artist.getId()))};
+		auto releases {Release::findIds(session, Release::FindParameters {}.setArtist(artist.getId()))};
 		ASSERT_EQ(releases.results.size(), 1);
 		EXPECT_EQ(releases.results.front(), release.getId());
 
