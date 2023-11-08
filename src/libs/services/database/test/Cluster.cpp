@@ -49,9 +49,9 @@ TEST_F(DatabaseFixture, Cluster)
             EXPECT_EQ(cluster->getType()->getId(), clusterType.getId());
 
             {
-                const auto clusters{ Cluster::find(session, Cluster::FindParameters {}) };
+                const auto clusters{ Cluster::findIds(session, Cluster::FindParameters {}) };
                 ASSERT_EQ(clusters.results.size(), 1);
-                EXPECT_EQ(std::get<ClusterId>(clusters.results.front()), cluster.getId());
+                EXPECT_EQ(clusters.results.front(), cluster.getId());
             }
 
             {
@@ -106,6 +106,8 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
         EXPECT_EQ(clusters.results.size(), 2);
         EXPECT_TRUE(track->getClusters().empty());
         EXPECT_TRUE(track->getClusterIds().empty());
+        EXPECT_EQ(Cluster::computeTrackCount(session, cluster1.getId()), 0);
+        EXPECT_EQ(Cluster::computeTrackCount(session, cluster2.getId()), 0);
     }
 
     {
@@ -116,9 +118,11 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
 
     {
         auto transaction{ session.createSharedTransaction() };
-        auto clusters{ Cluster::find(session, Cluster::FindParameters {}.setTrack(track.getId())) };
+        auto clusters{ Cluster::findIds(session, Cluster::FindParameters {}.setTrack(track.getId())) };
         ASSERT_EQ(clusters.results.size(), 1);
-        EXPECT_EQ(std::get<ClusterId>(clusters.results.front()), cluster1.getId());
+        EXPECT_EQ(clusters.results.front(), cluster1.getId());
+        EXPECT_EQ(Cluster::computeTrackCount(session, cluster1.getId()), 1);
+        EXPECT_EQ(Cluster::computeTrackCount(session, cluster2.getId()), 0);
     }
 
     {
@@ -182,6 +186,8 @@ TEST_F(DatabaseFixture, Cluster_singleTrackWithSeveralClusters)
 
         const auto tracks{ Track::findIds(session, Track::FindParameters{}.setClusters(clusterIds)) };
         EXPECT_TRUE(tracks.results.empty());
+        EXPECT_EQ(Cluster::computeTrackCount(session, cluster1.getId()), 1);
+        EXPECT_EQ(Cluster::computeTrackCount(session, cluster2.getId()), 0);
     }
 
     {
@@ -196,6 +202,8 @@ TEST_F(DatabaseFixture, Cluster_singleTrackWithSeveralClusters)
         const auto tracks{ Track::findIds(session, Track::FindParameters{}.setClusters(clusterIds)) };
         ASSERT_FALSE(tracks.results.empty());
         EXPECT_EQ(tracks.results.front(), track.getId());
+        EXPECT_EQ(Cluster::computeTrackCount(session, cluster1.getId()), 1);
+        EXPECT_EQ(Cluster::computeTrackCount(session, cluster2.getId()), 1);
     }
 }
 
@@ -219,7 +227,7 @@ TEST_F(DatabaseFixture, Cluster_multiTracks)
         auto transaction{ session.createSharedTransaction() };
         EXPECT_TRUE(Cluster::findOrphans(session, Range{}).results.empty());
 
-        EXPECT_EQ(cluster->getTracksCount(), tracks.size());
+        EXPECT_EQ(Cluster::computeTrackCount(session, cluster.getId()), tracks.size());
 
         for (TrackId trackId : cluster->getTracks(Range{}).results)
         {
@@ -344,6 +352,8 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
         ASSERT_EQ(Cluster::findOrphans(session, Range{}).results.size(), 2);
         EXPECT_TRUE(Release::find(session, Release::FindParameters{}.setClusters({ unusedCluster.getId() })).results.empty());
         EXPECT_EQ(Release::find(session, Release::FindParameters{}).results.size(), 1);
+        EXPECT_EQ(Cluster::computeReleaseCount(session, cluster.getId()), 0);
+        EXPECT_EQ(Cluster::computeReleaseCount(session, unusedCluster.getId()), 0);
     }
 
     {
@@ -361,14 +371,16 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
             ASSERT_EQ(clusters.results.size(), 1);
             EXPECT_EQ(clusters.results.front(), unusedCluster.getId());
         }
+        EXPECT_EQ(Cluster::computeReleaseCount(session, cluster.getId()), 1);
+        EXPECT_EQ(Cluster::computeReleaseCount(session, unusedCluster.getId()), 0);
     }
 
     {
         auto transaction{ session.createSharedTransaction() };
 
-        const auto clusters{ Cluster::find(session, Cluster::FindParameters{}.setRelease(release.getId())) };
+        const auto clusters{ Cluster::findIds(session, Cluster::FindParameters{}.setRelease(release.getId())) };
         ASSERT_EQ(clusters.results.size(), 1);
-        EXPECT_EQ(std::get<ClusterId>(clusters.results.front()), cluster.getId());
+        EXPECT_EQ(clusters.results.front(), cluster.getId());
     }
 
     {
@@ -389,10 +401,10 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        EXPECT_EQ(cluster->getReleasesCount(), 1);
-        EXPECT_EQ(cluster->getTracksCount(), 1);
-        EXPECT_EQ(unusedCluster->getReleasesCount(), 0);
-        EXPECT_EQ(unusedCluster->getTracksCount(), 0);
+        EXPECT_EQ(Cluster::computeReleaseCount(session, cluster.getId()), 1);
+        EXPECT_EQ(Cluster::computeTrackCount(session, cluster.getId()), 1);
+        EXPECT_EQ(Cluster::computeReleaseCount(session, unusedCluster.getId()), 0);
+        EXPECT_EQ(Cluster::computeTrackCount(session, unusedCluster.getId()), 0);
     }
 }
 

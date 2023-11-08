@@ -61,7 +61,7 @@ static void dumpTracksRecommendation(Session session, Recommendation::IRecommend
                 for (auto artist : track->getArtists({ TrackArtistLinkType::Artist }))
                     res += " - " + artist->getName();
                 for (auto cluster : track->getClusters())
-                    res += " {" + cluster->getType()->getName() + "-" + cluster->getName() + "}";
+                    res += " {" + cluster->getType()->getName() + "-" + std::string{ cluster->getName() } + "}";
 
                 return res;
             };

@@ -36,6 +36,7 @@
 #include "ScanStepDiscoverFiles.hpp"
 #include "ScanStepRemoveOrphanDbFiles.hpp"
 #include "ScanStepScanFiles.hpp"
+#include "ScanStepComputeClusterStats.hpp"
 
 using namespace Database;
 
@@ -357,6 +358,7 @@ ScannerService::refreshScanSettings()
 	_scanSteps.push_back(std::make_unique<ScanStepDiscoverFiles>(params));
 	_scanSteps.push_back(std::make_unique<ScanStepScanFiles>(params));
 	_scanSteps.push_back(std::make_unique<ScanStepRemoveOrphanDbFiles>(params));
+	_scanSteps.push_back(std::make_unique<ScanStepComputeClusterStats>(params));
 	_scanSteps.push_back(std::make_unique<ScanStepCheckDuplicatedDbFiles>(params));
 }
 

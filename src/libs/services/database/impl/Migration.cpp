@@ -224,6 +224,16 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
         session.getDboSession().execute("UPDATE user SET feedback_backend = scrobbling_backend");
     }
 
+    static void migrateFromV43(Session& session)
+    {
+        // add counts in genre table
+        session.getDboSession().execute("ALTER TABLE cluster ADD track_count INTEGER");
+        session.getDboSession().execute("ALTER TABLE cluster ADD release_count INTEGER");
+
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        ScanSettings::get(session).modify()->incScanVersion();
+    }
+
     void doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -245,6 +255,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
             {40, migrateFromV40},
             {41, migrateFromV41},
             {42, migrateFromV42},
+            {43, migrateFromV43},
         };
 
         {

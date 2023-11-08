@@ -228,7 +228,7 @@ namespace API::Subsonic
                 params.setClusterType(clusterType->getId());
 
                 for (const auto& cluster : Cluster::find(context.dbSession, params).results)
-                    trackResponse.addArrayValue(field, std::get<std::string>(cluster));
+                    trackResponse.addArrayValue(field, cluster->getName());
             }
         } };
 
@@ -243,7 +243,7 @@ namespace API::Subsonic
             params.setClusterType(genreClusterType->getId());
 
             for (const auto& cluster : Cluster::find(context.dbSession, params).results)
-                trackResponse.addArrayChild("genres", createItemGenreNode(std::get<std::string>(cluster)));
+                trackResponse.addArrayChild("genres", createItemGenreNode(cluster->getName()));
         }
 
         trackResponse.addChild("replayGain", createReplayGainNode(track));

@@ -32,11 +32,12 @@ namespace Database
 {
     namespace
     {
-        Wt::Dbo::Query<Cluster::ClusterFindResult> createQuery(Session& session, const Cluster::FindParameters& params)
+        template <typename ResultType>
+        Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Cluster::FindParameters& params)
         {
             session.checkSharedLocked();
 
-            auto query{ session.getDboSession().query<Cluster::ClusterFindResult>("SELECT DISTINCT c.id,c.name FROM cluster c") };
+            auto query{ session.getDboSession().query<ResultType>("SELECT DISTINCT " + std::string{ itemToSelect } + " FROM cluster c") };
 
             if (params.track.isValid() || params.release.isValid())
             {
@@ -53,6 +54,21 @@ namespace Database
                 query.where("c.cluster_type_id = ?").bind(params.clusterType);
 
             return query;
+        }
+
+        template <typename ResultType>
+        Wt::Dbo::Query<ResultType> createQuery(Session& session, const Cluster::FindParameters& params)
+        {
+            std::string_view itemToSelect;
+            
+            if constexpr (std::is_same_v<ResultType, ClusterId>)
+                itemToSelect = "c.id";
+            else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<Cluster>>)
+                itemToSelect = "c";
+            else
+                static_assert("Unhandled type");
+
+            return createQuery<ResultType>(session, itemToSelect, params);
         }
     }
 
@@ -74,10 +90,18 @@ namespace Database
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM cluster");
     }
 
-    RangeResults<Cluster::ClusterFindResult> Cluster::find(Session& session, const FindParameters& params)
+   RangeResults<ClusterId> Cluster::findIds(Session& session, const FindParameters& params)
     {
         session.checkSharedLocked();
-        auto query{ createQuery(session, params) };
+        auto query{ createQuery<ClusterId>(session, params) };
+
+        return Utils::execQuery(query, params.range);
+    }
+
+    RangeResults<Cluster::pointer> Cluster::find(Session& session, const FindParameters& params)
+    {
+        session.checkSharedLocked();
+        auto query{ createQuery<Wt::Dbo::ptr<Cluster>>(session, params) };
 
         return Utils::execQuery(query, params.range);
     }
@@ -97,6 +121,22 @@ namespace Database
         return session.getDboSession().find<Cluster>().where("id = ?").bind(id).resultValue();
     }
 
+    std::size_t Cluster::computeTrackCount(Session& session, ClusterId id)
+    {
+        session.checkSharedLocked();
+
+        return session.getDboSession().query<int>("SELECT COUNT(t.id) FROM track t INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
+            .where("t_c.cluster_id = ?").bind(id).resultValue();
+    }
+
+    std::size_t Cluster::computeReleaseCount(Session& session, ClusterId id)
+    {
+        session.checkSharedLocked();
+
+        return session.getDboSession().query<int>("SELECT COUNT(DISTINCT r.id) FROM release r INNER JOIN track t on t.release_id = r.id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
+            .where("t_c.cluster_id = ?").bind(id).resultValue();
+    }
+
     void Cluster::addTrack(ObjectPtr<Track> track)
     {
         _tracks.insert(getDboPtr(track));
@@ -111,15 +151,6 @@ namespace Database
 
         return Utils::execQuery(query, range);
     }
-
-    std::size_t Cluster::getReleasesCount() const
-    {
-        assert(session());
-
-        return session()->query<int>("SELECT COUNT(DISTINCT r.id) FROM release r INNER JOIN track t on t.release_id = r.id INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
-            .where("c.id = ?").bind(getId());
-    }
-
 
     ClusterType::ClusterType(std::string_view name)
         : _name{ name }

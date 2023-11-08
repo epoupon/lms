@@ -98,7 +98,7 @@ Filters::showDialog()
 			for (const Cluster::pointer& cluster : clusterType->getClusters())
 			{
 				if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), cluster->getId()) == _clusterIds.end())
-					valueCombo->addItem(Wt::WString::fromUTF8(cluster->getName()));
+					valueCombo->addItem(Wt::WString::fromUTF8(std::string{ cluster->getName() }));
 			}
 		}
 	}
@@ -115,7 +115,7 @@ Filters::showDialog()
 		for (const Cluster::pointer& cluster : clusterType->getClusters())
 		{
 			if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), cluster->getId()) == _clusterIds.end())
-				valueCombo->addItem(Wt::WString::fromUTF8(cluster->getName()));
+				valueCombo->addItem(Wt::WString::fromUTF8(std::string{ cluster->getName() }));
 		}
 	});
 

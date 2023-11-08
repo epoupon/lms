@@ -59,26 +59,35 @@ namespace Database {
         Cluster() = default;
 
         // Find utility
-        // As clusters only have a name, this is an optim to directly get the cluster names
-        using ClusterFindResult = std::tuple<ClusterId, std::string>;
         static std::size_t				        getCount(Session& session);
-        static RangeResults<ClusterFindResult>	find(Session& session, const FindParameters& range);
+        static RangeResults<ClusterId>	        findIds(Session& session, const FindParameters& range);
+        static RangeResults<pointer>            find(Session& session, const FindParameters& range);
+        static void                             find(Session& session, const FindParameters& range, std::function<void(const pointer& cluster)> _func);
         static pointer					        find(Session& session, ClusterId id);
         static RangeResults<ClusterId>      	findOrphans(Session& session, Range range);
 
-        // Accessors
-        const std::string& getName() const { return _name; }
-        ObjectPtr<ClusterType>			getType() const { return _clusterType; }
-        std::size_t						getTracksCount() const { return _tracks.size(); }
-        RangeResults<TrackId>			getTracks(Range range) const;
-        std::size_t						getReleasesCount() const;
+        // May be very slow
+        static std::size_t                      computeTrackCount(Session& session, ClusterId id);
+        static std::size_t                      computeReleaseCount(Session& session, ClusterId id);
 
+        // Accessors
+        std::string_view                getName() const { return _name; }
+        ObjectPtr<ClusterType>          getType() const { return _clusterType; }
+        std::size_t                     getTracksCount() const { return _trackCount; }
+        RangeResults<TrackId>           getTracks(Range range) const;
+        std::size_t                     getReleasesCount() const { return _releaseCount; };
+
+        void setReleaseCount(std::size_t releaseCount) { _releaseCount = releaseCount; }
+        void setTrackCount(std::size_t trackCount) { _trackCount = trackCount; }
         void addTrack(ObjectPtr<Track> track);
 
         template<class Action>
         void persist(Action& a)
         {
             Wt::Dbo::field(a, _name, "name");
+            // cached field since queries are too long
+            Wt::Dbo::field(a, _trackCount, "track_count");
+            Wt::Dbo::field(a, _releaseCount, "release_count");
 
             Wt::Dbo::belongsTo(a, _clusterType, "cluster_type", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
@@ -92,6 +101,8 @@ namespace Database {
         static const std::size_t _maxNameLength = 128;
 
         std::string	_name;
+        int _trackCount{};
+        int _releaseCount{};
 
         Wt::Dbo::ptr<ClusterType> _clusterType;
         Wt::Dbo::collection< Wt::Dbo::ptr<Track> > _tracks;

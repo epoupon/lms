@@ -85,6 +85,7 @@
 <message id="Lms.Admin.ScannerController.status-in-progress">Scansione: passo {1}/{2}</message>
 
 <message id="Lms.Admin.ScannerController.step-checking-for-missing-files">Controllo file... {1}%</message>
+
 <message id="Lms.Admin.ScannerController.step-discovering-files">File trovati: {1} files</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Recupero metadati da AcousticBrainz: {1}/{2} tracce ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Ricarica motore di tracce simili: {1}%...</message>
