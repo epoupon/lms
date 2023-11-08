@@ -191,7 +191,7 @@ namespace API::Subsonic
         ParameterValueTooHighGenericError(std::string_view parameterName, std::size_t max) : _parameterName{ parameterName }, _max{ max } {}
 
     private:
-        std::string getMessage() const override { return "Parameter '" + _parameterName + "': bad value"; }
+        std::string getMessage() const override { return "Parameter '" + _parameterName + "': bad value (max is " + std::to_string(_max) + ")"; }
 
         const std::string _parameterName;
         std::size_t _max;
