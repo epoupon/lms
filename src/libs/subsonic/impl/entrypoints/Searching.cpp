@@ -57,14 +57,21 @@ namespace API::Subsonic
             std::size_t songCount{ getParameterAs<std::size_t>(context.parameters, "songCount").value_or(20) };
             std::size_t songOffset{ getParameterAs<std::size_t>(context.parameters, "songOffset").value_or(0) };
 
+            if (artistCount > 500)
+                throw ParameterValueTooHighGenericError{ "artistCount", 500 };
+            else if (albumCount > 500)
+                throw ParameterValueTooHighGenericError{ "albumCount", 500 };
+            else if (songCount > 500)
+                throw ParameterValueTooHighGenericError{ "songCount", 500 };
+
+            Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+            Response::Node& searchResult2Node{ response.createNode(id3 ? "searchResult3" : "searchResult2") };
+
             auto transaction{ context.dbSession.createSharedTransaction() };
 
             User::pointer user{ User::find(context.dbSession, context.userId) };
             if (!user)
                 throw UserNotAuthorizedError{};
-
-            Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-            Response::Node& searchResult2Node{ response.createNode(id3 ? "searchResult3" : "searchResult2") };
 
             if (artistCount > 0)
             {

@@ -47,6 +47,8 @@ namespace API::Subsonic
             // Optional params
             const std::size_t size{ getParameterAs<std::size_t>(context.parameters, "size").value_or(10) };
             const std::size_t offset{ getParameterAs<std::size_t>(context.parameters, "offset").value_or(0) };
+            if (size > 500)
+                throw ParameterValueTooHighGenericError{ "size", 500 };
 
             const Range range{ offset, size };
 
@@ -196,7 +198,8 @@ namespace API::Subsonic
     {
         // Optional params
         std::size_t size{ getParameterAs<std::size_t>(context.parameters, "size").value_or(50) };
-        size = std::min(size, std::size_t{ 500 });
+        if (size > 500)
+            throw ParameterValueTooHighGenericError{"size", 500};
 
         auto transaction{ context.dbSession.createSharedTransaction() };
 
@@ -221,8 +224,9 @@ namespace API::Subsonic
         std::string genre{ getMandatoryParameterAs<std::string>(context.parameters, "genre") };
 
         // Optional params
-        std::size_t size{ getParameterAs<std::size_t>(context.parameters, "count").value_or(10) };
-        size = std::min(size, std::size_t{ 500 });
+        std::size_t count{ getParameterAs<std::size_t>(context.parameters, "count").value_or(10) };
+        if (count > 500)
+            throw ParameterValueTooHighGenericError{"count", 500};
 
         std::size_t offset{ getParameterAs<std::size_t>(context.parameters, "offset").value_or(0) };
 
@@ -245,7 +249,7 @@ namespace API::Subsonic
 
         Track::FindParameters params;
         params.setClusters({ cluster->getId() });
-        params.setRange({ offset, size });
+        params.setRange({ offset, count });
 
         const auto tracks{ Track::find(context.dbSession, params) };
         for (const Track::pointer& track : tracks.results)

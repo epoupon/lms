@@ -185,6 +185,18 @@ namespace API::Subsonic
         const std::string _parameterName;
     };
 
+    class ParameterValueTooHighGenericError : public GenericError
+    {
+    public:
+        ParameterValueTooHighGenericError(std::string_view parameterName, std::size_t max) : _parameterName{ parameterName }, _max{ max } {}
+
+    private:
+        std::string getMessage() const override { return "Parameter '" + _parameterName + "': bad value"; }
+
+        const std::string _parameterName;
+        std::size_t _max;
+    };
+
     class Response
     {
     public:
