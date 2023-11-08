@@ -345,9 +345,6 @@ namespace Cover
             }
         }
 
-        if (!cover)
-            cover = getDefault(width);
-
         if (cover)
             saveToCache(cacheEntryDesc, cover);
 
@@ -396,9 +393,6 @@ namespace Cover
             if (!cover)
                 cover = getFromTrack(session, releaseInfo->firstTrackId, width, false /* no release fallback */);
         }
-
-        if (!cover)
-            cover = getDefault(width);
 
         if (cover)
             saveToCache(cacheEntryDesc, cover);

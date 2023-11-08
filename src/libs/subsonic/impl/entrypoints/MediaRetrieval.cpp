@@ -207,8 +207,9 @@ namespace API::Subsonic
         // Mandatory params
         const auto trackId{ getParameterAs<TrackId>(context.parameters, "id") };
         const auto releaseId{ getParameterAs<ReleaseId>(context.parameters, "id") };
+        const auto artistId{ getParameterAs<ArtistId>(context.parameters, "id") };
 
-        if (!trackId && !releaseId)
+        if (!trackId && !releaseId && !artistId)
             throw BadParameterGenericError{ "id" };
 
         std::size_t size{ getParameterAs<std::size_t>(context.parameters, "size").value_or(1024) };
@@ -219,6 +220,21 @@ namespace API::Subsonic
             cover = Service<Cover::ICoverService>::get()->getFromTrack(*trackId, size);
         else if (releaseId)
             cover = Service<Cover::ICoverService>::get()->getFromRelease(*releaseId, size);
+        else if (artistId)
+        {
+            // TODO handle a placeholder for artists
+            response.setStatus(404);
+            return;
+        }
+
+        if (!cover && context.enableDefaultCover)
+            cover = Service<Cover::ICoverService>::get()->getDefault(size);
+
+        if (!cover)
+        {
+            response.setStatus(404);
+            return;
+        }
 
         response.out().write(reinterpret_cast<const char*>(cover->getData()), cover->getDataSize());
         response.setMimeType(std::string{ cover->getMimeType() });

@@ -66,7 +66,7 @@ namespace API::Subsonic
         {
             std::unordered_map<std::string, ProtocolVersion> res;
 
-            Service<IConfig>::get()->visitStrings("api-subsonic-report-old-server-protocol",
+            Service<IConfig>::get()->visitStrings("api-subsonic-old-server-protocol-clients",
                 [&](std::string_view client)
                 {
                     res.emplace(std::string{ client }, ProtocolVersion{ 1, 12, 0 });
@@ -84,6 +84,19 @@ namespace API::Subsonic
                 {
                     res.emplace(std::string{ client });
                 }, { "DSub" });
+
+            return res;
+        }
+
+        std::unordered_set<std::string> readDefaultCoverClients()
+        {
+            std::unordered_set<std::string> res;
+
+            Service<IConfig>::get()->visitStrings("api-subsonic-default-cover-clients",
+                [&](std::string_view client)
+                {
+                    res.emplace(std::string{ client });
+                }, { "DSub", "substreamer" });
 
             return res;
         }
@@ -266,6 +279,7 @@ namespace API::Subsonic
     SubsonicResource::SubsonicResource(Db& db)
         : _serverProtocolVersionsByClient{ readConfigProtocolVersions() }
         , _openSubsonicDisabledClients{ readOpenSubsonicDisabledClients() }
+        , _defaultCoverClients{ readDefaultCoverClients() }
         , _db{ db }
     {
     }
@@ -378,8 +392,9 @@ namespace API::Subsonic
         const ClientInfo clientInfo{ getClientInfo(parameters) };
         const Database::UserId userId{ authenticateUser(request, clientInfo) };
         bool enableOpenSubsonic{ _openSubsonicDisabledClients.find(clientInfo.name) == std::cend(_openSubsonicDisabledClients) };
+        bool enableDefaultCover{ _defaultCoverClients.find(clientInfo.name) != std::cend(_openSubsonicDisabledClients) };
 
-        return { parameters, _db.getTLSSession(), userId, clientInfo, getServerProtocolVersion(clientInfo.name), enableOpenSubsonic };
+        return { parameters, _db.getTLSSession(), userId, clientInfo, getServerProtocolVersion(clientInfo.name), enableOpenSubsonic, enableDefaultCover };
     }
 
     Database::UserId SubsonicResource::authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo)

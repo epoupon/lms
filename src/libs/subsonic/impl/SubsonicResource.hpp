@@ -53,6 +53,8 @@ namespace API::Subsonic
 
             const std::unordered_map<std::string, ProtocolVersion> _serverProtocolVersionsByClient;
             const std::unordered_set<std::string> _openSubsonicDisabledClients;
+            const std::unordered_set<std::string> _defaultCoverClients;
+
             Database::Db& _db;
     };
 
