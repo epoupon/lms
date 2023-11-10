@@ -33,7 +33,7 @@ private:
     Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
     void abort() override {};
 
-    static constexpr std::size_t _chunkSize{ 65536 };
+    static constexpr std::size_t _chunkSize{ 262'144 };
 
     std::filesystem::path   _path;
     std::string             _mimeType;
