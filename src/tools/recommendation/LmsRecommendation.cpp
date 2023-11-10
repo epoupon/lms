@@ -157,16 +157,16 @@ int main(int argc, char* argv[])
         Db db{ config->getPath("working-dir") / "lms.db" };
         Session session{ db };
 
-        std::cout << "Creating recommendation recommendationService..." << std::endl;
+        std::cout << "Creating recommendation service..." << std::endl;
         const auto recommendationService{ Recommendation::createRecommendationService(db) };
-        std::cout << "Recommendation recommendationService created!" << std::endl;
+        std::cout << "Recommendation service created!" << std::endl;
 
-        std::cout << "Loading recommendation recommendationService..." << std::endl;
-        recommendationService->load(false);
+        std::cout << "Loading recommendation service..." << std::endl;
+        recommendationService->load();
 
         unsigned maxSimilarityCount{ vm["max"].as<unsigned>() };
 
-        std::cout << "Recommendation recommendationService loaded!" << std::endl;
+        std::cout << "Recommendation service loaded!" << std::endl;
 
         if (vm.count("tracks"))
             dumpTracksRecommendation(db, *recommendationService, maxSimilarityCount);

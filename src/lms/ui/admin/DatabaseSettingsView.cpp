@@ -29,6 +29,7 @@
 #include "services/database/Cluster.hpp"
 #include "services/database/ScanSettings.hpp"
 #include "services/database/Session.hpp"
+#include "services/recommendation/IRecommendationService.hpp"
 #include "services/scanner/IScannerService.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
@@ -232,6 +233,7 @@ DatabaseSettingsView::refreshView()
 		{
 			model->saveData();
 
+			Service<Recommendation::IRecommendationService>::get()->load();
 			Service<Scanner::IScannerService>::get()->requestImmediateScan(false);
 			LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.database"), Wt::WString::tr("Lms.Admin.Database.settings-saved"));
 		}

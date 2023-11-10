@@ -34,7 +34,6 @@ namespace Scanner
 		Wt::WTime											startTime;
 		Database::ScanSettings::UpdatePeriod 				updatePeriod {Database::ScanSettings::UpdatePeriod::Never};
 		std::vector<std::filesystem::path>					supportedExtensions;
-		Database::ScanSettings::SimilarityEngineType		similarityServiceType;
 		std::filesystem::path								mediaDirectory;
 		bool												skipDuplicateMBID {};
 		std::set<std::string>								clusterTypeNames;
@@ -45,7 +44,6 @@ namespace Scanner
 				&& startTime == rhs.startTime
 				&& updatePeriod == rhs.updatePeriod
 				&& supportedExtensions == rhs.supportedExtensions
-				&& similarityServiceType == rhs.similarityServiceType
 				&& mediaDirectory == rhs.mediaDirectory
 				&& skipDuplicateMBID == rhs.skipDuplicateMBID
 				&& clusterTypeNames == rhs.clusterTypeNames;
