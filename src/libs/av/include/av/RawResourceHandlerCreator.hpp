@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2023 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -21,9 +21,10 @@
 
 #include <filesystem>
 #include <memory>
-#include <string_view>
 
 #include "utils/IResourceHandler.hpp"
 
-std::unique_ptr<IResourceHandler> createFileResourceHandler(const std::filesystem::path& path, std::string_view mimeType);
-
+namespace Av
+{
+    std::unique_ptr<IResourceHandler> createRawResourceHandler(const std::filesystem::path& path);
+}

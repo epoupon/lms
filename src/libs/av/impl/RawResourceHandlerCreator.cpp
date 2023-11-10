@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2023 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,13 +17,22 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "av/RawResourceHandlerCreator.hpp"
 
-#include <filesystem>
-#include <memory>
-#include <string_view>
+#include "av/IAudioFile.hpp"
+#include "utils/FileResourceHandlerCreator.hpp"
 
-#include "utils/IResourceHandler.hpp"
+namespace Av
+{
+    std::unique_ptr<IResourceHandler> createRawResourceHandler(const std::filesystem::path& path)
+    {
+        std::string mimeType;
+        const auto guessedAudioFormat{ Av::guessAudioFileFormat(path) };
+        if (guessedAudioFormat)
+            mimeType = guessedAudioFormat->mimeType;
+        else
+            mimeType = "application/octet-stream";
 
-std::unique_ptr<IResourceHandler> createFileResourceHandler(const std::filesystem::path& path, std::string_view mimeType);
-
+        return createFileResourceHandler(path, mimeType);
+    }
+}

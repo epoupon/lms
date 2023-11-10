@@ -20,6 +20,7 @@
 #include "MediaRetrieval.hpp"
 
 #include "av/IAudioFile.hpp"
+#include "av/RawResourceHandlerCreator.hpp"
 #include "av/TranscodeParameters.hpp"
 #include "av/TranscodeResourceHandlerCreator.hpp"
 #include "av/Types.hpp"
@@ -160,7 +161,7 @@ namespace API::Subsonic
                 trackPath = track->getPath();
             }
 
-            resourceHandler = createFileResourceHandler(trackPath);
+            resourceHandler = Av::createRawResourceHandler(trackPath);
         }
         else
         {
@@ -185,7 +186,7 @@ namespace API::Subsonic
                 if (streamParameters.transcodeParameters)
                     resourceHandler = Av::createTranscodeResourceHandler(streamParameters.inputFileParameters, *streamParameters.transcodeParameters, streamParameters.estimateContentLength);
                 else
-                    resourceHandler = createFileResourceHandler(streamParameters.inputFileParameters.trackPath);
+                    resourceHandler = Av::createRawResourceHandler(streamParameters.inputFileParameters.trackPath);
             }
             else
             {
