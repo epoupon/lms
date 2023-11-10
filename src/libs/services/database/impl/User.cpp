@@ -58,7 +58,7 @@ namespace Database {
         if (params.feedbackBackend)
             query.where("feedback_backend = ?").bind(*params.feedbackBackend);
 
-        return Utils::execQuery(query, params.range);
+        return Utils::execQuery<UserId>(query, params.range);
     }
 
     User::pointer User::findDemoUser(Session& session)

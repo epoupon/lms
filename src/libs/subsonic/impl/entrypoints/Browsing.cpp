@@ -124,7 +124,7 @@ namespace API::Subsonic
             // first pass: dispatch the artists by first letter
             LMS_LOG(API_SUBSONIC, DEBUG) << "GetArtists: fetching all artists...";
             std::map<char, std::vector<ArtistId>> artistsSortedByFirstChar;
-            std::size_t currentArtistOffset{0};
+            std::size_t currentArtistOffset{ 0 };
             constexpr std::size_t batchSize{ 100 };
             bool hasMoreArtists{ true };
             while (hasMoreArtists)
@@ -190,7 +190,7 @@ namespace API::Subsonic
             {
                 Track::FindParameters params;
                 params.setArtist(id);
-                params.setRange({ 0, meanTrackCountPerArtist });
+                params.setRange(Range{ 0, meanTrackCountPerArtist });
                 params.setSortMethod(TrackSortMethod::Random);
 
                 const auto artistTracks{ Track::findIds(context.dbSession, params) };
@@ -221,7 +221,7 @@ namespace API::Subsonic
             {
                 Track::FindParameters params;
                 params.setRelease(id);
-                params.setRange({ 0, meanTrackCountPerRelease });
+                params.setRange(Range{ 0, meanTrackCountPerRelease });
                 params.setSortMethod(TrackSortMethod::Random);
 
                 const auto releaseTracks{ Track::findIds(context.dbSession, params) };
@@ -242,6 +242,8 @@ namespace API::Subsonic
         {
             // Optional params
             std::size_t count{ getParameterAs<std::size_t>(context.parameters, "count").value_or(50) };
+            if (count > defaultMaxCountSize)
+                throw ParameterValueTooHighGenericError{ "count", defaultMaxCountSize };
 
             std::vector<TrackId> tracks;
 
@@ -316,9 +318,11 @@ namespace API::Subsonic
             directoryNode.setAttribute("id", idToString(RootId{}));
             directoryNode.setAttribute("name", "Music");
 
-            const auto rootArtistIds{ Artist::find(context.dbSession, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::BySortName)) };
-            for (const Artist::pointer& artist : rootArtistIds.results)
-                directoryNode.addArrayChild("child", createArtistNode(context, artist, user, false /* no id3 */));
+            // TODO: this does not scale when a lot of artists are present
+            Artist::find(context.dbSession, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::BySortName), [&](const Artist::pointer& artist)
+                {
+                    directoryNode.addArrayChild("child", createArtistNode(context, artist, user, false /* no id3 */));
+                });
         }
         else if (artistId)
         {
@@ -330,9 +334,10 @@ namespace API::Subsonic
 
             directoryNode.setAttribute("name", Utils::makeNameFilesystemCompatible(artist->getName()));
 
-            const auto artistReleases{ Release::find(context.dbSession, Release::FindParameters {}.setArtist(*artistId)) };
-            for (const Release::pointer& release : artistReleases.results)
-                directoryNode.addArrayChild("child", createAlbumNode(context, release, user, false /* no id3 */));
+            Release::find(context.dbSession, Release::FindParameters{}.setArtist(*artistId), [&](const Release::pointer& release)
+                {
+                    directoryNode.addArrayChild("child", createAlbumNode(context, release, user, false /* no id3 */));
+                });
         }
         else if (releaseId)
         {
@@ -344,9 +349,10 @@ namespace API::Subsonic
 
             directoryNode.setAttribute("name", Utils::makeNameFilesystemCompatible(release->getName()));
 
-            const auto tracks{ Track::find(context.dbSession, Track::FindParameters {}.setRelease(*releaseId).setSortMethod(TrackSortMethod::Release)) };
-            for (const Track::pointer& track : tracks.results)
-                directoryNode.addArrayChild("child", createSongNode(context, track, user));
+            Track::find(context.dbSession, Track::FindParameters{}.setRelease(*releaseId).setSortMethod(TrackSortMethod::Release), [&](const Track::pointer& track)
+                {
+                    directoryNode.addArrayChild("child", createSongNode(context, track, user));
+                });
         }
         else
             throw BadParameterGenericError{ "id" };

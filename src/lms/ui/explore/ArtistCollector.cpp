@@ -33,16 +33,14 @@ namespace UserInterface
 {
     using namespace Database;
 
-    RangeResults<ArtistId> ArtistCollector::get(Database::Range range)
+    RangeResults<ArtistId> ArtistCollector::get(std::optional<Database::Range> requestedRange)
     {
         Feedback::IFeedbackService& feedbackService{ *Service<Feedback::IFeedbackService>::get() };
         Scrobbling::IScrobblingService& scrobblingService{ *Service<Scrobbling::IScrobblingService>::get() };
 
-        RangeResults<ArtistId> artists;
+        const Range range{ getActualRange(requestedRange) };
 
-        range = getActualRange(range);
-        if (range.size == 0)
-            return artists;
+        RangeResults<ArtistId> artists;
 
         switch (getMode())
         {
@@ -51,8 +49,16 @@ namespace UserInterface
             break;
 
         case Mode::Starred:
-            artists = feedbackService.getStarredArtists(LmsApp->getUserId(), getFilters().getClusterIds(), _linkType, ArtistSortMethod::StarredDateDesc, range);
+        {
+            Feedback::IFeedbackService::ArtistFindParameters params;
+            params.setUser(LmsApp->getUserId());
+            params.setClusters(getFilters().getClusterIds());
+            params.setLinkType(_linkType);
+            params.setSortMethod(ArtistSortMethod::StarredDateDesc);
+            params.setRange(range);
+            artists = feedbackService.findStarredArtists(params);
             break;
+        }
 
         case Mode::RecentlyPlayed:
             artists = scrobblingService.getRecentArtists(LmsApp->getUserId(), getFilters().getClusterIds(), _linkType, range);

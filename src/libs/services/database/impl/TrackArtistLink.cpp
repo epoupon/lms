@@ -84,7 +84,7 @@ namespace Database
         session.checkSharedLocked();
 
         auto query{ createQuery(session, params) };
-        return Utils::execQuery(query, params.range);
+        return Utils::execQuery<TrackArtistLinkId>(query, params.range);
     }
 
     EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session)

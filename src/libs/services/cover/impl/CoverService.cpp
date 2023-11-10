@@ -374,8 +374,8 @@ namespace Cover
 
             auto transaction{ session.createSharedTransaction() };
 
-            const auto tracks{ Track::find(session, Track::FindParameters {}.setRelease(releaseId).setRange({0, 1}).setSortMethod(TrackSortMethod::Release)) };
-
+            // get a track in this release, consider the release is in a single directory
+            const auto tracks{ Track::find(session, Track::FindParameters {}.setRelease(releaseId).setRange(Range{ 0, 1 }).setSortMethod(TrackSortMethod::Release)) };
             if (!tracks.results.empty())
             {
                 const Track::pointer& track{ tracks.results.front() };

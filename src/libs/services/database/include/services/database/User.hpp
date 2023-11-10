@@ -49,11 +49,11 @@ namespace Database {
         {
             std::optional<ScrobblingBackend>	scrobblingBackend;
             std::optional<FeedbackBackend>	    feedbackBackend;
-            Range							    range;
+            std::optional<Range>			    range;
 
             FindParameters& setFeedbackBackend(FeedbackBackend _feedbackBackend) { feedbackBackend = _feedbackBackend; return *this; }
             FindParameters& setScrobblingBackend(ScrobblingBackend _scrobblingBackend) { scrobblingBackend = _scrobblingBackend; return *this; }
-            FindParameters& setRange(Range _range) { range = _range; return *this; }
+            FindParameters& setRange(std::optional<Range> _range) { range = _range; return *this; }
         };
 
         static inline constexpr std::size_t             MinNameLength{ 3 };

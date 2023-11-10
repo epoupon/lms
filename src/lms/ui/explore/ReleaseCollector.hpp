@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <vector>
+#include <optional>
 
 #include "DatabaseCollectorBase.hpp"
 
@@ -39,7 +39,7 @@ namespace UserInterface
 		public:
 			using DatabaseCollectorBase::DatabaseCollectorBase;
 
-			Database::RangeResults<Database::ReleaseId>	get(Database::Range range);
+			Database::RangeResults<Database::ReleaseId>	get(std::optional<Database::Range> range = std::nullopt);
 			void reset() { _randomReleases.reset(); }
 
 		private:

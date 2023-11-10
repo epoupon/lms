@@ -210,12 +210,11 @@ namespace Database
     }
 
 
-    RangeResults<ArtistId> Artist::findOrphanIds(Session& session, Range range)
+    RangeResults<ArtistId> Artist::findOrphanIds(Session& session, std::optional<Range> range)
     {
         session.checkSharedLocked();
         auto query{ session.getDboSession().query<ArtistId>("SELECT DISTINCT a.id FROM artist a WHERE NOT EXISTS(SELECT 1 FROM track t INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id WHERE t.id = t_a_l.track_id)") };
-
-        return Utils::execQuery(query, range);
+        return Utils::execQuery<ArtistId>(query, range);
     }
 
     RangeResults<ArtistId> Artist::findIds(Session& session, const FindParameters& params)
@@ -223,7 +222,7 @@ namespace Database
         session.checkSharedLocked();
 
         auto query{ createQuery<ArtistId>(session, params) };
-        return Utils::execQuery(query, params.range);
+        return Utils::execQuery<ArtistId>(query, params.range);
     }
 
     RangeResults<Artist::pointer> Artist::find(Session& session, const FindParameters& params)
@@ -231,10 +230,18 @@ namespace Database
         session.checkSharedLocked();
 
         auto query{ createQuery<Wt::Dbo::ptr<Artist>>(session, params) };
-        return Utils::execQuery(query, params.range);
+        return Utils::execQuery<Artist::pointer>(query, params.range);
     }
 
-    RangeResults<ArtistId> Artist::findSimilarArtistIds(EnumSet<TrackArtistLinkType> artistLinkTypes, Range range) const
+    void Artist::find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func)
+    {
+        session.checkSharedLocked();
+
+        auto query{ createQuery<Wt::Dbo::ptr<Artist>>(session, params) };
+        Utils::execQuery(query, params.range, func);
+    }
+
+    RangeResults<ArtistId> Artist::findSimilarArtistIds(EnumSet<TrackArtistLinkType> artistLinkTypes, std::optional<Range> range) const
     {
         assert(session());
 
@@ -278,7 +285,7 @@ namespace Database
         for (TrackArtistLinkType type : artistLinkTypes)
             query.bind(type);
 
-        return Utils::execQuery(query, range);
+        return Utils::execQuery<ArtistId>(query, range);
     }
 
     std::vector<std::vector<Cluster::pointer>> Artist::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::size_t size) const

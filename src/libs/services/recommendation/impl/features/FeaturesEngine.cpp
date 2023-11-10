@@ -120,7 +120,7 @@ FeaturesEngine::loadFromTraining(const TrainSettings& trainSettings, const Progr
 		auto transaction {session.createSharedTransaction()};
 
 		LMS_LOG(RECOMMENDATION, DEBUG) << "Getting Track features...";
-		trackFeaturesIds = TrackFeatures::find(session, Range {});
+		trackFeaturesIds = TrackFeatures::find(session);
 		LMS_LOG(RECOMMENDATION, DEBUG) << "Getting Track features DONE (found " << trackFeaturesIds.results.size() << " track features)";
 	}
 

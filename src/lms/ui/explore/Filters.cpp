@@ -84,7 +84,7 @@ Filters::showDialog()
 	{
 		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
 
-		const auto clusterTypesIds {ClusterType::findUsed(LmsApp->getDbSession(), Range {})};
+		const auto clusterTypesIds {ClusterType::findUsed(LmsApp->getDbSession())};
 		for (const ClusterTypeId clusterTypeId : clusterTypesIds.results)
 		{
 			const auto clusterType {ClusterType::find(LmsApp->getDbSession(), clusterTypeId)};

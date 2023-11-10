@@ -29,7 +29,7 @@ namespace Database
     // Caution: do not change enum values if they are set!
 
     // Request:
-    // 	  size = 0 => no size limit!
+    // 	  size = 0 => means we don't want data
     // Response (via RangeResults)
     //    size => results size
     struct Range
@@ -37,8 +37,7 @@ namespace Database
         std::size_t offset{};
         std::size_t size{};
 
-        // TODO remove this
-        operator bool() const { return size != 0; }
+        bool operator==(const Range& rhs) const { return offset == rhs.offset && size == rhs.size; }
     };
 
     // Func must return true to continue iterating

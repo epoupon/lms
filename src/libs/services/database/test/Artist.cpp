@@ -51,7 +51,7 @@ TEST_F(DatabaseFixture, Artist)
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
 
-        artists = Artist::findOrphanIds(session, Range{});
+        artists = Artist::findOrphanIds(session);
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
     }
@@ -63,6 +63,18 @@ TEST_F(DatabaseFixture, Artist)
         auto artists{ Artist::find(session, Artist::FindParameters {}) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front()->getId(), artist.getId());
+    }
+
+    {
+        auto transaction{ session.createSharedTransaction() };
+
+        bool visited{};
+        Artist::find(session, Artist::FindParameters{}, [&](const Artist::pointer& a)
+            {
+                visited = true;
+                EXPECT_EQ(a->getId(), artist.getId());
+            });
+        EXPECT_TRUE(visited);
     }
 }
 
@@ -80,7 +92,7 @@ TEST_F(DatabaseFixture, Artist_singleTrack)
 
     {
         auto transaction{ session.createSharedTransaction() };
-        EXPECT_TRUE(Artist::findOrphanIds(session, Range{}).results.empty());
+        EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
     }
 
     {
@@ -215,7 +227,7 @@ TEST_F(DatabaseFixture, Artist_singleTrackMultiArtists)
 
     {
         auto transaction{ session.createSharedTransaction() };
-        EXPECT_TRUE(Artist::findOrphanIds(session, Range{}).results.empty());
+        EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
     }
 
     {

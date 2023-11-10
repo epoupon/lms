@@ -95,7 +95,7 @@ namespace Database
         session.checkSharedLocked();
         auto query{ createQuery<ClusterId>(session, params) };
 
-        return Utils::execQuery(query, params.range);
+        return Utils::execQuery<ClusterId>(query, params.range);
     }
 
     RangeResults<Cluster::pointer> Cluster::find(Session& session, const FindParameters& params)
@@ -103,15 +103,15 @@ namespace Database
         session.checkSharedLocked();
         auto query{ createQuery<Wt::Dbo::ptr<Cluster>>(session, params) };
 
-        return Utils::execQuery(query, params.range);
+        return Utils::execQuery<Cluster::pointer>(query, params.range);
     }
 
-    RangeResults<ClusterId> Cluster::findOrphans(Session& session, Range range)
+    RangeResults<ClusterId> Cluster::findOrphans(Session& session, std::optional<Range> range)
     {
         session.checkSharedLocked();
         auto query{ session.getDboSession().query<ClusterId>("SELECT DISTINCT c.id FROM cluster c WHERE NOT EXISTS(SELECT 1 FROM track_cluster t_c WHERE t_c.cluster_id = c.id)") };
 
-        return Utils::execQuery(query, range);
+        return Utils::execQuery<ClusterId>(query, range);
     }
 
     Cluster::pointer Cluster::find(Session& session, ClusterId id)
@@ -142,14 +142,14 @@ namespace Database
         _tracks.insert(getDboPtr(track));
     }
 
-    RangeResults<TrackId> Cluster::getTracks(Range range) const
+    RangeResults<TrackId> Cluster::getTracks(std::optional<Range> range) const
     {
         assert(session());
 
         auto query{ session()->query<TrackId>("SELECT t.id FROM track t INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
                 .where("c.id = ?").bind(getId()) };
 
-        return Utils::execQuery(query, range);
+        return Utils::execQuery<TrackId>(query, range);
     }
 
     ClusterType::ClusterType(std::string_view name)
@@ -170,7 +170,7 @@ namespace Database
     }
 
 
-    RangeResults<ClusterTypeId> ClusterType::findOrphans(Session& session, Range range)
+    RangeResults<ClusterTypeId> ClusterType::findOrphans(Session& session, std::optional<Range> range)
     {
         session.checkSharedLocked();
 
@@ -179,10 +179,10 @@ namespace Database
                 " LEFT OUTER JOIN cluster c ON c_t.id = c.cluster_type_id")
             .where("c.id IS NULL") };
 
-        return Utils::execQuery(query, range);
+        return Utils::execQuery<ClusterTypeId>(query, range);
     }
 
-    RangeResults<ClusterTypeId> ClusterType::findUsed(Session& session, Range range)
+    RangeResults<ClusterTypeId> ClusterType::findUsed(Session& session, std::optional<Range> range)
     {
         session.checkSharedLocked();
 
@@ -190,7 +190,7 @@ namespace Database
                 "SELECT DISTINCT c_t.id from cluster_type c_t")
             .join("cluster c ON c_t.id = c.cluster_type_id") };
 
-        return Utils::execQuery(query, range);
+        return Utils::execQuery<ClusterTypeId>(query, range);
     }
 
     ClusterType::pointer ClusterType::find(Session& session, std::string_view name)
@@ -207,13 +207,13 @@ namespace Database
         return session.getDboSession().find<ClusterType>().where("id = ?").bind(id).resultValue();
     }
 
-    RangeResults<ClusterTypeId> ClusterType::find(Session& session, Range range)
+    RangeResults<ClusterTypeId> ClusterType::find(Session& session, std::optional<Range> range)
     {
         session.checkSharedLocked();
 
         auto query{ session.getDboSession().query<ClusterTypeId>("SELECT id from cluster_type") };
 
-        return Utils::execQuery(query, range);
+        return Utils::execQuery<ClusterTypeId>(query, range);
     }
 
     Cluster::pointer ClusterType::getCluster(const std::string& name) const

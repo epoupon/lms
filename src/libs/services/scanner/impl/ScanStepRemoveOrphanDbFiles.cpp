@@ -30,174 +30,169 @@
 
 namespace Scanner
 {
-	void
-	ScanStepRemoveOrphanDbFiles::process(ScanContext& context)
-	{
-		removeOrphanTracks(context);
-		removeOrphanClusters();
-		removeOrphanArtists();
-		removeOrphanReleases();
-	}
+    void ScanStepRemoveOrphanDbFiles::process(ScanContext& context)
+    {
+        removeOrphanTracks(context);
+        removeOrphanClusters();
+        removeOrphanArtists();
+        removeOrphanReleases();
+    }
 
-	void ScanStepRemoveOrphanDbFiles::removeOrphanTracks(ScanContext& context)
-	{
-		using namespace Database;
+    void ScanStepRemoveOrphanDbFiles::removeOrphanTracks(ScanContext& context)
+    {
+        using namespace Database;
 
-		if (_abortScan)
-			return;
+        if (_abortScan)
+            return;
 
-		static constexpr std::size_t batchSize {50};
-		Session& session {_db.getTLSSession()};
+        static constexpr std::size_t batchSize{ 50 };
+        Session& session{ _db.getTLSSession() };
 
-		LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks to be removed...";
-		std::size_t trackCount {};
+        LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks to be removed...";
+        std::size_t trackCount{};
 
-		{
-			auto transaction {session.createSharedTransaction()};
-			trackCount = Track::getCount(session);
-		}
-		LMS_LOG(DBUPDATER, DEBUG) << trackCount << " tracks to be checked...";
+        {
+            auto transaction{ session.createSharedTransaction() };
+            trackCount = Track::getCount(session);
+        }
+        LMS_LOG(DBUPDATER, DEBUG) << trackCount << " tracks to be checked...";
 
-		context.currentStepStats.totalElems = trackCount;
+        context.currentStepStats.totalElems = trackCount;
 
-		RangeResults<Track::PathResult> trackPaths;
-		std::vector<TrackId> tracksToRemove;
+        RangeResults<Track::PathResult> trackPaths;
+        std::vector<TrackId> tracksToRemove;
 
-		// TODO handle only files in context.directory
-		for (std::size_t i {trackCount < batchSize ? 0 : trackCount - batchSize}; ; i -= (i > batchSize ? batchSize : i))
-		{
-			tracksToRemove.clear();
+        // TODO handle only files in context.directory
+        for (std::size_t i{ trackCount < batchSize ? 0 : trackCount - batchSize }; ; i -= (i > batchSize ? batchSize : i))
+        {
+            tracksToRemove.clear();
 
-			{
-				auto transaction {session.createSharedTransaction()};
-				trackPaths = Track::findPaths(session, Range {i, batchSize});
-			}
+            {
+                auto transaction{ session.createSharedTransaction() };
+                trackPaths = Track::findPaths(session, Range{ i, batchSize });
+            }
 
-			for (const Track::PathResult& trackPath : trackPaths.results)
-			{
-				if (_abortScan)
-					return;
+            for (const Track::PathResult& trackPath : trackPaths.results)
+            {
+                if (_abortScan)
+                    return;
 
-				if (!checkFile(trackPath.path))
-					tracksToRemove.push_back(trackPath.trackId);
+                if (!checkFile(trackPath.path))
+                    tracksToRemove.push_back(trackPath.trackId);
 
-				context.currentStepStats.processedElems++;
-			}
+                context.currentStepStats.processedElems++;
+            }
 
-			if (!tracksToRemove.empty())
-			{
-				auto transaction {session.createSharedTransaction()};
+            if (!tracksToRemove.empty())
+            {
+                auto transaction{ session.createSharedTransaction() };
 
-				for (const TrackId trackId : tracksToRemove)
-				{
-					Track::pointer track {Track::find(session, trackId)};
-					if (track)
-					{
-						track.remove();
-						context.stats.deletions++;
-					}
-				}
-			}
+                for (const TrackId trackId : tracksToRemove)
+                {
+                    Track::pointer track{ Track::find(session, trackId) };
+                    if (track)
+                    {
+                        track.remove();
+                        context.stats.deletions++;
+                    }
+                }
+            }
 
-			_progressCallback(context.currentStepStats);
+            _progressCallback(context.currentStepStats);
 
-			if (i == 0)
-				break;
-		}
+            if (i == 0)
+                break;
+        }
 
-		LMS_LOG(DBUPDATER, DEBUG) << trackCount << " tracks checked!";
-	}
+        LMS_LOG(DBUPDATER, DEBUG) << trackCount << " tracks checked!";
+    }
 
-	void
-	ScanStepRemoveOrphanDbFiles::removeOrphanClusters()
-	{
-		using namespace Database;
+    void ScanStepRemoveOrphanDbFiles::removeOrphanClusters()
+    {
+        using namespace Database;
 
-		LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan clusters...";
-		Session& session {_db.getTLSSession()};
-		auto transaction {session.createUniqueTransaction()};
+        LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan clusters...";
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createUniqueTransaction() };
 
-		// Now process orphan Cluster (no track)
-		auto clusterIds {Cluster::findOrphans(session, Range {})};
-		for (ClusterId clusterId : clusterIds.results)
-		{
-			Cluster::pointer cluster {Cluster::find(session, clusterId)};
-			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan cluster '" << cluster->getName() << "'";
-			cluster.remove();
-		}
-	}
+        // Now process orphan Cluster (no track)
+        auto clusterIds{ Cluster::findOrphans(session) };
+        for (ClusterId clusterId : clusterIds.results)
+        {
+            Cluster::pointer cluster{ Cluster::find(session, clusterId) };
+            LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan cluster '" << cluster->getName() << "'";
+            cluster.remove();
+        }
+    }
 
-	void
-	ScanStepRemoveOrphanDbFiles::removeOrphanArtists()
-	{
-		using namespace Database;
+    void ScanStepRemoveOrphanDbFiles::removeOrphanArtists()
+    {
+        using namespace Database;
 
-		LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan artists...";
+        LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan artists...";
 
-		Session& session {_db.getTLSSession()};
-		auto transaction {session.createUniqueTransaction()};
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createUniqueTransaction() };
 
-		auto artistIds {Artist::findOrphanIds(session, Range {})};
-		for (const ArtistId artistId : artistIds.results)
-		{
-			Artist::pointer artist {Artist::find(session, artistId)};
-			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan artist '" << artist->getName() << "'";
-			artist.remove();
-		}
-	}
+        auto artistIds{ Artist::findOrphanIds(session) };
+        for (const ArtistId artistId : artistIds.results)
+        {
+            Artist::pointer artist{ Artist::find(session, artistId) };
+            LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan artist '" << artist->getName() << "'";
+            artist.remove();
+        }
+    }
 
-	void
-	ScanStepRemoveOrphanDbFiles::removeOrphanReleases()
-	{
-		using namespace Database;
+    void ScanStepRemoveOrphanDbFiles::removeOrphanReleases()
+    {
+        using namespace Database;
 
-		LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan releases...";
+        LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan releases...";
 
-		// TODO, by batch
-		Session& session {_db.getTLSSession()};
-		auto transaction {session.createUniqueTransaction()};
+        // TODO, by batch
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createUniqueTransaction() };
 
-		auto releases {Release::findOrphanIds(session, Range {})};
-		for (const ReleaseId releaseId : releases.results)
-		{
-			Release::pointer release {Release::find(session, releaseId)};
-			LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan release '" << release->getName() << "'";
-			release.remove();
-		}
-	}
+        auto releases{ Release::findOrphanIds(session) };
+        for (const ReleaseId releaseId : releases.results)
+        {
+            Release::pointer release{ Release::find(session, releaseId) };
+            LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan release '" << release->getName() << "'";
+            release.remove();
+        }
+    }
 
-	bool
-	ScanStepRemoveOrphanDbFiles::checkFile(const std::filesystem::path& p)
-	{
-		try
-		{
-			// For each track, make sure the the file still exists
-			// and still belongs to a media directory
-			if (!std::filesystem::exists( p )
-					|| !std::filesystem::is_regular_file( p ) )
-			{
-				LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': missing";
-				return false;
-			}
+    bool ScanStepRemoveOrphanDbFiles::checkFile(const std::filesystem::path& p)
+    {
+        try
+        {
+            // For each track, make sure the the file still exists
+            // and still belongs to a media directory
+            if (!std::filesystem::exists(p)
+                || !std::filesystem::is_regular_file(p))
+            {
+                LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': missing";
+                return false;
+            }
 
-			if (!PathUtils::isPathInRootPath(p, _settings.mediaDirectory, &excludeDirFileName))
-			{
-				LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': out of media directory";
-				return false;
-			}
+            if (!PathUtils::isPathInRootPath(p, _settings.mediaDirectory, &excludeDirFileName))
+            {
+                LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': out of media directory";
+                return false;
+            }
 
-			if (!PathUtils::hasFileAnyExtension(p, _settings.supportedExtensions))
-			{
-				LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': file format no longer handled";
-				return false;
-			}
+            if (!PathUtils::hasFileAnyExtension(p, _settings.supportedExtensions))
+            {
+                LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': file format no longer handled";
+                return false;
+            }
 
-			return true;
-		}
-		catch (std::filesystem::filesystem_error& e)
-		{
-			LMS_LOG(DBUPDATER, ERROR) << "Caught exception while checking file '" << p.string() << "': " << e.what();
-			return false;
-		}
-	}
+            return true;
+        }
+        catch (std::filesystem::filesystem_error& e)
+        {
+            LMS_LOG(DBUPDATER, ERROR) << "Caught exception while checking file '" << p.string() << "': " << e.what();
+            return false;
+        }
+    }
 }

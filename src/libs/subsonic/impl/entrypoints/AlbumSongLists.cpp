@@ -47,8 +47,8 @@ namespace API::Subsonic
             // Optional params
             const std::size_t size{ getParameterAs<std::size_t>(context.parameters, "size").value_or(10) };
             const std::size_t offset{ getParameterAs<std::size_t>(context.parameters, "offset").value_or(0) };
-            if (size > 500)
-                throw ParameterValueTooHighGenericError{ "size", 500 };
+            if (size > defaultMaxCountSize)
+                throw ParameterValueTooHighGenericError{ "size", defaultMaxCountSize };
 
             const Range range{ offset, size };
 
@@ -122,7 +122,7 @@ namespace API::Subsonic
                 // (no seed provided by subsonic, ot it would require to store some kind of context for each user/client when iterating over the random albums)
                 Release::FindParameters params;
                 params.setSortMethod(ReleaseSortMethod::Random);
-                params.setRange({ 0, size });
+                params.setRange(Range{ 0, size });
 
                 releases = Release::findIds(context.dbSession, params);
             }
@@ -132,10 +132,15 @@ namespace API::Subsonic
             }
             else if (type == "starred")
             {
-                releases = feedbackService.getStarredReleases(context.userId, {}, range);
+                Feedback::IFeedbackService::FindParameters params;
+                params.setUser(context.userId);
+                params.setRange(range);
+                releases = feedbackService.findStarredReleases(params);
             }
             else
+            {
                 throw NotImplementedGenericError{};
+            }
 
             Response response{ Response::createOkResponse(context.serverProtocolVersion) };
             Response::Node& albumListNode{ response.createNode(id3 ? Response::Node::Key{ "albumList2" } : Response::Node::Key{ "albumList" }) };
@@ -162,19 +167,27 @@ namespace API::Subsonic
 
             Feedback::IFeedbackService& feedbackService{ *Service<Feedback::IFeedbackService>::get() };
 
-            for (const ArtistId artistId : feedbackService.getStarredArtists(context.userId, {} /* clusters */, std::nullopt /* linkType */, ArtistSortMethod::BySortName, Range{}).results)
+            Feedback::IFeedbackService::FindParameters findParameters;
+            findParameters.setUser(context.userId);
+
             {
-                if (auto artist{ Artist::find(context.dbSession, artistId) })
-                    starredNode.addArrayChild("artist", createArtistNode(context, artist, user, id3));
+                Feedback::IFeedbackService::ArtistFindParameters artistFindParams;
+                artistFindParams.setUser(context.userId);
+                artistFindParams.setSortMethod(ArtistSortMethod::BySortName);
+                for (const ArtistId artistId : feedbackService.findStarredArtists(artistFindParams).results)
+                {
+                    if (auto artist{ Artist::find(context.dbSession, artistId) })
+                        starredNode.addArrayChild("artist", createArtistNode(context, artist, user, id3));
+                }
             }
 
-            for (const ReleaseId releaseId : feedbackService.getStarredReleases(context.userId, {} /* clusters */, Range{}).results)
+            for (const ReleaseId releaseId : feedbackService.findStarredReleases(findParameters).results)
             {
                 if (auto release{ Release::find(context.dbSession, releaseId) })
                     starredNode.addArrayChild("album", createAlbumNode(context, release, user, id3));
             }
 
-            for (const TrackId trackId : feedbackService.getStarredTracks(context.userId, {} /* clusters */, Range{}).results)
+            for (const TrackId trackId : feedbackService.findStarredTracks(findParameters).results)
             {
                 if (auto track{ Track::find(context.dbSession, trackId) })
                     starredNode.addArrayChild("song", createSongNode(context, track, user));
@@ -198,8 +211,8 @@ namespace API::Subsonic
     {
         // Optional params
         std::size_t size{ getParameterAs<std::size_t>(context.parameters, "size").value_or(50) };
-        if (size > 500)
-            throw ParameterValueTooHighGenericError{"size", 500};
+        if (size > defaultMaxCountSize)
+            throw ParameterValueTooHighGenericError{ "size", defaultMaxCountSize };
 
         auto transaction{ context.dbSession.createSharedTransaction() };
 
@@ -207,13 +220,17 @@ namespace API::Subsonic
         if (!user)
             throw UserNotAuthorizedError{};
 
-        const auto tracks{ Track::find(context.dbSession, Track::FindParameters {}.setSortMethod(TrackSortMethod::Random).setRange({0, size})) };
-
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-
         Response::Node& randomSongsNode{ response.createNode("randomSongs") };
-        for (const Track::pointer& track : tracks.results)
-            randomSongsNode.addArrayChild("song", createSongNode(context, track, user));
+
+        Track::FindParameters params;
+        params.setSortMethod(TrackSortMethod::Random);
+        params.setRange(Range{ 0, size });
+
+        Track::find(context.dbSession, params, [&](const Track::pointer& track)
+            {
+                randomSongsNode.addArrayChild("song", createSongNode(context, track, user));
+            });
 
         return response;
     }
@@ -225,8 +242,8 @@ namespace API::Subsonic
 
         // Optional params
         std::size_t count{ getParameterAs<std::size_t>(context.parameters, "count").value_or(10) };
-        if (count > 500)
-            throw ParameterValueTooHighGenericError{"count", 500};
+        if (count > defaultMaxCountSize)
+            throw ParameterValueTooHighGenericError{"count", defaultMaxCountSize};
 
         std::size_t offset{ getParameterAs<std::size_t>(context.parameters, "offset").value_or(0) };
 
@@ -249,11 +266,12 @@ namespace API::Subsonic
 
         Track::FindParameters params;
         params.setClusters({ cluster->getId() });
-        params.setRange({ offset, count });
+        params.setRange(Range{ offset, count });
 
-        const auto tracks{ Track::find(context.dbSession, params) };
-        for (const Track::pointer& track : tracks.results)
-            songsByGenreNode.addArrayChild("song", createSongNode(context, track, user));
+        Track::find(context.dbSession, params, [&](const Track::pointer& track)
+            {
+                songsByGenreNode.addArrayChild("song", createSongNode(context, track, user));
+            });
 
         return response;
     }

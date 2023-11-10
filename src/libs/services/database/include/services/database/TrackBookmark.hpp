@@ -20,6 +20,7 @@
 #pragma once
 
 #include <chrono>
+#include <optional>
 
 #include <Wt/Dbo/Dbo.h>
 
@@ -45,7 +46,7 @@ class TrackBookmark final : public Object<TrackBookmark, TrackBookmarkId>
 		// Find utility functions
 		static std::size_t						getCount(Session& session);
 		static pointer							find(Session& session, TrackBookmarkId id);
-		static RangeResults<TrackBookmarkId>	find(Session& session, UserId userId, Range range);
+		static RangeResults<TrackBookmarkId>	find(Session& session, UserId userId, std::optional<Range> range = std::nullopt);
 		static pointer							find(Session& session, UserId userId, TrackId trackId);
 
 		// Setters

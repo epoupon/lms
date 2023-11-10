@@ -41,7 +41,7 @@ TEST_F(DatabaseFixture, TrackFeatures)
 		auto transaction {session.createUniqueTransaction()};
 		EXPECT_EQ(TrackFeatures::getCount(session), 1);
 
-		auto allTrackFeatures {TrackFeatures::find(session, Range {})};
+		auto allTrackFeatures {TrackFeatures::find(session)};
 		ASSERT_EQ(allTrackFeatures.results.size(), 1);
 		EXPECT_EQ(allTrackFeatures.results.front(), trackFeatures.getId());
 	}

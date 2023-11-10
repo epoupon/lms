@@ -155,7 +155,8 @@ namespace UserInterface
             for (const ArtistId artistId : artistIds.results)
             {
                 const Artist::pointer artist{ Artist::find(LmsApp->getDbSession(), artistId) };
-                _artists->add(ArtistListHelpers::createEntry(artist));
+                if (artist)
+                    _artists->add(ArtistListHelpers::createEntry(artist));
             }
         }
     }
@@ -172,7 +173,8 @@ namespace UserInterface
             for (const ReleaseId releaseId : releaseIds.results)
             {
                 const Release::pointer release{ Release::find(LmsApp->getDbSession(), releaseId) };
-                _releases->add(ReleaseListHelpers::createEntry(release));
+                if (release)
+                    _releases->add(ReleaseListHelpers::createEntry(release));
             }
         }
     }
@@ -190,7 +192,8 @@ namespace UserInterface
             for (const TrackId trackId : trackIds.results)
             {
                 const Track::pointer track{ Track::find(LmsApp->getDbSession(), trackId) };
-                _tracks->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
+                if (track)
+                    _tracks->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
             }
         }
     }

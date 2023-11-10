@@ -40,7 +40,7 @@ namespace API::Subsonic
         if (!user)
             throw UserNotAuthorizedError{};
 
-        const auto bookmarkIds{ TrackBookmark::find(context.dbSession, user->getId(), Range {}) };
+        const auto bookmarkIds{ TrackBookmark::find(context.dbSession, user->getId()) };
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
         Response::Node& bookmarksNode{ response.createNode("bookmarks") };

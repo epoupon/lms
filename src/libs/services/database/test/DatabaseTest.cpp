@@ -42,8 +42,8 @@ TEST_F(DatabaseFixture, MultiTracksSingleArtistSingleRelease)
 
     {
         auto transaction{ session.createSharedTransaction() };
-        EXPECT_TRUE(Release::findOrphanIds(session, Range{}).results.empty());
-        EXPECT_TRUE(Artist::findOrphanIds(session, Range{}).results.empty());
+        EXPECT_TRUE(Release::findOrphanIds(session).results.empty());
+        EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
     }
 
     {

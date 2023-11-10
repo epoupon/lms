@@ -32,15 +32,14 @@ namespace UserInterface
 {
     using namespace Database;
 
-    RangeResults<ReleaseId> ReleaseCollector::get(Database::Range range)
+    RangeResults<ReleaseId> ReleaseCollector::get(std::optional<Database::Range> requestedRange)
     {
         Feedback::IFeedbackService& feedbackService{ *Service<Feedback::IFeedbackService>::get() };
         Scrobbling::IScrobblingService& scrobblingService{ *Service<Scrobbling::IScrobblingService>::get() };
 
+        const Range range{ getActualRange(requestedRange) };
+
         RangeResults<ReleaseId> releases;
-        range = getActualRange(range);
-        if (range.size == 0)
-            return releases;
 
         switch (getMode())
         {
@@ -49,8 +48,14 @@ namespace UserInterface
             break;
 
         case Mode::Starred:
-            releases = feedbackService.getStarredReleases(LmsApp->getUserId(), getFilters().getClusterIds(), range);
+        {
+            Feedback::IFeedbackService::FindParameters params;
+            params.setUser(LmsApp->getUserId());
+            params.setClusters(getFilters().getClusterIds());
+            params.setRange(range);
+            releases = feedbackService.findStarredReleases(params);
             break;
+        }
 
         case ReleaseCollector::Mode::RecentlyPlayed:
             releases = scrobblingService.getRecentReleases(LmsApp->getUserId(), getFilters().getClusterIds(), range);
@@ -118,7 +123,7 @@ namespace UserInterface
             Release::FindParameters params;
             params.setClusters(getFilters().getClusterIds());
             params.setSortMethod(ReleaseSortMethod::Random);
-            params.setRange({ 0, getMaxCount() });
+            params.setRange(Range{ 0, getMaxCount() });
 
             {
                 auto transaction{ LmsApp->getDbSession().createSharedTransaction() };

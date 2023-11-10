@@ -188,7 +188,7 @@ namespace Database
         Wt::Dbo::Query<ResultType> createQuery(Session& session, const Release::FindParameters& params)
         {
             std::string_view itemToSelect;
-            
+
             if constexpr (std::is_same_v<ResultType, ReleaseId>)
                 itemToSelect = "r.id";
             else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<Release>>)
@@ -256,7 +256,7 @@ namespace Database
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM release");
     }
 
-    RangeResults<ReleaseId> Release::findIdsOrderedByArtist(Session& session, Range range)
+    RangeResults<ReleaseId> Release::findIdsOrderedByArtist(Session& session, std::optional<Range> range)
     {
         session.checkSharedLocked();
 
@@ -268,15 +268,15 @@ namespace Database
                 " INNER JOIN artist a ON t_a_l.artist_id = a.id")
              .orderBy("a.name COLLATE NOCASE, r.name COLLATE NOCASE") };
 
-        return Utils::execQuery(query, range);
+        return Utils::execQuery<ReleaseId>(query, range);
     }
 
-    RangeResults<ReleaseId> Release::findOrphanIds(Session& session, Range range)
+    RangeResults<ReleaseId> Release::findOrphanIds(Session& session, std::optional<Range> range)
     {
         session.checkSharedLocked();
 
         auto query{ session.getDboSession().query<ReleaseId>("select r.id from release r LEFT OUTER JOIN Track t ON r.id = t.release_id WHERE t.id IS NULL") };
-        return Utils::execQuery(query, range);
+        return Utils::execQuery<ReleaseId>(query, range);
     }
 
     RangeResults<Release::pointer> Release::find(Session& session, const FindParameters& params)
@@ -284,7 +284,15 @@ namespace Database
         session.checkSharedLocked();
 
         auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, params) };
-        return Utils::execQuery(query, params.range);
+        return Utils::execQuery<pointer>(query, params.range);
+    }
+
+    void Release::find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func)
+    {
+        session.checkSharedLocked();
+
+        auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, params) };
+        Utils::execQuery<pointer>(query, params.range, func);
     }
 
     RangeResults<ReleaseId> Release::findIds(Session& session, const FindParameters& params)
@@ -292,7 +300,7 @@ namespace Database
         session.checkSharedLocked();
 
         auto query{ createQuery<ReleaseId>(session, params) };
-        return Utils::execQuery(query, params.range);
+        return Utils::execQuery<ReleaseId>(query, params.range);
     }
 
     std::size_t Release::getDiscCount() const

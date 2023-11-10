@@ -40,7 +40,7 @@ TEST_F(DatabaseFixture, Release)
         EXPECT_TRUE(Release::exists(session, release.getId()));
 
         {
-            const auto releases{ Release::findOrphanIds(session, Range {}) };
+            const auto releases{ Release::findOrphanIds(session) };
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release.getId());
         }
@@ -56,6 +56,16 @@ TEST_F(DatabaseFixture, Release)
             const auto releases{ Release::find(session, Release::FindParameters {}) };
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front()->getId(), release.getId());
+        }
+
+        {
+            bool visited{};
+            Release::find(session, Release::FindParameters{}, [&](const Release::pointer& r)
+                {
+                    visited = true;
+                    EXPECT_EQ(r->getId(), release.getId());
+                });
+            EXPECT_TRUE(visited);
         }
     }
 }
@@ -76,7 +86,7 @@ TEST_F(DatabaseFixture, Release_singleTrack)
 
         {
             auto transaction{ session.createSharedTransaction() };
-            EXPECT_TRUE(Release::findOrphanIds(session, Range{}).results.empty());
+            EXPECT_TRUE(Release::findOrphanIds(session).results.empty());
 
             const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release.getId())) };
             ASSERT_EQ(tracks.results.size(), 1);
@@ -114,7 +124,7 @@ TEST_F(DatabaseFixture, Release_singleTrack)
         const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release.getId())) };
         EXPECT_TRUE(tracks.results.empty());
 
-        auto releases{ Release::findOrphanIds(session, Range {}) };
+        auto releases{ Release::findOrphanIds(session) };
         ASSERT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results.front(), release.getId());
     }

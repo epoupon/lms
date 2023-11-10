@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -45,12 +46,12 @@ namespace Database {
     public:
         struct FindParameters
         {
-            Range           range;
-            ClusterTypeId   clusterType;	// if non empty, clusters that belong to this cluster type
-            TrackId         track;		    // if set, clusters involved in this track
-            ReleaseId       release;        // if set, clusters involved in this release
+            std::optional<Range>    range;
+            ClusterTypeId           clusterType;  // if non empty, clusters that belong to this cluster type
+            TrackId                 track;        // if set, clusters involved in this track
+            ReleaseId               release;      // if set, clusters involved in this release
 
-            FindParameters& setRange(Range _range) { range = _range; return *this; }
+            FindParameters& setRange(std::optional<Range> _range) { range = _range; return *this; }
             FindParameters& setClusterType(ClusterTypeId _clusterType) { clusterType = _clusterType; return *this; }
             FindParameters& setTrack(TrackId _track) { track = _track; return *this; }
             FindParameters& setRelease(ReleaseId _release) { release = _release; return *this; }
@@ -60,11 +61,11 @@ namespace Database {
 
         // Find utility
         static std::size_t				        getCount(Session& session);
-        static RangeResults<ClusterId>	        findIds(Session& session, const FindParameters& range);
-        static RangeResults<pointer>            find(Session& session, const FindParameters& range);
-        static void                             find(Session& session, const FindParameters& range, std::function<void(const pointer& cluster)> _func);
-        static pointer					        find(Session& session, ClusterId id);
-        static RangeResults<ClusterId>      	findOrphans(Session& session, Range range);
+        static RangeResults<ClusterId>	        findIds(Session& session, const FindParameters& params);
+        static RangeResults<pointer>            find(Session& session, const FindParameters& params);
+        static void                             find(Session& session, const FindParameters& params, std::function<void(const pointer& cluster)> _func);
+        static pointer                          find(Session& session, ClusterId id);
+        static RangeResults<ClusterId>          findOrphans(Session& session, std::optional<Range> range = std::nullopt);
 
         // May be very slow
         static std::size_t                      computeTrackCount(Session& session, ClusterId id);
@@ -74,7 +75,7 @@ namespace Database {
         std::string_view                getName() const { return _name; }
         ObjectPtr<ClusterType>          getType() const { return _clusterType; }
         std::size_t                     getTracksCount() const { return _trackCount; }
-        RangeResults<TrackId>           getTracks(Range range) const;
+        RangeResults<TrackId>           getTracks(std::optional<Range> range = std::nullopt) const;
         std::size_t                     getReleasesCount() const { return _releaseCount; };
 
         void setReleaseCount(std::size_t releaseCount) { _releaseCount = releaseCount; }
@@ -116,11 +117,11 @@ namespace Database {
 
         // Getters
         static std::size_t					getCount(Session& session);
-        static RangeResults<ClusterTypeId>	find(Session& session, Range range);
+        static RangeResults<ClusterTypeId>	find(Session& session, std::optional<Range> range = std::nullopt);
         static pointer 						find(Session& session, std::string_view name);
         static pointer						find(Session& session, ClusterTypeId id);
-        static RangeResults<ClusterTypeId>	findOrphans(Session& session, Range range);
-        static RangeResults<ClusterTypeId>	findUsed(Session& session, Range range);
+        static RangeResults<ClusterTypeId>	findOrphans(Session& session, std::optional<Range> range = std::nullopt);
+        static RangeResults<ClusterTypeId>	findUsed(Session& session, std::optional<Range> range = std::nullopt);
 
         static void remove(Session& session, const std::string& name);
 

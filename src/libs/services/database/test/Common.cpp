@@ -42,8 +42,7 @@ TmpDatabase::TmpDatabase()
 {
 }
 
-Database::Db&
-TmpDatabase::getDb()
+Database::Db& TmpDatabase::getDb()
 {
     return _db;
 }
@@ -53,8 +52,7 @@ DatabaseFixture::~DatabaseFixture()
     testDatabaseEmpty();
 }
 
-void
-DatabaseFixture::SetUpTestCase()
+void DatabaseFixture::SetUpTestCase()
 {
     _tmpDb = std::make_unique<TmpDatabase>();
     {
@@ -65,8 +63,8 @@ DatabaseFixture::SetUpTestCase()
         // remove default created entries
         {
             auto transaction{ s.createUniqueTransaction() };
-            auto clusterTypes{ Database::ClusterType::find(s, Database::Range {}) };
-            for (auto clusterTypeId : clusterTypes.results)
+
+            for (const Database::ClusterTypeId clusterTypeId : Database::ClusterType::find(s).results)
             {
                 auto clusterType{ Database::ClusterType::find(s, clusterTypeId) };
                 clusterType.remove();
@@ -75,14 +73,12 @@ DatabaseFixture::SetUpTestCase()
     }
 }
 
-void
-DatabaseFixture::TearDownTestCase()
+void DatabaseFixture::TearDownTestCase()
 {
     _tmpDb.reset();
 }
 
-void
-DatabaseFixture::testDatabaseEmpty()
+void DatabaseFixture::testDatabaseEmpty()
 {
     using namespace Database;
 
@@ -153,10 +149,10 @@ TEST_F(DatabaseFixture, Common_subRangeForeach)
     {
         std::vector<Range> subRanges;
         foreachSubRange(test.range, test.subRangeSize, [&](Range subRange)
-        {
-            subRanges.push_back(subRange);
-            return true;
-        });
+            {
+                subRanges.push_back(subRange);
+                return true;
+            });
 
         EXPECT_EQ(subRanges, test.expectedSubRanges) << ", test index = " << std::distance(std::cbegin(testCases), &test);
     }

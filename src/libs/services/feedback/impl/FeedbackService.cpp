@@ -87,23 +87,23 @@ namespace Feedback
         return getStarredDateTime<Artist, ArtistId, StarredArtist>(userId, artistId);
     }
 
-    FeedbackService::ArtistContainer FeedbackService::getStarredArtists(UserId userId, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, ArtistSortMethod sortMethod, Range range)
+    FeedbackService::ArtistContainer FeedbackService::findStarredArtists(const ArtistFindParameters& params)
     {
-        auto backend{ getUserFeedbackBackend(userId) };
+        auto backend{ getUserFeedbackBackend(params.user) };
         if (!backend)
             return {};
 
-        Artist::FindParameters params;
-        params.setStarringUser(userId, *backend);
-        params.setClusters(clusterIds);
-        params.setLinkType(linkType);
-        params.setSortMethod(sortMethod);
-        params.setRange(range);
+        Artist::FindParameters searchParams;
+        searchParams.setStarringUser(params.user, *backend);
+        searchParams.setClusters(params.clusters);
+        searchParams.setLinkType(params.linkType);
+        searchParams.setSortMethod(params.sortMethod);
+        searchParams.setRange(params.range);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createSharedTransaction() };
 
-        return Artist::findIds(session, params);
+        return Artist::findIds(session, searchParams);
     }
 
     void FeedbackService::star(UserId userId, ReleaseId releaseId)
@@ -126,22 +126,22 @@ namespace Feedback
         return getStarredDateTime<Release, ReleaseId, StarredRelease>(userId, releaseId);
     }
 
-    FeedbackService::ReleaseContainer FeedbackService::getStarredReleases(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
+    FeedbackService::ReleaseContainer FeedbackService::findStarredReleases(const FindParameters& params)
     {
-        auto backend{ getUserFeedbackBackend(userId) };
+        auto backend{ getUserFeedbackBackend(params.user) };
         if (!backend)
             return {};
 
-        Release::FindParameters params;
-        params.setStarringUser(userId, *backend);
-        params.setClusters(clusterIds);
-        params.setSortMethod(ReleaseSortMethod::StarredDateDesc);
-        params.setRange(range);
+        Release::FindParameters searchParams;
+        searchParams.setStarringUser(params.user, *backend);
+        searchParams.setClusters(params.clusters);
+        searchParams.setSortMethod(ReleaseSortMethod::StarredDateDesc);
+        searchParams.setRange(params.range);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createSharedTransaction() };
 
-        return Release::findIds(session, params);
+        return Release::findIds(session, searchParams);
     }
 
     void FeedbackService::star(UserId userId, TrackId trackId)
@@ -164,22 +164,22 @@ namespace Feedback
         return getStarredDateTime<Track, TrackId, StarredTrack>(userId, trackId);
     }
 
-    FeedbackService::TrackContainer FeedbackService::getStarredTracks(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
+    FeedbackService::TrackContainer FeedbackService::findStarredTracks(const FindParameters& params)
     {
-        auto backend{ getUserFeedbackBackend(userId) };
+        auto backend{ getUserFeedbackBackend(params.user) };
         if (!backend)
             return {};
 
-        Track::FindParameters params;
-        params.setStarringUser(userId, *backend);
-        params.setClusters(clusterIds);
-        params.setSortMethod(TrackSortMethod::StarredDateDesc);
-        params.setRange(range);
+        Track::FindParameters searchParams;
+        searchParams.setStarringUser(params.user, *backend);
+        searchParams.setClusters(params.clusters);
+        searchParams.setSortMethod(TrackSortMethod::StarredDateDesc);
+        searchParams.setRange(params.range);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createSharedTransaction() };
 
-        return Track::findIds(session, params);
+        return Track::findIds(session, searchParams);
     }
 } // ns Feedback
 

@@ -29,6 +29,8 @@
 
 namespace API::Subsonic
 {
+    // Max count expected from all API methods that expose a count
+    static inline constexpr std::size_t defaultMaxCountSize{ 1000 };
 
     enum class ResponseFormat
     {
