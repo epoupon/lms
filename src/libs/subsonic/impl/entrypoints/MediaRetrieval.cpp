@@ -88,17 +88,19 @@ namespace API::Subsonic
 
             StreamParameters parameters;
 
+            std::size_t bitrate{};
             parameters.estimateContentLength = estimateContentLength;
 
-            auto transaction{ context.dbSession.createSharedTransaction() };
-
             {
+                auto transaction{ context.dbSession.createSharedTransaction() };
+
                 const auto track{ Track::find(context.dbSession, id) };
                 if (!track)
                     throw RequestedDataNotFoundError{};
 
                 parameters.inputFileParameters.trackPath = track->getPath();
                 parameters.inputFileParameters.duration = track->getDuration();
+                bitrate = track->getBitrate() / 1000;
             }
 
             if (format == "raw") // raw => no transcode
@@ -111,12 +113,14 @@ namespace API::Subsonic
             if (const auto streamInfo{ audioFile->getBestStreamInfo() })
             {
                 // assume reported codec is "mp3", "opus", "vorbis", etc.
-                if (StringUtils::stringCaseInsensitiveEqual(streamInfo->codec, format) && (maxBitRate == 0 || (streamInfo->bitrate / 1000) <= maxBitRate))
+                if (StringUtils::stringCaseInsensitiveEqual(streamInfo->codec, format) && (maxBitRate == 0 || (bitrate != 0 && bitrate <= maxBitRate)))
                 {
                     LMS_LOG(API_SUBSONIC, DEBUG) << "stream parameters are compatible with actual file: no transcode";
                     return parameters;
                 }
             }
+
+            auto transaction{ context.dbSession.createSharedTransaction() };
 
             const User::pointer user{ User::find(context.dbSession, context.userId) };
             if (!user)
