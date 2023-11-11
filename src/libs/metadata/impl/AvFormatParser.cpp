@@ -187,14 +187,14 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 		const auto mediaFile {Av::parseAudioFile(p)};
 
 		// Stream info
+		if (const auto stream{ mediaFile->getBestStreamInfo() })
 		{
-			std::vector<AudioStream> audioStreams;
-
-			for (auto stream : mediaFile->getStreamInfo())
-			{
-				MetaData::AudioStream audioStream {static_cast<unsigned>(stream.bitrate)};
-				track.audioStreams.emplace_back(audioStream);
-			}
+			track.bitrate = stream->bitrate;
+		}
+		else
+		{
+            LMS_LOG(METADATA, INFO) << "File '" << p.string() << "': cannot get best audio stream";
+			return std::nullopt;
 		}
 
 		track.duration = mediaFile->getDuration();

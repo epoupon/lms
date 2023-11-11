@@ -128,6 +128,7 @@ namespace Database {
         void setName(const std::string& name) { _name = std::string(name, 0, _maxNameLength); }
         void setPath(const std::filesystem::path& filePath) { _filePath = filePath; }
         void setDuration(std::chrono::milliseconds duration) { _duration = duration; }
+        void setBitrate(std::size_t bitrate) { _bitrate = bitrate; }
         void setLastWriteTime(Wt::WDateTime time) { _fileLastWrite = time; }
         void setAddedTime(Wt::WDateTime time) { _fileAdded = time; }
         void setDate(const Wt::WDate& date) { _date = date; }
@@ -153,6 +154,7 @@ namespace Database {
         std::string 				getName() const { return _name; }
         std::filesystem::path		getPath() const { return _filePath; }
         std::chrono::milliseconds	getDuration() const { return _duration; }
+        std::size_t                 getBitrate() const { return _bitrate; }
         const Wt::WDateTime& getLastWritten() const { return _fileLastWrite; }
         std::optional<int>			getYear() const;
         std::optional<int>			getOriginalYear() const;
@@ -186,6 +188,7 @@ namespace Database {
             Wt::Dbo::field(a, _discSubtitle, "disc_subtitle"); // here in Track since Release does not have concept of "disc" (yet?)
             Wt::Dbo::field(a, _name, "name");
             Wt::Dbo::field(a, _duration, "duration");
+            Wt::Dbo::field(a, _bitrate, "bitrate");
             Wt::Dbo::field(a, _date, "date");
             Wt::Dbo::field(a, _originalDate, "original_date");
             Wt::Dbo::field(a, _filePath, "file_path");
@@ -220,6 +223,7 @@ namespace Database {
         std::string				_discSubtitle;
         std::string				_name;
         std::chrono::duration<int, std::milli>	_duration{};
+        int                     _bitrate; // in bps
         Wt::WDate				_date;
         Wt::WDate				_originalDate;
         std::string				_filePath;

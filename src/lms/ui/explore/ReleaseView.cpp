@@ -137,7 +137,7 @@ namespace UserInterface
                 }
             }
 
-            // TODO: save in DB and mean all this
+            // TODO: save in DB and aggregate all this
             for (const Track::pointer& track : Track::find(LmsApp->getDbSession(), Track::FindParameters{}.setRelease(releaseId).setRange(Range{ 0, 1 })).results)
             {
                 if (const auto audioFile{ Av::parseAudioFile(track->getPath()) })
@@ -147,14 +147,15 @@ namespace UserInterface
                     {
                         releaseInfo->setCondition("if-has-codec", true);
                         releaseInfo->bindString("codec", audioStream->codec);
-                        if (audioStream->bitrate)
-                        {
-                            releaseInfo->setCondition("if-has-bitrate", true);
-                            releaseInfo->bindString("bitrate", std::to_string(audioStream->bitrate / 1000) + " kbps");
-                            break;
-                        }
+                        break;
                     }
                 }
+            }
+
+            if (std::size_t meanBitrate{ release->getMeanBitrate() })
+            {
+                releaseInfo->setCondition("if-has-bitrate", true);
+                releaseInfo->bindString("bitrate", std::to_string(release->getMeanBitrate() / 1000) + " kbps");
             }
 
             Wt::WPushButton* okBtn{ releaseInfo->bindNew<Wt::WPushButton>("ok-btn", Wt::WString::tr("Lms.ok")) };

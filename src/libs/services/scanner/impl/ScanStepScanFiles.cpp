@@ -405,22 +405,7 @@ namespace Scanner
             }
         }
 
-        // We estimate this is an audio file if:
-        // - we found a least one audio stream
-        // - the duration is not null
-        if (trackInfo->audioStreams.empty())
-        {
-            LMS_LOG(DBUPDATER, DEBUG) << "Skipped '" << file.string() << "' (no audio stream found)";
-
-            // If Track exists here, delete it!
-            if (track)
-            {
-                track.remove();
-                stats.deletions++;
-            }
-            stats.errors.emplace_back(ScanError{ file, ScanErrorType::NoAudioTrack });
-            return;
-        }
+        // We estimate this is an audio file if the duration is not null
         if (trackInfo->duration == std::chrono::milliseconds::zero())
         {
             LMS_LOG(DBUPDATER, DEBUG) << "Skipped '" << file.string() << "' (duration is 0)";
@@ -513,6 +498,7 @@ namespace Scanner
         track.modify()->setLastWriteTime(lastWriteTime);
         track.modify()->setName(title);
         track.modify()->setDuration(trackInfo->duration);
+        track.modify()->setBitrate(trackInfo->bitrate);
         track.modify()->setAddedTime(Wt::WDateTime::currentDateTime());
         track.modify()->setTrackNumber(trackInfo->position);
         track.modify()->setDiscNumber(trackInfo->medium ? trackInfo->medium->position : std::nullopt);

@@ -547,7 +547,7 @@ TEST_F(DatabaseFixture, Release_releaseType)
     }
 }
 
-TEST_F(DatabaseFixture, ReleaseSortOrder)
+TEST_F(DatabaseFixture, Release_sortMethod)
 {
     ScopedRelease release1{ session, "MyRelease1" };
     const Wt::WDate release1Date{ Wt::WDate {2000, 2, 3} };
@@ -616,3 +616,42 @@ TEST_F(DatabaseFixture, ReleaseSortOrder)
     }
 }
 
+
+TEST_F(DatabaseFixture, Release_meanBitrate)
+{
+    ScopedRelease release1{ session, "MyRelease1" };
+    ScopedTrack track1{ session, "MyTrack1" };
+    ScopedTrack track2{ session, "MyTrack2" };
+    ScopedTrack track3{ session, "MyTrack3" };
+
+    auto checkExpectedBitrate = [&](std::size_t bitrate)
+        {
+            auto transaction{ session.createSharedTransaction() };
+            EXPECT_EQ(release1->getMeanBitrate(), bitrate);
+        };
+
+    checkExpectedBitrate(0);
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+        track1.get().modify()->setBitrate(128);
+        track1.get().modify()->setRelease(release1.get());
+    }
+
+    checkExpectedBitrate(128);
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+        track2.get().modify()->setBitrate(256);
+        track2.get().modify()->setRelease(release1.get());
+    }
+    checkExpectedBitrate(192);
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+        track3.get().modify()->setBitrate(0);
+        track3.get().modify()->setRelease(release1.get());
+    }
+    checkExpectedBitrate(192); // 0 should not be taken into account
+
+}

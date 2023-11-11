@@ -387,9 +387,8 @@ namespace Database
 
         Wt::Dbo::collection<std::string> copyrights = session()->query<std::string>
             ("SELECT copyright_url FROM track t INNER JOIN release r ON r.id = t.release_id")
-            .where("r.id = ?")
-            .groupBy("copyright_url")
-            .bind(getId());
+            .where("r.id = ?").bind(getId())
+            .groupBy("copyright_url");
 
         std::vector<std::string> values(copyrights.begin(), copyrights.end());
 
@@ -398,6 +397,16 @@ namespace Database
             return std::nullopt;
 
         return values.front();
+    }
+
+    std::size_t Release::getMeanBitrate() const
+    {
+        assert(session());
+
+        return session()->query<int>("SELECT COALESCE(AVG(t.bitrate), 0) FROM track t")
+            .where("release_id = ?").bind(getId())
+            .where("bitrate > 0")
+            .resultValue();
     }
 
     std::vector<Artist::pointer> Release::getArtists(TrackArtistLinkType linkType) const

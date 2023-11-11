@@ -104,6 +104,7 @@ namespace Database
         Wt::WDate                   getOriginalReleaseDate() const;
         std::optional<std::string>  getCopyright() const;
         std::optional<std::string>  getCopyrightURL() const;
+        std::size_t                 getMeanBitrate() const;
 
         // Accessors
         const std::string& getName() const { return _name; }

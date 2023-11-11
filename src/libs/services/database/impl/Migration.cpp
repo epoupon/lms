@@ -234,6 +234,15 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
         ScanSettings::get(session).modify()->incScanVersion();
     }
 
+    static void migrateFromV44(Session& session)
+    {
+        // add bitrate
+        session.getDboSession().execute("ALTER TABLE track ADD bitrate INTEGER");
+
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        ScanSettings::get(session).modify()->incScanVersion();
+    }
+
     void doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -256,6 +265,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
             {41, migrateFromV41},
             {42, migrateFromV42},
             {43, migrateFromV43},
+            {44, migrateFromV44},
         };
 
         {

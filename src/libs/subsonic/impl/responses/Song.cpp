@@ -148,6 +148,7 @@ namespace API::Subsonic
         }
 
         trackResponse.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count());
+        trackResponse.setAttribute("bitRate", (track->getBitrate() / 1000));
         trackResponse.setAttribute("type", "music");
         trackResponse.setAttribute("created", StringUtils::toISO8601String(track->getLastWritten()));
 
