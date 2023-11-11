@@ -26,13 +26,7 @@ namespace Av
 {
     std::unique_ptr<IResourceHandler> createRawResourceHandler(const std::filesystem::path& path)
     {
-        std::string mimeType;
-        const auto guessedAudioFormat{ Av::guessAudioFileFormat(path) };
-        if (guessedAudioFormat)
-            mimeType = guessedAudioFormat->mimeType;
-        else
-            mimeType = "application/octet-stream";
-
-        return createFileResourceHandler(path, mimeType);
+        std::string_view mimeType{ Av::getMimeType(path.extension()) };
+        return createFileResourceHandler(path, mimeType.empty() ? "application/octet-stream" : mimeType);
     }
 }

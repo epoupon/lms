@@ -27,6 +27,7 @@
 #include <unordered_map>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "Types.hpp"
@@ -72,7 +73,7 @@ namespace Av
 		std::string format;
 	};
 
-	std::optional<AudioFileFormat> guessAudioFileFormat(const std::filesystem::path& file);
+	std::string_view getMimeType(const std::filesystem::path& fileExtension);
 
 } // namespace Av
 

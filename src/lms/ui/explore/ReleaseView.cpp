@@ -152,10 +152,10 @@ namespace UserInterface
                 }
             }
 
-            if (std::size_t meanBitrate{ release->getMeanBitrate() })
+            if (const std::size_t meanBitrate{ release->getMeanBitrate() })
             {
                 releaseInfo->setCondition("if-has-bitrate", true);
-                releaseInfo->bindString("bitrate", std::to_string(release->getMeanBitrate() / 1000) + " kbps");
+                releaseInfo->bindString("bitrate", std::to_string(meanBitrate / 1000) + " kbps");
             }
 
             Wt::WPushButton* okBtn{ releaseInfo->bindNew<Wt::WPushButton>("ok-btn", Wt::WString::tr("Lms.ok")) };

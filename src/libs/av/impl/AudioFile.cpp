@@ -258,35 +258,39 @@ namespace Av
         return res;
     }
 
-    std::optional<AudioFileFormat> guessAudioFileFormat(const std::filesystem::path& file)
+    std::string_view getMimeType(const std::filesystem::path& fileExtension)
     {
-        const AVOutputFormat* format{ ::av_guess_format(NULL, file.string().c_str(), NULL) };
-        if (!format || !format->name)
+        static const std::unordered_map<std::filesystem::path, std::string_view> entries
         {
-            LMS_LOG(AV, INFO) << "File '" << file.string() << "': cannot guess file format!";
-            return std::nullopt;
-        }
+            {".mp3",    "audio/mpeg"},
+            {".ogg",    "audio/ogg"},
+            {".oga",    "audio/ogg"},
+            {".opus",   "audio/opus"},
+            {".aac",    "audio/aac"},
+            {".alac",   "audio/mp4"},
+            {".m4a",    "audio/mp4"},
+            {".m4b",    "audio/mp4"},
+            {".flac",   "audio/flac"},
+            {".webm",   "audio/webm"},
+            {".wav",    "audio/x-wav"},
+            {".wma",    "audio/x-ms-wma"},
+            {".ape",    "audio/x-monkeys-audio"},
+            {".mpc",    "audio/x-musepack"},
+            {".shn",    "audio/x-shn"},
+            {".aif",    "audio/x-aiff"},
+            {".aiff",   "audio/x-aiff"},
+            {".m3u",    "audio/x-mpegurl"},
+            {".pls",    "audio/x-scpls"},
+            {".dsf",    "audio/dsd"},
+            {".wv",     "audio/x-wavpack"},
+            {".wvp",    "audio/x-wavpack"},
+            {".mka",    "audio/x-matroska"},
+        };
 
-        LMS_LOG(AV, DEBUG) << "File '" << file.string() << "', formats = '" << format->name << "'";
+        auto it{ entries.find(fileExtension) };
+        if (it == std::cend(entries))
+            return "";
 
-        const auto formats{ StringUtils::splitString(format->name, ",") };
-        if (formats.size() > 1)
-            LMS_LOG(AV, INFO) << "File '" << file.string() << "' reported several formats: '" << format->name << "'";
-
-        std::vector<std::string_view> mimeTypes;
-        if (format->mime_type)
-            mimeTypes = StringUtils::splitString(format->mime_type, ",");
-
-        if (mimeTypes.empty())
-            LMS_LOG(AV, INFO) << "File '" << file.string() << "', no mime type found!";
-        else if (mimeTypes.size() > 1)
-            LMS_LOG(AV, INFO) << "File '" << file.string() << "' reported several mime types: '" << format->mime_type << "'";
-
-        AudioFileFormat res;
-        res.format = formats.front();
-        res.mimeType = mimeTypes.empty() ? "application/octet-stream" : mimeTypes.front();
-
-        return res;
+        return it->second;
     }
-
 } // namespace Av

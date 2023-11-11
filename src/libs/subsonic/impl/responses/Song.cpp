@@ -21,6 +21,7 @@
 
 #include <string_view>
 
+#include "av/IAudioFile.hpp"
 #include "services/database/Artist.hpp"
 #include "services/database/Cluster.hpp"
 #include "services/database/Listen.hpp"
@@ -123,7 +124,11 @@ namespace API::Subsonic
             trackResponse.setAttribute("suffix", extension.string().substr(1));
         }
 
-        trackResponse.setAttribute("transcodedSuffix", formatToSuffix(user->getSubsonicDefaultTranscodeFormat()));
+        {
+            const std::string fileSuffix{ formatToSuffix(user->getSubsonicDefaultTranscodeFormat()) };
+            trackResponse.setAttribute("transcodedSuffix", fileSuffix);
+            trackResponse.setAttribute("transcodedContentType", Av::getMimeType(std::filesystem::path{ "." + fileSuffix }));
+        }
 
         trackResponse.setAttribute("coverArt", idToString(track->getId()));
 
@@ -151,6 +156,7 @@ namespace API::Subsonic
         trackResponse.setAttribute("bitRate", (track->getBitrate() / 1000));
         trackResponse.setAttribute("type", "music");
         trackResponse.setAttribute("created", StringUtils::toISO8601String(track->getLastWritten()));
+        trackResponse.setAttribute("contentType", Av::getMimeType(track->getPath().extension()));
 
         if (const Wt::WDateTime dateTime{ Service<Feedback::IFeedbackService>::get()->getStarredDateTime(user->getId(), track->getId()) }; dateTime.isValid())
             trackResponse.setAttribute("starred", StringUtils::toISO8601String(dateTime));
