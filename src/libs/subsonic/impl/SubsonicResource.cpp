@@ -300,13 +300,13 @@ namespace API::Subsonic
         const ResponseFormat format{ getParameterAs<std::string>(request.getParameterMap(), "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml };
 
         ProtocolVersion protocolVersion{ defaultServerProtocolVersion };
-        
+
         try
         {
             // We need to parse client a soon as possible to make sure to answer with the right protocol version
             protocolVersion = getServerProtocolVersion(getMandatoryParameterAs<std::string>(request.getParameterMap(), "c"));
             RequestContext requestContext{ buildRequestContext(request) };
-            
+
             auto itEntryPoint{ requestEntryPoints.find(requestPath) };
             if (itEntryPoint != requestEntryPoints.end())
             {
@@ -399,6 +399,19 @@ namespace API::Subsonic
 
     Database::UserId SubsonicResource::authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo)
     {
+        // if the request if a continuation, the user is already authenticated
+        if (request.continuation())
+        {
+            Database::Session& session{ _db.getTLSSession() };
+            auto transaction{ session.createSharedTransaction() };
+
+            const auto user{ Database::User::find(session, clientInfo.user) };
+            if (!user)
+                throw UserNotAuthorizedError{};
+
+            return user->getId();
+        }
+
         if (auto * authEnvService{ Service<::Auth::IEnvService>::get() })
         {
             const auto checkResult{ authEnvService->processRequest(request) };
@@ -423,7 +436,7 @@ namespace API::Subsonic
             }
         }
 
-        throw InternalErrorGenericError{ "No service avalaible to authenticate user" };
+        throw InternalErrorGenericError{ "No service available to authenticate user" };
     }
 
 } // namespace api::subsonic
