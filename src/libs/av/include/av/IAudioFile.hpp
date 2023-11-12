@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* This file contains some classes in order to get info from file using the libavconv */
+ /* This file contains some classes in order to get info from file using the libavconv */
 
 #pragma once
 
@@ -34,46 +34,53 @@
 
 namespace Av
 {
-	struct Picture
-	{
-		std::string			mimeType;
-		const std::byte*	data {};
-		std::size_t			dataSize {};
-	};
+    struct Picture
+    {
+        std::string			mimeType;
+        const std::byte* data{};
+        std::size_t			dataSize{};
+    };
 
-	struct StreamInfo
-	{
-		size_t			index {};
-		std::size_t     bitrate {};
-		std::string 	codec;
-	};
+    struct ContainerInfo
+    {
+        std::size_t bitrate{};
+        std::string name{};
+        std::chrono::milliseconds duration{};
+    };
 
-	class IAudioFile
-	{
-		public:
-			virtual ~IAudioFile() = default;
+    struct StreamInfo
+    {
+        size_t			index{};
+        std::size_t     bitrate{};
+        std::string 	codec;
+    };
 
-			using MetadataMap = std::unordered_map<std::string, std::string>;
+    class IAudioFile
+    {
+    public:
+        virtual ~IAudioFile() = default;
 
-			virtual const std::filesystem::path& getPath() const = 0;
-			virtual std::chrono::milliseconds	getDuration() const = 0;
-			virtual MetadataMap					getMetaData() const = 0;
-			virtual std::vector<StreamInfo>		getStreamInfo() const = 0;
-			virtual std::optional<StreamInfo>	getBestStreamInfo() const = 0; // none if failure/unknown
-			virtual std::optional<std::size_t>	getBestStreamIndex() const = 0; // none if failure/unknown
-			virtual bool 						hasAttachedPictures() const = 0;
-			virtual void 						visitAttachedPictures(std::function<void(const Picture&)> func) const = 0;
-	};
+        using MetadataMap = std::unordered_map<std::string, std::string>;
 
-	std::unique_ptr<IAudioFile> parseAudioFile(const std::filesystem::path& p);
+        virtual const std::filesystem::path& getPath() const = 0;
+        virtual ContainerInfo               getContainerInfo() const = 0;
+        virtual MetadataMap					getMetaData() const = 0;
+        virtual std::vector<StreamInfo>		getStreamInfo() const = 0;
+        virtual std::optional<StreamInfo>	getBestStreamInfo() const = 0; // none if failure/unknown
+        virtual std::optional<std::size_t>	getBestStreamIndex() const = 0; // none if failure/unknown
+        virtual bool 						hasAttachedPictures() const = 0;
+        virtual void 						visitAttachedPictures(std::function<void(const Picture&)> func) const = 0;
+    };
 
-	struct AudioFileFormat
-	{
-		std::string mimeType;
-		std::string format;
-	};
+    std::unique_ptr<IAudioFile> parseAudioFile(const std::filesystem::path& p);
 
-	std::string_view getMimeType(const std::filesystem::path& fileExtension);
+    struct AudioFileFormat
+    {
+        std::string mimeType;
+        std::string format;
+    };
+
+    std::string_view getMimeType(const std::filesystem::path& fileExtension);
 
 } // namespace Av
 

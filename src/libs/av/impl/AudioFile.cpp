@@ -101,12 +101,14 @@ namespace Av
         return _p;
     }
 
-    std::chrono::milliseconds AudioFile::getDuration() const
+    ContainerInfo AudioFile::getContainerInfo() const
     {
-        if (_context->duration == AV_NOPTS_VALUE)
-            return std::chrono::milliseconds{ 0 }; // TODO estimate
+        ContainerInfo info;
+        info.bitrate = _context->bit_rate;
+        info.duration = std::chrono::milliseconds{ _context->duration == AV_NOPTS_VALUE ? 0 : _context->duration / AV_TIME_BASE * 1000 };
+        info.name = _context->iformat->name;
 
-        return std::chrono::milliseconds{ _context->duration / AV_TIME_BASE * 1000 };
+        return info;
     }
 
     AudioFile::MetadataMap AudioFile::getMetaData() const

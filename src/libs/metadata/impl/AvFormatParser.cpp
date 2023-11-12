@@ -186,18 +186,9 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 	{
 		const auto mediaFile {Av::parseAudioFile(p)};
 
-		// Stream info
-		if (const auto stream{ mediaFile->getBestStreamInfo() })
-		{
-			track.bitrate = stream->bitrate;
-		}
-		else
-		{
-            LMS_LOG(METADATA, INFO) << "File '" << p.string() << "': cannot get best audio stream";
-			return std::nullopt;
-		}
-
-		track.duration = mediaFile->getDuration();
+		Av::ContainerInfo info{ mediaFile->getContainerInfo() };
+		track.duration = info.duration;
+		track.bitrate = info.bitrate;
 		track.hasCover = mediaFile->hasAttachedPictures();
 
 		MetaData::Tags tags;

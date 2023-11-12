@@ -35,7 +35,7 @@ namespace Av
         ~AudioFile();
 
         const std::filesystem::path& getPath() const override;
-        std::chrono::milliseconds			getDuration() const override;
+        ContainerInfo                       getContainerInfo() const override;
         MetadataMap							getMetaData() const override;
         std::vector<StreamInfo>				getStreamInfo() const override;
         std::optional<StreamInfo>			getBestStreamInfo() const override;
