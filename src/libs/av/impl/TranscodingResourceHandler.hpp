@@ -23,16 +23,16 @@
 #include <filesystem>
 #include <optional>
 
-#include "av/TranscodeParameters.hpp"
+#include "av/TranscodingParameters.hpp"
 #include "utils/IResourceHandler.hpp"
 #include "Transcoder.hpp"
 
-namespace Av
+namespace Av::Transcoding
 {
-    class TranscodeResourceHandler final : public IResourceHandler
+    class TranscodingResourceHandler final : public IResourceHandler
     {
     public:
-        TranscodeResourceHandler(const InputFileParameters& inputFileParameters, const TranscodeParameters& parameters, bool estimateContentLength);
+        TranscodingResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength);
 
     private:
         Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& reponse) override;

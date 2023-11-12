@@ -161,8 +161,8 @@ namespace Database
         Writer = 10,
     };
 
-    // User selectable audio file formats
-    enum class AudioFormat
+    // User selectable transcoding output formats
+    enum class TranscodingOutputFormat
     {
         MP3 = 1,
         OGG_OPUS = 2,

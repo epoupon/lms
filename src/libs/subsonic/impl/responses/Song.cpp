@@ -46,15 +46,15 @@ namespace API::Subsonic
 
     namespace
     {
-        std::string_view formatToSuffix(AudioFormat format)
+        std::string_view formatToSuffix(TranscodingOutputFormat format)
         {
             switch (format)
             {
-            case AudioFormat::MP3:              return "mp3";
-            case AudioFormat::OGG_OPUS:         return "opus";
-            case AudioFormat::MATROSKA_OPUS:    return "mka";
-            case AudioFormat::OGG_VORBIS:       return "ogg";
-            case AudioFormat::WEBM_VORBIS:      return "webm";
+            case TranscodingOutputFormat::MP3:              return "mp3";
+            case TranscodingOutputFormat::OGG_OPUS:         return "opus";
+            case TranscodingOutputFormat::MATROSKA_OPUS:    return "mka";
+            case TranscodingOutputFormat::OGG_VORBIS:       return "ogg";
+            case TranscodingOutputFormat::WEBM_VORBIS:      return "webm";
             }
 
             return "";
@@ -125,7 +125,7 @@ namespace API::Subsonic
         }
 
         {
-            const std::string fileSuffix{ formatToSuffix(user->getSubsonicDefaultTranscodeFormat()) };
+            const std::string fileSuffix{ formatToSuffix(user->getSubsonicDefaultTranscodingOutputFormat()) };
             trackResponse.setAttribute("transcodedSuffix", fileSuffix);
             trackResponse.setAttribute("transcodedContentType", Av::getMimeType(std::filesystem::path{ "." + fileSuffix }));
         }

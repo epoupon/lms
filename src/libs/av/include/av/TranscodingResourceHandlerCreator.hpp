@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,25 +17,16 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "av/Types.hpp"
+#pragma once
 
-namespace Av
+#include <memory>
+
+#include "utils/IResourceHandler.hpp"
+
+namespace Av::Transcoding
 {
+	struct InputParameters;
+	struct OutputParameters;
 
-	std::string_view
-	formatToMimetype(Format format)
-	{
-		switch (format)
-		{
-			case Format::MP3: 			return "audio/mpeg";
-			case Format::OGG_OPUS:		return "audio/opus";
-			case Format::MATROSKA_OPUS:	return "audio/x-matroska";
-			case Format::OGG_VORBIS:	return "audio/ogg";
-			case Format::WEBM_VORBIS:	return "audio/webm";
-		}
-
-		throw Exception {"Invalid encoding"};
-	}
-
+	std::unique_ptr<IResourceHandler> createResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength);
 }
-

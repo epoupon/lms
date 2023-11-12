@@ -22,47 +22,45 @@
 #include <filesystem>
 #include <functional>
 
-#include "av/TranscodeParameters.hpp"
+#include "av/TranscodingParameters.hpp"
 #include "av/Types.hpp"
 
 class IChildProcess;
 
-namespace Av
+namespace Av::Transcoding
 {
-	class Transcoder
-	{
-		public:
-			Transcoder(const InputFileParameters& inputFileParameters, const TranscodeParameters& transcodeParameters);
-			~Transcoder();
+    class Transcoder
+    {
+    public:
+        Transcoder(const InputParameters& inputParameters, const OutputParameters& outputParameters);
+        ~Transcoder();
 
-			Transcoder(const Transcoder&) = delete;
-			Transcoder& operator=(const Transcoder&) = delete;
-			Transcoder(Transcoder&&) = delete;
-			Transcoder& operator=(Transcoder&&) = delete;
+        Transcoder(const Transcoder&) = delete;
+        Transcoder& operator=(const Transcoder&) = delete;
+        Transcoder(Transcoder&&) = delete;
+        Transcoder& operator=(Transcoder&&) = delete;
 
-			// non blocking calls
-			using ReadCallback = std::function<void(std::size_t nbReadBytes)>;
-			void			asyncRead(std::byte* buffer, std::size_t bufferSize, ReadCallback);
-			std::size_t		readSome(std::byte* buffer, std::size_t bufferSize);
+        // non blocking calls
+        using ReadCallback = std::function<void(std::size_t nbReadBytes)>;
+        void            asyncRead(std::byte* buffer, std::size_t bufferSize, ReadCallback);
+        std::size_t     readSome(std::byte* buffer, std::size_t bufferSize);
 
-			const std::string&	getOutputMimeType() const { return _outputMimeType; }
-			const TranscodeParameters& getParameters() const { return _transcodeParameters; }
+        const std::string& getOutputMimeType() const { return _outputMimeType; }
+        const OutputParameters& getOutputParameters() const { return _outputParameters; }
 
-			bool			finished() const;
+        bool            finished() const;
 
-		private:
-			static void init();
+    private:
+        static void init();
 
-			void start();
+        void start();
 
-			const std::size_t			_debugId {};
-			const InputFileParameters	_inputFileParameters;
-			const TranscodeParameters	_transcodeParameters;
+        const std::size_t           _debugId{};
+        const InputParameters       _inputParameters;
+        const OutputParameters      _outputParameters;
+        std::string                 _outputMimeType;
 
-			std::unique_ptr<IChildProcess>	_childProcess;
+        std::unique_ptr<IChildProcess>  _childProcess;
+    };
 
-			std::string		_outputMimeType;
-	};
-
-} // namespace Av
-
+} // namespace Av::Transcoding

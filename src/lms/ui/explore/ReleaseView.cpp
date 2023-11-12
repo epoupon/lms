@@ -146,7 +146,7 @@ namespace UserInterface
                     if (audioStream)
                     {
                         releaseInfo->setCondition("if-has-codec", true);
-                        releaseInfo->bindString("codec", audioStream->codec);
+                        releaseInfo->bindString("codec", audioStream->codecName);
                         break;
                     }
                 }

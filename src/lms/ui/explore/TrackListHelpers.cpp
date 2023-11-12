@@ -130,7 +130,7 @@ namespace UserInterface::TrackListHelpers
             if (audioStream)
             {
                 trackInfo->setCondition("if-has-codec", true);
-                trackInfo->bindString("codec", audioStream->codec);
+                trackInfo->bindString("codec", audioStream->codecName);
             }
         }
 

@@ -25,21 +25,32 @@
 
 #include "Types.hpp"
 
-namespace Av
+namespace Av::Transcoding
 {
-	struct InputFileParameters
-	{
-		std::filesystem::path trackPath;
-		std::chrono::milliseconds duration;
-	};
+    struct InputParameters
+    {
+        std::filesystem::path trackPath;
+        std::chrono::milliseconds duration; // used to estimate content length
+    };
 
-	struct TranscodeParameters
-	{
-		Format						format;
-		std::size_t					bitrate {128000};
-		std::optional<std::size_t>	stream; // Id of the stream to be transcoded (auto detect by default)
-		std::chrono::milliseconds	offset {0};
-		bool 						stripMetadata {true};
-	};
-} // namespace Av
+    enum class OutputFormat
+    {
+        MP3,
+        OGG_OPUS,
+        MATROSKA_OPUS,
+        OGG_VORBIS,
+        WEBM_VORBIS,
+    };
+
+    std::string_view toMimetype(OutputFormat format);
+
+    struct OutputParameters
+    {
+        OutputFormat                format;
+        std::size_t                 bitrate{ 128000 };
+        std::optional<std::size_t>  stream; // Id of the stream to be transcoded (auto detect by default)
+        std::chrono::milliseconds   offset{ 0 };
+        bool                        stripMetadata{ true };
+    };
+} // namespace Av::Transcoding
 

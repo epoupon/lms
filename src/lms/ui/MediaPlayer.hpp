@@ -19,118 +19,118 @@
 
 #pragma once
 
-#include <chrono>
 #include <optional>
 
 #include <Wt/WAnchor.h>
 #include <Wt/WJavaScript.h>
+#include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
 
 #include "services/database/TrackId.hpp"
 #include "services/database/Types.hpp"
 
-namespace UserInterface {
-
-class AudioFileResource;
-class AudioTranscodeResource;
-
-class MediaPlayer : public Wt::WTemplate
+namespace UserInterface
 {
-	public:
-		using Bitrate = Database::Bitrate;
-		using Format = Database::AudioFormat;
-		using Gain = float;
+    class AudioFileResource;
+    class AudioTranscodeResource;
 
-		// Do not change enum values as they may be stored locally in browser
-		// Keep it sync with LMS.mediaplayer js
+    class MediaPlayer : public Wt::WTemplate
+    {
+    public:
+        using Bitrate = Database::Bitrate;
+        using Format = Database::TranscodingOutputFormat;
+        using Gain = float;
 
-		struct Settings
-		{
-			struct Transcode
-			{
-				enum class Mode
-				{
-					Never			= 0,
-					Always			= 1,
-					IfFormatNotSupported	= 2,
-				};
-				static inline constexpr Mode defaultMode {Mode::IfFormatNotSupported};
-				static inline constexpr Format defaultFormat {Format::OGG_OPUS};
-				static inline constexpr Bitrate defaultBitrate {128000};
+        // Do not change enum values as they may be stored locally in browser
+        // Keep it sync with LMS.mediaplayer js
 
-				Mode		mode {defaultMode};
-				Format		format {defaultFormat};
-				Bitrate		bitrate {defaultBitrate};
-			};
+        struct Settings
+        {
+            struct Transcode
+            {
+                enum class Mode
+                {
+                    Never = 0,
+                    Always = 1,
+                    IfFormatNotSupported = 2,
+                };
+                static inline constexpr Mode defaultMode{ Mode::IfFormatNotSupported };
+                static inline constexpr Format defaultFormat{ Format::OGG_OPUS };
+                static inline constexpr Bitrate defaultBitrate{ 128000 };
 
-			struct ReplayGain
-			{
-				enum class Mode
-				{
-					None			= 0,
-					Auto			= 1,
-					Track			= 2,
-					Release			= 3,
-				};
+                Mode		mode{ defaultMode };
+                Format		format{ defaultFormat };
+                Bitrate		bitrate{ defaultBitrate };
+            };
 
-				static inline constexpr Mode			defaultMode {Mode::None};
-				static inline constexpr Gain			defaultPreAmpGain {};
-				static inline constexpr Gain			minPreAmpGain {-15};
-				static inline constexpr Gain			maxPreAmpGain {15};
+            struct ReplayGain
+            {
+                enum class Mode
+                {
+                    None = 0,
+                    Auto = 1,
+                    Track = 2,
+                    Release = 3,
+                };
 
-				Mode			mode {defaultMode};
-				Gain			preAmpGain {defaultPreAmpGain};
-				Gain			preAmpGainIfNoInfo {defaultPreAmpGain};
-			};
+                static inline constexpr Mode			defaultMode{ Mode::None };
+                static inline constexpr Gain			defaultPreAmpGain{};
+                static inline constexpr Gain			minPreAmpGain{ -15 };
+                static inline constexpr Gain			maxPreAmpGain{ 15 };
 
-			Transcode transcode;
-			ReplayGain replayGain;
-		};
+                Mode			mode{ defaultMode };
+                Gain			preAmpGain{ defaultPreAmpGain };
+                Gain			preAmpGainIfNoInfo{ defaultPreAmpGain };
+            };
 
-		MediaPlayer();
+            Transcode transcode;
+            ReplayGain replayGain;
+        };
 
-		MediaPlayer(const MediaPlayer&) = delete;
-		MediaPlayer(MediaPlayer&&) = delete;
-		MediaPlayer& operator=(const MediaPlayer&) = delete;
-		MediaPlayer& operator=(MediaPlayer&&) = delete;
+        MediaPlayer();
 
-		std::optional<Database::TrackId> getTrackLoaded() const { return _trackIdLoaded; }
+        MediaPlayer(const MediaPlayer&) = delete;
+        MediaPlayer(MediaPlayer&&) = delete;
+        MediaPlayer& operator=(const MediaPlayer&) = delete;
+        MediaPlayer& operator=(MediaPlayer&&) = delete;
 
-		void loadTrack(Database::TrackId trackId, bool play, float replayGain);
-		void stop();
+        std::optional<Database::TrackId> getTrackLoaded() const { return _trackIdLoaded; }
 
-		std::optional<Settings>	getSettings() const { return _settings; }
-		void					setSettings(const Settings& settings);
+        void loadTrack(Database::TrackId trackId, bool play, float replayGain);
+        void stop();
 
-		void					onPlayQueueUpdated(std::size_t trackCount);
+        std::optional<Settings>	getSettings() const { return _settings; }
+        void					setSettings(const Settings& settings);
 
-		// Signals
-		Wt::JSignal<> 					playPrevious;
-		Wt::JSignal<> 					playNext;
-		Wt::Signal<Database::TrackId>	trackLoaded;
-		Wt::Signal<>					settingsLoaded;
+        void					onPlayQueueUpdated(std::size_t trackCount);
 
-		Wt::JSignal<Database::TrackId::ValueType>						scrobbleListenNow;
-		Wt::JSignal<Database::TrackId::ValueType, unsigned /* ms */>	scrobbleListenFinished;
+        // Signals
+        Wt::JSignal<> 					playPrevious;
+        Wt::JSignal<> 					playNext;
+        Wt::Signal<Database::TrackId>	trackLoaded;
+        Wt::Signal<>					settingsLoaded;
 
-		Wt::JSignal<>			playbackEnded;
+        Wt::JSignal<Database::TrackId::ValueType>						scrobbleListenNow;
+        Wt::JSignal<Database::TrackId::ValueType, unsigned /* ms */>	scrobbleListenFinished;
 
-	private:
-		std::unique_ptr<AudioFileResource>		_audioFileResource;
-		std::unique_ptr<AudioTranscodeResource>	_audioTranscodeResource;
+        Wt::JSignal<>			playbackEnded;
 
-		std::optional<Database::TrackId> _trackIdLoaded;
-		std::optional<Settings>		_settings;
+    private:
+        std::unique_ptr<AudioFileResource>		_audioFileResource;
+        std::unique_ptr<AudioTranscodeResource>	_audioTranscodeResource;
 
-		Wt::JSignal<std::string> 	_settingsLoaded;
+        std::optional<Database::TrackId> _trackIdLoaded;
+        std::optional<Settings>		_settings;
 
-		Wt::WText*			_title {};
-		Wt::WAnchor*		_release {};
-		Wt::WText*			_separator {};
-		Wt::WAnchor*		_artist {};
-		Wt::WPushButton*	_playQueue {};
-};
+        Wt::JSignal<std::string> 	_settingsLoaded;
+
+        Wt::WText* _title{};
+        Wt::WAnchor* _release{};
+        Wt::WText* _separator{};
+        Wt::WAnchor* _artist{};
+        Wt::WPushButton* _playQueue{};
+    };
 
 } // namespace UserInterface
 

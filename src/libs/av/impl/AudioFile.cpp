@@ -65,6 +65,31 @@ namespace Av
                 res[StringUtils::stringToUpper(tag->key)] = tag->value;
             }
         }
+
+        DecodingCodec avcodecToDecodingCodec(AVCodecID codec)
+        {
+            switch (codec)
+            {
+            case AV_CODEC_ID_MP3:          return DecodingCodec::MP3;
+            case AV_CODEC_ID_AAC:          return DecodingCodec::AAC;
+            case AV_CODEC_ID_AC3:          return DecodingCodec::AC3;
+            case AV_CODEC_ID_VORBIS:       return DecodingCodec::VORBIS;
+            case AV_CODEC_ID_WMAV1:        return DecodingCodec::WMAV1;
+            case AV_CODEC_ID_WMAV2:        return DecodingCodec::WMAV2;
+            case AV_CODEC_ID_FLAC:         return DecodingCodec::FLAC;
+            case AV_CODEC_ID_ALAC:         return DecodingCodec::ALAC;
+            case AV_CODEC_ID_WAVPACK:      return DecodingCodec::WAVPACK;
+            case AV_CODEC_ID_MUSEPACK7:    return DecodingCodec::MUSEPACK7;
+            case AV_CODEC_ID_MUSEPACK8:    return DecodingCodec::MUSEPACK8;
+            case AV_CODEC_ID_APE:          return DecodingCodec::APE;
+            case AV_CODEC_ID_EAC3:         return DecodingCodec::EAC3;
+            case AV_CODEC_ID_MP4ALS:       return DecodingCodec::MP4ALS;
+            case AV_CODEC_ID_OPUS:         return DecodingCodec::OPUS;
+            case AV_CODEC_ID_SHORTEN:      return DecodingCodec::SHORTEN;
+            default:
+                return DecodingCodec::UNKNOWN;
+            }
+        }
     }
 
     std::unique_ptr<IAudioFile> parseAudioFile(const std::filesystem::path& p)
@@ -254,14 +279,17 @@ namespace Av
         res.emplace();
         res->index = streamIndex;
         res->bitrate = static_cast<std::size_t>(avstream->codecpar->bit_rate);
-        res->codec = ::avcodec_get_name(avstream->codecpar->codec_id);
-        assert(!res->codec.empty());
+        res->codec = avcodecToDecodingCodec(avstream->codecpar->codec_id);
+        res->codecName = ::avcodec_get_name(avstream->codecpar->codec_id);
+        assert(!res->codecName.empty()); // doc says it is never NULL
 
         return res;
     }
 
     std::string_view getMimeType(const std::filesystem::path& fileExtension)
     {
+        // List should be sync with the demuxers shipped in the lms's docker version
+        // + the _audioFileExtensions in ScanSettings
         static const std::unordered_map<std::filesystem::path, std::string_view> entries
         {
             {".mp3",    "audio/mpeg"},

@@ -34,6 +34,29 @@
 
 namespace Av
 {
+    // List should be sync with the codecs shipped in the lms's docker version
+    enum class DecodingCodec
+    {
+        UNKNOWN,
+        MP3,
+        AAC,
+        AC3,
+        VORBIS,
+        WMAV1,
+        WMAV2,
+        FLAC,           // Flac
+        ALAC,           // Apple Lossless Audio Codec (ALAC)
+        WAVPACK,        // WavPack
+        MUSEPACK7,      // Musepack
+        MUSEPACK8,
+        APE,            // // Monkey's Audio
+        EAC3,           // Enhanced AC-3 
+        MP4ALS,         // MPEG-4 Audio Lossless Coding
+        OPUS,           // Opus
+        SHORTEN,        // Shorten (shn)
+        // TODO add PCM codecs
+    };
+
     struct Picture
     {
         std::string			mimeType;
@@ -52,7 +75,8 @@ namespace Av
     {
         size_t			index{};
         std::size_t     bitrate{};
-        std::string 	codec;
+        DecodingCodec   codec;
+        std::string 	codecName;
     };
 
     class IAudioFile

@@ -80,10 +80,10 @@ namespace Database {
             .resultValue();
     }
 
-    void User::setSubsonicDefaultTranscodeBitrate(Bitrate bitrate)
+    void User::setSubsonicDefaultTranscodingOutputBitrate(Bitrate bitrate)
     {
         assert(isAudioBitrateAllowed(bitrate));
-        _subsonicDefaultTranscodeBitrate = bitrate;
+        _subsonicDefaultTranscodingOutputBitrate = bitrate;
     }
 
     void User::clearAuthTokens()

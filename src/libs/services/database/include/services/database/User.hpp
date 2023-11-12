@@ -58,8 +58,8 @@ namespace Database {
 
         static inline constexpr std::size_t             MinNameLength{ 3 };
         static inline constexpr std::size_t             MaxNameLength{ 15 };
-        static inline constexpr AudioFormat             defaultSubsonicTranscodeFormat{ AudioFormat::OGG_OPUS };
-        static inline constexpr Bitrate                 defaultSubsonicTranscodeBitrate{ 128000 };
+        static inline constexpr TranscodingOutputFormat defaultSubsonicTranscodingOutputFormat{ TranscodingOutputFormat::OGG_OPUS };
+        static inline constexpr Bitrate                 defaultSubsonicTranscodingOutputBitrate{ 128000 };
         static inline constexpr UITheme                 defaultUITheme{ UITheme::Dark };
         static inline constexpr SubsonicArtistListMode  defaultSubsonicArtistListMode{ SubsonicArtistListMode::AllArtists };
         static inline constexpr ScrobblingBackend       defaultScrobblingBackend{ ScrobblingBackend::Internal };
@@ -83,8 +83,8 @@ namespace Database {
         void setLastLogin(const Wt::WDateTime& dateTime) { _lastLogin = dateTime; }
         void setPasswordHash(const PasswordHash& passwordHash) { _passwordSalt = passwordHash.salt; _passwordHash = passwordHash.hash; }
         void setType(UserType type) { _type = type; }
-        void setSubsonicDefaultTranscodeFormat(AudioFormat encoding) { _subsonicDefaultTranscodeFormat = encoding; }
-        void setSubsonicDefaultTranscodeBitrate(Bitrate bitrate);
+        void setSubsonicDefaultTranscodintOutputFormat(TranscodingOutputFormat encoding) { _subsonicDefaultTranscodingOutputFormat = encoding; }
+        void setSubsonicDefaultTranscodingOutputBitrate(Bitrate bitrate);
         void setCurPlayingTrackPos(std::size_t pos) { _curPlayingTrackPos = pos; }
         void setRadio(bool val) { _radio = val; }
         void setRepeatAll(bool val) { _repeatAll = val; }
@@ -99,8 +99,8 @@ namespace Database {
         bool                    isAdmin() const { return _type == UserType::ADMIN; }
         bool                    isDemo() const { return _type == UserType::DEMO; }
         UserType                getType() const { return _type; }
-        AudioFormat             getSubsonicDefaultTranscodeFormat() const { return _subsonicDefaultTranscodeFormat; }
-        Bitrate                 getSubsonicDefaultTranscodeBitrate() const { return _subsonicDefaultTranscodeBitrate; }
+        TranscodingOutputFormat getSubsonicDefaultTranscodingOutputFormat() const { return _subsonicDefaultTranscodingOutputFormat; }
+        Bitrate                 getSubsonicDefaultTranscodingOutputBitrate() const { return _subsonicDefaultTranscodingOutputBitrate; }
         std::size_t             getCurPlayingTrackPos() const { return _curPlayingTrackPos; }
         bool                    isRepeatAllSet() const { return _repeatAll; }
         bool                    isRadioSet() const { return _radio; }
@@ -118,8 +118,8 @@ namespace Database {
             Wt::Dbo::field(a, _passwordSalt, "password_salt");
             Wt::Dbo::field(a, _passwordHash, "password_hash");
             Wt::Dbo::field(a, _lastLogin, "last_login");
-            Wt::Dbo::field(a, _subsonicDefaultTranscodeFormat, "subsonic_default_transcode_format");
-            Wt::Dbo::field(a, _subsonicDefaultTranscodeBitrate, "subsonic_default_transcode_bitrate");
+            Wt::Dbo::field(a, _subsonicDefaultTranscodingOutputFormat, "subsonic_default_transcode_format");
+            Wt::Dbo::field(a, _subsonicDefaultTranscodingOutputBitrate, "subsonic_default_transcode_bitrate");
             Wt::Dbo::field(a, _subsonicArtistListMode, "subsonic_artist_list_mode");
             Wt::Dbo::field(a, _uiTheme, "ui_theme");
             Wt::Dbo::field(a, _feedbackBackend, "feedback_backend");
@@ -153,8 +153,8 @@ namespace Database {
 
         // User defined settings
         SubsonicArtistListMode  _subsonicArtistListMode{ defaultSubsonicArtistListMode };
-        AudioFormat             _subsonicDefaultTranscodeFormat{ defaultSubsonicTranscodeFormat };
-        int                     _subsonicDefaultTranscodeBitrate{ defaultSubsonicTranscodeBitrate };
+        TranscodingOutputFormat _subsonicDefaultTranscodingOutputFormat{ defaultSubsonicTranscodingOutputFormat };
+        int                     _subsonicDefaultTranscodingOutputBitrate{ defaultSubsonicTranscodingOutputBitrate };
 
         // User's dynamic data (UI)
         int     _curPlayingTrackPos{}; // Current track position in queue

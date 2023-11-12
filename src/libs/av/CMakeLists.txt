@@ -3,8 +3,7 @@ add_library(lmsav SHARED
 	impl/AudioFile.cpp
 	impl/RawResourceHandlerCreator.cpp
 	impl/Transcoder.cpp
-	impl/TranscodeResourceHandler.cpp
-	impl/Types.cpp
+	impl/TranscodingResourceHandler.cpp
 	)
 
 target_include_directories(lmsav INTERFACE
