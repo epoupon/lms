@@ -51,7 +51,7 @@ enum class Module
     SCROBBLING,
     SERVICE,
     RECOMMENDATION,
-    TRANSCODE,
+    TRANSCODING,
     UI,
     UTILS,
 };

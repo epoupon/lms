@@ -31,7 +31,7 @@
 namespace Av::Transcoding
 {
 
-#define LOG(sev)	LMS_LOG(TRANSCODE, sev) << "[" << _debugId << "] - "
+#define LOG(sev)	LMS_LOG(TRANSCODING, sev) << "[" << _debugId << "] - "
 
     static std::atomic<size_t>		globalId{};
     static std::filesystem::path	ffmpegPath;

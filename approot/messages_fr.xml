@@ -245,8 +245,8 @@
 <message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.backend.listenbrainz-token">Jeton d'API ListenBrainz</message>
 <message id="Lms.Settings.change-password">Changement de mot de passe</message>
-<message id="Lms.Settings.default-transcode-bitrate">Bitrate par defaut du transcodage</message>
-<message id="Lms.Settings.default-transcode-format">Format par defaut du transcodage</message>
+<message id="Lms.Settings.default-transcoding-output-bitrate">Bitrate par defaut du transcodage</message>
+<message id="Lms.Settings.default-transcoding-output-format">Format par defaut du transcodage</message>
 <message id="Lms.Settings.demo-cannot-save">Impossible de sauvegarder en utilisant un compte de démo !</message>
 <message id="Lms.Settings.feedback">Feedback</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Paramètres</message>
@@ -267,18 +267,18 @@
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Tous les artistes d'album</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.track-artists">Tous les artistes de piste</message>
 <message id="Lms.Settings.subsonic-api">API Subsonic</message>
-<message id="Lms.Settings.transcode">Transcodage</message>
-<message id="Lms.Settings.transcode-bitrate">Bitrate du transcodage</message>
-<message id="Lms.Settings.transcode-format">Format du transcodage</message>
-<message id="Lms.Settings.transcode-format.matroska_opus">Matroska/Opus</message>
-<message id="Lms.Settings.transcode-format.mp3">MP3</message>
-<message id="Lms.Settings.transcode-format.ogg_opus">Ogg/Opus</message>
-<message id="Lms.Settings.transcode-format.ogg_vorbis">Ogg/Vorbis</message>
-<message id="Lms.Settings.transcode-format.webm_vorbis">WebM/Vorbis</message>
-<message id="Lms.Settings.transcode-mode">Appliquer le transcodage</message>
-<message id="Lms.Settings.transcode-mode.always">Toujours</message>
-<message id="Lms.Settings.transcode-mode.if-format-not-supported">Seulement lorsque le format n'est pas pris en charge</message>
-<message id="Lms.Settings.transcode-mode.never">Jamais</message>
+<message id="Lms.Settings.transcoding">Transcodage</message>
+<message id="Lms.Settings.transcoding-output-bitrate">Bitrate du transcodage</message>
+<message id="Lms.Settings.transcoding-output-format">Format du transcodage</message>
+<message id="Lms.Settings.transcoding-output-format.matroska_opus">Matroska/Opus</message>
+<message id="Lms.Settings.transcoding-output-format.mp3">MP3</message>
+<message id="Lms.Settings.transcoding-output-format.ogg_opus">Ogg/Opus</message>
+<message id="Lms.Settings.transcoding-output-format.ogg_vorbis">Ogg/Vorbis</message>
+<message id="Lms.Settings.transcoding-output-format.webm_vorbis">WebM/Vorbis</message>
+<message id="Lms.Settings.transcoding-mode">Appliquer le transcodage</message>
+<message id="Lms.Settings.transcoding-mode.always">Toujours</message>
+<message id="Lms.Settings.transcoding-mode.if-format-not-supported">Seulement lorsque le format n'est pas pris en charge par votre navigateur</message>
+<message id="Lms.Settings.transcoding-mode.never">Jamais</message>
 <message id="Lms.Settings.settings-saved">Paramètres sauvegardés !</message>
 
 <!--Wt-->

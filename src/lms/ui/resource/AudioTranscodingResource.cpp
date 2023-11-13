@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "AudioTranscodeResource.hpp"
+#include "AudioTranscodingResource.hpp"
 
 #include <optional>
 #include <Wt/Http/Response.h>
@@ -159,17 +159,17 @@ namespace UserInterface
         }
     }
 
-    AudioTranscodeResource:: ~AudioTranscodeResource()
+    AudioTranscodingResource:: ~AudioTranscodingResource()
     {
         beingDeleted();
     }
 
-    std::string AudioTranscodeResource::getUrl(Database::TrackId trackId) const
+    std::string AudioTranscodingResource::getUrl(Database::TrackId trackId) const
     {
         return url() + "&trackid=" + trackId.toString();
     }
 
-    void AudioTranscodeResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
+    void AudioTranscodingResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
     {
         std::shared_ptr<IResourceHandler> resourceHandler;
 

@@ -31,10 +31,10 @@ namespace Database
 
 namespace UserInterface
 {
-	class AudioTranscodeResource : public Wt::WResource
+	class AudioTranscodingResource : public Wt::WResource
 	{
 		public:
-			~AudioTranscodeResource();
+			~AudioTranscodingResource();
 
 			// Url depends on the user since settings are used in parameters
 			std::string getUrl(Database::TrackId trackId) const;

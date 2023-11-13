@@ -43,9 +43,9 @@ namespace Av::Transcoding
         , _transcoder{ inputParameters, outputParameters }
     {
         if (_estimatedContentLength)
-            LMS_LOG(TRANSCODE, DEBUG) << "Estimated content length = " << *_estimatedContentLength;
+            LMS_LOG(TRANSCODING, DEBUG) << "Estimated content length = " << *_estimatedContentLength;
         else
-            LMS_LOG(TRANSCODE, DEBUG) << "Not using estimated content length";
+            LMS_LOG(TRANSCODING, DEBUG) << "Not using estimated content length";
     }
 
     Wt::Http::ResponseContinuation* TranscodingResourceHandler::processRequest(const Wt::Http::Request& /*request*/, Wt::Http::Response& response)
@@ -53,11 +53,11 @@ namespace Av::Transcoding
         if (_estimatedContentLength)
             response.setContentLength(*_estimatedContentLength);
         response.setMimeType(_transcoder.getOutputMimeType());
-        LMS_LOG(TRANSCODE, DEBUG) << "Transcoder finished = " << _transcoder.finished() << ", total served bytes = " << _totalServedByteCount << ", mime type = " << _transcoder.getOutputMimeType();
+        LMS_LOG(TRANSCODING, DEBUG) << "Transcoder finished = " << _transcoder.finished() << ", total served bytes = " << _totalServedByteCount << ", mime type = " << _transcoder.getOutputMimeType();
 
         if (_bytesReadyCount > 0)
         {
-            LMS_LOG(TRANSCODE, DEBUG) << "Writing " << _bytesReadyCount << " bytes back to client";
+            LMS_LOG(TRANSCODING, DEBUG) << "Writing " << _bytesReadyCount << " bytes back to client";
 
             response.out().write(reinterpret_cast<const char*>(&_buffer[0]), _bytesReadyCount);
             _totalServedByteCount += _bytesReadyCount;
@@ -70,7 +70,7 @@ namespace Av::Transcoding
             continuation->waitForMoreData();
             _transcoder.asyncRead(_buffer.data(), _buffer.size(), [=](std::size_t nbBytesRead)
                 {
-                    LMS_LOG(TRANSCODE, DEBUG) << "Have " << nbBytesRead << " more bytes to send back";
+                    LMS_LOG(TRANSCODING, DEBUG) << "Have " << nbBytesRead << " more bytes to send back";
 
                     assert(_bytesReadyCount == 0);
                     _bytesReadyCount = nbBytesRead;
@@ -86,7 +86,7 @@ namespace Av::Transcoding
             {
                 const std::size_t padSize{ *_estimatedContentLength - _totalServedByteCount };
 
-                LMS_LOG(TRANSCODE, DEBUG) << "Adding " << padSize << " padding bytes";
+                LMS_LOG(TRANSCODING, DEBUG) << "Adding " << padSize << " padding bytes";
 
                 for (std::size_t i{}; i < padSize; ++i)
                     response.out().put(0);
@@ -94,7 +94,7 @@ namespace Av::Transcoding
                 _totalServedByteCount += padSize;
             }
 
-            LMS_LOG(TRANSCODE, DEBUG) << "Transcoding finished. Total served byte count = " << _totalServedByteCount;
+            LMS_LOG(TRANSCODING, DEBUG) << "Transcoding finished. Total served byte count = " << _totalServedByteCount;
         }
 
         return {};

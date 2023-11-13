@@ -44,23 +44,23 @@
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
 
-namespace UserInterface {
-
+namespace UserInterface 
+{
     using namespace Database;
 
     class SettingsModel : public Wt::WFormModel
     {
     public:
         // Associate each field with a unique string literal.
-        static inline const Field TranscodeModeField{ "transcode-mode" };
-        static inline const Field TranscodeFormatField{ "transcode-format" };
-        static inline const Field TranscodeBitrateField{ "transcode-bitrate" };
+        static inline const Field TranscodingModeField{ "transcoding-mode" };
+        static inline const Field TranscodeFormatField{ "transcoding-output-format" };
+        static inline const Field TranscodeBitrateField{ "transcoding-output-bitrate" };
         static inline const Field ReplayGainModeField{ "replaygain-mode" };
         static inline const Field ReplayGainPreAmpGainField{ "replaygain-preamp" };
         static inline const Field ReplayGainPreAmpGainIfNoInfoField{ "replaygain-preamp-no-rg-info" };
         static inline const Field SubsonicArtistListModeField{ "subsonic-artist-list-mode" };
-        static inline const Field SubsonicTranscodingOutputFormatField{ "subsonic-transcode-format" };
-        static inline const Field SubsonicTranscodingOutputBitrateField{ "subsonic-transcode-bitrate" };
+        static inline const Field SubsonicTranscodingOutputFormatField{ "subsonic-transcoding-output-format" };
+        static inline const Field SubsonicTranscodingOutputBitrateField{ "subsonic-transcoding-output-bitrate" };
         static inline const Field FeedbackBackendField{ "feedback-backend" };
         static inline const Field ScrobblingBackendField{ "scrobbling-backend" };
         static inline const Field ListenBrainzTokenField{ "listenbrainz-token" };
@@ -68,7 +68,7 @@ namespace UserInterface {
         static inline const Field PasswordField{ "password" };
         static inline const Field PasswordConfirmField{ "password-confirm" };
 
-        using TranscodingModeModel = ValueStringModel<MediaPlayer::Settings::Transcode::Mode>;
+        using TranscodingModeModel = ValueStringModel<MediaPlayer::Settings::Transcoding::Mode>;
         using ReplayGainModeModel = ValueStringModel<MediaPlayer::Settings::ReplayGain::Mode>;
         using FeedbackBackendModel = ValueStringModel<FeedbackBackend>;
         using ScrobblingBackendModel = ValueStringModel<ScrobblingBackend>;
@@ -79,7 +79,7 @@ namespace UserInterface {
         {
             initializeModels();
 
-            addField(TranscodeModeField);
+            addField(TranscodingModeField);
             addField(TranscodeBitrateField);
             addField(TranscodeFormatField);
             addField(ReplayGainModeField);
@@ -105,7 +105,7 @@ namespace UserInterface {
                 addField(PasswordConfirmField);
             }
 
-            setValidator(TranscodeModeField, createMandatoryValidator());
+            setValidator(TranscodingModeField, createMandatoryValidator());
             setValidator(TranscodeBitrateField, createMandatoryValidator());
             setValidator(TranscodeFormatField, createMandatoryValidator());
             setValidator(ReplayGainModeField, createMandatoryValidator());
@@ -124,7 +124,7 @@ namespace UserInterface {
 
         std::shared_ptr<TranscodingModeModel>	getTranscodingModeModel() { return _transcodingModeModeModel; }
         std::shared_ptr<Wt::WAbstractItemModel>	getTranscodingOutputBitrateModel() { return _transcodingOutputBitrateModel; }
-        std::shared_ptr<Wt::WAbstractItemModel>	getTranscodeFormatModel() { return _transcodingOutputFormatModel; }
+        std::shared_ptr<Wt::WAbstractItemModel>	getTranscodingOutputFormatModel() { return _transcodingOutputFormatModel; }
         std::shared_ptr<ReplayGainModeModel>	getReplayGainModeModel() { return _replayGainModeModel; }
         std::shared_ptr<Wt::WAbstractItemModel>	getSubsonicArtistListModeModel() { return _subsonicArtistListModeModel; }
         std::shared_ptr<FeedbackBackendModel>	getFeedbackBackendModel() { return _feedbackBackendModel; }
@@ -139,17 +139,17 @@ namespace UserInterface {
             {
                 MediaPlayer::Settings settings;
 
-                auto transcodeModeRow{ _transcodingModeModeModel->getRowFromString(valueText(TranscodeModeField)) };
-                if (transcodeModeRow)
-                    settings.transcode.mode = _transcodingModeModeModel->getValue(*transcodeModeRow);
+                auto transcodingModeRow{ _transcodingModeModeModel->getRowFromString(valueText(TranscodingModeField)) };
+                if (transcodingModeRow)
+                    settings.transcoding.mode = _transcodingModeModeModel->getValue(*transcodingModeRow);
 
-                auto transcodeFormatRow{ _transcodingOutputFormatModel->getRowFromString(valueText(TranscodeFormatField)) };
-                if (transcodeFormatRow)
-                    settings.transcode.format = _transcodingOutputFormatModel->getValue(*transcodeFormatRow);
+                auto transcodingOutputFormatRow{ _transcodingOutputFormatModel->getRowFromString(valueText(TranscodeFormatField)) };
+                if (transcodingOutputFormatRow)
+                    settings.transcoding.format = _transcodingOutputFormatModel->getValue(*transcodingOutputFormatRow);
 
-                auto transcodeBitrateRow{ _transcodingOutputBitrateModel->getRowFromString(valueText(TranscodeBitrateField)) };
-                if (transcodeBitrateRow)
-                    settings.transcode.bitrate = _transcodingOutputBitrateModel->getValue(*transcodeBitrateRow);
+                auto transcodingOutputBitrateRow{ _transcodingOutputBitrateModel->getRowFromString(valueText(TranscodeBitrateField)) };
+                if (transcodingOutputBitrateRow)
+                    settings.transcoding.bitrate = _transcodingOutputBitrateModel->getValue(*transcodingOutputBitrateRow);
 
                 auto replayGainModeRow{ _replayGainModeModel->getRowFromString(valueText(ReplayGainModeField)) };
                 if (replayGainModeRow)
@@ -205,22 +205,22 @@ namespace UserInterface {
             {
                 const auto settings{ *LmsApp->getMediaPlayer().getSettings() };
 
-                auto transcodeModeRow{ _transcodingModeModeModel->getRowFromValue(settings.transcode.mode) };
-                if (transcodeModeRow)
-                    setValue(TranscodeModeField, _transcodingModeModeModel->getString(*transcodeModeRow));
+                auto transcodingModeRow{ _transcodingModeModeModel->getRowFromValue(settings.transcoding.mode) };
+                if (transcodingModeRow)
+                    setValue(TranscodingModeField, _transcodingModeModeModel->getString(*transcodingModeRow));
 
-                auto transcodeFormatRow{ _transcodingOutputFormatModel->getRowFromValue(settings.transcode.format) };
-                if (transcodeFormatRow)
-                    setValue(TranscodeFormatField, _transcodingOutputFormatModel->getString(*transcodeFormatRow));
+                auto transcodingOutputFormatRow{ _transcodingOutputFormatModel->getRowFromValue(settings.transcoding.format) };
+                if (transcodingOutputFormatRow)
+                    setValue(TranscodeFormatField, _transcodingOutputFormatModel->getString(*transcodingOutputFormatRow));
 
-                auto transcodeBitrateRow{ _transcodingOutputBitrateModel->getRowFromValue(settings.transcode.bitrate) };
-                if (transcodeBitrateRow)
-                    setValue(TranscodeBitrateField, _transcodingOutputBitrateModel->getString(*transcodeBitrateRow));
+                auto transcodingOutputBitrateRow{ _transcodingOutputBitrateModel->getRowFromValue(settings.transcoding.bitrate) };
+                if (transcodingOutputBitrateRow)
+                    setValue(TranscodeBitrateField, _transcodingOutputBitrateModel->getString(*transcodingOutputBitrateRow));
 
                 {
-                    const bool usesTranscode{ settings.transcode.mode != MediaPlayer::Settings::Transcode::Mode::Never };
-                    setReadOnly(SettingsModel::TranscodeFormatField, !usesTranscode);
-                    setReadOnly(SettingsModel::TranscodeBitrateField, !usesTranscode);
+                    const bool useTranscoding{ settings.transcoding.mode != MediaPlayer::Settings::Transcoding::Mode::Never };
+                    setReadOnly(SettingsModel::TranscodeFormatField, !useTranscoding);
+                    setReadOnly(SettingsModel::TranscodeBitrateField, !useTranscoding);
                 }
 
                 auto replayGainModeRow{ _replayGainModeModel->getRowFromValue(settings.replayGain.mode) };
@@ -316,9 +316,9 @@ namespace UserInterface {
         void initializeModels()
         {
             _transcodingModeModeModel = std::make_shared<TranscodingModeModel>();
-            _transcodingModeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.always"), MediaPlayer::Settings::Transcode::Mode::Always);
-            _transcodingModeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.never"), MediaPlayer::Settings::Transcode::Mode::Never);
-            _transcodingModeModeModel->add(Wt::WString::tr("Lms.Settings.transcode-mode.if-format-not-supported"), MediaPlayer::Settings::Transcode::Mode::IfFormatNotSupported);
+            _transcodingModeModeModel->add(Wt::WString::tr("Lms.Settings.transcoding-mode.always"), MediaPlayer::Settings::Transcoding::Mode::Always);
+            _transcodingModeModeModel->add(Wt::WString::tr("Lms.Settings.transcoding-mode.never"), MediaPlayer::Settings::Transcoding::Mode::Never);
+            _transcodingModeModeModel->add(Wt::WString::tr("Lms.Settings.transcoding-mode.if-format-not-supported"), MediaPlayer::Settings::Transcoding::Mode::IfFormatNotSupported);
 
             _transcodingOutputBitrateModel = std::make_shared<ValueStringModel<Bitrate>>();
             visitAllowedAudioBitrates([&](const Bitrate bitrate)
@@ -327,11 +327,11 @@ namespace UserInterface {
                 });
 
             _transcodingOutputFormatModel = std::make_shared<ValueStringModel<TranscodingOutputFormat>>();
-            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcode-format.mp3"), TranscodingOutputFormat::MP3);
-            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcode-format.ogg_opus"), TranscodingOutputFormat::OGG_OPUS);
-            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcode-format.matroska_opus"), TranscodingOutputFormat::MATROSKA_OPUS);
-            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcode-format.ogg_vorbis"), TranscodingOutputFormat::OGG_VORBIS);
-            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcode-format.webm_vorbis"), TranscodingOutputFormat::WEBM_VORBIS);
+            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.mp3"), TranscodingOutputFormat::MP3);
+            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.ogg_opus"), TranscodingOutputFormat::OGG_OPUS);
+            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.matroska_opus"), TranscodingOutputFormat::MATROSKA_OPUS);
+            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.ogg_vorbis"), TranscodingOutputFormat::OGG_VORBIS);
+            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.webm_vorbis"), TranscodingOutputFormat::WEBM_VORBIS);
 
             _replayGainModeModel = std::make_shared<ReplayGainModeModel>();
             _replayGainModeModel->add(Wt::WString::tr("Lms.Settings.replaygain-mode.none"), MediaPlayer::Settings::ReplayGain::Mode::None);
@@ -431,24 +431,24 @@ namespace UserInterface {
         // Audio
         {
             // Transcode
-            auto transcodeMode{ std::make_unique<Wt::WComboBox>() };
-            auto* transcodeModeRaw{ transcodeMode.get() };
-            transcodeMode->setModel(model->getTranscodingModeModel());
-            t->setFormWidget(SettingsModel::TranscodeModeField, std::move(transcodeMode));
+            auto transcodingMode{ std::make_unique<Wt::WComboBox>() };
+            auto* transcodingModeRaw{ transcodingMode.get() };
+            transcodingMode->setModel(model->getTranscodingModeModel());
+            t->setFormWidget(SettingsModel::TranscodingModeField, std::move(transcodingMode));
 
             // Format
-            auto transcodeFormat{ std::make_unique<Wt::WComboBox>() };
-            transcodeFormat->setModel(model->getTranscodeFormatModel());
-            t->setFormWidget(SettingsModel::TranscodeFormatField, std::move(transcodeFormat));
+            auto transcodingOutputFormat{ std::make_unique<Wt::WComboBox>() };
+            transcodingOutputFormat->setModel(model->getTranscodingOutputFormatModel());
+            t->setFormWidget(SettingsModel::TranscodeFormatField, std::move(transcodingOutputFormat));
 
             // Bitrate
-            auto transcodeBitrate{ std::make_unique<Wt::WComboBox>() };
-            transcodeBitrate->setModel(model->getTranscodingOutputBitrateModel());
-            t->setFormWidget(SettingsModel::TranscodeBitrateField, std::move(transcodeBitrate));
+            auto transcodingOutputBitrate{ std::make_unique<Wt::WComboBox>() };
+            transcodingOutputBitrate->setModel(model->getTranscodingOutputBitrateModel());
+            t->setFormWidget(SettingsModel::TranscodeBitrateField, std::move(transcodingOutputBitrate));
 
-            transcodeModeRaw->activated().connect([=](int row)
+            transcodingModeRaw->activated().connect([=](int row)
                 {
-                    const bool enable{ model->getTranscodingModeModel()->getValue(row) != MediaPlayer::Settings::Transcode::Mode::Never };
+                    const bool enable{ model->getTranscodingModeModel()->getValue(row) != MediaPlayer::Settings::Transcoding::Mode::Never };
                     model->setReadOnly(SettingsModel::TranscodeFormatField, !enable);
                     model->setReadOnly(SettingsModel::TranscodeBitrateField, !enable);
                     t->updateModel(model.get());
@@ -491,14 +491,14 @@ namespace UserInterface {
             t->setCondition("if-has-subsonic-api", Service<IConfig>::get()->getBool("api-subsonic", true));
 
             // Format
-            auto transcodeFormat{ std::make_unique<Wt::WComboBox>() };
-            transcodeFormat->setModel(model->getTranscodeFormatModel());
-            t->setFormWidget(SettingsModel::SubsonicTranscodingOutputFormatField, std::move(transcodeFormat));
+            auto transcodingOutputFormat{ std::make_unique<Wt::WComboBox>() };
+            transcodingOutputFormat->setModel(model->getTranscodingOutputFormatModel());
+            t->setFormWidget(SettingsModel::SubsonicTranscodingOutputFormatField, std::move(transcodingOutputFormat));
 
             // Bitrate
-            auto transcodeBitrate{ std::make_unique<Wt::WComboBox>() };
-            transcodeBitrate->setModel(model->getTranscodingOutputBitrateModel());
-            t->setFormWidget(SettingsModel::SubsonicTranscodingOutputBitrateField, std::move(transcodeBitrate));
+            auto transcodingOutputBitrate{ std::make_unique<Wt::WComboBox>() };
+            transcodingOutputBitrate->setModel(model->getTranscodingOutputBitrateModel());
+            t->setFormWidget(SettingsModel::SubsonicTranscodingOutputBitrateField, std::move(transcodingOutputBitrate));
 
             // Artist list mode
             auto artistListMode{ std::make_unique<Wt::WComboBox>() };

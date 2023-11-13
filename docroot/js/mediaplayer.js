@@ -2,15 +2,15 @@
 
 var LMS = LMS || {};
 
-// Keep in sync with MediaPlayer::TranscodeMode cpp
-const TranscodeMode = {
+// Keep in sync with MediaPlayer::TranscodingMode cpp
+const TranscodingMode = {
 	Never: 0,
 	Always: 1,
 	IfFormatNotSupported: 2,
 }
 
 const Mode = {
-	Transcode: 1,
+	Transcoding: 1,
 	File: 2,
 }
 Object.freeze(Mode);
@@ -22,7 +22,7 @@ LMS.mediaplayer = function () {
 	let _trackId = null;
 	let _duration = 0;
 	let _audioNativeSrc;
-	let _audioTranscodeSrc;
+	let _audioTranscodingSrc;
 	let _settings = {};
 	let _playedDuration = 0;
 	let _lastStartPlaying = null;
@@ -236,10 +236,10 @@ LMS.mediaplayer = function () {
 			let selectedOffset = parseInt(_elems.seek.value, 10);
 
 			switch (mode) {
-				case Mode.Transcode:
+				case Mode.Transcoding:
 					_offset = selectedOffset;
 					_removeAudioSources();
-					_addAudioSource(_audioTranscodeSrc + "&offset=" + _offset);
+					_addAudioSource(_audioTranscodingSrc + "&offset=" + _offset);
 					_elems.audio.load();
 					_elems.audio.currentTime = 0;
 					_playTrack();
@@ -270,7 +270,7 @@ LMS.mediaplayer = function () {
 		});
 
 		_elems.audio.addEventListener("canplay", function() {
-			if (_getAudioMode() == Mode.Transcode) {
+			if (_getAudioMode() == Mode.Transcoding) {
 				_elems.transcodingActive.style.display = "inline";
 			}
 			else {
@@ -337,7 +337,7 @@ LMS.mediaplayer = function () {
 	let _getAudioMode = function() {
 		if (_elems.audio.currentSrc) {
 			if (_elems.audio.currentSrc.includes("format"))
-				return Mode.Transcode;
+				return Mode.Transcoding;
 			else
 				return Mode.File;
 		}
@@ -353,19 +353,19 @@ LMS.mediaplayer = function () {
 		_offset = 0;
 		_duration = params.duration;
 		_audioNativeSrc = params.nativeResource;
-		_audioTranscodeSrc = params.transcodeResource + "&bitrate=" + _settings.transcode.bitrate + "&format=" + _settings.transcode.format;
+		_audioTranscodingSrc = params.transcodingResource + "&bitrate=" + _settings.transcoding.bitrate + "&format=" + _settings.transcoding.format;
 
 		_elems.seek.max = _duration;
 
 		_removeAudioSources();
 		// ! order is important
-		if (_settings.transcode.mode == TranscodeMode.Never || _settings.transcode.mode == TranscodeMode.IfFormatNotSupported)
+		if (_settings.transcoding.mode == TranscodingMode.Never || _settings.transcoding.mode == TranscodingMode.IfFormatNotSupported)
 		{
 			_addAudioSource(_audioNativeSrc);
 		}
-		if (_settings.transcode.mode == TranscodeMode.Always || _settings.transcode.mode == TranscodeMode.IfFormatNotSupported)
+		if (_settings.transcoding.mode == TranscodingMode.Always || _settings.transcoding.mode == TranscodingMode.IfFormatNotSupported)
 		{
-			_addAudioSource(_audioTranscodeSrc);
+			_addAudioSource(_audioTranscodingSrc);
 		}
 		_elems.audio.load();
 

@@ -33,7 +33,7 @@
 namespace UserInterface
 {
     class AudioFileResource;
-    class AudioTranscodeResource;
+    class AudioTranscodingResource;
 
     class MediaPlayer : public Wt::WTemplate
     {
@@ -47,7 +47,7 @@ namespace UserInterface
 
         struct Settings
         {
-            struct Transcode
+            struct Transcoding
             {
                 enum class Mode
                 {
@@ -84,16 +84,14 @@ namespace UserInterface
                 Gain			preAmpGainIfNoInfo{ defaultPreAmpGain };
             };
 
-            Transcode transcode;
+            Transcoding transcoding;
             ReplayGain replayGain;
         };
 
         MediaPlayer();
-
+        ~MediaPlayer() = default;
         MediaPlayer(const MediaPlayer&) = delete;
-        MediaPlayer(MediaPlayer&&) = delete;
         MediaPlayer& operator=(const MediaPlayer&) = delete;
-        MediaPlayer& operator=(MediaPlayer&&) = delete;
 
         std::optional<Database::TrackId> getTrackLoaded() const { return _trackIdLoaded; }
 
@@ -118,7 +116,7 @@ namespace UserInterface
 
     private:
         std::unique_ptr<AudioFileResource>		_audioFileResource;
-        std::unique_ptr<AudioTranscodeResource>	_audioTranscodeResource;
+        std::unique_ptr<AudioTranscodingResource>	_audioTranscodingResource;
 
         std::optional<Database::TrackId> _trackIdLoaded;
         std::optional<Settings>		_settings;
