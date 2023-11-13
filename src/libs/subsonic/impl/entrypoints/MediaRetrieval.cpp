@@ -40,8 +40,9 @@ namespace API::Subsonic
 {
     using namespace Database;
 
-    namespace {
-        std::optional<Av::Transcoding::OutputFormat> subsonicStreamFormatToAvFormat(std::string_view format)
+    namespace 
+    {
+        std::optional<Av::Transcoding::OutputFormat> subsonicStreamFormatToAvOutputFormat(std::string_view format)
         {
             for (const auto& [str, avFormat] : std::initializer_list<std::pair<std::string_view, Av::Transcoding::OutputFormat>>{
                 {"mp3", Av::Transcoding::OutputFormat::MP3},
@@ -68,6 +69,25 @@ namespace API::Subsonic
             return Av::Transcoding::OutputFormat::OGG_OPUS;
         }
 
+        bool isCodecCompatibleWithOutputFormat(Av::DecodingCodec codec, Av::Transcoding::OutputFormat outputFormat)
+        {
+            switch (outputFormat)
+            {
+            case Av::Transcoding::OutputFormat::MP3:
+                return codec == Av::DecodingCodec::MP3;
+
+            case Av::Transcoding::OutputFormat::OGG_OPUS:
+            case Av::Transcoding::OutputFormat::MATROSKA_OPUS:
+                return codec == Av::DecodingCodec::OPUS;
+
+            case Av::Transcoding::OutputFormat::OGG_VORBIS:
+            case Av::Transcoding::OutputFormat::WEBM_VORBIS:
+                return codec == Av::DecodingCodec::VORBIS;
+            }
+
+            return true;
+        }
+
         struct StreamParameters
         {
             Av::Transcoding::InputParameters inputParameters;
@@ -75,50 +95,37 @@ namespace API::Subsonic
             bool estimateContentLength{};
         };
 
+        bool isOutputFormatCompatible(const std::filesystem::path& trackPath, Av::Transcoding::OutputFormat outputFormat)
+        {
+            try
+            {
+                const auto audioFile{ Av::parseAudioFile(trackPath) };
+
+                const auto streamInfo{ audioFile->getBestStreamInfo() };
+                if (!streamInfo)
+                    throw RequestedDataNotFoundError{}; // TODO 404?
+
+                return isCodecCompatibleWithOutputFormat(streamInfo->codec, outputFormat);
+            }
+            catch (const Av::Exception& e)
+            {
+                // TODO 404?
+                throw RequestedDataNotFoundError{};
+            }
+        }
+
         StreamParameters getStreamParameters(RequestContext& context)
         {
             // Mandatory params
             const TrackId id{ getMandatoryParameterAs<TrackId>(context.parameters, "id") };
 
             // Optional params
-            std::size_t maxBitRate{ getParameterAs<std::size_t>(context.parameters, "maxBitRate").value_or(0) }; // "If set to zero, no limit is imposed"
+            std::size_t maxBitRate{ getParameterAs<std::size_t>(context.parameters, "maxBitRate").value_or(0) * 1000 }; // "If set to zero, no limit is imposed", given in kpbs
             const std::string format{ getParameterAs<std::string>(context.parameters, "format").value_or("") };
             std::size_t timeOffset{ getParameterAs<std::size_t>(context.parameters, "timeOffset").value_or(0) };
             bool estimateContentLength{ getParameterAs<bool>(context.parameters, "estimateContentLength").value_or(false) };
 
             StreamParameters parameters;
-
-            std::size_t bitrate{};
-            parameters.estimateContentLength = estimateContentLength;
-
-            {
-                auto transaction{ context.dbSession.createSharedTransaction() };
-
-                const auto track{ Track::find(context.dbSession, id) };
-                if (!track)
-                    throw RequestedDataNotFoundError{};
-
-                parameters.inputParameters.trackPath = track->getPath();
-                parameters.inputParameters.duration = track->getDuration();
-                bitrate = track->getBitrate() / 1000;
-            }
-
-            if (format == "raw") // raw => no transcode
-                return parameters;
-
-            const auto audioFile{ Av::parseAudioFile(parameters.inputParameters.trackPath) };
-
-            // check if transcode is really needed or not
-            // same format as requested, bitrate is lower than requested => no need to transcode
-            if (const auto streamInfo{ audioFile->getBestStreamInfo() })
-            {
-                // assume reported codec is "mp3", "opus", "vorbis", etc.
-                if (StringUtils::stringCaseInsensitiveEqual(streamInfo->codecName, format) && (maxBitRate == 0 || (bitrate != 0 && bitrate <= maxBitRate)))
-                {
-                    LMS_LOG(API_SUBSONIC, DEBUG) << "stream parameters are compatible with actual file: no transcode";
-                    return parameters;
-                }
-            }
 
             auto transaction{ context.dbSession.createSharedTransaction() };
 
@@ -126,19 +133,55 @@ namespace API::Subsonic
             if (!user)
                 throw UserNotAuthorizedError{};
 
+            const auto track{ Track::find(context.dbSession, id) };
+            if (!track)
+                throw RequestedDataNotFoundError{};
+
+            parameters.inputParameters.trackPath = track->getPath();
+            parameters.inputParameters.duration = track->getDuration();
+            parameters.estimateContentLength = estimateContentLength;
+
+            if (format == "raw") // raw => no transcoding
+                return parameters;
+
+            std::optional<Av::Transcoding::OutputFormat> requestedFormat{ subsonicStreamFormatToAvOutputFormat(format) };
+            if (!requestedFormat)
+            {
+                if (user->getSubsonicEnableTranscodingByDefault())
+                    requestedFormat = userTranscodeFormatToAvFormat(user->getSubsonicDefaultTranscodingOutputFormat());
+            }
+
+            if (!requestedFormat && (maxBitRate == 0 || track->getBitrate() <= maxBitRate ))
+            {
+                LMS_LOG(API_SUBSONIC, DEBUG) << "File's bitrate is compatible with parameters => no transcoding";
+                return parameters; // no transcoding needed
+            }
+
+            // scan the file to check if its format is compatible with the actual requested format
+            //  same codec => apply max bitrate
+            //  otherwise => apply default bitrate (because we can't really compare bitrates between formats) + max bitrate)
+            std::size_t bitrate{};
+            if (requestedFormat && isOutputFormatCompatible(track->getPath(), *requestedFormat))
+            {
+                if (maxBitRate == 0 || track->getBitrate() <= maxBitRate)
+                {
+                    LMS_LOG(API_SUBSONIC, DEBUG) << "File's bitrate and format are compatible with parameters => no transcoding";
+                    return parameters; // no transcoding needed
+                }
+                bitrate = maxBitRate;
+            }
+            
+            if (!requestedFormat)
+                requestedFormat = userTranscodeFormatToAvFormat(user->getSubsonicDefaultTranscodingOutputFormat());
+            if (!bitrate)
+                bitrate = std::min<std::size_t>(user->getSubsonicDefaultTranscodingOutputBitrate(), maxBitRate);
+
             Av::Transcoding::OutputParameters& outputParameters{ parameters.outputParameters.emplace() };
 
             outputParameters.stripMetadata = false; // We want clients to use metadata (offline use, replay gain, etc.)
             outputParameters.offset = std::chrono::seconds{ timeOffset };
-
-            if (std::optional<Av::Transcoding::OutputFormat> requestedFormat{ subsonicStreamFormatToAvFormat(format) })
-                outputParameters.format = *requestedFormat;
-            else
-                outputParameters.format = userTranscodeFormatToAvFormat(user->getSubsonicDefaultTranscodingOutputFormat());
-
-            outputParameters.bitrate = user->getSubsonicDefaultTranscodingOutputBitrate();
-            if (maxBitRate != 0)
-                outputParameters.bitrate = Utils::clamp(outputParameters.bitrate, std::size_t{ 48000 }, maxBitRate * 1000);
+            outputParameters.format = *requestedFormat;
+            outputParameters.bitrate = bitrate;
 
             return parameters;
         }

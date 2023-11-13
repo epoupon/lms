@@ -248,6 +248,7 @@
 <message id="Lms.Settings.default-transcoding-output-bitrate">Default transcoding output bitrate</message>
 <message id="Lms.Settings.default-transcoding-output-format">Default transcoding output format</message>
 <message id="Lms.Settings.demo-cannot-save">Cannot save using a demo account!</message>
+<message id="Lms.Settings.enable-transcoding-by-default">Enable transcoding by default</message>
 <message id="Lms.Settings.feedback">Feedback</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Settings</message>
 <message id="Lms.Settings.password-bad">Bad password</message>

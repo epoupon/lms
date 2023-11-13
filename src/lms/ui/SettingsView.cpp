@@ -44,7 +44,7 @@
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
 
-namespace UserInterface 
+namespace UserInterface
 {
     using namespace Database;
 
@@ -58,6 +58,7 @@ namespace UserInterface
         static inline const Field ReplayGainModeField{ "replaygain-mode" };
         static inline const Field ReplayGainPreAmpGainField{ "replaygain-preamp" };
         static inline const Field ReplayGainPreAmpGainIfNoInfoField{ "replaygain-preamp-no-rg-info" };
+        static inline const Field SubsonicEnableTranscodingByDefault{ "subsonic-enable-transcoding-by-default" };
         static inline const Field SubsonicArtistListModeField{ "subsonic-artist-list-mode" };
         static inline const Field SubsonicTranscodingOutputFormatField{ "subsonic-transcoding-output-format" };
         static inline const Field SubsonicTranscodingOutputBitrateField{ "subsonic-transcoding-output-bitrate" };
@@ -85,6 +86,7 @@ namespace UserInterface
             addField(ReplayGainModeField);
             addField(ReplayGainPreAmpGainField);
             addField(ReplayGainPreAmpGainIfNoInfoField);
+            addField(SubsonicEnableTranscodingByDefault);
             addField(SubsonicTranscodingOutputBitrateField);
             addField(SubsonicTranscodingOutputFormatField);
             addField(FeedbackBackendField);
@@ -162,6 +164,9 @@ namespace UserInterface
             }
 
             {
+                bool subsonicEnableTranscodingByDefault{ Wt::asNumber(value(SubsonicEnableTranscodingByDefault)) != 0 };
+                user.modify()->setSubsonicEnableTranscodingByDefault(subsonicEnableTranscodingByDefault);
+
                 auto subsonicTranscodingOutputBitrateRow{ _transcodingOutputBitrateModel->getRowFromString(valueText(SubsonicTranscodingOutputBitrateField)) };
                 if (subsonicTranscodingOutputBitrateRow)
                     user.modify()->setSubsonicDefaultTranscodingOutputBitrate(_transcodingOutputBitrateModel->getValue(*subsonicTranscodingOutputBitrateRow));
@@ -173,7 +178,6 @@ namespace UserInterface
                 auto subsonicArtistListModeRow{ _subsonicArtistListModeModel->getRowFromString(valueText(SubsonicArtistListModeField)) };
                 if (subsonicArtistListModeRow)
                     user.modify()->setSubsonicArtistListMode(_subsonicArtistListModeModel->getValue(*subsonicArtistListModeRow));
-
             }
 
             {
@@ -232,6 +236,8 @@ namespace UserInterface
             }
 
             {
+                setValue(SubsonicEnableTranscodingByDefault, user->getSubsonicEnableTranscodingByDefault());
+
                 auto subsonicTranscodingOutputBitrateRow{ _transcodingOutputBitrateModel->getRowFromValue(user->getSubsonicDefaultTranscodingOutputBitrate()) };
                 if (subsonicTranscodingOutputBitrateRow)
                     setValue(SubsonicTranscodingOutputBitrateField, _transcodingOutputBitrateModel->getString(*subsonicTranscodingOutputBitrateRow));
@@ -356,7 +362,7 @@ namespace UserInterface
         ::Auth::IPasswordService* _authPasswordService{};
         bool _withOldPassword{};
 
-        std::shared_ptr<TranscodingModeModel>	                        _transcodingModeModeModel;
+        std::shared_ptr<TranscodingModeModel>	                    _transcodingModeModeModel;
         std::shared_ptr<ValueStringModel<Bitrate>>                  _transcodingOutputBitrateModel;
         std::shared_ptr<ValueStringModel<TranscodingOutputFormat>>  _transcodingOutputFormatModel;
         std::shared_ptr<ReplayGainModeModel>                        _replayGainModeModel;
@@ -489,6 +495,9 @@ namespace UserInterface
         // Subsonic
         {
             t->setCondition("if-has-subsonic-api", Service<IConfig>::get()->getBool("api-subsonic", true));
+
+            // Enable transcoding by default
+            t->setFormWidget(SettingsModel::SubsonicEnableTranscodingByDefault, std::make_unique<Wt::WCheckBox>());
 
             // Format
             auto transcodingOutputFormat{ std::make_unique<Wt::WComboBox>() };

@@ -245,9 +245,10 @@
 <message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.backend.listenbrainz-token">Jeton d'API ListenBrainz</message>
 <message id="Lms.Settings.change-password">Changement de mot de passe</message>
-<message id="Lms.Settings.default-transcoding-output-bitrate">Bitrate par defaut du transcodage</message>
-<message id="Lms.Settings.default-transcoding-output-format">Format par defaut du transcodage</message>
+<message id="Lms.Settings.default-transcoding-output-bitrate">Bitrate par défaut du transcodage</message>
+<message id="Lms.Settings.default-transcoding-output-format">Format par défaut du transcodage</message>
 <message id="Lms.Settings.demo-cannot-save">Impossible de sauvegarder en utilisant un compte de démo !</message>
+<message id="Lms.Settings.enable-transcoding-by-default">Activer par défaut le transcodage</message>
 <message id="Lms.Settings.feedback">Feedback</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Paramètres</message>
 <message id="Lms.Settings.password-bad">Mauvais mot de passe</message>

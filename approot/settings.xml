@@ -74,6 +74,17 @@
 		</div>
 		${<if-has-subsonic-api>}
 			<legend>${tr:Lms.Settings.subsonic-api}</legend>
+			<div class="col-12">
+				<div class="form-check">
+					${subsonic-enable-transcoding-by-default class="form-check-input"}
+					<label class="form-check-label" for="${id:subsonic-enable-transcoding-by-default}">
+						${tr:Lms.Settings.enable-transcoding-by-default}
+					</label>
+					<div class="invalid-feedback">
+						${subsonic-enable-transcoding-by-default-info}
+					</div>
+				</div>
+			</div>
 			<div class="col-lg-6">
 				<label class="form-label" for="${id:subsonic-transcoding-output-format}">
 					${tr:Lms.Settings.default-transcoding-output-format}

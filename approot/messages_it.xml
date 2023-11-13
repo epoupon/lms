@@ -249,6 +249,7 @@
 
 <message id="Lms.Settings.demo-cannot-save">Non posso salvare le impostazioni utilizzando l'account demo!</message>
 
+
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Impostazioni</message>
 <message id="Lms.Settings.password-bad">Password errata</message>
 <message id="Lms.Settings.password-must-fill-old-password">Devi inserire la password attuale</message>

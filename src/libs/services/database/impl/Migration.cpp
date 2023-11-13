@@ -243,6 +243,12 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
         ScanSettings::get(session).modify()->incScanVersion();
     }
 
+    void migrateFromV45(Session& session)
+    {
+        // add subsonic_enable_transcoding_by_default, default is disabled
+        session.getDboSession().execute("ALTER TABLE user ADD subsonic_enable_transcoding_by_default INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*User::defaultSubsonicEnableTranscodingByDefault*/0)) + ")");
+    }
+
     void doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -266,6 +272,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
             {42, migrateFromV42},
             {43, migrateFromV43},
             {44, migrateFromV44},
+            {45, migrateFromV45},
         };
 
         {
