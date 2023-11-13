@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
@@ -45,10 +47,10 @@ namespace Database
 
         struct FindParameters
         {
-            UserId							user;
-            std::optional<ScrobblingBackend>		backend;
-            std::optional<SyncState>	syncState;
-            Range							range;
+            UserId							    user;
+            std::optional<ScrobblingBackend>	backend;
+            std::optional<SyncState>        	syncState;
+            std::optional<Range>			    range;
 
             FindParameters& setUser(UserId _user) { user = _user; return *this; }
             FindParameters& setScrobblingBackend(ScrobblingBackend _backend) { backend = _backend; return *this; }
@@ -63,13 +65,13 @@ namespace Database
         static RangeResults<ListenId>   find(Session& session, const FindParameters& parameters);
 
         // Stats
-        static RangeResults<ArtistId>   getTopArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range = {});
-        static RangeResults<ReleaseId>  getTopReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range = {});
-        static RangeResults<TrackId>    getTopTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range = {});
+        static RangeResults<ArtistId>   getTopArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range = std::nullopt);
+        static RangeResults<ReleaseId>  getTopReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range = std::nullopt);
+        static RangeResults<TrackId>    getTopTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range = std::nullopt);
 
-        static RangeResults<ArtistId>   getRecentArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range = {});
-        static RangeResults<ReleaseId>  getRecentReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range = {});
-        static RangeResults<TrackId>    getRecentTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range = {});
+        static RangeResults<ArtistId>   getRecentArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range = std::nullopt);
+        static RangeResults<ReleaseId>  getRecentReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range = std::nullopt);
+        static RangeResults<TrackId>    getRecentTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range = std::nullopt);
 
         static std::size_t              getCount(Session& session, UserId userId, ScrobblingBackend backend, TrackId trackId);
         static std::size_t              getCount(Session& session, UserId userId, ScrobblingBackend backend, ReleaseId trackId);

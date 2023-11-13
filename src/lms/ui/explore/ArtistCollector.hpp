@@ -37,7 +37,7 @@ namespace UserInterface
 		public:
 			using DatabaseCollectorBase::DatabaseCollectorBase;
 
-			Database::RangeResults<Database::ArtistId>	get(Database::Range range);
+			Database::RangeResults<Database::ArtistId>	get(std::optional<Database::Range> range = std::nullopt);
 			void reset() { _randomArtists.reset(); }
 			void setArtistLinkType(std::optional<Database::TrackArtistLinkType> linkType) { _linkType = linkType; }
 

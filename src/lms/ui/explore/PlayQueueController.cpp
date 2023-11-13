@@ -45,7 +45,7 @@ namespace UserInterface
                 params.setArtist(artistId);
                 params.setSortMethod(Database::TrackSortMethod::DateDescAndRelease);
                 params.setClusters(clusters);
-                params.setRange({ 0, maxTrackCount - res.size() });
+                params.setRange(Database::Range{ 0, maxTrackCount - res.size() });
 
                 const auto tracks{ Database::Track::findIds(session, params) };
 
@@ -74,7 +74,7 @@ namespace UserInterface
                 params.setRelease(releaseId);
                 params.setSortMethod(Database::TrackSortMethod::Release);
                 params.setClusters(clusters);
-                params.setRange({ 0, maxTrackCount - res.size() });
+                params.setRange(Database::Range{ 0, maxTrackCount - res.size() });
 
                 const auto tracks{ Database::Track::findIds(session, params) };
 
@@ -98,7 +98,7 @@ namespace UserInterface
             Database::Track::FindParameters params;
             params.setTrackList(trackListId);
             params.setClusters(clusters);
-            params.setRange({ 0, maxTrackCount });
+            params.setRange(Database::Range{ 0, maxTrackCount });
             params.setSortMethod(TrackSortMethod::TrackList);
             params.setDistinct(false);
 

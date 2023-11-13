@@ -270,7 +270,7 @@ int main(int argc, char* argv[])
         Service<Cover::ICoverService> coverService{ Cover::createCoverService(database, argv[0], server.appRoot() + "/images/unknown-cover.jpg") };
         Service<Recommendation::IRecommendationService> recommendationService{ Recommendation::createRecommendationService(database) };
         Service<Recommendation::IPlaylistGeneratorService> playlistGeneratorService{ Recommendation::createPlaylistGeneratorService(database, *recommendationService.get()) };
-        Service<Scanner::IScannerService> scannerService{ Scanner::createScannerService(database, *recommendationService) };
+        Service<Scanner::IScannerService> scannerService{ Scanner::createScannerService(database) };
 
         scannerService->getEvents().scanComplete.connect([&]
             {

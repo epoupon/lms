@@ -57,43 +57,56 @@ namespace API::Subsonic
             std::size_t songCount{ getParameterAs<std::size_t>(context.parameters, "songCount").value_or(20) };
             std::size_t songOffset{ getParameterAs<std::size_t>(context.parameters, "songOffset").value_or(0) };
 
+            if (artistCount > defaultMaxCountSize)
+                throw ParameterValueTooHighGenericError{ "artistCount", defaultMaxCountSize };
+            else if (albumCount > defaultMaxCountSize)
+                throw ParameterValueTooHighGenericError{ "albumCount", defaultMaxCountSize };
+            else if (songCount > defaultMaxCountSize)
+                throw ParameterValueTooHighGenericError{ "songCount", defaultMaxCountSize };
+
+            Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+            Response::Node& searchResult2Node{ response.createNode(id3 ? "searchResult3" : "searchResult2") };
+
             auto transaction{ context.dbSession.createSharedTransaction() };
 
             User::pointer user{ User::find(context.dbSession, context.userId) };
             if (!user)
                 throw UserNotAuthorizedError{};
 
-            Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-            Response::Node& searchResult2Node{ response.createNode(id3 ? "searchResult3" : "searchResult2") };
-
             if (artistCount > 0)
             {
                 Artist::FindParameters params;
                 params.setKeywords(keywords);
-                params.setRange({ artistOffset, artistCount });
+                params.setRange(Range{ artistOffset, artistCount });
 
-                for (const Artist::pointer& artist : Artist::find(context.dbSession, params).results)
-                    searchResult2Node.addArrayChild("artist", createArtistNode(context, artist, user, id3));
+                Artist::find(context.dbSession, params, [&](const Artist::pointer& artist)
+                    {
+                        searchResult2Node.addArrayChild("artist", createArtistNode(context, artist, user, id3));
+                    });
             }
 
             if (albumCount > 0)
             {
                 Release::FindParameters params;
                 params.setKeywords(keywords);
-                params.setRange({ albumOffset, albumCount });
+                params.setRange(Range{ albumOffset, albumCount });
 
-                for (const Release::pointer& release : Release::find(context.dbSession, params).results)
-                    searchResult2Node.addArrayChild("album", createAlbumNode(context, release, user, id3));
+                Release::find(context.dbSession, params, [&](const Release::pointer& release)
+                    {
+                        searchResult2Node.addArrayChild("album", createAlbumNode(context, release, user, id3));
+                    });
             }
 
             if (songCount > 0)
             {
                 Track::FindParameters params;
                 params.setKeywords(keywords);
-                params.setRange({ songOffset, songCount });
+                params.setRange(Range{ songOffset, songCount });
 
-                for (const Track::pointer& track : Track::find(context.dbSession, params).results)
-                    searchResult2Node.addArrayChild("song", createSongNode(context, track, user));
+                Track::find(context.dbSession, params, [&](const Track::pointer& track)
+                    {
+                        searchResult2Node.addArrayChild("song", createSongNode(context, track, user));
+                    });
             }
 
             return response;

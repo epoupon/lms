@@ -33,113 +33,109 @@
 
 using namespace Database;
 
-namespace UserInterface {
-
-Releases::Releases(Filters& filters, PlayQueueController& playQueueController)
-: Template {Wt::WString::tr("Lms.Explore.Releases.template")}
-, _playQueueController {playQueueController}
-, _releaseCollector {filters, _defaultMode, _maxCount}
+namespace UserInterface
 {
-	addFunction("tr", &Wt::WTemplate::Functions::tr);
-	addFunction("id", &Wt::WTemplate::Functions::id);
 
-	auto bindMenuItem {[this](const std::string& var, const Wt::WString& title, ReleaseCollector::Mode mode)
-	{
-		auto *menuItem {bindNew<Wt::WPushButton>(var, title)};
-		menuItem->clicked().connect([=]
-		{
-			refreshView(mode);
-			_currentActiveItem->removeStyleClass("active");
-			menuItem->addStyleClass("active");
-			_currentActiveItem = menuItem;
-		});
+    Releases::Releases(Filters& filters, PlayQueueController& playQueueController)
+        : Template{ Wt::WString::tr("Lms.Explore.Releases.template") }
+        , _playQueueController{ playQueueController }
+        , _releaseCollector{ filters, _defaultMode, _maxCount }
+    {
+        addFunction("tr", &Wt::WTemplate::Functions::tr);
+        addFunction("id", &Wt::WTemplate::Functions::id);
 
-		if (mode == _defaultMode)
-		{
-			_currentActiveItem = menuItem;
-			_currentActiveItem->addStyleClass("active");
-		}
-	}};
+        auto bindMenuItem{ [this](const std::string& var, const Wt::WString& title, ReleaseCollector::Mode mode)
+        {
+            auto* menuItem {bindNew<Wt::WPushButton>(var, title)};
+            menuItem->clicked().connect([=]
+            {
+                refreshView(mode);
+                _currentActiveItem->removeStyleClass("active");
+                menuItem->addStyleClass("active");
+                _currentActiveItem = menuItem;
+            });
 
-	bindMenuItem("random", Wt::WString::tr("Lms.Explore.random"), ReleaseCollector::Mode::Random);
-	bindMenuItem("starred", Wt::WString::tr("Lms.Explore.starred"), ReleaseCollector::Mode::Starred);
-	bindMenuItem("recently-played", Wt::WString::tr("Lms.Explore.recently-played"), ReleaseCollector::Mode::RecentlyPlayed);
-	bindMenuItem("most-played", Wt::WString::tr("Lms.Explore.most-played"), ReleaseCollector::Mode::MostPlayed);
-	bindMenuItem("recently-added", Wt::WString::tr("Lms.Explore.recently-added"), ReleaseCollector::Mode::RecentlyAdded);
-	bindMenuItem("all", Wt::WString::tr("Lms.Explore.all"), ReleaseCollector::Mode::All);
+            if (mode == _defaultMode)
+            {
+                _currentActiveItem = menuItem;
+                _currentActiveItem->addStyleClass("active");
+            }
+        } };
 
-	Wt::WPushButton* playBtn {bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)};
-	playBtn->clicked().connect([this]
-	{
-		_playQueueController.processCommand(PlayQueueController::Command::Play, getAllReleases());
-	});
+        bindMenuItem("random", Wt::WString::tr("Lms.Explore.random"), ReleaseCollector::Mode::Random);
+        bindMenuItem("starred", Wt::WString::tr("Lms.Explore.starred"), ReleaseCollector::Mode::Starred);
+        bindMenuItem("recently-played", Wt::WString::tr("Lms.Explore.recently-played"), ReleaseCollector::Mode::RecentlyPlayed);
+        bindMenuItem("most-played", Wt::WString::tr("Lms.Explore.most-played"), ReleaseCollector::Mode::MostPlayed);
+        bindMenuItem("recently-added", Wt::WString::tr("Lms.Explore.recently-added"), ReleaseCollector::Mode::RecentlyAdded);
+        bindMenuItem("all", Wt::WString::tr("Lms.Explore.all"), ReleaseCollector::Mode::All);
 
-	bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
-		->clicked().connect([=]
-		{
-			_playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, getAllReleases());
-		});
-	bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"), Wt::TextFormat::Plain)
-		->clicked().connect([=]
-		{
-			_playQueueController.processCommand(PlayQueueController::Command::PlayNext, getAllReleases());
-		});
-	bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
-		->clicked().connect([=]
-		{
-			_playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, getAllReleases());
-		});
+        Wt::WPushButton* playBtn{ bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML) };
+        playBtn->clicked().connect([this]
+            {
+                _playQueueController.processCommand(PlayQueueController::Command::Play, getAllReleases());
+            });
 
-	_container = bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
-	_container->onRequestElements.connect([this]
-	{
-		addSome();
-	});
+        bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
+            ->clicked().connect([=]
+                {
+                    _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, getAllReleases());
+                });
+        bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"), Wt::TextFormat::Plain)
+            ->clicked().connect([=]
+                {
+                    _playQueueController.processCommand(PlayQueueController::Command::PlayNext, getAllReleases());
+                });
+        bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
+            ->clicked().connect([=]
+                {
+                    _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, getAllReleases());
+                });
 
-	filters.updated().connect([this]
-	{
-		refreshView();
-	});
+        _container = bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
+        _container->onRequestElements.connect([this]
+            {
+                addSome();
+            });
 
-	refreshView(_releaseCollector.getMode());
-}
+        filters.updated().connect([this]
+            {
+                refreshView();
+            });
 
-void
-Releases::refreshView()
-{
-	_container->reset();
-	_releaseCollector.reset();
-}
+        refreshView(_releaseCollector.getMode());
+    }
 
-void
-Releases::refreshView(ReleaseCollector::Mode mode)
-{
-	_releaseCollector.setMode(mode);
-	refreshView();
-}
+    void Releases::refreshView()
+    {
+        _container->reset();
+        _releaseCollector.reset();
+    }
 
-void
-Releases::addSome()
-{
-	const auto releaseIds {_releaseCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize})};
+    void Releases::refreshView(ReleaseCollector::Mode mode)
+    {
+        _releaseCollector.setMode(mode);
+        refreshView();
+    }
 
-	{
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+    void Releases::addSome()
+    {
+        const auto releaseIds{ _releaseCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize}) };
 
-		for (const ReleaseId releaseId : releaseIds.results)
-		{
-			if (const Release::pointer release {Release::find(LmsApp->getDbSession(), releaseId)})
-				_container->add(ReleaseListHelpers::createEntry(release));
-		}
-	}
-}
+        {
+            auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
 
-std::vector<ReleaseId>
-Releases::getAllReleases()
-{
-	RangeResults<ReleaseId> releaseIds {_releaseCollector.get(Range {})};
-	return std::move(releaseIds.results);
-}
+            for (const ReleaseId releaseId : releaseIds.results)
+            {
+                if (const Release::pointer release{ Release::find(LmsApp->getDbSession(), releaseId) })
+                    _container->add(ReleaseListHelpers::createEntry(release));
+            }
+        }
+    }
+
+    std::vector<ReleaseId> Releases::getAllReleases()
+    {
+        RangeResults<ReleaseId> releaseIds{ _releaseCollector.get() };
+        return std::move(releaseIds.results);
+    }
 
 } // namespace UserInterface
-

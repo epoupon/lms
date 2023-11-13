@@ -58,7 +58,7 @@ namespace Database
             std::vector<std::string_view>		keywords;	// if non empty, name must match all of these keywords (on either name field OR sort name field)
             std::optional<TrackArtistLinkType>	linkType;	// if set, only artists that have produced at least one track with this link type
             ArtistSortMethod					sortMethod{ ArtistSortMethod::None };
-            Range								range;
+            std::optional<Range>				range;
             Wt::WDateTime						writtenAfter;
             UserId								starringUser;	// only artists starred by this user
             std::optional<FeedbackBackend>		feedbackBackend; // and for this feedback backend
@@ -69,7 +69,7 @@ namespace Database
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
             FindParameters& setLinkType(std::optional<TrackArtistLinkType> _linkType) { linkType = _linkType; return *this; }
             FindParameters& setSortMethod(ArtistSortMethod _sortMethod) { sortMethod = _sortMethod; return *this; }
-            FindParameters& setRange(Range _range) { range = _range; return *this; }
+            FindParameters& setRange(std::optional<Range> _range) { range = _range; return *this; }
             FindParameters& setWrittenAfter(const Wt::WDateTime& _after) { writtenAfter = _after; return *this; }
             FindParameters& setStarringUser(UserId _user, FeedbackBackend _feedbackBackend) { starringUser = _user; feedbackBackend = _feedbackBackend; return *this; }
             FindParameters& setTrack(TrackId _track) { track = _track; return *this; }
@@ -84,8 +84,9 @@ namespace Database
         static pointer					find(Session& session, ArtistId id);
         static std::vector<pointer>		find(Session& session, const std::string& name);		// exact match on name field
         static RangeResults<pointer>	find(Session& session, const FindParameters& parameters);
+        static void					    find(Session& session, const FindParameters& parameters, std::function<void(const pointer&)> func);
         static RangeResults<ArtistId>	findIds(Session& session, const FindParameters& parameters);
-        static RangeResults<ArtistId>	findOrphanIds(Session& session, Range range); // No track related
+        static RangeResults<ArtistId>	findOrphanIds(Session& session, std::optional<Range> range = std::nullopt); // No track related
         static bool						exists(Session& session, ArtistId id);
 
         // Accessors
@@ -94,7 +95,7 @@ namespace Database
         std::optional<UUID>	getMBID() const { return UUID::fromString(_MBID); }
 
         // No artistLinkTypes means get them all
-        RangeResults<ArtistId>          findSimilarArtistIds(EnumSet<TrackArtistLinkType> artistLinkTypes = {}, Range range = {}) const;
+        RangeResults<ArtistId>          findSimilarArtistIds(EnumSet<TrackArtistLinkType> artistLinkTypes = {}, std::optional<Range> range = std::nullopt) const;
 
         // Get the cluster of the tracks made by this artist
         // Each clusters are grouped by cluster type, sorted by the number of occurence

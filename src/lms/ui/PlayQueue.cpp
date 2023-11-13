@@ -799,8 +799,9 @@ namespace UserInterface
         params.setDistinct(false);
         params.setSortMethod(TrackSortMethod::TrackList);
 
-        const auto tracks{ Track::find(session, params) };
-        for (const Track::pointer& track : tracks.results)
-            session.create<TrackListEntry>(track, trackList);
+        Track::find(session, params, [&](const Track::pointer& track)
+            {
+                session.create<TrackListEntry>(track, trackList);
+            });
     }
 } // namespace UserInterface

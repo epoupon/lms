@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -51,7 +52,7 @@ class TrackFeatures final : public Object<TrackFeatures, TrackFeaturesId>
 		static std::size_t						getCount(Session& session);
 		static pointer							find(Session& session, TrackFeaturesId id);
 		static pointer							find(Session& session, TrackId trackId);
-		static RangeResults<TrackFeaturesId>	find(Session& session, Range range);
+		static RangeResults<TrackFeaturesId>	find(Session& session, std::optional<Range> range = std::nullopt);
 
 		FeatureValues		getFeatureValues(const FeatureName& feature) const;
 		FeatureValuesMap	getFeatureValuesMap(const std::unordered_set<FeatureName>& featureNames) const;

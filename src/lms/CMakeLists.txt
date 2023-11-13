@@ -44,7 +44,7 @@ add_executable(lms
 	ui/explore/TrackListsView.cpp
 	ui/explore/TracksView.cpp
 	ui/resource/AudioFileResource.cpp
-	ui/resource/AudioTranscodeResource.cpp
+	ui/resource/AudioTranscodingResource.cpp
 	ui/resource/CoverResource.cpp
 	ui/resource/DownloadResource.cpp
 	)

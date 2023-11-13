@@ -35,88 +35,89 @@
 
 namespace UserInterface {
 
-CoverResource::CoverResource()
-{
-	LmsApp->getScannerEvents().scanComplete.connect(this, [this](const Scanner::ScanStats& stats)
-	{
-		if (stats.nbChanges())
-			setChanged();
-	});
-}
+    CoverResource::CoverResource()
+    {
+        LmsApp->getScannerEvents().scanComplete.connect(this, [this](const Scanner::ScanStats& stats)
+            {
+                if (stats.nbChanges())
+                    setChanged();
+            });
+    }
 
-CoverResource::~CoverResource()
-{
-	beingDeleted();
-}
+    CoverResource::~CoverResource()
+    {
+        beingDeleted();
+    }
 
-std::string
-CoverResource::getReleaseUrl(Database::ReleaseId releaseId, Size size) const
-{
-	return url() + "&releaseid=" + releaseId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size));
-}
+    std::string CoverResource::getReleaseUrl(Database::ReleaseId releaseId, Size size) const
+    {
+        return url() + "&releaseid=" + releaseId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size));
+    }
 
-std::string
-CoverResource::getTrackUrl(Database::TrackId trackId, Size size) const
-{
-	return url() + "&trackid=" + trackId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size));
-}
+    std::string CoverResource::getTrackUrl(Database::TrackId trackId, Size size) const
+    {
+        return url() + "&trackid=" + trackId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size));
+    }
 
-void
-CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
-{
-	// Retrieve parameters
-	const std::string *trackIdStr = request.getParameter("trackid");
-	const std::string *releaseIdStr = request.getParameter("releaseid");
-	const std::string *sizeStr = request.getParameter("size");
+    void CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
+    {
+        // Retrieve parameters
+        const std::string* trackIdStr = request.getParameter("trackid");
+        const std::string* releaseIdStr = request.getParameter("releaseid");
+        const std::string* sizeStr = request.getParameter("size");
 
-	// Mandatory parameter size
-	if (!sizeStr)
-	{
-		LOG(DEBUG) << "no size provided!";
-		return;
-	}
+        // Mandatory parameter size
+        if (!sizeStr)
+        {
+            LOG(DEBUG) << "no size provided!";
+            return;
+        }
 
-	const auto size {StringUtils::readAs<std::size_t>(*sizeStr)};
-	if (!size || *size > maxSize)
-	{
-		LOG(DEBUG) << "invalid size provided!";
-		return;
-	}
+        const auto size{ StringUtils::readAs<std::size_t>(*sizeStr) };
+        if (!size || *size > maxSize)
+        {
+            LOG(DEBUG) << "invalid size provided!";
+            return;
+        }
 
-	std::shared_ptr<Image::IEncodedImage> cover;
+        std::shared_ptr<Image::IEncodedImage> cover;
 
-	if (trackIdStr)
-	{
-		LOG(DEBUG) << "Requested cover for track " << *trackIdStr << ", size = " << *size;
+        if (trackIdStr)
+        {
+            LOG(DEBUG) << "Requested cover for track " << *trackIdStr << ", size = " << *size;
 
-		const std::optional<Database::TrackId> trackId {StringUtils::readAs<Database::TrackId::ValueType>(*trackIdStr)};
-		if (!trackId)
-		{
-			LOG(DEBUG) << "track not found";
-			return;
-		}
+            const std::optional<Database::TrackId> trackId{ StringUtils::readAs<Database::TrackId::ValueType>(*trackIdStr) };
+            if (!trackId)
+            {
+                LOG(DEBUG) << "track not found";
+                return;
+            }
 
-		cover = Service<Cover::ICoverService>::get()->getFromTrack(*trackId, *size);
-	}
-	else if (releaseIdStr)
-	{
-		LOG(DEBUG) << "Requested cover for release " << *releaseIdStr << ", size = " << *size;
+            cover = Service<Cover::ICoverService>::get()->getFromTrack(*trackId, *size);
+            if (!cover)
+                cover = Service<Cover::ICoverService>::get()->getDefault(*size);
+        }
+        else if (releaseIdStr)
+        {
+            LOG(DEBUG) << "Requested cover for release " << *releaseIdStr << ", size = " << *size;
 
-		const std::optional<Database::ReleaseId> releaseId {StringUtils::readAs<Database::ReleaseId::ValueType>(*releaseIdStr)};
-		if (!releaseId)
-			return;
+            const std::optional<Database::ReleaseId> releaseId{ StringUtils::readAs<Database::ReleaseId::ValueType>(*releaseIdStr) };
+            if (!releaseId)
+                return;
 
-		cover = Service<Cover::ICoverService>::get()->getFromRelease(*releaseId, *size);
-	}
-	else
-	{
-		LOG(DEBUG) << "No track or release provided";
-		return;
-	}
+            cover = Service<Cover::ICoverService>::get()->getFromRelease(*releaseId, *size);
+            if (!cover)
+                cover = Service<Cover::ICoverService>::get()->getDefault(*size);
+        }
+        else
+        {
+            LOG(DEBUG) << "No track or release provided";
+            return;
+        }
 
-	response.setMimeType(std::string {cover->getMimeType()});
+        response.setMimeType(std::string{ cover->getMimeType() });
 
-	response.out().write(reinterpret_cast<const char *>(cover->getData()), cover->getDataSize());
-}
+        response.out().write(reinterpret_cast<const char*>(cover->getData()), cover->getDataSize());
+    }
 
 } // namespace UserInterface

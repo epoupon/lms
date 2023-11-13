@@ -66,7 +66,7 @@ namespace API::Subsonic
         {
             std::unordered_map<std::string, ProtocolVersion> res;
 
-            Service<IConfig>::get()->visitStrings("api-subsonic-report-old-server-protocol",
+            Service<IConfig>::get()->visitStrings("api-subsonic-old-server-protocol-clients",
                 [&](std::string_view client)
                 {
                     res.emplace(std::string{ client }, ProtocolVersion{ 1, 12, 0 });
@@ -84,6 +84,19 @@ namespace API::Subsonic
                 {
                     res.emplace(std::string{ client });
                 }, { "DSub" });
+
+            return res;
+        }
+
+        std::unordered_set<std::string> readDefaultCoverClients()
+        {
+            std::unordered_set<std::string> res;
+
+            Service<IConfig>::get()->visitStrings("api-subsonic-default-cover-clients",
+                [&](std::string_view client)
+                {
+                    res.emplace(std::string{ client });
+                }, { "DSub", "substreamer" });
 
             return res;
         }
@@ -266,6 +279,7 @@ namespace API::Subsonic
     SubsonicResource::SubsonicResource(Db& db)
         : _serverProtocolVersionsByClient{ readConfigProtocolVersions() }
         , _openSubsonicDisabledClients{ readOpenSubsonicDisabledClients() }
+        , _defaultCoverClients{ readDefaultCoverClients() }
         , _db{ db }
     {
     }
@@ -286,13 +300,13 @@ namespace API::Subsonic
         const ResponseFormat format{ getParameterAs<std::string>(request.getParameterMap(), "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml };
 
         ProtocolVersion protocolVersion{ defaultServerProtocolVersion };
-        
+
         try
         {
             // We need to parse client a soon as possible to make sure to answer with the right protocol version
             protocolVersion = getServerProtocolVersion(getMandatoryParameterAs<std::string>(request.getParameterMap(), "c"));
             RequestContext requestContext{ buildRequestContext(request) };
-            
+
             auto itEntryPoint{ requestEntryPoints.find(requestPath) };
             if (itEntryPoint != requestEntryPoints.end())
             {
@@ -378,12 +392,26 @@ namespace API::Subsonic
         const ClientInfo clientInfo{ getClientInfo(parameters) };
         const Database::UserId userId{ authenticateUser(request, clientInfo) };
         bool enableOpenSubsonic{ _openSubsonicDisabledClients.find(clientInfo.name) == std::cend(_openSubsonicDisabledClients) };
+        bool enableDefaultCover{ _defaultCoverClients.find(clientInfo.name) != std::cend(_openSubsonicDisabledClients) };
 
-        return { parameters, _db.getTLSSession(), userId, clientInfo, getServerProtocolVersion(clientInfo.name), enableOpenSubsonic };
+        return { parameters, _db.getTLSSession(), userId, clientInfo, getServerProtocolVersion(clientInfo.name), enableOpenSubsonic, enableDefaultCover };
     }
 
     Database::UserId SubsonicResource::authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo)
     {
+        // if the request if a continuation, the user is already authenticated
+        if (request.continuation())
+        {
+            Database::Session& session{ _db.getTLSSession() };
+            auto transaction{ session.createSharedTransaction() };
+
+            const auto user{ Database::User::find(session, clientInfo.user) };
+            if (!user)
+                throw UserNotAuthorizedError{};
+
+            return user->getId();
+        }
+
         if (auto * authEnvService{ Service<::Auth::IEnvService>::get() })
         {
             const auto checkResult{ authEnvService->processRequest(request) };
@@ -408,7 +436,7 @@ namespace API::Subsonic
             }
         }
 
-        throw InternalErrorGenericError{ "No service avalaible to authenticate user" };
+        throw InternalErrorGenericError{ "No service available to authenticate user" };
     }
 
 } // namespace api::subsonic

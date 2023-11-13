@@ -20,6 +20,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 #include "utils/EnumSet.hpp"
 #include "services/database/TrackListId.hpp"
 #include "services/database/Types.hpp"
@@ -37,8 +38,7 @@ namespace Recommendation
 		public:
 			virtual ~IRecommendationService() = default;
 
-			virtual void load(bool forceReload, const ProgressCallback& progressCallback = {}) = 0;
-			virtual void cancelLoad() = 0;  // wait for cancel done
+			virtual void load() = 0;
 
 			virtual TrackContainer findSimilarTracks(Database::TrackListId tracklistId, std::size_t maxCount) const = 0;
 			virtual TrackContainer findSimilarTracks(const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) const = 0;

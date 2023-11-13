@@ -21,6 +21,7 @@
 
 #include <string_view>
 
+#include "av/IAudioFile.hpp"
 #include "services/database/Artist.hpp"
 #include "services/database/Cluster.hpp"
 #include "services/database/Listen.hpp"
@@ -45,15 +46,15 @@ namespace API::Subsonic
 
     namespace
     {
-        std::string_view formatToSuffix(AudioFormat format)
+        std::string_view formatToSuffix(TranscodingOutputFormat format)
         {
             switch (format)
             {
-            case AudioFormat::MP3:              return "mp3";
-            case AudioFormat::OGG_OPUS:         return "opus";
-            case AudioFormat::MATROSKA_OPUS:    return "mka";
-            case AudioFormat::OGG_VORBIS:       return "ogg";
-            case AudioFormat::WEBM_VORBIS:      return "webm";
+            case TranscodingOutputFormat::MP3:              return "mp3";
+            case TranscodingOutputFormat::OGG_OPUS:         return "opus";
+            case TranscodingOutputFormat::MATROSKA_OPUS:    return "mka";
+            case TranscodingOutputFormat::OGG_VORBIS:       return "ogg";
+            case TranscodingOutputFormat::WEBM_VORBIS:      return "webm";
             }
 
             return "";
@@ -123,7 +124,11 @@ namespace API::Subsonic
             trackResponse.setAttribute("suffix", extension.string().substr(1));
         }
 
-        trackResponse.setAttribute("transcodedSuffix", formatToSuffix(user->getSubsonicDefaultTranscodeFormat()));
+        {
+            const std::string fileSuffix{ formatToSuffix(user->getSubsonicDefaultTranscodingOutputFormat()) };
+            trackResponse.setAttribute("transcodedSuffix", fileSuffix);
+            trackResponse.setAttribute("transcodedContentType", Av::getMimeType(std::filesystem::path{ "." + fileSuffix }));
+        }
 
         trackResponse.setAttribute("coverArt", idToString(track->getId()));
 
@@ -148,8 +153,10 @@ namespace API::Subsonic
         }
 
         trackResponse.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count());
+        trackResponse.setAttribute("bitRate", (track->getBitrate() / 1000));
         trackResponse.setAttribute("type", "music");
         trackResponse.setAttribute("created", StringUtils::toISO8601String(track->getLastWritten()));
+        trackResponse.setAttribute("contentType", Av::getMimeType(track->getPath().extension()));
 
         if (const Wt::WDateTime dateTime{ Service<Feedback::IFeedbackService>::get()->getStarredDateTime(user->getId(), track->getId()) }; dateTime.isValid())
             trackResponse.setAttribute("starred", StringUtils::toISO8601String(dateTime));
@@ -228,7 +235,7 @@ namespace API::Subsonic
                 params.setClusterType(clusterType->getId());
 
                 for (const auto& cluster : Cluster::find(context.dbSession, params).results)
-                    trackResponse.addArrayValue(field, std::get<std::string>(cluster));
+                    trackResponse.addArrayValue(field, cluster->getName());
             }
         } };
 
@@ -243,7 +250,7 @@ namespace API::Subsonic
             params.setClusterType(genreClusterType->getId());
 
             for (const auto& cluster : Cluster::find(context.dbSession, params).results)
-                trackResponse.addArrayChild("genres", createItemGenreNode(std::get<std::string>(cluster)));
+                trackResponse.addArrayChild("genres", createItemGenreNode(cluster->getName()));
         }
 
         trackResponse.addChild("replayGain", createReplayGainNode(track));

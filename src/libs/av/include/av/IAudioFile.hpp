@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* This file contains some classes in order to get info from file using the libavconv */
+ /* This file contains some classes in order to get info from file using the libavconv */
 
 #pragma once
 
@@ -27,52 +27,84 @@
 #include <unordered_map>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "Types.hpp"
 
 namespace Av
 {
-	struct Picture
-	{
-		std::string			mimeType;
-		const std::byte*	data {};
-		std::size_t			dataSize {};
-	};
+    // List should be sync with the codecs shipped in the lms's docker version
+    enum class DecodingCodec
+    {
+        UNKNOWN,
+        MP3,
+        AAC,
+        AC3,
+        VORBIS,
+        WMAV1,
+        WMAV2,
+        FLAC,           // Flac
+        ALAC,           // Apple Lossless Audio Codec (ALAC)
+        WAVPACK,        // WavPack
+        MUSEPACK7,      // Musepack
+        MUSEPACK8,
+        APE,            // // Monkey's Audio
+        EAC3,           // Enhanced AC-3 
+        MP4ALS,         // MPEG-4 Audio Lossless Coding
+        OPUS,           // Opus
+        SHORTEN,        // Shorten (shn)
+        // TODO add PCM codecs
+    };
 
-	struct StreamInfo
-	{
-		size_t			index {};
-		std::size_t     bitrate {};
-		std::string 	codec;
-	};
+    struct Picture
+    {
+        std::string			mimeType;
+        const std::byte* data{};
+        std::size_t			dataSize{};
+    };
 
-	class IAudioFile
-	{
-		public:
-			virtual ~IAudioFile() = default;
+    struct ContainerInfo
+    {
+        std::size_t bitrate{};
+        std::string name{};
+        std::chrono::milliseconds duration{};
+    };
 
-			using MetadataMap = std::unordered_map<std::string, std::string>;
+    struct StreamInfo
+    {
+        size_t			index{};
+        std::size_t     bitrate{};
+        DecodingCodec   codec;
+        std::string 	codecName;
+    };
 
-			virtual const std::filesystem::path& getPath() const = 0;
-			virtual std::chrono::milliseconds	getDuration() const = 0;
-			virtual MetadataMap					getMetaData() const = 0;
-			virtual std::vector<StreamInfo>		getStreamInfo() const = 0;
-			virtual std::optional<StreamInfo>	getBestStreamInfo() const = 0; // none if failure/unknown
-			virtual std::optional<std::size_t>	getBestStreamIndex() const = 0; // none if failure/unknown
-			virtual bool 						hasAttachedPictures() const = 0;
-			virtual void 						visitAttachedPictures(std::function<void(const Picture&)> func) const = 0;
-	};
+    class IAudioFile
+    {
+    public:
+        virtual ~IAudioFile() = default;
 
-	std::unique_ptr<IAudioFile> parseAudioFile(const std::filesystem::path& p);
+        using MetadataMap = std::unordered_map<std::string, std::string>;
 
-	struct AudioFileFormat
-	{
-		std::string mimeType;
-		std::string format;
-	};
+        virtual const std::filesystem::path& getPath() const = 0;
+        virtual ContainerInfo               getContainerInfo() const = 0;
+        virtual MetadataMap					getMetaData() const = 0;
+        virtual std::vector<StreamInfo>		getStreamInfo() const = 0;
+        virtual std::optional<StreamInfo>	getBestStreamInfo() const = 0; // none if failure/unknown
+        virtual std::optional<std::size_t>	getBestStreamIndex() const = 0; // none if failure/unknown
+        virtual bool 						hasAttachedPictures() const = 0;
+        virtual void 						visitAttachedPictures(std::function<void(const Picture&)> func) const = 0;
+    };
 
-	std::optional<AudioFileFormat> guessAudioFileFormat(const std::filesystem::path& file);
+    std::unique_ptr<IAudioFile> parseAudioFile(const std::filesystem::path& p);
+
+    struct AudioFileFormat
+    {
+        std::string mimeType;
+        std::string format;
+    };
+
+    std::string_view getMimeType(const std::filesystem::path& fileExtension);
 
 } // namespace Av
 

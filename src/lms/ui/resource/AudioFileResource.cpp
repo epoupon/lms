@@ -23,9 +23,9 @@
 #include <Wt/Http/Response.h>
 
 #include "av/IAudioFile.hpp"
+#include "av/RawResourceHandlerCreator.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
-#include "utils/FileResourceHandlerCreator.hpp"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 #include "LmsApplication.hpp"
@@ -94,16 +94,7 @@ AudioFileResource::handleRequest(const Wt::Http::Request& request,
 		if (!trackPath)
 			return;
 
-		fileResourceHandler = createFileResourceHandler(*trackPath);
-
-		const auto guessedAudioFormat {Av::guessAudioFileFormat(*trackPath)};
-		if (guessedAudioFormat)
-		{
-			LOG(DEBUG) << "Set mime type to " << guessedAudioFormat->mimeType;
-			response.setMimeType(guessedAudioFormat->mimeType);
-		}
-		else
-			response.setMimeType("application/octet-stream");
+		fileResourceHandler = Av::createRawResourceHandler(*trackPath);
 	}
 	else
 	{

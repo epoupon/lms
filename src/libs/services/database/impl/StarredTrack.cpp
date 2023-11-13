@@ -76,7 +76,7 @@ namespace Database
         if (params.user.isValid())
             query.where("s_t.user_id = ?").bind(params.user);
 
-        return Utils::execQuery(query, params.range);
+        return Utils::execQuery<StarredTrackId>(query, params.range);
     }
 
     void StarredTrack::setDateTime(const Wt::WDateTime& dateTime)

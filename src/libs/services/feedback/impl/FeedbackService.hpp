@@ -46,19 +46,19 @@ namespace Feedback
         void unstar(Database::UserId userId, Database::ArtistId artistId) override;
         bool isStarred(Database::UserId userId, Database::ArtistId artistId) override;
         Wt::WDateTime getStarredDateTime(Database::UserId userId, Database::ArtistId artistId) override;
-        ArtistContainer	getStarredArtists(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, std::optional<Database::TrackArtistLinkType> linkType, Database::ArtistSortMethod sortMethod, Database::Range range) override;
+        ArtistContainer	findStarredArtists(const ArtistFindParameters& params) override;
 
         void star(Database::UserId userId, Database::ReleaseId releaseId) override;
         void unstar(Database::UserId userId, Database::ReleaseId releaseId) override;
         bool isStarred(Database::UserId userId, Database::ReleaseId releasedId) override;
         Wt::WDateTime getStarredDateTime(Database::UserId userId, Database::ReleaseId releasedId) override;
-        ReleaseContainer getStarredReleases(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) override;
+        ReleaseContainer findStarredReleases(const FindParameters& params) override;
 
         void star(Database::UserId userId, Database::TrackId trackId) override;
         void unstar(Database::UserId userId, Database::TrackId trackId) override;
         bool isStarred(Database::UserId userId, Database::TrackId trackId) override;
         Wt::WDateTime getStarredDateTime(Database::UserId userId, Database::TrackId trackId) override;
-        TrackContainer getStarredTracks(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) override;
+        TrackContainer findStarredTracks(const FindParameters& params) override;
 
         std::optional<Database::FeedbackBackend> getUserFeedbackBackend(Database::UserId userId);
 

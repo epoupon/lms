@@ -49,7 +49,7 @@ TEST_F(DatabaseFixture, TrackBookmark)
 
 		EXPECT_EQ(TrackBookmark::getCount(session), 1);
 
-		const auto bookmarks {TrackBookmark::find(session, user.getId(), Range {})};
+		const auto bookmarks {TrackBookmark::find(session, user.getId())};
 		ASSERT_EQ(bookmarks.results.size(), 1);
 		EXPECT_EQ(bookmarks.results.front(), bookmark.getId());
 	}

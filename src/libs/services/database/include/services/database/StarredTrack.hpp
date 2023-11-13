@@ -45,11 +45,11 @@ namespace Database
             std::optional<FeedbackBackend>  backend;    // for this backend
             std::optional<SyncState>	    syncState;  //   and these states
             UserId							user;       // and this user
-            Range							range;
+            std::optional<Range>			range;
 
             FindParameters& setFeedbackBackend(FeedbackBackend _backend, SyncState _syncState) { backend = _backend; syncState = _syncState; return *this; }
             FindParameters& setUser(UserId _user) { user = _user; return *this; }
-            FindParameters& setRange(Range _range) { range = _range; return *this; }
+            FindParameters& setRange(std::optional<Range> _range) { range = _range; return *this; }
         };
 
         // Search utility

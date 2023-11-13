@@ -186,18 +186,9 @@ AvFormatParser::parse(const std::filesystem::path& p, bool debug)
 	{
 		const auto mediaFile {Av::parseAudioFile(p)};
 
-		// Stream info
-		{
-			std::vector<AudioStream> audioStreams;
-
-			for (auto stream : mediaFile->getStreamInfo())
-			{
-				MetaData::AudioStream audioStream {static_cast<unsigned>(stream.bitrate)};
-				track.audioStreams.emplace_back(audioStream);
-			}
-		}
-
-		track.duration = mediaFile->getDuration();
+		Av::ContainerInfo info{ mediaFile->getContainerInfo() };
+		track.duration = info.duration;
+		track.bitrate = info.bitrate;
 		track.hasCover = mediaFile->hasAttachedPictures();
 
 		MetaData::Tags tags;

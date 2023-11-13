@@ -168,7 +168,7 @@ namespace API::Subsonic
                 params.setClusterType(clusterType->getId());
 
                 for (const auto& cluster : Cluster::find(context.dbSession, params).results)
-                    albumNode.addArrayValue(field, std::get<std::string>(cluster));
+                    albumNode.addArrayValue(field, cluster->getName());
             }
         } };
 
@@ -183,7 +183,7 @@ namespace API::Subsonic
             params.setClusterType(genreClusterType->getId());
 
             for (const auto& cluster : Cluster::find(context.dbSession, params).results)
-                albumNode.addArrayChild("genres", createItemGenreNode(std::get<std::string>(cluster)));
+                albumNode.addArrayChild("genres", createItemGenreNode(cluster->getName()));
         }
 
         albumNode.createEmptyArrayChild("artists");

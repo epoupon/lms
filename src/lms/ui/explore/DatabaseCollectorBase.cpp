@@ -30,16 +30,25 @@ namespace UserInterface
     {
     }
 
-    DatabaseCollectorBase::Range DatabaseCollectorBase::getActualRange(Range range) const
+    DatabaseCollectorBase::Range DatabaseCollectorBase::getActualRange(std::optional<Database::Range> requestedRange) const
     {
-        assert(range.size > 0);
+        Database::Range res;
 
-        if (range.offset < _maxCount)
-            range.size = std::min(_maxCount - range.offset, range.size);
+        if (!requestedRange)
+        {
+            res.offset = 0;
+            res.size = _maxCount;
+        }
         else
-            range.size = 0;
+        {
+            res.offset = requestedRange->offset;
+            if (requestedRange->offset < _maxCount)
+                res.size = std::min(_maxCount - requestedRange->offset, requestedRange->size);
+            else
+                res.size = 0;
+        }
 
-        return range;
+        return res;
     }
 
     std::size_t DatabaseCollectorBase::getMaxCount() const

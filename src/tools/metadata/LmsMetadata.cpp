@@ -212,6 +212,7 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 	}
 
 	std::cout << "Duration: " << std::fixed << std::setprecision(2) << track->duration.count() / 1000. << "s" << std::endl;
+	std::cout << "Bitrate: " << track->bitrate << " bps" << std::endl;
 
 	if (track->position)
 		std::cout << "Position: " << *track->position << std::endl;
@@ -223,9 +224,6 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 		std::cout << "Original date: " << track->originalDate.toString("yyyy-MM-dd") << std::endl;
 
 	std::cout << "HasCover = " << std::boolalpha << track->hasCover << std::endl;
-
-	for (const auto& audioStream : track->audioStreams)
-		std::cout << "Audio stream: " << audioStream.bitRate << " bps" << std::endl;
 
 	if (track->replayGain)
 		std::cout << "Track replay gain: " << *track->replayGain << std::endl;

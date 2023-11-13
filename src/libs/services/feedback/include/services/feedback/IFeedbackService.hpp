@@ -48,23 +48,46 @@ namespace Feedback
         using ReleaseContainer = Database::RangeResults<Database::ReleaseId>;
         using TrackContainer = Database::RangeResults<Database::TrackId>;
 
-        virtual void            star(Database::UserId userId, Database::ArtistId artistId) = 0;
-        virtual void            unstar(Database::UserId userId, Database::ArtistId artistId) = 0;
-        virtual bool            isStarred(Database::UserId userId, Database::ArtistId artistId) = 0;
-        virtual Wt::WDateTime   getStarredDateTime(Database::UserId userId, Database::ArtistId artistId) = 0;
-        virtual ArtistContainer	getStarredArtists(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, std::optional<Database::TrackArtistLinkType> linkType, Database::ArtistSortMethod sortMethod, Database::Range range) = 0;
+        struct FindParameters
+        {
+            Database::UserId                              user;
+            std::vector<Database::ClusterId>              clusters;	// if non empty, at least one artist that belongs to these clusters
+            std::optional<Database::Range>                range;
 
+            FindParameters& setUser(const Database::UserId _user) { user = _user; return *this; }
+            FindParameters& setClusters(const std::vector<Database::ClusterId>& _clusters) { clusters = _clusters; return *this; }
+            FindParameters& setRange(std::optional<Database::Range> _range) { range = _range; return *this; }
+        };
+
+        // Artists
+        struct ArtistFindParameters : public FindParameters
+        {
+            std::optional<Database::TrackArtistLinkType>  linkType;	// if set, only artists that have produced at least one track with this link type
+            Database::ArtistSortMethod                    sortMethod{ Database::ArtistSortMethod::None };
+
+            ArtistFindParameters& setLinkType(std::optional<Database::TrackArtistLinkType> _linkType) { linkType = _linkType; return *this; }
+            ArtistFindParameters& setSortMethod(Database::ArtistSortMethod _sortMethod) { sortMethod = _sortMethod; return *this; }
+        };
+
+        virtual void                star(Database::UserId userId, Database::ArtistId artistId) = 0;
+        virtual void                unstar(Database::UserId userId, Database::ArtistId artistId) = 0;
+        virtual bool                isStarred(Database::UserId userId, Database::ArtistId artistId) = 0;
+        virtual Wt::WDateTime       getStarredDateTime(Database::UserId userId, Database::ArtistId artistId) = 0;
+        virtual ArtistContainer	    findStarredArtists(const ArtistFindParameters& params) = 0;
+
+        // Releases
         virtual void                star(Database::UserId userId, Database::ReleaseId releaseId) = 0;
         virtual void                unstar(Database::UserId userId, Database::ReleaseId releaseId) = 0;
         virtual bool                isStarred(Database::UserId userId, Database::ReleaseId artistId) = 0;
         virtual Wt::WDateTime       getStarredDateTime(Database::UserId userId, Database::ReleaseId artistId) = 0;
-        virtual ReleaseContainer    getStarredReleases(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) = 0;
+        virtual ReleaseContainer    findStarredReleases(const FindParameters& params) = 0;
 
+        // Tracks
         virtual void                star(Database::UserId userId, Database::TrackId trackId) = 0;
         virtual void                unstar(Database::UserId userId, Database::TrackId trackId) = 0;
         virtual bool                isStarred(Database::UserId userId, Database::TrackId artistId) = 0;
         virtual Wt::WDateTime       getStarredDateTime(Database::UserId userId, Database::TrackId artistId) = 0;
-        virtual TrackContainer      getStarredTracks(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) = 0;
+        virtual TrackContainer      findStarredTracks(const FindParameters& params) = 0;
     };
 
     std::unique_ptr<IFeedbackService> createFeedbackService(boost::asio::io_service& ioService, Database::Db& db);

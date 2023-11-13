@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <functional>
 #include <string>
 #include <string_view>
 
@@ -30,57 +31,54 @@
 namespace Database::Utils
 {
 #define ESCAPE_CHAR_STR "\\"
-	static inline constexpr char escapeChar {'\\'};
-	std::string escapeLikeKeyword(std::string_view keywords);
+    static inline constexpr char escapeChar{ '\\' };
+    std::string escapeLikeKeyword(std::string_view keywords);
 
-	template <typename T>
-	RangeResults<T>
-	execQuery(Wt::Dbo::Query<T>& query, Range range)
-	{
-		RangeResults<T> res;
+    template <typename Query>
+    void applyRange(Query& query, std::optional<Range> range)
+    {
+        if (range)
+        {
+            query.limit(static_cast<int>(range->size));
+            query.offset(static_cast<int>(range->offset));
+        }
+    }
 
-		auto collection {query.limit(range.size ? static_cast<int>(range.size) + 1 : -1)
-							.offset(range.offset ? static_cast<int>(range.offset) : -1)
-							.resultList()};
+    template <typename ResultType, typename Query>
+    RangeResults<ResultType> execQuery(Query& query, std::optional<Range> range)
+    {
+        RangeResults<ResultType> res;
 
-		res.results.assign(collection.begin(), collection.end());
-		if (range.size && res.results.size() == static_cast<std::size_t>(range.size) + 1)
-		{
-			res.moreResults = true;
-			res.results.pop_back();
-		}
-		else
-			res.moreResults = false;
+        if (range)
+            applyRange(query, Range{ range->offset, range->size + 1 });
 
-		res.range.offset = range.offset;
-		res.range.size = res.results.size();
-		return res;
-	}
+        auto collection{ query.resultList() };
+        res.results.assign(collection.begin(), collection.end());
+        if (range && res.results.size() == static_cast<std::size_t>(range->size) + 1)
+        {
+            // TODO may optim by not actually requesting the last one
+            res.moreResults = true;
+            res.results.pop_back();
+        }
+        else
+            res.moreResults = false;
 
-	template <typename T>
-	RangeResults<typename T::pointer>
-	execQuery(Wt::Dbo::Query<Wt::Dbo::ptr<T>>& query, Range range)
-	{
-		RangeResults<typename T::pointer> res;
+        res.range.offset = range->offset;
+        res.range.size = res.results.size();
 
-		auto collection {query.limit(range.size ? static_cast<int>(range.size) + 1 : -1)
-							.offset(range.offset ? static_cast<int>(range.offset) : -1)
-							.resultList()};
+        return res;
+    }
 
-		res.results.assign(collection.begin(), collection.end());
-		if (range.size && res.results.size() == static_cast<std::size_t>(range.size) + 1)
-		{
-			res.moreResults = true;
-			res.results.pop_back();
-		}
-		else
-			res.moreResults = false;
+    template <typename ResultType, typename Query>
+    void execQuery(Query& query, std::optional<Range> range, std::function<void(const ResultType&)> func)
+    {
+        if (range)
+            applyRange(query, range);
 
-		res.range.offset = range.offset;
-		res.range.size = res.results.size();
-		return res;
-	}
+        for (const auto& res : query.resultList())
+            func(res);
+    }
 
-	Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime);
+    Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime);
 } // namespace Database::Utils
 

@@ -40,7 +40,7 @@ TEST_F(DatabaseFixture, Release)
         EXPECT_TRUE(Release::exists(session, release.getId()));
 
         {
-            const auto releases{ Release::findOrphanIds(session, Range {}) };
+            const auto releases{ Release::findOrphanIds(session) };
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release.getId());
         }
@@ -56,6 +56,16 @@ TEST_F(DatabaseFixture, Release)
             const auto releases{ Release::find(session, Release::FindParameters {}) };
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front()->getId(), release.getId());
+        }
+
+        {
+            bool visited{};
+            Release::find(session, Release::FindParameters{}, [&](const Release::pointer& r)
+                {
+                    visited = true;
+                    EXPECT_EQ(r->getId(), release.getId());
+                });
+            EXPECT_TRUE(visited);
         }
     }
 }
@@ -76,7 +86,7 @@ TEST_F(DatabaseFixture, Release_singleTrack)
 
         {
             auto transaction{ session.createSharedTransaction() };
-            EXPECT_TRUE(Release::findOrphanIds(session, Range{}).results.empty());
+            EXPECT_TRUE(Release::findOrphanIds(session).results.empty());
 
             const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release.getId())) };
             ASSERT_EQ(tracks.results.size(), 1);
@@ -114,7 +124,7 @@ TEST_F(DatabaseFixture, Release_singleTrack)
         const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release.getId())) };
         EXPECT_TRUE(tracks.results.empty());
 
-        auto releases{ Release::findOrphanIds(session, Range {}) };
+        auto releases{ Release::findOrphanIds(session) };
         ASSERT_EQ(releases.results.size(), 1);
         EXPECT_EQ(releases.results.front(), release.getId());
     }
@@ -537,7 +547,7 @@ TEST_F(DatabaseFixture, Release_releaseType)
     }
 }
 
-TEST_F(DatabaseFixture, ReleaseSortOrder)
+TEST_F(DatabaseFixture, Release_sortMethod)
 {
     ScopedRelease release1{ session, "MyRelease1" };
     const Wt::WDate release1Date{ Wt::WDate {2000, 2, 3} };
@@ -606,3 +616,41 @@ TEST_F(DatabaseFixture, ReleaseSortOrder)
     }
 }
 
+
+TEST_F(DatabaseFixture, Release_meanBitrate)
+{
+    ScopedRelease release1{ session, "MyRelease1" };
+    ScopedTrack track1{ session, "MyTrack1" };
+    ScopedTrack track2{ session, "MyTrack2" };
+    ScopedTrack track3{ session, "MyTrack3" };
+
+    auto checkExpectedBitrate = [&](std::size_t bitrate)
+        {
+            auto transaction{ session.createSharedTransaction() };
+            EXPECT_EQ(release1->getMeanBitrate(), bitrate);
+        };
+
+    checkExpectedBitrate(0);
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+        track1.get().modify()->setBitrate(128);
+        track1.get().modify()->setRelease(release1.get());
+    }
+
+    checkExpectedBitrate(128);
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+        track2.get().modify()->setBitrate(256);
+        track2.get().modify()->setRelease(release1.get());
+    }
+    checkExpectedBitrate(192);
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+        track3.get().modify()->setBitrate(0);
+        track3.get().modify()->setRelease(release1.get());
+    }
+    checkExpectedBitrate(192); // 0 should not be taken into account
+}

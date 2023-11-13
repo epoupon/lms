@@ -33,240 +33,91 @@
 
 namespace Recommendation
 {
+    namespace
+    {
+        Database::ScanSettings::SimilarityEngineType getSimilarityEngineType(Database::Session& session)
+        {
+            auto transaction{ session.createSharedTransaction() };
 
-	static
-	std::string_view
-	engineTypeToString(EngineType engineType)
-	{
-		switch (engineType)
-		{
-			case EngineType::Clusters: return "clusters";
-			case EngineType::Features: return "features";
-		}
+            return Database::ScanSettings::get(session)->getSimilarityEngineType();
+        }
+    }
 
-		throw LmsException {"Internal error"};
-	}
+    std::unique_ptr<IRecommendationService> createRecommendationService(Database::Db& db)
+    {
+        return std::make_unique<RecommendationService>(db);
+    }
 
-	std::unique_ptr<IRecommendationService>
-	createRecommendationService(Database::Db& db)
-	{
-		return std::make_unique<RecommendationService>(db);
-	}
+    RecommendationService::RecommendationService(Database::Db& db)
+        : _db{ db }
+    {
+        load();
+    }
 
-	RecommendationService::RecommendationService(Database::Db& db)
-		: _db {db}
-	{
-	}
+    TrackContainer RecommendationService::findSimilarTracks(Database::TrackListId trackListId, std::size_t maxCount) const
+    {
+        TrackContainer res;
 
-	TrackContainer
-	RecommendationService::findSimilarTracks(Database::TrackListId trackListId, std::size_t maxCount) const
-	{
-		TrackContainer res;
+        if (!_engine)
+            return res;
 
-		std::shared_lock lock {_enginesMutex};
-		for (const auto& engineType : _enginePriorities)
-		{
-			auto itEngine {_engines.find(engineType)};
-			if (itEngine == std::cend(_engines))
-				continue;
+        return _engine->findSimilarTracksFromTrackList(trackListId, maxCount);
+    }
 
-			res = itEngine->second->findSimilarTracksFromTrackList(trackListId, maxCount);
-			if (!res.empty())
-				break;
-		}
+    TrackContainer RecommendationService::findSimilarTracks(const std::vector<Database::TrackId>& trackIds, std::size_t maxCount) const
+    {
+        TrackContainer res;
 
-		return res;
-	}
+        if (!_engine)
+            return res;
 
-	TrackContainer
-	RecommendationService::findSimilarTracks(const std::vector<Database::TrackId>& trackIds, std::size_t maxCount) const
-	{
-		TrackContainer res;
+        return _engine->findSimilarTracks(trackIds, maxCount);
+    }
 
-		std::shared_lock lock {_enginesMutex};
-		for (EngineType engineType : _enginePriorities)
-		{
-			auto itEngine {_engines.find(engineType)};
-			if (itEngine == std::cend(_engines))
-				continue;
+    ReleaseContainer RecommendationService::getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const
+    {
+        ReleaseContainer res;
 
-			LMS_LOG(RECOMMENDATION, DEBUG) << "Trying engine '" << engineTypeToString(engineType) << "' to get similar tracks";
+        if (!_engine)
+            return res;
 
-			const IEngine& engine {*itEngine->second};
-			res = engine.findSimilarTracks(trackIds, maxCount);
-			if (!res.empty())
-			{
-				LMS_LOG(RECOMMENDATION, DEBUG) << "Got " << res.size() << " similar tracks using engine '" << engineTypeToString(engineType) << "'";
-				break;
-			}
-		}
+        return _engine->getSimilarReleases(releaseId, maxCount);;
+    }
 
-		return res;
-	}
+    ArtistContainer RecommendationService::getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
+    {
+        ArtistContainer res;
 
-	ReleaseContainer
-	RecommendationService::getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const
-	{
-		ReleaseContainer res;
+        if (!_engine)
+            return res;
 
-		std::shared_lock lock {_enginesMutex};
-		for (EngineType engineType : _enginePriorities)
-		{
-			auto itEngine {_engines.find(engineType)};
-			if (itEngine == std::cend(_engines))
-				continue;
+        return _engine->getSimilarArtists(artistId, linkTypes, maxCount);
 
-			LMS_LOG(RECOMMENDATION, DEBUG) << "Trying engine '" << engineTypeToString(engineType) << "' to get similar releases";
+        return res;
+    }
 
-			const IEngine& engine {*itEngine->second};
-			res = engine.getSimilarReleases(releaseId, maxCount);
-			if (!res.empty())
-			{
-				LMS_LOG(RECOMMENDATION, DEBUG) << "Got " << res.size() << " similar releases using engine '" << engineTypeToString(engineType) << "'";
-				break;
-			}
+    void RecommendationService::load()
+    {
+        using namespace Database;
 
-			LMS_LOG(RECOMMENDATION, DEBUG) << "No result using engine '" << engineTypeToString(engineType) << "'";
-		}
+        switch (getSimilarityEngineType(_db.getTLSSession()))
+        {
+        case ScanSettings::SimilarityEngineType::Clusters:
+            if (_engineType != EngineType::Clusters)
+            {
+                _engineType = EngineType::Clusters;
+                _engine = createClustersEngine(_db);
+            }
+            break;
 
-		return res;
-	}
+        case ScanSettings::SimilarityEngineType::Features:
+        case ScanSettings::SimilarityEngineType::None:
+            _engineType.reset();
+            _engine.reset();
+            break;
+        }
 
-	ArtistContainer
-	RecommendationService::getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
-	{
-		ArtistContainer res;
-
-		std::shared_lock lock {_enginesMutex};
-		for (EngineType engineType : _enginePriorities)
-		{
-			auto itEngine {_engines.find(engineType)};
-			if (itEngine == std::cend(_engines))
-				continue;
-
-			LMS_LOG(RECOMMENDATION, DEBUG) << "Trying engine '" << engineTypeToString(engineType) << "' to get similar artists";
-
-			const IEngine& engine {*itEngine->second};
-			res = engine.getSimilarArtists(artistId, linkTypes, maxCount);
-			if (!res.empty())
-			{
-				LMS_LOG(RECOMMENDATION, DEBUG) << "Got " << res.size() << " similar artists using engine '" << engineTypeToString(engineType) << "'";
-				return res;
-			}
-		}
-
-		return res;
-	}
-
-	static
-	Database::ScanSettings::SimilarityEngineType
-	getSimilarityEngineType(Database::Session& session)
-	{
-		auto transaction {session.createSharedTransaction()};
-
-		return Database::ScanSettings::get(session)->getSimilarityEngineType();
-	}
-
-	void
-	RecommendationService::load(bool forceReload, const ProgressCallback& progressCallback)
-	{
-		using namespace Database;
-
-		LMS_LOG(RECOMMENDATION, INFO) << "Reloading recommendation engines...";
-
-		EngineContainer enginesToLoad;
-
-		{
-			std::unique_lock controlLock {_controlMutex};
-
-			{
-				std::unique_lock lock {_enginesMutex};
-				_engines.clear();
-			}
-
-			switch (getSimilarityEngineType(_db.getTLSSession()))
-			{
-				case ScanSettings::SimilarityEngineType::Clusters:
-					_enginePriorities = {EngineType::Clusters};
-					enginesToLoad.try_emplace(EngineType::Clusters, createClustersEngine(_db));
-					break;
-
-				case ScanSettings::SimilarityEngineType::Features:
-					_enginePriorities = {EngineType::Features, EngineType::Clusters};
-
-					// not same order since clusters is faster to load
-					enginesToLoad.try_emplace(EngineType::Clusters, createClustersEngine(_db));
-					enginesToLoad.try_emplace(EngineType::Features, createFeaturesEngine(_db));
-					break;
-
-				case ScanSettings::SimilarityEngineType::None:
-					_enginePriorities.clear();
-					break;
-			}
-
-			assert(_pendingEngines.empty());
-			for (auto& [engineType, engine] : enginesToLoad)
-				_pendingEngines.push_back(engine.get());
-		}
-
-		for (auto& [engineType, engine] : enginesToLoad)
-			loadPendingEngine(engineType, std::move(engine), forceReload, progressCallback);
-
-		_pendingEnginesCondvar.notify_all();
-
-		LMS_LOG(RECOMMENDATION, INFO) << "Recommendation engines loaded!";
-	}
-
-	void
-	RecommendationService::loadPendingEngine(EngineType engineType, std::unique_ptr<IEngine> engine, bool forceReload, const ProgressCallback& progressCallback)
-	{
-		if (!_loadCancelled)
-		{
-			LMS_LOG(RECOMMENDATION, INFO) << "Initializing engine '" << engineTypeToString(engineType) << "'...";
-
-			auto progress {[&](const Progress& progress)
-			{
-				progressCallback(progress);
-			}};
-
-			engine->load(forceReload, progressCallback ? progress : ProgressCallback {});
-
-			LMS_LOG(RECOMMENDATION, INFO) << "Initializing engine '" << engineTypeToString(engineType) << "': " << (_loadCancelled ? "aborted" : "complete");
-		}
-
-		{
-			std::scoped_lock lock {_controlMutex};
-			_pendingEngines.erase(std::find(std::begin(_pendingEngines), std::end(_pendingEngines), engine.get()));
-		}
-
-		if (!_loadCancelled)
-		{
-			std::unique_lock lock {_enginesMutex};
-			_engines.emplace(engineType, std::move(engine));
-		}
-	}
-
-	void
-	RecommendationService::cancelLoad()
-	{
-		LMS_LOG(RECOMMENDATION, DEBUG) << "Cancelling loading...";
-
-		std::unique_lock controlLock {_controlMutex};
-
-		assert(!_loadCancelled);
-		_loadCancelled = true;
-
-		LMS_LOG(RECOMMENDATION, DEBUG) << "Still " <<  _pendingEngines.size() << " pending engines!";
-
-		for (IEngine* engine : _pendingEngines)
-		{
-			engine->requestCancelLoad();
-		}
-
-		_pendingEnginesCondvar.wait(controlLock, [this] {return _pendingEngines.empty();});
-		_loadCancelled = false;
-
-		LMS_LOG(RECOMMENDATION, DEBUG) << "Cancelling loading DONE";
-	}
-
+        if (_engine)
+            _engine->load(false);
+    }
 } // ns Similarity

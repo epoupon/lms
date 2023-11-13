@@ -31,6 +31,12 @@ TEST_F(DatabaseFixture, Track)
         EXPECT_EQ(Track::findIds(session, Track::FindParameters{}).results.size(), 0);
         EXPECT_EQ(Track::getCount(session), 0);
         EXPECT_FALSE(Track::exists(session, 0));
+
+        {
+            bool visited{};
+            Track::find(session, Track::FindParameters{}, [&](const Track::pointer&) {visited = true;});
+            EXPECT_FALSE(visited);
+        }
     }
 
     ScopedTrack track{ session, "MyTrackFile" };
@@ -44,6 +50,16 @@ TEST_F(DatabaseFixture, Track)
         auto myTrack{ Track::find(session, track.getId()) };
         ASSERT_TRUE(myTrack);
         EXPECT_EQ(myTrack->getId(), track.getId());
+
+        {
+            bool visited{};
+            Track::find(session, Track::FindParameters{}, [&](const Track::pointer& t)
+                {
+                    visited = true;
+                    EXPECT_EQ(t->getId(), track.getId());
+                });
+            EXPECT_TRUE(visited);
+        }
     }
 }
 

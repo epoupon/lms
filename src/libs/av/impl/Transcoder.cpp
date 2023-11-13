@@ -28,181 +28,191 @@
 #include "utils/Logger.hpp"
 #include "utils/Service.hpp"
 
-namespace Av {
-
-#define LOG(sev)	LMS_LOG(TRANSCODE, sev) << "[" << _debugId << "] - "
-
-static std::atomic<size_t>		globalId {};
-static std::filesystem::path	ffmpegPath;
-
-void
-Transcoder::init()
+namespace Av::Transcoding
 {
-	ffmpegPath = Service<IConfig>::get()->getPath("ffmpeg-file", "/usr/bin/ffmpeg");
-	if (!std::filesystem::exists(ffmpegPath))
-		throw Exception {"File '" + ffmpegPath.string() + "' does not exist!"};
-}
 
-Transcoder::Transcoder(const InputFileParameters& inputFileParameters, const TranscodeParameters& transcodeParameters)
-:  _debugId {globalId++}
-, _inputFileParameters {inputFileParameters}
-, _transcodeParameters {transcodeParameters}
-{
-	start();
-}
+#define LOG(sev)	LMS_LOG(TRANSCODING, sev) << "[" << _debugId << "] - "
 
-Transcoder::~Transcoder() = default;
+    static std::atomic<size_t>		globalId{};
+    static std::filesystem::path	ffmpegPath;
 
-void
-Transcoder::start()
-{
-	if (ffmpegPath.empty())
-		init();
+    std::string_view formatToMimetype(OutputFormat format)
+    {
+        switch (format)
+        {
+        case OutputFormat::MP3:             return "audio/mpeg";
+        case OutputFormat::OGG_OPUS:        return "audio/opus";
+        case OutputFormat::MATROSKA_OPUS:   return "audio/x-matroska";
+        case OutputFormat::OGG_VORBIS:      return "audio/ogg";
+        case OutputFormat::WEBM_VORBIS:     return "audio/webm";
+        }
 
-	try
-	{
-		if (!std::filesystem::exists(_inputFileParameters.trackPath))
-			throw Exception {"File '" + _inputFileParameters.trackPath.string() + "' does not exist!"};
-		else if (!std::filesystem::is_regular_file( _inputFileParameters.trackPath) )
-			throw Exception {"File '" + _inputFileParameters.trackPath.string() + "' is not regular!"};
-	}
-	catch (const std::filesystem::filesystem_error& e)
-	{
-		throw Exception {"File error '" + _inputFileParameters.trackPath.string() + "': " + e.what()};
-	}
+        throw Exception{ "Invalid encoding" };
+    }
 
-	LOG(INFO) << "Transcoding file '" << _inputFileParameters.trackPath.string() << "'";
+    void Transcoder::init()
+    {
+        ffmpegPath = Service<IConfig>::get()->getPath("ffmpeg-file", "/usr/bin/ffmpeg");
+        if (!std::filesystem::exists(ffmpegPath))
+            throw Exception{ "File '" + ffmpegPath.string() + "' does not exist!" };
+    }
 
-	std::vector<std::string> args;
+    Transcoder::Transcoder(const InputParameters& inputParameters, const OutputParameters& outputParameters)
+        : _debugId{ globalId++ }
+        , _inputParameters{ inputParameters }
+        , _outputParameters{ outputParameters }
+    {
+        start();
+    }
 
-	args.emplace_back(ffmpegPath.string());
+    Transcoder::~Transcoder() = default;
 
-	// Make sure:
-	// - we do not produce anything in the stderr output
-	// - we do not rely on input
-	// in order not to block the whole forked process
-	args.emplace_back("-loglevel");
-	args.emplace_back("quiet");
-	args.emplace_back("-nostdin");
+    void Transcoder::start()
+    {
+        if (ffmpegPath.empty())
+            init();
 
-	// input Offset
-	{
-		args.emplace_back("-ss");
+        try
+        {
+            if (!std::filesystem::exists(_inputParameters.trackPath))
+                throw Exception{ "File '" + _inputParameters.trackPath.string() + "' does not exist!" };
+            else if (!std::filesystem::is_regular_file(_inputParameters.trackPath))
+                throw Exception{ "File '" + _inputParameters.trackPath.string() + "' is not regular!" };
+        }
+        catch (const std::filesystem::filesystem_error& e)
+        {
+            throw Exception{ "File error '" + _inputParameters.trackPath.string() + "': " + e.what() };
+        }
 
-		std::ostringstream oss;
-		oss << std::fixed << std::showpoint << std::setprecision(3) << (_transcodeParameters.offset.count() / float {1000});
-		args.emplace_back(oss.str());
-	}
+        LOG(INFO) << "Transcoding file '" << _inputParameters.trackPath.string() << "'";
 
-	// Input file
-	args.emplace_back("-i");
-	args.emplace_back(_inputFileParameters.trackPath.string());
+        std::vector<std::string> args;
 
-	// Stream mapping, if set
-	if (_transcodeParameters.stream)
-	{
-		args.emplace_back("-map");
-		args.emplace_back("0:" + std::to_string(*_transcodeParameters.stream));
-	}
+        args.emplace_back(ffmpegPath.string());
 
-	if (_transcodeParameters.stripMetadata)
-	{
-		// Strip metadata
-		args.emplace_back("-map_metadata");
-		args.emplace_back("-1");
-	}
+        // Make sure:
+        // - we do not produce anything in the stderr output
+        // - we do not rely on input
+        // in order not to block the whole forked process
+        args.emplace_back("-loglevel");
+        args.emplace_back("quiet");
+        args.emplace_back("-nostdin");
 
-	// Skip video flows (including covers)
-	args.emplace_back("-vn");
+        // input Offset
+        {
+            args.emplace_back("-ss");
 
-	// Output bitrates
-	args.emplace_back("-b:a");
-	args.emplace_back(std::to_string(_transcodeParameters.bitrate));
+            std::ostringstream oss;
+            oss << std::fixed << std::showpoint << std::setprecision(3) << (_outputParameters.offset.count() / float{ 1000 });
+            args.emplace_back(oss.str());
+        }
 
-	// Codecs and formats
-	switch (_transcodeParameters.format)
-	{
-		case Format::MP3:
-			args.emplace_back("-f");
-			args.emplace_back("mp3");
-			break;
+        // Input file
+        args.emplace_back("-i");
+        args.emplace_back(_inputParameters.trackPath.string());
 
-		case Format::OGG_OPUS:
-			args.emplace_back("-acodec");
-			args.emplace_back("libopus");
-			args.emplace_back("-f");
-			args.emplace_back("ogg");
-			break;
+        // Stream mapping, if set
+        if (_outputParameters.stream)
+        {
+            args.emplace_back("-map");
+            args.emplace_back("0:" + std::to_string(*_outputParameters.stream));
+        }
 
-		case Format::MATROSKA_OPUS:
-			args.emplace_back("-acodec");
-			args.emplace_back("libopus");
-			args.emplace_back("-f");
-			args.emplace_back("matroska");
-			break;
+        if (_outputParameters.stripMetadata)
+        {
+            // Strip metadata
+            args.emplace_back("-map_metadata");
+            args.emplace_back("-1");
+        }
 
-		case Format::OGG_VORBIS:
-			args.emplace_back("-acodec");
-			args.emplace_back("libvorbis");
-			args.emplace_back("-f");
-			args.emplace_back("ogg");
-			break;
+        // Skip video flows (including covers)
+        args.emplace_back("-vn");
 
-		case Format::WEBM_VORBIS:
-			args.emplace_back("-acodec");
-			args.emplace_back("libvorbis");
-			args.emplace_back("-f");
-			args.emplace_back("webm");
-			break;
+        // Output bitrates
+        args.emplace_back("-b:a");
+        args.emplace_back(std::to_string(_outputParameters.bitrate));
 
-		default:
-			throw Exception {"Unhandled format (" + std::to_string(static_cast<int>(_transcodeParameters.format)) + ")"};
-	}
+        // Codecs and formats
+        switch (_outputParameters.format)
+        {
+        case OutputFormat::MP3:
+            args.emplace_back("-f");
+            args.emplace_back("mp3");
+            break;
 
-	_outputMimeType = formatToMimetype(_transcodeParameters.format);
+        case OutputFormat::OGG_OPUS:
+            args.emplace_back("-acodec");
+            args.emplace_back("libopus");
+            args.emplace_back("-f");
+            args.emplace_back("ogg");
+            break;
 
-	args.emplace_back("pipe:1");
+        case OutputFormat::MATROSKA_OPUS:
+            args.emplace_back("-acodec");
+            args.emplace_back("libopus");
+            args.emplace_back("-f");
+            args.emplace_back("matroska");
+            break;
 
-	LOG(DEBUG) << "Dumping args (" << args.size() << ")";
-	for (const std::string& arg : args)
-		LOG(DEBUG) << "Arg = '" << arg << "'";
+        case OutputFormat::OGG_VORBIS:
+            args.emplace_back("-acodec");
+            args.emplace_back("libvorbis");
+            args.emplace_back("-f");
+            args.emplace_back("ogg");
+            break;
 
-	// Caution: stdin must have been closed before
-	try
-	{
-		_childProcess = Service<IChildProcessManager>::get()->spawnChildProcess(ffmpegPath, args);
-	}
-	catch (ChildProcessException& exception)
-	{
-		throw Exception {"Cannot execute '" + ffmpegPath.string() + "': " + exception.what()};
-	}
-}
+        case OutputFormat::WEBM_VORBIS:
+            args.emplace_back("-acodec");
+            args.emplace_back("libvorbis");
+            args.emplace_back("-f");
+            args.emplace_back("webm");
+            break;
 
-void
-Transcoder::asyncRead(std::byte* buffer, std::size_t bufferSize, ReadCallback readCallback)
-{
-	assert(_childProcess);
+        default:
+            throw Exception{ "Unhandled format (" + std::to_string(static_cast<int>(_outputParameters.format)) + ")" };
+        }
 
-	return _childProcess->asyncRead(buffer, bufferSize, [readCallback {std::move(readCallback)}](IChildProcess::ReadResult /*res*/, std::size_t nbBytesRead)
-	{
-		readCallback(nbBytesRead);
-	});
-}
+        _outputMimeType = formatToMimetype(_outputParameters.format);
 
-std::size_t
-Transcoder::readSome(std::byte* buffer, std::size_t bufferSize)
-{
-	assert(_childProcess);
+        args.emplace_back("pipe:1");
 
-	return _childProcess->readSome(buffer, bufferSize);
-}
+        LOG(DEBUG) << "Dumping args (" << args.size() << ")";
+        for (const std::string& arg : args)
+            LOG(DEBUG) << "Arg = '" << arg << "'";
 
-bool
-Transcoder::finished() const
-{
-	assert(_childProcess);
+        // Caution: stdin must have been closed before
+        try
+        {
+            _childProcess = Service<IChildProcessManager>::get()->spawnChildProcess(ffmpegPath, args);
+        }
+        catch (ChildProcessException& exception)
+        {
+            throw Exception{ "Cannot execute '" + ffmpegPath.string() + "': " + exception.what() };
+        }
+    }
 
-	return _childProcess->finished();
-}
+    void Transcoder::asyncRead(std::byte* buffer, std::size_t bufferSize, ReadCallback readCallback)
+    {
+        assert(_childProcess);
 
-} // namespace Transcode
+        return _childProcess->asyncRead(buffer, bufferSize, [readCallback{ std::move(readCallback) }](IChildProcess::ReadResult /*res*/, std::size_t nbBytesRead)
+            {
+                readCallback(nbBytesRead);
+            });
+    }
+
+    std::size_t Transcoder::readSome(std::byte* buffer, std::size_t bufferSize)
+    {
+        assert(_childProcess);
+
+        return _childProcess->readSome(buffer, bufferSize);
+    }
+
+    bool Transcoder::finished() const
+    {
+        assert(_childProcess);
+
+        return _childProcess->finished();
+    }
+
+} // namespace Av::Transcoding

@@ -29,6 +29,8 @@
 
 namespace API::Subsonic
 {
+    // Max count expected from all API methods that expose a count
+    static inline constexpr std::size_t defaultMaxCountSize{ 1000 };
 
     enum class ResponseFormat
     {
@@ -183,6 +185,18 @@ namespace API::Subsonic
         std::string getMessage() const override { return "Parameter '" + _parameterName + "': bad value"; }
 
         const std::string _parameterName;
+    };
+
+    class ParameterValueTooHighGenericError : public GenericError
+    {
+    public:
+        ParameterValueTooHighGenericError(std::string_view parameterName, std::size_t max) : _parameterName{ parameterName }, _max{ max } {}
+
+    private:
+        std::string getMessage() const override { return "Parameter '" + _parameterName + "': bad value (max is " + std::to_string(_max) + ")"; }
+
+        const std::string _parameterName;
+        std::size_t _max;
     };
 
     class Response

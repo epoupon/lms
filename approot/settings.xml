@@ -10,33 +10,33 @@
 			${tr:Lms.Settings.audio-settings-are-local}
 		</div>
 		<div class="col-lg-4">
-			<label class="form-label" for="${id:transcode-mode}">
-				${tr:Lms.Settings.transcode-mode}
+			<label class="form-label" for="${id:transcoding-mode}">
+				${tr:Lms.Settings.transcoding-mode}
 			</label>
-			${transcode-mode class="form-control"}
+			${transcoding-mode class="form-control"}
 			<div class="invalid-feedback">
-				${transcode-mode-info}
+				${transcoding-mode-info}
 			</div>
 		</div>
 		<div class="col-lg-4">
-			<label class="form-label" for="${id:transcode-format}">
-				${tr:Lms.Settings.transcode-format}
+			<label class="form-label" for="${id:transcoding-output-format}">
+				${tr:Lms.Settings.transcoding-output-format}
 			</label>
-			${transcode-format class="form-control"}
+			${transcoding-output-format class="form-control"}
 			<div class="invalid-feedback">
-				${transcode-format-info}
+				${transcoding-output-format-info}
 			</div>
 		</div>
 		<div class="col-lg-4">
-			<label class="form-label" for="${id:transcode-bitrate}">
-				${tr:Lms.Settings.transcode-bitrate}
+			<label class="form-label" for="${id:transcoding-output-bitrate}">
+				${tr:Lms.Settings.transcoding-output-bitrate}
 			</label>
 			<div class="input-group mb-3">
-				${transcode-bitrate class="form-control"}
+				${transcoding-output-bitrate class="form-control"}
 				<span class="input-group-text">kbps</span>
 			</div>
 			<div class="invalid-feedback">
-				${transcode-bitrate-info}
+				${transcoding-output-bitrate-info}
 			</div>
 		</div>
 		<div class="col-lg-4">
@@ -74,25 +74,36 @@
 		</div>
 		${<if-has-subsonic-api>}
 			<legend>${tr:Lms.Settings.subsonic-api}</legend>
-			<div class="col-lg-6">
-				<label class="form-label" for="${id:subsonic-transcode-format}">
-					${tr:Lms.Settings.default-transcode-format}
-				</label>
-				${subsonic-transcode-format class="form-control"}
-				<div class="invalid-feedback">
-					${subsonic-transcode-format-info class="help-block"}
+			<div class="col-12">
+				<div class="form-check">
+					${subsonic-enable-transcoding-by-default class="form-check-input"}
+					<label class="form-check-label" for="${id:subsonic-enable-transcoding-by-default}">
+						${tr:Lms.Settings.enable-transcoding-by-default}
+					</label>
+					<div class="invalid-feedback">
+						${subsonic-enable-transcoding-by-default-info}
+					</div>
 				</div>
 			</div>
 			<div class="col-lg-6">
-				<label class="form-label" for="${id:subsonic-transcode-bitrate}">
-					${tr:Lms.Settings.default-transcode-bitrate}
+				<label class="form-label" for="${id:subsonic-transcoding-output-format}">
+					${tr:Lms.Settings.default-transcoding-output-format}
+				</label>
+				${subsonic-transcoding-output-format class="form-control"}
+				<div class="invalid-feedback">
+					${subsonic-transcoding-output-format-info class="help-block"}
+				</div>
+			</div>
+			<div class="col-lg-6">
+				<label class="form-label" for="${id:subsonic-transcoding-output-bitrate}">
+					${tr:Lms.Settings.default-transcoding-output-bitrate}
 				</label>
 				<div class="input-group mb-3">
-					${subsonic-transcode-bitrate class="form-control"}
+					${subsonic-transcoding-output-bitrate class="form-control"}
 					<span class="input-group-text">kbps</span>
 				</div>
 				<div class="invalid-feedback">
-					${subsonic-transcode-bitrate-info class="help-block"}
+					${subsonic-transcoding-output-bitrate-info class="help-block"}
 				</div>
 			</div>
 			<div class="col-12">

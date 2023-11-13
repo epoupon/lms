@@ -49,7 +49,7 @@
 #include "explore/Explore.hpp"
 #include "explore/Filters.hpp"
 #include "resource/AudioFileResource.hpp"
-#include "resource/AudioTranscodeResource.hpp"
+#include "resource/AudioTranscodingResource.hpp"
 #include "resource/DownloadResource.hpp"
 #include "resource/CoverResource.hpp"
 #include "Auth.hpp"

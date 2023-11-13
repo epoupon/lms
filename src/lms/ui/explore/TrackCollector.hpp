@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include "services/database/Object.hpp"
 #include "services/database/TrackId.hpp"
 #include "DatabaseCollectorBase.hpp"
@@ -35,7 +37,7 @@ namespace UserInterface
 		public:
 			using DatabaseCollectorBase::DatabaseCollectorBase;
 
-			Database::RangeResults<Database::TrackId>	get(Database::Range range);
+			Database::RangeResults<Database::TrackId>	get(std::optional<Database::Range> range = std::nullopt);
 			void reset() { _randomTracks.reset(); }
 
 		private:

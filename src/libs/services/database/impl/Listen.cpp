@@ -172,7 +172,7 @@ namespace Database
         if (parameters.syncState)
             query.where("sync_state = ?").bind(*parameters.syncState);
 
-        return Utils::execQuery(query, parameters.range);
+        return Utils::execQuery<ListenId>(query, parameters.range);
     }
 
     Listen::pointer Listen::find(Session& session, UserId userId, TrackId trackId, ScrobblingBackend backend, const Wt::WDateTime& dateTime)
@@ -187,7 +187,7 @@ namespace Database
             .resultValue();
     }
 
-    RangeResults<ArtistId> Listen::getTopArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range)
+    RangeResults<ArtistId> Listen::getTopArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range)
     {
         session.checkSharedLocked();
         auto query{ createArtistsQuery(session.getDboSession(), userId, backend, clusterIds, linkType) };
@@ -196,57 +196,57 @@ namespace Database
             .orderBy("COUNT(a.id) DESC")
             .groupBy("a.id") };
 
-        return Utils::execQuery(query, range);
+        return Utils::execQuery<ArtistId>(query, range);
     }
 
-    RangeResults<ReleaseId> Listen::getTopReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range)
+    RangeResults<ReleaseId> Listen::getTopReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range)
     {
         session.checkSharedLocked();
         auto query{ createReleasesQuery(session.getDboSession(), userId, backend, clusterIds)
                         .orderBy("COUNT(r.id) DESC")
                         .groupBy("r.id") };
 
-        return Utils::execQuery(query, range);
+        return Utils::execQuery<ReleaseId>(query, range);
     }
 
-    RangeResults<TrackId> Listen::getTopTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range)
+    RangeResults<TrackId> Listen::getTopTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range)
     {
         session.checkSharedLocked();
         auto query{ createTracksQuery(session.getDboSession(), userId, backend, clusterIds)
                         .orderBy("COUNT(t.id) DESC")
                         .groupBy("t.id") };
 
-        return Utils::execQuery(query, range);
+        return Utils::execQuery<TrackId>(query, range);
     }
 
-    RangeResults<ArtistId> Listen::getRecentArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range)
+    RangeResults<ArtistId> Listen::getRecentArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range)
     {
         session.checkSharedLocked();
         auto query{ createArtistsQuery(session.getDboSession(), userId, backend, clusterIds, linkType)
                         .groupBy("a.id").having("l.date_time = MAX(l.date_time)")
                         .orderBy("l.date_time DESC") };
 
-        return Utils::execQuery(query, range);
+        return Utils::execQuery<ArtistId>(query, range);
     }
 
-    RangeResults<ReleaseId> Listen::getRecentReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range)
+    RangeResults<ReleaseId> Listen::getRecentReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range)
     {
         session.checkSharedLocked();
         auto query{ createReleasesQuery(session.getDboSession(), userId, backend, clusterIds)
                         .groupBy("r.id").having("l.date_time = MAX(l.date_time)")
                         .orderBy("l.date_time DESC") };
 
-        return Utils::execQuery(query, range);
+        return Utils::execQuery<ReleaseId>(query, range);
     }
 
-    RangeResults<TrackId> Listen::getRecentTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, Range range)
+    RangeResults<TrackId> Listen::getRecentTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range)
     {
         session.checkSharedLocked();
         auto query{ createTracksQuery(session.getDboSession(), userId, backend, clusterIds)
                         .groupBy("t.id").having("l.date_time = MAX(l.date_time)")
                         .orderBy("l.date_time DESC") };
 
-        return Utils::execQuery(query, range);
+        return Utils::execQuery<TrackId>(query, range);
     }
 
     std::size_t Listen::getCount(Session& session, UserId userId, ScrobblingBackend backend, TrackId trackId)

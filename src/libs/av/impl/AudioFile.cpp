@@ -32,267 +32,295 @@ extern "C"
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
 
-namespace Av {
-
-static std::string averror_to_string(int error)
+namespace Av
 {
-	std::array<char, 128> buf = {0};
+    namespace
+    {
+        std::string averror_to_string(int error)
+        {
+            std::array<char, 128> buf = { 0 };
 
-	if (::av_strerror(error, buf.data(), buf.size()) == 0)
-		return &buf[0];
-	else
-		return "Unknown error";
-}
+            if (::av_strerror(error, buf.data(), buf.size()) == 0)
+                return &buf[0];
+            else
+                return "Unknown error";
+        }
 
-class AudioFileException : public Av::Exception
-{
-	public:
-		AudioFileException(int avError)
-			: Av::Exception {"AudioFileException: " + averror_to_string(avError)}
-		{}
-};
+        class AudioFileException : public Av::Exception
+        {
+        public:
+            AudioFileException(int avError)
+                : Av::Exception{ "AudioFileException: " + averror_to_string(avError) }
+            {}
+        };
 
-std::unique_ptr<IAudioFile>
-parseAudioFile(const std::filesystem::path& p)
-{
-	return std::make_unique<AudioFile>(p);
-}
+        void getMetaDataFromDictionnary(AVDictionary* dictionnary, AudioFile::MetadataMap& res)
+        {
+            if (!dictionnary)
+                return;
 
-AudioFile::AudioFile(const std::filesystem::path& p)
-: _p {p}
-{
-	int error {avformat_open_input(&_context, _p.string().c_str(), nullptr, nullptr)};
-	if (error < 0)
-	{
-		LMS_LOG(AV, ERROR) << "Cannot open " << _p.string() << ": " << averror_to_string(error);
-		throw AudioFileException {error};
-	}
+            AVDictionaryEntry* tag = NULL;
+            while ((tag = ::av_dict_get(dictionnary, "", tag, AV_DICT_IGNORE_SUFFIX)))
+            {
+                res[StringUtils::stringToUpper(tag->key)] = tag->value;
+            }
+        }
 
-	error = avformat_find_stream_info(_context, nullptr);
-	if (error < 0)
-	{
-		LMS_LOG(AV, ERROR) << "Cannot find stream information on " << _p.string() << ": " << averror_to_string(error);
-		avformat_close_input(&_context);
-		throw AudioFileException {error};
-	}
-}
+        DecodingCodec avcodecToDecodingCodec(AVCodecID codec)
+        {
+            switch (codec)
+            {
+            case AV_CODEC_ID_MP3:          return DecodingCodec::MP3;
+            case AV_CODEC_ID_AAC:          return DecodingCodec::AAC;
+            case AV_CODEC_ID_AC3:          return DecodingCodec::AC3;
+            case AV_CODEC_ID_VORBIS:       return DecodingCodec::VORBIS;
+            case AV_CODEC_ID_WMAV1:        return DecodingCodec::WMAV1;
+            case AV_CODEC_ID_WMAV2:        return DecodingCodec::WMAV2;
+            case AV_CODEC_ID_FLAC:         return DecodingCodec::FLAC;
+            case AV_CODEC_ID_ALAC:         return DecodingCodec::ALAC;
+            case AV_CODEC_ID_WAVPACK:      return DecodingCodec::WAVPACK;
+            case AV_CODEC_ID_MUSEPACK7:    return DecodingCodec::MUSEPACK7;
+            case AV_CODEC_ID_MUSEPACK8:    return DecodingCodec::MUSEPACK8;
+            case AV_CODEC_ID_APE:          return DecodingCodec::APE;
+            case AV_CODEC_ID_EAC3:         return DecodingCodec::EAC3;
+            case AV_CODEC_ID_MP4ALS:       return DecodingCodec::MP4ALS;
+            case AV_CODEC_ID_OPUS:         return DecodingCodec::OPUS;
+            case AV_CODEC_ID_SHORTEN:      return DecodingCodec::SHORTEN;
+            default:
+                return DecodingCodec::UNKNOWN;
+            }
+        }
+    }
 
-AudioFile::~AudioFile()
-{
-	avformat_close_input(&_context);
-}
+    std::unique_ptr<IAudioFile> parseAudioFile(const std::filesystem::path& p)
+    {
+        return std::make_unique<AudioFile>(p);
+    }
 
-const std::filesystem::path&
-AudioFile::getPath() const
-{
-	return _p;
-}
+    AudioFile::AudioFile(const std::filesystem::path& p)
+        : _p{ p }
+    {
+        int error{ avformat_open_input(&_context, _p.string().c_str(), nullptr, nullptr) };
+        if (error < 0)
+        {
+            LMS_LOG(AV, ERROR) << "Cannot open " << _p.string() << ": " << averror_to_string(error);
+            throw AudioFileException{ error };
+        }
 
-std::chrono::milliseconds
-AudioFile::getDuration() const
-{
-	if (_context->duration == AV_NOPTS_VALUE)
-		return std::chrono::milliseconds {0}; // TODO estimate
+        error = avformat_find_stream_info(_context, nullptr);
+        if (error < 0)
+        {
+            LMS_LOG(AV, ERROR) << "Cannot find stream information on " << _p.string() << ": " << averror_to_string(error);
+            avformat_close_input(&_context);
+            throw AudioFileException{ error };
+        }
+    }
 
-	return std::chrono::milliseconds {_context->duration / AV_TIME_BASE * 1000};
-}
+    AudioFile::~AudioFile()
+    {
+        avformat_close_input(&_context);
+    }
 
-void
-getMetaDataFromDictionnary(AVDictionary* dictionnary, AudioFile::MetadataMap& res)
-{
-	if (!dictionnary)
-		return;
+    const std::filesystem::path& AudioFile::getPath() const
+    {
+        return _p;
+    }
 
-	AVDictionaryEntry *tag = NULL;
-	while ((tag = ::av_dict_get(dictionnary, "", tag, AV_DICT_IGNORE_SUFFIX)))
-	{
-		res[StringUtils::stringToUpper(tag->key)] = tag->value;
-	}
-}
+    ContainerInfo AudioFile::getContainerInfo() const
+    {
+        ContainerInfo info;
+        info.bitrate = _context->bit_rate;
+        info.duration = std::chrono::milliseconds{ _context->duration == AV_NOPTS_VALUE ? 0 : _context->duration / AV_TIME_BASE * 1000 };
+        info.name = _context->iformat->name;
 
-AudioFile::MetadataMap
-AudioFile::getMetaData() const
-{
-	MetadataMap res;
+        return info;
+    }
 
-	getMetaDataFromDictionnary(_context->metadata, res);
+    AudioFile::MetadataMap AudioFile::getMetaData() const
+    {
+        MetadataMap res;
 
-	// HACK for OGG files
-	// If we did not find tags, search metadata in streams
-	if (res.empty())
-	{
-		for (std::size_t i {}; i < _context->nb_streams; ++i)
-		{
-			getMetaDataFromDictionnary(_context->streams[i]->metadata, res);
+        getMetaDataFromDictionnary(_context->metadata, res);
 
-			if (!res.empty())
-				break;
-		}
-	}
+        // HACK for OGG files
+        // If we did not find tags, search metadata in streams
+        if (res.empty())
+        {
+            for (std::size_t i{}; i < _context->nb_streams; ++i)
+            {
+                getMetaDataFromDictionnary(_context->streams[i]->metadata, res);
 
-	return res;
-}
+                if (!res.empty())
+                    break;
+            }
+        }
 
-std::vector<StreamInfo>
-AudioFile::getStreamInfo() const
-{
-	std::vector<StreamInfo> res;
+        return res;
+    }
 
-	for (std::size_t i {}; i < _context->nb_streams; ++i)
-	{
-		std::optional<StreamInfo> streamInfo {getStreamInfo(i)};
-		if (streamInfo)
-			res.emplace_back(std::move(*streamInfo));
-	}
+    std::vector<StreamInfo> AudioFile::getStreamInfo() const
+    {
+        std::vector<StreamInfo> res;
 
-	return res;
-}
+        for (std::size_t i{}; i < _context->nb_streams; ++i)
+        {
+            std::optional<StreamInfo> streamInfo{ getStreamInfo(i) };
+            if (streamInfo)
+                res.emplace_back(std::move(*streamInfo));
+        }
 
-std::optional<std::size_t>
-AudioFile::getBestStreamIndex() const
-{
-	int res = ::av_find_best_stream(_context,
-		AVMEDIA_TYPE_AUDIO,
-		-1,	// Auto
-		-1,	// Auto
-		NULL,
-		0);
+        return res;
+    }
 
-	if (res < 0)
-		return std::nullopt;
+    std::optional<std::size_t> AudioFile::getBestStreamIndex() const
+    {
+        int res = ::av_find_best_stream(_context,
+            AVMEDIA_TYPE_AUDIO,
+            -1,	// Auto
+            -1,	// Auto
+            NULL,
+            0);
 
-	return res;
-}
+        if (res < 0)
+            return std::nullopt;
 
-std::optional<StreamInfo>
-AudioFile::getBestStreamInfo() const
-{
-	std::optional<StreamInfo> res;
+        return res;
+    }
 
-	std::optional<std::size_t> bestStreamIndex {getBestStreamIndex()};
-	if (bestStreamIndex)
-		res = getStreamInfo(*bestStreamIndex);
+    std::optional<StreamInfo> AudioFile::getBestStreamInfo() const
+    {
+        std::optional<StreamInfo> res;
 
-	return res;
-}
+        std::optional<std::size_t> bestStreamIndex{ getBestStreamIndex() };
+        if (bestStreamIndex)
+            res = getStreamInfo(*bestStreamIndex);
 
-bool
-AudioFile::hasAttachedPictures() const
-{
-	for (std::size_t i = 0; i < _context->nb_streams; ++i)
-	{
-		if (_context->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)
-			return true;
-	}
+        return res;
+    }
 
-	return false;
-}
+    bool AudioFile::hasAttachedPictures() const
+    {
+        for (std::size_t i = 0; i < _context->nb_streams; ++i)
+        {
+            if (_context->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)
+                return true;
+        }
 
-void
-AudioFile::visitAttachedPictures(std::function<void(const Picture&)> func) const
-{
-	static const std::unordered_map<int, std::string> codecMimeMap =
-	{
-		{ AV_CODEC_ID_BMP, "image/x-bmp" },
-		{ AV_CODEC_ID_GIF, "image/gif" },
-		{ AV_CODEC_ID_MJPEG, "image/jpeg" },
-		{ AV_CODEC_ID_PNG, "image/png" },
-		{ AV_CODEC_ID_PNG, "image/x-png" },
-		{ AV_CODEC_ID_PPM, "image/x-portable-pixmap" },
-	};
+        return false;
+    }
 
-	for (std::size_t i = 0; i < _context->nb_streams; ++i)
-	{
-		AVStream *avstream = _context->streams[i];
+    void AudioFile::visitAttachedPictures(std::function<void(const Picture&)> func) const
+    {
+        static const std::unordered_map<int, std::string> codecMimeMap =
+        {
+            { AV_CODEC_ID_BMP, "image/x-bmp" },
+            { AV_CODEC_ID_GIF, "image/gif" },
+            { AV_CODEC_ID_MJPEG, "image/jpeg" },
+            { AV_CODEC_ID_PNG, "image/png" },
+            { AV_CODEC_ID_PNG, "image/x-png" },
+            { AV_CODEC_ID_PPM, "image/x-portable-pixmap" },
+        };
 
-		// Skip attached pics
-		if (!(avstream->disposition & AV_DISPOSITION_ATTACHED_PIC))
-			continue;
+        for (std::size_t i = 0; i < _context->nb_streams; ++i)
+        {
+            AVStream* avstream = _context->streams[i];
 
-		if (avstream->codecpar == nullptr)
-		{
-			LMS_LOG(AV, ERROR) << "Skipping stream " << i << " since no codecpar is set";
-			continue;
-		}
+            // Skip attached pics
+            if (!(avstream->disposition & AV_DISPOSITION_ATTACHED_PIC))
+                continue;
 
-		Picture picture;
+            if (avstream->codecpar == nullptr)
+            {
+                LMS_LOG(AV, ERROR) << "Skipping stream " << i << " since no codecpar is set";
+                continue;
+            }
 
-		auto itMime = codecMimeMap.find(avstream->codecpar->codec_id);
-		if (itMime != codecMimeMap.end())
-		{
-			picture.mimeType = itMime->second;
-		}
-		else
-		{
-			picture.mimeType = "application/octet-stream";
-			LMS_LOG(AV, ERROR) << "CODEC ID " << avstream->codecpar->codec_id << " not handled in mime type conversion";
-		}
+            Picture picture;
 
-		const AVPacket& pkt {avstream->attached_pic};
+            auto itMime = codecMimeMap.find(avstream->codecpar->codec_id);
+            if (itMime != codecMimeMap.end())
+            {
+                picture.mimeType = itMime->second;
+            }
+            else
+            {
+                picture.mimeType = "application/octet-stream";
+                LMS_LOG(AV, ERROR) << "CODEC ID " << avstream->codecpar->codec_id << " not handled in mime type conversion";
+            }
 
-		picture.data = reinterpret_cast<const std::byte*>(pkt.data);
-		picture.dataSize = pkt.size;
+            const AVPacket& pkt{ avstream->attached_pic };
 
-		func(picture);
-	}
-}
+            picture.data = reinterpret_cast<const std::byte*>(pkt.data);
+            picture.dataSize = pkt.size;
 
-std::optional<StreamInfo>
-AudioFile::getStreamInfo(std::size_t streamIndex) const
-{
-	std::optional<StreamInfo> res;
+            func(picture);
+        }
+    }
 
-	AVStream* avstream { _context->streams[streamIndex]};
-	assert(avstream);
+    std::optional<StreamInfo> AudioFile::getStreamInfo(std::size_t streamIndex) const
+    {
+        std::optional<StreamInfo> res;
 
-	if (avstream->disposition & AV_DISPOSITION_ATTACHED_PIC)
-		return res;
+        AVStream* avstream{ _context->streams[streamIndex] };
+        assert(avstream);
 
-	if (!avstream->codecpar)
-	{
-		LMS_LOG(AV, ERROR) << "Skipping stream " << streamIndex << " since no codecpar is set";
-		return res;
-	}
+        if (avstream->disposition & AV_DISPOSITION_ATTACHED_PIC)
+            return res;
 
-	if (avstream->codecpar->codec_type != AVMEDIA_TYPE_AUDIO)
-		return res;
+        if (!avstream->codecpar)
+        {
+            LMS_LOG(AV, ERROR) << "Skipping stream " << streamIndex << " since no codecpar is set";
+            return res;
+        }
 
-	res.emplace();
-	res->index = streamIndex;
-	res->bitrate = static_cast<std::size_t>(avstream->codecpar->bit_rate);
-	res->codec = ::avcodec_get_name(avstream->codecpar->codec_id);
-	assert(!res->codec.empty());
+        if (avstream->codecpar->codec_type != AVMEDIA_TYPE_AUDIO)
+            return res;
 
-	return res;
-}
+        res.emplace();
+        res->index = streamIndex;
+        res->bitrate = static_cast<std::size_t>(avstream->codecpar->bit_rate);
+        res->codec = avcodecToDecodingCodec(avstream->codecpar->codec_id);
+        res->codecName = ::avcodec_get_name(avstream->codecpar->codec_id);
+        assert(!res->codecName.empty()); // doc says it is never NULL
 
-std::optional<AudioFileFormat>
-guessAudioFileFormat(const std::filesystem::path& file)
-{
-	const AVOutputFormat* format {::av_guess_format(NULL, file.string().c_str(), NULL)};
-	if (!format || !format->name)
-		return {};
+        return res;
+    }
 
-	LMS_LOG(AV, DEBUG) << "File '" << file.string() << "', formats = '" << format->name << "'";
+    std::string_view getMimeType(const std::filesystem::path& fileExtension)
+    {
+        // List should be sync with the demuxers shipped in the lms's docker version
+        // + the _audioFileExtensions in ScanSettings
+        static const std::unordered_map<std::filesystem::path, std::string_view> entries
+        {
+            {".mp3",    "audio/mpeg"},
+            {".ogg",    "audio/ogg"},
+            {".oga",    "audio/ogg"},
+            {".opus",   "audio/opus"},
+            {".aac",    "audio/aac"},
+            {".alac",   "audio/mp4"},
+            {".m4a",    "audio/mp4"},
+            {".m4b",    "audio/mp4"},
+            {".flac",   "audio/flac"},
+            {".webm",   "audio/webm"},
+            {".wav",    "audio/x-wav"},
+            {".wma",    "audio/x-ms-wma"},
+            {".ape",    "audio/x-monkeys-audio"},
+            {".mpc",    "audio/x-musepack"},
+            {".shn",    "audio/x-shn"},
+            {".aif",    "audio/x-aiff"},
+            {".aiff",   "audio/x-aiff"},
+            {".m3u",    "audio/x-mpegurl"},
+            {".pls",    "audio/x-scpls"},
+            {".dsf",    "audio/dsd"},
+            {".wv",     "audio/x-wavpack"},
+            {".wvp",    "audio/x-wavpack"},
+            {".mka",    "audio/x-matroska"},
+        };
 
-	auto formats {StringUtils::splitString(format->name, ",")};
-	if (formats.size() > 1)
-		LMS_LOG(AV, INFO) << "File '" << file.string() << "' reported several formats: '" << format->name << "'";
+        auto it{ entries.find(fileExtension) };
+        if (it == std::cend(entries))
+            return "";
 
-	std::vector<std::string_view> mimeTypes;
-	if (format->mime_type)
-		mimeTypes = StringUtils::splitString(format->mime_type, ",");
-
-	if (mimeTypes.empty())
-		LMS_LOG(AV, INFO) << "File '" << file.string() << "', no mime type found!";
-	else if (mimeTypes.size() > 1)
-		LMS_LOG(AV, INFO) << "File '" << file.string() << "' reported several mime types: '" << format->mime_type << "'";
-
-	AudioFileFormat res;
-	res.format = formats.front();
-	res.mimeType = mimeTypes.empty() ? "application/octet-stream" : mimeTypes.front();
-
-	return res;
-}
-
+        return it->second;
+    }
 } // namespace Av

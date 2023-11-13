@@ -85,6 +85,7 @@
 <message id="Lms.Admin.ScannerController.status-in-progress">扫描中: 阶段 {1}/{2}</message>
 
 <message id="Lms.Admin.ScannerController.step-checking-for-missing-files">检查文件中... {1}%</message>
+
 <message id="Lms.Admin.ScannerController.step-discovering-files">检索文件中: {1} 文件</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">从 AcousticBrainz 获取音轨特征: {1}/{2} 音轨 ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">重载相似引擎中 {1}%...</message>
@@ -248,6 +249,7 @@
 
 <message id="Lms.Settings.demo-cannot-save">使用演示账号时不能保存！</message>
 
+
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> 设置</message>
 <message id="Lms.Settings.password-bad">无效密码</message>
 <message id="Lms.Settings.password-must-fill-old-password">必须填写旧密码</message>
@@ -266,18 +268,18 @@
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">专辑歌手</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.track-artists">音轨歌手</message>
 <message id="Lms.Settings.subsonic-api">Subsonic 应用程序接口</message>
-<message id="Lms.Settings.transcode">转码</message>
-<message id="Lms.Settings.transcode-bitrate">转码比特率</message>
-<message id="Lms.Settings.transcode-format">转码格式</message>
-<message id="Lms.Settings.transcode-format.matroska_opus">Matroska/Opus</message>
-<message id="Lms.Settings.transcode-format.mp3">MP3</message>
-<message id="Lms.Settings.transcode-format.ogg_opus">Ogg/Opus</message>
-<message id="Lms.Settings.transcode-format.ogg_vorbis">Ogg/Vorbis</message>
-<message id="Lms.Settings.transcode-format.webm_vorbis">WebM/Vorbis</message>
-<message id="Lms.Settings.transcode-mode">启动转码</message>
-<message id="Lms.Settings.transcode-mode.always">总是</message>
-<message id="Lms.Settings.transcode-mode.if-format-not-supported">仅当格式不支持时使用</message>
-<message id="Lms.Settings.transcode-mode.never">从不</message>
+<message id="Lms.Settings.transcoding">转码</message>
+<message id="Lms.Settings.transcoding-output-bitrate">转码比特率</message>
+<message id="Lms.Settings.transcoding-output-format">转码格式</message>
+<message id="Lms.Settings.transcoding-output-format.matroska_opus">Matroska/Opus</message>
+<message id="Lms.Settings.transcoding-output-format.mp3">MP3</message>
+<message id="Lms.Settings.transcoding-output-format.ogg_opus">Ogg/Opus</message>
+<message id="Lms.Settings.transcoding-output-format.ogg_vorbis">Ogg/Vorbis</message>
+<message id="Lms.Settings.transcoding-output-format.webm_vorbis">WebM/Vorbis</message>
+<message id="Lms.Settings.transcoding-mode">启动转码</message>
+<message id="Lms.Settings.transcoding-mode.always">总是</message>
+<message id="Lms.Settings.transcoding-mode.if-format-not-supported">仅当格式不支持时使用</message>
+<message id="Lms.Settings.transcoding-mode.never">从不</message>
 <message id="Lms.Settings.settings-saved">新设置已保存！</message>
 
 <!--Wt-->

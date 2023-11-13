@@ -186,11 +186,13 @@ namespace UserInterface
         params.setClusters(_filters.getClusterIds());
         params.setTrackList(_trackListId);
         params.setSortMethod(Database::TrackSortMethod::TrackList);
-        params.setRange({ static_cast<std::size_t>(_container->getCount()), _batchSize });
+        params.setRange(Database::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize });
         params.setDistinct(false);
 
-        for (const Track::pointer& track : Database::Track::find(LmsApp->getDbSession(), params).results)
-            _container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
+        Database::Track::find(LmsApp->getDbSession(), params, [this](const Track::pointer& track)
+            {
+                _container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
+            });
     }
 } // namespace UserInterface
 

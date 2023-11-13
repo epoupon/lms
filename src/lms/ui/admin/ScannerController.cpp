@@ -265,10 +265,15 @@ ScannerController::refreshContents()
 						.arg(status.currentScanStepStats->totalElems)
 						.arg(status.currentScanStepStats->progress()));
 					break;
+
 				case Scanner::ScanStep::ReloadingSimilarityEngine:
 					_stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-reloading-similarity-engine")
 						.arg(status.currentScanStepStats->progress()));
 					break;
+
+					case Scanner::ScanStep::ComputeClusterStats:
+					_stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-compute-cluster-stats")
+						.arg(status.currentScanStepStats->progress()));
 			}
 			break;
 	}

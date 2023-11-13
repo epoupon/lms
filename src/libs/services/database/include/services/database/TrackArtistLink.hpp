@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -45,13 +46,13 @@ namespace Database
     public:
         struct FindParameters
         {
-            Range								range;
+            std::optional<Range>				range;
             std::optional<TrackArtistLinkType>  linkType;   // if set, only artists that have produced at least one track with this link type
             ArtistId							artist;		// if set, links involved with this artist
             ReleaseId							release;	// if set, artists involved in this release
             TrackId                             track;      // if set, artists involved in this track
 
-            FindParameters& setRange(Range _range) { range = _range; return *this; }
+            FindParameters& setRange(std::optional<Range> _range) { range = _range; return *this; }
             FindParameters& setLinkType(std::optional<TrackArtistLinkType> _linkType) { linkType = _linkType; return *this; }
             FindParameters& setArtist(ArtistId _artist) { artist = _artist; return *this; }
             FindParameters& setRelease(ReleaseId _release) { release = _release; return *this; }

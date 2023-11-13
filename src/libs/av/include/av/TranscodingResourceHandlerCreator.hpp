@@ -23,11 +23,10 @@
 
 #include "utils/IResourceHandler.hpp"
 
-namespace Av
+namespace Av::Transcoding
 {
-	struct InputFileParameters;
-	struct TranscodeParameters;
+	struct InputParameters;
+	struct OutputParameters;
 
-	std::unique_ptr<IResourceHandler> createTranscodeResourceHandler(const InputFileParameters& inputFileParameters, const TranscodeParameters& parameters, bool estimateContentLength);
+	std::unique_ptr<IResourceHandler> createResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength);
 }
-

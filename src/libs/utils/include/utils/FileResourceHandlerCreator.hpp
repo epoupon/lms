@@ -21,8 +21,9 @@
 
 #include <filesystem>
 #include <memory>
+#include <string_view>
 
 #include "utils/IResourceHandler.hpp"
 
-std::unique_ptr<IResourceHandler> createFileResourceHandler(const std::filesystem::path& path);
+std::unique_ptr<IResourceHandler> createFileResourceHandler(const std::filesystem::path& path, std::string_view mimeType);
 

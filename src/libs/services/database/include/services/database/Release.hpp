@@ -53,7 +53,7 @@ namespace Database
             std::vector<ClusterId>              clusters; // if non empty, releases that belong to these clusters
             std::vector<std::string_view>       keywords; // if non empty, name must match all of these keywords
             ReleaseSortMethod                   sortMethod{ ReleaseSortMethod::None };
-            Range                               range;
+            std::optional<Range>                range;
             Wt::WDateTime                       writtenAfter;
             std::optional<DateRange>            dateRange;
             UserId                              starringUser;				// only releases starred by this user
@@ -67,7 +67,7 @@ namespace Database
             FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
             FindParameters& setSortMethod(ReleaseSortMethod _sortMethod) { sortMethod = _sortMethod; return *this; }
-            FindParameters& setRange(Range _range) { range = _range; return *this; }
+            FindParameters& setRange(std::optional<Range> _range) { range = _range; return *this; }
             FindParameters& setWrittenAfter(const Wt::WDateTime& _after) { writtenAfter = _after; return *this; }
             FindParameters& setDateRange(const std::optional<DateRange>& _dateRange) { dateRange = _dateRange; return *this; }
             FindParameters& setStarringUser(UserId _user, FeedbackBackend _feedbackBackend) { starringUser = _user; feedbackBackend = _feedbackBackend; return *this; }
@@ -89,9 +89,10 @@ namespace Database
         static std::vector<pointer>     find(Session& session, const std::string& name);
         static pointer                  find(Session& session, ReleaseId id);
         static RangeResults<pointer>    find(Session& session, const FindParameters& parameters);
+        static void                     find(Session& session, const FindParameters& parameters, std::function<void(const pointer&)> func);
         static RangeResults<ReleaseId>  findIds(Session& session, const FindParameters& parameters);
-        static RangeResults<ReleaseId>  findOrphanIds(Session& session, Range range); // not track related
-        static RangeResults<ReleaseId>  findIdsOrderedByArtist(Session& session, Range range);
+        static RangeResults<ReleaseId>  findOrphanIds(Session& session, std::optional<Range> range = std::nullopt); // not track related
+        static RangeResults<ReleaseId>  findIdsOrderedByArtist(Session& session, std::optional<Range> range = std::nullopt);
 
         // Get the cluster of the tracks that belong to this release
         // Each clusters are grouped by cluster type, sorted by the number of occurence (max to min)
@@ -103,6 +104,7 @@ namespace Database
         Wt::WDate                   getOriginalReleaseDate() const;
         std::optional<std::string>  getCopyright() const;
         std::optional<std::string>  getCopyrightURL() const;
+        std::size_t                 getMeanBitrate() const;
 
         // Accessors
         const std::string& getName() const { return _name; }

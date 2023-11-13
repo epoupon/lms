@@ -42,6 +42,7 @@ namespace API::Subsonic
         ClientInfo clientInfo;
         ProtocolVersion serverProtocolVersion;
         bool enableOpenSubsonic{ true };
+        bool enableDefaultCover{ };
     };
 }
 
