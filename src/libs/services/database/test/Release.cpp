@@ -653,5 +653,4 @@ TEST_F(DatabaseFixture, Release_meanBitrate)
         track3.get().modify()->setRelease(release1.get());
     }
     checkExpectedBitrate(192); // 0 should not be taken into account
-
 }

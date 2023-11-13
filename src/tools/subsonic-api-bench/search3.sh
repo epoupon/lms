@@ -8,7 +8,7 @@ fi
 # make any command failure exit
 set -e
 
-read -s -p "Enter password: " user_password
+read -r -s -p "Enter password: " user_password
 echo
 
 # Retrieve the argument from the command line
