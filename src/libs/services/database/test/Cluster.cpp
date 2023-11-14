@@ -55,7 +55,7 @@ TEST_F(DatabaseFixture, Cluster)
             }
 
             {
-                const auto clusters{ Cluster::findOrphans(session) };
+                const auto clusters{ Cluster::findOrphanIds(session) };
                 ASSERT_EQ(clusters.results.size(), 1);
                 EXPECT_EQ(clusters.results.front(), cluster.getId());
             }
@@ -91,7 +91,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
 
     {
         auto transaction{ session.createSharedTransaction() };
-        EXPECT_TRUE(Cluster::findOrphans(session).results.empty());
+        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
         auto clusterTypes{ ClusterType::findOrphans(session) };
         ASSERT_EQ(clusterTypes.results.size(), 1);
         EXPECT_EQ(clusterTypes.results.front(), clusterType.getId());
@@ -102,7 +102,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
 
     {
         auto transaction{ session.createSharedTransaction() };
-        auto clusters{ Cluster::findOrphans(session) };
+        auto clusters{ Cluster::findOrphanIds(session) };
         EXPECT_EQ(clusters.results.size(), 2);
         EXPECT_TRUE(track->getClusters().empty());
         EXPECT_TRUE(track->getClusterIds().empty());
@@ -127,7 +127,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
 
     {
         auto transaction{ session.createSharedTransaction() };
-        auto clusters{ Cluster::findOrphans(session) };
+        auto clusters{ Cluster::findOrphanIds(session) };
         ASSERT_EQ(clusters.results.size(), 1);
         EXPECT_EQ(clusters.results.front(), cluster2.getId());
 
@@ -225,7 +225,7 @@ TEST_F(DatabaseFixture, Cluster_multiTracks)
 
     {
         auto transaction{ session.createSharedTransaction() };
-        EXPECT_TRUE(Cluster::findOrphans(session).results.empty());
+        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
 
         EXPECT_EQ(Cluster::computeTrackCount(session, cluster.getId()), tracks.size());
 
@@ -244,7 +244,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
 
     {
         auto transaction{ session.createSharedTransaction() };
-        EXPECT_TRUE(Cluster::findOrphans(session).results.empty());
+        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
     }
 
     ScopedClusterType clusterType{ session, "MyClusterType" };
@@ -253,7 +253,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
 
     {
         auto transaction{ session.createSharedTransaction() };
-        ASSERT_EQ(Cluster::findOrphans(session).results.size(), 2);
+        ASSERT_EQ(Cluster::findOrphanIds(session).results.size(), 2);
         EXPECT_TRUE(Release::find(session, Release::FindParameters{}.setClusters({ unusedCluster.getId() })).results.empty());
         EXPECT_EQ(Release::find(session, Release::FindParameters{}).results.size(), 1);
         EXPECT_EQ(Cluster::computeReleaseCount(session, cluster.getId()), 0);
@@ -271,7 +271,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
         auto transaction{ session.createSharedTransaction() };
 
         {
-            auto clusters{ Cluster::findOrphans(session) };
+            auto clusters{ Cluster::findOrphanIds(session) };
             ASSERT_EQ(clusters.results.size(), 1);
             EXPECT_EQ(clusters.results.front(), unusedCluster.getId());
         }
@@ -330,7 +330,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiClusters)
     {
         auto transaction{ session.createSharedTransaction() };
         EXPECT_TRUE(ClusterType::findOrphans(session).results.empty());
-        EXPECT_EQ(Cluster::findOrphans(session).results.size(), 2);
+        EXPECT_EQ(Cluster::findOrphanIds(session).results.size(), 2);
         EXPECT_TRUE(Release::findOrphanIds(session).results.empty());
         EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
     }
@@ -390,7 +390,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiRolesMultiClusters)
 
     {
         auto transaction{ session.createSharedTransaction() };
-        EXPECT_TRUE(Cluster::findOrphans(session).results.empty());
+        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
         EXPECT_TRUE(Release::findOrphanIds(session).results.empty());
         EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
     }
@@ -430,7 +430,7 @@ TEST_F(DatabaseFixture, MultiTracksSingleArtistMultiClusters)
 
     {
         auto transaction{ session.createSharedTransaction() };
-        EXPECT_TRUE(Cluster::findOrphans(session).results.empty());
+        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
         EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
     }
 
@@ -541,7 +541,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistSingleCluster)
     {
         auto transaction{ session.createSharedTransaction() };
 
-        EXPECT_TRUE(Cluster::findOrphans(session).results.empty());
+        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
         EXPECT_TRUE(ClusterType::findOrphans(session).results.empty());
         EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
         EXPECT_TRUE(Release::findOrphanIds(session).results.empty());

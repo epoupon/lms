@@ -65,7 +65,7 @@ namespace Database {
         static RangeResults<pointer>            find(Session& session, const FindParameters& params);
         static void                             find(Session& session, const FindParameters& params, std::function<void(const pointer& cluster)> _func);
         static pointer                          find(Session& session, ClusterId id);
-        static RangeResults<ClusterId>          findOrphans(Session& session, std::optional<Range> range = std::nullopt);
+        static RangeResults<ClusterId>          findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
 
         // May be very slow
         static std::size_t                      computeTrackCount(Session& session, ClusterId id);
