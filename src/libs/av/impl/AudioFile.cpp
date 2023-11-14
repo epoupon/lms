@@ -28,6 +28,8 @@ extern "C"
 }
 
 #include <array>
+#include <map>
+#include <unordered_map>
 
 #include "utils/Logger.hpp"
 #include "utils/String.hpp"
@@ -290,7 +292,8 @@ namespace Av
     {
         // List should be sync with the demuxers shipped in the lms's docker version
         // + the _audioFileExtensions in ScanSettings
-        static const std::unordered_map<std::filesystem::path, std::string_view> entries
+        // std::filesystem::path does not seem to have std::hash specialization on freebsd
+        static const std::map<std::filesystem::path, std::string_view> entries
         {
             {".mp3",    "audio/mpeg"},
             {".ogg",    "audio/ogg"},

@@ -56,6 +56,8 @@ FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::
 
         LMS_LOG(UTILS, DEBUG) << "File '" << _path.string() << "', fileSize = " << fileSize;
 
+        response.addHeader("Accept-Ranges", "bytes");
+        
         const Wt::Http::Request::ByteRangeSpecifier ranges{ request.getRanges(fileSize) };
         if (!ranges.isSatisfiable())
         {
