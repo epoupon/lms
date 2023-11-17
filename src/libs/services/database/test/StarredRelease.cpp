@@ -62,6 +62,18 @@ TEST_F(DatabaseFixture, StarredRelease)
         releases = Release::find(session, Release::FindParameters{}.setStarringUser(user2.getId(), FeedbackBackend::Internal));
         EXPECT_EQ(releases.results.size(), 0);
     }
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+        user.get().modify()->setFeedbackBackend(FeedbackBackend::ListenBrainz);
+    }
+
+    {
+        auto transaction{ session.createSharedTransaction() };
+
+        auto gotRelease{ StarredRelease::find(session, release->getId(), user->getId()) };
+        EXPECT_EQ(gotRelease, StarredRelease::pointer{});
+    }
 }
 
 TEST_F(DatabaseFixture, Starredrelease_PendingDestroy)

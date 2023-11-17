@@ -451,9 +451,7 @@ namespace Feedback::ListenBrainz
             }
 
             trackId = tracks.front()->getId();
-
-            const StarredTrack::pointer starredTrack{ StarredTrack::find(session, trackId, context.userId, Database::FeedbackBackend::ListenBrainz) };
-            needImport = !starredTrack;
+            needImport = !StarredTrack::exists(session, trackId, context.userId, Database::FeedbackBackend::ListenBrainz);
 
             // don't update starred date time
             // no need to update state if it was found as not synchronized

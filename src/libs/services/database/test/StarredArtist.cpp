@@ -62,6 +62,29 @@ TEST_F(DatabaseFixture, StarredArtist)
         artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user2.getId(), FeedbackBackend::Internal));
         EXPECT_EQ(artists.results.size(), 0);
     }
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+        user.get().modify()->setFeedbackBackend(FeedbackBackend::ListenBrainz);
+    }
+
+    {
+        auto transaction{ session.createSharedTransaction() };
+
+        auto gotArtist{ StarredArtist::find(session, artist->getId(), user->getId()) };
+        EXPECT_EQ(gotArtist, Artist::pointer{});
+    }
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+        user.get().modify()->setFeedbackBackend(FeedbackBackend::Internal);
+    }
+
+    {
+        auto transaction{ session.createUniqueTransaction() };
+        auto gotArtist{ StarredArtist::find(session, artist->getId(), user->getId()) };
+        EXPECT_EQ(gotArtist->getId(), starredArtist->getId());
+    }
 }
 
 TEST_F(DatabaseFixture, StarredArtist_PendingDestroy)

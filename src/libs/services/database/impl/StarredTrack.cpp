@@ -53,6 +53,17 @@ namespace Database
         return session.getDboSession().find<StarredTrack>().where("id = ?").bind(id).resultValue();
     }
 
+    StarredTrack::pointer StarredTrack::find(Session& session, TrackId trackId, UserId userId)
+    {
+        session.checkSharedLocked();
+        return session.getDboSession().query<Wt::Dbo::ptr<StarredTrack>>("SELECT s_t from starred_track s_t")
+            .join("user u ON u.id = s_t.user_id")
+            .where("s_t.track_id = ?").bind(trackId)
+            .where("s_t.user_id = ?").bind(userId)
+            .where("s_t.backend = u.feedback_backend")
+            .resultValue();
+    }
+
     StarredTrack::pointer StarredTrack::find(Session& session, TrackId trackId, UserId userId, FeedbackBackend backend)
     {
         session.checkSharedLocked();
@@ -61,6 +72,15 @@ namespace Database
             .where("user_id = ?").bind(userId)
             .where("backend = ?").bind(backend)
             .resultValue();
+    }
+
+    bool StarredTrack::exists(Session& session, TrackId trackId, UserId userId, FeedbackBackend backend)
+    {
+        return session.getDboSession().query<int>("SELECT 1 from starred_track")
+            .where("track_id = ?").bind(trackId)
+            .where("user_id = ?").bind(userId)
+            .where("backend = ?").bind(backend)
+            .resultValue() == 1;
     }
 
     RangeResults<StarredTrackId> StarredTrack::find(Session& session, const FindParameters& params)

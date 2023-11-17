@@ -42,6 +42,7 @@ namespace Database
         // Search utility
         static std::size_t getCount(Session& session);
         static pointer find(Session& session, StarredReleaseId id);
+        static pointer find(Session& session, ReleaseId releaseId, UserId userId); // current feedback backend
         static pointer find(Session& session, ReleaseId releaseId, UserId userId, FeedbackBackend backend);
 
         // Accessors

@@ -82,28 +82,20 @@ namespace Feedback
     template <typename ObjType, typename ObjIdType, typename StarredObjType>
     bool FeedbackService::isStarred(UserId userId, ObjIdType objId)
     {
-        const auto backend{ getUserFeedbackBackend(userId) };
-        if (!backend)
-            return false;
-
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createSharedTransaction() };
 
-        typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId, *backend) };
+        typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId) };
         return starredObj && (starredObj->getSyncState() != SyncState::PendingRemove);
     }
 
     template <typename ObjType, typename ObjIdType, typename StarredObjType>
     Wt::WDateTime FeedbackService::getStarredDateTime(UserId userId, ObjIdType objId)
     {
-        const auto backend{ getUserFeedbackBackend(userId) };
-        if (!backend)
-            return {};
-
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createSharedTransaction() };
 
-        typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId, *backend) };
+        typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId) };
         if (starredObj && (starredObj->getSyncState() != SyncState::PendingRemove))
             return starredObj->getDateTime();
 

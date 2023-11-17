@@ -53,6 +53,17 @@ namespace Database
         return session.getDboSession().find<StarredRelease>().where("id = ?").bind(id).resultValue();
     }
 
+    StarredRelease::pointer StarredRelease::find(Session& session, ReleaseId releaseId, UserId userId)
+    {
+        session.checkSharedLocked();
+        return session.getDboSession().query<Wt::Dbo::ptr<StarredRelease>>("SELECT s_r from starred_release s_r")
+            .join("user u ON u.id = s_r.user_id")
+            .where("s_r.release_id = ?").bind(releaseId)
+            .where("s_r.user_id = ?").bind(userId)
+            .where("s_r.backend = u.feedback_backend")
+            .resultValue();
+    }
+
     StarredRelease::pointer StarredRelease::find(Session& session, ReleaseId releaseId, UserId userId, FeedbackBackend backend)
     {
         session.checkSharedLocked();
