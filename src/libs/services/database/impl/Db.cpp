@@ -24,6 +24,8 @@
 
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
+#include "utils/IConfig.hpp"
+#include "utils/Service.hpp"
 #include "utils/Logger.hpp"
 
 namespace Database
@@ -87,7 +89,8 @@ namespace Database
         LMS_LOG(DB, INFO) << "Creating connection pool on file " << dbPath.string();
 
         auto connection{ std::make_unique<Connection>(dbPath.string()) };
-        // connection->setProperty("show-queries", "true");
+        if (Service<IConfig>::get()->getBool("db-show-queries", false))
+            connection->setProperty("show-queries", "true");
 
         auto connectionPool{ std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), connectionCount) };
         connectionPool->setTimeout(std::chrono::seconds{ 10 });
