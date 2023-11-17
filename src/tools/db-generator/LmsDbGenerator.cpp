@@ -45,6 +45,7 @@ namespace
 {
     struct GeneratorParameters
     {
+        std::size_t releaseCountPerBatch{ 1000 };
         std::size_t releaseCount{ 100 };
         std::size_t trackCountPerRelease{ 10 };
         float compilationRatio{ 0.1 };
@@ -111,17 +112,22 @@ namespace
 
     void generate(const GeneratorParameters& params, GenerationContext& context)
     {
-        for (std::size_t i{}; i < params.releaseCount; ++i)
-        {
-            if ((i % 1000) == 0)
-                std::cout << "Generating album #" << i << std::endl;
+        std::size_t remainingCount{ params.releaseCount };
 
-            generateRelease(params, context);
+        while(remainingCount > 0)
+        {
+            auto transaction{ context.session.createUniqueTransaction() };
+            std::cout << "Generating album #" << params.releaseCount - remainingCount << " / " << params.releaseCount << std::endl;
+
+            for (std::size_t i{}; i < params.releaseCountPerBatch && remainingCount-- > 0; ++i)
+                generateRelease(params, context);
         }
     }
 
     void prepareContext(const GeneratorParameters& params, GenerationContext& context)
     {
+        auto transaction{ context.session.createUniqueTransaction() };
+
         // create some random genres/moods
         {
             Database::ClusterType::pointer genre{ Database::ClusterType::find(context.session, "GENRE") };
@@ -157,6 +163,7 @@ int main(int argc, char* argv[])
         po::options_description options{ "Options" };
         options.add_options()
             ("conf,c", po::value<std::string>()->default_value("/etc/lms.conf"), "lms config file")
+            ("release-count-per-batch", po::value<unsigned>()->default_value(defaultParams.releaseCountPerBatch), "Number of releases to generate before committing transaction")
             ("release-count", po::value<unsigned>()->default_value(defaultParams.releaseCount), "Number of releases to generate")
             ("track-count-per-release", po::value<unsigned>()->default_value(defaultParams.trackCountPerRelease), "Number of tracks per release")
             ("compilation-ratio", po::value<float>()->default_value(defaultParams.compilationRatio), "Compilation ratio (compilation means all tracks have a different artist)")
@@ -180,6 +187,7 @@ int main(int argc, char* argv[])
         po::notify(vm);
 
         GeneratorParameters genParams;
+        genParams.releaseCountPerBatch = vm["release-count-per-batch"].as<unsigned>();
         genParams.releaseCount = vm["release-count"].as<unsigned>();
         genParams.trackCountPerRelease = vm["track-count-per-release"].as<unsigned>();
         genParams.compilationRatio = vm["compilation-ratio"].as<float>();
@@ -191,7 +199,6 @@ int main(int argc, char* argv[])
         Service<IConfig> config{ createConfig(vm["conf"].as<std::string>()) };
         Database::Db db{ config->getPath("working-dir") / "lms.db" };
         Database::Session session{ db };
-        auto transaction{ session.createUniqueTransaction() };
         std::cout << "Starting generation..." << std::endl;
 
         GenerationContext genContext{ session };
