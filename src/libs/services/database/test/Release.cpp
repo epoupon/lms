@@ -27,6 +27,7 @@ TEST_F(DatabaseFixture, Release)
         auto transaction{ session.createSharedTransaction() };
 
         EXPECT_EQ(Release::getCount(session), 0);
+        EXPECT_EQ(Release::getCount(session, Release::FindParameters{}), 0);
         EXPECT_FALSE(Release::exists(session, 0));
         EXPECT_FALSE(Release::exists(session, 1));
     }
@@ -37,6 +38,7 @@ TEST_F(DatabaseFixture, Release)
         auto transaction{ session.createSharedTransaction() };
 
         EXPECT_EQ(Release::getCount(session), 1);
+        EXPECT_EQ(Release::getCount(session, Release::FindParameters{}), 1);
         EXPECT_TRUE(Release::exists(session, release.getId()));
 
         {
@@ -615,7 +617,6 @@ TEST_F(DatabaseFixture, Release_sortMethod)
         EXPECT_EQ(releases.results.back(), release1.getId());
     }
 }
-
 
 TEST_F(DatabaseFixture, Release_meanBitrate)
 {

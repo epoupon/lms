@@ -39,7 +39,7 @@ namespace Database
         template <typename ResultType>
         Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Release::FindParameters& params)
         {
-            auto query{ session.getDboSession().query<ResultType>("SELECT DISTINCT " + std::string{ itemToSelect } + " from release r") };
+            auto query{ session.getDboSession().query<ResultType>("SELECT " + std::string{ itemToSelect } + " from release r") };
 
             if (params.sortMethod == ReleaseSortMethod::LastWritten
                 || params.sortMethod == ReleaseSortMethod::Date
@@ -183,21 +183,6 @@ namespace Database
 
             return query;
         }
-
-        template <typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, const Release::FindParameters& params)
-        {
-            std::string_view itemToSelect;
-
-            if constexpr (std::is_same_v<ResultType, ReleaseId>)
-                itemToSelect = "r.id";
-            else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<Release>>)
-                itemToSelect = "r";
-            else
-                static_assert("Unhandled type");
-
-            return createQuery<ResultType>(session, itemToSelect, params);
-        }
     }
 
     Release::Release(const std::string& name, const std::optional<UUID>& MBID)
@@ -283,7 +268,7 @@ namespace Database
     {
         session.checkSharedLocked();
 
-        auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, params) };
+        auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, "DISTINCT r", params) };
         return Utils::execQuery<pointer>(query, params.range);
     }
 
@@ -291,7 +276,7 @@ namespace Database
     {
         session.checkSharedLocked();
 
-        auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, params) };
+        auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, "DISTINCT r", params) };
         Utils::execQuery<pointer>(query, params.range, func);
     }
 
@@ -299,8 +284,15 @@ namespace Database
     {
         session.checkSharedLocked();
 
-        auto query{ createQuery<ReleaseId>(session, params) };
+        auto query{ createQuery<ReleaseId>(session, "DISTINCT r.id", params) };
         return Utils::execQuery<ReleaseId>(query, params.range);
+    }
+
+    std::size_t Release::getCount(Session& session, const FindParameters& params)
+    {
+        session.checkSharedLocked();
+
+        return createQuery<int>(session, "COUNT(DISTINCT r.id)", params).resultValue();
     }
 
     std::size_t Release::getDiscCount() const

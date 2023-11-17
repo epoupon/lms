@@ -91,6 +91,7 @@ namespace Database
         static RangeResults<pointer>    find(Session& session, const FindParameters& parameters);
         static void                     find(Session& session, const FindParameters& parameters, std::function<void(const pointer&)> func);
         static RangeResults<ReleaseId>  findIds(Session& session, const FindParameters& parameters);
+        static std::size_t              getCount(Session& session, const FindParameters& parameters);
         static RangeResults<ReleaseId>  findOrphanIds(Session& session, std::optional<Range> range = std::nullopt); // not track related
         static RangeResults<ReleaseId>  findIdsOrderedByArtist(Session& session, std::optional<Range> range = std::nullopt);
 

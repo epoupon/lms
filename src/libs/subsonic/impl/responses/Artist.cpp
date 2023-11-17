@@ -82,8 +82,8 @@ namespace API::Subsonic
 
         if (id3)
         {
-            const auto releases{ Release::find(context.dbSession, Release::FindParameters {}.setArtist(artist->getId())) };
-            artistNode.setAttribute("albumCount", releases.results.size());
+            const std::size_t count{ Release::getCount(context.dbSession, Release::FindParameters {}.setArtist(artist->getId())) };
+            artistNode.setAttribute("albumCount", count);
         }
 
         if (const Wt::WDateTime dateTime{ Service<Feedback::IFeedbackService>::get()->getStarredDateTime(user->getId(), artist->getId()) }; dateTime.isValid())
