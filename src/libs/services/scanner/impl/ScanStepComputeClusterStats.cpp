@@ -57,6 +57,9 @@ namespace Scanner
 
                 for (const ClusterId clusterId : clusterIds)
                 {
+                    if (_abortScan)
+                        break;
+
                     std::size_t trackCount;
                     std::size_t releaseCount;
 
@@ -81,6 +84,6 @@ namespace Scanner
                 return true;
             });
 
-        LMS_LOG(DBUPDATER, DEBUG) << "Recomputed stats for " << clusterCount << " clusters!";
+        LMS_LOG(DBUPDATER, DEBUG) << "Recomputed stats for " << context.currentStepStats.processedElems << " clusters!";
     }
 }

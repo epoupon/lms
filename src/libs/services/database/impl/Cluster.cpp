@@ -106,7 +106,7 @@ namespace Database
         return Utils::execQuery<Cluster::pointer>(query, params.range);
     }
 
-    RangeResults<ClusterId> Cluster::findOrphans(Session& session, std::optional<Range> range)
+    RangeResults<ClusterId> Cluster::findOrphanIds(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
         auto query{ session.getDboSession().query<ClusterId>("SELECT DISTINCT c.id FROM cluster c WHERE NOT EXISTS(SELECT 1 FROM track_cluster t_c WHERE t_c.cluster_id = c.id)") };

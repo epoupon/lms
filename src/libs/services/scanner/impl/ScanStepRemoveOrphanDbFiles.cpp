@@ -30,6 +30,46 @@
 
 namespace Scanner
 {
+    using namespace Database;
+
+    namespace
+    {
+        constexpr std::size_t batchSize = 100;
+
+        template <typename T>
+        void removeOrphanEntries(Session& session, bool& abortScan)
+        {
+            using IdType = typename T::IdType;
+
+            RangeResults<IdType> entries;
+            while (!abortScan)
+            {
+                {
+                    auto transaction{ session.createReadTransaction() };
+
+                    entries = T::findOrphanIds(session, Range{ 0, batchSize });
+                };
+
+                {
+                    auto transaction{ session.createWriteTransaction() };
+
+                    for (const IdType objectId : entries.results)
+                    {
+                        if (abortScan)
+                            break;
+
+                        typename T::pointer entry{ T::find(session, objectId) };
+
+                        entry.remove();
+                    }
+                }
+
+                if (!entries.moreResults)
+                    break;
+            }
+        }
+    }
+
     void ScanStepRemoveOrphanDbFiles::process(ScanContext& context)
     {
         removeOrphanTracks(context);
@@ -45,7 +85,6 @@ namespace Scanner
         if (_abortScan)
             return;
 
-        static constexpr std::size_t batchSize{ 50 };
         Session& session{ _db.getTLSSession() };
 
         LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks to be removed...";
@@ -109,57 +148,20 @@ namespace Scanner
 
     void ScanStepRemoveOrphanDbFiles::removeOrphanClusters()
     {
-        using namespace Database;
-
         LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan clusters...";
-        Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createWriteTransaction() };
-
-        // Now process orphan Cluster (no track)
-        auto clusterIds{ Cluster::findOrphans(session) };
-        for (ClusterId clusterId : clusterIds.results)
-        {
-            Cluster::pointer cluster{ Cluster::find(session, clusterId) };
-            LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan cluster '" << cluster->getName() << "'";
-            cluster.remove();
-        }
+        removeOrphanEntries<Database::Cluster>(_db.getTLSSession(), _abortScan);
     }
 
     void ScanStepRemoveOrphanDbFiles::removeOrphanArtists()
     {
-        using namespace Database;
-
         LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan artists...";
-
-        Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createWriteTransaction() };
-
-        auto artistIds{ Artist::findOrphanIds(session) };
-        for (const ArtistId artistId : artistIds.results)
-        {
-            Artist::pointer artist{ Artist::find(session, artistId) };
-            LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan artist '" << artist->getName() << "'";
-            artist.remove();
-        }
+        removeOrphanEntries<Database::Artist>(_db.getTLSSession(), _abortScan);
     }
 
     void ScanStepRemoveOrphanDbFiles::removeOrphanReleases()
     {
-        using namespace Database;
-
         LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan releases...";
-
-        // TODO, by batch
-        Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createWriteTransaction() };
-
-        auto releases{ Release::findOrphanIds(session) };
-        for (const ReleaseId releaseId : releases.results)
-        {
-            Release::pointer release{ Release::find(session, releaseId) };
-            LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan release '" << release->getName() << "'";
-            release.remove();
-        }
+        removeOrphanEntries<Database::Release>(_db.getTLSSession(), _abortScan);
     }
 
     bool ScanStepRemoveOrphanDbFiles::checkFile(const std::filesystem::path& p)
@@ -168,8 +170,7 @@ namespace Scanner
         {
             // For each track, make sure the the file still exists
             // and still belongs to a media directory
-            if (!std::filesystem::exists(p)
-                || !std::filesystem::is_regular_file(p))
+            if (!std::filesystem::exists(p) || !std::filesystem::is_regular_file(p))
             {
                 LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': missing";
                 return false;
