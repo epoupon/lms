@@ -49,7 +49,7 @@ namespace UserInterface::TrackListHelpers
 
     void showTrackInfoModal(Database::TrackId trackId, Filters& filters)
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const Database::Track::pointer track{ Track::find(LmsApp->getDbSession(), trackId) };
         if (!track)
@@ -219,7 +219,7 @@ namespace UserInterface::TrackListHelpers
             Wt::WPushButton* starBtn{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
             starBtn->clicked().connect([=]
                 {
-                    auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
+                    auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
                     if (isStarred())
                     {

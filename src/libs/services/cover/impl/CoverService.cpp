@@ -51,7 +51,7 @@ namespace Cover
         {
             std::optional<TrackInfo> res;
 
-            auto transaction{ dbSession.createSharedTransaction() };
+            auto transaction{ dbSession.createReadTransaction() };
 
             const Database::Track::pointer track{ Database::Track::find(dbSession, trackId) };
             if (!track)
@@ -372,7 +372,7 @@ namespace Cover
         {
             std::optional<ReleaseInfo> res;
 
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
 
             // get a track in this release, consider the release is in a single directory
             const auto tracks{ Track::find(session, Track::FindParameters {}.setRelease(releaseId).setRange(Range{ 0, 1 }).setSortMethod(TrackSortMethod::Release)) };

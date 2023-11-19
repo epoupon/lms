@@ -337,7 +337,7 @@ namespace Scanner
         {
             // Skip file if last write is the same
             Database::Session& dbSession{ _db.getTLSSession() };
-            auto transaction{ _db.getTLSSession().createSharedTransaction() };
+            auto transaction{ _db.getTLSSession().createReadTransaction() };
 
             const Track::pointer track{ Track::findByPath(dbSession, file) };
 
@@ -359,7 +359,7 @@ namespace Scanner
         stats.scans++;
 
         Database::Session& dbSession{ _db.getTLSSession() };
-        auto uniqueTransaction{ dbSession.createUniqueTransaction() };
+        auto transaction{ dbSession.createWriteTransaction() };
 
         Track::pointer track{ Track::findByPath(dbSession, file) };
 

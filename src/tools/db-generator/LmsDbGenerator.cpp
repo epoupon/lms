@@ -116,7 +116,7 @@ namespace
 
         while(remainingCount > 0)
         {
-            auto transaction{ context.session.createUniqueTransaction() };
+            auto transaction{ context.session.createWriteTransaction() };
             std::cout << "Generating album #" << params.releaseCount - remainingCount << " / " << params.releaseCount << std::endl;
 
             for (std::size_t i{}; i < params.releaseCountPerBatch && remainingCount-- > 0; ++i)
@@ -126,7 +126,7 @@ namespace
 
     void prepareContext(const GeneratorParameters& params, GenerationContext& context)
     {
-        auto transaction{ context.session.createUniqueTransaction() };
+        auto transaction{ context.session.createWriteTransaction() };
 
         // create some random genres/moods
         {

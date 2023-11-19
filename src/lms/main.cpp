@@ -234,8 +234,8 @@ int main(int argc, char* argv[])
 
         IOContextRunner ioContextRunner{ ioContext, getThreadCount() };
 
-        // Initializing a connection pool to the database that will be shared along services
-        Database::Db database{ config->getPath("working-dir") / "lms.db", getThreadCount() };
+        // Connection pool size must be twice the number of threads: we have at least 2 io pools with getThreadCount() each and they all may access the database
+        Database::Db database{ config->getPath("working-dir") / "lms.db", getThreadCount() * 2 };
         {
             Database::Session session{ database };
             session.prepareTables();

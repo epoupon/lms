@@ -31,14 +31,14 @@ TEST_F(DatabaseFixture, TrackFeatures)
 	ScopedUser user {session, "MyUser"};
 
 	{
-		auto transaction {session.createSharedTransaction()};
+		auto transaction {session.createReadTransaction()};
 		EXPECT_EQ(TrackFeatures::getCount(session), 0);
 	}
 
 	ScopedTrackFeatures trackFeatures {session, track.lockAndGet(), ""};
 
 	{
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createWriteTransaction()};
 		EXPECT_EQ(TrackFeatures::getCount(session), 1);
 
 		auto allTrackFeatures {TrackFeatures::find(session)};

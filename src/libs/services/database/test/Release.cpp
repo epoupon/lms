@@ -24,7 +24,7 @@ using namespace Database;
 TEST_F(DatabaseFixture, Release)
 {
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         EXPECT_EQ(Release::getCount(session), 0);
         EXPECT_EQ(Release::getCount(session, Release::FindParameters{}), 0);
@@ -35,7 +35,7 @@ TEST_F(DatabaseFixture, Release)
     ScopedRelease release{ session, "MyRelease" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         EXPECT_EQ(Release::getCount(session), 1);
         EXPECT_EQ(Release::getCount(session, Release::FindParameters{}), 1);
@@ -79,7 +79,7 @@ TEST_F(DatabaseFixture, Release_singleTrack)
     {
         ScopedTrack track{ session, "MyTrack" };
         {
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
 
             track.get().modify()->setRelease(release.get());
             track.get().modify()->setName("MyTrackName");
@@ -87,7 +87,7 @@ TEST_F(DatabaseFixture, Release_singleTrack)
         }
 
         {
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
             EXPECT_TRUE(Release::findOrphanIds(session).results.empty());
 
             const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release.getId())) };
@@ -96,32 +96,32 @@ TEST_F(DatabaseFixture, Release_singleTrack)
         }
 
         {
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
 
             ASSERT_TRUE(track->getRelease());
             EXPECT_EQ(track->getRelease()->getId(), release.getId());
         }
 
         {
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
             auto tracks{ Track::findIds(session, Track::FindParameters{}.setName("MyTrackName").setReleaseName("MyReleaseName")) };
             ASSERT_EQ(tracks.results.size(), 1);
             EXPECT_EQ(tracks.results.front(), track.getId());
         }
         {
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
             auto tracks{ Track::findIds(session, Track::FindParameters{}.setName("MyTrackName").setReleaseName("MyReleaseFoo")) };
             EXPECT_EQ(tracks.results.size(), 0);
         }
         {
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
             auto tracks{ Track::findIds(session, Track::FindParameters{}.setName("MyTrackFoo").setReleaseName("MyReleaseName")) };
             EXPECT_EQ(tracks.results.size(), 0);
         }
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release.getId())) };
         EXPECT_TRUE(tracks.results.empty());
@@ -150,7 +150,7 @@ TEST_F(DatabaseFixture, MulitpleReleaseSearchByName)
     ScopedTrack track6{ session, "MyTrack" };
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         track1.get().modify()->setRelease(release1.get());
         track2.get().modify()->setRelease(release2.get());
@@ -161,7 +161,7 @@ TEST_F(DatabaseFixture, MulitpleReleaseSearchByName)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         {
             const auto releases{ Release::findIds(session, Release::FindParameters {}.setKeywords({"Release"})) };
@@ -203,33 +203,33 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseTotalDiscTrack)
     ScopedRelease release1{ session, "MyRelease" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         EXPECT_FALSE(release1->getTotalDisc());
     }
 
     ScopedTrack track1{ session, "MyTrack" };
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         track1.get().modify()->setRelease(release1.get());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         EXPECT_FALSE(release1->getTotalDisc());
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         track1.get().modify()->setTotalTrack(36);
         release1.get().modify()->setTotalDisc(6);
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         ASSERT_TRUE(track1->getTotalTrack());
         EXPECT_EQ(*track1->getTotalTrack(), 36);
@@ -239,7 +239,7 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseTotalDiscTrack)
 
     ScopedTrack track2{ session, "MyTrack2" };
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         track2.get().modify()->setRelease(release1.get());
         track2.get().modify()->setTotalTrack(37);
@@ -247,7 +247,7 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseTotalDiscTrack)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         ASSERT_TRUE(track1->getTotalTrack());
         EXPECT_EQ(*track1->getTotalTrack(), 36);
@@ -257,21 +257,21 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseTotalDiscTrack)
 
     ScopedRelease release2{ session, "MyRelease2" };
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         EXPECT_FALSE(release2->getTotalDisc());
     }
 
     ScopedTrack track3{ session, "MyTrack3" };
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         track3.get().modify()->setRelease(release2.get());
         track3.get().modify()->setTotalTrack(7);
         release2.get().modify()->setTotalDisc(5);
     }
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         ASSERT_TRUE(track1->getTotalTrack());
         EXPECT_EQ(*track1->getTotalTrack(), 36);
@@ -295,14 +295,14 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseFirstTrack)
     ScopedTrack track2B{ session, "MyTrack2B" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         EXPECT_TRUE(Track::findIds(session, Track::FindParameters{}.setRelease(release1.getId())).results.empty());
         EXPECT_TRUE(Track::findIds(session, Track::FindParameters{}.setRelease(release2.getId())).results.empty());
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         track1A.get().modify()->setRelease(release1.get());
         track1B.get().modify()->setRelease(release1.get());
@@ -319,7 +319,7 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseFirstTrack)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         {
             const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release1.getId()).setSortMethod(TrackSortMethod::Release)) };
@@ -348,14 +348,14 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseDate)
     ScopedTrack track2B{ session, "MyTrack2B" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto releases{ Release::findIds(session, Release::FindParameters {}.setDateRange(DateRange::fromYearRange(0, 3000))) };
         EXPECT_EQ(releases.results.size(), 0);
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         track1A.get().modify()->setRelease(release1.get());
         track1B.get().modify()->setRelease(release1.get());
@@ -373,7 +373,7 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseDate)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto releases{ Release::findIds(session, Release::FindParameters {}.setDateRange(DateRange::fromYearRange(1950, 2000))) };
         ASSERT_EQ(releases.results.size(), 1);
@@ -396,25 +396,25 @@ TEST_F(DatabaseFixture, Release_writtenAfter)
     const Wt::WDateTime dateTime{ Wt::WDate {1950, 1, 1}, Wt::WTime {12, 30, 20} };
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         track.get().modify()->setLastWriteTime(dateTime);
         track.get().modify()->setRelease(release.get());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         const auto releases{ Release::findIds(session, Release::FindParameters {}) };
         EXPECT_EQ(releases.results.size(), 1);
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         const auto releases{ Release::findIds(session, Release::FindParameters {}.setWrittenAfter(dateTime.addSecs(-1))) };
         EXPECT_EQ(releases.results.size(), 1);
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         const auto releases{ Release::findIds(session, Release::FindParameters {}.setWrittenAfter(dateTime.addSecs(+1))) };
         EXPECT_EQ(releases.results.size(), 0);
     }
@@ -427,12 +427,12 @@ TEST_F(DatabaseFixture, Release_artist)
     ScopedArtist artist{ session, "MyArtist" };
     ScopedArtist artist2{ session, "MyArtist2" };
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         track.get().modify()->setRelease(release.get());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto releases{ Release::findIds(session, Release::FindParameters {}.setArtist(artist.getId(), {TrackArtistLinkType::Artist})) };
         EXPECT_EQ(releases.results.size(), 0);
@@ -442,7 +442,7 @@ TEST_F(DatabaseFixture, Release_artist)
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
 
         auto releases{ Release::findIds(session, Release::FindParameters {}.setArtist(artist.getId(), {TrackArtistLinkType::Artist})) };
@@ -488,40 +488,40 @@ TEST_F(DatabaseFixture, Release_getDiscCount)
     ScopedTrack track2{ session, "MyTrack2" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_EQ(release.get()->getDiscCount(), 0);
     }
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         track.get().modify()->setRelease(release.get());
     }
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_EQ(release.get()->getDiscCount(), 0);
     }
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         track.get().modify()->setDiscNumber(5);
     }
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_EQ(release.get()->getDiscCount(), 1);
     }
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         track2.get().modify()->setRelease(release.get());
         track2.get().modify()->setDiscNumber(5);
     }
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_EQ(release.get()->getDiscCount(), 1);
     }
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         track2.get().modify()->setDiscNumber(6);
     }
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_EQ(release.get()->getDiscCount(), 2);
     }
 }
@@ -531,19 +531,19 @@ TEST_F(DatabaseFixture, Release_releaseType)
     ScopedRelease release{ session, "MyRelease" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_EQ(release.get()->getPrimaryType(), std::nullopt);
         EXPECT_EQ(release.get()->getSecondaryTypes(), EnumSet<ReleaseTypeSecondary> {});
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         release.get().modify()->setPrimaryType({ ReleaseTypePrimary::Album });
         release.get().modify()->setSecondaryTypes({ ReleaseTypeSecondary::Compilation });
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_EQ(release.get()->getPrimaryType(), ReleaseTypePrimary::Album);
         EXPECT_TRUE(release.get()->getSecondaryTypes().contains(ReleaseTypeSecondary::Compilation));
     }
@@ -565,7 +565,7 @@ TEST_F(DatabaseFixture, Release_sortMethod)
     ASSERT_GT(release2Date, release1OriginalDate);
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         track1.get().modify()->setRelease(release1.get());
         track1.get().modify()->setOriginalDate(release1OriginalDate);
@@ -576,7 +576,7 @@ TEST_F(DatabaseFixture, Release_sortMethod)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto releases{ Release::findIds(session, Release::FindParameters {}.setSortMethod(ReleaseSortMethod::Name)) };
         ASSERT_EQ(releases.results.size(), 2);
@@ -585,14 +585,14 @@ TEST_F(DatabaseFixture, Release_sortMethod)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto releases{ Release::findIds(session, Release::FindParameters {}.setSortMethod(ReleaseSortMethod::Random)) };
         ASSERT_EQ(releases.results.size(), 2);
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto releases{ Release::findIds(session, Release::FindParameters {}.setSortMethod(ReleaseSortMethod::Date)) };
         ASSERT_EQ(releases.results.size(), 2);
@@ -601,7 +601,7 @@ TEST_F(DatabaseFixture, Release_sortMethod)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto releases{ Release::findIds(session, Release::FindParameters {}.setSortMethod(ReleaseSortMethod::OriginalDate)) };
         ASSERT_EQ(releases.results.size(), 2);
@@ -609,7 +609,7 @@ TEST_F(DatabaseFixture, Release_sortMethod)
         EXPECT_EQ(releases.results.back(), release2.getId());
     }
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto releases{ Release::findIds(session, Release::FindParameters {}.setSortMethod(ReleaseSortMethod::OriginalDateDesc)) };
         ASSERT_EQ(releases.results.size(), 2);
@@ -627,14 +627,14 @@ TEST_F(DatabaseFixture, Release_meanBitrate)
 
     auto checkExpectedBitrate = [&](std::size_t bitrate)
         {
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(release1->getMeanBitrate(), bitrate);
         };
 
     checkExpectedBitrate(0);
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         track1.get().modify()->setBitrate(128);
         track1.get().modify()->setRelease(release1.get());
     }
@@ -642,14 +642,14 @@ TEST_F(DatabaseFixture, Release_meanBitrate)
     checkExpectedBitrate(128);
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         track2.get().modify()->setBitrate(256);
         track2.get().modify()->setRelease(release1.get());
     }
     checkExpectedBitrate(192);
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         track3.get().modify()->setBitrate(0);
         track3.get().modify()->setRelease(release1.get());
     }

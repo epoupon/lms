@@ -119,7 +119,7 @@ namespace UserInterface
 
     void Tracks::addSome()
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const auto trackIds{ _trackCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize}) };
 

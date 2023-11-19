@@ -60,7 +60,7 @@ class InitWizardModel : public Wt::WFormModel
 
 		void saveData()
 		{
-			auto transaction(LmsApp->getDbSession().createUniqueTransaction());
+			auto transaction(LmsApp->getDbSession().createWriteTransaction());
 
 			// Check if a user already exist
 			// If it's the case, just do nothing

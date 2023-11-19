@@ -31,21 +31,21 @@ TEST_F(DatabaseFixture, TrackBookmark)
 	ScopedUser user {session, "MyUser"};
 
 	{
-		auto transaction {session.createSharedTransaction()};
+		auto transaction {session.createReadTransaction()};
 		EXPECT_EQ(TrackBookmark::getCount(session), 0);
 	}
 
 	ScopedTrackBookmark bookmark {session, user.lockAndGet(), track.lockAndGet()};
 
 	{
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createWriteTransaction()};
 
 		bookmark.get().modify()->setComment("MyComment");
 		bookmark.get().modify()->setOffset(std::chrono::milliseconds {5});
 	}
 
 	{
-		auto transaction {session.createSharedTransaction()};
+		auto transaction {session.createReadTransaction()};
 
 		EXPECT_EQ(TrackBookmark::getCount(session), 1);
 
@@ -54,7 +54,7 @@ TEST_F(DatabaseFixture, TrackBookmark)
 		EXPECT_EQ(bookmarks.results.front(), bookmark.getId());
 	}
 	{
-		auto transaction {session.createSharedTransaction()};
+		auto transaction {session.createReadTransaction()};
 
 		auto userBookmark {TrackBookmark::find(session, user.getId(), track.getId())};
 		ASSERT_TRUE(userBookmark);

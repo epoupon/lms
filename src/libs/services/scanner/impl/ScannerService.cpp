@@ -345,7 +345,7 @@ namespace Scanner
 
         newSettings.skipDuplicateMBID = Service<IConfig>::get()->getBool("scanner-skip-duplicate-mbid", false);
         {
-            auto transaction{ _dbSession.createSharedTransaction() };
+            auto transaction{ _dbSession.createReadTransaction() };
 
             const ScanSettings::pointer scanSettings{ ScanSettings::get(_dbSession) };
 

@@ -29,7 +29,7 @@ namespace Feedback::ListenBrainz::Utils
 {
     std::optional<UUID> getListenBrainzToken(Database::Session& session, Database::UserId userId)
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const Database::User::pointer user{ Database::User::find(session, userId) };
         if (!user)

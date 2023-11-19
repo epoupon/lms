@@ -43,19 +43,19 @@ namespace Database
 
     std::size_t StarredArtist::getCount(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM starred_artist");
     }
 
     StarredArtist::pointer StarredArtist::find(Session& session, StarredArtistId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         return session.getDboSession().find<StarredArtist>().where("id = ?").bind(id).resultValue();
     }
 
     StarredArtist::pointer StarredArtist::find(Session& session, ArtistId artistId, UserId userId)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         return session.getDboSession().query<Wt::Dbo::ptr<StarredArtist>>("SELECT s_a from starred_artist s_a")
             .join("user u ON u.id = s_a.user_id")
             .where("s_a.artist_id = ?").bind(artistId)
@@ -66,7 +66,7 @@ namespace Database
 
     StarredArtist::pointer StarredArtist::find(Session& session, ArtistId artistId, UserId userId, FeedbackBackend backend)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         return session.getDboSession().find<StarredArtist>()
             .where("artist_id = ?").bind(artistId)
             .where("user_id = ?").bind(userId)

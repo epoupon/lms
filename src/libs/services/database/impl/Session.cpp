@@ -39,12 +39,36 @@
 #include "services/database/TrackArtistLink.hpp"
 #include "services/database/TrackList.hpp"
 #include "services/database/TrackFeatures.hpp"
+#include "services/database/TransactionChecker.hpp"
 #include "services/database/User.hpp"
 #include "EnumSetTraits.hpp"
 #include "Migration.hpp"
 
 namespace Database
 {
+
+    WriteTransaction::WriteTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session)
+        : _lock{ mutex },
+        _transaction{ session }
+    {
+        TransactionChecker::pushWriteTransaction(_transaction.session());
+    }
+
+    WriteTransaction::~WriteTransaction()
+    {
+        TransactionChecker::popWriteTransaction(_transaction.session());
+    }
+
+    ReadTransaction::ReadTransaction(Wt::Dbo::Session& session)
+        : _transaction{ session }
+    {
+        TransactionChecker::pushReadTransaction(_transaction.session());
+    }
+
+    ReadTransaction::~ReadTransaction()
+    {
+        TransactionChecker::popReadTransaction(_transaction.session());
+    }
 
     Session::Session(Db& db)
         : _db{ db }
@@ -71,36 +95,14 @@ namespace Database
         _session.mapClass<User>("user");
     }
 
-    UniqueTransaction::UniqueTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session)
-        : _lock{ mutex },
-        _transaction{ session }
+    WriteTransaction Session::createWriteTransaction()
     {
+        return WriteTransaction{ _db.getMutex(), _session };
     }
 
-    SharedTransaction::SharedTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session)
-        : _lock{ mutex },
-        _transaction{ session }
+    ReadTransaction Session::createReadTransaction()
     {
-    }
-
-    void Session::checkUniqueLocked()
-    {
-        assert(_db.getMutex().isUniqueLocked());
-    }
-
-    void Session::checkSharedLocked()
-    {
-        assert(_db.getMutex().isSharedLocked());
-    }
-
-    UniqueTransaction Session::createUniqueTransaction()
-    {
-        return UniqueTransaction{ _db.getMutex(), _session };
-    }
-
-    SharedTransaction Session::createSharedTransaction()
-    {
-        return SharedTransaction{ _db.getMutex(), _session };
+        return ReadTransaction{ _session };
     }
 
     void Session::prepareTables()
@@ -127,7 +129,7 @@ namespace Database
 
         // Indexes
         {
-            auto uniqueTransaction{ createUniqueTransaction() };
+            auto transaction{ createWriteTransaction() };
             _session.execute("CREATE INDEX IF NOT EXISTS artist_name_idx ON artist(name)");
             _session.execute("CREATE INDEX IF NOT EXISTS artist_sort_name_nocase_idx ON artist(sort_name COLLATE NOCASE)");
             _session.execute("CREATE INDEX IF NOT EXISTS artist_mbid_idx ON artist(mbid)");
@@ -172,7 +174,7 @@ namespace Database
 
         // Initial settings tables
         {
-            auto uniqueTransaction{ createUniqueTransaction() };
+            auto uniqueTransaction{ createWriteTransaction() };
 
             ScanSettings::init(*this);
         }
@@ -182,7 +184,7 @@ namespace Database
     {
         LMS_LOG(DB, INFO) << "Analyzing database...";
         {
-            auto uniqueTransaction{ createUniqueTransaction() };
+            auto transaction{ createWriteTransaction() };
             _session.execute("ANALYZE");
         }
         LMS_LOG(DB, INFO) << "Database Analyze complete";
@@ -192,7 +194,7 @@ namespace Database
     {
         LMS_LOG(DB, INFO) << "Optimizing database...";
         {
-            auto uniqueTransaction{ createUniqueTransaction() };
+            auto transaction{ createWriteTransaction() };
             _session.execute("PRAGMA optimize");
         }
         LMS_LOG(DB, INFO) << "Database optimizing complete";

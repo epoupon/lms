@@ -31,7 +31,7 @@ TEST_F(DatabaseFixture, StarredTrack)
     ScopedUser user2{ session, "MyUser2" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction {session.createReadTransaction()};
 
         auto starredTrack{ StarredTrack::find(session, track->getId(), user->getId(), FeedbackBackend::Internal) };
         EXPECT_FALSE(starredTrack);
@@ -43,7 +43,7 @@ TEST_F(DatabaseFixture, StarredTrack)
 
     ScopedStarredTrack starredTrack{ session, track.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction {session.createReadTransaction()};
 
         auto gotTrack{ StarredTrack::find(session, track->getId(), user->getId(), FeedbackBackend::Internal) };
         EXPECT_EQ(gotTrack->getId(), starredTrack->getId());
@@ -51,7 +51,7 @@ TEST_F(DatabaseFixture, StarredTrack)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction {session.createReadTransaction()};
 
         auto tracks{ Track::findIds(session, Track::FindParameters {}) };
         EXPECT_EQ(tracks.results.size(), 1);
@@ -64,12 +64,12 @@ TEST_F(DatabaseFixture, StarredTrack)
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         user.get().modify()->setFeedbackBackend(FeedbackBackend::ListenBrainz);
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto gotRelease{ StarredTrack::find(session, track->getId(), user->getId()) };
         EXPECT_EQ(gotRelease, StarredTrack::pointer{});
@@ -83,7 +83,7 @@ TEST_F(DatabaseFixture, Starredtrack_PendingDestroy)
     ScopedStarredTrack starredTrack{ session, track.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction {session.createWriteTransaction()};
 
         auto tracks{ Track::findIds(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
         EXPECT_EQ(tracks.results.size(), 1);
@@ -106,14 +106,14 @@ TEST_F(DatabaseFixture, StarredTrack_dateTime)
     const Wt::WDateTime dateTime{ Wt::WDate {1950, 1, 2}, Wt::WTime {12, 30, 1} };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction {session.createReadTransaction()};
 
         auto tracks{ Track::findIds(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
         EXPECT_EQ(tracks.results.size(), 2);
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction {session.createWriteTransaction()};
 
         starredTrack1.get().modify()->setDateTime(dateTime);
         starredTrack2.get().modify()->setDateTime(dateTime.addSecs(-1));
@@ -124,7 +124,7 @@ TEST_F(DatabaseFixture, StarredTrack_dateTime)
         EXPECT_EQ(tracks.results[1], starredTrack2->getTrack()->getId());
     }
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction {session.createWriteTransaction()};
 
         starredTrack1.get().modify()->setDateTime(dateTime);
         starredTrack2.get().modify()->setDateTime(dateTime.addSecs(1));

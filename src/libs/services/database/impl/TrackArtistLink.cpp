@@ -32,7 +32,7 @@ namespace Database
     {
         Wt::Dbo::Query<TrackArtistLinkId> createQuery(Session& session, const TrackArtistLink::FindParameters& params)
         {
-            session.checkSharedLocked();
+            session.checkReadTransaction();
 
             auto query{ session.getDboSession().query<TrackArtistLinkId>("SELECT DISTINCT t_a_l.id FROM track_artist_link t_a_l") };
 
@@ -65,7 +65,7 @@ namespace Database
 
     TrackArtistLink::pointer TrackArtistLink::create(Session& session, ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type, std::string_view subType)
     {
-        session.checkUniqueLocked();
+        session.checkWriteTransaction();
 
         TrackArtistLink::pointer res{ session.getDboSession().add(std::make_unique<TrackArtistLink>(track, artist, type, subType)) };
         session.getDboSession().flush();
@@ -75,13 +75,13 @@ namespace Database
 
     TrackArtistLink::pointer TrackArtistLink::find(Session& session, TrackArtistLinkId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         return session.getDboSession().find<TrackArtistLink>().where("id = ?").bind(id).resultValue();
     }
 
     RangeResults<TrackArtistLinkId> TrackArtistLink::find(Session& session, const FindParameters& params)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ createQuery(session, params) };
         return Utils::execQuery<TrackArtistLinkId>(query, params.range);
@@ -89,7 +89,7 @@ namespace Database
 
     EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto res{ session.getDboSession().query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link").resultList() };
 
@@ -98,7 +98,7 @@ namespace Database
 
     EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session, ArtistId artistId)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto res{ session.getDboSession()
             .query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link")

@@ -40,14 +40,14 @@ namespace Database {
 
     std::size_t TrackBookmark::getCount(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM track_bookmark");
     }
 
     RangeResults<TrackBookmarkId> TrackBookmark::find(Session& session, UserId userId, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ session.getDboSession().query<TrackBookmarkId>("SELECT id from track_bookmark")
                     .where("user_id = ?").bind(userId) };
@@ -57,7 +57,7 @@ namespace Database {
 
     TrackBookmark::pointer TrackBookmark::find(Session& session, UserId userId, TrackId trackId)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().find<TrackBookmark>()
             .where("user_id = ?").bind(userId)
@@ -67,7 +67,7 @@ namespace Database {
 
     TrackBookmark::pointer TrackBookmark::find(Session& session, TrackBookmarkId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().find<TrackBookmark>()
             .where("id = ?").bind(id)

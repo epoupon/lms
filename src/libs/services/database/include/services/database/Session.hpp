@@ -24,27 +24,37 @@
 
 #include "utils/RecursiveSharedMutex.hpp"
 #include "services/database/Object.hpp"
-
+#include "services/database/TransactionChecker.hpp"
 
 namespace Database
 {
-    class UniqueTransaction
+    class WriteTransaction
     {
+    public:
+        ~WriteTransaction();
     private:
         friend class Session;
-        UniqueTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session);
+        WriteTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session);
+
+        WriteTransaction(const WriteTransaction&) = delete;
+        WriteTransaction& operator=(const WriteTransaction&) = delete;
 
         std::unique_lock<RecursiveSharedMutex> _lock;
         Wt::Dbo::Transaction _transaction;
     };
 
-    class SharedTransaction
+    class ReadTransaction
     {
+    public:
+        ~ReadTransaction();
     private:
         friend class Session;
-        SharedTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session);
+        ReadTransaction(Wt::Dbo::Session& session);
 
-        std::shared_lock<RecursiveSharedMutex> _lock;
+
+        ReadTransaction(const ReadTransaction&) = delete;
+        ReadTransaction& operator=(const ReadTransaction&) = delete;
+
         Wt::Dbo::Transaction _transaction;
     };
 
@@ -54,11 +64,11 @@ namespace Database
     public:
         Session(Db& database);
 
-        [[nodiscard]] UniqueTransaction createUniqueTransaction();
-        [[nodiscard]] SharedTransaction createSharedTransaction();
+        [[nodiscard]] WriteTransaction createWriteTransaction();
+        [[nodiscard]] ReadTransaction createReadTransaction();
 
-        void checkUniqueLocked();
-        void checkSharedLocked();
+        void checkWriteTransaction() { TransactionChecker::checkWriteTransaction(_session); }
+        void checkReadTransaction() { TransactionChecker::checkReadTransaction(_session); }
 
         void analyze();
         void optimize();
@@ -71,7 +81,7 @@ namespace Database
         template <typename Object, typename... Args>
         typename Object::pointer create(Args&&... args)
         {
-            checkUniqueLocked();
+            TransactionChecker::checkWriteTransaction(_session);
 
             typename Object::pointer res{ Object::create(*this, std::forward<Args>(args)...) };
             getDboSession().flush();
@@ -90,5 +100,3 @@ namespace Database
         Wt::Dbo::Session	_session;
     };
 } // namespace Database
-
-

@@ -76,7 +76,7 @@ namespace UserInterface
             params.setRange(range);
 
             {
-                auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
                 tracks = Track::findIds(LmsApp->getDbSession(), params);
             }
             break;
@@ -90,7 +90,7 @@ namespace UserInterface
             params.setRange(range);
 
             {
-                auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
                 tracks = Track::findIds(LmsApp->getDbSession(), params);
             }
             break;
@@ -103,7 +103,7 @@ namespace UserInterface
             params.setRange(range);
 
             {
-                auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
                 tracks = Track::findIds(LmsApp->getDbSession(), params);
             }
             break;
@@ -128,7 +128,7 @@ namespace UserInterface
             params.setRange(Range{ 0, getMaxCount() });
 
             {
-                auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
                 _randomTracks = Track::findIds(LmsApp->getDbSession(), params);
             }
         }

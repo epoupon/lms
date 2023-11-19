@@ -45,7 +45,7 @@ namespace Database {
 void
 ScanSettings::init(Session& session)
 {
-	session.checkUniqueLocked();
+	session.checkWriteTransaction();
 
 	pointer settings {get(session)};
 	if (settings)
@@ -58,7 +58,7 @@ ScanSettings::init(Session& session)
 ScanSettings::pointer
 ScanSettings::get(Session& session)
 {
-	session.checkSharedLocked();
+	session.checkReadTransaction();
 
 	return session.getDboSession().find<ScanSettings>().resultValue();
 }
@@ -109,7 +109,7 @@ std::set<std::string> getNames(It begin, It end)
 void
 ScanSettings::setClusterTypes(Session& session, const std::set<std::string>& clusterTypeNames)
 {
-	session.checkUniqueLocked();
+	session.checkWriteTransaction();
 
 	bool needRescan {};
 

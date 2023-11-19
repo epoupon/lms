@@ -106,7 +106,7 @@ class AuthModel : public Wt::WFormModel
 		{
 			bool isDemo;
 			{
-				auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+				auto transaction {LmsApp->getDbSession().createWriteTransaction()};
 
 				Database::User::pointer user {Database::User::find(LmsApp->getDbSession(), valueText(LoginNameField).toUTF8())};
 				user.modify()->setLastLogin(Wt::WDateTime::currentDateTime());
@@ -200,7 +200,7 @@ Auth::Auth()
 	setFormWidget(AuthModel::RememberMeField, std::make_unique<Wt::WCheckBox>());
 
 	{
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+		auto transaction {LmsApp->getDbSession().createReadTransaction()};
 
 		Database::User::pointer demoUser {Database::User::findDemoUser(LmsApp->getDbSession())};
 		if (demoUser)

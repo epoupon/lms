@@ -36,7 +36,7 @@ namespace Scrobbling::ListenBrainz
     {
         bool canBeScrobbled(Session& session, TrackId trackId, std::chrono::seconds duration)
         {
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
 
             const Track::pointer track{ Track::find(session, trackId) };
             if (!track)

@@ -32,7 +32,7 @@ namespace Database
 {
     VersionInfo::pointer VersionInfo::getOrCreate(Session& session)
     {
-        session.checkUniqueLocked();
+        session.checkWriteTransaction();
 
         pointer versionInfo{ session.getDboSession().find<VersionInfo>() };
         if (!versionInfo)
@@ -43,7 +43,7 @@ namespace Database
 
     VersionInfo::pointer VersionInfo::get(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().find<VersionInfo>();
     }
@@ -276,7 +276,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
         };
 
         {
-            auto uniqueTransaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
 
             Version version;
             try

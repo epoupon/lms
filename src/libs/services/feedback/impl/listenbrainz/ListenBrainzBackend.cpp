@@ -37,7 +37,7 @@ namespace Feedback::ListenBrainz
         template <typename StarredObjType>
         void onStarred(Database::Session& session, typename StarredObjType::IdType id)
         {
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
 
             if (auto starredObj{ StarredObjType::find(session, id) })
             {
@@ -49,7 +49,7 @@ namespace Feedback::ListenBrainz
         template <typename StarredObjType>
         void onUnstarred(Database::Session& session, typename StarredObjType::IdType id)
         {
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
 
             if (auto starredObj{ StarredObjType::find(session, id) })
                 starredObj.remove();

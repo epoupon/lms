@@ -42,7 +42,7 @@ static void dumpTracksRecommendation(Session session, Recommendation::IRecommend
 {
     const RangeResults<TrackId> trackIds{ [&]
         {
-            auto transaction {session.createSharedTransaction()};
+            auto transaction {session.createReadTransaction()};
             return Track::findIds(session, Track::FindParameters{});
         }() };
 
@@ -52,7 +52,7 @@ static void dumpTracksRecommendation(Session session, Recommendation::IRecommend
         auto trackToString = [&](const TrackId trackId)
             {
                 std::string res;
-                auto transaction{ session.createSharedTransaction() };
+                auto transaction{ session.createReadTransaction() };
                 const Track::pointer track{ Track::find(session, trackId) };
 
                 res += track->getName();
@@ -76,7 +76,7 @@ static void dumpReleasesRecommendation(Session session, Recommendation::IRecomme
 {
     const RangeResults<ReleaseId> releaseIds{ std::invoke([&]
         {
-            auto transaction {session.createSharedTransaction()};
+            auto transaction {session.createReadTransaction()};
             return Release::findIds(session, Release::FindParameters {});
         }) };
 
@@ -85,7 +85,7 @@ static void dumpReleasesRecommendation(Session session, Recommendation::IRecomme
     {
         auto releaseToString = [&](ReleaseId releaseId) -> std::string
             {
-                auto transaction{ session.createSharedTransaction() };
+                auto transaction{ session.createReadTransaction() };
 
                 Release::pointer release{ Release::find(session, releaseId) };
                 return release->getName();
@@ -101,7 +101,7 @@ static void dumpArtistsRecommendation(Session session, Recommendation::IRecommen
 {
     const RangeResults<ArtistId> artistIds = std::invoke([&]()
         {
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
             return Artist::findIds(session, Artist::FindParameters{});
         });
 
@@ -110,7 +110,7 @@ static void dumpArtistsRecommendation(Session session, Recommendation::IRecommen
     {
         auto artistToString = [&](ArtistId artistId)
             {
-                auto transaction{ session.createSharedTransaction() };
+                auto transaction{ session.createReadTransaction() };
 
                 Artist::pointer artist{ Artist::find(session, artistId) };
                 return artist->getName();

@@ -127,7 +127,7 @@ namespace API::Subsonic
 
             StreamParameters parameters;
 
-            auto transaction{ context.dbSession.createSharedTransaction() };
+            auto transaction{ context.dbSession.createReadTransaction() };
 
             const User::pointer user{ User::find(context.dbSession, context.userId) };
             if (!user)
@@ -199,7 +199,7 @@ namespace API::Subsonic
 
             std::filesystem::path trackPath;
             {
-                auto transaction{ context.dbSession.createSharedTransaction() };
+                auto transaction{ context.dbSession.createReadTransaction() };
 
                 auto track{ Track::find(context.dbSession, id) };
                 if (!track)

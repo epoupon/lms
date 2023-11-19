@@ -83,7 +83,7 @@ namespace UserInterface::Utils
 
     std::unique_ptr<Wt::WInteractWidget> createCluster(Database::ClusterId clusterId, bool canDelete)
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const Database::Cluster::pointer cluster{ Database::Cluster::find(LmsApp->getDbSession(), clusterId) };
         if (!cluster)
@@ -124,7 +124,7 @@ namespace UserInterface::Utils
 
         bool firstArtist{ true };
 
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
         for (const ArtistId artistId : artistIds)
         {
             const Artist::pointer artist{ Artist::find(LmsApp->getDbSession(), artistId) };
@@ -152,7 +152,7 @@ namespace UserInterface::Utils
         std::string_view::size_type currentOffset{};
 
         auto result{ std::make_unique<Wt::WContainerWidget>() };
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         // consider order is guaranteed + we will likely succeed
         for (const ArtistId artistId : artistIds)

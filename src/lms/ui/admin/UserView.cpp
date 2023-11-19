@@ -76,7 +76,7 @@ class UserModel : public Wt::WFormModel
 
 		void saveData()
 		{
-			auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+			auto transaction {LmsApp->getDbSession().createWriteTransaction()};
 
 			if (_userId)
 			{
@@ -112,7 +112,7 @@ class UserModel : public Wt::WFormModel
 			if (!_userId)
 				return;
 
-			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+			auto transaction {LmsApp->getDbSession().createReadTransaction()};
 
 			const User::pointer user {User::find(LmsApp->getDbSession(), *_userId)};
 			if (!user)
@@ -125,7 +125,7 @@ class UserModel : public Wt::WFormModel
 		{
 			if (_userId)
 			{
-				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+				auto transaction {LmsApp->getDbSession().createReadTransaction()};
 
 				const User::pointer user {User::find(LmsApp->getDbSession(), *_userId)};
 				return user->getType();
@@ -138,7 +138,7 @@ class UserModel : public Wt::WFormModel
 		{
 			if (_userId)
 			{
-				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+				auto transaction {LmsApp->getDbSession().createReadTransaction()};
 
 				const User::pointer user {User::find(LmsApp->getDbSession(), *_userId)};
 				return user->getLoginName();
@@ -153,7 +153,7 @@ class UserModel : public Wt::WFormModel
 
 			if (field == LoginField)
 			{
-				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+				auto transaction {LmsApp->getDbSession().createReadTransaction()};
 
 				const User::pointer user {User::find(LmsApp->getDbSession(), valueText(LoginField).toUTF8())};
 				if (user)
@@ -161,7 +161,7 @@ class UserModel : public Wt::WFormModel
 			}
 			else if (field == DemoField)
 			{
-				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+				auto transaction {LmsApp->getDbSession().createReadTransaction()};
 
 				if (Wt::asNumber(value(DemoField)) && User::findDemoUser(LmsApp->getDbSession()))
 					error = Wt::WString::tr("Lms.Admin.User.demo-account-already-exists");
@@ -209,7 +209,7 @@ UserView::refreshView()
 
 	if (userId)
 	{
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+		auto transaction {LmsApp->getDbSession().createReadTransaction()};
 
 		const User::pointer user {User::find(LmsApp->getDbSession(), *userId)};
 		if (!user)

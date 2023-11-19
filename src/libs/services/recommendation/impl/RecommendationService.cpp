@@ -37,7 +37,7 @@ namespace Recommendation
     {
         Database::ScanSettings::SimilarityEngineType getSimilarityEngineType(Database::Session& session)
         {
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
 
             return Database::ScanSettings::get(session)->getSimilarityEngineType();
         }

@@ -170,7 +170,7 @@ constructFeaturesCache(Database::Session& session, const FeatureSettingsMap& fea
 	std::transform(std::cbegin(featureSettings), std::cend(featureSettings), std::inserter(names, std::begin(names)),
 			[](const auto& itFeature) { return itFeature.first; });
 
-	auto transaction {session.createSharedTransaction()};
+	auto transaction {session.createReadTransaction()};
 
 	for (auto trackId : Database::Track::getAllIdsWithFeatures(session))
 	{
@@ -225,7 +225,7 @@ std::string
 trackToString(Database::Session& session, Database::IdType trackId)
 {
 	std::string res;
-	auto transaction {session.createSharedTransaction()};
+	auto transaction {session.createReadTransaction()};
 	Database::Track::pointer track {Database::Track::getById(session, trackId)};
 
 	res += track->getName();
@@ -245,7 +245,7 @@ computeTrackScore(Database::Session& session, Database::IdType track1Id, Databas
 {
 	SimilarityScore score {};
 
-	auto transaction {session.createSharedTransaction()};
+	auto transaction {session.createReadTransaction()};
 
 	auto track1 {Database::Track::getById(session, track1Id)};
 	auto track2 {Database::Track::getById(session, track2Id)};
@@ -294,7 +294,7 @@ computeSimilarityScore(Database::Session& session, FeaturesSearcher::TrainSettin
 
 	const std::vector<Database::IdType> trackIds = std::invoke([&]()
 			{
-				auto transaction {session.createSharedTransaction()};
+				auto transaction {session.createReadTransaction()};
 				return Database::Track::getAllIdsWithFeatures(session);
 			});
 
@@ -328,7 +328,7 @@ printBadlyClassifiedTracks(Database::Session& session, FeaturesSearcher::TrainSe
 
 	const std::vector<Database::IdType> trackIds = std::invoke([&]()
 			{
-				auto transaction {session.createSharedTransaction()};
+				auto transaction {session.createReadTransaction()};
 				return Database::Track::getAllIdsWithFeatures(session);
 			});
 

@@ -42,7 +42,7 @@ namespace Recommendation {
             return {};
 
         Session& dbSession{ _db.getTLSSession() };
-        auto transaction{ dbSession.createSharedTransaction() };
+        auto transaction{ dbSession.createReadTransaction() };
 
         const auto similarTrackIds{ Track::findSimilarTrackIds(dbSession, trackIds, Range {0, maxCount}) };
         return std::move(similarTrackIds.results);
@@ -56,7 +56,7 @@ namespace Recommendation {
 
         {
             Session& dbSession{ _db.getTLSSession() };
-            auto transaction{ dbSession.createSharedTransaction() };
+            auto transaction{ dbSession.createReadTransaction() };
 
             const TrackList::pointer trackList{ TrackList::find(dbSession, tracklistId) };
             if (!trackList)
@@ -78,7 +78,7 @@ namespace Recommendation {
 
         {
             Session& dbSession{ _db.getTLSSession() };
-            auto transaction{ dbSession.createSharedTransaction() };
+            auto transaction{ dbSession.createReadTransaction() };
 
             auto release{ Release::find(dbSession, releaseId) };
             if (!release)
@@ -98,7 +98,7 @@ namespace Recommendation {
             return {};
 
         Session& dbSession{ _db.getTLSSession() };
-        auto transaction{ dbSession.createSharedTransaction() };
+        auto transaction{ dbSession.createReadTransaction() };
 
         auto artist{ Artist::find(dbSession, artistId) };
         if (!artist)

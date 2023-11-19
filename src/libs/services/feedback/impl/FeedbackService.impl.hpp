@@ -37,7 +37,7 @@ namespace Feedback
         typename StarredObjType::IdType starredObjId;
         {
             Session& session{ _db.getTLSSession() };
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
 
             typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId, *backend) };
             if (!starredObj)
@@ -68,7 +68,7 @@ namespace Feedback
         typename StarredObjType::IdType starredObjId;
         {
             Session& session{ _db.getTLSSession() };
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
 
             typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId, *backend) };
             if (!starredObj)
@@ -83,7 +83,7 @@ namespace Feedback
     bool FeedbackService::isStarred(UserId userId, ObjIdType objId)
     {
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId) };
         return starredObj && (starredObj->getSyncState() != SyncState::PendingRemove);
@@ -93,7 +93,7 @@ namespace Feedback
     Wt::WDateTime FeedbackService::getStarredDateTime(UserId userId, ObjIdType objId)
     {
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId) };
         if (starredObj && (starredObj->getSyncState() != SyncState::PendingRemove))

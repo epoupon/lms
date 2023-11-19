@@ -46,7 +46,7 @@ namespace
 
     std::optional<Wt::Json::Object> listenToJsonPayload(Database::Session& session, const Scrobbling::Listen& listen, const Wt::WDateTime& timePoint)
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const Database::Track::pointer track{ Database::Track::find(session, listen.trackId) };
         if (!track)
@@ -143,7 +143,7 @@ namespace
     {
         using namespace Database;
 
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         // first try to match using track MBID, and then fallback on possibly ambiguous info
         if (listen.trackMBID)
@@ -289,7 +289,7 @@ namespace Scrobbling::ListenBrainz
         using namespace Database;
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createUniqueTransaction() }; // TODO: unique only if needed
+        auto transaction{ session.createWriteTransaction() }; // TODO: unique only if needed
 
         Database::Listen::pointer dbListen{ Database::Listen::find(session, listen.userId, listen.trackId, Database::ScrobblingBackend::ListenBrainz, listen.listenedAt) };
         if (!dbListen)
@@ -324,7 +324,7 @@ namespace Scrobbling::ListenBrainz
         {
             Database::Session& session{ _db.getTLSSession() };
 
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
 
             Database::Listen::FindParameters params;
             params.setScrobblingBackend(Database::ScrobblingBackend::ListenBrainz)
@@ -408,7 +408,7 @@ namespace Scrobbling::ListenBrainz
         Database::RangeResults<Database::UserId> userIds;
         {
             Database::Session& session{ _db.getTLSSession() };
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
             userIds = Database::User::find(_db.getTLSSession(), Database::User::FindParameters{}.setScrobblingBackend(Database::ScrobblingBackend::ListenBrainz));
         }
 

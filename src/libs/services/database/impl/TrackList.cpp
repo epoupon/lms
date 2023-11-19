@@ -53,7 +53,7 @@ namespace Database
 
     std::size_t TrackList::getCount(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM tracklist");
     }
@@ -61,7 +61,7 @@ namespace Database
 
     TrackList::pointer TrackList::find(Session& session, std::string_view name, TrackListType type, UserId userId)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         assert(userId.isValid());
 
         return session.getDboSession().find<TrackList>()
@@ -72,7 +72,7 @@ namespace Database
 
     RangeResults<TrackListId> TrackList::find(Session& session, const FindParameters& params)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ session.getDboSession().query<TrackListId>("SELECT DISTINCT t_l.id FROM tracklist t_l") };
 
@@ -122,7 +122,7 @@ namespace Database
 
     TrackList::pointer TrackList::find(Session& session, TrackListId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().find<TrackList>().where("id = ?").bind(id).resultValue();
     }
@@ -323,7 +323,7 @@ namespace Database
 
     TrackListEntry::pointer TrackListEntry::getById(Session& session, TrackListEntryId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().find<TrackListEntry>().where("id = ?").bind(id).resultValue();
     }

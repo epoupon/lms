@@ -134,7 +134,7 @@ namespace UserInterface
 
         void saveData()
         {
-            auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
+            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
             User::pointer user{ LmsApp->getUser() };
 
@@ -202,7 +202,7 @@ namespace UserInterface
 
         void loadData()
         {
-            auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
             User::pointer user{ LmsApp->getUser() };
 
@@ -560,7 +560,7 @@ namespace UserInterface
         saveBtn->clicked().connect([=]
             {
                 {
-                    auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
                     if (LmsApp->getUser()->isDemo())
                     {

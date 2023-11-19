@@ -81,7 +81,7 @@ namespace UserInterface
         if (!trackListId)
             throw TrackListNotFoundException{};
 
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const Database::TrackList::pointer trackList{ Database::TrackList::find(LmsApp->getDbSession(), *trackListId) };
         if (!trackList)
@@ -148,7 +148,7 @@ namespace UserInterface
                     delBtn->clicked().connect([=]
                         {
                             {
-                                auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
+                                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
                                 Database::TrackList::pointer trackList{ Database::TrackList::find(LmsApp->getDbSession(), *trackListId) };
                                 if (trackList)
@@ -180,7 +180,7 @@ namespace UserInterface
 
     void TrackList::addSome()
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         Database::Track::FindParameters params;
         params.setClusters(_filters.getClusterIds());

@@ -52,7 +52,7 @@ namespace Scanner
         std::size_t trackCount{};
 
         {
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
             trackCount = Track::getCount(session);
         }
         LMS_LOG(DBUPDATER, DEBUG) << trackCount << " tracks to be checked...";
@@ -68,7 +68,7 @@ namespace Scanner
             tracksToRemove.clear();
 
             {
-                auto transaction{ session.createSharedTransaction() };
+                auto transaction{ session.createReadTransaction() };
                 trackPaths = Track::findPaths(session, Range{ i, batchSize });
             }
 
@@ -85,7 +85,7 @@ namespace Scanner
 
             if (!tracksToRemove.empty())
             {
-                auto transaction{ session.createSharedTransaction() };
+                auto transaction{ session.createWriteTransaction() };
 
                 for (const TrackId trackId : tracksToRemove)
                 {
@@ -113,7 +113,7 @@ namespace Scanner
 
         LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan clusters...";
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         // Now process orphan Cluster (no track)
         auto clusterIds{ Cluster::findOrphans(session) };
@@ -132,7 +132,7 @@ namespace Scanner
         LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan artists...";
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         auto artistIds{ Artist::findOrphanIds(session) };
         for (const ArtistId artistId : artistIds.results)
@@ -151,7 +151,7 @@ namespace Scanner
 
         // TODO, by batch
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         auto releases{ Release::findOrphanIds(session) };
         for (const ReleaseId releaseId : releases.results)

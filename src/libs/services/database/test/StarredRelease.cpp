@@ -31,7 +31,7 @@ TEST_F(DatabaseFixture, StarredRelease)
     ScopedUser user2{ session, "MyUser2" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto starredRelease{ StarredRelease::find(session, release->getId(), user->getId(), FeedbackBackend::Internal) };
         EXPECT_FALSE(starredRelease);
@@ -43,7 +43,7 @@ TEST_F(DatabaseFixture, StarredRelease)
 
     ScopedStarredRelease starredRelease{ session, release.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto gotRelease{ StarredRelease::find(session, release->getId(), user->getId(), FeedbackBackend::Internal) };
         EXPECT_EQ(gotRelease->getId(), starredRelease->getId());
@@ -51,7 +51,7 @@ TEST_F(DatabaseFixture, StarredRelease)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto releases{ Release::find(session, Release::FindParameters {}) };
         EXPECT_EQ(releases.results.size(), 1);
@@ -64,12 +64,12 @@ TEST_F(DatabaseFixture, StarredRelease)
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         user.get().modify()->setFeedbackBackend(FeedbackBackend::ListenBrainz);
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto gotRelease{ StarredRelease::find(session, release->getId(), user->getId()) };
         EXPECT_EQ(gotRelease, StarredRelease::pointer{});
@@ -83,7 +83,7 @@ TEST_F(DatabaseFixture, Starredrelease_PendingDestroy)
     ScopedStarredRelease starredRelease{ session, release.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         auto releases{ Release::find(session, Release::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
         EXPECT_EQ(releases.results.size(), 1);
@@ -106,14 +106,14 @@ TEST_F(DatabaseFixture, StarredRelease_dateTime)
     const Wt::WDateTime dateTime{ Wt::WDate {1950, 1, 2}, Wt::WTime {12, 30, 1} };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto releases{ Release::findIds(session, Release::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
         EXPECT_EQ(releases.results.size(), 2);
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         starredRelease1.get().modify()->setDateTime(dateTime);
         starredRelease2.get().modify()->setDateTime(dateTime.addSecs(-1));
@@ -124,7 +124,7 @@ TEST_F(DatabaseFixture, StarredRelease_dateTime)
         EXPECT_EQ(releases.results[1], starredRelease2->getRelease()->getId());
     }
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         starredRelease1.get().modify()->setDateTime(dateTime);
         starredRelease2.get().modify()->setDateTime(dateTime.addSecs(1));

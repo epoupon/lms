@@ -62,7 +62,7 @@ void DatabaseFixture::SetUpTestCase()
 
         // remove default created entries
         {
-            auto transaction{ s.createUniqueTransaction() };
+            auto transaction{ s.createWriteTransaction() };
 
             for (const Database::ClusterTypeId clusterTypeId : Database::ClusterType::find(s).results)
             {
@@ -82,7 +82,7 @@ void DatabaseFixture::testDatabaseEmpty()
 {
     using namespace Database;
 
-    auto uniqueTransaction{ session.createUniqueTransaction() };
+    auto transaction{ session.createWriteTransaction() };
 
     EXPECT_EQ(Artist::getCount(session), 0);
     EXPECT_EQ(Cluster::getCount(session), 0);

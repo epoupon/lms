@@ -117,7 +117,7 @@ FeaturesEngine::loadFromTraining(const TrainSettings& trainSettings, const Progr
 
 	RangeResults<TrackFeaturesId> trackFeaturesIds;
 	{
-		auto transaction {session.createSharedTransaction()};
+		auto transaction {session.createReadTransaction()};
 
 		LMS_LOG(RECOMMENDATION, DEBUG) << "Getting Track features...";
 		trackFeaturesIds = TrackFeatures::find(session);
@@ -137,7 +137,7 @@ FeaturesEngine::loadFromTraining(const TrainSettings& trainSettings, const Progr
 		if (_loadCancelled)
 			return;
 
-		auto transaction {session.createSharedTransaction()};
+		auto transaction {session.createReadTransaction()};
 
 		TrackFeatures::pointer trackFeatures {TrackFeatures::find(session, trackFeaturesId)};
 		if (!trackFeatures)
@@ -228,7 +228,7 @@ FeaturesEngine::findSimilarTracksFromTrackList(TrackListId trackListId, std::siz
 
 		Session& session {_db.getTLSSession()};
 
-		auto transaction {session.createSharedTransaction()};
+		auto transaction {session.createReadTransaction()};
 
 		const TrackList::pointer trackList {TrackList::find(session, trackListId)};
 		if (trackList)
@@ -249,7 +249,7 @@ FeaturesEngine::findSimilarTracks(const std::vector<TrackId>& tracksIds, std::si
 
 	{
 		// Report only existing ids, as tracks may have been removed a long time ago (refreshing the SOM takes some time)
-		auto transaction {session.createSharedTransaction()};
+		auto transaction {session.createReadTransaction()};
 
 		similarTrackIds.erase(std::remove_if(std::begin(similarTrackIds), std::end(similarTrackIds),
 			[&](TrackId trackId)
@@ -271,7 +271,7 @@ FeaturesEngine::getSimilarReleases(ReleaseId releaseId, std::size_t maxCount) co
 	if (!similarReleaseIds.empty())
 	{
 		// Report only existing ids
-		auto transaction {session.createSharedTransaction()};
+		auto transaction {session.createReadTransaction()};
 
 		similarReleaseIds.erase(std::remove_if(std::begin(similarReleaseIds), std::end(similarReleaseIds),
 			[&](ReleaseId releaseId)
@@ -312,7 +312,7 @@ FeaturesEngine::getSimilarArtists(ArtistId artistId, EnumSet<TrackArtistLinkType
 	Session& session {_db.getTLSSession()};
 	{
 		// Report only existing ids
-		auto transaction {session.createSharedTransaction()};
+		auto transaction {session.createReadTransaction()};
 
 		res.erase(std::remove_if(std::begin(res), std::end(res),
 			[&](ArtistId artistId)
@@ -384,7 +384,7 @@ FeaturesEngine::load(const SOM::Network& network, const TrackPositions& trackPos
 		if (_loadCancelled)
 			return;
 
-		auto transaction {session.createSharedTransaction()};
+		auto transaction {session.createReadTransaction()};
 
 		const Track::pointer track {Track::find(session, trackId)};
 		if (!track)

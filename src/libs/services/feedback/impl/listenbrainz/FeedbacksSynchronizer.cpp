@@ -77,7 +77,7 @@ namespace Feedback::ListenBrainz
         {
             Database::Session& session{ _db.getTLSSession() };
 
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
 
             Database::StarredTrack::pointer starredTrack{ Database::StarredTrack::find(session, starredTrackId) };
             if (!starredTrack)
@@ -151,7 +151,7 @@ namespace Feedback::ListenBrainz
         assert(_strand.running_in_this_thread());
 
         Database::Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         Database::StarredTrack::pointer starredTrack{ Database::StarredTrack::find(session, starredTrackId) };
         if (!starredTrack)
@@ -202,7 +202,7 @@ namespace Feedback::ListenBrainz
             {
                 Database::Session& session {_db.getTLSSession()};
 
-                auto transaction {session.createSharedTransaction()};
+                auto transaction {session.createReadTransaction()};
 
                 StarredTrack::FindParameters params;
                 params.setFeedbackBackend(Database::FeedbackBackend::ListenBrainz, scrobblingState)
@@ -277,7 +277,7 @@ namespace Feedback::ListenBrainz
         Database::RangeResults<Database::UserId> userIds;
         {
             Database::Session& session{ _db.getTLSSession() };
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
             userIds = Database::User::find(_db.getTLSSession(), Database::User::FindParameters{}.setFeedbackBackend(Database::FeedbackBackend::ListenBrainz));
         }
 
@@ -437,7 +437,7 @@ namespace Feedback::ListenBrainz
         TrackId trackId;
 
         {
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
             const std::vector<Track::pointer> tracks{ Track::findByRecordingMBID(session, feedback.recordingMBID) };
             if (tracks.size() > 1)
             {
@@ -463,7 +463,7 @@ namespace Feedback::ListenBrainz
         {
             LOG(DEBUG) << "Importing feedback '" << feedback << "'";
 
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
 
             const Track::pointer track{ Track::find(session, trackId) };
             if (!track)

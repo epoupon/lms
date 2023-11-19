@@ -122,7 +122,7 @@ namespace UserInterface
         const auto releaseIds{ _releaseCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize}) };
 
         {
-            auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
             for (const ReleaseId releaseId : releaseIds.results)
             {

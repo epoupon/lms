@@ -135,7 +135,7 @@ namespace API::Subsonic
 
         void checkUserTypeIsAllowed(RequestContext& context, EnumSet<Database::UserType> allowedUserTypes)
         {
-            auto transaction{ context.dbSession.createSharedTransaction() };
+            auto transaction{ context.dbSession.createReadTransaction() };
 
             User::pointer currentUser{ User::find(context.dbSession, context.userId) };
             if (!currentUser)
@@ -403,7 +403,7 @@ namespace API::Subsonic
         if (request.continuation())
         {
             Database::Session& session{ _db.getTLSSession() };
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
 
             const auto user{ Database::User::find(session, clientInfo.user) };
             if (!user)

@@ -36,7 +36,7 @@ namespace Auth
 	AuthServiceBase::getOrCreateUser(std::string_view loginName)
 	{
 		Session& session {getDbSession()};
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createWriteTransaction()};
 
 		User::pointer user {User::find(session, loginName)};
 		if (!user)
@@ -56,7 +56,7 @@ namespace Auth
 	AuthServiceBase::onUserAuthenticated(UserId userId)
 	{
 		Session& session {getDbSession()};
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createWriteTransaction()};
 
 		User::pointer user {User::find(session, userId)};
 		if (user)

@@ -101,7 +101,7 @@ namespace UserInterface
 		const Range range {static_cast<std::size_t>(_container->getCount()), _batchSize};
 
 		Session& session {LmsApp->getDbSession()};
-		auto transaction {session.createSharedTransaction()};
+		auto transaction {session.createReadTransaction()};
 
 		TrackList::FindParameters params;
 		params.setClusters(_filters.getClusterIds());

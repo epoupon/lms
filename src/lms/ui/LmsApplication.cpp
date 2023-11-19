@@ -169,7 +169,7 @@ LmsApplication::isUserAuthStrong() const
 Database::UserType
 LmsApplication::getUserType()
 {
-	auto transaction {getDbSession().createSharedTransaction()};
+	auto transaction {getDbSession().createReadTransaction()};
 
 	return getUser()->getType();
 }
@@ -177,7 +177,7 @@ LmsApplication::getUserType()
 std::string
 LmsApplication::getUserLoginName()
 {
-	auto transaction {getDbSession().createSharedTransaction()};
+	auto transaction {getDbSession().createReadTransaction()};
 
 	return getUser()->getLoginName();
 }
@@ -246,7 +246,7 @@ LmsApplication::processPasswordAuth()
 	// If here is no account in the database, launch the first connection wizard
 	bool firstConnection {};
 	{
-		auto transaction {getDbSession().createSharedTransaction()};
+		auto transaction {getDbSession().createReadTransaction()};
 		firstConnection = Database::User::getCount(getDbSession()) == 0;
 	}
 
@@ -360,7 +360,7 @@ void
 LmsApplication::logoutUser()
 {
 	{
-		auto transaction {getDbSession().createUniqueTransaction()};
+		auto transaction {getDbSession().createWriteTransaction()};
 		getUser().modify()->clearAuthTokens();
 	}
 

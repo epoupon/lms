@@ -121,7 +121,7 @@ Artists::addSome()
 	const auto artistIds {_artistCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize})};
 
 	{
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+		auto transaction {LmsApp->getDbSession().createReadTransaction()};
 
 		for (const ArtistId artistId : artistIds.results)
 		{

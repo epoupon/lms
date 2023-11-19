@@ -56,7 +56,7 @@ namespace API::Subsonic
             Scrobbling::IScrobblingService& scrobblingService{ *Service<Scrobbling::IScrobblingService>::get() };
             Feedback::IFeedbackService& feedbackService{ *Service<Feedback::IFeedbackService>::get() };
 
-            auto transaction{ context.dbSession.createSharedTransaction() };
+            auto transaction{ context.dbSession.createReadTransaction() };
 
             User::pointer user{ User::find(context.dbSession, context.userId) };
             if (!user)
@@ -156,7 +156,7 @@ namespace API::Subsonic
 
         Response handleGetStarredRequestCommon(RequestContext& context, bool id3)
         {
-            auto transaction{ context.dbSession.createSharedTransaction() };
+            auto transaction{ context.dbSession.createReadTransaction() };
 
             User::pointer user{ User::find(context.dbSession, context.userId) };
             if (!user)
@@ -214,7 +214,7 @@ namespace API::Subsonic
         if (size > defaultMaxCountSize)
             throw ParameterValueTooHighGenericError{ "size", defaultMaxCountSize };
 
-        auto transaction{ context.dbSession.createSharedTransaction() };
+        auto transaction{ context.dbSession.createReadTransaction() };
 
         User::pointer user{ User::find(context.dbSession, context.userId) };
         if (!user)
@@ -247,7 +247,7 @@ namespace API::Subsonic
 
         std::size_t offset{ getParameterAs<std::size_t>(context.parameters, "offset").value_or(0) };
 
-        auto transaction{ context.dbSession.createSharedTransaction() };
+        auto transaction{ context.dbSession.createReadTransaction() };
 
         auto clusterType{ ClusterType::find(context.dbSession, "GENRE") };
         if (!clusterType)

@@ -35,7 +35,7 @@ namespace Scanner
 			return;
 
 		Session& session {_db.getTLSSession()};
-		auto transaction {session.createSharedTransaction()};
+		auto transaction {session.createReadTransaction()};
 
 		const RangeResults<TrackId> tracks = Track::findIdsTrackMBIDDuplicates(session);
 		for (const TrackId trackId : tracks.results)

@@ -49,7 +49,7 @@ static
 std::optional<std::filesystem::path>
 getTrackPathFromTrackId(Database::TrackId trackId)
 {
-	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+	auto transaction {LmsApp->getDbSession().createReadTransaction()};
 
 	const Database::Track::pointer track {Database::Track::find(LmsApp->getDbSession(), trackId)};
 	if (!track)

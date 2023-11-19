@@ -95,7 +95,7 @@ namespace UserInterface
 
                 auto model{ std::make_shared<TrackListModel>() };
 
-                auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
                 TrackList::FindParameters params;
                 params.setType(TrackListType::Playlist);
@@ -148,7 +148,7 @@ namespace UserInterface
         shuffleBtn->clicked().connect([=]
             {
                 {
-                    auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
+                    auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
                     Database::TrackList::pointer queue{ getQueue() };
                     auto entries{ queue->getEntries() };
@@ -165,13 +165,13 @@ namespace UserInterface
         _repeatBtn = bindNew<Wt::WCheckBox>("repeat-btn");
         _repeatBtn->clicked().connect([=]
             {
-                auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
+                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
                 if (!LmsApp->getUser()->isDemo())
                     LmsApp->getUser().modify()->setRepeatAll(isRepeatAllSet());
             });
         {
-            auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
             if (LmsApp->getUser()->isRepeatAllSet())
                 _repeatBtn->setCheckState(Wt::CheckState::Checked);
         }
@@ -180,7 +180,7 @@ namespace UserInterface
         _radioBtn->clicked().connect([=]
             {
                 {
-                    auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
+                    auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
                     if (!LmsApp->getUser()->isDemo())
                         LmsApp->getUser().modify()->setRadio(isRadioModeSet());
@@ -191,7 +191,7 @@ namespace UserInterface
 
         bool isRadioModeSet{};
         {
-            auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
             isRadioModeSet = LmsApp->getUser()->isRadioSet();
         }
         if (isRadioModeSet)
@@ -213,7 +213,7 @@ namespace UserInterface
                 std::size_t trackPos{};
 
                 {
-                    auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
                     trackPos = LmsApp->getUser()->getCurPlayingTrackPos();
                 }
 
@@ -222,7 +222,7 @@ namespace UserInterface
 
         LmsApp->preQuit().connect([=]
             {
-                auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
+                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
                 if (LmsApp->getUser()->isDemo())
                 {
@@ -252,14 +252,14 @@ namespace UserInterface
 
     bool PlayQueue::isFull() const
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
         return getQueue()->getCount() == getCapacity();
     }
 
     void PlayQueue::clearTracks()
     {
         {
-            auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
+            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
             getQueue().modify()->clear();
         }
 
@@ -283,7 +283,7 @@ namespace UserInterface
         Database::TrackId trackId{};
         std::optional<float> replayGain{};
         {
-            auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
             const Database::TrackList::pointer queue{ getQueue() };
 
@@ -345,13 +345,13 @@ namespace UserInterface
 
     std::size_t PlayQueue::getCount()
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
         return getQueue()->getCount();
     }
 
     void PlayQueue::initTrackLists()
     {
-        auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
+        auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
         Database::TrackList::pointer queue;
         Database::TrackList::pointer radioStartingTracks;
@@ -374,7 +374,7 @@ namespace UserInterface
 
     void PlayQueue::updateInfo()
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const Database::TrackList::pointer queue{ getQueue() };
         const std::size_t trackCount{ queue->getCount() };
@@ -398,7 +398,7 @@ namespace UserInterface
     void PlayQueue::enqueueTracks(const std::vector<Database::TrackId>& trackIds)
     {
         {
-            auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
+            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
             Database::TrackList::pointer queue{ getQueue() };
             const std::size_t queueSize{ queue->getCount() };
@@ -427,7 +427,7 @@ namespace UserInterface
     {
         std::vector<Database::TrackId> tracks;
 
-        auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
+        auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
         Database::TrackList::pointer queue{ getQueue() };
         std::vector<Database::TrackListEntry::pointer> entries{ queue->getEntries(Database::Range {_trackPos ? *_trackPos + 1 : 0, getCapacity()}) };
@@ -489,7 +489,7 @@ namespace UserInterface
 
     void PlayQueue::addSome()
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const Database::TrackList::pointer queue{ getQueue() };
         const auto tracklistEntries{ queue->getEntries(Database::Range {_entriesContainer->getCount(), _batchSize}) };
@@ -550,7 +550,7 @@ namespace UserInterface
             {
                 // Remove the entry n both the widget tree and the playqueue
                 {
-                    auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
+                    auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
                     Database::TrackListEntry::pointer entryToRemove{ Database::TrackListEntry::getById(LmsApp->getDbSession(), tracklistEntryId) };
                     entryToRemove.remove();
@@ -584,7 +584,7 @@ namespace UserInterface
         Wt::WPushButton* starBtn{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
         starBtn->clicked().connect([=]
             {
-                auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
+                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
                 if (isStarred())
                 {
@@ -609,7 +609,7 @@ namespace UserInterface
 
         bool addTracks{};
         {
-            auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
             const Database::TrackList::pointer queue{ getQueue() };
 
@@ -776,7 +776,7 @@ namespace UserInterface
 
         {
             Session& session{ LmsApp->getDbSession() };
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
             TrackList::pointer trackList{ session.create<TrackList>(name.toUTF8(), TrackListType::Playlist, false, LmsApp->getUser()) };
             trackListId = trackList->getId();
         }
@@ -789,7 +789,7 @@ namespace UserInterface
         using namespace Database;
 
         Session& session{ LmsApp->getDbSession() };
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         TrackList::pointer trackList{ TrackList::find(LmsApp->getDbSession(), trackListId) };
         trackList.modify()->clear();

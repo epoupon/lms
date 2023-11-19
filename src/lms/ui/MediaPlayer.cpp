@@ -237,7 +237,7 @@ namespace UserInterface
 
         std::ostringstream oss;
         {
-            auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
             const auto track{ Database::Track::find(LmsApp->getDbSession(), trackId) };
             if (!track)

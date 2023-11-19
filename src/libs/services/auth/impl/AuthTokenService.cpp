@@ -54,7 +54,7 @@ namespace Auth
 
 		Database::Session& session {getDbSession()};
 
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createWriteTransaction()};
 
 		Database::User::pointer user {Database::User::find(session, userId)};
 		if (!user)
@@ -76,7 +76,7 @@ namespace Auth
 		const std::string secretHash {sha1Function.compute(std::string {secret}, {})};
 
 		Database::Session& session {getDbSession()};
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createWriteTransaction()};
 
 		Database::AuthToken::pointer authToken {Database::AuthToken::find(session, secretHash)};
 		if (!authToken)
@@ -131,7 +131,7 @@ namespace Auth
 	{
 		Database::Session& session {getDbSession()};
 
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createWriteTransaction()};
 
 		Database::User::pointer user {Database::User::find(session, userId)};
 		if (!user)

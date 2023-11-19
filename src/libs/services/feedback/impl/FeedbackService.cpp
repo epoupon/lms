@@ -60,7 +60,7 @@ namespace Feedback
         std::optional<Database::FeedbackBackend> feedbackBackend;
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         if (const User::pointer user{ User::find(session, userId) })
             feedbackBackend = user->getFeedbackBackend();
 
@@ -101,7 +101,7 @@ namespace Feedback
         searchParams.setRange(params.range);
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         return Artist::findIds(session, searchParams);
     }
@@ -139,7 +139,7 @@ namespace Feedback
         searchParams.setRange(params.range);
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         return Release::findIds(session, searchParams);
     }
@@ -177,7 +177,7 @@ namespace Feedback
         searchParams.setRange(params.range);
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         return Track::findIds(session, searchParams);
     }

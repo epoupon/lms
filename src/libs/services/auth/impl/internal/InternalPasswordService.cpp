@@ -49,7 +49,7 @@ namespace Auth
 		Database::User::PasswordHash passwordHash;
 		{
 			Database::Session& session {getDbSession()};
-			auto transaction {session.createSharedTransaction()};
+			auto transaction {session.createReadTransaction()};
 
 			const Database::User::pointer user {Database::User::find(session, loginName)};
 			if (!user)
@@ -100,7 +100,7 @@ namespace Auth
 		const Database::User::PasswordHash passwordHash {hashPassword(newPassword)};
 
 		Database::Session& session {getDbSession()};
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createWriteTransaction()};
 
 		Database::User::pointer user {Database::User::find(session, userId)};
 		if (!user)

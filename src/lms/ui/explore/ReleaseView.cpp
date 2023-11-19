@@ -56,7 +56,7 @@ namespace UserInterface
     {
         void showReleaseInfoModal(Database::ReleaseId releaseId)
         {
-            auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
             const Database::Release::pointer release{ Database::Release::find(LmsApp->getDbSession(), releaseId) };
             if (!release)
@@ -174,7 +174,7 @@ namespace UserInterface
                 const auto mbid{ UUID::fromString(wApp->internalPathNextPart("/release/mbid/")) };
                 if (mbid)
                 {
-                    auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
                     if (const Database::Release::pointer release{ Database::Release::find(LmsApp->getDbSession(), *mbid) })
                         return release->getId();
                 }
@@ -228,7 +228,7 @@ namespace UserInterface
 
         auto similarReleasesIds{ Service<Recommendation::IRecommendationService>::get()->getSimilarReleases(*releaseId, 6) };
 
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const Database::Release::pointer release{ Database::Release::find(LmsApp->getDbSession(), *releaseId) };
         if (!release)
@@ -433,7 +433,7 @@ namespace UserInterface
                     Wt::WPushButton* starBtn{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
                     starBtn->clicked().connect([=]
                         {
-                            auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
+                            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
                             if (isStarred())
                             {

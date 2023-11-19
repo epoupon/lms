@@ -85,7 +85,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 		void loadData()
 		{
-			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+			auto transaction {LmsApp->getDbSession().createReadTransaction()};
 
 			const ScanSettings::pointer scanSettings {ScanSettings::get(LmsApp->getDbSession())};
 
@@ -120,7 +120,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 
 		void saveData()
 		{
-			auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+			auto transaction {LmsApp->getDbSession().createWriteTransaction()};
 
 			ScanSettings::pointer scanSettings {ScanSettings::get(LmsApp->getDbSession())};
 

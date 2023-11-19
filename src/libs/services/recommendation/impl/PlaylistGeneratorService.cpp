@@ -100,7 +100,7 @@ namespace Recommendation
         TrackContainer tracks;
 
         Session& dbSession{ _db.getTLSSession() };
-        auto transaction{ dbSession.createSharedTransaction() };
+        auto transaction{ dbSession.createReadTransaction() };
 
         Track::FindParameters params;
         params.setTrackList(tracklistId);

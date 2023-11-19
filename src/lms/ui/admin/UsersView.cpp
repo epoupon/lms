@@ -70,7 +70,7 @@ UsersView::refreshView()
 
 	_container->clear();
 
-	auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+	auto transaction {LmsApp->getDbSession().createReadTransaction()};
 
 	const User::IdType currentUserId {LmsApp->getUser()};
 	for (const UserId userId : User::find(LmsApp->getDbSession(), User::FindParameters {}).results)
@@ -112,7 +112,7 @@ UsersView::refreshView()
 			delBtn->clicked().connect([=]
 			{
 				{
-					auto transaction {LmsApp->getDbSession().createUniqueTransaction()};
+					auto transaction {LmsApp->getDbSession().createWriteTransaction()};
 
 					User::pointer user {User::find(LmsApp->getDbSession(), userId)};
 					if (user)

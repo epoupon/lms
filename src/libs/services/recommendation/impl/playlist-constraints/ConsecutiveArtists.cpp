@@ -80,7 +80,7 @@ namespace Recommendation::PlaylistGeneratorConstraint
 		ArtistContainer res;
 
 		Session& dbSession {_db.getTLSSession()};
-		auto transaction {dbSession.createSharedTransaction()};
+		auto transaction {dbSession.createReadTransaction()};
 
 		const Track::pointer track {Track::find(dbSession, trackId)};
 		if (!track)

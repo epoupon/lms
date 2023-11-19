@@ -137,7 +137,7 @@ namespace UserInterface
 
             std::filesystem::path trackPath;
             {
-                auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
                 const Database::Track::pointer track{ Database::Track::find(LmsApp->getDbSession(), *trackId) };
                 if (!track)

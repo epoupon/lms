@@ -57,7 +57,7 @@ namespace UserInterface
                 const auto mbid{ UUID::fromString(wApp->internalPathNextPart("/artist/mbid/")) };
                 if (mbid)
                 {
-                    auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
                     if (const Database::Artist::pointer artist{ Database::Artist::find(LmsApp->getDbSession(), *mbid) })
                         return artist->getId();
                 }
@@ -124,7 +124,7 @@ namespace UserInterface
 
         const auto similarArtistIds{ Service<Recommendation::IRecommendationService>::get()->getSimilarArtists(*artistId, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, 5) };
 
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const Database::Artist::pointer artist{ Database::Artist::find(LmsApp->getDbSession(), *artistId) };
         if (!artist)
@@ -334,7 +334,7 @@ namespace UserInterface
 
     void Artist::addSomeReleases(ReleaseContainer& releaseContainer)
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         if (const Database::Artist::pointer artist{ Database::Artist::find(LmsApp->getDbSession(), _artistId) })
         {
@@ -349,7 +349,7 @@ namespace UserInterface
     bool Artist::addSomeNonReleaseTracks()
     {
         bool areTracksAdded{};
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const Range range{ static_cast<std::size_t>(_trackContainer->getCount()), _tracksBatchSize };
 

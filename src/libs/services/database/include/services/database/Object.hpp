@@ -22,6 +22,7 @@
 #include <Wt/WSignal.h>
 #include <Wt/Dbo/ptr.h>
 #include "services/database/IdType.hpp"
+#include "services/database/TransactionChecker.hpp"
 
 namespace Database
 {
@@ -38,9 +39,11 @@ namespace Database
 			bool operator==(const ObjectPtr& other) const { return _obj == other._obj; }
 			bool operator!=(const ObjectPtr& other) const { return other._obj != _obj; }
 
-			auto modify() { return _obj.modify(); }
+			auto modify() { TransactionChecker::checkWriteTransaction(*_obj.session()); return _obj.modify(); }
 			void remove()
 			{
+				TransactionChecker::checkWriteTransaction(*_obj.session());
+
 				if (_obj->hasOnPreRemove())
 					_obj.modify()->onPreRemove();
 				_obj.remove();

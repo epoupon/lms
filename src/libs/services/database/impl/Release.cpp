@@ -198,7 +198,7 @@ namespace Database
 
     std::vector<Release::pointer> Release::find(Session& session, const std::string& name)
     {
-        session.checkUniqueLocked();
+        session.checkWriteTransaction();
 
         auto res{ session.getDboSession()
                             .find<Release>()
@@ -210,7 +210,7 @@ namespace Database
 
     Release::pointer Release::find(Session& session, const UUID& mbid)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession()
             .find<Release>()
@@ -220,7 +220,7 @@ namespace Database
 
     Release::pointer Release::find(Session& session, ReleaseId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession()
             .find<Release>()
@@ -230,20 +230,20 @@ namespace Database
 
     bool Release::exists(Session& session, ReleaseId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         return session.getDboSession().query<int>("SELECT 1 FROM release").where("id = ?").bind(id).resultValue() == 1;
     }
 
     std::size_t Release::getCount(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM release");
     }
 
     RangeResults<ReleaseId> Release::findIdsOrderedByArtist(Session& session, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         // TODO merge with find
         auto query{ session.getDboSession().query<ReleaseId>(
@@ -258,7 +258,7 @@ namespace Database
 
     RangeResults<ReleaseId> Release::findOrphanIds(Session& session, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ session.getDboSession().query<ReleaseId>("select r.id from release r LEFT OUTER JOIN Track t ON r.id = t.release_id WHERE t.id IS NULL") };
         return Utils::execQuery<ReleaseId>(query, range);
@@ -266,7 +266,7 @@ namespace Database
 
     RangeResults<Release::pointer> Release::find(Session& session, const FindParameters& params)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, "DISTINCT r", params) };
         return Utils::execQuery<pointer>(query, params.range);
@@ -274,7 +274,7 @@ namespace Database
 
     void Release::find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, "DISTINCT r", params) };
         Utils::execQuery<pointer>(query, params.range, func);
@@ -282,7 +282,7 @@ namespace Database
 
     RangeResults<ReleaseId> Release::findIds(Session& session, const FindParameters& params)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ createQuery<ReleaseId>(session, "DISTINCT r.id", params) };
         return Utils::execQuery<ReleaseId>(query, params.range);
@@ -290,7 +290,7 @@ namespace Database
 
     std::size_t Release::getCount(Session& session, const FindParameters& params)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return createQuery<int>(session, "COUNT(DISTINCT r.id)", params).resultValue();
     }

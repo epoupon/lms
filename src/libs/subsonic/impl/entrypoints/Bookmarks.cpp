@@ -34,7 +34,7 @@ namespace API::Subsonic
 
     Response handleGetBookmarks(RequestContext& context)
     {
-        auto transaction{ context.dbSession.createSharedTransaction() };
+        auto transaction{ context.dbSession.createReadTransaction() };
 
         User::pointer user{ User::find(context.dbSession, context.userId) };
         if (!user)
@@ -64,7 +64,7 @@ namespace API::Subsonic
         unsigned long position{ getMandatoryParameterAs<unsigned long>(context.parameters, "position") };
         const std::optional<std::string> comment{ getParameterAs<std::string>(context.parameters, "comment") };
 
-        auto transaction{ context.dbSession.createUniqueTransaction() };
+        auto transaction{ context.dbSession.createWriteTransaction() };
 
         const User::pointer user{ User::find(context.dbSession, context.userId) };
         if (!user)
@@ -91,7 +91,7 @@ namespace API::Subsonic
         // Mandatory params
         TrackId trackId{ getMandatoryParameterAs<TrackId>(context.parameters, "id") };
 
-        auto transaction{ context.dbSession.createUniqueTransaction() };
+        auto transaction{ context.dbSession.createWriteTransaction() };
 
         auto bookmark{ TrackBookmark::find(context.dbSession, context.userId, trackId) };
         if (!bookmark)

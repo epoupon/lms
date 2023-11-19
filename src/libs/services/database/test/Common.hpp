@@ -49,7 +49,7 @@ class ScopedEntity
 		ScopedEntity(Database::Session& session, Args&& ...args)
 			: _session {session}
 		{
-			auto transaction {_session.createUniqueTransaction()};
+			auto transaction {_session.createWriteTransaction()};
 
 			auto entity {_session.create<T>(std::forward<Args>(args)...)};
 			EXPECT_TRUE(entity);
@@ -58,7 +58,7 @@ class ScopedEntity
 
 		~ScopedEntity()
 		{
-			auto transaction {_session.createUniqueTransaction()};
+			auto transaction {_session.createWriteTransaction()};
 
 			auto entity {T::find(_session, _id)};
 			// could not be here due to "on delete cascade" constraints...
@@ -73,13 +73,13 @@ class ScopedEntity
 
 		typename T::pointer lockAndGet()
 		{
-			auto transaction {_session.createSharedTransaction()};
+			auto transaction {_session.createReadTransaction()};
 			return get();
 		}
 
 		typename T::pointer get()
 		{
-			_session.checkSharedLocked();
+			_session.checkReadTransaction();
 
 			auto entity {T::find(_session, _id)};
 			EXPECT_TRUE(entity);
