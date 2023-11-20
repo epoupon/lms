@@ -204,7 +204,7 @@ namespace Database
                             .query<Wt::Dbo::ptr<Release>>("SELECT DISTINCT r from release r")
                             .join("track t ON t.release_id = r.id")
                             .where("r.name = ?").bind(std::string(name, 0, _maxNameLength))
-                            .where("t.file_path LIKE ?").bind(Utils::escapeLikeKeyword(releaseDirectory.string()) + "%")
+                            .where("t.file_path LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind(Utils::escapeLikeKeyword(releaseDirectory.string()) + "%")
                             .resultList() };
 
         return std::vector<Release::pointer>(res.begin(), res.end());
