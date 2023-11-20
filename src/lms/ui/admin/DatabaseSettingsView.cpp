@@ -114,7 +114,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			{
 				std::vector<std::string> names;
 				std::transform(clusterTypes.begin(), clusterTypes.end(), std::back_inserter(names),  [](auto clusterType) { return clusterType->getName(); });
-				setValue(ClustersField, StringUtils::joinStrings(names, " "));
+				setValue(ClustersField, StringUtils::joinStrings(names, ";"));
 			}
 		}
 
@@ -138,7 +138,7 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			if (similarityEngineTypeRow)
 				scanSettings.modify()->setSimilarityEngineType(_similarityEngineTypeModel->getValue(*similarityEngineTypeRow));
 
-			auto clusterTypes {StringUtils::splitStringCopy(valueText(ClustersField).toUTF8(), " ")};
+			auto clusterTypes {StringUtils::splitStringCopy(valueText(ClustersField).toUTF8(), ";")};
 			scanSettings.modify()->setClusterTypes(LmsApp->getDbSession(), std::set<std::string>(clusterTypes.begin(), clusterTypes.end()));
 		}
 
