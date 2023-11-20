@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <optional>
 #include <vector>
 
@@ -61,9 +62,9 @@ namespace Database
             ArtistId                            artist;						// only releases that involved this user
             EnumSet<TrackArtistLinkType>        trackArtistLinkTypes; 			//    and for these link types
             EnumSet<TrackArtistLinkType>        excludedTrackArtistLinkTypes; 	//    but not for these link types
-            std::optional<ReleaseTypePrimary>   primaryType;				// if, set, matching this primary type
+            std::optional<ReleaseTypePrimary>   primaryType;				// if set, matching this primary type
             EnumSet<ReleaseTypeSecondary>       secondaryTypes;				// Matching all this (if any)
-
+            
             FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
             FindParameters& setSortMethod(ReleaseSortMethod _sortMethod) { sortMethod = _sortMethod; return *this; }
@@ -86,7 +87,7 @@ namespace Database
         static std::size_t              getCount(Session& session);
         static bool                     exists(Session& session, ReleaseId id);
         static pointer                  find(Session& session, const UUID& MBID);
-        static std::vector<pointer>     find(Session& session, const std::string& name);
+        static std::vector<pointer>     find(Session& session, const std::string& name, const std::filesystem::path& releaseDirectory);
         static pointer                  find(Session& session, ReleaseId id);
         static RangeResults<pointer>    find(Session& session, const FindParameters& parameters);
         static void                     find(Session& session, const FindParameters& parameters, std::function<void(const pointer&)> func);

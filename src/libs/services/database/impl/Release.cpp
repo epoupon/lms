@@ -196,13 +196,15 @@ namespace Database
         return session.getDboSession().add(std::unique_ptr<Release> {new Release{ name, MBID }});
     }
 
-    std::vector<Release::pointer> Release::find(Session& session, const std::string& name)
+    std::vector<Release::pointer> Release::find(Session& session, const std::string& name, const std::filesystem::path& releaseDirectory)
     {
-        session.checkWriteTransaction();
+        session.checkReadTransaction();
 
         auto res{ session.getDboSession()
-                            .find<Release>()
-                            .where("name = ?").bind(std::string(name, 0, _maxNameLength))
+                            .query<Wt::Dbo::ptr<Release>>("SELECT DISTINCT r from release r")
+                            .join("track t ON t.release_id = r.id")
+                            .where("r.name = ?").bind(std::string(name, 0, _maxNameLength))
+                            .where("t.file_path LIKE ?").bind(Utils::escapeLikeKeyword(releaseDirectory.string()) + "%")
                             .resultList() };
 
         return std::vector<Release::pointer>(res.begin(), res.end());

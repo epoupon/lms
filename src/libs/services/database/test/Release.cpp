@@ -132,6 +132,40 @@ TEST_F(DatabaseFixture, Release_singleTrack)
     }
 }
 
+TEST_F(DatabaseFixture, Release_findByNameAndPath)
+{
+    ScopedRelease release1{ session, "MyRelease" };
+    ScopedRelease release2{ session, "MyRelease" };
+    ScopedTrack track1{ session, "MyTrack" };
+    ScopedTrack track2{ session, "MyTrack" };
+
+    {
+        auto transaction{ session.createWriteTransaction() };
+
+        track1.get().modify()->setRelease(release1.get());
+        track1.get().modify()->setPath("/tmp/foo/foo.mp3");
+
+        track2.get().modify()->setRelease(release2.get());
+        track2.get().modify()->setPath("/tmp/bar/bar.mp3");
+    }
+
+    {
+        auto transaction{ session.createReadTransaction() };
+        std::cout << "OK HERE" << std::endl;
+        {
+            const auto releases{ Release::find(session, "MyRelease", "/tmp/foo") };
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front()->getId(), release1.getId());
+        }
+
+        {
+            const auto releases{ Release::find(session, "MyRelease", "/tmp/bar") };
+            ASSERT_EQ(releases.size(), 1);
+            EXPECT_EQ(releases.front()->getId(), release2.getId());
+        }
+    }
+}
+
 TEST_F(DatabaseFixture, MulitpleReleaseSearchByName)
 {
     ScopedRelease release1{ session, "MyRelease" };
