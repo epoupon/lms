@@ -64,7 +64,7 @@ namespace Database
         popTransaction(TransactionType::Read, session);
     }
 
-    void TransactionChecker::pushTransaction(TransactionType type, Wt::Dbo::Session& session)
+    void TransactionChecker::pushTransaction([[maybe_unused]] TransactionType type, [[maybe_unused]] Wt::Dbo::Session& session)
     {
 #if LMS_CHECK_TRANSACTION_ACCESSES
         assert(transactionStack.empty() || transactionStack.back().session == &session);
@@ -72,7 +72,7 @@ namespace Database
 #endif // LMS_CHECK_TRANSACTION_ACCESSES
     }
 
-    void TransactionChecker::popTransaction(TransactionType type, Wt::Dbo::Session& session)
+    void TransactionChecker::popTransaction([[maybe_unused]] TransactionType type, [[maybe_unused]] Wt::Dbo::Session& session)
     {
 #if LMS_CHECK_TRANSACTION_ACCESSES
 
@@ -84,7 +84,7 @@ namespace Database
 
     }
 
-    void TransactionChecker::checkWriteTransaction(Wt::Dbo::Session& session)
+    void TransactionChecker::checkWriteTransaction([[maybe_unused]] Wt::Dbo::Session& session)
     {
         assert(!transactionStack.empty());
         assert(transactionStack.back().type == TransactionType::Write);
@@ -96,7 +96,7 @@ namespace Database
         checkWriteTransaction(session.getDboSession());
     }
 
-    void TransactionChecker::checkReadTransaction(Wt::Dbo::Session& session)
+    void TransactionChecker::checkReadTransaction([[maybe_unused]] Wt::Dbo::Session& session)
     {
         assert(!transactionStack.empty());
         assert(transactionStack.back().session == &session);
