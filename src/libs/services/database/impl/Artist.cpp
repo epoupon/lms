@@ -25,7 +25,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "SqlQuery.hpp"
 #include "Utils.hpp"
 #include "EnumSetTraits.hpp"

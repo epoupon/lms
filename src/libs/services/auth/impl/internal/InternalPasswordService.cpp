@@ -25,7 +25,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 namespace Auth
 {
@@ -44,7 +44,7 @@ namespace Auth
 	bool
 	InternalPasswordService::checkUserPassword(std::string_view loginName, std::string_view password)
 	{
-		LMS_LOG(AUTH, DEBUG) << "Checking internal password for user '" << loginName << "'";
+		LMS_LOG(AUTH, DEBUG, "Checking internal password for user '" << loginName << "'");
 
 		Database::User::PasswordHash passwordHash;
 		{
@@ -54,7 +54,7 @@ namespace Auth
 			const Database::User::pointer user {Database::User::find(session, loginName)};
 			if (!user)
 			{
-				LMS_LOG(AUTH, DEBUG) << "hashing random stuff";
+				LMS_LOG(AUTH, DEBUG, "hashing random stuff");
 				// hash random stuff here to waste some time
 				hashRandomPassword();
 				return false;

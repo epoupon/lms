@@ -88,7 +88,7 @@ Filters::showDialog()
 		for (const ClusterTypeId clusterTypeId : clusterTypesIds.results)
 		{
 			const auto clusterType {ClusterType::find(LmsApp->getDbSession(), clusterTypeId)};
-			typeCombo->addItem(Wt::WString::fromUTF8(clusterType->getName()));
+			typeCombo->addItem(Wt::WString::fromUTF8(std::string{ clusterType->getName() }));
 		}
 
 		if (!clusterTypesIds.results.empty())

@@ -30,7 +30,7 @@
 #include "services/database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/String.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"

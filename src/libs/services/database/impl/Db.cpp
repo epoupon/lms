@@ -26,7 +26,7 @@
 #include "services/database/User.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Service.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 namespace Database
 {
@@ -65,18 +65,18 @@ namespace Database
 
             void prepare()
             {
-                LMS_LOG(DB, DEBUG) << "Setting per-connection settings...";
+                LMS_LOG(DB, DEBUG, "Setting per-connection settings...");
                 executeSql("pragma journal_mode=WAL");
                 executeSql("pragma synchronous=normal");
                 executeSql("pragma analysis_limit=2000"); // to help make analyze command faster, 1000 does not seem to be enough to speed up all queries
-                LMS_LOG(DB, DEBUG) << "Setting per-connection settings done!";
+                LMS_LOG(DB, DEBUG, "Setting per-connection settings done!");
             }
 
             void optimize()
             {
-                LMS_LOG(DB, DEBUG) << "connection close: Running pragma optimize...";
+                LMS_LOG(DB, DEBUG, "connection close: Running pragma optimize...");
                 executeSql("pragma optimize");
-                LMS_LOG(DB, DEBUG) << "connection close: pragma optimize complete";
+                LMS_LOG(DB, DEBUG, "connection close: pragma optimize complete");
             }
 
             std::filesystem::path _dbPath;
@@ -86,7 +86,7 @@ namespace Database
     // Session living class handling the database and the login
     Db::Db(const std::filesystem::path& dbPath, std::size_t connectionCount)
     {
-        LMS_LOG(DB, INFO) << "Creating connection pool on file " << dbPath.string();
+        LMS_LOG(DB, INFO, "Creating connection pool on file " << dbPath.string());
 
         auto connection{ std::make_unique<Connection>(dbPath.string()) };
         if (IConfig * config{ Service<IConfig>::get() })// may not be here on testU

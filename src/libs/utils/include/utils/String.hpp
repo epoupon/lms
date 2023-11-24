@@ -38,19 +38,16 @@ namespace Wt
 namespace StringUtils {
 
     [[nodiscard]] std::vector<std::string> splitStringCopy(std::string_view string, std::string_view separators);
-
     [[nodiscard]] std::vector<std::string_view> splitString(std::string_view string, std::string_view separators);
 
+    [[nodiscard]] std::string joinStrings(const std::vector<std::string_view>& strings, std::string_view delimiter);
     [[nodiscard]] std::string joinStrings(const std::vector<std::string>& strings, const std::string& delimiter);
 
     [[nodiscard]] std::string_view stringTrim(std::string_view str, std::string_view whitespaces = " \t");
-
     [[nodiscard]] std::string_view stringTrimEnd(std::string_view str, std::string_view whitespaces = " \t");
 
     [[nodiscard]] std::string stringToLower(std::string_view str);
-
     void stringToLower(std::string& str);
-
     [[nodiscard]] std::string stringToUpper(const std::string& str);
 
     [[nodiscard]] std::string bufferToString(const std::vector<unsigned char>& data);

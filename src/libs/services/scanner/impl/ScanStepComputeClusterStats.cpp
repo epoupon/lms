@@ -21,7 +21,7 @@
 #include "services/database/Db.hpp"
 #include "services/database/Cluster.hpp"
 #include "services/database/Session.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Path.hpp"
 
 namespace Scanner
@@ -84,6 +84,6 @@ namespace Scanner
                 return true;
             });
 
-        LMS_LOG(DBUPDATER, DEBUG) << "Recomputed stats for " << context.currentStepStats.processedElems << " clusters!";
+        LMS_LOG(DBUPDATER, DEBUG, "Recomputed stats for " << context.currentStepStats.processedElems << " clusters!");
     }
 }

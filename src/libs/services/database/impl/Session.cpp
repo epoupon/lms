@@ -22,7 +22,7 @@
 #include <cassert>
 
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 #include "services/database/Artist.hpp"
 #include "services/database/AuthToken.hpp"
@@ -107,20 +107,20 @@ namespace Database
 
     void Session::prepareTables()
     {
-        LMS_LOG(DB, INFO) << "Preparing tables...";
+        LMS_LOG(DB, INFO, "Preparing tables...");
 
         // Initial creation case
         try
         {
             _session.createTables();
-            LMS_LOG(DB, INFO) << "Tables created";
+            LMS_LOG(DB, INFO, "Tables created");
         }
         catch (Wt::Dbo::Exception& e)
         {
-            LMS_LOG(DB, DEBUG) << "Cannot create tables: " << e.what();
+            LMS_LOG(DB, DEBUG, "Cannot create tables: " << e.what());
             if (std::string_view{ e.what() }.find("already exists") == std::string_view::npos)
             {
-                LMS_LOG(DB, ERROR) << "Cannot create tables: " << e.what();
+                LMS_LOG(DB, ERROR, "Cannot create tables: " << e.what());
                 throw e;
             }
         }
@@ -182,22 +182,22 @@ namespace Database
 
     void Session::analyze()
     {
-        LMS_LOG(DB, INFO) << "Analyzing database...";
+        LMS_LOG(DB, INFO, "Analyzing database...");
         {
             auto transaction{ createWriteTransaction() };
             _session.execute("ANALYZE");
         }
-        LMS_LOG(DB, INFO) << "Database Analyze complete";
+        LMS_LOG(DB, INFO, "Database Analyze complete");
     }
 
     void Session::optimize()
     {
-        LMS_LOG(DB, INFO) << "Optimizing database...";
+        LMS_LOG(DB, INFO, "Optimizing database...");
         {
             auto transaction{ createWriteTransaction() };
             _session.execute("PRAGMA optimize");
         }
-        LMS_LOG(DB, INFO) << "Database optimizing complete";
+        LMS_LOG(DB, INFO, "Database optimizing complete");
     }
 
 } // namespace Database

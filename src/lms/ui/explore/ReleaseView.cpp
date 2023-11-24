@@ -34,7 +34,7 @@
 #include "services/database/TrackArtistLink.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 #include "common/Template.hpp"
 #include "resource/DownloadResource.hpp"

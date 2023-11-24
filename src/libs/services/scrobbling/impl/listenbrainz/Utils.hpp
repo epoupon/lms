@@ -20,10 +20,10 @@
 #pragma once
 
 #include "services/database/UserId.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/UUID.hpp"
 
-#define LOG(sev)	LMS_LOG(SCROBBLING, sev) << "[listenbrainz] "
+#define LOG(sev, message)	LMS_LOG(SCROBBLING, sev, message << "[listenbrainz] ")
 
 namespace Database
 {

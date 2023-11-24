@@ -24,7 +24,7 @@
 
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "IdTypeTraits.hpp"
 #include "Utils.hpp"
 
@@ -111,7 +111,7 @@ namespace Database {
         }
         catch (boost::property_tree::ptree_error& error)
         {
-            LMS_LOG(DB, ERROR) << "Track " << _track.id() << ": ptree exception: " << error.what();
+            LMS_LOG(DB, ERROR, "Track " << _track.id() << ": ptree exception: " << error.what());
             res.clear();
         }
 

@@ -31,7 +31,7 @@
 #include "services/database/Session.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scanner/IScannerService.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 
@@ -112,8 +112,8 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			auto clusterTypes {scanSettings->getClusterTypes()};
 			if (!clusterTypes.empty())
 			{
-				std::vector<std::string> names;
-				std::transform(clusterTypes.begin(), clusterTypes.end(), std::back_inserter(names),  [](auto clusterType) { return clusterType->getName(); });
+				std::vector<std::string_view> names;
+				std::transform(clusterTypes.begin(), clusterTypes.end(), std::back_inserter(names),  [](const auto& clusterType) { return clusterType->getName(); });
 				setValue(ClustersField, StringUtils::joinStrings(names, " "));
 			}
 		}
@@ -138,8 +138,8 @@ class DatabaseSettingsModel : public Wt::WFormModel
 			if (similarityEngineTypeRow)
 				scanSettings.modify()->setSimilarityEngineType(_similarityEngineTypeModel->getValue(*similarityEngineTypeRow));
 
-			auto clusterTypes {StringUtils::splitStringCopy(valueText(ClustersField).toUTF8(), " ")};
-			scanSettings.modify()->setClusterTypes(LmsApp->getDbSession(), std::set<std::string>(clusterTypes.begin(), clusterTypes.end()));
+			const std::vector<std::string_view> clusterTypes {StringUtils::splitString(valueText(ClustersField).toUTF8(), " ")};
+			scanSettings.modify()->setClusterTypes(LmsApp->getDbSession(), std::set<std::string_view>(clusterTypes.begin(), clusterTypes.end()));
 		}
 
 	private:

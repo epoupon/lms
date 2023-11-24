@@ -32,7 +32,7 @@
 #include "services/database/Session.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 

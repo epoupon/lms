@@ -26,7 +26,7 @@
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Random.hpp"
 #include "utils/Service.hpp"
 #include "responses/Album.hpp"
@@ -122,7 +122,7 @@ namespace API::Subsonic
             // This endpoint does not scale: make sort lived transactions in order not to block the whole application
 
             // first pass: dispatch the artists by first letter
-            LMS_LOG(API_SUBSONIC, DEBUG) << "GetArtists: fetching all artists...";
+            LMS_LOG(API_SUBSONIC, DEBUG, "GetArtists: fetching all artists...");
             std::map<char, std::vector<ArtistId>> artistsSortedByFirstChar;
             std::size_t currentArtistOffset{ 0 };
             constexpr std::size_t batchSize{ 100 };
@@ -151,7 +151,7 @@ namespace API::Subsonic
             }
 
             // second pass: add each artist
-            LMS_LOG(API_SUBSONIC, DEBUG) << "GetArtists: constructing response...";
+            LMS_LOG(API_SUBSONIC, DEBUG, "GetArtists: constructing response...");
             for (const auto& [sortChar, artistIds] : artistsSortedByFirstChar)
             {
                 Response::Node& indexNode{ artistsNode.createArrayChild("index") };

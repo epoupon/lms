@@ -37,7 +37,7 @@
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IPlaylistGeneratorService.hpp"
 #include "utils/IConfig.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Random.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
@@ -226,7 +226,7 @@ namespace UserInterface
 
                 if (LmsApp->getUser()->isDemo())
                 {
-                    LMS_LOG(UI, DEBUG) << "Removing queue (tracklist id " << _queueId.toString() << ")";
+                    LMS_LOG(UI, DEBUG, "Removing queue (tracklist id " << _queueId.toString() << ")");
                     if (Database::TrackList::pointer queue{ getQueue() })
                         queue.remove();
                 }

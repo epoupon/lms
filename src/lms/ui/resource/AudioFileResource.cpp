@@ -26,87 +26,80 @@
 #include "av/RawResourceHandlerCreator.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/String.hpp"
 #include "LmsApplication.hpp"
 
-namespace UserInterface {
-
-#define LOG(level)	LMS_LOG(UI, level) << "Audio file resource: "
-
-AudioFileResource:: ~AudioFileResource()
+namespace UserInterface
 {
-	beingDeleted();
-}
+#define LOG(severity, message)	LMS_LOG(UI, severity, "Audio file resource: " << message)
 
-std::string
-AudioFileResource::getUrl(Database::TrackId trackId) const
-{
-	return url()+ "&trackid=" + trackId.toString();
-}
+    namespace
+    {
+        std::optional<std::filesystem::path> getTrackPathFromTrackId(Database::TrackId trackId)
+        {
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-static
-std::optional<std::filesystem::path>
-getTrackPathFromTrackId(Database::TrackId trackId)
-{
-	auto transaction {LmsApp->getDbSession().createReadTransaction()};
+            const Database::Track::pointer track{ Database::Track::find(LmsApp->getDbSession(), trackId) };
+            if (!track)
+            {
+                LOG(ERROR, "Missing track");
+                return std::nullopt;
+            }
 
-	const Database::Track::pointer track {Database::Track::find(LmsApp->getDbSession(), trackId)};
-	if (!track)
-	{
-		LOG(ERROR) << "Missing track";
-		return std::nullopt;
-	}
+            return track->getPath();
+        }
 
-	return track->getPath();
-}
+        std::optional<std::filesystem::path> getTrackPathFromURLArgs(const Wt::Http::Request& request)
+        {
+            const std::string* trackIdParameter{ request.getParameter("trackid") };
+            if (!trackIdParameter)
+            {
+                LOG(ERROR, "Missing trackid URL parameter!");
+                return std::nullopt;
+            }
 
-static
-std::optional<std::filesystem::path>
-getTrackPathFromURLArgs(const Wt::Http::Request& request)
-{
-	const std::string* trackIdParameter {request.getParameter("trackid")};
-	if (!trackIdParameter)
-	{
-		LOG(ERROR) << "Missing trackid URL parameter!";
-		return std::nullopt;
-	}
+            const std::optional<Database::TrackId> trackId{ StringUtils::readAs<Database::TrackId::ValueType>(*trackIdParameter) };
+            if (!trackId)
+            {
+                LOG(ERROR, "Bad trackid URL parameter!");
+                return std::nullopt;
+            }
 
-	const std::optional<Database::TrackId> trackId {StringUtils::readAs<Database::TrackId::ValueType>(*trackIdParameter)};
-	if (!trackId)
-	{
-		LOG(ERROR) << "Bad trackid URL parameter!";
-		return std::nullopt;
-	}
+            return getTrackPathFromTrackId(*trackId);
+        }
 
-	return getTrackPathFromTrackId(*trackId);
-}
+    }
 
-void
-AudioFileResource::handleRequest(const Wt::Http::Request& request,
-		Wt::Http::Response& response)
-{
-	std::shared_ptr<IResourceHandler> fileResourceHandler;
+    AudioFileResource:: ~AudioFileResource()
+    {
+        beingDeleted();
+    }
 
-	if (!request.continuation())
-	{
-		auto trackPath {getTrackPathFromURLArgs(request)};
-		if (!trackPath)
-			return;
+    std::string AudioFileResource::getUrl(Database::TrackId trackId) const
+    {
+        return url() + "&trackid=" + trackId.toString();
+    }
 
-		fileResourceHandler = Av::createRawResourceHandler(*trackPath);
-	}
-	else
-	{
-		fileResourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(request.continuation()->data());
-	}
+    void AudioFileResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
+    {
+        std::shared_ptr<IResourceHandler> fileResourceHandler;
 
-	auto* continuation {fileResourceHandler->processRequest(request, response)};
-	if (continuation)
-		continuation->setData(fileResourceHandler);
-}
+        if (!request.continuation())
+        {
+            auto trackPath{ getTrackPathFromURLArgs(request) };
+            if (!trackPath)
+                return;
 
+            fileResourceHandler = Av::createRawResourceHandler(*trackPath);
+        }
+        else
+        {
+            fileResourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(request.continuation()->data());
+        }
 
+        auto* continuation{ fileResourceHandler->processRequest(request, response) };
+        if (continuation)
+            continuation->setData(fileResourceHandler);
+    }
 } // namespace UserInterface
-
-

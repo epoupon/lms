@@ -110,7 +110,7 @@ namespace UserInterface::Utils
         auto res{ std::make_unique<Wt::WText>(std::string {} + (canDelete ? "<i class=\"fa fa-times-circle\"></i> " : "") + Wt::WString::fromUTF8(std::string{ cluster->getName() }), Wt::TextFormat::UnsafeXHTML) };
 
         res->setStyleClass("Lms-badge-cluster badge me-1 " + styleClass); // HACK
-        res->setToolTip(cluster->getType()->getName(), Wt::TextFormat::Plain);
+        res->setToolTip(std::string{ cluster->getType()->getName() }, Wt::TextFormat::Plain);
         res->setInline(true);
 
         return res;

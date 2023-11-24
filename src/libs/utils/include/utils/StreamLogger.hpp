@@ -20,19 +20,20 @@
 #pragma once
 
 #include "utils/EnumSet.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
-class StreamLogger final : public Logger
+class StreamLogger final : public ILogger
 {
-	public:
-		static constexpr EnumSet<Severity> defaultSeverities {Severity::FATAL, Severity::ERROR, Severity::WARNING, Severity::INFO};
+public:
+    static constexpr EnumSet<Severity> defaultSeverities{ Severity::FATAL, Severity::ERROR, Severity::WARNING, Severity::INFO };
 
-		StreamLogger(std::ostream& oss, EnumSet<Severity> severities = defaultSeverities);
+    StreamLogger(std::ostream& oss, EnumSet<Severity> severities = defaultSeverities);
 
-		void processLog(const Log& log);
+    bool isSeverityActive(Severity) const override { return true; }
+    void processLog(const Log& log) override;
 
-	private:
-		std::ostream& _os;
-		const EnumSet<Severity> _severities;
+private:
+    std::ostream& _os;
+    const EnumSet<Severity> _severities;
 };
 

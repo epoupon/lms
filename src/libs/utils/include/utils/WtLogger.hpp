@@ -19,11 +19,19 @@
 
 #pragma once
 
-#include "Logger.hpp"
+#include <string>
 
-class WtLogger final : public Logger
+#include "utils/ILogger.hpp"
+
+class WtLogger final : public ILogger
 {
-	public:
-		void processLog(const Log& log) override;
-};
+public:
+    WtLogger(Severity minSeverity);
 
+    static std::string computeLogConfig(Severity minSeverity);
+
+private:
+    bool isSeverityActive(Severity severity) const override;
+    void processLog(const Log& log) override;
+    const Severity _minSeverity;
+};

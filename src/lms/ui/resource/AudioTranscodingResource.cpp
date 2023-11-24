@@ -28,12 +28,12 @@
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/String.hpp"
 
 #include "LmsApplication.hpp"
 
-#define LOG(level)	LMS_LOG(UI, level) << "Audio transcode resource: "
+#define LOG(severity, message)	LMS_LOG(UI, severity, "Audio transcode resource: " << message)
 
 namespace StringUtils
 {
@@ -61,7 +61,7 @@ namespace StringUtils
             return format;
         }
 
-        LOG(ERROR) << "Cannot determine audio format from value '" << str << "'";
+        LOG(ERROR, "Cannot determine audio format from value '" << str << "'");
 
         return std::nullopt;
     }
@@ -82,7 +82,7 @@ namespace UserInterface
             case Database::TranscodingOutputFormat::WEBM_VORBIS:	return Av::Transcoding::OutputFormat::WEBM_VORBIS;
             }
 
-            LOG(ERROR) << "Cannot convert from audio format to AV format";
+            LOG(ERROR, "Cannot convert from audio format to AV format");
 
             return std::nullopt;
         }
@@ -93,13 +93,13 @@ namespace UserInterface
             auto paramStr{ request.getParameter(parameterName) };
             if (!paramStr)
             {
-                LOG(DEBUG) << "Missing parameter '" << parameterName << "'";
+                LOG(DEBUG, "Missing parameter '" << parameterName << "'");
                 return std::nullopt;
             }
 
             auto res{ StringUtils::readAs<T>(*paramStr) };
             if (!res)
-                LOG(ERROR) << "Cannot parse parameter '" << parameterName << "' from value '" << *paramStr << "'";
+                LOG(ERROR, "Cannot parse parameter '" << parameterName << "' from value '" << *paramStr << "'");
 
             return res;
         }
@@ -124,7 +124,7 @@ namespace UserInterface
 
             if (!Database::isAudioBitrateAllowed(*bitrate))
             {
-                LOG(ERROR) << "Bitrate '" << *bitrate << "' is not allowed";
+                LOG(ERROR, "Bitrate '" << *bitrate << "' is not allowed");
                 return std::nullopt;
             }
 
@@ -142,7 +142,7 @@ namespace UserInterface
                 const Database::Track::pointer track{ Database::Track::find(LmsApp->getDbSession(), *trackId) };
                 if (!track)
                 {
-                    LOG(ERROR) << "Missing track";
+                    LOG(ERROR, "Missing track");
                     return std::nullopt;
                 }
 
@@ -195,7 +195,7 @@ namespace UserInterface
         }
         catch (const Av::Exception& e)
         {
-            LOG(ERROR) << "Caught Av exception: " << e.what();
+            LOG(ERROR, "Caught Av exception: " << e.what());
         }
     }
 

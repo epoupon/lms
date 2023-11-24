@@ -23,7 +23,7 @@
 
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"
 #include "explore/Filters.hpp"

@@ -24,7 +24,7 @@
 #include "services/database/Track.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/http/IClient.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Service.hpp"
 #include "Utils.hpp"
 
@@ -44,7 +44,7 @@ namespace Scrobbling::ListenBrainz
 
             const bool res{ duration >= std::chrono::minutes(4) || (duration >= track->getDuration() / 2) };
             if (!res)
-                LOG(DEBUG) << "Track cannot be scrobbled since played duration is too short: " << duration.count() << "s, total duration = " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << "s";
+                LOG(DEBUG, "Track cannot be scrobbled since played duration is too short: " << duration.count() << "s, total duration = " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << "s");
 
             return res;
         }
@@ -57,12 +57,12 @@ namespace Scrobbling::ListenBrainz
         , _client{ Http::createClient(_ioContext, _baseAPIUrl) }
         , _listensSynchronizer{ _ioContext, db, *_client }
     {
-        LOG(INFO) << "Starting ListenBrainz backend... API endpoint = '" << _baseAPIUrl << "'";
+        LOG(INFO, "Starting ListenBrainz backend... API endpoint = '" << _baseAPIUrl << "'");
     }
 
     ListenBrainzBackend::~ListenBrainzBackend()
     {
-        LOG(INFO) << "Stopped ListenBrainz backend!";
+        LOG(INFO, "Stopped ListenBrainz backend!");
     }
 
     void ListenBrainzBackend::listenStarted(const Listen& listen)

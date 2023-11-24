@@ -37,7 +37,7 @@
 
 #include "utils/IConfig.hpp"
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 #include "Utils.hpp"
@@ -391,7 +391,7 @@ namespace MetaData
 
         if (f.isNull())
         {
-            LMS_LOG(METADATA, ERROR) << "File '" << p.string() << "': parsing failed";
+            LMS_LOG(METADATA, ERROR, "File '" << p.string() << "': parsing failed");
             return std::nullopt;
         }
 
@@ -404,7 +404,7 @@ namespace MetaData
         }
         else
         {
-            LMS_LOG(METADATA, INFO) << "File '" << p.string() << "': no audio properties";
+            LMS_LOG(METADATA, INFO, "File '" << p.string() << "': no audio properties");
             return std::nullopt;
         }
 

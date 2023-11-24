@@ -21,7 +21,7 @@
 
 #include "RawImage.hpp"
 #include "image/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 namespace Image::GraphicsMagick
 {
@@ -36,7 +36,7 @@ namespace Image::GraphicsMagick
 		}
 		catch (Magick::Exception& e)
 		{
-			LMS_LOG(COVER, ERROR) << "Caught Magick exception: " << e.what();
+			LMS_LOG(COVER, ERROR, "Caught Magick exception: " << e.what());
 			throw ImageException {std::string {"Magick read error: "} + e.what()};
 		}
 	}

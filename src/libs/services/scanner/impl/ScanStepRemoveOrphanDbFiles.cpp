@@ -25,7 +25,7 @@
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Path.hpp"
 
 namespace Scanner
@@ -87,14 +87,14 @@ namespace Scanner
 
         Session& session{ _db.getTLSSession() };
 
-        LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks to be removed...";
+        LMS_LOG(DBUPDATER, DEBUG, "Checking tracks to be removed...");
         std::size_t trackCount{};
 
         {
             auto transaction{ session.createReadTransaction() };
             trackCount = Track::getCount(session);
         }
-        LMS_LOG(DBUPDATER, DEBUG) << trackCount << " tracks to be checked...";
+        LMS_LOG(DBUPDATER, DEBUG,  trackCount << " tracks to be checked...");
 
         context.currentStepStats.totalElems = trackCount;
 
@@ -143,24 +143,24 @@ namespace Scanner
                 break;
         }
 
-        LMS_LOG(DBUPDATER, DEBUG) << trackCount << " tracks checked!";
+        LMS_LOG(DBUPDATER, DEBUG,  trackCount << " tracks checked!");
     }
 
     void ScanStepRemoveOrphanDbFiles::removeOrphanClusters()
     {
-        LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan clusters...";
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphan clusters...");
         removeOrphanEntries<Database::Cluster>(_db.getTLSSession(), _abortScan);
     }
 
     void ScanStepRemoveOrphanDbFiles::removeOrphanArtists()
     {
-        LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan artists...";
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphan artists...");
         removeOrphanEntries<Database::Artist>(_db.getTLSSession(), _abortScan);
     }
 
     void ScanStepRemoveOrphanDbFiles::removeOrphanReleases()
     {
-        LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan releases...";
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphan releases...");
         removeOrphanEntries<Database::Release>(_db.getTLSSession(), _abortScan);
     }
 
@@ -172,19 +172,19 @@ namespace Scanner
             // and still belongs to a media directory
             if (!std::filesystem::exists(p) || !std::filesystem::is_regular_file(p))
             {
-                LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': missing";
+                LMS_LOG(DBUPDATER, INFO, "Removing '" << p.string() << "': missing");
                 return false;
             }
 
             if (!PathUtils::isPathInRootPath(p, _settings.mediaDirectory, &excludeDirFileName))
             {
-                LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': out of media directory";
+                LMS_LOG(DBUPDATER, INFO, "Removing '" << p.string() << "': out of media directory");
                 return false;
             }
 
             if (!PathUtils::hasFileAnyExtension(p, _settings.supportedExtensions))
             {
-                LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': file format no longer handled";
+                LMS_LOG(DBUPDATER, INFO, "Removing '" << p.string() << "': file format no longer handled");
                 return false;
             }
 
@@ -192,7 +192,7 @@ namespace Scanner
         }
         catch (std::filesystem::filesystem_error& e)
         {
-            LMS_LOG(DBUPDATER, ERROR) << "Caught exception while checking file '" << p.string() << "': " << e.what();
+            LMS_LOG(DBUPDATER, ERROR, "Caught exception while checking file '" << p.string() << "': " << e.what());
             return false;
         }
     }

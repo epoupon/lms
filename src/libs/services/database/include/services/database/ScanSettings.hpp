@@ -20,6 +20,8 @@
 #pragma once
 
 #include <filesystem>
+#include <string>
+#include <string_view>
 #include <vector>
 
 #include <Wt/Dbo/Dbo.h>
@@ -74,7 +76,7 @@ namespace Database {
         void setMediaDirectory(const std::filesystem::path& p);
         void setUpdateStartTime(Wt::WTime t) { _startTime = t; }
         void setUpdatePeriod(UpdatePeriod p) { _updatePeriod = p; }
-        void setClusterTypes(Session& session, const std::set<std::string>& clusterTypeNames);
+        void setClusterTypes(Session& session, const std::set<std::string_view>& clusterTypeNames);
         void setSimilarityEngineType(SimilarityEngineType type) { _similarityEngineType = type; }
         void incScanVersion();
 

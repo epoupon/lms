@@ -26,7 +26,7 @@
 #include <sstream>
 #include <unordered_set>
 
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Random.hpp"
 
 namespace SOM

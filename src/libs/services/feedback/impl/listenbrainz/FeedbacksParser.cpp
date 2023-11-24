@@ -57,7 +57,7 @@ namespace Feedback::ListenBrainz
 
             const Wt::Json::Array& feedbacks = root.get("feedback");
 
-            LOG(DEBUG) << "Got " << feedbacks.size() << " feedbacks";
+            LOG(DEBUG, "Got " << feedbacks.size() << " feedbacks");
 
             if (feedbacks.empty())
                 return res;
@@ -72,17 +72,17 @@ namespace Feedback::ListenBrainz
                 }
                 catch (const Exception& e)
                 {
-                    LOG(DEBUG) << "Cannot parse feedback: " << e.what() << ", skipping";
+                    LOG(DEBUG, "Cannot parse feedback: " << e.what() << ", skipping");
                 }
                 catch (const Wt::WException& e)
                 {
-                    LOG(DEBUG) << "Cannot parse feedback: " << e.what() << ", skipping";
+                    LOG(DEBUG, "Cannot parse feedback: " << e.what() << ", skipping");
                 }
             }
         }
         catch (const Wt::WException& error)
         {
-            LOG(ERROR) << "Cannot parse 'feedback' result: " << error.what();
+            LOG(ERROR, "Cannot parse 'feedback' result: " << error.what());
         }
 
         return res;

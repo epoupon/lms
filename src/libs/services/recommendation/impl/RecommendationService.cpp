@@ -29,7 +29,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/ScanSettings.hpp"
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 namespace Recommendation
 {

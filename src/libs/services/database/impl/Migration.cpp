@@ -26,7 +26,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 namespace Database
 {
@@ -282,11 +282,11 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
             try
             {
                 version = VersionInfo::getOrCreate(session)->getVersion();
-                LMS_LOG(DB, INFO) << "Database version = " << version << ", LMS binary version = " << LMS_DATABASE_VERSION;
+                LMS_LOG(DB, INFO, "Database version = " << version << ", LMS binary version = " << LMS_DATABASE_VERSION);
             }
             catch (std::exception& e)
             {
-                LMS_LOG(DB, ERROR) << "Cannot get database version info: " << e.what();
+                LMS_LOG(DB, ERROR, "Cannot get database version info: " << e.what());
                 throw LmsException{ outdatedMsg };
             }
 
@@ -298,7 +298,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
 
             while (version < LMS_DATABASE_VERSION)
             {
-                LMS_LOG(DB, INFO) << "Migrating database from version " << version << " to " << version + 1 << "...";
+                LMS_LOG(DB, INFO, "Migrating database from version " << version << " to " << version + 1 << "...");
 
                 auto itMigrationFunc{ migrationFunctions.find(version) };
                 assert(itMigrationFunc != std::cend(migrationFunctions));
@@ -306,7 +306,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
 
                 VersionInfo::get(session).modify()->setVersion(++version);
 
-                LMS_LOG(DB, INFO) << "Migration complete to version " << version;
+                LMS_LOG(DB, INFO, "Migration complete to version " << version);
             }
         }
     }

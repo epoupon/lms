@@ -24,7 +24,7 @@
 #include "services/database/Artist.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/TrackArtistLink.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"
 #include "ArtistListHelpers.hpp"

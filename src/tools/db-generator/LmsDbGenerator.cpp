@@ -66,7 +66,7 @@ namespace
 
     Database::Cluster::pointer generateCluster(Database::Session& session, Database::ClusterType::pointer clusterType)
     {
-        const std::string clusterName{ clusterType->getName() + "-" + std::string{ UUID::generate().getAsString() } };
+        const std::string clusterName{ std::string{ clusterType->getName() } + "-" + std::string{ UUID::generate().getAsString() } };
         return session.create<Database::Cluster>(clusterType, clusterName);
     }
 
@@ -114,7 +114,7 @@ namespace
     {
         std::size_t remainingCount{ params.releaseCount };
 
-        while(remainingCount > 0)
+        while (remainingCount > 0)
         {
             auto transaction{ context.session.createWriteTransaction() };
             std::cout << "Generating album #" << params.releaseCount - remainingCount << " / " << params.releaseCount << std::endl;
@@ -154,7 +154,7 @@ int main(int argc, char* argv[])
     try
     {
         // log to stdout
-        Service<Logger> logger{ std::make_unique<StreamLogger>(std::cout) };
+        Service<ILogger> logger{ std::make_unique<StreamLogger>(std::cout) };
 
         namespace po = boost::program_options;
 

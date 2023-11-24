@@ -126,7 +126,7 @@ namespace Database {
         static void remove(Session& session, const std::string& name);
 
         // Accessors
-        const std::string& getName() const { return _name; }
+        std::string_view getName() const { return _name; }
         std::vector<Cluster::pointer>	getClusters() const;
         Cluster::pointer				getCluster(const std::string& name) const;
 
@@ -141,7 +141,7 @@ namespace Database {
     private:
         friend class Session;
         ClusterType(std::string_view name);
-        static pointer create(Session& session, const std::string& name);
+        static pointer create(Session& session, std::string_view name);
 
         static const std::size_t _maxNameLength = 128;
 

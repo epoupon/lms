@@ -21,10 +21,10 @@
 
 #include <thread>
 #include <sstream>
-#include <Wt/WApplication.h>
+#include <Wt/WServer.h>
 #include <Wt/WLogger.h>
 
-#include "utils/Logger.hpp"
+#include "utils/Exception.hpp"
 
 namespace
 {
@@ -34,6 +34,30 @@ namespace
         oss << id;
         return oss.str();
     }
+}
+
+WtLogger::WtLogger(Severity minSeverity)
+    : _minSeverity{ minSeverity }
+{
+}
+
+std::string WtLogger::computeLogConfig(Severity minSeverity)
+{
+    switch (minSeverity)
+    {
+    case Severity::DEBUG:       return "*";
+    case Severity::INFO:        return "* -debug";
+    case Severity::WARNING:     return "* -debug -info";
+    case Severity::ERROR:       return "* -debug -info -warning";
+    case Severity::FATAL:       return "* -debug -info -warning -error";
+    }
+
+    throw LmsException{ "Unhandled severity" };
+}
+
+bool WtLogger::isSeverityActive(Severity severity) const
+{
+    return static_cast<int>(severity) <= static_cast<int>(_minSeverity);
 }
 
 void WtLogger::processLog(const Log& log)

@@ -61,7 +61,7 @@ static void dumpTracksRecommendation(Session session, Recommendation::IRecommend
                 for (auto artist : track->getArtists({ TrackArtistLinkType::Artist }))
                     res += " - " + artist->getName();
                 for (auto cluster : track->getClusters())
-                    res += " {" + cluster->getType()->getName() + "-" + std::string{ cluster->getName() } + "}";
+                    res += " {" + std::string{ cluster->getType()->getName() } + "-" + std::string{ cluster->getName() } + "}";
 
                 return res;
             };
@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
         namespace po = boost::program_options;
 
         // log to stdout
-        Service<Logger> logger{ std::make_unique<StreamLogger>(std::cout) };
+        Service<ILogger> logger{ std::make_unique<StreamLogger>(std::cout) };
 
         po::options_description desc{ "Allowed options" };
         desc.add_options()

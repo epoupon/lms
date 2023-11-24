@@ -170,6 +170,22 @@ namespace StringUtils
         return res;
     }
 
+    std::string joinStrings(const std::vector<std::string_view>& strings, std::string_view delimiter)
+    {
+        std::string res;
+        bool first{ true };
+
+        for (std::string_view str : strings)
+        {
+            if (!first)
+                res += delimiter;
+            res += str;
+            first = false;
+        }
+
+        return res;
+    }
+
     std::string joinStrings(const std::vector<std::string>& strings, const std::string& delimiter)
     {
         return boost::algorithm::join(strings, delimiter);

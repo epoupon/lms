@@ -23,7 +23,7 @@
 #include <iostream>
 
 #include "av/IAudioFile.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/String.hpp"
 #include "Utils.hpp"
 

@@ -22,7 +22,7 @@
 #include "services/database/Db.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 namespace Auth
 {
@@ -43,7 +43,7 @@ namespace Auth
 		{
 			const UserType type {User::getCount(session) == 0 ? UserType::ADMIN : UserType::REGULAR};
 
-			LMS_LOG(AUTH, DEBUG) << "Creating user '" << loginName << "', admin = " << (type == UserType::ADMIN);
+			LMS_LOG(AUTH, DEBUG, "Creating user '" << loginName << "', admin = " << (type == UserType::ADMIN));
 
 			user = session.create<User>(loginName);
 			user.modify()->setType(type);

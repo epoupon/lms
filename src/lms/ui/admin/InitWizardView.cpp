@@ -28,7 +28,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Service.hpp"
 
 #include "common/LoginNameValidator.hpp"

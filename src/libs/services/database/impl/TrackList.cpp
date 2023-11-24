@@ -20,7 +20,7 @@
 
 #include <cassert>
 
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 #include "services/database/Artist.hpp"
 #include "services/database/Cluster.hpp"

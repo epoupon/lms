@@ -30,7 +30,7 @@
 #include "services/database/TrackArtistLink.hpp"
 #include "utils/Exception.hpp"
 #include "utils/IConfig.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Path.hpp"
 
 using namespace Database;
@@ -258,7 +258,7 @@ namespace Scanner
 
         MetaData::ParserReadStyle getParserReadStyle()
         {
-            std::string_view readStyle{ Service<IConfig>::get()->getString("scanner-parser-read-style", "accurate") };
+            std::string_view readStyle{ Service<IConfig>::get()->getString("scanner-parser-read-style", "average") };
 
             if (readStyle == "fast")
                 return MetaData::ParserReadStyle::Fast;
@@ -290,7 +290,7 @@ namespace Scanner
 
                 if (ec)
                 {
-                    LMS_LOG(DBUPDATER, ERROR) << "Cannot process entry '" << path.string() << "': " << ec.message();
+                    LMS_LOG(DBUPDATER, ERROR, "Cannot process entry '" << path.string() << "': " << ec.message());
                     context.stats.errors.emplace_back(ScanError{ path, ScanErrorType::CannotReadFile, ec.message() });
                 }
                 else if (PathUtils::hasFileAnyExtension(path, _settings.supportedExtensions))
@@ -319,7 +319,7 @@ namespace Scanner
         }
         catch (LmsException& e)
         {
-            LMS_LOG(DBUPDATER, ERROR) << e.what();
+            LMS_LOG(DBUPDATER, ERROR, e.what());
             stats.skips++;
             return;
         }
@@ -365,7 +365,7 @@ namespace Scanner
                 std::error_code ec;
                 if (!std::filesystem::exists(otherTrack->getPath(), ec))
                 {
-                    LMS_LOG(DBUPDATER, DEBUG) << "Considering track '" << file.string() << "' moved from '" << otherTrack->getPath() << "'";
+                    LMS_LOG(DBUPDATER, DEBUG, "Considering track '" << file.string() << "' moved from '" << otherTrack->getPath() << "'");
                     track = otherTrack;
                     track.modify()->setPath(file);
                 }
@@ -384,7 +384,7 @@ namespace Scanner
                     if (!PathUtils::isPathInRootPath(file, _settings.mediaDirectory, &excludeDirFileName))
                         continue;
 
-                    LMS_LOG(DBUPDATER, DEBUG) << "Skipped '" << file.string() << "' (similar MBID in '" << otherTrack->getPath().string() << "')";
+                    LMS_LOG(DBUPDATER, DEBUG, "Skipped '" << file.string() << "' (similar MBID in '" << otherTrack->getPath().string() << "')");
                     // As this MBID already exists, just remove what we just scanned
                     if (track)
                     {
@@ -399,7 +399,7 @@ namespace Scanner
         // We estimate this is an audio file if the duration is not null
         if (trackInfo->duration == std::chrono::milliseconds::zero())
         {
-            LMS_LOG(DBUPDATER, DEBUG) << "Skipped '" << file.string() << "' (duration is 0)";
+            LMS_LOG(DBUPDATER, DEBUG, "Skipped '" << file.string() << "' (duration is 0)");
 
             // If Track exists here, delete it!
             if (track)
@@ -427,12 +427,12 @@ namespace Scanner
         if (!track)
         {
             track = dbSession.create<Track>(file);
-            LMS_LOG(DBUPDATER, DEBUG) << "Adding '" << file.string() << "'";
+            LMS_LOG(DBUPDATER, DEBUG, "Adding '" << file.string() << "'");
             stats.additions++;
         }
         else
         {
-            LMS_LOG(DBUPDATER, DEBUG) << "Updating '" << file.string() << "'";
+            LMS_LOG(DBUPDATER, DEBUG, "Updating '" << file.string() << "'");
 
             stats.updates++;
         }

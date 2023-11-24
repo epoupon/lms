@@ -58,7 +58,7 @@ namespace
 
         if (artists.empty())
         {
-            LOG(DEBUG) << "Track cannot be scrobbled since it does not have any artist";
+            LOG(DEBUG, "Track cannot be scrobbled since it does not have any artist");
             return std::nullopt;
         }
 
@@ -134,7 +134,7 @@ namespace
         }
         catch (const Wt::WException& e)
         {
-            LOG(ERROR) << "Cannot parse listen count response: " << e.what();
+            LOG(ERROR, "Cannot parse listen count response: " << e.what());
             return std::nullopt;
         }
     }
@@ -152,12 +152,12 @@ namespace
             // if duplicated files, do not record it (let the user correct its database)
             if (tracks.size() == 1)
             {
-                LOG(DEBUG) << "Matched listen '" << listen << "' using track MBID";
+                LOG(DEBUG, "Matched listen '" << listen << "' using track MBID");
                 return tracks.front()->getId();
             }
             else if (tracks.size() > 1)
             {
-                LOG(DEBUG) << "Too many matches for listen '" << listen << "' using track MBID!";
+                LOG(DEBUG, "Too many matches for listen '" << listen << "' using track MBID!");
                 return {};
             }
         }
@@ -168,12 +168,12 @@ namespace
             // if duplicated files, do not record it (let the user correct its database)
             if (tracks.size() == 1)
             {
-                LOG(DEBUG) << "Matched listen '" << listen << "' using recording MBID";
+                LOG(DEBUG, "Matched listen '" << listen << "' using recording MBID");
                 return tracks.front()->getId();
             }
             else if (tracks.size() > 1)
             {
-                LOG(DEBUG) << "Too many matches for listen '" << listen << "' using recording MBID!";
+                LOG(DEBUG, "Too many matches for listen '" << listen << "' using recording MBID!");
                 return {};
             }
         }
@@ -192,16 +192,16 @@ namespace
         // conservative behavior: in case of multiple matches: reject
         if (tracks.results.size() == 1)
         {
-            LOG(DEBUG) << "Matched listen '" << listen << "' using metadata";
+            LOG(DEBUG, "Matched listen '" << listen << "' using metadata");
             return tracks.results.front();
         }
         else if (tracks.results.size() > 1)
         {
-            LOG(DEBUG) << "Too many matches for listen '" << listen << "' using metadata";
+            LOG(DEBUG, "Too many matches for listen '" << listen << "' using metadata");
             return {};
         }
 
-        LOG(DEBUG) << "No match for listen '" << listen << "'";
+        LOG(DEBUG, "No match for listen '" << listen << "'");
         return {};
     }
 }
@@ -215,7 +215,7 @@ namespace Scrobbling::ListenBrainz
         , _maxSyncListenCount{ Service<IConfig>::get()->getULong("listenbrainz-max-sync-listen-count", 1000) }
         , _syncListensPeriod{ Service<IConfig>::get()->getULong("listenbrainz-sync-listens-period-hours", 1) }
     {
-        LOG(INFO) << "Starting Listens synchronizer, maxSyncListenCount = " << _maxSyncListenCount << ", _syncListensPeriod = " << _syncListensPeriod.count() << " hours";
+        LOG(INFO, "Starting Listens synchronizer, maxSyncListenCount = " << _maxSyncListenCount << ", _syncListensPeriod = " << _syncListensPeriod.count() << " hours");
 
         scheduleSync(std::chrono::seconds{ 30 });
     }
@@ -267,14 +267,14 @@ namespace Scrobbling::ListenBrainz
         std::string bodyText{ listenToJsonString(_db.getTLSSession(), listen, timePoint, timePoint.isValid() ? "single" : "playing_now") };
         if (bodyText.empty())
         {
-            LOG(DEBUG) << "Cannot convert listen to json: skipping";
+            LOG(DEBUG, "Cannot convert listen to json: skipping");
             return;
         }
 
         const std::optional<UUID> listenBrainzToken{ Utils::getListenBrainzToken(_db.getTLSSession(), listen.userId) };
         if (!listenBrainzToken)
         {
-            LOG(DEBUG) << "No listenbrainz token found: skipping";
+            LOG(DEBUG, "No listenbrainz token found: skipping");
             return;
         }
 
@@ -305,7 +305,7 @@ namespace Scrobbling::ListenBrainz
             dbListen = session.create<Database::Listen>(user, track, Database::ScrobblingBackend::ListenBrainz, listen.listenedAt);
             dbListen.modify()->setSyncState(scrobblingState);
 
-            LOG(DEBUG) << "LISTEN CREATED for user " << user->getLoginName() << ", track '" << track->getName() << "' AT " << listen.listenedAt.toString();
+            LOG(DEBUG, "LISTEN CREATED for user " << user->getLoginName() << ", track '" << track->getName() << "' AT " << listen.listenedAt.toString());
 
             return true;
         }
@@ -347,7 +347,7 @@ namespace Scrobbling::ListenBrainz
             }
         }
 
-        LOG(DEBUG) << "Queing " << pendingListens.size() << " pending listen";
+        LOG(DEBUG, "Queing " << pendingListens.size() << " pending listen");
 
         for (const TimedListen& pendingListen : pendingListens)
             enqueListen(pendingListen);
@@ -379,13 +379,13 @@ namespace Scrobbling::ListenBrainz
         if (_syncListensPeriod.count() == 0 || _maxSyncListenCount == 0)
             return;
 
-        LOG(DEBUG) << "Scheduled sync in " << fromNow.count() << " seconds...";
+        LOG(DEBUG, "Scheduled sync in " << fromNow.count() << " seconds...");
         _syncTimer.expires_after(fromNow);
         _syncTimer.async_wait(boost::asio::bind_executor(_strand, [this](const boost::system::error_code& ec)
             {
                 if (ec == boost::asio::error::operation_aborted)
                 {
-                    LOG(DEBUG) << "getListens aborted";
+                    LOG(DEBUG, "getListens aborted");
                     return;
                 }
                 else if (ec)
@@ -399,7 +399,7 @@ namespace Scrobbling::ListenBrainz
 
     void ListensSynchronizer::startSync()
     {
-        LOG(DEBUG) << "Starting sync!";
+        LOG(DEBUG, "Starting sync!");
 
         assert(!isSyncing());
 
@@ -435,7 +435,7 @@ namespace Scrobbling::ListenBrainz
     {
         _strand.dispatch([this, &context]
             {
-                LOG(INFO) << "Sync done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedListenCount << ", matched: " << context.matchedListenCount << ", imported: " << context.importedListenCount;
+                LOG(INFO, "Sync done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedListenCount << ", matched: " << context.matchedListenCount << ", imported: " << context.importedListenCount);
                 context.syncing = false;
 
                 if (!isSyncing())
@@ -489,7 +489,7 @@ namespace Scrobbling::ListenBrainz
                     {
                         const auto listenCount = parseListenCount(msgBody);
                         if (listenCount)
-                            LOG(DEBUG) << "Listen count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *listenCount;
+                            LOG(DEBUG, "Listen count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *listenCount);
 
                         bool needSync{ listenCount && (!context.listenCount || *context.listenCount != *listenCount) };
                         context.listenCount = listenCount;
@@ -551,7 +551,7 @@ namespace Scrobbling::ListenBrainz
             // update oldest listen for the next query
             if (!parsedListen.listenedAt.isValid())
             {
-                LOG(DEBUG) << "Skipping entry due to invalid listenedAt";
+                LOG(DEBUG, "Skipping entry due to invalid listenedAt");
                 continue;
             }
 

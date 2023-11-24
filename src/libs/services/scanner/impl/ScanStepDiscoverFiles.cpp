@@ -18,7 +18,7 @@
  */
 
 #include "ScanStepDiscoverFiles.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Path.hpp"
 
 namespace Scanner
@@ -42,6 +42,6 @@ namespace Scanner
 
         context.stats.filesScanned = context.currentStepStats.processedElems;
 
-        LMS_LOG(DBUPDATER, DEBUG) << "Discovered " << context.stats.filesScanned << " files in '" << context.directory << "'";
+        LMS_LOG(DBUPDATER, DEBUG, "Discovered " << context.stats.filesScanned << " files in '" << context.directory << "'");
     }
 }

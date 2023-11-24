@@ -28,15 +28,14 @@
 #include "services/database/Track.hpp"
 #include "services/database/TrackList.hpp"
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 #include "LmsApplication.hpp"
 
-#define LOG(level)	LMS_LOG(UI, level) << "Download resource: "
+#define LOG(severity, message)	LMS_LOG(UI, severity, "Download resource: " << message)
 
 namespace UserInterface
 {
-
     DownloadResource::~DownloadResource()
     {
         beingDeleted();
@@ -66,7 +65,7 @@ namespace UserInterface
         }
         catch (Zip::Exception& exception)
         {
-            LOG(ERROR) << "Zipper exception: " << exception.what();
+            LOG(ERROR, "Zipper exception: " << exception.what());
         }
     }
 
@@ -216,7 +215,7 @@ namespace UserInterface
         const Database::Track::pointer track{ Database::Track::find(LmsApp->getDbSession(), _trackId) };
         if (!track)
         {
-            LOG(DEBUG) << "Cannot find track";
+            LOG(DEBUG, "Cannot find track");
             return {};
         }
 
@@ -243,5 +242,4 @@ namespace UserInterface
         const auto tracks{ Track::find(LmsApp->getDbSession(), params) };
         return details::createZipper(tracks.results);
     }
-
 } // namespace UserInterface

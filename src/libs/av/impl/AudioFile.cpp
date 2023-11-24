@@ -31,7 +31,7 @@ extern "C"
 #include <map>
 #include <unordered_map>
 
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/String.hpp"
 
 namespace Av
@@ -105,14 +105,14 @@ namespace Av
         int error{ avformat_open_input(&_context, _p.string().c_str(), nullptr, nullptr) };
         if (error < 0)
         {
-            LMS_LOG(AV, ERROR) << "Cannot open " << _p.string() << ": " << averror_to_string(error);
+            LMS_LOG(AV, ERROR, "Cannot open " << _p.string() << ": " << averror_to_string(error));
             throw AudioFileException{ error };
         }
 
         error = avformat_find_stream_info(_context, nullptr);
         if (error < 0)
         {
-            LMS_LOG(AV, ERROR) << "Cannot find stream information on " << _p.string() << ": " << averror_to_string(error);
+            LMS_LOG(AV, ERROR, "Cannot find stream information on " << _p.string() << ": " << averror_to_string(error));
             avformat_close_input(&_context);
             throw AudioFileException{ error };
         }
@@ -233,7 +233,7 @@ namespace Av
 
             if (avstream->codecpar == nullptr)
             {
-                LMS_LOG(AV, ERROR) << "Skipping stream " << i << " since no codecpar is set";
+                LMS_LOG(AV, ERROR, "Skipping stream " << i << " since no codecpar is set");
                 continue;
             }
 
@@ -247,7 +247,7 @@ namespace Av
             else
             {
                 picture.mimeType = "application/octet-stream";
-                LMS_LOG(AV, ERROR) << "CODEC ID " << avstream->codecpar->codec_id << " not handled in mime type conversion";
+                LMS_LOG(AV, ERROR, "CODEC ID " << avstream->codecpar->codec_id << " not handled in mime type conversion");
             }
 
             const AVPacket& pkt{ avstream->attached_pic };
@@ -271,7 +271,7 @@ namespace Av
 
         if (!avstream->codecpar)
         {
-            LMS_LOG(AV, ERROR) << "Skipping stream " << streamIndex << " since no codecpar is set";
+            LMS_LOG(AV, ERROR, "Skipping stream " << streamIndex << " since no codecpar is set");
             return res;
         }
 

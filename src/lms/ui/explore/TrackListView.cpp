@@ -26,7 +26,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/TrackList.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/String.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"

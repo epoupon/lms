@@ -157,7 +157,7 @@ namespace Database
     {
     }
 
-    ClusterType::pointer ClusterType::create(Session& session, const std::string& name)
+    ClusterType::pointer ClusterType::create(Session& session, std::string_view name)
     {
         return session.getDboSession().add(std::unique_ptr<ClusterType> {new ClusterType{ name }});
     }

@@ -23,7 +23,7 @@
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "IdTypeTraits.hpp"
 #include "StringViewTraits.hpp"
 #include "Utils.hpp"

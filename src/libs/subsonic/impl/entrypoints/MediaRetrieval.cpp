@@ -29,7 +29,7 @@
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
 #include "utils/IResourceHandler.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/FileResourceHandlerCreator.hpp"
 #include "utils/Utils.hpp"
 #include "utils/String.hpp"
@@ -153,7 +153,7 @@ namespace API::Subsonic
 
             if (!requestedFormat && (maxBitRate == 0 || track->getBitrate() <= maxBitRate ))
             {
-                LMS_LOG(API_SUBSONIC, DEBUG) << "File's bitrate is compatible with parameters => no transcoding";
+                LMS_LOG(API_SUBSONIC, DEBUG, "File's bitrate is compatible with parameters => no transcoding");
                 return parameters; // no transcoding needed
             }
 
@@ -165,7 +165,7 @@ namespace API::Subsonic
             {
                 if (maxBitRate == 0 || track->getBitrate() <= maxBitRate)
                 {
-                    LMS_LOG(API_SUBSONIC, DEBUG) << "File's bitrate and format are compatible with parameters => no transcoding";
+                    LMS_LOG(API_SUBSONIC, DEBUG, "File's bitrate and format are compatible with parameters => no transcoding");
                     return parameters; // no transcoding needed
                 }
                 bitrate = maxBitRate;
@@ -246,7 +246,7 @@ namespace API::Subsonic
         }
         catch (const Av::Exception& e)
         {
-            LMS_LOG(API_SUBSONIC, ERROR) << "Caught Av exception: " << e.what();
+            LMS_LOG(API_SUBSONIC, ERROR, "Caught Av exception: " << e.what());
         }
     }
 

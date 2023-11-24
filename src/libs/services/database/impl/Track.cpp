@@ -28,7 +28,7 @@
 #include "services/database/TrackFeatures.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 #include "IdTypeTraits.hpp"
 #include "SqlQuery.hpp"
@@ -536,7 +536,7 @@ namespace Database
                 for (auto artist : track->getArtists({ TrackArtistLinkType::Artist }))
                     os << " - " << artist->getName();
                 for (auto cluster : track->getClusters())
-                    os << " {" + cluster->getType()->getName() << "-" << cluster->getName() << "}";
+                    os << " {" << cluster->getType()->getName() << "-" << cluster->getName() << "}";
             }
             else
             {

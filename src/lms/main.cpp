@@ -47,140 +47,156 @@
 #include "utils/String.hpp"
 #include "utils/WtLogger.hpp"
 
-static
-std::size_t
-getThreadCount()
+namespace
 {
-    const unsigned long configHttpServerThreadCount{ Service<IConfig>::get()->getULong("http-server-thread-count", 0) };
-
-    // Reserve at least 2 threads since we still have some blocking IO (for example when reading from ffmpeg)
-    return configHttpServerThreadCount ? configHttpServerThreadCount : std::max<unsigned long>(2, std::thread::hardware_concurrency());
-}
-
-static
-std::vector<std::string>
-generateWtConfig(std::string execPath)
-{
-    std::vector<std::string> args;
-
-    const std::filesystem::path wtConfigPath{ Service<IConfig>::get()->getPath("working-dir") / "wt_config.xml" };
-    const std::filesystem::path wtLogFilePath{ Service<IConfig>::get()->getPath("log-file", "/var/log/lms.log") };
-    const std::filesystem::path wtAccessLogFilePath{ Service<IConfig>::get()->getPath("access-log-file", "/var/log/lms.access.log") };
-    const std::filesystem::path wtResourcesPath{ Service<IConfig>::get()->getPath("wt-resources", "/usr/share/Wt/resources") };
-
-    args.push_back(execPath);
-    args.push_back("--config=" + wtConfigPath.string());
-    args.push_back("--docroot=" + std::string{ Service<IConfig>::get()->getString("docroot") });
-    args.push_back("--approot=" + std::string{ Service<IConfig>::get()->getString("approot") });
-    args.push_back("--deploy-path=" + std::string{ Service<IConfig>::get()->getString("deploy-path", "/") });
-    if (!wtResourcesPath.empty())
-        args.push_back("--resources-dir=" + wtResourcesPath.string());
-
-    if (Service<IConfig>::get()->getBool("tls-enable", false))
+    std::size_t getThreadCount()
     {
-        args.push_back("--https-port=" + std::to_string(Service<IConfig>::get()->getULong("listen-port", 5082)));
-        args.push_back("--https-address=" + std::string{ Service<IConfig>::get()->getString("listen-addr", "0.0.0.0") });
-        args.push_back("--ssl-certificate=" + std::string{ Service<IConfig>::get()->getString("tls-cert") });
-        args.push_back("--ssl-private-key=" + std::string{ Service<IConfig>::get()->getString("tls-key") });
-        args.push_back("--ssl-tmp-dh=" + std::string{ Service<IConfig>::get()->getString("tls-dh") });
-    }
-    else
-    {
-        args.push_back("--http-port=" + std::to_string(Service<IConfig>::get()->getULong("listen-port", 5082)));
-        args.push_back("--http-address=" + std::string{ Service<IConfig>::get()->getString("listen-addr", "0.0.0.0") });
+        const unsigned long configHttpServerThreadCount{ Service<IConfig>::get()->getULong("http-server-thread-count", 0) };
+
+        // Reserve at least 2 threads since we still have some blocking IO (for example when reading from ffmpeg)
+        return configHttpServerThreadCount ? configHttpServerThreadCount : std::max<unsigned long>(2, std::thread::hardware_concurrency());
     }
 
-    if (!wtAccessLogFilePath.empty())
-        args.push_back("--accesslog=" + wtAccessLogFilePath.string());
-
-    args.push_back("--threads=" + std::to_string(getThreadCount()));
-
-    // Generate the wt_config.xml file
-    boost::property_tree::ptree pt;
-
-    pt.put("server.application-settings.<xmlattr>.location", "*");
-    pt.put("server.application-settings.log-file", wtLogFilePath.string());
-    pt.put("server.application-settings.log-config", Service<IConfig>::get()->getString("log-config", "* -debug -info:WebRequest"));
-    pt.put("server.application-settings.behind-reverse-proxy", Service<IConfig>::get()->getBool("behind-reverse-proxy", false));
-
+    Severity getLogMinSeverity()
     {
-        boost::property_tree::ptree viewport;
-        viewport.put("<xmlattr>.name", "viewport");
-        viewport.put("<xmlattr>.content", "width=device-width, initial-scale=1, user-scalable=no");
-        pt.add_child("server.application-settings.head-matter.meta", viewport);
-    }
-    {
-        boost::property_tree::ptree themeColor;
-        themeColor.put("<xmlattr>.name", "theme-color");
-        themeColor.put("<xmlattr>.content", "#303030");
-        pt.add_child("server.application-settings.head-matter.meta", themeColor);
+        std::string_view minSeverity{ Service<IConfig>::get()->getString("log-min-severity", "info") };
+
+        if (minSeverity == "debug")
+            return Severity::DEBUG;
+        else if (minSeverity == "info")
+            return Severity::INFO;
+        else if (minSeverity == "warning")
+            return Severity::WARNING;
+        else if (minSeverity == "error")
+            return Severity::ERROR;
+        else if (minSeverity == "fatal")
+            return Severity::FATAL;
+
+        throw LmsException{ "Invalid config value for 'log-min-severity'" };
     }
 
-
+    std::vector<std::string> generateWtConfig(std::string execPath, Severity minSeverity)
     {
-        std::ofstream oss{ wtConfigPath.string().c_str(), std::ios::out };
-        if (!oss)
-            throw LmsException{ "Can't open '" + wtConfigPath.string() + "' for writing!" };
+        std::vector<std::string> args;
 
-        boost::property_tree::xml_parser::write_xml(oss, pt);
+        const std::filesystem::path wtConfigPath{ Service<IConfig>::get()->getPath("working-dir") / "wt_config.xml" };
+        const std::filesystem::path wtLogFilePath{ Service<IConfig>::get()->getPath("log-file", "/var/log/lms.log") };
+        const std::filesystem::path wtAccessLogFilePath{ Service<IConfig>::get()->getPath("access-log-file", "/var/log/lms.access.log") };
+        const std::filesystem::path wtResourcesPath{ Service<IConfig>::get()->getPath("wt-resources", "/usr/share/Wt/resources") };
 
-        if (!oss)
-            throw LmsException{ "Can't write in file '" + wtConfigPath.string() + "', no space left?" };
-    }
+        args.push_back(execPath);
+        args.push_back("--config=" + wtConfigPath.string());
+        args.push_back("--docroot=" + std::string{ Service<IConfig>::get()->getString("docroot") });
+        args.push_back("--approot=" + std::string{ Service<IConfig>::get()->getString("approot") });
+        args.push_back("--deploy-path=" + std::string{ Service<IConfig>::get()->getString("deploy-path", "/") });
+        if (!wtResourcesPath.empty())
+            args.push_back("--resources-dir=" + wtResourcesPath.string());
 
-    return args;
-}
-
-
-static
-void
-proxyScannerEventsToApplication(Scanner::IScannerService& scanner, Wt::WServer& server)
-{
-    auto postAll{ [](Wt::WServer& server, std::function<void()> cb)
-    {
-        server.postAll([cb = std::move(cb)]
+        if (Service<IConfig>::get()->getBool("tls-enable", false))
         {
-                // may be nullptr, see https://redmine.webtoolkit.eu/issues/8202
-                if (LmsApp)
-                    cb();
+            args.push_back("--https-port=" + std::to_string(Service<IConfig>::get()->getULong("listen-port", 5082)));
+            args.push_back("--https-address=" + std::string{ Service<IConfig>::get()->getString("listen-addr", "0.0.0.0") });
+            args.push_back("--ssl-certificate=" + std::string{ Service<IConfig>::get()->getString("tls-cert") });
+            args.push_back("--ssl-private-key=" + std::string{ Service<IConfig>::get()->getString("tls-key") });
+            args.push_back("--ssl-tmp-dh=" + std::string{ Service<IConfig>::get()->getString("tls-dh") });
+        }
+        else
+        {
+            args.push_back("--http-port=" + std::to_string(Service<IConfig>::get()->getULong("listen-port", 5082)));
+            args.push_back("--http-address=" + std::string{ Service<IConfig>::get()->getString("listen-addr", "0.0.0.0") });
+        }
+
+        if (!wtAccessLogFilePath.empty())
+            args.push_back("--accesslog=" + wtAccessLogFilePath.string());
+
+        args.push_back("--threads=" + std::to_string(getThreadCount()));
+
+        // Generate the wt_config.xml file
+        boost::property_tree::ptree pt;
+
+        pt.put("server.application-settings.<xmlattr>.location", "*");
+        pt.put("server.application-settings.log-file", wtLogFilePath.string());
+
+        // log-config
+        pt.put("server.application-settings.log-config", WtLogger::computeLogConfig(minSeverity));
+        pt.put("server.application-settings.behind-reverse-proxy", Service<IConfig>::get()->getBool("behind-reverse-proxy", false));
+
+        {
+            boost::property_tree::ptree viewport;
+            viewport.put("<xmlattr>.name", "viewport");
+            viewport.put("<xmlattr>.content", "width=device-width, initial-scale=1, user-scalable=no");
+            pt.add_child("server.application-settings.head-matter.meta", viewport);
+        }
+        {
+            boost::property_tree::ptree themeColor;
+            themeColor.put("<xmlattr>.name", "theme-color");
+            themeColor.put("<xmlattr>.content", "#303030");
+            pt.add_child("server.application-settings.head-matter.meta", themeColor);
+        }
+
+
+        {
+            std::ofstream oss{ wtConfigPath.string().c_str(), std::ios::out };
+            if (!oss)
+                throw LmsException{ "Can't open '" + wtConfigPath.string() + "' for writing!" };
+
+            boost::property_tree::xml_parser::write_xml(oss, pt);
+
+            if (!oss)
+                throw LmsException{ "Can't write in file '" + wtConfigPath.string() + "', no space left?" };
+        }
+
+        return args;
+    }
+
+    void proxyScannerEventsToApplication(Scanner::IScannerService& scanner, Wt::WServer& server)
+    {
+        auto postAll{ [](Wt::WServer& server, std::function<void()> cb)
+        {
+            server.postAll([cb = std::move(cb)]
+            {
+                    // may be nullptr, see https://redmine.webtoolkit.eu/issues/8202
+                    if (LmsApp)
+                        cb();
+                });
+            } };
+
+        scanner.getEvents().scanStarted.connect([&]
+            {
+                postAll(server, []
+                    {
+                        LmsApp->getScannerEvents().scanStarted.emit();
+                        LmsApp->triggerUpdate();
+                    });
             });
-        } };
 
-    scanner.getEvents().scanStarted.connect([&]
-        {
-            postAll(server, []
-                {
-                    LmsApp->getScannerEvents().scanStarted.emit();
-                    LmsApp->triggerUpdate();
-                });
-        });
+        scanner.getEvents().scanComplete.connect([&](const Scanner::ScanStats& stats)
+            {
+                postAll(server, [=]
+                    {
+                        LmsApp->getScannerEvents().scanComplete.emit(stats);
+                        LmsApp->triggerUpdate();
+                    });
+            });
 
-    scanner.getEvents().scanComplete.connect([&](const Scanner::ScanStats& stats)
-        {
-            postAll(server, [=]
-                {
-                    LmsApp->getScannerEvents().scanComplete.emit(stats);
-                    LmsApp->triggerUpdate();
-                });
-        });
+        scanner.getEvents().scanInProgress.connect([&](const Scanner::ScanStepStats& stats)
+            {
+                postAll(server, [=]
+                    {
+                        LmsApp->getScannerEvents().scanInProgress.emit(stats);
+                        LmsApp->triggerUpdate();
+                    });
+            });
 
-    scanner.getEvents().scanInProgress.connect([&](const Scanner::ScanStepStats& stats)
-        {
-            postAll(server, [=]
-                {
-                    LmsApp->getScannerEvents().scanInProgress.emit(stats);
-                    LmsApp->triggerUpdate();
-                });
-        });
-
-    scanner.getEvents().scanScheduled.connect([&](const Wt::WDateTime dateTime)
-        {
-            postAll(server, [=]
-                {
-                    LmsApp->getScannerEvents().scanScheduled.emit(dateTime);
-                    LmsApp->triggerUpdate();
-                });
-        });
+        scanner.getEvents().scanScheduled.connect([&](const Wt::WDateTime dateTime)
+            {
+                postAll(server, [=]
+                    {
+                        LmsApp->getScannerEvents().scanScheduled.emit(dateTime);
+                        LmsApp->triggerUpdate();
+                    });
+            });
+    }
 }
 
 int main(int argc, char* argv[])
@@ -206,20 +222,21 @@ int main(int argc, char* argv[])
         close(STDIN_FILENO);
 
         Service<IConfig> config{ createConfig(configFilePath) };
-        Service<Logger> logger{ std::make_unique<WtLogger>() };
+        const Severity minLogSeverity{getLogMinSeverity()};
+        Service<ILogger> logger{ std::make_unique<WtLogger>(minLogSeverity) };
 
         // use system locale. libarchive relies on this to write filenames
         if (char* locale{ ::setlocale(LC_ALL, "") })
-            LMS_LOG(MAIN, INFO) << "locale set to '" << locale << "'";
+            LMS_LOG(MAIN, INFO, "locale set to '" << locale << "'");
         else
-            LMS_LOG(MAIN, WARNING) << "Cannot set locale from system";
+            LMS_LOG(MAIN, WARNING, "Cannot set locale from system");
 
         // Make sure the working directory exists
         std::filesystem::create_directories(config->getPath("working-dir"));
         std::filesystem::create_directories(config->getPath("working-dir") / "cache");
 
         // Construct WT configuration and get the argc/argv back
-        const std::vector<std::string> wtServerArgs{ generateWtConfig(argv[0]) };
+        const std::vector<std::string> wtServerArgs{ generateWtConfig(argv[0], minLogSeverity) };
 
         std::vector<const char*> wtArgv(wtServerArgs.size());
         for (std::size_t i = 0; i < wtServerArgs.size(); ++i)
@@ -300,27 +317,27 @@ int main(int argc, char* argv[])
 
         proxyScannerEventsToApplication(*scannerService, server);
 
-        LMS_LOG(MAIN, INFO) << "Starting server...";
+        LMS_LOG(MAIN, INFO, "Starting server...");
         server.start();
 
-        LMS_LOG(MAIN, INFO) << "Now running...";
+        LMS_LOG(MAIN, INFO, "Now running...");
         Wt::WServer::waitForShutdown();
 
-        LMS_LOG(MAIN, INFO) << "Stopping server...";
+        LMS_LOG(MAIN, INFO, "Stopping server...");
         server.stop();
 
-        LMS_LOG(MAIN, INFO) << "Quitting...";
+        LMS_LOG(MAIN, INFO, "Quitting...");
         res = EXIT_SUCCESS;
     }
     catch (const Wt::WServer::Exception& e)
     {
-        LMS_LOG(MAIN, FATAL) << "Caught WServer::Exception: " << e.what();
+        LMS_LOG(MAIN, FATAL, "Caught WServer::Exception: " << e.what());
         std::cerr << "Caught a WServer::Exception: " << e.what() << std::endl;
         res = EXIT_FAILURE;
     }
     catch (const std::exception& e)
     {
-        LMS_LOG(MAIN, FATAL) << "Caught std::exception: " << e.what();
+        LMS_LOG(MAIN, FATAL, "Caught std::exception: " << e.what());
         std::cerr << "Caught std::exception: " << e.what() << std::endl;
         res = EXIT_FAILURE;
     }
