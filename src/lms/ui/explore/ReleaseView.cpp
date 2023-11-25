@@ -27,11 +27,13 @@
 #include "av/IAudioFile.hpp"
 #include "services/database/Artist.hpp"
 #include "services/database/Cluster.hpp"
+#include "services/database/Listen.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/ScanSettings.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/TrackArtistLink.hpp"
+#include "services/database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "utils/ILogger.hpp"
@@ -157,6 +159,9 @@ namespace UserInterface
                 releaseInfo->setCondition("if-has-bitrate", true);
                 releaseInfo->bindString("bitrate", std::to_string(meanBitrate / 1000) + " kbps");
             }
+
+            const auto user{ LmsApp->getUser() };
+            releaseInfo->bindInt("playcount", Database::Listen::getCount(LmsApp->getDbSession(), user->getId(), user->getScrobblingBackend(), release->getId()));
 
             Wt::WPushButton* okBtn{ releaseInfo->bindNew<Wt::WPushButton>("ok-btn", Wt::WString::tr("Lms.ok")) };
             okBtn->clicked().connect([=]

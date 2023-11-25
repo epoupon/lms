@@ -137,6 +137,7 @@
 <message id="Lms.Explore.play-last">Jouer en dernier</message>
 <message id="Lms.Explore.play-next">Jouer ensuite</message>
 <message id="Lms.Explore.play-shuffled">Jouer aléatoirement</message>
+<message id="Lms.Explore.playcount">Nombre d'écoutes</message>
 <message id="Lms.Explore.random">Aléatoire</message>
 <message id="Lms.Explore.recently-added">Ajoutés récemment</message>
 <message id="Lms.Explore.recently-modified">Modifiés récemment</message>

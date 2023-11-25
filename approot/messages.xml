@@ -137,6 +137,7 @@
 <message id="Lms.Explore.play-last">Play last</message>
 <message id="Lms.Explore.play-next">Play next</message>
 <message id="Lms.Explore.play-shuffled">Play shuffled</message>
+<message id="Lms.Explore.playcount">Play count</message>
 <message id="Lms.Explore.random">Random</message>
 <message id="Lms.Explore.recently-added">Recently added</message>
 <message id="Lms.Explore.recently-modified">Recently modified</message>
