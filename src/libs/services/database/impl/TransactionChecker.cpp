@@ -81,7 +81,6 @@ namespace Database
         assert(transactionStack.back().session == &session);
         transactionStack.pop_back();
 #endif // LMS_CHECK_TRANSACTION_ACCESSES
-
     }
 
     void TransactionChecker::checkWriteTransaction([[maybe_unused]] Wt::Dbo::Session& session)

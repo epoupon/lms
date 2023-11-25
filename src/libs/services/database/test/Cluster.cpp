@@ -240,7 +240,6 @@ TEST_F(DatabaseFixture, Cluster_multiTracks)
 
 TEST_F(DatabaseFixture, ClusterType_singleTrack)
 {
-
     {
         auto transaction{ session.createReadTransaction() };
         EXPECT_TRUE(Cluster::find(session, Cluster::FindParameters{}).results.empty());
