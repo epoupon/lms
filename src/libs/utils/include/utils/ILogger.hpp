@@ -95,6 +95,6 @@ public:
 #define LMS_LOG(module, severity, message) \
     do \
     { \
-        if (auto* logger {::Service<::ILogger>::get()}; logger && logger->isSeverityActive(::Severity::severity)) \
-            ::Log{ *logger, ::Module::module, ::Severity::severity }.getOstream() << message; \
+        if (auto* logger_ {::Service<::ILogger>::get()}; logger_ && logger_->isSeverityActive(::Severity::severity)) \
+            ::Log{ *logger_, ::Module::module, ::Severity::severity }.getOstream() << message; \
     } while(0)
