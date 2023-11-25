@@ -67,7 +67,7 @@ namespace API::Subsonic
             Response response{ Response::createOkResponse(context.serverProtocolVersion) };
             Response::Node& searchResult2Node{ response.createNode(id3 ? "searchResult3" : "searchResult2") };
 
-            auto transaction{ context.dbSession.createSharedTransaction() };
+            auto transaction{ context.dbSession.createReadTransaction() };
 
             User::pointer user{ User::find(context.dbSession, context.userId) };
             if (!user)

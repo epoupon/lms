@@ -28,15 +28,14 @@
 #include "services/database/Track.hpp"
 #include "services/database/TrackList.hpp"
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 #include "LmsApplication.hpp"
 
-#define LOG(level)	LMS_LOG(UI, level) << "Download resource: "
+#define LOG(severity, message)	LMS_LOG(UI, severity, "Download resource: " << message)
 
 namespace UserInterface
 {
-
     DownloadResource::~DownloadResource()
     {
         beingDeleted();
@@ -66,7 +65,7 @@ namespace UserInterface
         }
         catch (Zip::Exception& exception)
         {
-            LOG(ERROR) << "Zipper exception: " << exception.what();
+            LOG(ERROR, "Zipper exception: " << exception.what());
         }
     }
 
@@ -163,7 +162,7 @@ namespace UserInterface
     DownloadArtistResource::DownloadArtistResource(Database::ArtistId artistId)
         : _artistId{ artistId }
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         Database::Artist::pointer artist{ Database::Artist::find(LmsApp->getDbSession(), artistId) };
         if (artist)
@@ -172,7 +171,7 @@ namespace UserInterface
 
     std::unique_ptr<Zip::IZipper> DownloadArtistResource::createZipper()
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const auto trackResults{ Database::Track::find(LmsApp->getDbSession(), Database::Track::FindParameters {}.setArtist(_artistId).setSortMethod(Database::TrackSortMethod::DateDescAndRelease)) };
         return details::createZipper(trackResults.results);
@@ -181,7 +180,7 @@ namespace UserInterface
     DownloadReleaseResource::DownloadReleaseResource(Database::ReleaseId releaseId)
         : _releaseId{ releaseId }
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         Database::Release::pointer release{ Database::Release::find(LmsApp->getDbSession(), releaseId) };
         if (release)
@@ -193,7 +192,7 @@ namespace UserInterface
     {
         using namespace Database;
 
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         auto tracks{ Track::find(LmsApp->getDbSession(), Track::FindParameters {}.setRelease(_releaseId).setSortMethod(TrackSortMethod::Release)) };
         return details::createZipper(tracks.results);
@@ -202,7 +201,7 @@ namespace UserInterface
     DownloadTrackResource::DownloadTrackResource(Database::TrackId trackId)
         : _trackId{ trackId }
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         Database::Track::pointer track{ Database::Track::find(LmsApp->getDbSession(), trackId) };
         if (track)
@@ -211,12 +210,12 @@ namespace UserInterface
 
     std::unique_ptr<Zip::IZipper> DownloadTrackResource::createZipper()
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const Database::Track::pointer track{ Database::Track::find(LmsApp->getDbSession(), _trackId) };
         if (!track)
         {
-            LOG(DEBUG) << "Cannot find track";
+            LOG(DEBUG, "Cannot find track");
             return {};
         }
 
@@ -226,7 +225,7 @@ namespace UserInterface
     DownloadTrackListResource::DownloadTrackListResource(Database::TrackListId trackListId)
         : _trackListId{ trackListId }
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const Database::TrackList::pointer trackList{ Database::TrackList::find(LmsApp->getDbSession(), trackListId) };
         if (trackList)
@@ -236,12 +235,11 @@ namespace UserInterface
     std::unique_ptr<Zip::IZipper> DownloadTrackListResource::createZipper()
     {
         using namespace Database;
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         Track::FindParameters params;
         params.setTrackList(_trackListId);
         const auto tracks{ Track::find(LmsApp->getDbSession(), params) };
         return details::createZipper(tracks.results);
     }
-
 } // namespace UserInterface

@@ -140,25 +140,25 @@ namespace Database
 
     Listen::pointer Listen::create(Session& session, ObjectPtr<User> user, ObjectPtr<Track> track, ScrobblingBackend backend, const Wt::WDateTime& dateTime)
     {
-        session.checkUniqueLocked();
+        session.checkWriteTransaction();
         return session.getDboSession().add(std::unique_ptr<Listen> {new Listen{ user, track, backend, dateTime }});
     }
 
     std::size_t Listen::getCount(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM listen");
     }
 
     Listen::pointer Listen::find(Session& session, ListenId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         return session.getDboSession().find<Listen>().where("id = ?").bind(id).resultValue();
     }
 
     RangeResults<ListenId> Listen::find(Session& session, const FindParameters& parameters)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ session.getDboSession().query<ListenId>("SELECT id FROM listen")
                                 .orderBy("date_time") };
@@ -177,7 +177,7 @@ namespace Database
 
     Listen::pointer Listen::find(Session& session, UserId userId, TrackId trackId, ScrobblingBackend backend, const Wt::WDateTime& dateTime)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().find<Listen>()
             .where("user_id = ?").bind(userId)
@@ -189,7 +189,7 @@ namespace Database
 
     RangeResults<ArtistId> Listen::getTopArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         auto query{ createArtistsQuery(session.getDboSession(), userId, backend, clusterIds, linkType) };
 
         auto collection{ query
@@ -201,7 +201,7 @@ namespace Database
 
     RangeResults<ReleaseId> Listen::getTopReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         auto query{ createReleasesQuery(session.getDboSession(), userId, backend, clusterIds)
                         .orderBy("COUNT(r.id) DESC")
                         .groupBy("r.id") };
@@ -211,7 +211,7 @@ namespace Database
 
     RangeResults<TrackId> Listen::getTopTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         auto query{ createTracksQuery(session.getDboSession(), userId, backend, clusterIds)
                         .orderBy("COUNT(t.id) DESC")
                         .groupBy("t.id") };
@@ -221,7 +221,7 @@ namespace Database
 
     RangeResults<ArtistId> Listen::getRecentArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         auto query{ createArtistsQuery(session.getDboSession(), userId, backend, clusterIds, linkType)
                         .groupBy("a.id").having("l.date_time = MAX(l.date_time)")
                         .orderBy("l.date_time DESC") };
@@ -231,7 +231,7 @@ namespace Database
 
     RangeResults<ReleaseId> Listen::getRecentReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         auto query{ createReleasesQuery(session.getDboSession(), userId, backend, clusterIds)
                         .groupBy("r.id").having("l.date_time = MAX(l.date_time)")
                         .orderBy("l.date_time DESC") };
@@ -241,7 +241,7 @@ namespace Database
 
     RangeResults<TrackId> Listen::getRecentTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         auto query{ createTracksQuery(session.getDboSession(), userId, backend, clusterIds)
                         .groupBy("t.id").having("l.date_time = MAX(l.date_time)")
                         .orderBy("l.date_time DESC") };
@@ -251,7 +251,7 @@ namespace Database
 
     std::size_t Listen::getCount(Session& session, UserId userId, ScrobblingBackend backend, TrackId trackId)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT COUNT(*) from listen l")
             .where("l.track_id = ?").bind(trackId)
@@ -262,7 +262,7 @@ namespace Database
 
     std::size_t Listen::getCount(Session& session, UserId userId, ScrobblingBackend backend, ReleaseId releaseId)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT IFNULL(MIN(count_result), 0)"
             " FROM ("
@@ -279,7 +279,7 @@ namespace Database
 
     Listen::pointer Listen::getMostRecentListen(Session& session, UserId userId, ScrobblingBackend backend, ReleaseId releaseId)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         // TODO not pending remove?
         return session.getDboSession().query<Wt::Dbo::ptr<Listen>>("SELECT l from listen l")
@@ -294,7 +294,7 @@ namespace Database
 
     Listen::pointer Listen::getMostRecentListen(Session& session, UserId userId, ScrobblingBackend backend, TrackId trackId)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         // TODO not pending remove?
         return session.getDboSession().query<Wt::Dbo::ptr<Listen>>("SELECT l from listen l")
             .where("l.track_id = ?").bind(trackId)

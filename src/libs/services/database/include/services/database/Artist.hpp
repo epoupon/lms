@@ -100,7 +100,7 @@ namespace Database
         // Get the cluster of the tracks made by this artist
         // Each clusters are grouped by cluster type, sorted by the number of occurence
         // size is the max number of cluster per cluster type
-        std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(std::vector<ObjectPtr<ClusterType>> clusterTypes, std::size_t size) const;
+        std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(std::vector<ClusterTypeId> clusterTypeIds, std::size_t size) const;
 
         void setName(std::string_view name) { _name = name; }
         void setMBID(const std::optional<UUID>& mbid) { _MBID = mbid ? mbid->getAsString() : ""; }

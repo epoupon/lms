@@ -26,7 +26,7 @@
 #include <archive.h>
 #include <archive_entry.h>
 
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 namespace Zip
 {
@@ -73,7 +73,7 @@ namespace Zip
 	{
 		const int res {::archive_write_free(arch)};
 		if (res != ARCHIVE_OK)
-			LMS_LOG(UTILS, ERROR) << "Failure while freeing archive control struct: " << std::string {::strerror(res)};
+			LMS_LOG(UTILS, ERROR, "Failure while freeing archive control struct: " << std::string {::strerror(res)});
 	}
 
 	void
@@ -176,7 +176,7 @@ namespace Zip
 	void
 	ArchiveZipper::abort()
 	{
-		LMS_LOG(UTILS, DEBUG) << "Aborting zip creation";
+		LMS_LOG(UTILS, DEBUG, "Aborting zip creation");
 		if (_archive)
 		{
 			::archive_write_fail(_archive.get());

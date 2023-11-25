@@ -27,7 +27,7 @@
 #include "services/database/ScanSettings.hpp"
 #include "utils/Exception.hpp"
 #include "utils/IConfig.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Path.hpp"
 #include "utils/Tuple.hpp"
 
@@ -82,9 +82,9 @@ namespace Scanner
 
     ScannerService::~ScannerService()
     {
-        LMS_LOG(DBUPDATER, INFO) << "Stopping service...";
+        LMS_LOG(DBUPDATER, INFO, "Stopping service...");
         stop();
-        LMS_LOG(DBUPDATER, INFO) << "Service stopped!";
+        LMS_LOG(DBUPDATER, INFO, "Service stopped!");
     }
 
     void ScannerService::start()
@@ -113,15 +113,15 @@ namespace Scanner
 
     void ScannerService::abortScan()
     {
-        LMS_LOG(DBUPDATER, DEBUG) << "Aborting scan...";
+        LMS_LOG(DBUPDATER, DEBUG, "Aborting scan...");
         std::scoped_lock lock{ _controlMutex };
 
-        LMS_LOG(DBUPDATER, DEBUG) << "Waiting for the scan to abort...";
+        LMS_LOG(DBUPDATER, DEBUG, "Waiting for the scan to abort...");
 
         _abortScan = true;
         _scheduleTimer.cancel();
         _ioService.stop();
-        LMS_LOG(DBUPDATER, DEBUG) << "Scan abort done!";
+        LMS_LOG(DBUPDATER, DEBUG, "Scan abort done!");
 
         _abortScan = false;
         _ioService.start();
@@ -167,7 +167,7 @@ namespace Scanner
 
     void ScannerService::scheduleNextScan()
     {
-        LMS_LOG(DBUPDATER, DEBUG) << "Scheduling next scan";
+        LMS_LOG(DBUPDATER, DEBUG, "Scheduling next scan");
 
         refreshScanSettings();
 
@@ -202,7 +202,7 @@ namespace Scanner
             break;
 
         case ScanSettings::UpdatePeriod::Never:
-            LMS_LOG(DBUPDATER, INFO) << "Auto scan disabled!";
+            LMS_LOG(DBUPDATER, INFO, "Auto scan disabled!");
             break;
         }
 
@@ -230,7 +230,7 @@ namespace Scanner
 
         if (dateTime.isNull())
         {
-            LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan right now";
+            LMS_LOG(DBUPDATER, INFO, "Scheduling next scan right now");
             _scheduleTimer.expires_from_now(std::chrono::seconds{ 0 });
             _scheduleTimer.async_wait(cb);
         }
@@ -240,7 +240,7 @@ namespace Scanner
             std::time_t t{ std::chrono::system_clock::to_time_t(timePoint) };
             char ctimeStr[26];
 
-            LMS_LOG(DBUPDATER, INFO) << "Scheduling next scan at " << std::string(::ctime_r(&t, ctimeStr));
+            LMS_LOG(DBUPDATER, INFO, "Scheduling next scan at " << std::string(::ctime_r(&t, ctimeStr)));
             _scheduleTimer.expires_at(timePoint);
             _scheduleTimer.async_wait(cb);
         }
@@ -257,7 +257,7 @@ namespace Scanner
         }
 
 
-        LMS_LOG(UI, INFO) << "New scan started!";
+        LMS_LOG(UI, INFO, "New scan started!");
 
         refreshScanSettings();
 
@@ -267,16 +267,16 @@ namespace Scanner
 
         for (auto& scanStep : _scanSteps)
         {
-            LMS_LOG(DBUPDATER, DEBUG) << "Starting scan step '" << scanStep->getStepName() << "'";
+            LMS_LOG(DBUPDATER, DEBUG, "Starting scan step '" << scanStep->getStepName() << "'");
             scanContext.currentStepStats = ScanStepStats{ Wt::WDateTime::currentDateTime(), scanStep->getStep() };
 
             notifyInProgress(scanContext.currentStepStats);
             scanStep->process(scanContext);
             notifyInProgress(scanContext.currentStepStats);
-            LMS_LOG(DBUPDATER, DEBUG) << "Completed scan step '" << scanStep->getStepName() << "'";
+            LMS_LOG(DBUPDATER, DEBUG, "Completed scan step '" << scanStep->getStepName() << "'");
         }
 
-        LMS_LOG(DBUPDATER, INFO) << "Scan " << (_abortScan ? "aborted" : "complete") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), features fetched = " << stats.featuresFetched << ",  duplicates = " << stats.duplicates.size();
+        LMS_LOG(DBUPDATER, INFO, "Scan " << (_abortScan ? "aborted" : "complete") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), features fetched = " << stats.featuresFetched << ",  duplicates = " << stats.duplicates.size());
 
         _dbSession.analyze();
 
@@ -290,14 +290,14 @@ namespace Scanner
                 _currentScanStepStats.reset();
             }
 
-            LMS_LOG(DBUPDATER, DEBUG) << "Scan not aborted, scheduling next scan!";
+            LMS_LOG(DBUPDATER, DEBUG, "Scan not aborted, scheduling next scan!");
             scheduleNextScan();
 
             _events.scanComplete.emit(stats);
         }
         else
         {
-            LMS_LOG(DBUPDATER, DEBUG) << "Scan aborted, not scheduling next scan!";
+            LMS_LOG(DBUPDATER, DEBUG, "Scan aborted, not scheduling next scan!");
 
             std::unique_lock lock{ _statusMutex };
 
@@ -312,9 +312,9 @@ namespace Scanner
         if (_settings == newSettings)
             return;
 
-        LMS_LOG(DBUPDATER, DEBUG) << "Scanner settings updated";
-        LMS_LOG(DBUPDATER, DEBUG) << "skipDuplicateMBID = " << newSettings.skipDuplicateMBID;
-        LMS_LOG(DBUPDATER, DEBUG) << "Using scan settings version " << newSettings.scanVersion;
+        LMS_LOG(DBUPDATER, DEBUG, "Scanner settings updated");
+        LMS_LOG(DBUPDATER, DEBUG, "skipDuplicateMBID = " << newSettings.skipDuplicateMBID);
+        LMS_LOG(DBUPDATER, DEBUG, "Using scan settings version " << newSettings.scanVersion);
 
         _settings = std::move(newSettings);
 
@@ -345,7 +345,7 @@ namespace Scanner
 
         newSettings.skipDuplicateMBID = Service<IConfig>::get()->getBool("scanner-skip-duplicate-mbid", false);
         {
-            auto transaction{ _dbSession.createSharedTransaction() };
+            auto transaction{ _dbSession.createReadTransaction() };
 
             const ScanSettings::pointer scanSettings{ ScanSettings::get(_dbSession) };
 
@@ -361,14 +361,10 @@ namespace Scanner
             }
             newSettings.mediaDirectory = scanSettings->getMediaDirectory();
 
-            const auto clusterTypes = scanSettings->getClusterTypes();
-            std::set<std::string> clusterTypeNames;
-
-            std::transform(std::cbegin(clusterTypes), std::cend(clusterTypes),
-                std::inserter(clusterTypeNames, clusterTypeNames.begin()),
-                [](ClusterType::pointer clusterType) { return clusterType->getName(); });
-
-            newSettings.clusterTypeNames = std::move(clusterTypeNames);
+            {
+                const auto& tags{ scanSettings->getExtraTagsToScan() };
+                std::transform(std::cbegin(tags), std::cend(tags), std::back_inserter(newSettings.extraTags), [](std::string_view tag) { return std::string{ tag };});
+            }
         }
 
         return newSettings;

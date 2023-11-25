@@ -42,7 +42,7 @@ static void dumpTracksRecommendation(Session session, Recommendation::IRecommend
 {
     const RangeResults<TrackId> trackIds{ [&]
         {
-            auto transaction {session.createSharedTransaction()};
+            auto transaction {session.createReadTransaction()};
             return Track::findIds(session, Track::FindParameters{});
         }() };
 
@@ -52,7 +52,7 @@ static void dumpTracksRecommendation(Session session, Recommendation::IRecommend
         auto trackToString = [&](const TrackId trackId)
             {
                 std::string res;
-                auto transaction{ session.createSharedTransaction() };
+                auto transaction{ session.createReadTransaction() };
                 const Track::pointer track{ Track::find(session, trackId) };
 
                 res += track->getName();
@@ -61,7 +61,7 @@ static void dumpTracksRecommendation(Session session, Recommendation::IRecommend
                 for (auto artist : track->getArtists({ TrackArtistLinkType::Artist }))
                     res += " - " + artist->getName();
                 for (auto cluster : track->getClusters())
-                    res += " {" + cluster->getType()->getName() + "-" + std::string{ cluster->getName() } + "}";
+                    res += " {" + std::string{ cluster->getType()->getName() } + "-" + std::string{ cluster->getName() } + "}";
 
                 return res;
             };
@@ -76,7 +76,7 @@ static void dumpReleasesRecommendation(Session session, Recommendation::IRecomme
 {
     const RangeResults<ReleaseId> releaseIds{ std::invoke([&]
         {
-            auto transaction {session.createSharedTransaction()};
+            auto transaction {session.createReadTransaction()};
             return Release::findIds(session, Release::FindParameters {});
         }) };
 
@@ -85,7 +85,7 @@ static void dumpReleasesRecommendation(Session session, Recommendation::IRecomme
     {
         auto releaseToString = [&](ReleaseId releaseId) -> std::string
             {
-                auto transaction{ session.createSharedTransaction() };
+                auto transaction{ session.createReadTransaction() };
 
                 Release::pointer release{ Release::find(session, releaseId) };
                 return release->getName();
@@ -101,7 +101,7 @@ static void dumpArtistsRecommendation(Session session, Recommendation::IRecommen
 {
     const RangeResults<ArtistId> artistIds = std::invoke([&]()
         {
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
             return Artist::findIds(session, Artist::FindParameters{});
         });
 
@@ -110,7 +110,7 @@ static void dumpArtistsRecommendation(Session session, Recommendation::IRecommen
     {
         auto artistToString = [&](ArtistId artistId)
             {
-                auto transaction{ session.createSharedTransaction() };
+                auto transaction{ session.createReadTransaction() };
 
                 Artist::pointer artist{ Artist::find(session, artistId) };
                 return artist->getName();
@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
         namespace po = boost::program_options;
 
         // log to stdout
-        Service<Logger> logger{ std::make_unique<StreamLogger>(std::cout) };
+        Service<ILogger> logger{ std::make_unique<StreamLogger>(std::cout) };
 
         po::options_description desc{ "Allowed options" };
         desc.add_options()

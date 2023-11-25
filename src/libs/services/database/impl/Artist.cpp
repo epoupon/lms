@@ -25,7 +25,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "SqlQuery.hpp"
 #include "Utils.hpp"
 #include "EnumSetTraits.hpp"
@@ -38,7 +38,7 @@ namespace Database
         template <typename ResultType>
         Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Artist::FindParameters& params)
         {
-            session.checkSharedLocked();
+            session.checkReadTransaction();
 
             auto query{ session.getDboSession().query<ResultType>("SELECT DISTINCT " + std::string{ itemToSelect } + " FROM artist a") };
             if (params.sortMethod == ArtistSortMethod::LastWritten
@@ -175,14 +175,14 @@ namespace Database
 
     std::size_t Artist::getCount(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM artist");
     }
 
     std::vector<Artist::pointer> Artist::find(Session& session, const std::string& name)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         Wt::Dbo::collection<Wt::Dbo::ptr<Artist>> res = session.getDboSession().find<Artist>()
             .where("name = ?").bind(std::string{ name, 0, _maxNameLength })
@@ -193,33 +193,33 @@ namespace Database
 
     Artist::pointer Artist::find(Session& session, const UUID& mbid)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         return session.getDboSession().find<Artist>().where("mbid = ?").bind(std::string{ mbid.getAsString() }).resultValue();
     }
 
     Artist::pointer Artist::find(Session& session, ArtistId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         return session.getDboSession().find<Artist>().where("id = ?").bind(id).resultValue();
     }
 
     bool Artist::exists(Session& session, ArtistId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         return session.getDboSession().query<int>("SELECT 1 FROM artist").where("id = ?").bind(id).resultValue() == 1;
     }
 
 
     RangeResults<ArtistId> Artist::findOrphanIds(Session& session, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         auto query{ session.getDboSession().query<ArtistId>("SELECT DISTINCT a.id FROM artist a WHERE NOT EXISTS(SELECT 1 FROM track t INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id WHERE t.id = t_a_l.track_id)") };
         return Utils::execQuery<ArtistId>(query, range);
     }
 
     RangeResults<ArtistId> Artist::findIds(Session& session, const FindParameters& params)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ createQuery<ArtistId>(session, params) };
         return Utils::execQuery<ArtistId>(query, params.range);
@@ -227,7 +227,7 @@ namespace Database
 
     RangeResults<Artist::pointer> Artist::find(Session& session, const FindParameters& params)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ createQuery<Wt::Dbo::ptr<Artist>>(session, params) };
         return Utils::execQuery<Artist::pointer>(query, params.range);
@@ -235,7 +235,7 @@ namespace Database
 
     void Artist::find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ createQuery<Wt::Dbo::ptr<Artist>>(session, params) };
         Utils::execQuery(query, params.range, func);
@@ -288,7 +288,7 @@ namespace Database
         return Utils::execQuery<ArtistId>(query, range);
     }
 
-    std::vector<std::vector<Cluster::pointer>> Artist::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::size_t size) const
+    std::vector<std::vector<Cluster::pointer>> Artist::getClusterGroups(std::vector<ClusterTypeId> clusterTypeIds, std::size_t size) const
     {
         assert(session());
 
@@ -300,8 +300,8 @@ namespace Database
         where.And(WhereClause("a.id = ?")).bind(getId().toString());
         {
             WhereClause clusterClause;
-            for (auto clusterType : clusterTypes)
-                clusterClause.Or(WhereClause("c_type.id = ?")).bind(clusterType->getId().toString());
+            for (ClusterTypeId clusterTypeId : clusterTypeIds)
+                clusterClause.Or(WhereClause("c_type.id = ?")).bind(clusterTypeId.toString());
 
             where.And(clusterClause);
         }

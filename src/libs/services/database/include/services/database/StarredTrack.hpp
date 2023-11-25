@@ -55,7 +55,9 @@ namespace Database
         // Search utility
         static std::size_t  getCount(Session& session);
         static pointer      find(Session& session, StarredTrackId id);
+        static pointer      find(Session& session, TrackId trackId, UserId userId); // current feedback backend
         static pointer      find(Session& session, TrackId trackId, UserId userId, FeedbackBackend backend);
+        static bool         exists(Session& session, TrackId trackId, UserId userId, FeedbackBackend backend);
         static RangeResults<StarredTrackId>	find(Session& session, const FindParameters& findParams);
 
         // Accessors

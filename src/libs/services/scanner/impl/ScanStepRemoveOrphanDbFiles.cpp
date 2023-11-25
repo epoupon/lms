@@ -25,15 +25,56 @@
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Path.hpp"
 
 namespace Scanner
 {
+    using namespace Database;
+
+    namespace
+    {
+        constexpr std::size_t batchSize = 100;
+
+        template <typename T>
+        void removeOrphanEntries(Session& session, bool& abortScan)
+        {
+            using IdType = typename T::IdType;
+
+            RangeResults<IdType> entries;
+            while (!abortScan)
+            {
+                {
+                    auto transaction{ session.createReadTransaction() };
+
+                    entries = T::findOrphanIds(session, Range{ 0, batchSize });
+                };
+
+                {
+                    auto transaction{ session.createWriteTransaction() };
+
+                    for (const IdType objectId : entries.results)
+                    {
+                        if (abortScan)
+                            break;
+
+                        typename T::pointer entry{ T::find(session, objectId) };
+
+                        entry.remove();
+                    }
+                }
+
+                if (!entries.moreResults)
+                    break;
+            }
+        }
+    }
+
     void ScanStepRemoveOrphanDbFiles::process(ScanContext& context)
     {
         removeOrphanTracks(context);
         removeOrphanClusters();
+        removeOrphanClusterTypes();
         removeOrphanArtists();
         removeOrphanReleases();
     }
@@ -45,17 +86,16 @@ namespace Scanner
         if (_abortScan)
             return;
 
-        static constexpr std::size_t batchSize{ 50 };
         Session& session{ _db.getTLSSession() };
 
-        LMS_LOG(DBUPDATER, DEBUG) << "Checking tracks to be removed...";
+        LMS_LOG(DBUPDATER, DEBUG, "Checking tracks to be removed...");
         std::size_t trackCount{};
 
         {
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
             trackCount = Track::getCount(session);
         }
-        LMS_LOG(DBUPDATER, DEBUG) << trackCount << " tracks to be checked...";
+        LMS_LOG(DBUPDATER, DEBUG,  trackCount << " tracks to be checked...");
 
         context.currentStepStats.totalElems = trackCount;
 
@@ -68,7 +108,7 @@ namespace Scanner
             tracksToRemove.clear();
 
             {
-                auto transaction{ session.createSharedTransaction() };
+                auto transaction{ session.createReadTransaction() };
                 trackPaths = Track::findPaths(session, Range{ i, batchSize });
             }
 
@@ -85,7 +125,7 @@ namespace Scanner
 
             if (!tracksToRemove.empty())
             {
-                auto transaction{ session.createSharedTransaction() };
+                auto transaction{ session.createWriteTransaction() };
 
                 for (const TrackId trackId : tracksToRemove)
                 {
@@ -104,62 +144,31 @@ namespace Scanner
                 break;
         }
 
-        LMS_LOG(DBUPDATER, DEBUG) << trackCount << " tracks checked!";
+        LMS_LOG(DBUPDATER, DEBUG,  trackCount << " tracks checked!");
     }
 
     void ScanStepRemoveOrphanDbFiles::removeOrphanClusters()
     {
-        using namespace Database;
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphan clusters...");
+        removeOrphanEntries<Database::Cluster>(_db.getTLSSession(), _abortScan);
+    }
 
-        LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan clusters...";
-        Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createUniqueTransaction() };
-
-        // Now process orphan Cluster (no track)
-        auto clusterIds{ Cluster::findOrphans(session) };
-        for (ClusterId clusterId : clusterIds.results)
-        {
-            Cluster::pointer cluster{ Cluster::find(session, clusterId) };
-            LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan cluster '" << cluster->getName() << "'";
-            cluster.remove();
-        }
+    void ScanStepRemoveOrphanDbFiles::removeOrphanClusterTypes()
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphan cluster types...");
+        removeOrphanEntries<Database::ClusterType>(_db.getTLSSession(), _abortScan);
     }
 
     void ScanStepRemoveOrphanDbFiles::removeOrphanArtists()
     {
-        using namespace Database;
-
-        LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan artists...";
-
-        Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createUniqueTransaction() };
-
-        auto artistIds{ Artist::findOrphanIds(session) };
-        for (const ArtistId artistId : artistIds.results)
-        {
-            Artist::pointer artist{ Artist::find(session, artistId) };
-            LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan artist '" << artist->getName() << "'";
-            artist.remove();
-        }
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphan artists...");
+        removeOrphanEntries<Database::Artist>(_db.getTLSSession(), _abortScan);
     }
 
     void ScanStepRemoveOrphanDbFiles::removeOrphanReleases()
     {
-        using namespace Database;
-
-        LMS_LOG(DBUPDATER, DEBUG) << "Checking orphan releases...";
-
-        // TODO, by batch
-        Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createUniqueTransaction() };
-
-        auto releases{ Release::findOrphanIds(session) };
-        for (const ReleaseId releaseId : releases.results)
-        {
-            Release::pointer release{ Release::find(session, releaseId) };
-            LMS_LOG(DBUPDATER, DEBUG) << "Removing orphan release '" << release->getName() << "'";
-            release.remove();
-        }
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphan releases...");
+        removeOrphanEntries<Database::Release>(_db.getTLSSession(), _abortScan);
     }
 
     bool ScanStepRemoveOrphanDbFiles::checkFile(const std::filesystem::path& p)
@@ -168,22 +177,21 @@ namespace Scanner
         {
             // For each track, make sure the the file still exists
             // and still belongs to a media directory
-            if (!std::filesystem::exists(p)
-                || !std::filesystem::is_regular_file(p))
+            if (!std::filesystem::exists(p) || !std::filesystem::is_regular_file(p))
             {
-                LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': missing";
+                LMS_LOG(DBUPDATER, INFO, "Removing '" << p.string() << "': missing");
                 return false;
             }
 
             if (!PathUtils::isPathInRootPath(p, _settings.mediaDirectory, &excludeDirFileName))
             {
-                LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': out of media directory";
+                LMS_LOG(DBUPDATER, INFO, "Removing '" << p.string() << "': out of media directory");
                 return false;
             }
 
             if (!PathUtils::hasFileAnyExtension(p, _settings.supportedExtensions))
             {
-                LMS_LOG(DBUPDATER, INFO) << "Removing '" << p.string() << "': file format no longer handled";
+                LMS_LOG(DBUPDATER, INFO, "Removing '" << p.string() << "': file format no longer handled");
                 return false;
             }
 
@@ -191,7 +199,7 @@ namespace Scanner
         }
         catch (std::filesystem::filesystem_error& e)
         {
-            LMS_LOG(DBUPDATER, ERROR) << "Caught exception while checking file '" << p.string() << "': " << e.what();
+            LMS_LOG(DBUPDATER, ERROR, "Caught exception while checking file '" << p.string() << "': " << e.what());
             return false;
         }
     }

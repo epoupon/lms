@@ -27,14 +27,14 @@ TEST_F(DatabaseFixture, SingleTrackList)
 {
     ScopedUser user{ session, "MyUser" };
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_EQ(TrackList::getCount(session), 0);
     }
 
     ScopedTrackList trackList{ session, "MytrackList", TrackListType::Playlist, false, user.lockAndGet() };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_EQ(TrackList::getCount(session), 1);
     }
 }
@@ -47,7 +47,7 @@ TEST_F(DatabaseFixture, SingleTrackListSingleTrack)
     ScopedTrack track{ session, "MyTrack" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto tracks{ Track::findIds(session, Track::FindParameters {}.setTrackList(trackList1.getId())) };
         EXPECT_EQ(tracks.results.size(), 0);
@@ -57,13 +57,13 @@ TEST_F(DatabaseFixture, SingleTrackListSingleTrack)
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         session.create<TrackListEntry>(track.get(), trackList1.get());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto tracks{ Track::findIds(session, Track::FindParameters {}.setTrackList(trackList1.getId())) };
         ASSERT_EQ(tracks.results.size(), 1);
@@ -82,7 +82,7 @@ TEST_F(DatabaseFixture, TrackList_SortMethod)
     ScopedTrack track{ session, "MyTrack" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setSortMethod(TrackListSortMethod::Name)) };
         ASSERT_EQ(trackLists.results.size(), 2);
@@ -91,14 +91,14 @@ TEST_F(DatabaseFixture, TrackList_SortMethod)
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         trackList1.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate {1900,1,1} });
         trackList2.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate {1900,1,2} });
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setSortMethod(TrackListSortMethod::LastModifiedDesc)) };
         ASSERT_EQ(trackLists.results.size(), 2);
@@ -107,14 +107,14 @@ TEST_F(DatabaseFixture, TrackList_SortMethod)
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         trackList1.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate {1900,1,2} });
         trackList2.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate {1900,1,1} });
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setSortMethod(TrackListSortMethod::LastModifiedDesc)) };
         ASSERT_EQ(trackLists.results.size(), 2);
@@ -133,12 +133,12 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrack)
     {
         tracks.emplace_back(session, "MyTrack" + std::to_string(i));
 
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         session.create<TrackListEntry>(tracks.back().get(), trackList.get());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         ASSERT_EQ(trackList->getCount(), tracks.size());
         const auto trackIds{ trackList->getTrackIds() };
@@ -161,21 +161,21 @@ TEST_F(DatabaseFixture, SingleTrackListSingleTrackWithCluster)
     ScopedTrack track{ session, "MyTrack" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setClusters({cluster.getId()})) };
         EXPECT_EQ(trackLists.results.size(), 0);
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         session.create<TrackListEntry>(track.get(), trackList1.get());
         cluster.get().modify()->addTrack(track.get());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setClusters({cluster.getId()})) };
         ASSERT_EQ(trackLists.results.size(), 1);
@@ -191,24 +191,24 @@ TEST_F(DatabaseFixture, SingleTrackList_getEntries)
     ScopedTrack track2{ session, "MyTrack" };
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         session.create<TrackListEntry>(track1.get(), trackList.get());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         auto entries{ trackList.get()->getEntries() };
         ASSERT_EQ(entries.size(), 1);
         EXPECT_EQ(entries.front()->getTrack()->getId(), track1.getId());
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         session.create<TrackListEntry>(track2.get(), trackList.get());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         auto entries{ trackList.get()->getEntries() };
         ASSERT_EQ(entries.size(), 2);
         EXPECT_EQ(entries[0]->getTrack()->getId(), track1.getId());
@@ -216,7 +216,7 @@ TEST_F(DatabaseFixture, SingleTrackList_getEntries)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         auto entries{ trackList.get()->getEntries(Range {1, 1}) };
         ASSERT_EQ(entries.size(), 1);
         EXPECT_EQ(entries[0]->getTrack()->getId(), track2.getId());

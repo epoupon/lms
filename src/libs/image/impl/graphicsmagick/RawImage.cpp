@@ -23,7 +23,7 @@
 
 #include "JPEGImage.hpp"
 #include "image/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 namespace Image
 {
@@ -43,16 +43,16 @@ namespace Image
 		Magick::InitializeMagick(path.string().c_str());
 
 		if (auto nbThreads {MagickLib::GetMagickResourceLimit(MagickLib::ThreadsResource)}; nbThreads != 1)
-			LMS_LOG(COVER, WARNING) << "Consider setting env var OMP_NUM_THREADS=1 to save resources";
+			LMS_LOG(COVER, WARNING, "Consider setting env var OMP_NUM_THREADS=1 to save resources");
 
 		if (!MagickLib::SetMagickResourceLimit(MagickLib::ThreadsResource, 1))
-			LMS_LOG(COVER, ERROR) << "Cannot set Magick thread resource limit to 1!";
+			LMS_LOG(COVER, ERROR, "Cannot set Magick thread resource limit to 1!");
 
 		if (!MagickLib::SetMagickResourceLimit(MagickLib::DiskResource, 0))
-			LMS_LOG(COVER, ERROR) << "Cannot set Magick disk resource limit to 0!";
+			LMS_LOG(COVER, ERROR, "Cannot set Magick disk resource limit to 0!");
 
-		LMS_LOG(COVER, INFO) << "Magick threads resource limit = " << GetMagickResourceLimit(MagickLib::ThreadsResource);
-		LMS_LOG(COVER, INFO) << "Magick Disk resource limit = " << GetMagickResourceLimit(MagickLib::DiskResource);
+		LMS_LOG(COVER, INFO, "Magick threads resource limit = " << GetMagickResourceLimit(MagickLib::ThreadsResource));
+		LMS_LOG(COVER, INFO, "Magick Disk resource limit = " << GetMagickResourceLimit(MagickLib::DiskResource));
 	}
 }
 
@@ -68,16 +68,16 @@ RawImage::RawImage(const std::byte* encodedData, std::size_t encodedDataSize)
 	}
 	catch (Magick::WarningCoder& e)
 	{
-		LMS_LOG(COVER, WARNING) << "Caught Magick WarningCoder: " << e.what();
+		LMS_LOG(COVER, WARNING, "Caught Magick WarningCoder: " << e.what());
 	}
 	catch (Magick::Warning& e)
 	{
-		LMS_LOG(COVER, WARNING) << "Caught Magick warning: " << e.what();
+		LMS_LOG(COVER, WARNING, "Caught Magick warning: " << e.what());
 		throw ImageException {std::string {"Magick read warning: "} + e.what()};
 	}
 	catch (Magick::Exception& e)
 	{
-		LMS_LOG(COVER, ERROR) << "Caught Magick exception: " << e.what();
+		LMS_LOG(COVER, ERROR, "Caught Magick exception: " << e.what());
 		throw ImageException {std::string {"Magick read error: "} + e.what()};
 	}
 }
@@ -90,16 +90,16 @@ RawImage::RawImage(const std::filesystem::path& p)
 	}
 	catch (Magick::WarningCoder& e)
 	{
-		LMS_LOG(COVER, WARNING) << "Caught Magick WarningCoder: " << e.what();
+		LMS_LOG(COVER, WARNING, "Caught Magick WarningCoder: " << e.what());
 	}
 	catch (Magick::Warning& e)
 	{
-		LMS_LOG(COVER, WARNING) << "Caught Magick warning: " << e.what();
+		LMS_LOG(COVER, WARNING, "Caught Magick warning: " << e.what());
 		throw ImageException {std::string {"Magick read warning: "} + e.what()};
 	}
 	catch (Magick::Exception& e)
 	{
-		LMS_LOG(COVER, ERROR) << "Caught Magick exception: " << e.what();
+		LMS_LOG(COVER, ERROR, "Caught Magick exception: " << e.what());
 		throw ImageException {std::string {"Magick read error: "} + e.what()};
 	}
 }
@@ -113,7 +113,7 @@ RawImage::resize(ImageSize width)
 	}
 	catch (Magick::Exception& e)
 	{
-		LMS_LOG(COVER, ERROR) << "Caught Magick exception while resizing: " << e.what();
+		LMS_LOG(COVER, ERROR, "Caught Magick exception while resizing: " << e.what());
 		throw ImageException {std::string {"Magick resize error: "} + e.what()};
 	}
 }

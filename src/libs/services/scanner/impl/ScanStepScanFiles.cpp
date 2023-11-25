@@ -30,264 +30,259 @@
 #include "services/database/TrackArtistLink.hpp"
 #include "utils/Exception.hpp"
 #include "utils/IConfig.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Path.hpp"
 
 using namespace Database;
 
-namespace
+namespace Scanner
 {
-    Artist::pointer
-        createArtist(Session& session, const MetaData::Artist& artistInfo)
+    namespace
     {
-        Artist::pointer artist{ session.create<Artist>(artistInfo.name) };
-
-        if (artistInfo.mbid)
-            artist.modify()->setMBID(*artistInfo.mbid);
-        if (artistInfo.sortName)
-            artist.modify()->setSortName(*artistInfo.sortName);
-
-        return artist;
-    }
-
-    void
-        updateArtistIfNeeded(Artist::pointer artist, const MetaData::Artist& artistInfo)
-    {
-        // Name may have been updated
-        if (artist->getName() != artistInfo.name)
+        Artist::pointer createArtist(Session& session, const MetaData::Artist& artistInfo)
         {
-            artist.modify()->setName(artistInfo.name);
-        }
+            Artist::pointer artist{ session.create<Artist>(artistInfo.name) };
 
-        // Sortname may have been updated
-        if (artistInfo.sortName && *artistInfo.sortName != artist->getSortName())
-        {
-            artist.modify()->setSortName(*artistInfo.sortName);
-        }
-    }
-
-    std::vector<Artist::pointer>
-        getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artistsInfo, bool allowFallbackOnMBIDEntries)
-    {
-        std::vector<Artist::pointer> artists;
-
-        for (const MetaData::Artist& artistInfo : artistsInfo)
-        {
-            Artist::pointer artist;
-
-            // First try to get by MBID
             if (artistInfo.mbid)
-            {
-                artist = Artist::find(session, *artistInfo.mbid);
-                if (!artist)
-                    artist = createArtist(session, artistInfo);
-                else
-                    updateArtistIfNeeded(artist, artistInfo);
+                artist.modify()->setMBID(*artistInfo.mbid);
+            if (artistInfo.sortName)
+                artist.modify()->setSortName(*artistInfo.sortName);
 
-                artists.emplace_back(std::move(artist));
-                continue;
+            return artist;
+        }
+
+        void updateArtistIfNeeded(Artist::pointer artist, const MetaData::Artist& artistInfo)
+        {
+            // Name may have been updated
+            if (artist->getName() != artistInfo.name)
+            {
+                artist.modify()->setName(artistInfo.name);
             }
 
-            // Fall back on artist name (collisions may occur)
-            if (!artistInfo.name.empty())
+            // Sortname may have been updated
+            if (artistInfo.sortName && *artistInfo.sortName != artist->getSortName())
             {
-                for (const Artist::pointer& sameNamedArtist : Artist::find(session, artistInfo.name))
-                {
-                    // Do not fallback on artist that is correctly tagged
-                    if (!allowFallbackOnMBIDEntries && sameNamedArtist->getMBID())
-                        continue;
+                artist.modify()->setSortName(*artistInfo.sortName);
+            }
+        }
 
-                    artist = sameNamedArtist;
-                    break;
+        std::vector<Artist::pointer> getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artistsInfo, bool allowFallbackOnMBIDEntries)
+        {
+            std::vector<Artist::pointer> artists;
+
+            for (const MetaData::Artist& artistInfo : artistsInfo)
+            {
+                Artist::pointer artist;
+
+                // First try to get by MBID
+                if (artistInfo.mbid)
+                {
+                    artist = Artist::find(session, *artistInfo.mbid);
+                    if (!artist)
+                        artist = createArtist(session, artistInfo);
+                    else
+                        updateArtistIfNeeded(artist, artistInfo);
+
+                    artists.emplace_back(std::move(artist));
+                    continue;
                 }
 
-                // No Artist found with the same name and without MBID -> creating
-                if (!artist)
-                    artist = createArtist(session, artistInfo);
-                else
-                    updateArtistIfNeeded(artist, artistInfo);
+                // Fall back on artist name (collisions may occur)
+                if (!artistInfo.name.empty())
+                {
+                    for (const Artist::pointer& sameNamedArtist : Artist::find(session, artistInfo.name))
+                    {
+                        // Do not fallback on artist that is correctly tagged
+                        if (!allowFallbackOnMBIDEntries && sameNamedArtist->getMBID())
+                            continue;
 
-                artists.emplace_back(std::move(artist));
-                continue;
+                        artist = sameNamedArtist;
+                        break;
+                    }
+
+                    // No Artist found with the same name and without MBID -> creating
+                    if (!artist)
+                        artist = createArtist(session, artistInfo);
+                    else
+                        updateArtistIfNeeded(artist, artistInfo);
+
+                    artists.emplace_back(std::move(artist));
+                    continue;
+                }
             }
+
+            return artists;
         }
 
-        return artists;
-    }
-
-    ReleaseTypePrimary convertReleaseTypePrimary(MetaData::Release::PrimaryType type)
-    {
-        switch (type)
-        {
-        case MetaData::Release::PrimaryType::Album:		return ReleaseTypePrimary::Album;
-        case MetaData::Release::PrimaryType::Single:	return ReleaseTypePrimary::Single;
-        case MetaData::Release::PrimaryType::EP:		return ReleaseTypePrimary::EP;
-        case MetaData::Release::PrimaryType::Broadcast:	return ReleaseTypePrimary::Broadcast;
-        case MetaData::Release::PrimaryType::Other:		return ReleaseTypePrimary::Other;
-        }
-
-        return ReleaseTypePrimary::Other;
-    }
-
-    EnumSet<ReleaseTypeSecondary> convertReleaseTypesSecondary(EnumSet<MetaData::Release::SecondaryType> types)
-    {
-        EnumSet<ReleaseTypeSecondary> res;
-
-        for (MetaData::Release::SecondaryType type : types)
+        ReleaseTypePrimary convertReleaseTypePrimary(MetaData::Release::PrimaryType type)
         {
             switch (type)
             {
-            case MetaData::Release::SecondaryType::Compilation:
-                res.insert(ReleaseTypeSecondary::Compilation);
-                break;
-            case MetaData::Release::SecondaryType::Soundtrack:
-                res.insert(ReleaseTypeSecondary::Soundtrack);
-                break;
-            case MetaData::Release::SecondaryType::Spokenword:
-                res.insert(ReleaseTypeSecondary::Spokenword);
-                break;
-            case MetaData::Release::SecondaryType::Interview:
-                res.insert(ReleaseTypeSecondary::Interview);
-                break;
-            case MetaData::Release::SecondaryType::Audiobook:
-                res.insert(ReleaseTypeSecondary::Audiobook);
-                break;
-            case MetaData::Release::SecondaryType::AudioDrama:
-                res.insert(ReleaseTypeSecondary::AudioDrama);
-                break;
-            case MetaData::Release::SecondaryType::Live:
-                res.insert(ReleaseTypeSecondary::Live);
-                break;
-            case MetaData::Release::SecondaryType::Remix:
-                res.insert(ReleaseTypeSecondary::Remix);
-                break;
-            case MetaData::Release::SecondaryType::DJMix:
-                res.insert(ReleaseTypeSecondary::DJMix);
-                break;
-            case MetaData::Release::SecondaryType::Mixtape_Street:
-                res.insert(ReleaseTypeSecondary::Mixtape_Street);
-                break;
-            case MetaData::Release::SecondaryType::Demo:
-                res.insert(ReleaseTypeSecondary::Demo);
-                break;
+            case MetaData::Release::PrimaryType::Album:		return ReleaseTypePrimary::Album;
+            case MetaData::Release::PrimaryType::Single:	return ReleaseTypePrimary::Single;
+            case MetaData::Release::PrimaryType::EP:		return ReleaseTypePrimary::EP;
+            case MetaData::Release::PrimaryType::Broadcast:	return ReleaseTypePrimary::Broadcast;
+            case MetaData::Release::PrimaryType::Other:		return ReleaseTypePrimary::Other;
             }
+
+            return ReleaseTypePrimary::Other;
         }
 
-        return res;
-    }
-
-    void
-        updateReleaseIfNeeded(Release::pointer release, const MetaData::Release& releaseInfo)
-    {
-        if (release->getName() != releaseInfo.name)
-            release.modify()->setName(releaseInfo.name);
-        if (release->getTotalDisc() != releaseInfo.mediumCount)
-            release.modify()->setTotalDisc(releaseInfo.mediumCount);
-        if (releaseInfo.primaryType)
+        EnumSet<ReleaseTypeSecondary> convertReleaseTypesSecondary(EnumSet<MetaData::Release::SecondaryType> types)
         {
-            const ReleaseTypePrimary primaryType{ convertReleaseTypePrimary(*releaseInfo.primaryType) };
-            if (release->getPrimaryType() != primaryType)
-                release.modify()->setPrimaryType(primaryType);
-        }
-        const EnumSet<ReleaseTypeSecondary> secondaryTypes{ convertReleaseTypesSecondary(releaseInfo.secondaryTypes) };
-        if (release->getSecondaryTypes() != secondaryTypes)
-            release.modify()->setSecondaryTypes(secondaryTypes);
-        if (release->getArtistDisplayName() != releaseInfo.artistDisplayName)
-            release.modify()->setArtistDisplayName(releaseInfo.artistDisplayName);
-    }
+            EnumSet<ReleaseTypeSecondary> res;
 
-    Release::pointer
-        getOrCreateRelease(Session& session, const MetaData::Release& releaseInfo)
-    {
-        Release::pointer release;
-
-        // First try to get by MBID
-        if (releaseInfo.mbid)
-        {
-            release = Release::find(session, *releaseInfo.mbid);
-            if (!release)
-                release = session.create<Release>(releaseInfo.name, releaseInfo.mbid);
-
-            updateReleaseIfNeeded(release, releaseInfo);
-            return release;
-        }
-
-        // Fall back on release name (collisions may occur)
-        if (!releaseInfo.name.empty())
-        {
-            for (const Release::pointer& sameNamedRelease : Release::find(session, releaseInfo.name))
+            for (MetaData::Release::SecondaryType type : types)
             {
-                // do not fallback on properly tagged releases
-                if (sameNamedRelease->getMBID())
-                    continue;
-
-                release = sameNamedRelease;
-                break;
+                switch (type)
+                {
+                case MetaData::Release::SecondaryType::Compilation:
+                    res.insert(ReleaseTypeSecondary::Compilation);
+                    break;
+                case MetaData::Release::SecondaryType::Soundtrack:
+                    res.insert(ReleaseTypeSecondary::Soundtrack);
+                    break;
+                case MetaData::Release::SecondaryType::Spokenword:
+                    res.insert(ReleaseTypeSecondary::Spokenword);
+                    break;
+                case MetaData::Release::SecondaryType::Interview:
+                    res.insert(ReleaseTypeSecondary::Interview);
+                    break;
+                case MetaData::Release::SecondaryType::Audiobook:
+                    res.insert(ReleaseTypeSecondary::Audiobook);
+                    break;
+                case MetaData::Release::SecondaryType::AudioDrama:
+                    res.insert(ReleaseTypeSecondary::AudioDrama);
+                    break;
+                case MetaData::Release::SecondaryType::Live:
+                    res.insert(ReleaseTypeSecondary::Live);
+                    break;
+                case MetaData::Release::SecondaryType::Remix:
+                    res.insert(ReleaseTypeSecondary::Remix);
+                    break;
+                case MetaData::Release::SecondaryType::DJMix:
+                    res.insert(ReleaseTypeSecondary::DJMix);
+                    break;
+                case MetaData::Release::SecondaryType::Mixtape_Street:
+                    res.insert(ReleaseTypeSecondary::Mixtape_Street);
+                    break;
+                case MetaData::Release::SecondaryType::Demo:
+                    res.insert(ReleaseTypeSecondary::Demo);
+                    break;
+                }
             }
 
-            // No release found with the same name and without MBID -> creating
-            if (!release)
-                release = session.create<Release>(releaseInfo.name);
-
-            updateReleaseIfNeeded(release, releaseInfo);
-            return release;
+            return res;
         }
 
-        return Release::pointer{};
-    }
-
-    std::vector<Cluster::pointer>
-        getOrCreateClusters(Session& session, const MetaData::Tags& tags)
-    {
-        std::vector<Cluster::pointer> clusters;
-
-        for (const auto& [tag, values] : tags)
+        void updateReleaseIfNeeded(Release::pointer release, const MetaData::Release& releaseInfo)
         {
-            auto clusterType = ClusterType::find(session, tag);
-            if (!clusterType)
-                continue;
-
-            for (auto clusterName : values)
+            if (release->getName() != releaseInfo.name)
+                release.modify()->setName(releaseInfo.name);
+            if (release->getTotalDisc() != releaseInfo.mediumCount)
+                release.modify()->setTotalDisc(releaseInfo.mediumCount);
+            if (releaseInfo.primaryType)
             {
-                auto cluster = clusterType->getCluster(clusterName);
-                if (!cluster)
-                    cluster = session.create<Cluster>(clusterType, clusterName);
-
-                clusters.push_back(cluster);
+                const ReleaseTypePrimary primaryType{ convertReleaseTypePrimary(*releaseInfo.primaryType) };
+                if (release->getPrimaryType() != primaryType)
+                    release.modify()->setPrimaryType(primaryType);
             }
+            const EnumSet<ReleaseTypeSecondary> secondaryTypes{ convertReleaseTypesSecondary(releaseInfo.secondaryTypes) };
+            if (release->getSecondaryTypes() != secondaryTypes)
+                release.modify()->setSecondaryTypes(secondaryTypes);
+            if (release->getArtistDisplayName() != releaseInfo.artistDisplayName)
+                release.modify()->setArtistDisplayName(releaseInfo.artistDisplayName);
         }
 
-        return clusters;
-    }
+        Release::pointer getOrCreateRelease(Session& session, const MetaData::Release& releaseInfo, const std::filesystem::path& expectedReleaseDirectory)
+        {
+            Release::pointer release;
 
-    MetaData::ParserReadStyle
-        getParserReadStyle()
-    {
-        std::string_view readStyle{ Service<IConfig>::get()->getString("scanner-parser-read-style", "accurate") };
+            // First try to get by MBID
+            if (releaseInfo.mbid)
+            {
+                release = Release::find(session, *releaseInfo.mbid);
+                if (!release)
+                    release = session.create<Release>(releaseInfo.name, releaseInfo.mbid);
 
-        if (readStyle == "fast")
-            return MetaData::ParserReadStyle::Fast;
-        else if (readStyle == "average")
-            return MetaData::ParserReadStyle::Average;
-        else if (readStyle == "accurate")
-            return MetaData::ParserReadStyle::Accurate;
+                updateReleaseIfNeeded(release, releaseInfo);
+                return release;
+            }
 
-        throw LmsException{ "Invalid value for 'scanner-parser-read-style'" };
-    }
-} // namespace
+            // Fall back on release name (collisions may occur), if and only if it is in the current directory
+            if (!releaseInfo.name.empty())
+            {
+                for (const Release::pointer& sameNamedRelease : Release::find(session, releaseInfo.name, expectedReleaseDirectory))
+                {
+                    // do not fallback on properly tagged releases
+                    if (sameNamedRelease->getMBID())
+                        continue;
 
-namespace Scanner
-{
+                    release = sameNamedRelease;
+                    break;
+                }
+
+                // No release found with the same name and without MBID -> creating
+                if (!release)
+                    release = session.create<Release>(releaseInfo.name);
+
+                updateReleaseIfNeeded(release, releaseInfo);
+                return release;
+            }
+
+            return Release::pointer{};
+        }
+
+        std::vector<Cluster::pointer> getOrCreateClusters(Session& session, const MetaData::Tags& tags)
+        {
+            std::vector<Cluster::pointer> clusters;
+
+            for (const auto& [tag, values] : tags)
+            {
+                auto clusterType = ClusterType::find(session, tag);
+                if (!clusterType)
+                    clusterType = session.create<ClusterType>(tag);
+
+                for (const auto& clusterName : values)
+                {
+                    auto cluster = clusterType->getCluster(clusterName);
+                    if (!cluster)
+                        cluster = session.create<Cluster>(clusterType, clusterName);
+
+                    clusters.push_back(cluster);
+                }
+            }
+
+            return clusters;
+        }
+
+        MetaData::ParserReadStyle getParserReadStyle()
+        {
+            std::string_view readStyle{ Service<IConfig>::get()->getString("scanner-parser-read-style", "average") };
+
+            if (readStyle == "fast")
+                return MetaData::ParserReadStyle::Fast;
+            else if (readStyle == "average")
+                return MetaData::ParserReadStyle::Average;
+            else if (readStyle == "accurate")
+                return MetaData::ParserReadStyle::Accurate;
+
+            throw LmsException{ "Invalid value for 'scanner-parser-read-style'" };
+        }
+    } // namespace
+
     ScanStepScanFiles::ScanStepScanFiles(InitParams& initParams)
         : ScanStepBase{ initParams }
         , _metadataParser{ MetaData::createParser(MetaData::ParserType::TagLib, getParserReadStyle()) } // For now, always use TagLib
     {
     }
 
-    void
-        ScanStepScanFiles::process(ScanContext& context)
+    void ScanStepScanFiles::process(ScanContext& context)
     {
-        _metadataParser->setClusterTypeNames(_settings.clusterTypeNames);
+        std::vector<std::string> tagsToParse{ _tagsToParse };
+        tagsToParse.insert(std::end(tagsToParse), std::cbegin(_settings.extraTags), std::cend(_settings.extraTags));
+
+        _metadataParser->setExtraTags(tagsToParse);
 
         context.currentStepStats.totalElems = context.stats.filesScanned;
 
@@ -298,7 +293,7 @@ namespace Scanner
 
                 if (ec)
                 {
-                    LMS_LOG(DBUPDATER, ERROR) << "Cannot process entry '" << path.string() << "': " << ec.message();
+                    LMS_LOG(DBUPDATER, ERROR, "Cannot process entry '" << path.string() << "': " << ec.message());
                     context.stats.errors.emplace_back(ScanError{ path, ScanErrorType::CannotReadFile, ec.message() });
                 }
                 else if (PathUtils::hasFileAnyExtension(path, _settings.supportedExtensions))
@@ -317,8 +312,7 @@ namespace Scanner
             }, &excludeDirFileName);
     }
 
-    void
-        ScanStepScanFiles::scanAudioFile(const std::filesystem::path& file, ScanContext& context)
+    void ScanStepScanFiles::scanAudioFile(const std::filesystem::path& file, ScanContext& context)
     {
         ScanStats& stats{ context.stats };
         Wt::WDateTime lastWriteTime;
@@ -328,7 +322,7 @@ namespace Scanner
         }
         catch (LmsException& e)
         {
-            LMS_LOG(DBUPDATER, ERROR) << e.what();
+            LMS_LOG(DBUPDATER, ERROR, e.what());
             stats.skips++;
             return;
         }
@@ -337,7 +331,7 @@ namespace Scanner
         {
             // Skip file if last write is the same
             Database::Session& dbSession{ _db.getTLSSession() };
-            auto transaction{ _db.getTLSSession().createSharedTransaction() };
+            auto transaction{ _db.getTLSSession().createReadTransaction() };
 
             const Track::pointer track{ Track::findByPath(dbSession, file) };
 
@@ -359,7 +353,7 @@ namespace Scanner
         stats.scans++;
 
         Database::Session& dbSession{ _db.getTLSSession() };
-        auto uniqueTransaction{ dbSession.createUniqueTransaction() };
+        auto transaction{ dbSession.createWriteTransaction() };
 
         Track::pointer track{ Track::findByPath(dbSession, file) };
 
@@ -374,7 +368,7 @@ namespace Scanner
                 std::error_code ec;
                 if (!std::filesystem::exists(otherTrack->getPath(), ec))
                 {
-                    LMS_LOG(DBUPDATER, DEBUG) << "Considering track '" << file.string() << "' moved from '" << otherTrack->getPath() << "'";
+                    LMS_LOG(DBUPDATER, DEBUG, "Considering track '" << file.string() << "' moved from '" << otherTrack->getPath() << "'");
                     track = otherTrack;
                     track.modify()->setPath(file);
                 }
@@ -393,7 +387,7 @@ namespace Scanner
                     if (!PathUtils::isPathInRootPath(file, _settings.mediaDirectory, &excludeDirFileName))
                         continue;
 
-                    LMS_LOG(DBUPDATER, DEBUG) << "Skipped '" << file.string() << "' (similar MBID in '" << otherTrack->getPath().string() << "')";
+                    LMS_LOG(DBUPDATER, DEBUG, "Skipped '" << file.string() << "' (similar MBID in '" << otherTrack->getPath().string() << "')");
                     // As this MBID already exists, just remove what we just scanned
                     if (track)
                     {
@@ -408,7 +402,7 @@ namespace Scanner
         // We estimate this is an audio file if the duration is not null
         if (trackInfo->duration == std::chrono::milliseconds::zero())
         {
-            LMS_LOG(DBUPDATER, DEBUG) << "Skipped '" << file.string() << "' (duration is 0)";
+            LMS_LOG(DBUPDATER, DEBUG, "Skipped '" << file.string() << "' (duration is 0)");
 
             // If Track exists here, delete it!
             if (track)
@@ -436,12 +430,12 @@ namespace Scanner
         if (!track)
         {
             track = dbSession.create<Track>(file);
-            LMS_LOG(DBUPDATER, DEBUG) << "Adding '" << file.string() << "'";
+            LMS_LOG(DBUPDATER, DEBUG, "Adding '" << file.string() << "'");
             stats.additions++;
         }
         else
         {
-            LMS_LOG(DBUPDATER, DEBUG) << "Updating '" << file.string() << "'";
+            LMS_LOG(DBUPDATER, DEBUG, "Updating '" << file.string() << "'");
 
             stats.updates++;
         }
@@ -488,7 +482,7 @@ namespace Scanner
 
         track.modify()->setScanVersion(_settings.scanVersion);
         if (trackInfo->medium && trackInfo->medium->release)
-            track.modify()->setRelease(getOrCreateRelease(dbSession, *trackInfo->medium->release));
+            track.modify()->setRelease(getOrCreateRelease(dbSession, *trackInfo->medium->release, file.parent_path()));
         else
             track.modify()->setRelease({});
         track.modify()->setTotalTrack(trackInfo->medium ? trackInfo->medium->trackCount : std::nullopt);

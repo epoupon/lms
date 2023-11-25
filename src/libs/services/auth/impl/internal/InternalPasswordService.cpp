@@ -25,7 +25,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 namespace Auth
 {
@@ -44,17 +44,17 @@ namespace Auth
 	bool
 	InternalPasswordService::checkUserPassword(std::string_view loginName, std::string_view password)
 	{
-		LMS_LOG(AUTH, DEBUG) << "Checking internal password for user '" << loginName << "'";
+		LMS_LOG(AUTH, DEBUG, "Checking internal password for user '" << loginName << "'");
 
 		Database::User::PasswordHash passwordHash;
 		{
 			Database::Session& session {getDbSession()};
-			auto transaction {session.createSharedTransaction()};
+			auto transaction {session.createReadTransaction()};
 
 			const Database::User::pointer user {Database::User::find(session, loginName)};
 			if (!user)
 			{
-				LMS_LOG(AUTH, DEBUG) << "hashing random stuff";
+				LMS_LOG(AUTH, DEBUG, "hashing random stuff");
 				// hash random stuff here to waste some time
 				hashRandomPassword();
 				return false;
@@ -100,7 +100,7 @@ namespace Auth
 		const Database::User::PasswordHash passwordHash {hashPassword(newPassword)};
 
 		Database::Session& session {getDbSession()};
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createWriteTransaction()};
 
 		Database::User::pointer user {Database::User::find(session, userId)};
 		if (!user)

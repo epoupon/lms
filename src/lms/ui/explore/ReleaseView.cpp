@@ -27,14 +27,16 @@
 #include "av/IAudioFile.hpp"
 #include "services/database/Artist.hpp"
 #include "services/database/Cluster.hpp"
+#include "services/database/Listen.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/ScanSettings.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/TrackArtistLink.hpp"
+#include "services/database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 #include "common/Template.hpp"
 #include "resource/DownloadResource.hpp"
@@ -56,7 +58,7 @@ namespace UserInterface
     {
         void showReleaseInfoModal(Database::ReleaseId releaseId)
         {
-            auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
             const Database::Release::pointer release{ Database::Release::find(LmsApp->getDbSession(), releaseId) };
             if (!release)
@@ -158,6 +160,9 @@ namespace UserInterface
                 releaseInfo->bindString("bitrate", std::to_string(meanBitrate / 1000) + " kbps");
             }
 
+            const auto user{ LmsApp->getUser() };
+            releaseInfo->bindInt("playcount", Database::Listen::getCount(LmsApp->getDbSession(), user->getId(), user->getScrobblingBackend(), release->getId()));
+
             Wt::WPushButton* okBtn{ releaseInfo->bindNew<Wt::WPushButton>("ok-btn", Wt::WString::tr("Lms.ok")) };
             okBtn->clicked().connect([=]
                 {
@@ -174,7 +179,7 @@ namespace UserInterface
                 const auto mbid{ UUID::fromString(wApp->internalPathNextPart("/release/mbid/")) };
                 if (mbid)
                 {
-                    auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
                     if (const Database::Release::pointer release{ Database::Release::find(LmsApp->getDbSession(), *mbid) })
                         return release->getId();
                 }
@@ -228,7 +233,7 @@ namespace UserInterface
 
         auto similarReleasesIds{ Service<Recommendation::IRecommendationService>::get()->getSimilarReleases(*releaseId, 6) };
 
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const Database::Release::pointer release{ Database::Release::find(LmsApp->getDbSession(), *releaseId) };
         if (!release)
@@ -258,8 +263,8 @@ namespace UserInterface
 
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
         {
-            const auto clusterTypes{ ScanSettings::get(LmsApp->getDbSession())->getClusterTypes() };
-            const auto clusterGroups{ release->getClusterGroups(clusterTypes, 3) };
+            const auto clusterTypeIds{ ClusterType::findIds(LmsApp->getDbSession()).results };
+            const auto clusterGroups{ release->getClusterGroups(clusterTypeIds, 3) };
 
             for (const auto& clusters : clusterGroups)
             {
@@ -433,7 +438,7 @@ namespace UserInterface
                     Wt::WPushButton* starBtn{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
                     starBtn->clicked().connect([=]
                         {
-                            auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
+                            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
                             if (isStarred())
                             {

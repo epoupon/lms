@@ -12,6 +12,7 @@
 <message id="Lms.delete">Delete</message>
 <message id="Lms.discard">Discard</message>
 <message id="Lms.edit">Edit</message>
+<message id="Lms.field-must-be-in-upper-case">This field must be in upper case</message>
 <message id="Lms.loading">Loading...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Logout</message>
@@ -46,6 +47,7 @@
 <!--Administration-->
 <message id="Lms.Admin.Database.daily">Daily</message>
 <message id="Lms.Admin.Database.database">Music collection</message>
+<message id="Lms.Admin.Database.extra-tags-to-scan">Extra tags to scan (use <kbd>;</kbd> as separator)</message>
 <message id="Lms.Admin.Database.hourly">Hourly</message>
 <message id="Lms.Admin.Database.immediate-scan">Scan now!</message>
 <message id="Lms.Admin.Database.monthly">Monthly</message>
@@ -135,6 +137,7 @@
 <message id="Lms.Explore.play-last">Play last</message>
 <message id="Lms.Explore.play-next">Play next</message>
 <message id="Lms.Explore.play-shuffled">Play shuffled</message>
+<message id="Lms.Explore.playcount">Play count</message>
 <message id="Lms.Explore.random">Random</message>
 <message id="Lms.Explore.recently-added">Recently added</message>
 <message id="Lms.Explore.recently-modified">Recently modified</message>

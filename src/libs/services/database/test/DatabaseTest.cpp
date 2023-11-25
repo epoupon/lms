@@ -34,20 +34,20 @@ TEST_F(DatabaseFixture, MultiTracksSingleArtistSingleRelease)
     {
         tracks.emplace_back(session, "MyTrack" + std::to_string(i));
 
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         TrackArtistLink::create(session, tracks.back().get(), artist.get(), TrackArtistLinkType::Artist);
         tracks.back().get().modify()->setRelease(release.get());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_TRUE(Release::findOrphanIds(session).results.empty());
         EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto releases{ Release::findIds(session, Release::FindParameters {}.setArtist(artist.getId())) };
         ASSERT_EQ(releases.results.size(), 1);
@@ -65,14 +65,14 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtist)
     ScopedArtist artist{ session, "MyArtist" };
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         auto trackArtistLink{ TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist) };
         track.get().modify()->setRelease(release.get());
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         auto releases{ Release::findIds(session, Release::FindParameters {}.setArtist(artist.getId())) };
         ASSERT_EQ(releases.results.size(), 1);
@@ -87,7 +87,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtist)
 TEST_F(DatabaseFixture, SingleUser)
 {
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_TRUE(User::find(session, User::FindParameters{}).results.empty());
         EXPECT_EQ(User::getCount(session), 0);
     }
@@ -95,7 +95,7 @@ TEST_F(DatabaseFixture, SingleUser)
     ScopedUser user{ session, "MyUser" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         EXPECT_EQ(User::find(session, User::FindParameters{}).results.size(), 1);
         EXPECT_EQ(User::getCount(session), 1);

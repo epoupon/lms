@@ -56,7 +56,7 @@ Filters::showDialog()
 		ClusterId clusterId {};
 
 		{
-			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+			auto transaction {LmsApp->getDbSession().createReadTransaction()};
 
 			ClusterType::pointer clusterType {ClusterType::find(LmsApp->getDbSession(), type)};
 			if (!clusterType)
@@ -82,13 +82,13 @@ Filters::showDialog()
 
 	// Populate data
 	{
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+		auto transaction {LmsApp->getDbSession().createReadTransaction()};
 
 		const auto clusterTypesIds {ClusterType::findUsed(LmsApp->getDbSession())};
 		for (const ClusterTypeId clusterTypeId : clusterTypesIds.results)
 		{
 			const auto clusterType {ClusterType::find(LmsApp->getDbSession(), clusterTypeId)};
-			typeCombo->addItem(Wt::WString::fromUTF8(clusterType->getName()));
+			typeCombo->addItem(Wt::WString::fromUTF8(std::string{ clusterType->getName() }));
 		}
 
 		if (!clusterTypesIds.results.empty())
@@ -109,7 +109,7 @@ Filters::showDialog()
 
 		valueCombo->clear();
 
-		auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+		auto transaction {LmsApp->getDbSession().createReadTransaction()};
 
 		auto clusterType {ClusterType::find(LmsApp->getDbSession(), name)};
 		for (const Cluster::pointer& cluster : clusterType->getClusters())

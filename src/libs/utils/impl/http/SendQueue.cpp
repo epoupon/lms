@@ -23,10 +23,10 @@
 #include <boost/asio/bind_executor.hpp>
 
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/String.hpp"
 
-#define LOG(sev)	LMS_LOG(SCROBBLING, sev) << "[Http SendQueue] - "
+#define LOG(sev, message)	LMS_LOG(SCROBBLING, sev, "[Http SendQueue] - " << message)
 
 namespace StringUtils
 {
@@ -98,7 +98,7 @@ namespace Http
 
 		for (auto& [prio, requests] : _sendQueue)
 		{
-			LOG(DEBUG) << "Processing prio " << static_cast<int>(prio) << ", request count = " << requests.size();
+			LOG(DEBUG, "Processing prio " << static_cast<int>(prio) << ", request count = " << requests.size());
 			while (!requests.empty())
 			{
 				std::unique_ptr<ClientRequest> request {std::move(requests.front())};
@@ -118,7 +118,7 @@ namespace Http
 	SendQueue::sendRequest(const ClientRequest& request)
 	{
 		std::string url {_baseUrl + request.getParameters().relativeUrl};
-		LOG(DEBUG) << "Sending request to url '" << url << "'";
+		LOG(DEBUG, "Sending request to url '" << url << "'");
 
 		bool res {};
 		switch (request.getType())
@@ -133,7 +133,7 @@ namespace Http
 		}
 
 		if (!res)
-			LOG(ERROR) << "Send failed, bad url or unsupported scheme?";
+			LOG(ERROR, "Send failed, bad url or unsupported scheme?");
 
 		return res;
 	}
@@ -143,14 +143,14 @@ namespace Http
 	{
 		if (ec == boost::asio::error::operation_aborted)
 		{
-			LOG(DEBUG) << "Client aborted";
+			LOG(DEBUG, "Client aborted");
 			return;
 		}
 
 		assert(_currentRequest);
 		_state = State::Idle;
 
-		LOG(DEBUG) << "Client done. status = " << msg.status();
+		LOG(DEBUG, "Client done. status = " << msg.status());
 		if (ec)
 			onClientDoneError(std::move(_currentRequest), ec);
 		else
@@ -160,7 +160,7 @@ namespace Http
 	void
 	SendQueue::onClientDoneError(std::unique_ptr<ClientRequest> request, Wt::AsioWrapper::error_code ec)
 	{
-		LOG(ERROR) << "Retry " << request->retryCount << ", client error: '" << ec.message() << "'";
+		LOG(ERROR, "Retry " << request->retryCount << ", client error: '" << ec.message() << "'");
 
 		// may be a network error, try again later
 		throttle(_defaultRetryWaitDuration);
@@ -171,7 +171,7 @@ namespace Http
 		}
 		else
 		{
-			LOG(ERROR) << "Too many retries, giving up operation and throttle";
+			LOG(ERROR, "Too many retries, giving up operation and throttle");
 			if (request->getParameters().onFailureFunc)
 				request->getParameters().onFailureFunc();
 		}
@@ -189,7 +189,7 @@ namespace Http
 		}
 
 		const auto remainingCount {headerReadAs<std::size_t>(msg, "X-RateLimit-Remaining")};
-		LOG(DEBUG) << "Remaining messages = " << (remainingCount ? *remainingCount : 0);
+		LOG(DEBUG, "Remaining messages = " << (remainingCount ? *remainingCount : 0));
 		if (mustThrottle || (remainingCount && *remainingCount == 0))
 		{
 			const auto waitDuration {headerReadAs<std::chrono::seconds>(msg, "X-RateLimit-Reset-In")};
@@ -205,7 +205,7 @@ namespace Http
 			}
 			else
 			{
-				LOG(ERROR) << "Send error: '" << msg.body() << "'";
+				LOG(ERROR, "Send error: '" << msg.body() << "'");
 				if (requestParameters.onFailureFunc)
 					requestParameters.onFailureFunc();
 			}
@@ -221,14 +221,14 @@ namespace Http
 		assert(_state == State::Idle);
 
 		const std::chrono::seconds duration {clamp(requestedDuration, _minRetryWaitDuration, _maxRetryWaitDuration)};
-		LOG(DEBUG) << "Throttling for " << duration.count() << " seconds";
+		LOG(DEBUG, "Throttling for " << duration.count() << " seconds");
 
 		_throttleTimer.expires_after(duration);
 		_throttleTimer.async_wait([this](const boost::system::error_code& ec)
 		{
 			if (ec == boost::asio::error::operation_aborted)
 			{
-				LOG(DEBUG) << "Throttle aborted";
+				LOG(DEBUG, "Throttle aborted");
 				return;
 			}
 			else if (ec)

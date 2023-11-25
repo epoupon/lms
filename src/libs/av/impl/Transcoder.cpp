@@ -25,13 +25,13 @@
 #include "utils/IChildProcessManager.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/Path.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Service.hpp"
 
 namespace Av::Transcoding
 {
 
-#define LOG(sev)	LMS_LOG(TRANSCODING, sev) << "[" << _debugId << "] - "
+#define LOG(severity, message)	LMS_LOG(TRANSCODING, severity, "[" << _debugId << "] - " << message)
 
     static std::atomic<size_t>		globalId{};
     static std::filesystem::path	ffmpegPath;
@@ -84,7 +84,7 @@ namespace Av::Transcoding
             throw Exception{ "File error '" + _inputParameters.trackPath.string() + "': " + e.what() };
         }
 
-        LOG(INFO) << "Transcoding file '" << _inputParameters.trackPath.string() << "'";
+        LOG(INFO, "Transcoding file '" << _inputParameters.trackPath.string() << "'");
 
         std::vector<std::string> args;
 
@@ -176,9 +176,9 @@ namespace Av::Transcoding
 
         args.emplace_back("pipe:1");
 
-        LOG(DEBUG) << "Dumping args (" << args.size() << ")";
+        LOG(DEBUG, "Dumping args (" << args.size() << ")");
         for (const std::string& arg : args)
-            LOG(DEBUG) << "Arg = '" << arg << "'";
+            LOG(DEBUG, "Arg = '" << arg << "'");
 
         // Caution: stdin must have been closed before
         try

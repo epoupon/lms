@@ -26,7 +26,7 @@
 #include "playlist-constraints/ConsecutiveArtists.hpp"
 #include "playlist-constraints/ConsecutiveReleases.hpp"
 #include "playlist-constraints/DuplicateTracks.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 namespace Recommendation
 {
@@ -48,7 +48,7 @@ namespace Recommendation
 
     std::vector<TrackId> PlaylistGeneratorService::extendPlaylist(TrackListId tracklistId, std::size_t maxCount) const
     {
-        LMS_LOG(RECOMMENDATION, DEBUG) << "Requested to extend playlist by " << maxCount << " similar tracks";
+        LMS_LOG(RECOMMENDATION, DEBUG, "Requested to extend playlist by " << maxCount << " similar tracks");
 
         // supposed to be ordered from most similar to least similar
         std::vector<TrackId> similarTracks{ _recommendationService.findSimilarTracks(tracklistId, maxCount * 2) }; // ask for more tracks than we need as it will be easier to respect constraints
@@ -100,7 +100,7 @@ namespace Recommendation
         TrackContainer tracks;
 
         Session& dbSession{ _db.getTLSSession() };
-        auto transaction{ dbSession.createSharedTransaction() };
+        auto transaction{ dbSession.createReadTransaction() };
 
         Track::FindParameters params;
         params.setTrackList(tracklistId);

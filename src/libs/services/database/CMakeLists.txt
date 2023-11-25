@@ -17,6 +17,7 @@ add_library(lmsdatabase SHARED
 	impl/SqlQuery.cpp
 	impl/Track.cpp
 	impl/TrackBookmark.cpp
+	impl/TransactionChecker.cpp
 	impl/Types.cpp
 	impl/User.cpp
 	impl/Utils.cpp

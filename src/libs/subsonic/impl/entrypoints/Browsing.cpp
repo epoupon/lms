@@ -26,7 +26,7 @@
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Random.hpp"
 #include "utils/Service.hpp"
 #include "responses/Album.hpp"
@@ -58,7 +58,7 @@ namespace API::Subsonic
             Response::Node& artistInfoNode{ response.createNode(id3 ? Response::Node::Key{ "artistInfo2" } : Response::Node::Key{ "artistInfo" }) };
 
             {
-                auto transaction{ context.dbSession.createSharedTransaction() };
+                auto transaction{ context.dbSession.createReadTransaction() };
 
                 const Artist::pointer artist{ Artist::find(context.dbSession, id) };
                 if (!artist)
@@ -72,7 +72,7 @@ namespace API::Subsonic
             auto similarArtistsId{ Service<Recommendation::IRecommendationService>::get()->getSimilarArtists(id, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, count) };
 
             {
-                auto transaction{ context.dbSession.createSharedTransaction() };
+                auto transaction{ context.dbSession.createReadTransaction() };
 
                 User::pointer user{ User::find(context.dbSession, context.userId) };
                 if (!user)
@@ -99,7 +99,7 @@ namespace API::Subsonic
 
             Artist::FindParameters parameters;
             {
-                auto transaction{ context.dbSession.createSharedTransaction() };
+                auto transaction{ context.dbSession.createReadTransaction() };
 
                 User::pointer user{ User::find(context.dbSession, context.userId) };
                 if (!user)
@@ -122,14 +122,14 @@ namespace API::Subsonic
             // This endpoint does not scale: make sort lived transactions in order not to block the whole application
 
             // first pass: dispatch the artists by first letter
-            LMS_LOG(API_SUBSONIC, DEBUG) << "GetArtists: fetching all artists...";
+            LMS_LOG(API_SUBSONIC, DEBUG, "GetArtists: fetching all artists...");
             std::map<char, std::vector<ArtistId>> artistsSortedByFirstChar;
             std::size_t currentArtistOffset{ 0 };
             constexpr std::size_t batchSize{ 100 };
             bool hasMoreArtists{ true };
             while (hasMoreArtists)
             {
-                auto transaction{ context.dbSession.createSharedTransaction() };
+                auto transaction{ context.dbSession.createReadTransaction() };
 
                 parameters.setRange(Range{ currentArtistOffset, batchSize });
                 const auto artists{ Artist::find(context.dbSession, parameters) };
@@ -151,7 +151,7 @@ namespace API::Subsonic
             }
 
             // second pass: add each artist
-            LMS_LOG(API_SUBSONIC, DEBUG) << "GetArtists: constructing response...";
+            LMS_LOG(API_SUBSONIC, DEBUG, "GetArtists: constructing response...");
             for (const auto& [sortChar, artistIds] : artistsSortedByFirstChar)
             {
                 Response::Node& indexNode{ artistsNode.createArrayChild("index") };
@@ -159,7 +159,7 @@ namespace API::Subsonic
 
                 for (const ArtistId artistId : artistIds)
                 {
-                    auto transaction{ context.dbSession.createSharedTransaction() };
+                    auto transaction{ context.dbSession.createReadTransaction() };
                     User::pointer user{ User::find(context.dbSession, context.userId) };
                     if (!user)
                         throw UserNotAuthorizedError{};
@@ -181,7 +181,7 @@ namespace API::Subsonic
 
             const std::size_t meanTrackCountPerArtist{ (count / artistIds.size()) + 1 };
 
-            auto transaction{ context.dbSession.createSharedTransaction() };
+            auto transaction{ context.dbSession.createReadTransaction() };
 
             std::vector<TrackId> tracks;
             tracks.reserve(count);
@@ -212,7 +212,7 @@ namespace API::Subsonic
 
             const std::size_t meanTrackCountPerRelease{ (count / releaseIds.size()) + 1 };
 
-            auto transaction{ context.dbSession.createSharedTransaction() };
+            auto transaction{ context.dbSession.createReadTransaction() };
 
             std::vector<TrackId> tracks;
             tracks.reserve(count);
@@ -258,7 +258,7 @@ namespace API::Subsonic
 
             Random::shuffleContainer(tracks);
 
-            auto transaction{ context.dbSession.createSharedTransaction() };
+            auto transaction{ context.dbSession.createReadTransaction() };
 
             User::pointer user{ User::find(context.dbSession, context.userId) };
             if (!user)
@@ -307,7 +307,7 @@ namespace API::Subsonic
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
         Response::Node& directoryNode{ response.createNode("directory") };
 
-        auto transaction{ context.dbSession.createSharedTransaction() };
+        auto transaction{ context.dbSession.createReadTransaction() };
 
         User::pointer user{ User::find(context.dbSession, context.userId) };
         if (!user)
@@ -366,7 +366,7 @@ namespace API::Subsonic
 
         Response::Node& genresNode{ response.createNode("genres") };
 
-        auto transaction{ context.dbSession.createSharedTransaction() };
+        auto transaction{ context.dbSession.createReadTransaction() };
 
         const ClusterType::pointer clusterType{ ClusterType::find(context.dbSession, "GENRE") };
         if (clusterType)
@@ -390,7 +390,7 @@ namespace API::Subsonic
         // Mandatory params
         ArtistId id{ getMandatoryParameterAs<ArtistId>(context.parameters, "id") };
 
-        auto transaction{ context.dbSession.createSharedTransaction() };
+        auto transaction{ context.dbSession.createReadTransaction() };
 
         const Artist::pointer artist{ Artist::find(context.dbSession, id) };
         if (!artist)
@@ -417,7 +417,7 @@ namespace API::Subsonic
         // Mandatory params
         ReleaseId id{ getMandatoryParameterAs<ReleaseId>(context.parameters, "id") };
 
-        auto transaction{ context.dbSession.createSharedTransaction() };
+        auto transaction{ context.dbSession.createReadTransaction() };
 
         Release::pointer release{ Release::find(context.dbSession, id) };
         if (!release)
@@ -444,7 +444,7 @@ namespace API::Subsonic
         // Mandatory params
         TrackId id{ getMandatoryParameterAs<TrackId>(context.parameters, "id") };
 
-        auto transaction{ context.dbSession.createSharedTransaction() };
+        auto transaction{ context.dbSession.createReadTransaction() };
 
         const Track::pointer track{ Track::find(context.dbSession, id) };
         if (!track)

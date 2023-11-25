@@ -29,7 +29,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/ScanSettings.hpp"
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 namespace Recommendation
 {
@@ -37,7 +37,7 @@ namespace Recommendation
     {
         Database::ScanSettings::SimilarityEngineType getSimilarityEngineType(Database::Session& session)
         {
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
 
             return Database::ScanSettings::get(session)->getSimilarityEngineType();
         }

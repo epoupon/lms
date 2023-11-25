@@ -24,7 +24,7 @@
 #include <Wt/Json/Serializer.h>
 #include <Wt/WPushButton.h>
 
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 #include "services/database/Artist.hpp"
 #include "services/database/Release.hpp"
@@ -210,34 +210,34 @@ namespace UserInterface
 
         _settingsLoaded.connect([this](const std::string& settings)
             {
-                LMS_LOG(UI, DEBUG) << "Settings loaded! '" << settings << "'";
+                LMS_LOG(UI, DEBUG, "Settings loaded! '" << settings << "'");
 
                 _settings = settingsfromJSString(settings);
 
                 settingsLoaded.emit();
-            });
+                    });
 
-        {
-            Settings defaultSettings;
+                {
+                    Settings defaultSettings;
 
-            std::ostringstream oss;
-            oss << "LMS.mediaplayer.init("
-                << jsRef()
-                << ", defaultSettings = " << settingsToJSString(defaultSettings)
-                << ")";
+                    std::ostringstream oss;
+                    oss << "LMS.mediaplayer.init("
+                        << jsRef()
+                        << ", defaultSettings = " << settingsToJSString(defaultSettings)
+                        << ")";
 
-            LMS_LOG(UI, DEBUG) << "Running js = '" << oss.str() << "'";
-            doJavaScript(oss.str());
-        }
+                    LMS_LOG(UI, DEBUG, "Running js = '" << oss.str() << "'");
+                    doJavaScript(oss.str());
+                }
     }
 
     void MediaPlayer::loadTrack(Database::TrackId trackId, bool play, float replayGain)
     {
-        LMS_LOG(UI, DEBUG) << "Playing track ID = " << trackId.toString();
+        LMS_LOG(UI, DEBUG, "Playing track ID = " << trackId.toString());
 
         std::ostringstream oss;
         {
-            auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
             const auto track{ Database::Track::find(LmsApp->getDbSession(), trackId) };
             if (!track)
@@ -305,7 +305,7 @@ namespace UserInterface
                 _separator->setText("");
         }
 
-        LMS_LOG(UI, DEBUG) << "Running js = '" << oss.str() << "'";
+        LMS_LOG(UI, DEBUG, "Running js = '" << oss.str() << "'");
         doJavaScript(oss.str());
 
         _trackIdLoaded = trackId;
@@ -325,7 +325,7 @@ namespace UserInterface
             std::ostringstream oss;
             oss << "LMS.mediaplayer.setSettings(settings = " << settingsToJSString(settings) << ")";
 
-            LMS_LOG(UI, DEBUG) << "Running js = '" << oss.str() << "'";
+            LMS_LOG(UI, DEBUG, "Running js = '" << oss.str() << "'");
             doJavaScript(oss.str());
         }
     }

@@ -27,7 +27,7 @@ using namespace Database;
 TEST_F(DatabaseFixture, Cluster)
 {
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         EXPECT_EQ(Cluster::getCount(session), 0);
         EXPECT_EQ(ClusterType::getCount(session), 0);
     }
@@ -35,7 +35,7 @@ TEST_F(DatabaseFixture, Cluster)
     ScopedClusterType clusterType{ session, "MyType" };
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         EXPECT_EQ(ClusterType::getCount(session), 1);
     }
 
@@ -43,7 +43,7 @@ TEST_F(DatabaseFixture, Cluster)
         ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
 
         {
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
 
             EXPECT_EQ(Cluster::getCount(session), 1);
             EXPECT_EQ(cluster->getType()->getId(), clusterType.getId());
@@ -55,12 +55,12 @@ TEST_F(DatabaseFixture, Cluster)
             }
 
             {
-                const auto clusters{ Cluster::findOrphans(session) };
+                const auto clusters{ Cluster::findOrphanIds(session) };
                 ASSERT_EQ(clusters.results.size(), 1);
                 EXPECT_EQ(clusters.results.front(), cluster.getId());
             }
 
-            auto clusterTypes{ ClusterType::find(session) };
+            auto clusterTypes{ ClusterType::findIds(session) };
             ASSERT_EQ(clusterTypes.results.size(), 1);
             EXPECT_EQ(clusterTypes.results.front(), clusterType.getId());
 
@@ -68,15 +68,15 @@ TEST_F(DatabaseFixture, Cluster)
             ASSERT_EQ(clusterTypes.results.size(), 1);
             EXPECT_EQ(clusterTypes.results.front(), clusterType.getId());
 
-            clusterTypes = ClusterType::findOrphans(session);
+            clusterTypes = ClusterType::findOrphanIds(session);
             EXPECT_TRUE(clusterTypes.results.empty());
         }
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
-        auto clusterTypes{ ClusterType::findOrphans(session) };
+        auto clusterTypes{ ClusterType::findOrphanIds(session) };
         ASSERT_EQ(clusterTypes.results.size(), 1);
         EXPECT_EQ(clusterTypes.results.front(), clusterType.getId());
 
@@ -90,9 +90,9 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
     ScopedClusterType clusterType{ session, "MyClusterType" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
-        EXPECT_TRUE(Cluster::findOrphans(session).results.empty());
-        auto clusterTypes{ ClusterType::findOrphans(session) };
+        auto transaction{ session.createReadTransaction() };
+        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
+        auto clusterTypes{ ClusterType::findOrphanIds(session) };
         ASSERT_EQ(clusterTypes.results.size(), 1);
         EXPECT_EQ(clusterTypes.results.front(), clusterType.getId());
     }
@@ -101,8 +101,8 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
     ScopedCluster cluster2{ session, clusterType.lockAndGet(), "MyCluster2" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
-        auto clusters{ Cluster::findOrphans(session) };
+        auto transaction{ session.createReadTransaction() };
+        auto clusters{ Cluster::findOrphanIds(session) };
         EXPECT_EQ(clusters.results.size(), 2);
         EXPECT_TRUE(track->getClusters().empty());
         EXPECT_TRUE(track->getClusterIds().empty());
@@ -111,13 +111,13 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         cluster1.get().modify()->addTrack(track.get());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         auto clusters{ Cluster::findIds(session, Cluster::FindParameters {}.setTrack(track.getId())) };
         ASSERT_EQ(clusters.results.size(), 1);
         EXPECT_EQ(clusters.results.front(), cluster1.getId());
@@ -126,16 +126,16 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
-        auto clusters{ Cluster::findOrphans(session) };
+        auto transaction{ session.createReadTransaction() };
+        auto clusters{ Cluster::findOrphanIds(session) };
         ASSERT_EQ(clusters.results.size(), 1);
         EXPECT_EQ(clusters.results.front(), cluster2.getId());
 
-        EXPECT_TRUE(ClusterType::findOrphans(session).results.empty());
+        EXPECT_TRUE(ClusterType::findOrphanIds(session).results.empty());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto tracks{ Track::findIds(session, Track::FindParameters {}.setClusters({cluster1.getId()})) };
         ASSERT_EQ(tracks.results.size(), 1);
@@ -146,7 +146,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto clusters{ track->getClusters() };
         ASSERT_EQ(clusters.size(), 1);
@@ -169,20 +169,20 @@ TEST_F(DatabaseFixture, Cluster_singleTrackWithSeveralClusters)
     const std::vector<ClusterId> clusterIds{ cluster1.getId(), cluster2.getId() };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto tracks{ Track::findIds(session, Track::FindParameters{}.setClusters(clusterIds)) };
         EXPECT_TRUE(tracks.results.empty());
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         cluster1.get().modify()->addTrack(track.get());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto tracks{ Track::findIds(session, Track::FindParameters{}.setClusters(clusterIds)) };
         EXPECT_TRUE(tracks.results.empty());
@@ -191,13 +191,13 @@ TEST_F(DatabaseFixture, Cluster_singleTrackWithSeveralClusters)
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         cluster2.get().modify()->addTrack(track.get());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto tracks{ Track::findIds(session, Track::FindParameters{}.setClusters(clusterIds)) };
         ASSERT_FALSE(tracks.results.empty());
@@ -218,14 +218,14 @@ TEST_F(DatabaseFixture, Cluster_multiTracks)
         tracks.emplace_back(session, "MyTrack" + std::to_string(i));
 
         {
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
             cluster.get().modify()->addTrack(tracks.back().get());
         }
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
-        EXPECT_TRUE(Cluster::findOrphans(session).results.empty());
+        auto transaction{ session.createReadTransaction() };
+        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
 
         EXPECT_EQ(Cluster::computeTrackCount(session, cluster.getId()), tracks.size());
 
@@ -237,14 +237,45 @@ TEST_F(DatabaseFixture, Cluster_multiTracks)
     }
 }
 
+
+TEST_F(DatabaseFixture, ClusterType_singleTrack)
+{
+    {
+        auto transaction{ session.createReadTransaction() };
+        EXPECT_TRUE(Cluster::find(session, Cluster::FindParameters{}).results.empty());
+        EXPECT_TRUE(Cluster::find(session, Cluster::FindParameters{}.setClusterTypeName("Foo")).results.empty());
+    }
+
+    ScopedClusterType clusterType{ session, "MyClusterType" };
+    ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
+
+    {
+        auto transaction{ session.createReadTransaction() };
+        auto clusters {Cluster::findIds(session, Cluster::FindParameters{}).results};
+        ASSERT_EQ(clusters.size(), 1);
+        EXPECT_EQ(clusters.front(), cluster.getId());
+
+        clusters = Cluster::findIds(session, Cluster::FindParameters{}.setClusterType(clusterType.getId())).results;
+        ASSERT_EQ(clusters.size(), 1);
+        EXPECT_EQ(clusters.front(), cluster.getId());
+
+        clusters = Cluster::findIds(session, Cluster::FindParameters{}.setClusterTypeName("Foo")).results;
+        EXPECT_EQ(clusters.size(), 0);
+
+        clusters = Cluster::findIds(session, Cluster::FindParameters{}.setClusterTypeName("MyClusterType")).results;
+        ASSERT_EQ(clusters.size(), 1);
+        EXPECT_EQ(clusters.front(), cluster.getId());
+    }
+}
+
 TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
 {
     ScopedTrack track{ session, "MyTrackFile" };
     ScopedRelease release{ session, "MyRelease" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
-        EXPECT_TRUE(Cluster::findOrphans(session).results.empty());
+        auto transaction{ session.createReadTransaction() };
+        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
     }
 
     ScopedClusterType clusterType{ session, "MyClusterType" };
@@ -252,8 +283,8 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
     ScopedCluster unusedCluster{ session, clusterType.lockAndGet(), "MyClusterUnused" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
-        ASSERT_EQ(Cluster::findOrphans(session).results.size(), 2);
+        auto transaction{ session.createReadTransaction() };
+        ASSERT_EQ(Cluster::findOrphanIds(session).results.size(), 2);
         EXPECT_TRUE(Release::find(session, Release::FindParameters{}.setClusters({ unusedCluster.getId() })).results.empty());
         EXPECT_EQ(Release::find(session, Release::FindParameters{}).results.size(), 1);
         EXPECT_EQ(Cluster::computeReleaseCount(session, cluster.getId()), 0);
@@ -261,17 +292,17 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         track.get().modify()->setRelease(release.get());
         cluster.get().modify()->addTrack(track.get());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         {
-            auto clusters{ Cluster::findOrphans(session) };
+            auto clusters{ Cluster::findOrphanIds(session) };
             ASSERT_EQ(clusters.results.size(), 1);
             EXPECT_EQ(clusters.results.front(), unusedCluster.getId());
         }
@@ -280,7 +311,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto clusters{ Cluster::findIds(session, Cluster::FindParameters{}.setRelease(release.getId())) };
         ASSERT_EQ(clusters.results.size(), 1);
@@ -288,7 +319,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto releases{ Release::findIds(session, Release::FindParameters {}.setClusters({cluster.getId()})) };
         ASSERT_EQ(releases.results.size(), 1);
@@ -296,14 +327,14 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto releases{ Release::findIds(session, Release::FindParameters {}.setClusters({unusedCluster.getId()})) };
         EXPECT_EQ(releases.results.size(), 0);
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         EXPECT_EQ(Cluster::computeReleaseCount(session, cluster.getId()), 1);
         EXPECT_EQ(Cluster::computeTrackCount(session, cluster.getId()), 1);
@@ -321,28 +352,28 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiClusters)
     ScopedCluster cluster2{ session, clusterType.lockAndGet(), "Cluster2" };
     ScopedCluster cluster3{ session, clusterType.lockAndGet(), "Cluster3" };
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         auto trackArtistLink{ TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist) };
         cluster1.get().modify()->addTrack(track.get());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
-        EXPECT_TRUE(ClusterType::findOrphans(session).results.empty());
-        EXPECT_EQ(Cluster::findOrphans(session).results.size(), 2);
+        auto transaction{ session.createReadTransaction() };
+        EXPECT_TRUE(ClusterType::findOrphanIds(session).results.empty());
+        EXPECT_EQ(Cluster::findOrphanIds(session).results.size(), 2);
         EXPECT_TRUE(Release::findOrphanIds(session).results.empty());
         EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_EQ(track->getClusters().size(), 1);
         EXPECT_EQ(track->getClusterIds().size(), 1);
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters({cluster1.getId()})) };
         ASSERT_EQ(artists.results.size(), 1);
@@ -355,7 +386,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiClusters)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters({cluster1.getId()})) };
         ASSERT_EQ(artists.results.size(), 1);
@@ -381,7 +412,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiRolesMultiClusters)
     ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
         TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::ReleaseArtist);
@@ -389,14 +420,14 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiRolesMultiClusters)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
-        EXPECT_TRUE(Cluster::findOrphans(session).results.empty());
+        auto transaction{ session.createReadTransaction() };
+        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
         EXPECT_TRUE(Release::findOrphanIds(session).results.empty());
         EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters({cluster.getId()})) };
         ASSERT_EQ(artists.results.size(), 1);
@@ -421,7 +452,7 @@ TEST_F(DatabaseFixture, MultiTracksSingleArtistMultiClusters)
     {
         tracks.emplace_back(session, "MyTrackFile" + std::to_string(i));
 
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         TrackArtistLink::create(session, tracks.back().get(), artist.get(), TrackArtistLinkType::Artist);
 
         for (auto& cluster : clusters)
@@ -429,13 +460,13 @@ TEST_F(DatabaseFixture, MultiTracksSingleArtistMultiClusters)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
-        EXPECT_TRUE(Cluster::findOrphans(session).results.empty());
+        auto transaction{ session.createReadTransaction() };
+        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
         EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         std::vector<ClusterId> clusterIds;
         std::transform(std::cbegin(clusters), std::cend(clusters), std::back_inserter(clusterIds), [](const ScopedCluster& cluster) { return cluster.getId(); });
@@ -458,13 +489,13 @@ TEST_F(DatabaseFixture, MultipleTracksSingleClusterSimilarity)
         tracks.emplace_back(session, "MyTrack" + std::to_string(i));
 
         {
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
             cluster.get().modify()->addTrack(tracks.back().get());
         }
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto similarTracks{ Track::findSimilarTrackIds(session, {tracks.front().getId()}) };
         EXPECT_EQ(similarTracks.results.size(), tracks.size() - 1);
@@ -487,7 +518,7 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleClustersSimilarity)
         tracks.emplace_back(session, "MyTrack" + std::to_string(i));
 
         {
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
             cluster1.get().modify()->addTrack(tracks.back().get());
         }
     }
@@ -497,14 +528,14 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleClustersSimilarity)
         tracks.emplace_back(session, "MyTrack" + std::to_string(i));
 
         {
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
             cluster1.get().modify()->addTrack(tracks.back().get());
             cluster2.get().modify()->addTrack(tracks.back().get());
         }
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         {
             auto similarTracks{ Track::findSimilarTrackIds(session, {tracks.back().getId()}, Range {0, 4}) };
@@ -531,7 +562,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistSingleCluster)
     ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
         track.get().modify()->setRelease(release.get());
@@ -539,16 +570,16 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistSingleCluster)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
-        EXPECT_TRUE(Cluster::findOrphans(session).results.empty());
-        EXPECT_TRUE(ClusterType::findOrphans(session).results.empty());
+        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
+        EXPECT_TRUE(ClusterType::findOrphanIds(session).results.empty());
         EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
         EXPECT_TRUE(Release::findOrphanIds(session).results.empty());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters({cluster.getId()})) };
         ASSERT_EQ(artists.results.size(), 1);
@@ -574,7 +605,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistMultiClusters)
     ScopedCluster cluster2{ session, clusterType.lockAndGet(), "MyCluster2" };
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         auto trackArtistLink{ TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist) };
         track.get().modify()->setRelease(release.get());
@@ -583,7 +614,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistMultiClusters)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto releases{ Release::findIds(session, Release::FindParameters {}.setArtist(artist.getId())) };
         ASSERT_EQ(releases.results.size(), 1);
@@ -607,7 +638,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackSingleCluster)
     {
         tracks.emplace_back(session, "MyTrack" + std::to_string(i));
 
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         if (i < 5)
             session.create<TrackListEntry>(tracks.back().get(), trackList.get());
@@ -617,7 +648,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackSingleCluster)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto similarTracks{ trackList->getSimilarTracks() };
         EXPECT_EQ(similarTracks.size(), 5);
@@ -640,7 +671,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClusters)
     {
         tracks.emplace_back(session, "MyTrack" + std::to_string(i));
 
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         if (i < 5)
             session.create<TrackListEntry>(tracks.back().get(), trackList.get());
@@ -657,7 +688,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClusters)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         {
             const auto similarTracks{ trackList->getSimilarTracks(0, 5) };
@@ -689,7 +720,7 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleArtistsMultiClusters)
     ScopedCluster cluster2{ session, clusterType.lockAndGet(), "MyCluster2" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_TRUE(artist1->findSimilarArtistIds().results.empty());
         EXPECT_TRUE(artist2->findSimilarArtistIds().results.empty());
         EXPECT_TRUE(artist3->findSimilarArtistIds().results.empty());
@@ -700,7 +731,7 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleArtistsMultiClusters)
     {
         tracks.emplace_back(session, "MyTrack" + std::to_string(i));
 
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         if (i < 5)
             TrackArtistLink::create(session, tracks.back().get(), artist1.get(), TrackArtistLinkType::Artist);
@@ -715,13 +746,13 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleArtistsMultiClusters)
 
     tracks.emplace_back(session, "MyTrack" + std::to_string(tracks.size()));
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         TrackArtistLink::create(session, tracks.back().get(), artist3.get(), TrackArtistLinkType::Artist);
         cluster2.get().modify()->addTrack(tracks.back().get());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         {
             auto artists{ artist1->findSimilarArtistIds() };
@@ -770,7 +801,7 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleReleasesMultiClusters)
     ScopedCluster cluster2{ session, clusterType.lockAndGet(), "MyCluster2" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_TRUE(release1->getSimilarReleases().empty());
         EXPECT_TRUE(release2->getSimilarReleases().empty());
         EXPECT_TRUE(release3->getSimilarReleases().empty());
@@ -781,7 +812,7 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleReleasesMultiClusters)
     {
         tracks.emplace_back(session, "MyTrack" + std::to_string(i));
 
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         if (i < 5)
             tracks.back().get().modify()->setRelease(release1.get());
@@ -796,13 +827,13 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleReleasesMultiClusters)
 
     tracks.emplace_back(session, "MyTrack" + std::to_string(tracks.size()));
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         tracks.back().get().modify()->setRelease(release3.get());
         cluster2.get().modify()->addTrack(tracks.back().get());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         {
             auto releases{ release1->getSimilarReleases() };

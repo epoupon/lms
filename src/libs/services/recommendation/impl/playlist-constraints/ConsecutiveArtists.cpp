@@ -25,7 +25,7 @@
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 namespace Recommendation::PlaylistGeneratorConstraint
 {
@@ -80,7 +80,7 @@ namespace Recommendation::PlaylistGeneratorConstraint
 		ArtistContainer res;
 
 		Session& dbSession {_db.getTLSSession()};
-		auto transaction {dbSession.createSharedTransaction()};
+		auto transaction {dbSession.createReadTransaction()};
 
 		const Track::pointer track {Track::find(dbSession, trackId)};
 		if (!track)

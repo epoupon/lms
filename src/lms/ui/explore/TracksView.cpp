@@ -23,7 +23,7 @@
 
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"
 #include "explore/Filters.hpp"
@@ -119,7 +119,7 @@ namespace UserInterface
 
     void Tracks::addSome()
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const auto trackIds{ _trackCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize}) };
 

@@ -22,7 +22,7 @@
 #include <cassert>
 
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 #include "services/database/Artist.hpp"
 #include "services/database/AuthToken.hpp"
@@ -39,12 +39,36 @@
 #include "services/database/TrackArtistLink.hpp"
 #include "services/database/TrackList.hpp"
 #include "services/database/TrackFeatures.hpp"
+#include "services/database/TransactionChecker.hpp"
 #include "services/database/User.hpp"
 #include "EnumSetTraits.hpp"
 #include "Migration.hpp"
 
 namespace Database
 {
+
+    WriteTransaction::WriteTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session)
+        : _lock{ mutex },
+        _transaction{ session }
+    {
+        TransactionChecker::pushWriteTransaction(_transaction.session());
+    }
+
+    WriteTransaction::~WriteTransaction()
+    {
+        TransactionChecker::popWriteTransaction(_transaction.session());
+    }
+
+    ReadTransaction::ReadTransaction(Wt::Dbo::Session& session)
+        : _transaction{ session }
+    {
+        TransactionChecker::pushReadTransaction(_transaction.session());
+    }
+
+    ReadTransaction::~ReadTransaction()
+    {
+        TransactionChecker::popReadTransaction(_transaction.session());
+    }
 
     Session::Session(Db& db)
         : _db{ db }
@@ -71,54 +95,32 @@ namespace Database
         _session.mapClass<User>("user");
     }
 
-    UniqueTransaction::UniqueTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session)
-        : _lock{ mutex },
-        _transaction{ session }
+    WriteTransaction Session::createWriteTransaction()
     {
+        return WriteTransaction{ _db.getMutex(), _session };
     }
 
-    SharedTransaction::SharedTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session)
-        : _lock{ mutex },
-        _transaction{ session }
+    ReadTransaction Session::createReadTransaction()
     {
-    }
-
-    void Session::checkUniqueLocked()
-    {
-        assert(_db.getMutex().isUniqueLocked());
-    }
-
-    void Session::checkSharedLocked()
-    {
-        assert(_db.getMutex().isSharedLocked());
-    }
-
-    UniqueTransaction Session::createUniqueTransaction()
-    {
-        return UniqueTransaction{ _db.getMutex(), _session };
-    }
-
-    SharedTransaction Session::createSharedTransaction()
-    {
-        return SharedTransaction{ _db.getMutex(), _session };
+        return ReadTransaction{ _session };
     }
 
     void Session::prepareTables()
     {
-        LMS_LOG(DB, INFO) << "Preparing tables...";
+        LMS_LOG(DB, INFO, "Preparing tables...");
 
         // Initial creation case
         try
         {
             _session.createTables();
-            LMS_LOG(DB, INFO) << "Tables created";
+            LMS_LOG(DB, INFO, "Tables created");
         }
         catch (Wt::Dbo::Exception& e)
         {
-            LMS_LOG(DB, DEBUG) << "Cannot create tables: " << e.what();
+            LMS_LOG(DB, DEBUG, "Cannot create tables: " << e.what());
             if (std::string_view{ e.what() }.find("already exists") == std::string_view::npos)
             {
-                LMS_LOG(DB, ERROR) << "Cannot create tables: " << e.what();
+                LMS_LOG(DB, ERROR, "Cannot create tables: " << e.what());
                 throw e;
             }
         }
@@ -127,7 +129,7 @@ namespace Database
 
         // Indexes
         {
-            auto uniqueTransaction{ createUniqueTransaction() };
+            auto transaction{ createWriteTransaction() };
             _session.execute("CREATE INDEX IF NOT EXISTS artist_name_idx ON artist(name)");
             _session.execute("CREATE INDEX IF NOT EXISTS artist_sort_name_nocase_idx ON artist(sort_name COLLATE NOCASE)");
             _session.execute("CREATE INDEX IF NOT EXISTS artist_mbid_idx ON artist(mbid)");
@@ -169,33 +171,26 @@ namespace Database
             _session.execute("CREATE INDEX IF NOT EXISTS starred_track_user_backend_idx ON starred_track(user_id,backend)");
             _session.execute("CREATE INDEX IF NOT EXISTS starred_track_track_user_backend_idx ON starred_track(track_id,user_id,backend)");
         }
-
-        // Initial settings tables
-        {
-            auto uniqueTransaction{ createUniqueTransaction() };
-
-            ScanSettings::init(*this);
-        }
     }
 
     void Session::analyze()
     {
-        LMS_LOG(DB, INFO) << "Analyzing database...";
+        LMS_LOG(DB, INFO, "Analyzing database...");
         {
-            auto uniqueTransaction{ createUniqueTransaction() };
+            auto transaction{ createWriteTransaction() };
             _session.execute("ANALYZE");
         }
-        LMS_LOG(DB, INFO) << "Database Analyze complete";
+        LMS_LOG(DB, INFO, "Database Analyze complete");
     }
 
     void Session::optimize()
     {
-        LMS_LOG(DB, INFO) << "Optimizing database...";
+        LMS_LOG(DB, INFO, "Optimizing database...");
         {
-            auto uniqueTransaction{ createUniqueTransaction() };
+            auto transaction{ createWriteTransaction() };
             _session.execute("PRAGMA optimize");
         }
-        LMS_LOG(DB, INFO) << "Database optimizing complete";
+        LMS_LOG(DB, INFO, "Database optimizing complete");
     }
 
 } // namespace Database

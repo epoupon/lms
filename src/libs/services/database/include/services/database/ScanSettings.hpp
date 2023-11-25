@@ -20,6 +20,8 @@
 #pragma once
 
 #include <filesystem>
+#include <string>
+#include <string_view>
 #include <vector>
 
 #include <Wt/Dbo/Dbo.h>
@@ -30,9 +32,8 @@
 
 LMS_DECLARE_IDTYPE(ScanSettingsId)
 
-namespace Database {
-
-    class ClusterType;
+namespace Database
+{
     class Session;
 
     class ScanSettings final : public Object<ScanSettings, ScanSettingsId>
@@ -65,7 +66,7 @@ namespace Database {
         std::filesystem::path	getMediaDirectory() const { return _mediaDirectory; }
         Wt::WTime				getUpdateStartTime() const { return _startTime; }
         UpdatePeriod			getUpdatePeriod() const { return _updatePeriod; }
-        std::vector<ObjectPtr<ClusterType>> getClusterTypes() const;
+        std::vector<std::string_view> getExtraTagsToScan() const;
         std::vector<std::filesystem::path> getAudioFileExtensions() const;
         SimilarityEngineType	getSimilarityEngineType() const { return _similarityEngineType; }
 
@@ -74,7 +75,7 @@ namespace Database {
         void setMediaDirectory(const std::filesystem::path& p);
         void setUpdateStartTime(Wt::WTime t) { _startTime = t; }
         void setUpdatePeriod(UpdatePeriod p) { _updatePeriod = p; }
-        void setClusterTypes(Session& session, const std::set<std::string>& clusterTypeNames);
+        void setExtraTagsToScan(const std::vector<std::string_view>& extraTags);
         void setSimilarityEngineType(SimilarityEngineType type) { _similarityEngineType = type; }
         void incScanVersion();
 
@@ -87,20 +88,17 @@ namespace Database {
             Wt::Dbo::field(a, _updatePeriod, "update_period");
             Wt::Dbo::field(a, _audioFileExtensions, "audio_file_extensions");
             Wt::Dbo::field(a, _similarityEngineType, "similarity_engine_type");
-            Wt::Dbo::hasMany(a, _clusterTypes, Wt::Dbo::ManyToOne, "scan_settings");
+            Wt::Dbo::field(a, _extraTagsToScan, "extra_tags_to_scan");
         }
 
     private:
-        int         	_scanVersion{};
-        std::string     _mediaDirectory;
-        Wt::WTime       _startTime = Wt::WTime{ 0,0,0 };
-        UpdatePeriod    _updatePeriod{ UpdatePeriod::Never };
+        int         	        _scanVersion{};
+        std::string             _mediaDirectory;
+        Wt::WTime               _startTime = Wt::WTime{ 0,0,0 };
+        UpdatePeriod            _updatePeriod{ UpdatePeriod::Never };
         SimilarityEngineType    _similarityEngineType{ SimilarityEngineType::Clusters };
         std::string             _audioFileExtensions{ ".alac .mp3 .ogg .oga .aac .m4a .m4b .flac .wav .wma .aif .aiff .ape .mpc .shn .opus .wv" };
-        
-        Wt::Dbo::collection<Wt::Dbo::ptr<ClusterType>>	_clusterTypes;
+        std::string             _extraTagsToScan;
     };
-
-
 } // namespace Database
 

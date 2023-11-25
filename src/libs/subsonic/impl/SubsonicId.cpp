@@ -21,7 +21,7 @@
 
 #include "SubsonicResponse.hpp"
 
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/String.hpp"
 
 namespace API::Subsonic

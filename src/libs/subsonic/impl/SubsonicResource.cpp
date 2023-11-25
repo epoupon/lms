@@ -29,7 +29,7 @@
 #include "services/database/User.hpp"
 #include "utils/EnumSet.hpp"
 #include "utils/IConfig.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 #include "utils/Utils.hpp"
@@ -135,7 +135,7 @@ namespace API::Subsonic
 
         void checkUserTypeIsAllowed(RequestContext& context, EnumSet<Database::UserType> allowedUserTypes)
         {
-            auto transaction{ context.dbSession.createSharedTransaction() };
+            auto transaction{ context.dbSession.createReadTransaction() };
 
             User::pointer currentUser{ User::find(context.dbSession, context.userId) };
             if (!currentUser)
@@ -290,7 +290,7 @@ namespace API::Subsonic
 
         const std::size_t requestId{ curRequestId++ };
 
-        LMS_LOG(API_SUBSONIC, DEBUG) << "Handling request " << requestId << " '" << request.pathInfo() << "', continuation = " << (request.continuation() ? "true" : "false") << ", params = " << parameterMapToDebugString(request.getParameterMap());
+        LMS_LOG(API_SUBSONIC, DEBUG, "Handling request " << requestId << " '" << request.pathInfo() << "', continuation = " << (request.continuation() ? "true" : "false") << ", params = " << parameterMapToDebugString(request.getParameterMap()));
 
         std::string requestPath{ request.pathInfo() };
         if (StringUtils::stringEndsWith(requestPath, ".view"))
@@ -319,7 +319,7 @@ namespace API::Subsonic
 
                 resp.write(response.out(), format);
                 response.setMimeType(std::string{ ResponseFormatToMimeType(format) });
-                LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId << " '" << requestPath << "' handled!";
+                LMS_LOG(API_SUBSONIC, DEBUG, "Request " << requestId << " '" << requestPath << "' handled!");
 
                 return;
             }
@@ -328,18 +328,18 @@ namespace API::Subsonic
             if (itStreamHandler != mediaRetrievalHandlers.end())
             {
                 itStreamHandler->second(requestContext, request, response);
-                LMS_LOG(API_SUBSONIC, DEBUG) << "Request " << requestId << " '" << requestPath << "' handled!";
+                LMS_LOG(API_SUBSONIC, DEBUG, "Request " << requestId << " '" << requestPath << "' handled!");
                 return;
             }
 
-            LMS_LOG(API_SUBSONIC, ERROR) << "Unhandled command '" << requestPath << "'";
+            LMS_LOG(API_SUBSONIC, ERROR, "Unhandled command '" << requestPath << "'");
             throw UnknownEntryPointGenericError{};
         }
         catch (const Error& e)
         {
-            LMS_LOG(API_SUBSONIC, ERROR) << "Error while processing request '" << requestPath << "'"
+            LMS_LOG(API_SUBSONIC, ERROR, "Error while processing request '" << requestPath << "'"
                 << ", params = [" << parameterMapToDebugString(request.getParameterMap()) << "]"
-                << ", code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'";
+                << ", code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'");
             Response resp{ Response::createFailedResponse(protocolVersion, e) };
             resp.write(response.out(), format);
             response.setMimeType(std::string{ ResponseFormatToMimeType(format) });
@@ -403,7 +403,7 @@ namespace API::Subsonic
         if (request.continuation())
         {
             Database::Session& session{ _db.getTLSSession() };
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
 
             const auto user{ Database::User::find(session, clientInfo.user) };
             if (!user)

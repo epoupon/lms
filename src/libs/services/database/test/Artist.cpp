@@ -24,7 +24,7 @@ using namespace Database;
 TEST_F(DatabaseFixture, Artist)
 {
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_FALSE(Artist::exists(session, 35));
         EXPECT_FALSE(Artist::exists(session, 0));
         EXPECT_FALSE(Artist::exists(session, 1));
@@ -34,7 +34,7 @@ TEST_F(DatabaseFixture, Artist)
     ScopedArtist artist{ session, "MyArtist" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         EXPECT_TRUE(artist.get());
         EXPECT_FALSE(!artist.get());
@@ -45,7 +45,7 @@ TEST_F(DatabaseFixture, Artist)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto artists{ Artist::findIds(session, Artist::FindParameters {}) };
         ASSERT_EQ(artists.results.size(), 1);
@@ -58,7 +58,7 @@ TEST_F(DatabaseFixture, Artist)
 
     
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto artists{ Artist::find(session, Artist::FindParameters {}) };
         ASSERT_EQ(artists.results.size(), 1);
@@ -66,7 +66,7 @@ TEST_F(DatabaseFixture, Artist)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         bool visited{};
         Artist::find(session, Artist::FindParameters{}, [&](const Artist::pointer& a)
@@ -84,19 +84,19 @@ TEST_F(DatabaseFixture, Artist_singleTrack)
     ScopedArtist artist{ session, "MyArtist" };
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         track.get().modify()->setName("MyTrackName");
         TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto artists{ track->getArtists({TrackArtistLinkType::Artist}) };
         ASSERT_EQ(artists.size(), 1);
@@ -113,7 +113,7 @@ TEST_F(DatabaseFixture, Artist_singleTrack)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto artists{ track->getArtistIds({TrackArtistLinkType::Artist}) };
         ASSERT_EQ(artists.size(), 1);
@@ -125,23 +125,23 @@ TEST_F(DatabaseFixture, Artist_singleTrack)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         auto tracks{ Track::findIds(session, Track::FindParameters{}.setName("MyTrackName").setArtistName("MyArtist")) };
         ASSERT_EQ(tracks.results.size(), 1);
         EXPECT_EQ(tracks.results.front(), track.getId());
     }
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         auto tracks{ Track::findIds(session, Track::FindParameters{}.setName("MyTrackName").setArtistName("MyArtistFoo")) };
         EXPECT_EQ(tracks.results.size(), 0);
     }
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         auto tracks{ Track::findIds(session, Track::FindParameters{}.setName("MyTrackNameFoo").setArtistName("MyArtist")) };
         EXPECT_EQ(tracks.results.size(), 0);
     }
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         auto artists{ Artist::findIds(session, Artist::FindParameters{}.setTrack(track->getId())) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
@@ -153,7 +153,7 @@ TEST_F(DatabaseFixture, Artist_singleTracktMultiRoles)
     ScopedTrack track{ session, "MyTrack" };
     ScopedArtist artist{ session, "MyArtist" };
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
         TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::ReleaseArtist);
@@ -161,12 +161,12 @@ TEST_F(DatabaseFixture, Artist_singleTracktMultiRoles)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_TRUE(Artist::findOrphanIds(session, Range{}).results.empty());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}).results.size(), 1);
         EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setLinkType(TrackArtistLinkType::Artist)).results.size(), 1);
         EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setLinkType(TrackArtistLinkType::ReleaseArtist)).results.size(), 1);
@@ -175,7 +175,7 @@ TEST_F(DatabaseFixture, Artist_singleTracktMultiRoles)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto artists{ track->getArtists({TrackArtistLinkType::Artist}) };
         ASSERT_EQ(artists.size(), 1);
@@ -202,7 +202,7 @@ TEST_F(DatabaseFixture, Artist_singleTracktMultiRoles)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EnumSet<TrackArtistLinkType> types{ TrackArtistLink::findUsedTypes(session, artist.getId()) };
         EXPECT_TRUE(types.contains(TrackArtistLinkType::ReleaseArtist));
         EXPECT_TRUE(types.contains(TrackArtistLinkType::Artist));
@@ -219,19 +219,19 @@ TEST_F(DatabaseFixture, Artist_singleTrackMultiArtists)
     ASSERT_NE(artist1.getId(), artist2.getId());
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         TrackArtistLink::create(session, track.get(), artist1.get(), TrackArtistLinkType::Artist);
         TrackArtistLink::create(session, track.get(), artist2.get(), TrackArtistLinkType::Artist);
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto artists{ track->getArtists({TrackArtistLinkType::Artist}) };
         ASSERT_EQ(artists.size(), 2);
@@ -246,7 +246,7 @@ TEST_F(DatabaseFixture, Artist_singleTrackMultiArtists)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto tracks{ Track::findIds(session, Track::FindParameters {}.setArtist(artist1->getId())) };
         ASSERT_EQ(tracks.results.size(), 1);
@@ -276,13 +276,13 @@ TEST_F(DatabaseFixture, Artist_findByName)
     ScopedTrack track{ session, "MyTrack" }; // filters does not work on orphans
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         artist.get().modify()->setSortName("ZZZ");
         TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         EXPECT_TRUE(Artist::findIds(session, Artist::FindParameters{}.setKeywords({ "N" })).results.empty());
 
@@ -310,7 +310,7 @@ TEST_F(DatabaseFixture, Artist_findByNameEscaped)
     ScopedArtist artist6{ session, R"(%AMyArtist)" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         {
             const auto artists{ Artist::find(session, R"(MyArtist%)") };
             ASSERT_TRUE(artists.size() == 1);
@@ -332,7 +332,7 @@ TEST_F(DatabaseFixture, Artist_findByNameEscaped)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         {
             const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"MyArtist"})) };
             EXPECT_EQ(artists.results.size(), 6);
@@ -366,14 +366,14 @@ TEST_F(DatabaseFixture, Artist_sortMethod)
     ScopedArtist artistB{ session, "artistB" };
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         artistA.get().modify()->setSortName("sortNameB");
         artistB.get().modify()->setSortName("sortNameA");
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto allArtistsByName{ Artist::findIds(session, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::ByName)) };
         auto allArtistsBySortName{ Artist::findIds(session, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::BySortName)) };
@@ -396,14 +396,14 @@ TEST_F(DatabaseFixture, Artist_nonReleaseTracks)
     ScopedRelease release{ session, "MyRelease" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto tracks{ Track::findIds(session, Track::FindParameters {}.setNonRelease(true).setArtist(artist->getId())) };
         EXPECT_EQ(tracks.results.size(), 0);
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         TrackArtistLink::create(session, track1.get(), artist.get(), TrackArtistLinkType::Artist);
         TrackArtistLink::create(session, track2.get(), artist.get(), TrackArtistLinkType::Artist);
@@ -412,7 +412,7 @@ TEST_F(DatabaseFixture, Artist_nonReleaseTracks)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const auto tracks{ Track::findIds(session, Track::FindParameters {}.setArtist(artist.getId()).setNonRelease(true)) };
         ASSERT_EQ(tracks.results.size(), 1);
@@ -427,29 +427,29 @@ TEST_F(DatabaseFixture, Artist_findByRelease)
     ScopedRelease release{ session, "MyRelease" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setRelease(release.getId())) };
         EXPECT_EQ(artists.results.size(), 0);
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setRelease(release.getId())) };
         EXPECT_EQ(artists.results.size(), 0);
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         track.get().modify()->setRelease(release.get());
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setRelease(release.getId())) };
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());

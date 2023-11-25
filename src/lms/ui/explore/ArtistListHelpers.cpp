@@ -47,7 +47,7 @@ namespace UserInterface::ArtistListHelpers
 
 		EnumSet<TrackArtistLinkType> usedLinkTypes;
 		{
-			auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+			auto transaction {LmsApp->getDbSession().createReadTransaction()};
 			usedLinkTypes = TrackArtistLink::findUsedTypes(LmsApp->getDbSession());
 		}
 

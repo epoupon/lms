@@ -28,7 +28,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 namespace Auth
 {
@@ -54,7 +54,7 @@ namespace Auth
 
 		Database::Session& session {getDbSession()};
 
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createWriteTransaction()};
 
 		Database::User::pointer user {Database::User::find(session, userId)};
 		if (!user)
@@ -62,7 +62,7 @@ namespace Auth
 
 		Database::AuthToken::pointer authToken {session.create<Database::AuthToken>(secretHash, expiry, user)};
 
-		LMS_LOG(UI, DEBUG) << "Created auth token for user '" << user->getLoginName() << "', expiry = " << expiry.toString();
+		LMS_LOG(UI, DEBUG, "Created auth token for user '" << user->getLoginName() << "', expiry = " << expiry.toString());
 
 		if (user->getAuthTokensCount() >= 50)
 			Database::AuthToken::removeExpiredTokens(session, Wt::WDateTime::currentDateTime());
@@ -76,7 +76,7 @@ namespace Auth
 		const std::string secretHash {sha1Function.compute(std::string {secret}, {})};
 
 		Database::Session& session {getDbSession()};
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createWriteTransaction()};
 
 		Database::AuthToken::pointer authToken {Database::AuthToken::find(session, secretHash)};
 		if (!authToken)
@@ -88,7 +88,7 @@ namespace Auth
 			return std::nullopt;
 		}
 
-		LMS_LOG(UI, DEBUG) << "Found auth token for user '" << authToken->getUser()->getLoginName() << "'!";
+		LMS_LOG(UI, DEBUG, "Found auth token for user '" << authToken->getUser()->getLoginName() << "'!");
 
 		AuthTokenService::AuthTokenProcessResult::AuthTokenInfo res {authToken->getUser()->getId(), authToken->getExpiry()};
 		authToken.remove();
@@ -131,7 +131,7 @@ namespace Auth
 	{
 		Database::Session& session {getDbSession()};
 
-		auto transaction {session.createUniqueTransaction()};
+		auto transaction {session.createWriteTransaction()};
 
 		Database::User::pointer user {Database::User::find(session, userId)};
 		if (!user)

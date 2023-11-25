@@ -176,7 +176,7 @@ namespace Database {
         std::vector<ObjectPtr<Cluster>>			getClusters() const;
         std::vector<ClusterId>					getClusterIds() const;
 
-        std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ObjectPtr<ClusterType>>& clusterTypes, std::size_t size) const;
+        std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ClusterTypeId>& clusterTypes, std::size_t size) const;
 
         template<class Action>
         void persist(Action& a)

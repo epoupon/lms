@@ -20,7 +20,7 @@
 
 #include <cassert>
 
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 #include "services/database/Artist.hpp"
 #include "services/database/Cluster.hpp"
@@ -53,7 +53,7 @@ namespace Database
 
     std::size_t TrackList::getCount(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM tracklist");
     }
@@ -61,7 +61,7 @@ namespace Database
 
     TrackList::pointer TrackList::find(Session& session, std::string_view name, TrackListType type, UserId userId)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         assert(userId.isValid());
 
         return session.getDboSession().find<TrackList>()
@@ -72,7 +72,7 @@ namespace Database
 
     RangeResults<TrackListId> TrackList::find(Session& session, const FindParameters& params)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ session.getDboSession().query<TrackListId>("SELECT DISTINCT t_l.id FROM tracklist t_l") };
 
@@ -122,7 +122,7 @@ namespace Database
 
     TrackList::pointer TrackList::find(Session& session, TrackListId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().find<TrackList>().where("id = ?").bind(id).resultValue();
     }
@@ -187,12 +187,12 @@ namespace Database
         return std::vector<Cluster::pointer>(res.begin(), res.end());
     }
 
-    std::vector<std::vector<Cluster::pointer>> TrackList::getClusterGroups(const std::vector<ClusterType::pointer>& clusterTypes, std::size_t size) const
+    std::vector<std::vector<Cluster::pointer>> TrackList::getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const
     {
         assert(session());
         std::vector<std::vector<Cluster::pointer>> res;
 
-        if (clusterTypes.empty())
+        if (clusterTypeIds.empty())
             return res;
 
         auto query{ session()->query<Wt::Dbo::ptr<Cluster>>("SELECT c from cluster c") };
@@ -208,12 +208,12 @@ namespace Database
             std::ostringstream oss;
             oss << "c_type.id IN (";
             bool first{ true };
-            for (auto clusterType : clusterTypes)
+            for (ClusterTypeId clusterTypeId : clusterTypeIds)
             {
                 if (!first)
                     oss << ", ";
                 oss << "?";
-                query.bind(clusterType->getId());
+                query.bind(clusterTypeId);
                 first = false;
             }
             oss << ")";
@@ -323,7 +323,7 @@ namespace Database
 
     TrackListEntry::pointer TrackListEntry::getById(Session& session, TrackListEntryId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().find<TrackListEntry>().where("id = ?").bind(id).resultValue();
     }

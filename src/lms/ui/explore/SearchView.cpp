@@ -150,7 +150,7 @@ namespace UserInterface
         const Range range{ _artists->getCount(), getBatchSize(Mode::Artist) };
         const RangeResults<ArtistId> artistIds{ _artistCollector.get(range) };
         {
-            auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
             for (const ArtistId artistId : artistIds.results)
             {
@@ -168,7 +168,7 @@ namespace UserInterface
         const Range range{ _releases->getCount(), getBatchSize(Mode::Release) };
         const RangeResults<ReleaseId> releaseIds{ _releaseCollector.get(range) };
         {
-            auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
             for (const ReleaseId releaseId : releaseIds.results)
             {
@@ -187,7 +187,7 @@ namespace UserInterface
         const RangeResults<TrackId> trackIds{ _trackCollector.get(range) };
 
         {
-            auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
             for (const TrackId trackId : trackIds.results)
             {

@@ -67,11 +67,11 @@ WhereClause::get() const
 }
 
 WhereClause&
-WhereClause::bind(const std::string& bindArg)
+WhereClause::bind(std::string_view bindArg)
 {
 	assert(_bindArgs.size() < static_cast<std::size_t>(std::count(_clause.begin(), _clause.end(), '?')));
 
-	_bindArgs.push_back(bindArg);
+	_bindArgs.push_back(std::string{ bindArg });
 
 	return *this;
 }
@@ -102,8 +102,8 @@ SelectStatement::And(const std::string& statement)
 {
 	_statement.push_back(statement);
 
-	_statement.sort();
-	_statement.unique();
+	std::sort(_statement.begin(), _statement.end());
+	_statement.erase(std::unique(_statement.begin(), _statement.end()), _statement.end());
 
 	return *this;
 }
@@ -113,7 +113,7 @@ SelectStatement::get() const
 {
 	std::string res = "SELECT ";
 
-	for (std::list<std::string>::const_iterator it = _statement.begin(); it != _statement.end(); ++it)
+	for (auto it = _statement.begin(); it != _statement.end(); ++it)
 	{
 		if (it != _statement.begin())
 			res += ",";
@@ -150,8 +150,8 @@ FromClause::And(const FromClause& clause)
 		_clause.push_back(fromClause);
 	}
 
-	_clause.sort();
-	_clause.unique();
+	std::sort(_clause.begin(), _clause.end());
+	_clause.erase(std::unique(_clause.begin(), _clause.end()), _clause.end());
 
 	return *this;
 }
@@ -164,7 +164,7 @@ FromClause::get() const
 	if (!_clause.empty())
 	{
 		oss << "FROM ";
-		for (std::list<std::string>::const_iterator it = _clause.begin(); it != _clause.end(); ++it) {
+		for (auto it = _clause.begin(); it != _clause.end(); ++it) {
 			if (it != _clause.begin())
 				oss << ",";
 

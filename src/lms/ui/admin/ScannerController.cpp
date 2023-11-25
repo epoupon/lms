@@ -93,7 +93,7 @@ class ReportResource : public Wt::WResource
 			response.out() << Wt::WString::tr("Lms.Admin.ScannerController.duplicates-header").arg(_stats->duplicates.size()).toUTF8() << std::endl;
 
 			{
-				auto transaction {LmsApp->getDbSession().createSharedTransaction()};
+				auto transaction {LmsApp->getDbSession().createReadTransaction()};
 
 				for (const auto& duplicate : _stats->duplicates)
 				{

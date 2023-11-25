@@ -31,7 +31,7 @@ TEST_F(DatabaseFixture, StarredArtist)
     ScopedUser user2{ session, "MyUser2" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto starredArtist{ StarredArtist::find(session, artist->getId(), user->getId(), FeedbackBackend::Internal) };
         EXPECT_FALSE(starredArtist);
@@ -43,7 +43,7 @@ TEST_F(DatabaseFixture, StarredArtist)
 
     ScopedStarredArtist starredArtist{ session, artist.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto gotArtist{ StarredArtist::find(session, artist->getId(), user->getId(), FeedbackBackend::Internal) };
         EXPECT_EQ(gotArtist->getId(), starredArtist->getId());
@@ -51,7 +51,7 @@ TEST_F(DatabaseFixture, StarredArtist)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto artists{ Artist::findIds(session, Artist::FindParameters {}) };
         EXPECT_EQ(artists.results.size(), 1);
@@ -62,6 +62,29 @@ TEST_F(DatabaseFixture, StarredArtist)
         artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user2.getId(), FeedbackBackend::Internal));
         EXPECT_EQ(artists.results.size(), 0);
     }
+
+    {
+        auto transaction{ session.createWriteTransaction() };
+        user.get().modify()->setFeedbackBackend(FeedbackBackend::ListenBrainz);
+    }
+
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        auto gotArtist{ StarredArtist::find(session, artist->getId(), user->getId()) };
+        EXPECT_EQ(gotArtist, Artist::pointer{});
+    }
+
+    {
+        auto transaction{ session.createWriteTransaction() };
+        user.get().modify()->setFeedbackBackend(FeedbackBackend::Internal);
+    }
+
+    {
+        auto transaction{ session.createWriteTransaction() };
+        auto gotArtist{ StarredArtist::find(session, artist->getId(), user->getId()) };
+        EXPECT_EQ(gotArtist->getId(), starredArtist->getId());
+    }
 }
 
 TEST_F(DatabaseFixture, StarredArtist_PendingDestroy)
@@ -71,7 +94,7 @@ TEST_F(DatabaseFixture, StarredArtist_PendingDestroy)
     ScopedStarredArtist starredArtist{ session, artist.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         auto artists{ Artist::findIds(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
         EXPECT_EQ(artists.results.size(), 1);
@@ -94,14 +117,14 @@ TEST_F(DatabaseFixture, StarredArtist_dateTime)
     const Wt::WDateTime dateTime{ Wt::WDate {1950, 1, 2}, Wt::WTime {12, 30, 1} };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         auto artists{ Artist::find(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
         EXPECT_EQ(artists.results.size(), 2);
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         starredArtist1.get().modify()->setDateTime(dateTime);
         starredArtist2.get().modify()->setDateTime(dateTime.addSecs(-1));
@@ -112,7 +135,7 @@ TEST_F(DatabaseFixture, StarredArtist_dateTime)
         EXPECT_EQ(artists.results[1], starredArtist2->getArtist()->getId());
     }
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         starredArtist1.get().modify()->setDateTime(dateTime);
         starredArtist2.get().modify()->setDateTime(dateTime.addSecs(1));

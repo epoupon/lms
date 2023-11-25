@@ -26,13 +26,13 @@
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 namespace Database
 {
     VersionInfo::pointer VersionInfo::getOrCreate(Session& session)
     {
-        session.checkUniqueLocked();
+        session.checkWriteTransaction();
 
         pointer versionInfo{ session.getDboSession().find<VersionInfo>() };
         if (!versionInfo)
@@ -43,7 +43,7 @@ namespace Database
 
     VersionInfo::pointer VersionInfo::get(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().find<VersionInfo>();
     }
@@ -249,6 +249,24 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
         session.getDboSession().execute("ALTER TABLE user ADD subsonic_enable_transcoding_by_default INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*User::defaultSubsonicEnableTranscodingByDefault*/0)) + ")");
     }
 
+    void migrateFromV46(Session& session)
+    {
+        // add extra tags to parse
+        session.getDboSession().execute(R"(CREATE TABLE IF NOT EXISTS "cluster_type_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null
+);)");
+        session.getDboSession().execute("INSERT INTO cluster_type_backup SELECT id, version, name FROM cluster_type");
+        session.getDboSession().execute("DROP TABLE cluster_type");
+        session.getDboSession().execute("ALTER TABLE cluster_type_backup RENAME TO cluster_type");
+
+        session.getDboSession().execute("ALTER TABLE scan_settings ADD COLUMN extra_tags_to_scan TEXT");
+
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        ScanSettings::get(session).modify()->incScanVersion();
+    }
+
     void doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -273,20 +291,21 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
             {43, migrateFromV43},
             {44, migrateFromV44},
             {45, migrateFromV45},
+            {46, migrateFromV46},
         };
 
         {
-            auto uniqueTransaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
 
             Version version;
             try
             {
                 version = VersionInfo::getOrCreate(session)->getVersion();
-                LMS_LOG(DB, INFO) << "Database version = " << version << ", LMS binary version = " << LMS_DATABASE_VERSION;
+                LMS_LOG(DB, INFO, "Database version = " << version << ", LMS binary version = " << LMS_DATABASE_VERSION);
             }
             catch (std::exception& e)
             {
-                LMS_LOG(DB, ERROR) << "Cannot get database version info: " << e.what();
+                LMS_LOG(DB, ERROR, "Cannot get database version info: " << e.what());
                 throw LmsException{ outdatedMsg };
             }
 
@@ -298,7 +317,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
 
             while (version < LMS_DATABASE_VERSION)
             {
-                LMS_LOG(DB, INFO) << "Migrating database from version " << version << " to " << version + 1 << "...";
+                LMS_LOG(DB, INFO, "Migrating database from version " << version << " to " << version + 1 << "...");
 
                 auto itMigrationFunc{ migrationFunctions.find(version) };
                 assert(itMigrationFunc != std::cend(migrationFunctions));
@@ -306,7 +325,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
 
                 VersionInfo::get(session).modify()->setVersion(++version);
 
-                LMS_LOG(DB, INFO) << "Migration complete to version " << version;
+                LMS_LOG(DB, INFO, "Migration complete to version " << version);
             }
         }
     }

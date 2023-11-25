@@ -48,7 +48,7 @@ namespace Scrobbling
     void InternalBackend::addTimedListen(const TimedListen& listen)
     {
         Database::Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         if (Database::Listen::find(session, listen.userId, listen.trackId, Database::ScrobblingBackend::Internal, listen.listenedAt))
             return;

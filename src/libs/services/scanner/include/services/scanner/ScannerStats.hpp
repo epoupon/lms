@@ -67,7 +67,7 @@ namespace Scanner
         ReloadingSimilarityEngine,
         ComputeClusterStats,
     };
-    static inline constexpr unsigned ScanProgressStepCount{ 6 };
+    static inline constexpr unsigned ScanProgressStepCount{ 7 };
 
     // reduced scan stats
     struct ScanStepStats

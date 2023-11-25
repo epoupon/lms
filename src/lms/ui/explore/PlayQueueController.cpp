@@ -37,7 +37,7 @@ namespace UserInterface
 
             std::vector<Database::TrackId> res;
 
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
 
             for (const Database::ArtistId artistId : artistsId)
             {
@@ -66,7 +66,7 @@ namespace UserInterface
 
             std::vector<TrackId> res;
 
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
 
             for (const ReleaseId releaseId : releasesId)
             {
@@ -93,7 +93,7 @@ namespace UserInterface
             using namespace Database;
             assert(maxTrackCount);
 
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
 
             Database::Track::FindParameters params;
             params.setTrackList(trackListId);
@@ -154,7 +154,7 @@ namespace UserInterface
     {
         Database::ReleaseId releaseId;
         {
-            auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
             const Database::Track::pointer track{ Database::Track::find(LmsApp->getDbSession(), trackId) };
             if (!track || !track->getRelease())
                 return;

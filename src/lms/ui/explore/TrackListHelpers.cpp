@@ -26,12 +26,14 @@
 
 #include "av/IAudioFile.hpp"
 #include "services/database/Artist.hpp"
+#include "services/database/Listen.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/TrackArtistLink.hpp"
+#include "services/database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Service.hpp"
 
 #include "common/Template.hpp"
@@ -49,7 +51,7 @@ namespace UserInterface::TrackListHelpers
 
     void showTrackInfoModal(Database::TrackId trackId, Filters& filters)
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const Database::Track::pointer track{ Track::find(LmsApp->getDbSession(), trackId) };
         if (!track)
@@ -141,6 +143,9 @@ namespace UserInterface::TrackListHelpers
             trackInfo->bindString("bitrate", std::to_string(track->getBitrate() / 1000) + " kbps");
         }
 
+        const auto user{ LmsApp->getUser() };
+        trackInfo->bindInt("playcount", Database::Listen::getCount(LmsApp->getDbSession(), user->getId(), user->getScrobblingBackend(), track->getId()));
+
         Wt::WContainerWidget* clusterContainer{ trackInfo->bindWidget("clusters", Utils::createClustersForTrack(track, filters)) };
         if (clusterContainer->count() > 0)
             trackInfo->setCondition("if-has-clusters", true);
@@ -219,7 +224,7 @@ namespace UserInterface::TrackListHelpers
             Wt::WPushButton* starBtn{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
             starBtn->clicked().connect([=]
                 {
-                    auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
+                    auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
                     if (isStarred())
                     {

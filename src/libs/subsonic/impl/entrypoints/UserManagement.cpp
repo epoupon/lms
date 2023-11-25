@@ -28,7 +28,7 @@ namespace API::Subsonic
     {
         std::string username{ getMandatoryParameterAs<std::string>(context.parameters, "username") };
 
-        auto transaction{ context.dbSession.createSharedTransaction() };
+        auto transaction{ context.dbSession.createReadTransaction() };
 
         checkUserIsMySelfOrAdmin(context, username);
 
@@ -44,7 +44,7 @@ namespace API::Subsonic
 
     Response handleGetUsersRequest(RequestContext& context)
     {
-        auto transaction{ context.dbSession.createSharedTransaction() };
+        auto transaction{ context.dbSession.createReadTransaction() };
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
         Response::Node& usersNode{ response.createNode("users") };
@@ -67,7 +67,7 @@ namespace API::Subsonic
 
         Database::UserId userId;
         {
-            auto transaction{ context.dbSession.createUniqueTransaction() };
+            auto transaction{ context.dbSession.createWriteTransaction() };
 
             User::pointer user{ User::find(context.dbSession, username) };
             if (user)
@@ -79,7 +79,7 @@ namespace API::Subsonic
 
         auto removeCreatedUser{ [&]()
         {
-            auto transaction {context.dbSession.createUniqueTransaction()};
+            auto transaction {context.dbSession.createWriteTransaction()};
             User::pointer user {User::find(context.dbSession, userId)};
             if (user)
                 user.remove();
@@ -112,7 +112,7 @@ namespace API::Subsonic
     {
         std::string username{ getMandatoryParameterAs<std::string>(context.parameters, "username") };
 
-        auto transaction{ context.dbSession.createUniqueTransaction() };
+        auto transaction{ context.dbSession.createWriteTransaction() };
 
         User::pointer user{ User::find(context.dbSession, username) };
         if (!user)
@@ -134,7 +134,7 @@ namespace API::Subsonic
 
         UserId userId;
         {
-            auto transaction{ context.dbSession.createSharedTransaction() };
+            auto transaction{ context.dbSession.createReadTransaction() };
 
             User::pointer user{ User::find(context.dbSession, username) };
             if (!user)
@@ -177,7 +177,7 @@ namespace API::Subsonic
         {
             Database::UserId userId;
             {
-                auto transaction{ context.dbSession.createSharedTransaction() };
+                auto transaction{ context.dbSession.createReadTransaction() };
 
                 checkUserIsMySelfOrAdmin(context, username);
 

@@ -29,7 +29,7 @@
 #include "services/database/StarredTrack.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 #include "internal/InternalBackend.hpp"
 #include "listenbrainz/ListenBrainzBackend.hpp"
@@ -44,15 +44,15 @@ namespace Feedback
     FeedbackService::FeedbackService(boost::asio::io_context& ioContext, Db& db)
         : _db{ db }
     {
-        LMS_LOG(SCROBBLING, INFO) << "Starting service...";
+        LMS_LOG(SCROBBLING, INFO, "Starting service...");
         _backends.emplace(Database::FeedbackBackend::Internal, std::make_unique<InternalBackend>(_db));
         _backends.emplace(Database::FeedbackBackend::ListenBrainz, std::make_unique<ListenBrainz::ListenBrainzBackend>(ioContext, _db));
-        LMS_LOG(SCROBBLING, INFO) << "Service started!";
+        LMS_LOG(SCROBBLING, INFO, "Service started!");
     }
 
     FeedbackService::~FeedbackService()
     {
-        LMS_LOG(SCROBBLING, INFO) << "Service stopped!";
+        LMS_LOG(SCROBBLING, INFO, "Service stopped!");
     }
 
     std::optional<Database::FeedbackBackend> FeedbackService::getUserFeedbackBackend(UserId userId)
@@ -60,7 +60,7 @@ namespace Feedback
         std::optional<Database::FeedbackBackend> feedbackBackend;
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         if (const User::pointer user{ User::find(session, userId) })
             feedbackBackend = user->getFeedbackBackend();
 
@@ -101,7 +101,7 @@ namespace Feedback
         searchParams.setRange(params.range);
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         return Artist::findIds(session, searchParams);
     }
@@ -139,7 +139,7 @@ namespace Feedback
         searchParams.setRange(params.range);
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         return Release::findIds(session, searchParams);
     }
@@ -177,7 +177,7 @@ namespace Feedback
         searchParams.setRange(params.range);
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         return Track::findIds(session, searchParams);
     }

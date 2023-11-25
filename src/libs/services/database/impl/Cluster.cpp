@@ -35,7 +35,7 @@ namespace Database
         template <typename ResultType>
         Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Cluster::FindParameters& params)
         {
-            session.checkSharedLocked();
+            session.checkReadTransaction();
 
             auto query{ session.getDboSession().query<ResultType>("SELECT DISTINCT " + std::string{ itemToSelect } + " FROM cluster c") };
 
@@ -44,14 +44,19 @@ namespace Database
                 query.join("track_cluster t_c ON t_c.cluster_id = c.id");
                 query.join("track t ON t.id = t_c.track_id");
             }
+            if (!params.clusterTypeName.empty())
+                query.join("cluster_type c_t ON c_t.id = c.cluster_type_id");
 
             if (params.track.isValid())
                 query.where("t.id = ?").bind(params.track);
             if (params.release.isValid())
                 query.where("t.release_id = ?").bind(params.release);
 
+            assert(!params.clusterType.isValid() || params.clusterTypeName.empty());
             if (params.clusterType.isValid())
                 query.where("c.cluster_type_id = ?").bind(params.clusterType);
+            else if (!params.clusterTypeName.empty())
+                query.where("c_t.name = ?").bind(params.clusterTypeName);
 
             return query;
         }
@@ -85,14 +90,14 @@ namespace Database
 
     std::size_t Cluster::getCount(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM cluster");
     }
 
    RangeResults<ClusterId> Cluster::findIds(Session& session, const FindParameters& params)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         auto query{ createQuery<ClusterId>(session, params) };
 
         return Utils::execQuery<ClusterId>(query, params.range);
@@ -100,15 +105,15 @@ namespace Database
 
     RangeResults<Cluster::pointer> Cluster::find(Session& session, const FindParameters& params)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         auto query{ createQuery<Wt::Dbo::ptr<Cluster>>(session, params) };
 
         return Utils::execQuery<Cluster::pointer>(query, params.range);
     }
 
-    RangeResults<ClusterId> Cluster::findOrphans(Session& session, std::optional<Range> range)
+    RangeResults<ClusterId> Cluster::findOrphanIds(Session& session, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         auto query{ session.getDboSession().query<ClusterId>("SELECT DISTINCT c.id FROM cluster c WHERE NOT EXISTS(SELECT 1 FROM track_cluster t_c WHERE t_c.cluster_id = c.id)") };
 
         return Utils::execQuery<ClusterId>(query, range);
@@ -116,14 +121,14 @@ namespace Database
 
     Cluster::pointer Cluster::find(Session& session, ClusterId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().find<Cluster>().where("id = ?").bind(id).resultValue();
     }
 
     std::size_t Cluster::computeTrackCount(Session& session, ClusterId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT COUNT(t.id) FROM track t INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
             .where("t_c.cluster_id = ?").bind(id).resultValue();
@@ -131,7 +136,7 @@ namespace Database
 
     std::size_t Cluster::computeReleaseCount(Session& session, ClusterId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT COUNT(DISTINCT r.id) FROM release r INNER JOIN track t on t.release_id = r.id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
             .where("t_c.cluster_id = ?").bind(id).resultValue();
@@ -157,22 +162,22 @@ namespace Database
     {
     }
 
-    ClusterType::pointer ClusterType::create(Session& session, const std::string& name)
+    ClusterType::pointer ClusterType::create(Session& session, std::string_view name)
     {
         return session.getDboSession().add(std::unique_ptr<ClusterType> {new ClusterType{ name }});
     }
 
     std::size_t ClusterType::getCount(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM cluster_type");
     }
 
 
-    RangeResults<ClusterTypeId> ClusterType::findOrphans(Session& session, std::optional<Range> range)
+    RangeResults<ClusterTypeId> ClusterType::findOrphanIds(Session& session, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ session.getDboSession().query<ClusterTypeId>(
                 "SELECT c_t.id from cluster_type c_t"
@@ -184,7 +189,7 @@ namespace Database
 
     RangeResults<ClusterTypeId> ClusterType::findUsed(Session& session, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ session.getDboSession().query<ClusterTypeId>(
                 "SELECT DISTINCT c_t.id from cluster_type c_t")
@@ -195,21 +200,21 @@ namespace Database
 
     ClusterType::pointer ClusterType::find(Session& session, std::string_view name)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().find<ClusterType>().where("name = ?").bind(std::string{ name }).resultValue();
     }
 
     ClusterType::pointer ClusterType::find(Session& session, ClusterTypeId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().find<ClusterType>().where("id = ?").bind(id).resultValue();
     }
 
-    RangeResults<ClusterTypeId> ClusterType::find(Session& session, std::optional<Range> range)
+    RangeResults<ClusterTypeId> ClusterType::findIds(Session& session, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ session.getDboSession().query<ClusterTypeId>("SELECT id from cluster_type") };
 

@@ -19,7 +19,7 @@
 
 #include "ChildProcessManager.hpp"
 
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 #include "ChildProcess.hpp"
 

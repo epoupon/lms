@@ -43,19 +43,30 @@ namespace Database
 
     std::size_t StarredRelease::getCount(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM starred_release");
     }
 
     StarredRelease::pointer StarredRelease::find(Session& session, StarredReleaseId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         return session.getDboSession().find<StarredRelease>().where("id = ?").bind(id).resultValue();
+    }
+
+    StarredRelease::pointer StarredRelease::find(Session& session, ReleaseId releaseId, UserId userId)
+    {
+        session.checkReadTransaction();
+        return session.getDboSession().query<Wt::Dbo::ptr<StarredRelease>>("SELECT s_r from starred_release s_r")
+            .join("user u ON u.id = s_r.user_id")
+            .where("s_r.release_id = ?").bind(releaseId)
+            .where("s_r.user_id = ?").bind(userId)
+            .where("s_r.backend = u.feedback_backend")
+            .resultValue();
     }
 
     StarredRelease::pointer StarredRelease::find(Session& session, ReleaseId releaseId, UserId userId, FeedbackBackend backend)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         return session.getDboSession().find<StarredRelease>()
             .where("release_id = ?").bind(releaseId)
             .where("user_id = ?").bind(userId)

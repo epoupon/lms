@@ -24,7 +24,7 @@
 
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "IdTypeTraits.hpp"
 #include "Utils.hpp"
 
@@ -43,14 +43,14 @@ namespace Database {
 
     std::size_t TrackFeatures::getCount(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM track_features");
     }
 
     TrackFeatures::pointer TrackFeatures::find(Session& session, TrackFeaturesId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().find<TrackFeatures>()
             .where("id = ?").bind(id)
@@ -59,7 +59,7 @@ namespace Database {
 
     TrackFeatures::pointer TrackFeatures::find(Session& session, TrackId trackId)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().find<TrackFeatures>()
             .where("track_id = ?").bind(trackId)
@@ -68,7 +68,7 @@ namespace Database {
 
     RangeResults<TrackFeaturesId> TrackFeatures::find(Session& session, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ session.getDboSession().query<TrackFeaturesId>("SELECT id from track_features") };
 
@@ -111,7 +111,7 @@ namespace Database {
         }
         catch (boost::property_tree::ptree_error& error)
         {
-            LMS_LOG(DB, ERROR) << "Track " << _track.id() << ": ptree exception: " << error.what();
+            LMS_LOG(DB, ERROR, "Track " << _track.id() << ": ptree exception: " << error.what());
             res.clear();
         }
 

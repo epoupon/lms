@@ -25,16 +25,16 @@
 #include "services/cover/ICoverService.hpp"
 #include "services/database/Track.hpp"
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 
 #include "LmsApplication.hpp"
 
-#define LOG(level)	LMS_LOG(UI, level) << "Image resource: "
+#define LOG(severity, message)	LMS_LOG(UI, severity, "Image resource: " << message)
 
-namespace UserInterface {
-
+namespace UserInterface
+{
     CoverResource::CoverResource()
     {
         LmsApp->getScannerEvents().scanComplete.connect(this, [this](const Scanner::ScanStats& stats)
@@ -69,14 +69,14 @@ namespace UserInterface {
         // Mandatory parameter size
         if (!sizeStr)
         {
-            LOG(DEBUG) << "no size provided!";
+            LOG(DEBUG, "no size provided!");
             return;
         }
 
         const auto size{ StringUtils::readAs<std::size_t>(*sizeStr) };
         if (!size || *size > maxSize)
         {
-            LOG(DEBUG) << "invalid size provided!";
+            LOG(DEBUG, "invalid size provided!");
             return;
         }
 
@@ -84,12 +84,12 @@ namespace UserInterface {
 
         if (trackIdStr)
         {
-            LOG(DEBUG) << "Requested cover for track " << *trackIdStr << ", size = " << *size;
+            LOG(DEBUG, "Requested cover for track " << *trackIdStr << ", size = " << *size);
 
             const std::optional<Database::TrackId> trackId{ StringUtils::readAs<Database::TrackId::ValueType>(*trackIdStr) };
             if (!trackId)
             {
-                LOG(DEBUG) << "track not found";
+                LOG(DEBUG, "track not found");
                 return;
             }
 
@@ -99,7 +99,7 @@ namespace UserInterface {
         }
         else if (releaseIdStr)
         {
-            LOG(DEBUG) << "Requested cover for release " << *releaseIdStr << ", size = " << *size;
+            LOG(DEBUG, "Requested cover for release " << *releaseIdStr << ", size = " << *size);
 
             const std::optional<Database::ReleaseId> releaseId{ StringUtils::readAs<Database::ReleaseId::ValueType>(*releaseIdStr) };
             if (!releaseId)
@@ -111,7 +111,7 @@ namespace UserInterface {
         }
         else
         {
-            LOG(DEBUG) << "No track or release provided";
+            LOG(DEBUG, "No track or release provided");
             return;
         }
 
@@ -119,5 +119,4 @@ namespace UserInterface {
 
         response.out().write(reinterpret_cast<const char*>(cover->getData()), cover->getDataSize());
     }
-
 } // namespace UserInterface

@@ -24,6 +24,7 @@ add_executable(lms
 	ui/common/MandatoryValidator.cpp
 	ui/common/PasswordValidator.cpp
 	ui/common/Template.cpp
+	ui/common/UppercaseValidator.cpp
 	ui/common/UUIDValidator.cpp
 	ui/explore/ArtistCollector.cpp
 	ui/explore/ArtistListHelpers.cpp

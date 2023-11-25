@@ -53,7 +53,7 @@ namespace Feedback::ListenBrainz
             }
             catch (const Wt::WException& e)
             {
-                LOG(ERROR) << "Cannot parse listen count response: " << e.what();
+                LOG(ERROR, "Cannot parse listen count response: " << e.what());
                 return std::nullopt;
             }
         }
@@ -66,7 +66,7 @@ namespace Feedback::ListenBrainz
         , _maxSyncFeedbackCount{ Service<IConfig>::get()->getULong("listenbrainz-max-sync-feedback-count", 1000) }
         , _syncFeedbacksPeriod{ Service<IConfig>::get()->getULong("listenbrainz-sync-feedbacks-period-hours", 1) }
     {
-        LOG(INFO) << "Starting Feedbacks synchronizer, maxSyncFeedbackCount = " << _maxSyncFeedbackCount << ", _syncFeedbacksPeriod = " << _syncFeedbacksPeriod.count() << " hours";
+        LOG(INFO, "Starting Feedbacks synchronizer, maxSyncFeedbackCount = " << _maxSyncFeedbackCount << ", _syncFeedbacksPeriod = " << _syncFeedbacksPeriod.count() << " hours");
 
         scheduleSync(std::chrono::seconds{ 30 });
     }
@@ -77,7 +77,7 @@ namespace Feedback::ListenBrainz
         {
             Database::Session& session{ _db.getTLSSession() };
 
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
 
             Database::StarredTrack::pointer starredTrack{ Database::StarredTrack::find(session, starredTrackId) };
             if (!starredTrack)
@@ -95,7 +95,7 @@ namespace Feedback::ListenBrainz
             case FeedbackType::Erase:
                 if (!recordingMBID)
                 {
-                    LOG(DEBUG) << "Track has no recording MBID: erasing star";
+                    LOG(DEBUG, "Track has no recording MBID: erasing star");
                     starredTrack.remove();
                 }
                 else
@@ -112,7 +112,7 @@ namespace Feedback::ListenBrainz
 
             if (!recordingMBID)
             {
-                LOG(DEBUG) << "Track has no recording MBID: skipping";
+                LOG(DEBUG, "Track has no recording MBID: skipping");
                 return;
             }
 
@@ -142,7 +142,7 @@ namespace Feedback::ListenBrainz
         }
         catch (Exception& e)
         {
-            LOG(DEBUG) << "Cannot send feedback: " << e.what();
+            LOG(DEBUG, "Cannot send feedback: " << e.what());
         }
     }
 
@@ -151,12 +151,12 @@ namespace Feedback::ListenBrainz
         assert(_strand.running_in_this_thread());
 
         Database::Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
 
         Database::StarredTrack::pointer starredTrack{ Database::StarredTrack::find(session, starredTrackId) };
         if (!starredTrack)
         {
-            LOG(DEBUG) << "Starred track not found. deleted?";
+            LOG(DEBUG, "Starred track not found. deleted?");
             return;
         }
 
@@ -166,23 +166,23 @@ namespace Feedback::ListenBrainz
         {
         case FeedbackType::Love:
             starredTrack.modify()->setSyncState(Database::SyncState::Synchronized);
-            LOG(DEBUG) << "State set to synchronized";
+            LOG(DEBUG, "State set to synchronized");
 
             if (userContext.feedbackCount)
             {
                 (*userContext.feedbackCount)++;
-                LOG(DEBUG) << "Feedback count set to " << *userContext.feedbackCount << " for user '" << userContext.listenBrainzUserName << "'";
+                LOG(DEBUG, "Feedback count set to " << *userContext.feedbackCount << " for user '" << userContext.listenBrainzUserName << "'");
             }
             break;
 
         case FeedbackType::Erase:
             starredTrack.remove();
-            LOG(DEBUG) << "Removed starred track";
+            LOG(DEBUG, "Removed starred track");
 
             if (userContext.feedbackCount && *userContext.feedbackCount > 0)
             {
                 (*userContext.feedbackCount)--;
-                LOG(DEBUG) << "Feedback count set to " << *userContext.feedbackCount << " for user '" << userContext.listenBrainzUserName << "'";
+                LOG(DEBUG, "Feedback count set to " << *userContext.feedbackCount << " for user '" << userContext.listenBrainzUserName << "'");
             }
             break;
 
@@ -202,7 +202,7 @@ namespace Feedback::ListenBrainz
             {
                 Database::Session& session {_db.getTLSSession()};
 
-                auto transaction {session.createSharedTransaction()};
+                auto transaction {session.createReadTransaction()};
 
                 StarredTrack::FindParameters params;
                 params.setFeedbackBackend(Database::FeedbackBackend::ListenBrainz, scrobblingState)
@@ -211,7 +211,7 @@ namespace Feedback::ListenBrainz
                 pendingFeedbacks = StarredTrack::find(session, params);
             }
 
-            LOG(DEBUG) << "Queing " << pendingFeedbacks.results.size() << " pending '" << (feedbackType == FeedbackType::Love ? "love" : "erase") << "' feedbacks";
+            LOG(DEBUG, "Queing " << pendingFeedbacks.results.size() << " pending '" << (feedbackType == FeedbackType::Love ? "love" : "erase") << "' feedbacks");
 
             for (const StarredTrackId starredTrackId : pendingFeedbacks.results)
                 enqueFeedback(feedbackType, starredTrackId);
@@ -247,13 +247,13 @@ namespace Feedback::ListenBrainz
         if (_syncFeedbacksPeriod.count() == 0 || _maxSyncFeedbackCount == 0)
             return;
 
-        LOG(DEBUG) << "Scheduled sync in " << fromNow.count() << " seconds...";
+        LOG(DEBUG, "Scheduled sync in " << fromNow.count() << " seconds...");
         _syncTimer.expires_after(fromNow);
         _syncTimer.async_wait(boost::asio::bind_executor(_strand, [this](const boost::system::error_code& ec)
             {
                 if (ec == boost::asio::error::operation_aborted)
                 {
-                    LOG(DEBUG) << "getFeedbacks aborted";
+                    LOG(DEBUG, "getFeedbacks aborted");
                     return;
                 }
                 else if (ec)
@@ -267,7 +267,7 @@ namespace Feedback::ListenBrainz
 
     void FeedbacksSynchronizer::startSync()
     {
-        LOG(DEBUG) << "Starting sync!";
+        LOG(DEBUG, "Starting sync!");
 
         assert(!isSyncing());
         assert(_strand.running_in_this_thread());
@@ -277,7 +277,7 @@ namespace Feedback::ListenBrainz
         Database::RangeResults<Database::UserId> userIds;
         {
             Database::Session& session{ _db.getTLSSession() };
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
             userIds = Database::User::find(_db.getTLSSession(), Database::User::FindParameters{}.setFeedbackBackend(Database::FeedbackBackend::ListenBrainz));
         }
 
@@ -303,7 +303,7 @@ namespace Feedback::ListenBrainz
     {
         _strand.dispatch([this, &context]
             {
-                LOG(INFO) << "Feedback sync done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedFeedbackCount << ", matched: " << context.matchedFeedbackCount << ", imported: " << context.importedFeedbackCount;
+                LOG(INFO, "Feedback sync done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedFeedbackCount << ", matched: " << context.matchedFeedbackCount << ", imported: " << context.importedFeedbackCount);
                 context.syncing = false;
 
                 if (!isSyncing())
@@ -356,11 +356,11 @@ namespace Feedback::ListenBrainz
                 std::string msgBodyCopy{ msgBody };
                 _strand.dispatch([this, msgBodyCopy, &context]
                     {
-                        LOG(DEBUG) << "Current feedback count = " << (context.feedbackCount ? *context.feedbackCount : 0) << " for user '" << context.listenBrainzUserName << "'";
+                        LOG(DEBUG, "Current feedback count = " << (context.feedbackCount ? *context.feedbackCount : 0) << " for user '" << context.listenBrainzUserName << "'");
 
                         const auto totalFeedbackCount = parseTotalFeedbackCount(msgBodyCopy);
                         if (totalFeedbackCount)
-                            LOG(DEBUG) << "Feedback count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *totalFeedbackCount;
+                            LOG(DEBUG, "Feedback count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *totalFeedbackCount);
 
                         bool needSync{ totalFeedbackCount && (!context.feedbackCount || *context.feedbackCount != *totalFeedbackCount) };
                         context.feedbackCount = totalFeedbackCount;
@@ -416,7 +416,7 @@ namespace Feedback::ListenBrainz
     {
         const FeedbacksParser::Result parseResult{ FeedbacksParser::parse(msgBody) };
 
-        LOG(DEBUG) << "Parsed " << parseResult.feedbackCount << " feedbacks, found " << parseResult.feedbacks.size() << " usable entries";
+        LOG(DEBUG, "Parsed " << parseResult.feedbackCount << " feedbacks, found " << parseResult.feedbacks.size() << " usable entries");
         context.fetchedFeedbackCount += parseResult.feedbackCount;
 
         for (const Feedback& feedback : parseResult.feedbacks)
@@ -437,23 +437,21 @@ namespace Feedback::ListenBrainz
         TrackId trackId;
 
         {
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
             const std::vector<Track::pointer> tracks{ Track::findByRecordingMBID(session, feedback.recordingMBID) };
             if (tracks.size() > 1)
             {
-                LOG(DEBUG) << "Too many matches for feedback '" << feedback << "': duplicate recording MBIDs found";
+                LOG(DEBUG, "Too many matches for feedback '" << feedback << "': duplicate recording MBIDs found");
                 return;
             }
             else if (tracks.empty())
             {
-                LOG(DEBUG) << "Cannot match feedback '" << feedback << "': no track found for this recording MBID";
+                LOG(DEBUG, "Cannot match feedback '" << feedback << "': no track found for this recording MBID");
                 return;
             }
 
             trackId = tracks.front()->getId();
-
-            const StarredTrack::pointer starredTrack{ StarredTrack::find(session, trackId, context.userId, Database::FeedbackBackend::ListenBrainz) };
-            needImport = !starredTrack;
+            needImport = !StarredTrack::exists(session, trackId, context.userId, Database::FeedbackBackend::ListenBrainz);
 
             // don't update starred date time
             // no need to update state if it was found as not synchronized
@@ -463,9 +461,9 @@ namespace Feedback::ListenBrainz
 
         if (needImport)
         {
-            LOG(DEBUG) << "Importing feedback '" << feedback << "'";
+            LOG(DEBUG, "Importing feedback '" << feedback << "'");
 
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
 
             const Track::pointer track{ Track::find(session, trackId) };
             if (!track)
@@ -483,7 +481,7 @@ namespace Feedback::ListenBrainz
         }
         else
         {
-            LOG(DEBUG) << "No need to import feedback '" << feedback << "', already imported";
+            LOG(DEBUG, "No need to import feedback '" << feedback << "', already imported");
             context.matchedFeedbackCount++;
         }
     }

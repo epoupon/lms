@@ -99,7 +99,7 @@ namespace Database {
 
         // Get clusters, order by occurence
         std::vector<ObjectPtr<Cluster>> getClusters() const;
-        std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ObjectPtr<ClusterType>>& clusterTypes, std::size_t size) const;
+        std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const;
 
         bool hasTrack(TrackId trackId) const;
 

@@ -26,7 +26,7 @@
 #include "services/database/Track.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/http/IClient.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Service.hpp"
 #include "Utils.hpp"
 
@@ -37,7 +37,7 @@ namespace Feedback::ListenBrainz
         template <typename StarredObjType>
         void onStarred(Database::Session& session, typename StarredObjType::IdType id)
         {
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
 
             if (auto starredObj{ StarredObjType::find(session, id) })
             {
@@ -49,7 +49,7 @@ namespace Feedback::ListenBrainz
         template <typename StarredObjType>
         void onUnstarred(Database::Session& session, typename StarredObjType::IdType id)
         {
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
 
             if (auto starredObj{ StarredObjType::find(session, id) })
                 starredObj.remove();
@@ -63,12 +63,12 @@ namespace Feedback::ListenBrainz
         , _client{ Http::createClient(_ioContext, _baseAPIUrl) }
         , _feedbacksSynchronizer{ _ioContext, db, *_client }
     {
-        LOG(INFO) << "Starting ListenBrainz feedback backend... API endpoint = '" << _baseAPIUrl << "'";
+        LOG(INFO, "Starting ListenBrainz feedback backend... API endpoint = '" << _baseAPIUrl << "'");
     }
 
     ListenBrainzBackend::~ListenBrainzBackend()
     {
-        LOG(INFO) << "Stopped ListenBrainz feedback backend!";
+        LOG(INFO, "Stopped ListenBrainz feedback backend!");
     }
 
     void ListenBrainzBackend::onStarred(Database::StarredArtistId starredArtistId)

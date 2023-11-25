@@ -21,7 +21,7 @@
 
 #include "LoginThrottler.hpp"
 
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Random.hpp"
 
 namespace Auth {
@@ -81,10 +81,10 @@ LoginThrottler::onBadClientAttempt(const boost::asio::ip::address& address)
 
 	attemptInfo.badConsecutiveAttemptCount += 1;
 
-	LMS_LOG(AUTH, DEBUG) << "Registering bad attempt for '" << clientAddress.to_string() << "', consecutive bad attempts count = " << attemptInfo.badConsecutiveAttemptCount;
+	LMS_LOG(AUTH, DEBUG, "Registering bad attempt for '" << clientAddress.to_string() << "', consecutive bad attempts count = " << attemptInfo.badConsecutiveAttemptCount);
 	if (attemptInfo.badConsecutiveAttemptCount >= _maxBadConsecutiveAttemptCount)
 	{
-		LMS_LOG(AUTH, DEBUG) << "Throttling '" << clientAddress.to_string() << "'";
+		LMS_LOG(AUTH, DEBUG, "Throttling '" << clientAddress.to_string() << "'");
 		attemptInfo.nextAttempt = now.addMSecs(std::chrono::duration_cast<std::chrono::milliseconds>(_throttlingDuration).count());
 	}
 	else

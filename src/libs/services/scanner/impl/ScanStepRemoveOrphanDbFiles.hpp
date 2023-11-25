@@ -37,6 +37,7 @@ namespace Scanner
 
 			void removeOrphanTracks(ScanContext& context);
 			void removeOrphanClusters();
+			void removeOrphanClusterTypes();
 			void removeOrphanArtists();
 			void removeOrphanReleases();
 			bool checkFile(const std::filesystem::path& p);

@@ -34,7 +34,7 @@ namespace API::Subsonic
 
     Response handleGetPlaylistsRequest(RequestContext& context)
     {
-        auto transaction{ context.dbSession.createSharedTransaction() };
+        auto transaction{ context.dbSession.createReadTransaction() };
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
         Response::Node& playlistsNode{ response.createNode("playlists") };
@@ -58,7 +58,7 @@ namespace API::Subsonic
         // Mandatory params
         TrackListId trackListId{ getMandatoryParameterAs<TrackListId>(context.parameters, "id") };
 
-        auto transaction{ context.dbSession.createSharedTransaction() };
+        auto transaction{ context.dbSession.createReadTransaction() };
 
         User::pointer user{ User::find(context.dbSession, context.userId) };
         if (!user)
@@ -91,7 +91,7 @@ namespace API::Subsonic
         if (!name && !id)
             throw RequiredParameterMissingError{ "name or id" };
 
-        auto transaction{ context.dbSession.createUniqueTransaction() };
+        auto transaction{ context.dbSession.createWriteTransaction() };
 
         User::pointer user{ User::find(context.dbSession, context.userId) };
         if (!user)
@@ -140,7 +140,7 @@ namespace API::Subsonic
         std::vector<TrackId> trackIdsToAdd{ getMultiParametersAs<TrackId>(context.parameters, "songIdToAdd") };
         std::vector<std::size_t> trackPositionsToRemove{ getMultiParametersAs<std::size_t>(context.parameters, "songIndexToRemove") };
 
-        auto transaction{ context.dbSession.createUniqueTransaction() };
+        auto transaction{ context.dbSession.createWriteTransaction() };
 
         User::pointer user{ User::find(context.dbSession, context.userId) };
         if (!user)
@@ -189,7 +189,7 @@ namespace API::Subsonic
     {
         TrackListId id{ getMandatoryParameterAs<TrackListId>(context.parameters, "id") };
 
-        auto transaction{ context.dbSession.createUniqueTransaction() };
+        auto transaction{ context.dbSession.createWriteTransaction() };
 
         User::pointer user{ User::find(context.dbSession, context.userId) };
         if (!user)

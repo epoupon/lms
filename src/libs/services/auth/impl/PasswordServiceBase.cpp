@@ -31,7 +31,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 namespace Auth
 {
@@ -61,7 +61,7 @@ namespace Auth
 	PasswordServiceBase::CheckResult
 	PasswordServiceBase::checkUserPassword(const boost::asio::ip::address& clientAddress, std::string_view loginName, std::string_view password)
 	{
-		LMS_LOG(AUTH, DEBUG) << "Checking password for user '" << loginName << "'";
+		LMS_LOG(AUTH, DEBUG, "Checking password for user '" << loginName << "'");
 
 		// Do not waste too much resource on brute force attacks (optim)
 		{

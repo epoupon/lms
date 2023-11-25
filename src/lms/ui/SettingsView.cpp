@@ -38,7 +38,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
 #include "utils/IConfig.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Service.hpp"
 
 #include "LmsApplication.hpp"
@@ -134,7 +134,7 @@ namespace UserInterface
 
         void saveData()
         {
-            auto transaction{ LmsApp->getDbSession().createUniqueTransaction() };
+            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
             User::pointer user{ LmsApp->getUser() };
 
@@ -202,7 +202,7 @@ namespace UserInterface
 
         void loadData()
         {
-            auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
             User::pointer user{ LmsApp->getUser() };
 
@@ -259,10 +259,7 @@ namespace UserInterface
                     setValue(ScrobblingBackendField, _scrobblingBackendModel->getString(*scrobblingBackendRow));
 
                 if (auto listenBrainzToken{ user->getListenBrainzToken() })
-                {
-                    LMS_LOG(UI, DEBUG) << "Read listenBrainzToken! value = " << listenBrainzToken->getAsString();
                     setValue(ListenBrainzTokenField, Wt::WString::fromUTF8(std::string{ listenBrainzToken->getAsString() }));
-                }
 
                 {
                     const bool usesListenBrainz{ user->getScrobblingBackend() == ScrobblingBackend::ListenBrainz || user->getFeedbackBackend() == FeedbackBackend::ListenBrainz };
@@ -560,7 +557,7 @@ namespace UserInterface
         saveBtn->clicked().connect([=]
             {
                 {
-                    auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
                     if (LmsApp->getUser()->isDemo())
                     {

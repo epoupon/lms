@@ -30,7 +30,7 @@
 #include "services/database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/String.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"
@@ -57,7 +57,7 @@ namespace UserInterface
                 const auto mbid{ UUID::fromString(wApp->internalPathNextPart("/artist/mbid/")) };
                 if (mbid)
                 {
-                    auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
                     if (const Database::Artist::pointer artist{ Database::Artist::find(LmsApp->getDbSession(), *mbid) })
                         return artist->getId();
                 }
@@ -124,7 +124,7 @@ namespace UserInterface
 
         const auto similarArtistIds{ Service<Recommendation::IRecommendationService>::get()->getSimilarArtists(*artistId, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, 5) };
 
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const Database::Artist::pointer artist{ Database::Artist::find(LmsApp->getDbSession(), *artistId) };
         if (!artist)
@@ -142,10 +142,10 @@ namespace UserInterface
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
 
         {
-            auto clusterTypes = ScanSettings::get(LmsApp->getDbSession())->getClusterTypes();
-            auto clusterGroups = artist->getClusterGroups(clusterTypes, 3);
+            auto clusterTypes{ ClusterType::findIds(LmsApp->getDbSession()).results };
+            auto clusterGroups{ artist->getClusterGroups(clusterTypes, 3) };
 
-            for (auto clusters : clusterGroups)
+            for (const auto& clusters : clusterGroups)
             {
                 for (const Database::Cluster::pointer& cluster : clusters)
                 {
@@ -334,7 +334,7 @@ namespace UserInterface
 
     void Artist::addSomeReleases(ReleaseContainer& releaseContainer)
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         if (const Database::Artist::pointer artist{ Database::Artist::find(LmsApp->getDbSession(), _artistId) })
         {
@@ -349,7 +349,7 @@ namespace UserInterface
     bool Artist::addSomeNonReleaseTracks()
     {
         bool areTracksAdded{};
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const Range range{ static_cast<std::size_t>(_trackContainer->getCount()), _tracksBatchSize };
 

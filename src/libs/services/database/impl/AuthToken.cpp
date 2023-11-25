@@ -44,7 +44,7 @@ namespace Database
 	void
 	AuthToken::removeExpiredTokens(Session& session, const Wt::WDateTime& now)
 	{
-		session.checkUniqueLocked();
+		session.checkWriteTransaction();
 
 		session.getDboSession().execute("DELETE FROM auth_token WHERE expiry < ?").bind(now);
 	}
@@ -52,7 +52,7 @@ namespace Database
 	AuthToken::pointer
 	AuthToken::find(Session& session, std::string_view value)
 	{
-		session.checkSharedLocked();
+		session.checkReadTransaction();
 
 		return session.getDboSession().find<AuthToken>()
 			.where("value = ?").bind(value)

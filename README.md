@@ -40,13 +40,12 @@ __Note__: depending on your database size and/or your hardware, the tag-based re
 _LMS_ relies exclusively on tags to organize your music collection.
 
 ### Filtering
-You can specify the tags you want to use to filter your collection. By default, `genre`, `albumgrouping`, `mood` and `albummood` tags are used.
-In the administration settings, you can set whatever tags you want, even custom tags.
+It is possible to apply global filters on your collection using `genre`, `mood`, `grouping` and `language` tags. More tags can be added in the database administration settings, even custom tags.
 
 __Note__: you can use the `lms-metadata` tool to have an idea of the tags parsed by _LMS_ using [TagLib](https://github.com/taglib/taglib).
 
 ### Multiple album artists
-_LMS_ requires the `ALBUMARTISTS` and `ALBUMARTISTSSORT` tags to properly handle multiple album artists on the same album. As they are a custom tags, you may need to setup your favorite tagger to add them.
+_LMS_ requires the `albumartists` and `albumartistssort` tags to properly handle multiple album artists on the same album. As they are a custom tags, you may need to setup your favorite tagger to add them.
 
 __Note__: if you use [Picard](https://picard.musicbrainz.org/), add the following script to include these tags:
 ```

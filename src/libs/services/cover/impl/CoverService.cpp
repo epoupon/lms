@@ -29,7 +29,7 @@
 #include "image/Exception.hpp"
 #include "image/IRawImage.hpp"
 #include "utils/IConfig.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Random.hpp"
 #include "utils/String.hpp"
 #include "utils/Utils.hpp"
@@ -51,7 +51,7 @@ namespace Cover
         {
             std::optional<TrackInfo> res;
 
-            auto transaction{ dbSession.createSharedTransaction() };
+            auto transaction{ dbSession.createReadTransaction() };
 
             const Database::Track::pointer track{ Database::Track::find(dbSession, trackId) };
             if (!track)
@@ -110,10 +110,10 @@ namespace Cover
     {
         setJpegQuality(Service<IConfig>::get()->getULong("cover-jpeg-quality", 75));
 
-        LMS_LOG(COVER, INFO) << "Default cover path = '" << _defaultCoverPath.string() << "'";
-        LMS_LOG(COVER, INFO) << "Max cache size = " << _maxCacheSize;
-        LMS_LOG(COVER, INFO) << "Max file size = " << _maxFileSize;
-        LMS_LOG(COVER, INFO) << "Preferred file names: " << StringUtils::joinStrings(_preferredFileNames, ",");
+        LMS_LOG(COVER, INFO, "Default cover path = '" << _defaultCoverPath.string() << "'");
+        LMS_LOG(COVER, INFO, "Max cache size = " << _maxCacheSize);
+        LMS_LOG(COVER, INFO, "Max file size = " << _maxFileSize);
+        LMS_LOG(COVER, INFO, "Preferred file names: " << StringUtils::joinStrings(_preferredFileNames, ","));
 
 #if LMS_SUPPORT_IMAGE_GM
         GraphicsMagick::init(execPath);
@@ -148,7 +148,7 @@ namespace Cover
                 }
                 catch (const Image::ImageException& e)
                 {
-                    LMS_LOG(COVER, ERROR) << "Cannot read embedded cover: " << e.what();
+                    LMS_LOG(COVER, ERROR, "Cannot read embedded cover: " << e.what());
                 }
             });
 
@@ -167,7 +167,7 @@ namespace Cover
         }
         catch (const ImageException& e)
         {
-            LMS_LOG(COVER, ERROR) << "Cannot read cover in file '" << p.string() << "': " << e.what();
+            LMS_LOG(COVER, ERROR, "Cannot read cover in file '" << p.string() << "': " << e.what());
         }
 
         return image;
@@ -190,7 +190,7 @@ namespace Cover
 
             std::shared_ptr<IEncodedImage> image{ getFromCoverFile(_defaultCoverPath, width) };
             _defaultCoverCache[width] = image;
-            LMS_LOG(COVER, DEBUG) << "Default cache entries = " << _defaultCoverCache.size();
+            LMS_LOG(COVER, DEBUG, "Default cache entries = " << _defaultCoverCache.size());
 
             return image;
         }
@@ -269,7 +269,7 @@ namespace Cover
 
         if (std::filesystem::file_size(filePath, ec) > _maxFileSize && !ec)
         {
-            LMS_LOG(COVER, INFO) << "Cover file '" << filePath.string() << " is too big (" << std::filesystem::file_size(filePath, ec) << "), limit is " << _maxFileSize;
+            LMS_LOG(COVER, INFO, "Cover file '" << filePath.string() << " is too big (" << std::filesystem::file_size(filePath, ec) << "), limit is " << _maxFileSize);
             return false;
         }
 
@@ -306,7 +306,7 @@ namespace Cover
         }
         catch (Av::Exception& e)
         {
-            LMS_LOG(COVER, ERROR) << "Cannot get covers from track " << p.string() << ": " << e.what();
+            LMS_LOG(COVER, ERROR, "Cannot get covers from track " << p.string() << ": " << e.what());
         }
 
         return image;
@@ -372,7 +372,7 @@ namespace Cover
         {
             std::optional<ReleaseInfo> res;
 
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
 
             // get a track in this release, consider the release is in a single directory
             const auto tracks{ Track::find(session, Track::FindParameters {}.setRelease(releaseId).setRange(Range{ 0, 1 }).setSortMethod(TrackSortMethod::Release)) };
@@ -404,7 +404,7 @@ namespace Cover
     {
         std::unique_lock lock{ _cacheMutex };
 
-        LMS_LOG(COVER, DEBUG) << "Cache stats: hits = " << _cacheHits << ", misses = " << _cacheMisses << ", nb entries = " << _cache.size() << ", size = " << _cacheSize;
+        LMS_LOG(COVER, DEBUG, "Cache stats: hits = " << _cacheHits << ", misses = " << _cacheMisses << ", nb entries = " << _cache.size() << ", size = " << _cacheSize);
         _cacheHits = 0;
         _cacheMisses = 0;
         _cacheSize = 0;
@@ -415,7 +415,7 @@ namespace Cover
     {
         _jpegQuality = Utils::clamp<unsigned>(quality, 1, 100);
 
-        LMS_LOG(COVER, INFO) << "JPEG export quality = " << _jpegQuality;
+        LMS_LOG(COVER, INFO, "JPEG export quality = " << _jpegQuality);
     }
 
     void CoverService::saveToCache(const CacheEntryDesc& entryDesc, std::shared_ptr<IEncodedImage> image)

@@ -28,7 +28,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "utils/Service.hpp"
 
 #include "common/LoginNameValidator.hpp"
@@ -60,7 +60,7 @@ class InitWizardModel : public Wt::WFormModel
 
 		void saveData()
 		{
-			auto transaction(LmsApp->getDbSession().createUniqueTransaction());
+			auto transaction(LmsApp->getDbSession().createWriteTransaction());
 
 			// Check if a user already exist
 			// If it's the case, just do nothing

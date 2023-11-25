@@ -26,7 +26,7 @@ using namespace Database;
 TEST_F(DatabaseFixture, Track)
 {
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_EQ(Track::find(session, Track::FindParameters{}).results.size(), 0);
         EXPECT_EQ(Track::findIds(session, Track::FindParameters{}).results.size(), 0);
         EXPECT_EQ(Track::getCount(session), 0);
@@ -42,7 +42,7 @@ TEST_F(DatabaseFixture, Track)
     ScopedTrack track{ session, "MyTrackFile" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         EXPECT_EQ(Track::find(session, Track::FindParameters{}).results.size(), 1);
         EXPECT_EQ(Track::getCount(session), 1);
@@ -69,7 +69,7 @@ TEST_F(DatabaseFixture, MultipleTracks)
     ScopedTrack track2{ session, "MyTrackFile2" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         EXPECT_TRUE(track1.getId() != track2.getId());
         EXPECT_TRUE(track1.get() != track2.get());
@@ -87,7 +87,7 @@ TEST_F(DatabaseFixture, MultipleTracksSearchByFilter)
     ScopedTrack track6{ session, "" };
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         track1.get().modify()->setName("MyTrack");
         track2.get().modify()->setName("MyTrack%");
         track3.get().modify()->setName("MyTrack%Foo");
@@ -97,7 +97,7 @@ TEST_F(DatabaseFixture, MultipleTracksSearchByFilter)
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         {
             const auto tracks{ Track::findIds(session, Track::FindParameters {}.setKeywords({"Track"})) };
@@ -128,19 +128,19 @@ TEST_F(DatabaseFixture, Track_date)
     ScopedTrack track{ session, "MyTrack" };
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_EQ(track->getYear(), std::nullopt);
         EXPECT_EQ(track->getOriginalYear(), std::nullopt);
     }
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         track.get().modify()->setDate(Wt::WDate{ 1995, 5, 5 });
         track.get().modify()->setOriginalDate(Wt::WDate{ 1994, 2, 2 });
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         EXPECT_EQ(track->getYear(), 1995);
         EXPECT_EQ(track->getOriginalYear(), 1994);
     }
@@ -153,24 +153,24 @@ TEST_F(DatabaseFixture, Track_writtenAfter)
     const Wt::WDateTime dateTime{ Wt::WDate {1950, 1, 1}, Wt::WTime {12, 30, 20} };
 
     {
-        auto transaction{ session.createUniqueTransaction() };
+        auto transaction{ session.createWriteTransaction() };
         track.get().modify()->setLastWriteTime(dateTime);
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         const auto tracks{ Track::findIds(session, Track::FindParameters {}) };
         EXPECT_EQ(tracks.results.size(), 1);
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         const auto tracks{ Track::findIds(session, Track::FindParameters {}.setWrittenAfter(dateTime.addSecs(-1))) };
         EXPECT_EQ(tracks.results.size(), 1);
     }
 
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         const auto tracks{ Track::findIds(session, Track::FindParameters {}.setWrittenAfter(dateTime.addSecs(+1))) };
         EXPECT_EQ(tracks.results.size(), 0);
     }

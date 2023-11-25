@@ -28,7 +28,7 @@
 #include "services/database/TrackFeatures.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/User.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 #include "IdTypeTraits.hpp"
 #include "SqlQuery.hpp"
@@ -42,7 +42,7 @@ namespace Database
         template <typename ResultType>
         Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Track::FindParameters& params)
         {
-            session.checkSharedLocked();
+            session.checkReadTransaction();
 
             std::string selectStatement{ params.distinct ? "SELECT DISTINCT" : "SELECT" };
             auto query{ session.getDboSession().query<ResultType>(selectStatement + " " + std::string{ itemToSelect } + " FROM track t") };
@@ -200,21 +200,21 @@ namespace Database
     std::size_t
         Track::getCount(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM track");
     }
 
     Track::pointer Track::findByPath(Session& session, const std::filesystem::path& p)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().find<Track>().where("file_path = ?").bind(p.string()).resultValue();
     }
 
     Track::pointer Track::find(Session& session, TrackId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().find<Track>()
             .where("id = ?").bind(id)
@@ -223,14 +223,14 @@ namespace Database
 
     bool Track::exists(Session& session, TrackId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT 1 from track").where("id = ?").bind(id).resultValue() == 1;
     }
 
     std::vector<Track::pointer> Track::findByMBID(Session& session, const UUID& mbid)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto res{ session.getDboSession().find<Track>()
             .where("mbid = ?").bind(std::string {mbid.getAsString()})
@@ -241,7 +241,7 @@ namespace Database
 
     std::vector<Track::pointer> Track::findByRecordingMBID(Session& session, const UUID& mbid)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto res{ session.getDboSession().find<Track>()
             .where("recording_mbid = ?").bind(std::string {mbid.getAsString()})
@@ -253,7 +253,7 @@ namespace Database
     RangeResults<Track::PathResult> Track::findPaths(Session& session, std::optional<Range> range)
     {
         using QueryResultType = std::tuple<TrackId, std::string>;
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         // TODO Dbo traits on filesystem
         auto query{ session.getDboSession().query<QueryResultType>("SELECT id, file_path FROM track") };
@@ -276,7 +276,7 @@ namespace Database
 
     RangeResults<TrackId> Track::findIdsTrackMBIDDuplicates(Session& session, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ session.getDboSession().query<TrackId>("SELECT track.id FROM track WHERE mbid in (SELECT mbid FROM track WHERE mbid <> '' GROUP BY mbid HAVING COUNT (*) > 1)")
             .orderBy("track.release_id,track.disc_number,track.track_number,track.mbid") };
@@ -286,7 +286,7 @@ namespace Database
 
     RangeResults<TrackId> Track::findIdsWithRecordingMBIDAndMissingFeatures(Session& session, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ session.getDboSession().query<TrackId>("SELECT t.id FROM track t")
             .where("LENGTH(t.recording_mbid) > 0")
@@ -314,7 +314,7 @@ namespace Database
 
     RangeResults<TrackId> Track::findIds(Session& session, const FindParameters& parameters)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ createQuery<TrackId>(session, parameters) };
         return Utils::execQuery<TrackId>(query, parameters.range);
@@ -322,7 +322,7 @@ namespace Database
 
     RangeResults<Track::pointer> Track::find(Session& session, const FindParameters& parameters)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ createQuery<Wt::Dbo::ptr<Track>>(session, parameters) };
         return Utils::execQuery<Track::pointer>(query, parameters.range);
@@ -330,7 +330,7 @@ namespace Database
 
     void Track::find(Session& session, const FindParameters& params, std::function<void(const Track::pointer&)> func)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ createQuery<Wt::Dbo::ptr<Track>>(session, params)};
         Utils::execQuery(query, params.range, func);
@@ -339,7 +339,7 @@ namespace Database
     RangeResults<TrackId> Track::findSimilarTrackIds(Session& session, const std::vector<TrackId>& tracks, std::optional<Range> range)
     {
         assert(!tracks.empty());
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         std::ostringstream oss;
         for (std::size_t i{}; i < tracks.size(); ++i)
@@ -479,7 +479,7 @@ namespace Database
         return std::vector<TrackArtistLink::pointer>(_trackArtistLinks.begin(), _trackArtistLinks.end());
     }
 
-    std::vector<std::vector<Cluster::pointer>> Track::getClusterGroups(const std::vector<ClusterType::pointer>& clusterTypes, std::size_t size) const
+    std::vector<std::vector<Cluster::pointer>> Track::getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const
     {
         assert(self());
         assert(session());
@@ -493,8 +493,8 @@ namespace Database
         where.And(WhereClause("t.id = ?")).bind(getId().toString());
         {
             WhereClause clusterClause;
-            for (auto clusterType : clusterTypes)
-                clusterClause.Or(WhereClause("c_type.id = ?")).bind(clusterType->getId().toString());
+            for (ClusterTypeId clusterTypeId : clusterTypeIds)
+                clusterClause.Or(WhereClause("c_type.id = ?")).bind(clusterTypeId.toString());
             where.And(clusterClause);
         }
         oss << " " << where.get();
@@ -514,8 +514,8 @@ namespace Database
         }
 
         std::vector<std::vector<Cluster::pointer>> res;
-        for (auto cluster_list : clusters)
-            res.push_back(cluster_list.second);
+        for (const auto& [type, clusters] : clusters)
+            res.push_back(clusters);
 
         return res;
     }
@@ -524,7 +524,7 @@ namespace Database
     {
         std::ostream& operator<<(std::ostream& os, const TrackInfo& trackInfo)
         {
-            auto transaction{ trackInfo.session.createSharedTransaction() };
+            auto transaction{ trackInfo.session.createReadTransaction() };
 
             const Track::pointer track{ Track::find(trackInfo.session, trackInfo.trackId) };
             if (track)
@@ -536,7 +536,7 @@ namespace Database
                 for (auto artist : track->getArtists({ TrackArtistLinkType::Artist }))
                     os << " - " << artist->getName();
                 for (auto cluster : track->getClusters())
-                    os << " {" + cluster->getType()->getName() << "-" << cluster->getName() << "}";
+                    os << " {" << cluster->getType()->getName() << "-" << cluster->getName() << "}";
             }
             else
             {

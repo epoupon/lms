@@ -133,6 +133,14 @@
 							</div>
 						</div>
 						${</if-has-bitrate>}
+						<div class="row align-items-center">
+							<div class="col-4">
+								${tr:Lms.Explore.playcount}
+							</div>
+							<div class="col">
+								${playcount}
+							</div>
+						</div>
 					</div>
 				</div>
 				<div class="modal-footer">

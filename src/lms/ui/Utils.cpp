@@ -83,7 +83,7 @@ namespace UserInterface::Utils
 
     std::unique_ptr<Wt::WInteractWidget> createCluster(Database::ClusterId clusterId, bool canDelete)
     {
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const Database::Cluster::pointer cluster{ Database::Cluster::find(LmsApp->getDbSession(), clusterId) };
         if (!cluster)
@@ -110,7 +110,7 @@ namespace UserInterface::Utils
         auto res{ std::make_unique<Wt::WText>(std::string {} + (canDelete ? "<i class=\"fa fa-times-circle\"></i> " : "") + Wt::WString::fromUTF8(std::string{ cluster->getName() }), Wt::TextFormat::UnsafeXHTML) };
 
         res->setStyleClass("Lms-badge-cluster badge me-1 " + styleClass); // HACK
-        res->setToolTip(cluster->getType()->getName(), Wt::TextFormat::Plain);
+        res->setToolTip(std::string{ cluster->getType()->getName() }, Wt::TextFormat::Plain);
         res->setInline(true);
 
         return res;
@@ -124,7 +124,7 @@ namespace UserInterface::Utils
 
         bool firstArtist{ true };
 
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
         for (const ArtistId artistId : artistIds)
         {
             const Artist::pointer artist{ Artist::find(LmsApp->getDbSession(), artistId) };
@@ -152,7 +152,7 @@ namespace UserInterface::Utils
         std::string_view::size_type currentOffset{};
 
         auto result{ std::make_unique<Wt::WContainerWidget>() };
-        auto transaction{ LmsApp->getDbSession().createSharedTransaction() };
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         // consider order is guaranteed + we will likely succeed
         for (const ArtistId artistId : artistIds)
@@ -285,7 +285,8 @@ namespace UserInterface::Utils
 
         std::unique_ptr<Wt::WContainerWidget> clusterContainer{ std::make_unique<Wt::WContainerWidget>() };
 
-        const auto clusterTypes{ ScanSettings::get(LmsApp->getDbSession())->getClusterTypes() };
+        // TODO: optimize this
+        const auto clusterTypes{ ClusterType::findIds(LmsApp->getDbSession()).results };
         const auto clusterGroups{ track->getClusterGroups(clusterTypes, 3) };
 
         for (const auto& clusters : clusterGroups)

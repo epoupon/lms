@@ -34,7 +34,7 @@
 
 namespace MetaData
 {
-    using Tags = std::map<std::string /* type */, std::set<std::string> /* names */>;
+    using Tags = std::map<std::string /* type */, std::set<std::string> /* values */>;
 
     // Very simplified version of https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 
@@ -131,10 +131,10 @@ namespace MetaData
 
         virtual std::optional<Track> parse(const std::filesystem::path& p, bool debug = false) = 0;
 
-        void setClusterTypeNames(const std::set<std::string>& clusterTypeNames) { _clusterTypeNames = clusterTypeNames; }
+        void setExtraTags(const std::vector<std::string>& extraTags) { _extraTags = std::set(extraTags.cbegin(), extraTags.cend()); }
 
     protected:
-        std::set<std::string> _clusterTypeNames;
+        std::set<std::string> _extraTags;
     };
 
     enum class ParserType

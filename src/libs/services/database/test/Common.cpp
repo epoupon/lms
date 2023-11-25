@@ -59,17 +59,6 @@ void DatabaseFixture::SetUpTestCase()
         Database::Session s{ _tmpDb->getDb() };
         s.prepareTables();
         s.analyze();
-
-        // remove default created entries
-        {
-            auto transaction{ s.createUniqueTransaction() };
-
-            for (const Database::ClusterTypeId clusterTypeId : Database::ClusterType::find(s).results)
-            {
-                auto clusterType{ Database::ClusterType::find(s, clusterTypeId) };
-                clusterType.remove();
-            }
-        }
     }
 }
 
@@ -82,7 +71,7 @@ void DatabaseFixture::testDatabaseEmpty()
 {
     using namespace Database;
 
-    auto uniqueTransaction{ session.createUniqueTransaction() };
+    auto transaction{ session.createWriteTransaction() };
 
     EXPECT_EQ(Artist::getCount(session), 0);
     EXPECT_EQ(Cluster::getCount(session), 0);

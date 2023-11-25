@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <optional>
 #include <vector>
 
@@ -61,9 +62,9 @@ namespace Database
             ArtistId                            artist;						// only releases that involved this user
             EnumSet<TrackArtistLinkType>        trackArtistLinkTypes; 			//    and for these link types
             EnumSet<TrackArtistLinkType>        excludedTrackArtistLinkTypes; 	//    but not for these link types
-            std::optional<ReleaseTypePrimary>   primaryType;				// if, set, matching this primary type
+            std::optional<ReleaseTypePrimary>   primaryType;				// if set, matching this primary type
             EnumSet<ReleaseTypeSecondary>       secondaryTypes;				// Matching all this (if any)
-
+            
             FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
             FindParameters& setSortMethod(ReleaseSortMethod _sortMethod) { sortMethod = _sortMethod; return *this; }
@@ -86,18 +87,19 @@ namespace Database
         static std::size_t              getCount(Session& session);
         static bool                     exists(Session& session, ReleaseId id);
         static pointer                  find(Session& session, const UUID& MBID);
-        static std::vector<pointer>     find(Session& session, const std::string& name);
+        static std::vector<pointer>     find(Session& session, const std::string& name, const std::filesystem::path& releaseDirectory);
         static pointer                  find(Session& session, ReleaseId id);
         static RangeResults<pointer>    find(Session& session, const FindParameters& parameters);
         static void                     find(Session& session, const FindParameters& parameters, std::function<void(const pointer&)> func);
         static RangeResults<ReleaseId>  findIds(Session& session, const FindParameters& parameters);
+        static std::size_t              getCount(Session& session, const FindParameters& parameters);
         static RangeResults<ReleaseId>  findOrphanIds(Session& session, std::optional<Range> range = std::nullopt); // not track related
         static RangeResults<ReleaseId>  findIdsOrderedByArtist(Session& session, std::optional<Range> range = std::nullopt);
 
         // Get the cluster of the tracks that belong to this release
         // Each clusters are grouped by cluster type, sorted by the number of occurence (max to min)
         // size is the max number of cluster per cluster type
-        std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ObjectPtr<ClusterType>>& clusterTypes, std::size_t size) const;
+        std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const;
 
         // Utility functions (if all tracks have the same values, which is legit to not be the case)
         Wt::WDate                   getReleaseDate() const;

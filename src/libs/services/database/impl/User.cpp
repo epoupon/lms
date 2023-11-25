@@ -23,7 +23,7 @@
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "IdTypeTraits.hpp"
 #include "StringViewTraits.hpp"
 #include "Utils.hpp"
@@ -42,14 +42,14 @@ namespace Database {
 
     std::size_t User::getCount(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM user");
     }
 
     RangeResults<UserId> User::find(Session& session, const FindParameters& params)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ session.getDboSession().query<UserId>("SELECT id FROM user") };
 
@@ -63,7 +63,7 @@ namespace Database {
 
     User::pointer User::findDemoUser(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().find<User>().where("type = ?").bind(UserType::DEMO).resultValue();
     }

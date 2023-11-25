@@ -19,19 +19,9 @@
 
 #pragma once
 
-#include "services/database/UserId.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/UUID.hpp"
+#include <Wt/WValidator.h>
 
-#define LOG(sev, message)	LMS_LOG(FEEDBACK, sev, "[listenbrainz] " << message)
-
-namespace Database
+namespace UserInterface
 {
-	class Session;
-}
-
-namespace Feedback::ListenBrainz::Utils
-{
-	std::optional<UUID>	getListenBrainzToken(Database::Session& session, Database::UserId userId);
-	std::string parseValidateToken(std::string_view msgBody);
-}
+    std::unique_ptr<Wt::WValidator> createUppercaseValidator(std::string_view delimiters);
+} // namespace UserInterface

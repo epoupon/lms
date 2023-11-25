@@ -26,7 +26,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 #include "internal/InternalBackend.hpp"
 #include "listenbrainz/ListenBrainzBackend.hpp"
@@ -43,15 +43,15 @@ namespace Scrobbling
     ScrobblingService::ScrobblingService(boost::asio::io_context& ioContext, Db& db)
         : _db{ db }
     {
-        LMS_LOG(SCROBBLING, INFO) << "Starting service...";
+        LMS_LOG(SCROBBLING, INFO, "Starting service...");
         _scrobblingBackends.emplace(ScrobblingBackend::Internal, std::make_unique<InternalBackend>(_db));
         _scrobblingBackends.emplace(ScrobblingBackend::ListenBrainz, std::make_unique<ListenBrainz::ListenBrainzBackend>(ioContext, _db));
-        LMS_LOG(SCROBBLING, INFO) << "Service started!";
+        LMS_LOG(SCROBBLING, INFO, "Service started!");
     }
 
     ScrobblingService::~ScrobblingService()
     {
-        LMS_LOG(SCROBBLING, INFO) << "Service stopped!";
+        LMS_LOG(SCROBBLING, INFO, "Service stopped!");
     }
 
     void ScrobblingService::listenStarted(const Listen& listen)
@@ -77,7 +77,7 @@ namespace Scrobbling
         std::optional<ScrobblingBackend> backend;
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
         if (const User::pointer user{ User::find(session, userId) })
             backend = user->getScrobblingBackend();
 
@@ -93,7 +93,7 @@ namespace Scrobbling
             return res;
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         res = Database::Listen::getRecentArtists(session, userId, *backend, clusterIds, linkType, range);
         return res;
@@ -108,7 +108,7 @@ namespace Scrobbling
             return res;
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         res = Database::Listen::getRecentReleases(session, userId, *backend, clusterIds, range);
         return res;
@@ -123,7 +123,7 @@ namespace Scrobbling
             return res;
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         res = Database::Listen::getRecentTracks(session, userId, *backend, clusterIds, range);
         return res;
@@ -136,7 +136,7 @@ namespace Scrobbling
             return {};
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const Database::Listen::pointer listen{ Database::Listen::getMostRecentListen(session, userId, *backend, releaseId) };
         return listen ? listen->getDateTime() : Wt::WDateTime{};
@@ -149,7 +149,7 @@ namespace Scrobbling
             return {};
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const Database::Listen::pointer listen{ Database::Listen::getMostRecentListen(session, userId, *backend, trackId) };
         return listen ? listen->getDateTime() : Wt::WDateTime{};
@@ -165,7 +165,7 @@ namespace Scrobbling
             return res;
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         res = Database::Listen::getTopArtists(session, userId, *backend, clusterIds, linkType, range);
         return res;
@@ -180,7 +180,7 @@ namespace Scrobbling
             return res;
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         res = Database::Listen::getTopReleases(session, userId, *backend, clusterIds, range);
         return res;
@@ -195,7 +195,7 @@ namespace Scrobbling
             return res;
 
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         res = Database::Listen::getTopTracks(session, userId, *backend, clusterIds, range);
         return res;

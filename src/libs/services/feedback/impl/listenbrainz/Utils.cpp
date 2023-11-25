@@ -29,7 +29,7 @@ namespace Feedback::ListenBrainz::Utils
 {
     std::optional<UUID> getListenBrainzToken(Database::Session& session, Database::UserId userId)
     {
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
         const Database::User::pointer user{ Database::User::find(session, userId) };
         if (!user)
@@ -46,13 +46,13 @@ namespace Feedback::ListenBrainz::Utils
         Wt::Json::Object root;
         if (!Wt::Json::parse(std::string{ msgBody }, root, error))
         {
-            LOG(ERROR) << "Cannot parse 'validate-token' result: " << error.what();
+            LOG(ERROR, "Cannot parse 'validate-token' result: " << error.what());
             return listenBrainzUserName;
         }
 
         if (!root.get("valid").orIfNull(false))
         {
-            LOG(INFO) << "Invalid listenbrainz user";
+            LOG(INFO, "Invalid listenbrainz user");
             return listenBrainzUserName;
         }
 

@@ -26,7 +26,7 @@
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/User.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 #include "SqlQuery.hpp"
 #include "EnumSetTraits.hpp"
 #include "IdTypeTraits.hpp"
@@ -39,7 +39,7 @@ namespace Database
         template <typename ResultType>
         Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Release::FindParameters& params)
         {
-            auto query{ session.getDboSession().query<ResultType>("SELECT DISTINCT " + std::string{ itemToSelect } + " from release r") };
+            auto query{ session.getDboSession().query<ResultType>("SELECT " + std::string{ itemToSelect } + " from release r") };
 
             if (params.sortMethod == ReleaseSortMethod::LastWritten
                 || params.sortMethod == ReleaseSortMethod::Date
@@ -183,21 +183,6 @@ namespace Database
 
             return query;
         }
-
-        template <typename ResultType>
-        Wt::Dbo::Query<ResultType> createQuery(Session& session, const Release::FindParameters& params)
-        {
-            std::string_view itemToSelect;
-
-            if constexpr (std::is_same_v<ResultType, ReleaseId>)
-                itemToSelect = "r.id";
-            else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<Release>>)
-                itemToSelect = "r";
-            else
-                static_assert("Unhandled type");
-
-            return createQuery<ResultType>(session, itemToSelect, params);
-        }
     }
 
     Release::Release(const std::string& name, const std::optional<UUID>& MBID)
@@ -211,13 +196,15 @@ namespace Database
         return session.getDboSession().add(std::unique_ptr<Release> {new Release{ name, MBID }});
     }
 
-    std::vector<Release::pointer> Release::find(Session& session, const std::string& name)
+    std::vector<Release::pointer> Release::find(Session& session, const std::string& name, const std::filesystem::path& releaseDirectory)
     {
-        session.checkUniqueLocked();
+        session.checkReadTransaction();
 
         auto res{ session.getDboSession()
-                            .find<Release>()
-                            .where("name = ?").bind(std::string(name, 0, _maxNameLength))
+                            .query<Wt::Dbo::ptr<Release>>("SELECT DISTINCT r from release r")
+                            .join("track t ON t.release_id = r.id")
+                            .where("r.name = ?").bind(std::string(name, 0, _maxNameLength))
+                            .where("t.file_path LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind(Utils::escapeLikeKeyword(releaseDirectory.string()) + "%")
                             .resultList() };
 
         return std::vector<Release::pointer>(res.begin(), res.end());
@@ -225,7 +212,7 @@ namespace Database
 
     Release::pointer Release::find(Session& session, const UUID& mbid)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession()
             .find<Release>()
@@ -235,7 +222,7 @@ namespace Database
 
     Release::pointer Release::find(Session& session, ReleaseId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession()
             .find<Release>()
@@ -245,20 +232,20 @@ namespace Database
 
     bool Release::exists(Session& session, ReleaseId id)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
         return session.getDboSession().query<int>("SELECT 1 FROM release").where("id = ?").bind(id).resultValue() == 1;
     }
 
     std::size_t Release::getCount(Session& session)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM release");
     }
 
     RangeResults<ReleaseId> Release::findIdsOrderedByArtist(Session& session, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         // TODO merge with find
         auto query{ session.getDboSession().query<ReleaseId>(
@@ -273,7 +260,7 @@ namespace Database
 
     RangeResults<ReleaseId> Release::findOrphanIds(Session& session, std::optional<Range> range)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
         auto query{ session.getDboSession().query<ReleaseId>("select r.id from release r LEFT OUTER JOIN Track t ON r.id = t.release_id WHERE t.id IS NULL") };
         return Utils::execQuery<ReleaseId>(query, range);
@@ -281,26 +268,33 @@ namespace Database
 
     RangeResults<Release::pointer> Release::find(Session& session, const FindParameters& params)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
-        auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, params) };
+        auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, "DISTINCT r", params) };
         return Utils::execQuery<pointer>(query, params.range);
     }
 
     void Release::find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
-        auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, params) };
+        auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, "DISTINCT r", params) };
         Utils::execQuery<pointer>(query, params.range, func);
     }
 
     RangeResults<ReleaseId> Release::findIds(Session& session, const FindParameters& params)
     {
-        session.checkSharedLocked();
+        session.checkReadTransaction();
 
-        auto query{ createQuery<ReleaseId>(session, params) };
+        auto query{ createQuery<ReleaseId>(session, "DISTINCT r.id", params) };
         return Utils::execQuery<ReleaseId>(query, params.range);
+    }
+
+    std::size_t Release::getCount(Session& session, const FindParameters& params)
+    {
+        session.checkReadTransaction();
+
+        return createQuery<int>(session, "COUNT(DISTINCT r.id)", params).resultValue();
     }
 
     std::size_t Release::getDiscCount() const
@@ -487,7 +481,7 @@ namespace Database
         return query.resultValue();
     }
 
-    std::vector<std::vector<Cluster::pointer>> Release::getClusterGroups(const std::vector<ClusterType::pointer>& clusterTypes, std::size_t size) const
+    std::vector<std::vector<Cluster::pointer>> Release::getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const
     {
         assert(session());
 
@@ -500,8 +494,8 @@ namespace Database
         where.And(WhereClause("r.id = ?")).bind(getId().toString());
         {
             WhereClause clusterClause;
-            for (auto clusterType : clusterTypes)
-                clusterClause.Or(WhereClause("c_type.id = ?")).bind(clusterType->getId().toString());
+            for (const ClusterTypeId clusterTypeId : clusterTypeIds)
+                clusterClause.Or(WhereClause("c_type.id = ?")).bind(clusterTypeId.toString());
             where.And(clusterClause);
         }
         oss << " " << where.get();

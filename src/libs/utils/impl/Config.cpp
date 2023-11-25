@@ -20,7 +20,7 @@
 #include "Config.hpp"
 
 #include "utils/Exception.hpp"
-#include "utils/Logger.hpp"
+#include "utils/ILogger.hpp"
 
 std::unique_ptr<IConfig> createConfig(const std::filesystem::path& p)
 {

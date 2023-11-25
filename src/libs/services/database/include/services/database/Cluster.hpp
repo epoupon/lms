@@ -38,7 +38,6 @@ namespace Database {
 
     class Track;
     class ClusterType;
-    class ScanSettings;
     class Session;
 
     class Cluster final : public Object<Cluster, ClusterId>
@@ -47,12 +46,14 @@ namespace Database {
         struct FindParameters
         {
             std::optional<Range>    range;
-            ClusterTypeId           clusterType;  // if non empty, clusters that belong to this cluster type
+            ClusterTypeId           clusterType;    // if non empty, clusters that belong to this cluster type
+            std::string             clusterTypeName; // if non empty, clusters that belong to this cluster type
             TrackId                 track;        // if set, clusters involved in this track
             ReleaseId               release;      // if set, clusters involved in this release
 
             FindParameters& setRange(std::optional<Range> _range) { range = _range; return *this; }
             FindParameters& setClusterType(ClusterTypeId _clusterType) { clusterType = _clusterType; return *this; }
+            FindParameters& setClusterTypeName(std::string_view _name) { clusterTypeName = _name; return *this; }
             FindParameters& setTrack(TrackId _track) { track = _track; return *this; }
             FindParameters& setRelease(ReleaseId _release) { release = _release; return *this; }
         };
@@ -65,7 +66,7 @@ namespace Database {
         static RangeResults<pointer>            find(Session& session, const FindParameters& params);
         static void                             find(Session& session, const FindParameters& params, std::function<void(const pointer& cluster)> _func);
         static pointer                          find(Session& session, ClusterId id);
-        static RangeResults<ClusterId>          findOrphans(Session& session, std::optional<Range> range = std::nullopt);
+        static RangeResults<ClusterId>          findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
 
         // May be very slow
         static std::size_t                      computeTrackCount(Session& session, ClusterId id);
@@ -117,16 +118,16 @@ namespace Database {
 
         // Getters
         static std::size_t					getCount(Session& session);
-        static RangeResults<ClusterTypeId>	find(Session& session, std::optional<Range> range = std::nullopt);
+        static RangeResults<ClusterTypeId>	findIds(Session& session, std::optional<Range> range = std::nullopt);
         static pointer 						find(Session& session, std::string_view name);
         static pointer						find(Session& session, ClusterTypeId id);
-        static RangeResults<ClusterTypeId>	findOrphans(Session& session, std::optional<Range> range = std::nullopt);
+        static RangeResults<ClusterTypeId>	findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
         static RangeResults<ClusterTypeId>	findUsed(Session& session, std::optional<Range> range = std::nullopt);
 
         static void remove(Session& session, const std::string& name);
 
         // Accessors
-        const std::string& getName() const { return _name; }
+        std::string_view getName() const { return _name; }
         std::vector<Cluster::pointer>	getClusters() const;
         Cluster::pointer				getCluster(const std::string& name) const;
 
@@ -135,19 +136,17 @@ namespace Database {
         {
             Wt::Dbo::field(a, _name, "name");
             Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToOne, "cluster_type");
-            Wt::Dbo::belongsTo(a, _scanSettings, "scan_settings", Wt::Dbo::OnDeleteCascade);
         }
 
     private:
         friend class Session;
         ClusterType(std::string_view name);
-        static pointer create(Session& session, const std::string& name);
+        static pointer create(Session& session, std::string_view name);
 
         static const std::size_t _maxNameLength = 128;
 
         std::string     _name;
         Wt::Dbo::collection< Wt::Dbo::ptr<Cluster> > _clusters;
-        Wt::Dbo::ptr<ScanSettings> _scanSettings;
     };
 
 } // namespace Database

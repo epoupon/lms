@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <list>
+#include <vector>
 #include <string>
 
 
@@ -33,14 +33,14 @@ class WhereClause
 		WhereClause& Or(const WhereClause& clause);
 
 		// Arguments binding (for each '?' in where clause)
-		WhereClause& bind(const std::string& arg);
+		WhereClause& bind(std::string_view arg);
 
 		std::string get() const;
-		const std::list<std::string>&	getBindArgs() const	{return _bindArgs;}
+		const std::vector<std::string>&	getBindArgs() const	{return _bindArgs;}
 
 	private:
 		std::string _clause;		// WHERE clause
-		std::list<std::string>  _bindArgs;
+		std::vector<std::string>  _bindArgs;
 };
 
 class InnerJoinClause
@@ -81,7 +81,7 @@ class SelectStatement
 		std::string get() const;
 
 	private:
-		std::list<std::string>	_statement;
+		std::vector<std::string>	_statement;
 };
 
 class FromClause
@@ -95,7 +95,7 @@ class FromClause
 		std::string get() const;
 
 	private:
-		std::list<std::string>	_clause;
+		std::vector<std::string>	_clause;
 };
 
 class SqlQuery

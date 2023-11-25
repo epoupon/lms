@@ -37,7 +37,7 @@ namespace Feedback
         typename StarredObjType::IdType starredObjId;
         {
             Session& session{ _db.getTLSSession() };
-            auto transaction{ session.createUniqueTransaction() };
+            auto transaction{ session.createWriteTransaction() };
 
             typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId, *backend) };
             if (!starredObj)
@@ -68,7 +68,7 @@ namespace Feedback
         typename StarredObjType::IdType starredObjId;
         {
             Session& session{ _db.getTLSSession() };
-            auto transaction{ session.createSharedTransaction() };
+            auto transaction{ session.createReadTransaction() };
 
             typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId, *backend) };
             if (!starredObj)
@@ -82,28 +82,20 @@ namespace Feedback
     template <typename ObjType, typename ObjIdType, typename StarredObjType>
     bool FeedbackService::isStarred(UserId userId, ObjIdType objId)
     {
-        const auto backend{ getUserFeedbackBackend(userId) };
-        if (!backend)
-            return false;
-
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
-        typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId, *backend) };
+        typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId) };
         return starredObj && (starredObj->getSyncState() != SyncState::PendingRemove);
     }
 
     template <typename ObjType, typename ObjIdType, typename StarredObjType>
     Wt::WDateTime FeedbackService::getStarredDateTime(UserId userId, ObjIdType objId)
     {
-        const auto backend{ getUserFeedbackBackend(userId) };
-        if (!backend)
-            return {};
-
         Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createSharedTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
-        typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId, *backend) };
+        typename StarredObjType::pointer starredObj{ StarredObjType::find(session, objId, userId) };
         if (starredObj && (starredObj->getSyncState() != SyncState::PendingRemove))
             return starredObj->getDateTime();
 
