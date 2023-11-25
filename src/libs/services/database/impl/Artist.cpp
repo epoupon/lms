@@ -288,7 +288,7 @@ namespace Database
         return Utils::execQuery<ArtistId>(query, range);
     }
 
-    std::vector<std::vector<Cluster::pointer>> Artist::getClusterGroups(std::vector<ClusterType::pointer> clusterTypes, std::size_t size) const
+    std::vector<std::vector<Cluster::pointer>> Artist::getClusterGroups(std::vector<ClusterTypeId> clusterTypeIds, std::size_t size) const
     {
         assert(session());
 
@@ -300,8 +300,8 @@ namespace Database
         where.And(WhereClause("a.id = ?")).bind(getId().toString());
         {
             WhereClause clusterClause;
-            for (auto clusterType : clusterTypes)
-                clusterClause.Or(WhereClause("c_type.id = ?")).bind(clusterType->getId().toString());
+            for (ClusterTypeId clusterTypeId : clusterTypeIds)
+                clusterClause.Or(WhereClause("c_type.id = ?")).bind(clusterTypeId.toString());
 
             where.And(clusterClause);
         }

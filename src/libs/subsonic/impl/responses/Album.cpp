@@ -131,7 +131,7 @@ namespace API::Subsonic
         const ClusterType::pointer genreClusterType{ ClusterType::find(context.dbSession, "GENRE") };
         if (genreClusterType)
         {
-            auto clusters{ release->getClusterGroups({genreClusterType}, 1) };
+            auto clusters{ release->getClusterGroups({genreClusterType->getId()}, 1) };
             if (!clusters.empty() && !clusters.front().empty())
                 albumNode.setAttribute("genre", clusters.front().front()->getName());
         }
@@ -160,16 +160,12 @@ namespace API::Subsonic
         {
             albumNode.createEmptyArrayValue(field);
 
-            ClusterType::pointer clusterType{ ClusterType::find(context.dbSession, clusterTypeName) };
-            if (clusterType)
-            {
-                Cluster::FindParameters params;
-                params.setRelease(release->getId());
-                params.setClusterType(clusterType->getId());
+            Cluster::FindParameters params;
+            params.setRelease(release->getId());
+            params.setClusterTypeName(clusterTypeName);
 
-                for (const auto& cluster : Cluster::find(context.dbSession, params).results)
-                    albumNode.addArrayValue(field, cluster->getName());
-            }
+            for (const auto& cluster : Cluster::find(context.dbSession, params).results)
+                albumNode.addArrayValue(field, cluster->getName());
         } };
 
         addClusters("moods", "MOOD");

@@ -44,14 +44,19 @@ namespace Database
                 query.join("track_cluster t_c ON t_c.cluster_id = c.id");
                 query.join("track t ON t.id = t_c.track_id");
             }
+            if (!params.clusterTypeName.empty())
+                query.join("cluster_type c_t ON c_t.id = c.cluster_type_id");
 
             if (params.track.isValid())
                 query.where("t.id = ?").bind(params.track);
             if (params.release.isValid())
                 query.where("t.release_id = ?").bind(params.release);
 
+            assert(!params.clusterType.isValid() || params.clusterTypeName.empty());
             if (params.clusterType.isValid())
                 query.where("c.cluster_type_id = ?").bind(params.clusterType);
+            else if (!params.clusterTypeName.empty())
+                query.where("c_t.name = ?").bind(params.clusterTypeName);
 
             return query;
         }
@@ -170,7 +175,7 @@ namespace Database
     }
 
 
-    RangeResults<ClusterTypeId> ClusterType::findOrphans(Session& session, std::optional<Range> range)
+    RangeResults<ClusterTypeId> ClusterType::findOrphanIds(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
 
@@ -207,7 +212,7 @@ namespace Database
         return session.getDboSession().find<ClusterType>().where("id = ?").bind(id).resultValue();
     }
 
-    RangeResults<ClusterTypeId> ClusterType::find(Session& session, std::optional<Range> range)
+    RangeResults<ClusterTypeId> ClusterType::findIds(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
 

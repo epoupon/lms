@@ -12,6 +12,7 @@
 <message id="Lms.delete">删除</message>
 <message id="Lms.discard">撤销</message>
 <message id="Lms.edit">编辑</message>
+
 <message id="Lms.loading">加载中...</message>
 <message id="Lms.login">登陆</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> 注销</message>
@@ -46,6 +47,7 @@
 <!--Administration-->
 <message id="Lms.Admin.Database.daily">每日</message>
 <message id="Lms.Admin.Database.database">音乐收藏</message>
+
 <message id="Lms.Admin.Database.hourly">每小时</message>
 <message id="Lms.Admin.Database.immediate-scan">立即扫描！</message>
 <message id="Lms.Admin.Database.monthly">每月</message>

@@ -65,7 +65,7 @@ namespace Recommendation
                         const auto& refVector = network.getRefVector({ x, y });
 
                         boost::property_tree::ptree node;
-                        for (auto value : refVector)
+                        for (const auto& value : refVector)
                             node.add("values.value", value);
 
                         node.put("coord_x", x);

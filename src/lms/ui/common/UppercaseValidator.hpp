@@ -19,27 +19,9 @@
 
 #pragma once
 
-#include <filesystem>
+#include <Wt/WValidator.h>
 
-#include "ScanStepBase.hpp"
-
-namespace Scanner
+namespace UserInterface
 {
-	class ScanStepRemoveOrphanDbFiles : public ScanStepBase
-	{
-		public:
-			using ScanStepBase::ScanStepBase;
-
-		private:
-			std::string_view getStepName() const override { return "Checking orphaned entries"; }
-			ScanStep getStep() const override { return ScanStep::ChekingForMissingFiles; }
-			void process(ScanContext& context) override;
-
-			void removeOrphanTracks(ScanContext& context);
-			void removeOrphanClusters();
-			void removeOrphanClusterTypes();
-			void removeOrphanArtists();
-			void removeOrphanReleases();
-			bool checkFile(const std::filesystem::path& p);
-	};
-}
+    std::unique_ptr<Wt::WValidator> createUppercaseValidator(std::string_view delimiters);
+} // namespace UserInterface

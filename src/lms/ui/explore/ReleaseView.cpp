@@ -258,8 +258,8 @@ namespace UserInterface
 
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
         {
-            const auto clusterTypes{ ScanSettings::get(LmsApp->getDbSession())->getClusterTypes() };
-            const auto clusterGroups{ release->getClusterGroups(clusterTypes, 3) };
+            const auto clusterTypeIds{ ClusterType::findIds(LmsApp->getDbSession()).results };
+            const auto clusterGroups{ release->getClusterGroups(clusterTypeIds, 3) };
 
             for (const auto& clusters : clusterGroups)
             {

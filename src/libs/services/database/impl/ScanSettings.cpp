@@ -30,30 +30,6 @@
 
 namespace Database
 {
-    namespace
-    {
-
-        const std::set<std::string_view> defaultClusterTypeNames =
-        {
-            "GENRE",
-            "ALBUMGROUPING",
-            "MOOD",
-            "ALBUMMOOD",
-        };
-
-    }
-    void ScanSettings::init(Session& session)
-    {
-        session.checkWriteTransaction();
-
-        pointer settings{ get(session) };
-        if (settings)
-            return;
-
-        settings = session.getDboSession().add(std::make_unique<ScanSettings>());
-        settings.modify()->setClusterTypes(session, defaultClusterTypeNames);
-    }
-
     ScanSettings::pointer ScanSettings::get(Session& session)
     {
         session.checkReadTransaction();
@@ -77,9 +53,9 @@ namespace Database
         _audioFileExtensions += " " + ext.string();
     }
 
-    std::vector<ClusterType::pointer> ScanSettings::getClusterTypes() const
+    std::vector<std::string_view> ScanSettings::getExtraTagsToScan() const
     {
-        return std::vector<ClusterType::pointer>(std::cbegin(_clusterTypes), std::cend(_clusterTypes));
+        return StringUtils::splitString(_extraTagsToScan, ";");
     }
 
     void ScanSettings::setMediaDirectory(const std::filesystem::path& p)
@@ -87,58 +63,17 @@ namespace Database
         _mediaDirectory = StringUtils::stringTrimEnd(p.string(), "/\\");
     }
 
-    template <typename It>
-    std::set<std::string> getNames(It begin, It end)
+    void ScanSettings::setExtraTagsToScan(const std::vector<std::string_view>& extraTags)
     {
-        std::set<std::string> names;
-        std::transform(begin, end, std::inserter(names, std::cbegin(names)),
-            [](const ClusterType::pointer& clusterType)
-            {
-                return clusterType->getName();
-            });
+        std::string newTagsToScan{ StringUtils::joinStrings(extraTags, ";") };
+        if (newTagsToScan != _extraTagsToScan)
+            incScanVersion();
 
-        return names;
+        _extraTagsToScan = std::move(newTagsToScan);
     }
 
-    void ScanSettings::setClusterTypes(Session& session, const std::set<std::string_view>& clusterTypeNames)
-    {
-        session.checkWriteTransaction();
-
-        bool needRescan{};
-
-        // Create any missing cluster type
-        for (const std::string_view clusterTypeName : clusterTypeNames)
-        {
-            ClusterType::pointer clusterType{ ClusterType::find(session, clusterTypeName) };
-            if (!clusterType)
-            {
-                LMS_LOG(DB, INFO, "Creating cluster type " << clusterTypeName);
-                clusterType = session.create<ClusterType>(clusterTypeName);
-                _clusterTypes.insert(getDboPtr(clusterType));
-
-                needRescan = true;
-            }
-        }
-
-        // Delete no longer existing cluster types
-        for (Wt::Dbo::ptr<ClusterType> clusterType : _clusterTypes)
-        {
-            if (std::none_of(clusterTypeNames.begin(), clusterTypeNames.end(),
-                [clusterType](std::string_view name) { return name == clusterType->getName(); }))
-            {
-                LMS_LOG(DB, INFO, "Deleting cluster type " << clusterType->getName());
-                clusterType.remove();
-            }
-        }
-
-        if (needRescan)
-            _scanVersion += 1;
-    }
-
-    void
-        ScanSettings::incScanVersion()
+    void ScanSettings::incScanVersion()
     {
         _scanVersion += 1;
     }
-
 } // namespace Database

@@ -162,12 +162,15 @@ namespace API::Subsonic
             trackResponse.setAttribute("starred", StringUtils::toISO8601String(dateTime));
 
         // Report the first GENRE for this track
-        const ClusterType::pointer genreClusterType{ ClusterType::find(context.dbSession, "GENRE") };
-        if (genreClusterType)
+        std::vector<Cluster::pointer> genres;
         {
-            auto clusters{ track->getClusterGroups({genreClusterType}, 1) };
-            if (!clusters.empty() && !clusters.front().empty())
-                trackResponse.setAttribute("genre", clusters.front().front()->getName());
+            Cluster::FindParameters params;
+            params.setTrack(track->getId());
+            params.setClusterTypeName("GENRE");
+
+            genres = Cluster::find(context.dbSession, params).results;
+            if (!genres.empty())
+                trackResponse.setAttribute("genre", genres.front()->getName());
         }
 
         // OpenSubsonic specific fields (must always be set)
@@ -227,31 +230,20 @@ namespace API::Subsonic
         {
             trackResponse.createEmptyArrayValue(field);
 
-            ClusterType::pointer clusterType{ ClusterType::find(context.dbSession, clusterTypeName) };
-            if (clusterType)
-            {
-                Cluster::FindParameters params;
-                params.setTrack(track->getId());
-                params.setClusterType(clusterType->getId());
+            Cluster::FindParameters params;
+            params.setTrack(track->getId());
+            params.setClusterTypeName(clusterTypeName);
 
-                for (const auto& cluster : Cluster::find(context.dbSession, params).results)
-                    trackResponse.addArrayValue(field, cluster->getName());
-            }
+            for (const auto& cluster : Cluster::find(context.dbSession, params).results)
+                trackResponse.addArrayValue(field, cluster->getName());
         } };
 
         addClusters("moods", "MOOD");
 
         // Genres
         trackResponse.createEmptyArrayChild("genres");
-        if (genreClusterType)
-        {
-            Cluster::FindParameters params;
-            params.setTrack(track->getId());
-            params.setClusterType(genreClusterType->getId());
-
-            for (const auto& cluster : Cluster::find(context.dbSession, params).results)
-                trackResponse.addArrayChild("genres", createItemGenreNode(cluster->getName()));
-        }
+        for (const auto& genre : genres)
+            trackResponse.addArrayChild("genres", createItemGenreNode(genre->getName()));
 
         trackResponse.addChild("replayGain", createReplayGainNode(track));
 

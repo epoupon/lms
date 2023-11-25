@@ -368,18 +368,18 @@ namespace MetaData
             track.replayGain = StringUtils::readAs<float>(value);
         else if (tag == "ARTIST")
             track.artistDisplayName = value;
-        else if (_clusterTypeNames.find(tag) != _clusterTypeNames.end())
+        else if (std::find(std::cbegin(_extraTags), std::cend(_extraTags), tag) != std::cend(_extraTags))
         {
-            std::set<std::string> clusterNames;
+            std::set<std::string> tagValues;
             for (std::string_view valueList : values)
             {
-                const std::vector<std::string_view> splittedValues{ splitAndTrimString(valueList, "/,;") };
+                const std::vector<std::string_view> splittedValues{ splitAndTrimString(valueList, "/,;") }; // handle possibily bad split tags
                 for (std::string_view value : splittedValues)
-                    clusterNames.insert(std::string{ value });
+                    tagValues.insert(std::string{ value });
             }
 
-            if (!clusterNames.empty())
-                track.tags[tag] = std::move(clusterNames);
+            if (!tagValues.empty())
+                track.tags[tag] = std::move(tagValues);
         }
     }
 

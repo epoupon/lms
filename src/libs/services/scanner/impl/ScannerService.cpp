@@ -361,14 +361,10 @@ namespace Scanner
             }
             newSettings.mediaDirectory = scanSettings->getMediaDirectory();
 
-            const auto clusterTypes = scanSettings->getClusterTypes();
-            std::set<std::string> clusterTypeNames;
-
-            std::transform(std::cbegin(clusterTypes), std::cend(clusterTypes),
-                std::inserter(clusterTypeNames, clusterTypeNames.begin()),
-                [](const ClusterType::pointer& clusterType) { return std::string{ clusterType->getName() }; });
-
-            newSettings.clusterTypeNames = std::move(clusterTypeNames);
+            {
+                const auto& tags{ scanSettings->getExtraTagsToScan() };
+                std::transform(std::cbegin(tags), std::cend(tags), std::back_inserter(newSettings.extraTags), [](std::string_view tag) { return std::string{ tag };});
+            }
         }
 
         return newSettings;

@@ -187,12 +187,12 @@ namespace Database
         return std::vector<Cluster::pointer>(res.begin(), res.end());
     }
 
-    std::vector<std::vector<Cluster::pointer>> TrackList::getClusterGroups(const std::vector<ClusterType::pointer>& clusterTypes, std::size_t size) const
+    std::vector<std::vector<Cluster::pointer>> TrackList::getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const
     {
         assert(session());
         std::vector<std::vector<Cluster::pointer>> res;
 
-        if (clusterTypes.empty())
+        if (clusterTypeIds.empty())
             return res;
 
         auto query{ session()->query<Wt::Dbo::ptr<Cluster>>("SELECT c from cluster c") };
@@ -208,12 +208,12 @@ namespace Database
             std::ostringstream oss;
             oss << "c_type.id IN (";
             bool first{ true };
-            for (auto clusterType : clusterTypes)
+            for (ClusterTypeId clusterTypeId : clusterTypeIds)
             {
                 if (!first)
                     oss << ", ";
                 oss << "?";
-                query.bind(clusterType->getId());
+                query.bind(clusterTypeId);
                 first = false;
             }
             oss << ")";

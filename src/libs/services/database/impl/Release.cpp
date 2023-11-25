@@ -481,7 +481,7 @@ namespace Database
         return query.resultValue();
     }
 
-    std::vector<std::vector<Cluster::pointer>> Release::getClusterGroups(const std::vector<ClusterType::pointer>& clusterTypes, std::size_t size) const
+    std::vector<std::vector<Cluster::pointer>> Release::getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const
     {
         assert(session());
 
@@ -494,8 +494,8 @@ namespace Database
         where.And(WhereClause("r.id = ?")).bind(getId().toString());
         {
             WhereClause clusterClause;
-            for (auto clusterType : clusterTypes)
-                clusterClause.Or(WhereClause("c_type.id = ?")).bind(clusterType->getId().toString());
+            for (const ClusterTypeId clusterTypeId : clusterTypeIds)
+                clusterClause.Or(WhereClause("c_type.id = ?")).bind(clusterTypeId.toString());
             where.And(clusterClause);
         }
         oss << " " << where.get();

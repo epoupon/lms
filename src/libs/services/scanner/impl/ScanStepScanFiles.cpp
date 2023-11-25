@@ -241,9 +241,9 @@ namespace Scanner
             {
                 auto clusterType = ClusterType::find(session, tag);
                 if (!clusterType)
-                    continue;
+                    clusterType = session.create<ClusterType>(tag);
 
-                for (auto clusterName : values)
+                for (const auto& clusterName : values)
                 {
                     auto cluster = clusterType->getCluster(clusterName);
                     if (!cluster)
@@ -279,7 +279,10 @@ namespace Scanner
 
     void ScanStepScanFiles::process(ScanContext& context)
     {
-        _metadataParser->setClusterTypeNames(_settings.clusterTypeNames);
+        std::vector<std::string> tagsToParse{ _tagsToParse };
+        tagsToParse.insert(std::end(tagsToParse), std::cbegin(_settings.extraTags), std::cend(_settings.extraTags));
+
+        _metadataParser->setExtraTags(tagsToParse);
 
         context.currentStepStats.totalElems = context.stats.filesScanned;
 

@@ -479,7 +479,7 @@ namespace Database
         return std::vector<TrackArtistLink::pointer>(_trackArtistLinks.begin(), _trackArtistLinks.end());
     }
 
-    std::vector<std::vector<Cluster::pointer>> Track::getClusterGroups(const std::vector<ClusterType::pointer>& clusterTypes, std::size_t size) const
+    std::vector<std::vector<Cluster::pointer>> Track::getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const
     {
         assert(self());
         assert(session());
@@ -493,8 +493,8 @@ namespace Database
         where.And(WhereClause("t.id = ?")).bind(getId().toString());
         {
             WhereClause clusterClause;
-            for (auto clusterType : clusterTypes)
-                clusterClause.Or(WhereClause("c_type.id = ?")).bind(clusterType->getId().toString());
+            for (ClusterTypeId clusterTypeId : clusterTypeIds)
+                clusterClause.Or(WhereClause("c_type.id = ?")).bind(clusterTypeId.toString());
             where.And(clusterClause);
         }
         oss << " " << where.get();
@@ -514,8 +514,8 @@ namespace Database
         }
 
         std::vector<std::vector<Cluster::pointer>> res;
-        for (auto cluster_list : clusters)
-            res.push_back(cluster_list.second);
+        for (const auto& [type, clusters] : clusters)
+            res.push_back(clusters);
 
         return res;
     }

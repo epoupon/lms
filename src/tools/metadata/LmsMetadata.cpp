@@ -142,7 +142,7 @@ void parse(MetaData::IParser& parser, const std::filesystem::path& file)
 {
     using namespace MetaData;
 
-    parser.setClusterTypeNames({ "ALBUMMOOD", "MOOD", "ALBUMGROUPING", "ALBUMGENRE", "GENRE" });
+    parser.setExtraTags({ "MOOD", "ALBUMGROUPING", "GENRE", "LANGUAGE" });
 
     const auto start{ std::chrono::steady_clock::now() };
     std::optional<Track> track{ parser.parse(file, true) };

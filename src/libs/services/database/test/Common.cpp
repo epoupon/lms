@@ -59,17 +59,6 @@ void DatabaseFixture::SetUpTestCase()
         Database::Session s{ _tmpDb->getDb() };
         s.prepareTables();
         s.analyze();
-
-        // remove default created entries
-        {
-            auto transaction{ s.createWriteTransaction() };
-
-            for (const Database::ClusterTypeId clusterTypeId : Database::ClusterType::find(s).results)
-            {
-                auto clusterType{ Database::ClusterType::find(s, clusterTypeId) };
-                clusterType.remove();
-            }
-        }
     }
 }
 

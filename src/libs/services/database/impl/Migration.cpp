@@ -249,6 +249,24 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
         session.getDboSession().execute("ALTER TABLE user ADD subsonic_enable_transcoding_by_default INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*User::defaultSubsonicEnableTranscodingByDefault*/0)) + ")");
     }
 
+    void migrateFromV46(Session& session)
+    {
+        // add extra tags to parse
+        session.getDboSession().execute(R"(CREATE TABLE IF NOT EXISTS "cluster_type_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null
+);)");
+        session.getDboSession().execute("INSERT INTO cluster_type_backup SELECT id, version, name FROM cluster_type");
+        session.getDboSession().execute("DROP TABLE cluster_type");
+        session.getDboSession().execute("ALTER TABLE cluster_type_backup RENAME TO cluster_type");
+
+        session.getDboSession().execute("ALTER TABLE scan_settings ADD COLUMN extra_tags_to_scan TEXT");
+
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        ScanSettings::get(session).modify()->incScanVersion();
+    }
+
     void doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -273,6 +291,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
             {43, migrateFromV43},
             {44, migrateFromV44},
             {45, migrateFromV45},
+            {46, migrateFromV46},
         };
 
         {

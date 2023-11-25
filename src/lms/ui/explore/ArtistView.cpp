@@ -142,10 +142,10 @@ namespace UserInterface
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
 
         {
-            auto clusterTypes = ScanSettings::get(LmsApp->getDbSession())->getClusterTypes();
-            auto clusterGroups = artist->getClusterGroups(clusterTypes, 3);
+            auto clusterTypes{ ClusterType::findIds(LmsApp->getDbSession()).results };
+            auto clusterGroups{ artist->getClusterGroups(clusterTypes, 3) };
 
-            for (auto clusters : clusterGroups)
+            for (const auto& clusters : clusterGroups)
             {
                 for (const Database::Cluster::pointer& cluster : clusters)
                 {

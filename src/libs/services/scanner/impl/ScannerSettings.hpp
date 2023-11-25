@@ -20,7 +20,6 @@
 #pragma once
 
 #include <filesystem>
-#include <set>
 #include <string>
 #include <vector>
 #include <Wt/WDateTime.h>
@@ -36,7 +35,7 @@ namespace Scanner
 		std::vector<std::filesystem::path>					supportedExtensions;
 		std::filesystem::path								mediaDirectory;
 		bool												skipDuplicateMBID {};
-		std::set<std::string>								clusterTypeNames;
+		std::vector<std::string>							extraTags;
 
 		bool operator==(const ScannerSettings& rhs) const
 		{
@@ -46,7 +45,7 @@ namespace Scanner
 				&& supportedExtensions == rhs.supportedExtensions
 				&& mediaDirectory == rhs.mediaDirectory
 				&& skipDuplicateMBID == rhs.skipDuplicateMBID
-				&& clusterTypeNames == rhs.clusterTypeNames;
+				&& extraTags == rhs.extraTags;
 		}
 	};
 }

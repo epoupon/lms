@@ -12,6 +12,7 @@
 <message id="Lms.delete">Supprimer</message>
 <message id="Lms.discard">Annuler</message>
 <message id="Lms.edit">Editer</message>
+<message id="Lms.field-must-be-in-upper-case">Ce champ doit être en majuscule</message>
 <message id="Lms.loading">Chargement...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Quitter</message>
@@ -46,6 +47,7 @@
 <!--Administration-->
 <message id="Lms.Admin.Database.daily">Tous les jours</message>
 <message id="Lms.Admin.Database.database">Collection de musiques</message>
+<message id="Lms.Admin.Database.extra-tags-to-scan">Tags supplémentaires à scanner (utiliser <kbd>;</kbd> comme séparateur)</message>
 <message id="Lms.Admin.Database.hourly">Toutes les heures</message>
 <message id="Lms.Admin.Database.immediate-scan">Scanner maintenant !</message>
 <message id="Lms.Admin.Database.monthly">Tous les mois</message>

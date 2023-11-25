@@ -151,7 +151,6 @@ TEST_F(DatabaseFixture, Release_findByNameAndPath)
 
     {
         auto transaction{ session.createReadTransaction() };
-        std::cout << "OK HERE" << std::endl;
         {
             const auto releases{ Release::find(session, "MyRelease", "/tmp/foo") };
             ASSERT_EQ(releases.size(), 1);

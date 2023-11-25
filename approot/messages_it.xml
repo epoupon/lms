@@ -12,6 +12,7 @@
 <message id="Lms.delete">Elimina</message>
 <message id="Lms.discard">Annulla</message>
 <message id="Lms.edit">Modifica</message>
+
 <message id="Lms.loading">Caricamento...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Logout</message>
@@ -46,6 +47,7 @@
 <!--Administration-->
 <message id="Lms.Admin.Database.daily">Giornaliera</message>
 <message id="Lms.Admin.Database.database">Raccolta musicale</message>
+
 <message id="Lms.Admin.Database.hourly">Ogni ora</message>
 <message id="Lms.Admin.Database.immediate-scan">Scansiona ora!</message>
 <message id="Lms.Admin.Database.monthly">Mensile</message>

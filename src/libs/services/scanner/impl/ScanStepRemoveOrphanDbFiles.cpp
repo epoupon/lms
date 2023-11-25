@@ -74,6 +74,7 @@ namespace Scanner
     {
         removeOrphanTracks(context);
         removeOrphanClusters();
+        removeOrphanClusterTypes();
         removeOrphanArtists();
         removeOrphanReleases();
     }
@@ -150,6 +151,12 @@ namespace Scanner
     {
         LMS_LOG(DBUPDATER, DEBUG, "Checking orphan clusters...");
         removeOrphanEntries<Database::Cluster>(_db.getTLSSession(), _abortScan);
+    }
+
+    void ScanStepRemoveOrphanDbFiles::removeOrphanClusterTypes()
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphan cluster types...");
+        removeOrphanEntries<Database::ClusterType>(_db.getTLSSession(), _abortScan);
     }
 
     void ScanStepRemoveOrphanDbFiles::removeOrphanArtists()
