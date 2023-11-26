@@ -25,11 +25,11 @@
 #include <Wt/Json/Value.h>
 #include <Wt/Json/Serializer.h>
 
-#include "services/database/Db.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/StarredTrack.hpp"
-#include "services/database/Track.hpp"
-#include "services/database/User.hpp"
+#include "database/Db.hpp"
+#include "database/Session.hpp"
+#include "database/StarredTrack.hpp"
+#include "database/Track.hpp"
+#include "database/User.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/http/IClient.hpp"
 #include "utils/Service.hpp"

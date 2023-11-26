@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include "services/database/Db.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/User.hpp"
+#include "database/Db.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
 
 namespace Feedback
 {

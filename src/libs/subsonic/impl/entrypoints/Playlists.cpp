@@ -19,10 +19,10 @@
 
 #include "Playlists.hpp"
 
-#include "services/database/Session.hpp"
-#include "services/database/Track.hpp"
-#include "services/database/TrackList.hpp"
-#include "services/database/User.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
+#include "database/TrackList.hpp"
+#include "database/User.hpp"
 #include "responses/Playlist.hpp"
 #include "responses/Song.hpp"
 #include "ParameterParsing.hpp"

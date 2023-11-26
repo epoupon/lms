@@ -23,9 +23,9 @@
 
 #include "DatabaseCollectorBase.hpp"
 
-#include "services/database/Object.hpp"
-#include "services/database/ReleaseId.hpp"
-#include "services/database/Types.hpp"
+#include "database/Object.hpp"
+#include "database/ReleaseId.hpp"
+#include "database/Types.hpp"
 
 namespace Database
 {

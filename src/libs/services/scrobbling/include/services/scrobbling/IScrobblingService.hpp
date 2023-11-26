@@ -26,11 +26,11 @@
 #include <Wt/WDateTime.h>
 
 #include "services/scrobbling/Listen.hpp"
-#include "services/database/ArtistId.hpp"
-#include "services/database/ClusterId.hpp"
-#include "services/database/ReleaseId.hpp"
-#include "services/database/TrackId.hpp"
-#include "services/database/Types.hpp"
+#include "database/ArtistId.hpp"
+#include "database/ClusterId.hpp"
+#include "database/ReleaseId.hpp"
+#include "database/TrackId.hpp"
+#include "database/Types.hpp"
 
 namespace Database
 {

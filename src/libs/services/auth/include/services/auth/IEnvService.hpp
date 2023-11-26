@@ -22,7 +22,7 @@
 #include <optional>
 #include <string>
 
-#include "services/database/UserId.hpp"
+#include "database/UserId.hpp"
 
 namespace Database
 {

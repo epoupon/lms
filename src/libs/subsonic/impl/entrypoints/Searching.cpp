@@ -19,11 +19,11 @@
 
 #include "Searching.hpp"
 
-#include "services/database/Artist.hpp"
-#include "services/database/Release.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/Track.hpp"
-#include "services/database/User.hpp"
+#include "database/Artist.hpp"
+#include "database/Release.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
+#include "database/User.hpp"
 #include "responses/Album.hpp"
 #include "responses/Artist.hpp"
 #include "responses/Song.hpp"

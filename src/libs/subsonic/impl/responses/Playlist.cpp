@@ -19,8 +19,8 @@
 
 #include "Playlist.hpp"
 
-#include "services/database/TrackList.hpp"
-#include "services/database/User.hpp"
+#include "database/TrackList.hpp"
+#include "database/User.hpp"
 #include "SubsonicId.hpp"
 
 namespace API::Subsonic

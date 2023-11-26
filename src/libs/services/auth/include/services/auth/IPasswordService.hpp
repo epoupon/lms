@@ -27,7 +27,7 @@
 #include <Wt/Dbo/ptr.h>
 
 #include "services/auth/Types.hpp"
-#include "services/database/UserId.hpp"
+#include "database/UserId.hpp"
 
 namespace Database
 {

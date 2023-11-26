@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "services/database/UserId.hpp"
+#include "database/UserId.hpp"
 #include "utils/ILogger.hpp"
 #include "utils/UUID.hpp"
 

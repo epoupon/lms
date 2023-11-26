@@ -20,8 +20,8 @@
 #pragma once
 
 #include <Wt/WResource.h>
-#include "services/database/ReleaseId.hpp"
-#include "services/database/TrackId.hpp"
+#include "database/ReleaseId.hpp"
+#include "database/TrackId.hpp"
 
 namespace UserInterface
 {

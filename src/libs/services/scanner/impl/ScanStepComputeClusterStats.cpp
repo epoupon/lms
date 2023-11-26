@@ -18,9 +18,9 @@
  */
 
 #include "ScanStepComputeClusterStats.hpp"
-#include "services/database/Db.hpp"
-#include "services/database/Cluster.hpp"
-#include "services/database/Session.hpp"
+#include "database/Db.hpp"
+#include "database/Cluster.hpp"
+#include "database/Session.hpp"
 #include "utils/ILogger.hpp"
 #include "utils/Path.hpp"
 

@@ -19,9 +19,9 @@
 
 #include "ReleaseCollector.hpp"
 
-#include "services/database/Release.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/User.hpp"
+#include "database/Release.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"

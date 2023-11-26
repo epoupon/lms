@@ -22,7 +22,7 @@
 #include <optional>
 #include <Wt/WTemplateFormView.h>
 
-#include "services/database/UserId.hpp"
+#include "database/UserId.hpp"
 
 namespace UserInterface
 {

@@ -24,8 +24,8 @@
 
 #include "av/IAudioFile.hpp"
 #include "av/RawResourceHandlerCreator.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/Track.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
 #include "utils/ILogger.hpp"
 #include "utils/String.hpp"
 #include "LmsApplication.hpp"

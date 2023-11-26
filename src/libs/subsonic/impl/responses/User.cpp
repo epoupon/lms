@@ -19,7 +19,7 @@
 
 #include "responses/User.hpp"
 
-#include "services/database/User.hpp"
+#include "database/User.hpp"
 
 namespace API::Subsonic
 {

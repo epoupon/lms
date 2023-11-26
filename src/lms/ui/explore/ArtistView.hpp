@@ -21,10 +21,10 @@
 
 #include <map>
 #include <optional>
-#include "services/database/ArtistId.hpp"
-#include "services/database/Object.hpp"
-#include "services/database/ReleaseId.hpp"
-#include "services/database/Types.hpp"
+#include "database/ArtistId.hpp"
+#include "database/Object.hpp"
+#include "database/ReleaseId.hpp"
+#include "database/Types.hpp"
 #include "utils/EnumSet.hpp"
 #include "common/Template.hpp"
 

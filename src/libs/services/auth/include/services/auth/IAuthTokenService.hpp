@@ -27,7 +27,7 @@
 #include <boost/asio/ip/address.hpp>
 #include <Wt/WDateTime.h>
 
-#include "services/database/UserId.hpp"
+#include "database/UserId.hpp"
 
 namespace Database
 {

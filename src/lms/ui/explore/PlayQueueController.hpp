@@ -21,10 +21,10 @@
 
 #include <vector>
 
-#include "services/database/ArtistId.hpp"
-#include "services/database/ReleaseId.hpp"
-#include "services/database/TrackId.hpp"
-#include "services/database/TrackListId.hpp"
+#include "database/ArtistId.hpp"
+#include "database/ReleaseId.hpp"
+#include "database/TrackId.hpp"
+#include "database/TrackListId.hpp"
 
 namespace UserInterface
 {

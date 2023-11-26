@@ -31,7 +31,7 @@
 
 #include "services/cover/ICoverService.hpp"
 #include "image/IEncodedImage.hpp"
-#include "services/database/Types.hpp"
+#include "database/Types.hpp"
 
 namespace Database
 {

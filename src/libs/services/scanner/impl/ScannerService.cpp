@@ -22,9 +22,9 @@
 #include <ctime>
 #include <boost/asio/placeholders.hpp>
 
-#include "services/database/Cluster.hpp"
-#include "services/database/TrackFeatures.hpp"
-#include "services/database/ScanSettings.hpp"
+#include "database/Cluster.hpp"
+#include "database/TrackFeatures.hpp"
+#include "database/ScanSettings.hpp"
 #include "utils/Exception.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/ILogger.hpp"

@@ -19,10 +19,10 @@
 
 #include "responses/Artist.hpp"
 
-#include "services/database/Artist.hpp"
-#include "services/database/Release.hpp"
-#include "services/database/TrackArtistLink.hpp"
-#include "services/database/User.hpp"
+#include "database/Artist.hpp"
+#include "database/Release.hpp"
+#include "database/TrackArtistLink.hpp"
+#include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"

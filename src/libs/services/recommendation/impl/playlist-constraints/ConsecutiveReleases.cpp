@@ -19,10 +19,10 @@
 
 #include "ConsecutiveReleases.hpp"
 
-#include "services/database/Db.hpp"
-#include "services/database/Release.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/Track.hpp"
+#include "database/Db.hpp"
+#include "database/Release.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
 #include "utils/ILogger.hpp"
 
 namespace Recommendation::PlaylistGeneratorConstraint

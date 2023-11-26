@@ -25,7 +25,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "services/database/Types.hpp"
+#include "database/Types.hpp"
 
 namespace UserInterface
 {

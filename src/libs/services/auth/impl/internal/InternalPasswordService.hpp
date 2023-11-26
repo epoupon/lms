@@ -22,7 +22,7 @@
 #include <Wt/Auth/HashFunction.h>
 #include <Wt/Auth/PasswordStrengthValidator.h>
 
-#include "services/database/User.hpp"
+#include "database/User.hpp"
 #include "PasswordServiceBase.hpp"
 #include "LoginThrottler.hpp"
 

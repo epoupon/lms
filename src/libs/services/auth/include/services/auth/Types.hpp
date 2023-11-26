@@ -20,7 +20,7 @@
 #pragma once
 
 #include <string>
-#include "services/database/Types.hpp"
+#include "database/Types.hpp"
 #include "utils/Exception.hpp"
 
 namespace Auth

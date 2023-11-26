@@ -22,8 +22,8 @@
 #include <Wt/Json/Object.h>
 #include <Wt/Json/Parser.h>
 
-#include "services/database/Session.hpp"
-#include "services/database/User.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
 
 namespace Scrobbling::ListenBrainz::Utils
 {

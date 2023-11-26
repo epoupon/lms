@@ -26,8 +26,8 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WResource.h>
 
-#include "services/database/Session.hpp"
-#include "services/database/Track.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
 #include "services/scanner/IScannerService.hpp"
 #include "utils/Service.hpp"
 #include "LmsApplication.hpp"

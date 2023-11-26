@@ -19,10 +19,10 @@
 
 #include "ArtistCollector.hpp"
 
-#include "services/database/Artist.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/TrackList.hpp"
-#include "services/database/User.hpp"
+#include "database/Artist.hpp"
+#include "database/Session.hpp"
+#include "database/TrackList.hpp"
+#include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"

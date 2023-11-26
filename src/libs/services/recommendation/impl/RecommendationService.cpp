@@ -25,9 +25,9 @@
 #include "ClustersEngineCreator.hpp"
 #include "FeaturesEngineCreator.hpp"
 
-#include "services/database/Db.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/ScanSettings.hpp"
+#include "database/Db.hpp"
+#include "database/Session.hpp"
+#include "database/ScanSettings.hpp"
 #include "utils/Exception.hpp"
 #include "utils/ILogger.hpp"
 

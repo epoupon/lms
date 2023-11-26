@@ -21,10 +21,10 @@
 
 #include <algorithm>
 
-#include "services/database/Session.hpp"
-#include "services/database/Track.hpp"
-#include "services/database/TrackList.hpp"
-#include "services/database/User.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
+#include "database/TrackList.hpp"
+#include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"

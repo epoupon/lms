@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "services/database/Object.hpp"
+#include "database/Object.hpp"
 #include "SubsonicResponse.hpp"
 
 namespace Database

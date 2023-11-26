@@ -24,9 +24,9 @@
 #include <Wt/WRandom.h>
 
 #include "services/auth/Types.hpp"
-#include "services/database/AuthToken.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/User.hpp"
+#include "database/AuthToken.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
 #include "utils/Exception.hpp"
 #include "utils/ILogger.hpp"
 

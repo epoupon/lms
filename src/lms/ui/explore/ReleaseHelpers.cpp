@@ -23,8 +23,8 @@
 #include <Wt/WImage.h>
 #include <Wt/WText.h>
 
-#include "services/database/Artist.hpp"
-#include "services/database/Release.hpp"
+#include "database/Artist.hpp"
+#include "database/Release.hpp"
 
 #include "Utils.hpp"
 

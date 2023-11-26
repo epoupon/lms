@@ -26,7 +26,7 @@
 #include <Wt/WStackedWidget.h>
 #include <Wt/WTemplate.h>
 
-#include "services/database/Types.hpp"
+#include "database/Types.hpp"
 #include "ArtistCollector.hpp"
 #include "ReleaseCollector.hpp"
 #include "TrackCollector.hpp"

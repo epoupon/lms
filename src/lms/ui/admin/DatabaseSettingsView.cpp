@@ -26,9 +26,9 @@
 #include <Wt/WString.h>
 #include <Wt/WTemplateFormView.h>
 
-#include "services/database/Cluster.hpp"
-#include "services/database/ScanSettings.hpp"
-#include "services/database/Session.hpp"
+#include "database/Cluster.hpp"
+#include "database/ScanSettings.hpp"
+#include "database/Session.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scanner/IScannerService.hpp"
 #include "utils/ILogger.hpp"

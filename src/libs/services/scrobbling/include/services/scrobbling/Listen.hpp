@@ -21,8 +21,8 @@
 
 #include <Wt/WDateTime.h>
 
-#include "services/database/TrackId.hpp"
-#include "services/database/UserId.hpp"
+#include "database/TrackId.hpp"
+#include "database/UserId.hpp"
 
 namespace Scrobbling
 {

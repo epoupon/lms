@@ -21,7 +21,7 @@
 
 #include "IConstraint.hpp"
 
-#include "services/database/ReleaseId.hpp"
+#include "database/ReleaseId.hpp"
 
 namespace Database
 {

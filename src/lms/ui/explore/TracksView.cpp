@@ -21,8 +21,8 @@
 
 #include <Wt/WPushButton.h>
 
-#include "services/database/Session.hpp"
-#include "services/database/Track.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
 #include "utils/ILogger.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"

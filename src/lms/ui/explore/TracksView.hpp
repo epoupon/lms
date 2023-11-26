@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "services/database/Types.hpp"
+#include "database/Types.hpp"
 
 #include "common/Template.hpp"
 #include "TrackCollector.hpp"

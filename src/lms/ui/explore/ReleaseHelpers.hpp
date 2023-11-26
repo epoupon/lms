@@ -25,8 +25,8 @@
 #include <Wt/WString.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WDate.h>
-#include "services/database/Object.hpp"
-#include "services/database/Types.hpp"
+#include "database/Object.hpp"
+#include "database/Types.hpp"
 #include "utils/EnumSet.hpp"
 
 namespace Database

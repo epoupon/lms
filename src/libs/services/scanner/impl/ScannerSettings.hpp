@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 #include <Wt/WDateTime.h>
-#include "services/database/ScanSettings.hpp"
+#include "database/ScanSettings.hpp"
 
 namespace Scanner
 {

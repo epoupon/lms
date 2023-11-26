@@ -24,8 +24,8 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
-#include "services/database/Cluster.hpp"
-#include "services/database/Session.hpp"
+#include "database/Cluster.hpp"
+#include "database/Session.hpp"
 
 #include "LmsApplication.hpp"
 #include "Utils.hpp"

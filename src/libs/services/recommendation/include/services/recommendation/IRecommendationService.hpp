@@ -22,8 +22,8 @@
 #include <memory>
 #include <vector>
 #include "utils/EnumSet.hpp"
-#include "services/database/TrackListId.hpp"
-#include "services/database/Types.hpp"
+#include "database/TrackListId.hpp"
+#include "database/Types.hpp"
 #include "services/recommendation/Types.hpp"
 
 namespace Database

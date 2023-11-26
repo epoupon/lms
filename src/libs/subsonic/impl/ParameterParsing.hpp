@@ -25,7 +25,7 @@
 #include <vector>
 #include <string>
 
-#include "services/database/Types.hpp"
+#include "database/Types.hpp"
 #include "utils/String.hpp"
 #include "SubsonicResponse.hpp"
 

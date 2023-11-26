@@ -21,8 +21,8 @@
 
 #include <string>
 #include <vector>
-#include "services/database/Object.hpp"
-#include "services/database/Types.hpp"
+#include "database/Object.hpp"
+#include "database/Types.hpp"
 #include "SubsonicResponse.hpp"
 
 namespace Database

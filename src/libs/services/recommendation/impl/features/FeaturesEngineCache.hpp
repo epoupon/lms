@@ -22,7 +22,7 @@
 #include <filesystem>
 #include <unordered_map>
 
-#include "services/database/TrackId.hpp"
+#include "database/TrackId.hpp"
 #include "som/Network.hpp"
 
 namespace Recommendation {

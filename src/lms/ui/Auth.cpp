@@ -30,8 +30,8 @@
 
 #include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/IPasswordService.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/User.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
 #include "utils/ILogger.hpp"
 #include "utils/Service.hpp"
 

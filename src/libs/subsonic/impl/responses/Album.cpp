@@ -19,10 +19,10 @@
 
 #include "responses/Album.hpp"
 
-#include "services/database/Artist.hpp"
-#include "services/database/Cluster.hpp"
-#include "services/database/Release.hpp"
-#include "services/database/User.hpp"
+#include "database/Artist.hpp"
+#include "database/Cluster.hpp"
+#include "database/Release.hpp"
+#include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"

@@ -22,8 +22,8 @@
 #include <filesystem>
 #include <memory>
 
-#include "services/database/ReleaseId.hpp"
-#include "services/database/TrackId.hpp"
+#include "database/ReleaseId.hpp"
+#include "database/TrackId.hpp"
 #include "image/IEncodedImage.hpp"
 
 namespace Database

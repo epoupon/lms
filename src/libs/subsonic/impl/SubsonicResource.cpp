@@ -24,9 +24,9 @@
 
 #include "services/auth/IPasswordService.hpp"
 #include "services/auth/IEnvService.hpp"
-#include "services/database/Db.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/User.hpp"
+#include "database/Db.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
 #include "utils/EnumSet.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/ILogger.hpp"
