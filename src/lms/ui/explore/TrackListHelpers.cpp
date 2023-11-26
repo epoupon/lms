@@ -26,13 +26,13 @@
 
 #include "av/IAudioFile.hpp"
 #include "services/database/Artist.hpp"
-#include "services/database/Listen.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/Session.hpp"
 #include "services/database/Track.hpp"
 #include "services/database/TrackArtistLink.hpp"
 #include "services/database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/ILogger.hpp"
 #include "utils/Service.hpp"
 
@@ -143,8 +143,7 @@ namespace UserInterface::TrackListHelpers
             trackInfo->bindString("bitrate", std::to_string(track->getBitrate() / 1000) + " kbps");
         }
 
-        const auto user{ LmsApp->getUser() };
-        trackInfo->bindInt("playcount", Database::Listen::getCount(LmsApp->getDbSession(), user->getId(), user->getScrobblingBackend(), track->getId()));
+        trackInfo->bindInt("playcount", Service<Scrobbling::IScrobblingService>::get()->getCount(LmsApp->getUserId(), track->getId()));
 
         Wt::WContainerWidget* clusterContainer{ trackInfo->bindWidget("clusters", Utils::createClustersForTrack(track, filters)) };
         if (clusterContainer->count() > 0)

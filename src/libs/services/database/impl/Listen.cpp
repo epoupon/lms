@@ -249,29 +249,31 @@ namespace Database
         return Utils::execQuery<TrackId>(query, range);
     }
 
-    std::size_t Listen::getCount(Session& session, UserId userId, ScrobblingBackend backend, TrackId trackId)
+    std::size_t Listen::getCount(Session& session, UserId userId, TrackId trackId)
     {
         session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT COUNT(*) from listen l")
+            .join("user u ON u.id = l.user_id")
             .where("l.track_id = ?").bind(trackId)
             .where("l.user_id = ?").bind(userId)
-            .where("l.backend = ?").bind(backend)
+            .where("l.backend = u.scrobbling_backend")
             .resultValue();
     }
 
-    std::size_t Listen::getCount(Session& session, UserId userId, ScrobblingBackend backend, ReleaseId releaseId)
+    std::size_t Listen::getCount(Session& session, UserId userId, ReleaseId releaseId)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().query<int>("SELECT IFNULL(MIN(count_result), 0)"
+        return session.getDboSession().query<int>(
+            "SELECT IFNULL(MIN(count_result), 0)"
             " FROM ("
             " SELECT COUNT(l.track_id) AS count_result"
             " FROM track t"
-            " LEFT JOIN listen l ON t.id = l.track_id AND l.backend = ? AND l.user_id = ?"
+            " LEFT JOIN listen l ON t.id = l.track_id AND l.backend = (SELECT scrobbling_backend FROM user WHERE id = ?) AND l.user_id = ?"
             " WHERE t.release_id = ?"
             " GROUP BY t.id)")
-            .bind(backend)
+            .bind(userId)
             .bind(userId)
             .bind(releaseId)
             .resultValue();

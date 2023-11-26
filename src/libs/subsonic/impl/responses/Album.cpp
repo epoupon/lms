@@ -21,7 +21,6 @@
 
 #include "services/database/Artist.hpp"
 #include "services/database/Cluster.hpp"
-#include "services/database/Listen.hpp"
 #include "services/database/Release.hpp"
 #include "services/database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
@@ -125,7 +124,7 @@ namespace API::Subsonic
             }
         }
 
-        albumNode.setAttribute("playCount", Listen::getCount(context.dbSession, user->getId(), user->getScrobblingBackend(), release->getId()));
+        albumNode.setAttribute("playCount", Service<Scrobbling::IScrobblingService>::get()->getCount(user->getId(), release->getId()));
 
         // Report the first GENRE for this track
         const ClusterType::pointer genreClusterType{ ClusterType::find(context.dbSession, "GENRE") };

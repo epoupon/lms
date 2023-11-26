@@ -881,7 +881,7 @@ TEST_F(DatabaseFixture, Listen_getCount_track)
     {
         auto transaction{ session.createReadTransaction() };
 
-        const std::size_t count{ Listen::getCount(session, user->getId(), ScrobblingBackend::Internal, track.getId()) };
+        const std::size_t count{ Listen::getCount(session, user->getId(), track.getId()) };
         EXPECT_EQ(count, 0);
     }
 
@@ -891,9 +891,21 @@ TEST_F(DatabaseFixture, Listen_getCount_track)
     {
         auto transaction{ session.createReadTransaction() };
 
-        const std::size_t count{ Listen::getCount(session, user->getId(), ScrobblingBackend::Internal, track.getId()) };
+        const std::size_t count{ Listen::getCount(session, user->getId(), track.getId()) };
         EXPECT_EQ(count, 1);
     }
+
+    {
+        auto transaction{ session.createWriteTransaction() };
+        user.get().modify()->setScrobblingBackend(ScrobblingBackend::ListenBrainz);
+    }
+
+    {
+        auto transaction{ session.createReadTransaction() };
+        const std::size_t count{ Listen::getCount(session, user->getId(), track.getId()) };
+        EXPECT_EQ(count, 0);
+    }
+
 }
 
 TEST_F(DatabaseFixture, Listen_getCount_release)
@@ -906,7 +918,7 @@ TEST_F(DatabaseFixture, Listen_getCount_release)
     auto getReleaseListenCount{ [&]
     {
         auto transaction{ session.createReadTransaction() };
-        return Listen::getCount(session, user->getId(), ScrobblingBackend::Internal, release.getId());
+        return Listen::getCount(session, user->getId(), release.getId());
     } };
 
     EXPECT_EQ(getReleaseListenCount(), 0);
@@ -936,6 +948,12 @@ TEST_F(DatabaseFixture, Listen_getCount_release)
 
     ScopedListen listen4{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
     EXPECT_EQ(getReleaseListenCount(), 2);
+
+    {
+        auto transaction{ session.createWriteTransaction() };
+        user.get().modify()->setScrobblingBackend(ScrobblingBackend::ListenBrainz);
+    }
+    EXPECT_EQ(getReleaseListenCount(), 0);
 }
 
 TEST_F(DatabaseFixture, Listen_getMostRecentTrack)

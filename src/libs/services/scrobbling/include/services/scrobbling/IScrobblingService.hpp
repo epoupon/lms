@@ -61,6 +61,9 @@ namespace Scrobbling
         virtual ReleaseContainer getRecentReleases(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) = 0;
         virtual TrackContainer getRecentTracks(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) = 0;
 
+        virtual std::size_t getCount(Database::UserId userId, Database::ReleaseId releaseId) = 0;
+        virtual std::size_t getCount(Database::UserId userId, Database::TrackId trackId) = 0;
+
         virtual Wt::WDateTime getLastListenDateTime(Database::UserId userId, Database::ReleaseId releaseId) = 0;
         virtual Wt::WDateTime getLastListenDateTime(Database::UserId userId, Database::TrackId trackId) = 0;
 

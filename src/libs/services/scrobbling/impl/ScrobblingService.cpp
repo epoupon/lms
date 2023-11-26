@@ -129,6 +129,20 @@ namespace Scrobbling
         return res;
     }
 
+    std::size_t ScrobblingService::getCount(Database::UserId userId, Database::ReleaseId releaseId)
+    {
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createReadTransaction() };
+        return Database::Listen::getCount(session, userId, releaseId);
+    }
+
+    std::size_t ScrobblingService::getCount(Database::UserId userId, Database::TrackId trackId)
+    {
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createReadTransaction() };
+        return Database::Listen::getCount(session, userId, trackId);
+    }
+
     Wt::WDateTime ScrobblingService::getLastListenDateTime(Database::UserId userId, Database::ReleaseId releaseId)
     {
         const auto backend{ getUserBackend(userId) };

@@ -73,8 +73,8 @@ namespace Database
         static RangeResults<ReleaseId>  getRecentReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range = std::nullopt);
         static RangeResults<TrackId>    getRecentTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range = std::nullopt);
 
-        static std::size_t              getCount(Session& session, UserId userId, ScrobblingBackend backend, TrackId trackId);
-        static std::size_t              getCount(Session& session, UserId userId, ScrobblingBackend backend, ReleaseId trackId);
+        static std::size_t              getCount(Session& session, UserId userId, TrackId trackId); // for the current backend
+        static std::size_t              getCount(Session& session, UserId userId, ReleaseId trackId); // for the current backend
 
         static pointer          getMostRecentListen(Session& session, UserId userId, ScrobblingBackend backend, ReleaseId releaseId);
         static pointer          getMostRecentListen(Session& session, UserId userId, ScrobblingBackend backend, TrackId releaseId);
