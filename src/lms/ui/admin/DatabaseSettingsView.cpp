@@ -77,7 +77,7 @@ namespace UserInterface
             setValidator(UpdatePeriodField, createMandatoryValidator());
             setValidator(UpdateStartTimeField, createMandatoryValidator());
             setValidator(SimilarityEngineTypeField, createMandatoryValidator());
-            setValidator(ExtraTagsField, createUppercaseValidator(extraTagsDelimiter));
+            setValidator(ExtraTagsField, createUppercaseValidator());
 
             // populate the model with initial data
             loadData();

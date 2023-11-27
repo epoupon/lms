@@ -26,14 +26,9 @@ namespace UserInterface
 {
     class UppercaseValidator : public Wt::WValidator
     {
-    public:
-        UppercaseValidator(std::string_view delimiters) : _delimiters{ delimiters } {}
-
     private:
         Wt::WValidator::Result validate(const Wt::WString& input) const override;
         std::string javaScriptValidate() const override { return {}; }
-
-        std::string _delimiters;
     };
 
     Wt::WValidator::Result UppercaseValidator::validate(const Wt::WString& input) const
@@ -42,7 +37,7 @@ namespace UserInterface
             return Wt::WValidator::validate(input);
 
         const std::string str{ input.toUTF8() };
-        const bool valid{ std::all_of(std::cbegin(str),std::cend(str), [&](char c) { return std::isupper(c) || _delimiters.find(c) != std::string::npos;}) };
+        const bool valid{ std::all_of(std::cbegin(str), std::cend(str), [&](char c) { return !std::isalpha(c) || std::isupper(c);}) };
 
         if (!valid)
             return Wt::WValidator::Result(Wt::ValidationState::Invalid, Wt::WString::tr("Lms.field-must-be-in-upper-case"));
@@ -50,8 +45,8 @@ namespace UserInterface
         return Wt::WValidator::Result(Wt::ValidationState::Valid);
     }
 
-    std::unique_ptr<Wt::WValidator> createUppercaseValidator(std::string_view delimiters)
+    std::unique_ptr<Wt::WValidator> createUppercaseValidator()
     {
-        return std::make_unique<UppercaseValidator>(delimiters);
+        return std::make_unique<UppercaseValidator>();
     }
 } // namespace UserInterface

@@ -23,5 +23,5 @@
 
 namespace UserInterface
 {
-    std::unique_ptr<Wt::WValidator> createUppercaseValidator(std::string_view delimiters);
+    std::unique_ptr<Wt::WValidator> createUppercaseValidator();
 } // namespace UserInterface
