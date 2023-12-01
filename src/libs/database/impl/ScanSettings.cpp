@@ -30,6 +30,16 @@
 
 namespace Database
 {
+    void ScanSettings::init(Session& session)
+    {
+        session.checkWriteTransaction();
+
+        if (pointer settings{ get(session) })
+            return;
+
+        session.getDboSession().add(std::make_unique<ScanSettings>());
+    }
+
     ScanSettings::pointer ScanSettings::get(Session& session)
     {
         session.checkReadTransaction();

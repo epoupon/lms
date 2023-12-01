@@ -171,6 +171,12 @@ namespace Database
             _session.execute("CREATE INDEX IF NOT EXISTS starred_track_user_backend_idx ON starred_track(user_id,backend)");
             _session.execute("CREATE INDEX IF NOT EXISTS starred_track_track_user_backend_idx ON starred_track(track_id,user_id,backend)");
         }
+
+        // Singletons
+        {
+            auto uniqueTransaction{ createWriteTransaction() };
+            ScanSettings::init(*this);
+        }
     }
 
     void Session::analyze()
