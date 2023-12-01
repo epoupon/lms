@@ -20,8 +20,8 @@
 #pragma once
 
 #include <memory>
-#include "services/database/Types.hpp"
-#include "services/database/TrackListId.hpp"
+#include "database/Types.hpp"
+#include "database/TrackListId.hpp"
 #include "services/recommendation/Types.hpp"
 #include "utils/EnumSet.hpp"
 

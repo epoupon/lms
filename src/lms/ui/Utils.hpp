@@ -27,11 +27,11 @@
 #include <Wt/WImage.h>
 #include <Wt/WInteractWidget.h>
 
-#include "services/database/ArtistId.hpp"
-#include "services/database/ClusterId.hpp"
-#include "services/database/Object.hpp"
-#include "services/database/ReleaseId.hpp"
-#include "services/database/TrackId.hpp"
+#include "database/ArtistId.hpp"
+#include "database/ClusterId.hpp"
+#include "database/Object.hpp"
+#include "database/ReleaseId.hpp"
+#include "database/TrackId.hpp"
 
 #include "resource/CoverResource.hpp"
 

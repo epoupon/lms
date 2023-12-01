@@ -24,8 +24,8 @@
 #include <Wt/WTemplate.h>
 
 #include "common/ValueStringModel.hpp"
-#include "services/database/Object.hpp"
-#include "services/database/Types.hpp"
+#include "database/Object.hpp"
+#include "database/Types.hpp"
 
 namespace Database
 {

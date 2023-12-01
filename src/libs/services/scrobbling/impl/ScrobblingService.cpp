@@ -19,13 +19,13 @@
 
 #include "ScrobblingService.hpp"
 
-#include "services/database/Artist.hpp"
-#include "services/database/Db.hpp"
-#include "services/database/Listen.hpp"
-#include "services/database/Release.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/Track.hpp"
-#include "services/database/User.hpp"
+#include "database/Artist.hpp"
+#include "database/Db.hpp"
+#include "database/Listen.hpp"
+#include "database/Release.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
+#include "database/User.hpp"
 #include "utils/ILogger.hpp"
 
 #include "internal/InternalBackend.hpp"
@@ -127,6 +127,20 @@ namespace Scrobbling
 
         res = Database::Listen::getRecentTracks(session, userId, *backend, clusterIds, range);
         return res;
+    }
+
+    std::size_t ScrobblingService::getCount(Database::UserId userId, Database::ReleaseId releaseId)
+    {
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createReadTransaction() };
+        return Database::Listen::getCount(session, userId, releaseId);
+    }
+
+    std::size_t ScrobblingService::getCount(Database::UserId userId, Database::TrackId trackId)
+    {
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createReadTransaction() };
+        return Database::Listen::getCount(session, userId, trackId);
     }
 
     Wt::WDateTime ScrobblingService::getLastListenDateTime(Database::UserId userId, Database::ReleaseId releaseId)

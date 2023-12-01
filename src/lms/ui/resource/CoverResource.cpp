@@ -23,7 +23,7 @@
 #include <Wt/Http/Response.h>
 
 #include "services/cover/ICoverService.hpp"
-#include "services/database/Track.hpp"
+#include "database/Track.hpp"
 #include "utils/Exception.hpp"
 #include "utils/ILogger.hpp"
 #include "utils/Service.hpp"

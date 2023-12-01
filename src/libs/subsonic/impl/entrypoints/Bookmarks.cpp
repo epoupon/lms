@@ -19,10 +19,10 @@
 
 #include "Bookmarks.hpp"
 
-#include "services/database/Session.hpp"
-#include "services/database/User.hpp"
-#include "services/database/Track.hpp"
-#include "services/database/TrackBookmark.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
+#include "database/Track.hpp"
+#include "database/TrackBookmark.hpp"
 #include "responses/Bookmark.hpp"
 #include "responses/Song.hpp"
 #include "ParameterParsing.hpp"

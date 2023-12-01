@@ -19,9 +19,9 @@
 
 #include "ScanStepCheckDuplicatedDbFiles.hpp"
 
-#include "services/database/Db.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/Track.hpp"
+#include "database/Db.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
 #include "utils/ILogger.hpp"
 
 namespace Scanner

@@ -1,4 +1,5 @@
 add_subdirectory(av)
+add_subdirectory(database)
 add_subdirectory(image)
 add_subdirectory(metadata)
 add_subdirectory(services)

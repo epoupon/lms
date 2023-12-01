@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include "services/database/TrackListId.hpp"
-#include "services/database/Types.hpp"
+#include "database/TrackListId.hpp"
+#include "database/Types.hpp"
 
 #include "common/Template.hpp"
 

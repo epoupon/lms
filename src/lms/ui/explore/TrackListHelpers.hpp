@@ -22,8 +22,8 @@
 #include <memory>
 
 #include <Wt/WWidget.h>
-#include "services/database/Object.hpp"
-#include "services/database/TrackId.hpp"
+#include "database/Object.hpp"
+#include "database/TrackId.hpp"
 
 namespace Database
 {

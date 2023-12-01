@@ -22,13 +22,12 @@
 #include <string_view>
 
 #include "av/IAudioFile.hpp"
-#include "services/database/Artist.hpp"
-#include "services/database/Cluster.hpp"
-#include "services/database/Listen.hpp"
-#include "services/database/Release.hpp"
-#include "services/database/Track.hpp"
-#include "services/database/TrackArtistLink.hpp"
-#include "services/database/User.hpp"
+#include "database/Artist.hpp"
+#include "database/Cluster.hpp"
+#include "database/Release.hpp"
+#include "database/Track.hpp"
+#include "database/TrackArtistLink.hpp"
+#include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/Service.hpp"
@@ -108,7 +107,7 @@ namespace API::Subsonic
             trackResponse.setAttribute("discNumber", *track->getDiscNumber());
         if (track->getYear())
             trackResponse.setAttribute("year", *track->getYear());
-        trackResponse.setAttribute("playCount", Listen::getCount(context.dbSession, user->getId(), user->getScrobblingBackend(), track->getId()));
+        trackResponse.setAttribute("playCount", Service<Scrobbling::IScrobblingService>::get()->getCount(user->getId(), track->getId()));
         trackResponse.setAttribute("path", getTrackPath(track));
         {
             // TODO, store this in DB

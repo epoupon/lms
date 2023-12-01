@@ -28,8 +28,8 @@
 #endif // LMS_SUPPORT_PAM
 
 #include "services/auth/Types.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/User.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
 #include "utils/Exception.hpp"
 #include "utils/ILogger.hpp"
 

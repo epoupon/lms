@@ -30,9 +30,9 @@
 
 #include <boost/asio/system_timer.hpp>
 
-#include "services/database/Db.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/Types.hpp"
+#include "database/Db.hpp"
+#include "database/Session.hpp"
+#include "database/Types.hpp"
 #include "services/scanner/IScannerService.hpp"
 #include "utils/Path.hpp"
 #include "IScanStep.hpp"

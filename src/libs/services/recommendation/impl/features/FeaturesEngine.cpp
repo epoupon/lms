@@ -21,14 +21,14 @@
 
 #include <numeric>
 
-#include "services/database/Artist.hpp"
-#include "services/database/Db.hpp"
-#include "services/database/Release.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/Track.hpp"
-#include "services/database/TrackArtistLink.hpp"
-#include "services/database/TrackFeatures.hpp"
-#include "services/database/TrackList.hpp"
+#include "database/Artist.hpp"
+#include "database/Db.hpp"
+#include "database/Release.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
+#include "database/TrackArtistLink.hpp"
+#include "database/TrackFeatures.hpp"
+#include "database/TrackList.hpp"
 #include "som/DataNormalizer.hpp"
 #include "utils/ILogger.hpp"
 #include "utils/Random.hpp"

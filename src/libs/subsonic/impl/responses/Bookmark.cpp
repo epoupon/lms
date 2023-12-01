@@ -19,8 +19,8 @@
 
 #include "responses/Bookmark.hpp"
 
-#include "services/database/TrackBookmark.hpp"
-#include "services/database/User.hpp"
+#include "database/TrackBookmark.hpp"
+#include "database/User.hpp"
 
 namespace API::Subsonic
 {

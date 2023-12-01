@@ -19,7 +19,7 @@
 
 #include "responses/ReplayGain.hpp"
 
-#include "services/database/Track.hpp"
+#include "database/Track.hpp"
 
 namespace API::Subsonic
 {

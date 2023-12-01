@@ -22,8 +22,8 @@
 #include <optional>
 
 #include "DatabaseCollectorBase.hpp"
-#include "services/database/ArtistId.hpp"
-#include "services/database/Types.hpp"
+#include "database/ArtistId.hpp"
+#include "database/Types.hpp"
 
 namespace Database
 {

@@ -19,11 +19,11 @@
 
 #include "InternalBackend.hpp"
 
-#include "services/database/Db.hpp"
-#include "services/database/Listen.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/Track.hpp"
-#include "services/database/User.hpp"
+#include "database/Db.hpp"
+#include "database/Listen.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
+#include "database/User.hpp"
 
 namespace Scrobbling
 {

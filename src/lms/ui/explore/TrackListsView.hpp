@@ -22,9 +22,9 @@
 #include <unordered_map>
 #include <Wt/WTemplate.h>
 
-#include "services/database/Object.hpp"
-#include "services/database/TrackListId.hpp"
-#include "services/database/Types.hpp"
+#include "database/Object.hpp"
+#include "database/TrackListId.hpp"
+#include "database/Types.hpp"
 
 #include "common/Template.hpp"
 

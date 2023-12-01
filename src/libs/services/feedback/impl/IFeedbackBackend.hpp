@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include "services/database/StarredArtistId.hpp"
-#include "services/database/StarredReleaseId.hpp"
-#include "services/database/StarredTrackId.hpp"
+#include "database/StarredArtistId.hpp"
+#include "database/StarredReleaseId.hpp"
+#include "database/StarredTrackId.hpp"
 
 namespace Feedback
 {

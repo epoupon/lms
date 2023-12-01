@@ -25,13 +25,13 @@
 #include <Wt/Json/Value.h>
 #include <Wt/Json/Serializer.h>
 
-#include "services/database/Artist.hpp"
-#include "services/database/Db.hpp"
-#include "services/database/Listen.hpp"
-#include "services/database/Release.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/Track.hpp"
-#include "services/database/User.hpp"
+#include "database/Artist.hpp"
+#include "database/Db.hpp"
+#include "database/Listen.hpp"
+#include "database/Release.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
+#include "database/User.hpp"
 #include "services/scrobbling/Exception.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/http/IClient.hpp"

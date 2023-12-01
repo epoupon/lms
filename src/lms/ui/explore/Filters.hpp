@@ -24,7 +24,7 @@
 #include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
 
-#include "services/database/ClusterId.hpp"
+#include "database/ClusterId.hpp"
 
 #include "Filters.hpp"
 

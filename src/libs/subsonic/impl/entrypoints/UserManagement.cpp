@@ -1,7 +1,7 @@
 #include "UserManagement.hpp"
 
-#include "services/database/Session.hpp"
-#include "services/database/User.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
 #include "services/auth/IPasswordService.hpp"
 #include "utils/Service.hpp"
 #include "responses/User.hpp"

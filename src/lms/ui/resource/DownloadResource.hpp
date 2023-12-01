@@ -22,10 +22,10 @@
 #include <memory>
 #include <Wt/WResource.h>
 
-#include "services/database/ArtistId.hpp"
-#include "services/database/ReleaseId.hpp"
-#include "services/database/TrackId.hpp"
-#include "services/database/TrackListId.hpp"
+#include "database/ArtistId.hpp"
+#include "database/ReleaseId.hpp"
+#include "database/TrackId.hpp"
+#include "database/TrackListId.hpp"
 #include "utils/IZipper.hpp"
 #include "utils/ZipperResourceHandlerCreator.hpp"
 

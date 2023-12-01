@@ -25,7 +25,7 @@
 #include <Wt/WResource.h>
 #include <Wt/Http/Response.h>
 
-#include "services/database/Types.hpp"
+#include "database/Types.hpp"
 #include "ClientInfo.hpp"
 #include "RequestContext.hpp"
 

@@ -19,8 +19,8 @@
 
 #include "responses/Contributor.hpp"
 
-#include "services/database/Object.hpp"
-#include "services/database/TrackArtistLink.hpp"
+#include "database/Object.hpp"
+#include "database/TrackArtistLink.hpp"
 #include "SubsonicResponse.hpp"
 #include "responses/Artist.hpp"
 

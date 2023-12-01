@@ -23,9 +23,9 @@
 
 #include <Wt/WApplication.h>
 
-#include "services/database/Object.hpp"
-#include "services/database/UserId.hpp"
-#include "services/database/Types.hpp"
+#include "database/Object.hpp"
+#include "database/UserId.hpp"
+#include "database/Types.hpp"
 #include "services/scanner/ScannerEvents.hpp"
 #include "Notification.hpp"
 

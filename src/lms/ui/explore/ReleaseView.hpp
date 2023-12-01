@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include "services/database/Object.hpp"
-#include "services/database/ReleaseId.hpp"
+#include "database/Object.hpp"
+#include "database/ReleaseId.hpp"
 #include "common/Template.hpp"
 
 namespace Database

@@ -19,9 +19,9 @@
 
 #include "PlaylistGeneratorService.hpp"
 
-#include "services/database/Db.hpp"
-#include "services/database/Session.hpp"
-#include "services/database/Track.hpp"
+#include "database/Db.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "playlist-constraints/ConsecutiveArtists.hpp"
 #include "playlist-constraints/ConsecutiveReleases.hpp"

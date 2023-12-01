@@ -21,8 +21,8 @@
 
 #include <optional>
 
-#include "services/database/Object.hpp"
-#include "services/database/TrackId.hpp"
+#include "database/Object.hpp"
+#include "database/TrackId.hpp"
 #include "DatabaseCollectorBase.hpp"
 
 namespace Database

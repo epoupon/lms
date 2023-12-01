@@ -22,7 +22,7 @@
 #include <Wt/Dbo/ptr.h>
 #include <Wt/WResource.h>
 
-#include "services/database/TrackId.hpp"
+#include "database/TrackId.hpp"
 
 namespace Database
 {

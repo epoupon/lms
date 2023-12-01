@@ -19,7 +19,7 @@
 
 #include "responses/ItemGenre.hpp"
 
-#include "services/database/Cluster.hpp"
+#include "database/Cluster.hpp"
 
 namespace API::Subsonic
 {

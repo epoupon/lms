@@ -43,6 +43,9 @@ namespace Scrobbling
         ReleaseContainer getRecentReleases(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds,Database::Range range) override;
         TrackContainer getRecentTracks(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) override;
 
+        std::size_t getCount(Database::UserId userId, Database::ReleaseId releaseId) override;
+        std::size_t getCount(Database::UserId userId, Database::TrackId trackId) override;
+
         Wt::WDateTime getLastListenDateTime(Database::UserId userId, Database::ReleaseId releaseId) override;
         Wt::WDateTime getLastListenDateTime(Database::UserId userId, Database::TrackId trackId) override;
 
