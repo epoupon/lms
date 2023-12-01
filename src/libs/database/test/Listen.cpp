@@ -905,7 +905,6 @@ TEST_F(DatabaseFixture, Listen_getCount_track)
         const std::size_t count{ Listen::getCount(session, user->getId(), track.getId()) };
         EXPECT_EQ(count, 0);
     }
-
 }
 
 TEST_F(DatabaseFixture, Listen_getCount_release)
