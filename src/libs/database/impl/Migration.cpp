@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS "track_artist_link_backup" (
     {
         // Increased precision for track durations (now in milliseconds instead of secodns)
         // Just increment the scan version of the settings to make the next scheduled scan rescan everything
-        ScanSettings::get(session).modify()->incScanVersion();
+        session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
     static void migrateFromV37(Session& session)
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS "track_artist_link_backup" (
         session.getDboSession().execute("ALTER TABLE track_artist_link ADD subtype TEXT");
 
         // Just increment the scan version of the settings to make the next scheduled scan rescan everything
-        ScanSettings::get(session).modify()->incScanVersion();
+        session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
     static void migrateFromV38(Session& session)
@@ -166,7 +166,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
         session.getDboSession().execute("ALTER TABLE track_backup RENAME TO track");
 
         // Just increment the scan version of the settings to make the next scheduled scan rescan everything
-        ScanSettings::get(session).modify()->incScanVersion();
+        session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
     static void migrateFromV39(Session& session)
@@ -176,7 +176,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
         session.getDboSession().execute("ALTER TABLE release ADD secondary_types INTEGER");
 
         // Just increment the scan version of the settings to make the next scheduled scan rescan everything
-        ScanSettings::get(session).modify()->incScanVersion();
+        session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
     static void migrateFromV40(Session& session)
@@ -186,7 +186,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
         session.getDboSession().execute("ALTER TABLE track ADD artist_display_name TEXT");
 
         // Just increment the scan version of the settings to make the next scheduled scan rescan everything
-        ScanSettings::get(session).modify()->incScanVersion();
+        session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
     static void migrateFromV41(Session& session)
@@ -231,7 +231,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
         session.getDboSession().execute("ALTER TABLE cluster ADD release_count INTEGER");
 
         // Just increment the scan version of the settings to make the next scheduled scan rescan everything
-        ScanSettings::get(session).modify()->incScanVersion();
+        session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
     static void migrateFromV44(Session& session)
@@ -240,7 +240,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
         session.getDboSession().execute("ALTER TABLE track ADD bitrate INTEGER");
 
         // Just increment the scan version of the settings to make the next scheduled scan rescan everything
-        ScanSettings::get(session).modify()->incScanVersion();
+        session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
     void migrateFromV45(Session& session)
@@ -264,7 +264,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
         session.getDboSession().execute("ALTER TABLE scan_settings ADD COLUMN extra_tags_to_scan TEXT");
 
         // Just increment the scan version of the settings to make the next scheduled scan rescan everything
-        ScanSettings::get(session).modify()->incScanVersion();
+        session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
     void doDbMigration(Session& session)

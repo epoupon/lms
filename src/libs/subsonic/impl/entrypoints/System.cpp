@@ -29,6 +29,12 @@ namespace API::Subsonic
             transcodeOffsetNode.addArrayValue("versions", 1);
         }
 
+        {
+            Response::Node& formPostNode{ response.createArrayNode("openSubsonicExtensions") };
+            formPostNode.setAttribute("name", "formPost");
+            formPostNode.addArrayValue("versions", 1);
+        }
+
         return response;
     };
 }
