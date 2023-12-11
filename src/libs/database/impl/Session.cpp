@@ -82,6 +82,7 @@ namespace Database
         _session.mapClass<ClusterType>("cluster_type");
         _session.mapClass<Listen>("listen");
         _session.mapClass<Release>("release");
+        _session.mapClass<ReleaseType>("release_type");
         _session.mapClass<ScanSettings>("scan_settings");
         _session.mapClass<StarredArtist>("starred_artist");
         _session.mapClass<StarredRelease>("starred_release");
@@ -142,6 +143,7 @@ namespace Database
             _session.execute("CREATE INDEX IF NOT EXISTS release_name_idx ON release(name)");
             _session.execute("CREATE INDEX IF NOT EXISTS release_name_nocase_idx ON release(name COLLATE NOCASE)");
             _session.execute("CREATE INDEX IF NOT EXISTS release_mbid_idx ON release(mbid)");
+            _session.execute("CREATE INDEX IF NOT EXISTS release_type_name_idx ON release_type(name)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_path_idx ON track(file_path)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_name_idx ON track(name)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_name_nocase_idx ON track(name COLLATE NOCASE)");

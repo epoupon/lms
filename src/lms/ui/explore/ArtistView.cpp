@@ -69,18 +69,6 @@ namespace UserInterface
         }
     }
 
-    bool Artist::ReleaseType::operator<(const ReleaseType& other) const
-    {
-        if (!primaryType && other.primaryType)
-            return false;
-        else if (primaryType && !other.primaryType)
-            return true;
-        else if (*primaryType == *other.primaryType)
-            return secondaryTypes.getBitfield() < other.secondaryTypes.getBitfield();
-        else
-            return static_cast<int>(*primaryType) < static_cast<int>(*other.primaryType);
-    }
-
     Artist::Artist(Filters& filters, PlayQueueController& controller)
         : Template{ Wt::WString::tr("Lms.Explore.Artist.template") }
         , _filters{ filters }
@@ -217,12 +205,12 @@ namespace UserInterface
         const auto releases{ Release::findIds(LmsApp->getDbSession(), params) };
         if (!releases.results.empty())
         {
-            // first pass: gather all ids and sort by type
+            // first pass: gather all ids and sort by release type
             for (const ReleaseId releaseId : releases.results)
             {
                 const Database::Release::pointer release{ Database::Release::find(LmsApp->getDbSession(), releaseId) };
 
-                ReleaseType releaseType{ release->getPrimaryType(), release->getSecondaryTypes() };
+                ReleaseType releaseType{ parseReleaseType(release->getReleaseTypeNames())};
                 _releaseContainers[releaseType].releases.push_back(releaseId);
             }
 
@@ -232,11 +220,11 @@ namespace UserInterface
             {
                 Wt::WTemplate* releaseContainer{ releaseContainers->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artist.template.release-container")) };
 
-                if (releaseType.primaryType)
-                    releaseContainer->bindString("release-type", ReleaseHelpers::buildReleaseTypeString(*releaseType.primaryType, releaseType.secondaryTypes));
+                if (releaseType.primaryType || !releaseType.customTypes.empty())
+                    releaseContainer->bindString("release-type", ReleaseHelpers::buildReleaseTypeString(releaseType));
                 else
-                    releaseContainer->bindString("release-type", Wt::WString::tr("Lms.Explore.releases")); // fallback when not tagged with MB
-
+                    releaseContainer->bindString("release-type", Wt::WString::tr("Lms.Explore.releases")); // fallback when not tagged with MB or custom type
+                
                 releases.container = releaseContainer->bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
                 releases.container->onRequestElements.connect(this, [this, &releases = releases]
                     {

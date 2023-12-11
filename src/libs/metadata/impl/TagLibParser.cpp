@@ -214,12 +214,7 @@ namespace MetaData
                 }
             }
 
-            release->primaryType = getPropertyValueFirstMatchAs<MetaData::Release::PrimaryType>(tags, { "MUSICBRAINZ_ALBUMTYPE", "RELEASETYPE", "MUSICBRAINZ ALBUM TYPE", "MUSICBRAINZ/ALBUM TYPE" });
-            if (release->primaryType)
-            {
-                const auto secondaryTypes{ getPropertyValuesFirstMatchAs<MetaData::Release::SecondaryType>(tags, {"MUSICBRAINZ_ALBUMTYPE", "RELEASETYPE", "MUSICBRAINZ ALBUM TYPE", "MUSICBRAINZ/ALBUM TYPE"}) };
-                release->secondaryTypes.assign(std::cbegin(secondaryTypes), std::cend(secondaryTypes));
-            }
+            release->releaseTypes = getPropertyValuesFirstMatchAs<std::string>(tags, { "MUSICBRAINZ_ALBUMTYPE", "RELEASETYPE", "MUSICBRAINZ ALBUM TYPE", "MUSICBRAINZ/ALBUM TYPE" });
 
             return release;
         }
@@ -368,18 +363,18 @@ namespace MetaData
             track.replayGain = StringUtils::readAs<float>(value);
         else if (tag == "ARTIST")
             track.artistDisplayName = value;
-        else if (std::find(std::cbegin(_extraTags), std::cend(_extraTags), tag) != std::cend(_extraTags))
+        else if (std::find(std::cbegin(_userExtraTags), std::cend(_userExtraTags), tag) != std::cend(_userExtraTags))
         {
-            std::set<std::string> tagValues;
+            std::vector<std::string> tagValues;
             for (std::string_view valueList : values)
             {
                 const std::vector<std::string_view> splittedValues{ splitAndTrimString(valueList, "/,;") }; // handle possibily bad split tags
                 for (std::string_view value : splittedValues)
-                    tagValues.insert(std::string{ value });
+                    tagValues.push_back(std::string{ value });
             }
 
             if (!tagValues.empty())
-                track.tags[tag] = std::move(tagValues);
+                track.userExtraTags[tag] = std::move(tagValues);
         }
     }
 

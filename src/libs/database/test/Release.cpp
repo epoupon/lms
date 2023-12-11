@@ -20,6 +20,7 @@
 #include "Common.hpp"
 
 using namespace Database;
+using ScopedReleaseType = ScopedEntity<Database::ReleaseType>;
 
 TEST_F(DatabaseFixture, Release)
 {
@@ -559,26 +560,78 @@ TEST_F(DatabaseFixture, Release_getDiscCount)
     }
 }
 
+TEST_F(DatabaseFixture, ReleaseType)
+{
+    {
+        auto transaction{ session.createReadTransaction() };
+        ReleaseType::pointer res{ ReleaseType::find(session, "album") };
+        EXPECT_EQ(res, ReleaseType::pointer{});
+    }
+
+    ScopedReleaseType releaseType{ session, "album" };
+
+    {
+        auto transaction{ session.createReadTransaction() };
+        ReleaseType::pointer res{ ReleaseType::find(session, "album") };
+        EXPECT_EQ(res, releaseType.get());
+    }
+}
+
 TEST_F(DatabaseFixture, Release_releaseType)
 {
     ScopedRelease release{ session, "MyRelease" };
 
     {
         auto transaction{ session.createReadTransaction() };
-        EXPECT_EQ(release.get()->getPrimaryType(), std::nullopt);
-        EXPECT_EQ(release.get()->getSecondaryTypes(), EnumSet<ReleaseTypeSecondary> {});
+        EXPECT_EQ(release.get()->getReleaseTypes().size(), 0);
     }
+
+    ScopedReleaseType releaseType{ session, "album" };
 
     {
         auto transaction{ session.createWriteTransaction() };
-        release.get().modify()->setPrimaryType({ ReleaseTypePrimary::Album });
-        release.get().modify()->setSecondaryTypes({ ReleaseTypeSecondary::Compilation });
+        release.get().modify()->addReleaseType(releaseType.get());
     }
 
     {
         auto transaction{ session.createReadTransaction() };
-        EXPECT_EQ(release.get()->getPrimaryType(), ReleaseTypePrimary::Album);
-        EXPECT_TRUE(release.get()->getSecondaryTypes().contains(ReleaseTypeSecondary::Compilation));
+
+        const auto releaseTypes{ release.get()->getReleaseTypes() };
+        ASSERT_EQ(releaseTypes.size(), 1);
+        EXPECT_EQ(releaseTypes.front()->getId(), releaseType.getId());
+
+        const auto releaseTypeNames{ release.get()->getReleaseTypeNames() };
+        ASSERT_EQ(releaseTypeNames.size(), 1);
+        EXPECT_EQ(releaseTypeNames.front(), "album");
+    }
+}
+
+TEST_F(DatabaseFixture, Release_find_releaseType)
+{
+    ScopedRelease release{ session, "MyRelease" };
+
+    {
+        auto transaction{ session.createReadTransaction() };
+        auto releases{ Release::find(session, Release::FindParameters{}.setReleaseType("Foo")).results };
+        EXPECT_EQ(releases.size(), 0);
+    }
+
+    ScopedReleaseType releaseType{ session, "album" };
+
+    {
+        auto transaction{ session.createWriteTransaction() };
+        release.get().modify()->addReleaseType(releaseType.get());
+    }
+
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        auto releases{ Release::find(session, Release::FindParameters{}.setReleaseType("Foo")).results };
+        EXPECT_EQ(releases.size(), 0);
+
+        releases = Release::find(session, Release::FindParameters{}.setReleaseType("album")).results;
+        ASSERT_EQ(releases.size(), 1);
+        EXPECT_EQ(releases.front()->getId(), release.getId());
     }
 }
 

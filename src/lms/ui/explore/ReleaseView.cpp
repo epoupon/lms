@@ -68,10 +68,10 @@ namespace UserInterface
             Wt::WWidget* releaseInfoPtr{ releaseInfo.get() };
             releaseInfo->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-            if (auto primaryReleaseType{ release->getPrimaryType() })
+            if (const auto releaseTypeNames{ release->getReleaseTypeNames() }; !releaseTypeNames.empty())
             {
                 releaseInfo->setCondition("if-has-release-type", true);
-                releaseInfo->bindString("release-type", ReleaseHelpers::buildReleaseTypeString(*primaryReleaseType, release->getSecondaryTypes()));
+                releaseInfo->bindString("release-type", ReleaseHelpers::buildReleaseTypeString(parseReleaseType(releaseTypeNames)));
             }
 
             std::map<Wt::WString, std::set<ArtistId>> artistMap;

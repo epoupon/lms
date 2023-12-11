@@ -38,6 +38,7 @@ add_executable(lms
 	ui/explore/ReleaseHelpers.cpp
 	ui/explore/ReleasesView.cpp
 	ui/explore/ReleaseView.cpp
+	ui/explore/ReleaseTypes.cpp
 	ui/explore/SearchView.cpp
 	ui/explore/TrackCollector.cpp
 	ui/explore/TrackListHelpers.cpp
@@ -70,4 +71,3 @@ target_link_libraries(lms PRIVATE
 	)
 
 install(TARGETS lms DESTINATION bin)
-

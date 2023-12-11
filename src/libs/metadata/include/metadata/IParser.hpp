@@ -23,18 +23,16 @@
 #include <filesystem>
 #include <map>
 #include <optional>
-#include <set>
 #include <string>
 #include <string_view>
 #include <vector>
 
 #include <Wt/WDate.h>
-#include "utils/EnumSet.hpp"
 #include "utils/UUID.hpp"
 
 namespace MetaData
 {
-    using Tags = std::map<std::string /* type */, std::set<std::string> /* values */>;
+    using Tags = std::map<std::string /* type */, std::vector<std::string> /* values */>;
 
     // Very simplified version of https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 
@@ -52,43 +50,17 @@ namespace MetaData
 
     struct Release
     {
-        // see https://musicbrainz.org/doc/Release_Group/Type
-        enum class PrimaryType
-        {
-            Album,
-            Single,
-            EP,
-            Broadcast,
-            Other
-        };
-
-        enum class SecondaryType
-        {
-            Compilation,
-            Soundtrack,
-            Spokenword,
-            Interview,
-            Audiobook,
-            AudioDrama,
-            Live,
-            Remix,
-            DJMix,
-            Mixtape_Street,
-            Demo,
-        };
-
         std::optional<UUID> 		mbid;
         std::string					name;
         std::string					artistDisplayName;
         std::vector<Artist>			artists;
         std::optional<std::size_t>	mediumCount;
-        std::optional<PrimaryType>	primaryType;
-        EnumSet<SecondaryType>		secondaryTypes;
+        std::vector<std::string>    releaseTypes;
     };
 
     struct Medium
     {
-        std::string					type;
+        std::string					type; // CD, etc.
         std::string					name;
         std::optional<Release>		release;
         std::optional<std::size_t>	position; // in release
@@ -103,7 +75,11 @@ namespace MetaData
         std::string					title;
         std::optional<Medium>		medium;
         std::optional<std::size_t>	position; // in medium
-        Tags						tags;
+        std::vector<std::string>    grouping;
+        std::vector<std::string>    genres;
+        std::vector<std::string>    moods;
+        std::vector<std::string>    languages;
+        Tags                        userExtraTags;
         std::chrono::milliseconds 	duration{};
         std::size_t                 bitrate{};
         Wt::WDate					date;
@@ -131,10 +107,10 @@ namespace MetaData
 
         virtual std::optional<Track> parse(const std::filesystem::path& p, bool debug = false) = 0;
 
-        void setExtraTags(const std::vector<std::string>& extraTags) { _extraTags = std::set(extraTags.cbegin(), extraTags.cend()); }
+        void setUserExtraTags(const std::vector<std::string>& extraTags) { _userExtraTags = std::vector(extraTags.cbegin(), extraTags.cend()); }
 
     protected:
-        std::set<std::string> _extraTags;
+        std::vector<std::string> _userExtraTags;
     };
 
     enum class ParserType
@@ -151,4 +127,3 @@ namespace MetaData
     };
     std::unique_ptr<IParser> createParser(ParserType parserType, ParserReadStyle parserReadStyle);
 } // namespace MetaData
-

@@ -197,8 +197,7 @@ namespace Database
         return session.getDboSession().add(std::unique_ptr<Track> {new Track{ p }});
     }
 
-    std::size_t
-        Track::getCount(Session& session)
+    std::size_t Track::getCount(Session& session)
     {
         session.checkReadTransaction();
 

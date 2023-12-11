@@ -40,7 +40,7 @@
 #include "database/User.hpp"
 
 template <typename T>
-class ScopedEntity
+class [[nodiscard]] ScopedEntity
 {
 	public:
 		using IdType = typename T::IdType;

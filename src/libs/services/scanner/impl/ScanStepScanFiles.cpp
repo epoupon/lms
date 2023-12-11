@@ -114,84 +114,29 @@ namespace Scanner
             return artists;
         }
 
-        ReleaseTypePrimary convertReleaseTypePrimary(MetaData::Release::PrimaryType type)
+        ReleaseType::pointer getOrCreateReleaseType(Session& session, std::string_view name)
         {
-            switch (type)
-            {
-            case MetaData::Release::PrimaryType::Album:		return ReleaseTypePrimary::Album;
-            case MetaData::Release::PrimaryType::Single:	return ReleaseTypePrimary::Single;
-            case MetaData::Release::PrimaryType::EP:		return ReleaseTypePrimary::EP;
-            case MetaData::Release::PrimaryType::Broadcast:	return ReleaseTypePrimary::Broadcast;
-            case MetaData::Release::PrimaryType::Other:		return ReleaseTypePrimary::Other;
-            }
+            ReleaseType::pointer releaseType{ ReleaseType::find(session, name) };
+            if (!releaseType)
+                releaseType = session.create<ReleaseType>(name);
 
-            return ReleaseTypePrimary::Other;
+            return releaseType;
         }
 
-        EnumSet<ReleaseTypeSecondary> convertReleaseTypesSecondary(EnumSet<MetaData::Release::SecondaryType> types)
-        {
-            EnumSet<ReleaseTypeSecondary> res;
-
-            for (MetaData::Release::SecondaryType type : types)
-            {
-                switch (type)
-                {
-                case MetaData::Release::SecondaryType::Compilation:
-                    res.insert(ReleaseTypeSecondary::Compilation);
-                    break;
-                case MetaData::Release::SecondaryType::Soundtrack:
-                    res.insert(ReleaseTypeSecondary::Soundtrack);
-                    break;
-                case MetaData::Release::SecondaryType::Spokenword:
-                    res.insert(ReleaseTypeSecondary::Spokenword);
-                    break;
-                case MetaData::Release::SecondaryType::Interview:
-                    res.insert(ReleaseTypeSecondary::Interview);
-                    break;
-                case MetaData::Release::SecondaryType::Audiobook:
-                    res.insert(ReleaseTypeSecondary::Audiobook);
-                    break;
-                case MetaData::Release::SecondaryType::AudioDrama:
-                    res.insert(ReleaseTypeSecondary::AudioDrama);
-                    break;
-                case MetaData::Release::SecondaryType::Live:
-                    res.insert(ReleaseTypeSecondary::Live);
-                    break;
-                case MetaData::Release::SecondaryType::Remix:
-                    res.insert(ReleaseTypeSecondary::Remix);
-                    break;
-                case MetaData::Release::SecondaryType::DJMix:
-                    res.insert(ReleaseTypeSecondary::DJMix);
-                    break;
-                case MetaData::Release::SecondaryType::Mixtape_Street:
-                    res.insert(ReleaseTypeSecondary::Mixtape_Street);
-                    break;
-                case MetaData::Release::SecondaryType::Demo:
-                    res.insert(ReleaseTypeSecondary::Demo);
-                    break;
-                }
-            }
-
-            return res;
-        }
-
-        void updateReleaseIfNeeded(Release::pointer release, const MetaData::Release& releaseInfo)
+        void updateReleaseIfNeeded(Session& session, Release::pointer release, const MetaData::Release& releaseInfo)
         {
             if (release->getName() != releaseInfo.name)
                 release.modify()->setName(releaseInfo.name);
             if (release->getTotalDisc() != releaseInfo.mediumCount)
                 release.modify()->setTotalDisc(releaseInfo.mediumCount);
-            if (releaseInfo.primaryType)
-            {
-                const ReleaseTypePrimary primaryType{ convertReleaseTypePrimary(*releaseInfo.primaryType) };
-                if (release->getPrimaryType() != primaryType)
-                    release.modify()->setPrimaryType(primaryType);
-            }
-            const EnumSet<ReleaseTypeSecondary> secondaryTypes{ convertReleaseTypesSecondary(releaseInfo.secondaryTypes) };
-            if (release->getSecondaryTypes() != secondaryTypes)
-                release.modify()->setSecondaryTypes(secondaryTypes);
             if (release->getArtistDisplayName() != releaseInfo.artistDisplayName)
                 release.modify()->setArtistDisplayName(releaseInfo.artistDisplayName);
+            if (release->getReleaseTypeNames() != releaseInfo.releaseTypes)
+            {
+                release.modify()->clearReleaseTypes();
+                for (std::string_view releaseType : releaseInfo.releaseTypes)
+                    release.modify()->addReleaseType(getOrCreateReleaseType(session, releaseType));
+            }
         }
 
         Release::pointer getOrCreateRelease(Session& session, const MetaData::Release& releaseInfo, const std::filesystem::path& expectedReleaseDirectory)
@@ -205,7 +150,7 @@ namespace Scanner
                 if (!release)
                     release = session.create<Release>(releaseInfo.name, releaseInfo.mbid);
 
-                updateReleaseIfNeeded(release, releaseInfo);
+                updateReleaseIfNeeded(session, release, releaseInfo);
                 return release;
             }
 
@@ -226,7 +171,7 @@ namespace Scanner
                 if (!release)
                     release = session.create<Release>(releaseInfo.name);
 
-                updateReleaseIfNeeded(release, releaseInfo);
+                updateReleaseIfNeeded(session, release, releaseInfo);
                 return release;
             }
 
@@ -279,10 +224,7 @@ namespace Scanner
 
     void ScanStepScanFiles::process(ScanContext& context)
     {
-        std::vector<std::string> tagsToParse{ _tagsToParse };
-        tagsToParse.insert(std::end(tagsToParse), std::cbegin(_settings.extraTags), std::cend(_settings.extraTags));
-
-        _metadataParser->setExtraTags(tagsToParse);
+        _metadataParser->setUserExtraTags(_extraTagsToParse);
 
         context.currentStepStats.totalElems = context.stats.filesScanned;
 
@@ -488,7 +430,7 @@ namespace Scanner
         track.modify()->setTotalTrack(trackInfo->medium ? trackInfo->medium->trackCount : std::nullopt);
         track.modify()->setReleaseReplayGain(trackInfo->medium ? trackInfo->medium->replayGain : std::nullopt);
         track.modify()->setDiscSubtitle(trackInfo->medium ? trackInfo->medium->name : "");
-        track.modify()->setClusters(getOrCreateClusters(dbSession, trackInfo->tags));
+        track.modify()->setClusters(getOrCreateClusters(dbSession, trackInfo->userExtraTags));
         track.modify()->setLastWriteTime(lastWriteTime);
         track.modify()->setName(title);
         track.modify()->setDuration(trackInfo->duration);

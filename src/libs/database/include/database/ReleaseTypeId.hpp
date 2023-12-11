@@ -1,6 +1,5 @@
-
 /*
- * Copyright (C) 2016 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -20,22 +19,7 @@
 
 #pragma once
 
-#include <string_view>
-#include <Wt/WDate.h>
+#include "database/IdType.hpp"
 
-#include "metadata/IParser.hpp"
+LMS_DECLARE_IDTYPE(ReleaseTypeId)
 
-namespace MetaData::Utils
-{
-	Wt::WDate parseDate(std::string_view dateStr);
-	std::string_view readStyleToString(ParserReadStyle readStyle);
-
-	struct PerformerArtist
-	{
-		Artist artist;
-		std::string role;
-	};
-
-	// format is "artist name (role)"
-	PerformerArtist extractPerformerAndRole(std::string_view entry);
-}
