@@ -89,7 +89,7 @@ namespace API::Subsonic
         std::vector<TrackId> trackIds{ getMultiParametersAs<TrackId>(context.parameters, "songId") };
 
         if (!name && !id)
-            throw RequiredParameterMissingError{ "name or id" };
+            throw RequiredParameterMissingError{ "name or playlistId" };
 
         auto transaction{ context.dbSession.createWriteTransaction() };
 
@@ -125,7 +125,16 @@ namespace API::Subsonic
             context.dbSession.create<TrackListEntry>(track, tracklist);
         }
 
-        return Response::createOkResponse(context.serverProtocolVersion);
+        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response::Node playlistNode{ createPlaylistNode(tracklist, context.dbSession) };
+
+        auto entries{ tracklist->getEntries() };
+        for (const TrackListEntry::pointer& entry : entries)
+            playlistNode.addArrayChild("entry", createSongNode(context, entry->getTrack(), user));
+
+        response.addNode("playlist", std::move(playlistNode));
+
+        return response;
     }
 
     Response handleUpdatePlaylistRequest(RequestContext& context)
