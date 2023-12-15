@@ -36,4 +36,5 @@ namespace API::Subsonic
     Response handleGetArtistInfo2Request(RequestContext& context);
     Response handleGetSimilarSongsRequest(RequestContext& context);
     Response handleGetSimilarSongs2Request(RequestContext& context);
+    Response handleGetTopSongs(RequestContext& context);
 }

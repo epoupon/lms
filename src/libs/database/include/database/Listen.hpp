@@ -68,6 +68,7 @@ namespace Database
         static RangeResults<ArtistId>   getTopArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range = std::nullopt);
         static RangeResults<ReleaseId>  getTopReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range = std::nullopt);
         static RangeResults<TrackId>    getTopTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range = std::nullopt);
+        static RangeResults<TrackId>    getTopTracks(Session& session, UserId userId, ArtistId artistId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range = std::nullopt);
 
         static RangeResults<ArtistId>   getRecentArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range = std::nullopt);
         static RangeResults<ReleaseId>  getRecentReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range = std::nullopt);

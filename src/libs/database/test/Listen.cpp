@@ -438,6 +438,47 @@ TEST_F(DatabaseFixture, Listen_getTopTracks)
     }
 }
 
+
+TEST_F(DatabaseFixture, Listen_getTopTracks_artist)
+{
+    ScopedTrack track{ session, "MyTrack" };
+    ScopedUser user{ session, "MyUser" };
+    ScopedArtist artist{ session, "MyArtist" };
+    const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
+
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        auto tracks{ Listen::getTopTracks(session, user->getId(), artist->getId(), ScrobblingBackend::Internal, {}) };
+        EXPECT_EQ(tracks.moreResults, false);
+        ASSERT_EQ(tracks.results.size(), 0);
+    }
+
+    ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
+
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        auto tracks{ Listen::getTopTracks(session, user->getId(), artist->getId(), ScrobblingBackend::Internal, {}) };
+        EXPECT_EQ(tracks.moreResults, false);
+        ASSERT_EQ(tracks.results.size(), 0);
+    }
+
+    {
+        auto transaction{ session.createWriteTransaction() };
+        TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+    }
+
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        auto tracks{ Listen::getTopTracks(session, user->getId(), artist->getId(), ScrobblingBackend::Internal, {}) };
+        EXPECT_EQ(tracks.moreResults, false);
+        ASSERT_EQ(tracks.results.size(), 1);
+        EXPECT_EQ(tracks.results[0], track.getId());
+    }
+}
+
 TEST_F(DatabaseFixture, Listen_getTopTrack_multi)
 {
     ScopedTrack track1{ session, "MyTrack1" };

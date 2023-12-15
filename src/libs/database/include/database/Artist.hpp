@@ -82,7 +82,7 @@ namespace Database
         static std::size_t				getCount(Session& session);
         static pointer					find(Session& session, const UUID& MBID);
         static pointer					find(Session& session, ArtistId id);
-        static std::vector<pointer>		find(Session& session, const std::string& name);		// exact match on name field
+        static std::vector<pointer>		find(Session& session, std::string_view name);		// exact match on name field
         static RangeResults<pointer>	find(Session& session, const FindParameters& parameters);
         static void					    find(Session& session, const FindParameters& parameters, std::function<void(const pointer&)> func);
         static RangeResults<ArtistId>	findIds(Session& session, const FindParameters& parameters);

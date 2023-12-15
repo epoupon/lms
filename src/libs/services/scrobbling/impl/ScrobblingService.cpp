@@ -214,5 +214,20 @@ namespace Scrobbling
         res = Database::Listen::getTopTracks(session, userId, *backend, clusterIds, range);
         return res;
     }
+
+    ScrobblingService::TrackContainer ScrobblingService::getTopTracks(UserId userId, Database::ArtistId artistId, const std::vector<ClusterId>& clusterIds, Range range)
+    {
+        TrackContainer res;
+
+        const auto backend{ getUserBackend(userId) };
+        if (!backend)
+            return res;
+
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createReadTransaction() };
+
+        res = Database::Listen::getTopTracks(session, userId, artistId, *backend, clusterIds, range);
+        return res;
+    }
 } // ns Scrobbling
 

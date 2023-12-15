@@ -71,6 +71,7 @@ namespace Scrobbling
         virtual ArtistContainer getTopArtists(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, std::optional<Database::TrackArtistLinkType> linkType, Database::Range) = 0;
         virtual ReleaseContainer getTopReleases(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) = 0;
         virtual TrackContainer getTopTracks(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) = 0;
+        virtual TrackContainer getTopTracks(Database::UserId userId, Database::ArtistId artistId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) = 0;
     };
 
     std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_service& ioService, Database::Db& db);
