@@ -19,6 +19,8 @@
 
 #include "CoverService.hpp"
 
+#include <set>
+
 #include "av/IAudioFile.hpp"
 
 #include "database/Db.hpp"
@@ -30,13 +32,13 @@
 #include "image/IRawImage.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/ILogger.hpp"
+#include "utils/Path.hpp"
 #include "utils/Random.hpp"
 #include "utils/String.hpp"
 #include "utils/Utils.hpp"
 
 namespace Cover
 {
-
     namespace
     {
         struct TrackInfo
@@ -85,6 +87,19 @@ namespace Cover
             return res;
         }
 
+        std::vector<std::string> constructArtistFileNames()
+        {
+            std::vector<std::string> res;
+
+            Service<IConfig>::get()->visitStrings("artist-image-file-names",
+                [&res](std::string_view fileName)
+                {
+                    res.emplace_back(fileName);
+                }, { "artist" });
+
+            return res;
+        }
+
         bool isFileSupported(const std::filesystem::path& file, const std::vector<std::filesystem::path>& extensions)
         {
             return (std::find(std::cbegin(extensions), std::cend(extensions), file.extension()) != std::cend(extensions));
@@ -106,7 +121,7 @@ namespace Cover
         , _maxCacheSize{ Service<IConfig>::get()->getULong("cover-max-cache-size", 30) * 1000 * 1000 }
         , _maxFileSize{ Service<IConfig>::get()->getULong("cover-max-file-size", 10) * 1000 * 1000 }
         , _preferredFileNames{ constructPreferredFileNames() }
-
+        , _artistFileNames{ constructArtistFileNames() }
     {
         setJpegQuality(Service<IConfig>::get()->getULong("cover-jpeg-quality", 75));
 
@@ -196,7 +211,7 @@ namespace Cover
         }
     }
 
-    std::unique_ptr<IEncodedImage> CoverService::getFromDirectory(const std::filesystem::path& directory, ImageSize width) const
+    std::unique_ptr<IEncodedImage> CoverService::getFromDirectory(const std::filesystem::path& directory, ImageSize width, const std::vector<std::string>& preferredFileNames, bool allowPickRandom) const
     {
         const std::multimap<std::string, std::filesystem::path> coverPaths{ getCoverPaths(directory) };
 
@@ -216,19 +231,21 @@ namespace Cover
 
         std::unique_ptr<IEncodedImage> image;
 
-        for (std::string_view filename : _preferredFileNames)
+        for (std::string_view filename : preferredFileNames)
         {
             image = tryLoadImageFromFilename(filename);
             if (image)
                 return image;
         }
 
-        // Just pick one
-        for (const auto& [filename, coverPath] : coverPaths)
+        if (allowPickRandom)
         {
-            image = getFromCoverFile(coverPath, width);
-            if (image)
-                return image;
+            for (const auto& [filename, coverPath] : coverPaths)
+            {
+                image = getFromCoverFile(coverPath, width);
+                if (image)
+                    return image;
+            }
         }
 
         return image;
@@ -269,7 +286,7 @@ namespace Cover
 
         if (std::filesystem::file_size(filePath, ec) > _maxFileSize && !ec)
         {
-            LMS_LOG(COVER, INFO, "Cover file '" << filePath.string() << " is too big (" << std::filesystem::file_size(filePath, ec) << "), limit is " << _maxFileSize);
+            LMS_LOG(COVER, INFO, "Image file '" << filePath.string() << " is too big (" << std::filesystem::file_size(filePath, ec) << "), limit is " << _maxFileSize);
             return false;
         }
 
@@ -341,7 +358,7 @@ namespace Cover
             if (!cover && trackInfo->isMultiDisc)
             {
                 if (trackInfo->trackPath.parent_path().has_parent_path())
-                    cover = getFromDirectory(trackInfo->trackPath.parent_path().parent_path(), width);
+                    cover = getFromDirectory(trackInfo->trackPath.parent_path().parent_path(), width, _preferredFileNames, true);
             }
         }
 
@@ -389,7 +406,7 @@ namespace Cover
 
         if (const std::optional<ReleaseInfo> releaseInfo{ getReleaseInfo() })
         {
-            cover = getFromDirectory(releaseInfo->releaseDirectory, width);
+            cover = getFromDirectory(releaseInfo->releaseDirectory, width, _preferredFileNames, true);
             if (!cover)
                 cover = getFromTrack(session, releaseInfo->firstTrackId, width, false /* no release fallback */);
         }
@@ -398,6 +415,50 @@ namespace Cover
             saveToCache(cacheEntryDesc, cover);
 
         return cover;
+    }
+
+    std::shared_ptr<IEncodedImage> CoverService::getFromArtist(Database::ArtistId artistId, ImageSize width)
+    {
+        using namespace Database;
+        const CacheEntryDesc cacheEntryDesc{ artistId, width };
+
+        std::shared_ptr<IEncodedImage> artistImage{ loadFromCache(cacheEntryDesc) };
+        if (artistImage)
+            return artistImage;
+
+        std::set<std::filesystem::path> parentPaths;
+        {
+            Session& session{ _db.getTLSSession() };
+            auto transaction{ session.createReadTransaction() };
+
+            Track::find(session, Track::FindParameters{}.setArtist(artistId), [&](const Track::pointer& track)
+                {
+                    parentPaths.insert(track->getPath().parent_path());
+                });
+        }
+
+        if (parentPaths.size() == 1)
+            artistImage = getFromDirectory(parentPaths.begin()->parent_path(), width, _artistFileNames, false);
+        else if (parentPaths.size() > 1)
+        {
+            const std::filesystem::path longestCommonPath{ PathUtils::getLongestCommonPath(std::cbegin(parentPaths), std::cend(parentPaths)) };
+            artistImage = getFromDirectory(longestCommonPath, width, _artistFileNames, false);
+        }
+
+        if (!artistImage)
+        {
+            for (const std::filesystem::path& parentPath : parentPaths)
+            {
+                artistImage = getFromDirectory(parentPath, width, _artistFileNames, false);
+                if (artistImage)
+                    break;
+            }
+        }
+
+        if (artistImage)
+            saveToCache(cacheEntryDesc, artistImage);
+
+        return artistImage;
     }
 
     void CoverService::flushCache()

@@ -269,13 +269,9 @@ namespace API::Subsonic
         else if (releaseId)
             cover = Service<Cover::ICoverService>::get()->getFromRelease(*releaseId, size);
         else if (artistId)
-        {
-            // TODO handle a placeholder for artists
-            response.setStatus(404);
-            return;
-        }
+            cover = Service<Cover::ICoverService>::get()->getFromArtist(*artistId, size);
 
-        if (!cover && context.enableDefaultCover)
+        if (!cover && context.enableDefaultCover && !artistId)
             cover = Service<Cover::ICoverService>::get()->getDefault(size);
 
         if (!cover)

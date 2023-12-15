@@ -47,7 +47,7 @@ namespace Cover
 {
     struct CacheEntryDesc
     {
-        std::variant<Database::TrackId, Database::ReleaseId> id;
+        std::variant<Database::ArtistId, Database::ReleaseId, Database::TrackId> id;
         std::size_t			size;
 
         bool operator==(const CacheEntryDesc& other) const
@@ -92,6 +92,7 @@ namespace Cover
     private:
         std::shared_ptr<Image::IEncodedImage>   getFromTrack(Database::TrackId trackId, Image::ImageSize width) override;
         std::shared_ptr<Image::IEncodedImage>   getFromRelease(Database::ReleaseId releaseId, Image::ImageSize width) override;
+        std::shared_ptr<Image::IEncodedImage>   getFromArtist(Database::ArtistId artistId, Image::ImageSize width) override;
         std::shared_ptr<Image::IEncodedImage>   getDefault(Image::ImageSize width) override;
         void                                    flushCache() override;
         void                                    setJpegQuality(unsigned quality) override;
@@ -102,7 +103,7 @@ namespace Cover
 
         std::unique_ptr<Image::IEncodedImage>   getFromTrack(const std::filesystem::path& path, Image::ImageSize width) const;
         std::multimap<std::string, std::filesystem::path>   getCoverPaths(const std::filesystem::path& directoryPath) const;
-        std::unique_ptr<Image::IEncodedImage>   getFromDirectory(const std::filesystem::path& directory, Image::ImageSize width) const;
+        std::unique_ptr<Image::IEncodedImage>   getFromDirectory(const std::filesystem::path& directory, Image::ImageSize width, const std::vector<std::string>& preferredFileNames, bool allowPickRandom) const;
         std::unique_ptr<Image::IEncodedImage>   getFromSameNamedFile(const std::filesystem::path& filePath, Image::ImageSize width) const;
 
         bool                                    checkCoverFile(const std::filesystem::path& directoryPath) const;
@@ -124,6 +125,7 @@ namespace Cover
         static inline const std::vector<std::filesystem::path> _fileExtensions{ ".jpg", ".jpeg", ".png", ".bmp" }; // TODO parametrize
         const std::size_t _maxFileSize;
         const std::vector<std::string> _preferredFileNames;
+        const std::vector<std::string> _artistFileNames;
         unsigned _jpegQuality;
     };
 
