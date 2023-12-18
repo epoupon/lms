@@ -226,15 +226,15 @@ namespace MetaData
                 {
                     track.recordingMBID = UUID::fromString(value);
                 }
-                else if (std::find(std::cbegin(_extraTags), std::cend(_extraTags), tag) != std::cend(_extraTags))
+                else if (std::find(std::cbegin(_userExtraTags), std::cend(_userExtraTags), tag) != std::cend(_userExtraTags))
                 {
                     const std::vector<std::string_view> tagValues{ StringUtils::splitString(value, "/,;") };
 
                     if (!tagValues.empty())
                     {
-                        std::set<std::string> values;
+                        std::vector<std::string> values;
                         std::transform(std::cbegin(tagValues), std::cend(tagValues), std::inserter(values, std::begin(values)), [](std::string_view v) { return std::string{ v }; });
-                        track.tags[tag] = std::move(values);
+                        track.userExtraTags[tag] = std::move(values);
                     }
                 }
             }

@@ -28,6 +28,7 @@
 #include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "utils/EnumSet.hpp"
+#include "ReleaseTypes.hpp"
 
 namespace Database
 {
@@ -43,6 +44,6 @@ namespace UserInterface::ReleaseListHelpers
 
 namespace UserInterface::ReleaseHelpers
 {
-    Wt::WString buildReleaseTypeString(Database::ReleaseTypePrimary primaryType, EnumSet<Database::ReleaseTypeSecondary> secondaryTypes);
+    Wt::WString buildReleaseTypeString(const ReleaseType& releaseType);
     Wt::WString buildReleaseYearString(const Wt::WDate& releaseDate, const Wt::WDate& originalReleaseDate);
 }

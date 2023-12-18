@@ -52,6 +52,7 @@ namespace Scrobbling
         ArtistContainer getTopArtists(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, std::optional<Database::TrackArtistLinkType> linkType, Database::Range range) override;
         ReleaseContainer getTopReleases(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) override;
         TrackContainer getTopTracks(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) override;
+        TrackContainer getTopTracks(Database::UserId userId, Database::ArtistId artistId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) override;
 
         std::optional<Database::ScrobblingBackend> getUserBackend(Database::UserId userId);
 

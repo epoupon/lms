@@ -24,63 +24,56 @@
 #include "database/ArtistId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
-#include "database/Types.hpp"
 #include "utils/EnumSet.hpp"
 #include "common/Template.hpp"
+#include "ReleaseTypes.hpp"
 
 namespace Database
 {
-	class Artist;
-	class Release;
+    class Artist;
+    class Release;
 }
 
 namespace UserInterface
 {
-	class Filters;
-	class PlayQueueController;
-	class InfiniteScrollingContainer;
+    class Filters;
+    class PlayQueueController;
+    class InfiniteScrollingContainer;
 
-	class Artist : public Template
-	{
-		public:
-			Artist(Filters& filters, PlayQueueController& controller);
+    class Artist : public Template
+    {
+    public:
+        Artist(Filters& filters, PlayQueueController& controller);
 
-		private:
-			void refreshView();
-			void refreshReleases();
-			void refreshAppearsOnReleases();
-			void refreshNonReleaseTracks();
-			void refreshSimilarArtists(const std::vector<Database::ArtistId>& similarArtistsId);
-			void refreshLinks(const Database::ObjectPtr<Database::Artist>& artist);
+    private:
+        void refreshView();
+        void refreshReleases();
+        void refreshAppearsOnReleases();
+        void refreshNonReleaseTracks();
+        void refreshSimilarArtists(const std::vector<Database::ArtistId>& similarArtistsId);
+        void refreshLinks(const Database::ObjectPtr<Database::Artist>& artist);
 
-			struct ReleaseContainer;
-			void addSomeReleases(ReleaseContainer& releaseContainer);
-			bool addSomeNonReleaseTracks();
-			static constexpr std::size_t _releasesBatchSize {6};
-			static constexpr std::size_t _tracksBatchSize {6};
-			static constexpr std::size_t _tracksMaxCount {160};
+        struct ReleaseContainer;
+        void addSomeReleases(ReleaseContainer& releaseContainer);
+        bool addSomeNonReleaseTracks();
+        static constexpr std::size_t _releasesBatchSize{ 6 };
+        static constexpr std::size_t _tracksBatchSize{ 6 };
+        static constexpr std::size_t _tracksMaxCount{ 160 };
 
-			Filters&					_filters;
-			PlayQueueController&		_playQueueController;
+        Filters& _filters;
+        PlayQueueController& _playQueueController;
 
-			struct ReleaseType
-			{
-				std::optional<Database::ReleaseTypePrimary> primaryType;
-				EnumSet<Database::ReleaseTypeSecondary> secondaryTypes;
-
-				bool operator<(const ReleaseType& other) const;
-			};
-
-			struct ReleaseContainer
-			{
-				InfiniteScrollingContainer* container {};
-				std::vector<Database::ReleaseId> releases;
-			};
-			std::map<ReleaseType, ReleaseContainer> _releaseContainers;
-			ReleaseContainer			_appearsOnReleaseContainer {};
-			InfiniteScrollingContainer* _trackContainer {};
-			Database::ArtistId			_artistId {};
-			bool						_needForceRefresh {};
-	};
+        // Display releases the same way as MusicBrainz
+        struct ReleaseContainer
+        {
+            InfiniteScrollingContainer* container{};
+            std::vector<Database::ReleaseId> releases;
+        };
+        std::map<ReleaseType, ReleaseContainer> _releaseContainers;
+        ReleaseContainer			_appearsOnReleaseContainer{};
+        InfiniteScrollingContainer* _trackContainer{};
+        Database::ArtistId			_artistId{};
+        bool						_needForceRefresh{};
+    };
 } // namespace UserInterface
 

@@ -1,5 +1,5 @@
 /*
- * copyright (c) 2021 emeric poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,24 +19,7 @@
 
 #pragma once
 
-#include "utils/String.hpp"
+#include "database/IdType.hpp"
 
-namespace API::Subsonic
-{
-    struct ProtocolVersion
-    {
-        unsigned major{};
-        unsigned minor{};
-        unsigned patch{};
-    };
-
-    static inline constexpr ProtocolVersion defaultServerProtocolVersion{ 1, 16, 0 };
-    static inline constexpr std::string_view serverVersion{ "5" };
-}
-
-namespace StringUtils
-{
-    template<>
-    std::optional<API::Subsonic::ProtocolVersion> readAs(std::string_view str);
-}
+LMS_DECLARE_IDTYPE(ReleaseTypeId)
 

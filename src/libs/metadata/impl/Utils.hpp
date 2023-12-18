@@ -39,13 +39,3 @@ namespace MetaData::Utils
 	// format is "artist name (role)"
 	PerformerArtist extractPerformerAndRole(std::string_view entry);
 }
-
-namespace StringUtils
-{
-	template<>
-	std::optional<MetaData::Release::PrimaryType> readAs(std::string_view str);
-
-	template<>
-	std::optional<MetaData::Release::SecondaryType> readAs(std::string_view str);
-}
-

@@ -180,7 +180,7 @@ namespace Database
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM artist");
     }
 
-    std::vector<Artist::pointer> Artist::find(Session& session, const std::string& name)
+    std::vector<Artist::pointer> Artist::find(Session& session, std::string_view name)
     {
         session.checkReadTransaction();
 

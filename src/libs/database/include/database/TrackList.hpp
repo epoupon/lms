@@ -88,10 +88,6 @@ namespace Database {
         std::vector<ObjectPtr<TrackListEntry>>		getEntries(std::optional<Range> range = {}) const;
         ObjectPtr<TrackListEntry>					getEntryByTrackAndDateTime(ObjectPtr<Track> track, const Wt::WDateTime& dateTime) const;
 
-        RangeResults<ObjectPtr<Artist>>			    getArtists(const std::vector<ClusterId>& clusters, std::optional<TrackArtistLinkType> linkType, ArtistSortMethod sortMethod, std::optional<Range> range, bool& moreResults) const;
-        RangeResults<ObjectPtr<Release>>			getReleases(const std::vector<ClusterId>& clusters, std::optional<Range> range, bool& moreResults) const;
-        RangeResults<ObjectPtr<Track>>				getTracks(const std::vector<ClusterId>& clusters, std::optional<Range> range, bool& moreResults) const;
-
         std::vector<TrackId>						getTrackIds() const;
         std::chrono::milliseconds					getDuration() const;
 

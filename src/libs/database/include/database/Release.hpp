@@ -21,6 +21,8 @@
 
 #include <filesystem>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <vector>
 
 #include <Wt/WDateTime.h>
@@ -30,6 +32,7 @@
 #include "database/ClusterId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
+#include "database/ReleaseTypeId.hpp"
 #include "database/Types.hpp"
 #include "database/UserId.hpp"
 #include "utils/EnumSet.hpp"
@@ -37,7 +40,6 @@
 
 namespace Database
 {
-
     class Artist;
     class Cluster;
     class ClusterType;
@@ -45,6 +47,34 @@ namespace Database
     class Session;
     class Track;
     class User;
+
+    class ReleaseType final : public Object<ReleaseType, ReleaseTypeId>
+    {
+    public:
+        ReleaseType() = default;
+        static pointer  find(Session& session, ReleaseTypeId id);
+        static pointer  find(Session& session, std::string_view name);
+
+        // Accessors
+        std::string_view getName() const { return _name; }
+
+        template<class Action>
+        void persist(Action& a)
+        {
+            Wt::Dbo::field(a, _name, "name");
+            Wt::Dbo::hasMany(a, _releases, Wt::Dbo::ManyToMany, "release_release_type", "", Wt::Dbo::OnDeleteCascade);
+        }
+
+    private:
+        static constexpr std::size_t _maxNameLength{ 128 };
+
+        friend class Session;
+        ReleaseType(std::string_view name);
+        static pointer create(Session& session, std::string_view name);
+
+        std::string _name;
+        Wt::Dbo::collection<Wt::Dbo::ptr<Release>>	_releases; 	// releases that match this type
+    };
 
     class Release final : public Object<Release, ReleaseId>
     {
@@ -62,9 +92,8 @@ namespace Database
             ArtistId                            artist;						// only releases that involved this user
             EnumSet<TrackArtistLinkType>        trackArtistLinkTypes; 			//    and for these link types
             EnumSet<TrackArtistLinkType>        excludedTrackArtistLinkTypes; 	//    but not for these link types
-            std::optional<ReleaseTypePrimary>   primaryType;				// if set, matching this primary type
-            EnumSet<ReleaseTypeSecondary>       secondaryTypes;				// Matching all this (if any)
-            
+            std::string                         releaseType;    // If set, albums that has this release type
+
             FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
             FindParameters& setSortMethod(ReleaseSortMethod _sortMethod) { sortMethod = _sortMethod; return *this; }
@@ -79,6 +108,7 @@ namespace Database
                 excludedTrackArtistLinkTypes = _excludedTrackArtistLinkTypes;
                 return *this;
             }
+            FindParameters& setReleaseType(std::string_view _releaseType) { releaseType = _releaseType; return *this; }
         };
 
         Release() = default;
@@ -116,18 +146,18 @@ namespace Database
         std::vector<DiscInfo>               getDiscs() const;
         std::chrono::milliseconds           getDuration() const;
         Wt::WDateTime                       getLastWritten() const;
-        std::optional<ReleaseTypePrimary>   getPrimaryType() const { return _primaryType; }
-        EnumSet<ReleaseTypeSecondary>       getSecondaryTypes() const { return _secondaryTypes; }
         std::string_view                    getArtistDisplayName() const { return _artistDisplayName; }
         std::size_t                         getTracksCount() const;
+        std::vector<ObjectPtr<ReleaseType>> getReleaseTypes() const;
+        std::vector<std::string>            getReleaseTypeNames() const;
 
         // Setters
         void setName(std::string_view name) { _name = name; }
         void setMBID(const std::optional<UUID>& mbid) { _MBID = mbid ? mbid->getAsString() : ""; }
         void setTotalDisc(std::optional<int> totalDisc) { _totalDisc = totalDisc; }
-        void setPrimaryType(std::optional<ReleaseTypePrimary> type) { _primaryType = type; }
-        void setSecondaryTypes(EnumSet<ReleaseTypeSecondary> types) { _secondaryTypes = types; }
         void setArtistDisplayName(std::string_view name) { _artistDisplayName = name; }
+        void clearReleaseTypes();
+        void addReleaseType(ObjectPtr<ReleaseType> releaseType);
 
         // Get the artists of this release
         std::vector<ObjectPtr<Artist>>  getArtists(TrackArtistLinkType type = TrackArtistLinkType::Artist) const;
@@ -135,17 +165,15 @@ namespace Database
         bool                            hasVariousArtists() const;
         std::vector<pointer>            getSimilarReleases(std::optional<std::size_t> offset = {}, std::optional<std::size_t> count = {}) const;
 
-
         template<class Action>
         void persist(Action& a)
         {
             Wt::Dbo::field(a, _name, "name");
             Wt::Dbo::field(a, _MBID, "mbid");
             Wt::Dbo::field(a, _totalDisc, "total_disc");
-            Wt::Dbo::field(a, _primaryType, "primary_type");
-            Wt::Dbo::field(a, _secondaryTypes, "secondary_types");
             Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
             Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "release");
+            Wt::Dbo::hasMany(a, _releaseTypes, Wt::Dbo::ManyToMany, "release_release_type", "", Wt::Dbo::OnDeleteCascade);
         }
 
     private:
@@ -160,13 +188,10 @@ namespace Database
         std::string                         _name;
         std::string                         _MBID;
         std::optional<int>                  _totalDisc{};
-        std::optional<ReleaseTypePrimary>   _primaryType;
-        EnumSet<ReleaseTypeSecondary>       _secondaryTypes;
         std::string                         _artistDisplayName;
 
-        Wt::Dbo::collection<Wt::Dbo::ptr<Track>>    _tracks; // Tracks in the release
+        Wt::Dbo::collection<Wt::Dbo::ptr<Track>>        _tracks; // Tracks in the release
+        Wt::Dbo::collection<Wt::Dbo::ptr<ReleaseType>>  _releaseTypes; // Release types
     };
 
 } // namespace Database
-
-

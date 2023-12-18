@@ -79,6 +79,7 @@ namespace API::Subsonic
 
         artistNode.setAttribute("id", idToString(artist->getId()));
         artistNode.setAttribute("name", artist->getName());
+        artistNode.setAttribute("coverArt", idToString(artist->getId()));
 
         if (id3)
         {

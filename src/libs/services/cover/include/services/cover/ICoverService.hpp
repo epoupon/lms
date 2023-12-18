@@ -22,6 +22,7 @@
 #include <filesystem>
 #include <memory>
 
+#include "database/ArtistId.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 #include "image/IEncodedImage.hpp"
@@ -40,6 +41,7 @@ namespace Cover
 
         virtual std::shared_ptr<Image::IEncodedImage> getFromTrack(Database::TrackId trackId, Image::ImageSize width) = 0;
         virtual std::shared_ptr<Image::IEncodedImage> getFromRelease(Database::ReleaseId releaseId, Image::ImageSize width) = 0;
+        virtual std::shared_ptr<Image::IEncodedImage> getFromArtist(Database::ArtistId artistId, Image::ImageSize width) = 0;
 
         virtual std::shared_ptr<Image::IEncodedImage> getDefault(Image::ImageSize width) = 0;
 

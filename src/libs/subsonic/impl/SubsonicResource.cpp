@@ -182,7 +182,7 @@ namespace API::Subsonic
             {"/getAlbumInfo2",          {handleNotImplemented}},
             {"/getSimilarSongs",        {handleGetSimilarSongsRequest}},
             {"/getSimilarSongs2",       {handleGetSimilarSongs2Request}},
-            {"/getTopSongs",            {handleNotImplemented}},
+            {"/getTopSongs",            {handleGetTopSongs}},
 
             // Album/song lists
             {"/getAlbumList",           {handleGetAlbumListRequest}},

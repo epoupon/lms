@@ -162,4 +162,21 @@ namespace PathUtils
 
         return false;
     }
+
+    std::filesystem::path getLongestCommonPath(const std::filesystem::path& path1, const std::filesystem::path& path2)
+    {
+        std::filesystem::path longestCommonPath;
+
+        auto it1{ path1.begin() };
+        auto it2{ path2.begin() };
+
+        while (it1 != std::cend(path1) && it2 != std::cend(path2) && *it1 == *it2)
+        {
+            longestCommonPath /= *it1;
+            ++it1;
+            ++it2;
+        }
+
+        return longestCommonPath;
+    }
 } // ns PathUtils

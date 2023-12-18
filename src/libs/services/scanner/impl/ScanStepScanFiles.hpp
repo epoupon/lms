@@ -41,6 +41,6 @@ namespace Scanner
         void scanAudioFile(const std::filesystem::path& file, ScanContext& context);
 
         std::unique_ptr<MetaData::IParser>  _metadataParser;
-        const std::vector<std::string>      _tagsToParse{ "GENRE", "MOOD", "LANGUAGE", "ALBUMGROUPING" };
+        const std::vector<std::string>      _extraTagsToParse{ "GENRE", "MOOD", "LANGUAGE", "ALBUMGROUPING" };
     };
 }

@@ -26,6 +26,7 @@
 #include "database/Track.hpp"
 #include "database/User.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
+#include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/ILogger.hpp"
 #include "utils/Random.hpp"
 #include "utils/Service.hpp"
@@ -480,4 +481,34 @@ namespace API::Subsonic
         return handleGetSimilarSongsRequestCommon(context, true /* id3 */);
     }
 
+    Response handleGetTopSongs(RequestContext& context)
+    {
+        // Mandatory params
+        std::string_view artistName{ getMandatoryParameterAs<std::string_view>(context.parameters, "artist") };
+        std::size_t count{ getParameterAs<std::size_t>(context.parameters, "count").value_or(50) };
+        if (count > defaultMaxCountSize)
+            throw ParameterValueTooHighGenericError{ "count", defaultMaxCountSize };
+
+        auto transaction{ context.dbSession.createReadTransaction() };
+
+        const auto artists{ Artist::find(context.dbSession, artistName) };
+        if (artists.size() != 1)
+            throw RequestedDataNotFoundError{};
+
+        User::pointer user{ User::find(context.dbSession, context.userId) };
+        if (!user)
+            throw UserNotAuthorizedError{};
+
+        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response::Node& topSongs{ response.createNode("topSongs") };
+
+        const auto trackIds{ Service<Scrobbling::IScrobblingService>::get()->getTopTracks(context.userId, artists.front()->getId(), {}, Database::Range{ 0, count }) };
+        for (const TrackId trackId : trackIds.results)
+        {
+            if (Track::pointer track{ Track::find(context.dbSession, trackId) })
+                topSongs.addArrayChild("song", createSongNode(context, track, user));
+        }
+
+        return response;
+    }
 }

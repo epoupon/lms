@@ -190,12 +190,12 @@
 	<plural case="1">Producers</plural>
 </message>
 <message id="Lms.Explore.Artists.linktype-releaseartist">
-	<plural case="0">Album artists</plural>
-	<plural case="1">Album artist</plural>
+	<plural case="0">Album artist</plural>
+	<plural case="1">Album artists</plural>
 </message>
 <message id="Lms.Explore.Artists.linktype-remixer">
-	<plural case="0">Remixers</plural>
-	<plural case="1">Remixer</plural>
+	<plural case="0">Remixer</plural>
+	<plural case="1">Remixers</plural>
 </message>
 
 <!--Explore:Release-->
@@ -213,6 +213,7 @@
 <message id="Lms.Explore.Release.type-secondary-compilation">Compilation</message>
 <message id="Lms.Explore.Release.type-secondary-demo">Demo</message>
 <message id="Lms.Explore.Release.type-secondary-djmix">DJ-mix</message>
+<message id="Lms.Explore.Release.type-secondary-field-recording">Field recording</message>
 <message id="Lms.Explore.Release.type-secondary-interview">Interview</message>
 <message id="Lms.Explore.Release.type-secondary-live">Live</message>
 <message id="Lms.Explore.Release.type-secondary-mixtape-street">Mixtape/Street</message>

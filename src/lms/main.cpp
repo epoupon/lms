@@ -292,7 +292,7 @@ int main(int argc, char* argv[])
         scannerService->getEvents().scanComplete.connect([&]
             {
                 // Flush cover cache even if no changes:
-                // covers may be external files that changed and we don't keep track of them
+                // covers may be external files that changed and we don't keep track of them for now (but we should)
                 coverService->flushCache();
             });
 

@@ -19,6 +19,7 @@
 
 #include "Playlist.hpp"
 
+#include "database/Track.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
 #include "SubsonicId.hpp"
@@ -40,6 +41,9 @@ namespace API::Subsonic
         playlistNode.setAttribute("public", tracklist->isPublic());
         playlistNode.setAttribute("created", reportedDummyDate);
         playlistNode.setAttribute("owner", tracklist->getUser()->getLoginName());
+
+        if (const auto entry {tracklist->getEntry(0)})
+            playlistNode.setAttribute("coverArt", idToString(entry->getTrack()->getId()));
 
         return playlistNode;
     }

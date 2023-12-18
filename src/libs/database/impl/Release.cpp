@@ -30,6 +30,7 @@
 #include "SqlQuery.hpp"
 #include "EnumSetTraits.hpp"
 #include "IdTypeTraits.hpp"
+#include "StringViewTraits.hpp"
 #include "Utils.hpp"
 
 namespace Database
@@ -51,6 +52,13 @@ namespace Database
                 || params.clusters.size() == 1)
             {
                 query.join("track t ON t.release_id = r.id");
+            }
+
+            if (!params.releaseType.empty())
+            {
+                query.join("release_release_type r_r_t ON r_r_t.release_id = r.id");
+                query.join("release_type r_t ON r_t.id = r_r_t.release_type_id")
+                    .where("r_t.name = ?").bind(params.releaseType);
             }
 
             if (params.writtenAfter.isValid())
@@ -148,11 +156,6 @@ namespace Database
                 query.where(oss.str());
             }
 
-            if (params.primaryType)
-                query.where("primary_type = ?").bind(*params.primaryType);
-            if (!params.secondaryTypes.empty())
-                query.where("secondary_type = ?").bind(params.secondaryTypes);
-
             switch (params.sortMethod)
             {
             case ReleaseSortMethod::None:
@@ -183,6 +186,36 @@ namespace Database
 
             return query;
         }
+    }
+
+    ReleaseType::ReleaseType(std::string_view name)
+        : _name{ std::string(name, 0 , _maxNameLength) }
+    {
+    }
+
+    ReleaseType::pointer ReleaseType::create(Session& session, std::string_view name)
+    {
+        return session.getDboSession().add(std::unique_ptr<ReleaseType> {new ReleaseType{ name }});
+    }
+
+    ReleaseType::pointer ReleaseType::find(Session& session, ReleaseTypeId id)
+    {
+        session.checkReadTransaction();
+
+        return session.getDboSession()
+            .find<ReleaseType>()
+            .where("id = ?").bind(id)
+            .resultValue();
+    }
+
+    ReleaseType::pointer ReleaseType::find(Session& session, std::string_view name)
+    {
+        session.checkReadTransaction();
+
+        return session.getDboSession()
+            .find<ReleaseType>()
+            .where("name = ?").bind(name)
+            .resultValue();
     }
 
     Release::Release(const std::string& name, const std::optional<UUID>& MBID)
@@ -448,6 +481,16 @@ namespace Database
         return std::vector<pointer>(res.begin(), res.end());
     }
 
+    void Release::clearReleaseTypes()
+    {
+        _releaseTypes.clear();
+    }
+
+    void Release::addReleaseType(ObjectPtr<ReleaseType> releaseType)
+    {
+        _releaseTypes.insert(getDboPtr(releaseType));
+    }
+
     bool Release::hasVariousArtists() const
     {
         // TODO optimize
@@ -457,6 +500,21 @@ namespace Database
     std::size_t Release::getTracksCount() const
     {
         return _tracks.size();
+    }
+
+    std::vector<ObjectPtr<ReleaseType>> Release::getReleaseTypes() const
+    {
+        return std::vector<ObjectPtr<ReleaseType>>(_releaseTypes.begin(), _releaseTypes.end());
+    }
+
+    std::vector<std::string> Release::getReleaseTypeNames() const
+    {
+        std::vector<std::string> res;
+
+        for (const auto& releaseType : _releaseTypes)
+            res.push_back(std::string{ releaseType->getName() });
+
+        return res;
     }
 
     std::chrono::milliseconds Release::getDuration() const
