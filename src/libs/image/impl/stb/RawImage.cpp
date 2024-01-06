@@ -25,6 +25,8 @@
 #define STBIR_DEFAULT_FILTER_DOWNSAMPLE   STBIR_FILTER_MITCHELL
 #define STBIR_DEFAULT_FILTER_UPSAMPLE   STBIR_FILTER_CATMULLROM
 
+#define STBI_FAILURE_USERMSG
+
 #include <stb_image.h>
 #include <stb_image_resize.h>
 
@@ -34,99 +36,92 @@
 
 namespace Image
 {
-	std::unique_ptr<IRawImage> decodeImage(const std::byte* encodedData, std::size_t encodedDataSize)
-	{
-		return std::make_unique<STB::RawImage>(encodedData, encodedDataSize);
-	}
+    std::unique_ptr<IRawImage> decodeImage(const std::byte* encodedData, std::size_t encodedDataSize)
+    {
+        return std::make_unique<STB::RawImage>(encodedData, encodedDataSize);
+    }
 
-	std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path)
-	{
-		return std::make_unique<STB::RawImage>(path);
-	}
+    std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path)
+    {
+        return std::make_unique<STB::RawImage>(path);
+    }
 
-	void
-	init(const std::filesystem::path&)
-	{
-	}
+    void init(const std::filesystem::path&)
+    {
+    }
 }
 
 namespace Image::STB
 {
-	RawImage::RawImage(const std::byte* encodedData, std::size_t encodedDataSize)
-	{
-		int n;
-		_data = UniquePtrFree {stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(encodedData), encodedDataSize, &_width, &_height, &n, 3), std::free};
-		if (!_data)
-			throw ImageException {"Cannot load image from memory"};
-	}
+    RawImage::RawImage(const std::byte* encodedData, std::size_t encodedDataSize)
+    {
+        int n;
+        _data = UniquePtrFree{ ::stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(encodedData), encodedDataSize, &_width, &_height, &n, 3), std::free };
+        if (!_data)
+            throw ImageException{ "Cannot load image from memory: " + std::string{ ::stbi_failure_reason() } };
+    }
 
-	RawImage::RawImage(const std::filesystem::path& p)
-	{
-		int n;
-		_data = UniquePtrFree {stbi_load(p.string().c_str(), &_width, &_height, &n, 3), std::free};
-		if (!_data)
-			throw ImageException {"Cannot load image from memory"};
-	}
+    RawImage::RawImage(const std::filesystem::path& p)
+    {
+        int n;
+        _data = UniquePtrFree{ stbi_load(p.string().c_str(), &_width, &_height, &n, 3), std::free };
+        if (!_data)
+            throw ImageException{ "Cannot load image from file: " + std::string{ ::stbi_failure_reason() } };
+    }
 
-	void
-	RawImage::resize(ImageSize width)
-	{
-		size_t height;
-		if (_width == _height)
-		{
-			height = width;
-		}
-		else if (_width > _height)
-		{
-			height = (size_t)((float)width/_width*_height);
-		}
-		else
-		{
-			height = width;
-			width = (size_t)((float)height/_height*_width);
-		}
+    void RawImage::resize(ImageSize width)
+    {
+        size_t height;
+        if (_width == _height)
+        {
+            height = width;
+        }
+        else if (_width > _height)
+        {
+            height = (size_t)((float)width / _width * _height);
+        }
+        else
+        {
+            height = width;
+            width = (size_t)((float)height / _height * _width);
+        }
 
-		UniquePtrFree resizedData {reinterpret_cast<unsigned char*>(malloc(width*height*3)), std::free};
-		if (!resizedData)
-			throw ImageException {"Cannot allocate memory for resized image!"};
+        UniquePtrFree resizedData{ reinterpret_cast<unsigned char*>(malloc(width * height * 3)), std::free };
+        if (!resizedData)
+            throw ImageException{ "Cannot allocate memory for resized image!" };
 
-		if (stbir_resize_uint8_srgb(reinterpret_cast<const unsigned char*>(_data.get()), _width, _height, 0,
-					reinterpret_cast<unsigned char*>(resizedData.get()), width, height, 0,
-					3, STBIR_ALPHA_CHANNEL_NONE, 0) == 0)
-		{
-			throw ImageException {"Failed to resize image!"};
-		}
+        if (::stbir_resize_uint8_srgb(reinterpret_cast<const unsigned char*>(_data.get()), _width, _height, 0,
+            reinterpret_cast<unsigned char*>(resizedData.get()), width, height, 0,
+            3, STBIR_ALPHA_CHANNEL_NONE, 0) == 0)
+        {
+            throw ImageException{ "Failed to resize image:" + std::string{ ::stbi_failure_reason() } };
+        }
 
-		_data = std::move(resizedData);
-		_height = height;
-		_width = width;
-	}
+        _data = std::move(resizedData);
+        _height = height;
+        _width = width;
+    }
 
-	std::unique_ptr<IEncodedImage>
-	RawImage::encodeToJPEG(unsigned quality) const
-	{
-		return std::make_unique<JPEGImage>(*this, quality);
-	}
+    std::unique_ptr<IEncodedImage> RawImage::encodeToJPEG(unsigned quality) const
+    {
+        return std::make_unique<JPEGImage>(*this, quality);
+    }
 
-	ImageSize
-	RawImage::getWidth() const
-	{
-		return _width;
-	}
+    ImageSize RawImage::getWidth() const
+    {
+        return _width;
+    }
 
-	ImageSize
-	RawImage::getHeight() const
-	{
-		return _height;
-	}
+    ImageSize RawImage::getHeight() const
+    {
+        return _height;
+    }
 
-	const std::byte*
-	RawImage::getData() const
-	{
-		if (!_data)
-			return nullptr;
+    const std::byte* RawImage::getData() const
+    {
+        if (!_data)
+            return nullptr;
 
-		return reinterpret_cast<const std::byte*>(_data.get());
-	}
+        return reinterpret_cast<const std::byte*>(_data.get());
+    }
 }
-
