@@ -224,7 +224,11 @@ namespace Scanner
 
     void ScanStepScanFiles::process(ScanContext& context)
     {
-        _metadataParser->setUserExtraTags(_extraTagsToParse);
+        {
+            std::vector<std::string> tagsToParse{ _extraTagsToParse };
+            tagsToParse.insert(std::end(tagsToParse), std::cbegin(_settings.extraTags), std::cend(_settings.extraTags));
+            _metadataParser->setUserExtraTags(tagsToParse);
+        }
 
         context.currentStepStats.totalElems = context.stats.filesScanned;
 

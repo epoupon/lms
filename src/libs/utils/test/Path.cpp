@@ -66,6 +66,7 @@ TEST(Path, getLongestCommonPathIterator)
         {{"/foo", "/bar"}, "/"},
         {{"/foo/bar/file1.txt", "/foo/bar/file2.txt"}, "/foo/bar"},
         {{"/foo", "/foo/"}, "/foo"},
+        {{"/foo", "/foo"}, "/foo"},
         {{"/foo/", "/foo/"}, "/foo/"},
         {{"/foo/", "/foo/", "/bar"}, "/"},
         {{"/foo/", "/foo/", "/foo/bar"}, "/foo"},
