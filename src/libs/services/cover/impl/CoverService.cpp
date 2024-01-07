@@ -429,16 +429,22 @@ namespace Cover
         std::set<std::filesystem::path> parentPaths;
         {
             Session& session{ _db.getTLSSession() };
+
+            Track::FindParameters params;
+            params.setArtist(artistId, { TrackArtistLinkType::ReleaseArtist });
+
             auto transaction{ session.createReadTransaction() };
 
-            Track::find(session, Track::FindParameters{}.setArtist(artistId), [&](const Track::pointer& track)
+            Track::find(session, params, [&](const Track::pointer& track)
                 {
                     parentPaths.insert(track->getPath().parent_path());
                 });
         }
 
         if (parentPaths.size() == 1)
+        {
             artistImage = getFromDirectory(parentPaths.begin()->parent_path(), width, _artistFileNames, false);
+        }
         else if (parentPaths.size() > 1)
         {
             const std::filesystem::path longestCommonPath{ PathUtils::getLongestCommonPath(std::cbegin(parentPaths), std::cend(parentPaths)) };
