@@ -24,6 +24,7 @@ pkg_check_modules(LIBAV IMPORTED_TARGET libavcodec libavutil libavformat)
 pkg_check_modules(Archive REQUIRED IMPORTED_TARGET libarchive)
 find_package(PAM)
 find_package(STB)
+find_package(benchmark)
 
 # WT
 if (NOT Wt_FOUND)
@@ -69,6 +70,15 @@ elseif (IMAGE_LIBRARY STREQUAL STB AND NOT STB_FOUND)
 	message(FATAL_ERROR "STB not found")
 endif ()
 message(STATUS "IMAGE_LIBRARY set to ${IMAGE_LIBRARY}")
+
+# Benchmark
+if (benchmark_FOUND)
+	set(BUILD_BENCHMARKS ON)
+	message(STATUS "Google Benchmark found. Building benchmarks")
+else ()
+	set(BUILD_BENCHMARKS OFF)
+	message(STATUS "Google Benchmark not found. Not building benchmarks")
+endif()
 
 add_subdirectory(src)
 
