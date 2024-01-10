@@ -64,6 +64,7 @@ namespace
 
         Wt::Json::Object additionalInfo;
         additionalInfo["listening_from"] = "LMS";
+        additionalInfo["duration_ms"] = std::chrono::duration_cast<std::chrono::milliseconds>(track->getDuration()).count();
         if (track->getRelease())
         {
             if (auto MBID{ track->getRelease()->getMBID() })
