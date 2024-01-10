@@ -30,6 +30,7 @@
 
 #include "responses/Artist.hpp"
 #include "responses/DiscTitle.hpp"
+#include "responses/ItemDate.hpp"
 #include "responses/ItemGenre.hpp"
 #include "SubsonicId.hpp"
 
@@ -58,8 +59,8 @@ namespace API::Subsonic
         albumNode.setAttribute("created", StringUtils::toISO8601String(release->getLastWritten()));
         albumNode.setAttribute("id", idToString(release->getId()));
         albumNode.setAttribute("coverArt", idToString(release->getId()));
-        if (const Wt::WDate releaseDate{ release->getReleaseDate() }; releaseDate.isValid())
-            albumNode.setAttribute("year", releaseDate.year());
+        if (const auto year{ release->getYear() })
+            albumNode.setAttribute("year", *year);
 
         auto artists{ release->getReleaseArtists() };
         if (artists.empty())
@@ -149,11 +150,7 @@ namespace API::Subsonic
             albumNode.addArrayChild("artists", createArtistNode(artist));
 
         albumNode.setAttribute("displayArtist", release->getArtistDisplayName());
-
-        {
-            const Wt::WDate originalReleaseDate{ release->getOriginalReleaseDate() };
-            albumNode.setAttribute("originalReleaseDate", originalReleaseDate.isValid() ? StringUtils::toISO8601String(originalReleaseDate) : "");
-        }
+        albumNode.addChild("originalReleaseDate", createItemDateNode(release->getOriginalDate(), release->getOriginalYear()));
 
         {
             bool isCompilation{};

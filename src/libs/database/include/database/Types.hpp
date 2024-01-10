@@ -93,8 +93,8 @@ namespace Database
 
     struct DateRange
     {
-        Wt::WDate begin;
-        Wt::WDate end;
+        int begin;
+        int end;
 
         static DateRange fromYearRange(int from, int to);
     };

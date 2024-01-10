@@ -82,7 +82,9 @@ namespace MetaData
         Tags                        userExtraTags;
         std::chrono::milliseconds 	duration{};
         std::size_t                 bitrate{};
+        std::optional<int>          year{};
         Wt::WDate					date;
+        std::optional<int>          originalYear{};
         Wt::WDate					originalDate;
         bool						hasCover{};
         std::optional<UUID>			acoustID;

@@ -132,7 +132,9 @@ namespace Database {
         void setLastWriteTime(Wt::WDateTime time) { _fileLastWrite = time; }
         void setAddedTime(Wt::WDateTime time) { _fileAdded = time; }
         void setDate(const Wt::WDate& date) { _date = date; }
+        void setYear(std::optional<int> year) { _year = year; }
         void setOriginalDate(const Wt::WDate& date) { _originalDate = date; }
+        void setOriginalYear(std::optional<int> year) { _originalYear = year; }
         void setHasCover(bool hasCover) { _hasCover = hasCover; }
         void setTrackMBID(const std::optional<UUID>& MBID) { _trackMBID = MBID ? MBID->getAsString() : ""; }
         void setRecordingMBID(const std::optional<UUID>& MBID) { _recordingMBID = MBID ? MBID->getAsString() : ""; }
@@ -156,8 +158,10 @@ namespace Database {
         std::chrono::milliseconds	getDuration() const { return _duration; }
         std::size_t                 getBitrate() const { return _bitrate; }
         const Wt::WDateTime& getLastWritten() const { return _fileLastWrite; }
-        std::optional<int>			getYear() const;
-        std::optional<int>			getOriginalYear() const;
+        const Wt::WDate&            getDate() const { return _date; }
+        std::optional<int>			getYear() const { return _year; }
+        const Wt::WDate&            getOriginalDate() const { return _originalDate; }
+        std::optional<int>			getOriginalYear() const { return _originalYear; };
         Wt::WDateTime				getLastWriteTime() const { return _fileLastWrite; }
         Wt::WDateTime				getAddedTime() const { return _fileAdded; }
         bool						hasCover() const { return _hasCover; }
@@ -190,7 +194,9 @@ namespace Database {
             Wt::Dbo::field(a, _duration, "duration");
             Wt::Dbo::field(a, _bitrate, "bitrate");
             Wt::Dbo::field(a, _date, "date");
+            Wt::Dbo::field(a, _year, "year");
             Wt::Dbo::field(a, _originalDate, "original_date");
+            Wt::Dbo::field(a, _originalYear, "original_year");
             Wt::Dbo::field(a, _filePath, "file_path");
             Wt::Dbo::field(a, _fileLastWrite, "file_last_write");
             Wt::Dbo::field(a, _fileAdded, "file_added");
@@ -225,7 +231,9 @@ namespace Database {
         std::chrono::duration<int, std::milli>	_duration{};
         int                     _bitrate; // in bps
         Wt::WDate				_date;
+        std::optional<int>      _year;
         Wt::WDate				_originalDate;
+        std::optional<int>      _originalYear;
         std::string				_filePath;
         Wt::WDateTime			_fileLastWrite;
         Wt::WDateTime			_fileAdded;

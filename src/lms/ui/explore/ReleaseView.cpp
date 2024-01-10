@@ -247,7 +247,7 @@ namespace UserInterface
 
         bindString("name", Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);
 
-        Wt::WString year{ ReleaseHelpers::buildReleaseYearString(release->getReleaseDate(), release->getOriginalReleaseDate()) };
+        Wt::WString year{ ReleaseHelpers::buildReleaseYearString(release->getYear(), release->getOriginalYear()) };
         if (!year.empty())
         {
             setCondition("if-has-year", true);

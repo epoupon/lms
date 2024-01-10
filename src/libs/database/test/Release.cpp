@@ -402,8 +402,61 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseDate)
         track1A.get().modify()->setOriginalDate(release1OriginalDate);
         track1B.get().modify()->setOriginalDate(release1OriginalDate);
 
-        EXPECT_EQ(release1.get()->getReleaseDate(), release1Date);
-        EXPECT_EQ(release1.get()->getOriginalReleaseDate(), release1OriginalDate);
+        EXPECT_EQ(release1.get()->getDate(), release1Date);
+        EXPECT_EQ(release1.get()->getOriginalDate(), release1OriginalDate);
+    }
+
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        auto releases{ Release::findIds(session, Release::FindParameters {}.setDateRange(DateRange::fromYearRange(1950, 2000))) };
+        ASSERT_EQ(releases.results.size(), 1);
+        EXPECT_EQ(releases.results.front(), release1.getId());
+
+        releases = Release::findIds(session, Release::FindParameters{}.setDateRange(DateRange::fromYearRange(1994, 1994)));
+        ASSERT_EQ(releases.results.size(), 1);
+        EXPECT_EQ(releases.results.front(), release1.getId());
+
+        releases = Release::findIds(session, Release::FindParameters{}.setDateRange(DateRange::fromYearRange(1993, 1993)));
+        ASSERT_EQ(releases.results.size(), 0);
+    }
+}
+
+TEST_F(DatabaseFixture, MultiTracksSingleReleaseYear)
+{
+    ScopedRelease release1{ session, "MyRelease1" };
+    ScopedRelease release2{ session, "MyRelease2" };
+    const int release1Year{ 1994 };
+    const int release1OriginalYear{ 1993 };
+
+    ScopedTrack track1A{ session, "MyTrack1A" };
+    ScopedTrack track1B{ session, "MyTrack1B" };
+    ScopedTrack track2A{ session, "MyTrack2A" };
+    ScopedTrack track2B{ session, "MyTrack2B" };
+
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        const auto releases{ Release::findIds(session, Release::FindParameters {}.setDateRange(DateRange::fromYearRange(0, 3000))) };
+        EXPECT_EQ(releases.results.size(), 0);
+    }
+
+    {
+        auto transaction{ session.createWriteTransaction() };
+
+        track1A.get().modify()->setRelease(release1.get());
+        track1B.get().modify()->setRelease(release1.get());
+        track2A.get().modify()->setRelease(release2.get());
+        track2B.get().modify()->setRelease(release2.get());
+
+
+        track1A.get().modify()->setYear(release1Year);
+        track1B.get().modify()->setYear(release1Year);
+        track1A.get().modify()->setOriginalYear(release1OriginalYear);
+        track1B.get().modify()->setOriginalYear(release1OriginalYear);
+
+        EXPECT_EQ(release1.get()->getYear(), release1Year);
+        EXPECT_EQ(release1.get()->getOriginalYear(), release1OriginalYear);
     }
 
     {

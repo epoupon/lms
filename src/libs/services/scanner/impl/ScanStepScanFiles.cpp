@@ -443,11 +443,17 @@ namespace Scanner
         track.modify()->setTrackNumber(trackInfo->position);
         track.modify()->setDiscNumber(trackInfo->medium ? trackInfo->medium->position : std::nullopt);
         track.modify()->setDate(trackInfo->date);
+        track.modify()->setYear(trackInfo->year);
         track.modify()->setOriginalDate(trackInfo->originalDate);
+        track.modify()->setOriginalYear(trackInfo->originalYear);
 
-        // If a file has an OriginalYear but no Year, set it to ease filtering
+        // If a file has an OriginalDate but no date, set it to ease filtering
         if (!trackInfo->date.isValid() && trackInfo->originalDate.isValid())
             track.modify()->setDate(trackInfo->originalDate);
+        
+        // If a file has an OriginalYear but no Year, set it to ease filtering
+        if (!trackInfo->year && trackInfo->originalYear)
+            track.modify()->setYear(trackInfo->originalYear);
 
         track.modify()->setRecordingMBID(trackInfo->recordingMBID);
         track.modify()->setTrackMBID(trackInfo->mbid);

@@ -66,8 +66,8 @@ namespace Database
 
             if (params.dateRange)
             {
-                query.where("t.date >= ?").bind(params.dateRange->begin);
-                query.where("t.date <= ?").bind(params.dateRange->end);
+                query.where("COALESCE(CAST(SUBSTR(t.date, 1, 4) AS INTEGER), t.year) >= ?").bind(params.dateRange->begin);
+                query.where("COALESCE(CAST(SUBSTR(t.date, 1, 4) AS INTEGER), t.year) <= ?").bind(params.dateRange->end);
             }
 
             for (std::string_view keyword : params.keywords)
@@ -170,13 +170,13 @@ namespace Database
                 query.orderBy("t.file_last_write DESC");
                 break;
             case ReleaseSortMethod::Date:
-                query.orderBy("t.date, r.name COLLATE NOCASE");
+                query.orderBy("COALESCE(t.date, CAST(t.year AS TEXT)), r.name COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::OriginalDate:
-                query.orderBy("CASE WHEN t.original_date IS NULL THEN t.date ELSE t.original_date END, t.date, r.name COLLATE NOCASE");
+                query.orderBy("COALESCE(original_date, CAST(original_year AS TEXT), date, CAST(year AS TEXT)), r.name COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::OriginalDateDesc:
-                query.orderBy("CASE WHEN t.original_date IS NULL THEN t.date ELSE t.original_date END DESC, t.date, r.name COLLATE NOCASE");
+                query.orderBy("COALESCE(original_date, CAST(original_year AS TEXT), date, CAST(year AS TEXT)) DESC, r.name COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::StarredDateDesc:
                 assert(params.starringUser.isValid());
@@ -359,17 +359,17 @@ namespace Database
         return discs;
     }
 
-    Wt::WDate Release::getReleaseDate() const
+    Wt::WDate Release::getDate() const
     {
-        return getReleaseDate(false);
+        return getDate(false);
     }
 
-    Wt::WDate Release::getOriginalReleaseDate() const
+    Wt::WDate Release::getOriginalDate() const
     {
-        return getReleaseDate(true);
+        return getDate(true);
     }
 
-    Wt::WDate Release::getReleaseDate(bool original) const
+    Wt::WDate Release::getDate(bool original) const
     {
         assert(session());
 
@@ -387,6 +387,35 @@ namespace Database
             return {};
 
         return dates.front();
+    }
+    
+    std::optional<int> Release::getYear() const
+    {
+        return getYear(false);
+    }
+
+    std::optional<int> Release::getOriginalYear() const
+    {
+        return getYear(true);
+    }
+
+    std::optional<int> Release::getYear(bool original) const
+    {
+        assert(session());
+
+        const char* field{ original ? "original_year" : "year" };
+
+        auto years{ session()->query<std::optional<int>>(
+                std::string {"SELECT "} + "t." + field + " FROM track t INNER JOIN release r ON r.id = t.release_id")
+            .where("r.id = ?").bind(getId())
+            .groupBy(field)
+            .resultList() };
+
+        // various years => invalid years
+        if (years.empty() || years.size() > 1)
+            return std::nullopt;
+
+        return years.front();
     }
 
     std::optional<std::string> Release::getCopyright() const

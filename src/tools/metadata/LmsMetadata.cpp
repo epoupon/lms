@@ -172,9 +172,13 @@ namespace
 
         if (track->date.isValid())
             std::cout << "Date: " << track->date.toString("yyyy-MM-dd") << std::endl;
+        if (track->year)
+            std::cout << "Year: " << *track->year << std::endl;
 
         if (track->originalDate.isValid())
             std::cout << "Original date: " << track->originalDate.toString("yyyy-MM-dd") << std::endl;
+        if (track->originalYear)
+            std::cout << "Original year: " << *track->originalYear << std::endl;
 
         std::cout << "HasCover = " << std::boolalpha << track->hasCover << std::endl;
 

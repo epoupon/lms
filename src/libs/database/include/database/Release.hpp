@@ -132,8 +132,10 @@ namespace Database
         std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const;
 
         // Utility functions (if all tracks have the same values, which is legit to not be the case)
-        Wt::WDate                   getReleaseDate() const;
-        Wt::WDate                   getOriginalReleaseDate() const;
+        Wt::WDate                   getDate() const;
+        std::optional<int>          getYear() const;
+        Wt::WDate                   getOriginalDate() const;
+        std::optional<int>          getOriginalYear() const;
         std::optional<std::string>  getCopyright() const;
         std::optional<std::string>  getCopyrightURL() const;
         std::size_t                 getMeanBitrate() const;
@@ -181,7 +183,8 @@ namespace Database
         Release(const std::string& name, const std::optional<UUID>& MBID = {});
         static pointer create(Session& session, const std::string& name, const std::optional<UUID>& MBID = {});
 
-        Wt::WDate getReleaseDate(bool original) const;
+        Wt::WDate getDate(bool original) const;
+        std::optional<int> getYear(bool original) const;
 
         static constexpr std::size_t _maxNameLength{ 128 };
 

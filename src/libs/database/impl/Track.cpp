@@ -158,7 +158,7 @@ namespace Database
                 query.orderBy("t.name COLLATE NOCASE");
                 break;
             case TrackSortMethod::DateDescAndRelease:
-                query.orderBy("t.date DESC,t.release_id,t.disc_number,t.track_number");
+                query.orderBy("COALESCE(t.date, CAST(t.year AS TEXT)) DESC,t.release_id,t.disc_number,t.track_number");
                 break;
             case TrackSortMethod::Release:
                 query.orderBy("t.disc_number,t.track_number");
@@ -380,16 +380,6 @@ namespace Database
         _clusters.clear();
         for (const ObjectPtr<Cluster>& cluster : clusters)
             _clusters.insert(getDboPtr(cluster));
-    }
-
-    std::optional<int> Track::getYear() const
-    {
-        return (_date.isValid() ? std::make_optional<int>(_date.year()) : std::nullopt);
-    }
-
-    std::optional<int> Track::getOriginalYear() const
-    {
-        return (_originalDate.isValid() ? std::make_optional<int>(_originalDate.year()) : std::nullopt);
     }
 
     std::optional<std::string> Track::getCopyright() const
