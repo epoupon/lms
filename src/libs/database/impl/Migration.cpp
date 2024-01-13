@@ -299,6 +299,16 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
         session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV49(Session& session)
+    {
+        // Add year / originalYear fields, as date / originalDate are not enough (we don't want a wrong date but year or nothing)
+        session.getDboSession().execute("ALTER TABLE track ADD year INTEGER");
+        session.getDboSession().execute("ALTER TABLE track ADD original_year INTEGER");
+
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
+
     void doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -326,6 +336,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
             {46, migrateFromV46},
             {47, migrateFromV47},
             {48, migrateFromV48},
+            {49, migrateFromV49},
         };
 
         {

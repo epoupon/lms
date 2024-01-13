@@ -247,7 +247,7 @@ namespace UserInterface
 
         bindString("name", Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);
 
-        Wt::WString year{ ReleaseHelpers::buildReleaseYearString(release->getReleaseDate(), release->getOriginalReleaseDate()) };
+        Wt::WString year{ ReleaseHelpers::buildReleaseYearString(release->getYear(), release->getOriginalYear()) };
         if (!year.empty())
         {
             setCondition("if-has-year", true);
@@ -394,6 +394,7 @@ namespace UserInterface
                 entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
                 const auto artists{ track->getArtistIds({TrackArtistLinkType::Artist}) };
+                // TODO: display artist if it is single and not the one of the release (variousArtists is false in that case)
                 if (variousArtists && !artists.empty())
                 {
                     entry->setCondition("if-has-artists", true);

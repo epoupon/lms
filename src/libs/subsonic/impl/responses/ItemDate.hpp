@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,35 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/Types.hpp"
+#pragma once
 
-#include <set>
+#include <Wt/WDate.h>
+#include "SubsonicResponse.hpp"
 
-namespace Database
+namespace API::Subsonic
 {
-    static const std::set<Bitrate> allowedAudioBitrates
-    {
-        64000,
-        96000,
-        128000,
-        192000,
-        320000,
-    };
-
-    void visitAllowedAudioBitrates(std::function<void(Bitrate)> func)
-    {
-        for (Bitrate bitrate : allowedAudioBitrates)
-            func(bitrate);
-    }
-
-    bool isAudioBitrateAllowed(Bitrate bitrate)
-    {
-        return allowedAudioBitrates.find(bitrate) != std::cend(allowedAudioBitrates);
-    }
-
-    DateRange DateRange::fromYearRange(int from, int to)
-    {
-        return DateRange{ from, to };
-    }
+    Response::Node createItemDateNode(const Wt::WDate& date, std::optional<int> year);
 }
-

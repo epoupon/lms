@@ -24,6 +24,7 @@
 #include "av/IAudioFile.hpp"
 
 #include "database/Db.hpp"
+#include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
@@ -426,36 +427,86 @@ namespace Cover
         if (artistImage)
             return artistImage;
 
-        std::set<std::filesystem::path> parentPaths;
+        std::string artistName;
+        std::string artistMBID;
+
+        std::set<std::filesystem::path> releasePaths;
+        std::set<std::filesystem::path> multiArtistReleasePaths;
+
         {
             Session& session{ _db.getTLSSession() };
+
+            auto transaction{ session.createReadTransaction() };
+
+            const Artist::pointer artist{ Artist::find(session, artistId) };
+            if (!artist)
+                return artistImage;
+
+            artistName = artist->getName();
+            if (auto mbid{ artist->getMBID() })
+                artistMBID = mbid->getAsString();
 
             Track::FindParameters params;
             params.setArtist(artistId, { TrackArtistLinkType::ReleaseArtist });
 
-            auto transaction{ session.createReadTransaction() };
-
             Track::find(session, params, [&](const Track::pointer& track)
                 {
-                    parentPaths.insert(track->getPath().parent_path());
+                    Artist::FindParameters artistFindParams;
+                    artistFindParams.setTrack(track->getId());
+                    artistFindParams.setLinkType(TrackArtistLinkType::ReleaseArtist);
+
+                    const auto releaseArtists{ Artist::findIds(session, artistFindParams) };
+                    if (releaseArtists.results.size() == 1)
+                        releasePaths.insert(track->getPath().parent_path());
+                    else
+                        multiArtistReleasePaths.insert(track->getPath().parent_path());
                 });
         }
 
-        if (parentPaths.size() == 1)
+        std::vector<std::string> artistFileNames;
+        if (!artistMBID.empty())
+            artistFileNames.push_back(artistMBID);
+        artistFileNames.push_back(artistName);
+
+        std::vector<std::string> artistFileNamesWithGenericNames{ artistFileNames };
+        artistFileNamesWithGenericNames.insert(artistFileNamesWithGenericNames.end(), std::cbegin(_artistFileNames), std::cend(_artistFileNames));
+
+        // Expect layout like this:
+        // ReleaseArtist/Release/Tracks'
+        //              /artist-mbid.jpg
+        //              /artist-name.jpg
+        //              /artist.jpg
+        if (!releasePaths.empty())
         {
-            artistImage = getFromDirectory(parentPaths.begin()->parent_path(), width, _artistFileNames, false);
-        }
-        else if (parentPaths.size() > 1)
-        {
-            const std::filesystem::path longestCommonPath{ PathUtils::getLongestCommonPath(std::cbegin(parentPaths), std::cend(parentPaths)) };
-            artistImage = getFromDirectory(longestCommonPath, width, _artistFileNames, false);
+            const std::filesystem::path artistPath{ releasePaths.size() == 1 ? releasePaths.begin()->parent_path() : PathUtils::getLongestCommonPath(std::cbegin(releasePaths), std::cend(releasePaths)) };
+            artistImage = getFromDirectory(artistPath, width, artistFileNamesWithGenericNames, false);
         }
 
+        // Expect layout like this:
+        // ReleaseArtist/Release/Tracks'
+        //                      /artist-mbid.jpg
+        //                      /artist-name.jpg
+        //                      /artist.jpg
         if (!artistImage)
         {
-            for (const std::filesystem::path& parentPath : parentPaths)
+            for (const std::filesystem::path& releasePath : releasePaths)
             {
-                artistImage = getFromDirectory(parentPath, width, _artistFileNames, false);
+                artistImage = getFromDirectory(releasePath, width, artistFileNamesWithGenericNames, false);
+                if (artistImage)
+                    break;
+            }
+        }
+
+        // Expect layout like this:
+        // Only search for the artist's name in the release path, as we can't map a generic name to several artists
+        // ReleaseArtist/Release/Tracks'
+        //                      /artist-name.jpg
+        //                      /artist-mbid.jpg
+        if (!artistImage)
+        {
+            for (const std::filesystem::path& releasePath : multiArtistReleasePaths)
+            {
+                artistImage = getFromDirectory(releasePath, width, artistFileNames, false);
                 if (artistImage)
                     break;
             }

@@ -333,26 +333,22 @@ namespace MetaData
         }
         else if (tag == "DATE")
         {
-            // Higher priority than YEAR
             if (const Wt::WDate date{ Utils::parseDate(value) }; date.isValid())
                 track.date = date;
+            else if (!track.year)
+                track.year = StringUtils::readAs<int>(value);
         }
-        else if (tag == "YEAR" && !track.date.isValid())
-        {
-            // lower priority than DATE
-            track.date = Utils::parseDate(value);
-        }
+        else if (tag == "YEAR")
+            track.year = StringUtils::readAs<int>(value);
         else if (tag == "ORIGINALDATE")
         {
-            // Higher priority than ORIGINALYEAR
             if (const Wt::WDate date{ Utils::parseDate(value) }; date.isValid())
                 track.originalDate = date;
+            else if (!track.originalYear)
+                track.originalYear = StringUtils::readAs<int>(value);
         }
-        else if (tag == "ORIGINALYEAR" && !track.originalDate.isValid())
-        {
-            // Lower priority than ORIGINALDATE
-            track.originalDate = Utils::parseDate(value);
-        }
+        else if (tag == "ORIGINALYEAR")
+            track.originalYear = StringUtils::readAs<int>(value);
         else if (tag == "METADATA_BLOCK_PICTURE")
             track.hasCover = true;
         else if (tag == "COPYRIGHT")
@@ -509,6 +505,14 @@ namespace MetaData
 
         for (const auto& [tag, values] : tags)
             processTag(track, tag, values, debug);
+
+        // If a file has date but no year, set it
+        if (!track.year && track.date.isValid())
+            track.year = track.date.year();
+
+        // If a file has originalDate but no originalYear, set it
+        if (!track.originalYear && track.originalDate.isValid())
+            track.originalYear = track.originalDate.year();
 
         return track;
     }

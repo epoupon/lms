@@ -37,17 +37,23 @@ namespace MetaData::Utils
 
         for (const char* format : formats)
         {
-            std::tm tm = {};
+            std::tm tm{};
+            tm.tm_mon = -1;
+            tm.tm_mday = -1;
+
             std::istringstream ss{ std::string {dateStr} }; // TODO, remove extra copy here
             ss >> std::get_time(&tm, format);
             if (ss.fail())
                 continue;
 
+            if (tm.tm_mday <= 0 || tm.tm_mon < 0)
+                continue;
+
             const Wt::WDate res
             {
-                tm.tm_year + 1900,			// years since 1900
-                tm.tm_mon + 1,				// months since January – [0, 11]
-                tm.tm_mday ? tm.tm_mday : 1 // day of the month – [1, 31]
+                tm.tm_year + 1900,  // tm.tm_year: years since 1900
+                tm.tm_mon + 1,      // tm.tm_mon: months since January – [00, 11]
+                tm.tm_mday          // tm.tm_mday: day of the month – [1, 31]
             };
             if (!res.isValid())
                 continue;

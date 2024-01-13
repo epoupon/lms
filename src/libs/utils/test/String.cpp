@@ -155,7 +155,7 @@ TEST(StringUtils, escapeString)
     EXPECT_EQ(StringUtils::escapeString("**||", "*|", '_'), "_*_*_|_|");
 }
 
-TEST(StringUtils, readAs)
+TEST(StringUtils, readAs_bool)
 {
     EXPECT_EQ(StringUtils::readAs<bool>("true"), true);
     EXPECT_EQ(StringUtils::readAs<bool>("1"), true);
@@ -163,6 +163,19 @@ TEST(StringUtils, readAs)
     EXPECT_EQ(StringUtils::readAs<bool>("0"), false);
     EXPECT_EQ(StringUtils::readAs<bool>("foo"), std::nullopt);
     EXPECT_EQ(StringUtils::readAs<bool>(""), std::nullopt);
+}
+
+TEST(StringUtils, readAs_int)
+{
+    EXPECT_EQ(StringUtils::readAs<int>("1024"), 1024);
+    EXPECT_EQ(StringUtils::readAs<int>("0"), 0);
+    EXPECT_EQ(StringUtils::readAs<int>("-0"), 0);
+    EXPECT_EQ(StringUtils::readAs<int>("-1"), -1);
+    EXPECT_EQ(StringUtils::readAs<int>(""), std::nullopt);
+    EXPECT_EQ(StringUtils::readAs<int>("a"), std::nullopt);
+    EXPECT_EQ(StringUtils::readAs<int>("1024-1"), 1024);
+    EXPECT_EQ(StringUtils::readAs<int>("1024-"), 1024);
+    EXPECT_EQ(StringUtils::readAs<int>("1024/5"), 1024);
 }
 
 TEST(StringUtils, capitalize)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2023 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,35 +17,27 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/Types.hpp"
+#include "responses/Genre.hpp"
 
-#include <set>
+#include "database/Cluster.hpp"
 
-namespace Database
+namespace API::Subsonic
 {
-    static const std::set<Bitrate> allowedAudioBitrates
+    Response::Node createItemDateNode(const Wt::WDate& date, std::optional<int> year)
     {
-        64000,
-        96000,
-        128000,
-        192000,
-        320000,
-    };
+        Response::Node itemDateNode;
 
-    void visitAllowedAudioBitrates(std::function<void(Bitrate)> func)
-    {
-        for (Bitrate bitrate : allowedAudioBitrates)
-            func(bitrate);
-    }
+        if (date.isValid())
+        {
+            itemDateNode.setAttribute("year", date.year());
+            itemDateNode.setAttribute("month", date.month());
+            itemDateNode.setAttribute("day", date.day());
+        }
+        else if (year)
+        {
+            itemDateNode.setAttribute("year", *year);
+        }
 
-    bool isAudioBitrateAllowed(Bitrate bitrate)
-    {
-        return allowedAudioBitrates.find(bitrate) != std::cend(allowedAudioBitrates);
-    }
-
-    DateRange DateRange::fromYearRange(int from, int to)
-    {
-        return DateRange{ from, to };
+        return itemDateNode;
     }
 }
-

@@ -45,5 +45,5 @@ namespace UserInterface::ReleaseListHelpers
 namespace UserInterface::ReleaseHelpers
 {
     Wt::WString buildReleaseTypeString(const ReleaseType& releaseType);
-    Wt::WString buildReleaseYearString(const Wt::WDate& releaseDate, const Wt::WDate& originalReleaseDate);
+    Wt::WString buildReleaseYearString(std::optional<int> year, std::optional<int> originalYear);
 }

@@ -57,7 +57,7 @@ namespace UserInterface::ReleaseListHelpers
 
             if (showYear)
             {
-                Wt::WString year{ ReleaseHelpers::buildReleaseYearString(release->getReleaseDate(), release->getOriginalReleaseDate()) };
+                Wt::WString year{ ReleaseHelpers::buildReleaseYearString(release->getYear(), release->getOriginalYear()) };
                 if (!year.empty())
                 {
                     entry->setCondition("if-has-year", true);
@@ -136,18 +136,18 @@ namespace UserInterface::ReleaseHelpers
         return res;
     }
 
-    Wt::WString buildReleaseYearString(const Wt::WDate& releaseDate, const Wt::WDate& originalReleaseDate)
+    Wt::WString buildReleaseYearString(std::optional<int> year, std::optional<int> originalYear)
     {
         Wt::WString res;
 
         // Year can be here, but originalYear can't be here without year (enforced by scanner)
-        if (!releaseDate.isValid())
+        if (!year)
             return res;
 
-        if (originalReleaseDate.isValid() && originalReleaseDate.year() != releaseDate.year())
-            res = std::to_string(originalReleaseDate.year()) + " (" + std::to_string(releaseDate.year()) + ")";
+        if (originalYear && *originalYear != *year)
+            res = std::to_string(*originalYear) + " (" + std::to_string(*year) + ")";
         else
-            res = std::to_string(releaseDate.year());
+            res = std::to_string(*year);
 
         return res;
     }

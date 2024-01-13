@@ -100,8 +100,8 @@ namespace UserInterface
         {
             std::string releaseName;
 
-            if (const Wt::WDate releaseDate{ release->getReleaseDate() }; releaseDate.isValid())
-                releaseName += std::to_string(releaseDate.year()) + " - ";
+            if (const auto year{ release->getYear() })
+                releaseName += std::to_string(*year) + " - ";
             releaseName += StringUtils::replaceInString(release->getName(), "/", "_");
 
             return releaseName;
