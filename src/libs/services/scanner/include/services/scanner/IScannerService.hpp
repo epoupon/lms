@@ -38,6 +38,7 @@ namespace Scanner
 			virtual ~IScannerService() = default;
 
 			// Async requests
+			virtual void requestStop() = 0;
 			virtual void requestReload() = 0;
 			virtual void requestImmediateScan(bool force) = 0;
 

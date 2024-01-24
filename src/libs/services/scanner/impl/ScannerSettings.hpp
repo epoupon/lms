@@ -23,29 +23,38 @@
 #include <string>
 #include <vector>
 #include <Wt/WDateTime.h>
+#include "database/MediaLibraryId.hpp"
 #include "database/ScanSettings.hpp"
 
 namespace Scanner
 {
-	struct ScannerSettings
-	{
-		std::size_t											scanVersion {};
-		Wt::WTime											startTime;
-		Database::ScanSettings::UpdatePeriod 				updatePeriod {Database::ScanSettings::UpdatePeriod::Never};
-		std::vector<std::filesystem::path>					supportedExtensions;
-		std::filesystem::path								mediaDirectory;
-		bool												skipDuplicateMBID {};
-		std::vector<std::string>							extraTags;
+    struct ScannerSettings
+    {
+        std::size_t											scanVersion{};
+        Wt::WTime											startTime;
+        Database::ScanSettings::UpdatePeriod 				updatePeriod{ Database::ScanSettings::UpdatePeriod::Never };
+        std::vector<std::filesystem::path>					supportedExtensions;
+        bool												skipDuplicateMBID{};
+        std::vector<std::string>							extraTags;
 
-		bool operator==(const ScannerSettings& rhs) const
-		{
-			return scanVersion == rhs.scanVersion
-				&& startTime == rhs.startTime
-				&& updatePeriod == rhs.updatePeriod
-				&& supportedExtensions == rhs.supportedExtensions
-				&& mediaDirectory == rhs.mediaDirectory
-				&& skipDuplicateMBID == rhs.skipDuplicateMBID
-				&& extraTags == rhs.extraTags;
-		}
-	};
+        struct MediaLibraryInfo
+        {
+            Database::MediaLibraryId id;
+            std::filesystem::path rootDirectory;
+
+            bool operator==(const MediaLibraryInfo& other) const { return id == other.id && rootDirectory == other.rootDirectory; }
+        };
+        std::vector<MediaLibraryInfo>					    mediaLibraries;
+
+        bool operator==(const ScannerSettings& rhs) const
+        {
+            return scanVersion == rhs.scanVersion
+                && startTime == rhs.startTime
+                && updatePeriod == rhs.updatePeriod
+                && supportedExtensions == rhs.supportedExtensions
+                && mediaLibraries == rhs.mediaLibraries
+                && skipDuplicateMBID == rhs.skipDuplicateMBID
+                && extraTags == rhs.extraTags;
+        }
+    };
 }

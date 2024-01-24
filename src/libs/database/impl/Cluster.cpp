@@ -20,6 +20,7 @@
 #include "database/Cluster.hpp"
 
 #include "database/Artist.hpp"
+#include "database/MediaLibrary.hpp"
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"

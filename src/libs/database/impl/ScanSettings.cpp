@@ -21,12 +21,9 @@
 
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "utils/Path.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/String.hpp"
-
-#include "database/Cluster.hpp"
+#include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
+#include "utils/String.hpp"
 
 namespace Database
 {
@@ -66,11 +63,6 @@ namespace Database
     std::vector<std::string_view> ScanSettings::getExtraTagsToScan() const
     {
         return StringUtils::splitString(_extraTagsToScan, ";");
-    }
-
-    void ScanSettings::setMediaDirectory(const std::filesystem::path& p)
-    {
-        _mediaDirectory = StringUtils::stringTrimEnd(p.string(), "/\\");
     }
 
     void ScanSettings::setExtraTagsToScan(const std::vector<std::string_view>& extraTags)

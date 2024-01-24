@@ -63,7 +63,6 @@ namespace Database
 
         // Getters
         std::size_t				getScanVersion() const { return _scanVersion; }
-        std::filesystem::path	getMediaDirectory() const { return _mediaDirectory; }
         Wt::WTime				getUpdateStartTime() const { return _startTime; }
         UpdatePeriod			getUpdatePeriod() const { return _updatePeriod; }
         std::vector<std::string_view> getExtraTagsToScan() const;
@@ -72,7 +71,6 @@ namespace Database
 
         // Setters
         void addAudioFileExtension(const std::filesystem::path& ext);
-        void setMediaDirectory(const std::filesystem::path& p);
         void setUpdateStartTime(Wt::WTime t) { _startTime = t; }
         void setUpdatePeriod(UpdatePeriod p) { _updatePeriod = p; }
         void setExtraTagsToScan(const std::vector<std::string_view>& extraTags);
@@ -83,7 +81,6 @@ namespace Database
         void persist(Action& a)
         {
             Wt::Dbo::field(a, _scanVersion, "scan_version");
-            Wt::Dbo::field(a, _mediaDirectory, "media_directory");
             Wt::Dbo::field(a, _startTime, "start_time");
             Wt::Dbo::field(a, _updatePeriod, "update_period");
             Wt::Dbo::field(a, _audioFileExtensions, "audio_file_extensions");
@@ -93,7 +90,6 @@ namespace Database
 
     private:
         int         	        _scanVersion{};
-        std::string             _mediaDirectory;
         Wt::WTime               _startTime = Wt::WTime{ 0,0,0 };
         UpdatePeriod            _updatePeriod{ UpdatePeriod::Never };
         SimilarityEngineType    _similarityEngineType{ SimilarityEngineType::Clusters };

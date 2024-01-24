@@ -133,6 +133,32 @@ TEST_F(DatabaseFixture, Release_singleTrack)
     }
 }
 
+TEST_F(DatabaseFixture, Release_singleTrack_mediaLibrary)
+{
+    ScopedTrack track{ session, "MyTrack" };
+    ScopedRelease release{ session, "MyRelease" };
+    ScopedMediaLibrary library{ session };
+    ScopedMediaLibrary otherLibrary{ session };
+
+    {
+        auto transaction{ session.createWriteTransaction() };
+
+        track.get().modify()->setRelease(release.get());
+        track.get().modify()->setMediaLibrary(library.get());
+    }
+    {
+        auto transaction{ session.createReadTransaction() };
+        auto releases{ Release::findIds(session, Release::FindParameters{}.setMediaLibrary(library->getId())) };
+        ASSERT_EQ(releases.results.size(), 1);
+        EXPECT_EQ(releases.results.front(), release.getId());
+    }
+     {
+        auto transaction{ session.createReadTransaction() };
+        auto releases{ Release::findIds(session, Release::FindParameters{}.setMediaLibrary(otherLibrary->getId())) };
+        EXPECT_EQ(releases.results.size(), 0);
+    }
+}
+
 TEST_F(DatabaseFixture, Release_findByNameAndPath)
 {
     ScopedRelease release1{ session, "MyRelease" };

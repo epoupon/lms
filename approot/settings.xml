@@ -177,7 +177,7 @@
 		</div>
 		${</if-has-change-password>}
 		<div class="col-12">
-			${apply-btn class="btn btn-primary me-1"}${discard-btn class="btn btn-secondary"}
+			${save-btn class="btn btn-primary me-1"}${discard-btn class="btn btn-secondary"}
 		</div>
 	</form>
 </message>

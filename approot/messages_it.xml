@@ -5,7 +5,6 @@
 <!--Common-->
 <message id="Lms.add">Aggiungi</message>
 <message id="Lms.administration">Amministrazione</message>
-<message id="Lms.apply">Applica</message>
 <message id="Lms.cancel">Annulla</message>
 <message id="Lms.clusters">Tags</message>
 <message id="Lms.create">Crea</message>
@@ -57,7 +56,7 @@
 
 <message id="Lms.Admin.Database.scan-complete">Scansione completata: {1} file totali, {2} aggiunti, {3} aggiornati, {4} eliminati, {5} duplicati, {6} errati</message>
 <message id="Lms.Admin.Database.scan-launched">Scansione avviata!</message>
-<message id="Lms.Admin.Database.scan-options">Impostazioni scansione</message>
+<message id="Lms.Admin.Database.scan-settings">Impostazioni scansione</message>
 <message id="Lms.Admin.Database.settings-saved">Impostazioni salvate!</message>
 
 

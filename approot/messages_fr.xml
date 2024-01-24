@@ -5,7 +5,6 @@
 <!--Common-->
 <message id="Lms.add">Ajouter</message>
 <message id="Lms.administration">Administration</message>
-<message id="Lms.apply">Appliquer</message>
 <message id="Lms.cancel">Annuler</message>
 <message id="Lms.clusters">Tags</message>
 <message id="Lms.create">Créer</message>
@@ -54,10 +53,9 @@
 <message id="Lms.Admin.Database.menu-database"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Collection de musiques</message>
 <message id="Lms.Admin.Database.never">Jamais</message>
 <message id="Lms.Admin.Database.path">Dossier racine des fichiers de musique</message>
-<message id="Lms.Admin.Database.path-help">Les dossiers contenant un fichier <code>.lmsignore</code> sont ignorés</message>
 <message id="Lms.Admin.Database.scan-complete">Scan terminé : {1} fichiers, {2} ajouts, {3} mises à jour, {4} suppressions, {5} duplicatas, {6} erreurs</message>
 <message id="Lms.Admin.Database.scan-launched">Scan lancé !</message>
-<message id="Lms.Admin.Database.scan-options">Options </message>
+<message id="Lms.Admin.Database.scan-settings">Options </message>
 <message id="Lms.Admin.Database.settings-saved">Nouveaux paramètres sauvegardés !</message>
 <message id="Lms.Admin.Database.similarity-engine-type">Moteur de similarité</message>
 <message id="Lms.Admin.Database.similarity-engine-type.clusters">Basé sur les tags</message>

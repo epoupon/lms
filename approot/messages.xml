@@ -5,7 +5,6 @@
 <!--Common-->
 <message id="Lms.add">Add</message>
 <message id="Lms.administration">Administration</message>
-<message id="Lms.apply">Apply</message>
 <message id="Lms.cancel">Cancel</message>
 <message id="Lms.clusters">Tags</message>
 <message id="Lms.create">Create</message>
@@ -16,7 +15,6 @@
 <message id="Lms.loading">Loading...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Logout</message>
-<message id="Lms.not-a-directory">Not a directory</message>
 <message id="Lms.ok">Ok</message>
 <message id="Lms.password">Password</message>
 <message id="Lms.password-bad-login-combination">Bad login / password combination</message>
@@ -29,6 +27,7 @@
 <message id="Lms.passwords-dont-match">Passwords don't match</message>
 <message id="Lms.quit-other-session">Another session has been open. Reopen this one?</message>
 <message id="Lms.save">Save</message>
+<message id="Lms.settings-saved">Settings saved!</message>
 <message id="Lms.track-count">
 	<plural case="0">{1} track</plural>
 	<plural case="1">{1} tracks</plural>
@@ -45,20 +44,36 @@
 <message id="Lms.Error.user-not-found">User not found</message>
 
 <!--Administration-->
+<message id="Lms.Admin.menu-media-libraries"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Music libraries</message>
+<message id="Lms.Admin.menu-scan-settings"><i class="fa fa-fw fa-cogs" aria-hidden="true"></i> Scan settings</message>
+<message id="Lms.Admin.menu-scanner"><i class="fa fa-fw fa-wrench" aria-hidden="true"></i> Scanner</message>
+<message id="Lms.Admin.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Users</message>
+
+<!--MediaLibraries-->
+<message id="Lms.Admin.MediaLibraries.media-libraries">Music libraries</message>
+<message id="Lms.Admin.MediaLibrary.create-library">Create library</message>
+<message id="Lms.Admin.MediaLibrary.del-library-confirm">Delete library?</message>
+<message id="Lms.Admin.MediaLibrary.edit-library">Edit library</message>
+<message id="Lms.Admin.MediaLibrary.library-created">Library created!</message>
+<message id="Lms.Admin.MediaLibrary.library-deleted">Library deleted!</message>
+<message id="Lms.Admin.MediaLibrary.name">Library name</message>
+<message id="Lms.Admin.MediaLibrary.name-already-exists">Library name already exists</message>
+<message id="Lms.Admin.MediaLibrary.path-must-be-absolute">Path must be absolute</message>
+<message id="Lms.Admin.MediaLibrary.path-must-not-overlap">Path must not overlap that of another library</message>
+<message id="Lms.Admin.MediaLibrary.path-must-be-existing-directory">Path must be an existing directory</message>
+<message id="Lms.Admin.MediaLibrary.root-path">Root directory</message>
+
+<message id="Lms.Admin.Database.add-library">Add library</message>
 <message id="Lms.Admin.Database.daily">Daily</message>
-<message id="Lms.Admin.Database.database">Music collection</message>
 <message id="Lms.Admin.Database.extra-tags-to-scan">Extra tags to scan (use <kbd>;</kbd> as separator)</message>
 <message id="Lms.Admin.Database.hourly">Hourly</message>
 <message id="Lms.Admin.Database.immediate-scan">Scan now!</message>
 <message id="Lms.Admin.Database.monthly">Monthly</message>
-<message id="Lms.Admin.Database.menu-database"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Music collection</message>
 <message id="Lms.Admin.Database.never">Never</message>
-<message id="Lms.Admin.Database.path">Media root directory</message>
-<message id="Lms.Admin.Database.path-help">Directories containing a <code>.lmsignore</code> file are skipped</message>
+<message id="Lms.Admin.Database.scan-aborted">Scan aborted!</message>
 <message id="Lms.Admin.Database.scan-complete">Scan complete: {1} total files, {2} additions, {3} updates, {4} deletions, {5} duplicates, {6} errors</message>
 <message id="Lms.Admin.Database.scan-launched">Scan launched!</message>
-<message id="Lms.Admin.Database.scan-options">Scan options</message>
-<message id="Lms.Admin.Database.settings-saved">New settings saved!</message>
+<message id="Lms.Admin.Database.scan-settings">Scan settings</message>
 <message id="Lms.Admin.Database.similarity-engine-type">Similarity engine</message>
 <message id="Lms.Admin.Database.similarity-engine-type.clusters">Tag-based</message>
 <message id="Lms.Admin.Database.similarity-engine-type.none">None</message>
@@ -100,7 +115,6 @@
 <message id="Lms.Admin.Users.del-user-confirm">Delete user?</message>
 <message id="Lms.Admin.Users.demo">Demo</message>
 <message id="Lms.Admin.Users.users">Users</message>
-<message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Users</message>
 
 <!--User-->
 <message id="Lms.Admin.User.demo-account">Demo account</message>

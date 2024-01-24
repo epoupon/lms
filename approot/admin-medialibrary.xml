@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Admin.MediaLibrary.template">
+	<div class="modal fade" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">${title}</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+                <div class="modal-body">
+                    <form>
+                        <div class="row">
+                            <div class="col-12">
+                                <label class="form-label" for="${id:name}">
+                                    ${tr:Lms.Admin.MediaLibrary.name}
+                                </label>
+                                ${name class="form-control"}
+                                <div class="invalid-feedback">
+                                    ${name-info}
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="${id:directory}">
+                                    ${tr:Lms.Admin.MediaLibrary.root-path}
+                                </label>
+                                ${directory class="form-control"}
+                                <div class="invalid-feedback">
+                                    ${directory-info}
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+				<div class="modal-footer">
+					${save-btn class="btn btn-primary me-1"}${cancel-btn class="btn btn-secondary"}
+				</div>
+			</div>
+		</div>
+	</div>
+</message>
+
+</messages>

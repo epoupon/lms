@@ -119,6 +119,7 @@ namespace Database
     {
         None,
         Name,
+        ArtistNameThenName,
         Date,
         OriginalDate,
         OriginalDateDesc,

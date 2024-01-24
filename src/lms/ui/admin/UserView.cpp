@@ -41,236 +41,233 @@
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
 
-namespace UserInterface {
-
-using namespace Database;
-
-class UserModel : public Wt::WFormModel
+namespace UserInterface
 {
-	public:
-		static inline const Field LoginField {"login"};
-		static inline const Field PasswordField {"password"};
-		static inline const Field DemoField {"demo"};
+    using namespace Database;
 
-		UserModel(std::optional<UserId> userId, ::Auth::IPasswordService* authPasswordService)
-		: _userId {userId}
-		, _authPasswordService {authPasswordService}
-		{
-			if (!_userId)
-			{
-				addField(LoginField);
-				setValidator(LoginField, createLoginNameValidator());
-			}
+    class UserModel : public Wt::WFormModel
+    {
+    public:
+        static inline const Field LoginField{ "login" };
+        static inline const Field PasswordField{ "password" };
+        static inline const Field DemoField{ "demo" };
 
-			if (authPasswordService)
-			{
-				addField(PasswordField);
-				setValidator(PasswordField, createPasswordStrengthValidator([this] { return ::Auth::PasswordValidationContext {getLoginName(), getUserType()}; }));
-				if (!userId)
-					validator(PasswordField)->setMandatory(true);
-			}
-			addField(DemoField);
+        UserModel(std::optional<UserId> userId, ::Auth::IPasswordService* authPasswordService)
+            : _userId{ userId }
+            , _authPasswordService{ authPasswordService }
+        {
+            if (!_userId)
+            {
+                addField(LoginField);
+                setValidator(LoginField, createLoginNameValidator());
+            }
 
-			loadData();
-		}
+            if (authPasswordService)
+            {
+                addField(PasswordField);
+                setValidator(PasswordField, createPasswordStrengthValidator([this] { return ::Auth::PasswordValidationContext{ getLoginName(), getUserType() }; }));
+                if (!userId)
+                    validator(PasswordField)->setMandatory(true);
+            }
+            addField(DemoField);
 
-		void saveData()
-		{
-			auto transaction {LmsApp->getDbSession().createWriteTransaction()};
+            loadData();
+        }
 
-			if (_userId)
-			{
-				// Update user
-				User::pointer user {User::find(LmsApp->getDbSession(), *_userId)};
-				if (!user)
-					throw UserNotFoundException {};
+        void saveData()
+        {
+            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-				if (_authPasswordService && !valueText(PasswordField).empty())
-					_authPasswordService->setPassword(user->getId(), valueText(PasswordField).toUTF8());
-			}
-			else
-			{
-				// Check races with other endpoints (subsonic API...)
-				User::pointer user {User::find(LmsApp->getDbSession(), valueText(LoginField).toUTF8())};
-				if (user)
-					throw UserNotAllowedException {};
+            if (_userId)
+            {
+                // Update user
+                User::pointer user{ User::find(LmsApp->getDbSession(), *_userId) };
+                if (!user)
+                    throw UserNotFoundException{};
 
-				// Create user
-				user = LmsApp->getDbSession().create<User>(valueText(LoginField).toUTF8());
+                if (_authPasswordService && !valueText(PasswordField).empty())
+                    _authPasswordService->setPassword(user->getId(), valueText(PasswordField).toUTF8());
+            }
+            else
+            {
+                // Check races with other endpoints (subsonic API...)
+                User::pointer user{ User::find(LmsApp->getDbSession(), valueText(LoginField).toUTF8()) };
+                if (user)
+                    throw UserNotAllowedException{};
 
-				if (Wt::asNumber(value(DemoField)))
-					user.modify()->setType(UserType::DEMO);
+                // Create user
+                user = LmsApp->getDbSession().create<User>(valueText(LoginField).toUTF8());
 
-				if (_authPasswordService)
-					_authPasswordService->setPassword(user->getId(), valueText(PasswordField).toUTF8());
-			}
-		}
+                if (Wt::asNumber(value(DemoField)))
+                    user.modify()->setType(UserType::DEMO);
 
-	private:
-		void loadData()
-		{
-			if (!_userId)
-				return;
+                if (_authPasswordService)
+                    _authPasswordService->setPassword(user->getId(), valueText(PasswordField).toUTF8());
+            }
+        }
 
-			auto transaction {LmsApp->getDbSession().createReadTransaction()};
+    private:
+        void loadData()
+        {
+            if (!_userId)
+                return;
 
-			const User::pointer user {User::find(LmsApp->getDbSession(), *_userId)};
-			if (!user)
-				throw UserNotFoundException {};
-			else if (user == LmsApp->getUser())
-				throw UserNotAllowedException {};
-		}
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-		UserType getUserType() const
-		{
-			if (_userId)
-			{
-				auto transaction {LmsApp->getDbSession().createReadTransaction()};
+            const User::pointer user{ User::find(LmsApp->getDbSession(), *_userId) };
+            if (!user)
+                throw UserNotFoundException{};
+            else if (user == LmsApp->getUser())
+                throw UserNotAllowedException{};
+        }
 
-				const User::pointer user {User::find(LmsApp->getDbSession(), *_userId)};
-				return user->getType();
-			}
+        UserType getUserType() const
+        {
+            if (_userId)
+            {
+                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-			return Wt::asNumber(value(DemoField)) ? UserType::DEMO : UserType::REGULAR;
-		}
+                const User::pointer user{ User::find(LmsApp->getDbSession(), *_userId) };
+                return user->getType();
+            }
 
-		std::string getLoginName() const
-		{
-			if (_userId)
-			{
-				auto transaction {LmsApp->getDbSession().createReadTransaction()};
+            return Wt::asNumber(value(DemoField)) ? UserType::DEMO : UserType::REGULAR;
+        }
 
-				const User::pointer user {User::find(LmsApp->getDbSession(), *_userId)};
-				return user->getLoginName();
-			}
+        std::string getLoginName() const
+        {
+            if (_userId)
+            {
+                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-			return valueText(LoginField).toUTF8();
-		}
+                const User::pointer user{ User::find(LmsApp->getDbSession(), *_userId) };
+                return user->getLoginName();
+            }
 
-		bool validateField(Field field)
-		{
-			Wt::WString error;
+            return valueText(LoginField).toUTF8();
+        }
 
-			if (field == LoginField)
-			{
-				auto transaction {LmsApp->getDbSession().createReadTransaction()};
+        bool validateField(Field field)
+        {
+            Wt::WString error;
 
-				const User::pointer user {User::find(LmsApp->getDbSession(), valueText(LoginField).toUTF8())};
-				if (user)
-					error = Wt::WString::tr("Lms.Admin.User.user-already-exists");
-			}
-			else if (field == DemoField)
-			{
-				auto transaction {LmsApp->getDbSession().createReadTransaction()};
+            if (field == LoginField)
+            {
+                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-				if (Wt::asNumber(value(DemoField)) && User::findDemoUser(LmsApp->getDbSession()))
-					error = Wt::WString::tr("Lms.Admin.User.demo-account-already-exists");
-			}
+                const User::pointer user{ User::find(LmsApp->getDbSession(), valueText(LoginField).toUTF8()) };
+                if (user)
+                    error = Wt::WString::tr("Lms.Admin.User.user-already-exists");
+            }
+            else if (field == DemoField)
+            {
+                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-			if (error.empty())
-				return Wt::WFormModel::validateField(field);
+                if (Wt::asNumber(value(DemoField)) && User::findDemoUser(LmsApp->getDbSession()))
+                    error = Wt::WString::tr("Lms.Admin.User.demo-account-already-exists");
+            }
 
-			setValidation(field, Wt::WValidator::Result {Wt::ValidationState::Invalid, error});
+            if (error.empty())
+                return Wt::WFormModel::validateField(field);
 
-			return false;
-		}
+            setValidation(field, Wt::WValidator::Result{ Wt::ValidationState::Invalid, error });
 
-		std::optional<UserId> _userId;
-		::Auth::IPasswordService* _authPasswordService {};
-};
+            return false;
+        }
 
-UserView::UserView()
-{
-	wApp->internalPathChanged().connect(this, [this]()
-	{
-		refreshView();
-	});
+        std::optional<UserId> _userId;
+        ::Auth::IPasswordService* _authPasswordService{};
+    };
 
-	refreshView();
-}
+    UserView::UserView()
+    {
+        wApp->internalPathChanged().connect(this, [this]()
+            {
+                refreshView();
+            });
 
-void
-UserView::refreshView()
-{
-	if (!wApp->internalPathMatches("/admin/user"))
-		return;
+        refreshView();
+    }
 
-	const std::optional<UserId> userId {StringUtils::readAs<UserId::ValueType>(wApp->internalPathNextPart("/admin/user/"))};
+    void UserView::refreshView()
+    {
+        if (!wApp->internalPathMatches("/admin/user"))
+            return;
 
-	clear();
+        const std::optional<UserId> userId{ StringUtils::readAs<UserId::ValueType>(wApp->internalPathNextPart("/admin/user/")) };
 
-	Wt::WTemplateFormView* t {addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.Admin.User.template"))};
+        clear();
 
-	auto* authPasswordService {Service<::Auth::IPasswordService>::get()};
-	if (authPasswordService && !authPasswordService->canSetPasswords())
-		authPasswordService = nullptr;
+        Wt::WTemplateFormView* t{ addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.Admin.User.template")) };
 
-	auto model {std::make_shared<UserModel>(userId, authPasswordService)};
+        auto* authPasswordService{ Service<::Auth::IPasswordService>::get() };
+        if (authPasswordService && !authPasswordService->canSetPasswords())
+            authPasswordService = nullptr;
 
-	if (userId)
-	{
-		auto transaction {LmsApp->getDbSession().createReadTransaction()};
+        auto model{ std::make_shared<UserModel>(userId, authPasswordService) };
 
-		const User::pointer user {User::find(LmsApp->getDbSession(), *userId)};
-		if (!user)
-			throw UserNotFoundException {};
+        if (userId)
+        {
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-		const Wt::WString title {Wt::WString::tr("Lms.Admin.User.user-edit").arg(user->getLoginName())};
-		LmsApp->setTitle(title);
+            const User::pointer user{ User::find(LmsApp->getDbSession(), *userId) };
+            if (!user)
+                throw UserNotFoundException{};
 
-		t->bindString("title", title, Wt::TextFormat::Plain);
-		t->setCondition("if-has-last-login", true);
-		t->bindString("last-login", user->getLastLogin().toString(), Wt::TextFormat::Plain);
-	}
-	else
-	{
-		const Wt::WString title {Wt::WString::tr("Lms.Admin.User.user-create")};
-		LmsApp->setTitle(title);
+            const Wt::WString title{ Wt::WString::tr("Lms.Admin.User.user-edit").arg(user->getLoginName()) };
+            LmsApp->setTitle(title);
 
-		// Login
-		t->setCondition("if-has-login", true);
-		t->setFormWidget(UserModel::LoginField, std::make_unique<Wt::WLineEdit>());
-		t->bindString("title", title);
-	}
+            t->bindString("title", title, Wt::TextFormat::Plain);
+            t->setCondition("if-has-last-login", true);
+            t->bindString("last-login", user->getLastLogin().toString(), Wt::TextFormat::Plain);
+        }
+        else
+        {
+            const Wt::WString title{ Wt::WString::tr("Lms.Admin.User.user-create") };
+            LmsApp->setTitle(title);
 
-	if (authPasswordService)
-	{
-		t->setCondition("if-has-password", true);
+            // Login
+            t->setCondition("if-has-login", true);
+            t->setFormWidget(UserModel::LoginField, std::make_unique<Wt::WLineEdit>());
+            t->bindString("title", title);
+        }
 
-		// Password
-		auto passwordEdit = std::make_unique<Wt::WLineEdit>();
-		passwordEdit->setEchoMode(Wt::EchoMode::Password);
-		passwordEdit->setAttributeValue("autocomplete", "off");
-		t->setFormWidget(UserModel::PasswordField, std::move(passwordEdit));
-	}
+        if (authPasswordService)
+        {
+            t->setCondition("if-has-password", true);
 
-	// Demo account
-	t->setFormWidget(UserModel::DemoField, std::make_unique<Wt::WCheckBox>());
-	if (!userId && Service<IConfig>::get()->getBool("demo", false))
-		t->setCondition("if-demo", true);
+            // Password
+            auto passwordEdit = std::make_unique<Wt::WLineEdit>();
+            passwordEdit->setEchoMode(Wt::EchoMode::Password);
+            passwordEdit->setAttributeValue("autocomplete", "off");
+            t->setFormWidget(UserModel::PasswordField, std::move(passwordEdit));
+        }
 
-	Wt::WPushButton* saveBtn {t->bindNew<Wt::WPushButton>("save-btn", Wt::WString::tr(userId ? "Lms.save" : "Lms.create"))};
-	saveBtn->clicked().connect([=]()
-	{
-		t->updateModel(model.get());
+        // Demo account
+        t->setFormWidget(UserModel::DemoField, std::make_unique<Wt::WCheckBox>());
+        if (!userId && Service<IConfig>::get()->getBool("demo", false))
+            t->setCondition("if-demo", true);
 
-		if (model->validate())
-		{
-			model->saveData();
-			LmsApp->notifyMsg(Notification::Type::Info,
-					Wt::WString::tr("Lms.Admin.Users.users"),
-					Wt::WString::tr(userId ? "Lms.Admin.User.user-updated" : "Lms.Admin.User.user-created"));
-			LmsApp->setInternalPath("/admin/users", true);
-		}
-		else
-		{
-			t->updateView(model.get());
-		}
-	});
+        Wt::WPushButton* saveBtn{ t->bindNew<Wt::WPushButton>("save-btn", Wt::WString::tr(userId ? "Lms.save" : "Lms.create")) };
+        saveBtn->clicked().connect([=]()
+            {
+                t->updateModel(model.get());
 
-	t->updateView(model.get());
-}
+                if (model->validate())
+                {
+                    model->saveData();
+                    LmsApp->notifyMsg(Notification::Type::Info,
+                        Wt::WString::tr("Lms.Admin.Users.users"),
+                        Wt::WString::tr(userId ? "Lms.Admin.User.user-updated" : "Lms.Admin.User.user-created"));
+                    LmsApp->setInternalPath("/admin/users", true);
+                }
+                else
+                {
+                    t->updateView(model.get());
+                }
+            });
+
+        t->updateView(model.get());
+    }
 
 } // namespace UserInterface
-
-

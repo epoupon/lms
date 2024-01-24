@@ -31,6 +31,12 @@ namespace API::Subsonic
         return "ar-" + id.toString();
     }
 
+    std::string idToString(Database::MediaLibraryId id)
+    {
+        // No need to prefix as this is only used at well known places
+        return id.toString();
+    }
+
     std::string idToString(Database::ReleaseId id)
     {
         return "al-" + id.toString();
@@ -66,6 +72,15 @@ namespace StringUtils
 
         if (const auto value{ StringUtils::readAs<Database::ArtistId::ValueType>(values[1]) })
             return Database::ArtistId{ *value };
+
+        return std::nullopt;
+    }
+
+    template<>
+    std::optional<Database::MediaLibraryId> readAs(std::string_view str)
+    {
+        if (const auto value{ StringUtils::readAs<Database::MediaLibraryId::ValueType>(str) })
+            return Database::MediaLibraryId{ *value };
 
         return std::nullopt;
     }

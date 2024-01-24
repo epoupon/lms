@@ -99,6 +99,7 @@ namespace Feedback
         searchParams.setLinkType(params.linkType);
         searchParams.setSortMethod(params.sortMethod);
         searchParams.setRange(params.range);
+        searchParams.setMediaLibrary(params.library);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
@@ -137,6 +138,7 @@ namespace Feedback
         searchParams.setClusters(params.clusters);
         searchParams.setSortMethod(ReleaseSortMethod::StarredDateDesc);
         searchParams.setRange(params.range);
+        searchParams.setMediaLibrary(params.library);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
@@ -175,6 +177,7 @@ namespace Feedback
         searchParams.setClusters(params.clusters);
         searchParams.setSortMethod(TrackSortMethod::StarredDateDesc);
         searchParams.setRange(params.range);
+        searchParams.setMediaLibrary(params.library);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };

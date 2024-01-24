@@ -48,7 +48,8 @@ namespace Scanner
 
         ScannerService(const ScannerService&) = delete;
         ScannerService& operator=(const ScannerService&) = delete;
-
+    private:
+        void requestStop() override;
         void requestReload() override;
         void requestImmediateScan(bool force) override;
 

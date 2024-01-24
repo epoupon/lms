@@ -551,7 +551,7 @@ namespace UserInterface
         scrobblingBackendRaw->activated().connect([=] { updateListenBrainzTokenField();});
 
         // Buttons
-        Wt::WPushButton* saveBtn{ t->bindWidget("apply-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.apply"))) };
+        Wt::WPushButton* saveBtn{ t->bindWidget("save-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.save"))) };
         Wt::WPushButton* discardBtn{ t->bindWidget("discard-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.discard"))) };
 
         saveBtn->clicked().connect([=]

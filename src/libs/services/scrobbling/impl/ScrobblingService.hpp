@@ -39,9 +39,9 @@ namespace Scrobbling
         void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
         void addTimedListen(const TimedListen& listen) override;
 
-        ArtistContainer getRecentArtists(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, std::optional<Database::TrackArtistLinkType> linkType,Database::Range range) override;
-        ReleaseContainer getRecentReleases(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds,Database::Range range) override;
-        TrackContainer getRecentTracks(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) override;
+        ArtistContainer getRecentArtists(const ArtistFindParameters& params) override;
+        ReleaseContainer getRecentReleases(const FindParameters& params) override;
+        TrackContainer getRecentTracks(const FindParameters& params) override;
 
         std::size_t getCount(Database::UserId userId, Database::ReleaseId releaseId) override;
         std::size_t getCount(Database::UserId userId, Database::TrackId trackId) override;
@@ -49,10 +49,9 @@ namespace Scrobbling
         Wt::WDateTime getLastListenDateTime(Database::UserId userId, Database::ReleaseId releaseId) override;
         Wt::WDateTime getLastListenDateTime(Database::UserId userId, Database::TrackId trackId) override;
 
-        ArtistContainer getTopArtists(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, std::optional<Database::TrackArtistLinkType> linkType, Database::Range range) override;
-        ReleaseContainer getTopReleases(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) override;
-        TrackContainer getTopTracks(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) override;
-        TrackContainer getTopTracks(Database::UserId userId, Database::ArtistId artistId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) override;
+        ArtistContainer getTopArtists(const ArtistFindParameters& params) override;
+        ReleaseContainer getTopReleases(const FindParameters& params) override;
+        TrackContainer getTopTracks(const FindParameters& params) override;
 
         std::optional<Database::ScrobblingBackend> getUserBackend(Database::UserId userId);
 

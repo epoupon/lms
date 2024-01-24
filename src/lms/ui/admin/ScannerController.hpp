@@ -25,21 +25,18 @@
 
 namespace UserInterface
 {
+    class ScannerController : public Wt::WTemplate
+    {
+    public:
+        ScannerController();
 
-	class ScannerController : public Wt::WTemplate
-	{
-		public:
-			ScannerController();
+    private:
+        void refreshContents();
 
-		private:
-			void refreshContents();
-
-			Wt::WPushButton*	_reportBtn;
-			Wt::WLineEdit*		_lastScanStatus;
-			Wt::WLineEdit*		_status;
-			Wt::WLineEdit*		_stepStatus;
-			class ReportResource* _reportResource;
-	};
-
+        Wt::WPushButton* _reportBtn;
+        Wt::WLineEdit* _lastScanStatus;
+        Wt::WLineEdit* _status;
+        Wt::WLineEdit* _stepStatus;
+        class ReportResource* _reportResource;
+    };
 } // namespace DatabaseStatus
-

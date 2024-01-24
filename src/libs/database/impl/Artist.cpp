@@ -46,7 +46,8 @@ namespace Database
                 || params.linkType
                 || params.track.isValid()
                 || params.release.isValid()
-                || params.clusters.size() == 1)
+                || params.clusters.size() == 1
+                || params.mediaLibrary.isValid())
             {
                 query.join("track t ON t.id = t_a_l.track_id");
                 query.join("track_artist_link t_a_l ON t_a_l.artist_id = a.id");
@@ -119,6 +120,9 @@ namespace Database
 
             if (params.release.isValid())
                 query.where("t.release_id = ?").bind(params.release);
+
+            if (params.mediaLibrary.isValid())
+                query.where("t.media_library_id = ?").bind(params.mediaLibrary);
 
             switch (params.sortMethod)
             {

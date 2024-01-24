@@ -11,12 +11,13 @@ add_executable(lms
 	ui/PlayQueue.cpp
 	ui/SettingsView.cpp
 	ui/Utils.cpp
-	ui/admin/DatabaseSettingsView.cpp
-	ui/admin/ScannerController.cpp
 	ui/admin/InitWizardView.cpp
+	ui/admin/MediaLibrariesView.cpp
+	ui/admin/MediaLibraryModal.cpp
+	ui/admin/ScannerController.cpp
+	ui/admin/ScanSettingsView.cpp
 	ui/admin/UserView.cpp
 	ui/admin/UsersView.cpp
-	ui/common/DirectoryValidator.cpp
 	ui/common/DoubleValidator.cpp
 	ui/common/InfiniteScrollingContainer.cpp
 	ui/common/LoadingIndicator.cpp

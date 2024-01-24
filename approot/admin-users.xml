@@ -2,7 +2,7 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Admin.Users.template">
-	<h3>${tr:Lms.Admin.Users.users}</h3>
+	<legend>${tr:Lms.Admin.Users.users}</legend>
 	${users class="d-grid gap-1 mb-3 Lms-row-container"}
 	${<if-can-create-user>}
 	${add-btn class="btn btn-primary"}

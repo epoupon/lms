@@ -183,7 +183,11 @@ namespace Scanner
                 return false;
             }
 
-            if (!PathUtils::isPathInRootPath(p, _settings.mediaDirectory, &excludeDirFileName))
+            if (std::none_of(std::cbegin(_settings.mediaLibraries), std::cend(_settings.mediaLibraries),
+                [&](const ScannerSettings::MediaLibraryInfo& libraryInfo)
+                {
+                    return PathUtils::isPathInRootPath(p, libraryInfo.rootDirectory, &excludeDirFileName);
+                }))
             {
                 LMS_LOG(DBUPDATER, INFO, "Removing '" << p.string() << "': out of media directory");
                 return false;

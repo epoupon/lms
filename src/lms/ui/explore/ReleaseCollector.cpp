@@ -58,12 +58,26 @@ namespace UserInterface
         }
 
         case ReleaseCollector::Mode::RecentlyPlayed:
-            releases = scrobblingService.getRecentReleases(LmsApp->getUserId(), getFilters().getClusterIds(), range);
+        {
+            Scrobbling::IScrobblingService::FindParameters params;
+            params.setUser(LmsApp->getUserId());
+            params.setClusters(getFilters().getClusterIds());
+            params.setRange(range);
+
+            releases = scrobblingService.getRecentReleases(params);
             break;
+        }
 
         case Mode::MostPlayed:
-            releases = scrobblingService.getTopReleases(LmsApp->getUserId(), getFilters().getClusterIds(), range);
+        {
+            Scrobbling::IScrobblingService::FindParameters params;
+            params.setUser(LmsApp->getUserId());
+            params.setClusters(getFilters().getClusterIds());
+            params.setRange(range);
+
+            releases = scrobblingService.getTopReleases(params);
             break;
+        }
 
         case Mode::RecentlyAdded:
         {

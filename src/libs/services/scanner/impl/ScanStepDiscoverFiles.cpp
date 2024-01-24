@@ -18,6 +18,7 @@
  */
 
 #include "ScanStepDiscoverFiles.hpp"
+
 #include "utils/ILogger.hpp"
 #include "utils/Path.hpp"
 
@@ -26,22 +27,30 @@ namespace Scanner
     void ScanStepDiscoverFiles::process(ScanContext& context)
     {
         context.stats.filesScanned = 0;
-        PathUtils::exploreFilesRecursive(context.directory, [&](std::error_code ec, const std::filesystem::path& path)
-            {
-                if (_abortScan)
-                    return false;
 
-                if (!ec && PathUtils::hasFileAnyExtension(path, _settings.supportedExtensions))
+        for (const ScannerSettings::MediaLibraryInfo& mediaLibrary : _settings.mediaLibraries)
+        {
+            std::size_t currentDirectoryProcessElemsCount{};
+            PathUtils::exploreFilesRecursive(mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path)
                 {
-                    context.currentStepStats.processedElems++;
-                    _progressCallback(context.currentStepStats);
-                }
+                    if (_abortScan)
+                        return false;
 
-                return true;
-            }, &excludeDirFileName);
+                    if (!ec && PathUtils::hasFileAnyExtension(path, _settings.supportedExtensions))
+                    {
+                        context.currentStepStats.processedElems++;
+                        currentDirectoryProcessElemsCount++;
+                        _progressCallback(context.currentStepStats);
+                    }
+
+                    return true;
+                }, &excludeDirFileName);
+
+            LMS_LOG(DBUPDATER, DEBUG, "Discovered " << currentDirectoryProcessElemsCount << " files in '" << mediaLibrary.rootDirectory << "'");
+        }
 
         context.stats.filesScanned = context.currentStepStats.processedElems;
 
-        LMS_LOG(DBUPDATER, DEBUG, "Discovered " << context.stats.filesScanned << " files in '" << context.directory << "'");
+        LMS_LOG(DBUPDATER, DEBUG, "Discovered " << context.stats.filesScanned << " files in all directories");
     }
 }

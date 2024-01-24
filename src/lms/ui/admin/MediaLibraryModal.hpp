@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,10 +19,22 @@
 
 #pragma once
 
-#include <Wt/WValidator.h>
+#include <Wt/WSignal.h>
+#include <Wt/WTemplateFormView.h>
+#include "database/MediaLibraryId.hpp"
 
 namespace UserInterface
 {
-	std::unique_ptr<Wt::WValidator> createDirectoryValidator();
-} // namespace UserInterface
+    class MediaLibraryModal : public Wt::WTemplateFormView
+    {
+    public:
+        MediaLibraryModal(Database::MediaLibraryId mediaLibaryId);
 
+        Wt::Signal<Database::MediaLibraryId>& saved() { return _saved; };
+        Wt::Signal<>& cancelled() { return _cancelled; }
+
+    private:
+        Wt::Signal<Database::MediaLibraryId> _saved;
+        Wt::Signal<> _cancelled;
+    };
+}

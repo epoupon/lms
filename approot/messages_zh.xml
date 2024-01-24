@@ -5,7 +5,6 @@
 <!--Common-->
 <message id="Lms.add">添加</message>
 <message id="Lms.administration">管理</message>
-<message id="Lms.apply">应用</message>
 <message id="Lms.cancel">取消</message>
 <message id="Lms.clusters">标签</message>
 <message id="Lms.create">新建</message>
@@ -54,10 +53,9 @@
 <message id="Lms.Admin.Database.menu-database"><i class="fa fa-fw fa-database" aria-hidden="true"></i> 音乐收藏</message>
 <message id="Lms.Admin.Database.never">从不</message>
 <message id="Lms.Admin.Database.path">媒体根目录</message>
-<message id="Lms.Admin.Database.path-help">包含 <code>.lmsignore</code> 文件的目录将会被跳过</message>
 <message id="Lms.Admin.Database.scan-complete">扫描完成：总文件 {1}，添加文件 {2}，更新文件 {3}，删除文件 {4}，重复文件 {5}，错误文件 {6}</message>
 <message id="Lms.Admin.Database.scan-launched">扫描已完成！</message>
-<message id="Lms.Admin.Database.scan-options">扫描选项</message>
+<message id="Lms.Admin.Database.scan-settings">扫描选项</message>
 <message id="Lms.Admin.Database.settings-saved">新设置已保存！</message>
 
 

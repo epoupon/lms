@@ -30,6 +30,7 @@
 
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
+#include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/ReleaseTypeId.hpp"
@@ -93,6 +94,7 @@ namespace Database
             EnumSet<TrackArtistLinkType>        trackArtistLinkTypes; 			//    and for these link types
             EnumSet<TrackArtistLinkType>        excludedTrackArtistLinkTypes; 	//    but not for these link types
             std::string                         releaseType;    // If set, albums that has this release type
+            MediaLibraryId                      mediaLibrary;   // If set, releases that has at least a track in this library
 
             FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
@@ -109,6 +111,7 @@ namespace Database
                 return *this;
             }
             FindParameters& setReleaseType(std::string_view _releaseType) { releaseType = _releaseType; return *this; }
+            FindParameters& setMediaLibrary(MediaLibraryId  _mediaLibrary) { mediaLibrary = _mediaLibrary; return *this; }
         };
 
         Release() = default;
@@ -124,7 +127,6 @@ namespace Database
         static RangeResults<ReleaseId>  findIds(Session& session, const FindParameters& parameters);
         static std::size_t              getCount(Session& session, const FindParameters& parameters);
         static RangeResults<ReleaseId>  findOrphanIds(Session& session, std::optional<Range> range = std::nullopt); // not track related
-        static RangeResults<ReleaseId>  findIdsOrderedByArtist(Session& session, std::optional<Range> range = std::nullopt);
 
         // Get the cluster of the tracks that belong to this release
         // Each clusters are grouped by cluster type, sorted by the number of occurence (max to min)

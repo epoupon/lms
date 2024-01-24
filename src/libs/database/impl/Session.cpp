@@ -29,6 +29,7 @@
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
 #include "database/Listen.hpp"
+#include "database/MediaLibrary.hpp"
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/StarredArtist.hpp"
@@ -42,6 +43,7 @@
 #include "database/TransactionChecker.hpp"
 #include "database/User.hpp"
 #include "EnumSetTraits.hpp"
+#include "PathTraits.hpp"
 #include "Migration.hpp"
 
 namespace Database
@@ -81,6 +83,7 @@ namespace Database
         _session.mapClass<Cluster>("cluster");
         _session.mapClass<ClusterType>("cluster_type");
         _session.mapClass<Listen>("listen");
+        _session.mapClass<MediaLibrary>("media_library");
         _session.mapClass<Release>("release");
         _session.mapClass<ReleaseType>("release_type");
         _session.mapClass<ScanSettings>("scan_settings");
@@ -152,7 +155,10 @@ namespace Database
             _session.execute("CREATE INDEX IF NOT EXISTS track_release_idx ON track(release_id)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_file_last_write_idx ON track(file_last_write)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_date_idx ON track(date)");
+            _session.execute("CREATE INDEX IF NOT EXISTS track_year_idx ON track(year)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_original_date_idx ON track(original_date)");
+            _session.execute("CREATE INDEX IF NOT EXISTS track_original_year_idx ON track(original_year)");
+            _session.execute("CREATE INDEX IF NOT EXISTS track_media_library_idx ON track(media_library_id)");
             _session.execute("CREATE INDEX IF NOT EXISTS tracklist_name_idx ON tracklist(name)");
             _session.execute("CREATE INDEX IF NOT EXISTS tracklist_user_idx ON tracklist(user_id)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_features_track_idx ON track_features(track_id)");
