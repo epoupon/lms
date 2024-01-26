@@ -44,7 +44,7 @@
 <message id="Lms.Error.user-not-found">User not found</message>
 
 <!--Administration-->
-<message id="Lms.Admin.menu-media-libraries"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Music libraries</message>
+<message id="Lms.Admin.menu-media-libraries"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Libraries</message>
 <message id="Lms.Admin.menu-scan-settings"><i class="fa fa-fw fa-cogs" aria-hidden="true"></i> Scan settings</message>
 <message id="Lms.Admin.menu-scanner"><i class="fa fa-fw fa-wrench" aria-hidden="true"></i> Scanner</message>
 <message id="Lms.Admin.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Users</message>
@@ -63,7 +63,7 @@
 <message id="Lms.Admin.MediaLibrary.path-must-be-existing-directory">Path must be an existing directory</message>
 <message id="Lms.Admin.MediaLibrary.root-path">Root directory</message>
 
-<message id="Lms.Admin.Database.add-library">Add library</message>
+<!--Scan settings-->
 <message id="Lms.Admin.Database.daily">Daily</message>
 <message id="Lms.Admin.Database.extra-tags-to-scan">Extra tags to scan (use <kbd>;</kbd> as separator)</message>
 <message id="Lms.Admin.Database.hourly">Hourly</message>
@@ -81,6 +81,7 @@
 <message id="Lms.Admin.Database.update-start-time">Update start time</message>
 <message id="Lms.Admin.Database.weekly">Weekly</message>
 
+<!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Cannot get track duration</message>
 <message id="Lms.Admin.ScannerController.cannot-parse-file">Cannot parse file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">Cannot read file</message>

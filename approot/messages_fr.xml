@@ -15,7 +15,6 @@
 <message id="Lms.loading">Chargement...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Quitter</message>
-<message id="Lms.not-a-directory">N'est pas un répertoire</message>
 <message id="Lms.ok">Ok</message>
 <message id="Lms.password">Mot de passe</message>
 <message id="Lms.password-bad-login-combination">Mauvaise combinaison login / mot de passe</message>
@@ -28,6 +27,7 @@
 <message id="Lms.passwords-dont-match">Les mots de passe ne correspondent pas</message>
 <message id="Lms.quit-other-session">Une autre session a été ouverte. Reouvrir celle-ci ?</message>
 <message id="Lms.save">Sauvegarder</message>
+<message id="Lms.settings-saved">Paramètres sauvegardés!</message>
 <message id="Lms.track-count">
 	<plural case="0">{1} piste</plural>
 	<plural case="1">{1} pistes</plural>
@@ -44,19 +44,36 @@
 <message id="Lms.Error.user-not-found">L'utilisateur n'existe pas</message>
 
 <!--Administration-->
+<message id="Lms.Admin.menu-media-libraries"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Bibliothèques</message>
+<message id="Lms.Admin.menu-scan-settings"><i class="fa fa-fw fa-cogs" aria-hidden="true"></i> Paramètres du scan</message>
+<message id="Lms.Admin.menu-scanner"><i class="fa fa-fw fa-wrench" aria-hidden="true"></i> Scanner</message>
+<message id="Lms.Admin.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Utilisateurs</message>
+
+<!--MediaLibraries-->
+<message id="Lms.Admin.MediaLibraries.media-libraries">Bibliothèques musicales</message>
+<message id="Lms.Admin.MediaLibrary.create-library">Créer une bibliothèque</message>
+<message id="Lms.Admin.MediaLibrary.del-library-confirm">Supprimer la bibliothèque?</message>
+<message id="Lms.Admin.MediaLibrary.edit-library">Editer la bibliothèque</message>
+<message id="Lms.Admin.MediaLibrary.library-created">Bibliothèque créée !</message>
+<message id="Lms.Admin.MediaLibrary.library-deleted">Bibilothèque supprimée !</message>
+<message id="Lms.Admin.MediaLibrary.name">Nom de la bibliothèque</message>
+<message id="Lms.Admin.MediaLibrary.name-already-exists">Ce nom de bibliothèque existe déjà</message>
+<message id="Lms.Admin.MediaLibrary.path-must-be-absolute">Le chemin doit être absolu</message>
+<message id="Lms.Admin.MediaLibrary.path-must-not-overlap">Le chemin ne doit pas recouvrir celui d'une autre bibliothèque</message>
+<message id="Lms.Admin.MediaLibrary.path-must-be-existing-directory">Le chemin doit référencer un répertoire existant</message>
+<message id="Lms.Admin.MediaLibrary.root-path">Répertoire racine</message>
+
+<!--Scan settings-->
 <message id="Lms.Admin.Database.daily">Tous les jours</message>
-<message id="Lms.Admin.Database.database">Collection de musiques</message>
 <message id="Lms.Admin.Database.extra-tags-to-scan">Tags supplémentaires à scanner (utiliser <kbd>;</kbd> comme séparateur)</message>
 <message id="Lms.Admin.Database.hourly">Toutes les heures</message>
 <message id="Lms.Admin.Database.immediate-scan">Scanner maintenant !</message>
 <message id="Lms.Admin.Database.monthly">Tous les mois</message>
-<message id="Lms.Admin.Database.menu-database"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Collection de musiques</message>
 <message id="Lms.Admin.Database.never">Jamais</message>
-<message id="Lms.Admin.Database.path">Dossier racine des fichiers de musique</message>
+<message id="Lms.Admin.Database.scan-aborted">Scan interrompu !</message>
 <message id="Lms.Admin.Database.scan-complete">Scan terminé : {1} fichiers, {2} ajouts, {3} mises à jour, {4} suppressions, {5} duplicatas, {6} erreurs</message>
 <message id="Lms.Admin.Database.scan-launched">Scan lancé !</message>
 <message id="Lms.Admin.Database.scan-settings">Options </message>
-<message id="Lms.Admin.Database.settings-saved">Nouveaux paramètres sauvegardés !</message>
 <message id="Lms.Admin.Database.similarity-engine-type">Moteur de similarité</message>
 <message id="Lms.Admin.Database.similarity-engine-type.clusters">Basé sur les tags</message>
 <message id="Lms.Admin.Database.similarity-engine-type.none">Aucun</message>
@@ -64,6 +81,7 @@
 <message id="Lms.Admin.Database.update-start-time">Heure de départ de la mise à jour</message>
 <message id="Lms.Admin.Database.weekly">Toutes les semaines</message>
 
+<!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Impossible de récupérer la durée de la piste</message>
 <message id="Lms.Admin.ScannerController.cannot-parse-file">Impossible d'analyser le fichier</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">Impossible de lire le fichier</message>
@@ -98,7 +116,6 @@
 <message id="Lms.Admin.Users.del-user-confirm">Supprimer l'utilisateur ?</message>
 <message id="Lms.Admin.Users.demo">Demo</message>
 <message id="Lms.Admin.Users.users">Utilisateurs</message>
-<message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Utilisateurs</message>
 
 <!--User-->
 <message id="Lms.Admin.User.demo-account">Compte de démonstration</message>

@@ -1045,6 +1045,45 @@ TEST_F(DatabaseFixture, Listen_getRecentArtists_cluster)
     }
 }
 
+
+TEST_F(DatabaseFixture, Listen_getRecentArtists_mediaLibrary)
+{
+    ScopedTrack track{ session, "MyTrack" };
+    ScopedUser user{ session, "MyUser" };
+    ScopedArtist artist{ session, "MyArtist" };
+    ScopedMediaLibrary library{ session };
+    ScopedMediaLibrary otherLibrary{ session };
+
+    {
+        auto transaction{ session.createWriteTransaction() };
+        TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+        track.get().modify()->setMediaLibrary(library.get());
+    }
+
+    const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
+
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        Listen::ArtistStatsFindParameters params;
+        params.setMediaLibrary(library.getId());
+
+        auto artists{ Listen::getRecentArtists(session, params) };
+        ASSERT_EQ(artists.results.size(), 1);
+        EXPECT_EQ(artists.results[0], artist->getId());
+    }
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        Listen::ArtistStatsFindParameters params;
+        params.setMediaLibrary(otherLibrary.getId());
+
+        auto artists{ Listen::getRecentArtists(session, params) };
+        EXPECT_EQ(artists.results.size(), 0);
+    }
+}
+
 TEST_F(DatabaseFixture, Listen_getRecentReleases)
 {
     ScopedTrack track{ session, "MyTrack" };
@@ -1095,7 +1134,6 @@ TEST_F(DatabaseFixture, Listen_getRecentReleases)
         EXPECT_EQ(releases.results.size(), 0);
     }
 }
-
 
 TEST_F(DatabaseFixture, Listen_getMostRecentRelease)
 {
@@ -1282,6 +1320,46 @@ TEST_F(DatabaseFixture, Listen_getRecentReleases_cluster)
     }
 }
 
+TEST_F(DatabaseFixture, Listen_getRecentReleases_mediaLibrary)
+{
+    ScopedTrack track{ session, "MyTrack" };
+    ScopedUser user{ session, "MyUser" };
+    ScopedRelease release{ session, "MyRelease" };
+    ScopedMediaLibrary library{ session };
+    ScopedMediaLibrary otherLibrary{ session };
+
+    {
+        auto transaction{ session.createWriteTransaction() };
+        track.get().modify()->setRelease(release.get());
+        track.get().modify()->setMediaLibrary(library.get());
+    }
+
+    const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
+
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        Listen::StatsFindParameters params;
+        params.setMediaLibrary(library.getId());
+
+        auto releases{ Listen::getRecentReleases(session, params) };
+        EXPECT_EQ(releases.moreResults, false);
+        ASSERT_EQ(releases.results.size(), 1);
+        EXPECT_EQ(releases.results[0], release.getId());
+    }
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        Listen::StatsFindParameters params;
+        params.setMediaLibrary(otherLibrary.getId());
+
+        auto releases{ Listen::getRecentReleases(session, params) };
+        EXPECT_EQ(releases.moreResults, false);
+        EXPECT_EQ(releases.results.size(), 0);
+    }
+}
+
 TEST_F(DatabaseFixture, Listen_getRecentTracks)
 {
     ScopedTrack track{ session, "MyTrack" };
@@ -1321,6 +1399,46 @@ TEST_F(DatabaseFixture, Listen_getRecentTracks)
         Listen::StatsFindParameters params;
         params.setUser(user->getId());
         params.setScrobblingBackend(ScrobblingBackend::ListenBrainz);
+
+        auto tracks{ Listen::getRecentTracks(session, params) };
+        EXPECT_EQ(tracks.moreResults, false);
+        EXPECT_EQ(tracks.results.size(), 0);
+    }
+}
+
+
+TEST_F(DatabaseFixture, Listen_getRecentTracks_mediaLibrary)
+{
+    ScopedTrack track{ session, "MyTrack" };
+    ScopedUser user{ session, "MyUser" };
+    ScopedMediaLibrary library{ session };
+    ScopedMediaLibrary otherLibrary{ session };
+
+    const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+    ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
+
+    {
+        auto transaction{ session.createWriteTransaction() };
+        track.get().modify()->setMediaLibrary(library.get());
+    }
+
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        Listen::StatsFindParameters params;
+        params.setMediaLibrary(library.getId());
+
+        auto tracks{ Listen::getRecentTracks(session, params) };
+        EXPECT_EQ(tracks.moreResults, false);
+        ASSERT_EQ(tracks.results.size(), 1);
+        EXPECT_EQ(tracks.results[0], track.getId());
+    }
+
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        Listen::StatsFindParameters params;
+        params.setMediaLibrary(otherLibrary.getId());
 
         auto tracks{ Listen::getRecentTracks(session, params) };
         EXPECT_EQ(tracks.moreResults, false);

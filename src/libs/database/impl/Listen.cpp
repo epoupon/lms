@@ -34,8 +34,10 @@ namespace Database
             auto query{ session.query<ArtistId>("SELECT a.id from artist a")
                             .join("track t ON t.id = t_a_l.track_id")
                             .join("track_artist_link t_a_l ON t_a_l.artist_id = a.id")
-                            .join("listen l ON l.track_id = t.id")
-                            .where("l.user_id = ?").bind(params.user) };
+                            .join("listen l ON l.track_id = t.id") };
+
+            if (params.user.isValid())
+                query.where("l.user_id = ?").bind(params.user);
 
             if (params.backend)
                 query.where("l.backend = ?").bind(*params.backend);
@@ -77,8 +79,10 @@ namespace Database
         {
             auto query{ session.query<ReleaseId>("SELECT r.id from release r")
                             .join("track t ON t.release_id = r.id")
-                            .join("listen l ON l.track_id = t.id")
-                            .where("l.user_id = ?").bind(params.user) };
+                            .join("listen l ON l.track_id = t.id") };
+
+            if (params.user.isValid())
+                query.where("l.user_id = ?").bind(params.user);
 
             if (params.backend)
                 query.where("l.backend = ?").bind(*params.backend);
@@ -119,8 +123,10 @@ namespace Database
         Wt::Dbo::Query<TrackId> createTracksQuery(Wt::Dbo::Session& session, const Listen::StatsFindParameters& params)
         {
             auto query{ session.query<TrackId>("SELECT t.id from track t")
-                        .join("listen l ON l.track_id = t.id")
-                        .where("l.user_id = ?").bind(params.user) };
+                        .join("listen l ON l.track_id = t.id") };
+
+            if (params.user.isValid())
+                query.where("l.user_id = ?").bind(params.user);
 
             if (params.backend)
                 query.where("l.backend = ?").bind(*params.backend);

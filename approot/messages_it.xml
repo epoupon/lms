@@ -15,8 +15,7 @@
 <message id="Lms.loading">Caricamento...</message>
 <message id="Lms.login">Login</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Logout</message>
-<message id="Lms.not-a-directory">Non è una directory</message>
-
+<message id="Lms.ok">Ok</message>
 <message id="Lms.password">Password</message>
 <message id="Lms.password-bad-login-combination">Errata combinazione di Login / Password </message>
 <message id="Lms.password-client-throttled">Superati i tentativi di accesso, riprova più tardi</message>
@@ -28,6 +27,7 @@
 <message id="Lms.passwords-dont-match">Le password non corrispondono</message>
 <message id="Lms.quit-other-session">Un'altra sessione è stata aperta. Vuoi riaprire questa?</message>
 <message id="Lms.save">Salva</message>
+
 
 
 
@@ -44,20 +44,36 @@
 <message id="Lms.Error.user-not-found">Utente non trovato</message>
 
 <!--Administration-->
+
+
+
+
+
+<!--MediaLibraries-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--Scan settings-->
 <message id="Lms.Admin.Database.daily">Giornaliera</message>
-<message id="Lms.Admin.Database.database">Raccolta musicale</message>
 
 <message id="Lms.Admin.Database.hourly">Ogni ora</message>
 <message id="Lms.Admin.Database.immediate-scan">Scansiona ora!</message>
 <message id="Lms.Admin.Database.monthly">Mensile</message>
-<message id="Lms.Admin.Database.menu-database"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Raccolta musicale</message>
 <message id="Lms.Admin.Database.never">Mai</message>
-<message id="Lms.Admin.Database.path">Cartella dei file multimediali</message>
 
 <message id="Lms.Admin.Database.scan-complete">Scansione completata: {1} file totali, {2} aggiunti, {3} aggiornati, {4} eliminati, {5} duplicati, {6} errati</message>
 <message id="Lms.Admin.Database.scan-launched">Scansione avviata!</message>
-<message id="Lms.Admin.Database.scan-settings">Impostazioni scansione</message>
-<message id="Lms.Admin.Database.settings-saved">Impostazioni salvate!</message>
+
 
 
 
@@ -65,6 +81,7 @@
 <message id="Lms.Admin.Database.update-start-time">Orario di aggiornamento</message>
 <message id="Lms.Admin.Database.weekly">Settimanale</message>
 
+<!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Non sono stato in grado di determinare la durata della traccia</message>
 <message id="Lms.Admin.ScannerController.cannot-parse-file">Non in grado di analizzare il file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">Non in grado di leggere il file</message>
@@ -99,7 +116,6 @@
 <message id="Lms.Admin.Users.del-user-confirm">Elimina l'utente ?</message>
 <message id="Lms.Admin.Users.demo">Demo</message>
 <message id="Lms.Admin.Users.users">Utenti</message>
-<message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Utenti</message>
 
 <!--User-->
 <message id="Lms.Admin.User.demo-account">Account demo</message>

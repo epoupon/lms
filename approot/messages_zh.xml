@@ -15,7 +15,6 @@
 <message id="Lms.loading">加载中...</message>
 <message id="Lms.login">登陆</message>
 <message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> 注销</message>
-<message id="Lms.not-a-directory">不是一个目录</message>
 
 <message id="Lms.password">密码</message>
 <message id="Lms.password-bad-login-combination">用户名或密码无效</message>
@@ -32,6 +31,7 @@
 
 
 
+
 <message id="Lms.user">用户</message>
 
 <!--Errors-->
@@ -44,19 +44,36 @@
 <message id="Lms.Error.user-not-found">用户未找到</message>
 
 <!--Administration-->
+
+
+
+
+
+<!--MediaLibraries-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--Scan settings-->
 <message id="Lms.Admin.Database.daily">每日</message>
-<message id="Lms.Admin.Database.database">音乐收藏</message>
 
 <message id="Lms.Admin.Database.hourly">每小时</message>
 <message id="Lms.Admin.Database.immediate-scan">立即扫描！</message>
 <message id="Lms.Admin.Database.monthly">每月</message>
-<message id="Lms.Admin.Database.menu-database"><i class="fa fa-fw fa-database" aria-hidden="true"></i> 音乐收藏</message>
 <message id="Lms.Admin.Database.never">从不</message>
-<message id="Lms.Admin.Database.path">媒体根目录</message>
+
 <message id="Lms.Admin.Database.scan-complete">扫描完成：总文件 {1}，添加文件 {2}，更新文件 {3}，删除文件 {4}，重复文件 {5}，错误文件 {6}</message>
 <message id="Lms.Admin.Database.scan-launched">扫描已完成！</message>
 <message id="Lms.Admin.Database.scan-settings">扫描选项</message>
-<message id="Lms.Admin.Database.settings-saved">新设置已保存！</message>
 
 
 
@@ -64,6 +81,7 @@
 <message id="Lms.Admin.Database.update-start-time">更新开始时间</message>
 <message id="Lms.Admin.Database.weekly">每周</message>
 
+<!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">无法获得音轨时间</message>
 <message id="Lms.Admin.ScannerController.cannot-parse-file">无法解析文件</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">无法读取文件</message>
@@ -98,7 +116,6 @@
 <message id="Lms.Admin.Users.del-user-confirm">删除用户？</message>
 <message id="Lms.Admin.Users.demo">演示</message>
 <message id="Lms.Admin.Users.users">用户</message>
-<message id="Lms.Admin.Users.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> 用户</message>
 
 <!--User-->
 <message id="Lms.Admin.User.demo-account">演示账号</message>
