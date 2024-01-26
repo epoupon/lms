@@ -67,7 +67,6 @@ namespace UserInterface
             });
 
         refreshView();
-
     }
 
     void MediaLibrariesView::refreshView()
