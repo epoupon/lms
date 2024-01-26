@@ -225,9 +225,9 @@ namespace Database {
         Track(const std::filesystem::path& p);
         static pointer create(Session& session, const std::filesystem::path& p);
 
-        static constexpr std::size_t _maxNameLength{ 128 };
-        static constexpr std::size_t _maxCopyrightLength{ 128 };
-        static constexpr std::size_t _maxCopyrightURLLength{ 128 };
+        static constexpr std::size_t _maxNameLength{ 256 };
+        static constexpr std::size_t _maxCopyrightLength{ 256 };
+        static constexpr std::size_t _maxCopyrightURLLength{ 256 };
 
         int						_scanVersion{};
         std::optional<int>		_trackNumber{};

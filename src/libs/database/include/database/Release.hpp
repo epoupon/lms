@@ -188,7 +188,7 @@ namespace Database
         Wt::WDate getDate(bool original) const;
         std::optional<int> getYear(bool original) const;
 
-        static constexpr std::size_t _maxNameLength{ 128 };
+        static constexpr std::size_t _maxNameLength{ 256 };
 
         std::string                         _name;
         std::string                         _MBID;

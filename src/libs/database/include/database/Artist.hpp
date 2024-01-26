@@ -121,7 +121,7 @@ namespace Database
         }
 
     private:
-        static constexpr std::size_t _maxNameLength{ 128 };
+        static constexpr std::size_t _maxNameLength{ 256 };
 
         friend class Session;
         // Create
