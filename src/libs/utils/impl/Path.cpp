@@ -139,14 +139,13 @@ namespace PathUtils
         return (std::find(std::cbegin(supportedExtensions), std::cend(supportedExtensions), extension) != std::cend(supportedExtensions));
     }
 
-    bool isPathInRootPath(const std::filesystem::path& path, const std::filesystem::path& rootPath, const std::filesystem::path* excludeDirFileName)
+    bool isPathInRootPath(const std::filesystem::path& path, const std::filesystem::path& rootPathArg, const std::filesystem::path* excludeDirFileName)
     {
-        std::filesystem::path curPath = path;
+        std::filesystem::path curPath{ path };
+        std::filesystem::path rootPath{ rootPathArg.has_filename() ? rootPathArg : rootPathArg.parent_path() };
 
-        while (curPath.parent_path() != curPath)
+        while (true)
         {
-            curPath = curPath.parent_path();
-
             if (excludeDirFileName && !excludeDirFileName->empty())
             {
                 assert(!excludeDirFileName->has_parent_path());
@@ -158,6 +157,11 @@ namespace PathUtils
 
             if (curPath == rootPath)
                 return true;
+            
+            if (curPath == curPath.root_path())
+                break;
+            
+            curPath = curPath.parent_path();
         }
 
         return false;

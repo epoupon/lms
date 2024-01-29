@@ -19,17 +19,35 @@
 
 #pragma once
 
-#include <string_view>
+#include <string>
+#include <filesystem>
 #include <Wt/Dbo/SqlTraits.h>
 
 namespace Wt::Dbo
 {
     template<>
-    struct sql_value_traits<std::string_view>
+    struct sql_value_traits<std::filesystem::path>
     {
-        static void bind(std::string_view str, SqlStatement* statement, int column, int /* size */)
+        static std::string type(SqlConnection* conn, int size)
         {
-            statement->bind(column, std::string{ str });
+            return sql_value_traits<std::string>::type(conn, size);
+        }
+
+        static void bind(const std::filesystem::path& path, SqlStatement* statement, int column, int /* size */)
+        {
+            statement->bind(column, path.string());
+        }
+
+        static bool read(std::filesystem::path& p, SqlStatement* statement, int column, int size)
+        {
+            std::string s;
+            bool result = statement->getResult(column, &s, size);
+            if (!result)
+                return false;
+
+            p = std::filesystem::path{ s };
+
+            return true;
         }
     };
 }

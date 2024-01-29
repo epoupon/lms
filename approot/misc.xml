@@ -14,6 +14,7 @@
 	${loading-indicator}
 </message>
 
+<message id="Lms.template.trash-btn"><i class="fa fa-fw fa-trash"></i></message>
 <message id="Lms.template.delete-btn"><i class="fa fa-fw fa-times"></i></message>
 <message id="Lms.template.edit-btn"><i class="fa fa-fw fa-edit"></i></message>
 <message id="Lms.template.more-btn"><i class="fa fa-fw fa-ellipsis-v"></i></message>

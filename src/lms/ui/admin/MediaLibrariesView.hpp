@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,19 +19,24 @@
 
 #pragma once
 
+#include <Wt/WTemplate.h>
 #include <Wt/WContainerWidget.h>
 
-namespace UserInterface {
+#include "database/MediaLibraryId.hpp"
 
-class DatabaseSettingsView : public Wt::WContainerWidget
+namespace UserInterface
 {
-	public:
-		DatabaseSettingsView();
+    class MediaLibrariesView : public Wt::WTemplate
+    {
+    public:
+        MediaLibrariesView();
 
-	private:
-		void refreshView();
-};
+    private:
+        void refreshView();
+        void showDeleteLibraryModal(Database::MediaLibraryId library, Wt::WTemplate* libraryEntry);
+        void updateEntry(Database::MediaLibraryId library, Wt::WTemplate* libraryEntry);
+        Wt::WTemplate* addEntry();
 
-
-} // namespace UserInterface
-
+        Wt::WContainerWidget* _libraries{};
+    };
+}

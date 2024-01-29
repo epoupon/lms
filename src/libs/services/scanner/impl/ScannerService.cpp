@@ -22,7 +22,7 @@
 #include <ctime>
 #include <boost/asio/placeholders.hpp>
 
-#include "database/Cluster.hpp"
+#include "database/MediaLibrary.hpp"
 #include "database/TrackFeatures.hpp"
 #include "database/ScanSettings.hpp"
 #include "utils/Exception.hpp"
@@ -113,6 +113,12 @@ namespace Scanner
 
     void ScannerService::abortScan()
     {
+        bool isRunning{};
+        {
+            std::scoped_lock lock{ _statusMutex };
+            isRunning = _curState == State::InProgress;
+        }
+
         LMS_LOG(DBUPDATER, DEBUG, "Aborting scan...");
         std::scoped_lock lock{ _controlMutex };
 
@@ -125,6 +131,9 @@ namespace Scanner
 
         _abortScan = false;
         _ioService.start();
+
+        if (isRunning)
+            _events.scanAborted.emit();
     }
 
     void ScannerService::requestImmediateScan(bool force)
@@ -137,6 +146,11 @@ namespace Scanner
 
                 scheduleScan(force);
             });
+    }
+
+    void ScannerService::requestStop()
+    {
+        abortScan();
     }
 
     void ScannerService::requestReload()
@@ -261,7 +275,7 @@ namespace Scanner
 
         refreshScanSettings();
 
-        IScanStep::ScanContext scanContext{ _settings.mediaDirectory, forceScan, ScanStats {}, ScanStepStats {} };
+        IScanStep::ScanContext scanContext{ forceScan, ScanStats {}, ScanStepStats {} };
         ScanStats& stats{ scanContext.stats };
         stats.startTime = Wt::WDateTime::currentDateTime();
 
@@ -359,7 +373,11 @@ namespace Scanner
                 std::transform(std::cbegin(fileExtensions), std::end(fileExtensions), std::back_inserter(newSettings.supportedExtensions),
                     [](const std::filesystem::path& extension) { return std::filesystem::path{ StringUtils::stringToLower(extension.string()) }; });
             }
-            newSettings.mediaDirectory = scanSettings->getMediaDirectory();
+
+            MediaLibrary::find(_dbSession, [&](const MediaLibrary::pointer& mediaLibrary)
+                {
+                    newSettings.mediaLibraries.push_back(ScannerSettings::MediaLibraryInfo{ mediaLibrary->getId(), mediaLibrary->getPath().lexically_normal() });
+                });
 
             {
                 const auto& tags{ scanSettings->getExtraTagsToScan() };

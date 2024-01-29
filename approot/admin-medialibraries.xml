@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Admin.MediaLibraries.template">
+	<legend>${tr:Lms.Admin.MediaLibraries.media-libraries}</legend>
+	${libraries class="d-grid gap-1 mb-3 Lms-row-container"}
+	${add-btn class="btn btn-primary"}
+</message>
+
+<message id="Lms.Admin.MediaLibraries.template.entry">
+	<div class="d-flex align-items-center Lms-bg-dark-hover">
+		<div class="row align-items-center flex-fill">
+			<div class="col-12 col-md-4">
+				<div class="p-2">
+					${name class="d-block text-truncate"}
+				</div>
+			</div>
+			<div class="col-12 col-md-8">
+				<div class="p-2 d-none d-md-block">
+					${path class="d-block text-truncate"}
+				</div>
+			</div>
+		</div>
+		<div class="p-2 d-flex">
+			${edit-btn class="btn btn-sm btn-outline-secondary border-0"}
+			${del-btn class="btn btn-sm btn-outline-danger border-0"}
+		</div>
+	</div>
+</message>
+
+<message id="Lms.Admin.MediaLibraries.template.delete-library">
+	<div class="modal fade" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">${tr:Lms.Admin.MediaLibrary.del-library-confirm}</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-footer">
+					${del-btn class="btn btn-danger me-1"}${cancel-btn class="btn btn-secondary"}
+				</div>
+			</div>
+		</div>
+	</div>
+</message>
+
+</messages>

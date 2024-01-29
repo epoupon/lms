@@ -44,6 +44,7 @@ namespace PathUtils
     bool hasFileAnyExtension(const std::filesystem::path& file, const std::vector<std::filesystem::path>& extensions);
 
     // Check if a path is within a directory (excludeDirFileName is a relative can be used to exclude a whole directory and its subdirectory, must not have parent_path)
+    // Caller responsibility to call with normalized paths
     bool isPathInRootPath(const std::filesystem::path& path, const std::filesystem::path& rootPath, const std::filesystem::path* excludeDirFileName = {});
 
     std::filesystem::path getLongestCommonPath(const std::filesystem::path& path1, const std::filesystem::path& path2);

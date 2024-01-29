@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2018 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,31 +19,16 @@
 
 #pragma once
 
-#include <Wt/WDateTime.h>
-#include <Wt/WSignal.h>
+#include <Wt/WContainerWidget.h>
 
-#include "ScannerStats.hpp"
-
-namespace Scanner
+namespace UserInterface
 {
-
-    struct Events
+    class ScanSettingsView : public Wt::WContainerWidget
     {
-        // Called if scan was aborted
-        Wt::Signal<> 				scanAborted;
+    public:
+        ScanSettingsView();
 
-        // Called just after scan start
-        Wt::Signal<> 				scanStarted;
-
-        // Called just after scan complete (true if changes have been made)
-        Wt::Signal<ScanStats>		scanComplete;
-
-        // Called during scan in progress
-        Wt::Signal<ScanStepStats>	scanInProgress;
-
-        // Called after a schedule
-        Wt::Signal<Wt::WDateTime>	scanScheduled;
+    private:
+        void refreshView();
     };
-
-} // ns Scanner
-
+} // namespace UserInterface

@@ -61,12 +61,28 @@ namespace UserInterface
         }
 
         case Mode::RecentlyPlayed:
-            artists = scrobblingService.getRecentArtists(LmsApp->getUserId(), getFilters().getClusterIds(), _linkType, range);
+        {
+            Scrobbling::IScrobblingService::ArtistFindParameters params;
+            params.setUser(LmsApp->getUserId());
+            params.setClusters(getFilters().getClusterIds());
+            params.setLinkType(_linkType);
+            params.setRange(range);
+
+            artists = scrobblingService.getRecentArtists(params);
             break;
+        }
 
         case Mode::MostPlayed:
-            artists = scrobblingService.getTopArtists(LmsApp->getUserId(), getFilters().getClusterIds(), _linkType, range);
+        {
+            Scrobbling::IScrobblingService::ArtistFindParameters params;
+            params.setUser(LmsApp->getUserId());
+            params.setClusters(getFilters().getClusterIds());
+            params.setLinkType(_linkType);
+            params.setRange(range);
+
+            artists = scrobblingService.getTopArtists(params);
             break;
+        }
 
         case Mode::RecentlyAdded:
         {

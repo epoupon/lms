@@ -35,6 +35,26 @@ namespace Scrobbling
 {
     using namespace Database;
 
+    namespace
+    {
+        Database::Listen::StatsFindParameters convertToListenFindParameters(const ScrobblingService::FindParameters& params)
+        {
+            Database::Listen::StatsFindParameters listenFindParams;
+            listenFindParams.setUser(params.user);
+            listenFindParams.setClusters(params.clusters);
+            listenFindParams.setRange(params.range);
+            listenFindParams.setMediaLibrary(params.library);
+            listenFindParams.setArtist(params.artist);
+
+            return listenFindParams;
+        }
+
+        Database::Listen::ArtistStatsFindParameters convertToListenFindParameters(const ScrobblingService::ArtistFindParameters& params)
+        {
+            return Database::Listen::ArtistStatsFindParameters{ convertToListenFindParameters(static_cast<const ScrobblingService::FindParameters&>(params)), params.linkType };
+        }
+    }
+
     std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_context& ioContext, Db& db)
     {
         return std::make_unique<ScrobblingService>(ioContext, db);
@@ -84,48 +104,57 @@ namespace Scrobbling
         return backend;
     }
 
-    ScrobblingService::ArtistContainer ScrobblingService::getRecentArtists(UserId userId, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range)
+    ScrobblingService::ArtistContainer ScrobblingService::getRecentArtists(const ArtistFindParameters& params)
     {
         ArtistContainer res;
 
-        const auto backend{ getUserBackend(userId) };
+        const auto backend{ getUserBackend(params.user) };
         if (!backend)
             return res;
+
+        Database::Listen::ArtistStatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
+        listenFindParams.setScrobblingBackend(backend);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        res = Database::Listen::getRecentArtists(session, userId, *backend, clusterIds, linkType, range);
+        res = Database::Listen::getRecentArtists(session, listenFindParams);
         return res;
     }
 
-    ScrobblingService::ReleaseContainer ScrobblingService::getRecentReleases(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
+    ScrobblingService::ReleaseContainer ScrobblingService::getRecentReleases(const FindParameters& params)
     {
         ReleaseContainer res;
 
-        const auto backend{ getUserBackend(userId) };
+        const auto backend{ getUserBackend(params.user) };
         if (!backend)
             return res;
+
+        Database::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
+        listenFindParams.setScrobblingBackend(backend);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        res = Database::Listen::getRecentReleases(session, userId, *backend, clusterIds, range);
+        res = Database::Listen::getRecentReleases(session, listenFindParams);
         return res;
     }
 
-    ScrobblingService::TrackContainer ScrobblingService::getRecentTracks(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
+    ScrobblingService::TrackContainer ScrobblingService::getRecentTracks(const FindParameters& params)
     {
         TrackContainer res;
 
-        const auto backend{ getUserBackend(userId) };
+        const auto backend{ getUserBackend(params.user) };
         if (!backend)
             return res;
+
+        Database::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
+        listenFindParams.setScrobblingBackend(backend);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        res = Database::Listen::getRecentTracks(session, userId, *backend, clusterIds, range);
+        res = Database::Listen::getRecentTracks(session, listenFindParams);
         return res;
     }
 
@@ -170,63 +199,57 @@ namespace Scrobbling
     }
 
     // Top
-    ScrobblingService::ArtistContainer ScrobblingService::getTopArtists(UserId userId, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, Range range)
+    ScrobblingService::ArtistContainer ScrobblingService::getTopArtists(const ArtistFindParameters& params)
     {
         ArtistContainer res;
 
-        const auto backend{ getUserBackend(userId) };
+        const auto backend{ getUserBackend(params.user) };
         if (!backend)
             return res;
+
+        Database::Listen::ArtistStatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
+        listenFindParams.setScrobblingBackend(backend);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        res = Database::Listen::getTopArtists(session, userId, *backend, clusterIds, linkType, range);
+        res = Database::Listen::getTopArtists(session, listenFindParams);
         return res;
     }
 
-    ScrobblingService::ReleaseContainer ScrobblingService::getTopReleases(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
+    ScrobblingService::ReleaseContainer ScrobblingService::getTopReleases(const FindParameters& params)
     {
         ReleaseContainer res;
 
-        const auto backend{ getUserBackend(userId) };
+        const auto backend{ getUserBackend(params.user) };
         if (!backend)
             return res;
+
+        Database::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
+        listenFindParams.setScrobblingBackend(backend);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        res = Database::Listen::getTopReleases(session, userId, *backend, clusterIds, range);
+        res = Database::Listen::getTopReleases(session, listenFindParams);
         return res;
     }
 
-    ScrobblingService::TrackContainer ScrobblingService::getTopTracks(UserId userId, const std::vector<ClusterId>& clusterIds, Range range)
+    ScrobblingService::TrackContainer ScrobblingService::getTopTracks(const FindParameters& params)
     {
         TrackContainer res;
 
-        const auto backend{ getUserBackend(userId) };
+        const auto backend{ getUserBackend(params.user) };
         if (!backend)
             return res;
+
+        Database::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
+        listenFindParams.setScrobblingBackend(backend);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        res = Database::Listen::getTopTracks(session, userId, *backend, clusterIds, range);
-        return res;
-    }
-
-    ScrobblingService::TrackContainer ScrobblingService::getTopTracks(UserId userId, Database::ArtistId artistId, const std::vector<ClusterId>& clusterIds, Range range)
-    {
-        TrackContainer res;
-
-        const auto backend{ getUserBackend(userId) };
-        if (!backend)
-            return res;
-
-        Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-
-        res = Database::Listen::getTopTracks(session, userId, artistId, *backend, clusterIds, range);
+        res = Database::Listen::getTopTracks(session, listenFindParams);
         return res;
     }
 } // ns Scrobbling

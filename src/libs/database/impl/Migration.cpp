@@ -309,6 +309,67 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
         session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV50(Session& session)
+    {
+        // MediaLibrary support
+        session.getDboSession().execute(R"(CREATE TABLE IF NOT EXISTS "media_library" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "path" text not null,
+  "name" text not null
+))");
+
+        const int scanSettingsId{ session.getDboSession().query<int>("SELECT id FROM scan_settings") };
+
+        // Convert the existing media_directory in the scan_settings table to a media_library with id '1'
+        session.getDboSession().execute(R"(INSERT INTO "media_library" ("id", "version", "path", "name")
+SELECT 1, 0, s_s.media_directory, "Main"
+FROM scan_settings s_s
+WHERE id = ?)").bind(scanSettingsId);
+
+        // Remove the outdated column in scan_settings
+        session.getDboSession().execute("ALTER TABLE scan_settings DROP media_directory");
+
+        // Add the media_library column in tracks, with id '1'
+        session.getDboSession().execute(R"(
+CREATE TABLE IF NOT EXISTS "track_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "scan_version" integer not null,
+  "track_number" integer,
+  "disc_number" integer,
+  "total_track" integer,
+  "disc_subtitle" text not null,
+  "name" text not null,
+  "duration" integer,
+  "bitrate" integer not null,
+  "date" text,
+  "year" integer,
+  "original_date" text,
+  "original_year" integer,
+  "file_path" text not null,
+  "file_last_write" text,
+  "file_added" text,
+  "has_cover" boolean not null,
+  "mbid" text not null,
+  "recording_mbid" text not null,
+  "copyright" text not null,
+  "copyright_url" text not null,
+  "track_replay_gain" real,
+  "release_replay_gain" real,
+  "artist_display_name" text not null,
+  "release_id" bigint,
+  "media_library_id" bigint,
+  constraint "fk_track_release" foreign key ("release_id") references "release" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_track_media_library" foreign key ("media_library_id") references "media_library" ("id") on delete set null deferrable initially deferred
+))");
+
+// Migrate data, with the new media_library_id field set to 1
+        session.getDboSession().execute("INSERT INTO track_backup SELECT id, version, scan_version, track_number, disc_number, total_track, disc_subtitle, name, duration, bitrate, date, year, original_date, original_year, file_path, file_last_write, file_added, has_cover, mbid, recording_mbid, copyright, copyright_url, track_replay_gain, release_replay_gain, artist_display_name, release_id, 1 FROM track");
+        session.getDboSession().execute("DROP TABLE track");
+        session.getDboSession().execute("ALTER TABLE track_backup RENAME TO track");
+    }
+
     void doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -337,6 +398,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
             {47, migrateFromV47},
             {48, migrateFromV48},
             {49, migrateFromV49},
+            {50, migrateFromV50},
         };
 
         {

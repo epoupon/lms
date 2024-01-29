@@ -717,7 +717,6 @@ namespace UserInterface
                 });
         }
 
-
         // Create TrackList
         Wt::WTemplateFormView* createTrackList{ contentStack->addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.PlayQueue.template.save-as-tracklist.create-tracklist")) };
         auto createTrackListModel{ std::make_shared<CreateTrackListModel>() };

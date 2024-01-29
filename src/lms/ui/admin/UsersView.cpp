@@ -32,109 +32,105 @@
 #include "LmsApplication.hpp"
 #include "ModalManager.hpp"
 
-namespace UserInterface {
-
-using namespace Database;
-
-UsersView::UsersView()
- : Wt::WTemplate {Wt::WString::tr("Lms.Admin.Users.template")}
+namespace UserInterface
 {
-	addFunction("tr", &Wt::WTemplate::Functions::tr);
+    using namespace Database;
 
-	_container = bindNew<Wt::WContainerWidget>("users");
+    UsersView::UsersView()
+        : Wt::WTemplate{ Wt::WString::tr("Lms.Admin.Users.template") }
+    {
+        addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-	if (Service<::Auth::IPasswordService>::get() && Service<::Auth::IPasswordService>::get()->canSetPasswords())
-	{
-		setCondition("if-can-create-user", true);
+        _container = bindNew<Wt::WContainerWidget>("users");
 
-		Wt::WPushButton* addBtn = bindNew<Wt::WPushButton>("add-btn", Wt::WString::tr("Lms.Admin.Users.add"));
-		addBtn->clicked().connect([]
-		{
-			LmsApp->setInternalPath("/admin/user", true);
-		});
-	}
+        if (Service<::Auth::IPasswordService>::get() && Service<::Auth::IPasswordService>::get()->canSetPasswords())
+        {
+            setCondition("if-can-create-user", true);
 
-	wApp->internalPathChanged().connect(this, [this]()
-	{
-		refreshView();
-	});
+            Wt::WPushButton* addBtn = bindNew<Wt::WPushButton>("add-btn", Wt::WString::tr("Lms.Admin.Users.add"));
+            addBtn->clicked().connect([]
+                {
+                    LmsApp->setInternalPath("/admin/user", true);
+                });
+        }
 
-	refreshView();
-}
+        wApp->internalPathChanged().connect(this, [this]()
+            {
+                refreshView();
+            });
 
-void
-UsersView::refreshView()
-{
-	if (!wApp->internalPathMatches("/admin/users"))
-		return;
+        refreshView();
+    }
 
-	_container->clear();
+    void UsersView::refreshView()
+    {
+        if (!wApp->internalPathMatches("/admin/users"))
+            return;
 
-	auto transaction {LmsApp->getDbSession().createReadTransaction()};
+        _container->clear();
 
-	const User::IdType currentUserId {LmsApp->getUser()};
-	for (const UserId userId : User::find(LmsApp->getDbSession(), User::FindParameters {}).results)
-	{
-		const User::pointer user {User::find(LmsApp->getDbSession(), userId)};
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-		Wt::WTemplate* entry {_container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.entry"))};
+        const User::IdType currentUserId{ LmsApp->getUser() };
+        for (const UserId userId : User::find(LmsApp->getDbSession(), User::FindParameters{}).results)
+        {
+            const User::pointer user{ User::find(LmsApp->getDbSession(), userId) };
 
-		entry->bindString("name", user->getLoginName(), Wt::TextFormat::Plain);
+            Wt::WTemplate* entry{ _container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.entry")) };
 
-		// Create tag
-		if (user->isAdmin() || user->isDemo())
-		{
-			entry->setCondition("if-tag", true);
-			entry->bindString("tag", Wt::WString::tr(user->isAdmin() ? "Lms.Admin.Users.admin" : "Lms.Admin.Users.demo"));
-		}
+            entry->bindString("name", user->getLoginName(), Wt::TextFormat::Plain);
 
-		// Don't edit ourself this way
-		if (user->getId() == currentUserId)
-			continue;
+            // Create tag
+            if (user->isAdmin() || user->isDemo())
+            {
+                entry->setCondition("if-tag", true);
+                entry->bindString("tag", Wt::WString::tr(user->isAdmin() ? "Lms.Admin.Users.admin" : "Lms.Admin.Users.demo"));
+            }
 
-		entry->setCondition("if-edit", true);
-		Wt::WPushButton* editBtn = entry->bindNew<Wt::WPushButton>("edit-btn", Wt::WString::tr("Lms.template.edit-btn"), Wt::TextFormat::XHTML);
-		editBtn->setToolTip(Wt::WString::tr("Lms.edit"));
-		editBtn->clicked().connect([=]()
-		{
-			LmsApp->setInternalPath("/admin/user/" + userId.toString(), true);
-		});
+            // Don't edit ourself this way
+            if (user->getId() == currentUserId)
+                continue;
 
-		Wt::WPushButton* delBtn = entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.template.delete-btn"), Wt::TextFormat::XHTML);
-		delBtn->setToolTip(Wt::WString::tr("Lms.delete"));
-		delBtn->clicked().connect([=]
-		{
-			auto modal {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.delete-user"))};
-			modal->addFunction("tr", &Wt::WTemplate::Functions::tr);
-			Wt::WWidget* modalPtr {modal.get()};
+            entry->setCondition("if-edit", true);
+            Wt::WPushButton* editBtn = entry->bindNew<Wt::WPushButton>("edit-btn", Wt::WString::tr("Lms.template.edit-btn"), Wt::TextFormat::XHTML);
+            editBtn->setToolTip(Wt::WString::tr("Lms.edit"));
+            editBtn->clicked().connect([=]()
+                {
+                    LmsApp->setInternalPath("/admin/user/" + userId.toString(), true);
+                });
 
-			auto* delBtn {modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.delete"))};
-			delBtn->clicked().connect([=]
-			{
-				{
-					auto transaction {LmsApp->getDbSession().createWriteTransaction()};
+            Wt::WPushButton* delBtn = entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.template.trash-btn"), Wt::TextFormat::XHTML);
+            delBtn->setToolTip(Wt::WString::tr("Lms.delete"));
+            delBtn->clicked().connect([=]
+                {
+                    auto modal{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.delete-user")) };
+                    modal->addFunction("tr", &Wt::WTemplate::Functions::tr);
+                    Wt::WWidget* modalPtr{ modal.get() };
 
-					User::pointer user {User::find(LmsApp->getDbSession(), userId)};
-					if (user)
-						user.remove();
-				}
+                    auto* delBtn{ modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.delete")) };
+                    delBtn->clicked().connect([=]
+                        {
+                            {
+                                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-				_container->removeWidget(entry);
+                                User::pointer user{ User::find(LmsApp->getDbSession(), userId) };
+                                if (user)
+                                    user.remove();
+                            }
 
-				LmsApp->getModalManager().dispose(modalPtr);
-			});
+                            _container->removeWidget(entry);
 
-			auto* cancelBtn {modal->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel"))};
-			cancelBtn->clicked().connect([=]
-			{
-				LmsApp->getModalManager().dispose(modalPtr);
-			});
+                            LmsApp->getModalManager().dispose(modalPtr);
+                        });
 
-			LmsApp->getModalManager().show(std::move(modal));
-		});
-	}
-}
+                    auto* cancelBtn{ modal->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel")) };
+                    cancelBtn->clicked().connect([=]
+                        {
+                            LmsApp->getModalManager().dispose(modalPtr);
+                        });
 
+                    LmsApp->getModalManager().show(std::move(modal));
+                });
+        }
+    }
 } // namespace UserInterface
-
-

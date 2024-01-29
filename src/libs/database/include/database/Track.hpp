@@ -37,6 +37,7 @@
 
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
+#include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
@@ -49,6 +50,7 @@ namespace Database {
     class Artist;
     class Cluster;
     class ClusterType;
+    class MediaLibrary;
     class Release;
     class Session;
     class TrackArtistLink;
@@ -76,6 +78,7 @@ namespace Database {
             std::string							releaseName;	// matching this release name
             TrackListId							trackList;		// matching this trackList
             std::optional<int>					trackNumber;	// matching this track number
+            MediaLibraryId                      mediaLibrary;   // If set, tracks in this library
             bool								distinct{ true };
 
             FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
@@ -92,6 +95,7 @@ namespace Database {
             FindParameters& setReleaseName(std::string_view _releaseName) { releaseName = _releaseName; return *this; }
             FindParameters& setTrackList(TrackListId _trackList) { trackList = _trackList; return *this; }
             FindParameters& setTrackNumber(int _trackNumber) { trackNumber = _trackNumber; return *this; }
+            FindParameters& setMediaLibrary(MediaLibraryId  _mediaLibrary) { mediaLibrary = _mediaLibrary; return *this; }
             FindParameters& setDistinct(bool _distinct) { distinct = _distinct; return *this; }
         };
 
@@ -147,6 +151,7 @@ namespace Database {
         void addArtistLink(const ObjectPtr<TrackArtistLink>& artistLink);
         void setRelease(ObjectPtr<Release> release) { _release = getDboPtr(release); }
         void setClusters(const std::vector<ObjectPtr<Cluster>>& clusters);
+        void setMediaLibrary(ObjectPtr<MediaLibrary> mediaLibrary) { _mediaLibrary = getDboPtr(mediaLibrary); }
 
         std::size_t 				getScanVersion() const { return _scanVersion; }
         std::optional<std::size_t>	getTrackNumber() const { return _trackNumber; }
@@ -158,9 +163,9 @@ namespace Database {
         std::chrono::milliseconds	getDuration() const { return _duration; }
         std::size_t                 getBitrate() const { return _bitrate; }
         const Wt::WDateTime& getLastWritten() const { return _fileLastWrite; }
-        const Wt::WDate&            getDate() const { return _date; }
+        const Wt::WDate& getDate() const { return _date; }
         std::optional<int>			getYear() const { return _year; }
-        const Wt::WDate&            getOriginalDate() const { return _originalDate; }
+        const Wt::WDate& getOriginalDate() const { return _originalDate; }
         std::optional<int>			getOriginalYear() const { return _originalYear; };
         Wt::WDateTime				getLastWriteTime() const { return _fileLastWrite; }
         Wt::WDateTime				getAddedTime() const { return _fileAdded; }
@@ -179,6 +184,7 @@ namespace Database {
         ObjectPtr<Release>						getRelease() const { return _release; }
         std::vector<ObjectPtr<Cluster>>			getClusters() const;
         std::vector<ClusterId>					getClusterIds() const;
+        ObjectPtr<MediaLibrary>                 getMediaLibrary() const { return _mediaLibrary; }
 
         std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ClusterTypeId>& clusterTypes, std::size_t size) const;
 
@@ -209,6 +215,7 @@ namespace Database {
             Wt::Dbo::field(a, _releaseReplayGain, "release_replay_gain"); // here in Track since Release does not have concept of "disc" (yet?)
             Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
             Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
+            Wt::Dbo::belongsTo(a, _mediaLibrary, "media_library", Wt::Dbo::OnDeleteSetNull); // don't delete track on media library removal, we want to wait for the next scan to have a chance to migrate files
             Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "track");
             Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
         }
@@ -218,9 +225,9 @@ namespace Database {
         Track(const std::filesystem::path& p);
         static pointer create(Session& session, const std::filesystem::path& p);
 
-        static constexpr std::size_t _maxNameLength{ 128 };
-        static constexpr std::size_t _maxCopyrightLength{ 128 };
-        static constexpr std::size_t _maxCopyrightURLLength{ 128 };
+        static constexpr std::size_t _maxNameLength{ 256 };
+        static constexpr std::size_t _maxCopyrightLength{ 256 };
+        static constexpr std::size_t _maxCopyrightURLLength{ 256 };
 
         int						_scanVersion{};
         std::optional<int>		_trackNumber{};
@@ -246,9 +253,10 @@ namespace Database {
         std::optional<float>	_releaseReplayGain;
         std::string				_artistDisplayName;
 
-        Wt::Dbo::ptr<Release>								_release;
-        Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>>	_trackArtistLinks;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>>			_clusters;
+        Wt::Dbo::ptr<Release>                               _release;
+        Wt::Dbo::ptr<MediaLibrary>                          _mediaLibrary;
+        Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>>  _trackArtistLinks;
+        Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>>          _clusters;
     };
 
     namespace Debug

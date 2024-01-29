@@ -42,17 +42,22 @@ namespace Database
         {
             auto query{ session.getDboSession().query<ResultType>("SELECT " + std::string{ itemToSelect } + " from release r") };
 
-            if (params.sortMethod == ReleaseSortMethod::LastWritten
+            if (params.sortMethod == ReleaseSortMethod::ArtistNameThenName
+                || params.sortMethod == ReleaseSortMethod::LastWritten
                 || params.sortMethod == ReleaseSortMethod::Date
                 || params.sortMethod == ReleaseSortMethod::OriginalDate
                 || params.sortMethod == ReleaseSortMethod::OriginalDateDesc
                 || params.writtenAfter.isValid()
                 || params.dateRange
                 || params.artist.isValid()
-                || params.clusters.size() == 1)
+                || params.clusters.size() == 1
+                || params.mediaLibrary.isValid())
             {
                 query.join("track t ON t.release_id = r.id");
             }
+
+            if (params.mediaLibrary.isValid())
+                query.where("t.media_library_id = ?").bind(params.mediaLibrary);
 
             if (!params.releaseType.empty())
             {
@@ -82,7 +87,8 @@ namespace Database
                     .where("s_r.sync_state <> ?").bind(SyncState::PendingRemove);
             }
 
-            if (params.artist.isValid())
+            if (params.artist.isValid() 
+                || params.sortMethod == ReleaseSortMethod::ArtistNameThenName)
             {
                 query.join("artist a ON a.id = t_a_l.artist_id")
                     .join("track_artist_link t_a_l ON t_a_l.track_id = t.id")
@@ -162,6 +168,9 @@ namespace Database
                 break;
             case ReleaseSortMethod::Name:
                 query.orderBy("r.name COLLATE NOCASE");
+                break;
+            case ReleaseSortMethod::ArtistNameThenName:
+                query.orderBy("a.name COLLATE NOCASE, r.name COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::Random:
                 query.orderBy("RANDOM()");
@@ -274,21 +283,6 @@ namespace Database
         session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM release");
-    }
-
-    RangeResults<ReleaseId> Release::findIdsOrderedByArtist(Session& session, std::optional<Range> range)
-    {
-        session.checkReadTransaction();
-
-        // TODO merge with find
-        auto query{ session.getDboSession().query<ReleaseId>(
-                "SELECT DISTINCT r.id FROM release r"
-                " INNER JOIN track t ON r.id = t.release_id"
-                " INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id"
-                " INNER JOIN artist a ON t_a_l.artist_id = a.id")
-             .orderBy("a.name COLLATE NOCASE, r.name COLLATE NOCASE") };
-
-        return Utils::execQuery<ReleaseId>(query, range);
     }
 
     RangeResults<ReleaseId> Release::findOrphanIds(Session& session, std::optional<Range> range)

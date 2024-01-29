@@ -28,9 +28,8 @@
 #include "responses/Artist.hpp"
 #include "responses/Song.hpp"
 #include "ParameterParsing.hpp"
+#include "SubsonicId.hpp"
  
-#include "ParameterParsing.hpp"
-
 namespace API::Subsonic
 {
     using namespace Database;
@@ -42,6 +41,9 @@ namespace API::Subsonic
             // Mandatory params
             std::string queryString{ getMandatoryParameterAs<std::string>(context.parameters, "query") };
             std::string_view query{ queryString };
+
+            // Optional params
+            const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.parameters, "musicFolderId").value_or(MediaLibraryId{}) };
 
             // Symfonium adds extra ""
             if (context.clientInfo.name == "Symfonium")
@@ -78,6 +80,7 @@ namespace API::Subsonic
                 Artist::FindParameters params;
                 params.setKeywords(keywords);
                 params.setRange(Range{ artistOffset, artistCount });
+                params.setMediaLibrary(mediaLibrary);
 
                 Artist::find(context.dbSession, params, [&](const Artist::pointer& artist)
                     {
@@ -90,6 +93,7 @@ namespace API::Subsonic
                 Release::FindParameters params;
                 params.setKeywords(keywords);
                 params.setRange(Range{ albumOffset, albumCount });
+                params.setMediaLibrary(mediaLibrary);
 
                 Release::find(context.dbSession, params, [&](const Release::pointer& release)
                     {
@@ -102,6 +106,7 @@ namespace API::Subsonic
                 Track::FindParameters params;
                 params.setKeywords(keywords);
                 params.setRange(Range{ songOffset, songCount });
+                params.setMediaLibrary(mediaLibrary);
 
                 Track::find(context.dbSession, params, [&](const Track::pointer& track)
                     {

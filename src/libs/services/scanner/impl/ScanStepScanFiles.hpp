@@ -38,7 +38,7 @@ namespace Scanner
         std::string_view getStepName() const override { return "Scanning files"; }
         void process(ScanContext& context) override;
 
-        void scanAudioFile(const std::filesystem::path& file, ScanContext& context);
+        void scanAudioFile(const std::filesystem::path& file, ScanContext& context, const ScannerSettings::MediaLibraryInfo& libraryInfo);
 
         std::unique_ptr<MetaData::IParser>  _metadataParser;
         const std::vector<std::string>      _extraTagsToParse{ "GENRE", "MOOD", "LANGUAGE", "ALBUMGROUPING" };

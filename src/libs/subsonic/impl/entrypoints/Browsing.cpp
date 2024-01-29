@@ -21,6 +21,7 @@
 
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
+#include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
@@ -92,6 +93,9 @@ namespace API::Subsonic
 
         Response handleGetArtistsRequestCommon(RequestContext& context, bool id3)
         {
+            // Optional params
+            const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.parameters, "musicFolderId").value_or(MediaLibraryId{}) };
+
             Response response{ Response::createOkResponse(context.serverProtocolVersion) };
 
             Response::Node& artistsNode{ response.createNode(id3 ? "artists" : "indexes") };
@@ -119,6 +123,7 @@ namespace API::Subsonic
                     break;
                 }
             }
+            parameters.setMediaLibrary(mediaLibrary);
 
             // This endpoint does not scale: make sort lived transactions in order not to block the whole application
 
@@ -283,9 +288,14 @@ namespace API::Subsonic
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
         Response::Node& musicFoldersNode{ response.createNode("musicFolders") };
 
-        Response::Node& musicFolderNode{ musicFoldersNode.createArrayChild("musicFolder") };
-        musicFolderNode.setAttribute("id", "0");
-        musicFolderNode.setAttribute("name", "Music");
+        auto transaction{ context.dbSession.createReadTransaction() };
+        MediaLibrary::find(context.dbSession, [&](const MediaLibrary::pointer& library)
+            {
+                Response::Node& musicFolderNode{ musicFoldersNode.createArrayChild("musicFolder") };
+
+                musicFolderNode.setAttribute("id", idToString(library->getId()));
+                musicFolderNode.setAttribute("name", library->getName());
+            });
 
         return response;
     }
@@ -502,7 +512,12 @@ namespace API::Subsonic
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
         Response::Node& topSongs{ response.createNode("topSongs") };
 
-        const auto trackIds{ Service<Scrobbling::IScrobblingService>::get()->getTopTracks(context.userId, artists.front()->getId(), {}, Database::Range{ 0, count }) };
+        Scrobbling::IScrobblingService::FindParameters params;
+        params.setUser(context.userId);
+        params.setRange(Database::Range{ 0, count });
+        params.setArtist(artists.front()->getId());
+
+        const auto trackIds{ Service<Scrobbling::IScrobblingService>::get()->getTopTracks(params) };
         for (const TrackId trackId : trackIds.results)
         {
             if (Track::pointer track{ Track::find(context.dbSession, trackId) })

@@ -77,3 +77,35 @@ TEST(Path, getLongestCommonPathIterator)
         EXPECT_EQ(PathUtils::getLongestCommonPath(std::cbegin(test.paths), std::cend(test.paths)), test.expectedCommonPath);
     }
 }
+
+TEST(Path, isPathInRootPath)
+{
+    using namespace PathUtils;
+
+    struct TestCase
+    {
+        std::filesystem::path path;
+        std::filesystem::path rootPath;
+        bool expectedResult;
+    };
+
+    TestCase tests[]
+    {
+        {"/file.txt", "/", true},
+        {"/root/folder/file.txt", "/root", true},
+        {"/root/file.txt", "/root", true},
+        {"/root/file.txt", "/root/", true},
+        {"/root", "/root", true},
+        {"/root", "/root/", true},
+        {"/root/", "/root", true},
+        {"/root/", "/root/", true},
+        {"/folder/file.txt", "/root", false},
+        {"/folder/file.txt", "/root/", false},
+        {"", "/root", false},
+    };
+
+    for (const TestCase& test : tests)
+    {
+        EXPECT_EQ(PathUtils::isPathInRootPath(test.path, test.rootPath), test.expectedResult) << "Failed: path = " << test.path << ", rootPath = " << test.rootPath;
+    }
+}

@@ -29,19 +29,28 @@ namespace Database
 {
     namespace
     {
-        Wt::Dbo::Query<ArtistId> createArtistsQuery(Wt::Dbo::Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType)
+        Wt::Dbo::Query<ArtistId> createArtistsQuery(Wt::Dbo::Session& session, const Listen::ArtistStatsFindParameters& params)
         {
             auto query{ session.query<ArtistId>("SELECT a.id from artist a")
                             .join("track t ON t.id = t_a_l.track_id")
                             .join("track_artist_link t_a_l ON t_a_l.artist_id = a.id")
-                            .join("listen l ON l.track_id = t.id")
-                            .where("l.user_id = ?").bind(userId)
-                            .where("l.backend = ?").bind(backend) };
+                            .join("listen l ON l.track_id = t.id") };
 
-            if (linkType)
-                query.where("t_a_l.type = ?").bind(*linkType);
+            if (params.user.isValid())
+                query.where("l.user_id = ?").bind(params.user);
 
-            if (!clusterIds.empty())
+            if (params.backend)
+                query.where("l.backend = ?").bind(*params.backend);
+
+            assert(!params.artist.isValid()); // poor check
+
+            if (params.library.isValid())
+                query.where("t.media_library_id = ?").bind(params.library);
+
+            if (params.linkType)
+                query.where("t_a_l.type = ?").bind(*params.linkType);
+
+            if (!params.clusters.empty())
             {
                 std::ostringstream oss;
                 oss << "a.id IN (SELECT DISTINCT a.id FROM artist a"
@@ -51,14 +60,14 @@ namespace Database
                     " INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
 
                 WhereClause clusterClause;
-                for (auto id : clusterIds)
+                for (auto id : params.clusters)
                 {
                     clusterClause.Or(WhereClause("c.id = ?"));
                     query.bind(id);
                 }
 
                 oss << " " << clusterClause.get();
-                oss << " GROUP BY t.id,a.id HAVING COUNT(DISTINCT c.id) = " << clusterIds.size() << ")";
+                oss << " GROUP BY t.id,a.id HAVING COUNT(DISTINCT c.id) = " << params.clusters.size() << ")";
 
                 query.where(oss.str());
             }
@@ -66,15 +75,28 @@ namespace Database
             return query;
         }
 
-        Wt::Dbo::Query<ReleaseId> createReleasesQuery(Wt::Dbo::Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds)
+        Wt::Dbo::Query<ReleaseId> createReleasesQuery(Wt::Dbo::Session& session, const Listen::StatsFindParameters& params)
         {
             auto query{ session.query<ReleaseId>("SELECT r.id from release r")
                             .join("track t ON t.release_id = r.id")
-                            .join("listen l ON l.track_id = t.id")
-                            .where("l.user_id = ?").bind(userId)
-                            .where("l.backend = ?").bind(backend) };
+                            .join("listen l ON l.track_id = t.id") };
 
-            if (!clusterIds.empty())
+            if (params.user.isValid())
+                query.where("l.user_id = ?").bind(params.user);
+
+            if (params.backend)
+                query.where("l.backend = ?").bind(*params.backend);
+
+            if (params.artist.isValid())
+            {
+                query.join("track_artist_link t_a_l ON t_a_l.track_id = t.id")
+                    .where("t_a_l.artist_id = ?").bind(params.artist);
+            }
+
+            if (params.library.isValid())
+                query.where("t.media_library_id = ?").bind(params.library);
+
+            if (!params.clusters.empty())
             {
                 std::ostringstream oss;
                 oss << "r.id IN (SELECT DISTINCT r.id FROM release r"
@@ -83,14 +105,14 @@ namespace Database
                     " INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
 
                 WhereClause clusterClause;
-                for (ClusterId id : clusterIds)
+                for (ClusterId id : params.clusters)
                 {
                     clusterClause.Or(WhereClause("c.id = ?"));
                     query.bind(id);
                 }
 
                 oss << " " << clusterClause.get();
-                oss << " GROUP BY t.id HAVING COUNT(DISTINCT c.id) = " << clusterIds.size() << ")";
+                oss << " GROUP BY t.id HAVING COUNT(DISTINCT c.id) = " << params.clusters.size() << ")";
 
                 query.where(oss.str());
             }
@@ -98,17 +120,27 @@ namespace Database
             return query;
         }
 
-        Wt::Dbo::Query<TrackId> createTracksQuery(Wt::Dbo::Session& session, UserId userId, ArtistId artistId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds)
+        Wt::Dbo::Query<TrackId> createTracksQuery(Wt::Dbo::Session& session, const Listen::StatsFindParameters& params)
         {
             auto query{ session.query<TrackId>("SELECT t.id from track t")
-                        .join("listen l ON l.track_id = t.id")
-                        .where("l.user_id = ?").bind(userId)
-                        .where("l.backend = ?").bind(backend) };
+                        .join("listen l ON l.track_id = t.id") };
 
-            if (artistId.isValid())
-                query.join("track_artist_link t_a_l ON t_a_l.track_id = t.id").where("t_a_l.artist_id = ?").bind(artistId);
+            if (params.user.isValid())
+                query.where("l.user_id = ?").bind(params.user);
 
-            if (!clusterIds.empty())
+            if (params.backend)
+                query.where("l.backend = ?").bind(*params.backend);
+
+            if (params.artist.isValid())
+            {
+                query.join("track_artist_link t_a_l ON t_a_l.track_id = t.id")
+                    .where("t_a_l.artist_id = ?").bind(params.artist);
+            }
+
+            if (params.library.isValid())
+                query.where("t.media_library_id = ?").bind(params.library);
+
+            if (!params.clusters.empty())
             {
                 std::ostringstream oss;
                 oss << "t.id IN (SELECT DISTINCT t.id FROM track t"
@@ -116,14 +148,14 @@ namespace Database
                     " INNER JOIN cluster c ON c.id = t_c.cluster_id";
 
                 WhereClause clusterClause;
-                for (auto id : clusterIds)
+                for (auto id : params.clusters)
                 {
                     clusterClause.Or(WhereClause("c.id = ?")).bind(id.toString());
                     query.bind(id);
                 }
 
                 oss << " " << clusterClause.get();
-                oss << " GROUP BY t.id HAVING COUNT(*) = " << clusterIds.size() << ")";
+                oss << " GROUP BY t.id HAVING COUNT(*) = " << params.clusters.size() << ")";
 
                 query.where(oss.str());
             }
@@ -188,76 +220,66 @@ namespace Database
             .resultValue();
     }
 
-    RangeResults<ArtistId> Listen::getTopArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range)
+    RangeResults<ArtistId> Listen::getTopArtists(Session& session, const ArtistStatsFindParameters& params)
     {
         session.checkReadTransaction();
-        auto query{ createArtistsQuery(session.getDboSession(), userId, backend, clusterIds, linkType) };
+        auto query{ createArtistsQuery(session.getDboSession(), params) };
 
         auto collection{ query
             .orderBy("COUNT(a.id) DESC")
             .groupBy("a.id") };
 
-        return Utils::execQuery<ArtistId>(query, range);
+        return Utils::execQuery<ArtistId>(query, params.range);
     }
 
-    RangeResults<ReleaseId> Listen::getTopReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range)
+    RangeResults<ReleaseId> Listen::getTopReleases(Session& session, const StatsFindParameters& params)
     {
         session.checkReadTransaction();
-        auto query{ createReleasesQuery(session.getDboSession(), userId, backend, clusterIds)
+        auto query{ createReleasesQuery(session.getDboSession(), params)
                         .orderBy("COUNT(r.id) DESC")
                         .groupBy("r.id") };
 
-        return Utils::execQuery<ReleaseId>(query, range);
+        return Utils::execQuery<ReleaseId>(query, params.range);
     }
 
-    RangeResults<TrackId> Listen::getTopTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range)
+    RangeResults<TrackId> Listen::getTopTracks(Session& session, const StatsFindParameters& params)
     {
         session.checkReadTransaction();
-        auto query{ createTracksQuery(session.getDboSession(), userId, ArtistId{}, backend, clusterIds)
+        auto query{ createTracksQuery(session.getDboSession(), params)
                         .orderBy("COUNT(t.id) DESC")
                         .groupBy("t.id") };
 
-        return Utils::execQuery<TrackId>(query, range);
+        return Utils::execQuery<TrackId>(query, params.range);
     }
 
-    RangeResults<TrackId> Listen::getTopTracks(Session& session, UserId userId, ArtistId artistId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range)
+    RangeResults<ArtistId> Listen::getRecentArtists(Session& session, const ArtistStatsFindParameters& params)
     {
         session.checkReadTransaction();
-        auto query{ createTracksQuery(session.getDboSession(), userId, artistId, backend, clusterIds)
-                        .orderBy("COUNT(t.id) DESC")
-                        .groupBy("t.id") };
-
-        return Utils::execQuery<TrackId>(query, range);
-    }
-
-    RangeResults<ArtistId> Listen::getRecentArtists(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<TrackArtistLinkType> linkType, std::optional<Range> range)
-    {
-        session.checkReadTransaction();
-        auto query{ createArtistsQuery(session.getDboSession(), userId, backend, clusterIds, linkType)
+        auto query{ createArtistsQuery(session.getDboSession(), params)
                         .groupBy("a.id").having("l.date_time = MAX(l.date_time)")
                         .orderBy("l.date_time DESC") };
 
-        return Utils::execQuery<ArtistId>(query, range);
+        return Utils::execQuery<ArtistId>(query, params.range);
     }
 
-    RangeResults<ReleaseId> Listen::getRecentReleases(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range)
+    RangeResults<ReleaseId> Listen::getRecentReleases(Session& session, const StatsFindParameters& params)
     {
         session.checkReadTransaction();
-        auto query{ createReleasesQuery(session.getDboSession(), userId, backend, clusterIds)
+        auto query{ createReleasesQuery(session.getDboSession(), params)
                         .groupBy("r.id").having("l.date_time = MAX(l.date_time)")
                         .orderBy("l.date_time DESC") };
 
-        return Utils::execQuery<ReleaseId>(query, range);
+        return Utils::execQuery<ReleaseId>(query, params.range);
     }
 
-    RangeResults<TrackId> Listen::getRecentTracks(Session& session, UserId userId, ScrobblingBackend backend, const std::vector<ClusterId>& clusterIds, std::optional<Range> range)
+    RangeResults<TrackId> Listen::getRecentTracks(Session& session, const StatsFindParameters& params)
     {
         session.checkReadTransaction();
-        auto query{ createTracksQuery(session.getDboSession(), userId, ArtistId{}, backend, clusterIds)
+        auto query{ createTracksQuery(session.getDboSession(), params)
                         .groupBy("t.id").having("l.date_time = MAX(l.date_time)")
                         .orderBy("l.date_time DESC") };
 
-        return Utils::execQuery<TrackId>(query, range);
+        return Utils::execQuery<TrackId>(query, params.range);
     }
 
     std::size_t Listen::getCount(Session& session, UserId userId, TrackId trackId)

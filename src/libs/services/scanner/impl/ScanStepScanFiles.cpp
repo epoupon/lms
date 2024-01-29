@@ -23,6 +23,7 @@
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
+#include "database/MediaLibrary.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
@@ -232,33 +233,36 @@ namespace Scanner
 
         context.currentStepStats.totalElems = context.stats.filesScanned;
 
-        PathUtils::exploreFilesRecursive(context.directory, [&](std::error_code ec, const std::filesystem::path& path)
-            {
-                if (_abortScan)
-                    return false;
-
-                if (ec)
+        for (const ScannerSettings::MediaLibraryInfo& mediaLibrary : _settings.mediaLibraries)
+        {
+            PathUtils::exploreFilesRecursive(mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path)
                 {
-                    LMS_LOG(DBUPDATER, ERROR, "Cannot process entry '" << path.string() << "': " << ec.message());
-                    context.stats.errors.emplace_back(ScanError{ path, ScanErrorType::CannotReadFile, ec.message() });
-                }
-                else if (PathUtils::hasFileAnyExtension(path, _settings.supportedExtensions))
-                {
-                    scanAudioFile(path, context);
+                    if (_abortScan)
+                        return false;
 
-                    context.currentStepStats.processedElems++;
-                    _progressCallback(context.currentStepStats);
+                    if (ec)
+                    {
+                        LMS_LOG(DBUPDATER, ERROR, "Cannot process entry '" << path.string() << "': " << ec.message());
+                        context.stats.errors.emplace_back(ScanError{ path, ScanErrorType::CannotReadFile, ec.message() });
+                    }
+                    else if (PathUtils::hasFileAnyExtension(path, _settings.supportedExtensions))
+                    {
+                        scanAudioFile(path, context, mediaLibrary);
 
-                    // optimize the database during scan (if we import a very large database, it may be too late to do it once at end)
-                    if ((context.currentStepStats.processedElems % 1'000) == 0)
-                        _db.getTLSSession().optimize();
-                }
+                        context.currentStepStats.processedElems++;
+                        _progressCallback(context.currentStepStats);
 
-                return true;
-            }, &excludeDirFileName);
+                        // optimize the database during scan (if we import a very large database, it may be too late to do it once at end)
+                        if ((context.currentStepStats.processedElems % 1'000) == 0)
+                            _db.getTLSSession().optimize();
+                    }
+
+                    return true;
+                }, &excludeDirFileName);
+        }
     }
 
-    void ScanStepScanFiles::scanAudioFile(const std::filesystem::path& file, ScanContext& context)
+    void ScanStepScanFiles::scanAudioFile(const std::filesystem::path& file, ScanContext& context, const ScannerSettings::MediaLibraryInfo& libraryInfo)
     {
         ScanStats& stats{ context.stats };
         Wt::WDateTime lastWriteTime;
@@ -273,6 +277,7 @@ namespace Scanner
             return;
         }
 
+        bool needUpdateLibrary{};
         if (!context.forceScan)
         {
             // Skip file if last write is the same
@@ -281,12 +286,33 @@ namespace Scanner
 
             const Track::pointer track{ Track::findByPath(dbSession, file) };
 
-            if (track && track->getLastWriteTime().toTime_t() == lastWriteTime.toTime_t()
-                && track->getScanVersion() == _settings.scanVersion)
+            if (track
+                && track->getLastWriteTime().toTime_t() == lastWriteTime.toTime_t()
+                && track->getScanVersion() == _settings.scanVersion
+                )
             {
-                stats.skips++;
-                return;
+                // this file may have been moved from one library to another, then we just need to update the media library id instead of a full rescan
+                auto trackMediaLibrary{ track->getMediaLibrary() };
+                if (trackMediaLibrary && trackMediaLibrary->getId() == libraryInfo.id)
+                {
+                    stats.skips++;
+                    return;
+                }
+
+                needUpdateLibrary = true;
             }
+        }
+
+        if (needUpdateLibrary)
+        {
+            Database::Session& dbSession{ _db.getTLSSession() };
+            auto transaction{ _db.getTLSSession().createWriteTransaction() };
+
+            Track::pointer track{ Track::findByPath(dbSession, file) };
+            assert(track);
+            track.modify()->setMediaLibrary(Database::MediaLibrary::find(dbSession, libraryInfo.id)); // may be null, will be handled in the next scan anyway
+            stats.updates++;
+            return;
         }
 
         std::optional<MetaData::Track> trackInfo{ _metadataParser->parse(file) };
@@ -330,8 +356,14 @@ namespace Scanner
                         continue;
 
                     // Skip if duplicate files no longer in media root: as it will be removed later, we will end up with no file
-                    if (!PathUtils::isPathInRootPath(file, _settings.mediaDirectory, &excludeDirFileName))
+                    if (std::none_of(std::cbegin(_settings.mediaLibraries), std::cend(_settings.mediaLibraries),
+                        [&](const ScannerSettings::MediaLibraryInfo& libraryInfo)
+                        {
+                            return PathUtils::isPathInRootPath(file, libraryInfo.rootDirectory, &excludeDirFileName);
+                        }))
+                    {
                         continue;
+                    }
 
                     LMS_LOG(DBUPDATER, DEBUG, "Skipped '" << file.string() << "' (similar MBID in '" << otherTrack->getPath().string() << "')");
                     // As this MBID already exists, just remove what we just scanned
@@ -389,6 +421,7 @@ namespace Scanner
         // Track related data
         assert(track);
 
+        track.modify()->setMediaLibrary(MediaLibrary::find(dbSession, libraryInfo.id)); // may be null if settings are updated in // => next scan will correct this
         track.modify()->clearArtistLinks();
         // Do not fallback on artists with the same name but having a MBID for artist and releaseArtists, as it may be corrected by properly tagging files
         for (const Artist::pointer& artist : getOrCreateArtists(dbSession, trackInfo->artists, false))
@@ -450,7 +483,7 @@ namespace Scanner
         // If a file has an OriginalDate but no date, set it to ease filtering
         if (!trackInfo->date.isValid() && trackInfo->originalDate.isValid())
             track.modify()->setDate(trackInfo->originalDate);
-        
+
         // If a file has an OriginalYear but no Year, set it to ease filtering
         if (!trackInfo->year && trackInfo->originalYear)
             track.modify()->setYear(trackInfo->originalYear);

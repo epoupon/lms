@@ -27,6 +27,7 @@
 #include "database/Types.hpp"
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
+#include "database/MediaLibraryId.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 #include "database/UserId.hpp"
@@ -53,10 +54,12 @@ namespace Feedback
             Database::UserId                              user;
             std::vector<Database::ClusterId>              clusters;	// if non empty, at least one artist that belongs to these clusters
             std::optional<Database::Range>                range;
+            Database::MediaLibraryId                      library;
 
             FindParameters& setUser(const Database::UserId _user) { user = _user; return *this; }
             FindParameters& setClusters(const std::vector<Database::ClusterId>& _clusters) { clusters = _clusters; return *this; }
             FindParameters& setRange(std::optional<Database::Range> _range) { range = _range; return *this; }
+            FindParameters& setMediaLibrary(Database::MediaLibraryId _library) { library  = _library; return *this; }
         };
 
         // Artists

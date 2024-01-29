@@ -20,6 +20,7 @@
 #pragma once
 
 #include "database/ArtistId.hpp"
+#include "database/MediaLibraryId.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 #include "database/TrackListId.hpp"
@@ -30,6 +31,7 @@ namespace API::Subsonic
     struct RootId {};
 
     std::string idToString(Database::ArtistId id);
+    std::string idToString(Database::MediaLibraryId id);
     std::string idToString(Database::ReleaseId id);
     std::string idToString(Database::TrackId id);
     std::string idToString(Database::TrackListId id);
@@ -44,6 +46,9 @@ namespace StringUtils
 
     template<>
     std::optional<Database::ArtistId> readAs(std::string_view str);
+
+    template<>
+    std::optional<Database::MediaLibraryId> readAs(std::string_view str);
 
     template<>
     std::optional<Database::ReleaseId> readAs(std::string_view str);

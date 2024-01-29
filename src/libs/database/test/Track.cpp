@@ -63,6 +63,57 @@ TEST_F(DatabaseFixture, Track)
     }
 }
 
+TEST_F(DatabaseFixture, Track_MediaLibrary)
+{
+    ScopedTrack track{ session, "MyTrackFile" };
+    ScopedMediaLibrary library{ session };
+    ScopedMediaLibrary otherLibrary{ session };
+
+    {
+        auto transaction{ session.createWriteTransaction() };
+        track.get().modify()->setMediaLibrary(library.get());
+    }
+
+    {
+        auto transaction{ session.createWriteTransaction() };
+        const auto tracks{ Track::findIds(session, Track::FindParameters{}.setMediaLibrary(library->getId()))};
+        ASSERT_EQ(tracks.results.size(), 1);
+        EXPECT_EQ(tracks.results.front(), track.getId());
+    }
+     {
+        auto transaction{ session.createWriteTransaction() };
+        const auto tracks{ Track::findIds(session, Track::FindParameters{}.setMediaLibrary(otherLibrary->getId()))};
+        EXPECT_EQ(tracks.results.size(), 0);
+    }
+}
+
+TEST_F(DatabaseFixture, Track_noMediaLibrary)
+{
+    ScopedTrack track{ session, "MyTrackFile" };
+    {
+        auto transaction{ session.createReadTransaction() };
+        MediaLibrary::pointer mediaLibrary{ track->getMediaLibrary() };
+        EXPECT_EQ(mediaLibrary, MediaLibrary::pointer{});
+        EXPECT_FALSE(mediaLibrary);
+        EXPECT_TRUE(!mediaLibrary);
+    }
+}
+
+TEST_F(DatabaseFixture, TrackNotExists)
+{
+    auto transaction{ session.createReadTransaction() };
+
+    EXPECT_FALSE(Track::exists(session, TrackId{ 42 }));
+    EXPECT_EQ(Track::find(session, TrackId{ 42 }), Track::pointer{});
+    EXPECT_FALSE(Track::find(session, TrackId{ 42 }));
+    EXPECT_EQ(Track::find(session, Track::FindParameters{}).results.size(), 0);
+    {
+        auto track{ Track::find(session, TrackId{ 42 }) };
+        EXPECT_TRUE(!track);
+        EXPECT_FALSE(track);
+    }
+}
+
 TEST_F(DatabaseFixture, MultipleTracks)
 {
     ScopedTrack track1{ session, "MyTrackFile1" };

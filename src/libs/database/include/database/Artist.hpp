@@ -29,6 +29,7 @@
 
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
+#include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/Types.hpp"
@@ -64,6 +65,7 @@ namespace Database
             std::optional<FeedbackBackend>		feedbackBackend; // and for this feedback backend
             TrackId								track;		// artists involved in this track
             ReleaseId							release;	// artists involved in this release
+            MediaLibraryId                      mediaLibrary; // artists that belong to this library
 
             FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
@@ -74,6 +76,7 @@ namespace Database
             FindParameters& setStarringUser(UserId _user, FeedbackBackend _feedbackBackend) { starringUser = _user; feedbackBackend = _feedbackBackend; return *this; }
             FindParameters& setTrack(TrackId _track) { track = _track; return *this; }
             FindParameters& setRelease(ReleaseId _release) { release = _release; return *this; }
+            FindParameters& setMediaLibrary(MediaLibraryId  _mediaLibrary) { mediaLibrary = _mediaLibrary; return *this; }
         };
 
         Artist() = default;
@@ -118,7 +121,7 @@ namespace Database
         }
 
     private:
-        static constexpr std::size_t _maxNameLength{ 128 };
+        static constexpr std::size_t _maxNameLength{ 256 };
 
         friend class Session;
         // Create

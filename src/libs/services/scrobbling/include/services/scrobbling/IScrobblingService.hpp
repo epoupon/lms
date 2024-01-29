@@ -28,6 +28,7 @@
 #include "services/scrobbling/Listen.hpp"
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
+#include "database/MediaLibraryId.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 #include "database/Types.hpp"
@@ -39,7 +40,6 @@ namespace Database
 
 namespace Scrobbling
 {
-
     class IScrobblingService
     {
     public:
@@ -55,11 +55,36 @@ namespace Scrobbling
         using ArtistContainer = Database::RangeResults<Database::ArtistId>;
         using ReleaseContainer = Database::RangeResults<Database::ReleaseId>;
         using TrackContainer = Database::RangeResults<Database::TrackId>;
-        
+
+        struct FindParameters
+        {
+            Database::UserId                              user;
+            std::vector<Database::ClusterId>              clusters;	// if non empty, at least one artist that belongs to these clusters
+            std::optional<Database::Range>                range;
+            Database::MediaLibraryId                      library; // if set, match this library
+            Database::ArtistId                            artist; // if set, match this artist
+
+            FindParameters& setUser(const Database::UserId _user) { user = _user; return *this; }
+            FindParameters& setClusters(const std::vector<Database::ClusterId>& _clusters) { clusters = _clusters; return *this; }
+            FindParameters& setRange(std::optional<Database::Range> _range) { range = _range; return *this; }
+            FindParameters& setMediaLibrary(Database::MediaLibraryId _library) { library = _library; return *this; }
+            FindParameters& setArtist(Database::ArtistId _artist) { artist = _artist; return *this; }
+        };
+
+        // Artists
+        struct ArtistFindParameters : public FindParameters
+        {
+            std::optional<Database::TrackArtistLinkType>  linkType;	// if set, only artists that have produced at least one track with this link type
+            Database::ArtistSortMethod                    sortMethod{ Database::ArtistSortMethod::None };
+
+            ArtistFindParameters& setLinkType(std::optional<Database::TrackArtistLinkType> _linkType) { linkType = _linkType; return *this; }
+            ArtistFindParameters& setSortMethod(Database::ArtistSortMethod _sortMethod) { sortMethod = _sortMethod; return *this; }
+        };
+
         // From most recent to oldest
-        virtual ArtistContainer getRecentArtists(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, std::optional<Database::TrackArtistLinkType> linkType, Database::Range range) = 0;
-        virtual ReleaseContainer getRecentReleases(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) = 0;
-        virtual TrackContainer getRecentTracks(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) = 0;
+        virtual ArtistContainer getRecentArtists(const ArtistFindParameters& params) = 0;
+        virtual ReleaseContainer getRecentReleases(const FindParameters& params) = 0;
+        virtual TrackContainer getRecentTracks(const FindParameters& params) = 0;
 
         virtual std::size_t getCount(Database::UserId userId, Database::ReleaseId releaseId) = 0;
         virtual std::size_t getCount(Database::UserId userId, Database::TrackId trackId) = 0;
@@ -68,13 +93,10 @@ namespace Scrobbling
         virtual Wt::WDateTime getLastListenDateTime(Database::UserId userId, Database::TrackId trackId) = 0;
 
         // Top
-        virtual ArtistContainer getTopArtists(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, std::optional<Database::TrackArtistLinkType> linkType, Database::Range) = 0;
-        virtual ReleaseContainer getTopReleases(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) = 0;
-        virtual TrackContainer getTopTracks(Database::UserId userId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) = 0;
-        virtual TrackContainer getTopTracks(Database::UserId userId, Database::ArtistId artistId, const std::vector<Database::ClusterId>& clusterIds, Database::Range range) = 0;
+        virtual ArtistContainer getTopArtists(const ArtistFindParameters& params) = 0;
+        virtual ReleaseContainer getTopReleases(const FindParameters& params) = 0;
+        virtual TrackContainer getTopTracks(const FindParameters& params) = 0;
     };
 
     std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_service& ioService, Database::Db& db);
-
 } // ns Scrobbling
-

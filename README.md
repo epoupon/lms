@@ -54,7 +54,7 @@ $setmulti(albumartistssort,%_albumartists_sort%)
 ```
 
 ## Keyboard shortcuts
-* Play/pause: <kbd>Space</bbd>
+* Play/pause: <kbd>Space</kbd>
 * Previous track: <kbd>Ctrl</kbd> + <kbd>Left</kbd>
 * Next track: <kbd>Ctrl</kbd> + <kbd>Right</kbd>
 

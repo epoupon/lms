@@ -148,6 +148,39 @@ TEST_F(DatabaseFixture, Artist_singleTrack)
     }
 }
 
+TEST_F(DatabaseFixture, Artist_singleTrack_mediaLibrary)
+{
+    ScopedTrack track{ session, "MyTrack" };
+    ScopedArtist artist{ session, "MyArtist" };
+    ScopedMediaLibrary library{ session };
+    ScopedMediaLibrary otherLibrary{ session };
+
+    {
+        auto transaction{ session.createWriteTransaction() };
+
+        track.get().modify()->setName("MyTrackName");
+        TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+        track.get().modify()->setMediaLibrary(library.get());
+    }
+    {
+        auto transaction{ session.createReadTransaction() };
+        auto artists{ Artist::findIds(session, Artist::FindParameters{}.setTrack(track->getId())) };
+        ASSERT_EQ(artists.results.size(), 1);
+        EXPECT_EQ(artists.results.front(), artist.getId());
+    }
+    {
+        auto transaction{ session.createReadTransaction() };
+        auto artists{ Artist::findIds(session, Artist::FindParameters{}.setMediaLibrary(library->getId())) };
+        ASSERT_EQ(artists.results.size(), 1);
+        EXPECT_EQ(artists.results.front(), artist.getId());
+    }
+     {
+        auto transaction{ session.createReadTransaction() };
+        auto artists{ Artist::findIds(session, Artist::FindParameters{}.setMediaLibrary(otherLibrary->getId())) };
+        EXPECT_EQ(artists.results.size(), 0);
+    }
+}
+
 TEST_F(DatabaseFixture, Artist_singleTracktMultiRoles)
 {
     ScopedTrack track{ session, "MyTrack" };

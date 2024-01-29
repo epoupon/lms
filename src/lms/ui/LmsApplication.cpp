@@ -42,15 +42,16 @@
 #include "utils/String.hpp"
 
 #include "admin/InitWizardView.hpp"
-#include "admin/DatabaseSettingsView.hpp"
+#include "admin/MediaLibrariesView.hpp"
+#include "admin/ScanSettingsView.hpp"
 #include "admin/UserView.hpp"
 #include "admin/UsersView.hpp"
+#include "admin/ScannerController.hpp"
 #include "common/Template.hpp"
 #include "explore/Explore.hpp"
 #include "explore/Filters.hpp"
 #include "resource/AudioFileResource.hpp"
 #include "resource/AudioTranscodingResource.hpp"
-#include "resource/DownloadResource.hpp"
 #include "resource/CoverResource.hpp"
 #include "Auth.hpp"
 #include "LmsApplicationException.hpp"
@@ -73,9 +74,11 @@ namespace UserInterface
             const std::string appRoot{ Wt::WApplication::appRoot() };
 
             auto res{ std::make_shared<Wt::WMessageResourceBundle>() };
-            res->use(appRoot + "admin-database");
             res->use(appRoot + "admin-initwizard");
+            res->use(appRoot + "admin-medialibraries");
+            res->use(appRoot + "admin-medialibrary");
             res->use(appRoot + "admin-scannercontroller");
+            res->use(appRoot + "admin-scansettings");
             res->use(appRoot + "admin-user");
             res->use(appRoot + "admin-users");
             res->use(appRoot + "artist");
@@ -111,7 +114,9 @@ namespace UserInterface
             IdxExplore = 0,
             IdxPlayQueue,
             IdxSettings,
-            IdxAdminDatabase,
+            IdxAdminLibraries,
+            IdxAdminScanSettings,
+            IdxAdminScanner,
             IdxAdminUsers,
             IdxAdminUser,
         };
@@ -126,19 +131,21 @@ namespace UserInterface
                 std::optional<Wt::WString> title;
             } views[] =
             {
-                { "/artists",			IdxExplore,			false,	Wt::WString::tr("Lms.Explore.artists") },
-                { "/artist",			IdxExplore,			false,	std::nullopt },
-                { "/releases",			IdxExplore,			false,	Wt::WString::tr("Lms.Explore.releases") },
-                { "/release",			IdxExplore,			false,	std::nullopt },
-                { "/search",			IdxExplore,			false,	Wt::WString::tr("Lms.Explore.search") },
-                { "/tracks",			IdxExplore,			false,	Wt::WString::tr("Lms.Explore.tracks") },
-                { "/tracklists",		IdxExplore,			false,	Wt::WString::tr("Lms.Explore.tracklists") },
-                { "/tracklist",			IdxExplore,			false,	std::nullopt },
-                { "/playqueue",			IdxPlayQueue,		false,	Wt::WString::tr("Lms.PlayQueue.playqueue") },
-                { "/settings",			IdxSettings,		false,	Wt::WString::tr("Lms.Settings.settings") },
-                { "/admin/database",	IdxAdminDatabase,	true,	Wt::WString::tr("Lms.Admin.Database.database") },
-                { "/admin/users",		IdxAdminUsers,		true,	Wt::WString::tr("Lms.Admin.Users.users") },
-                { "/admin/user",		IdxAdminUser,		true,	std::nullopt },
+                { "/artists",			    IdxExplore,			    false,	Wt::WString::tr("Lms.Explore.artists") },
+                { "/artist",			    IdxExplore,			    false,	std::nullopt },
+                { "/releases",			    IdxExplore,			    false,	Wt::WString::tr("Lms.Explore.releases") },
+                { "/release",			    IdxExplore,			    false,	std::nullopt },
+                { "/search",			    IdxExplore,			    false,	Wt::WString::tr("Lms.Explore.search") },
+                { "/tracks",			    IdxExplore,			    false,	Wt::WString::tr("Lms.Explore.tracks") },
+                { "/tracklists",		    IdxExplore,			    false,	Wt::WString::tr("Lms.Explore.tracklists") },
+                { "/tracklist",			    IdxExplore,			    false,	std::nullopt },
+                { "/playqueue",			    IdxPlayQueue,		    false,	Wt::WString::tr("Lms.PlayQueue.playqueue") },
+                { "/settings",			    IdxSettings,		    false,	Wt::WString::tr("Lms.Settings.settings") },
+                { "/admin/libraries",	    IdxAdminLibraries,	    true,	Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries") },
+                { "/admin/scan-settings",	IdxAdminScanSettings,	true,	Wt::WString::tr("Lms.Admin.Database.scan-settings") },
+                { "/admin/scanner",	        IdxAdminScanner,	    true,	Wt::WString::tr("Lms.Admin.ScannerController.scanner") },
+                { "/admin/users",		    IdxAdminUsers,		    true,	Wt::WString::tr("Lms.Admin.Users.users") },
+                { "/admin/user",		    IdxAdminUser,		    true,	std::nullopt },
             };
 
             LMS_LOG(UI, DEBUG, "Internal path changed to '" << wApp->internalPath() << "'");
@@ -425,8 +432,10 @@ namespace UserInterface
         if (LmsApp->getUserType() == Database::UserType::ADMIN)
         {
             navbar->setCondition("if-is-admin", true);
-            navbar->bindNew<Wt::WAnchor>("database", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/database" }, Wt::WString::tr("Lms.Admin.Database.menu-database"));
-            navbar->bindNew<Wt::WAnchor>("users", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/users" }, Wt::WString::tr("Lms.Admin.Users.menu-users"));
+            navbar->bindNew<Wt::WAnchor>("media-libraries", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/libraries" }, Wt::WString::tr("Lms.Admin.menu-media-libraries"));
+            navbar->bindNew<Wt::WAnchor>("scan-settings", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/scan-settings" }, Wt::WString::tr("Lms.Admin.menu-scan-settings"));
+            navbar->bindNew<Wt::WAnchor>("scanner", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/scanner" }, Wt::WString::tr("Lms.Admin.menu-scanner"));
+            navbar->bindNew<Wt::WAnchor>("users", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/users" }, Wt::WString::tr("Lms.Admin.menu-users"));
         }
 
         // Contents
@@ -453,7 +462,9 @@ namespace UserInterface
         // Admin stuff
         if (getUserType() == Database::UserType::ADMIN)
         {
-            mainStack->addNew<DatabaseSettingsView>();
+            mainStack->addNew<MediaLibrariesView>();
+            mainStack->addNew<ScanSettingsView>();
+            mainStack->addNew<ScannerController>();
             mainStack->addNew<UsersView>();
             mainStack->addNew<UserView>();
         }

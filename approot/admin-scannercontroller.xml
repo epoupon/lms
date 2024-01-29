@@ -2,46 +2,42 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Admin.ScannerController.template">
-	<div class="card">
-		<h5 class="card-header">${tr:Lms.Admin.ScannerController.scanner}</h5>
-		<div class="card-body">
-			<form>
-				<div class="row g-3">
-					<div class="col-lg-6">
-						<label class="form-label" for="${id:status}">
-							${tr:Lms.Admin.ScannerController.status}
-						</label>
-						${status class="form-control"}
-					</div>
-					<div class="col-lg-6">
-						<label class="form-label" for="${id:step-status}">
-							${tr:Lms.Admin.ScannerController.step-status}
-						</label>
-						${step-status class="form-control"}
-					</div>
-					<div class="col-12">
-						<label class="form-label" for="{id:last-scan}">
-							${tr:Lms.Admin.ScannerController.last-scan}
-						</label>
-						<div class="input-group">
-							${last-scan class="form-control"}
-							${report-btn class="btn btn-outline-info"}
-						</div>
-					</div>
-					<div class="col-12">
-						<div class="btn-group">
-							${scan-btn class="btn btn-primary"}
-							<button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
-							</button>
-							<ul class="dropdown-menu">
-								<li>${full-scan-btn class="dropdown-item"}</li>
-							</ul>
-						</div>
-					</div>
+	<form>
+		<legend>${tr:Lms.Admin.ScannerController.scanner}</legend>
+		<div class="row g-3">
+			<div class="col-lg-6">
+				<label class="form-label" for="${id:status}">
+					${tr:Lms.Admin.ScannerController.status}
+				</label>
+				${status class="form-control"}
+			</div>
+			<div class="col-lg-6">
+				<label class="form-label" for="${id:step-status}">
+					${tr:Lms.Admin.ScannerController.step-status}
+				</label>
+				${step-status class="form-control"}
+			</div>
+			<div class="col-12">
+				<label class="form-label" for="{id:last-scan}">
+					${tr:Lms.Admin.ScannerController.last-scan}
+				</label>
+				<div class="input-group">
+					${last-scan class="form-control"}
+					${report-btn class="btn btn-outline-info"}
 				</div>
-			</form>
+			</div>
+			<div class="col-12">
+				<div class="btn-group">
+					${scan-btn class="btn btn-primary"}
+					<button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+					</button>
+					<ul class="dropdown-menu">
+						<li>${full-scan-btn class="dropdown-item"}</li>
+					</ul>
+				</div>
+			</div>
 		</div>
-	</div>
+	</form>
 </message>
 
 </messages>

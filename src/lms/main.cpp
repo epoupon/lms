@@ -161,6 +161,15 @@ namespace
                 });
             } };
 
+        scanner.getEvents().scanAborted.connect([&]
+            {
+                postAll(server, []
+                    {
+                        LmsApp->getScannerEvents().scanAborted.emit();
+                        LmsApp->triggerUpdate();
+                    });
+            });
+
         scanner.getEvents().scanStarted.connect([&]
             {
                 postAll(server, []

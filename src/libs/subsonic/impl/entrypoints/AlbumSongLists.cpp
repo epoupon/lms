@@ -32,6 +32,7 @@
 #include "responses/Song.hpp"
 #include "utils/Service.hpp"
 #include "ParameterParsing.hpp"
+#include "SubsonicId.hpp"
 
 namespace API::Subsonic
 {
@@ -45,6 +46,7 @@ namespace API::Subsonic
             const std::string type{ getMandatoryParameterAs<std::string>(context.parameters, "type") };
 
             // Optional params
+            const MediaLibraryId mediaLibraryId{ getParameterAs<MediaLibraryId>(context.parameters, "musicFolderId").value_or(MediaLibraryId{}) };
             const std::size_t size{ getParameterAs<std::size_t>(context.parameters, "size").value_or(10) };
             const std::size_t offset{ getParameterAs<std::size_t>(context.parameters, "offset").value_or(0) };
             if (size > defaultMaxCountSize)
@@ -67,12 +69,18 @@ namespace API::Subsonic
                 Release::FindParameters params;
                 params.setSortMethod(ReleaseSortMethod::Name);
                 params.setRange(range);
+                params.setMediaLibrary(mediaLibraryId);
 
                 releases = Release::findIds(context.dbSession, params);
             }
             else if (type == "alphabeticalByArtist")
             {
-                releases = Release::findIdsOrderedByArtist(context.dbSession, range);
+                Release::FindParameters params;
+                params.setSortMethod(ReleaseSortMethod::ArtistNameThenName);
+                params.setRange(range);
+                params.setMediaLibrary(mediaLibraryId);
+
+                releases = Release::findIds(context.dbSession, params);
             }
             else if (type == "byGenre")
             {
@@ -87,6 +95,7 @@ namespace API::Subsonic
                         params.setClusters({ cluster->getId() });
                         params.setSortMethod(ReleaseSortMethod::Name);
                         params.setRange(range);
+                        params.setMediaLibrary(mediaLibraryId);
 
                         releases = Release::findIds(context.dbSession, params);
                     }
@@ -101,18 +110,25 @@ namespace API::Subsonic
                 params.setSortMethod(ReleaseSortMethod::Date);
                 params.setRange(range);
                 params.setDateRange(DateRange::fromYearRange(fromYear, toYear));
+                params.setMediaLibrary(mediaLibraryId);
 
                 releases = Release::findIds(context.dbSession, params);
             }
             else if (type == "frequent")
             {
-                releases = scrobblingService.getTopReleases(context.userId, {}, range);
+                Scrobbling::IScrobblingService::FindParameters params;
+                params.setUser(context.userId);
+                params.setRange(range);
+                params.setMediaLibrary(mediaLibraryId);
+
+                releases = scrobblingService.getTopReleases(params);
             }
             else if (type == "newest")
             {
                 Release::FindParameters params;
                 params.setSortMethod(ReleaseSortMethod::LastWritten);
                 params.setRange(range);
+                params.setMediaLibrary(mediaLibraryId);
 
                 releases = Release::findIds(context.dbSession, params);
             }
@@ -123,18 +139,26 @@ namespace API::Subsonic
                 Release::FindParameters params;
                 params.setSortMethod(ReleaseSortMethod::Random);
                 params.setRange(Range{ 0, size });
+                params.setMediaLibrary(mediaLibraryId);
 
                 releases = Release::findIds(context.dbSession, params);
             }
             else if (type == "recent")
             {
-                releases = scrobblingService.getRecentReleases(context.userId, {}, range);
+                Scrobbling::IScrobblingService::FindParameters params;
+                params.setUser(context.userId);
+                params.setRange(range);
+                params.setMediaLibrary(mediaLibraryId);
+
+                releases = scrobblingService.getRecentReleases(params);
             }
             else if (type == "starred")
             {
                 Feedback::IFeedbackService::FindParameters params;
                 params.setUser(context.userId);
                 params.setRange(range);
+                params.setMediaLibrary(mediaLibraryId);
+
                 releases = feedbackService.findStarredReleases(params);
             }
             else
@@ -156,6 +180,9 @@ namespace API::Subsonic
 
         Response handleGetStarredRequestCommon(RequestContext& context, bool id3)
         {
+            // Optional parameters
+            const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.parameters, "musicFolderId").value_or(MediaLibraryId{}) };
+
             auto transaction{ context.dbSession.createReadTransaction() };
 
             User::pointer user{ User::find(context.dbSession, context.userId) };
@@ -167,9 +194,6 @@ namespace API::Subsonic
 
             Feedback::IFeedbackService& feedbackService{ *Service<Feedback::IFeedbackService>::get() };
 
-            Feedback::IFeedbackService::FindParameters findParameters;
-            findParameters.setUser(context.userId);
-
             {
                 Feedback::IFeedbackService::ArtistFindParameters artistFindParams;
                 artistFindParams.setUser(context.userId);
@@ -180,6 +204,10 @@ namespace API::Subsonic
                         starredNode.addArrayChild("artist", createArtistNode(context, artist, user, id3));
                 }
             }
+
+            Feedback::IFeedbackService::FindParameters findParameters;
+            findParameters.setUser(context.userId);
+            findParameters.setMediaLibrary(mediaLibrary);
 
             for (const ReleaseId releaseId : feedbackService.findStarredReleases(findParameters).results)
             {
@@ -210,6 +238,7 @@ namespace API::Subsonic
     Response handleGetRandomSongsRequest(RequestContext& context)
     {
         // Optional params
+        const MediaLibraryId mediaLibraryId{ getParameterAs<MediaLibraryId>(context.parameters, "musicFolderId").value_or(MediaLibraryId{}) };
         std::size_t size{ getParameterAs<std::size_t>(context.parameters, "size").value_or(50) };
         if (size > defaultMaxCountSize)
             throw ParameterValueTooHighGenericError{ "size", defaultMaxCountSize };
@@ -226,6 +255,7 @@ namespace API::Subsonic
         Track::FindParameters params;
         params.setSortMethod(TrackSortMethod::Random);
         params.setRange(Range{ 0, size });
+        params.setMediaLibrary(mediaLibraryId);
 
         Track::find(context.dbSession, params, [&](const Track::pointer& track)
             {
@@ -241,6 +271,7 @@ namespace API::Subsonic
         std::string genre{ getMandatoryParameterAs<std::string>(context.parameters, "genre") };
 
         // Optional params
+        const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.parameters, "musicFolderId").value_or(MediaLibraryId{}) };
         std::size_t count{ getParameterAs<std::size_t>(context.parameters, "count").value_or(10) };
         if (count > defaultMaxCountSize)
             throw ParameterValueTooHighGenericError{"count", defaultMaxCountSize};
@@ -267,6 +298,7 @@ namespace API::Subsonic
         Track::FindParameters params;
         params.setClusters({ cluster->getId() });
         params.setRange(Range{ offset, count });
+        params.setMediaLibrary(mediaLibrary);
 
         Track::find(context.dbSession, params, [&](const Track::pointer& track)
             {
