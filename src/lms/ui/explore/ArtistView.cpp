@@ -139,7 +139,7 @@ namespace UserInterface
                 {
                     const Database::ClusterId clusterId = cluster->getId();
                     Wt::WInteractWidget* entry{ clusterContainers->addWidget(Utils::createCluster(clusterId)) };
-                    entry->clicked().connect([=]
+                    entry->clicked().connect([this, clusterId]
                         {
                             _filters.add(clusterId);
                         });
@@ -150,23 +150,23 @@ namespace UserInterface
         bindString("name", Wt::WString::fromUTF8(artist->getName()), Wt::TextFormat::Plain);
 
         bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
-            ->clicked().connect([=]
+            ->clicked().connect([this]
                 {
                     _playQueueController.processCommand(PlayQueueController::Command::Play, { _artistId });
                 });
 
         bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
-            ->clicked().connect([=]
+            ->clicked().connect([this]
                 {
                     _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, { _artistId });
                 });
         bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"), Wt::TextFormat::Plain)
-            ->clicked().connect([=]
+            ->clicked().connect([this]
                 {
                     _playQueueController.processCommand(PlayQueueController::Command::PlayNext, { _artistId });
                 });
         bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
-            ->clicked().connect([=]
+            ->clicked().connect([this]
                 {
                     _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, { _artistId });
                 });
@@ -174,10 +174,10 @@ namespace UserInterface
             ->setLink(Wt::WLink{ std::make_unique<DownloadArtistResource>(_artistId) });
 
         {
-            auto isStarred{ [=] { return Service<Feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), _artistId); } };
+            auto isStarred{ [this] { return Service<Feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), _artistId); } };
 
             Wt::WPushButton* starBtn{ bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
-            starBtn->clicked().connect([=]
+            starBtn->clicked().connect([=, this]
                 {
                     if (isStarred())
                     {

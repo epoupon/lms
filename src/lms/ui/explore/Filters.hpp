@@ -30,21 +30,22 @@
 
 namespace UserInterface
 {
-	class Filters : public Wt::WTemplate
-	{
-		public:
-			Filters();
+    class Filters : public Wt::WTemplate
+    {
+    public:
+        Filters();
 
-			void add(Database::ClusterId clusterId);
-			const std::vector<Database::ClusterId>& getClusterIds() const { return _clusterIds; }
-			Wt::Signal<>& updated() { return _sigUpdated; }
+        const std::vector<Database::ClusterId>& getClusterIds() const { return _clusterIds; }
+        void add(Database::ClusterId clusterId);
 
-		private:
-			void showDialog();
+        Wt::Signal<>& updated() { return _sigUpdated; }
 
-			Wt::WContainerWidget *_filters;
-			Wt::Signal<> _sigUpdated;
-			std::vector<Database::ClusterId> _clusterIds;
-	};
+    private:
+        void showDialog();
+
+        Wt::WContainerWidget* _filters;
+        Wt::Signal<> _sigUpdated;
+        std::vector<Database::ClusterId> _clusterIds;
+    };
 } // namespace UserInterface
 

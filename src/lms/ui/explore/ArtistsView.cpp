@@ -44,7 +44,7 @@ Artists::Artists(Filters& filters)
 	auto bindMenuItem {[this](const std::string& var, const Wt::WString& title, ArtistCollector::Mode mode)
 	{
 		auto *menuItem {bindNew<Wt::WPushButton>(var, title)};
-		menuItem->clicked().connect([=]
+		menuItem->clicked().connect([=, this]
 		{
 			refreshView(mode);
 			_currentActiveItem->removeStyleClass("active");

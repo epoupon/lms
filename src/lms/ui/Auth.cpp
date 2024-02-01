@@ -171,7 +171,7 @@ Auth::Auth()
 {
 	auto model {std::make_shared<AuthModel>()};
 
-	auto processAuth = [=]()
+	auto processAuth = [this, model]
 	{
 		updateModel(model.get());
 

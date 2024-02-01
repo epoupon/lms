@@ -101,14 +101,14 @@ namespace UserInterface
 
             Wt::WPushButton* delBtn = entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.template.trash-btn"), Wt::TextFormat::XHTML);
             delBtn->setToolTip(Wt::WString::tr("Lms.delete"));
-            delBtn->clicked().connect([=]
+            delBtn->clicked().connect([this, userId, entry]
                 {
                     auto modal{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.delete-user")) };
                     modal->addFunction("tr", &Wt::WTemplate::Functions::tr);
                     Wt::WWidget* modalPtr{ modal.get() };
 
                     auto* delBtn{ modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.delete")) };
-                    delBtn->clicked().connect([=]
+                    delBtn->clicked().connect([=, this]
                         {
                             {
                                 auto transaction{ LmsApp->getDbSession().createWriteTransaction() };

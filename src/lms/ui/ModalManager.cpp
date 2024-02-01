@@ -25,7 +25,7 @@ namespace UserInterface
     ModalManager::ModalManager()
         : _closed{ this, "closed" }
     {
-        _closed.connect([=](const std::string& id)
+        _closed.connect([this](const std::string& id)
             {
                 LMS_LOG(UI, DEBUG, "Received closed for id '" << id << "'");
                 for (int i{}; i < count(); ++i)

@@ -448,12 +448,12 @@ namespace UserInterface
         _playQueue = mainStack->addWidget(std::move(playQueue));
         mainStack->addNew<SettingsView>();
 
-        searchEdit->enterPressed().connect([=]
+        searchEdit->enterPressed().connect([this]
             {
                 setInternalPath("/search", true);
             });
 
-        searchEdit->textInput().connect([=]
+        searchEdit->textInput().connect([this, explore, searchEdit]
             {
                 setInternalPath("/search", true);
                 explore->search(searchEdit->text());
@@ -518,7 +518,7 @@ namespace UserInterface
                         const bool isAdmin{ getUserType() == Database::UserType::ADMIN };
                         if (isAdmin)
                         {
-                            _scannerEvents.scanComplete.connect([=](const Scanner::ScanStats& stats)
+                            _scannerEvents.scanComplete.connect([this](const Scanner::ScanStats& stats)
                                 {
                                     notifyMsg(Notification::Type::Info,
                                     Wt::WString::tr("Lms.Admin.Database.database"),

@@ -80,7 +80,7 @@ namespace UserInterface
     {
         NotificationWidget* notification{ addNew<NotificationWidget>(type, category, message, duration) };
 
-        notification->closed.connect([=]
+        notification->closed.connect([this, notification]
             {
                 removeWidget(notification);
             });
