@@ -336,19 +336,19 @@ namespace MetaData
             if (const Wt::WDate date{ Utils::parseDate(value) }; date.isValid())
                 track.date = date;
             else if (!track.year)
-                track.year = StringUtils::readAs<int>(value);
+                track.year = Utils::parseYear(value);
         }
         else if (tag == "YEAR")
-            track.year = StringUtils::readAs<int>(value);
+            track.year = Utils::parseYear(value);
         else if (tag == "ORIGINALDATE")
         {
             if (const Wt::WDate date{ Utils::parseDate(value) }; date.isValid())
                 track.originalDate = date;
             else if (!track.originalYear)
-                track.originalYear = StringUtils::readAs<int>(value);
+                track.originalYear = Utils::parseYear(value);
         }
         else if (tag == "ORIGINALYEAR")
-            track.originalYear = StringUtils::readAs<int>(value);
+            track.originalYear = Utils::parseYear(value);
         else if (tag == "METADATA_BLOCK_PICTURE")
             track.hasCover = true;
         else if (tag == "COPYRIGHT")

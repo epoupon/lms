@@ -173,9 +173,12 @@ TEST(StringUtils, readAs_int)
     EXPECT_EQ(StringUtils::readAs<int>("-1"), -1);
     EXPECT_EQ(StringUtils::readAs<int>(""), std::nullopt);
     EXPECT_EQ(StringUtils::readAs<int>("a"), std::nullopt);
+    EXPECT_EQ(StringUtils::readAs<int>("-"), std::nullopt);
     EXPECT_EQ(StringUtils::readAs<int>("1024-1"), 1024);
     EXPECT_EQ(StringUtils::readAs<int>("1024-"), 1024);
     EXPECT_EQ(StringUtils::readAs<int>("1024/5"), 1024);
+    EXPECT_EQ(StringUtils::readAs<int>("1024a"), 1024);
+    EXPECT_EQ(StringUtils::readAs<int>("a1024a"), std::nullopt);
 }
 
 TEST(StringUtils, capitalize)
