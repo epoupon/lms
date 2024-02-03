@@ -70,6 +70,13 @@ elseif (IMAGE_LIBRARY STREQUAL STB AND NOT STB_FOUND)
 endif ()
 message(STATUS "IMAGE_LIBRARY set to ${IMAGE_LIBRARY}")
 
+# Benchmark
+option(BUILD_BENCHMARKS "Build benchmarks" OFF)
+if (BUILD_BENCHMARKS)
+	find_package(benchmark REQUIRED)
+	message(STATUS "Building benchmarks")
+endif()
+
 add_subdirectory(src)
 
 install(DIRECTORY approot DESTINATION share/lms)

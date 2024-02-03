@@ -22,3 +22,7 @@ install(TARGETS lmssom DESTINATION lib)
 if(BUILD_TESTING)
 	add_subdirectory(test)
 endif()
+
+if (BUILD_BENCHMARKS)
+	add_subdirectory(bench)
+endif()
