@@ -15,6 +15,7 @@ ARG	LMS_BUILD_PACKAGES=" \
 	gcc \
 	g++ \
 	musl-dev \
+	benchmark-dev \
 	boost-dev \
 	ffmpeg-dev \
 	libarchive-dev \
@@ -35,7 +36,7 @@ ARG LMS_BUILD_TYPE="Release"
 RUN \
 	DIR=/tmp/lms/build && mkdir -p ${DIR} && cd ${DIR}  && \
 		xx-info is-cross && export BUILD_TESTS=OFF || export BUILD_TESTS=ON && \
-		PKG_CONFIG_PATH=/$(xx-info)/usr/lib/pkgconfig cmake /tmp/lms/ -DCMAKE_INCLUDE_PATH=${PREFIX}/include -DCMAKE_BUILD_TYPE=${LMS_BUILD_TYPE} $(xx-clang --print-cmake-defines) -DCMAKE_PREFIX_PATH=/$(xx-info)/usr/lib/cmake -DBUILD_TESTING=${BUILD_TESTS} && \
+		PKG_CONFIG_PATH=/$(xx-info)/usr/lib/pkgconfig cmake /tmp/lms/ -DCMAKE_INCLUDE_PATH=${PREFIX}/include -DCMAKE_BUILD_TYPE=${LMS_BUILD_TYPE} $(xx-clang --print-cmake-defines) -DCMAKE_PREFIX_PATH=/$(xx-info)/usr/lib/cmake -DBUILD_TESTING=${BUILD_TESTS} -DBUILD_BENCHMARKS=ON && \
 		VERBOSE=1 make -j$(nproc) && \
 		xx-verify src/lms/lms && \
 		(xx-info is-cross || make test)

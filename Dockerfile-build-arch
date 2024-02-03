@@ -1,6 +1,7 @@
 FROM archlinux:latest
 
 ARG BUILD_PACKAGES="\
+	benchmark \
 	clang \
 	cmake \
 	boost \
@@ -22,6 +23,6 @@ COPY . /tmp/lms/
 ARG LMS_BUILD_TYPE="Release"
 RUN \
 	DIR=/tmp/lms/build && mkdir -p ${DIR} && cd ${DIR}  && \
-		cmake /tmp/lms/ -DCMAKE_BUILD_TYPE=${LMS_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=/usr && \
+		cmake /tmp/lms/ -DCMAKE_BUILD_TYPE=${LMS_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_BENCHMARKS=ON && \
 		VERBOSE=1 make -j$(nproc) && \
 		make test
