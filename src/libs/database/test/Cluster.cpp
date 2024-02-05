@@ -768,7 +768,7 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleArtistsMultiClusters)
 
         {
             auto artists{ artist1->findSimilarArtistIds({TrackArtistLinkType::ReleaseArtist}) };
-            EXPECT_EQ(artists.results.size(), 1);
+            EXPECT_EQ(artists.results.size(), 0);
         }
 
         {
