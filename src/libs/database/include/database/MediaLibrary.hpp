@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #include <filesystem>
 #include <string>
 #include <string_view>
@@ -38,7 +40,7 @@ namespace Database
         MediaLibrary() = default;
 
         // find
-        std::size_t getCount(Session& session);
+        static std::size_t getCount(Session& session);
         static pointer find(Session& session, MediaLibraryId id);
         static pointer find(Session& session, std::string_view name);
         static pointer find(Session& session, const std::filesystem::path& path);
