@@ -68,7 +68,7 @@ namespace Av::Transcoding
         {
             Wt::Http::ResponseContinuation* continuation{ response.createContinuation() };
             continuation->waitForMoreData();
-            _transcoder.asyncRead(_buffer.data(), _buffer.size(), [=](std::size_t nbBytesRead)
+            _transcoder.asyncRead(_buffer.data(), _buffer.size(), [this, continuation](std::size_t nbBytesRead)
                 {
                     LMS_LOG(TRANSCODING, DEBUG, "Have " << nbBytesRead << " more bytes to send back");
 

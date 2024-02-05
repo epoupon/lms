@@ -31,142 +31,135 @@
 #include "Utils.hpp"
 #include "ModalManager.hpp"
 
-namespace UserInterface {
-
-using namespace Database;
-
-void
-Filters::showDialog()
+namespace UserInterface 
 {
-	auto dialog {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.template.add-filter"))};
-	Wt::WWidget* dialogPtr {dialog.get()};
-	dialog->addFunction("tr", &Wt::WTemplate::Functions::tr);
-	dialog->addFunction("id", &Wt::WTemplate::Functions::id);
+    using namespace Database;
 
-	Wt::WComboBox* typeCombo {dialog->bindNew<Wt::WComboBox>("type")};
-	Wt::WComboBox* valueCombo {dialog->bindNew<Wt::WComboBox>("value")};
+    void Filters::showDialog()
+    {
+        auto dialog{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.template.add-filter")) };
+        Wt::WWidget* dialogPtr{ dialog.get() };
+        dialog->addFunction("tr", &Wt::WTemplate::Functions::tr);
+        dialog->addFunction("id", &Wt::WTemplate::Functions::id);
 
-	Wt::WPushButton* addBtn {dialog->bindNew<Wt::WPushButton>("add-btn", Wt::WString::tr("Lms.Explore.add-filter"))};
-	addBtn->clicked().connect([=]
-	{
-		const std::string type {typeCombo->valueText().toUTF8()};
-		const std::string value {valueCombo->valueText().toUTF8()};
+        Wt::WComboBox* typeCombo{ dialog->bindNew<Wt::WComboBox>("type") };
+        Wt::WComboBox* valueCombo{ dialog->bindNew<Wt::WComboBox>("value") };
 
-		// TODO use a model to store the cluster.id() values
-		ClusterId clusterId {};
+        Wt::WPushButton* addBtn{ dialog->bindNew<Wt::WPushButton>("add-btn", Wt::WString::tr("Lms.Explore.add-filter")) };
+        addBtn->clicked().connect([this, typeCombo, valueCombo, dialogPtr]
+            {
+                const std::string type{ typeCombo->valueText().toUTF8() };
+                const std::string value{ valueCombo->valueText().toUTF8() };
 
-		{
-			auto transaction {LmsApp->getDbSession().createReadTransaction()};
+                // TODO use a model to store the cluster.id() values
+                ClusterId clusterId{};
 
-			ClusterType::pointer clusterType {ClusterType::find(LmsApp->getDbSession(), type)};
-			if (!clusterType)
-				return;
+                {
+                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-			Cluster::pointer cluster {clusterType->getCluster(value)};
-			if (!cluster)
-				return;
+                    ClusterType::pointer clusterType{ ClusterType::find(LmsApp->getDbSession(), type) };
+                    if (!clusterType)
+                        return;
 
-			clusterId = cluster->getId();
-		}
+                    Cluster::pointer cluster{ clusterType->getCluster(value) };
+                    if (!cluster)
+                        return;
 
-		add(clusterId);
-		LmsApp->getModalManager().dispose(dialogPtr);
-	});
+                    clusterId = cluster->getId();
+                }
 
-	Wt::WPushButton* cancelBtn {dialog->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel"))};
-	cancelBtn->clicked().connect([=]
-	{
-		LmsApp->getModalManager().dispose(dialogPtr);
-	});
+                add(clusterId);
+                LmsApp->getModalManager().dispose(dialogPtr);
+            });
 
+        Wt::WPushButton* cancelBtn{ dialog->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel")) };
+        cancelBtn->clicked().connect([=]
+            {
+                LmsApp->getModalManager().dispose(dialogPtr);
+            });
 
-	// Populate data
-	{
-		auto transaction {LmsApp->getDbSession().createReadTransaction()};
+        // Populate data
+        {
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-		const auto clusterTypesIds {ClusterType::findUsed(LmsApp->getDbSession())};
-		for (const ClusterTypeId clusterTypeId : clusterTypesIds.results)
-		{
-			const auto clusterType {ClusterType::find(LmsApp->getDbSession(), clusterTypeId)};
-			typeCombo->addItem(Wt::WString::fromUTF8(std::string{ clusterType->getName() }));
-		}
+            const auto clusterTypesIds{ ClusterType::findUsed(LmsApp->getDbSession()) };
+            for (const ClusterTypeId clusterTypeId : clusterTypesIds.results)
+            {
+                const auto clusterType{ ClusterType::find(LmsApp->getDbSession(), clusterTypeId) };
+                typeCombo->addItem(Wt::WString::fromUTF8(std::string{ clusterType->getName() }));
+            }
 
-		if (!clusterTypesIds.results.empty())
-		{
-			const auto clusterType {ClusterType::find(LmsApp->getDbSession(), clusterTypesIds.results.front())};
+            if (!clusterTypesIds.results.empty())
+            {
+                const auto clusterType{ ClusterType::find(LmsApp->getDbSession(), clusterTypesIds.results.front()) };
 
-			for (const Cluster::pointer& cluster : clusterType->getClusters())
-			{
-				if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), cluster->getId()) == _clusterIds.end())
-					valueCombo->addItem(Wt::WString::fromUTF8(std::string{ cluster->getName() }));
-			}
-		}
-	}
+                for (const Cluster::pointer& cluster : clusterType->getClusters())
+                {
+                    if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), cluster->getId()) == _clusterIds.end())
+                        valueCombo->addItem(Wt::WString::fromUTF8(std::string{ cluster->getName() }));
+                }
+            }
+        }
 
-	typeCombo->changed().connect([=]
-	{
-		const std::string name {typeCombo->valueText().toUTF8()};
+        typeCombo->changed().connect([this, typeCombo, valueCombo]
+            {
+                const std::string name{ typeCombo->valueText().toUTF8() };
 
-		valueCombo->clear();
+                valueCombo->clear();
 
-		auto transaction {LmsApp->getDbSession().createReadTransaction()};
+                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-		auto clusterType {ClusterType::find(LmsApp->getDbSession(), name)};
-		for (const Cluster::pointer& cluster : clusterType->getClusters())
-		{
-			if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), cluster->getId()) == _clusterIds.end())
-				valueCombo->addItem(Wt::WString::fromUTF8(std::string{ cluster->getName() }));
-		}
-	});
+                auto clusterType{ ClusterType::find(LmsApp->getDbSession(), name) };
+                for (const Cluster::pointer& cluster : clusterType->getClusters())
+                {
+                    if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), cluster->getId()) == _clusterIds.end())
+                        valueCombo->addItem(Wt::WString::fromUTF8(std::string{ cluster->getName() }));
+                }
+            });
 
-	LmsApp->getModalManager().show(std::move(dialog));
-}
+        LmsApp->getModalManager().show(std::move(dialog));
+    }
 
-void
-Filters::add(ClusterId clusterId)
-{
-	if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), clusterId) != std::cend(_clusterIds))
-		return;
+    void Filters::add(ClusterId clusterId)
+    {
+        if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), clusterId) != std::cend(_clusterIds))
+            return;
 
-	Wt::WInteractWidget* filter {};
+        Wt::WInteractWidget* filter{};
 
-	{
-		auto cluster {Utils::createCluster(clusterId, true)};
-		if (!cluster)
-			return;
+        {
+            auto cluster{ Utils::createCluster(clusterId, true) };
+            if (!cluster)
+                return;
 
-		filter = _filters->addWidget(std::move(cluster));
-	}
+            filter = _filters->addWidget(std::move(cluster));
+        }
 
-	_clusterIds.push_back(clusterId);
+        _clusterIds.push_back(clusterId);
 
-	filter->clicked().connect([=]
-	{
-		_filters->removeWidget(filter);
-		_clusterIds.erase(std::remove_if(std::begin(_clusterIds), std::end(_clusterIds), [clusterId](ClusterId id) { return id == clusterId; }), std::end(_clusterIds));
-		_sigUpdated.emit();
-	});
+        filter->clicked().connect([this, filter, clusterId]
+            {
+                _filters->removeWidget(filter);
+                _clusterIds.erase(std::remove_if(std::begin(_clusterIds), std::end(_clusterIds), [clusterId](ClusterId id) { return id == clusterId; }), std::end(_clusterIds));
+                _sigUpdated.emit();
+            });
 
-	LmsApp->notifyMsg(Notification::Type::Info,
-			Wt::WString::tr("Lms.Explore.filters"),
-			Wt::WString::tr("Lms.Explore.filter-added"), std::chrono::seconds {2});
+        LmsApp->notifyMsg(Notification::Type::Info,
+            Wt::WString::tr("Lms.Explore.filters"),
+            Wt::WString::tr("Lms.Explore.filter-added"), std::chrono::seconds{ 2 });
 
-	_sigUpdated.emit();
-}
+        _sigUpdated.emit();
+    }
 
-Filters::Filters()
-: Wt::WTemplate {Wt::WString::tr("Lms.Explore.template.filters")}
-{
-	addFunction("tr", &Functions::tr);
+    Filters::Filters()
+        : Wt::WTemplate{ Wt::WString::tr("Lms.Explore.template.filters") }
+    {
+        addFunction("tr", &Functions::tr);
 
-	// Filters
-	Wt::WPushButton *addFilterBtn = bindNew<Wt::WPushButton>("add-filter", Wt::WText::tr("Lms.Explore.add-filter"));
-	addFilterBtn->clicked().connect(this, &Filters::showDialog);
+        // Filters
+        Wt::WPushButton* addFilterBtn = bindNew<Wt::WPushButton>("add-filter", Wt::WText::tr("Lms.Explore.add-filter"));
+        addFilterBtn->clicked().connect(this, &Filters::showDialog);
 
-	_filters = bindNew<Wt::WContainerWidget>("clusters");
-}
-
-
-
+        _filters = bindNew<Wt::WContainerWidget>("clusters");
+    }
 } // namespace UserInterface
-

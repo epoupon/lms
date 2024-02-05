@@ -77,7 +77,7 @@ namespace UserInterface
         auto bindMenuItem{ [this](std::size_t index, const std::string& var, const Wt::WString& title)
         {
             Wt::WPushButton* menuItem {bindNew<Wt::WPushButton>(var, title)};
-            menuItem->clicked().connect([=]
+            menuItem->clicked().connect([this, menuItem, index]
             {
                 _stack->setCurrentIndex(index);
                 _currentActiveItem->removeStyleClass("active");
@@ -96,7 +96,7 @@ namespace UserInterface
         bindMenuItem(1, "artists", Wt::WString::tr("Lms.Explore.artists"));
         bindMenuItem(2, "tracks", Wt::WString::tr("Lms.Explore.tracks"));
 
-        filters.updated().connect([=]
+        filters.updated().connect([this]
             {
                 refreshView();
             });

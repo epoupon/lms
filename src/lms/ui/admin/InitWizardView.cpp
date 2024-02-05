@@ -131,7 +131,7 @@ InitWizardView::InitWizardView()
 
 
 	Wt::WPushButton* saveButton = bindNew<Wt::WPushButton>("create-btn", Wt::WString::tr("Lms.create"));
-	saveButton->clicked().connect([=]
+	saveButton->clicked().connect([=, this]
 	{
 		updateModel(model.get());
 

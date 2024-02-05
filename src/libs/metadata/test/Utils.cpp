@@ -76,6 +76,43 @@ TEST(MetaData, parseDate)
     }
 }
 
+TEST(MetaData, parseYear)
+{
+    using namespace MetaData::Utils;
+
+    struct TestCase
+    {
+        std::string	str;
+        std::optional<int>	result;
+    } testCases[]
+    {
+        { "1995-05-09", 1995 },
+        { "1995", 1995 },
+        { "-0", 0 },
+        { "0", 0 },
+        { "00", 0 },
+        { "05", 5 },
+        { "050", 50 },
+        { "00005", 0 },
+        { "-50", -50 },
+        { "-", std::nullopt },
+        { "", std::nullopt },
+        { "a", std::nullopt },
+        { "1a", 1 },
+        { "12a", 12 },
+        { "123a", 123 },
+        { "1234a", 1234 },
+        { "19951123", 1995 },
+        { "199511", 1995 },
+    };
+
+    for (const TestCase& testCase : testCases)
+    {
+        const std::optional<int> parsed{ parseYear(testCase.str) };
+        EXPECT_EQ(parsed, testCase.result) << " str was '" << testCase.str << "'";
+    }
+}
+
 TEST(MetaData, extractPerformerAndRole)
 {
     using namespace MetaData::Utils;

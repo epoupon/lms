@@ -182,8 +182,8 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
     static void migrateFromV40(Session& session)
     {
         // add artist_display_name in Release and Track
-        session.getDboSession().execute("ALTER TABLE release ADD artist_display_name TEXT");
-        session.getDboSession().execute("ALTER TABLE track ADD artist_display_name TEXT");
+        session.getDboSession().execute("ALTER TABLE release ADD artist_display_name TEXT NOT NULL DEFAULT ''");
+        session.getDboSession().execute("ALTER TABLE track ADD artist_display_name TEXT NOT NULL DEFAULT ''");
 
         // Just increment the scan version of the settings to make the next scheduled scan rescan everything
         session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
@@ -237,7 +237,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
     static void migrateFromV44(Session& session)
     {
         // add bitrate
-        session.getDboSession().execute("ALTER TABLE track ADD bitrate INTEGER");
+        session.getDboSession().execute("ALTER TABLE track ADD bitrate INTEGER NOT NULL DEFAULT 0");
 
         // Just increment the scan version of the settings to make the next scheduled scan rescan everything
         session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
@@ -365,7 +365,36 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
 ))");
 
 // Migrate data, with the new media_library_id field set to 1
-        session.getDboSession().execute("INSERT INTO track_backup SELECT id, version, scan_version, track_number, disc_number, total_track, disc_subtitle, name, duration, bitrate, date, year, original_date, original_year, file_path, file_last_write, file_added, has_cover, mbid, recording_mbid, copyright, copyright_url, track_replay_gain, release_replay_gain, artist_display_name, release_id, 1 FROM track");
+        session.getDboSession().execute(R"(INSERT INTO track_backup 
+SELECT
+ id,
+ version,
+ scan_version,
+ track_number,
+ disc_number,
+ total_track,
+ disc_subtitle,
+ name,
+ duration,
+ COALESCE(bitrate, 0),
+ date,
+ year,
+ original_date,
+ original_year,
+ file_path,
+ file_last_write,
+ file_added,
+ has_cover,
+ mbid,
+ recording_mbid,
+ copyright,
+ copyright_url,
+ track_replay_gain,
+ release_replay_gain,
+ COALESCE(artist_display_name, ""),
+ release_id,
+ 1
+ FROM track)");
         session.getDboSession().execute("DROP TABLE track");
         session.getDboSession().execute("ALTER TABLE track_backup RENAME TO track");
     }

@@ -100,7 +100,6 @@ namespace UserInterface
             params.setClusters(clusters);
             params.setRange(Database::Range{ 0, maxTrackCount });
             params.setSortMethod(TrackSortMethod::TrackList);
-            params.setDistinct(false);
 
             return Database::Track::findIds(session, params).results;
         }

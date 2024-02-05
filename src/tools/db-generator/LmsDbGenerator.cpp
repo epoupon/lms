@@ -31,6 +31,7 @@
 #include "database/Db.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
+#include "database/MediaLibrary.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
@@ -45,6 +46,7 @@ namespace
 {
     struct GeneratorParameters
     {
+        std::size_t mediaLibraryCount{ 1 };
         std::size_t releaseCountPerBatch{ 1000 };
         std::size_t releaseCount{ 100 };
         std::size_t trackCountPerRelease{ 10 };
@@ -59,6 +61,7 @@ namespace
     struct GenerationContext
     {
         Database::Session& session;
+        std::vector<Database::MediaLibrary::pointer> mediaLibraries;
         std::vector<Database::Cluster::pointer> genres;
         std::vector<Database::Cluster::pointer> moods;
         GenerationContext(Database::Session& _session) : session{ _session } {}
@@ -99,13 +102,17 @@ namespace
             track.modify()->setTrackMBID(UUID::generate());
             track.modify()->setRecordingMBID(UUID::generate());
             track.modify()->setTotalTrack(params.trackCountPerRelease);
+            if (!context.mediaLibraries.empty())
+                track.modify()->setMediaLibrary(*Random::pickRandom(context.mediaLibraries));
 
             TrackArtistLink::create(context.session, track, artist, TrackArtistLinkType::Artist);
             TrackArtistLink::create(context.session, track, artist, TrackArtistLinkType::ReleaseArtist);
 
             std::vector<ObjectPtr<Cluster>> clusters;
-            clusters.push_back(*Random::pickRandom(context.genres));
-            clusters.push_back(*Random::pickRandom(context.moods));
+            if (!context.genres.empty())
+                clusters.push_back(*Random::pickRandom(context.genres));
+            if (!context.moods.empty())
+                clusters.push_back(*Random::pickRandom(context.moods));
             track.modify()->setClusters(clusters);
         }
     }
@@ -127,6 +134,10 @@ namespace
     void prepareContext(const GeneratorParameters& params, GenerationContext& context)
     {
         auto transaction{ context.session.createWriteTransaction() };
+
+        // create some random media libraries
+        for (std::size_t i{}; i < params.mediaLibraryCount; ++i)
+            context.mediaLibraries.push_back(context.session.create<Database::MediaLibrary>());
 
         // create some random genres/moods
         {
@@ -163,6 +174,7 @@ int main(int argc, char* argv[])
         po::options_description options{ "Options" };
         options.add_options()
             ("conf,c", po::value<std::string>()->default_value("/etc/lms.conf"), "lms config file")
+            ("media-library-count", po::value<unsigned>()->default_value(defaultParams.mediaLibraryCount), "Number of media libraries to use")
             ("release-count-per-batch", po::value<unsigned>()->default_value(defaultParams.releaseCountPerBatch), "Number of releases to generate before committing transaction")
             ("release-count", po::value<unsigned>()->default_value(defaultParams.releaseCount), "Number of releases to generate")
             ("track-count-per-release", po::value<unsigned>()->default_value(defaultParams.trackCountPerRelease), "Number of tracks per release")
@@ -187,6 +199,7 @@ int main(int argc, char* argv[])
         po::notify(vm);
 
         GeneratorParameters genParams;
+        genParams.mediaLibraryCount = vm["media-library-count"].as<unsigned>();
         genParams.releaseCountPerBatch = vm["release-count-per-batch"].as<unsigned>();
         genParams.releaseCount = vm["release-count"].as<unsigned>();
         genParams.trackCountPerRelease = vm["track-count-per-release"].as<unsigned>();

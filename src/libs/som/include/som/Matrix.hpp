@@ -26,108 +26,104 @@
 
 namespace SOM
 {
+    using Coordinate = unsigned;
 
-using Coordinate = unsigned;
-using Norm = InputVector::value_type;
+    struct Position
+    {
+        Coordinate x;
+        Coordinate y;
 
-struct Position
-{
-	Coordinate x;
-	Coordinate y;
+        bool operator<(const Position& other) const
+        {
+            if (x == other.x)
+                return y < other.y;
+            else
+                return x < other.x;
+        }
 
-	bool operator<(const Position& other) const
-	{
-		if (x == other.x)
-			return y < other.y;
-		else
-			return x < other.x;
-	}
+        bool operator==(const Position& other) const
+        {
+            return x == other.x && y == other.y;
+        }
+    };
 
-	bool operator==(const Position& other) const
-	{
-		return x == other.x && y == other.y;
-	}
-};
+    template <typename T>
+    class Matrix
+    {
+    public:
+        Matrix() = default;
 
-template <typename T>
-class Matrix
-{
-	public:
-		Matrix() = default;
+        Matrix(Coordinate width, Coordinate height)
+            : _width{ width }
+            , _height{ height }
+        {
+            _values.resize(static_cast<std::size_t>(_width) * static_cast<std::size_t>(_height));
+        }
 
-		Matrix(Coordinate width, Coordinate height)
-		: _width {width}
-		, _height {height}
-		{
-			_values.resize(static_cast<std::size_t>(_width) * static_cast<std::size_t>(_height));
-		}
+        template<typename... CtrArgs>
+        Matrix(Coordinate width, Coordinate height, CtrArgs&& ... args)
+            : _width{ width }
+            , _height{ height }
+        {
+            _values.resize(static_cast<std::size_t>(_width) * static_cast<std::size_t>(_height), T{ std::forward<CtrArgs>(args)... });
+        }
 
-		template<typename... CtArgs>
-		Matrix(Coordinate width, Coordinate height, CtArgs... args)
-		: _width {width}
-		, _height {height}
-		{
-			 _values.resize(static_cast<std::size_t>(_width) * static_cast<std::size_t>(_height), T{args...});
-		}
+        void clear()
+        {
+            _values.clear();
+        }
 
-		void clear()
-		{
-			std::vector<T> values(static_cast<std::size_t>(_width) * static_cast<std::size_t>(_height));
-			_values.swap(values);
-		}
+        Coordinate getHeight() const { return _height; }
+        Coordinate getWidth() const { return _width; }
 
-		Coordinate getHeight() const { return _height; }
-		Coordinate getWidth() const { return _width; }
+        T& get(const Position& position)
+        {
+            assert(position.x < _width);
+            assert(position.y < _height);
+            return _values[position.x + _width * position.y];
+        }
 
-		T& get(const Position& position)
-		{
-			assert(position.x < _width);
-			assert(position.y < _height);
-			return _values[position.x + _width*position.y];
-		}
+        const T& get(const Position& position) const
+        {
+            assert(position.x < _width);
+            assert(position.y < _height);
+            return _values[position.x + _width * position.y];
+        }
 
-		const T& get(const Position& position) const
-		{
-			assert(position.x < _width);
-			assert(position.y < _height);
-			return _values[position.x + _width*position.y];
-		}
+        T& operator[](const Position& position) { return get(position); }
+        const T& operator[](const Position& position) const { return get(position); }
 
-		T& operator[](const Position& position) { return get(position); }
-		const T& operator[](const Position& position) const { return get(position); }
+        template <typename Func>
+        Position getPositionMinElement(Func func) const
+        {
+            assert(!_values.empty());
 
-		template <typename Func>
-		Position getPositionMinElement(Func func) const
-		{
-			assert(!_values.empty());
+            const auto it{ std::min_element(_values.begin(), _values.end(), std::move(func)) };
+            const auto index{ static_cast<Coordinate>(std::distance(_values.begin(), it)) };
 
-			auto it {std::min_element(_values.begin(), _values.end(), std::move(func))};
-			auto index {static_cast<Coordinate>(std::distance(_values.begin(), it))};
+            return Position{ index % _height, index / _height };
+        }
 
-			return {index % _height, index / _height};
-		}
-
-	private:
-		Coordinate		_width {};
-		Coordinate		_height {};
-		std::vector<T>	_values;
-};
+    private:
+        Coordinate		_width{};
+        Coordinate		_height{};
+        std::vector<T>	_values;
+    };
 
 } // ns SOM
 
-namespace std {
-
-template<>
-class hash<SOM::Position>
+namespace std
 {
-	public:
-		size_t operator()(const SOM::Position& s) const
-		{
-			size_t h1 = std::hash<SOM::Coordinate>()(s.x);
-			size_t h2 = std::hash<SOM::Coordinate>()(s.y);
-			return h1 ^ (h2 << 1);
-		}
-};
-
+    template<>
+    class hash<SOM::Position>
+    {
+    public:
+        size_t operator()(const SOM::Position& s) const
+        {
+            size_t h1 = std::hash<SOM::Coordinate>()(s.x);
+            size_t h2 = std::hash<SOM::Coordinate>()(s.y);
+            return h1 ^ (h2 << 1);
+        }
+    };
 } // ns std
 

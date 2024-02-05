@@ -64,6 +64,38 @@ namespace MetaData::Utils
         return {};
     }
 
+    std::optional<int> parseYear(std::string_view yearStr)
+    {
+        // limit to first 4 digit, accept leading '-'
+        if (yearStr.empty())
+            return std::nullopt;
+
+        int sign;
+        if (yearStr.front() == '-')
+        {
+            sign = -1;
+            yearStr.remove_prefix(1);
+        }
+        else
+        {
+            sign = 1;
+        }
+
+        if (yearStr.empty() || !std::isdigit(yearStr.front()))
+            return std::nullopt;
+
+        int result{};
+        for (std::size_t i{}; i < yearStr.size() && i < 4; ++i)
+        {
+            if (!std::isdigit(yearStr[i])) {
+                break;
+            }
+            result = result * 10 + (yearStr[i] - '0');
+        }
+
+        return result * sign;
+    }
+
     std::string_view readStyleToString(ParserReadStyle readStyle)
     {
         switch (readStyle)

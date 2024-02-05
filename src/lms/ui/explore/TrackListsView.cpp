@@ -44,7 +44,7 @@ namespace UserInterface
 		auto bindMenuItem {[this](const std::string& var, const Wt::WString& title, Mode mode)
 		{
 			auto *menuItem {bindNew<Wt::WPushButton>(var, title)};
-			menuItem->clicked().connect([=]
+			menuItem->clicked().connect([this, mode, menuItem]
 			{
 				_mode = mode;
 				refreshView();

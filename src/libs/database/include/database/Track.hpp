@@ -79,7 +79,6 @@ namespace Database {
             TrackListId							trackList;		// matching this trackList
             std::optional<int>					trackNumber;	// matching this track number
             MediaLibraryId                      mediaLibrary;   // If set, tracks in this library
-            bool								distinct{ true };
 
             FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
@@ -96,7 +95,6 @@ namespace Database {
             FindParameters& setTrackList(TrackListId _trackList) { trackList = _trackList; return *this; }
             FindParameters& setTrackNumber(int _trackNumber) { trackNumber = _trackNumber; return *this; }
             FindParameters& setMediaLibrary(MediaLibraryId  _mediaLibrary) { mediaLibrary = _mediaLibrary; return *this; }
-            FindParameters& setDistinct(bool _distinct) { distinct = _distinct; return *this; }
         };
 
         struct PathResult

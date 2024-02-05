@@ -23,6 +23,7 @@
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
 #include "database/Listen.hpp"
+#include "database/MediaLibrary.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/StarredArtist.hpp"
@@ -77,6 +78,7 @@ void DatabaseFixture::testDatabaseEmpty()
     EXPECT_EQ(Cluster::getCount(session), 0);
     EXPECT_EQ(ClusterType::getCount(session), 0);
     EXPECT_EQ(Listen::getCount(session), 0);
+    EXPECT_EQ(MediaLibrary::getCount(session), 0);
     EXPECT_EQ(Release::getCount(session), 0);
     EXPECT_EQ(StarredArtist::getCount(session), 0);
     EXPECT_EQ(StarredRelease::getCount(session), 0);

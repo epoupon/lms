@@ -23,15 +23,15 @@
 #include "utils/ILogger.hpp"
 #include "utils/UUID.hpp"
 
-#define LOG(sev, message)	LMS_LOG(SCROBBLING, sev, message << "[listenbrainz] ")
+#define LOG(sev, message)	LMS_LOG(SCROBBLING, sev, "[listenbrainz] " << message)
 
 namespace Database
 {
-	class Session;
+    class Session;
 }
 
 namespace Scrobbling::ListenBrainz::Utils
 {
-	std::optional<UUID>	getListenBrainzToken(Database::Session& session, Database::UserId userId);
-	std::string parseValidateToken(std::string_view msgBody);
+    std::optional<UUID>	getListenBrainzToken(Database::Session& session, Database::UserId userId);
+    std::string parseValidateToken(std::string_view msgBody);
 }

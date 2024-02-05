@@ -189,7 +189,7 @@ namespace UserInterface
         setFormWidget(MediaLibraryModel::DirectoryField, std::make_unique<Wt::WLineEdit>());
 
         Wt::WPushButton* saveBtn{ bindNew<Wt::WPushButton>("save-btn", Wt::WString::tr(mediaLibraryId.isValid() ? "Lms.save" : "Lms.create")) };
-        saveBtn->clicked().connect(this, [=]
+        saveBtn->clicked().connect(this, [this, mediaLibraryId, model]
             {
                 updateModel(model.get());
 
@@ -205,7 +205,7 @@ namespace UserInterface
             });
 
         Wt::WPushButton* cancelBtn{ bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel")) };
-        cancelBtn->clicked().connect(this, [=] {cancelled().emit();});
+        cancelBtn->clicked().connect(this, [this] { cancelled().emit(); });
 
         updateView(model.get());
     }

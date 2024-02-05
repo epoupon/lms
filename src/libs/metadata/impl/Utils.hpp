@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string_view>
 #include <Wt/WDate.h>
 
@@ -28,6 +29,7 @@
 namespace MetaData::Utils
 {
 	Wt::WDate parseDate(std::string_view dateStr);
+	std::optional<int> parseYear(std::string_view yearStr);
 	std::string_view readStyleToString(ParserReadStyle readStyle);
 
 	struct PerformerArtist

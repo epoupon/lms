@@ -4,7 +4,7 @@ project(lms)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/modules/)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 if (UNIX)
 	set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
@@ -69,6 +69,13 @@ elseif (IMAGE_LIBRARY STREQUAL STB AND NOT STB_FOUND)
 	message(FATAL_ERROR "STB not found")
 endif ()
 message(STATUS "IMAGE_LIBRARY set to ${IMAGE_LIBRARY}")
+
+# Benchmark
+option(BUILD_BENCHMARKS "Build benchmarks" OFF)
+if (BUILD_BENCHMARKS)
+	find_package(benchmark REQUIRED)
+	message(STATUS "Building benchmarks")
+endif()
 
 add_subdirectory(src)
 

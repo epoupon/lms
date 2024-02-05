@@ -69,7 +69,7 @@ TEST_F(DatabaseFixture, Cluster)
             EXPECT_EQ(clusterTypes.results.front(), clusterType.getId());
 
             clusterTypes = ClusterType::findOrphanIds(session);
-            EXPECT_TRUE(clusterTypes.results.empty());
+            EXPECT_EQ(clusterTypes.results.size(), 0);
         }
     }
 
@@ -80,7 +80,7 @@ TEST_F(DatabaseFixture, Cluster)
         ASSERT_EQ(clusterTypes.results.size(), 1);
         EXPECT_EQ(clusterTypes.results.front(), clusterType.getId());
 
-        ASSERT_TRUE(ClusterType::findUsed(session).results.empty());
+        ASSERT_EQ(ClusterType::findUsed(session).results.size(), 0);
     }
 }
 
@@ -91,7 +91,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
 
     {
         auto transaction{ session.createReadTransaction() };
-        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
+        EXPECT_EQ(Cluster::findOrphanIds(session).results.size(), 0);
         auto clusterTypes{ ClusterType::findOrphanIds(session) };
         ASSERT_EQ(clusterTypes.results.size(), 1);
         EXPECT_EQ(clusterTypes.results.front(), clusterType.getId());
@@ -104,8 +104,8 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
         auto transaction{ session.createReadTransaction() };
         auto clusters{ Cluster::findOrphanIds(session) };
         EXPECT_EQ(clusters.results.size(), 2);
-        EXPECT_TRUE(track->getClusters().empty());
-        EXPECT_TRUE(track->getClusterIds().empty());
+        EXPECT_EQ(track->getClusters().size(), 0);
+        EXPECT_EQ(track->getClusterIds().size(), 0);
         EXPECT_EQ(Cluster::computeTrackCount(session, cluster1.getId()), 0);
         EXPECT_EQ(Cluster::computeTrackCount(session, cluster2.getId()), 0);
     }
@@ -131,7 +131,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
         ASSERT_EQ(clusters.results.size(), 1);
         EXPECT_EQ(clusters.results.front(), cluster2.getId());
 
-        EXPECT_TRUE(ClusterType::findOrphanIds(session).results.empty());
+        EXPECT_EQ(ClusterType::findOrphanIds(session).results.size(), 0);
     }
 
     {
@@ -142,7 +142,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrack)
         EXPECT_EQ(tracks.results.front(), track.getId());
 
         tracks = Track::findIds(session, Track::FindParameters{}.setClusters({ cluster2.getId() }));
-        EXPECT_TRUE(tracks.results.empty());
+        EXPECT_EQ(tracks.results.size(), 0);
     }
 
     {
@@ -172,7 +172,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrackWithSeveralClusters)
         auto transaction{ session.createReadTransaction() };
 
         const auto tracks{ Track::findIds(session, Track::FindParameters{}.setClusters(clusterIds)) };
-        EXPECT_TRUE(tracks.results.empty());
+        EXPECT_EQ(tracks.results.size(), 0);
     }
 
     {
@@ -185,7 +185,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrackWithSeveralClusters)
         auto transaction{ session.createReadTransaction() };
 
         const auto tracks{ Track::findIds(session, Track::FindParameters{}.setClusters(clusterIds)) };
-        EXPECT_TRUE(tracks.results.empty());
+        EXPECT_EQ(tracks.results.size(), 0);
         EXPECT_EQ(Cluster::computeTrackCount(session, cluster1.getId()), 1);
         EXPECT_EQ(Cluster::computeTrackCount(session, cluster2.getId()), 0);
     }
@@ -200,7 +200,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrackWithSeveralClusters)
         auto transaction{ session.createReadTransaction() };
 
         const auto tracks{ Track::findIds(session, Track::FindParameters{}.setClusters(clusterIds)) };
-        ASSERT_FALSE(tracks.results.empty());
+        ASSERT_EQ(tracks.results.size(), 1);
         EXPECT_EQ(tracks.results.front(), track.getId());
         EXPECT_EQ(Cluster::computeTrackCount(session, cluster1.getId()), 1);
         EXPECT_EQ(Cluster::computeTrackCount(session, cluster2.getId()), 1);
@@ -225,7 +225,7 @@ TEST_F(DatabaseFixture, Cluster_multiTracks)
 
     {
         auto transaction{ session.createReadTransaction() };
-        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
+        EXPECT_EQ(Cluster::findOrphanIds(session).results.size(), 0);
 
         EXPECT_EQ(Cluster::computeTrackCount(session, cluster.getId()), tracks.size());
 
@@ -242,8 +242,8 @@ TEST_F(DatabaseFixture, ClusterType_singleTrack)
 {
     {
         auto transaction{ session.createReadTransaction() };
-        EXPECT_TRUE(Cluster::find(session, Cluster::FindParameters{}).results.empty());
-        EXPECT_TRUE(Cluster::find(session, Cluster::FindParameters{}.setClusterTypeName("Foo")).results.empty());
+        EXPECT_EQ(Cluster::find(session, Cluster::FindParameters{}).results.size(), 0);
+        EXPECT_EQ(Cluster::find(session, Cluster::FindParameters{}.setClusterTypeName("Foo")).results.size(), 0);
     }
 
     ScopedClusterType clusterType{ session, "MyClusterType" };
@@ -275,7 +275,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
 
     {
         auto transaction{ session.createReadTransaction() };
-        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
+        EXPECT_EQ(Cluster::findOrphanIds(session).results.size(), 0);
     }
 
     ScopedClusterType clusterType{ session, "MyClusterType" };
@@ -285,7 +285,7 @@ TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
     {
         auto transaction{ session.createReadTransaction() };
         ASSERT_EQ(Cluster::findOrphanIds(session).results.size(), 2);
-        EXPECT_TRUE(Release::find(session, Release::FindParameters{}.setClusters({ unusedCluster.getId() })).results.empty());
+        EXPECT_EQ(Release::find(session, Release::FindParameters{}.setClusters({ unusedCluster.getId() })).results.size(), 0);
         EXPECT_EQ(Release::find(session, Release::FindParameters{}).results.size(), 1);
         EXPECT_EQ(Cluster::computeReleaseCount(session, cluster.getId()), 0);
         EXPECT_EQ(Cluster::computeReleaseCount(session, unusedCluster.getId()), 0);
@@ -360,10 +360,10 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiClusters)
 
     {
         auto transaction{ session.createReadTransaction() };
-        EXPECT_TRUE(ClusterType::findOrphanIds(session).results.empty());
+        EXPECT_EQ(ClusterType::findOrphanIds(session).results.size(), 0);
         EXPECT_EQ(Cluster::findOrphanIds(session).results.size(), 2);
-        EXPECT_TRUE(Release::findOrphanIds(session).results.empty());
-        EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
+        EXPECT_EQ(Release::findOrphanIds(session).results.size(), 0);
+        EXPECT_EQ(Artist::findOrphanIds(session).results.size(), 0);
     }
 
     {
@@ -379,8 +379,8 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiClusters)
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
 
-        EXPECT_TRUE(Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster2.getId() })).results.empty());
-        EXPECT_TRUE(Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster3.getId() })).results.empty());
+        EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster2.getId() })).results.size(), 0);
+        EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster3.getId() })).results.size(), 0);
 
         cluster2.get().modify()->addTrack(track.get());
     }
@@ -400,7 +400,7 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiClusters)
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
 
-        EXPECT_TRUE(Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster3.getId() })).results.empty());
+        EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster3.getId() })).results.size(), 0);
     }
 }
 
@@ -421,9 +421,9 @@ TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiRolesMultiClusters)
 
     {
         auto transaction{ session.createReadTransaction() };
-        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
-        EXPECT_TRUE(Release::findOrphanIds(session).results.empty());
-        EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
+        EXPECT_EQ(Cluster::findOrphanIds(session).results.size(), 0);
+        EXPECT_EQ(Release::findOrphanIds(session).results.size(), 0);
+        EXPECT_EQ(Artist::findOrphanIds(session).results.size(), 0);
     }
 
     {
@@ -461,8 +461,8 @@ TEST_F(DatabaseFixture, MultiTracksSingleArtistMultiClusters)
 
     {
         auto transaction{ session.createReadTransaction() };
-        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
-        EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
+        EXPECT_EQ(Cluster::findOrphanIds(session).results.size(), 0);
+        EXPECT_EQ(Artist::findOrphanIds(session).results.size(), 0);
     }
 
     {
@@ -572,10 +572,10 @@ TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistSingleCluster)
     {
         auto transaction{ session.createReadTransaction() };
 
-        EXPECT_TRUE(Cluster::findOrphanIds(session).results.empty());
-        EXPECT_TRUE(ClusterType::findOrphanIds(session).results.empty());
-        EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
-        EXPECT_TRUE(Release::findOrphanIds(session).results.empty());
+        EXPECT_EQ(Cluster::findOrphanIds(session).results.size(), 0);
+        EXPECT_EQ(ClusterType::findOrphanIds(session).results.size(), 0);
+        EXPECT_EQ(Artist::findOrphanIds(session).results.size(), 0);
+        EXPECT_EQ(Release::findOrphanIds(session).results.size(), 0);
     }
 
     {
@@ -706,7 +706,7 @@ TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClusters)
                 EXPECT_TRUE(std::any_of(std::next(std::cbegin(tracks), 10), std::next(std::cbegin(tracks), 15), [similarTrack](const ScopedTrack& track) { return track.getId() == similarTrack->getId(); }));
         }
 
-        EXPECT_TRUE(trackList->getSimilarTracks(10, 10).empty());
+        EXPECT_EQ(trackList->getSimilarTracks(10, 10).size(), 0);
     }
 }
 
@@ -721,9 +721,9 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleArtistsMultiClusters)
 
     {
         auto transaction{ session.createReadTransaction() };
-        EXPECT_TRUE(artist1->findSimilarArtistIds().results.empty());
-        EXPECT_TRUE(artist2->findSimilarArtistIds().results.empty());
-        EXPECT_TRUE(artist3->findSimilarArtistIds().results.empty());
+        EXPECT_EQ(artist1->findSimilarArtistIds().results.size(), 0);
+        EXPECT_EQ(artist2->findSimilarArtistIds().results.size(), 0);
+        EXPECT_EQ(artist3->findSimilarArtistIds().results.size(), 0);
     }
 
     std::list<ScopedTrack> tracks;
@@ -768,7 +768,7 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleArtistsMultiClusters)
 
         {
             auto artists{ artist1->findSimilarArtistIds({TrackArtistLinkType::ReleaseArtist}) };
-            EXPECT_EQ(artists.results.empty(), 1);
+            EXPECT_EQ(artists.results.size(), 0);
         }
 
         {
@@ -779,7 +779,7 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleArtistsMultiClusters)
 
         {
             auto artists{ artist1->findSimilarArtistIds({TrackArtistLinkType::Composer}) };
-            EXPECT_TRUE(artists.results.empty());
+            EXPECT_EQ(artists.results.size(), 0);
         }
 
         {
@@ -802,9 +802,9 @@ TEST_F(DatabaseFixture, MultipleTracksMultipleReleasesMultiClusters)
 
     {
         auto transaction{ session.createReadTransaction() };
-        EXPECT_TRUE(release1->getSimilarReleases().empty());
-        EXPECT_TRUE(release2->getSimilarReleases().empty());
-        EXPECT_TRUE(release3->getSimilarReleases().empty());
+        EXPECT_EQ(release1->getSimilarReleases().size(), 0);
+        EXPECT_EQ(release2->getSimilarReleases().size(), 0);
+        EXPECT_EQ(release3->getSimilarReleases().size(), 0);
     }
 
     std::list<ScopedTrack> tracks;

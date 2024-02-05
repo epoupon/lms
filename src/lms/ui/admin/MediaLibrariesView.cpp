@@ -44,7 +44,7 @@ namespace UserInterface
                 auto mediaLibraryModal{ std::make_unique<MediaLibraryModal>(Database::MediaLibraryId{}) };
                 MediaLibraryModal* mediaLibraryModalPtr{ mediaLibraryModal.get() };
 
-                mediaLibraryModalPtr->saved().connect(this, [=](Database::MediaLibraryId newMediaLibraryId)
+                mediaLibraryModalPtr->saved().connect(this, [this, mediaLibraryModalPtr](Database::MediaLibraryId newMediaLibraryId)
                     {
                         Wt::WTemplate* entry{ addEntry() };
                         updateEntry(newMediaLibraryId, entry);
@@ -53,7 +53,7 @@ namespace UserInterface
                         LmsApp->getModalManager().dispose(mediaLibraryModalPtr);
                     });
 
-                mediaLibraryModalPtr->cancelled().connect(this, [=]
+                mediaLibraryModalPtr->cancelled().connect(this, [mediaLibraryModalPtr]
                     {
                         LmsApp->getModalManager().dispose(mediaLibraryModalPtr);
                     });
@@ -95,7 +95,7 @@ namespace UserInterface
         Wt::WWidget* modalPtr{ modal.get() };
 
         auto* delBtn{ modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.delete")) };
-        delBtn->clicked().connect([=]
+        delBtn->clicked().connect([=, this]
             {
                 {
                     auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
@@ -138,12 +138,12 @@ namespace UserInterface
 
         Wt::WPushButton* editBtn{ entry->bindNew<Wt::WPushButton>("edit-btn", Wt::WString::tr("Lms.template.edit-btn"), Wt::TextFormat::XHTML) };
         editBtn->setToolTip(Wt::WString::tr("Lms.edit"));
-        editBtn->clicked().connect([=]
+        editBtn->clicked().connect([this, mediaLibraryId, entry]
             {
                 auto mediaLibraryModal{ std::make_unique<MediaLibraryModal>(mediaLibraryId) };
                 MediaLibraryModal* mediaLibraryModalPtr{ mediaLibraryModal.get() };
 
-                mediaLibraryModalPtr->saved().connect(this, [=](Database::MediaLibraryId newMediaLibraryId)
+                mediaLibraryModalPtr->saved().connect(this, [=, this](Database::MediaLibraryId newMediaLibraryId)
                     {
                         updateEntry(newMediaLibraryId, entry);
 
@@ -154,7 +154,7 @@ namespace UserInterface
                         LmsApp->getModalManager().dispose(mediaLibraryModalPtr);
                     });
 
-                mediaLibraryModalPtr->cancelled().connect(this, [=]
+                mediaLibraryModalPtr->cancelled().connect(this, [mediaLibraryModalPtr]
                     {
                         LmsApp->getModalManager().dispose(mediaLibraryModalPtr);
                     });
@@ -164,7 +164,7 @@ namespace UserInterface
 
         Wt::WPushButton* delBtn{ entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.template.trash-btn"), Wt::TextFormat::XHTML) };
         delBtn->setToolTip(Wt::WString::tr("Lms.delete"));
-        delBtn->clicked().connect([=]
+        delBtn->clicked().connect([this, mediaLibraryId, entry]
             {
                 showDeleteLibraryModal(mediaLibraryId, entry);
             });

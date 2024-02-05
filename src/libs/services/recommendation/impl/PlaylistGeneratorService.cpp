@@ -105,7 +105,6 @@ namespace Recommendation
         Track::FindParameters params;
         params.setTrackList(tracklistId);
         params.setSortMethod(TrackSortMethod::TrackList);
-        params.setDistinct(false);
 
         for (const TrackId trackId : Track::findIds(dbSession, params).results)
             tracks.push_back(trackId);

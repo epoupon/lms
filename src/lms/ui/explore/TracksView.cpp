@@ -47,7 +47,7 @@ namespace UserInterface
         auto bindMenuItem{ [this](const std::string& var, const Wt::WString& title, TrackCollector::Mode mode)
         {
             auto* menuItem {bindNew<Wt::WPushButton>(var, title)};
-            menuItem->clicked().connect([=]
+            menuItem->clicked().connect([this, mode, menuItem]
             {
                 refreshView(mode);
                 _currentActiveItem->removeStyleClass("active");
@@ -70,23 +70,23 @@ namespace UserInterface
         bindMenuItem("all", Wt::WString::tr("Lms.Explore.all"), TrackCollector::Mode::All);
 
         bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
-            ->clicked().connect([=]
+            ->clicked().connect([this]
                 {
                     _playQueueController.processCommand(PlayQueueController::Command::Play, getAllTracks());
                 });
 
         bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
-            ->clicked().connect([=]
+            ->clicked().connect([this]
                 {
                     _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, getAllTracks());
                 });
         bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"), Wt::TextFormat::Plain)
-            ->clicked().connect([=]
+            ->clicked().connect([this]
                 {
                     _playQueueController.processCommand(PlayQueueController::Command::PlayNext, getAllTracks());
                 });
         bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
-            ->clicked().connect([=]
+            ->clicked().connect([this]
                 {
                     _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, getAllTracks());
                 });

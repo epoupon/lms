@@ -256,7 +256,7 @@ namespace UserInterface
                 << " duration: " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << ","
                 << " replayGain: " << replayGain << ","
                 << " title: \"" << StringUtils::jsEscape(track->getName()) << "\","
-                << " artist: \"" << (!artists.empty() ? StringUtils::jsEscape(artists.front()->getName()) : "") << "\","
+                << " artist: \"" << (!artists.empty() ? StringUtils::jsEscape(track->getArtistDisplayName()) : "") << "\","
                 << " release: \"" << (track->getRelease() ? StringUtils::jsEscape(track->getRelease()->getName()) : "") << "\","
                 << " artwork: ["
                 << "   { src: \"" << LmsApp->getCoverResource()->getTrackUrl(trackId, CoverResource::Size::Small) << "\", sizes: \"128x128\",	type: \"image/jpeg\" },"

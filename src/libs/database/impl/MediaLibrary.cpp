@@ -43,7 +43,7 @@ namespace Database
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().query<int>("SELECT COUNT(*) FROM cluster");
+        return session.getDboSession().query<int>("SELECT COUNT(*) FROM media_library");
     }
 
     MediaLibrary::pointer MediaLibrary::find(Session& session, MediaLibraryId id)

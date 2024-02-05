@@ -108,7 +108,7 @@ namespace UserInterface
                 {
                     const ClusterId clusterId{ cluster->getId() };
                     Wt::WInteractWidget* entry{ clusterContainers->addWidget(Utils::createCluster(clusterId)) };
-                    entry->clicked().connect([=]
+                    entry->clicked().connect([this, clusterId]
                         {
                             _filters.add(clusterId);
                         });
@@ -117,19 +117,19 @@ namespace UserInterface
         }
 
         bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
-            ->clicked().connect([=]
+            ->clicked().connect([this, trackListId]
                 {
                     _playQueueController.processCommand(PlayQueueController::Command::Play, *trackListId);
                 });
 
         bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
-            ->clicked().connect([=]
+            ->clicked().connect([this, trackListId]
                 {
                     _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, *trackListId);
                 });
 
         bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
-            ->clicked().connect([=]
+            ->clicked().connect([this, trackListId]
                 {
                     _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, *trackListId);
                 });
@@ -138,14 +138,14 @@ namespace UserInterface
             ->setLink(Wt::WLink{ std::make_unique<DownloadTrackListResource>(*trackListId) });
 
         bindNew<Wt::WPushButton>("delete", Wt::WString::tr("Lms.delete"))
-            ->clicked().connect([=]
+            ->clicked().connect([this, trackListId]
                 {
                     auto modal{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.TrackList.template.delete-tracklist")) };
                     modal->addFunction("tr", &Wt::WTemplate::Functions::tr);
                     Wt::WWidget* modalPtr{ modal.get() };
 
                     auto* delBtn{ modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.delete")) };
-                    delBtn->clicked().connect([=]
+                    delBtn->clicked().connect([this, trackListId, modalPtr]
                         {
                             {
                                 auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
@@ -187,7 +187,6 @@ namespace UserInterface
         params.setTrackList(_trackListId);
         params.setSortMethod(Database::TrackSortMethod::TrackList);
         params.setRange(Database::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize });
-        params.setDistinct(false);
 
         Database::Track::find(LmsApp->getDbSession(), params, [this](const Track::pointer& track)
             {

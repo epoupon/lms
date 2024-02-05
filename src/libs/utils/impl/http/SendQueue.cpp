@@ -66,7 +66,7 @@ namespace Http
 	{
 		_client.done().connect([this](Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg)
 		{
-			_strand.dispatch([=, msg = std::move(msg)]
+			_strand.dispatch([this, ec, msg = std::move(msg)]
 			{
 				onClientDone(ec, msg);
 			});
