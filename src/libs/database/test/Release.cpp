@@ -89,7 +89,7 @@ TEST_F(DatabaseFixture, Release_singleTrack)
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_TRUE(Release::findOrphanIds(session).results.empty());
+            EXPECT_EQ(Release::findOrphanIds(session).results.size(), 0);
 
             const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release.getId())) };
             ASSERT_EQ(tracks.results.size(), 1);
@@ -125,7 +125,7 @@ TEST_F(DatabaseFixture, Release_singleTrack)
         auto transaction{ session.createWriteTransaction() };
 
         const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release.getId())) };
-        EXPECT_TRUE(tracks.results.empty());
+        EXPECT_EQ(tracks.results.size(), 0);
 
         auto releases{ Release::findOrphanIds(session) };
         ASSERT_EQ(releases.results.size(), 1);
@@ -357,8 +357,8 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseFirstTrack)
     {
         auto transaction{ session.createReadTransaction() };
 
-        EXPECT_TRUE(Track::findIds(session, Track::FindParameters{}.setRelease(release1.getId())).results.empty());
-        EXPECT_TRUE(Track::findIds(session, Track::FindParameters{}.setRelease(release2.getId())).results.empty());
+        EXPECT_EQ(Track::findIds(session, Track::FindParameters{}.setRelease(release1.getId())).results.size(), 0);
+        EXPECT_EQ(Track::findIds(session, Track::FindParameters{}.setRelease(release2.getId())).results.size(), 0);
     }
 
     {
@@ -383,13 +383,13 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseFirstTrack)
 
         {
             const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release1.getId()).setSortMethod(TrackSortMethod::Release)) };
-            ASSERT_FALSE(tracks.results.empty());
+            EXPECT_EQ(tracks.results.size(), 2);
             EXPECT_EQ(tracks.results.front(), track1A.getId());
         }
 
         {
             const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release2.getId()).setSortMethod(TrackSortMethod::Release)) };
-            ASSERT_FALSE(tracks.results.empty());
+            EXPECT_EQ(tracks.results.size(), 2);
             EXPECT_EQ(tracks.results.front(), track2B.getId());
         }
     }
@@ -421,7 +421,6 @@ TEST_F(DatabaseFixture, MultiTracksSingleReleaseDate)
         track1B.get().modify()->setRelease(release1.get());
         track2A.get().modify()->setRelease(release2.get());
         track2B.get().modify()->setRelease(release2.get());
-
 
         track1A.get().modify()->setDate(release1Date);
         track1B.get().modify()->setDate(release1Date);

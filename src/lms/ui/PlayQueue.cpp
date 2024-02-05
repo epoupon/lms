@@ -795,7 +795,6 @@ namespace UserInterface
 
         Track::FindParameters params;
         params.setTrackList(_queueId);
-        params.setDistinct(false);
         params.setSortMethod(TrackSortMethod::TrackList);
 
         Track::find(session, params, [&](const Track::pointer& track)

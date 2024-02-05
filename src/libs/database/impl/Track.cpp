@@ -45,8 +45,7 @@ namespace Database
         {
             session.checkReadTransaction();
 
-            std::string selectStatement{ params.distinct ? "SELECT DISTINCT" : "SELECT" };
-            auto query{ session.getDboSession().query<ResultType>(selectStatement + " " + std::string{ itemToSelect } + " FROM track t") };
+            auto query{ session.getDboSession().query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM track t") };
 
             assert(params.keywords.empty() || params.name.empty());
             for (std::string_view keyword : params.keywords)
@@ -118,6 +117,8 @@ namespace Database
                     }
                     query.where(oss.str());
                 }
+
+                query.groupBy("t.id");
             }
 
             assert(!(params.nonRelease && params.release.isValid()));

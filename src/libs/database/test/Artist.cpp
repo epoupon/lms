@@ -92,7 +92,7 @@ TEST_F(DatabaseFixture, Artist_singleTrack)
 
     {
         auto transaction{ session.createReadTransaction() };
-        EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
+        EXPECT_EQ(Artist::findOrphanIds(session).results.size(), 0);
     }
 
     {
@@ -108,7 +108,7 @@ TEST_F(DatabaseFixture, Artist_singleTrack)
         EXPECT_EQ(artistLink->getArtist()->getId(), artist.getId());
 
         ASSERT_EQ(track->getArtists({ TrackArtistLinkType::Artist }).size(), 1);
-        EXPECT_TRUE(track->getArtists({ TrackArtistLinkType::ReleaseArtist }).empty());
+        EXPECT_EQ(track->getArtists({ TrackArtistLinkType::ReleaseArtist }).size(), 0);
         EXPECT_EQ(track->getArtists({}).size(), 1);
     }
 
@@ -120,7 +120,7 @@ TEST_F(DatabaseFixture, Artist_singleTrack)
         EXPECT_EQ(artists.front(), artist.getId());
 
         ASSERT_EQ(track->getArtistIds({ TrackArtistLinkType::Artist }).size(), 1);
-        EXPECT_TRUE(track->getArtistIds({ TrackArtistLinkType::ReleaseArtist }).empty());
+        EXPECT_EQ(track->getArtistIds({ TrackArtistLinkType::ReleaseArtist }).size(), 0);
         EXPECT_EQ(track->getArtistIds({}).size(), 1);
     }
 
@@ -195,7 +195,7 @@ TEST_F(DatabaseFixture, Artist_singleTracktMultiRoles)
 
     {
         auto transaction{ session.createReadTransaction() };
-        EXPECT_TRUE(Artist::findOrphanIds(session, Range{}).results.empty());
+        EXPECT_EQ(Artist::findOrphanIds(session, Range{}).results.size(), 0);
     }
 
     {
@@ -260,7 +260,7 @@ TEST_F(DatabaseFixture, Artist_singleTrackMultiArtists)
 
     {
         auto transaction{ session.createReadTransaction() };
-        EXPECT_TRUE(Artist::findOrphanIds(session).results.empty());
+        EXPECT_EQ(Artist::findOrphanIds(session).results.size(), 0);
     }
 
     {
@@ -273,7 +273,7 @@ TEST_F(DatabaseFixture, Artist_singleTrackMultiArtists)
 
         EXPECT_EQ(track->getArtists({}).size(), 2);
         EXPECT_EQ(track->getArtists({ TrackArtistLinkType::Artist }).size(), 2);
-        EXPECT_TRUE(track->getArtists({ TrackArtistLinkType::ReleaseArtist }).empty());
+        EXPECT_EQ(track->getArtists({ TrackArtistLinkType::ReleaseArtist }).size(), 0);
         EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}).results.size(), 2);
         EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::Random)).results.size(), 2);
     }
@@ -317,7 +317,7 @@ TEST_F(DatabaseFixture, Artist_findByName)
     {
         auto transaction{ session.createReadTransaction() };
 
-        EXPECT_TRUE(Artist::findIds(session, Artist::FindParameters{}.setKeywords({ "N" })).results.empty());
+        EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setKeywords({ "N" })).results.size(), 0);
 
         const auto artistsByAAA{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"A"})) };
         ASSERT_EQ(artistsByAAA.results.size(), 1);
@@ -327,7 +327,7 @@ TEST_F(DatabaseFixture, Artist_findByName)
         ASSERT_EQ(artistsByZZZ.results.size(), 1);
         EXPECT_EQ(artistsByZZZ.results.front(), artist.getId());
 
-        EXPECT_TRUE(Artist::find(session, "NNN").empty());
+        EXPECT_EQ(Artist::find(session, "NNN").size(), 0);
         EXPECT_EQ(Artist::find(session, "AAA").size(), 1);
     }
 }
@@ -348,19 +348,19 @@ TEST_F(DatabaseFixture, Artist_findByNameEscaped)
             const auto artists{ Artist::find(session, R"(MyArtist%)") };
             ASSERT_TRUE(artists.size() == 1);
             EXPECT_EQ(artists.front()->getId(), artist1.getId());
-            EXPECT_TRUE(Artist::find(session, R"(MyArtistFoo)").empty());
+            EXPECT_EQ(Artist::find(session, R"(MyArtistFoo)").size(), 0);
         }
         {
             const auto artists{ Artist::find(session, R"(%MyArtist)") };
             ASSERT_TRUE(artists.size() == 1);
             EXPECT_EQ(artists.front()->getId(), artist2.getId());
-            EXPECT_TRUE(Artist::find(session, R"(FooMyArtist)").empty());
+            EXPECT_EQ(Artist::find(session, R"(FooMyArtist)").size(), 0);
         }
         {
             const auto artists{ Artist::find(session, R"(%_MyArtist)") };
             ASSERT_TRUE(artists.size() == 1);
             ASSERT_EQ(artists.front()->getId(), artist3.getId());
-            EXPECT_TRUE(Artist::find(session, R"(%CMyArtist)").empty());
+            EXPECT_EQ(Artist::find(session, R"(%CMyArtist)").size(), 0);
         }
     }
 

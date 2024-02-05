@@ -187,7 +187,6 @@ namespace UserInterface
         params.setTrackList(_trackListId);
         params.setSortMethod(Database::TrackSortMethod::TrackList);
         params.setRange(Database::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize });
-        params.setDistinct(false);
 
         Database::Track::find(LmsApp->getDbSession(), params, [this](const Track::pointer& track)
             {
