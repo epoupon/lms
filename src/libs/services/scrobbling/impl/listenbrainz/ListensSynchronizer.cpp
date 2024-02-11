@@ -94,7 +94,7 @@ namespace Scrobbling::ListenBrainz
 
             Wt::Json::Object trackMetadata;
             trackMetadata["additional_info"] = std::move(additionalInfo);
-            trackMetadata["artist_name"] = Wt::Json::Value{ artists.front()->getName() };
+            trackMetadata["artist_name"] = Wt::Json::Value{ std::string{ track->getArtistDisplayName() } };
             trackMetadata["track_name"] = Wt::Json::Value{ track->getName() };
             if (track->getRelease())
                 trackMetadata["release_name"] = Wt::Json::Value{ track->getRelease()->getName() };
