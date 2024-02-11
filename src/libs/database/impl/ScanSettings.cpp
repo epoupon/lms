@@ -55,11 +55,6 @@ namespace Database
         return res;
     }
 
-    void ScanSettings::addAudioFileExtension(const std::filesystem::path& ext)
-    {
-        _audioFileExtensions += " " + ext.string();
-    }
-
     std::vector<std::string_view> ScanSettings::getExtraTagsToScan() const
     {
         return StringUtils::splitString(_extraTagsToScan, ";");

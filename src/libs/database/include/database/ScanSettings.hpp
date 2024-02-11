@@ -70,7 +70,6 @@ namespace Database
         SimilarityEngineType	getSimilarityEngineType() const { return _similarityEngineType; }
 
         // Setters
-        void addAudioFileExtension(const std::filesystem::path& ext);
         void setUpdateStartTime(Wt::WTime t) { _startTime = t; }
         void setUpdatePeriod(UpdatePeriod p) { _updatePeriod = p; }
         void setExtraTagsToScan(const std::vector<std::string_view>& extraTags);

@@ -72,11 +72,6 @@ namespace Database::Migration
         Db& _db;
     };
 
-    static void migrateFromV32(Session& session)
-    {
-        ScanSettings::get(session).modify()->addAudioFileExtension(".wv");
-    }
-
     static void migrateFromV33(Session& session)
     {
         // remove name from track_artist_link
@@ -409,7 +404,6 @@ SELECT
 
         const std::map<unsigned, MigrationFunction> migrationFunctions
         {
-            {32, migrateFromV32},
             {33, migrateFromV33},
             {34, migrateFromV34},
             {35, migrateFromV35},
