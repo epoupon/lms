@@ -58,7 +58,6 @@ namespace MetaData
                     }
 
                     visitTagIfNonEmpty(value);
-
                 });
         }
 

@@ -247,7 +247,6 @@ int main(int argc, char* argv[])
             {
                 std::cerr << "Parsing failed: " << e.what() << std::endl;
             }
-
         }
     }
     catch (std::exception& e)
