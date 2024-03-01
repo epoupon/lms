@@ -81,7 +81,7 @@ namespace MetaData
             { TagType::Engineer, { "ENGINEER" } },
             { TagType::GaplessPlayback, { "GAPLESSPLAYBACK" } },
             { TagType::Genre, { "GENRE" } },
-            { TagType::Grouping, { "GROUPING" } },
+            { TagType::Grouping, { "GROUPING", "ALBUMGROUPING" } },
             { TagType::InitialKey, { "INITIALKEY" } },
             { TagType::ISRC, { "ISRC" } },
             { TagType::Language, { "LANGUAGE" } },

@@ -33,7 +33,7 @@ namespace MetaData
     namespace
     {
 
-        // Mapping to internal taglib names and/or common alternative custom names
+        // Mapping to internal avformat names and/or common alternative custom names
         static const std::unordered_map<TagType, std::vector<std::string>> tagMapping
         {
             { TagType::AcoustID, { "ACOUSTID_ID", "ACOUSTID ID" } },
@@ -71,7 +71,7 @@ namespace MetaData
             { TagType::Engineer, { "ENGINEER" } },
             { TagType::GaplessPlayback, { "GAPLESSPLAYBACK" } },
             { TagType::Genre, { "GENRE" } },
-            { TagType::Grouping, { "GROUPING", "WM/CONTENTGROUPDESCRIPTION" } },
+            { TagType::Grouping, { "GROUPING", "WM/CONTENTGROUPDESCRIPTION", "ALBUMGROUPING" } },
             { TagType::InitialKey, { "INITIALKEY" } },
             { TagType::ISRC, { "ISRC", "WM/ISRC", "TSRC" } },
             { TagType::Language, { "LANGUAGE" } },
