@@ -17,6 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cassert>
 #include <thread>
 
 #include "utils/StreamLogger.hpp"
@@ -29,7 +30,7 @@ StreamLogger::StreamLogger(std::ostream& os, EnumSet<Severity> severities)
 
 void StreamLogger::processLog(const Log& log)
 {
-    if (_severities.contains(log.getSeverity()))
-        _os << std::this_thread::get_id() << " [" << getSeverityName(log.getSeverity()) << "] [" << getModuleName(log.getModule()) << "] " << log.getMessage() << std::endl;
+    assert(isSeverityActive(log.getSeverity()));
+    _os << std::this_thread::get_id() << " [" << getSeverityName(log.getSeverity()) << "] [" << getModuleName(log.getModule()) << "] " << log.getMessage() << std::endl;
 }
 

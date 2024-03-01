@@ -215,7 +215,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
         session.getDboSession().execute("ALTER TABLE starred_release RENAME COLUMN scrobbling_state TO sync_state");
         session.getDboSession().execute("ALTER TABLE starred_track RENAME COLUMN scrobbler TO backend");
         session.getDboSession().execute("ALTER TABLE starred_track RENAME COLUMN scrobbling_state TO sync_state");
-        
+
         session.getDboSession().execute("UPDATE user SET feedback_backend = scrobbling_backend");
     }
 
@@ -359,7 +359,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
   constraint "fk_track_media_library" foreign key ("media_library_id") references "media_library" ("id") on delete set null deferrable initially deferred
 ))");
 
-// Migrate data, with the new media_library_id field set to 1
+        // Migrate data, with the new media_library_id field set to 1
         session.getDboSession().execute(R"(INSERT INTO track_backup 
 SELECT
  id,
@@ -394,6 +394,13 @@ SELECT
         session.getDboSession().execute("ALTER TABLE track_backup RENAME TO track");
     }
 
+    void migrateFromV51(Session& session)
+    {
+        // Add custom artist tag delimiters, no need to rescan since it has no effect when empty
+        session.getDboSession().execute("ALTER TABLE scan_settings ADD artist_tag_delimiters TEXT NOT NULL DEFAULT ''");
+        session.getDboSession().execute("ALTER TABLE scan_settings ADD default_tag_delimiters TEXT NOT NULL DEFAULT ''");
+    }
+
     void doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -422,6 +429,7 @@ SELECT
             {48, migrateFromV48},
             {49, migrateFromV49},
             {50, migrateFromV50},
+            {51, migrateFromV51},
         };
 
         {

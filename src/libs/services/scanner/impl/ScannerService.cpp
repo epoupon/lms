@@ -383,6 +383,9 @@ namespace Scanner
                 const auto& tags{ scanSettings->getExtraTagsToScan() };
                 std::transform(std::cbegin(tags), std::cend(tags), std::back_inserter(newSettings.extraTags), [](std::string_view tag) { return std::string{ tag };});
             }
+
+            newSettings.artistTagDelimiters = scanSettings->getArtistTagDelimiters();
+            newSettings.defaultTagDelimiters = scanSettings->getDefaultTagDelimiters();
         }
 
         return newSettings;

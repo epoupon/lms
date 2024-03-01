@@ -23,17 +23,13 @@
 #include <iomanip>
 #include <utility>
 
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/join.hpp>
-#include <boost/algorithm/string.hpp>
-
 #include <Wt/WDateTime.h>
 #include <Wt/WDate.h>
 
 namespace StringUtils
 {
 
-    namespace
+    namespace details
     {
         constexpr std::pair<char, std::string_view> jsEscapeChars[]
         {
@@ -87,32 +83,23 @@ namespace StringUtils
                     os << c;
             }
         }
-    }
 
-    bool readList(const std::string& str, const std::string& separators, std::list<std::string>& results)
-    {
-        std::string curStr;
-
-        for (char c : str)
+        template <typename StringType>
+        std::string joinStrings(std::span<const StringType> strings, std::string_view delimiter)
         {
-            if (separators.find(c) != std::string::npos) {
-                if (!curStr.empty()) {
-                    results.push_back(curStr);
-                    curStr.clear();
-                }
-            }
-            else {
-                if (curStr.empty() && std::isspace(c))
-                    continue;
+            std::string res;
+            bool first{ true };
 
-                curStr.push_back(c);
+            for (const StringType& str : strings)
+            {
+                if (!first)
+                    res += delimiter;
+                res += str;
+                first = false;
             }
+
+            return res;
         }
-
-        if (!curStr.empty())
-            results.push_back(curStr);
-
-        return !str.empty();
     }
 
     template<>
@@ -138,57 +125,102 @@ namespace StringUtils
         return std::nullopt;
     }
 
-    std::vector<std::string> splitStringCopy(std::string_view string, std::string_view separators)
+    std::vector<std::string_view> splitString(std::string_view str, char separator)
     {
-        std::string str{ stringTrim(string, separators) };
-
-        std::vector<std::string> res;
-        boost::algorithm::split(res, str, boost::is_any_of(separators), boost::token_compress_on);
-
-        return res;
+        return splitString(str, std::string_view{ &separator, 1 });
     }
 
-    std::vector<std::string_view> splitString(std::string_view str, std::string_view separators)
+    std::vector<std::string_view> splitString(std::string_view str, std::string_view separator)
     {
         std::vector<std::string_view> res;
 
-        std::string_view::size_type strBegin{};
+        if (separator.empty())
+            return { str };
 
-        while ((strBegin = str.find_first_not_of(separators, strBegin)) != std::string_view::npos)
+        size_t pos{};
+        size_t found{ str.find(separator) };
+
+        while (found != std::string_view::npos)
         {
-            auto strEnd{ str.find_first_of(separators, strBegin + 1) };
-            if (strEnd == std::string_view::npos)
+            res.push_back(str.substr(pos, found - pos));
+            pos = found + separator.size();
+            found = str.find(separator, pos);
+        }
+
+        res.push_back(str.substr(pos));
+
+        return res;
+    }
+
+    std::string joinStrings(std::span<const std::string_view> strings, std::string_view delimiter)
+    {
+        return details::joinStrings(strings, delimiter);
+    }
+
+    std::string joinStrings(std::span<const std::string> strings, std::string_view delimiter)
+    {
+        return details::joinStrings(strings, delimiter);
+    }
+
+    std::string joinStrings(std::span<const std::string> strings, char delimiter)
+    {
+        return details::joinStrings(strings, std::string_view{ &delimiter, 1 });
+    }
+
+    std::string joinStrings(std::span<const std::string_view> strings, char delimiter)
+    {
+        return details::joinStrings(strings, std::string_view{ &delimiter, 1 });
+    }
+
+    std::string escapeAndJoinStrings(std::span<const std::string_view> strings, char delimiter, char escapeChar)
+    {
+        std::string result;
+        for (const std::string_view str : strings)
+        {
+            if (!result.empty())
+                result.push_back(delimiter);
+
+            for (char c : str)
             {
-                res.push_back(str.substr(strBegin, str.size() - strBegin));
-                break;
+                if (c == delimiter || c == escapeChar)
+                    result.push_back(escapeChar);
+
+                result.push_back(c);
             }
-
-            res.push_back(str.substr(strBegin, strEnd - strBegin));
-            strBegin = strEnd + 1;
         }
-
-        return res;
+        return result;
     }
 
-    std::string joinStrings(const std::vector<std::string_view>& strings, std::string_view delimiter)
+    std::vector<std::string> splitEscapedStrings(std::string_view str, char delimiter, char escapeChar)
     {
-        std::string res;
-        bool first{ true };
+        std::vector<std::string> result;
+        std::string current;
+        bool escaped{};
 
-        for (std::string_view str : strings)
+        for (char c : str)
         {
-            if (!first)
-                res += delimiter;
-            res += str;
-            first = false;
+            if (escaped) {
+                current.push_back(c);
+                escaped = false;
+            }
+            else
+            {
+                if (c == delimiter)
+                {
+                    result.push_back(std::move(current));
+                    current.clear();
+                }
+                else if (c == escapeChar)
+                    escaped = true;
+                else
+                    current.push_back(c);
+            }
         }
 
-        return res;
-    }
+        if (!current.empty())
+            result.push_back(std::move(current));
 
-    std::string joinStrings(const std::vector<std::string>& strings, const std::string& delimiter)
-    {
-        return boost::algorithm::join(strings, delimiter);
+        return result;
     }
 
     std::string_view stringTrim(std::string_view str, std::string_view whitespaces)
@@ -237,7 +269,7 @@ namespace StringUtils
         return res;
     }
 
-    std::string bufferToString(const std::vector<unsigned char>& data)
+    std::string bufferToString(std::span<const unsigned char> data)
     {
         std::ostringstream oss;
 
@@ -253,7 +285,7 @@ namespace StringUtils
     {
         if (strA.size() != strB.size())
             return false;
-        
+
         for (std::size_t i{}; i < strA.size(); ++i)
         {
             if (std::tolower(strA[i]) != std::tolower(strB[i]))
@@ -293,22 +325,22 @@ namespace StringUtils
 
     std::string jsEscape(std::string_view str)
     {
-        return escape(str, jsEscapeChars);
+        return details::escape(str, details::jsEscapeChars);
     }
 
     void writeJSEscapedString(std::ostream& os, std::string_view str)
     {
-        writeEscapedString(os, str, jsEscapeChars);
+        details::writeEscapedString(os, str, details::jsEscapeChars);
     }
-    
+
     std::string jsonEscape(std::string_view str)
     {
-        return escape(str, jsonEscapeChars);
+        return details::escape(str, details::jsonEscapeChars);
     }
 
     void writeJsonEscapedString(std::ostream& os, std::string_view str)
     {
-        writeEscapedString(os, str, jsonEscapeChars);
+        details::writeEscapedString(os, str, details::jsonEscapeChars);
     }
 
     std::string escapeString(std::string_view str, std::string_view charsToEscape, char escapeChar)
@@ -327,9 +359,41 @@ namespace StringUtils
         return res;
     }
 
-    bool stringEndsWith(const std::string& str, const std::string& ending)
+    std::string unescapeString(std::string_view str, char escapeChar)
     {
-        return boost::algorithm::ends_with(str, ending);
+        std::string res;
+        res.reserve(str.size());
+
+        bool escaped{};
+
+        for (char c : str)
+        {
+            if (escaped)
+            {
+                res += c;
+                escaped = false;
+            }
+            else
+            {
+                if (c == escapeChar)
+                    escaped = true;
+                else
+                    res += c;
+            }
+        }
+
+        if (escaped)
+            res += escapeChar;
+
+        return res;
+    }
+
+    bool stringEndsWith(std::string_view str, std::string_view ending)
+    {
+        if (str.length() < ending.length())
+            return false;
+
+        return str.substr(str.length() - ending.length()) == ending;
     }
 
     std::optional<std::string> stringFromHex(const std::string& str)

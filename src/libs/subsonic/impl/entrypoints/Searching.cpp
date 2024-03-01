@@ -49,7 +49,7 @@ namespace API::Subsonic
             if (context.clientInfo.name == "Symfonium")
                 query = StringUtils::stringTrim(query, "\"");
 
-            std::vector<std::string_view> keywords{ StringUtils::splitString(query, " ") };
+            std::vector<std::string_view> keywords{ StringUtils::splitString(query, ' ') };
 
             // Optional params
             std::size_t artistCount{ getParameterAs<std::size_t>(context.parameters, "artistCount").value_or(20) };

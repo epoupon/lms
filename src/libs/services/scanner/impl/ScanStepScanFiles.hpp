@@ -47,13 +47,13 @@ namespace Scanner
         struct MetaDataScanResult
         {
             std::filesystem::path path;
-            std::optional<MetaData::Track> trackMetaData;
+            std::unique_ptr<MetaData::Track> trackMetaData;
         };
-        void processMetaDataScanResults(ScanContext& context, std::span<const std::unique_ptr<MetaDataScanResult>> scanResults, const ScannerSettings::MediaLibraryInfo& libraryInfo);
+        void processMetaDataScanResults(ScanContext& context, std::span<const MetaDataScanResult> scanResults, const ScannerSettings::MediaLibraryInfo& libraryInfo);
         void processFileMetaData(ScanContext& context, const std::filesystem::path& file, const MetaData::Track& trackMetadata, const ScannerSettings::MediaLibraryInfo& libraryInfo);
 
         std::unique_ptr<MetaData::IParser>  _metadataParser;
-        const std::vector<std::string>      _extraTagsToParse{ "GENRE", "MOOD", "LANGUAGE", "ALBUMGROUPING" };
+        const std::vector<std::string>      _extraTagsToParse;
 
         class MetadataScanQueue
         {
@@ -62,10 +62,10 @@ namespace Scanner
 
                 std::size_t getThreadCount() const { return _scanContextRunner.getThreadCount(); }
 
-                void pushScanRequest(const std::filesystem::path path);
+                void pushScanRequest(const std::filesystem::path& path);
 
                 std::size_t getResultsCount() const;
-                size_t popResults(std::vector<std::unique_ptr<MetaDataScanResult>>& results, std::size_t maxCount);
+                size_t popResults(std::vector<MetaDataScanResult>& results, std::size_t maxCount);
 
                 void wait(std::size_t maxScanRequestCount = 0); // wait until ongoing scan request count <= maxScanRequestCount
 
@@ -76,11 +76,11 @@ namespace Scanner
 
                 mutable std::mutex _mutex ;
                 std::size_t _ongoingScanCount{};
-                std::deque<std::unique_ptr<MetaDataScanResult>> _scanResults;
+                std::deque<MetaDataScanResult> _scanResults;
                 std::condition_variable _condVar;
         };
         MetadataScanQueue _metadataScanQueue;
 
-        std::deque<std::unique_ptr<MetaDataScanResult>> _metaDataScanResults;
+        std::deque<MetaDataScanResult> _metaDataScanResults;
     };
 }

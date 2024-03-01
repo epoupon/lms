@@ -30,31 +30,24 @@ namespace Scanner
 {
     struct ScannerSettings
     {
-        std::size_t											scanVersion{};
-        Wt::WTime											startTime;
-        Database::ScanSettings::UpdatePeriod 				updatePeriod{ Database::ScanSettings::UpdatePeriod::Never };
-        std::vector<std::filesystem::path>					supportedExtensions;
-        bool												skipDuplicateMBID{};
-        std::vector<std::string>							extraTags;
+        std::size_t								scanVersion{};
+        Wt::WTime								startTime;
+        Database::ScanSettings::UpdatePeriod 	updatePeriod{ Database::ScanSettings::UpdatePeriod::Never };
+        std::vector<std::filesystem::path>		supportedExtensions;
+        bool									skipDuplicateMBID{};
+        std::vector<std::string>				extraTags;
+        std::vector<std::string>                artistTagDelimiters;
+        std::vector<std::string>                defaultTagDelimiters;
 
         struct MediaLibraryInfo
         {
             Database::MediaLibraryId id;
             std::filesystem::path rootDirectory;
 
-            bool operator==(const MediaLibraryInfo& other) const { return id == other.id && rootDirectory == other.rootDirectory; }
+            bool operator<=>(const MediaLibraryInfo& other) const = default;
         };
-        std::vector<MediaLibraryInfo>					    mediaLibraries;
+        std::vector<MediaLibraryInfo>			mediaLibraries;
 
-        bool operator==(const ScannerSettings& rhs) const
-        {
-            return scanVersion == rhs.scanVersion
-                && startTime == rhs.startTime
-                && updatePeriod == rhs.updatePeriod
-                && supportedExtensions == rhs.supportedExtensions
-                && mediaLibraries == rhs.mediaLibraries
-                && skipDuplicateMBID == rhs.skipDuplicateMBID
-                && extraTags == rhs.extraTags;
-        }
+        bool operator<=>(const ScannerSettings& rhs) const = default;
     };
 }

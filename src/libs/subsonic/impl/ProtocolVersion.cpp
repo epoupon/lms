@@ -25,7 +25,7 @@ namespace StringUtils
     std::optional<API::Subsonic::ProtocolVersion> readAs(std::string_view str)
     {
         // Expects "X.Y.Z"
-        const auto numbers{ StringUtils::splitString(str, ".") };
+        const auto numbers{ StringUtils::splitString(str, '.') };
         if (numbers.size() < 2 || numbers.size() > 3)
             return std::nullopt;
 

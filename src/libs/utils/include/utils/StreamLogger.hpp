@@ -25,11 +25,12 @@
 class StreamLogger final : public ILogger
 {
 public:
+    static constexpr EnumSet<Severity> allSeverities{ Severity::FATAL, Severity::ERROR, Severity::WARNING, Severity::INFO, Severity::DEBUG };
     static constexpr EnumSet<Severity> defaultSeverities{ Severity::FATAL, Severity::ERROR, Severity::WARNING, Severity::INFO };
 
     StreamLogger(std::ostream& oss, EnumSet<Severity> severities = defaultSeverities);
 
-    bool isSeverityActive(Severity) const override { return true; }
+    bool isSeverityActive(Severity severity) const override { return _severities.contains(severity); }
     void processLog(const Log& log) override;
 
 private:

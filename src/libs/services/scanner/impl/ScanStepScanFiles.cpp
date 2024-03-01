@@ -19,7 +19,6 @@
 
 #include "ScanStepScanFiles.hpp"
 
-#include "metadata/IParser.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
@@ -29,15 +28,17 @@
 #include "database/Track.hpp"
 #include "database/TrackFeatures.hpp"
 #include "database/TrackArtistLink.hpp"
+#include "metadata/Exception.hpp"
+#include "metadata/IParser.hpp"
 #include "utils/Exception.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/ILogger.hpp"
 #include "utils/Path.hpp"
 
-using namespace Database;
-
 namespace Scanner
 {
+    using namespace Database;
+
     namespace
     {
         Artist::pointer createArtist(Session& session, const MetaData::Artist& artistInfo)
@@ -179,25 +180,34 @@ namespace Scanner
             return Release::pointer{};
         }
 
-        std::vector<Cluster::pointer> getOrCreateClusters(Session& session, const MetaData::Tags& tags)
+        std::vector<Cluster::pointer> getOrCreateClusters(Session& session, const MetaData::Track& track)
         {
             std::vector<Cluster::pointer> clusters;
 
-            for (const auto& [tag, values] : tags)
+            auto getOrCreateClusters {[&](std::string tag, std::span<const std::string> values)
             {
                 auto clusterType = ClusterType::find(session, tag);
                 if (!clusterType)
                     clusterType = session.create<ClusterType>(tag);
 
-                for (const auto& clusterName : values)
+                for (const auto& value : values)
                 {
-                    auto cluster = clusterType->getCluster(clusterName);
+                    auto cluster{ clusterType->getCluster(value) };
                     if (!cluster)
-                        cluster = session.create<Cluster>(clusterType, clusterName);
+                        cluster = session.create<Cluster>(clusterType, value);
 
                     clusters.push_back(cluster);
                 }
-            }
+            }};
+
+            // TODO: migrate these fields in dedicated tables in DB
+            getOrCreateClusters("GENRE", track.genres);
+            getOrCreateClusters("MOOD", track.genres);
+            getOrCreateClusters("LANGUAGE", track.languages);
+            getOrCreateClusters("GROUPING", track.groupings);
+
+            for (const auto& [tag, values] : track.userExtraTags)
+                getOrCreateClusters(tag, values);
 
             return clusters;
         }
@@ -232,7 +242,7 @@ namespace Scanner
         , _scanContextRunner{ _scanContext, threadCount }
     {}
 
-    void ScanStepScanFiles::MetadataScanQueue::pushScanRequest(const std::filesystem::path path)
+    void ScanStepScanFiles::MetadataScanQueue::pushScanRequest(const std::filesystem::path& path)
     {
         {
             std::scoped_lock lock{ _mutex };
@@ -241,12 +251,21 @@ namespace Scanner
 
         _scanContext.post([=, this]
             {
-                std::optional<MetaData::Track> trackMetaData{ _metadataParser.parse(path) };
+                std::unique_ptr<MetaData::Track> track;
 
+                try
+                {
+                    track = _metadataParser.parse(path);
+                }
+                catch(const MetaData::Exception& e)
+                {
+                    LMS_LOG(DBUPDATER, INFO, "Failed to parse '" << path.string() << "'");
+                }
+                
                 {
                     std::scoped_lock lock{ _mutex };
 
-                    _scanResults.emplace_back(std::make_unique<MetaDataScanResult>(path, std::move(trackMetaData)));
+                    _scanResults.emplace_back(MetaDataScanResult{ std::move(path), std::move(track) });
                     _ongoingScanCount -= 1;
                 }
                 _condVar.notify_all();
@@ -259,7 +278,7 @@ namespace Scanner
         return _scanResults.size();
     }
 
-    size_t ScanStepScanFiles::MetadataScanQueue::popResults(std::vector<std::unique_ptr<MetaDataScanResult>>& results, std::size_t maxCount)
+    size_t ScanStepScanFiles::MetadataScanQueue::popResults(std::vector<MetaDataScanResult>& results, std::size_t maxCount)
     {
         results.clear();
         results.reserve(maxCount);
@@ -285,7 +304,7 @@ namespace Scanner
 
     ScanStepScanFiles::ScanStepScanFiles(InitParams& initParams)
         : ScanStepBase{ initParams }
-        , _metadataParser{ MetaData::createParser(MetaData::ParserType::TagLib, getParserReadStyle()) } // For now, always use TagLib
+        , _metadataParser{ MetaData::createParser(MetaData::ParserBackend::TagLib, getParserReadStyle()) } // For now, always use TagLib
         , _metadataScanQueue{ *_metadataParser, getScanMetaDataThreadCount() }
     {
         LMS_LOG(DBUPDATER, INFO, "Using " << _metadataScanQueue.getThreadCount() << " thread(s) for scanning file metadata");
@@ -300,9 +319,11 @@ namespace Scanner
             std::vector<std::string> tagsToParse{ _extraTagsToParse };
             tagsToParse.insert(std::end(tagsToParse), std::cbegin(_settings.extraTags), std::cend(_settings.extraTags));
             _metadataParser->setUserExtraTags(tagsToParse);
+            _metadataParser->setArtistTagDelimiters(_settings.artistTagDelimiters);
+            _metadataParser->setDefaultTagDelimiters(_settings.defaultTagDelimiters);
         }
 
-        std::vector<std::unique_ptr<MetaDataScanResult>> scanResults;
+        std::vector<MetaDataScanResult> scanResults;
         context.currentStepStats.totalElems = context.stats.filesScanned;
 
         for (const ScannerSettings::MediaLibraryInfo& mediaLibrary : _settings.mediaLibraries)
@@ -400,21 +421,21 @@ namespace Scanner
         return true; // need to scan
     }
 
-    void ScanStepScanFiles::processMetaDataScanResults(ScanContext& context, std::span<const std::unique_ptr<MetaDataScanResult>> scanResults, const ScannerSettings::MediaLibraryInfo& libraryInfo)
+    void ScanStepScanFiles::processMetaDataScanResults(ScanContext& context, std::span<const MetaDataScanResult> scanResults, const ScannerSettings::MediaLibraryInfo& libraryInfo)
     {
         Database::Session& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createWriteTransaction() };
 
-        for (const auto& scanResult : scanResults)
+        for (const MetaDataScanResult& scanResult : scanResults)
         {
             if (_abortScan)
                 return;
 
-            if (scanResult->trackMetaData)
+            if (scanResult.trackMetaData)
             {
                 context.stats.scans++;
 
-                processFileMetaData(context, scanResult->path, *scanResult->trackMetaData, libraryInfo);
+                processFileMetaData(context, scanResult.path, *scanResult.trackMetaData, libraryInfo);
 
                 // optimize the database during scan (if we import a very large database, it may be too late to do it once at end)
                 if ((context.stats.scans % 1'000) == 0)
@@ -422,7 +443,7 @@ namespace Scanner
             }
             else
             {
-                context.stats.errors.emplace_back(scanResult->path, ScanErrorType::CannotParseFile);
+                context.stats.errors.emplace_back(scanResult.path, ScanErrorType::CannotParseFile);
             }
         }
     }
@@ -583,7 +604,7 @@ namespace Scanner
         track.modify()->setTotalTrack(trackMetadata.medium ? trackMetadata.medium->trackCount : std::nullopt);
         track.modify()->setReleaseReplayGain(trackMetadata.medium ? trackMetadata.medium->replayGain : std::nullopt);
         track.modify()->setDiscSubtitle(trackMetadata.medium ? trackMetadata.medium->name : "");
-        track.modify()->setClusters(getOrCreateClusters(dbSession, trackMetadata.userExtraTags));
+        track.modify()->setClusters(getOrCreateClusters(dbSession, trackMetadata));
         track.modify()->setLastWriteTime(lastWriteTime);
         track.modify()->setName(title);
         track.modify()->setDuration(trackMetadata.duration);

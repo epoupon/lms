@@ -64,7 +64,9 @@
 <message id="Lms.Admin.MediaLibrary.root-path">Root directory</message>
 
 <!--Scan settings-->
+<message id="Lms.Admin.Database.artist-tag-delimiter">Delimiter to be used for splitting artist names (only if the file does not contain any multi-valued tag)</message>
 <message id="Lms.Admin.Database.daily">Daily</message>
+<message id="Lms.Admin.Database.default-tag-delimiter">Delimiter to be used for splitting other tags (only if the file does not contain any multi-valued tag)</message>
 <message id="Lms.Admin.Database.extra-tags-to-scan">Extra tags to scan (use <kbd>;</kbd> as separator)</message>
 <message id="Lms.Admin.Database.hourly">Hourly</message>
 <message id="Lms.Admin.Database.immediate-scan">Scan now!</message>
@@ -77,6 +79,7 @@
 <message id="Lms.Admin.Database.similarity-engine-type">Similarity engine</message>
 <message id="Lms.Admin.Database.similarity-engine-type.clusters">Tag-based</message>
 <message id="Lms.Admin.Database.similarity-engine-type.none">None</message>
+<message id="Lms.Admin.Database.tag-delimiter-must-not-contain-only-spaces">The tag delimiter must not consist solely of spaces</message>
 <message id="Lms.Admin.Database.update-period">Update period</message>
 <message id="Lms.Admin.Database.update-start-time">Update start time</message>
 <message id="Lms.Admin.Database.weekly">Weekly</message>

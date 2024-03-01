@@ -4,9 +4,9 @@ if(BUILD_TESTING)
 endif()
 
 add_library(lmsmetadata SHARED
-	impl/AvFormatParser.cpp
-	impl/Factory.cpp
-	impl/TagLibParser.cpp
+	impl/AvFormatTagReader.cpp
+	impl/Parser.cpp
+	impl/TagLibTagReader.cpp
 	impl/Utils.cpp
 	)
 

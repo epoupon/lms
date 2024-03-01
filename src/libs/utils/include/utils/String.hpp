@@ -21,6 +21,7 @@
 
 #include <initializer_list>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <sstream>
@@ -35,13 +36,18 @@ namespace Wt
     class WDateTime;
 }
 
-namespace StringUtils {
+namespace StringUtils
+{
+    [[nodiscard]] std::vector<std::string_view> splitString(std::string_view string, char separator);
+    [[nodiscard]] std::vector<std::string_view> splitString(std::string_view string, std::string_view separator);
 
-    [[nodiscard]] std::vector<std::string> splitStringCopy(std::string_view string, std::string_view separators);
-    [[nodiscard]] std::vector<std::string_view> splitString(std::string_view string, std::string_view separators);
+    [[nodiscard]] std::string joinStrings(std::span<const std::string> strings, std::string_view delimiter);
+    [[nodiscard]] std::string joinStrings(std::span<const std::string_view> strings, std::string_view delimiter);
+    [[nodiscard]] std::string joinStrings(std::span<const std::string> strings, char delimiter);
+    [[nodiscard]] std::string joinStrings(std::span<const std::string_view> strings, char delimiter);
 
-    [[nodiscard]] std::string joinStrings(const std::vector<std::string_view>& strings, std::string_view delimiter);
-    [[nodiscard]] std::string joinStrings(const std::vector<std::string>& strings, const std::string& delimiter);
+    [[nodiscard]] std::string escapeAndJoinStrings(std::span<const std::string_view> strings, char delimiter, char escapeChar);
+    [[nodiscard]] std::vector<std::string> splitEscapedStrings(std::string_view string, char delimiter, char escapeChar);
 
     [[nodiscard]] std::string_view stringTrim(std::string_view str, std::string_view whitespaces = " \t");
     [[nodiscard]] std::string_view stringTrimEnd(std::string_view str, std::string_view whitespaces = " \t");
@@ -50,7 +56,7 @@ namespace StringUtils {
     void stringToLower(std::string& str);
     [[nodiscard]] std::string stringToUpper(const std::string& str);
 
-    [[nodiscard]] std::string bufferToString(const std::vector<unsigned char>& data);
+    [[nodiscard]] std::string bufferToString(std::span<const unsigned char> data);
 
     [[nodiscard]] bool stringCaseInsensitiveEqual(std::string_view strA, std::string_view strB);
 
@@ -86,8 +92,9 @@ namespace StringUtils {
     void writeJsonEscapedString(std::ostream& os, std::string_view str);
 
     [[nodiscard]] std::string escapeString(std::string_view str, std::string_view charsToEscape, char escapeChar);
+    [[nodiscard]] std::string unescapeString(std::string_view str, char escapeChar);
 
-    [[nodiscard]] bool stringEndsWith(const std::string& str, const std::string& ending);
+    [[nodiscard]] bool stringEndsWith(std::string_view str, std::string_view ending);
 
     [[nodiscard]] std::optional<std::string> stringFromHex(const std::string& str);
 
