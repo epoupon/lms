@@ -64,7 +64,7 @@
 <message id="Lms.Admin.MediaLibrary.root-path">Cartella principale</message>
 
 <!--Scan settings-->
-<message id="Lms.Admin.Database.artist-tag-delimiter">Delimitatore da utilizzare per separare i nomi degli artisti (solo se il file non contiene alcun tag con valori multipli)</message>
+<message id="Lms.Admin.Database.artist-tag-delimiter">Delimitatore da utilizzare per separare i tag degli artisti (solo se il file non contiene alcun tag con valori multipli)</message>
 <message id="Lms.Admin.Database.daily">Giornaliera</message>
 <message id="Lms.Admin.Database.default-tag-delimiter">Delimitatore da utilizzare per separare gli altri tag (solo se il file non contiene alcun tag con valori multipli)</message>
 <message id="Lms.Admin.Database.extra-tags-to-scan">Tag aggiuntivi da scansionare (usa <kbd>;</kbd> come separatore)</message>
