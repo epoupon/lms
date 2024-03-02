@@ -20,9 +20,10 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 
 namespace API::Subsonic::Utils
 {
     void checkSetPasswordImplemented();
-    std::string makeNameFilesystemCompatible(const std::string& name);
+    std::string makeNameFilesystemCompatible(std::string_view name);
 }

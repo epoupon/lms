@@ -30,6 +30,15 @@
 
 namespace Database
 {
+    namespace
+    {
+        static constexpr Version LMS_DATABASE_VERSION{ 53 };
+    }
+
+    VersionInfo::VersionInfo()
+        : _version{ LMS_DATABASE_VERSION }
+    {}
+
     VersionInfo::pointer VersionInfo::getOrCreate(Session& session)
     {
         session.checkWriteTransaction();
@@ -401,6 +410,16 @@ SELECT
         session.getDboSession().execute("ALTER TABLE scan_settings ADD default_tag_delimiters TEXT NOT NULL DEFAULT ''");
     }
 
+    void migrateFromV52(Session& session)
+    {
+        // Add sort name for releases
+        session.getDboSession().execute("ALTER TABLE release ADD sort_name TEXT NOT NULL DEFAULT ''");
+
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
+
+
     void doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -430,6 +449,7 @@ SELECT
             {49, migrateFromV49},
             {50, migrateFromV50},
             {51, migrateFromV51},
+            {52, migrateFromV52},
         };
 
         {

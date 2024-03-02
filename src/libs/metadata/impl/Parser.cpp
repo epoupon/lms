@@ -372,6 +372,7 @@ namespace MetaData
 
         release.emplace();
         release->name = std::move(*releaseName);
+        release->sortName = getTagValueAs<std::string>(tagReader, TagType::AlbumSortOrder).value_or("");
         release->artistDisplayName = getTagValueAs<std::string>(tagReader, TagType::AlbumArtist).value_or(""); // TODO try to join albumartists if present
         release->mbid = getTagValueAs<UUID>(tagReader, TagType::MusicBrainzReleaseID);
         release->artists = getArtists(tagReader, { TagType::AlbumArtists, TagType::AlbumArtist }, { TagType::AlbumArtistsSortOrder, TagType::AlbumArtistSortOrder }, { TagType::MusicBrainzReleaseArtistID }, _artistTagDelimiters);

@@ -55,6 +55,7 @@ namespace MetaData
     {
         std::optional<UUID> 		mbid;
         std::string					name;
+        std::string					sortName;
         std::string					artistDisplayName;
         std::vector<Artist>			artists;
         std::optional<std::size_t>	mediumCount;

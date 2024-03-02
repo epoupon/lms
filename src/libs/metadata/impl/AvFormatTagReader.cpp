@@ -42,7 +42,7 @@ namespace MetaData
             { TagType::AlbumArtistSortOrder, { "ALBUMARTISTSORT", "TSO2" } },
             { TagType::AlbumArtists, { "ALBUMARTISTS" } },
             { TagType::AlbumArtistsSortOrder, { "ALBUMARTISTSSORT" } },
-            { TagType::AlbumSortOrder, { "ALBUMSORT" } },
+            { TagType::AlbumSortOrder, { "ALBUMSORT", "ALBUM-SORT" } },
             { TagType::Arranger, { "ARRANGER" } },
             { TagType::Artist, { "ARTIST" } },
             { TagType::ArtistSortOrder, { "ARTISTSORT", "ARTIST-SORT", "WM/ARTISTSORTORDER" } },

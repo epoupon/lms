@@ -238,14 +238,14 @@ namespace UserInterface
         if (!release)
             throw ReleaseNotFoundException{};
 
-        LmsApp->setTitle(release->getName());
+        LmsApp->setTitle(std::string{ release->getName() });
         _releaseId = *releaseId;
 
         refreshCopyright(release);
         refreshLinks(release);
         refreshSimilarReleases(similarReleasesIds);
 
-        bindString("name", Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);
+        bindString("name", Wt::WString::fromUTF8(std::string{ release->getName() }), Wt::TextFormat::Plain);
 
         Wt::WString year{ ReleaseHelpers::buildReleaseYearString(release->getYear(), release->getOriginalYear()) };
         if (!year.empty())

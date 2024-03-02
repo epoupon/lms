@@ -33,6 +33,7 @@ namespace MetaData
             {
                 { TagType::AcoustID, { "e987a441-e134-4960-8019-274eddacc418" } },
                 { TagType::Album, { "MyAlbum" } },
+                { TagType::AlbumSortOrder, { "MyAlbumSortName" } },
                 { TagType::Artist, { "MyArtist1 & MyArtist2" } },
                 { TagType::Artists, { "MyArtist1", "MyArtist2" } },
                 { TagType::ArtistSortOrder, { "MyArtist1SortName", "MyArtist2SortName" } },
@@ -195,6 +196,7 @@ namespace MetaData
         EXPECT_EQ(track->medium->release->mbid.value(), UUID::fromString("3fa39992-b786-4585-a70e-85d5cc15ef69"));
         EXPECT_EQ(track->medium->release->mediumCount, 3);
         EXPECT_EQ(track->medium->release->name, "MyAlbum");
+        EXPECT_EQ(track->medium->release->sortName, "MyAlbumSortName");
         {
             std::vector<std::string> expectedReleaseTypes{ "Album", "Compilation" };
             EXPECT_EQ(track->medium->release->releaseTypes, expectedReleaseTypes);

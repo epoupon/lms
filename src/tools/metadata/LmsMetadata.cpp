@@ -50,7 +50,10 @@ namespace
         os << release.name;
 
         if (release.mbid)
-            os << " (" << release.mbid->getAsString() << ")" << std::endl;
+            os << " (" << release.mbid->getAsString() << ")";
+        if (!release.sortName.empty())
+            os << " '" << release.sortName << "'";
+        os << std::endl;
 
         if (release.mediumCount)
             std::cout << "\tMediumCount: " << *release.mediumCount << std::endl;
@@ -61,9 +64,8 @@ namespace
         for (const MetaData::Artist& artist : release.artists)
             std::cout << "\tRelease artist: " << artist << std::endl;
 
-        std::cout << "Release types:" << std::endl;
         for (std::string_view releaseType : release.releaseTypes)
-            std::cout << "\t" << releaseType << std::endl;
+            std::cout << "\tRelease type: " << releaseType << std::endl;
 
         return os;
     }
@@ -87,7 +89,7 @@ namespace
             std::cout << "\tReplay gain: " << *medium.replayGain << std::endl;
 
         if (medium.release)
-            std::cout << "Release: " << *medium.release << std::endl;
+            std::cout << "Release: " << *medium.release;
 
         return os;
     }

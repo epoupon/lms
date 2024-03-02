@@ -33,7 +33,7 @@ namespace API::Subsonic::Utils
             throw NotImplementedGenericError{};
     }
 
-    std::string makeNameFilesystemCompatible(const std::string& name)
+    std::string makeNameFilesystemCompatible(std::string_view name)
     {
         return StringUtils::replaceInString(name, "/", "_");
     }
