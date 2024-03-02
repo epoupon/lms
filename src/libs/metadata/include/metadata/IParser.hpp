@@ -54,6 +54,7 @@ namespace MetaData
     struct Release
     {
         std::optional<UUID> 		mbid;
+        std::optional<UUID> 		groupMBID;
         std::string					name;
         std::string					sortName;
         std::string					artistDisplayName;

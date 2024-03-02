@@ -32,7 +32,7 @@ namespace Database
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 53 };
+        static constexpr Version LMS_DATABASE_VERSION{ 54 };
     }
 
     VersionInfo::VersionInfo()
@@ -419,6 +419,14 @@ SELECT
         session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV53(Session& session)
+    {
+        // Add release group mbid
+        session.getDboSession().execute("ALTER TABLE release ADD group_mbid TEXT NOT NULL DEFAULT ''");
+
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
 
     void doDbMigration(Session& session)
     {
@@ -450,6 +458,7 @@ SELECT
             {50, migrateFromV50},
             {51, migrateFromV51},
             {52, migrateFromV52},
+            {53, migrateFromV53},
         };
 
         {

@@ -131,6 +131,8 @@ namespace Scanner
                 release.modify()->setName(releaseInfo.name);
             if (release->getSortName() != releaseInfo.sortName)
                 release.modify()->setSortName(releaseInfo.sortName);
+            if (release->getGroupMBID() != releaseInfo.groupMBID)
+                release.modify()->setGroupMBID(releaseInfo.groupMBID);
             if (release->getTotalDisc() != releaseInfo.mediumCount)
                 release.modify()->setTotalDisc(releaseInfo.mediumCount);
             if (release->getArtistDisplayName() != releaseInfo.artistDisplayName)

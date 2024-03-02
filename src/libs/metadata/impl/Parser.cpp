@@ -375,6 +375,7 @@ namespace MetaData
         release->sortName = getTagValueAs<std::string>(tagReader, TagType::AlbumSortOrder).value_or("");
         release->artistDisplayName = getTagValueAs<std::string>(tagReader, TagType::AlbumArtist).value_or(""); // TODO try to join albumartists if present
         release->mbid = getTagValueAs<UUID>(tagReader, TagType::MusicBrainzReleaseID);
+        release->groupMBID = getTagValueAs<UUID>(tagReader, TagType::MusicBrainzReleaseGroupID);
         release->artists = getArtists(tagReader, { TagType::AlbumArtists, TagType::AlbumArtist }, { TagType::AlbumArtistsSortOrder, TagType::AlbumArtistSortOrder }, { TagType::MusicBrainzReleaseArtistID }, _artistTagDelimiters);
         release->mediumCount = getTagValueAs<std::size_t>(tagReader, TagType::TotalDiscs);
         if (!release->mediumCount)

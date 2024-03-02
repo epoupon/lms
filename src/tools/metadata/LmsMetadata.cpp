@@ -48,12 +48,15 @@ namespace
     std::ostream& operator<<(std::ostream& os, const MetaData::Release& release)
     {
         os << release.name;
-
-        if (release.mbid)
-            os << " (" << release.mbid->getAsString() << ")";
         if (!release.sortName.empty())
             os << " '" << release.sortName << "'";
         os << std::endl;
+
+        if (release.mbid)
+            os << "\tRelease MBID = " << release.mbid->getAsString() << std::endl;
+
+        if (release.groupMBID)
+            os << "\tRelease Group MBID = " << release.groupMBID->getAsString() << std::endl;
 
         if (release.mediumCount)
             std::cout << "\tMediumCount: " << *release.mediumCount << std::endl;

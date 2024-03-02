@@ -57,6 +57,7 @@ namespace MetaData
                 { TagType::MusicBrainzTrackID, { "0afb190a-6735-46df-a16d-199f48206e4a" } },
                 { TagType::MusicBrainzReleaseArtistID, { "6fbf097c-1487-43e8-874b-50dd074398a7", "5ed3d6b3-2aed-4a03-828c-3c4d4f7406e1" } },
                 { TagType::MusicBrainzReleaseID, { "3fa39992-b786-4585-a70e-85d5cc15ef69" } },
+                { TagType::MusicBrainzReleaseGroupID, { "5b1a5a44-8420-4426-9b86-d25dc8d04838" } },
                 { TagType::MusicBrainzRecordingID, { "bd3fc666-89de-4ac8-93f6-2dbf028ad8d5" } },
                 { TagType::Producer, { "MyProducer1", "MyProducer2" } },
                 { TagType::Remixer, { "MyRemixer1", "MyRemixer2" } },
@@ -194,6 +195,7 @@ namespace MetaData
         EXPECT_EQ(track->medium->release->artists[1].mbid, UUID::fromString("5ed3d6b3-2aed-4a03-828c-3c4d4f7406e1"));
         ASSERT_TRUE(track->medium->release->mbid.has_value());
         EXPECT_EQ(track->medium->release->mbid.value(), UUID::fromString("3fa39992-b786-4585-a70e-85d5cc15ef69"));
+        EXPECT_EQ(track->medium->release->groupMBID.value(), UUID::fromString("5b1a5a44-8420-4426-9b86-d25dc8d04838"));
         EXPECT_EQ(track->medium->release->mediumCount, 3);
         EXPECT_EQ(track->medium->release->name, "MyAlbum");
         EXPECT_EQ(track->medium->release->sortName, "MyAlbumSortName");
