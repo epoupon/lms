@@ -340,20 +340,46 @@ namespace UserInterface
 
         // Expect to be called in asc order
         std::map<std::size_t, Wt::WContainerWidget*> trackContainers;
-        auto getOrAddDiscContainer = [&](std::size_t discNumber, const std::string& discSubtitle) -> Wt::WContainerWidget*
+        auto getOrAddDiscContainer = [&, releaseId = _releaseId](std::size_t discNumber, const std::string& discSubtitle) -> Wt::WContainerWidget*
             {
-                {
-                    auto it = trackContainers.find(discNumber);
-                    if (it != std::cend(trackContainers))
-                        return it->second;
-                }
+                if (auto it{ trackContainers.find(discNumber) }; it != std::cend(trackContainers))
+                    return it->second;
 
-                Wt::WTemplate* disc{ rootContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.entry-disc")) };
+                Template* disc{ rootContainer->addNew<Template>(Wt::WString::tr("Lms.Explore.Release.template.entry-disc")) };
+                disc->addFunction("id", &Wt::WTemplate::Functions::id);
 
                 if (discSubtitle.empty())
                     disc->bindNew<Wt::WText>("disc-title", Wt::WString::tr("Lms.Explore.Release.disc").arg(discNumber));
                 else
                     disc->bindString("disc-title", Wt::WString::fromUTF8(discSubtitle), Wt::TextFormat::Plain);
+
+                Wt::WPushButton* playBtn{ disc->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.template.play-btn"), Wt::TextFormat::XHTML) };
+                playBtn->clicked().connect([this, releaseId, discNumber]
+                    {
+                        _playQueueController.processCommand(PlayQueueController::Command::Play, { PlayQueueController::Disc{ releaseId, discNumber} });
+                    });
+                disc->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML);
+                disc->bindNew<Wt::WPushButton>("play", Wt::WString::tr("Lms.Explore.play"))
+                    ->clicked().connect([this, releaseId, discNumber]
+                        {
+                            _playQueueController.processCommand(PlayQueueController::Command::Play, { PlayQueueController::Disc{ releaseId, discNumber} });
+                        });
+                disc->bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"))
+                    ->clicked().connect([this, releaseId, discNumber]
+                        {
+                            _playQueueController.processCommand(PlayQueueController::Command::PlayNext, { PlayQueueController::Disc{ releaseId, discNumber } });
+                        });
+
+                disc->bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
+                    ->clicked().connect([this, releaseId, discNumber]
+                        {
+                            _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, { PlayQueueController::Disc{ releaseId, discNumber } });
+                        });
+                disc->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
+                    ->clicked().connect([this, releaseId, discNumber]
+                        {
+                            _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, { PlayQueueController::Disc{ releaseId, discNumber } });
+                        });
 
                 Wt::WContainerWidget* tracksContainer{ disc->bindNew<Wt::WContainerWidget>("tracks") };
                 trackContainers[discNumber] = tracksContainer;
@@ -390,6 +416,7 @@ namespace UserInterface
                     container = getOrAddNoDiscContainer();
 
                 Template* entry{ container->addNew<Template>(Wt::WString::tr("Lms.Explore.Release.template.entry")) };
+                entry->addFunction("id", &Wt::WTemplate::Functions::id);
 
                 entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 

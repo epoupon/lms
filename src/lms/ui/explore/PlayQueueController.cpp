@@ -88,6 +88,36 @@ namespace UserInterface
             return res;
         }
 
+        std::vector<Database::TrackId> getDiscTracks(Database::Session& session, const std::vector<PlayQueueController::Disc>& discs, const std::vector<Database::ClusterId>& clusters, std::size_t maxTrackCount)
+        {
+            using namespace Database;
+            assert(maxTrackCount);
+
+            std::vector<TrackId> res;
+
+            auto transaction{ session.createReadTransaction() };
+
+            for (const PlayQueueController::Disc& disc : discs)
+            {
+                Database::Track::FindParameters params;
+                params.setRelease(disc.releaseId);
+                params.setSortMethod(Database::TrackSortMethod::Release);
+                params.setDiscNumber(disc.discNumber);
+                params.setClusters(clusters);
+                params.setRange(Database::Range{ 0, maxTrackCount - res.size() });
+
+                const auto tracks{ Database::Track::findIds(session, params) };
+
+                res.reserve(res.size() + tracks.results.size());
+                res.insert(std::end(res), std::cbegin(tracks.results), std::cend(tracks.results));
+
+                if (res.size() == maxTrackCount)
+                    break;
+            }
+
+            return res;
+        }
+
         std::vector<Database::TrackId> getTrackListTracks(Database::Session& session, Database::TrackListId trackListId, const std::vector<Database::ClusterId>& clusters, std::size_t maxTrackCount)
         {
             using namespace Database;
@@ -146,6 +176,12 @@ namespace UserInterface
     void PlayQueueController::processCommand(Command command, Database::TrackListId trackListId)
     {
         const std::vector<Database::TrackId> tracks{ getTrackListTracks(LmsApp->getDbSession(), trackListId, _filters.getClusterIds(), _maxTrackCountToEnqueue) };
+        processCommand(command, tracks);
+    }
+
+    void PlayQueueController::processCommand(Command command, const std::vector<Disc>& discs)
+    {
+        const std::vector<Database::TrackId> tracks{ getDiscTracks(LmsApp->getDbSession(), discs, _filters.getClusterIds(), _maxTrackCountToEnqueue) };
         processCommand(command, tracks);
     }
 
