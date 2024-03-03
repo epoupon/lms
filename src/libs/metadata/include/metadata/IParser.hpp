@@ -23,6 +23,7 @@
 #include <filesystem>
 #include <map>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -44,6 +45,8 @@ namespace MetaData
 
         Artist(std::string_view _name) : name{ _name } {}
         Artist(std::optional<UUID> _mbid, std::string_view _name, std::optional<std::string> _sortName) : mbid{ std::move(_mbid) }, name{ _name }, sortName{ std::move(_sortName) } {}
+
+        bool operator<=>(const Artist&) const = default;
     };
 
     using PerformerContainer = std::map<std::string /*role*/, std::vector<Artist>>;
@@ -51,21 +54,33 @@ namespace MetaData
     struct Release
     {
         std::optional<UUID> 		mbid;
+        std::optional<UUID> 		groupMBID;
         std::string					name;
+        std::string					sortName;
         std::string					artistDisplayName;
         std::vector<Artist>			artists;
         std::optional<std::size_t>	mediumCount;
         std::vector<std::string>    releaseTypes;
+
+        bool operator<=>(const Release&) const = default;
     };
 
     struct Medium
     {
-        std::string					type; // CD, etc.
+        std::string					media; // CD, etc.
         std::string					name;
         std::optional<Release>		release;
         std::optional<std::size_t>	position; // in release
         std::optional<std::size_t>  trackCount;
         std::optional<float>        replayGain;
+
+        bool operator<=>(const Medium&) const = default;
+
+        bool isDefault() const
+        {
+            static Medium defaultMedium;
+            return *this == defaultMedium;
+        }
     };
 
     struct Track
@@ -75,9 +90,10 @@ namespace MetaData
         std::string					title;
         std::optional<Medium>		medium;
         std::optional<std::size_t>	position; // in medium
-        std::vector<std::string>    grouping;
+        std::vector<std::string>    groupings;
         std::vector<std::string>    genres;
         std::vector<std::string>    moods;
+        std::vector<std::string>    labels;
         std::vector<std::string>    languages;
         Tags                        userExtraTags;
         std::chrono::milliseconds 	duration{};
@@ -107,15 +123,14 @@ namespace MetaData
     public:
         virtual ~IParser() = default;
 
-        virtual std::optional<Track> parse(const std::filesystem::path& p, bool debug = false) = 0;
+        virtual std::unique_ptr<Track> parse(const std::filesystem::path& p, bool debug = false) = 0;
 
-        void setUserExtraTags(const std::vector<std::string>& extraTags) { _userExtraTags = std::vector(extraTags.cbegin(), extraTags.cend()); }
-
-    protected:
-        std::vector<std::string> _userExtraTags;
+        virtual void setUserExtraTags(std::span<const std::string> extraTags) = 0;
+        virtual void setArtistTagDelimiters(std::span<const std::string> delimiters) = 0;
+        virtual void setDefaultTagDelimiters(std::span<const std::string> delimiters) = 0;
     };
 
-    enum class ParserType
+    enum class ParserBackend
     {
         TagLib,
         AvFormat,
@@ -127,5 +142,5 @@ namespace MetaData
         Average,
         Accurate,
     };
-    std::unique_ptr<IParser> createParser(ParserType parserType, ParserReadStyle parserReadStyle);
+    std::unique_ptr<IParser> createParser(ParserBackend parserBackend, ParserReadStyle parserReadStyle);
 } // namespace MetaData

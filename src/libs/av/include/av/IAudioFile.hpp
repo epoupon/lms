@@ -84,6 +84,7 @@ namespace Av
     public:
         virtual ~IAudioFile() = default;
 
+        // Keys are forced to be in upper case
         using MetadataMap = std::unordered_map<std::string, std::string>;
 
         virtual const std::filesystem::path& getPath() const = 0;

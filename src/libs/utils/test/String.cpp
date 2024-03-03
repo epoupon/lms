@@ -24,80 +24,77 @@
 #include <Wt/WTime.h>
 #include "utils/String.hpp"
 
-TEST(StringUtils, splitString)
+
+TEST(StringUtils, splitString_charDelim)
 {
+    struct TestCase
     {
-        const std::string test{ "a" };
+        std::string_view input;
+        char delimiter;
+        std::vector<std::string_view> expectedOutput;
+    };
 
-        const std::vector<std::string_view> strings{ StringUtils::splitString(test, "") };
-        ASSERT_EQ(strings.size(), 1);
-        EXPECT_EQ(strings.front(), "a");
-    }
-
+    TestCase tests[]
     {
-        const std::string test{ "a b" };
+        {"abc", '-', {"abc"}},
+        {"a", '-', {"a"}},
+        {"", '-', {""}},
+        {"a-b-c", '-', {"a", "b", "c"}},
+        {"a|b|c", '|', {"a", "b", "c"}},
+        {"a;b;c", ';', {"a", "b", "c"}},
+        {";b;c", ';', {"", "b", "c"}},
+        {" ;b;c", ';', {" ", "b", "c"}},
+        {" ;;c", ';', {" ", "", "c"}},
+        {" ; ;c", ';', {" ", " ", "c"}},
+        {"a;b; ", ';', {"a", "b", " "}},
+        {"a;b", ';', {"a", "b"}},
+        {";b", ';', {"", "b"}},
+        {";", ';', {"", ""}},
+        {";;", ';', {"", "", ""}},
+        {";;;", ';', {"", "", "", ""}},
+        {";;a;;b;;", ';', {"", "", "a", "", "b", "", ""}},
+        {"a b", ' ', {"a", "b"}},
+        {"", ' ', {""}},
+        {"a-b|c", '-', {"a","b|c"}},
+        {"a|b-c", '-', {"a|b", "c"}},
+        {"test=foo bar", '=', {"test", "foo bar"}},
+    };
 
-        const std::vector<std::string_view> strings{ StringUtils::splitString(test, "|") };
-        ASSERT_EQ(strings.size(), 1);
-        EXPECT_EQ(strings.front(), "a b");
-    }
-
+    for (const TestCase& test : tests)
     {
-        const std::string test{ "  a" };
-
-        const std::vector<std::string_view> strings{ StringUtils::splitString(test, " ") };
-        ASSERT_EQ(strings.size(), 1);
-        EXPECT_EQ(strings.front(), "a");
-    }
-
-    {
-        const std::string test{ "a  " };
-
-        const std::vector<std::string_view> strings{ StringUtils::splitString(test, " ") };
-        ASSERT_EQ(strings.size(), 1);
-        EXPECT_EQ(strings.front(), "a");
-    }
-
-    {
-        const std::string test{ "a b" };
-
-        const std::vector<std::string_view> strings{ StringUtils::splitString(test, " ") };
-        ASSERT_EQ(strings.size(), 2);
-        EXPECT_EQ(strings.front(), "a");
-        EXPECT_EQ(strings.back(), "b");
-    }
-
-    {
-        const std::string test{ "a b,c|defgh  " };
-
-        const std::vector<std::string_view> strings{ StringUtils::splitString(test, " ,|") };
-        ASSERT_EQ(strings.size(), 4);
-        EXPECT_EQ(strings[0], "a");
-        EXPECT_EQ(strings[1], "b");
-        EXPECT_EQ(strings[2], "c");
-        EXPECT_EQ(strings[3], "defgh");
+        const std::vector<std::string_view> res{ StringUtils::splitString(test.input, test.delimiter) };
+        EXPECT_EQ(res, test.expectedOutput) << "Input = '" << test.input << "', delims = '" << test.delimiter << "'";
     }
 }
 
-
-TEST(StringUtils, splitStringCopy)
+TEST(StringUtils, splitString_stringDelim)
 {
+    struct TestCase
     {
-        const std::string test{ "test=foo" };
+        std::string_view input;
+        std::string_view delimiter;
+        std::vector<std::string_view> expectedOutput;
+    };
 
-        const std::vector<std::string> strings{ StringUtils::splitStringCopy(test, "=") };
-        ASSERT_EQ(strings.size(), 2);
-        EXPECT_EQ(strings[0], "test");
-        EXPECT_EQ(strings[1], "foo");
-    }
-
+    TestCase tests[]
     {
-        const std::string test{ "test=foo bar" };
+        {"abc", "", {"abc"}},
+        {"abc", "-", {"abc"}},
+        {"abc", "b", {"a", "c"}},
+        {"ab/cd", "/", {"ab", "cd"}},
+        {"ab/cd", "/ ", {"ab/cd"}},
+        {"ab/cd", " /", {"ab/cd"}},
+        {"ab /cd", " /", {"ab", "cd"}},
+        {"ab/ cd", "/ ", {"ab", "cd"}},
+        {"ab / cd", " / ", {"ab", "cd"}},
+        {"ab/cd", " / ", {"ab/cd"}},
+        {"ab/cd / ", " / ", {"ab/cd", ""}},
+    };
 
-        const std::vector<std::string> strings{ StringUtils::splitStringCopy(test, "=") };
-        ASSERT_EQ(strings.size(), 2);
-        EXPECT_EQ(strings[0], "test");
-        EXPECT_EQ(strings[1], "foo bar");
+    for (const TestCase& test : tests)
+    {
+        const std::vector<std::string_view> res{ StringUtils::splitString(test.input, test.delimiter) };
+        EXPECT_EQ(res, test.expectedOutput) << "Input = '" << test.input << "', delims = '" << test.delimiter << "'";
     }
 }
 
@@ -128,6 +125,58 @@ TEST(StringUtils, joinStrings)
     }
 }
 
+TEST(StringUtils, escapeAndJoinStrings)
+{
+ struct TestCase
+    {
+        std::vector<std::string_view> input;
+        char delimiter;
+        char escapeChar;
+        std::string expectedOutput;
+    };
+
+    TestCase tests[]
+    {
+        {{""}, ';', '\\', ""},
+        {{";"}, ';', '\\', "\\;"},
+        {{";;"}, ';', '\\', "\\;\\;"},
+        {{"a;", "b"}, ';', '\\', "a\\;;b"},
+        {{"a;", "b;"}, ';', '\\', "a\\;;b\\;"},
+    };
+
+    for (const TestCase& test : tests)
+    {
+        const std::string str{ StringUtils::escapeAndJoinStrings(test.input, test.delimiter, test.escapeChar) };
+        EXPECT_EQ(str, test.expectedOutput);
+    }
+}
+
+TEST(StringUtils, splitEscapedStrings)
+{
+ struct TestCase
+    {
+        std::string input;
+        char delimiter;
+        char escapeChar;
+        std::vector<std::string> expectedOutput;
+    };
+
+    TestCase tests[]
+    {
+        {"", ';', '\\', {}},
+        {"\\;", ';', '\\', {";"}},
+        {"\\;\\;", ';', '\\', {";;"}},
+        {"a\\;;b", ';', '\\', {"a;", "b"}},
+        {"a\\;;b\\;", ';', '\\', {"a;", "b;"}},
+    };
+
+    for (const TestCase& test : tests)
+    {
+        const std::vector<std::string> str{ StringUtils::splitEscapedStrings(test.input, test.delimiter, test.escapeChar) };
+        EXPECT_EQ(str, test.expectedOutput);
+    }
+}
+
 TEST(StringUtils, escapeJSString)
 {
     EXPECT_EQ(StringUtils::jsEscape(""), "");
@@ -153,6 +202,17 @@ TEST(StringUtils, escapeString)
     EXPECT_EQ(StringUtils::escapeString("*a*", "*", '_'), "_*a_*");
     EXPECT_EQ(StringUtils::escapeString("*a|", "*|", '_'), "_*a_|");
     EXPECT_EQ(StringUtils::escapeString("**||", "*|", '_'), "_*_*_|_|");
+    EXPECT_EQ(StringUtils::escapeString("one;two", ";", '\\'), "one\\;two");
+    EXPECT_EQ(StringUtils::escapeString("one\\;two", ";", '\\'), "one\\\\;two");
+    EXPECT_EQ(StringUtils::escapeString("one;", ";", '\\'), "one\\;");
+}
+
+TEST(StringUtils, unescapeString)
+{
+    EXPECT_EQ(StringUtils::unescapeString("one\\", '\\'), "one\\");
+    EXPECT_EQ(StringUtils::unescapeString("\\\\one", '\\'), "\\one");
+    EXPECT_EQ(StringUtils::unescapeString("one\\;two", '\\'), "one;two");
+    EXPECT_EQ(StringUtils::unescapeString("one\\\\;two", '\\'), "one\\;two");
 }
 
 TEST(StringUtils, readAs_bool)
@@ -220,4 +280,16 @@ TEST(Stringutils, dateTime)
 {
     const Wt::WDateTime dateTime{ Wt::WDate {2020, 01, 03 }, Wt::WTime{9, 8, 11, 75} };
     EXPECT_EQ(StringUtils::toISO8601String(dateTime), "2020-01-03T09:08:11.075");
+}
+
+TEST(StringUtils, stringEndsWith)
+{
+    EXPECT_TRUE(StringUtils::stringEndsWith("FooBar", "Bar"));
+    EXPECT_TRUE(StringUtils::stringEndsWith("FooBar", ""));
+    EXPECT_TRUE(StringUtils::stringEndsWith("", ""));
+    EXPECT_TRUE(StringUtils::stringEndsWith("FooBar", "ar"));
+    EXPECT_TRUE(StringUtils::stringEndsWith("FooBar", "FooBar"));
+    EXPECT_FALSE(StringUtils::stringEndsWith("FooBar", "1FooBar"));
+    EXPECT_FALSE(StringUtils::stringEndsWith("FooBar", "1FooBar"));
+    EXPECT_FALSE(StringUtils::stringEndsWith("FooBar", "R"));
 }

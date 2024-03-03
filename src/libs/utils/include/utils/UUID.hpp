@@ -33,6 +33,8 @@ public:
 
     std::string_view getAsString() const { return _value; }
 
+    bool operator<=>(const UUID&) const = default;
+
 private:
     UUID(std::string_view value);
     std::string _value;

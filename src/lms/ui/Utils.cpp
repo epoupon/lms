@@ -255,9 +255,10 @@ namespace UserInterface::Utils
 
         if (setText)
         {
+            std::string releaseName{ release->getName() };
             res->setTextFormat(Wt::TextFormat::Plain);
-            res->setText(Wt::WString::fromUTF8(release->getName()));
-            res->setToolTip(Wt::WString::fromUTF8(release->getName()), Wt::TextFormat::Plain);
+            res->setText(Wt::WString::fromUTF8(releaseName));
+            res->setToolTip(Wt::WString::fromUTF8(releaseName), Wt::TextFormat::Plain);
         }
 
         return res;

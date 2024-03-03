@@ -289,7 +289,7 @@ namespace UserInterface
             if (track->getRelease())
             {
                 _release->setTextFormat(Wt::TextFormat::Plain);
-                _release->setText(Wt::WString::fromUTF8(track->getRelease()->getName()));
+                _release->setText(Wt::WString::fromUTF8(std::string{ track->getRelease()->getName() }));
                 _release->setLink(Utils::createReleaseLink(track->getRelease()));
             }
             else

@@ -143,8 +143,10 @@ namespace Database
         std::size_t                 getMeanBitrate() const;
 
         // Accessors
-        const std::string& getName() const { return _name; }
+        std::string_view                    getName() const { return _name; }
+        std::string_view                    getSortName() const { return _sortName; }
         std::optional<UUID>                 getMBID() const { return UUID::fromString(_MBID); }
+        std::optional<UUID>                 getGroupMBID() const { return UUID::fromString(_groupMBID); }
         std::optional<std::size_t>          getTotalDisc() const { return _totalDisc; }
         std::size_t                         getDiscCount() const; // may not be total disc (if incomplete for example)
         std::vector<DiscInfo>               getDiscs() const;
@@ -157,7 +159,9 @@ namespace Database
 
         // Setters
         void setName(std::string_view name) { _name = name; }
+        void setSortName(std::string_view sortName) { _sortName = sortName; }
         void setMBID(const std::optional<UUID>& mbid) { _MBID = mbid ? mbid->getAsString() : ""; }
+        void setGroupMBID(const std::optional<UUID>& mbid) { _groupMBID = mbid ? mbid->getAsString() : ""; }
         void setTotalDisc(std::optional<int> totalDisc) { _totalDisc = totalDisc; }
         void setArtistDisplayName(std::string_view name) { _artistDisplayName = name; }
         void clearReleaseTypes();
@@ -173,7 +177,9 @@ namespace Database
         void persist(Action& a)
         {
             Wt::Dbo::field(a, _name, "name");
+            Wt::Dbo::field(a, _sortName, "sort_name");
             Wt::Dbo::field(a, _MBID, "mbid");
+            Wt::Dbo::field(a, _groupMBID, "group_mbid");
             Wt::Dbo::field(a, _totalDisc, "total_disc");
             Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
             Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "release");
@@ -191,7 +197,9 @@ namespace Database
         static constexpr std::size_t _maxNameLength{ 256 };
 
         std::string                         _name;
+        std::string                         _sortName;
         std::string                         _MBID;
+        std::string                         _groupMBID;
         std::optional<int>                  _totalDisc{};
         std::string                         _artistDisplayName;
 

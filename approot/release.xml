@@ -50,7 +50,21 @@
 </message>
 
 <message id="Lms.Explore.Release.template.entry-disc">
-	<h4>${disc-title}</h4>
+	<div class="d-flex align-items-center">
+		<h4 class="flex-fill">${disc-title}</h4>
+		<div class="p-2 d-flex">
+			${play-btn class="d-none d-sm-block btn btn-sm btn-outline-secondary border-0"}
+			<div class="dropdown d-inline-block">
+				${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-sm btn-outline-secondary border-0"}
+				<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
+					<li class="d-block d-sm-none">${play class="dropdown-item"}</li>
+					<li>${play-next class="dropdown-item"}</li>
+					<li>${play-last class="dropdown-item"}</li>
+					<li>${play-shuffled class="dropdown-item"}</li>
+				</ul>
+			</div>
+		</div>
+	</div>
 	${tracks class="d-grid gap-1 Lms-row-container"}
 </message>
 

@@ -106,6 +106,8 @@ namespace API::Subsonic
             return albumNode;
 
         // OpenSubsonic specific fields (must always be set)
+        albumNode.setAttribute("sortName", release->getSortName());
+
         if (!id3)
             albumNode.setAttribute("mediaType", "album");
 

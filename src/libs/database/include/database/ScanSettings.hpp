@@ -20,6 +20,7 @@
 #pragma once
 
 #include <filesystem>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -62,19 +63,22 @@ namespace Database
         static pointer get(Session& session);
 
         // Getters
-        std::size_t				getScanVersion() const { return _scanVersion; }
-        Wt::WTime				getUpdateStartTime() const { return _startTime; }
-        UpdatePeriod			getUpdatePeriod() const { return _updatePeriod; }
-        std::vector<std::string_view> getExtraTagsToScan() const;
-        std::vector<std::filesystem::path> getAudioFileExtensions() const;
-        SimilarityEngineType	getSimilarityEngineType() const { return _similarityEngineType; }
+        std::size_t                         getScanVersion() const { return _scanVersion; }
+        Wt::WTime                           getUpdateStartTime() const { return _startTime; }
+        UpdatePeriod                        getUpdatePeriod() const { return _updatePeriod; }
+        std::vector<std::string_view>       getExtraTagsToScan() const;
+        std::vector<std::filesystem::path>  getAudioFileExtensions() const;
+        SimilarityEngineType	            getSimilarityEngineType() const { return _similarityEngineType; }
+        std::vector<std::string>            getArtistTagDelimiters() const;
+        std::vector<std::string>            getDefaultTagDelimiters() const;
 
         // Setters
-        void addAudioFileExtension(const std::filesystem::path& ext);
         void setUpdateStartTime(Wt::WTime t) { _startTime = t; }
         void setUpdatePeriod(UpdatePeriod p) { _updatePeriod = p; }
         void setExtraTagsToScan(const std::vector<std::string_view>& extraTags);
         void setSimilarityEngineType(SimilarityEngineType type) { _similarityEngineType = type; }
+        void setArtistTagDelimiters(std::span<const std::string_view> delimiters);
+        void setDefaultTagDelimiters(std::span<const std::string_view> delimiters);
         void incScanVersion();
 
         template<class Action>
@@ -86,6 +90,8 @@ namespace Database
             Wt::Dbo::field(a, _audioFileExtensions, "audio_file_extensions");
             Wt::Dbo::field(a, _similarityEngineType, "similarity_engine_type");
             Wt::Dbo::field(a, _extraTagsToScan, "extra_tags_to_scan");
+            Wt::Dbo::field(a, _artistTagDelimiters, "artist_tag_delimiters");
+            Wt::Dbo::field(a, _defaultTagDelimiters, "default_tag_delimiters");
         }
 
     private:
@@ -95,6 +101,7 @@ namespace Database
         SimilarityEngineType    _similarityEngineType{ SimilarityEngineType::Clusters };
         std::string             _audioFileExtensions{ ".alac .mp3 .ogg .oga .aac .m4a .m4b .flac .wav .wma .aif .aiff .ape .mpc .shn .opus .wv" };
         std::string             _extraTagsToScan;
+        std::string             _artistTagDelimiters;
+        std::string             _defaultTagDelimiters;
     };
 } // namespace Database
-

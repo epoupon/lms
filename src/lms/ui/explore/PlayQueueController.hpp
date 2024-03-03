@@ -45,11 +45,18 @@ namespace UserInterface
 				PlayShuffled,
 			};
 
-			void processCommand(Command command, const std::vector<Database::ArtistId>&);
-			void processCommand(Command command, const std::vector<Database::ReleaseId>&);
-			void processCommand(Command command, const std::vector<Database::TrackId>&);
-			void processCommand(Command command, Database::TrackListId);
-			void playTrackInRelease(Database::TrackId);
+			void processCommand(Command command, const std::vector<Database::ArtistId>& artists);
+			void processCommand(Command command, const std::vector<Database::ReleaseId>& releases);
+			void processCommand(Command command, const std::vector<Database::TrackId>& tracks);
+
+			struct Disc
+			{
+				Database::ReleaseId releaseId;
+				size_t discNumber;
+			};
+			void processCommand(Command command, const std::vector<Disc>& discs);
+			void processCommand(Command command, Database::TrackListId trackList);
+			void playTrackInRelease(Database::TrackId track);
 
 			void setMaxTrackCountToEnqueue(std::size_t maxTrackCount) { _maxTrackCountToEnqueue = maxTrackCount; }
 

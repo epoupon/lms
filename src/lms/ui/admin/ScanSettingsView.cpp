@@ -45,6 +45,24 @@ namespace UserInterface
 
     namespace
     {
+        class TagDelimitersValidator : public Wt::WValidator
+        {
+        private:
+            Wt::WValidator::Result validate(const Wt::WString& input) const override
+            {
+                if (input.empty())
+                    return Wt::WValidator::Result{ Wt::ValidationState::Valid };
+
+                std::string inputStr{ input.toUTF8() };
+                if (std::all_of(std::cbegin(inputStr), std::cend(inputStr), [](char c) { return std::isspace(c); }))
+                    return Wt::WValidator::Result{ Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.Database.tag-delimiter-must-not-contain-only-spaces") };
+                    
+                return Wt::WValidator::Result{ Wt::ValidationState::Valid };
+            }
+
+            std::string javaScriptValidate() const override { return {}; }
+        };
+
         class DatabaseSettingsModel : public Wt::WFormModel
         {
         public:
@@ -52,10 +70,12 @@ namespace UserInterface
             static inline constexpr Field UpdateStartTimeField{ "update-start-time" };
             static inline constexpr Field SimilarityEngineTypeField{ "similarity-engine-type" };
             static inline constexpr Field ExtraTagsField{ "extra-tags-to-scan" };
+            static inline constexpr Field ArtistTagDelimiterField{ "artist-tag-delimiter" };
+            static inline constexpr Field DefaultTagDelimiterField{ "default-tag-delimiter" };
 
             using UpdatePeriodModel = ValueStringModel<ScanSettings::UpdatePeriod>;
 
-            static inline constexpr std::string_view extraTagsDelimiter{ ";" };
+            static inline constexpr char extraTagsDelimiter{ ';' };
 
             DatabaseSettingsModel()
             {
@@ -65,11 +85,15 @@ namespace UserInterface
                 addField(UpdateStartTimeField);
                 addField(SimilarityEngineTypeField);
                 addField(ExtraTagsField);
+                addField(ArtistTagDelimiterField);
+                addField(DefaultTagDelimiterField);
 
                 setValidator(UpdatePeriodField, createMandatoryValidator());
                 setValidator(UpdateStartTimeField, createMandatoryValidator());
                 setValidator(SimilarityEngineTypeField, createMandatoryValidator());
                 setValidator(ExtraTagsField, createUppercaseValidator());
+                setValidator(ArtistTagDelimiterField, std::make_unique<TagDelimitersValidator>());
+                setValidator(DefaultTagDelimiterField, std::make_unique<TagDelimitersValidator>());
 
                 // populate the model with initial data
                 loadData();
@@ -103,8 +127,18 @@ namespace UserInterface
                 if (similarityEngineTypeRow)
                     setValue(SimilarityEngineTypeField, _similarityEngineTypeModel->getString(*similarityEngineTypeRow));
 
-                auto extraTags{ scanSettings->getExtraTagsToScan() };
-                setValue(ExtraTagsField, StringUtils::joinStrings(scanSettings->getExtraTagsToScan(), extraTagsDelimiter));
+                const auto extraTags{ scanSettings->getExtraTagsToScan() };
+                setValue(ExtraTagsField, StringUtils::joinStrings(extraTags, extraTagsDelimiter));
+
+                {
+                    std::vector<std::string> delimiters{ scanSettings->getArtistTagDelimiters() };
+                    setValue(ArtistTagDelimiterField, delimiters.empty() ? "" : delimiters.front());
+                }
+
+                {
+                    std::vector<std::string> delimiters{ scanSettings->getDefaultTagDelimiters() };
+                    setValue(DefaultTagDelimiterField, delimiters.empty() ? "" : delimiters.front());
+                }
             }
 
             void saveData()
@@ -126,6 +160,20 @@ namespace UserInterface
                     scanSettings.modify()->setSimilarityEngineType(_similarityEngineTypeModel->getValue(*similarityEngineTypeRow));
 
                 scanSettings.modify()->setExtraTagsToScan(StringUtils::splitString(valueText(ExtraTagsField).toUTF8(), extraTagsDelimiter));
+                
+                {
+                    std::vector<std::string_view> artistDelimiters;
+                    if (std::string artistDelimiter{ valueText(ArtistTagDelimiterField).toUTF8() }; !artistDelimiter.empty())
+                        artistDelimiters.push_back(std::move(artistDelimiter));
+                    scanSettings.modify()->setArtistTagDelimiters(artistDelimiters);
+                }
+
+                 {
+                    std::vector<std::string_view> defaultDelimiters;
+                    if (std::string defaultDelimiter{ valueText(DefaultTagDelimiterField).toUTF8() }; !defaultDelimiter.empty())
+                        defaultDelimiters.push_back(std::move(defaultDelimiter));
+                    scanSettings.modify()->setDefaultTagDelimiters(defaultDelimiters);
+                }
             }
 
         private:
@@ -200,6 +248,12 @@ namespace UserInterface
 
         // Extra tags
         t->setFormWidget(DatabaseSettingsModel::ExtraTagsField, std::make_unique<Wt::WLineEdit>());
+
+        // Artist tag delimiter
+        t->setFormWidget(DatabaseSettingsModel::ArtistTagDelimiterField, std::make_unique<Wt::WLineEdit>());
+
+        // Default tag delimiter
+        t->setFormWidget(DatabaseSettingsModel::DefaultTagDelimiterField, std::make_unique<Wt::WLineEdit>());
 
         // Buttons
         Wt::WPushButton* saveBtn = t->bindWidget("save-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.save")));

@@ -142,6 +142,9 @@ namespace Database
             if (params.trackNumber)
                 query.where("t.track_number = ?").bind(*params.trackNumber);
 
+            if (params.discNumber)
+                query.where("t.disc_number = ?").bind(*params.discNumber);
+
             if (params.mediaLibrary.isValid())
                 query.where("t.media_library_id = ?").bind(params.mediaLibrary);
 

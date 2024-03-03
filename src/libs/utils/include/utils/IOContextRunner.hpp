@@ -25,19 +25,18 @@
 
 class IOContextRunner
 {
-	public:
-		IOContextRunner(boost::asio::io_service& ioService, std::size_t threadCount);
-		~IOContextRunner();
+public:
+    IOContextRunner(boost::asio::io_service& ioService, std::size_t threadCount);
+    ~IOContextRunner();
 
-		IOContextRunner(const IOContextRunner&) = delete;
-		IOContextRunner(IOContextRunner&&) = delete;
-		IOContextRunner& operator=(const IOContextRunner&) = delete;
-		IOContextRunner& operator=(IOContextRunner&&) = delete;
+    void stop();
+    std::size_t getThreadCount() const;
 
-		void stop();
+private:
+    IOContextRunner(const IOContextRunner&) = delete;
+    IOContextRunner& operator=(const IOContextRunner&) = delete;
 
-	private:
-		boost::asio::io_service&		_ioService;
-		std::optional<boost::asio::io_service::work>	_work;
-		std::vector<std::thread>		_threads;
+    boost::asio::io_service& _ioService;
+    std::optional<boost::asio::io_service::work>    _work;
+    std::vector<std::thread>                        _threads;
 };
