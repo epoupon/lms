@@ -241,8 +241,8 @@ namespace MetaData
                 if (!frameListMap["APIC"].isEmpty())
                     _hasEmbeddedCover = true;
 
-                if (!frameListMap["TSST"].isEmpty())
-                    _propertyMap["DISCSUBTITLE"] = { frameListMap["TSST"].front()->toString().to8Bit(true) };
+                if (!frameListMap["TSST"].isEmpty() && !_propertyMap.contains("DISCSUBTITLE"))
+                    _propertyMap["DISCSUBTITLE"] = { frameListMap["TSST"].front()->toString() };
             }
 
             getAPETags(mp3File->APETag());
@@ -289,6 +289,9 @@ namespace MetaData
                 for (const auto& value : values)
                     LMS_LOG(METADATA, DEBUG, "Key = '" << key << "', value = '" << value.to8Bit(true) << "'");
             }
+
+            for (const auto& value : _propertyMap.unsupportedData())
+                LMS_LOG(METADATA, DEBUG, "Unknown value: '" << value.to8Bit(true) << "'");
         }
 
         _hasMultiValuedTags = std::any_of(std::cbegin(_propertyMap), std::cend(_propertyMap), [](const auto& entry) { return entry.second.size() > 1; });
