@@ -50,7 +50,7 @@
 </message>
 
 <message id="Lms.Explore.Release.template.entry-disc">
-	<div class="d-flex">
+	<div class="d-flex align-items-center">
 		<h4 class="flex-fill">${disc-title}</h4>
 		<div class="p-2 d-flex">
 			${play-btn class="d-none d-sm-block btn btn-sm btn-outline-secondary border-0"}
