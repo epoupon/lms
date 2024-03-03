@@ -45,7 +45,7 @@ It is possible to apply global filters on your collection using `genre`, `mood`,
 __Note__: you can use the `lms-metadata` tool to have an idea of the tags parsed by _LMS_ using [TagLib](https://github.com/taglib/taglib).
 
 ### Multiple album artists
-_LMS_ requires the `albumartists` and `albumartistssort` tags to properly handle multiple album artists on the same album. As they are a custom tags, you may need to setup your favorite tagger to add them.
+_LMS_ requires the `albumartists` and `albumartistssort` tags to properly handle multiple album artists on the same album. As they are custom tags, you may need to set up your favorite tagger to add them.
 
 __Note__: if you use [Picard](https://picard.musicbrainz.org/), add the following script to include these tags:
 ```
