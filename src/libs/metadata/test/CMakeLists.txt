@@ -2,6 +2,7 @@ include(GoogleTest)
 
 add_executable(test-metadata
 	Metadata.cpp
+	Parser.cpp
 	Utils.cpp
 	)
 

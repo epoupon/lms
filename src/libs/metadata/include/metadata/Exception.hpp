@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,17 +19,19 @@
 
 #pragma once
 
-#include "metadata/IParser.hpp"
+#include "utils/Exception.hpp"
 
 namespace MetaData
 {
+    class Exception : public LmsException
+    {
+    public:
+        using LmsException::LmsException;
+    };
 
-// Parse that makes use of AvFormat
-class AvFormatParser : public IParser
-{
-	public:
-		std::optional<Track> parse(const std::filesystem::path& p, bool debug = false) override;
-};
-
-} // namespace MetaData
-
+    class ParseException : public Exception
+    {
+    public:
+        using Exception::Exception;
+    };
+}

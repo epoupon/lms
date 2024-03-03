@@ -68,6 +68,7 @@ Log::Log(ILogger& logger, Module module, Severity severity)
 
 Log::~Log()
 {
+    assert(_logger.isSeverityActive(_severity));
     _logger.processLog(*this);
 }
 

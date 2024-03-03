@@ -59,7 +59,7 @@ namespace UserInterface
     void DatabaseCollectorBase::setSearch(std::string_view searchText)
     {
         _searchText = searchText;
-        _searchKeywords = StringUtils::splitString(_searchText, " ");
+        _searchKeywords = StringUtils::splitString(_searchText, ' ');
     }
 
 } // ns UserInterface

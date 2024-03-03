@@ -30,6 +30,15 @@
 
 namespace Database
 {
+    namespace
+    {
+        static constexpr Version LMS_DATABASE_VERSION{ 54 };
+    }
+
+    VersionInfo::VersionInfo()
+        : _version{ LMS_DATABASE_VERSION }
+    {}
+
     VersionInfo::pointer VersionInfo::getOrCreate(Session& session)
     {
         session.checkWriteTransaction();
@@ -71,11 +80,6 @@ namespace Database::Migration
     private:
         Db& _db;
     };
-
-    static void migrateFromV32(Session& session)
-    {
-        ScanSettings::get(session).modify()->addAudioFileExtension(".wv");
-    }
 
     static void migrateFromV33(Session& session)
     {
@@ -220,7 +224,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
         session.getDboSession().execute("ALTER TABLE starred_release RENAME COLUMN scrobbling_state TO sync_state");
         session.getDboSession().execute("ALTER TABLE starred_track RENAME COLUMN scrobbler TO backend");
         session.getDboSession().execute("ALTER TABLE starred_track RENAME COLUMN scrobbling_state TO sync_state");
-        
+
         session.getDboSession().execute("UPDATE user SET feedback_backend = scrobbling_backend");
     }
 
@@ -364,7 +368,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
   constraint "fk_track_media_library" foreign key ("media_library_id") references "media_library" ("id") on delete set null deferrable initially deferred
 ))");
 
-// Migrate data, with the new media_library_id field set to 1
+        // Migrate data, with the new media_library_id field set to 1
         session.getDboSession().execute(R"(INSERT INTO track_backup 
 SELECT
  id,
@@ -399,6 +403,31 @@ SELECT
         session.getDboSession().execute("ALTER TABLE track_backup RENAME TO track");
     }
 
+    void migrateFromV51(Session& session)
+    {
+        // Add custom artist tag delimiters, no need to rescan since it has no effect when empty
+        session.getDboSession().execute("ALTER TABLE scan_settings ADD artist_tag_delimiters TEXT NOT NULL DEFAULT ''");
+        session.getDboSession().execute("ALTER TABLE scan_settings ADD default_tag_delimiters TEXT NOT NULL DEFAULT ''");
+    }
+
+    void migrateFromV52(Session& session)
+    {
+        // Add sort name for releases
+        session.getDboSession().execute("ALTER TABLE release ADD sort_name TEXT NOT NULL DEFAULT ''");
+
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
+
+    void migrateFromV53(Session& session)
+    {
+        // Add release group mbid
+        session.getDboSession().execute("ALTER TABLE release ADD group_mbid TEXT NOT NULL DEFAULT ''");
+
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        session.getDboSession().execute("UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
+
     void doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -409,7 +438,6 @@ SELECT
 
         const std::map<unsigned, MigrationFunction> migrationFunctions
         {
-            {32, migrateFromV32},
             {33, migrateFromV33},
             {34, migrateFromV34},
             {35, migrateFromV35},
@@ -428,6 +456,9 @@ SELECT
             {48, migrateFromV48},
             {49, migrateFromV49},
             {50, migrateFromV50},
+            {51, migrateFromV51},
+            {52, migrateFromV52},
+            {53, migrateFromV53},
         };
 
         {

@@ -43,6 +43,24 @@
 			</div>
 		</div>
 		<div class="col-12">
+			<label class="form-label" for="${id:artist-tag-delimiter}">
+				${tr:Lms.Admin.Database.artist-tag-delimiter}
+			</label>
+			${artist-tag-delimiter class="form-control"}
+			<div class="invalid-feedback">
+				${artist-tag-delimiter-info}
+			</div>
+		</div>
+		<div class="col-12">
+			<label class="form-label" for="${id:default-tag-delimiter}">
+				${tr:Lms.Admin.Database.default-tag-delimiter}
+			</label>
+			${default-tag-delimiter class="form-control"}
+			<div class="invalid-feedback">
+				${default-tag-delimiter-info}
+			</div>
+		</div>
+		<div class="col-12">
 			${save-btn class="btn btn-primary me-1"}${discard-btn class="btn btn-secondary"}
 		</div>
 	</form>

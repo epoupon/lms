@@ -24,23 +24,23 @@
 
 namespace Database
 {
-	class Db;
-	class Session;
+    class Db;
+    class Session;
 }
 
 namespace Auth
 {
-	class AuthServiceBase
-	{
-		protected:
-			AuthServiceBase(Database::Db& db);
+    class AuthServiceBase
+    {
+    protected:
+        AuthServiceBase(Database::Db& db);
 
-			Database::UserId	getOrCreateUser(std::string_view loginName);
-			void				onUserAuthenticated(Database::UserId userId);
+        Database::UserId    getOrCreateUser(std::string_view loginName);
+        void                onUserAuthenticated(Database::UserId userId);
 
-			Database::Session&		getDbSession();
+        Database::Session&  getDbSession();
 
-		private:
-			Database::Db&		_db;
-	};
+    private:
+        Database::Db& _db;
+    };
 }

@@ -64,7 +64,9 @@
 
 
 <!--Scan settings-->
+
 <message id="Lms.Admin.Database.daily">每日</message>
+
 
 <message id="Lms.Admin.Database.hourly">每小时</message>
 <message id="Lms.Admin.Database.immediate-scan">立即扫描！</message>

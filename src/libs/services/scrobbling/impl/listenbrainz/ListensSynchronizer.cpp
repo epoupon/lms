@@ -65,10 +65,12 @@ namespace Scrobbling::ListenBrainz
             Wt::Json::Object additionalInfo;
             additionalInfo["listening_from"] = "LMS";
             additionalInfo["duration_ms"] = std::chrono::duration_cast<std::chrono::milliseconds>(track->getDuration()).count();
-            if (track->getRelease())
+            if (const auto release {track->getRelease()})
             {
-                if (auto MBID{ track->getRelease()->getMBID() })
+                if (auto MBID{ release->getMBID() })
                     additionalInfo["release_mbid"] = Wt::Json::Value{ std::string {MBID->getAsString()} };
+                if (auto groupMBID{ release->getGroupMBID() })
+                    additionalInfo["release_group_mbid"] = Wt::Json::Value{ std::string {groupMBID->getAsString()} };
             }
 
             {
@@ -94,10 +96,10 @@ namespace Scrobbling::ListenBrainz
 
             Wt::Json::Object trackMetadata;
             trackMetadata["additional_info"] = std::move(additionalInfo);
-            trackMetadata["artist_name"] = Wt::Json::Value{ artists.front()->getName() };
+            trackMetadata["artist_name"] = Wt::Json::Value{ std::string{ track->getArtistDisplayName() } };
             trackMetadata["track_name"] = Wt::Json::Value{ track->getName() };
             if (track->getRelease())
-                trackMetadata["release_name"] = Wt::Json::Value{ track->getRelease()->getName() };
+                trackMetadata["release_name"] = Wt::Json::Value{ std::string {track->getRelease()->getName()} };
 
             Wt::Json::Object payload;
             payload["track_metadata"] = std::move(trackMetadata);

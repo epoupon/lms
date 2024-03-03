@@ -63,7 +63,7 @@ namespace StringUtils
     template<>
     std::optional<Database::ArtistId> readAs(std::string_view str)
     {
-        std::vector<std::string_view> values{ StringUtils::splitString(str, "-") };
+        std::vector<std::string_view> values{ StringUtils::splitString(str, '-') };
         if (values.size() != 2)
             return std::nullopt;
 
@@ -88,7 +88,7 @@ namespace StringUtils
     template<>
     std::optional<Database::ReleaseId> readAs(std::string_view str)
     {
-        std::vector<std::string_view> values{ StringUtils::splitString(str, "-") };
+        std::vector<std::string_view> values{ StringUtils::splitString(str, '-') };
         if (values.size() != 2)
             return std::nullopt;
 
@@ -113,7 +113,7 @@ namespace StringUtils
     template<>
     std::optional<Database::TrackId> readAs(std::string_view str)
     {
-        std::vector<std::string_view> values{ StringUtils::splitString(str, "-") };
+        std::vector<std::string_view> values{ StringUtils::splitString(str, '-') };
         if (values.size() != 2)
             return std::nullopt;
 
@@ -129,7 +129,7 @@ namespace StringUtils
     template<>
     std::optional<Database::TrackListId> readAs(std::string_view str)
     {
-        std::vector<std::string_view> values{ StringUtils::splitString(str, "-") };
+        std::vector<std::string_view> values{ StringUtils::splitString(str, '-') };
         if (values.size() != 2)
             return std::nullopt;
 

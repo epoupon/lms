@@ -78,6 +78,7 @@ namespace Database {
             std::string							releaseName;	// matching this release name
             TrackListId							trackList;		// matching this trackList
             std::optional<int>					trackNumber;	// matching this track number
+            std::optional<int>					discNumber;	    // matching this disc number
             MediaLibraryId                      mediaLibrary;   // If set, tracks in this library
 
             FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
@@ -94,6 +95,7 @@ namespace Database {
             FindParameters& setReleaseName(std::string_view _releaseName) { releaseName = _releaseName; return *this; }
             FindParameters& setTrackList(TrackListId _trackList) { trackList = _trackList; return *this; }
             FindParameters& setTrackNumber(int _trackNumber) { trackNumber = _trackNumber; return *this; }
+            FindParameters& setDiscNumber(int _discNumber) { discNumber = _discNumber; return *this; }
             FindParameters& setMediaLibrary(MediaLibraryId  _mediaLibrary) { mediaLibrary = _mediaLibrary; return *this; }
         };
 

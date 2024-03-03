@@ -57,7 +57,7 @@ static void dumpTracksRecommendation(Session session, Recommendation::IRecommend
 
                 res += track->getName();
                 if (track->getRelease())
-                    res += " [" + track->getRelease()->getName() + "]";
+                    res += " [" + std::string{ track->getRelease()->getName() } + "]";
                 for (auto artist : track->getArtists({ TrackArtistLinkType::Artist }))
                     res += " - " + artist->getName();
                 for (auto cluster : track->getClusters())
@@ -88,7 +88,7 @@ static void dumpReleasesRecommendation(Session session, Recommendation::IRecomme
                 auto transaction{ session.createReadTransaction() };
 
                 Release::pointer release{ Release::find(session, releaseId) };
-                return release->getName();
+                return std::string{ release->getName() };
             };
 
         std::cout << "Processing release '" << releaseToString(releaseId) << "'" << std::endl;

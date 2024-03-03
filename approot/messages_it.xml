@@ -64,7 +64,9 @@
 <message id="Lms.Admin.MediaLibrary.root-path">Cartella principale</message>
 
 <!--Scan settings-->
+<message id="Lms.Admin.Database.artist-tag-delimiter">Delimitatore da utilizzare per separare i tag degli artisti (solo se il file non contiene alcun tag con valori multipli)</message>
 <message id="Lms.Admin.Database.daily">Giornaliera</message>
+<message id="Lms.Admin.Database.default-tag-delimiter">Delimitatore da utilizzare per separare gli altri tag (solo se il file non contiene alcun tag con valori multipli)</message>
 <message id="Lms.Admin.Database.extra-tags-to-scan">Tag aggiuntivi da scansionare (usa <kbd>;</kbd> come separatore)</message>
 <message id="Lms.Admin.Database.hourly">Ogni ora</message>
 <message id="Lms.Admin.Database.immediate-scan">Scansiona ora!</message>
@@ -77,6 +79,7 @@
 <message id="Lms.Admin.Database.similarity-engine-type">Motore di similarità</message>
 <message id="Lms.Admin.Database.similarity-engine-type.clusters">Basato su tag</message>
 <message id="Lms.Admin.Database.similarity-engine-type.none">Nessuno</message>
+<message id="Lms.Admin.Database.tag-delimiter-must-not-contain-only-spaces">Il delimitatore del tag non deve consistere esclusivamente di spazi</message>
 <message id="Lms.Admin.Database.update-period">Frequenza di aggiornamento</message>
 <message id="Lms.Admin.Database.update-start-time">Orario di aggiornamento</message>
 <message id="Lms.Admin.Database.weekly">Settimanale</message>
