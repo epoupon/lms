@@ -206,7 +206,7 @@ namespace Scanner
 
             // TODO: migrate these fields in dedicated tables in DB
             getOrCreateClusters("GENRE", track.genres);
-            getOrCreateClusters("MOOD", track.genres);
+            getOrCreateClusters("MOOD", track.moods);
             getOrCreateClusters("LANGUAGE", track.languages);
             getOrCreateClusters("GROUPING", track.groupings);
 
