@@ -293,8 +293,6 @@ namespace MetaData
             for (const auto& value : _propertyMap.unsupportedData())
                 LMS_LOG(METADATA, DEBUG, "Unknown value: '" << value.to8Bit(true) << "'");
         }
-
-        _hasMultiValuedTags = std::any_of(std::cbegin(_propertyMap), std::cend(_propertyMap), [](const auto& entry) { return entry.second.size() > 1; });
     }
 
     void TagLibTagReader::visitTagValues(TagType tag, TagValueVisitor visitor) const

@@ -36,7 +36,6 @@ namespace MetaData
         AvFormatTagReader(const AvFormatTagReader&) = delete;
         AvFormatTagReader& operator=(const AvFormatTagReader&) = delete;
 
-        bool hasMultiValuedTags() const override { return false; /* not supported */}
         void visitTagValues(TagType tag, TagValueVisitor visitor) const override;
         void visitTagValues(std::string_view tag, TagValueVisitor visitor) const override;
         void visitPerformerTags(PerformerVisitor visitor) const override;

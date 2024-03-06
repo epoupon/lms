@@ -44,19 +44,18 @@ namespace MetaData
                             visitor(tag);
                     } };
 
-                    if (!tagReader.hasMultiValuedTags())
+                    for (std::string_view tagDelimiter : tagDelimiters)
                     {
-                        for (std::string_view tagDelimiter : tagDelimiters)
+                        if (value.find(tagDelimiter) != std::string_view::npos)
                         {
-                            if (value.find(tagDelimiter) != std::string_view::npos)
-                            {
-                                for (std::string_view splitTag : StringUtils::splitString(value, tagDelimiter))
-                                    visitTagIfNonEmpty(splitTag);
-                                return;
-                            }
+                            for (std::string_view splitTag : StringUtils::splitString(value, tagDelimiter))
+                                visitTagIfNonEmpty(splitTag);
+
+                            return;
                         }
                     }
 
+                    // no delimiter found, or no delimiter to be used
                     visitTagIfNonEmpty(value);
                 });
         }
@@ -81,17 +80,14 @@ namespace MetaData
 
                 tagReader.visitTagValues(tagType, [&](std::string_view value)
                     {
-                        if (!tagReader.hasMultiValuedTags())
+                        for (std::string_view tagDelimiter : tagDelimiters)
                         {
-                            for (std::string_view tagDelimiter : tagDelimiters)
+                            if (value.find(tagDelimiter) != std::string_view::npos)
                             {
-                                if (value.find(tagDelimiter) != std::string_view::npos)
-                                {
-                                    for (std::string_view splitTag : StringUtils::splitString(value, tagDelimiter))
-                                        addTagIfNonEmpty(splitTag);
+                                for (std::string_view splitTag : StringUtils::splitString(value, tagDelimiter))
+                                    addTagIfNonEmpty(splitTag);
 
-                                    return;
-                                }
+                                return;
                             }
                         }
 

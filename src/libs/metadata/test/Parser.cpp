@@ -246,24 +246,4 @@ namespace MetaData
         EXPECT_EQ(track->artists[1].name, "Other Artist");
         EXPECT_EQ(track->artistDisplayName, "This /  is ; One Artist \\  Other Artist");
     }
-
-    TEST(Parser, customDelimiters_notWithMultiValuedTags)
-    {
-        const TestTagReader testTags{
-            {
-                { TagType::Genre, { "Genre1 ; Genre2" } },
-                { TagType::Language, { "Lang1", "Lang2" } },
-            }
-        };
-
-        Parser parser;
-        static_cast<IParser&>(parser).setDefaultTagDelimiters(std::vector<std::string>{ " ; " });
-        std::unique_ptr<Track> track{ parser.parse(testTags) };
-
-        ASSERT_EQ(track->genres.size(), 1);
-        EXPECT_EQ(track->genres[0], "Genre1 ; Genre2");
-        ASSERT_EQ(track->languages.size(), 2);
-        EXPECT_EQ(track->languages[0], "Lang1");
-        EXPECT_EQ(track->languages[1], "Lang2");
-    }
 }

@@ -145,8 +145,6 @@ namespace MetaData
     public:
         virtual ~ITagReader() = default;
 
-        virtual bool hasMultiValuedTags() const = 0;
-
         using TagValueVisitor = std::function<void(std::string_view value)>;
         virtual void visitTagValues(TagType tag, TagValueVisitor visitor) const = 0;
         virtual void visitTagValues(std::string_view tag, TagValueVisitor visitor) const = 0;
