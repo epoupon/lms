@@ -2,6 +2,7 @@ include(GoogleTest)
 
 add_executable(test-utils
 	EnumSet.cpp
+	LiteralString.cpp
 	Path.cpp
 	RecursiveSharedMutex.cpp
 	String.cpp
