@@ -22,6 +22,7 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/Dbo/SqlConnectionPool.h>
 
+#include "utils/IProfiler.hpp"
 #include "utils/RecursiveSharedMutex.hpp"
 #include "database/Object.hpp"
 #include "database/TransactionChecker.hpp"
@@ -32,6 +33,7 @@ namespace Database
     {
     public:
         ~WriteTransaction();
+
     private:
         friend class Session;
         WriteTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session);
@@ -40,6 +42,7 @@ namespace Database
         WriteTransaction& operator=(const WriteTransaction&) = delete;
 
         std::unique_lock<RecursiveSharedMutex> _lock;
+        profiling::ScopedEvent _profilingEvent{ "Database", profiling::Level::Detailed, "WriteTransaction" }; // before actual transaction
         Wt::Dbo::Transaction _transaction;
     };
 
@@ -47,14 +50,15 @@ namespace Database
     {
     public:
         ~ReadTransaction();
+
     private:
         friend class Session;
         ReadTransaction(Wt::Dbo::Session& session);
 
-
         ReadTransaction(const ReadTransaction&) = delete;
         ReadTransaction& operator=(const ReadTransaction&) = delete;
 
+        profiling::ScopedEvent _profilingEvent{ "Database", profiling::Level::Detailed, "ReadTransaction" }; // before actual transaction
         Wt::Dbo::Transaction _transaction;
     };
 

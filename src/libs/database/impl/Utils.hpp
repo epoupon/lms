@@ -27,6 +27,7 @@
 #include <Wt/WDateTime.h>
 
 #include "database/Types.hpp"
+#include "utils/IProfiler.hpp"
 
 namespace Database::Utils
 {
@@ -47,6 +48,8 @@ namespace Database::Utils
     template <typename ResultType, typename Query>
     RangeResults<ResultType> execQuery(Query& query, std::optional<Range> range)
     {
+        LMS_SCOPED_PROFILE_DETAILED("Database", "ExecQueryRange");
+
         RangeResults<ResultType> res;
 
         if (range)
@@ -76,7 +79,10 @@ namespace Database::Utils
             applyRange(query, range);
 
         for (const auto& res : query.resultList())
+        {
+            LMS_SCOPED_PROFILE_DETAILED("Database", "ExecQueryResult");
             func(res);
+        }
     }
 
     Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime);
