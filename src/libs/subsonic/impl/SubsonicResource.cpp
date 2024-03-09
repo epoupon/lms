@@ -28,8 +28,10 @@
 #include "database/Session.hpp"
 #include "database/User.hpp"
 #include "utils/EnumSet.hpp"
+#include "utils/LiteralString.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/ILogger.hpp"
+#include "utils/IProfiler.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 #include "utils/Utils.hpp"
@@ -159,7 +161,7 @@ namespace API::Subsonic
             CheckImplementedFunc    checkFunc{};
         };
 
-        static const std::unordered_map<std::string_view, RequestEntryPointInfo> requestEntryPoints
+        static const std::unordered_map<LiteralString, RequestEntryPointInfo, LiteralStringHash, LiteralStringEqual> requestEntryPoints
         {
             // System
             {"/ping",                       {handlePingRequest}},
@@ -310,17 +312,26 @@ namespace API::Subsonic
             auto itEntryPoint{ requestEntryPoints.find(requestPath) };
             if (itEntryPoint != requestEntryPoints.end())
             {
+                LMS_SCOPED_PROFILE_OVERVIEW("Subsonic", itEntryPoint->first);
+
                 if (itEntryPoint->second.checkFunc)
                     itEntryPoint->second.checkFunc();
 
                 checkUserTypeIsAllowed(requestContext, itEntryPoint->second.allowedUserTypes);
 
-                const Response resp{ (itEntryPoint->second.func)(requestContext) };
+                const Response resp{ [&] {
+                    LMS_SCOPED_PROFILE_DETAILED("Subsonic", "HandleRequest");
+                    return itEntryPoint->second.func(requestContext);
+                    }()};
 
-                resp.write(response.out(), format);
-                response.setMimeType(std::string{ ResponseFormatToMimeType(format) });
+                {
+                    LMS_SCOPED_PROFILE_DETAILED("Subsonic", "WriteResponse");
+
+                    resp.write(response.out(), format);
+                    response.setMimeType(std::string{ ResponseFormatToMimeType(format) });
+                }
+
                 LMS_LOG(API_SUBSONIC, DEBUG, "Request " << requestId << " '" << requestPath << "' handled!");
-
                 return;
             }
 
