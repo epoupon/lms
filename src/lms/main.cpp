@@ -277,7 +277,7 @@ int main(int argc, char* argv[])
         Wt::WServer server{ argv[0] };
         server.setServerConfiguration(wtServerArgs.size(), const_cast<char**>(&wtArgv[0]));
 
-        IOContextRunner ioContextRunner{ ioContext, getThreadCount() };
+        IOContextRunner ioContextRunner{ ioContext, getThreadCount(), "Misc" };
 
         // Connection pool size must be twice the number of threads: we have at least 2 io pools with getThreadCount() each and they all may access the database
         Database::Db database{ config->getPath("working-dir") / "lms.db", getThreadCount() * 2 };

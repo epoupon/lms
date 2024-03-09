@@ -244,7 +244,7 @@ namespace Scanner
 
     ScanStepScanFiles::MetadataScanQueue::MetadataScanQueue(MetaData::IParser& parser, std::size_t threadCount, bool& abort)
         : _metadataParser{ parser }
-        , _scanContextRunner{ _scanContext, threadCount }
+        , _scanContextRunner{ _scanContext, threadCount, "ScannerMetadata" }
         , _abort{ abort }
     {}
 

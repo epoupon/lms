@@ -22,16 +22,31 @@
 #include <cstdlib>
 
 #include "utils/ILogger.hpp"
+#include "utils/IProfiler.hpp"
 
-IOContextRunner::IOContextRunner(boost::asio::io_service& ioService, std::size_t threadCount)
+IOContextRunner::IOContextRunner(boost::asio::io_service& ioService, std::size_t threadCount, std::string_view name)
     : _ioService{ ioService }
     , _work{ ioService }
 {
     LMS_LOG(UTILS, INFO, "Starting IO context with " << threadCount << " threads...");
+
     for (std::size_t i{}; i < threadCount; ++i)
     {
-        _threads.emplace_back([&]
+        std::string threadName{ name };
+        if (!threadName.empty())
+        {
+            threadName += "Thread_";
+            threadName += std::to_string(i);
+        }
+
+        _threads.emplace_back([this, threadName]
             {
+                if (!threadName.empty())
+                {
+                    if (auto * profiler{ Service<profiling::IProfiler>::get() })
+                        profiler->setThreadName(std::this_thread::get_id(), threadName);
+                }
+
                 try
                 {
                     _ioService.run();
@@ -45,8 +60,7 @@ IOContextRunner::IOContextRunner(boost::asio::io_service& ioService, std::size_t
     }
 }
 
-void
-IOContextRunner::stop()
+void IOContextRunner::stop()
 {
     LMS_LOG(UTILS, DEBUG, "Stopping IO context...");
     _work.reset();

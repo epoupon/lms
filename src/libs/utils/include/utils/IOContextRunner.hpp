@@ -26,7 +26,7 @@
 class IOContextRunner
 {
 public:
-    IOContextRunner(boost::asio::io_service& ioService, std::size_t threadCount);
+    IOContextRunner(boost::asio::io_service& ioService, std::size_t threadCount, std::string_view name);
     ~IOContextRunner();
 
     void stop();
