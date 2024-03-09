@@ -24,6 +24,7 @@
 #include "database/TrackArtistLink.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
+#include "utils/IProfiler.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 
@@ -75,6 +76,8 @@ namespace API::Subsonic
 
     Response::Node createArtistNode(RequestContext& context, const Artist::pointer& artist, const User::pointer& user, bool id3)
     {
+        LMS_SCOPED_PROFILE_DETAILED("Subsonic", "CreateArtist");
+
         Response::Node artistNode{ createArtistNode(artist) };
 
         artistNode.setAttribute("id", idToString(artist->getId()));

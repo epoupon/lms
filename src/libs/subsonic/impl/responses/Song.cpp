@@ -30,6 +30,7 @@
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
+#include "utils/IProfiler.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 #include "responses/Artist.hpp"
@@ -96,6 +97,8 @@ namespace API::Subsonic
 
     Response::Node createSongNode(RequestContext& context, const Track::pointer& track, const User::pointer& user)
     {
+        LMS_SCOPED_PROFILE_DETAILED("Subsonic", "CreateSong");
+
         Response::Node trackResponse;
 
         trackResponse.setAttribute("id", idToString(track->getId()));
