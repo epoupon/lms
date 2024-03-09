@@ -63,6 +63,8 @@ namespace profiling
         if (bufferSizeinMBytes < MinBufferSizeInMBytes)
             throw LmsException{ "Profiler must be configured with at least " + std::to_string(MinBufferSizeInMBytes) + " MBytes" };
 
+        setThreadName(_creatorThreadId, "MainThread");
+
         for (Buffer& buffer : _buffers)
             _freeBuffers.push_back(&buffer);
 
@@ -124,16 +126,30 @@ namespace profiling
         os << "{" << std::endl;
         os << "\t\"traceEvents\": [" << std::endl;
 
+        bool first{ true };
+
+        {
+            std::scoped_lock lock{ _threadNameMutex };
+
+            for (const auto& [threadId, threadName] : _threadNames)
+            {
+                if (first)
+                    first = false;
+                else
+                    os << ", " << std::endl;
+
+                os << "\t\t{ ";
+                os << "\"name\" : \"thread_name\", ";
+                os << "\"pid\" : 1, ";
+                os << "\"tid\" : " << threadId << ", ";
+                os << "\"ph\" : \"M\", ";
+                os << "\"args\" : { \"name\" : \"" + threadName + "\" }";
+                os << " }";
+            }
+        }
+
         // we allow threads to fill in their current block while dumping
         {
-            os << "\t\t{ ";
-            os << "\"name\" : \"thread_name\", ";
-            os << "\"pid\" : 1, ";
-            os << "\"tid\" : " << _creatorThreadId << ", ";
-            os << "\"ph\" : \"M\", ";
-            os << "\"args\" : { \"name\" : \"MainThread\" }";
-            os << " }";
-
             std::scoped_lock lock{ _mutex };
 
             for (Buffer& buffer : _buffers)
@@ -144,7 +160,11 @@ namespace profiling
                     using clockMicro = std::chrono::duration<double, std::micro>;
                     const CompleteEvent& event{ buffer.durationEvents[i] };
 
-                    os << "," << std::endl;
+                    if (first)
+                        first = false;
+                    else
+                        os << ", " << std::endl;;
+
                     os << "\t\t{ ";
                     os << "\"name\" : \"" << event.name.c_str() << "\", ";
                     os << "\"cat\" : \"" << event.category.c_str() << "\", ";
@@ -162,5 +182,11 @@ namespace profiling
         os << "\t]," << std::endl;
         os << "\t\"meta_cpu_count\" : " << std::thread::hardware_concurrency() << std::endl;
         os << "}" << std::endl;
+    }
+
+    void Profiler::setThreadName(std::thread::id id, std::string_view threadName)
+    {
+        std::scoped_lock lock{ _threadNameMutex };
+        _threadNames.emplace(id, threadName);
     }
 }

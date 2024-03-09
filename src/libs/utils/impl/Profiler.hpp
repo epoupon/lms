@@ -24,6 +24,7 @@
 #include <mutex>
 #include <vector>
 #include <thread>
+#include <unordered_map>
 
 #include "utils/IProfiler.hpp"
 
@@ -40,6 +41,7 @@ namespace profiling
         bool isLevelActive(Level level) const override;
         void write(const CompleteEvent& event) override;
         void dumpCurrentBuffer(std::ostream& os) override;
+        void setThreadName(std::thread::id id, std::string_view threadName) override;
 
         static constexpr std::size_t BufferSize{ 32 * 1024 };
 
@@ -59,6 +61,9 @@ namespace profiling
         const std::thread::id _creatorThreadId;
 
         std::vector<Buffer> _buffers; // allocated once during construction
+
+        std::mutex _threadNameMutex;
+        std::unordered_map<std::thread::id, std::string> _threadNames;
 
         std::mutex _mutex;
         std::deque<Buffer*> _freeBuffers;

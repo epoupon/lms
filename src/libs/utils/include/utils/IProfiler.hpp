@@ -22,6 +22,7 @@
 #include <chrono>
 #include <memory>
 #include <ostream>
+#include <string_view>
 #include <thread>
 
 #include "LiteralString.hpp"
@@ -69,6 +70,7 @@ namespace profiling
         virtual bool isLevelActive(Level level) const = 0;
         virtual void write(const CompleteEvent& entry) = 0;
         virtual void dumpCurrentBuffer(std::ostream& os) = 0;
+        virtual void setThreadName(std::thread::id id, std::string_view threadName) = 0;
     };
 
     static constexpr std::size_t MinBufferSizeInMBytes = 16;
