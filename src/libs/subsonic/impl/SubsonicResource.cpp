@@ -268,7 +268,7 @@ namespace API::Subsonic
         };
 
         using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::Http::Request&, Wt::Http::Response&)>;
-        static std::unordered_map<std::string, MediaRetrievalHandlerFunc> mediaRetrievalHandlers
+        static std::unordered_map<LiteralString, MediaRetrievalHandlerFunc, LiteralStringHash, LiteralStringEqual> mediaRetrievalHandlers
         {
             // Media retrieval
             {"/download",       handleDownload},
@@ -276,7 +276,6 @@ namespace API::Subsonic
             {"/getCoverArt",    handleGetCoverArt},
         };
     }
-
 
     SubsonicResource::SubsonicResource(Db& db)
         : _serverProtocolVersionsByClient{ readConfigProtocolVersions() }
@@ -338,6 +337,8 @@ namespace API::Subsonic
             auto itStreamHandler{ mediaRetrievalHandlers.find(requestPath) };
             if (itStreamHandler != mediaRetrievalHandlers.end())
             {
+                LMS_SCOPED_PROFILE_OVERVIEW("Subsonic", itStreamHandler->first);
+
                 itStreamHandler->second(requestContext, request, response);
                 LMS_LOG(API_SUBSONIC, DEBUG, "Request " << requestId << " '" << requestPath << "' handled!");
                 return;
