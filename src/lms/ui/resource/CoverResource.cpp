@@ -26,6 +26,7 @@
 #include "database/Track.hpp"
 #include "utils/Exception.hpp"
 #include "utils/ILogger.hpp"
+#include "utils/IProfiler.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 
@@ -61,6 +62,8 @@ namespace UserInterface
 
     void CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
     {
+        LMS_SCOPED_PROFILE_OVERVIEW("UI", "HandleCoverRequest");
+
         // Retrieve parameters
         const std::string* trackIdStr = request.getParameter("trackid");
         const std::string* releaseIdStr = request.getParameter("releaseid");
