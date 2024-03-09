@@ -10,6 +10,7 @@ add_library(lmsutils SHARED
 	impl/Logger.cpp
 	impl/NetAddress.cpp
 	impl/Path.cpp
+	impl/Profiler.cpp
 	impl/Random.cpp
 	impl/RecursiveSharedMutex.cpp
 	impl/StreamLogger.cpp
@@ -41,4 +42,8 @@ install(TARGETS lmsutils DESTINATION lib)
 
 if(BUILD_TESTING)
 	add_subdirectory(test)
+endif()
+
+if (BUILD_BENCHMARKS)
+	add_subdirectory(bench)
 endif()
