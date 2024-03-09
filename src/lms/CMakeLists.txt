@@ -14,6 +14,7 @@ add_executable(lms
 	ui/admin/InitWizardView.cpp
 	ui/admin/MediaLibrariesView.cpp
 	ui/admin/MediaLibraryModal.cpp
+	ui/admin/ProfilerController.cpp
 	ui/admin/ScannerController.cpp
 	ui/admin/ScanSettingsView.cpp
 	ui/admin/UserView.cpp

@@ -43,6 +43,7 @@
 #include "utils/IChildProcessManager.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/IOContextRunner.hpp"
+#include "utils/IProfiler.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 #include "utils/WtLogger.hpp"
@@ -73,6 +74,20 @@ namespace
             return Severity::FATAL;
 
         throw LmsException{ "Invalid config value for 'log-min-severity'" };
+    }
+
+    std::optional<profiling::Level> getProfilingLevel()
+    {
+        std::string_view profilingLevel{ Service<IConfig>::get()->getString("profiling-level", "disabled") };
+
+        if (profilingLevel == "disabled")
+            return std::nullopt;
+        else if (profilingLevel == "overview")
+            return profiling::Level::Overview;
+        else if (profilingLevel == "detailed")
+            return profiling::Level::Detailed;
+
+        throw LmsException{ "Invalid config value for 'profiling-level'" };
     }
 
     std::vector<std::string> generateWtConfig(std::string execPath, Severity minSeverity)
@@ -233,6 +248,9 @@ int main(int argc, char* argv[])
         Service<IConfig> config{ createConfig(configFilePath) };
         const Severity minLogSeverity{getLogMinSeverity()};
         Service<ILogger> logger{ std::make_unique<WtLogger>(minLogSeverity) };
+        std::optional<Service<profiling::IProfiler>> profiler;
+        if (const auto level{ getProfilingLevel() })
+            profiler.emplace(profiling::createProfiler(level.value(), config->getULong("profiling-buffer-size", profiling::MinBufferSizeInMBytes)));
 
         // use system locale. libarchive relies on this to write filenames
         if (char* locale{ ::setlocale(LC_ALL, "") })
@@ -243,6 +261,7 @@ int main(int argc, char* argv[])
         // Make sure the working directory exists
         std::filesystem::create_directories(config->getPath("working-dir"));
         std::filesystem::create_directories(config->getPath("working-dir") / "cache");
+        std::filesystem::create_directories(config->getPath("working-dir") / "profiling");
 
         // Construct WT configuration and get the argc/argv back
         const std::vector<std::string> wtServerArgs{ generateWtConfig(argv[0], minLogSeverity) };

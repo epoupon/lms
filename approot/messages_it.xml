@@ -45,6 +45,7 @@
 
 <!--Administration-->
 <message id="Lms.Admin.menu-media-libraries"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Librerie</message>
+<message id="Lms.Admin.menu-profiler"><i class="fa fa-fw fa-bar-chart" aria-hidden="true"></i> Profilatore</message>
 <message id="Lms.Admin.menu-scan-settings"><i class="fa fa-fw fa-cogs" aria-hidden="true"></i> Impostazioni di scansione</message>
 <message id="Lms.Admin.menu-scanner"><i class="fa fa-fw fa-wrench" aria-hidden="true"></i> Scanner</message>
 <message id="Lms.Admin.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Utenti</message>
@@ -62,6 +63,10 @@
 <message id="Lms.Admin.MediaLibrary.path-must-not-overlap">Il percorso non deve sovrapporsi a quello di un'altra libreria</message>
 <message id="Lms.Admin.MediaLibrary.path-must-be-existing-directory">Il percorso deve essere una directory esistente</message>
 <message id="Lms.Admin.MediaLibrary.root-path">Cartella principale</message>
+
+<!--Profiler Controller-->
+<message id="Lms.Admin.ProfilerController.export-current-buffer">Esporta dati di profilazione</message>
+<message id="Lms.Admin.ProfilerController.profiler">Profilatore</message>
 
 <!--Scan settings-->
 <message id="Lms.Admin.Database.artist-tag-delimiter">Delimitatore da utilizzare per separare i tag degli artisti</message>

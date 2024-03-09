@@ -38,15 +38,17 @@
 #include "database/User.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/ILogger.hpp"
+#include "utils/IProfiler.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 
 #include "admin/InitWizardView.hpp"
 #include "admin/MediaLibrariesView.hpp"
+#include "admin/ProfilerController.hpp"
+#include "admin/ScannerController.hpp"
 #include "admin/ScanSettingsView.hpp"
 #include "admin/UserView.hpp"
 #include "admin/UsersView.hpp"
-#include "admin/ScannerController.hpp"
 #include "common/Template.hpp"
 #include "explore/Explore.hpp"
 #include "explore/Filters.hpp"
@@ -77,6 +79,7 @@ namespace UserInterface
             res->use(appRoot + "admin-initwizard");
             res->use(appRoot + "admin-medialibraries");
             res->use(appRoot + "admin-medialibrary");
+            res->use(appRoot + "admin-profilercontroller");
             res->use(appRoot + "admin-scannercontroller");
             res->use(appRoot + "admin-scansettings");
             res->use(appRoot + "admin-user");
@@ -119,6 +122,7 @@ namespace UserInterface
             IdxAdminScanner,
             IdxAdminUsers,
             IdxAdminUser,
+            IdxAdminProfiler,
         };
 
         void handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
@@ -146,6 +150,7 @@ namespace UserInterface
                 { "/admin/scanner",	        IdxAdminScanner,	    true,	Wt::WString::tr("Lms.Admin.ScannerController.scanner") },
                 { "/admin/users",		    IdxAdminUsers,		    true,	Wt::WString::tr("Lms.Admin.Users.users") },
                 { "/admin/user",		    IdxAdminUser,		    true,	std::nullopt },
+                { "/admin/profiler",		IdxAdminProfiler,		true,	Wt::WString::tr("Lms.Admin.ProfilerController.profiler") },
             };
 
             LMS_LOG(UI, DEBUG, "Internal path changed to '" << wApp->internalPath() << "'");
@@ -264,6 +269,8 @@ namespace UserInterface
 
     void LmsApplication::init()
     {
+        LMS_SCOPED_PROFILE_OVERVIEW("UI", "ApplicationInit");
+
         setTheme(std::make_shared<LmsTheme>());
 
         useStyleSheet("resources/font-awesome/css/font-awesome.min.css");
@@ -381,6 +388,8 @@ namespace UserInterface
 
     void LmsApplication::createHome()
     {
+        LMS_SCOPED_PROFILE_OVERVIEW("UI", "ApplicationCreateHome");
+
         _coverResource = std::make_shared<CoverResource>();
 
         declareJavaScriptFunction("onLoadCover", "function(id) { id.className += \" Lms-cover-loaded\"}");
@@ -436,6 +445,11 @@ namespace UserInterface
             navbar->bindNew<Wt::WAnchor>("scan-settings", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/scan-settings" }, Wt::WString::tr("Lms.Admin.menu-scan-settings"));
             navbar->bindNew<Wt::WAnchor>("scanner", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/scanner" }, Wt::WString::tr("Lms.Admin.menu-scanner"));
             navbar->bindNew<Wt::WAnchor>("users", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/users" }, Wt::WString::tr("Lms.Admin.menu-users"));
+            // Hide the entry if the profiler is not enabled
+            if (Service<::profiling::IProfiler>::get())
+                navbar->bindNew<Wt::WAnchor>("profiler", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/profiler" }, Wt::WString::tr("Lms.Admin.menu-profiler"));
+            else
+                navbar->bindEmpty("profiler");
         }
 
         // Contents
@@ -467,6 +481,7 @@ namespace UserInterface
             mainStack->addNew<ScannerController>();
             mainStack->addNew<UsersView>();
             mainStack->addNew<UserView>();
+            mainStack->addNew<ProfilerController>();
         }
 
         explore->getPlayQueueController().setMaxTrackCountToEnqueue(_playQueue->getCapacity());
@@ -544,6 +559,7 @@ namespace UserInterface
     {
         try
         {
+            LMS_SCOPED_PROFILE_OVERVIEW("UI", "ProcessEvent");
             WApplication::notify(event);
         }
         catch (LmsApplicationException& e)
