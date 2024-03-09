@@ -38,7 +38,7 @@ namespace Auth
         Session& session{ getDbSession() };
 
         User::pointer user;
-        
+
         {
             auto transaction{ session.createReadTransaction() };
             user = User::find(session, loginName);
@@ -48,12 +48,16 @@ namespace Auth
         {
             auto transaction{ session.createWriteTransaction() };
 
-            const UserType type{ User::getCount(session) == 0 ? UserType::ADMIN : UserType::REGULAR };
+            user = User::find(session, loginName);
+            if (!user)
+            {
+                const UserType type{ User::getCount(session) == 0 ? UserType::ADMIN : UserType::REGULAR };
 
-            LMS_LOG(AUTH, DEBUG, "Creating user '" << loginName << "', admin = " << (type == UserType::ADMIN));
+                LMS_LOG(AUTH, DEBUG, "Creating user '" << loginName << "', admin = " << (type == UserType::ADMIN));
 
-            user = session.create<User>(loginName);
-            user.modify()->setType(type);
+                user = session.create<User>(loginName);
+                user.modify()->setType(type);
+            }
         }
 
         return user->getId();
