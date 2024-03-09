@@ -36,11 +36,18 @@ namespace Auth
     UserId AuthServiceBase::getOrCreateUser(std::string_view loginName)
     {
         Session& session{ getDbSession() };
-        auto transaction{ session.createWriteTransaction() };
 
-        User::pointer user{ User::find(session, loginName) };
+        User::pointer user;
+        
+        {
+            auto transaction{ session.createReadTransaction() };
+            user = User::find(session, loginName);
+        }
+
         if (!user)
         {
+            auto transaction{ session.createWriteTransaction() };
+
             const UserType type{ User::getCount(session) == 0 ? UserType::ADMIN : UserType::REGULAR };
 
             LMS_LOG(AUTH, DEBUG, "Creating user '" << loginName << "', admin = " << (type == UserType::ADMIN));
