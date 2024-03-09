@@ -48,7 +48,7 @@ namespace MetaData
         std::size_t                 getBitsPerSample() const override;
         std::size_t                 getSampleRate() const override;
 
-        TagLib::FileRef _file;
+        const TagLib::FileRef _file;
         TagLib::PropertyMap _propertyMap; // case-insensitive keys
         bool _hasEmbeddedCover{};
     };

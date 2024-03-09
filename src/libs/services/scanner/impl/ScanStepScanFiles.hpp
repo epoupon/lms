@@ -58,7 +58,7 @@ namespace Scanner
         class MetadataScanQueue
         {
             public:
-                MetadataScanQueue(MetaData::IParser& parser, std::size_t threadCount);
+                MetadataScanQueue(MetaData::IParser& parser, std::size_t threadCount, bool& abort);
 
                 std::size_t getThreadCount() const { return _scanContextRunner.getThreadCount(); }
 
@@ -78,6 +78,7 @@ namespace Scanner
                 std::size_t _ongoingScanCount{};
                 std::deque<MetaDataScanResult> _scanResults;
                 std::condition_variable _condVar;
+                bool& _abort;
         };
         MetadataScanQueue _metadataScanQueue;
 

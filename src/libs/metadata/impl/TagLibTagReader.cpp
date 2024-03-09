@@ -35,6 +35,7 @@
 
 #include "metadata/Exception.hpp"
 #include "utils/ILogger.hpp"
+#include "utils/IProfiler.hpp"
 #include "utils/String.hpp"
 
 namespace MetaData
@@ -169,12 +170,19 @@ namespace MetaData
                     dst[tag] = std::move(values);
             }
         }
+
+        TagLib::FileRef parseFile(const std::filesystem::path& p, ParserReadStyle parserReadStyle)
+        {
+            LMS_SCOPED_PROFILE_DETAILED("MetaData", "TagLibParseFile");
+
+            return TagLib::FileRef{ p.string().c_str()
+                , true // read audio properties
+                , readStyleToTagLibReadStyle(parserReadStyle) };
+        }
     }
 
     TagLibTagReader::TagLibTagReader(const std::filesystem::path& p, ParserReadStyle parserReadStyle, bool debug)
-        : _file{ p.string().c_str()
-            , true // read audio properties
-            , readStyleToTagLibReadStyle(parserReadStyle) }
+        : _file{ parseFile(p, parserReadStyle) }
     {
         if (_file.isNull())
         {

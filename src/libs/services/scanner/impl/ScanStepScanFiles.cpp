@@ -34,6 +34,7 @@
 #include "utils/IConfig.hpp"
 #include "utils/ILogger.hpp"
 #include "utils/Path.hpp"
+#include "utils/IProfiler.hpp"
 
 namespace Scanner
 {
@@ -188,7 +189,7 @@ namespace Scanner
         {
             std::vector<Cluster::pointer> clusters;
 
-            auto getOrCreateClusters {[&](std::string tag, std::span<const std::string> values)
+            auto getOrCreateClusters{ [&](std::string tag, std::span<const std::string> values)
             {
                 auto clusterType = ClusterType::find(session, tag);
                 if (!clusterType)
@@ -202,7 +203,7 @@ namespace Scanner
 
                     clusters.push_back(cluster);
                 }
-            }};
+            } };
 
             // TODO: migrate these fields in dedicated tables in DB
             getOrCreateClusters("GENRE", track.genres);
@@ -236,14 +237,15 @@ namespace Scanner
 
             if (threadCount == 0)
                 threadCount = std::max<std::size_t>(std::thread::hardware_concurrency() / 2, 1);
-            
+
             return threadCount;
         }
     } // namespace
 
-    ScanStepScanFiles::MetadataScanQueue::MetadataScanQueue(MetaData::IParser& parser, std::size_t threadCount)
+    ScanStepScanFiles::MetadataScanQueue::MetadataScanQueue(MetaData::IParser& parser, std::size_t threadCount, bool& abort)
         : _metadataParser{ parser }
         , _scanContextRunner{ _scanContext, threadCount }
+        , _abort{ abort }
     {}
 
     void ScanStepScanFiles::MetadataScanQueue::pushScanRequest(const std::filesystem::path& path)
@@ -255,23 +257,34 @@ namespace Scanner
 
         _scanContext.post([=, this]
             {
+                LMS_SCOPED_PROFILE_OVERVIEW("Scanner", "AudioFileParseJob");
+
                 std::unique_ptr<MetaData::Track> track;
 
-                try
-                {
-                    track = _metadataParser.parse(path);
-                }
-                catch(const MetaData::Exception& e)
-                {
-                    LMS_LOG(DBUPDATER, INFO, "Failed to parse '" << path.string() << "'");
-                }
-                
+                if (_abort)
                 {
                     std::scoped_lock lock{ _mutex };
-
-                    _scanResults.emplace_back(MetaDataScanResult{ std::move(path), std::move(track) });
                     _ongoingScanCount -= 1;
                 }
+                else
+                {
+                    try
+                    {
+                        track = _metadataParser.parse(path);
+                    }
+                    catch (const MetaData::Exception& e)
+                    {
+                        LMS_LOG(DBUPDATER, INFO, "Failed to parse '" << path.string() << "'");
+                    }
+
+                    {
+                        std::scoped_lock lock{ _mutex };
+
+                        _scanResults.emplace_back(MetaDataScanResult{ std::move(path), std::move(track) });
+                        _ongoingScanCount -= 1;
+                    }
+                }
+
                 _condVar.notify_all();
             });
     }
@@ -286,10 +299,10 @@ namespace Scanner
     {
         results.clear();
         results.reserve(maxCount);
-        
+
         {
             std::scoped_lock lock{ _mutex };
-            
+
             while (results.size() < maxCount && !_scanResults.empty())
             {
                 results.push_back(std::move(_scanResults.front()));
@@ -302,22 +315,24 @@ namespace Scanner
 
     void ScanStepScanFiles::MetadataScanQueue::wait(std::size_t maxScanRequestCount)
     {
+        LMS_SCOPED_PROFILE_OVERVIEW("Scanner", "WaitParseResults");
+
         std::unique_lock lock{ _mutex };
-        _condVar.wait(lock, [=, this] {return _ongoingScanCount <= maxScanRequestCount;});
+        _condVar.wait(lock, [=, this] { return _ongoingScanCount <= maxScanRequestCount; });
     }
 
     ScanStepScanFiles::ScanStepScanFiles(InitParams& initParams)
         : ScanStepBase{ initParams }
         , _metadataParser{ MetaData::createParser(MetaData::ParserBackend::TagLib, getParserReadStyle()) } // For now, always use TagLib
-        , _metadataScanQueue{ *_metadataParser, getScanMetaDataThreadCount() }
+        , _metadataScanQueue{ *_metadataParser, getScanMetaDataThreadCount(), _abortScan }
     {
         LMS_LOG(DBUPDATER, INFO, "Using " << _metadataScanQueue.getThreadCount() << " thread(s) for scanning file metadata");
     }
 
     void ScanStepScanFiles::process(ScanContext& context)
     {
-        const std::size_t scanQueueMaxScanRequestCount{ 20 * _metadataScanQueue.getThreadCount() };
-        const std::size_t processMetaDataBatchSize{ 10 };
+        const std::size_t scanQueueMaxScanRequestCount{ 100 * _metadataScanQueue.getThreadCount() };
+        const std::size_t processMetaDataBatchSize{ 5 };
 
         {
             std::vector<std::string> tagsToParse{ _extraTagsToParse };
@@ -334,6 +349,8 @@ namespace Scanner
         {
             PathUtils::exploreFilesRecursive(mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path)
                 {
+                    LMS_SCOPED_PROFILE_DETAILED("Scanner", "OnExploreFile");
+
                     if (_abortScan)
                         return false;
 
@@ -367,7 +384,7 @@ namespace Scanner
             while (_metadataScanQueue.popResults(scanResults, processMetaDataBatchSize) > 0)
                 processMetaDataScanResults(context, scanResults, mediaLibrary);
         }
-    }      
+    }
 
     bool ScanStepScanFiles::checkFileNeedScan(ScanContext& context, const std::filesystem::path& file, const ScannerSettings::MediaLibraryInfo& libraryInfo)
     {
@@ -427,6 +444,8 @@ namespace Scanner
 
     void ScanStepScanFiles::processMetaDataScanResults(ScanContext& context, std::span<const MetaDataScanResult> scanResults, const ScannerSettings::MediaLibraryInfo& libraryInfo)
     {
+        LMS_SCOPED_PROFILE_OVERVIEW("Scanner", "ProcessScanResults");
+
         Database::Session& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createWriteTransaction() };
 
