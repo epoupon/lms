@@ -193,13 +193,13 @@ namespace API::Subsonic
                 for (const auto& [key, value] : node._attributes)
                 {
                     if (std::holds_alternative<std::string>(value))
-                        res.put("<xmlattr>." + std::string{ key.get() }, std::get<std::string>(value));
+                        res.put("<xmlattr>." + std::string{ key.str() }, std::get<std::string>(value));
                     else if (std::holds_alternative<bool>(value))
-                        res.put("<xmlattr>." + std::string{ key.get() }, std::get<bool>(value));
+                        res.put("<xmlattr>." + std::string{ key.str() }, std::get<bool>(value));
                     else if (std::holds_alternative<float>(value))
-                        res.put("<xmlattr>." + std::string{ key.get() }, std::get<float>(value));
+                        res.put("<xmlattr>." + std::string{ key.str() }, std::get<float>(value));
                     else if (std::holds_alternative<long long>(value))
-                        res.put("<xmlattr>." + std::string{ key.get() }, std::get<long long>(value));
+                        res.put("<xmlattr>." + std::string{ key.str() }, std::get<long long>(value));
                 }
 
                 auto valueToPropertyTree = [](const Node::ValueType& value)
@@ -221,19 +221,19 @@ namespace API::Subsonic
                 {
                     for (const auto& [key, childNode] : node._children)
                     {
-                        res.add_child(std::string{ key.get() }, nodeToPropertyTree(childNode));
+                        res.add_child(std::string{ key.str() }, nodeToPropertyTree(childNode));
                     }
 
                     for (const auto& [key, childArrayNodes] : node._childrenArrays)
                     {
                         for (const Node& childNode : childArrayNodes)
-                            res.add_child(std::string{ key.get() }, nodeToPropertyTree(childNode));
+                            res.add_child(std::string{ key.str() }, nodeToPropertyTree(childNode));
                     }
 
                     for (const auto& [key, childArrayValues] : node._childrenValues)
                     {
                         for (const Response::Node::ValueType& value : childArrayValues)
-                            res.add_child(std::string{ key.get() }, valueToPropertyTree(value));
+                            res.add_child(std::string{ key.str() }, valueToPropertyTree(value));
                     }
                 }
 
@@ -255,7 +255,7 @@ namespace API::Subsonic
             if (!first)
                 os << ',';
 
-            serializeEscapedString(os, key.get());
+            serializeEscapedString(os, key.str());
             os << ':';
             serializeValue(os, value);
 
@@ -279,7 +279,7 @@ namespace API::Subsonic
                 if (!first)
                     os << ',';
 
-                serializeEscapedString(os, key.get());
+                serializeEscapedString(os, key.str());
                 os << ':';
                 serializeNode(os, childNode);
 
@@ -291,7 +291,7 @@ namespace API::Subsonic
                 if (!first)
                     os << ',';
 
-                serializeEscapedString(os, key.get());
+                serializeEscapedString(os, key.str());
                 os << ":[";
 
                 bool firstChild{ true };
@@ -313,7 +313,7 @@ namespace API::Subsonic
                 if (!first)
                     os << ',';
 
-                serializeEscapedString(os, key.get());
+                serializeEscapedString(os, key.str());
                 os << ":[";
 
                 bool firstChild{ true };
