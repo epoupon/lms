@@ -64,10 +64,6 @@
 
 
 
-
-
-
-
 <!--Scan settings-->
 
 <message id="Lms.Admin.Database.daily">每日</message>
@@ -117,6 +113,10 @@
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">重载相似引擎中 {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">扫描文件中: {1}/{2} 个文件 ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-status">当前步骤状态</message>
+
+<!--Tracing-->
+
+
 
 <!--Users-->
 <message id="Lms.Admin.Users.add">新建用户</message>

@@ -23,7 +23,7 @@
 
 #include "utils/Exception.hpp"
 #include "utils/ILogger.hpp"
-#include "utils/IProfiler.hpp"
+#include "utils/ITraceLogger.hpp"
 
 #include "database/Artist.hpp"
 #include "database/AuthToken.hpp"
@@ -190,7 +190,7 @@ namespace Database
 
     void Session::analyze()
     {
-        LMS_SCOPED_PROFILE_DETAILED("Database", "Analyze");
+        LMS_SCOPED_TRACE_DETAILED("Database", "Analyze");
         LMS_LOG(DB, INFO, "Analyzing database...");
         {
             auto transaction{ createWriteTransaction() };
@@ -201,7 +201,7 @@ namespace Database
 
     void Session::optimize()
     {
-        LMS_SCOPED_PROFILE_DETAILED("Database", "Optimize");
+        LMS_SCOPED_TRACE_DETAILED("Database", "Optimize");
         LMS_LOG(DB, INFO, "Optimizing database...");
         {
             auto transaction{ createWriteTransaction() };

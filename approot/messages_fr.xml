@@ -45,9 +45,9 @@
 
 <!--Administration-->
 <message id="Lms.Admin.menu-media-libraries"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Bibliothèques</message>
-<message id="Lms.Admin.menu-profiler"><i class="fa fa-fw fa-bar-chart" aria-hidden="true"></i> Profileur</message>
 <message id="Lms.Admin.menu-scan-settings"><i class="fa fa-fw fa-cogs" aria-hidden="true"></i> Paramètres du scan</message>
 <message id="Lms.Admin.menu-scanner"><i class="fa fa-fw fa-wrench" aria-hidden="true"></i> Scanner</message>
+<message id="Lms.Admin.menu-tracing"><i class="fa fa-fw fa-bar-chart" aria-hidden="true"></i> Traces</message>
 <message id="Lms.Admin.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Utilisateurs</message>
 
 <!--MediaLibraries-->
@@ -63,10 +63,6 @@
 <message id="Lms.Admin.MediaLibrary.path-must-not-overlap">Le chemin ne doit pas recouvrir celui d'une autre bibliothèque</message>
 <message id="Lms.Admin.MediaLibrary.path-must-be-existing-directory">Le chemin doit référencer un répertoire existant</message>
 <message id="Lms.Admin.MediaLibrary.root-path">Répertoire racine</message>
-
-<!--Profiler Controller-->
-<message id="Lms.Admin.ProfilerController.export-current-buffer">Exporter les données de profilage</message>
-<message id="Lms.Admin.ProfilerController.profiler">Profileur</message>
 
 <!--Scan settings-->
 <message id="Lms.Admin.Database.artist-tag-delimiter">Délimiteur à utiliser pour séparer les tags d'artistes</message>
@@ -117,6 +113,10 @@
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Rechargement du moteur de recommandation : {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Scan des fichiers : {1}/{2} fichiers ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-status">Statut de l'étape</message>
+
+<!--Tracing-->
+<message id="Lms.Admin.Tracing.export-current-buffer">Exporter les traces</message>
+<message id="Lms.Admin.Tracing.tracing">Traces</message>
 
 <!--Users-->
 <message id="Lms.Admin.Users.add">Ajouter</message>

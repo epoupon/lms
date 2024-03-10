@@ -38,13 +38,13 @@
 #include "database/User.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "utils/ILogger.hpp"
-#include "utils/IProfiler.hpp"
+#include "utils/ITraceLogger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 
 #include "admin/InitWizardView.hpp"
 #include "admin/MediaLibrariesView.hpp"
-#include "admin/ProfilerController.hpp"
+#include "admin/TracingView.hpp"
 #include "admin/ScannerController.hpp"
 #include "admin/ScanSettingsView.hpp"
 #include "admin/UserView.hpp"
@@ -79,9 +79,9 @@ namespace UserInterface
             res->use(appRoot + "admin-initwizard");
             res->use(appRoot + "admin-medialibraries");
             res->use(appRoot + "admin-medialibrary");
-            res->use(appRoot + "admin-profilercontroller");
             res->use(appRoot + "admin-scannercontroller");
             res->use(appRoot + "admin-scansettings");
+            res->use(appRoot + "admin-tracing");
             res->use(appRoot + "admin-user");
             res->use(appRoot + "admin-users");
             res->use(appRoot + "artist");
@@ -122,7 +122,7 @@ namespace UserInterface
             IdxAdminScanner,
             IdxAdminUsers,
             IdxAdminUser,
-            IdxAdminProfiler,
+            IdxAdminTracing,
         };
 
         void handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
@@ -150,7 +150,7 @@ namespace UserInterface
                 { "/admin/scanner",	        IdxAdminScanner,	    true,	Wt::WString::tr("Lms.Admin.ScannerController.scanner") },
                 { "/admin/users",		    IdxAdminUsers,		    true,	Wt::WString::tr("Lms.Admin.Users.users") },
                 { "/admin/user",		    IdxAdminUser,		    true,	std::nullopt },
-                { "/admin/profiler",		IdxAdminProfiler,		true,	Wt::WString::tr("Lms.Admin.ProfilerController.profiler") },
+                { "/admin/tracing",		    IdxAdminTracing,		true,	Wt::WString::tr("Lms.Admin.Tracing.tracing") },
             };
 
             LMS_LOG(UI, DEBUG, "Internal path changed to '" << wApp->internalPath() << "'");
@@ -269,7 +269,7 @@ namespace UserInterface
 
     void LmsApplication::init()
     {
-        LMS_SCOPED_PROFILE_OVERVIEW("UI", "ApplicationInit");
+        LMS_SCOPED_TRACE_OVERVIEW("UI", "ApplicationInit");
 
         setTheme(std::make_shared<LmsTheme>());
 
@@ -388,7 +388,7 @@ namespace UserInterface
 
     void LmsApplication::createHome()
     {
-        LMS_SCOPED_PROFILE_OVERVIEW("UI", "ApplicationCreateHome");
+        LMS_SCOPED_TRACE_OVERVIEW("UI", "ApplicationCreateHome");
 
         _coverResource = std::make_shared<CoverResource>();
 
@@ -445,11 +445,11 @@ namespace UserInterface
             navbar->bindNew<Wt::WAnchor>("scan-settings", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/scan-settings" }, Wt::WString::tr("Lms.Admin.menu-scan-settings"));
             navbar->bindNew<Wt::WAnchor>("scanner", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/scanner" }, Wt::WString::tr("Lms.Admin.menu-scanner"));
             navbar->bindNew<Wt::WAnchor>("users", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/users" }, Wt::WString::tr("Lms.Admin.menu-users"));
-            // Hide the entry if the profiler is not enabled
-            if (Service<::profiling::IProfiler>::get())
-                navbar->bindNew<Wt::WAnchor>("profiler", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/profiler" }, Wt::WString::tr("Lms.Admin.menu-profiler"));
+            // Hide the entry if the trace logger is not enabled
+            if (Service<::tracing::ITraceLogger>::get())
+                navbar->bindNew<Wt::WAnchor>("tracing", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/tracing" }, Wt::WString::tr("Lms.Admin.menu-tracing"));
             else
-                navbar->bindEmpty("profiler");
+                navbar->bindEmpty("tracing");
         }
 
         // Contents
@@ -481,7 +481,7 @@ namespace UserInterface
             mainStack->addNew<ScannerController>();
             mainStack->addNew<UsersView>();
             mainStack->addNew<UserView>();
-            mainStack->addNew<ProfilerController>();
+            mainStack->addNew<TracingView>();
         }
 
         explore->getPlayQueueController().setMaxTrackCountToEnqueue(_playQueue->getCapacity());
@@ -559,7 +559,7 @@ namespace UserInterface
     {
         try
         {
-            LMS_SCOPED_PROFILE_OVERVIEW("UI", "ProcessEvent");
+            LMS_SCOPED_TRACE_OVERVIEW("UI", "ProcessEvent");
             WApplication::notify(event);
         }
         catch (LmsApplicationException& e)

@@ -34,7 +34,7 @@
 #include "utils/IConfig.hpp"
 #include "utils/ILogger.hpp"
 #include "utils/Path.hpp"
-#include "utils/IProfiler.hpp"
+#include "utils/ITraceLogger.hpp"
 
 namespace Scanner
 {
@@ -257,7 +257,7 @@ namespace Scanner
 
         _scanContext.post([=, this]
             {
-                LMS_SCOPED_PROFILE_OVERVIEW("Scanner", "AudioFileParseJob");
+                LMS_SCOPED_TRACE_OVERVIEW("Scanner", "AudioFileParseJob");
 
                 std::unique_ptr<MetaData::Track> track;
 
@@ -315,7 +315,7 @@ namespace Scanner
 
     void ScanStepScanFiles::MetadataScanQueue::wait(std::size_t maxScanRequestCount)
     {
-        LMS_SCOPED_PROFILE_OVERVIEW("Scanner", "WaitParseResults");
+        LMS_SCOPED_TRACE_OVERVIEW("Scanner", "WaitParseResults");
 
         std::unique_lock lock{ _mutex };
         _condVar.wait(lock, [=, this] { return _ongoingScanCount <= maxScanRequestCount; });
@@ -349,7 +349,7 @@ namespace Scanner
         {
             PathUtils::exploreFilesRecursive(mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path)
                 {
-                    LMS_SCOPED_PROFILE_DETAILED("Scanner", "OnExploreFile");
+                    LMS_SCOPED_TRACE_DETAILED("Scanner", "OnExploreFile");
 
                     if (_abortScan)
                         return false;
@@ -444,7 +444,7 @@ namespace Scanner
 
     void ScanStepScanFiles::processMetaDataScanResults(ScanContext& context, std::span<const MetaDataScanResult> scanResults, const ScannerSettings::MediaLibraryInfo& libraryInfo)
     {
-        LMS_SCOPED_PROFILE_OVERVIEW("Scanner", "ProcessScanResults");
+        LMS_SCOPED_TRACE_OVERVIEW("Scanner", "ProcessScanResults");
 
         Database::Session& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createWriteTransaction() };

@@ -10,11 +10,11 @@ add_library(lmsutils SHARED
 	impl/Logger.cpp
 	impl/NetAddress.cpp
 	impl/Path.cpp
-	impl/Profiler.cpp
 	impl/Random.cpp
 	impl/RecursiveSharedMutex.cpp
 	impl/StreamLogger.cpp
 	impl/String.cpp
+	impl/TraceLogger.cpp
 	impl/UUID.cpp
 	impl/WtLogger.cpp
 	)

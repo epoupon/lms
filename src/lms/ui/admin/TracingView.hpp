@@ -23,9 +23,9 @@
 
 namespace UserInterface
 {
-    class ProfilerController : public Wt::WTemplate
+    class TracingView : public Wt::WTemplate
     {
     public:
-        ProfilerController();
+        TracingView();
     };
 } // namespace UserInterface

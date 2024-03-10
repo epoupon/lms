@@ -35,7 +35,7 @@
 
 #include "metadata/Exception.hpp"
 #include "utils/ILogger.hpp"
-#include "utils/IProfiler.hpp"
+#include "utils/ITraceLogger.hpp"
 #include "utils/String.hpp"
 
 namespace MetaData
@@ -173,7 +173,7 @@ namespace MetaData
 
         TagLib::FileRef parseFile(const std::filesystem::path& p, ParserReadStyle parserReadStyle)
         {
-            LMS_SCOPED_PROFILE_DETAILED("MetaData", "TagLibParseFile");
+            LMS_SCOPED_TRACE_DETAILED("MetaData", "TagLibParseFile");
 
             return TagLib::FileRef{ p.string().c_str()
                 , true // read audio properties

@@ -27,7 +27,7 @@
 #include <Wt/WDateTime.h>
 
 #include "database/Types.hpp"
-#include "utils/IProfiler.hpp"
+#include "utils/ITraceLogger.hpp"
 
 namespace Database::Utils
 {
@@ -48,7 +48,7 @@ namespace Database::Utils
     template <typename ResultType, typename Query>
     RangeResults<ResultType> execQuery(Query& query, std::optional<Range> range)
     {
-        LMS_SCOPED_PROFILE_DETAILED("Database", "ExecQueryRange");
+        LMS_SCOPED_TRACE_DETAILED("Database", "ExecQueryRange");
 
         RangeResults<ResultType> res;
 
@@ -80,7 +80,7 @@ namespace Database::Utils
 
         for (const auto& res : query.resultList())
         {
-            LMS_SCOPED_PROFILE_DETAILED("Database", "ExecQueryResult");
+            LMS_SCOPED_TRACE_DETAILED("Database", "ExecQueryResult");
             func(res);
         }
     }

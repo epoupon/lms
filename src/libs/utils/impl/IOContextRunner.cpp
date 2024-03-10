@@ -22,7 +22,7 @@
 #include <cstdlib>
 
 #include "utils/ILogger.hpp"
-#include "utils/IProfiler.hpp"
+#include "utils/ITraceLogger.hpp"
 
 IOContextRunner::IOContextRunner(boost::asio::io_service& ioService, std::size_t threadCount, std::string_view name)
     : _ioService{ ioService }
@@ -43,8 +43,8 @@ IOContextRunner::IOContextRunner(boost::asio::io_service& ioService, std::size_t
             {
                 if (!threadName.empty())
                 {
-                    if (auto * profiler{ Service<profiling::IProfiler>::get() })
-                        profiler->setThreadName(std::this_thread::get_id(), threadName);
+                    if (auto * traceLogger{ Service<tracing::ITraceLogger>::get() })
+                        traceLogger->setThreadName(std::this_thread::get_id(), threadName);
                 }
 
                 try

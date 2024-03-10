@@ -24,7 +24,7 @@
 
 #include "utils/Exception.hpp"
 #include "utils/ILogger.hpp"
-#include "utils/IProfiler.hpp"
+#include "utils/ITraceLogger.hpp"
 #include "utils/String.hpp"
 
 #define LOG(sev, message)	LMS_LOG(SCROBBLING, sev, "[Http SendQueue] - " << message)
@@ -118,7 +118,7 @@ namespace Http
 	bool
 	SendQueue::sendRequest(const ClientRequest& request)
 	{
-		LMS_SCOPED_PROFILE_DETAILED("SendQueue", "SendRequest");
+		LMS_SCOPED_TRACE_DETAILED("SendQueue", "SendRequest");
 
 		std::string url {_baseUrl + request.getParameters().relativeUrl};
 		LOG(DEBUG, "Sending request to url '" << url << "'");
@@ -144,7 +144,7 @@ namespace Http
 	void
 	SendQueue::onClientDone(Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg)
 	{
-		LMS_SCOPED_PROFILE_DETAILED("SendQueue", "OnClientDone");
+		LMS_SCOPED_TRACE_DETAILED("SendQueue", "OnClientDone");
 
 		if (ec == boost::asio::error::operation_aborted)
 		{

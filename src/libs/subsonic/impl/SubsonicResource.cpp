@@ -31,7 +31,7 @@
 #include "utils/LiteralString.hpp"
 #include "utils/IConfig.hpp"
 #include "utils/ILogger.hpp"
-#include "utils/IProfiler.hpp"
+#include "utils/ITraceLogger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 #include "utils/Utils.hpp"
@@ -311,7 +311,7 @@ namespace API::Subsonic
             auto itEntryPoint{ requestEntryPoints.find(requestPath) };
             if (itEntryPoint != requestEntryPoints.end())
             {
-                LMS_SCOPED_PROFILE_OVERVIEW("Subsonic", itEntryPoint->first);
+                LMS_SCOPED_TRACE_OVERVIEW("Subsonic", itEntryPoint->first);
 
                 if (itEntryPoint->second.checkFunc)
                     itEntryPoint->second.checkFunc();
@@ -319,12 +319,12 @@ namespace API::Subsonic
                 checkUserTypeIsAllowed(requestContext, itEntryPoint->second.allowedUserTypes);
 
                 const Response resp{ [&] {
-                    LMS_SCOPED_PROFILE_DETAILED("Subsonic", "HandleRequest");
+                    LMS_SCOPED_TRACE_DETAILED("Subsonic", "HandleRequest");
                     return itEntryPoint->second.func(requestContext);
                     }()};
 
                 {
-                    LMS_SCOPED_PROFILE_DETAILED("Subsonic", "WriteResponse");
+                    LMS_SCOPED_TRACE_DETAILED("Subsonic", "WriteResponse");
 
                     resp.write(response.out(), format);
                     response.setMimeType(std::string{ ResponseFormatToMimeType(format) });
@@ -337,7 +337,7 @@ namespace API::Subsonic
             auto itStreamHandler{ mediaRetrievalHandlers.find(requestPath) };
             if (itStreamHandler != mediaRetrievalHandlers.end())
             {
-                LMS_SCOPED_PROFILE_OVERVIEW("Subsonic", itStreamHandler->first);
+                LMS_SCOPED_TRACE_OVERVIEW("Subsonic", itStreamHandler->first);
 
                 itStreamHandler->second(requestContext, request, response);
                 LMS_LOG(API_SUBSONIC, DEBUG, "Request " << requestId << " '" << requestPath << "' handled!");

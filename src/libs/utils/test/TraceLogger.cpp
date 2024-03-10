@@ -21,22 +21,22 @@
 #include <thread>
 #include <gtest/gtest.h>
 
-#include "utils/IProfiler.hpp"
+#include "utils/ITraceLogger.hpp"
 
-namespace profiling::tests
+namespace tracing::tests
 {
     // not much can be tested with this implementation
-    TEST(Profiler, MultipleThreads)
+    TEST(TraceLogger, MultipleThreads)
     {
-        auto profiler{ createProfiler(Level::Overview) };
+        auto traceLogger{ createTraceLogger(Level::Overview) };
 
         std::vector<std::thread> threads;
         for (std::size_t i{}; i < 16; ++i)
         {
             threads.emplace_back([&]
                 {
-                    ScopedEvent loggedEvent{ "MyCategory", Level::Overview, "MyEventLogged", profiler.get() };
-                    ScopedEvent notLoggedEvent{ "MyCategory", Level::Detailed, "MyEventNotLogged", profiler.get() };
+                    ScopedTrace loggedEvent{ "MyCategory", Level::Overview, "MyEventLogged", traceLogger.get() };
+                    ScopedTrace notLoggedEvent{ "MyCategory", Level::Detailed, "MyEventNotLogged", traceLogger.get() };
                 });
         }
 
@@ -44,7 +44,7 @@ namespace profiling::tests
             t.join();
 
         std::ostringstream oss;
-        profiler->dumpCurrentBuffer(oss);
+        traceLogger->dumpCurrentBuffer(oss);
        
         EXPECT_NE(oss.str().find("MyEventLogged"), std::string::npos);
         EXPECT_EQ(oss.str().find("MyEventNotLogged"), std::string::npos);

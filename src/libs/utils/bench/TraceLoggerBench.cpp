@@ -22,32 +22,32 @@
 #include <benchmark/benchmark.h>
 
 #include "utils/ILogger.hpp"
-#include "utils/IProfiler.hpp"
+#include "utils/ITraceLogger.hpp"
 #include "utils/StreamLogger.hpp"
 
 
-// Profiler is meant to built/destroyed once
+// The trace logger is meant to built/destroyed once
 Service<ILogger> logger{ std::make_unique<StreamLogger>(std::cout, StreamLogger::allSeverities) };
-Service<profiling::IProfiler> profiler{ profiling::createProfiler(::profiling::Level::Overview) };
+Service<tracing::ITraceLogger> traceLogger{ tracing::createTraceLogger(::tracing::Level::Overview) };
 
-static void BM_Profiler_Overview(benchmark::State& state)
+static void BM_TraceLogger_Overview(benchmark::State& state)
 {
     for (auto _ : state)
     {
-        LMS_SCOPED_PROFILE_OVERVIEW("Cat", "Test");
+        LMS_SCOPED_TRACE_OVERVIEW("Cat", "Test");
     }
 }
 
-static void BM_Profiler_Detailed(benchmark::State& state)
+static void BM_TraceLogger_Detailed(benchmark::State& state)
 {
     for (auto _ : state)
     {
         // Should do nothing
-        LMS_SCOPED_PROFILE_DETAILED("Cat", "Test");
+        LMS_SCOPED_TRACE_DETAILED("Cat", "Test");
     }
 }
 
-BENCHMARK(BM_Profiler_Overview)->Threads(1)->Threads(std::thread::hardware_concurrency());
-BENCHMARK(BM_Profiler_Detailed)->Threads(1)->Threads(std::thread::hardware_concurrency());
+BENCHMARK(BM_TraceLogger_Overview)->Threads(1)->Threads(std::thread::hardware_concurrency());
+BENCHMARK(BM_TraceLogger_Detailed)->Threads(1)->Threads(std::thread::hardware_concurrency());
 
 BENCHMARK_MAIN();

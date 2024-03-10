@@ -26,14 +26,14 @@
 #include <thread>
 #include <unordered_map>
 
-#include "utils/IProfiler.hpp"
+#include "utils/ITraceLogger.hpp"
 
-namespace profiling
+namespace tracing
 {
-    class Profiler : public IProfiler
+    class TraceLogger : public ITraceLogger
     {
     public:
-        Profiler(Level minLevel, std::size_t bufferSizeinMBytes);
+        TraceLogger(Level minLevel, std::size_t bufferSizeinMBytes);
 
         void onThreadPreDestroy();
 

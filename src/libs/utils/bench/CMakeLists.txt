@@ -1,6 +1,6 @@
 
 add_executable(bench-utils
-	ProfilerBench.cpp
+	TraceLoggerBench.cpp
 	)
 
 target_link_libraries(bench-utils PRIVATE

@@ -4,9 +4,9 @@ add_executable(test-utils
 	EnumSet.cpp
 	LiteralString.cpp
 	Path.cpp
-	Profiler.cpp
 	RecursiveSharedMutex.cpp
 	String.cpp
+	TraceLogger.cpp
 	Utils.cpp
 	)
 

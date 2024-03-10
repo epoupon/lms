@@ -17,14 +17,14 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ProfilerController.hpp"
+#include "TracingView.hpp"
 
 #include <Wt/Http/Response.h>
 #include <Wt/WDateTime.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WResource.h>
 
-#include "utils/IProfiler.hpp"
+#include "utils/ITraceLogger.hpp"
 #include "utils/String.hpp"
 
 namespace UserInterface
@@ -34,8 +34,8 @@ namespace UserInterface
         class ReportResource : public Wt::WResource
         {
         public:
-            ReportResource(::profiling::IProfiler& profiler)
-                : _profiler{ profiler }
+            ReportResource(::tracing::ITraceLogger& traceLogger)
+                : _traceLogger{ traceLogger }
             {
             }
 
@@ -46,26 +46,26 @@ namespace UserInterface
 
             void handleRequest(const Wt::Http::Request&, Wt::Http::Response& response)
             {
-                suggestFileName(StringUtils::toISO8601String(Wt::WDateTime::currentDateTime()) + "-profiling.json");
+                suggestFileName(StringUtils::toISO8601String(Wt::WDateTime::currentDateTime()) + "-traces.json");
                 response.setMimeType("application/json");
-                _profiler.dumpCurrentBuffer(response.out());
+                _traceLogger.dumpCurrentBuffer(response.out());
             }
 
         private:
-            profiling::IProfiler& _profiler;
+            tracing::ITraceLogger& _traceLogger;
         };
     }
 
-    ProfilerController::ProfilerController()
-        : Wt::WTemplate{ Wt::WString::tr("Lms.Admin.ProfilerController.template") }
+    TracingView::TracingView()
+        : Wt::WTemplate{ Wt::WString::tr("Lms.Admin.Tracing.template") }
     {
         addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-        Wt::WPushButton* dumpBtn{ bindNew<Wt::WPushButton>("export-btn", Wt::WString::tr("Lms.Admin.ProfilerController.export-current-buffer")) };
+        Wt::WPushButton* dumpBtn{ bindNew<Wt::WPushButton>("export-btn", Wt::WString::tr("Lms.Admin.Tracing.export-current-buffer")) };
 
-        if (auto profiler{ Service<profiling::IProfiler>::get() })
+        if (auto traceLogger{ Service<tracing::ITraceLogger>::get() })
         {
-            Wt::WLink link{ std::make_shared<ReportResource>(*profiler) };
+            Wt::WLink link{ std::make_shared<ReportResource>(*traceLogger) };
             link.setTarget(Wt::LinkTarget::NewWindow);
             dumpBtn->setLink(link);
         }

@@ -28,22 +28,22 @@
 #include "LiteralString.hpp"
 #include "Service.hpp"
 
-#define LMS_ENABLE_PROFILING 1
+#define LMS_SUPPORT_TRACING 1
 
 #define LMS_CONCAT_IMPL(x, y) x##y
 #define LMS_CONCAT(x, y) LMS_CONCAT_IMPL(x, y)
 
-#if LMS_ENABLE_PROFILING 
-#define LMS_SCOPED_PROFILE(CATEGORY, LEVEL, NAME) ::profiling::ScopedEvent LMS_CONCAT(scopedEvent_, __LINE__){ CATEGORY, LEVEL, NAME }
+#if LMS_SUPPORT_TRACING 
+#define LMS_SCOPED_TRACE(CATEGORY, LEVEL, NAME) ::tracing::ScopedTrace LMS_CONCAT(ScopedTrace_, __LINE__){ CATEGORY, LEVEL, NAME }
 
 #else
-#define LMS_SCOPED_PROFILE(CATEGORY, LEVEL, NAME)      (void)0
+#define LMS_SCOPED_TRACE(CATEGORY, LEVEL, NAME)      (void)0
 #endif
 
-#define LMS_SCOPED_PROFILE_OVERVIEW(CATEGORY, NAME)   LMS_SCOPED_PROFILE(CATEGORY, ::profiling::Level::Overview, NAME)
-#define LMS_SCOPED_PROFILE_DETAILED(CATEGORY, NAME)   LMS_SCOPED_PROFILE(CATEGORY, ::profiling::Level::Detailed, NAME)
+#define LMS_SCOPED_TRACE_OVERVIEW(CATEGORY, NAME)   LMS_SCOPED_TRACE(CATEGORY, ::tracing::Level::Overview, NAME)
+#define LMS_SCOPED_TRACE_DETAILED(CATEGORY, NAME)   LMS_SCOPED_TRACE(CATEGORY, ::tracing::Level::Detailed, NAME)
 
-namespace profiling
+namespace tracing
 {
     using clock = std::chrono::steady_clock;
 
@@ -53,7 +53,7 @@ namespace profiling
         Detailed,
     };
 
-    class IProfiler
+    class ITraceLogger
     {
     public:
         struct CompleteEvent
@@ -65,7 +65,7 @@ namespace profiling
             LiteralString category;
         };
 
-        virtual ~IProfiler() = default;
+        virtual ~ITraceLogger() = default;
 
         virtual bool isLevelActive(Level level) const = 0;
         virtual void write(const CompleteEvent& entry) = 0;
@@ -74,16 +74,16 @@ namespace profiling
     };
 
     static constexpr std::size_t MinBufferSizeInMBytes = 16;
-    std::unique_ptr<IProfiler> createProfiler(Level minLevel = Level::Overview, std::size_t bufferSizeInMbytes = MinBufferSizeInMBytes);
+    std::unique_ptr<ITraceLogger> createTraceLogger(Level minLevel = Level::Overview, std::size_t bufferSizeInMbytes = MinBufferSizeInMBytes);
 
-    class ScopedEvent
+    class ScopedTrace
     {
     public:
-        ScopedEvent(LiteralString category, Level level, LiteralString name, IProfiler* profiler = Service<IProfiler>::get())
+        ScopedTrace(LiteralString category, Level level, LiteralString name, ITraceLogger* traceLogger = Service<ITraceLogger>::get())
         {
-            if (profiler && profiler->isLevelActive(level))
+            if (traceLogger && traceLogger->isLevelActive(level))
             {
-                _profiler = profiler;
+                _traceLogger = traceLogger;
 
                 _event.start = clock::now();
                 _event.threadId = std::this_thread::get_id();
@@ -92,24 +92,24 @@ namespace profiling
             }
             else
             {
-                _profiler = nullptr;
+                _traceLogger = nullptr;
             }
         }
 
-        ~ScopedEvent()
+        ~ScopedTrace()
         {
-            if (_profiler)
+            if (_traceLogger)
             {
                 _event.duration = clock::now() - _event.start;
-                _profiler->write(_event);
+                _traceLogger->write(_event);
             }
         }
 
     private:
-        ScopedEvent(const ScopedEvent&) = delete;
-        ScopedEvent& operator=(const ScopedEvent&) = delete;
+        ScopedTrace(const ScopedTrace&) = delete;
+        ScopedTrace& operator=(const ScopedTrace&) = delete;
 
-        IProfiler* _profiler;
-        IProfiler::CompleteEvent _event;
+        ITraceLogger* _traceLogger;
+        ITraceLogger::CompleteEvent _event;
     };
 }

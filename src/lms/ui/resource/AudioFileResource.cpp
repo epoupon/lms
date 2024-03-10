@@ -27,7 +27,7 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "utils/ILogger.hpp"
-#include "utils/IProfiler.hpp"
+#include "utils/ITraceLogger.hpp"
 #include "utils/String.hpp"
 #include "LmsApplication.hpp"
 
@@ -84,7 +84,7 @@ namespace UserInterface
 
     void AudioFileResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
     {
-        LMS_SCOPED_PROFILE_OVERVIEW("UI", "HandleAudioFileRequest");
+        LMS_SCOPED_TRACE_OVERVIEW("UI", "HandleAudioFileRequest");
 
         std::shared_ptr<IResourceHandler> fileResourceHandler;
 

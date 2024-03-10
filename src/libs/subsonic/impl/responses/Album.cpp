@@ -25,7 +25,7 @@
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
-#include "utils/IProfiler.hpp"
+#include "utils/ITraceLogger.hpp"
 #include "utils/Service.hpp"
 #include "utils/String.hpp"
 
@@ -41,7 +41,7 @@ namespace API::Subsonic
 
     Response::Node createAlbumNode(RequestContext& context, const Release::pointer& release, const User::pointer& user, bool id3)
     {
-        LMS_SCOPED_PROFILE_DETAILED("Subsonic", "CreateAlbum");
+        LMS_SCOPED_TRACE_DETAILED("Subsonic", "CreateAlbum");
 
         Response::Node albumNode;
 

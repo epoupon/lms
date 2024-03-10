@@ -45,9 +45,9 @@
 
 <!--Administration-->
 <message id="Lms.Admin.menu-media-libraries"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Libraries</message>
-<message id="Lms.Admin.menu-profiler"><i class="fa fa-fw fa-bar-chart" aria-hidden="true"></i> Profiler</message>
 <message id="Lms.Admin.menu-scan-settings"><i class="fa fa-fw fa-cogs" aria-hidden="true"></i> Scan settings</message>
 <message id="Lms.Admin.menu-scanner"><i class="fa fa-fw fa-wrench" aria-hidden="true"></i> Scanner</message>
+<message id="Lms.Admin.menu-tracing"><i class="fa fa-fw fa-bar-chart" aria-hidden="true"></i> Tracing</message>
 <message id="Lms.Admin.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Users</message>
 
 <!--MediaLibraries-->
@@ -63,10 +63,6 @@
 <message id="Lms.Admin.MediaLibrary.path-must-not-overlap">Path must not overlap that of another library</message>
 <message id="Lms.Admin.MediaLibrary.path-must-be-existing-directory">Path must be an existing directory</message>
 <message id="Lms.Admin.MediaLibrary.root-path">Root directory</message>
-
-<!--Profiler Controller-->
-<message id="Lms.Admin.ProfilerController.export-current-buffer">Export profiling data</message>
-<message id="Lms.Admin.ProfilerController.profiler">Profiler</message>
 
 <!--Scan settings-->
 <message id="Lms.Admin.Database.artist-tag-delimiter">Delimiter to be used for splitting artist tags</message>
@@ -117,6 +113,10 @@
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Reloading similarity engine: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Scanning files: {1}/{2} files ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-status">Step status</message>
+
+<!--Tracing-->
+<message id="Lms.Admin.Tracing.export-current-buffer">Export traces</message>
+<message id="Lms.Admin.Tracing.tracing">Tracing</message>
 
 <!--Users-->
 <message id="Lms.Admin.Users.add">New user</message>

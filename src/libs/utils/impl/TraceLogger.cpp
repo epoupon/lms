@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Profiler.hpp"
+#include "TraceLogger.hpp"
 
 #include <iomanip>
 #include <memory>
@@ -25,58 +25,58 @@
 #include "utils/Exception.hpp"
 #include "utils/ILogger.hpp"
 
-namespace profiling
+namespace tracing
 {
     namespace
     {
         class CurrentThreadUnregisterer
         {
         public:
-            CurrentThreadUnregisterer(Profiler* profiler) : _profiler{ profiler } {}
+            CurrentThreadUnregisterer(TraceLogger* logger) : _logger{ logger } {}
             ~CurrentThreadUnregisterer()
             {
-                if (_profiler)
-                    _profiler->onThreadPreDestroy();
+                if (_logger)
+                    _logger->onThreadPreDestroy();
             }
 
         private:
             CurrentThreadUnregisterer(const CurrentThreadUnregisterer&) = delete;
             CurrentThreadUnregisterer& operator=(const CurrentThreadUnregisterer&) = delete;
 
-            Profiler* _profiler;
+            TraceLogger* _logger;
         };
     }
 
-    thread_local Profiler::Buffer* Profiler::_currentBuffer{};
+    thread_local TraceLogger::Buffer* TraceLogger::_currentBuffer{};
 
-    std::unique_ptr<IProfiler> createProfiler(Level minLevel, std::size_t bufferSizeInMbytes)
+    std::unique_ptr<ITraceLogger> createTraceLogger(Level minLevel, std::size_t bufferSizeInMbytes)
     {
-        return std::make_unique<Profiler>(minLevel, bufferSizeInMbytes);
+        return std::make_unique<TraceLogger>(minLevel, bufferSizeInMbytes);
     }
 
-    Profiler::Profiler(Level minLevel, std::size_t bufferSizeinMBytes)
+    TraceLogger::TraceLogger(Level minLevel, std::size_t bufferSizeinMBytes)
         : _minLevel{ minLevel }
         , _start{ clock::now() }
         , _creatorThreadId{ std::this_thread::get_id() }
         , _buffers((bufferSizeinMBytes * 1024 * 1024) / BufferSize)
     {
         if (bufferSizeinMBytes < MinBufferSizeInMBytes)
-            throw LmsException{ "Profiler must be configured with at least " + std::to_string(MinBufferSizeInMBytes) + " MBytes" };
+            throw LmsException{ "TraceLogger must be configured with at least " + std::to_string(MinBufferSizeInMBytes) + " MBytes" };
 
         setThreadName(_creatorThreadId, "MainThread");
 
         for (Buffer& buffer : _buffers)
             _freeBuffers.push_back(&buffer);
 
-        LMS_LOG(UTILS, INFO, "Profiler: using " << _buffers.size() << " buffers. Buffer size = " << std::to_string(BufferSize));
+        LMS_LOG(UTILS, INFO, "TraceLogger: using " << _buffers.size() << " buffers. Buffer size = " << std::to_string(BufferSize));
     }
 
-    bool Profiler::isLevelActive(Level level) const
+    bool TraceLogger::isLevelActive(Level level) const
     {
         return static_cast<std::underlying_type_t<Level>>(level) <= static_cast<std::underlying_type_t<Level>>(_minLevel);
     }
 
-    void Profiler::write(const CompleteEvent& event)
+    void TraceLogger::write(const CompleteEvent& event)
     {
         if (!_currentBuffer)
             _currentBuffer = acquireBuffer();
@@ -91,21 +91,21 @@ namespace profiling
         }
     }
 
-    void Profiler::onThreadPreDestroy()
+    void TraceLogger::onThreadPreDestroy()
     {
         if (_currentBuffer)
             releaseBuffer(_currentBuffer);
     }
 
-    Profiler::Buffer* Profiler::acquireBuffer()
+    TraceLogger::Buffer* TraceLogger::acquireBuffer()
     {
-        // We consider the creator thread will survive the profiler (thus we don't want to release anything on thread destruction)
+        // We consider the creator thread will survive the trace logger (thus we don't want to release anything on thread destruction)
         static thread_local CurrentThreadUnregisterer currentThreadUnregister{ _creatorThreadId == std::this_thread::get_id() ? nullptr : this };
 
         std::scoped_lock lock{ _mutex };
         assert(!_freeBuffers.empty());
 
-        Profiler::Buffer* buffer{ _freeBuffers.front() };
+        TraceLogger::Buffer* buffer{ _freeBuffers.front() };
         _freeBuffers.pop_front();
 
         // Empty new buffer only now (we want to keep history on released buffers since we dump them)
@@ -113,7 +113,7 @@ namespace profiling
         return buffer;
     }
 
-    void Profiler::releaseBuffer(Buffer* buffer)
+    void TraceLogger::releaseBuffer(Buffer* buffer)
     {
         assert(buffer);
 
@@ -121,7 +121,7 @@ namespace profiling
         _freeBuffers.push_back(buffer);
     }
 
-    void Profiler::dumpCurrentBuffer(std::ostream& os)
+    void TraceLogger::dumpCurrentBuffer(std::ostream& os)
     {
         os << "{" << std::endl;
         os << "\t\"traceEvents\": [" << std::endl;
@@ -154,10 +154,12 @@ namespace profiling
 
             for (Buffer& buffer : _buffers)
             {
-                // Looks like tracing viewer is not pleased when nested event start at the same timestamp
                 for (std::size_t i{}; i < buffer.currentDurationIndex; ++i)
                 {
+                    // Looks like tracing viewer is not pleased when nested event start at the same timestamp
+                    // Hence the double representation as the microsecond unit is not precise enough
                     using clockMicro = std::chrono::duration<double, std::micro>;
+
                     const CompleteEvent& event{ buffer.durationEvents[i] };
 
                     if (first)
@@ -184,7 +186,7 @@ namespace profiling
         os << "}" << std::endl;
     }
 
-    void Profiler::setThreadName(std::thread::id id, std::string_view threadName)
+    void TraceLogger::setThreadName(std::thread::id id, std::string_view threadName)
     {
         std::scoped_lock lock{ _threadNameMutex };
         _threadNames.emplace(id, threadName);
