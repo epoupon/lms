@@ -25,6 +25,7 @@
 #include <variant>
 #include <vector>
 
+#include "utils/LiteralString.hpp"
 #include "RequestContext.hpp"
 
 namespace API::Subsonic
@@ -205,18 +206,7 @@ namespace API::Subsonic
         class Node
         {
         public:
-            class Key
-            {
-            public:
-                template<std::size_t N>
-                constexpr Key(const char (&str)[N]) : _str{ str } {}
-                constexpr std::string_view get() const { return _str; }
-
-                bool constexpr operator<(const Key& other) const { return _str < other._str; }
-
-            private:
-                const std::string_view _str;
-            };
+            using Key = LiteralString;
 
             void setAttribute(Key key, std::string_view value);
 
