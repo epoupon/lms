@@ -28,5 +28,5 @@ target_link_libraries(lmsmetadata PUBLIC
 	std::filesystem
 	)
 
-install(TARGETS lmsmetadata DESTINATION lib)
+install(TARGETS lmsmetadata DESTINATION ${CMAKE_INSTALL_LIBDIR})
 

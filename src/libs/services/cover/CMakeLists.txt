@@ -24,5 +24,5 @@ target_link_libraries(lmsservice-cover PUBLIC
 	std::filesystem
 	)
 
-install(TARGETS lmsservice-cover DESTINATION lib)
+install(TARGETS lmsservice-cover DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
