@@ -62,11 +62,11 @@ namespace Database::Utils
             // TODO may optim by not actually requesting the last one
             res.moreResults = true;
             res.results.pop_back();
+            res.range.offset = range->offset;
         }
         else
             res.moreResults = false;
 
-        res.range.offset = range->offset;
         res.range.size = res.results.size();
 
         return res;
