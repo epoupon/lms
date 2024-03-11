@@ -26,7 +26,7 @@ target_link_libraries(lmsscrobbling PUBLIC
 	lmsdatabase
 	)
 
-install(TARGETS lmsscrobbling DESTINATION lib)
+install(TARGETS lmsscrobbling DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 if(BUILD_TESTING)
 	add_subdirectory(test)

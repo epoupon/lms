@@ -26,4 +26,4 @@ target_link_libraries(lmsfeedback PUBLIC
 	lmsdatabase
 	)
 
-install(TARGETS lmsfeedback DESTINATION lib)
+install(TARGETS lmsfeedback DESTINATION ${CMAKE_INSTALL_LIBDIR})
