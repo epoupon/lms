@@ -42,7 +42,7 @@ target_link_libraries(lmsdatabase PUBLIC
 	Wt::Dbo
 	)
 
-install(TARGETS lmsdatabase DESTINATION lib)
+install(TARGETS lmsdatabase DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 if(BUILD_TESTING)
 	add_subdirectory(test)

@@ -35,5 +35,5 @@ if (USE_PAM)
 	target_link_libraries(lmsauth PRIVATE ${PAM_LIBRARIES})
 endif (USE_PAM)
 
-install(TARGETS lmsauth DESTINATION lib)
+install(TARGETS lmsauth DESTINATION ${CMAKE_INSTALL_LIBDIR})
 

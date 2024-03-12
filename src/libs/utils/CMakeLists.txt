@@ -38,7 +38,7 @@ target_link_libraries(lmsutils PUBLIC
 	Wt::Wt
 	)
 
-install(TARGETS lmsutils DESTINATION lib)
+install(TARGETS lmsutils DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 if(BUILD_TESTING)
 	add_subdirectory(test)

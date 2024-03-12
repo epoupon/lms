@@ -10,11 +10,16 @@ if (UNIX)
 	set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
 endif ()
 
-include(CTest)
+option(ENABLE_TESTS "Enable tests" ON)
+
+if(ENABLE_TESTS)
+	include(CTest)
+	find_package(GTest REQUIRED)
+endif()
+
 find_package(PkgConfig REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Filesystem REQUIRED)
-find_package(GTest REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system program_options)
 find_package(Wt REQUIRED COMPONENTS Wt Dbo DboSqlite3 HTTP)
 pkg_check_modules(Taglib REQUIRED IMPORTED_TARGET taglib)

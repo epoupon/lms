@@ -17,7 +17,7 @@ target_link_libraries(lmssom PUBLIC
 
 set_property(TARGET lmssom PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-install(TARGETS lmssom DESTINATION lib)
+install(TARGETS lmssom DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 if(BUILD_TESTING)
 	add_subdirectory(test)

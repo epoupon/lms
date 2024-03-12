@@ -26,5 +26,5 @@ target_link_libraries(lmsrecommendation PRIVATE
 	std::filesystem
 	)
 
-install(TARGETS lmsrecommendation DESTINATION lib)
+install(TARGETS lmsrecommendation DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
