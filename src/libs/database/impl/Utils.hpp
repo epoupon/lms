@@ -53,7 +53,10 @@ namespace Database::Utils
         RangeResults<ResultType> res;
 
         if (range)
+        {
+            res.range.offset = range->offset;
             applyRange(query, Range{ range->offset, range->size + 1 });
+        }
 
         auto collection{ query.resultList() };
         res.results.assign(collection.begin(), collection.end());
@@ -62,10 +65,7 @@ namespace Database::Utils
             // TODO may optim by not actually requesting the last one
             res.moreResults = true;
             res.results.pop_back();
-            res.range.offset = range->offset;
         }
-        else
-            res.moreResults = false;
 
         res.range.size = res.results.size();
 

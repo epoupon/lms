@@ -56,7 +56,7 @@ TEST_F(DatabaseFixture, Artist)
         EXPECT_EQ(artists.results.front(), artist.getId());
     }
 
-    
+
     {
         auto transaction{ session.createReadTransaction() };
 
@@ -75,6 +75,66 @@ TEST_F(DatabaseFixture, Artist)
                 EXPECT_EQ(a->getId(), artist.getId());
             });
         EXPECT_TRUE(visited);
+    }
+}
+
+TEST_F(DatabaseFixture, MultipleArtists)
+{
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        auto artists{ Artist::findIds(session, Artist::FindParameters {}) };
+        ASSERT_EQ(artists.results.size(), 0);
+        ASSERT_FALSE(artists.moreResults);
+        ASSERT_EQ(artists.range.offset, 0);
+        ASSERT_EQ(artists.range.size, 0);
+    }
+
+    ScopedArtist artist1{ session, "MyArtist1" };
+    ScopedArtist artist2{ session, "MyArtist2" };
+    ScopedArtist artist3{ session, "MyArtist3" };
+
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        auto artists{ Artist::findIds(session, Artist::FindParameters{}) };
+        ASSERT_EQ(artists.results.size(), 3);
+        ASSERT_FALSE(artists.moreResults);
+        ASSERT_EQ(artists.range.offset, 0);
+        ASSERT_EQ(artists.range.size, 3);
+    }
+
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        auto artists{ Artist::findIds(session, Artist::FindParameters{}.setRange(Range{0,1})) };
+        ASSERT_EQ(artists.results.size(), 1);
+        ASSERT_TRUE(artists.moreResults);
+        ASSERT_EQ(artists.range.offset, 0);
+        ASSERT_EQ(artists.range.size, 1);
+        EXPECT_EQ(artists.results[0], artist1.getId());
+    }
+
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        auto artists{ Artist::findIds(session, Artist::FindParameters{}.setRange(Range{1,1})) };
+        ASSERT_EQ(artists.results.size(), 1);
+        ASSERT_TRUE(artists.moreResults);
+        ASSERT_EQ(artists.range.offset, 1);
+        ASSERT_EQ(artists.range.size, 1);
+        EXPECT_EQ(artists.results[0], artist2.getId());
+    }
+
+    {
+        auto transaction{ session.createReadTransaction() };
+
+        auto artists{ Artist::findIds(session, Artist::FindParameters{}.setRange(Range{2,1})) };
+        ASSERT_EQ(artists.results.size(), 1);
+        ASSERT_FALSE(artists.moreResults);
+        ASSERT_EQ(artists.range.offset, 2);
+        ASSERT_EQ(artists.range.size, 1);
+        EXPECT_EQ(artists.results[0], artist3.getId());
     }
 }
 
@@ -174,7 +234,7 @@ TEST_F(DatabaseFixture, Artist_singleTrack_mediaLibrary)
         ASSERT_EQ(artists.results.size(), 1);
         EXPECT_EQ(artists.results.front(), artist.getId());
     }
-     {
+    {
         auto transaction{ session.createReadTransaction() };
         auto artists{ Artist::findIds(session, Artist::FindParameters{}.setMediaLibrary(otherLibrary->getId())) };
         EXPECT_EQ(artists.results.size(), 0);
