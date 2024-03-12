@@ -53,7 +53,10 @@ namespace Database::Utils
         RangeResults<ResultType> res;
 
         if (range)
+        {
+            res.range.offset = range->offset;
             applyRange(query, Range{ range->offset, range->size + 1 });
+        }
 
         auto collection{ query.resultList() };
         res.results.assign(collection.begin(), collection.end());
@@ -63,10 +66,7 @@ namespace Database::Utils
             res.moreResults = true;
             res.results.pop_back();
         }
-        else
-            res.moreResults = false;
 
-        res.range.offset = range->offset;
         res.range.size = res.results.size();
 
         return res;
