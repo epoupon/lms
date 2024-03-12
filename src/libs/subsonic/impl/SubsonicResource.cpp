@@ -27,14 +27,14 @@
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "utils/EnumSet.hpp"
-#include "utils/LiteralString.hpp"
-#include "utils/IConfig.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/ITraceLogger.hpp"
-#include "utils/Service.hpp"
-#include "utils/String.hpp"
-#include "utils/Utils.hpp"
+#include "core/EnumSet.hpp"
+#include "core/LiteralString.hpp"
+#include "core/IConfig.hpp"
+#include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
+#include "core/Service.hpp"
+#include "core/String.hpp"
+#include "core/Utils.hpp"
 
 #include "entrypoints/AlbumSongLists.hpp"
 #include "entrypoints/Browsing.hpp"
@@ -53,11 +53,9 @@
 #include "SubsonicResponse.hpp"
 #include "Utils.hpp"
 
-using namespace Database;
-
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    std::unique_ptr<Wt::WResource> createSubsonicResource(Database::Db& db)
+    std::unique_ptr<Wt::WResource> createSubsonicResource(db::Db& db)
     {
         return std::make_unique<SubsonicResource>(db);
     }
@@ -68,7 +66,7 @@ namespace API::Subsonic
         {
             std::unordered_map<std::string, ProtocolVersion> res;
 
-            Service<IConfig>::get()->visitStrings("api-subsonic-old-server-protocol-clients",
+            core::Service<core::IConfig>::get()->visitStrings("api-subsonic-old-server-protocol-clients",
                 [&](std::string_view client)
                 {
                     res.emplace(std::string{ client }, ProtocolVersion{ 1, 12, 0 });
@@ -81,7 +79,7 @@ namespace API::Subsonic
         {
             std::unordered_set<std::string> res;
 
-            Service<IConfig>::get()->visitStrings("api-open-subsonic-disabled-clients",
+            core::Service<core::IConfig>::get()->visitStrings("api-open-subsonic-disabled-clients",
                 [&](std::string_view client)
                 {
                     res.emplace(std::string{ client });
@@ -94,7 +92,7 @@ namespace API::Subsonic
         {
             std::unordered_set<std::string> res;
 
-            Service<IConfig>::get()->visitStrings("api-subsonic-default-cover-clients",
+            core::Service<core::IConfig>::get()->visitStrings("api-subsonic-default-cover-clients",
                 [&](std::string_view client)
                 {
                     res.emplace(std::string{ client });
@@ -135,11 +133,11 @@ namespace API::Subsonic
             return res;
         }
 
-        void checkUserTypeIsAllowed(RequestContext& context, EnumSet<Database::UserType> allowedUserTypes)
+        void checkUserTypeIsAllowed(RequestContext& context, core::EnumSet<db::UserType> allowedUserTypes)
         {
             auto transaction{ context.dbSession.createReadTransaction() };
 
-            User::pointer currentUser{ User::find(context.dbSession, context.userId) };
+            db::User::pointer currentUser{ db::User::find(context.dbSession, context.userId) };
             if (!currentUser)
                 throw RequestedDataNotFoundError{};
 
@@ -157,11 +155,11 @@ namespace API::Subsonic
         struct RequestEntryPointInfo
         {
             RequestHandlerFunc      func;
-            EnumSet<UserType>       allowedUserTypes{ UserType::DEMO, UserType::REGULAR, UserType::ADMIN };
+            core::EnumSet<db::UserType>       allowedUserTypes{ db::UserType::DEMO, db::UserType::REGULAR, db::UserType::ADMIN };
             CheckImplementedFunc    checkFunc{};
         };
 
-        static const std::unordered_map<LiteralString, RequestEntryPointInfo, LiteralStringHash, LiteralStringEqual> requestEntryPoints
+        static const std::unordered_map<core::LiteralString, RequestEntryPointInfo, core::LiteralStringHash, core::LiteralStringEqual> requestEntryPoints
         {
             // System
             {"/ping",                       {handlePingRequest}},
@@ -249,11 +247,11 @@ namespace API::Subsonic
 
             // User management
             {"/getUser",            {handleGetUserRequest}},
-            {"/getUsers",           {handleGetUsersRequest,     {UserType::ADMIN}}},
-            {"/createUser",         {handleCreateUserRequest,   {UserType::ADMIN},                      &Utils::checkSetPasswordImplemented}},
-            {"/updateUser",         {handleUpdateUserRequest,   {UserType::ADMIN}}},
-            {"/deleteUser",         {handleDeleteUserRequest,   {UserType::ADMIN}}},
-            {"/changePassword",     {handleChangePassword,      {UserType::REGULAR, UserType::ADMIN},   &Utils::checkSetPasswordImplemented}},
+            {"/getUsers",           {handleGetUsersRequest,     {db::UserType::ADMIN}}},
+            {"/createUser",         {handleCreateUserRequest,   {db::UserType::ADMIN},                      &utils::checkSetPasswordImplemented}},
+            {"/updateUser",         {handleUpdateUserRequest,   {db::UserType::ADMIN}}},
+            {"/deleteUser",         {handleDeleteUserRequest,   {db::UserType::ADMIN}}},
+            {"/changePassword",     {handleChangePassword,      {db::UserType::REGULAR, db::UserType::ADMIN},   &utils::checkSetPasswordImplemented}},
 
             // Bookmarks
             {"/getBookmarks",       {handleGetBookmarks}},
@@ -263,12 +261,12 @@ namespace API::Subsonic
             {"/savePlayQueue",      {handleNotImplemented}},
 
             // Media library scanning
-            {"/getScanStatus",      {Scan::handleGetScanStatus, {UserType::ADMIN}}},
-            {"/startScan",          {Scan::handleStartScan,     {UserType::ADMIN}}},
+            {"/getScanStatus",      {Scan::handleGetScanStatus, {db::UserType::ADMIN}}},
+            {"/startScan",          {Scan::handleStartScan,     {db::UserType::ADMIN}}},
         };
 
         using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::Http::Request&, Wt::Http::Response&)>;
-        static std::unordered_map<LiteralString, MediaRetrievalHandlerFunc, LiteralStringHash, LiteralStringEqual> mediaRetrievalHandlers
+        static std::unordered_map<core::LiteralString, MediaRetrievalHandlerFunc, core::LiteralStringHash, core::LiteralStringEqual> mediaRetrievalHandlers
         {
             // Media retrieval
             {"/download",       handleDownload},
@@ -277,7 +275,7 @@ namespace API::Subsonic
         };
     }
 
-    SubsonicResource::SubsonicResource(Db& db)
+    SubsonicResource::SubsonicResource(db::Db& db)
         : _serverProtocolVersionsByClient{ readConfigProtocolVersions() }
         , _openSubsonicDisabledClients{ readOpenSubsonicDisabledClients() }
         , _defaultCoverClients{ readDefaultCoverClients() }
@@ -294,7 +292,7 @@ namespace API::Subsonic
         LMS_LOG(API_SUBSONIC, DEBUG, "Handling request " << requestId << " '" << request.pathInfo() << "', continuation = " << (request.continuation() ? "true" : "false") << ", params = " << parameterMapToDebugString(request.getParameterMap()));
 
         std::string requestPath{ request.pathInfo() };
-        if (StringUtils::stringEndsWith(requestPath, ".view"))
+        if (core::stringUtils::stringEndsWith(requestPath, ".view"))
             requestPath.resize(requestPath.length() - 5);
 
         // Optional parameters
@@ -402,48 +400,48 @@ namespace API::Subsonic
     {
         const Wt::Http::ParameterMap& parameters{ request.getParameterMap() };
         const ClientInfo clientInfo{ getClientInfo(parameters) };
-        const Database::UserId userId{ authenticateUser(request, clientInfo) };
+        const db::UserId userId{ authenticateUser(request, clientInfo) };
         bool enableOpenSubsonic{ _openSubsonicDisabledClients.find(clientInfo.name) == std::cend(_openSubsonicDisabledClients) };
         bool enableDefaultCover{ _defaultCoverClients.find(clientInfo.name) != std::cend(_openSubsonicDisabledClients) };
 
         return { parameters, _db.getTLSSession(), userId, clientInfo, getServerProtocolVersion(clientInfo.name), enableOpenSubsonic, enableDefaultCover };
     }
 
-    Database::UserId SubsonicResource::authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo)
+    db::UserId SubsonicResource::authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo)
     {
         // if the request if a continuation, the user is already authenticated
         if (request.continuation())
         {
-            Database::Session& session{ _db.getTLSSession() };
+            db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
-            const auto user{ Database::User::find(session, clientInfo.user) };
+            const auto user{ db::User::find(session, clientInfo.user) };
             if (!user)
                 throw UserNotAuthorizedError{};
 
             return user->getId();
         }
 
-        if (auto * authEnvService{ Service<::Auth::IEnvService>::get() })
+        if (auto * authEnvService{ core::Service<auth::IEnvService>::get() })
         {
             const auto checkResult{ authEnvService->processRequest(request) };
-            if (checkResult.state != ::Auth::IEnvService::CheckResult::State::Granted)
+            if (checkResult.state != auth::IEnvService::CheckResult::State::Granted)
                 throw UserNotAuthorizedError{};
 
             return *checkResult.userId;
         }
-        else if (auto * authPasswordService{ Service<::Auth::IPasswordService>::get() })
+        else if (auto * authPasswordService{ core::Service<auth::IPasswordService>::get() })
         {
             const auto checkResult{ authPasswordService->checkUserPassword(boost::asio::ip::address::from_string(request.clientAddress()), clientInfo.user, clientInfo.password) };
 
             switch (checkResult.state)
             {
-            case Auth::IPasswordService::CheckResult::State::Granted:
+            case auth::IPasswordService::CheckResult::State::Granted:
                 return *checkResult.userId;
                 break;
-            case Auth::IPasswordService::CheckResult::State::Denied:
+            case auth::IPasswordService::CheckResult::State::Denied:
                 throw WrongUsernameOrPasswordError{};
-            case Auth::IPasswordService::CheckResult::State::Throttled:
+            case auth::IPasswordService::CheckResult::State::Throttled:
                 throw LoginThrottledGenericError{};
             }
         }
@@ -451,5 +449,5 @@ namespace API::Subsonic
         throw InternalErrorGenericError{ "No service available to authenticate user" };
     }
 
-} // namespace api::subsonic
+} // namespace lms::api::subsonic
 

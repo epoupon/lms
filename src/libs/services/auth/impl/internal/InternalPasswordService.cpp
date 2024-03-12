@@ -24,12 +24,12 @@
 #include "services/auth/Types.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "utils/Exception.hpp"
-#include "utils/ILogger.hpp"
+#include "core/Exception.hpp"
+#include "core/ILogger.hpp"
 
-namespace Auth
+namespace lms::auth
 {
-    InternalPasswordService::InternalPasswordService(Database::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService)
+    InternalPasswordService::InternalPasswordService(db::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService)
         : PasswordServiceBase{ db, maxThrottlerEntries, authTokenService }
     {
         _validator.setMinimumLength(Wt::Auth::PasswordStrengthType::OneCharClass, 4);
@@ -45,12 +45,12 @@ namespace Auth
     {
         LMS_LOG(AUTH, DEBUG, "Checking internal password for user '" << loginName << "'");
 
-        Database::User::PasswordHash passwordHash;
+        db::User::PasswordHash passwordHash;
         {
-            Database::Session& session{ getDbSession() };
+            db::Session& session{ getDbSession() };
             auto transaction{ session.createReadTransaction() };
 
-            const Database::User::pointer user{ Database::User::find(session, loginName) };
+            const db::User::pointer user{ db::User::find(session, loginName) };
             if (!user)
             {
                 LMS_LOG(AUTH, DEBUG, "hashing random stuff");
@@ -81,24 +81,24 @@ namespace Auth
     {
         switch (context.userType)
         {
-        case Database::UserType::ADMIN:
-        case Database::UserType::REGULAR:
+        case db::UserType::ADMIN:
+        case db::UserType::REGULAR:
             return _validator.evaluateStrength(std::string{ password }, context.loginName, "").isValid() ? PasswordAcceptabilityResult::OK : PasswordAcceptabilityResult::TooWeak;
-        case Database::UserType::DEMO:
+        case db::UserType::DEMO:
             return password == context.loginName ? PasswordAcceptabilityResult::OK : PasswordAcceptabilityResult::MustMatchLoginName;
         }
 
         throw NotImplementedException{};
     }
 
-    void InternalPasswordService::setPassword(Database::UserId userId, std::string_view newPassword)
+    void InternalPasswordService::setPassword(db::UserId userId, std::string_view newPassword)
     {
-        const Database::User::PasswordHash passwordHash{ hashPassword(newPassword) };
+        const db::User::PasswordHash passwordHash{ hashPassword(newPassword) };
 
-        Database::Session& session{ getDbSession() };
+        db::Session& session{ getDbSession() };
         auto transaction{ session.createWriteTransaction() };
 
-        Database::User::pointer user{ Database::User::find(session, userId) };
+        db::User::pointer user{ db::User::find(session, userId) };
         if (!user)
             throw Exception{ "User not found!" };
 
@@ -116,7 +116,7 @@ namespace Auth
         getAuthTokenService().clearAuthTokens(userId);
     }
 
-    Database::User::PasswordHash InternalPasswordService::hashPassword(std::string_view password) const
+    db::User::PasswordHash InternalPasswordService::hashPassword(std::string_view password) const
     {
         const std::string salt{ Wt::WRandom::generateId(32) };
 
@@ -129,5 +129,5 @@ namespace Auth
         hashPassword(Wt::WRandom::generateId(32));
     }
 
-} // namespace Auth
+} // namespace lms::auth
 

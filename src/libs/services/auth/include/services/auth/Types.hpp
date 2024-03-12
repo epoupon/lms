@@ -21,31 +21,31 @@
 
 #include <string>
 #include "database/Types.hpp"
-#include "utils/Exception.hpp"
+#include "core/Exception.hpp"
 
-namespace Auth
+namespace lms::auth
 {
-	class Exception : public ::LmsException
+	class Exception : public core::LmsException
 	{
-		using LmsException::LmsException;
+		using core::LmsException::LmsException;
 	};
 
 	class NotImplementedException : public Exception
 	{
 		public:
-			NotImplementedException() : Auth::Exception {"Not implemented"} {}
+			NotImplementedException() : Exception {"Not implemented"} {}
 	};
 
 	class UserNotFoundException : public Exception
 	{
 		public:
-			UserNotFoundException() : Auth::Exception {"User not found"} {}
+			UserNotFoundException() : Exception {"User not found"} {}
 	};
 
 	struct PasswordValidationContext
 	{
 		std::string loginName;
-		Database::UserType userType;
+		db::UserType userType;
 	};
 
 	class PasswordException : public Exception

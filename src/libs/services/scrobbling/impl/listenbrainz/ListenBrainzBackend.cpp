@@ -22,15 +22,15 @@
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "utils/IConfig.hpp"
-#include "utils/http/IClient.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/Service.hpp"
+#include "core/IConfig.hpp"
+#include "core/http/IClient.hpp"
+#include "core/ILogger.hpp"
+#include "core/Service.hpp"
 #include "Utils.hpp"
 
-namespace Scrobbling::ListenBrainz
+namespace lms::scrobbling::listenBrainz
 {
-    using namespace Database;
+    using namespace db;
 
     namespace
     {
@@ -53,8 +53,8 @@ namespace Scrobbling::ListenBrainz
     ListenBrainzBackend::ListenBrainzBackend(boost::asio::io_context& ioContext, Db& db)
         : _ioContext{ ioContext }
         , _db{ db }
-        , _baseAPIUrl{ Service<IConfig>::get()->getString("listenbrainz-api-base-url", "https://api.listenbrainz.org") }
-        , _client{ Http::createClient(_ioContext, _baseAPIUrl) }
+        , _baseAPIUrl{ core::Service<core::IConfig>::get()->getString("listenbrainz-api-base-url", "https://api.listenbrainz.org") }
+        , _client{ core::http::createClient(_ioContext, _baseAPIUrl) }
         , _listensSynchronizer{ _ioContext, db, *_client }
     {
         LOG(INFO, "Starting ListenBrainz backend... API endpoint = '" << _baseAPIUrl << "'");
@@ -83,5 +83,5 @@ namespace Scrobbling::ListenBrainz
     {
         _listensSynchronizer.enqueListen(timedListen);
     }
-} // namespace Scrobbling::ListenBrainz
+} // namespace lms::scrobbling::listenBrainz
 

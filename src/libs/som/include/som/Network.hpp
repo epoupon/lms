@@ -27,7 +27,7 @@
 #include "InputVector.hpp"
 #include "Matrix.hpp"
 
-namespace SOM
+namespace lms::som
 {
 
     using LearningFactor = InputVector::value_type;
@@ -104,4 +104,4 @@ namespace SOM
         NeighbourhoodFunc _neighbourhoodFunc;
     };
 
-} // namespace SOM
+} // namespace lms::som

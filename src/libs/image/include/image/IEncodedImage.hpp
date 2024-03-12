@@ -22,7 +22,7 @@
 #include <cstddef>
 #include <string_view>
 
-namespace Image
+namespace lms::image
 {
 	using ImageSize = std::size_t;
 
@@ -35,6 +35,5 @@ namespace Image
 			virtual std::size_t getDataSize() const = 0;
 			virtual std::string_view getMimeType() const = 0;
 	};
-
-} // namespace Cover
+}
 

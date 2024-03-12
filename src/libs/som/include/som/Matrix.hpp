@@ -24,7 +24,7 @@
 #include <functional>
 #include <vector>
 
-namespace SOM
+namespace lms::som
 {
     using Coordinate = unsigned;
 
@@ -110,18 +110,18 @@ namespace SOM
         std::vector<T>	_values;
     };
 
-} // ns SOM
+} // ns lms::som
 
 namespace std
 {
     template<>
-    class hash<SOM::Position>
+    class hash<lms::som::Position>
     {
     public:
-        size_t operator()(const SOM::Position& s) const
+        size_t operator()(const lms::som::Position& s) const
         {
-            size_t h1 = std::hash<SOM::Coordinate>()(s.x);
-            size_t h2 = std::hash<SOM::Coordinate>()(s.y);
+            size_t h1 = std::hash<lms::som::Coordinate>()(s.x);
+            size_t h2 = std::hash<lms::som::Coordinate>()(s.y);
             return h1 ^ (h2 << 1);
         }
     };

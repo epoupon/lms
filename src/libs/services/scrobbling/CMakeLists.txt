@@ -19,7 +19,7 @@ target_include_directories(lmsscrobbling PRIVATE
 	)
 
 target_link_libraries(lmsscrobbling PRIVATE
-	lmsutils
+	lmscore
 	)
 
 target_link_libraries(lmsscrobbling PUBLIC

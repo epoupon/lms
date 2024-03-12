@@ -23,7 +23,7 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WLineEdit.h>
 
-namespace UserInterface
+namespace lms::ui
 {
     class ScannerController : public Wt::WTemplate
     {
@@ -39,4 +39,4 @@ namespace UserInterface
         Wt::WLineEdit* _stepStatus;
         class ReportResource* _reportResource;
     };
-} // namespace DatabaseStatus
+} // namespace lms::dbStatus

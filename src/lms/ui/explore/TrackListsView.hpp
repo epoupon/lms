@@ -28,12 +28,12 @@
 
 #include "common/Template.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class TrackList;
 }
 
-namespace UserInterface
+namespace lms::ui
 {
 	class Filters;
 	class InfiniteScrollingContainer;
@@ -43,7 +43,7 @@ namespace UserInterface
 		public:
 			TrackLists(Filters& filters);
 
-			void onTrackListDeleted(Database::TrackListId trackListId);
+			void onTrackListDeleted(db::TrackListId trackListId);
 
 		private:
 			enum class Mode
@@ -54,7 +54,7 @@ namespace UserInterface
 
 			void refreshView();
 			void addSome();
-			void addTracklist(const Database::ObjectPtr<Database::TrackList>& trackList);
+			void addTracklist(const db::ObjectPtr<db::TrackList>& trackList);
 
 			static constexpr std::size_t _batchSize {30};
 			static constexpr std::size_t _maxCount {500};
@@ -63,7 +63,7 @@ namespace UserInterface
 			Filters&					_filters;
 			Wt::WWidget*				_currentActiveItem {};
 			InfiniteScrollingContainer* _container {};
-			std::unordered_map<Database::TrackListId, Wt::WWidget*> _trackListWidgets;
+			std::unordered_map<db::TrackListId, Wt::WWidget*> _trackListWidgets;
 	};
-} // namespace UserInterface
+} // namespace lms::ui
 

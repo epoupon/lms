@@ -22,7 +22,7 @@
 #include "RequestContext.hpp"
 #include "SubsonicResponse.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
     Response handleGetMusicFoldersRequest(RequestContext& context);
     Response handleGetIndexesRequest(RequestContext& context);

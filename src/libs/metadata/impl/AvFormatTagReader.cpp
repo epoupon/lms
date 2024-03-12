@@ -24,15 +24,14 @@
 
 #include "av/IAudioFile.hpp"
 #include "metadata/Exception.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/String.hpp"
+#include "core/ILogger.hpp"
+#include "core/String.hpp"
 #include "Utils.hpp"
 
-namespace MetaData
+namespace lms::metadata
 {
     namespace
     {
-
         // Mapping to internal avformat names and/or common alternative custom names
         static const std::unordered_map<TagType, std::vector<std::string>> tagMapping
         {
@@ -144,19 +143,19 @@ namespace MetaData
     {
         try
         {
-            const auto audioFile{ Av::parseAudioFile(p) };
+            const auto audioFile{ av::parseAudioFile(p) };
 
             _containerInfo = audioFile->getContainerInfo();
             _metaDataMap = audioFile->getMetaData();
             _hasEmbeddedCover = audioFile->hasAttachedPictures();
 
-            if (debug && Service<ILogger>::get()->isSeverityActive(Severity::DEBUG))
+            if (debug && core::Service<core::logging::ILogger>::get()->isSeverityActive(core::logging::Severity::DEBUG))
             {
                 for (const auto& [key, value] : _metaDataMap)
                     LMS_LOG(METADATA, DEBUG, "Key = '" << key << "', value = '" << value << "'");
             }
         }
-        catch (Av::Exception& e)
+        catch (av::Exception& e)
         {
             throw ParseException{};
         }
@@ -199,4 +198,4 @@ namespace MetaData
             visitor("", value);
         });
     }
-} // namespace MetaData
+} // namespace lms::metadata

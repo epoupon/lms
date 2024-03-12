@@ -23,7 +23,7 @@
 #include <numeric>
 #include <sstream>
 
-namespace SOM
+namespace lms::som
 {
 
 template<typename T>
@@ -117,4 +117,4 @@ DataNormalizer::dump(std::ostream& os) const
 		os << "(" << _minmax[i].min << ", " << _minmax[i].max << ")";
 }
 
-} // namespace SOM
+} // namespace lms::som

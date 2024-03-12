@@ -22,7 +22,7 @@
 #include <cassert>
 #include "LoadingIndicator.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
 	InfiniteScrollingContainer::InfiniteScrollingContainer(const Wt::WString& text)
 		: Wt::WTemplate {text}

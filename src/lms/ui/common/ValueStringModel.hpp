@@ -23,7 +23,7 @@
 
 #include <Wt/WStringListModel.h>
 
-namespace UserInterface {
+namespace lms::ui {
 
 // Helper class
 template <typename T>
@@ -79,4 +79,4 @@ class ValueStringModel : public Wt::WStringListModel
 		}
 };
 
-} // namespace UserInterface
+} // namespace lms::ui

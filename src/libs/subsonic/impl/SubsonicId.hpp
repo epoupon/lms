@@ -24,39 +24,39 @@
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 #include "database/TrackListId.hpp"
-#include "utils/String.hpp"
+#include "core/String.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
     struct RootId {};
 
-    std::string idToString(Database::ArtistId id);
-    std::string idToString(Database::MediaLibraryId id);
-    std::string idToString(Database::ReleaseId id);
-    std::string idToString(Database::TrackId id);
-    std::string idToString(Database::TrackListId id);
+    std::string idToString(db::ArtistId id);
+    std::string idToString(db::MediaLibraryId id);
+    std::string idToString(db::ReleaseId id);
+    std::string idToString(db::TrackId id);
+    std::string idToString(db::TrackListId id);
     std::string idToString(RootId);
-} // namespace API::Subsonic
+} // namespace lms::api::subsonic
 
 // Used to parse parameters
-namespace StringUtils
+namespace lms::core::stringUtils
 {
     template<>
-    std::optional<API::Subsonic::RootId> readAs(std::string_view str);
+    std::optional<api::subsonic::RootId> readAs(std::string_view str);
 
     template<>
-    std::optional<Database::ArtistId> readAs(std::string_view str);
+    std::optional<db::ArtistId> readAs(std::string_view str);
 
     template<>
-    std::optional<Database::MediaLibraryId> readAs(std::string_view str);
+    std::optional<db::MediaLibraryId> readAs(std::string_view str);
 
     template<>
-    std::optional<Database::ReleaseId> readAs(std::string_view str);
+    std::optional<db::ReleaseId> readAs(std::string_view str);
 
     template<>
-    std::optional<Database::TrackId> readAs(std::string_view str);
+    std::optional<db::TrackId> readAs(std::string_view str);
 
     template<>
-    std::optional<Database::TrackListId> readAs(std::string_view str);
+    std::optional<db::TrackListId> readAs(std::string_view str);
 }
 

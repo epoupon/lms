@@ -22,14 +22,14 @@
 #include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
 
+#include "core/EnumSet.hpp"
 #include "database/TrackId.hpp"
 #include "database/Object.hpp"
 #include "database/StarredTrackId.hpp"
 #include "database/Types.hpp"
 #include "database/UserId.hpp"
-#include "utils/EnumSet.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Track;
     class Session;
@@ -94,5 +94,5 @@ namespace Database
         Wt::Dbo::ptr<Track> _track;
         Wt::Dbo::ptr<User>  _user;
     };
-} // namespace Database
+} // namespace lms::db
 

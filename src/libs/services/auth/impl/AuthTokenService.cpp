@@ -27,45 +27,45 @@
 #include "database/AuthToken.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "utils/Exception.hpp"
-#include "utils/ILogger.hpp"
+#include "core/Exception.hpp"
+#include "core/ILogger.hpp"
 
-namespace Auth
+namespace lms::auth
 {
 
-	std::unique_ptr<IAuthTokenService> createAuthTokenService(Database::Db& db, std::size_t maxThrottlerEntries)
+	std::unique_ptr<IAuthTokenService> createAuthTokenService(db::Db& db, std::size_t maxThrottlerEntries)
 	{
 		return std::make_unique<AuthTokenService>(db, maxThrottlerEntries);
 	}
 
 	static const Wt::Auth::SHA1HashFunction sha1Function;
 
-	AuthTokenService::AuthTokenService(Database::Db& db, std::size_t maxThrottlerEntries)
+	AuthTokenService::AuthTokenService(db::Db& db, std::size_t maxThrottlerEntries)
 	: AuthServiceBase {db}
 	, _loginThrottler {maxThrottlerEntries}
 	{
 	}
 
 	std::string
-	AuthTokenService::createAuthToken(Database::UserId userId, const Wt::WDateTime& expiry)
+	AuthTokenService::createAuthToken(db::UserId userId, const Wt::WDateTime& expiry)
 	{
 		const std::string secret {Wt::WRandom::generateId(32)};
 		const std::string secretHash {sha1Function.compute(secret, {})};
 
-		Database::Session& session {getDbSession()};
+		db::Session& session {getDbSession()};
 
 		auto transaction {session.createWriteTransaction()};
 
-		Database::User::pointer user {Database::User::find(session, userId)};
+		db::User::pointer user {db::User::find(session, userId)};
 		if (!user)
 			throw Exception {"User deleted"};
 
-		Database::AuthToken::pointer authToken {session.create<Database::AuthToken>(secretHash, expiry, user)};
+		db::AuthToken::pointer authToken {session.create<db::AuthToken>(secretHash, expiry, user)};
 
 		LMS_LOG(UI, DEBUG, "Created auth token for user '" << user->getLoginName() << "', expiry = " << expiry.toString());
 
 		if (user->getAuthTokensCount() >= 50)
-			Database::AuthToken::removeExpiredTokens(session, Wt::WDateTime::currentDateTime());
+			db::AuthToken::removeExpiredTokens(session, Wt::WDateTime::currentDateTime());
 
 		return secret;
 	}
@@ -75,10 +75,10 @@ namespace Auth
 	{
 		const std::string secretHash {sha1Function.compute(std::string {secret}, {})};
 
-		Database::Session& session {getDbSession()};
+		db::Session& session {getDbSession()};
 		auto transaction {session.createWriteTransaction()};
 
-		Database::AuthToken::pointer authToken {Database::AuthToken::find(session, secretHash)};
+		db::AuthToken::pointer authToken {db::AuthToken::find(session, secretHash)};
 		if (!authToken)
 			return std::nullopt;
 
@@ -127,17 +127,17 @@ namespace Auth
 	}
 
 	void
-	AuthTokenService::clearAuthTokens(Database::UserId userId)
+	AuthTokenService::clearAuthTokens(db::UserId userId)
 	{
-		Database::Session& session {getDbSession()};
+		db::Session& session {getDbSession()};
 
 		auto transaction {session.createWriteTransaction()};
 
-		Database::User::pointer user {Database::User::find(session, userId)};
+		db::User::pointer user {db::User::find(session, userId)};
 		if (!user)
 			throw Exception {"User deleted"};
 
 		user.modify()->clearAuthTokens();
 	}
 
-} // namespace Auth
+} // namespace lms::auth

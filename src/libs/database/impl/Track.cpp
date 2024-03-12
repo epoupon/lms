@@ -29,14 +29,14 @@
 #include "database/TrackFeatures.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
 #include "IdTypeTraits.hpp"
 #include "SqlQuery.hpp"
 #include "StringViewTraits.hpp"
 #include "Utils.hpp"
 
-namespace Database
+namespace lms::db
 {
     namespace
     {
@@ -49,7 +49,7 @@ namespace Database
 
             assert(params.keywords.empty() || params.name.empty());
             for (std::string_view keyword : params.keywords)
-                query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + Utils::escapeLikeKeyword(keyword) + "%");
+                query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
 
             if (!params.name.empty())
                 query.where("t.name = ?").bind(params.name);
@@ -235,7 +235,7 @@ namespace Database
         return session.getDboSession().query<int>("SELECT 1 from track").where("id = ?").bind(id).resultValue() == 1;
     }
 
-    std::vector<Track::pointer> Track::findByMBID(Session& session, const UUID& mbid)
+    std::vector<Track::pointer> Track::findByMBID(Session& session, const core::UUID& mbid)
     {
         session.checkReadTransaction();
 
@@ -246,7 +246,7 @@ namespace Database
         return std::vector<Track::pointer>(res.begin(), res.end());
     }
 
-    std::vector<Track::pointer> Track::findByRecordingMBID(Session& session, const UUID& mbid)
+    std::vector<Track::pointer> Track::findByRecordingMBID(Session& session, const core::UUID& mbid)
     {
         session.checkReadTransaction();
 
@@ -265,7 +265,7 @@ namespace Database
         // TODO Dbo traits on filesystem
         auto query{ session.getDboSession().query<QueryResultType>("SELECT id, file_path FROM track") };
 
-        RangeResults<QueryResultType> queryResults{ Utils::execQuery<QueryResultType>(query, range) };
+        RangeResults<QueryResultType> queryResults{ utils::execQuery<QueryResultType>(query, range) };
 
         RangeResults<PathResult> res;
         res.range = queryResults.range;
@@ -288,7 +288,7 @@ namespace Database
         auto query{ session.getDboSession().query<TrackId>("SELECT track.id FROM track WHERE mbid in (SELECT mbid FROM track WHERE mbid <> '' GROUP BY mbid HAVING COUNT (*) > 1)")
             .orderBy("track.release_id,track.disc_number,track.track_number,track.mbid") };
 
-        return Utils::execQuery<TrackId>(query, range);
+        return utils::execQuery<TrackId>(query, range);
     }
 
     RangeResults<TrackId> Track::findIdsWithRecordingMBIDAndMissingFeatures(Session& session, std::optional<Range> range)
@@ -299,7 +299,7 @@ namespace Database
             .where("LENGTH(t.recording_mbid) > 0")
             .where("NOT EXISTS (SELECT * FROM track_features t_f WHERE t_f.track_id = t.id)") };
 
-        return Utils::execQuery<TrackId>(query, range);
+        return utils::execQuery<TrackId>(query, range);
     }
 
     std::vector<Cluster::pointer> Track::getClusters() const
@@ -324,7 +324,7 @@ namespace Database
         session.checkReadTransaction();
 
         auto query{ createQuery<TrackId>(session, parameters) };
-        return Utils::execQuery<TrackId>(query, parameters.range);
+        return utils::execQuery<TrackId>(query, parameters.range);
     }
 
     RangeResults<Track::pointer> Track::find(Session& session, const FindParameters& parameters)
@@ -332,7 +332,7 @@ namespace Database
         session.checkReadTransaction();
 
         auto query{ createQuery<Wt::Dbo::ptr<Track>>(session, parameters) };
-        return Utils::execQuery<Track::pointer>(query, parameters.range);
+        return utils::execQuery<Track::pointer>(query, parameters.range);
     }
 
     void Track::find(Session& session, const FindParameters& params, std::function<void(const Track::pointer&)> func)
@@ -340,7 +340,7 @@ namespace Database
         session.checkReadTransaction();
 
         auto query{ createQuery<Wt::Dbo::ptr<Track>>(session, params)};
-        Utils::execQuery(query, params.range, func);
+        utils::execQuery(query, params.range, func);
     }
 
     RangeResults<TrackId> Track::findSimilarTrackIds(Session& session, const std::vector<TrackId>& tracks, std::optional<Range> range)
@@ -370,7 +370,7 @@ namespace Database
         for (TrackId trackId : tracks)
             query.bind(trackId);
 
-        return Utils::execQuery<TrackId>(query, range);
+        return utils::execQuery<TrackId>(query, range);
     }
 
     void Track::clearArtistLinks()
@@ -400,7 +400,7 @@ namespace Database
         return _copyrightURL != "" ? std::make_optional<std::string>(_copyrightURL) : std::nullopt;
     }
 
-    std::vector<Artist::pointer> Track::getArtists(EnumSet<TrackArtistLinkType> linkTypes) const
+    std::vector<Artist::pointer> Track::getArtists(core::EnumSet<TrackArtistLinkType> linkTypes) const
     {
         assert(session());
 
@@ -435,7 +435,7 @@ namespace Database
         return std::vector<Artist::pointer>(std::begin(res), std::end(res));
     }
 
-    std::vector<ArtistId> Track::getArtistIds(EnumSet<TrackArtistLinkType> linkTypes) const
+    std::vector<ArtistId> Track::getArtistIds(core::EnumSet<TrackArtistLinkType> linkTypes) const
     {
         assert(self());
         assert(session());
@@ -544,4 +544,4 @@ namespace Database
         }
     }
 
-} // namespace Database
+} // namespace lms::db

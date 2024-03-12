@@ -23,21 +23,21 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
-namespace Recommendation::PlaylistGeneratorConstraint
+namespace lms::recommendation::PlaylistGeneratorConstraint
 {
-	ConsecutiveReleases::ConsecutiveReleases(Database::Db& db)
+	ConsecutiveReleases::ConsecutiveReleases(db::Db& db)
 		: _db {db}
 	{}
 
 	float
-	ConsecutiveReleases::computeScore(const std::vector<Database::TrackId>& trackIds, std::size_t trackIndex)
+	ConsecutiveReleases::computeScore(const std::vector<db::TrackId>& trackIds, std::size_t trackIndex)
 	{
 		assert(!trackIds.empty());
 		assert(trackIndex <= trackIds.size() - 1);
 
-		const Database::ReleaseId releaseId {getReleaseId(trackIds[trackIndex])};
+		const db::ReleaseId releaseId {getReleaseId(trackIds[trackIndex])};
 
 		constexpr std::size_t rangeSize{ 3 }; // check up to rangeSize tracks before/after the target track
 		static_assert(rangeSize > 0);
@@ -55,10 +55,10 @@ namespace Recommendation::PlaylistGeneratorConstraint
 		return score;
 	}
 
-	Database::ReleaseId
-	ConsecutiveReleases::getReleaseId(Database::TrackId trackId)
+	db::ReleaseId
+	ConsecutiveReleases::getReleaseId(db::TrackId trackId)
 	{
-		using namespace Database;
+		using namespace db;
 
 		Session& dbSession {_db.getTLSSession()};
 		auto transaction {dbSession.createReadTransaction()};
@@ -73,5 +73,5 @@ namespace Recommendation::PlaylistGeneratorConstraint
 
 		return release->getId();
 	}
-} // namespace Recommendation
+} // namespace lms::recommendation
 

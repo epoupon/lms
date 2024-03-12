@@ -22,12 +22,12 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/Dbo/SqlConnectionPool.h>
 
-#include "utils/ITraceLogger.hpp"
-#include "utils/RecursiveSharedMutex.hpp"
+#include "core/ITraceLogger.hpp"
+#include "core/RecursiveSharedMutex.hpp"
 #include "database/Object.hpp"
 #include "database/TransactionChecker.hpp"
 
-namespace Database
+namespace lms::db
 {
     class WriteTransaction
     {
@@ -36,13 +36,13 @@ namespace Database
 
     private:
         friend class Session;
-        WriteTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session);
+        WriteTransaction(core::RecursiveSharedMutex& mutex, Wt::Dbo::Session& session);
 
         WriteTransaction(const WriteTransaction&) = delete;
         WriteTransaction& operator=(const WriteTransaction&) = delete;
 
-        std::unique_lock<RecursiveSharedMutex> _lock;
-        tracing::ScopedTrace _trace{ "Database", tracing::Level::Detailed, "WriteTransaction" }; // before actual transaction
+        std::unique_lock<core::RecursiveSharedMutex> _lock;
+        core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "WriteTransaction" }; // before actual transaction
         Wt::Dbo::Transaction _transaction;
     };
 
@@ -58,7 +58,7 @@ namespace Database
         ReadTransaction(const ReadTransaction&) = delete;
         ReadTransaction& operator=(const ReadTransaction&) = delete;
 
-        tracing::ScopedTrace _trace{ "Database", tracing::Level::Detailed, "ReadTransaction" }; // before actual transaction
+        core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "ReadTransaction" }; // before actual transaction
         Wt::Dbo::Transaction _transaction;
     };
 
@@ -103,4 +103,4 @@ namespace Database
         Db& _db;
         Wt::Dbo::Session	_session;
     };
-} // namespace Database
+} // namespace lms::db

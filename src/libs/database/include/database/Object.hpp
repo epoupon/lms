@@ -24,7 +24,7 @@
 #include "database/IdType.hpp"
 #include "database/TransactionChecker.hpp"
 
-namespace Database
+namespace lms::db
 {
     template <typename T>
     class ObjectPtr
@@ -57,8 +57,8 @@ namespace Database
     template <typename T, typename ObjectIdType>
     class Object : public Wt::Dbo::Dbo<T>
     {
-        static_assert(std::is_base_of_v<Database::IdType, ObjectIdType>);
-        static_assert(!std::is_same_v<Database::IdType, ObjectIdType>);
+        static_assert(std::is_base_of_v<db::IdType, ObjectIdType>);
+        static_assert(!std::is_same_v<db::IdType, ObjectIdType>);
 
     public:
         using pointer = ObjectPtr<T>;

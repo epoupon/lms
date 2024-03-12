@@ -21,17 +21,17 @@
 
 #include <memory>
 #include <vector>
-#include "utils/EnumSet.hpp"
+#include "core/EnumSet.hpp"
 #include "database/TrackListId.hpp"
 #include "database/Types.hpp"
 #include "services/recommendation/Types.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class Db;
 }
 
-namespace Recommendation
+namespace lms::recommendation
 {
 	class IRecommendationService
 	{
@@ -40,12 +40,12 @@ namespace Recommendation
 
 			virtual void load() = 0;
 
-			virtual TrackContainer findSimilarTracks(Database::TrackListId tracklistId, std::size_t maxCount) const = 0;
-			virtual TrackContainer findSimilarTracks(const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) const = 0;
-			virtual ReleaseContainer getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const = 0;
-			virtual ArtistContainer getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const = 0;
+			virtual TrackContainer findSimilarTracks(db::TrackListId tracklistId, std::size_t maxCount) const = 0;
+			virtual TrackContainer findSimilarTracks(const std::vector<db::TrackId>& tracksId, std::size_t maxCount) const = 0;
+			virtual ReleaseContainer getSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const = 0;
+			virtual ArtistContainer getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const = 0;
 	};
 
-	std::unique_ptr<IRecommendationService> createRecommendationService(Database::Db& db);
+	std::unique_ptr<IRecommendationService> createRecommendationService(db::Db& db);
 } // ns Recommendation
 

@@ -29,7 +29,7 @@
 #define LMS_CHECK_TRANSACTION_ACCESSES 0
 #endif
 
-namespace Database
+namespace lms::db
 {
 #if LMS_CHECK_TRANSACTION_ACCESSES
     namespace

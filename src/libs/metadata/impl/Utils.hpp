@@ -26,7 +26,7 @@
 
 #include "metadata/IParser.hpp"
 
-namespace MetaData::Utils
+namespace lms::metadata::utils
 {
 	Wt::WDate parseDate(std::string_view dateStr);
 	std::optional<int> parseYear(std::string_view yearStr);

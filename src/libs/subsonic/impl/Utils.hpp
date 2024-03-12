@@ -22,7 +22,7 @@
 #include <string>
 #include <string_view>
 
-namespace API::Subsonic::Utils
+namespace lms::api::subsonic::utils
 {
     void checkSetPasswordImplemented();
     std::string makeNameFilesystemCompatible(std::string_view name);

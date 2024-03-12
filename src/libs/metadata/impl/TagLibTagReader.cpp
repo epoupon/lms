@@ -34,11 +34,11 @@
 #include <taglib/wavpackfile.h>
 
 #include "metadata/Exception.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/ITraceLogger.hpp"
-#include "utils/String.hpp"
+#include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
+#include "core/String.hpp"
 
-namespace MetaData
+namespace lms::metadata
 {
     namespace
     {
@@ -159,7 +159,7 @@ namespace MetaData
             case ParserReadStyle::Accurate: return TagLib::AudioProperties::ReadStyle::Accurate;
             }
 
-            throw LmsException{ "Cannot convert read style" };
+            throw core::LmsException{ "Cannot convert read style" };
         }
 
         void mergeTagMaps(TagLib::PropertyMap& dst, TagLib::PropertyMap&& src)
@@ -223,7 +223,7 @@ namespace MetaData
                     if (attributeList.isEmpty())
                         continue;
 
-                    std::string strName{ StringUtils::stringToUpper(name.to8Bit(true)) };
+                    std::string strName{ core::stringUtils::stringToUpper(name.to8Bit(true)) };
                     if (strName.find("WM/") == 0 || _propertyMap.find(strName) != std::cend(_propertyMap))
                         continue;
 
@@ -290,7 +290,7 @@ namespace MetaData
                 _hasEmbeddedCover = true;
         }
 
-        if (debug && Service<ILogger>::get()->isSeverityActive(Severity::DEBUG))
+        if (debug && core::Service<core::logging::ILogger>::get()->isSeverityActive(core::logging::Severity::DEBUG))
         {
             for (const auto& [key, values] : _propertyMap)
             {
@@ -380,4 +380,4 @@ namespace MetaData
     {
         return static_cast<std::size_t>(_file.audioProperties()->sampleRate());
     }
-} // namespace MetaData
+} // namespace lms::metadata

@@ -25,21 +25,21 @@
 #include "database/StarredRelease.hpp"
 #include "database/StarredTrack.hpp"
 
-namespace Feedback
+namespace lms::feedback
 {
     namespace details
     {
         template <typename StarredObjType>
-        void onStarred(Database::Session& session, typename StarredObjType::IdType id)
+        void onStarred(db::Session& session, typename StarredObjType::IdType id)
         {
             auto transaction{ session.createWriteTransaction() };
 
             if (auto starredObj{ StarredObjType::find(session, id) })
-                starredObj.modify()->setSyncState(Database::SyncState::Synchronized);
+                starredObj.modify()->setSyncState(db::SyncState::Synchronized);
         }
 
         template <typename StarredObjType>
-        void onUnstarred(Database::Session& session, typename StarredObjType::IdType id)
+        void onUnstarred(db::Session& session, typename StarredObjType::IdType id)
         {
             auto transaction{ session.createWriteTransaction() };
 
@@ -48,37 +48,37 @@ namespace Feedback
         }
     }
 
-    InternalBackend::InternalBackend(Database::Db& db)
+    InternalBackend::InternalBackend(db::Db& db)
         : _db{ db }
     {}
 
-    void InternalBackend::onStarred(Database::StarredArtistId starredArtistId)
+    void InternalBackend::onStarred(db::StarredArtistId starredArtistId)
     {
-        details::onStarred<Database::StarredArtist>(_db.getTLSSession(), starredArtistId);
+        details::onStarred<db::StarredArtist>(_db.getTLSSession(), starredArtistId);
     }
 
-    void InternalBackend::onUnstarred(Database::StarredArtistId starredArtistId)
+    void InternalBackend::onUnstarred(db::StarredArtistId starredArtistId)
     {
-        details::onUnstarred<Database::StarredArtist>(_db.getTLSSession(), starredArtistId);
+        details::onUnstarred<db::StarredArtist>(_db.getTLSSession(), starredArtistId);
     }
 
-    void InternalBackend::onStarred(Database::StarredReleaseId starredReleaseId)
+    void InternalBackend::onStarred(db::StarredReleaseId starredReleaseId)
     {
-        details::onStarred<Database::StarredRelease>(_db.getTLSSession(), starredReleaseId);
+        details::onStarred<db::StarredRelease>(_db.getTLSSession(), starredReleaseId);
     }
 
-    void InternalBackend::onUnstarred(Database::StarredReleaseId starredReleaseId)
+    void InternalBackend::onUnstarred(db::StarredReleaseId starredReleaseId)
     {
-        details::onUnstarred<Database::StarredRelease>(_db.getTLSSession(), starredReleaseId);
+        details::onUnstarred<db::StarredRelease>(_db.getTLSSession(), starredReleaseId);
     }
 
-    void InternalBackend::onStarred(Database::StarredTrackId starredTrackId)
+    void InternalBackend::onStarred(db::StarredTrackId starredTrackId)
     {
-        details::onStarred<Database::StarredTrack>(_db.getTLSSession(), starredTrackId);
+        details::onStarred<db::StarredTrack>(_db.getTLSSession(), starredTrackId);
     }
 
-    void InternalBackend::onUnstarred(Database::StarredTrackId starredTrackId)
+    void InternalBackend::onUnstarred(db::StarredTrackId starredTrackId)
     {
-        details::onUnstarred<Database::StarredTrack>(_db.getTLSSession(), starredTrackId);
+        details::onUnstarred<db::StarredTrack>(_db.getTLSSession(), starredTrackId);
     }
 } // Feedback

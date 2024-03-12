@@ -28,9 +28,9 @@
 #include "database/User.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/Random.hpp"
-#include "utils/Service.hpp"
+#include "core/ILogger.hpp"
+#include "core/Random.hpp"
+#include "core/Service.hpp"
 #include "responses/Album.hpp"
 #include "responses/Artist.hpp"
 #include "responses/Genre.hpp"
@@ -39,9 +39,9 @@
 #include "SubsonicId.hpp"
 #include "Utils.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    using namespace Database;
+    using namespace db;
 
     static const std::string_view	reportedDummyDate{ "2000-01-01T00:00:00" };
     static const unsigned long long	reportedDummyDateULong{ 946684800000ULL }; // 2000-01-01T00:00:00 UTC
@@ -66,12 +66,12 @@ namespace API::Subsonic
                 if (!artist)
                     throw RequestedDataNotFoundError{};
 
-                std::optional<UUID> artistMBID{ artist->getMBID() };
+                std::optional<core::UUID> artistMBID{ artist->getMBID() };
                 if (artistMBID)
                     artistInfoNode.createChild("musicBrainzId").setValue(artistMBID->getAsString());
             }
 
-            auto similarArtistsId{ Service<Recommendation::IRecommendationService>::get()->getSimilarArtists(id, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, count) };
+            auto similarArtistsId{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(id, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, count) };
 
             {
                 auto transaction{ context.dbSession.createReadTransaction() };
@@ -182,7 +182,7 @@ namespace API::Subsonic
         {
             // API says: "Returns a random collection of songs from the given artist and similar artists"
             const std::size_t similarArtistCount{ count / 5 };
-            std::vector<ArtistId> artistIds{ Service<Recommendation::IRecommendationService>::get()->getSimilarArtists(artistId, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, similarArtistCount) };
+            std::vector<ArtistId> artistIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(artistId, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, similarArtistCount) };
             artistIds.push_back(artistId);
 
             const std::size_t meanTrackCountPerArtist{ (count / artistIds.size()) + 1 };
@@ -213,7 +213,7 @@ namespace API::Subsonic
             // API says: "Returns a random collection of songs from the given artist and similar artists"
             // so let's extend this for release
             const std::size_t similarReleaseCount{ count / 5 };
-            std::vector<ReleaseId> releaseIds{ Service<Recommendation::IRecommendationService>::get()->getSimilarReleases(releaseId, similarReleaseCount) };
+            std::vector<ReleaseId> releaseIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarReleases(releaseId, similarReleaseCount) };
             releaseIds.push_back(releaseId);
 
             const std::size_t meanTrackCountPerRelease{ (count / releaseIds.size()) + 1 };
@@ -241,7 +241,7 @@ namespace API::Subsonic
 
         std::vector<TrackId> findSimilarSongs(RequestContext&, TrackId trackId, std::size_t count)
         {
-            return Service<Recommendation::IRecommendationService>::get()->findSimilarTracks({ trackId }, count);
+            return core::Service<recommendation::IRecommendationService>::get()->findSimilarTracks({ trackId }, count);
         }
 
         Response handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
@@ -262,7 +262,7 @@ namespace API::Subsonic
             else
                 throw BadParameterGenericError{ "id" };
 
-            Random::shuffleContainer(tracks);
+            core::random::shuffleContainer(tracks);
 
             auto transaction{ context.dbSession.createReadTransaction() };
 
@@ -343,7 +343,7 @@ namespace API::Subsonic
             if (!artist)
                 throw RequestedDataNotFoundError{};
 
-            directoryNode.setAttribute("name", Utils::makeNameFilesystemCompatible(artist->getName()));
+            directoryNode.setAttribute("name", utils::makeNameFilesystemCompatible(artist->getName()));
 
             Release::find(context.dbSession, Release::FindParameters{}.setArtist(*artistId), [&](const Release::pointer& release)
                 {
@@ -358,7 +358,7 @@ namespace API::Subsonic
             if (!release)
                 throw RequestedDataNotFoundError{};
 
-            directoryNode.setAttribute("name", Utils::makeNameFilesystemCompatible(release->getName()));
+            directoryNode.setAttribute("name", utils::makeNameFilesystemCompatible(release->getName()));
 
             Track::find(context.dbSession, Track::FindParameters{}.setRelease(*releaseId).setSortMethod(TrackSortMethod::Release), [&](const Track::pointer& track)
                 {
@@ -512,12 +512,12 @@ namespace API::Subsonic
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
         Response::Node& topSongs{ response.createNode("topSongs") };
 
-        Scrobbling::IScrobblingService::FindParameters params;
+        scrobbling::IScrobblingService::FindParameters params;
         params.setUser(context.userId);
-        params.setRange(Database::Range{ 0, count });
+        params.setRange(db::Range{ 0, count });
         params.setArtist(artists.front()->getId());
 
-        const auto trackIds{ Service<Scrobbling::IScrobblingService>::get()->getTopTracks(params) };
+        const auto trackIds{ core::Service<scrobbling::IScrobblingService>::get()->getTopTracks(params) };
         for (const TrackId trackId : trackIds.results)
         {
             if (Track::pointer track{ Track::find(context.dbSession, trackId) })

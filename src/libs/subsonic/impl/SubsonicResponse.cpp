@@ -24,11 +24,11 @@
 #include <climits>
 #include <boost/property_tree/xml_parser.hpp>
 
-#include "utils/Exception.hpp"
-#include "utils/String.hpp"
+#include "core/Exception.hpp"
+#include "core/String.hpp"
 #include "ProtocolVersion.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
     std::string_view ResponseFormatToMimeType(ResponseFormat format)
     {
@@ -366,7 +366,7 @@ namespace API::Subsonic
     void Response::JsonSerializer::serializeEscapedString(std::ostream& os, std::string_view str)
     {
         os << '\"';
-        StringUtils::writeJsonEscapedString(os, str);
+        core::stringUtils::writeJsonEscapedString(os, str);
         os << '\"';
     }
 

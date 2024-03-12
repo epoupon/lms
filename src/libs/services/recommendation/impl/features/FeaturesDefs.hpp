@@ -24,7 +24,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace Recommendation {
+namespace lms::recommendation {
 
 using FeatureName = std::string;
 using FeatureNames = std::unordered_set<FeatureName>;
@@ -46,4 +46,4 @@ struct FeatureSettings
 };
 using FeatureSettingsMap = std::unordered_map<FeatureName, FeatureSettings>;
 
-} // namespace Recommendation
+} // namespace lms::recommendation

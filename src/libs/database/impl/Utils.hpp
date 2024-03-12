@@ -27,9 +27,9 @@
 #include <Wt/WDateTime.h>
 
 #include "database/Types.hpp"
-#include "utils/ITraceLogger.hpp"
+#include "core/ITraceLogger.hpp"
 
-namespace Database::Utils
+namespace lms::db::utils
 {
 #define ESCAPE_CHAR_STR "\\"
     static inline constexpr char escapeChar{ '\\' };
@@ -86,5 +86,5 @@ namespace Database::Utils
     }
 
     Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime);
-} // namespace Database::Utils
+}
 

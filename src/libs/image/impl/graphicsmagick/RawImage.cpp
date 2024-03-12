@@ -23,9 +23,9 @@
 
 #include "JPEGImage.hpp"
 #include "image/Exception.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
-namespace Image
+namespace lms::image
 {
 	std::unique_ptr<IRawImage> decodeImage(const std::byte* encodedData, std::size_t encodedDataSize)
 	{
@@ -56,7 +56,7 @@ namespace Image
 	}
 }
 
-namespace Image::GraphicsMagick
+namespace lms::image::GraphicsMagick
 {
 
 RawImage::RawImage(const std::byte* encodedData, std::size_t encodedDataSize)
@@ -73,12 +73,12 @@ RawImage::RawImage(const std::byte* encodedData, std::size_t encodedDataSize)
 	catch (Magick::Warning& e)
 	{
 		LMS_LOG(COVER, WARNING, "Caught Magick warning: " << e.what());
-		throw ImageException {std::string {"Magick read warning: "} + e.what()};
+		throw Exception {std::string {"Magick read warning: "} + e.what()};
 	}
 	catch (Magick::Exception& e)
 	{
 		LMS_LOG(COVER, ERROR, "Caught Magick exception: " << e.what());
-		throw ImageException {std::string {"Magick read error: "} + e.what()};
+		throw Exception {std::string {"Magick read error: "} + e.what()};
 	}
 }
 
@@ -95,12 +95,12 @@ RawImage::RawImage(const std::filesystem::path& p)
 	catch (Magick::Warning& e)
 	{
 		LMS_LOG(COVER, WARNING, "Caught Magick warning: " << e.what());
-		throw ImageException {std::string {"Magick read warning: "} + e.what()};
+		throw Exception {std::string {"Magick read warning: "} + e.what()};
 	}
 	catch (Magick::Exception& e)
 	{
 		LMS_LOG(COVER, ERROR, "Caught Magick exception: " << e.what());
-		throw ImageException {std::string {"Magick read error: "} + e.what()};
+		throw Exception {std::string {"Magick read error: "} + e.what()};
 	}
 }
 
@@ -114,7 +114,7 @@ RawImage::resize(ImageSize width)
 	catch (Magick::Exception& e)
 	{
 		LMS_LOG(COVER, ERROR, "Caught Magick exception while resizing: " << e.what());
-		throw ImageException {std::string {"Magick resize error: "} + e.what()};
+		throw Exception {std::string {"Magick resize error: "} + e.what()};
 	}
 }
 
@@ -130,5 +130,5 @@ RawImage::getMagickImage() const
 	return _image;
 }
 
-} // namespace Image::GraphicsMagick
+} // namespace lms::image::GraphicsMagick
 

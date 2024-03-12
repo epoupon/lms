@@ -27,24 +27,24 @@
 #include "database/ReleaseId.hpp"
 #include "database/Types.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class Release;
 }
 
-namespace UserInterface
+namespace lms::ui
 {
 	class ReleaseCollector : public DatabaseCollectorBase
 	{
 		public:
 			using DatabaseCollectorBase::DatabaseCollectorBase;
 
-			Database::RangeResults<Database::ReleaseId>	get(std::optional<Database::Range> range = std::nullopt);
+			db::RangeResults<db::ReleaseId>	get(std::optional<db::Range> range = std::nullopt);
 			void reset() { _randomReleases.reset(); }
 
 		private:
-			Database::RangeResults<Database::ReleaseId> getRandomReleases(Range range);
-			std::optional<Database::RangeResults<Database::ReleaseId>> _randomReleases;
+			db::RangeResults<db::ReleaseId> getRandomReleases(Range range);
+			std::optional<db::RangeResults<db::ReleaseId>> _randomReleases;
 	};
 } // ns UserInterface
 

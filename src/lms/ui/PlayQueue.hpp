@@ -33,14 +33,14 @@
 #include "common/Template.hpp"
 
 
-namespace Database
+namespace lms::db
 {
 	class Track;
 	class TrackList;
 	class TrackListEntry;
 }
 
-namespace UserInterface {
+namespace lms::ui {
 
 class InfiniteScrollingContainer;
 
@@ -49,11 +49,11 @@ class PlayQueue : public Template
 	public:
 		PlayQueue();
 
-		void play(const std::vector<Database::TrackId>& trackIds);
-		void playNext(const std::vector<Database::TrackId>& trackIds);
-		void playShuffled(const std::vector<Database::TrackId>& trackIds);
-		void playOrAddLast(const std::vector<Database::TrackId>& trackIds); // play if queue empty, otherwise just add last
-		void playAtIndex(const std::vector<Database::TrackId>& trackIds, std::size_t index);
+		void play(const std::vector<db::TrackId>& trackIds);
+		void playNext(const std::vector<db::TrackId>& trackIds);
+		void playShuffled(const std::vector<db::TrackId>& trackIds);
+		void playOrAddLast(const std::vector<db::TrackId>& trackIds); // play if queue empty, otherwise just add last
+		void playAtIndex(const std::vector<db::TrackId>& trackIds, std::size_t index);
 
 		// play the next track in the queue
 		void playNext();
@@ -62,7 +62,7 @@ class PlayQueue : public Template
 		void playPrevious();
 
 		// Signal emitted when a track is to be load(and optionally played)
-		Wt::Signal<Database::TrackId, bool /*play*/, float /* replayGain */> trackSelected;
+		Wt::Signal<db::TrackId, bool /*play*/, float /* replayGain */> trackSelected;
 
 		// Signal emitted when track is unselected (has to be stopped)
 		Wt::Signal<> trackUnselected;
@@ -79,14 +79,14 @@ class PlayQueue : public Template
 		void initTrackLists();
 
 		void notifyAddedTracks(std::size_t nbAddedTracks) const;
-		Database::ObjectPtr<Database::TrackList> getQueue() const;
+		db::ObjectPtr<db::TrackList> getQueue() const;
 		bool isFull() const;
 
 		void clearTracks();
-		void enqueueTracks(const std::vector<Database::TrackId>& trackIds);
-		std::vector<Database::TrackId> getAndClearNextTracks();
+		void enqueueTracks(const std::vector<db::TrackId>& trackIds);
+		std::vector<db::TrackId> getAndClearNextTracks();
 		void addSome();
-		void addEntry(const Database::ObjectPtr<Database::TrackListEntry>& entry);
+		void addEntry(const db::ObjectPtr<db::TrackListEntry>& entry);
 		void enqueueRadioTracksIfNeeded();
 		void enqueueRadioTracks();
 		void updateInfo();
@@ -97,17 +97,17 @@ class PlayQueue : public Template
 		void loadTrack(std::size_t pos, bool play);
 		void stop();
 
-		std::optional<float> getReplayGain(std::size_t pos, const Database::ObjectPtr<Database::Track>& track) const;
+		std::optional<float> getReplayGain(std::size_t pos, const db::ObjectPtr<db::Track>& track) const;
 		void saveAsTrackList();
 
 		void exportToNewTrackList(const Wt::WString& name);
-		void exportToTrackList(Database::TrackListId trackList);
+		void exportToTrackList(db::TrackListId trackList);
 
 		const std::size_t _capacity;
 		static inline constexpr std::size_t _batchSize {12};
 
 		bool _mediaPlayerSettingsLoaded {};
-		Database::TrackListId _queueId {};
+		db::TrackListId _queueId {};
 		InfiniteScrollingContainer* _entriesContainer {};
 		Wt::WText* _nbTracks {};
 		Wt::WText* _duration {};
@@ -117,5 +117,5 @@ class PlayQueue : public Template
 		bool _isTrackSelected {};
 };
 
-} // namespace UserInterface
+} // namespace lms::ui
 

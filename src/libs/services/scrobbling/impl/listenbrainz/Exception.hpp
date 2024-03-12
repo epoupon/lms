@@ -21,11 +21,11 @@
 
 #include "services/scrobbling/Exception.hpp"
 
-namespace Scrobbling::ListenBrainz
+namespace lms::scrobbling::listenBrainz
 {
-	class Exception : public Scrobbling::Exception
+	class Exception : public scrobbling::Exception
 	{
 		public:
-			using Scrobbling::Exception::Exception;
+			using scrobbling::Exception::Exception;
 	};
 }

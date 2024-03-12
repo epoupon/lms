@@ -24,7 +24,7 @@
 
 #include "services/scanner/ScannerStats.hpp"
 
-namespace Scanner
+namespace lms::scanner
 {
     class IScanStep
     {

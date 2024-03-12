@@ -21,23 +21,23 @@
 
 #include "SubsonicResponse.hpp"
 
-#include "utils/ILogger.hpp"
-#include "utils/String.hpp"
+#include "core/ILogger.hpp"
+#include "core/String.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    std::string idToString(Database::ArtistId id)
+    std::string idToString(db::ArtistId id)
     {
         return "ar-" + id.toString();
     }
 
-    std::string idToString(Database::MediaLibraryId id)
+    std::string idToString(db::MediaLibraryId id)
     {
         // No need to prefix as this is only used at well known places
         return id.toString();
     }
 
-    std::string idToString(Database::ReleaseId id)
+    std::string idToString(db::ReleaseId id)
     {
         return "al-" + id.toString();
     }
@@ -47,97 +47,97 @@ namespace API::Subsonic
         return "root";
     }
 
-    std::string idToString(Database::TrackId id)
+    std::string idToString(db::TrackId id)
     {
         return "tr-" + id.toString();
     }
 
-    std::string idToString(Database::TrackListId id)
+    std::string idToString(db::TrackListId id)
     {
         return "pl-" + id.toString();
     }
-} // namespace API::Subsonic
+} // namespace lms::api::subsonic
 
-namespace StringUtils
+namespace lms::core::stringUtils
 {
     template<>
-    std::optional<Database::ArtistId> readAs(std::string_view str)
+    std::optional<db::ArtistId> readAs(std::string_view str)
     {
-        std::vector<std::string_view> values{ StringUtils::splitString(str, '-') };
+        std::vector<std::string_view> values{ core::stringUtils::splitString(str, '-') };
         if (values.size() != 2)
             return std::nullopt;
 
         if (values[0] != "ar")
             return std::nullopt;
 
-        if (const auto value{ StringUtils::readAs<Database::ArtistId::ValueType>(values[1]) })
-            return Database::ArtistId{ *value };
+        if (const auto value{ core::stringUtils::readAs<db::ArtistId::ValueType>(values[1]) })
+            return db::ArtistId{ *value };
 
         return std::nullopt;
     }
 
     template<>
-    std::optional<Database::MediaLibraryId> readAs(std::string_view str)
+    std::optional<db::MediaLibraryId> readAs(std::string_view str)
     {
-        if (const auto value{ StringUtils::readAs<Database::MediaLibraryId::ValueType>(str) })
-            return Database::MediaLibraryId{ *value };
+        if (const auto value{ core::stringUtils::readAs<db::MediaLibraryId::ValueType>(str) })
+            return db::MediaLibraryId{ *value };
 
         return std::nullopt;
     }
 
     template<>
-    std::optional<Database::ReleaseId> readAs(std::string_view str)
+    std::optional<db::ReleaseId> readAs(std::string_view str)
     {
-        std::vector<std::string_view> values{ StringUtils::splitString(str, '-') };
+        std::vector<std::string_view> values{ core::stringUtils::splitString(str, '-') };
         if (values.size() != 2)
             return std::nullopt;
 
         if (values[0] != "al")
             return std::nullopt;
 
-        if (const auto value{ StringUtils::readAs<Database::ReleaseId::ValueType>(values[1]) })
-            return Database::ReleaseId{ *value };
+        if (const auto value{ core::stringUtils::readAs<db::ReleaseId::ValueType>(values[1]) })
+            return db::ReleaseId{ *value };
 
         return std::nullopt;
     }
 
     template<>
-    std::optional<API::Subsonic::RootId> readAs(std::string_view str)
+    std::optional<api::subsonic::RootId> readAs(std::string_view str)
     {
         if (str == "root")
-            return API::Subsonic::RootId{};
+            return api::subsonic::RootId{};
 
         return std::nullopt;
     }
 
     template<>
-    std::optional<Database::TrackId> readAs(std::string_view str)
+    std::optional<db::TrackId> readAs(std::string_view str)
     {
-        std::vector<std::string_view> values{ StringUtils::splitString(str, '-') };
+        std::vector<std::string_view> values{ core::stringUtils::splitString(str, '-') };
         if (values.size() != 2)
             return std::nullopt;
 
         if (values[0] != "tr")
             return std::nullopt;
 
-        if (const auto value{ StringUtils::readAs<Database::TrackId::ValueType>(values[1]) })
-            return Database::TrackId{ *value };
+        if (const auto value{ core::stringUtils::readAs<db::TrackId::ValueType>(values[1]) })
+            return db::TrackId{ *value };
 
         return std::nullopt;
     }
 
     template<>
-    std::optional<Database::TrackListId> readAs(std::string_view str)
+    std::optional<db::TrackListId> readAs(std::string_view str)
     {
-        std::vector<std::string_view> values{ StringUtils::splitString(str, '-') };
+        std::vector<std::string_view> values{ core::stringUtils::splitString(str, '-') };
         if (values.size() != 2)
             return std::nullopt;
 
         if (values[0] != "pl")
             return std::nullopt;
 
-        if (const auto value{ StringUtils::readAs<Database::TrackListId::ValueType>(values[1]) })
-            return Database::TrackListId{ *value };
+        if (const auto value{ core::stringUtils::readAs<db::TrackListId::ValueType>(values[1]) })
+            return db::TrackListId{ *value };
 
         return std::nullopt;
     }

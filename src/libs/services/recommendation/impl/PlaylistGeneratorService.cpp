@@ -26,18 +26,18 @@
 #include "playlist-constraints/ConsecutiveArtists.hpp"
 #include "playlist-constraints/ConsecutiveReleases.hpp"
 #include "playlist-constraints/DuplicateTracks.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
-namespace Recommendation
+namespace lms::recommendation
 {
-    using namespace Database;
+    using namespace db;
 
-    std::unique_ptr<IPlaylistGeneratorService> createPlaylistGeneratorService(Db& db, Recommendation::IRecommendationService& recommendationService)
+    std::unique_ptr<IPlaylistGeneratorService> createPlaylistGeneratorService(Db& db, IRecommendationService& recommendationService)
     {
         return std::make_unique<PlaylistGeneratorService>(db, recommendationService);
     }
 
-    PlaylistGeneratorService::PlaylistGeneratorService(Db& db, Recommendation::IRecommendationService& recommendationService)
+    PlaylistGeneratorService::PlaylistGeneratorService(Db& db, IRecommendationService& recommendationService)
         : _db{ db }
         , _recommendationService{ recommendationService }
     {
@@ -69,7 +69,7 @@ namespace Recommendation
             // select the similar track that has the best score
             for (std::size_t trackIndex{}; trackIndex < similarTracks.size(); ++trackIndex)
             {
-                using namespace Database::Debug;
+                using namespace db::Debug;
 
                 finalResult.push_back(similarTracks[trackIndex]);
 
@@ -95,7 +95,7 @@ namespace Recommendation
         return std::vector(std::cbegin(finalResult) + startingTracks.size(), std::cend(finalResult));
     }
 
-    TrackContainer PlaylistGeneratorService::getTracksFromTrackList(Database::TrackListId tracklistId) const
+    TrackContainer PlaylistGeneratorService::getTracksFromTrackList(db::TrackListId tracklistId) const
     {
         TrackContainer tracks;
 

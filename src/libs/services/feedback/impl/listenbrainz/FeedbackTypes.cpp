@@ -19,7 +19,7 @@
 
 #include "FeedbackTypes.hpp"
 
-namespace Feedback::ListenBrainz
+namespace lms::feedback::listenBrainz
 {
 	std::ostream&
 	operator<<(std::ostream& os, const Feedback& feedback)
@@ -27,4 +27,4 @@ namespace Feedback::ListenBrainz
 		os << "created = '" << feedback.created.toString() << "', recording MBID = '" << feedback.recordingMBID.getAsString() << "', score = " << static_cast<int>(feedback.score);
 		return os;
 	}
-} // Feedback::ListenBrainz
+} // feedback::ListenBrainz

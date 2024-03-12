@@ -28,7 +28,7 @@
 #include "database/Types.hpp"
 #include "database/UserId.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Release;
     class Session;
@@ -79,5 +79,5 @@ namespace Database
         Wt::Dbo::ptr<Release>	_release;
         Wt::Dbo::ptr<User>		_user;
     };
-} // namespace Database
+} // namespace lms::db
 

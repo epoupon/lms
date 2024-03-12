@@ -27,13 +27,13 @@
 #include "Exception.hpp"
 #include "Utils.hpp"
 
-namespace Feedback::ListenBrainz
+namespace lms::feedback::listenBrainz
 {
     namespace
     {
         Feedback parseFeedback(const Wt::Json::Object& feedbackObj)
         {
-            const std::optional<UUID> recordingMBID{ UUID::fromString(static_cast<std::string>(feedbackObj.get("recording_mbid"))) };
+            const std::optional<core::UUID> recordingMBID{ core::UUID::fromString(static_cast<std::string>(feedbackObj.get("recording_mbid"))) };
             if (!recordingMBID)
                 throw Exception{ "MBID not found!" };
 
@@ -87,4 +87,4 @@ namespace Feedback::ListenBrainz
 
         return res;
     }
-} // Feedback::ListenBrainz
+} // feedback::ListenBrainz

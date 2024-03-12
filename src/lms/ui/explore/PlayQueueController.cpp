@@ -26,28 +26,28 @@
 #include "PlayQueue.hpp"
 #include "LmsApplication.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
 
     namespace
     {
-        std::vector<Database::TrackId> getArtistsTracks(Database::Session& session, const std::vector<Database::ArtistId>& artistsId, const std::vector<Database::ClusterId>& clusters, std::size_t maxTrackCount)
+        std::vector<db::TrackId> getArtistsTracks(db::Session& session, const std::vector<db::ArtistId>& artistsId, const std::vector<db::ClusterId>& clusters, std::size_t maxTrackCount)
         {
             assert(maxTrackCount);
 
-            std::vector<Database::TrackId> res;
+            std::vector<db::TrackId> res;
 
             auto transaction{ session.createReadTransaction() };
 
-            for (const Database::ArtistId artistId : artistsId)
+            for (const db::ArtistId artistId : artistsId)
             {
-                Database::Track::FindParameters params;
+                db::Track::FindParameters params;
                 params.setArtist(artistId);
-                params.setSortMethod(Database::TrackSortMethod::DateDescAndRelease);
+                params.setSortMethod(db::TrackSortMethod::DateDescAndRelease);
                 params.setClusters(clusters);
-                params.setRange(Database::Range{ 0, maxTrackCount - res.size() });
+                params.setRange(db::Range{ 0, maxTrackCount - res.size() });
 
-                const auto tracks{ Database::Track::findIds(session, params) };
+                const auto tracks{ db::Track::findIds(session, params) };
 
                 res.reserve(res.size() + tracks.results.size());
                 res.insert(std::end(res), std::cbegin(tracks.results), std::cend(tracks.results));
@@ -59,9 +59,9 @@ namespace UserInterface
             return res;
         }
 
-        std::vector<Database::TrackId> getReleasesTracks(Database::Session& session, const std::vector<Database::ReleaseId>& releasesId, const std::vector<Database::ClusterId>& clusters, std::size_t maxTrackCount)
+        std::vector<db::TrackId> getReleasesTracks(db::Session& session, const std::vector<db::ReleaseId>& releasesId, const std::vector<db::ClusterId>& clusters, std::size_t maxTrackCount)
         {
-            using namespace Database;
+            using namespace db;
             assert(maxTrackCount);
 
             std::vector<TrackId> res;
@@ -70,13 +70,13 @@ namespace UserInterface
 
             for (const ReleaseId releaseId : releasesId)
             {
-                Database::Track::FindParameters params;
+                db::Track::FindParameters params;
                 params.setRelease(releaseId);
-                params.setSortMethod(Database::TrackSortMethod::Release);
+                params.setSortMethod(db::TrackSortMethod::Release);
                 params.setClusters(clusters);
-                params.setRange(Database::Range{ 0, maxTrackCount - res.size() });
+                params.setRange(db::Range{ 0, maxTrackCount - res.size() });
 
-                const auto tracks{ Database::Track::findIds(session, params) };
+                const auto tracks{ db::Track::findIds(session, params) };
 
                 res.reserve(res.size() + tracks.results.size());
                 res.insert(std::end(res), std::cbegin(tracks.results), std::cend(tracks.results));
@@ -88,9 +88,9 @@ namespace UserInterface
             return res;
         }
 
-        std::vector<Database::TrackId> getDiscTracks(Database::Session& session, const std::vector<PlayQueueController::Disc>& discs, const std::vector<Database::ClusterId>& clusters, std::size_t maxTrackCount)
+        std::vector<db::TrackId> getDiscTracks(db::Session& session, const std::vector<PlayQueueController::Disc>& discs, const std::vector<db::ClusterId>& clusters, std::size_t maxTrackCount)
         {
-            using namespace Database;
+            using namespace db;
             assert(maxTrackCount);
 
             std::vector<TrackId> res;
@@ -99,14 +99,14 @@ namespace UserInterface
 
             for (const PlayQueueController::Disc& disc : discs)
             {
-                Database::Track::FindParameters params;
+                db::Track::FindParameters params;
                 params.setRelease(disc.releaseId);
-                params.setSortMethod(Database::TrackSortMethod::Release);
+                params.setSortMethod(db::TrackSortMethod::Release);
                 params.setDiscNumber(disc.discNumber);
                 params.setClusters(clusters);
-                params.setRange(Database::Range{ 0, maxTrackCount - res.size() });
+                params.setRange(db::Range{ 0, maxTrackCount - res.size() });
 
-                const auto tracks{ Database::Track::findIds(session, params) };
+                const auto tracks{ db::Track::findIds(session, params) };
 
                 res.reserve(res.size() + tracks.results.size());
                 res.insert(std::end(res), std::cbegin(tracks.results), std::cend(tracks.results));
@@ -118,20 +118,20 @@ namespace UserInterface
             return res;
         }
 
-        std::vector<Database::TrackId> getTrackListTracks(Database::Session& session, Database::TrackListId trackListId, const std::vector<Database::ClusterId>& clusters, std::size_t maxTrackCount)
+        std::vector<db::TrackId> getTrackListTracks(db::Session& session, db::TrackListId trackListId, const std::vector<db::ClusterId>& clusters, std::size_t maxTrackCount)
         {
-            using namespace Database;
+            using namespace db;
             assert(maxTrackCount);
 
             auto transaction{ session.createReadTransaction() };
 
-            Database::Track::FindParameters params;
+            db::Track::FindParameters params;
             params.setTrackList(trackListId);
             params.setClusters(clusters);
-            params.setRange(Database::Range{ 0, maxTrackCount });
+            params.setRange(db::Range{ 0, maxTrackCount });
             params.setSortMethod(TrackSortMethod::TrackList);
 
-            return Database::Track::findIds(session, params).results;
+            return db::Track::findIds(session, params).results;
         }
     }
 
@@ -141,19 +141,19 @@ namespace UserInterface
     {
     }
 
-    void PlayQueueController::processCommand(Command command, const std::vector<Database::ArtistId>& artistIds)
+    void PlayQueueController::processCommand(Command command, const std::vector<db::ArtistId>& artistIds)
     {
-        const std::vector<Database::TrackId> tracks{ getArtistsTracks(LmsApp->getDbSession(), artistIds, _filters.getClusterIds(), _maxTrackCountToEnqueue) };
+        const std::vector<db::TrackId> tracks{ getArtistsTracks(LmsApp->getDbSession(), artistIds, _filters.getClusterIds(), _maxTrackCountToEnqueue) };
         processCommand(command, tracks);
     }
 
-    void PlayQueueController::processCommand(Command command, const std::vector<Database::ReleaseId>& releaseIds)
+    void PlayQueueController::processCommand(Command command, const std::vector<db::ReleaseId>& releaseIds)
     {
-        const std::vector<Database::TrackId> tracks{ getReleasesTracks(LmsApp->getDbSession(), releaseIds, _filters.getClusterIds(), _maxTrackCountToEnqueue) };
+        const std::vector<db::TrackId> tracks{ getReleasesTracks(LmsApp->getDbSession(), releaseIds, _filters.getClusterIds(), _maxTrackCountToEnqueue) };
         processCommand(command, tracks);
     }
 
-    void PlayQueueController::processCommand(Command command, const std::vector<Database::TrackId>& trackIds)
+    void PlayQueueController::processCommand(Command command, const std::vector<db::TrackId>& trackIds)
     {
         // consider things are already filtered here, and _maxTrackCount honored playqueue side...
         switch (command)
@@ -173,31 +173,31 @@ namespace UserInterface
         }
     }
 
-    void PlayQueueController::processCommand(Command command, Database::TrackListId trackListId)
+    void PlayQueueController::processCommand(Command command, db::TrackListId trackListId)
     {
-        const std::vector<Database::TrackId> tracks{ getTrackListTracks(LmsApp->getDbSession(), trackListId, _filters.getClusterIds(), _maxTrackCountToEnqueue) };
+        const std::vector<db::TrackId> tracks{ getTrackListTracks(LmsApp->getDbSession(), trackListId, _filters.getClusterIds(), _maxTrackCountToEnqueue) };
         processCommand(command, tracks);
     }
 
     void PlayQueueController::processCommand(Command command, const std::vector<Disc>& discs)
     {
-        const std::vector<Database::TrackId> tracks{ getDiscTracks(LmsApp->getDbSession(), discs, _filters.getClusterIds(), _maxTrackCountToEnqueue) };
+        const std::vector<db::TrackId> tracks{ getDiscTracks(LmsApp->getDbSession(), discs, _filters.getClusterIds(), _maxTrackCountToEnqueue) };
         processCommand(command, tracks);
     }
 
-    void PlayQueueController::playTrackInRelease(Database::TrackId trackId)
+    void PlayQueueController::playTrackInRelease(db::TrackId trackId)
     {
-        Database::ReleaseId releaseId;
+        db::ReleaseId releaseId;
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-            const Database::Track::pointer track{ Database::Track::find(LmsApp->getDbSession(), trackId) };
+            const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), trackId) };
             if (!track || !track->getRelease())
                 return;
 
             releaseId = track->getRelease()->getId();
         }
 
-        const std::vector<Database::TrackId> tracks{ getReleasesTracks(LmsApp->getDbSession(), {releaseId}, _filters.getClusterIds(), _maxTrackCountToEnqueue) };
+        const std::vector<db::TrackId> tracks{ getReleasesTracks(LmsApp->getDbSession(), {releaseId}, _filters.getClusterIds(), _maxTrackCountToEnqueue) };
         auto itTrack{ std::find(std::cbegin(tracks), std::cend(tracks), trackId) };
         if (itTrack == std::cend(tracks))
             return;
@@ -205,4 +205,4 @@ namespace UserInterface
         const std::size_t index{ static_cast<std::size_t>(std::distance(std::cbegin(tracks), itTrack)) };
         _playQueue.playAtIndex(tracks, index);
     }
-} // namespace UserInterface
+} // namespace lms::ui

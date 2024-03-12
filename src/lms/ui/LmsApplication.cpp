@@ -37,10 +37,10 @@
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/ITraceLogger.hpp"
-#include "utils/Service.hpp"
-#include "utils/String.hpp"
+#include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
+#include "core/Service.hpp"
+#include "core/String.hpp"
 
 #include "admin/InitWizardView.hpp"
 #include "admin/MediaLibrariesView.hpp"
@@ -65,7 +65,7 @@
 #include "PlayQueue.hpp"
 #include "SettingsView.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
     namespace
     {
@@ -175,12 +175,12 @@ namespace UserInterface
         }
     }
 
-    std::unique_ptr<Wt::WApplication> LmsApplication::create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationManager& appManager)
+    std::unique_ptr<Wt::WApplication> LmsApplication::create(const Wt::WEnvironment& env, db::Db& db, LmsApplicationManager& appManager)
     {
-        if (auto * authEnvService{ Service<::Auth::IEnvService>::get() })
+        if (auto * authEnvService{ core::Service<auth::IEnvService>::get() })
         {
             const auto checkResult{ authEnvService->processEnv(env) };
-            if (checkResult.state != ::Auth::IEnvService::CheckResult::State::Granted)
+            if (checkResult.state != auth::IEnvService::CheckResult::State::Granted)
             {
                 LMS_LOG(UI, ERROR, "Cannot authenticate user from environment!");
                 // return a blank page
@@ -198,25 +198,25 @@ namespace UserInterface
         return static_cast<LmsApplication*>(Wt::WApplication::instance());
     }
 
-    Database::Db& LmsApplication::getDb()
+    db::Db& LmsApplication::getDb()
     {
         return _db;
     }
 
-    Database::Session& LmsApplication::getDbSession()
+    db::Session& LmsApplication::getDbSession()
     {
         return _db.getTLSSession();
     }
 
-    Database::User::pointer LmsApplication::getUser()
+    db::User::pointer LmsApplication::getUser()
     {
         if (!_authenticatedUser)
             return {};
 
-        return Database::User::find(getDbSession(), _authenticatedUser->userId);
+        return db::User::find(getDbSession(), _authenticatedUser->userId);
     }
 
-    Database::UserId LmsApplication::getUserId()
+    db::UserId LmsApplication::getUserId()
     {
         return _authenticatedUser->userId;
     }
@@ -226,7 +226,7 @@ namespace UserInterface
         return _authenticatedUser->strongAuth;
     }
 
-    Database::UserType LmsApplication::getUserType()
+    db::UserType LmsApplication::getUserType()
     {
         auto transaction{ getDbSession().createReadTransaction() };
 
@@ -241,9 +241,9 @@ namespace UserInterface
     }
 
     LmsApplication::LmsApplication(const Wt::WEnvironment& env,
-        Database::Db& db,
+        db::Db& db,
         LmsApplicationManager& appManager,
-        std::optional<Database::UserId> userId)
+        std::optional<db::UserId> userId)
         : Wt::WApplication{ env }
         , _db{ db }
         , _appManager{ appManager }
@@ -261,7 +261,7 @@ namespace UserInterface
         catch (std::exception& e)
         {
             LMS_LOG(UI, ERROR, "Caught exception: " << e.what());
-            throw LmsException{ "Internal error" }; // Do not put details here at it may appear on the user rendered html
+            throw core::LmsException{ "Internal error" }; // Do not put details here at it may appear on the user rendered html
         }
     }
 
@@ -284,14 +284,14 @@ namespace UserInterface
 
         if (_authenticatedUser)
             onUserLoggedIn();
-        else if (Service<::Auth::IPasswordService>::exists())
+        else if (core::Service<auth::IPasswordService>::exists())
             processPasswordAuth();
     }
 
     void LmsApplication::processPasswordAuth()
     {
         {
-            std::optional<Database::UserId> userId{ processAuthToken(environment()) };
+            std::optional<db::UserId> userId{ processAuthToken(environment()) };
             if (userId)
             {
                 LMS_LOG(UI, DEBUG, "User authenticated using Auth token!");
@@ -305,19 +305,19 @@ namespace UserInterface
         bool firstConnection{};
         {
             auto transaction{ getDbSession().createReadTransaction() };
-            firstConnection = Database::User::getCount(getDbSession()) == 0;
+            firstConnection = db::User::getCount(getDbSession()) == 0;
         }
 
         LMS_LOG(UI, DEBUG, "Creating root widget. First connection = " << firstConnection);
 
-        if (firstConnection && Service<::Auth::IPasswordService>::get()->canSetPasswords())
+        if (firstConnection && core::Service<auth::IPasswordService>::get()->canSetPasswords())
         {
             root()->addWidget(std::make_unique<InitWizardView>());
         }
         else
         {
             Auth* auth{ root()->addNew<Auth>() };
-            auth->userLoggedIn.connect(this, [this](Database::UserId userId)
+            auth->userLoggedIn.connect(this, [this](db::UserId userId)
                 {
                     _authenticatedUser = { userId, true };
                     onUserLoggedIn();
@@ -376,7 +376,7 @@ namespace UserInterface
                 // Only one active session by user
                 if (otherApplication.getUserId() == getUserId())
                 {
-                    if (LmsApp->getUserType() != Database::UserType::DEMO)
+                    if (LmsApp->getUserType() != db::UserType::DEMO)
                     {
                         quit(Wt::WString::tr("Lms.quit-other-session"));
                     }
@@ -438,7 +438,7 @@ namespace UserInterface
         Wt::WLineEdit* searchEdit{ navbar->bindNew<Wt::WLineEdit>("search") };
         searchEdit->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
 
-        if (LmsApp->getUserType() == Database::UserType::ADMIN)
+        if (LmsApp->getUserType() == db::UserType::ADMIN)
         {
             navbar->setCondition("if-is-admin", true);
             navbar->bindNew<Wt::WAnchor>("media-libraries", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/libraries" }, Wt::WString::tr("Lms.Admin.menu-media-libraries"));
@@ -446,7 +446,7 @@ namespace UserInterface
             navbar->bindNew<Wt::WAnchor>("scanner", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/scanner" }, Wt::WString::tr("Lms.Admin.menu-scanner"));
             navbar->bindNew<Wt::WAnchor>("users", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/users" }, Wt::WString::tr("Lms.Admin.menu-users"));
             // Hide the entry if the trace logger is not enabled
-            if (Service<::tracing::ITraceLogger>::get())
+            if (core::Service<core::tracing::ITraceLogger>::get())
                 navbar->bindNew<Wt::WAnchor>("tracing", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/tracing" }, Wt::WString::tr("Lms.Admin.menu-tracing"));
             else
                 navbar->bindEmpty("tracing");
@@ -474,7 +474,7 @@ namespace UserInterface
             });
 
         // Admin stuff
-        if (getUserType() == Database::UserType::ADMIN)
+        if (getUserType() == db::UserType::ADMIN)
         {
             mainStack->addNew<MediaLibrariesView>();
             mainStack->addNew<ScanSettingsView>();
@@ -496,18 +496,18 @@ namespace UserInterface
                 _playQueue->playPrevious();
             });
 
-        _mediaPlayer->scrobbleListenNow.connect([this](Database::TrackId trackId)
+        _mediaPlayer->scrobbleListenNow.connect([this](db::TrackId trackId)
             {
                 LMS_LOG(UI, DEBUG, "Received ScrobbleListenNow from player for trackId = " << trackId.toString());
-                const Scrobbling::Listen listen{ getUserId(), trackId };
-                Service<Scrobbling::IScrobblingService>::get()->listenStarted(listen);
+                const scrobbling::Listen listen{ getUserId(), trackId };
+                core::Service<scrobbling::IScrobblingService>::get()->listenStarted(listen);
                     });
-                _mediaPlayer->scrobbleListenFinished.connect([this](Database::TrackId trackId, unsigned durationMs)
+                _mediaPlayer->scrobbleListenFinished.connect([this](db::TrackId trackId, unsigned durationMs)
                     {
                         LMS_LOG(UI, DEBUG, "Received ScrobbleListenFinished from player for trackId = " << trackId.toString() << ", duration = " << (durationMs / 1000) << "s");
                         const std::chrono::milliseconds duration{ durationMs };
-                        const Scrobbling::Listen listen{ getUserId(), trackId };
-                        Service<Scrobbling::IScrobblingService>::get()->listenFinished(listen, std::chrono::duration_cast<std::chrono::seconds>(duration));
+                        const scrobbling::Listen listen{ getUserId(), trackId };
+                        core::Service<scrobbling::IScrobblingService>::get()->listenFinished(listen, std::chrono::duration_cast<std::chrono::seconds>(duration));
                             });
 
                         _mediaPlayer->playbackEnded.connect([this]
@@ -515,7 +515,7 @@ namespace UserInterface
                                 _playQueue->onPlaybackEnded();
                             });
 
-                        _playQueue->trackSelected.connect([this](Database::TrackId trackId, bool play, float replayGain)
+                        _playQueue->trackSelected.connect([this](db::TrackId trackId, bool play, float replayGain)
                             {
                                 _mediaPlayer->loadTrack(trackId, play, replayGain);
                             });
@@ -530,10 +530,10 @@ namespace UserInterface
                             });
                         _mediaPlayer->onPlayQueueUpdated(_playQueue->getCount());
 
-                        const bool isAdmin{ getUserType() == Database::UserType::ADMIN };
+                        const bool isAdmin{ getUserType() == db::UserType::ADMIN };
                         if (isAdmin)
                         {
-                            _scannerEvents.scanComplete.connect([this](const Scanner::ScanStats& stats)
+                            _scannerEvents.scanComplete.connect([this](const scanner::ScanStats& stats)
                                 {
                                     notifyMsg(Notification::Type::Info,
                                     Wt::WString::tr("Lms.Admin.Database.database"),
@@ -570,7 +570,7 @@ namespace UserInterface
         catch (std::exception& e)
         {
             LMS_LOG(UI, ERROR, "Caught exception: " << e.what());
-            throw LmsException{ "Internal error" }; // Do not put details here at it may appear on the user rendered html
+            throw core::LmsException{ "Internal error" }; // Do not put details here at it may appear on the user rendered html
         }
     }
 
@@ -592,4 +592,4 @@ namespace UserInterface
         LMS_LOG(UI, INFO, "Notifying message '" << message.toUTF8() << "' for category '" << category.toUTF8() << "'");
         _notificationContainer->add(type, category, message, duration);
     }
-} // namespace UserInterface
+} // namespace lms::ui

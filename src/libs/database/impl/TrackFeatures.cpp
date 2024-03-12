@@ -24,11 +24,11 @@
 
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 #include "IdTypeTraits.hpp"
 #include "Utils.hpp"
 
-namespace Database {
+namespace lms::db {
 
     TrackFeatures::TrackFeatures(ObjectPtr<Track> track, const std::string& jsonEncodedFeatures)
         : _data{ jsonEncodedFeatures },
@@ -72,7 +72,7 @@ namespace Database {
 
         auto query{ session.getDboSession().query<TrackFeaturesId>("SELECT id from track_features") };
 
-        return Utils::execQuery<TrackFeaturesId>(query, range);
+        return utils::execQuery<TrackFeaturesId>(query, range);
     }
 
     FeatureValues TrackFeatures::getFeatureValues(const FeatureName& featureNode) const
@@ -118,4 +118,4 @@ namespace Database {
         return res;
     }
 
-} // namespace Database
+} // namespace lms::db

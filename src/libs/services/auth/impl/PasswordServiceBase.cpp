@@ -30,16 +30,15 @@
 #include "services/auth/Types.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "utils/Exception.hpp"
-#include "utils/ILogger.hpp"
+#include "core/Exception.hpp"
+#include "core/ILogger.hpp"
 
-namespace Auth
+namespace lms::auth
 {
-
 	static const Wt::Auth::SHA1HashFunction sha1Function;
 
 	std::unique_ptr<IPasswordService>
-	createPasswordService(std::string_view passwordAuthenticationBackend, Database::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService)
+	createPasswordService(std::string_view passwordAuthenticationBackend, db::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService)
 	{
 		if (passwordAuthenticationBackend == "internal")
 			return std::make_unique<InternalPasswordService>(db, maxThrottlerEntries, authTokenService);
@@ -51,7 +50,7 @@ namespace Auth
 		throw Exception {"Authentication backend '" + std::string {passwordAuthenticationBackend} + "' is not supported!"};
 	}
 
-	PasswordServiceBase::PasswordServiceBase(Database::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService)
+	PasswordServiceBase::PasswordServiceBase(db::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService)
 		: AuthServiceBase {db}
 		, _loginThrottler {maxThrottlerEntries}
 		, _authTokenService {authTokenService}
@@ -82,7 +81,7 @@ namespace Auth
 			{
 				_loginThrottler.onGoodClientAttempt(clientAddress);
 
-				const Database::UserId userId {getOrCreateUser(loginName)};
+				const db::UserId userId {getOrCreateUser(loginName)};
 				onUserAuthenticated(userId);
 				return {CheckResult::State::Granted, userId};
 			}
@@ -93,5 +92,5 @@ namespace Auth
 			}
 		}
 	}
-} // namespace Auth
+} // namespace lms::auth
 

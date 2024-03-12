@@ -28,9 +28,9 @@
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    using namespace Database;
+    using namespace db;
 
     Response handleGetBookmarks(RequestContext& context)
     {

@@ -22,10 +22,10 @@
 #include "services/auth/Types.hpp"
 #include "http-headers/HttpHeadersEnvService.hpp"
 
-namespace Auth
+namespace lms::auth
 {
 	std::unique_ptr<IEnvService>
-	createEnvService(std::string_view backendName, Database::Db& db)
+	createEnvService(std::string_view backendName, db::Db& db)
 	{
 		if (backendName == "http-headers")
 			return std::make_unique<HttpHeadersEnvService>(db);

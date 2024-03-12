@@ -32,7 +32,7 @@
 #include "TrackListsView.hpp"
 #include "TracksView.hpp"
 
-namespace UserInterface {
+namespace lms::ui {
 
 	namespace {
 
@@ -125,4 +125,4 @@ namespace UserInterface {
 		_search->refreshView(searchText);
 	}
 
-} // namespace UserInterface
+} // namespace lms::ui

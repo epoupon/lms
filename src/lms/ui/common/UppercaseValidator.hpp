@@ -21,7 +21,7 @@
 
 #include <Wt/WValidator.h>
 
-namespace UserInterface
+namespace lms::ui
 {
     std::unique_ptr<Wt::WValidator> createUppercaseValidator();
-} // namespace UserInterface
+} // namespace lms::ui

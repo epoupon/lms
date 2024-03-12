@@ -25,17 +25,17 @@
 #include "AuthServiceBase.hpp"
 #include "LoginThrottler.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class Session;
 }
 
-namespace Auth
+namespace lms::auth
 {
 	class AuthTokenService : public IAuthTokenService, public AuthServiceBase
 	{
 		public:
-			AuthTokenService(Database::Db& db, std::size_t maxThrottlerEntries);
+			AuthTokenService(db::Db& db, std::size_t maxThrottlerEntries);
 
 			AuthTokenService(const AuthTokenService&) = delete;
 			AuthTokenService& operator=(const AuthTokenService&) = delete;
@@ -44,8 +44,8 @@ namespace Auth
 
 		private:
 			AuthTokenProcessResult	processAuthToken(const boost::asio::ip::address& clientAddress, std::string_view tokenValue) override;
-			std::string				createAuthToken(Database::UserId userId, const Wt::WDateTime& expiry) override;
-			void					clearAuthTokens(Database::UserId userId) override;
+			std::string				createAuthToken(db::UserId userId, const Wt::WDateTime& expiry) override;
+			void					clearAuthTokens(db::UserId userId) override;
 
 			std::optional<AuthTokenService::AuthTokenProcessResult::AuthTokenInfo> processAuthToken(std::string_view secret);
 

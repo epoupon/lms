@@ -23,9 +23,9 @@
 #include <iomanip>
 #include <sstream>
 
-#include "utils/Exception.hpp"
+#include "core/Exception.hpp"
 
-namespace MetaData::Utils
+namespace lms::metadata::utils
 {
     Wt::WDate parseDate(std::string_view dateStr)
     {
@@ -105,7 +105,7 @@ namespace MetaData::Utils
         case ParserReadStyle::Accurate: return "accurate";
         }
 
-        throw LmsException{ "Unknown read style" };
+        throw core::LmsException{ "Unknown read style" };
     }
 
     PerformerArtist extractPerformerAndRole(std::string_view entry)
@@ -138,8 +138,8 @@ namespace MetaData::Utils
                 if (--count == 0)
                 {
                     roleBegin = currentIndex + 1;
-                    role = StringUtils::stringTrim(entry.substr(roleBegin, roleEnd - roleBegin));
-                    artistName = StringUtils::stringTrim(entry.substr(0, currentIndex));
+                    role = core::stringUtils::stringTrim(entry.substr(roleBegin, roleEnd - roleBegin));
+                    artistName = core::stringUtils::stringTrim(entry.substr(0, currentIndex));
                     break;
                 }
             }
@@ -148,7 +148,7 @@ namespace MetaData::Utils
         }
 
         if (!roleEnd || !roleBegin)
-            artistName = StringUtils::stringTrim(entry);
+            artistName = core::stringUtils::stringTrim(entry);
 
         return PerformerArtist{ Artist {artistName}, std::string {role} };
     }

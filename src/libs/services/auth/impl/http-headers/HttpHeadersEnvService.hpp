@@ -22,12 +22,12 @@
 #include "services/auth/IEnvService.hpp"
 #include "AuthServiceBase.hpp"
 
-namespace Auth
+namespace lms::auth
 {
 	class HttpHeadersEnvService : public IEnvService, public AuthServiceBase
 	{
 		public:
-			HttpHeadersEnvService(Database::Db& db);
+			HttpHeadersEnvService(db::Db& db);
 
 		private:
 			CheckResult	processEnv(const Wt::WEnvironment& env) override;
@@ -36,5 +36,5 @@ namespace Auth
 			std::string _fieldName;
 	};
 
-} // namespace Auth
+} // namespace lms::auth
 

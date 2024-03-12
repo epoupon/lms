@@ -1,6 +1,6 @@
 #pragma once
 
-namespace UserInterface::Notification
+namespace lms::ui::Notification
 {
 	enum class Type
 	{

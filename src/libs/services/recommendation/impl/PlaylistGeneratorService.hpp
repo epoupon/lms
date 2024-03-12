@@ -23,20 +23,20 @@
 #include "services/recommendation/IRecommendationService.hpp"
 #include "playlist-constraints/IConstraint.hpp"
 
-namespace Recommendation
+namespace lms::recommendation
 {
 	class PlaylistGeneratorService : public IPlaylistGeneratorService
 	{
 		public:
-			PlaylistGeneratorService(Database::Db& db, Recommendation::IRecommendationService& recommendationService);
+			PlaylistGeneratorService(db::Db& db, IRecommendationService& recommendationService);
 
 		private:
-			TrackContainer extendPlaylist(Database::TrackListId tracklistId, std::size_t maxCount) const override;
+			TrackContainer extendPlaylist(db::TrackListId tracklistId, std::size_t maxCount) const override;
 
-			TrackContainer getTracksFromTrackList(Database::TrackListId tracklistId) const;
+			TrackContainer getTracksFromTrackList(db::TrackListId tracklistId) const;
 
-			Database::Db& _db;
-			Recommendation::IRecommendationService& _recommendationService;
+			db::Db& _db;
+			IRecommendationService& _recommendationService;
 			std::vector<std::unique_ptr<PlaylistGeneratorConstraint::IConstraint>> _constraints;
 	};
 } // namespace Radio

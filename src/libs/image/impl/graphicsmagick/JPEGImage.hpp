@@ -27,7 +27,7 @@
 
 #include "image/IEncodedImage.hpp"
 
-namespace Image::GraphicsMagick
+namespace lms::image::GraphicsMagick
 {
 	class RawImage;
 	class JPEGImage : public IEncodedImage

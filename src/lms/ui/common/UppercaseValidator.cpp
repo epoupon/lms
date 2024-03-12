@@ -22,7 +22,7 @@
 #include <string>
 #include <string_view>
 
-namespace UserInterface
+namespace lms::ui
 {
     class UppercaseValidator : public Wt::WValidator
     {
@@ -49,4 +49,4 @@ namespace UserInterface
     {
         return std::make_unique<UppercaseValidator>();
     }
-} // namespace UserInterface
+} // namespace lms::ui

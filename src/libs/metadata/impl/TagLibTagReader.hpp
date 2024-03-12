@@ -27,7 +27,7 @@
 #include "metadata/IParser.hpp"
 #include "ITagReader.hpp"
 
-namespace MetaData
+namespace lms::metadata
 {
     class TagLibTagReader : public ITagReader
     {
@@ -52,4 +52,4 @@ namespace MetaData
         TagLib::PropertyMap _propertyMap; // case-insensitive keys
         bool _hasEmbeddedCover{};
     };
-} // namespace MetaData
+} // namespace lms::metadata

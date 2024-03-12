@@ -21,12 +21,12 @@
 
 #include "IConstraint.hpp"
 
-namespace Recommendation::PlaylistGeneratorConstraint
+namespace lms::recommendation::PlaylistGeneratorConstraint
 {
 	class DuplicateTracks : public IConstraint
 	{
 		private:
-			float computeScore(const std::vector<Database::TrackId>& trackIds, std::size_t trackIndex) override;
+			float computeScore(const std::vector<db::TrackId>& trackIds, std::size_t trackIndex) override;
 	};
-} // namespace Recommendation::PlaylistGeneratorConstraints
+} // namespace lms::recommendation::PlaylistGeneratorConstraints
 

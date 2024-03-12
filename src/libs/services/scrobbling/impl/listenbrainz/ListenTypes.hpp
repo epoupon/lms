@@ -23,21 +23,21 @@
 #include <ostream>
 #include <Wt/WDateTime.h>
 
-#include "utils/UUID.hpp"
+#include "core/UUID.hpp"
 
-namespace Scrobbling::ListenBrainz
+namespace lms::scrobbling::listenBrainz
 {
 	struct Listen
 	{
 		std::string trackName;
 		std::string releaseName;
 		std::string artistName;
-		std::optional<UUID> recordingMBID;
-		std::optional<UUID> trackMBID;
-		std::optional<UUID> releaseMBID;
+		std::optional<core::UUID> recordingMBID;
+		std::optional<core::UUID> trackMBID;
+		std::optional<core::UUID> releaseMBID;
 		std::optional<unsigned> trackNumber;
 		Wt::WDateTime listenedAt;
 	};
 
 	std::ostream& operator<<(std::ostream& os, const Listen& listen);
-} // Scrobbling::ListenBrainz
+}

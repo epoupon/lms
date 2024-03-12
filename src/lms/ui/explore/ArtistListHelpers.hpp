@@ -27,18 +27,18 @@
 #include "database/Object.hpp"
 #include "database/Types.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class Artist;
 }
 
-namespace UserInterface
+namespace lms::ui
 {
-	using ArtistLinkTypesModel = ValueStringModel<std::optional<Database::TrackArtistLinkType>>;
+	using ArtistLinkTypesModel = ValueStringModel<std::optional<db::TrackArtistLinkType>>;
 
 	namespace ArtistListHelpers
 	{
-		std::unique_ptr<Wt::WTemplate> createEntry(const Database::ObjectPtr<Database::Artist>& artist);
+		std::unique_ptr<Wt::WTemplate> createEntry(const db::ObjectPtr<db::Artist>& artist);
 		std::unique_ptr<ArtistLinkTypesModel> createArtistLinkTypesModel();
 	}
 }

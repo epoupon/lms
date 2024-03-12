@@ -28,7 +28,7 @@
 #include "database/Types.hpp"
 #include "database/UserId.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Artist;
     class Session;
@@ -79,5 +79,5 @@ namespace Database
         Wt::Dbo::ptr<Artist>    _artist;
         Wt::Dbo::ptr<User>      _user;
     };
-} // namespace Database
+} // namespace lms::db
 

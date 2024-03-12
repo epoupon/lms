@@ -27,30 +27,30 @@
 #include "database/TrackId.hpp"
 #include "image/IEncodedImage.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Db;
 }
 
-namespace Cover
+namespace lms::cover
 {
     class ICoverService
     {
     public:
         virtual ~ICoverService() = default;
 
-        virtual std::shared_ptr<Image::IEncodedImage> getFromTrack(Database::TrackId trackId, Image::ImageSize width) = 0;
-        virtual std::shared_ptr<Image::IEncodedImage> getFromRelease(Database::ReleaseId releaseId, Image::ImageSize width) = 0;
-        virtual std::shared_ptr<Image::IEncodedImage> getFromArtist(Database::ArtistId artistId, Image::ImageSize width) = 0;
+        virtual std::shared_ptr<image::IEncodedImage> getFromTrack(db::TrackId trackId, image::ImageSize width) = 0;
+        virtual std::shared_ptr<image::IEncodedImage> getFromRelease(db::ReleaseId releaseId, image::ImageSize width) = 0;
+        virtual std::shared_ptr<image::IEncodedImage> getFromArtist(db::ArtistId artistId, image::ImageSize width) = 0;
 
-        virtual std::shared_ptr<Image::IEncodedImage> getDefault(Image::ImageSize width) = 0;
+        virtual std::shared_ptr<image::IEncodedImage> getDefault(image::ImageSize width) = 0;
 
         virtual void flushCache() = 0;
 
         virtual void setJpegQuality(unsigned quality) = 0; // from 1 to 100
     };
 
-    std::unique_ptr<ICoverService> createCoverService(Database::Db& db, const std::filesystem::path& execPath, const std::filesystem::path& defaultCoverPath);
+    std::unique_ptr<ICoverService> createCoverService(db::Db& db, const std::filesystem::path& execPath, const std::filesystem::path& defaultCoverPath);
 
-} // namespace CoverArt
+} // namespace lms::coverArt
 

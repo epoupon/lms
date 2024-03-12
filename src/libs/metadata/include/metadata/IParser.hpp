@@ -29,9 +29,9 @@
 #include <vector>
 
 #include <Wt/WDate.h>
-#include "utils/UUID.hpp"
+#include "core/UUID.hpp"
 
-namespace MetaData
+namespace lms::metadata
 {
     using Tags = std::map<std::string /* type */, std::vector<std::string> /* values */>;
 
@@ -39,12 +39,12 @@ namespace MetaData
 
     struct Artist
     {
-        std::optional<UUID>			mbid;
+        std::optional<core::UUID>			mbid;
         std::string					name;
         std::optional<std::string>	sortName;
 
         Artist(std::string_view _name) : name{ _name } {}
-        Artist(std::optional<UUID> _mbid, std::string_view _name, std::optional<std::string> _sortName) : mbid{ std::move(_mbid) }, name{ _name }, sortName{ std::move(_sortName) } {}
+        Artist(std::optional<core::UUID> _mbid, std::string_view _name, std::optional<std::string> _sortName) : mbid{ std::move(_mbid) }, name{ _name }, sortName{ std::move(_sortName) } {}
 
         bool operator<=>(const Artist&) const = default;
     };
@@ -53,8 +53,8 @@ namespace MetaData
 
     struct Release
     {
-        std::optional<UUID> 		mbid;
-        std::optional<UUID> 		groupMBID;
+        std::optional<core::UUID>   mbid;
+        std::optional<core::UUID>   groupMBID;
         std::string					name;
         std::string					sortName;
         std::string					artistDisplayName;
@@ -85,8 +85,8 @@ namespace MetaData
 
     struct Track
     {
-        std::optional<UUID>			mbid;
-        std::optional<UUID>			recordingMBID;
+        std::optional<core::UUID>	mbid;
+        std::optional<core::UUID>	recordingMBID;
         std::string					title;
         std::optional<Medium>		medium;
         std::optional<std::size_t>	position; // in medium
@@ -103,7 +103,7 @@ namespace MetaData
         std::optional<int>          originalYear{};
         Wt::WDate					originalDate;
         bool						hasCover{};
-        std::optional<UUID>			acoustID;
+        std::optional<core::UUID>   acoustID;
         std::string					copyright;
         std::string					copyrightURL;
         std::optional<float>		replayGain;
@@ -143,4 +143,4 @@ namespace MetaData
         Accurate,
     };
     std::unique_ptr<IParser> createParser(ParserBackend parserBackend, ParserReadStyle parserReadStyle);
-} // namespace MetaData
+}

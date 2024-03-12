@@ -27,16 +27,16 @@
 #include "services/auth/IPasswordService.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "utils/Exception.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/Service.hpp"
+#include "core/Exception.hpp"
+#include "core/ILogger.hpp"
+#include "core/Service.hpp"
 
 #include "common/LoginNameValidator.hpp"
 #include "common/MandatoryValidator.hpp"
 #include "common/PasswordValidator.hpp"
 #include "LmsApplication.hpp"
 
-namespace UserInterface {
+namespace lms::ui {
 
 class InitWizardModel : public Wt::WFormModel
 {
@@ -53,7 +53,7 @@ class InitWizardModel : public Wt::WFormModel
 			addField(PasswordConfirmField);
 
 			setValidator(AdminLoginField, createLoginNameValidator());
-			setValidator(PasswordField, createPasswordStrengthValidator([this] { return ::Auth::PasswordValidationContext {valueText(AdminLoginField).toUTF8(), Database::UserType::ADMIN}; }));
+			setValidator(PasswordField, createPasswordStrengthValidator([this] { return auth::PasswordValidationContext {valueText(AdminLoginField).toUTF8(), db::UserType::ADMIN}; }));
 			validator(PasswordField)->setMandatory(true);
 			setValidator(PasswordConfirmField, createMandatoryValidator());
 		}
@@ -64,12 +64,12 @@ class InitWizardModel : public Wt::WFormModel
 
 			// Check if a user already exist
 			// If it's the case, just do nothing
-			if (Database::User::getCount(LmsApp->getDbSession()) > 0)
-				throw LmsException {"Admin user already created"};
+			if (db::User::getCount(LmsApp->getDbSession()) > 0)
+				throw core::LmsException {"Admin user already created"};
 
-			Database::User::pointer user {LmsApp->getDbSession().create<Database::User>(valueText(AdminLoginField).toUTF8())};
-			user.modify()->setType(Database::UserType::ADMIN);
-			Service<::Auth::IPasswordService>::get()->setPassword(user->getId(), valueText(PasswordField).toUTF8());
+			db::User::pointer user {LmsApp->getDbSession().create<db::User>(valueText(AdminLoginField).toUTF8())};
+			user.modify()->setType(db::UserType::ADMIN);
+			core::Service<auth::IPasswordService>::get()->setPassword(user->getId(), valueText(PasswordField).toUTF8());
 		}
 
 		bool validateField(Field field)
@@ -149,5 +149,5 @@ InitWizardView::InitWizardView()
 	updateView(model.get());
 }
 
-} // namespace UserInterface
+} // namespace lms::ui
 

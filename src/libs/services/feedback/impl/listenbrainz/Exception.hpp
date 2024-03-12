@@ -21,11 +21,11 @@
 
 #include "services/feedback/Exception.hpp"
 
-namespace Feedback::ListenBrainz
+namespace lms::feedback::listenBrainz
 {
-	class Exception : public ::Feedback::Exception
+	class Exception : public feedback::Exception
 	{
 		public:
-			using ::Feedback::Exception::Exception;
+			using feedback::Exception::Exception;
 	};
 }

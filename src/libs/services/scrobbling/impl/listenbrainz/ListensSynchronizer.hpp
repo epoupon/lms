@@ -30,42 +30,44 @@
 
 #include "services/scrobbling/Listen.hpp"
 
-namespace Database
+namespace lms
 {
-	class Db;
+	namespace core::http
+	{
+		class IClient;
+	}
+	namespace db
+	{
+		class Db;
+	}
 }
 
-namespace Http
-{
-	class IClient;
-}
-
-namespace Scrobbling::ListenBrainz
+namespace lms::scrobbling::listenBrainz
 {
 	class ListensSynchronizer
 	{
 		public:
-			ListensSynchronizer(boost::asio::io_context& ioContext, Database::Db& db, Http::IClient& client);
+			ListensSynchronizer(boost::asio::io_context& ioContext, db::Db& db, core::http::IClient& client);
 
 			void enqueListen(const TimedListen& listen);
 			void enqueListenNow(const Listen& listen);
 
 		private:
 			void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
-			bool saveListen(const TimedListen& listen, Database::SyncState scrobblinState);
+			bool saveListen(const TimedListen& listen, db::SyncState scrobblinState);
 
 			void enquePendingListens();
 
 			struct UserContext
 			{
-				UserContext(Database::UserId id) : userId {id} {}
+				UserContext(db::UserId id) : userId {id} {}
 
 				UserContext(const UserContext&) = delete;
 				UserContext(UserContext&&) = delete;
 				UserContext& operator=(const UserContext&) = delete;
 				UserContext& operator=(UserContext&&) = delete;
 
-				const Database::UserId		userId;
+				const db::UserId		userId;
 				bool						syncing {};
 				std::optional<std::size_t>	listenCount {};
 
@@ -77,7 +79,7 @@ namespace Scrobbling::ListenBrainz
 				std::size_t		importedListenCount{};
 			};
 
-			UserContext& getUserContext(Database::UserId userId);
+			UserContext& getUserContext(db::UserId userId);
 			bool isSyncing() const;
 			void scheduleSync(std::chrono::seconds fromNow);
 			void startSync();
@@ -90,14 +92,14 @@ namespace Scrobbling::ListenBrainz
 
 			boost::asio::io_context&		_ioContext;
 			boost::asio::io_context::strand	_strand {_ioContext};
-			Database::Db&					_db;
+			db::Db&					_db;
 			boost::asio::steady_timer		_syncTimer {_ioContext};
-			Http::IClient&					_client;
+			core::http::IClient&					_client;
 
-			std::unordered_map<Database::UserId, UserContext> _userContexts;
+			std::unordered_map<db::UserId, UserContext> _userContexts;
 
 			const std::size_t			_maxSyncListenCount;
 			const std::chrono::hours	_syncListensPeriod;
 	};
-} // Scrobbling::ListenBrainz
+} // scrobbling::ListenBrainz
 

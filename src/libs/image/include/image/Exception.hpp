@@ -19,16 +19,15 @@
 
 #pragma once
 
-#include "utils/Exception.hpp"
+#include "core/Exception.hpp"
 
-namespace Image
+namespace lms::image
 {
-	// internal use only
-	class ImageException : public LmsException
+	class Exception : public core::LmsException
 	{
 		public:
 			using LmsException::LmsException;
 	};
 
-} // namespace Cover
+} // namespace lms::cover
 

@@ -23,7 +23,7 @@
 
 #include "FeedbackTypes.hpp"
 
-namespace Feedback::ListenBrainz
+namespace lms::feedback::listenBrainz
 {
 	class FeedbacksParser
 	{
@@ -37,4 +37,4 @@ namespace Feedback::ListenBrainz
 			static Result parse(std::string_view msgBody);
 	};
 
-} // Feedback::ListenBrainz
+} // feedback::ListenBrainz

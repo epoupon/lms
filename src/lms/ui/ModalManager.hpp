@@ -23,7 +23,7 @@
 #include <Wt/WSignal.h>
 #include <Wt/WWidget.h>
 
-namespace UserInterface
+namespace lms::ui
 {
 	class ModalManager : public Wt::WContainerWidget
 	{

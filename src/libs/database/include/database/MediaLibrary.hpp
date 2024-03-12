@@ -28,7 +28,7 @@
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Session;
 
@@ -63,11 +63,11 @@ namespace Database
         }
 
     private:
-        friend class ::Database::Session;
+        friend class Session;
         MediaLibrary(const std::filesystem::path& p, std::string_view name);
         static pointer create(Session& session, const std::filesystem::path& p = {}, std::string_view name = {});
 
         std::filesystem::path       _path;
         std::string                 _name;
     };
-} // namespace Database
+} // namespace lms::db

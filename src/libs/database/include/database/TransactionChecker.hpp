@@ -22,7 +22,7 @@
 #include <vector>
 #include <Wt/Dbo/Session.h>
 
-namespace Database
+namespace lms::db
 {
     class Session;
 

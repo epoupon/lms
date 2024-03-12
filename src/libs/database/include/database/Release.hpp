@@ -28,6 +28,8 @@
 #include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
 
+#include "core/EnumSet.hpp"
+#include "core/UUID.hpp"
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
 #include "database/MediaLibraryId.hpp"
@@ -36,10 +38,8 @@
 #include "database/ReleaseTypeId.hpp"
 #include "database/Types.hpp"
 #include "database/UserId.hpp"
-#include "utils/EnumSet.hpp"
-#include "utils/UUID.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Artist;
     class Cluster;
@@ -91,8 +91,8 @@ namespace Database
             UserId                              starringUser;				// only releases starred by this user
             std::optional<FeedbackBackend>      feedbackBackend;		    //    and for this backend
             ArtistId                            artist;						// only releases that involved this user
-            EnumSet<TrackArtistLinkType>        trackArtistLinkTypes; 			//    and for these link types
-            EnumSet<TrackArtistLinkType>        excludedTrackArtistLinkTypes; 	//    but not for these link types
+            core::EnumSet<TrackArtistLinkType>        trackArtistLinkTypes; 			//    and for these link types
+            core::EnumSet<TrackArtistLinkType>        excludedTrackArtistLinkTypes; 	//    but not for these link types
             std::string                         releaseType;    // If set, albums that has this release type
             MediaLibraryId                      mediaLibrary;   // If set, releases that has at least a track in this library
 
@@ -103,7 +103,7 @@ namespace Database
             FindParameters& setWrittenAfter(const Wt::WDateTime& _after) { writtenAfter = _after; return *this; }
             FindParameters& setDateRange(const std::optional<DateRange>& _dateRange) { dateRange = _dateRange; return *this; }
             FindParameters& setStarringUser(UserId _user, FeedbackBackend _feedbackBackend) { starringUser = _user; feedbackBackend = _feedbackBackend; return *this; }
-            FindParameters& setArtist(ArtistId _artist, EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {}, EnumSet<TrackArtistLinkType> _excludedTrackArtistLinkTypes = {})
+            FindParameters& setArtist(ArtistId _artist, core::EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {}, core::EnumSet<TrackArtistLinkType> _excludedTrackArtistLinkTypes = {})
             {
                 artist = _artist;
                 trackArtistLinkTypes = _trackArtistLinkTypes;
@@ -119,7 +119,7 @@ namespace Database
         // Accessors
         static std::size_t              getCount(Session& session);
         static bool                     exists(Session& session, ReleaseId id);
-        static pointer                  find(Session& session, const UUID& MBID);
+        static pointer                  find(Session& session, const core::UUID& MBID);
         static std::vector<pointer>     find(Session& session, const std::string& name, const std::filesystem::path& releaseDirectory);
         static pointer                  find(Session& session, ReleaseId id);
         static RangeResults<pointer>    find(Session& session, const FindParameters& parameters);
@@ -145,8 +145,8 @@ namespace Database
         // Accessors
         std::string_view                    getName() const { return _name; }
         std::string_view                    getSortName() const { return _sortName; }
-        std::optional<UUID>                 getMBID() const { return UUID::fromString(_MBID); }
-        std::optional<UUID>                 getGroupMBID() const { return UUID::fromString(_groupMBID); }
+        std::optional<core::UUID>                 getMBID() const { return core::UUID::fromString(_MBID); }
+        std::optional<core::UUID>                 getGroupMBID() const { return core::UUID::fromString(_groupMBID); }
         std::optional<std::size_t>          getTotalDisc() const { return _totalDisc; }
         std::size_t                         getDiscCount() const; // may not be total disc (if incomplete for example)
         std::vector<DiscInfo>               getDiscs() const;
@@ -160,8 +160,8 @@ namespace Database
         // Setters
         void setName(std::string_view name) { _name = name; }
         void setSortName(std::string_view sortName) { _sortName = sortName; }
-        void setMBID(const std::optional<UUID>& mbid) { _MBID = mbid ? mbid->getAsString() : ""; }
-        void setGroupMBID(const std::optional<UUID>& mbid) { _groupMBID = mbid ? mbid->getAsString() : ""; }
+        void setMBID(const std::optional<core::UUID>& mbid) { _MBID = mbid ? mbid->getAsString() : ""; }
+        void setGroupMBID(const std::optional<core::UUID>& mbid) { _groupMBID = mbid ? mbid->getAsString() : ""; }
         void setTotalDisc(std::optional<int> totalDisc) { _totalDisc = totalDisc; }
         void setArtistDisplayName(std::string_view name) { _artistDisplayName = name; }
         void clearReleaseTypes();
@@ -188,8 +188,8 @@ namespace Database
 
     private:
         friend class Session;
-        Release(const std::string& name, const std::optional<UUID>& MBID = {});
-        static pointer create(Session& session, const std::string& name, const std::optional<UUID>& MBID = {});
+        Release(const std::string& name, const std::optional<core::UUID>& MBID = {});
+        static pointer create(Session& session, const std::string& name, const std::optional<core::UUID>& MBID = {});
 
         Wt::WDate getDate(bool original) const;
         std::optional<int> getYear(bool original) const;
@@ -207,4 +207,4 @@ namespace Database
         Wt::Dbo::collection<Wt::Dbo::ptr<ReleaseType>>  _releaseTypes; // Release types
     };
 
-} // namespace Database
+} // namespace lms::db

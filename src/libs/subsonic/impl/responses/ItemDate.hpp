@@ -22,7 +22,7 @@
 #include <Wt/WDate.h>
 #include "SubsonicResponse.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
     Response::Node createItemDateNode(const Wt::WDate& date, std::optional<int> year);
 }

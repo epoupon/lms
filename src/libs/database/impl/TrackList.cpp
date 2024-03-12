@@ -20,7 +20,7 @@
 
 #include <cassert>
 
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
@@ -33,14 +33,14 @@
 #include "IdTypeTraits.hpp"
 #include "Utils.hpp"
 
-namespace Database
+namespace lms::db
 {
     TrackList::TrackList(std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user)
         : _name{ name }
         , _type{ type }
         , _isPublic{ isPublic }
-        , _creationDateTime{ Utils::normalizeDateTime(Wt::WDateTime::currentDateTime()) }
-        , _lastModifiedDateTime{ Utils::normalizeDateTime(Wt::WDateTime::currentDateTime()) }
+        , _creationDateTime{ utils::normalizeDateTime(Wt::WDateTime::currentDateTime()) }
+        , _lastModifiedDateTime{ utils::normalizeDateTime(Wt::WDateTime::currentDateTime()) }
         , _user{ getDboPtr(user) }
     {
         assert(user);
@@ -117,7 +117,7 @@ namespace Database
             break;
         }
 
-        return Utils::execQuery<TrackListId>(query, params.range);
+        return utils::execQuery<TrackListId>(query, params.range);
     }
 
     TrackList::pointer TrackList::find(Session& session, TrackListId id)
@@ -170,7 +170,7 @@ namespace Database
         return session()->find<TrackListEntry>()
             .where("tracklist_id = ?").bind(getId())
             .where("track_id = ?").bind(track->getId())
-            .where("date_time = ?").bind(Utils::normalizeDateTime(dateTime))
+            .where("date_time = ?").bind(utils::normalizeDateTime(dateTime))
             .resultValue();
     }
 
@@ -294,11 +294,11 @@ namespace Database
 
     void TrackList::setLastModifiedDateTime(const Wt::WDateTime& dateTime)
     {
-        _lastModifiedDateTime = Utils::normalizeDateTime(dateTime);
+        _lastModifiedDateTime = utils::normalizeDateTime(dateTime);
     }
 
     TrackListEntry::TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime)
-        : _dateTime{ Utils::normalizeDateTime(dateTime) }
+        : _dateTime{ utils::normalizeDateTime(dateTime) }
         , _track{ getDboPtr(track) }
         , _tracklist{ getDboPtr(tracklist) }
     {
@@ -313,12 +313,12 @@ namespace Database
 
     void TrackListEntry::onPostCreated()
     {
-        _tracklist.modify()->setLastModifiedDateTime(Utils::normalizeDateTime(Wt::WDateTime::currentDateTime()));
+        _tracklist.modify()->setLastModifiedDateTime(utils::normalizeDateTime(Wt::WDateTime::currentDateTime()));
     }
 
     void TrackListEntry::onPreRemove()
     {
-        _tracklist.modify()->setLastModifiedDateTime(Utils::normalizeDateTime(Wt::WDateTime::currentDateTime()));
+        _tracklist.modify()->setLastModifiedDateTime(utils::normalizeDateTime(Wt::WDateTime::currentDateTime()));
     }
 
     TrackListEntry::pointer TrackListEntry::getById(Session& session, TrackListEntryId id)
@@ -327,5 +327,4 @@ namespace Database
 
         return session.getDboSession().find<TrackListEntry>().where("id = ?").bind(id).resultValue();
     }
-
-} // namespace Database
+} // namespace lms::db

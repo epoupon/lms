@@ -25,29 +25,30 @@
 #include "database/TrackId.hpp"
 #include "som/Network.hpp"
 
-namespace Recommendation {
-
-class FeaturesEngineCache
+namespace lms::recommendation
 {
-	public:
-		static void invalidate();
 
-		static std::optional<FeaturesEngineCache> read();
-		void write() const;
+    class FeaturesEngineCache
+    {
+    public:
+        static void invalidate();
 
-	private:
-		using TrackPositions = std::unordered_map<Database::TrackId, std::vector<SOM::Position>>;
+        static std::optional<FeaturesEngineCache> read();
+        void write() const;
 
-		FeaturesEngineCache(SOM::Network network, TrackPositions trackPositions);
+    private:
+        using TrackPositions = std::unordered_map<db::TrackId, std::vector<som::Position>>;
 
-		static std::optional<SOM::Network> createNetworkFromCacheFile(const std::filesystem::path& path);
-		static std::optional<TrackPositions> createObjectPositionsFromCacheFile(const std::filesystem::path& path);
-		static bool objectPositionToCacheFile(const TrackPositions& trackPositions, const std::filesystem::path& path);
+        FeaturesEngineCache(som::Network network, TrackPositions trackPositions);
 
-		friend class FeaturesEngine;
+        static std::optional<som::Network> createNetworkFromCacheFile(const std::filesystem::path& path);
+        static std::optional<TrackPositions> createObjectPositionsFromCacheFile(const std::filesystem::path& path);
+        static bool objectPositionToCacheFile(const TrackPositions& trackPositions, const std::filesystem::path& path);
 
-		SOM::Network		_network;
-		TrackPositions		_trackPositions;
-};
+        friend class FeaturesEngine;
 
-} // namespace Recommendation
+        som::Network		_network;
+        TrackPositions		_trackPositions;
+    };
+
+} // namespace lms::recommendation

@@ -31,10 +31,10 @@ extern "C"
 #include <map>
 #include <unordered_map>
 
-#include "utils/ILogger.hpp"
-#include "utils/String.hpp"
+#include "core/ILogger.hpp"
+#include "core/String.hpp"
 
-namespace Av
+namespace lms::av
 {
     namespace
     {
@@ -48,11 +48,11 @@ namespace Av
                 return "Unknown error";
         }
 
-        class AudioFileException : public Av::Exception
+        class AudioFileException : public Exception
         {
         public:
             AudioFileException(int avError)
-                : Av::Exception{ "AudioFileException: " + averror_to_string(avError) }
+                : Exception{ "AudioFileException: " + averror_to_string(avError) }
             {}
         };
 
@@ -64,7 +64,7 @@ namespace Av
             AVDictionaryEntry* tag = NULL;
             while ((tag = ::av_dict_get(dictionnary, "", tag, AV_DICT_IGNORE_SUFFIX)))
             {
-                res[StringUtils::stringToUpper(tag->key)] = tag->value;
+                res[core::stringUtils::stringToUpper(tag->key)] = tag->value;
             }
         }
 
@@ -320,10 +320,10 @@ namespace Av
             {".mka",    "audio/x-matroska"},
         };
 
-        auto it{ entries.find(StringUtils::stringToLower(fileExtension.string())) };
+        auto it{ entries.find(core::stringUtils::stringToLower(fileExtension.string())) };
         if (it == std::cend(entries))
             return "";
 
         return it->second;
     }
-} // namespace Av
+} // namespace lms::av

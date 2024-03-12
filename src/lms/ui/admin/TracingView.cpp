@@ -24,17 +24,17 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WResource.h>
 
-#include "utils/ITraceLogger.hpp"
-#include "utils/String.hpp"
+#include "core/ITraceLogger.hpp"
+#include "core/String.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
     namespace
     {
         class ReportResource : public Wt::WResource
         {
         public:
-            ReportResource(::tracing::ITraceLogger& traceLogger)
+            ReportResource(core::tracing::ITraceLogger& traceLogger)
                 : _traceLogger{ traceLogger }
             {
             }
@@ -46,13 +46,13 @@ namespace UserInterface
 
             void handleRequest(const Wt::Http::Request&, Wt::Http::Response& response)
             {
-                suggestFileName(StringUtils::toISO8601String(Wt::WDateTime::currentDateTime()) + "-traces.json");
+                suggestFileName(core::stringUtils::toISO8601String(Wt::WDateTime::currentDateTime()) + "-traces.json");
                 response.setMimeType("application/json");
                 _traceLogger.dumpCurrentBuffer(response.out());
             }
 
         private:
-            tracing::ITraceLogger& _traceLogger;
+            core::tracing::ITraceLogger& _traceLogger;
         };
     }
 
@@ -63,7 +63,7 @@ namespace UserInterface
 
         Wt::WPushButton* dumpBtn{ bindNew<Wt::WPushButton>("export-btn", Wt::WString::tr("Lms.Admin.Tracing.export-current-buffer")) };
 
-        if (auto traceLogger{ Service<tracing::ITraceLogger>::get() })
+        if (auto traceLogger{ core::Service<core::tracing::ITraceLogger>::get() })
         {
             Wt::WLink link{ std::make_shared<ReportResource>(*traceLogger) };
             link.setTarget(Wt::LinkTarget::NewWindow);
@@ -72,4 +72,4 @@ namespace UserInterface
         else
             dumpBtn->setEnabled(false);
     }
-} // namespace UserInterface
+} // namespace lms::ui

@@ -24,12 +24,12 @@
 #include "ScannerEvents.hpp"
 #include "ScannerStats.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class Db;
 }
 
-namespace Scanner
+namespace lms::scanner
 {
 
 	class IScannerService
@@ -62,7 +62,7 @@ namespace Scanner
 			virtual Events& getEvents() = 0;
 	};
 
-	std::unique_ptr<IScannerService> createScannerService(Database::Db& db);
+	std::unique_ptr<IScannerService> createScannerService(db::Db& db);
 
 } // Scanner
 

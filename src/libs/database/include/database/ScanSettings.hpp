@@ -33,7 +33,7 @@
 
 LMS_DECLARE_IDTYPE(ScanSettingsId)
 
-namespace Database
+namespace lms::db
 {
     class Session;
 
@@ -104,4 +104,4 @@ namespace Database
         std::string             _artistTagDelimiters;
         std::string             _defaultTagDelimiters;
     };
-} // namespace Database
+} // namespace lms::db

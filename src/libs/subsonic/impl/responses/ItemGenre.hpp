@@ -22,12 +22,12 @@
 #include <string_view>
 #include "SubsonicResponse.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Cluster;
 }
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
     Response::Node createItemGenreNode(std::string_view name);
 }

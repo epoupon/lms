@@ -31,11 +31,10 @@
 #include "explore/ReleaseHelpers.hpp"
 #include "LmsApplication.hpp"
 
-using namespace Database;
-
-namespace UserInterface
+namespace lms::ui
 {
-
+    using namespace db;
+    
     Releases::Releases(Filters& filters, PlayQueueController& playQueueController)
         : Template{ Wt::WString::tr("Lms.Explore.Releases.template") }
         , _playQueueController{ playQueueController }
@@ -127,7 +126,7 @@ namespace UserInterface
             for (const ReleaseId releaseId : releaseIds.results)
             {
                 if (const Release::pointer release{ Release::find(LmsApp->getDbSession(), releaseId) })
-                    _container->add(ReleaseListHelpers::createEntry(release));
+                    _container->add(releaseListHelpers::createEntry(release));
             }
         }
     }
@@ -138,4 +137,4 @@ namespace UserInterface
         return std::move(releaseIds.results);
     }
 
-} // namespace UserInterface
+} // namespace lms::ui

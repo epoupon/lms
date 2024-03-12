@@ -24,30 +24,30 @@
 #include "database/StarredArtist.hpp"
 #include "database/StarredRelease.hpp"
 #include "database/Track.hpp"
-#include "utils/IConfig.hpp"
-#include "utils/http/IClient.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/Service.hpp"
+#include "core/IConfig.hpp"
+#include "core/http/IClient.hpp"
+#include "core/ILogger.hpp"
+#include "core/Service.hpp"
 #include "Utils.hpp"
 
-namespace Feedback::ListenBrainz
+namespace lms::feedback::listenBrainz
 {
     namespace details
     {
         template <typename StarredObjType>
-        void onStarred(Database::Session& session, typename StarredObjType::IdType id)
+        void onStarred(db::Session& session, typename StarredObjType::IdType id)
         {
             auto transaction{ session.createWriteTransaction() };
 
             if (auto starredObj{ StarredObjType::find(session, id) })
             {
                 // maybe in the future this will be supported by ListenBrainz so set it to PendingAdd for all types
-                starredObj.modify()->setSyncState(Database::SyncState::PendingAdd);
+                starredObj.modify()->setSyncState(db::SyncState::PendingAdd);
             }
         }
 
         template <typename StarredObjType>
-        void onUnstarred(Database::Session& session, typename StarredObjType::IdType id)
+        void onUnstarred(db::Session& session, typename StarredObjType::IdType id)
         {
             auto transaction{ session.createWriteTransaction() };
 
@@ -56,11 +56,11 @@ namespace Feedback::ListenBrainz
         }
     }
 
-    ListenBrainzBackend::ListenBrainzBackend(boost::asio::io_context& ioContext, Database::Db& db)
+    ListenBrainzBackend::ListenBrainzBackend(boost::asio::io_context& ioContext, db::Db& db)
         : _ioContext{ ioContext }
         , _db{ db }
-        , _baseAPIUrl{ Service<IConfig>::get()->getString("listenbrainz-api-base-url", "https://api.listenbrainz.org") }
-        , _client{ Http::createClient(_ioContext, _baseAPIUrl) }
+        , _baseAPIUrl{ core::Service<core::IConfig>::get()->getString("listenbrainz-api-base-url", "https://api.listenbrainz.org") }
+        , _client{ core::http::createClient(_ioContext, _baseAPIUrl) }
         , _feedbacksSynchronizer{ _ioContext, db, *_client }
     {
         LOG(INFO, "Starting ListenBrainz feedback backend... API endpoint = '" << _baseAPIUrl << "'");
@@ -71,33 +71,33 @@ namespace Feedback::ListenBrainz
         LOG(INFO, "Stopped ListenBrainz feedback backend!");
     }
 
-    void ListenBrainzBackend::onStarred(Database::StarredArtistId starredArtistId)
+    void ListenBrainzBackend::onStarred(db::StarredArtistId starredArtistId)
     {
-        details::onStarred<Database::StarredArtist>(_db.getTLSSession(), starredArtistId);
+        details::onStarred<db::StarredArtist>(_db.getTLSSession(), starredArtistId);
     }
 
-    void ListenBrainzBackend::onUnstarred(Database::StarredArtistId starredArtistId)
+    void ListenBrainzBackend::onUnstarred(db::StarredArtistId starredArtistId)
     {
-        details::onUnstarred<Database::StarredArtist>(_db.getTLSSession(), starredArtistId);
+        details::onUnstarred<db::StarredArtist>(_db.getTLSSession(), starredArtistId);
     }
 
-    void ListenBrainzBackend::onStarred(Database::StarredReleaseId starredReleaseId)
+    void ListenBrainzBackend::onStarred(db::StarredReleaseId starredReleaseId)
     {
-        details::onStarred<Database::StarredRelease>(_db.getTLSSession(), starredReleaseId);
+        details::onStarred<db::StarredRelease>(_db.getTLSSession(), starredReleaseId);
     }
 
-    void ListenBrainzBackend::onUnstarred(Database::StarredReleaseId starredReleaseId)
+    void ListenBrainzBackend::onUnstarred(db::StarredReleaseId starredReleaseId)
     {
-        details::onUnstarred<Database::StarredRelease>(_db.getTLSSession(), starredReleaseId);
+        details::onUnstarred<db::StarredRelease>(_db.getTLSSession(), starredReleaseId);
     }
 
-    void ListenBrainzBackend::onStarred(Database::StarredTrackId starredTrackId)
+    void ListenBrainzBackend::onStarred(db::StarredTrackId starredTrackId)
     {
         _feedbacksSynchronizer.enqueFeedback(FeedbackType::Love, starredTrackId);
     }
 
-    void ListenBrainzBackend::onUnstarred(Database::StarredTrackId starredtrackId)
+    void ListenBrainzBackend::onUnstarred(db::StarredTrackId starredtrackId)
     {
         _feedbacksSynchronizer.enqueFeedback(FeedbackType::Erase, starredtrackId);
     }
-} // namespace Scrobbling::ListenBrainz
+} // namespace lms::scrobbling::listenBrainz

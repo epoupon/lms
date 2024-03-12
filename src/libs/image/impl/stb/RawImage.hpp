@@ -29,7 +29,7 @@
 #include "image/IEncodedImage.hpp"
 #include "image/IRawImage.hpp"
 
-namespace Image::STB
+namespace lms::image::STB
 {
     class RawImage : public IRawImage
     {

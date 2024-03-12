@@ -19,7 +19,7 @@
 
 #include "LoadingIndicator.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
 	std::unique_ptr<Wt::WTemplate>
 	createLoadingIndicator()

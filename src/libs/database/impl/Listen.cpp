@@ -25,7 +25,7 @@
 #include "SqlQuery.hpp"
 #include "Utils.hpp"
 
-namespace Database
+namespace lms::db
 {
     namespace
     {
@@ -205,7 +205,7 @@ namespace Database
         if (parameters.syncState)
             query.where("sync_state = ?").bind(*parameters.syncState);
 
-        return Utils::execQuery<ListenId>(query, parameters.range);
+        return utils::execQuery<ListenId>(query, parameters.range);
     }
 
     Listen::pointer Listen::find(Session& session, UserId userId, TrackId trackId, ScrobblingBackend backend, const Wt::WDateTime& dateTime)
@@ -229,7 +229,7 @@ namespace Database
             .orderBy("COUNT(a.id) DESC")
             .groupBy("a.id") };
 
-        return Utils::execQuery<ArtistId>(query, params.range);
+        return utils::execQuery<ArtistId>(query, params.range);
     }
 
     RangeResults<ReleaseId> Listen::getTopReleases(Session& session, const StatsFindParameters& params)
@@ -239,7 +239,7 @@ namespace Database
                         .orderBy("COUNT(r.id) DESC")
                         .groupBy("r.id") };
 
-        return Utils::execQuery<ReleaseId>(query, params.range);
+        return utils::execQuery<ReleaseId>(query, params.range);
     }
 
     RangeResults<TrackId> Listen::getTopTracks(Session& session, const StatsFindParameters& params)
@@ -249,7 +249,7 @@ namespace Database
                         .orderBy("COUNT(t.id) DESC")
                         .groupBy("t.id") };
 
-        return Utils::execQuery<TrackId>(query, params.range);
+        return utils::execQuery<TrackId>(query, params.range);
     }
 
     RangeResults<ArtistId> Listen::getRecentArtists(Session& session, const ArtistStatsFindParameters& params)
@@ -259,7 +259,7 @@ namespace Database
                         .groupBy("a.id").having("l.date_time = MAX(l.date_time)")
                         .orderBy("l.date_time DESC") };
 
-        return Utils::execQuery<ArtistId>(query, params.range);
+        return utils::execQuery<ArtistId>(query, params.range);
     }
 
     RangeResults<ReleaseId> Listen::getRecentReleases(Session& session, const StatsFindParameters& params)
@@ -269,7 +269,7 @@ namespace Database
                         .groupBy("r.id").having("l.date_time = MAX(l.date_time)")
                         .orderBy("l.date_time DESC") };
 
-        return Utils::execQuery<ReleaseId>(query, params.range);
+        return utils::execQuery<ReleaseId>(query, params.range);
     }
 
     RangeResults<TrackId> Listen::getRecentTracks(Session& session, const StatsFindParameters& params)
@@ -279,7 +279,7 @@ namespace Database
                         .groupBy("t.id").having("l.date_time = MAX(l.date_time)")
                         .orderBy("l.date_time DESC") };
 
-        return Utils::execQuery<TrackId>(query, params.range);
+        return utils::execQuery<TrackId>(query, params.range);
     }
 
     std::size_t Listen::getCount(Session& session, UserId userId, TrackId trackId)
@@ -339,4 +339,4 @@ namespace Database
             .limit(1)
             .resultValue();
     }
-} // namespace Database
+} // namespace lms::db

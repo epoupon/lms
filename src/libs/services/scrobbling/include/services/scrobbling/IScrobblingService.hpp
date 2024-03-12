@@ -33,12 +33,12 @@
 #include "database/TrackId.hpp"
 #include "database/Types.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Db;
 }
 
-namespace Scrobbling
+namespace lms::scrobbling
 {
     class IScrobblingService
     {
@@ -52,33 +52,33 @@ namespace Scrobbling
         virtual void addTimedListen(const TimedListen& listen) = 0;
 
         // Stats
-        using ArtistContainer = Database::RangeResults<Database::ArtistId>;
-        using ReleaseContainer = Database::RangeResults<Database::ReleaseId>;
-        using TrackContainer = Database::RangeResults<Database::TrackId>;
+        using ArtistContainer = db::RangeResults<db::ArtistId>;
+        using ReleaseContainer = db::RangeResults<db::ReleaseId>;
+        using TrackContainer = db::RangeResults<db::TrackId>;
 
         struct FindParameters
         {
-            Database::UserId                              user;
-            std::vector<Database::ClusterId>              clusters;	// if non empty, at least one artist that belongs to these clusters
-            std::optional<Database::Range>                range;
-            Database::MediaLibraryId                      library; // if set, match this library
-            Database::ArtistId                            artist; // if set, match this artist
+            db::UserId                              user;
+            std::vector<db::ClusterId>              clusters;	// if non empty, at least one artist that belongs to these clusters
+            std::optional<db::Range>                range;
+            db::MediaLibraryId                      library; // if set, match this library
+            db::ArtistId                            artist; // if set, match this artist
 
-            FindParameters& setUser(const Database::UserId _user) { user = _user; return *this; }
-            FindParameters& setClusters(const std::vector<Database::ClusterId>& _clusters) { clusters = _clusters; return *this; }
-            FindParameters& setRange(std::optional<Database::Range> _range) { range = _range; return *this; }
-            FindParameters& setMediaLibrary(Database::MediaLibraryId _library) { library = _library; return *this; }
-            FindParameters& setArtist(Database::ArtistId _artist) { artist = _artist; return *this; }
+            FindParameters& setUser(const db::UserId _user) { user = _user; return *this; }
+            FindParameters& setClusters(const std::vector<db::ClusterId>& _clusters) { clusters = _clusters; return *this; }
+            FindParameters& setRange(std::optional<db::Range> _range) { range = _range; return *this; }
+            FindParameters& setMediaLibrary(db::MediaLibraryId _library) { library = _library; return *this; }
+            FindParameters& setArtist(db::ArtistId _artist) { artist = _artist; return *this; }
         };
 
         // Artists
         struct ArtistFindParameters : public FindParameters
         {
-            std::optional<Database::TrackArtistLinkType>  linkType;	// if set, only artists that have produced at least one track with this link type
-            Database::ArtistSortMethod                    sortMethod{ Database::ArtistSortMethod::None };
+            std::optional<db::TrackArtistLinkType>  linkType;	// if set, only artists that have produced at least one track with this link type
+            db::ArtistSortMethod                    sortMethod{ db::ArtistSortMethod::None };
 
-            ArtistFindParameters& setLinkType(std::optional<Database::TrackArtistLinkType> _linkType) { linkType = _linkType; return *this; }
-            ArtistFindParameters& setSortMethod(Database::ArtistSortMethod _sortMethod) { sortMethod = _sortMethod; return *this; }
+            ArtistFindParameters& setLinkType(std::optional<db::TrackArtistLinkType> _linkType) { linkType = _linkType; return *this; }
+            ArtistFindParameters& setSortMethod(db::ArtistSortMethod _sortMethod) { sortMethod = _sortMethod; return *this; }
         };
 
         // From most recent to oldest
@@ -86,11 +86,11 @@ namespace Scrobbling
         virtual ReleaseContainer getRecentReleases(const FindParameters& params) = 0;
         virtual TrackContainer getRecentTracks(const FindParameters& params) = 0;
 
-        virtual std::size_t getCount(Database::UserId userId, Database::ReleaseId releaseId) = 0;
-        virtual std::size_t getCount(Database::UserId userId, Database::TrackId trackId) = 0;
+        virtual std::size_t getCount(db::UserId userId, db::ReleaseId releaseId) = 0;
+        virtual std::size_t getCount(db::UserId userId, db::TrackId trackId) = 0;
 
-        virtual Wt::WDateTime getLastListenDateTime(Database::UserId userId, Database::ReleaseId releaseId) = 0;
-        virtual Wt::WDateTime getLastListenDateTime(Database::UserId userId, Database::TrackId trackId) = 0;
+        virtual Wt::WDateTime getLastListenDateTime(db::UserId userId, db::ReleaseId releaseId) = 0;
+        virtual Wt::WDateTime getLastListenDateTime(db::UserId userId, db::TrackId trackId) = 0;
 
         // Top
         virtual ArtistContainer getTopArtists(const ArtistFindParameters& params) = 0;
@@ -98,5 +98,5 @@ namespace Scrobbling
         virtual TrackContainer getTopTracks(const FindParameters& params) = 0;
     };
 
-    std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_service& ioService, Database::Db& db);
+    std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_service& ioService, db::Db& db);
 } // ns Scrobbling

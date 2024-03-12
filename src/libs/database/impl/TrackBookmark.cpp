@@ -25,8 +25,8 @@
 #include "IdTypeTraits.hpp"
 #include "Utils.hpp"
 
-namespace Database {
-
+namespace lms::db
+{
     TrackBookmark::TrackBookmark(ObjectPtr<User> user, ObjectPtr<Track> track)
         : _user{ getDboPtr(user) },
         _track{ getDboPtr(track) }
@@ -52,7 +52,7 @@ namespace Database {
         auto query{ session.getDboSession().query<TrackBookmarkId>("SELECT id from track_bookmark")
                     .where("user_id = ?").bind(userId) };
 
-        return Utils::execQuery<TrackBookmarkId>(query, range);
+        return utils::execQuery<TrackBookmarkId>(query, range);
     }
 
     TrackBookmark::pointer TrackBookmark::find(Session& session, UserId userId, TrackId trackId)
@@ -74,5 +74,5 @@ namespace Database {
             .resultValue();
     }
 
-} // namespace Database
+} // namespace lms::db
 

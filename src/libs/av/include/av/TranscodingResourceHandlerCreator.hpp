@@ -21,9 +21,9 @@
 
 #include <memory>
 
-#include "utils/IResourceHandler.hpp"
+#include "core/IResourceHandler.hpp"
 
-namespace Av::Transcoding
+namespace lms::av::transcoding
 {
 	struct InputParameters;
 	struct OutputParameters;

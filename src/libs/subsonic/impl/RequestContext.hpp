@@ -27,18 +27,18 @@
 #include "ClientInfo.hpp"
 #include "ProtocolVersion.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Session;
 }
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
     struct RequestContext
     {
         const Wt::Http::ParameterMap& parameters;
-        Database::Session& dbSession;
-        Database::UserId userId;
+        db::Session& dbSession;
+        db::UserId userId;
         ClientInfo clientInfo;
         ProtocolVersion serverProtocolVersion;
         bool enableOpenSubsonic{ true };

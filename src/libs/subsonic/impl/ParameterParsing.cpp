@@ -19,7 +19,7 @@
 
 #include "ParameterParsing.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
     bool hasParameter(const Wt::Http::ParameterMap& parameterMap, const std::string& param)
     {
@@ -30,7 +30,7 @@ namespace API::Subsonic
     {
         if (password.find("enc:") == 0)
         {
-            auto decodedPassword{ StringUtils::stringFromHex(password.substr(4)) };
+            auto decodedPassword{ core::stringUtils::stringFromHex(password.substr(4)) };
             if (!decodedPassword)
                 return password; // fallback on plain password
 

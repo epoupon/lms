@@ -30,15 +30,15 @@
 #include "database/StarredTrack.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
-#include "utils/IConfig.hpp"
-#include "utils/http/IClient.hpp"
-#include "utils/Service.hpp"
+#include "core/IConfig.hpp"
+#include "core/http/IClient.hpp"
+#include "core/Service.hpp"
 
 #include "Exception.hpp"
 #include "FeedbacksParser.hpp"
 #include "Utils.hpp"
 
-namespace Feedback::ListenBrainz
+namespace lms::feedback::listenBrainz
 {
     namespace
     {
@@ -59,37 +59,37 @@ namespace Feedback::ListenBrainz
         }
     }
 
-    FeedbacksSynchronizer::FeedbacksSynchronizer(boost::asio::io_context& ioContext, Database::Db& db, Http::IClient& client)
+    FeedbacksSynchronizer::FeedbacksSynchronizer(boost::asio::io_context& ioContext, db::Db& db, core::http::IClient& client)
         : _ioContext{ ioContext }
         , _db{ db }
         , _client{ client }
-        , _maxSyncFeedbackCount{ Service<IConfig>::get()->getULong("listenbrainz-max-sync-feedback-count", 1000) }
-        , _syncFeedbacksPeriod{ Service<IConfig>::get()->getULong("listenbrainz-sync-feedbacks-period-hours", 1) }
+        , _maxSyncFeedbackCount{ core::Service<core::IConfig>::get()->getULong("listenbrainz-max-sync-feedback-count", 1000) }
+        , _syncFeedbacksPeriod{ core::Service<core::IConfig>::get()->getULong("listenbrainz-sync-feedbacks-period-hours", 1) }
     {
         LOG(INFO, "Starting Feedbacks synchronizer, maxSyncFeedbackCount = " << _maxSyncFeedbackCount << ", _syncFeedbacksPeriod = " << _syncFeedbacksPeriod.count() << " hours");
 
         scheduleSync(std::chrono::seconds{ 30 });
     }
 
-    void FeedbacksSynchronizer::enqueFeedback(FeedbackType type, Database::StarredTrackId starredTrackId)
+    void FeedbacksSynchronizer::enqueFeedback(FeedbackType type, db::StarredTrackId starredTrackId)
     {
         try
         {
-            Database::Session& session{ _db.getTLSSession() };
+            db::Session& session{ _db.getTLSSession() };
 
             auto transaction{ session.createWriteTransaction() };
 
-            Database::StarredTrack::pointer starredTrack{ Database::StarredTrack::find(session, starredTrackId) };
+            db::StarredTrack::pointer starredTrack{ db::StarredTrack::find(session, starredTrackId) };
             if (!starredTrack)
                 return;
 
-            std::optional<UUID> recordingMBID{ starredTrack->getTrack()->getRecordingMBID() };
+            std::optional<core::UUID> recordingMBID{ starredTrack->getTrack()->getRecordingMBID() };
 
             switch (type)
             {
             case FeedbackType::Love:
-                if (starredTrack->getSyncState() != Database::SyncState::PendingAdd)
-                    starredTrack.modify()->setSyncState(Database::SyncState::PendingAdd);
+                if (starredTrack->getSyncState() != db::SyncState::PendingAdd)
+                    starredTrack.modify()->setSyncState(db::SyncState::PendingAdd);
                 break;
 
             case FeedbackType::Erase:
@@ -102,7 +102,7 @@ namespace Feedback::ListenBrainz
                 {
                     // Send the erase order even if it is not on the remote LB server (it may be
                     // queued for add, or not)
-                    starredTrack.modify()->setSyncState(Database::SyncState::PendingRemove);
+                    starredTrack.modify()->setSyncState(db::SyncState::PendingRemove);
                 }
                 break;
 
@@ -116,11 +116,11 @@ namespace Feedback::ListenBrainz
                 return;
             }
 
-            const std::optional<UUID> listenBrainzToken{ starredTrack->getUser()->getListenBrainzToken() };
+            const std::optional<core::UUID> listenBrainzToken{ starredTrack->getUser()->getListenBrainzToken() };
             if (!listenBrainzToken)
                 return;
 
-            Http::ClientPOSTRequestParameters request;
+            core::http::ClientPOSTRequestParameters request;
             request.relativeUrl = "/1/feedback/recording-feedback";
             request.message.addHeader("Authorization", "Token " + std::string{ listenBrainzToken->getAsString() });
 
@@ -146,14 +146,14 @@ namespace Feedback::ListenBrainz
         }
     }
 
-    void FeedbacksSynchronizer::onFeedbackSent(FeedbackType type, Database::StarredTrackId starredTrackId)
+    void FeedbacksSynchronizer::onFeedbackSent(FeedbackType type, db::StarredTrackId starredTrackId)
     {
         assert(_strand.running_in_this_thread());
 
-        Database::Session& session{ _db.getTLSSession() };
+        db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
-        Database::StarredTrack::pointer starredTrack{ Database::StarredTrack::find(session, starredTrackId) };
+        db::StarredTrack::pointer starredTrack{ db::StarredTrack::find(session, starredTrackId) };
         if (!starredTrack)
         {
             LOG(DEBUG, "Starred track not found. deleted?");
@@ -165,7 +165,7 @@ namespace Feedback::ListenBrainz
         switch (type)
         {
         case FeedbackType::Love:
-            starredTrack.modify()->setSyncState(Database::SyncState::Synchronized);
+            starredTrack.modify()->setSyncState(db::SyncState::Synchronized);
             LOG(DEBUG, "State set to synchronized");
 
             if (userContext.feedbackCount)
@@ -193,20 +193,20 @@ namespace Feedback::ListenBrainz
 
     void FeedbacksSynchronizer::enquePendingFeedbacks()
     {
-    using namespace Database;
+    using namespace db;
 
         auto processPendingFeedbacks{ [this](SyncState scrobblingState, FeedbackType feedbackType)
         {
             RangeResults<StarredTrackId> pendingFeedbacks;
 
             {
-                Database::Session& session {_db.getTLSSession()};
+                db::Session& session {_db.getTLSSession()};
 
                 auto transaction {session.createReadTransaction()};
 
                 StarredTrack::FindParameters params;
-                params.setFeedbackBackend(Database::FeedbackBackend::ListenBrainz, scrobblingState)
-                        .setRange(Database::Range {0, 100}); // don't flood too much?
+                params.setFeedbackBackend(db::FeedbackBackend::ListenBrainz, scrobblingState)
+                        .setRange(db::Range {0, 100}); // don't flood too much?
 
                 pendingFeedbacks = StarredTrack::find(session, params);
             }
@@ -221,7 +221,7 @@ namespace Feedback::ListenBrainz
         processPendingFeedbacks(SyncState::PendingRemove, FeedbackType::Erase);
     }
 
-    FeedbacksSynchronizer::UserContext& FeedbacksSynchronizer::getUserContext(Database::UserId userId)
+    FeedbacksSynchronizer::UserContext& FeedbacksSynchronizer::getUserContext(db::UserId userId)
     {
         assert(_strand.running_in_this_thread());
 
@@ -274,14 +274,14 @@ namespace Feedback::ListenBrainz
 
         enquePendingFeedbacks();
 
-        Database::RangeResults<Database::UserId> userIds;
+        db::RangeResults<db::UserId> userIds;
         {
-            Database::Session& session{ _db.getTLSSession() };
+            db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
-            userIds = Database::User::find(_db.getTLSSession(), Database::User::FindParameters{}.setFeedbackBackend(Database::FeedbackBackend::ListenBrainz));
+            userIds = db::User::find(_db.getTLSSession(), db::User::FindParameters{}.setFeedbackBackend(db::FeedbackBackend::ListenBrainz));
         }
 
-        for (const Database::UserId userId : userIds.results)
+        for (const db::UserId userId : userIds.results)
             startSync(getUserContext(userId));
 
         if (!isSyncing())
@@ -315,20 +315,20 @@ namespace Feedback::ListenBrainz
     {
         assert(context.listenBrainzUserName.empty());
 
-        const std::optional<UUID> listenBrainzToken{ ListenBrainz::Utils::getListenBrainzToken(_db.getTLSSession(), context.userId) };
+        const std::optional<core::UUID> listenBrainzToken{ utils::getListenBrainzToken(_db.getTLSSession(), context.userId) };
         if (!listenBrainzToken)
         {
             onSyncEnded(context);
             return;
         }
 
-        Http::ClientGETRequestParameters request;
-        request.priority = Http::ClientRequestParameters::Priority::Low;
+        core::http::ClientGETRequestParameters request;
+        request.priority = core::http::ClientRequestParameters::Priority::Low;
         request.relativeUrl = "/1/validate-token";
         request.headers = { {"Authorization",  "Token " + std::string {listenBrainzToken->getAsString()}} };
         request.onSuccessFunc = [this, &context](std::string_view msgBody)
             {
-                context.listenBrainzUserName = ListenBrainz::Utils::parseValidateToken(msgBody);
+                context.listenBrainzUserName = utils::parseValidateToken(msgBody);
                 if (context.listenBrainzUserName.empty())
                 {
                     onSyncEnded(context);
@@ -348,9 +348,9 @@ namespace Feedback::ListenBrainz
     {
         assert(!context.listenBrainzUserName.empty());
 
-        Http::ClientGETRequestParameters request;
+        core::http::ClientGETRequestParameters request;
         request.relativeUrl = "/1/feedback/user/" + std::string{ context.listenBrainzUserName } + "/get-feedback?score=1&count=0";
-        request.priority = Http::ClientRequestParameters::Priority::Low;
+        request.priority = core::http::ClientRequestParameters::Priority::Low;
         request.onSuccessFunc = [this, &context](std::string_view msgBody)
             {
                 std::string msgBodyCopy{ msgBody };
@@ -383,9 +383,9 @@ namespace Feedback::ListenBrainz
     {
         assert(!context.listenBrainzUserName.empty());
 
-        Http::ClientGETRequestParameters request;
+        core::http::ClientGETRequestParameters request;
         request.relativeUrl = "/1/feedback/user/" + context.listenBrainzUserName + "/get-feedback?offset=" + std::to_string(context.fetchedFeedbackCount);
-        request.priority = Http::ClientRequestParameters::Priority::Low;
+        request.priority = core::http::ClientRequestParameters::Priority::Low;
         request.onSuccessFunc = [this, &context](std::string_view msgBody)
             {
                 std::string msgBodyCopy{ msgBody };
@@ -429,7 +429,7 @@ namespace Feedback::ListenBrainz
 
     void FeedbacksSynchronizer::tryImportFeedback(const Feedback& feedback, UserContext& context)
     {
-        using namespace Database;
+        using namespace db;
 
         Session& session{ _db.getTLSSession() };
 
@@ -451,7 +451,7 @@ namespace Feedback::ListenBrainz
             }
 
             trackId = tracks.front()->getId();
-            needImport = !StarredTrack::exists(session, trackId, context.userId, Database::FeedbackBackend::ListenBrainz);
+            needImport = !StarredTrack::exists(session, trackId, context.userId, db::FeedbackBackend::ListenBrainz);
 
             // don't update starred date time
             // no need to update state if it was found as not synchronized
@@ -473,7 +473,7 @@ namespace Feedback::ListenBrainz
             if (!user)
                 return;
 
-            StarredTrack::pointer starredTrack{ session.create<StarredTrack>(track, user, Database::FeedbackBackend::ListenBrainz) };
+            StarredTrack::pointer starredTrack{ session.create<StarredTrack>(track, user, db::FeedbackBackend::ListenBrainz) };
             starredTrack.modify()->setSyncState(SyncState::Synchronized);
             starredTrack.modify()->setDateTime(feedback.created);
 
@@ -485,4 +485,4 @@ namespace Feedback::ListenBrainz
             context.matchedFeedbackCount++;
         }
     }
-} // namespace Feedback::ListenBrainz
+} // namespace lms::feedback::listenBrainz

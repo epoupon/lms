@@ -24,21 +24,21 @@
 
 #include "services/cover/ICoverService.hpp"
 #include "database/Track.hpp"
-#include "utils/Exception.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/ITraceLogger.hpp"
-#include "utils/Service.hpp"
-#include "utils/String.hpp"
+#include "core/Exception.hpp"
+#include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
+#include "core/Service.hpp"
+#include "core/String.hpp"
 
 #include "LmsApplication.hpp"
 
 #define LOG(severity, message)	LMS_LOG(UI, severity, "Image resource: " << message)
 
-namespace UserInterface
+namespace lms::ui
 {
     CoverResource::CoverResource()
     {
-        LmsApp->getScannerEvents().scanComplete.connect(this, [this](const Scanner::ScanStats& stats)
+        LmsApp->getScannerEvents().scanComplete.connect(this, [this](const scanner::ScanStats& stats)
             {
                 if (stats.nbChanges())
                     setChanged();
@@ -50,12 +50,12 @@ namespace UserInterface
         beingDeleted();
     }
 
-    std::string CoverResource::getReleaseUrl(Database::ReleaseId releaseId, Size size) const
+    std::string CoverResource::getReleaseUrl(db::ReleaseId releaseId, Size size) const
     {
         return url() + "&releaseid=" + releaseId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size));
     }
 
-    std::string CoverResource::getTrackUrl(Database::TrackId trackId, Size size) const
+    std::string CoverResource::getTrackUrl(db::TrackId trackId, Size size) const
     {
         return url() + "&trackid=" + trackId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size));
     }
@@ -76,41 +76,41 @@ namespace UserInterface
             return;
         }
 
-        const auto size{ StringUtils::readAs<std::size_t>(*sizeStr) };
+        const auto size{ core::stringUtils::readAs<std::size_t>(*sizeStr) };
         if (!size || *size > maxSize)
         {
             LOG(DEBUG, "invalid size provided!");
             return;
         }
 
-        std::shared_ptr<Image::IEncodedImage> cover;
+        std::shared_ptr<image::IEncodedImage> cover;
 
         if (trackIdStr)
         {
             LOG(DEBUG, "Requested cover for track " << *trackIdStr << ", size = " << *size);
 
-            const std::optional<Database::TrackId> trackId{ StringUtils::readAs<Database::TrackId::ValueType>(*trackIdStr) };
+            const std::optional<db::TrackId> trackId{ core::stringUtils::readAs<db::TrackId::ValueType>(*trackIdStr) };
             if (!trackId)
             {
                 LOG(DEBUG, "track not found");
                 return;
             }
 
-            cover = Service<Cover::ICoverService>::get()->getFromTrack(*trackId, *size);
+            cover = core::Service<cover::ICoverService>::get()->getFromTrack(*trackId, *size);
             if (!cover)
-                cover = Service<Cover::ICoverService>::get()->getDefault(*size);
+                cover = core::Service<cover::ICoverService>::get()->getDefault(*size);
         }
         else if (releaseIdStr)
         {
             LOG(DEBUG, "Requested cover for release " << *releaseIdStr << ", size = " << *size);
 
-            const std::optional<Database::ReleaseId> releaseId{ StringUtils::readAs<Database::ReleaseId::ValueType>(*releaseIdStr) };
+            const std::optional<db::ReleaseId> releaseId{ core::stringUtils::readAs<db::ReleaseId::ValueType>(*releaseIdStr) };
             if (!releaseId)
                 return;
 
-            cover = Service<Cover::ICoverService>::get()->getFromRelease(*releaseId, *size);
+            cover = core::Service<cover::ICoverService>::get()->getFromRelease(*releaseId, *size);
             if (!cover)
-                cover = Service<Cover::ICoverService>::get()->getDefault(*size);
+                cover = core::Service<cover::ICoverService>::get()->getDefault(*size);
         }
         else
         {
@@ -122,4 +122,4 @@ namespace UserInterface
 
         response.out().write(reinterpret_cast<const char*>(cover->getData()), cover->getDataSize());
     }
-} // namespace UserInterface
+} // namespace lms::ui

@@ -24,7 +24,7 @@
 
 #include "common/Template.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
 	class Filters;
 	class InfiniteScrollingContainer;
@@ -35,7 +35,7 @@ namespace UserInterface
 		public:
 			TrackList(Filters& filters, PlayQueueController& playQueueController);
 
-			Wt::Signal<Database::TrackListId> trackListDeleted;
+			Wt::Signal<db::TrackListId> trackListDeleted;
 
 		private:
 			void refreshView();
@@ -46,8 +46,8 @@ namespace UserInterface
 
 			Filters&					_filters;
 			PlayQueueController&		_playQueueController;
-			Database::TrackListId		_trackListId;
+			db::TrackListId		_trackListId;
 			InfiniteScrollingContainer* _container {};
 	};
-} // namespace UserInterface
+} // namespace lms::ui
 

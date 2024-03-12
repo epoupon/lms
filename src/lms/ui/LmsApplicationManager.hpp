@@ -27,7 +27,7 @@
 
 #include "database/UserId.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
 	class LmsApplication;
 	class LmsApplicationManager
@@ -43,6 +43,6 @@ namespace UserInterface
 			void unregisterApplication(LmsApplication& application);
 
 			std::mutex _mutex;
-			std::unordered_map<Database::UserId, std::unordered_set<LmsApplication*>>  m_applications;
+			std::unordered_map<db::UserId, std::unordered_set<LmsApplication*>>  m_applications;
 	};
 } // UserInterface

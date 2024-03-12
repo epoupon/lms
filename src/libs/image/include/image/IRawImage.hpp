@@ -24,7 +24,7 @@
 
 #include "image/IEncodedImage.hpp"
 
-namespace Image
+namespace lms::image
 {
 	class IRawImage
 	{

@@ -21,28 +21,29 @@
 
 #include "database/TrackFeatures.hpp"
 
-using ScopedTrackFeatures = ScopedEntity<Database::TrackFeatures>;
-
-using namespace Database;
-
-TEST_F(DatabaseFixture, TrackFeatures)
+namespace lms::db::tests
 {
-	ScopedTrack track {session, "MyTrack"};
-	ScopedUser user {session, "MyUser"};
+    using ScopedTrackFeatures = ScopedEntity<db::TrackFeatures>;
 
-	{
-		auto transaction {session.createReadTransaction()};
-		EXPECT_EQ(TrackFeatures::getCount(session), 0);
-	}
+    TEST_F(DatabaseFixture, TrackFeatures)
+    {
+        ScopedTrack track{ session, "MyTrack" };
+        ScopedUser user{ session, "MyUser" };
 
-	ScopedTrackFeatures trackFeatures {session, track.lockAndGet(), ""};
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(TrackFeatures::getCount(session), 0);
+        }
 
-	{
-		auto transaction {session.createWriteTransaction()};
-		EXPECT_EQ(TrackFeatures::getCount(session), 1);
+        ScopedTrackFeatures trackFeatures{ session, track.lockAndGet(), "" };
 
-		auto allTrackFeatures {TrackFeatures::find(session)};
-		ASSERT_EQ(allTrackFeatures.results.size(), 1);
-		EXPECT_EQ(allTrackFeatures.results.front(), trackFeatures.getId());
-	}
+        {
+            auto transaction{ session.createWriteTransaction() };
+            EXPECT_EQ(TrackFeatures::getCount(session), 1);
+
+            auto allTrackFeatures{ TrackFeatures::find(session) };
+            ASSERT_EQ(allTrackFeatures.results.size(), 1);
+            EXPECT_EQ(allTrackFeatures.results.front(), trackFeatures.getId());
+        }
+    }
 }

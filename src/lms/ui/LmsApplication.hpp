@@ -30,14 +30,14 @@
 #include "admin/ScannerController.hpp"
 #include "Notification.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Db;
     class Session;
     class User;
 }
 
-namespace UserInterface
+namespace lms::ui
 {
     class CoverResource;
     class LmsApplicationException;
@@ -50,25 +50,25 @@ namespace UserInterface
     class LmsApplication : public Wt::WApplication
     {
     public:
-        LmsApplication(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationManager& appManager, std::optional<Database::UserId> userId = std::nullopt);
+        LmsApplication(const Wt::WEnvironment& env, db::Db& db, LmsApplicationManager& appManager, std::optional<db::UserId> userId = std::nullopt);
         ~LmsApplication();
 
-        static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env, Database::Db& db, LmsApplicationManager& appManager);
+        static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env, db::Db& db, LmsApplicationManager& appManager);
         static LmsApplication* instance();
 
         // Session application data
         std::shared_ptr<CoverResource> getCoverResource() { return _coverResource; }
-        Database::Db& getDb();
-        Database::Session& getDbSession(); // always thread safe
+        db::Db& getDb();
+        db::Session& getDbSession(); // always thread safe
 
-        Database::ObjectPtr<Database::User>	getUser();
-        Database::UserId				getUserId();
+        db::ObjectPtr<db::User>	getUser();
+        db::UserId				getUserId();
         bool isUserAuthStrong() const; // user must be logged in prior this call
-        Database::UserType				getUserType(); // user must be logged in prior this call
+        db::UserType				getUserType(); // user must be logged in prior this call
         std::string						getUserLoginName(); // user must be logged in prior this call
 
         // Proxified scanner events
-        Scanner::Events& getScannerEvents() { return _scannerEvents; }
+        scanner::Events& getScannerEvents() { return _scannerEvents; }
 
         // Utils
         void post(std::function<void()> func);
@@ -99,13 +99,13 @@ namespace UserInterface
 
         void createHome();
 
-        Database::Db& _db;
+        db::Db& _db;
         Wt::Signal<>							_preQuit;
         LmsApplicationManager& _appManager;
-        Scanner::Events							_scannerEvents;
+        scanner::Events							_scannerEvents;
         struct UserAuthInfo
         {
-            Database::UserId	userId;
+            db::UserId	userId;
             bool				strongAuth{};
         };
         std::optional<UserAuthInfo>				_authenticatedUser;
@@ -118,7 +118,7 @@ namespace UserInterface
 
 
     // Helper to get session instance
-#define LmsApp	::UserInterface::LmsApplication::instance()
+#define LmsApp	lms::ui::LmsApplication::instance()
 
-} // namespace UserInterface
+} // namespace lms::ui
 

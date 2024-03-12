@@ -5,7 +5,7 @@ add_executable(test-scrobbling
 	)
 
 target_link_libraries(test-scrobbling PRIVATE
-	lmsutils
+	lmscore
 	lmsscrobbling
 	GTest::GTest
 	)

@@ -22,12 +22,12 @@
 #include "database/Object.hpp"
 #include "SubsonicResponse.hpp"
 
-namespace Database
+namespace lms::db
 {
     class TrackBookmark;
 }
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    Response::Node createBookmarkNode(const Database::ObjectPtr<Database::TrackBookmark>& bookmark);
+    Response::Node createBookmarkNode(const db::ObjectPtr<db::TrackBookmark>& bookmark);
 }

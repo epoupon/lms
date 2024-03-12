@@ -21,7 +21,7 @@ target_link_libraries(lmsscanner PRIVATE
 	lmsdatabase
 	lmsmetadata
 	lmsrecommendation
-	lmsutils
+	lmscore
 	)
 
 target_link_libraries(lmsscanner PUBLIC

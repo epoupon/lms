@@ -19,31 +19,31 @@
 
 #include "ProtocolVersion.hpp"
 
-namespace StringUtils
+namespace lms::core::stringUtils
 {
     template<>
-    std::optional<API::Subsonic::ProtocolVersion> readAs(std::string_view str)
+    std::optional<api::subsonic::ProtocolVersion> readAs(std::string_view str)
     {
         // Expects "X.Y.Z"
-        const auto numbers{ StringUtils::splitString(str, '.') };
+        const auto numbers{ core::stringUtils::splitString(str, '.') };
         if (numbers.size() < 2 || numbers.size() > 3)
             return std::nullopt;
 
-        API::Subsonic::ProtocolVersion version;
+        api::subsonic::ProtocolVersion version;
 
-        auto number{ StringUtils::readAs<unsigned>(numbers[0]) };
+        auto number{ core::stringUtils::readAs<unsigned>(numbers[0]) };
         if (!number)
             return std::nullopt;
         version.major = *number;
 
-        number = { StringUtils::readAs<unsigned>(numbers[1]) };
+        number = { core::stringUtils::readAs<unsigned>(numbers[1]) };
         if (!number)
             return std::nullopt;
         version.minor = *number;
 
         if (numbers.size() == 3)
         {
-            number = { StringUtils::readAs<unsigned>(numbers[2]) };
+            number = { core::stringUtils::readAs<unsigned>(numbers[2]) };
             if (!number)
                 return std::nullopt;
             version.patch = *number;

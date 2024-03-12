@@ -27,7 +27,7 @@
 #include "IdTypeTraits.hpp"
 #include "Utils.hpp"
 
-namespace Database
+namespace lms::db
 {
     StarredArtist::StarredArtist(ObjectPtr<Artist> artist, ObjectPtr<User> user, FeedbackBackend backend)
         : _backend{ backend }
@@ -76,6 +76,6 @@ namespace Database
 
     void StarredArtist::setDateTime(const Wt::WDateTime& dateTime)
     {
-        _dateTime = Utils::normalizeDateTime(dateTime);
+        _dateTime = utils::normalizeDateTime(dateTime);
     }
 }

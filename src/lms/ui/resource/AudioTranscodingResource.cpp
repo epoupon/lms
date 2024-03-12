@@ -28,36 +28,36 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/String.hpp"
+#include "core/ILogger.hpp"
+#include "core/String.hpp"
 
 #include "LmsApplication.hpp"
 
 #define LOG(severity, message)	LMS_LOG(UI, severity, "Audio transcode resource: " << message)
 
-namespace StringUtils
+namespace lms::core::stringUtils
 {
     template <>
-    std::optional<Database::TranscodingOutputFormat> readAs(std::string_view str)
+    std::optional<db::TranscodingOutputFormat> readAs(std::string_view str)
     {
         auto encodedFormat{ readAs<int>(str) };
         if (!encodedFormat)
             return std::nullopt;
 
-        Database::TranscodingOutputFormat format{ static_cast<Database::TranscodingOutputFormat>(*encodedFormat) };
+        db::TranscodingOutputFormat format{ static_cast<db::TranscodingOutputFormat>(*encodedFormat) };
 
         // check
-        switch (static_cast<Database::TranscodingOutputFormat>(*encodedFormat))
+        switch (static_cast<db::TranscodingOutputFormat>(*encodedFormat))
         {
-        case Database::TranscodingOutputFormat::MP3:
+        case db::TranscodingOutputFormat::MP3:
             [[fallthrough]];
-        case Database::TranscodingOutputFormat::OGG_OPUS:
+        case db::TranscodingOutputFormat::OGG_OPUS:
             [[fallthrough]];
-        case Database::TranscodingOutputFormat::MATROSKA_OPUS:
+        case db::TranscodingOutputFormat::MATROSKA_OPUS:
             [[fallthrough]];
-        case Database::TranscodingOutputFormat::OGG_VORBIS:
+        case db::TranscodingOutputFormat::OGG_VORBIS:
             [[fallthrough]];
-        case Database::TranscodingOutputFormat::WEBM_VORBIS:
+        case db::TranscodingOutputFormat::WEBM_VORBIS:
             return format;
         }
 
@@ -67,19 +67,19 @@ namespace StringUtils
     }
 }
 
-namespace UserInterface
+namespace lms::ui
 {
     namespace
     {
-        std::optional<Av::Transcoding::OutputFormat> AudioFormatToAvFormat(Database::TranscodingOutputFormat format)
+        std::optional<av::transcoding::OutputFormat> AudioFormatToAvFormat(db::TranscodingOutputFormat format)
         {
             switch (format)
             {
-            case Database::TranscodingOutputFormat::MP3:			return Av::Transcoding::OutputFormat::MP3;
-            case Database::TranscodingOutputFormat::OGG_OPUS:		return Av::Transcoding::OutputFormat::OGG_OPUS;
-            case Database::TranscodingOutputFormat::MATROSKA_OPUS:	return Av::Transcoding::OutputFormat::MATROSKA_OPUS;
-            case Database::TranscodingOutputFormat::OGG_VORBIS:		return Av::Transcoding::OutputFormat::OGG_VORBIS;
-            case Database::TranscodingOutputFormat::WEBM_VORBIS:	return Av::Transcoding::OutputFormat::WEBM_VORBIS;
+            case db::TranscodingOutputFormat::MP3:			return av::transcoding::OutputFormat::MP3;
+            case db::TranscodingOutputFormat::OGG_OPUS:		return av::transcoding::OutputFormat::OGG_OPUS;
+            case db::TranscodingOutputFormat::MATROSKA_OPUS:	return av::transcoding::OutputFormat::MATROSKA_OPUS;
+            case db::TranscodingOutputFormat::OGG_VORBIS:		return av::transcoding::OutputFormat::OGG_VORBIS;
+            case db::TranscodingOutputFormat::WEBM_VORBIS:	return av::transcoding::OutputFormat::WEBM_VORBIS;
             }
 
             LOG(ERROR, "Cannot convert from audio format to AV format");
@@ -97,7 +97,7 @@ namespace UserInterface
                 return std::nullopt;
             }
 
-            auto res{ StringUtils::readAs<T>(*paramStr) };
+            auto res{ core::stringUtils::readAs<T>(*paramStr) };
             if (!res)
                 LOG(ERROR, "Cannot parse parameter '" << parameterName << "' from value '" << *paramStr << "'");
 
@@ -106,8 +106,8 @@ namespace UserInterface
 
         struct TranscodingParameters
         {
-            Av::Transcoding::InputParameters inputParameters;
-            Av::Transcoding::OutputParameters outputParameters;
+            av::transcoding::InputParameters inputParameters;
+            av::transcoding::OutputParameters outputParameters;
         };
 
         std::optional<TranscodingParameters> readTranscodingParameters(const Wt::Http::Request& request)
@@ -115,20 +115,20 @@ namespace UserInterface
             TranscodingParameters parameters;
 
             // mandatory parameters
-            const std::optional<Database::TrackId> trackId{ readParameterAs<Database::TrackId::ValueType>(request, "trackid") };
-            const auto format{ readParameterAs<Database::TranscodingOutputFormat>(request, "format") };
-            const auto bitrate{ readParameterAs<Database::Bitrate>(request, "bitrate") };
+            const std::optional<db::TrackId> trackId{ readParameterAs<db::TrackId::ValueType>(request, "trackid") };
+            const auto format{ readParameterAs<db::TranscodingOutputFormat>(request, "format") };
+            const auto bitrate{ readParameterAs<db::Bitrate>(request, "bitrate") };
 
             if (!trackId || !format || !bitrate)
                 return std::nullopt;
 
-            if (!Database::isAudioBitrateAllowed(*bitrate))
+            if (!db::isAudioBitrateAllowed(*bitrate))
             {
                 LOG(ERROR, "Bitrate '" << *bitrate << "' is not allowed");
                 return std::nullopt;
             }
 
-            const std::optional<Av::Transcoding::OutputFormat> avFormat{ AudioFormatToAvFormat(*format) };
+            const std::optional<av::transcoding::OutputFormat> avFormat{ AudioFormatToAvFormat(*format) };
             if (!avFormat)
                 return std::nullopt;
 
@@ -139,7 +139,7 @@ namespace UserInterface
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-                const Database::Track::pointer track{ Database::Track::find(LmsApp->getDbSession(), *trackId) };
+                const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), *trackId) };
                 if (!track)
                 {
                     LOG(ERROR, "Missing track");
@@ -164,7 +164,7 @@ namespace UserInterface
         beingDeleted();
     }
 
-    std::string AudioTranscodingResource::getUrl(Database::TrackId trackId) const
+    std::string AudioTranscodingResource::getUrl(db::TrackId trackId) const
     {
         return url() + "&trackid=" + trackId.toString();
     }
@@ -179,7 +179,7 @@ namespace UserInterface
             if (!continuation)
             {
                 if (const auto& parameters{ readTranscodingParameters(request) })
-                    resourceHandler = Av::Transcoding::createResourceHandler(parameters->inputParameters, parameters->outputParameters, false /* estimate content length */);
+                    resourceHandler = av::transcoding::createResourceHandler(parameters->inputParameters, parameters->outputParameters, false /* estimate content length */);
             }
             else
             {
@@ -193,10 +193,10 @@ namespace UserInterface
                     continuation->setData(resourceHandler);
             }
         }
-        catch (const Av::Exception& e)
+        catch (const av::Exception& e)
         {
             LOG(ERROR, "Caught Av exception: " << e.what());
         }
     }
 
-} // namespace UserInterface
+} // namespace lms::ui

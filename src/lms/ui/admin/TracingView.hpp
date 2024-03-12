@@ -21,11 +21,11 @@
 
 #include <Wt/WTemplate.h>
 
-namespace UserInterface
+namespace lms::ui
 {
     class TracingView : public Wt::WTemplate
     {
     public:
         TracingView();
     };
-} // namespace UserInterface
+} // namespace lms::ui

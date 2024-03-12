@@ -22,7 +22,7 @@
 #include <Wt/WContainerWidget.h>
 #include <Wt/WTemplate.h>
 
-namespace UserInterface {
+namespace lms::ui {
 
 class UsersView : public Wt::WTemplate
 {
@@ -35,6 +35,6 @@ class UsersView : public Wt::WTemplate
 		Wt::WContainerWidget* _container;
 };
 
-} // namespace UserInterface
+} // namespace lms::ui
 
 
