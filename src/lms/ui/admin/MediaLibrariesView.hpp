@@ -24,7 +24,7 @@
 
 #include "database/MediaLibraryId.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
     class MediaLibrariesView : public Wt::WTemplate
     {
@@ -33,8 +33,8 @@ namespace UserInterface
 
     private:
         void refreshView();
-        void showDeleteLibraryModal(Database::MediaLibraryId library, Wt::WTemplate* libraryEntry);
-        void updateEntry(Database::MediaLibraryId library, Wt::WTemplate* libraryEntry);
+        void showDeleteLibraryModal(db::MediaLibraryId library, Wt::WTemplate* libraryEntry);
+        void updateEntry(db::MediaLibraryId library, Wt::WTemplate* libraryEntry);
         Wt::WTemplate* addEntry();
 
         Wt::WContainerWidget* _libraries{};

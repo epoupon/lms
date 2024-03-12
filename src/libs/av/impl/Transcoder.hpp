@@ -25,9 +25,12 @@
 #include "av/TranscodingParameters.hpp"
 #include "av/Types.hpp"
 
-class IChildProcess;
+namespace lms::core
+{
+    class IChildProcess;
+}
 
-namespace Av::Transcoding
+namespace lms::av::transcoding
 {
     class Transcoder
     {
@@ -60,7 +63,6 @@ namespace Av::Transcoding
         const OutputParameters      _outputParameters;
         std::string                 _outputMimeType;
 
-        std::unique_ptr<IChildProcess>  _childProcess;
+        std::unique_ptr<core::IChildProcess>  _childProcess;
     };
-
-} // namespace Av::Transcoding
+}

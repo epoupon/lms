@@ -28,11 +28,11 @@
 
 #include "metadata/Exception.hpp"
 #include "metadata/IParser.hpp"
-#include "utils/StreamLogger.hpp"
+#include "core/StreamLogger.hpp"
 
-namespace
+namespace lms::metadata
 {
-    std::ostream& operator<<(std::ostream& os, const MetaData::Artist& artist)
+    std::ostream& operator<<(std::ostream& os, const Artist& artist)
     {
         os << artist.name;
 
@@ -45,7 +45,7 @@ namespace
         return os;
     }
 
-    std::ostream& operator<<(std::ostream& os, const MetaData::Release& release)
+    std::ostream& operator<<(std::ostream& os, const Release& release)
     {
         os << release.name;
         if (!release.sortName.empty())
@@ -64,7 +64,7 @@ namespace
         if (!release.artistDisplayName.empty())
             std::cout << "\tDisplay artist: " << release.artistDisplayName << std::endl;
 
-        for (const MetaData::Artist& artist : release.artists)
+        for (const Artist& artist : release.artists)
             std::cout << "\tRelease artist: " << artist << std::endl;
 
         for (std::string_view releaseType : release.releaseTypes)
@@ -73,7 +73,7 @@ namespace
         return os;
     }
 
-    std::ostream& operator<<(std::ostream& os, const MetaData::Medium& medium)
+    std::ostream& operator<<(std::ostream& os, const Medium& medium)
     {
         if (!medium.name.empty())
             os << medium.name;
@@ -97,9 +97,9 @@ namespace
         return os;
     }
 
-    void parse(MetaData::IParser& parser, const std::filesystem::path& file)
+    void parse(IParser& parser, const std::filesystem::path& file)
     {
-        using namespace MetaData;
+        using namespace metadata;
 
         const auto start{ std::chrono::steady_clock::now() };
         std::unique_ptr<Track> track{ parser.parse(file, true) };
@@ -222,8 +222,10 @@ int main(int argc, char* argv[])
 
     try
     {
+        using namespace lms;
+        
         // log to stdout
-        Service<ILogger> logger{ std::make_unique<StreamLogger>(std::cout, StreamLogger::allSeverities) };
+        core::Service<core::logging::ILogger> logger{ std::make_unique<core::logging::StreamLogger>(std::cout, core::logging::StreamLogger::allSeverities) };
 
         for (std::size_t i{}; i < static_cast<std::size_t>(argc - 1); ++i)
         {
@@ -234,10 +236,10 @@ int main(int argc, char* argv[])
             try
             {
                 std::cout << "Using av:" << std::endl;
-                auto parser{ MetaData::createParser(MetaData::ParserBackend::AvFormat, MetaData::ParserReadStyle::Accurate) };
+                auto parser{ metadata::createParser(metadata::ParserBackend::AvFormat, metadata::ParserReadStyle::Accurate) };
                 parse(*parser, file);
             }
-            catch (MetaData::Exception& e)
+            catch (metadata::Exception& e)
             {
                 std::cerr << "Parsing failed: " << e.what() << std::endl;
             }
@@ -245,10 +247,10 @@ int main(int argc, char* argv[])
             try
             {
                 std::cout << "Using TagLib:" << std::endl;
-                auto parser{ MetaData::createParser(MetaData::ParserBackend::TagLib, MetaData::ParserReadStyle::Accurate) };
+                auto parser{ metadata::createParser(metadata::ParserBackend::TagLib, metadata::ParserReadStyle::Accurate) };
                 parse(*parser, file);
             }
-            catch (MetaData::Exception& e)
+            catch (metadata::Exception& e)
             {
                 std::cerr << "Parsing failed: " << e.what() << std::endl;
             }

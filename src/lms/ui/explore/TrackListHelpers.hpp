@@ -25,20 +25,20 @@
 #include "database/Object.hpp"
 #include "database/TrackId.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class Track;
 }
 
-namespace UserInterface
+namespace lms::ui
 {
 	class PlayQueueController;
 	class Filters;
 }
 
-namespace UserInterface::TrackListHelpers
+namespace lms::ui::TrackListHelpers
 {
-	void showTrackInfoModal(Database::TrackId trackId, Filters& filters);
-	std::unique_ptr<Wt::WWidget> createEntry(const Database::ObjectPtr<Database::Track>& track, PlayQueueController& playQueueController, Filters& filters);
-} // namespace UserInterface
+	void showTrackInfoModal(db::TrackId trackId, Filters& filters);
+	std::unique_ptr<Wt::WWidget> createEntry(const db::ObjectPtr<db::Track>& track, PlayQueueController& playQueueController, Filters& filters);
+} // namespace lms::ui
 

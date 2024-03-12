@@ -18,9 +18,9 @@
  */
 
 #include "TranscodingResourceHandler.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
-namespace Av::Transcoding
+namespace lms::av::transcoding
 {
     namespace
     {

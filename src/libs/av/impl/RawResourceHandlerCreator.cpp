@@ -20,13 +20,13 @@
 #include "av/RawResourceHandlerCreator.hpp"
 
 #include "av/IAudioFile.hpp"
-#include "utils/FileResourceHandlerCreator.hpp"
+#include "core/FileResourceHandlerCreator.hpp"
 
-namespace Av
+namespace lms::av
 {
     std::unique_ptr<IResourceHandler> createRawResourceHandler(const std::filesystem::path& path)
     {
-        std::string_view mimeType{ Av::getMimeType(path.extension()) };
+        std::string_view mimeType{ getMimeType(path.extension()) };
         return createFileResourceHandler(path, mimeType.empty() ? "application/octet-stream" : mimeType);
     }
 }

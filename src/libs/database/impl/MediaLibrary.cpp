@@ -26,7 +26,7 @@
 #include "PathTraits.hpp"
 #include "StringViewTraits.hpp"
 
-namespace Database
+namespace lms::db
 {
     MediaLibrary::MediaLibrary(const std::filesystem::path& p, std::string_view name)
         : _path{ p },
@@ -75,4 +75,4 @@ namespace Database
         for (const auto& result : results)
             func(result);
     }
-} // namespace Database
+} // namespace lms::db

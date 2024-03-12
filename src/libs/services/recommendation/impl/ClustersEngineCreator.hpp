@@ -21,14 +21,14 @@
 
 #include <memory>
 
-namespace Database
+namespace lms::db
 {
 	class Db;
 }
 
-namespace Recommendation
+namespace lms::recommendation
 {
 	class IEngine;
-	std::unique_ptr<IEngine> createClustersEngine(Database::Db& db);
+	std::unique_ptr<IEngine> createClustersEngine(db::Db& db);
 }
 

@@ -21,7 +21,7 @@
 
 #include <set>
 
-namespace Database
+namespace lms::db
 {
     static const std::set<Bitrate> allowedAudioBitrates
     {

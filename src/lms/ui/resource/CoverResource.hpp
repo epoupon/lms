@@ -23,7 +23,7 @@
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
 	class CoverResource : public Wt::WResource
 	{
@@ -39,11 +39,11 @@ namespace UserInterface
 				Large = 512,
 			};
 
-			std::string getReleaseUrl(Database::ReleaseId releaseId, Size size) const;
-			std::string getTrackUrl(Database::TrackId trackId, Size size) const;
+			std::string getReleaseUrl(db::ReleaseId releaseId, Size size) const;
+			std::string getTrackUrl(db::TrackId trackId, Size size) const;
 
 		private:
 			void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
 	};
-} // namespace UserInterface
+} // namespace lms::ui
 

@@ -24,7 +24,7 @@
 #include <Wt/Json/Serializer.h>
 #include <Wt/WPushButton.h>
 
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
@@ -38,13 +38,13 @@
 #include "resource/AudioTranscodingResource.hpp"
 #include "resource/AudioFileResource.hpp"
 
-#include "utils/String.hpp"
-#include "utils/Utils.hpp"
+#include "core/String.hpp"
+#include "core/Utils.hpp"
 
 #include "LmsApplication.hpp"
 #include "Utils.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
     namespace
     {
@@ -75,7 +75,7 @@ namespace UserInterface
 
         std::optional<MediaPlayer::Settings::Transcoding::Mode> transcodingModeFromString(const std::string& str)
         {
-            const auto value{ StringUtils::readAs<int>(str) };
+            const auto value{ core::stringUtils::readAs<int>(str) };
             if (!value)
                 return std::nullopt;
 
@@ -93,7 +93,7 @@ namespace UserInterface
 
         std::optional<MediaPlayer::Format> formatFromString(const std::string& str)
         {
-            const auto value{ StringUtils::readAs<int>(str) };
+            const auto value{ core::stringUtils::readAs<int>(str) };
             if (!value)
                 return std::nullopt;
 
@@ -113,11 +113,11 @@ namespace UserInterface
 
         std::optional<MediaPlayer::Bitrate> bitrateFromString(const std::string& str)
         {
-            const auto value{ StringUtils::readAs<int>(str) };
+            const auto value{ core::stringUtils::readAs<int>(str) };
             if (!value)
                 return std::nullopt;
 
-            if (!Database::isAudioBitrateAllowed(*value))
+            if (!db::isAudioBitrateAllowed(*value))
                 return std::nullopt;
 
             return *value;
@@ -125,7 +125,7 @@ namespace UserInterface
 
         std::optional<MediaPlayer::Settings::ReplayGain::Mode> replayGainModeFromString(const std::string& str)
         {
-            const auto value{ StringUtils::readAs<int>(str) };
+            const auto value{ core::stringUtils::readAs<int>(str) };
             if (!value)
                 return std::nullopt;
 
@@ -144,11 +144,11 @@ namespace UserInterface
 
         std::optional<float> replayGainPreAmpGainFromString(const std::string& str)
         {
-            const auto value{ StringUtils::readAs<double>(str) };
+            const auto value{ core::stringUtils::readAs<double>(str) };
             if (!value)
                 return std::nullopt;
 
-            return ::Utils::clamp(*value, (double)MediaPlayer::Settings::ReplayGain::minPreAmpGain, (double)MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
+            return core::utils::clamp(*value, (double)MediaPlayer::Settings::ReplayGain::minPreAmpGain, (double)MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
         }
 
         MediaPlayer::Settings settingsfromJSString(const std::string& strSettings)
@@ -231,7 +231,7 @@ namespace UserInterface
                 }
     }
 
-    void MediaPlayer::loadTrack(Database::TrackId trackId, bool play, float replayGain)
+    void MediaPlayer::loadTrack(db::TrackId trackId, bool play, float replayGain)
     {
         LMS_LOG(UI, DEBUG, "Playing track ID = " << trackId.toString());
 
@@ -239,14 +239,14 @@ namespace UserInterface
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-            const auto track{ Database::Track::find(LmsApp->getDbSession(), trackId) };
+            const auto track{ db::Track::find(LmsApp->getDbSession(), trackId) };
             if (!track)
                 return;
 
             const std::string transcodingResource{ _audioTranscodingResource->getUrl(trackId) };
             const std::string nativeResource{ _audioFileResource->getUrl(trackId) };
 
-            const auto artists{ track->getArtists({Database::TrackArtistLinkType::Artist}) };
+            const auto artists{ track->getArtists({db::TrackArtistLinkType::Artist}) };
 
             oss
                 << "var params = {"
@@ -255,9 +255,9 @@ namespace UserInterface
                 << " transcodingResource: \"" << transcodingResource << "\","
                 << " duration: " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << ","
                 << " replayGain: " << replayGain << ","
-                << " title: \"" << StringUtils::jsEscape(track->getName()) << "\","
-                << " artist: \"" << (!artists.empty() ? StringUtils::jsEscape(track->getArtistDisplayName()) : "") << "\","
-                << " release: \"" << (track->getRelease() ? StringUtils::jsEscape(track->getRelease()->getName()) : "") << "\","
+                << " title: \"" << core::stringUtils::jsEscape(track->getName()) << "\","
+                << " artist: \"" << (!artists.empty() ? core::stringUtils::jsEscape(track->getArtistDisplayName()) : "") << "\","
+                << " release: \"" << (track->getRelease() ? core::stringUtils::jsEscape(track->getRelease()->getName()) : "") << "\","
                 << " artwork: ["
                 << "   { src: \"" << LmsApp->getCoverResource()->getTrackUrl(trackId, CoverResource::Size::Small) << "\", sizes: \"128x128\",	type: \"image/jpeg\" },"
                 << "   { src: \"" << LmsApp->getCoverResource()->getTrackUrl(trackId, CoverResource::Size::Large) << "\", sizes: \"512x512\",	type: \"image/jpeg\" },"
@@ -277,7 +277,7 @@ namespace UserInterface
             {
                 _artist->setTextFormat(Wt::TextFormat::Plain);
                 _artist->setText(Wt::WString::fromUTF8(artists.front()->getName()));
-                _artist->setLink(Utils::createArtistLink(artists.front()));
+                _artist->setLink(utils::createArtistLink(artists.front()));
             }
             else
             {
@@ -290,7 +290,7 @@ namespace UserInterface
             {
                 _release->setTextFormat(Wt::TextFormat::Plain);
                 _release->setText(Wt::WString::fromUTF8(std::string{ track->getRelease()->getName() }));
-                _release->setLink(Utils::createReleaseLink(track->getRelease()));
+                _release->setLink(utils::createReleaseLink(track->getRelease()));
             }
             else
             {
@@ -335,4 +335,4 @@ namespace UserInterface
         _playQueue->setText(Wt::WString::tr("Lms.MediaPlayer.template.playqueue-btn").arg(trackCount));
     }
 
-} // namespace UserInterface
+} // namespace lms::ui

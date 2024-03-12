@@ -28,33 +28,33 @@
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/ScanSettings.hpp"
-#include "utils/Exception.hpp"
-#include "utils/ILogger.hpp"
+#include "core/Exception.hpp"
+#include "core/ILogger.hpp"
 
-namespace Recommendation
+namespace lms::recommendation
 {
     namespace
     {
-        Database::ScanSettings::SimilarityEngineType getSimilarityEngineType(Database::Session& session)
+        db::ScanSettings::SimilarityEngineType getSimilarityEngineType(db::Session& session)
         {
             auto transaction{ session.createReadTransaction() };
 
-            return Database::ScanSettings::get(session)->getSimilarityEngineType();
+            return db::ScanSettings::get(session)->getSimilarityEngineType();
         }
     }
 
-    std::unique_ptr<IRecommendationService> createRecommendationService(Database::Db& db)
+    std::unique_ptr<IRecommendationService> createRecommendationService(db::Db& db)
     {
         return std::make_unique<RecommendationService>(db);
     }
 
-    RecommendationService::RecommendationService(Database::Db& db)
+    RecommendationService::RecommendationService(db::Db& db)
         : _db{ db }
     {
         load();
     }
 
-    TrackContainer RecommendationService::findSimilarTracks(Database::TrackListId trackListId, std::size_t maxCount) const
+    TrackContainer RecommendationService::findSimilarTracks(db::TrackListId trackListId, std::size_t maxCount) const
     {
         TrackContainer res;
 
@@ -64,7 +64,7 @@ namespace Recommendation
         return _engine->findSimilarTracksFromTrackList(trackListId, maxCount);
     }
 
-    TrackContainer RecommendationService::findSimilarTracks(const std::vector<Database::TrackId>& trackIds, std::size_t maxCount) const
+    TrackContainer RecommendationService::findSimilarTracks(const std::vector<db::TrackId>& trackIds, std::size_t maxCount) const
     {
         TrackContainer res;
 
@@ -74,7 +74,7 @@ namespace Recommendation
         return _engine->findSimilarTracks(trackIds, maxCount);
     }
 
-    ReleaseContainer RecommendationService::getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const
+    ReleaseContainer RecommendationService::getSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const
     {
         ReleaseContainer res;
 
@@ -84,7 +84,7 @@ namespace Recommendation
         return _engine->getSimilarReleases(releaseId, maxCount);;
     }
 
-    ArtistContainer RecommendationService::getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
+    ArtistContainer RecommendationService::getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
     {
         ArtistContainer res;
 
@@ -98,7 +98,7 @@ namespace Recommendation
 
     void RecommendationService::load()
     {
-        using namespace Database;
+        using namespace db;
 
         switch (getSimilarityEngineType(_db.getTLSSession()))
         {

@@ -21,8 +21,8 @@
 
 #include <Wt/WValidator.h>
 
-namespace UserInterface
+namespace lms::ui
 {
 	std::unique_ptr<Wt::WValidator> createMandatoryValidator();
-} // namespace UserInterface
+} // namespace lms::ui
 

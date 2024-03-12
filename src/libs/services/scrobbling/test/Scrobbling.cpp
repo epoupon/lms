@@ -19,14 +19,15 @@
 
 #include <gtest/gtest.h>
 
-#include "utils/ILogger.hpp"
-#include "utils/Service.hpp"
-#include "utils/StreamLogger.hpp"
+#include "core/ILogger.hpp"
+#include "core/Service.hpp"
+#include "core/StreamLogger.hpp"
 
 int main(int argc, char** argv)
 {
+    using namespace lms;
     // log to stdout
-    Service<ILogger> logger{ std::make_unique<StreamLogger>(std::cout, EnumSet<Severity> {Severity::FATAL, Severity::ERROR}) };
+    core::Service<core::logging::ILogger> logger{ std::make_unique<core::logging::StreamLogger>(std::cout, core::EnumSet<core::logging::Severity> {core::logging::Severity::FATAL, core::logging::Severity::ERROR}) };
 
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

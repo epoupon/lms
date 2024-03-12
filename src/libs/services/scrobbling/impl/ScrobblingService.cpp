@@ -26,20 +26,20 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
 #include "internal/InternalBackend.hpp"
 #include "listenbrainz/ListenBrainzBackend.hpp"
 
-namespace Scrobbling
+namespace lms::scrobbling
 {
-    using namespace Database;
+    using namespace db;
 
     namespace
     {
-        Database::Listen::StatsFindParameters convertToListenFindParameters(const ScrobblingService::FindParameters& params)
+        db::Listen::StatsFindParameters convertToListenFindParameters(const ScrobblingService::FindParameters& params)
         {
-            Database::Listen::StatsFindParameters listenFindParams;
+            db::Listen::StatsFindParameters listenFindParams;
             listenFindParams.setUser(params.user);
             listenFindParams.setClusters(params.clusters);
             listenFindParams.setRange(params.range);
@@ -49,9 +49,9 @@ namespace Scrobbling
             return listenFindParams;
         }
 
-        Database::Listen::ArtistStatsFindParameters convertToListenFindParameters(const ScrobblingService::ArtistFindParameters& params)
+        db::Listen::ArtistStatsFindParameters convertToListenFindParameters(const ScrobblingService::ArtistFindParameters& params)
         {
-            return Database::Listen::ArtistStatsFindParameters{ convertToListenFindParameters(static_cast<const ScrobblingService::FindParameters&>(params)), params.linkType };
+            return db::Listen::ArtistStatsFindParameters{ convertToListenFindParameters(static_cast<const ScrobblingService::FindParameters&>(params)), params.linkType };
         }
     }
 
@@ -65,7 +65,7 @@ namespace Scrobbling
     {
         LMS_LOG(SCROBBLING, INFO, "Starting service...");
         _scrobblingBackends.emplace(ScrobblingBackend::Internal, std::make_unique<InternalBackend>(_db));
-        _scrobblingBackends.emplace(ScrobblingBackend::ListenBrainz, std::make_unique<ListenBrainz::ListenBrainzBackend>(ioContext, _db));
+        _scrobblingBackends.emplace(ScrobblingBackend::ListenBrainz, std::make_unique<listenBrainz::ListenBrainzBackend>(ioContext, _db));
         LMS_LOG(SCROBBLING, INFO, "Service started!");
     }
 
@@ -112,13 +112,13 @@ namespace Scrobbling
         if (!backend)
             return res;
 
-        Database::Listen::ArtistStatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
+        db::Listen::ArtistStatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
         listenFindParams.setScrobblingBackend(backend);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        res = Database::Listen::getRecentArtists(session, listenFindParams);
+        res = db::Listen::getRecentArtists(session, listenFindParams);
         return res;
     }
 
@@ -130,13 +130,13 @@ namespace Scrobbling
         if (!backend)
             return res;
 
-        Database::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
+        db::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
         listenFindParams.setScrobblingBackend(backend);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        res = Database::Listen::getRecentReleases(session, listenFindParams);
+        res = db::Listen::getRecentReleases(session, listenFindParams);
         return res;
     }
 
@@ -148,31 +148,31 @@ namespace Scrobbling
         if (!backend)
             return res;
 
-        Database::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
+        db::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
         listenFindParams.setScrobblingBackend(backend);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        res = Database::Listen::getRecentTracks(session, listenFindParams);
+        res = db::Listen::getRecentTracks(session, listenFindParams);
         return res;
     }
 
-    std::size_t ScrobblingService::getCount(Database::UserId userId, Database::ReleaseId releaseId)
+    std::size_t ScrobblingService::getCount(db::UserId userId, db::ReleaseId releaseId)
     {
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
-        return Database::Listen::getCount(session, userId, releaseId);
+        return db::Listen::getCount(session, userId, releaseId);
     }
 
-    std::size_t ScrobblingService::getCount(Database::UserId userId, Database::TrackId trackId)
+    std::size_t ScrobblingService::getCount(db::UserId userId, db::TrackId trackId)
     {
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
-        return Database::Listen::getCount(session, userId, trackId);
+        return db::Listen::getCount(session, userId, trackId);
     }
 
-    Wt::WDateTime ScrobblingService::getLastListenDateTime(Database::UserId userId, Database::ReleaseId releaseId)
+    Wt::WDateTime ScrobblingService::getLastListenDateTime(db::UserId userId, db::ReleaseId releaseId)
     {
         const auto backend{ getUserBackend(userId) };
         if (!backend)
@@ -181,11 +181,11 @@ namespace Scrobbling
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        const Database::Listen::pointer listen{ Database::Listen::getMostRecentListen(session, userId, *backend, releaseId) };
+        const db::Listen::pointer listen{ db::Listen::getMostRecentListen(session, userId, *backend, releaseId) };
         return listen ? listen->getDateTime() : Wt::WDateTime{};
     }
 
-    Wt::WDateTime ScrobblingService::getLastListenDateTime(Database::UserId userId, Database::TrackId trackId)
+    Wt::WDateTime ScrobblingService::getLastListenDateTime(db::UserId userId, db::TrackId trackId)
     {
         const auto backend{ getUserBackend(userId) };
         if (!backend)
@@ -194,7 +194,7 @@ namespace Scrobbling
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        const Database::Listen::pointer listen{ Database::Listen::getMostRecentListen(session, userId, *backend, trackId) };
+        const db::Listen::pointer listen{ db::Listen::getMostRecentListen(session, userId, *backend, trackId) };
         return listen ? listen->getDateTime() : Wt::WDateTime{};
     }
 
@@ -207,13 +207,13 @@ namespace Scrobbling
         if (!backend)
             return res;
 
-        Database::Listen::ArtistStatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
+        db::Listen::ArtistStatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
         listenFindParams.setScrobblingBackend(backend);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        res = Database::Listen::getTopArtists(session, listenFindParams);
+        res = db::Listen::getTopArtists(session, listenFindParams);
         return res;
     }
 
@@ -225,13 +225,13 @@ namespace Scrobbling
         if (!backend)
             return res;
 
-        Database::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
+        db::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
         listenFindParams.setScrobblingBackend(backend);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        res = Database::Listen::getTopReleases(session, listenFindParams);
+        res = db::Listen::getTopReleases(session, listenFindParams);
         return res;
     }
 
@@ -243,13 +243,13 @@ namespace Scrobbling
         if (!backend)
             return res;
 
-        Database::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
+        db::Listen::StatsFindParameters listenFindParams{ convertToListenFindParameters(params) };
         listenFindParams.setScrobblingBackend(backend);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        res = Database::Listen::getTopTracks(session, listenFindParams);
+        res = db::Listen::getTopTracks(session, listenFindParams);
         return res;
     }
 } // ns Scrobbling

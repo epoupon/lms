@@ -21,7 +21,7 @@
 
 #include <Wt/WDoubleValidator.h>
 
-namespace UserInterface
+namespace lms::ui
 {
 	class DoubleValidator : public Wt::WDoubleValidator
 	{
@@ -38,4 +38,4 @@ namespace UserInterface
 		auto validator {std::make_unique<DoubleValidator>(min, max)};
 		return validator;
 	}
-} // namespace UserInterface
+} // namespace lms::ui

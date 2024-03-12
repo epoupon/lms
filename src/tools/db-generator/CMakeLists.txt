@@ -5,6 +5,6 @@ add_executable(lms-db-generator
 
 target_link_libraries(lms-db-generator PRIVATE
 	lmsdatabase
-	lmsutils
+	lmscore
 	Boost::program_options
 	)

@@ -21,15 +21,15 @@
 
 #include <Wt/WEnvironment.h>
 
-#include "utils/IConfig.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/Service.hpp"
+#include "core/IConfig.hpp"
+#include "core/ILogger.hpp"
+#include "core/Service.hpp"
 
-namespace Auth
+namespace lms::auth
 {
-    HttpHeadersEnvService::HttpHeadersEnvService(Database::Db& db)
+    HttpHeadersEnvService::HttpHeadersEnvService(db::Db& db)
         : AuthServiceBase{ db }
-        , _fieldName{ Service<IConfig>::get()->getString("http-headers-login-field", "X-Forwarded-User") }
+        , _fieldName{ core::Service<core::IConfig>::get()->getString("http-headers-login-field", "X-Forwarded-User") }
     {
         LMS_LOG(AUTH, INFO, "Using http header field = '" << _fieldName << "'");
     }
@@ -42,7 +42,7 @@ namespace Auth
 
         LMS_LOG(AUTH, DEBUG, "Extracted login name = '" << loginName << "' from HTTP header");
 
-        const Database::UserId userId{ getOrCreateUser(loginName) };
+        const db::UserId userId{ getOrCreateUser(loginName) };
         onUserAuthenticated(userId);
         return { CheckResult::State::Granted, userId };
     }
@@ -55,8 +55,8 @@ namespace Auth
 
         LMS_LOG(AUTH, DEBUG, "Extracted login name = '" << loginName << "' from HTTP header");
 
-        const Database::UserId userId{ getOrCreateUser(loginName) };
+        const db::UserId userId{ getOrCreateUser(loginName) };
         onUserAuthenticated(userId);
         return { CheckResult::State::Granted, userId };
     }
-} // namespace Auth
+} // namespace lms::auth

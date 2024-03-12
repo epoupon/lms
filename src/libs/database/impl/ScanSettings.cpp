@@ -23,9 +23,9 @@
 
 #include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
-#include "utils/String.hpp"
+#include "core/String.hpp"
 
-namespace Database
+namespace lms::db
 {
     void ScanSettings::init(Session& session)
     {
@@ -46,7 +46,7 @@ namespace Database
 
     std::vector<std::filesystem::path> ScanSettings::getAudioFileExtensions() const
     {
-        const auto extensions{ StringUtils::splitString(_audioFileExtensions, ' ') };
+        const auto extensions{ core::stringUtils::splitString(_audioFileExtensions, ' ') };
 
         std::vector<std::filesystem::path> res(std::cbegin(extensions), std::cend(extensions));
         std::sort(std::begin(res), std::end(res));
@@ -57,22 +57,22 @@ namespace Database
 
     std::vector<std::string_view> ScanSettings::getExtraTagsToScan() const
     {
-        return StringUtils::splitString(_extraTagsToScan, ';');
+        return core::stringUtils::splitString(_extraTagsToScan, ';');
     }
 
     std::vector<std::string> ScanSettings::getArtistTagDelimiters() const
     {
-        return StringUtils::splitEscapedStrings(_artistTagDelimiters, ';', '\\');
+        return core::stringUtils::splitEscapedStrings(_artistTagDelimiters, ';', '\\');
     }
 
     std::vector<std::string> ScanSettings::getDefaultTagDelimiters() const
     {
-        return StringUtils::splitEscapedStrings(_defaultTagDelimiters, ';', '\\');
+        return core::stringUtils::splitEscapedStrings(_defaultTagDelimiters, ';', '\\');
     }
 
     void ScanSettings::setExtraTagsToScan(const std::vector<std::string_view>& extraTags)
     {
-        std::string newTagsToScan{ StringUtils::joinStrings(extraTags, ";") };
+        std::string newTagsToScan{ core::stringUtils::joinStrings(extraTags, ";") };
         if (newTagsToScan != _extraTagsToScan)
             incScanVersion();
 
@@ -81,7 +81,7 @@ namespace Database
 
     void ScanSettings::setArtistTagDelimiters(std::span<const std::string_view> delimiters)
     {
-        std::string tagDelimiters{ StringUtils::escapeAndJoinStrings(delimiters, ';', '\\') };
+        std::string tagDelimiters{ core::stringUtils::escapeAndJoinStrings(delimiters, ';', '\\') };
         if (tagDelimiters != _artistTagDelimiters)
         {
             _artistTagDelimiters.swap(tagDelimiters);
@@ -91,7 +91,7 @@ namespace Database
 
     void ScanSettings::setDefaultTagDelimiters(std::span<const std::string_view> delimiters)
     {
-        std::string tagDelimiters{ StringUtils::escapeAndJoinStrings(delimiters, ';', '\\') };
+        std::string tagDelimiters{ core::stringUtils::escapeAndJoinStrings(delimiters, ';', '\\') };
         if (tagDelimiters != _defaultTagDelimiters)
         {
             _defaultTagDelimiters.swap(tagDelimiters);
@@ -103,4 +103,4 @@ namespace Database
     {
         _scanVersion += 1;
     }
-} // namespace Database
+} // namespace lms::db

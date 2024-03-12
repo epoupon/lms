@@ -5,7 +5,7 @@
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 
-namespace Recommendation
+namespace lms::recommendation
 {
 	struct Progress
 	{
@@ -17,8 +17,8 @@ namespace Recommendation
 	template <typename IdType>
 	using ResultContainer = std::vector<IdType>;
 
-	using ArtistContainer = ResultContainer<Database::ArtistId>;
-	using ReleaseContainer = ResultContainer<Database::ReleaseId>;
-	using TrackContainer = ResultContainer<Database::TrackId>;
+	using ArtistContainer = ResultContainer<db::ArtistId>;
+	using ReleaseContainer = ResultContainer<db::ReleaseId>;
+	using TrackContainer = ResultContainer<db::TrackId>;
 
-} // namespace Recommendation
+} // namespace lms::recommendation

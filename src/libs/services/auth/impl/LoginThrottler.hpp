@@ -24,10 +24,10 @@
 
 #include <Wt/WDateTime.h>
 
-#include "utils/NetAddress.hpp"
-#include "utils/Exception.hpp"
+#include "core/NetAddress.hpp"
+#include "core/Exception.hpp"
 
-namespace Auth
+namespace lms::auth
 {
 	class LoginThrottler
 	{

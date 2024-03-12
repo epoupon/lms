@@ -23,11 +23,11 @@
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
-namespace Auth
+namespace lms::auth
 {
-    using namespace Database;
+    using namespace db;
 
     AuthServiceBase::AuthServiceBase(Db& db)
         : _db{ db }

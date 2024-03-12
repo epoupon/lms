@@ -22,9 +22,9 @@
 #include <algorithm>
 #include <iterator>
 
-#include "utils/Exception.hpp"
+#include "core/Exception.hpp"
 
-namespace Recommendation {
+namespace lms::recommendation {
 
 static const std::unordered_map<FeatureName, FeatureDef> featureDefinitions
 {
@@ -373,7 +373,7 @@ getFeatureDef(const FeatureName& featureName)
 {
 	auto it {featureDefinitions.find(featureName)};
 	if (it == std::cend(featureDefinitions))
-		throw LmsException {"Unhandled requested feature '" + featureName + "'"};
+		throw core::LmsException {"Unhandled requested feature '" + featureName + "'"};
 
 	return it->second;
 }
@@ -389,5 +389,5 @@ getFeatureNames()
 	return res;
 }
 
-} // namespace Recommendation
+} // namespace lms::recommendation
 

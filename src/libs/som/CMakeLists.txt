@@ -12,7 +12,7 @@ target_include_directories(lmssom PRIVATE
 	)
 
 target_link_libraries(lmssom PUBLIC
-	lmsutils
+	lmscore
 	)
 
 set_property(TARGET lmssom PROPERTY POSITION_INDEPENDENT_CODE ON)

@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include "utils/Exception.hpp"
+#include "core/Exception.hpp"
 
-namespace Feedback
+namespace lms::feedback
 {
-    class Exception : public LmsException
+    class Exception : public core::LmsException
     {
     public:
         using LmsException::LmsException;

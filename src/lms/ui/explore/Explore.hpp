@@ -22,7 +22,7 @@
 #include <Wt/WTemplate.h>
 #include "PlayQueueController.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
 	class Filters;
 	class SearchView;
@@ -40,5 +40,5 @@ namespace UserInterface
 			PlayQueueController _playQueueController;
 			SearchView* _search {};
 	};
-} // namespace UserInterface
+} // namespace lms::ui
 

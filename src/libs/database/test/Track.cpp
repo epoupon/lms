@@ -21,224 +21,224 @@
 
 #include <algorithm>
 
-using namespace Database;
-
-TEST_F(DatabaseFixture, Track)
+namespace lms::db::tests
 {
+    TEST_F(DatabaseFixture, Track)
+    {
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(Track::find(session, Track::FindParameters{}).results.size(), 0);
+            EXPECT_EQ(Track::findIds(session, Track::FindParameters{}).results.size(), 0);
+            EXPECT_EQ(Track::getCount(session), 0);
+            EXPECT_FALSE(Track::exists(session, 0));
+
+            {
+                bool visited{};
+                Track::find(session, Track::FindParameters{}, [&](const Track::pointer&) {visited = true;});
+                EXPECT_FALSE(visited);
+            }
+        }
+
+        ScopedTrack track{ session, "MyTrackFile" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            EXPECT_EQ(Track::find(session, Track::FindParameters{}).results.size(), 1);
+            EXPECT_EQ(Track::getCount(session), 1);
+            EXPECT_TRUE(Track::exists(session, track.getId()));
+            auto myTrack{ Track::find(session, track.getId()) };
+            ASSERT_TRUE(myTrack);
+            EXPECT_EQ(myTrack->getId(), track.getId());
+
+            {
+                bool visited{};
+                Track::find(session, Track::FindParameters{}, [&](const Track::pointer& t)
+                    {
+                        visited = true;
+                        EXPECT_EQ(t->getId(), track.getId());
+                    });
+                EXPECT_TRUE(visited);
+            }
+        }
+    }
+
+    TEST_F(DatabaseFixture, Track_MediaLibrary)
+    {
+        ScopedTrack track{ session, "MyTrackFile" };
+        ScopedMediaLibrary library{ session };
+        ScopedMediaLibrary otherLibrary{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track.get().modify()->setMediaLibrary(library.get());
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setMediaLibrary(library->getId())) };
+            ASSERT_EQ(tracks.results.size(), 1);
+            EXPECT_EQ(tracks.results.front(), track.getId());
+        }
+        {
+            auto transaction{ session.createWriteTransaction() };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setMediaLibrary(otherLibrary->getId())) };
+            EXPECT_EQ(tracks.results.size(), 0);
+        }
+    }
+
+    TEST_F(DatabaseFixture, Track_noMediaLibrary)
+    {
+        ScopedTrack track{ session, "MyTrackFile" };
+        {
+            auto transaction{ session.createReadTransaction() };
+            MediaLibrary::pointer mediaLibrary{ track->getMediaLibrary() };
+            EXPECT_EQ(mediaLibrary, MediaLibrary::pointer{});
+            EXPECT_FALSE(mediaLibrary);
+            EXPECT_TRUE(!mediaLibrary);
+        }
+    }
+
+    TEST_F(DatabaseFixture, TrackNotExists)
     {
         auto transaction{ session.createReadTransaction() };
+
+        EXPECT_FALSE(Track::exists(session, TrackId{ 42 }));
+        EXPECT_EQ(Track::find(session, TrackId{ 42 }), Track::pointer{});
+        EXPECT_FALSE(Track::find(session, TrackId{ 42 }));
         EXPECT_EQ(Track::find(session, Track::FindParameters{}).results.size(), 0);
-        EXPECT_EQ(Track::findIds(session, Track::FindParameters{}).results.size(), 0);
-        EXPECT_EQ(Track::getCount(session), 0);
-        EXPECT_FALSE(Track::exists(session, 0));
-
         {
-            bool visited{};
-            Track::find(session, Track::FindParameters{}, [&](const Track::pointer&) {visited = true;});
-            EXPECT_FALSE(visited);
+            auto track{ Track::find(session, TrackId{ 42 }) };
+            EXPECT_TRUE(!track);
+            EXPECT_FALSE(track);
         }
     }
 
-    ScopedTrack track{ session, "MyTrackFile" };
-
+    TEST_F(DatabaseFixture, MultipleTracks)
     {
-        auto transaction{ session.createReadTransaction() };
-
-        EXPECT_EQ(Track::find(session, Track::FindParameters{}).results.size(), 1);
-        EXPECT_EQ(Track::getCount(session), 1);
-        EXPECT_TRUE(Track::exists(session, track.getId()));
-        auto myTrack{ Track::find(session, track.getId()) };
-        ASSERT_TRUE(myTrack);
-        EXPECT_EQ(myTrack->getId(), track.getId());
+        ScopedTrack track1{ session, "MyTrackFile1" };
+        ScopedTrack track2{ session, "MyTrackFile2" };
 
         {
-            bool visited{};
-            Track::find(session, Track::FindParameters{}, [&](const Track::pointer& t)
-                {
-                    visited = true;
-                    EXPECT_EQ(t->getId(), track.getId());
-                });
-            EXPECT_TRUE(visited);
+            auto transaction{ session.createReadTransaction() };
+
+            EXPECT_TRUE(track1.getId() != track2.getId());
+            EXPECT_TRUE(track1.get() != track2.get());
+            EXPECT_FALSE(track1.get() == track2.get());
+        }
+    }
+
+    TEST_F(DatabaseFixture, MultipleTracksSearchByFilter)
+    {
+        ScopedTrack track1{ session, "" };
+        ScopedTrack track2{ session, "" };
+        ScopedTrack track3{ session, "" };
+        ScopedTrack track4{ session, "" };
+        ScopedTrack track5{ session, "" };
+        ScopedTrack track6{ session, "" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track1.get().modify()->setName("MyTrack");
+            track2.get().modify()->setName("MyTrack%");
+            track3.get().modify()->setName("MyTrack%Foo");
+            track4.get().modify()->setName("%MyTrack");
+            track5.get().modify()->setName("Foo%MyTrack");
+            track6.get().modify()->setName("M_Track");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            {
+                const auto tracks{ Track::findIds(session, Track::FindParameters {}.setKeywords({"Track"})) };
+                EXPECT_EQ(tracks.results.size(), 6);
+            }
+            {
+                const auto tracks{ Track::findIds(session, Track::FindParameters {}.setKeywords({"MyTrack"})) };
+                EXPECT_EQ(tracks.results.size(), 5);
+                EXPECT_TRUE(std::none_of(std::cbegin(tracks.results), std::cend(tracks.results), [&](const TrackId trackId) { return trackId == track6.getId(); }));
+            }
+            {
+                const auto tracks{ Track::findIds(session, Track::FindParameters {}.setKeywords({"MyTrack%"})) };
+                ASSERT_EQ(tracks.results.size(), 2);
+                EXPECT_EQ(tracks.results[0], track2.getId());
+                EXPECT_EQ(tracks.results[1], track3.getId());
+            }
+            {
+                const auto tracks{ Track::findIds(session, Track::FindParameters {}.setKeywords({"%MyTrack"})) };
+                ASSERT_EQ(tracks.results.size(), 2);
+                EXPECT_EQ(tracks.results[0], track4.getId());
+                EXPECT_EQ(tracks.results[1], track5.getId());
+            }
+        }
+    }
+
+    TEST_F(DatabaseFixture, Track_date)
+    {
+        ScopedTrack track{ session, "MyTrack" };
+        const Wt::WDate date{ 1995, 5, 5 };
+        const Wt::WDate originalDate{ 1994, 2, 2 };
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(track->getYear(), std::nullopt);
+            EXPECT_EQ(track->getOriginalYear(), std::nullopt);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track.get().modify()->setDate(date);
+            track.get().modify()->setOriginalDate(originalDate);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(track->getYear(), std::nullopt);
+            EXPECT_EQ(track->getOriginalYear(), std::nullopt);
+            EXPECT_EQ(track->getDate(), date);
+            EXPECT_EQ(track->getOriginalDate(), originalDate);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track.get().modify()->setYear(date.year());
+            track.get().modify()->setOriginalYear(originalDate.year());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(track->getYear(), date.year());
+            EXPECT_EQ(track->getOriginalYear(), originalDate.year());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Track_writtenAfter)
+    {
+        ScopedTrack track{ session, "MyTrack" };
+
+        const Wt::WDateTime dateTime{ Wt::WDate {1950, 1, 1}, Wt::WTime {12, 30, 20} };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track.get().modify()->setLastWriteTime(dateTime);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto tracks{ Track::findIds(session, Track::FindParameters {}) };
+            EXPECT_EQ(tracks.results.size(), 1);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto tracks{ Track::findIds(session, Track::FindParameters {}.setWrittenAfter(dateTime.addSecs(-1))) };
+            EXPECT_EQ(tracks.results.size(), 1);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto tracks{ Track::findIds(session, Track::FindParameters {}.setWrittenAfter(dateTime.addSecs(+1))) };
+            EXPECT_EQ(tracks.results.size(), 0);
         }
     }
 }
-
-TEST_F(DatabaseFixture, Track_MediaLibrary)
-{
-    ScopedTrack track{ session, "MyTrackFile" };
-    ScopedMediaLibrary library{ session };
-    ScopedMediaLibrary otherLibrary{ session };
-
-    {
-        auto transaction{ session.createWriteTransaction() };
-        track.get().modify()->setMediaLibrary(library.get());
-    }
-
-    {
-        auto transaction{ session.createWriteTransaction() };
-        const auto tracks{ Track::findIds(session, Track::FindParameters{}.setMediaLibrary(library->getId()))};
-        ASSERT_EQ(tracks.results.size(), 1);
-        EXPECT_EQ(tracks.results.front(), track.getId());
-    }
-     {
-        auto transaction{ session.createWriteTransaction() };
-        const auto tracks{ Track::findIds(session, Track::FindParameters{}.setMediaLibrary(otherLibrary->getId()))};
-        EXPECT_EQ(tracks.results.size(), 0);
-    }
-}
-
-TEST_F(DatabaseFixture, Track_noMediaLibrary)
-{
-    ScopedTrack track{ session, "MyTrackFile" };
-    {
-        auto transaction{ session.createReadTransaction() };
-        MediaLibrary::pointer mediaLibrary{ track->getMediaLibrary() };
-        EXPECT_EQ(mediaLibrary, MediaLibrary::pointer{});
-        EXPECT_FALSE(mediaLibrary);
-        EXPECT_TRUE(!mediaLibrary);
-    }
-}
-
-TEST_F(DatabaseFixture, TrackNotExists)
-{
-    auto transaction{ session.createReadTransaction() };
-
-    EXPECT_FALSE(Track::exists(session, TrackId{ 42 }));
-    EXPECT_EQ(Track::find(session, TrackId{ 42 }), Track::pointer{});
-    EXPECT_FALSE(Track::find(session, TrackId{ 42 }));
-    EXPECT_EQ(Track::find(session, Track::FindParameters{}).results.size(), 0);
-    {
-        auto track{ Track::find(session, TrackId{ 42 }) };
-        EXPECT_TRUE(!track);
-        EXPECT_FALSE(track);
-    }
-}
-
-TEST_F(DatabaseFixture, MultipleTracks)
-{
-    ScopedTrack track1{ session, "MyTrackFile1" };
-    ScopedTrack track2{ session, "MyTrackFile2" };
-
-    {
-        auto transaction{ session.createReadTransaction() };
-
-        EXPECT_TRUE(track1.getId() != track2.getId());
-        EXPECT_TRUE(track1.get() != track2.get());
-        EXPECT_FALSE(track1.get() == track2.get());
-    }
-}
-
-TEST_F(DatabaseFixture, MultipleTracksSearchByFilter)
-{
-    ScopedTrack track1{ session, "" };
-    ScopedTrack track2{ session, "" };
-    ScopedTrack track3{ session, "" };
-    ScopedTrack track4{ session, "" };
-    ScopedTrack track5{ session, "" };
-    ScopedTrack track6{ session, "" };
-
-    {
-        auto transaction{ session.createWriteTransaction() };
-        track1.get().modify()->setName("MyTrack");
-        track2.get().modify()->setName("MyTrack%");
-        track3.get().modify()->setName("MyTrack%Foo");
-        track4.get().modify()->setName("%MyTrack");
-        track5.get().modify()->setName("Foo%MyTrack");
-        track6.get().modify()->setName("M_Track");
-    }
-
-    {
-        auto transaction{ session.createReadTransaction() };
-
-        {
-            const auto tracks{ Track::findIds(session, Track::FindParameters {}.setKeywords({"Track"})) };
-            EXPECT_EQ(tracks.results.size(), 6);
-        }
-        {
-            const auto tracks{ Track::findIds(session, Track::FindParameters {}.setKeywords({"MyTrack"})) };
-            EXPECT_EQ(tracks.results.size(), 5);
-            EXPECT_TRUE(std::none_of(std::cbegin(tracks.results), std::cend(tracks.results), [&](const TrackId trackId) { return trackId == track6.getId(); }));
-        }
-        {
-            const auto tracks{ Track::findIds(session, Track::FindParameters {}.setKeywords({"MyTrack%"})) };
-            ASSERT_EQ(tracks.results.size(), 2);
-            EXPECT_EQ(tracks.results[0], track2.getId());
-            EXPECT_EQ(tracks.results[1], track3.getId());
-        }
-        {
-            const auto tracks{ Track::findIds(session, Track::FindParameters {}.setKeywords({"%MyTrack"})) };
-            ASSERT_EQ(tracks.results.size(), 2);
-            EXPECT_EQ(tracks.results[0], track4.getId());
-            EXPECT_EQ(tracks.results[1], track5.getId());
-        }
-    }
-}
-
-TEST_F(DatabaseFixture, Track_date)
-{
-    ScopedTrack track{ session, "MyTrack" };
-    const Wt::WDate date{ 1995, 5, 5 };
-    const Wt::WDate originalDate{ 1994, 2, 2 };
-    {
-        auto transaction{ session.createReadTransaction() };
-        EXPECT_EQ(track->getYear(), std::nullopt);
-        EXPECT_EQ(track->getOriginalYear(), std::nullopt);
-    }
-
-    {
-        auto transaction{ session.createWriteTransaction() };
-        track.get().modify()->setDate(date);
-        track.get().modify()->setOriginalDate(originalDate);
-    }
-
-    {
-        auto transaction{ session.createReadTransaction() };
-        EXPECT_EQ(track->getYear(), std::nullopt);
-        EXPECT_EQ(track->getOriginalYear(), std::nullopt);
-        EXPECT_EQ(track->getDate(), date);
-        EXPECT_EQ(track->getOriginalDate(), originalDate);
-    }
-
-    {
-        auto transaction{ session.createWriteTransaction() };
-        track.get().modify()->setYear(date.year());
-        track.get().modify()->setOriginalYear(originalDate.year());
-    }
-
-    {
-        auto transaction{ session.createReadTransaction() };
-        EXPECT_EQ(track->getYear(), date.year());
-        EXPECT_EQ(track->getOriginalYear(), originalDate.year());
-    }
-}
-
-TEST_F(DatabaseFixture, Track_writtenAfter)
-{
-    ScopedTrack track{ session, "MyTrack" };
-
-    const Wt::WDateTime dateTime{ Wt::WDate {1950, 1, 1}, Wt::WTime {12, 30, 20} };
-
-    {
-        auto transaction{ session.createWriteTransaction() };
-        track.get().modify()->setLastWriteTime(dateTime);
-    }
-
-    {
-        auto transaction{ session.createReadTransaction() };
-        const auto tracks{ Track::findIds(session, Track::FindParameters {}) };
-        EXPECT_EQ(tracks.results.size(), 1);
-    }
-
-    {
-        auto transaction{ session.createReadTransaction() };
-        const auto tracks{ Track::findIds(session, Track::FindParameters {}.setWrittenAfter(dateTime.addSecs(-1))) };
-        EXPECT_EQ(tracks.results.size(), 1);
-    }
-
-    {
-        auto transaction{ session.createReadTransaction() };
-        const auto tracks{ Track::findIds(session, Track::FindParameters {}.setWrittenAfter(dateTime.addSecs(+1))) };
-        EXPECT_EQ(tracks.results.size(), 0);
-    }
-}
-

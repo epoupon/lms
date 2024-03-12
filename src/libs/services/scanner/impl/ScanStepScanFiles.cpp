@@ -30,19 +30,19 @@
 #include "database/TrackArtistLink.hpp"
 #include "metadata/Exception.hpp"
 #include "metadata/IParser.hpp"
-#include "utils/Exception.hpp"
-#include "utils/IConfig.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/Path.hpp"
-#include "utils/ITraceLogger.hpp"
+#include "core/Exception.hpp"
+#include "core/IConfig.hpp"
+#include "core/ILogger.hpp"
+#include "core/Path.hpp"
+#include "core/ITraceLogger.hpp"
 
-namespace Scanner
+namespace lms::scanner
 {
-    using namespace Database;
+    using namespace db;
 
     namespace
     {
-        Artist::pointer createArtist(Session& session, const MetaData::Artist& artistInfo)
+        Artist::pointer createArtist(Session& session, const metadata::Artist& artistInfo)
         {
             Artist::pointer artist{ session.create<Artist>(artistInfo.name) };
 
@@ -54,7 +54,7 @@ namespace Scanner
             return artist;
         }
 
-        void updateArtistIfNeeded(Artist::pointer artist, const MetaData::Artist& artistInfo)
+        void updateArtistIfNeeded(Artist::pointer artist, const metadata::Artist& artistInfo)
         {
             // Name may have been updated
             if (artist->getName() != artistInfo.name)
@@ -69,11 +69,11 @@ namespace Scanner
             }
         }
 
-        std::vector<Artist::pointer> getOrCreateArtists(Session& session, const std::vector<MetaData::Artist>& artistsInfo, bool allowFallbackOnMBIDEntries)
+        std::vector<Artist::pointer> getOrCreateArtists(Session& session, const std::vector<metadata::Artist>& artistsInfo, bool allowFallbackOnMBIDEntries)
         {
             std::vector<Artist::pointer> artists;
 
-            for (const MetaData::Artist& artistInfo : artistsInfo)
+            for (const metadata::Artist& artistInfo : artistsInfo)
             {
                 Artist::pointer artist;
 
@@ -126,7 +126,7 @@ namespace Scanner
             return releaseType;
         }
 
-        void updateReleaseIfNeeded(Session& session, Release::pointer release, const MetaData::Release& releaseInfo)
+        void updateReleaseIfNeeded(Session& session, Release::pointer release, const metadata::Release& releaseInfo)
         {
             if (release->getName() != releaseInfo.name)
                 release.modify()->setName(releaseInfo.name);
@@ -146,7 +146,7 @@ namespace Scanner
             }
         }
 
-        Release::pointer getOrCreateRelease(Session& session, const MetaData::Release& releaseInfo, const std::filesystem::path& expectedReleaseDirectory)
+        Release::pointer getOrCreateRelease(Session& session, const metadata::Release& releaseInfo, const std::filesystem::path& expectedReleaseDirectory)
         {
             Release::pointer release;
 
@@ -185,7 +185,7 @@ namespace Scanner
             return Release::pointer{};
         }
 
-        std::vector<Cluster::pointer> getOrCreateClusters(Session& session, const MetaData::Track& track)
+        std::vector<Cluster::pointer> getOrCreateClusters(Session& session, const metadata::Track& track)
         {
             std::vector<Cluster::pointer> clusters;
 
@@ -217,23 +217,23 @@ namespace Scanner
             return clusters;
         }
 
-        MetaData::ParserReadStyle getParserReadStyle()
+        metadata::ParserReadStyle getParserReadStyle()
         {
-            std::string_view readStyle{ Service<IConfig>::get()->getString("scanner-parser-read-style", "average") };
+            std::string_view readStyle{ core::Service<core::IConfig>::get()->getString("scanner-parser-read-style", "average") };
 
             if (readStyle == "fast")
-                return MetaData::ParserReadStyle::Fast;
+                return metadata::ParserReadStyle::Fast;
             else if (readStyle == "average")
-                return MetaData::ParserReadStyle::Average;
+                return metadata::ParserReadStyle::Average;
             else if (readStyle == "accurate")
-                return MetaData::ParserReadStyle::Accurate;
+                return metadata::ParserReadStyle::Accurate;
 
-            throw LmsException{ "Invalid value for 'scanner-parser-read-style'" };
+            throw core::LmsException{ "Invalid value for 'scanner-parser-read-style'" };
         }
 
         std::size_t getScanMetaDataThreadCount()
         {
-            std::size_t threadCount{ Service<IConfig>::get()->getULong("scanner-metadata-thread-count", 0) };
+            std::size_t threadCount{ core::Service<core::IConfig>::get()->getULong("scanner-metadata-thread-count", 0) };
 
             if (threadCount == 0)
                 threadCount = std::max<std::size_t>(std::thread::hardware_concurrency() / 2, 1);
@@ -242,7 +242,7 @@ namespace Scanner
         }
     } // namespace
 
-    ScanStepScanFiles::MetadataScanQueue::MetadataScanQueue(MetaData::IParser& parser, std::size_t threadCount, bool& abort)
+    ScanStepScanFiles::MetadataScanQueue::MetadataScanQueue(metadata::IParser& parser, std::size_t threadCount, bool& abort)
         : _metadataParser{ parser }
         , _scanContextRunner{ _scanContext, threadCount, "ScannerMetadata" }
         , _abort{ abort }
@@ -259,7 +259,7 @@ namespace Scanner
             {
                 LMS_SCOPED_TRACE_OVERVIEW("Scanner", "AudioFileParseJob");
 
-                std::unique_ptr<MetaData::Track> track;
+                std::unique_ptr<metadata::Track> track;
 
                 if (_abort)
                 {
@@ -272,7 +272,7 @@ namespace Scanner
                     {
                         track = _metadataParser.parse(path);
                     }
-                    catch (const MetaData::Exception& e)
+                    catch (const metadata::Exception& e)
                     {
                         LMS_LOG(DBUPDATER, INFO, "Failed to parse '" << path.string() << "'");
                     }
@@ -323,7 +323,7 @@ namespace Scanner
 
     ScanStepScanFiles::ScanStepScanFiles(InitParams& initParams)
         : ScanStepBase{ initParams }
-        , _metadataParser{ MetaData::createParser(MetaData::ParserBackend::TagLib, getParserReadStyle()) } // For now, always use TagLib
+        , _metadataParser{ metadata::createParser(metadata::ParserBackend::TagLib, getParserReadStyle()) } // For now, always use TagLib
         , _metadataScanQueue{ *_metadataParser, getScanMetaDataThreadCount(), _abortScan }
     {
         LMS_LOG(DBUPDATER, INFO, "Using " << _metadataScanQueue.getThreadCount() << " thread(s) for scanning file metadata");
@@ -347,7 +347,7 @@ namespace Scanner
 
         for (const ScannerSettings::MediaLibraryInfo& mediaLibrary : _settings.mediaLibraries)
         {
-            PathUtils::exploreFilesRecursive(mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path)
+            core::pathUtils::exploreFilesRecursive(mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path)
                 {
                     LMS_SCOPED_TRACE_DETAILED("Scanner", "OnExploreFile");
 
@@ -359,7 +359,7 @@ namespace Scanner
                         LMS_LOG(DBUPDATER, ERROR, "Cannot process entry '" << path.string() << "': " << ec.message());
                         context.stats.errors.emplace_back(ScanError{ path, ScanErrorType::CannotReadFile, ec.message() });
                     }
-                    else if (PathUtils::hasFileAnyExtension(path, _settings.supportedExtensions))
+                    else if (core::pathUtils::hasFileAnyExtension(path, _settings.supportedExtensions))
                     {
                         if (checkFileNeedScan(context, path, mediaLibrary))
                             _metadataScanQueue.pushScanRequest(path);
@@ -392,9 +392,9 @@ namespace Scanner
         Wt::WDateTime lastWriteTime;
         try
         {
-            lastWriteTime = PathUtils::getLastWriteTime(file);
+            lastWriteTime = core::pathUtils::getLastWriteTime(file);
         }
-        catch (LmsException& e)
+        catch (core::LmsException& e)
         {
             LMS_LOG(DBUPDATER, ERROR, e.what());
             stats.skips++;
@@ -405,7 +405,7 @@ namespace Scanner
         if (!context.forceScan)
         {
             // Skip file if last write is the same
-            Database::Session& dbSession{ _db.getTLSSession() };
+            db::Session& dbSession{ _db.getTLSSession() };
             auto transaction{ _db.getTLSSession().createReadTransaction() };
 
             const Track::pointer track{ Track::findByPath(dbSession, file) };
@@ -429,12 +429,12 @@ namespace Scanner
 
         if (needUpdateLibrary)
         {
-            Database::Session& dbSession{ _db.getTLSSession() };
+            db::Session& dbSession{ _db.getTLSSession() };
             auto transaction{ _db.getTLSSession().createWriteTransaction() };
 
             Track::pointer track{ Track::findByPath(dbSession, file) };
             assert(track);
-            track.modify()->setMediaLibrary(Database::MediaLibrary::find(dbSession, libraryInfo.id)); // may be null, will be handled in the next scan anyway
+            track.modify()->setMediaLibrary(db::MediaLibrary::find(dbSession, libraryInfo.id)); // may be null, will be handled in the next scan anyway
             stats.updates++;
             return false;
         }
@@ -446,7 +446,7 @@ namespace Scanner
     {
         LMS_SCOPED_TRACE_OVERVIEW("Scanner", "ProcessScanResults");
 
-        Database::Session& dbSession{ _db.getTLSSession() };
+        db::Session& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createWriteTransaction() };
 
         for (const MetaDataScanResult& scanResult : scanResults)
@@ -471,22 +471,22 @@ namespace Scanner
         }
     }
 
-    void ScanStepScanFiles::processFileMetaData(ScanContext& context, const std::filesystem::path& file, const MetaData::Track& trackMetadata, const ScannerSettings::MediaLibraryInfo& libraryInfo)
+    void ScanStepScanFiles::processFileMetaData(ScanContext& context, const std::filesystem::path& file, const metadata::Track& trackMetadata, const ScannerSettings::MediaLibraryInfo& libraryInfo)
     {
         ScanStats& stats{ context.stats };
         Wt::WDateTime lastWriteTime;
         try
         {
-            lastWriteTime = PathUtils::getLastWriteTime(file);
+            lastWriteTime = core::pathUtils::getLastWriteTime(file);
         }
-        catch (LmsException& e)
+        catch (core::LmsException& e)
         {
             LMS_LOG(DBUPDATER, ERROR, e.what());
             stats.skips++;
             return;
         }
 
-        Database::Session& dbSession{ _db.getTLSSession() };
+        db::Session& dbSession{ _db.getTLSSession() };
         Track::pointer track{ Track::findByPath(dbSession, file) };
 
         if (trackMetadata.mbid && (!track || _settings.skipDuplicateMBID))
@@ -519,7 +519,7 @@ namespace Scanner
                     if (std::none_of(std::cbegin(_settings.mediaLibraries), std::cend(_settings.mediaLibraries),
                         [&](const ScannerSettings::MediaLibraryInfo& libraryInfo)
                         {
-                            return PathUtils::isPathInRootPath(file, libraryInfo.rootDirectory, &excludeDirFileName);
+                            return core::pathUtils::isPathInRootPath(file, libraryInfo.rootDirectory, &excludeDirFileName);
                         }))
                     {
                         continue;

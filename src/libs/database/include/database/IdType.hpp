@@ -24,7 +24,7 @@
 #include <functional>
 #include <Wt/Dbo/ptr.h>
 
-namespace Database
+namespace lms::db
 {
 	class IdType
 	{
@@ -49,7 +49,7 @@ namespace Database
 	};
 
 #define LMS_DECLARE_IDTYPE(name) \
-	namespace Database { \
+	namespace lms::db { \
 		class name : public IdType \
 		{ \
 			public: \
@@ -59,14 +59,14 @@ namespace Database
 	namespace std \
 	{ \
 		template<> \
-		class hash<Database::name> \
+		class hash<lms::db::name> \
 		{ \
 			public: \
-					size_t operator()(Database::name id) const \
+					size_t operator()(lms::db::name id) const \
 			{ \
-				return std::hash<Database::name::ValueType>()(id.getValue()); \
+				return std::hash<lms::db::name::ValueType>()(id.getValue()); \
 			} \
 		}; \
 	} // ns std
-} // namespace Database
+} // namespace lms::db
 

@@ -20,18 +20,18 @@
 #pragma once
 
 #include "database/UserId.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/UUID.hpp"
+#include "core/ILogger.hpp"
+#include "core/UUID.hpp"
 
 #define LOG(sev, message)	LMS_LOG(FEEDBACK, sev, "[listenbrainz] " << message)
 
-namespace Database
+namespace lms::db
 {
     class Session;
 }
 
-namespace Feedback::ListenBrainz::Utils
+namespace lms::feedback::listenBrainz::utils
 {
-    std::optional<UUID>	getListenBrainzToken(Database::Session& session, Database::UserId userId);
+    std::optional<core::UUID>	getListenBrainzToken(db::Session& session, db::UserId userId);
     std::string parseValidateToken(std::string_view msgBody);
 }

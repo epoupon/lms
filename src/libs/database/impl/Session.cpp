@@ -21,9 +21,9 @@
 
 #include <cassert>
 
-#include "utils/Exception.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/ITraceLogger.hpp"
+#include "core/Exception.hpp"
+#include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
 
 #include "database/Artist.hpp"
 #include "database/AuthToken.hpp"
@@ -47,10 +47,9 @@
 #include "PathTraits.hpp"
 #include "Migration.hpp"
 
-namespace Database
+namespace lms::db
 {
-
-    WriteTransaction::WriteTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session)
+    WriteTransaction::WriteTransaction(core::RecursiveSharedMutex& mutex, Wt::Dbo::Session& session)
         : _lock{ mutex },
         _transaction{ session }
     {
@@ -210,4 +209,4 @@ namespace Database
         LMS_LOG(DB, INFO, "Database optimizing complete");
     }
 
-} // namespace Database
+} // namespace lms::db

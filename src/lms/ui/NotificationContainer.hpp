@@ -25,7 +25,7 @@
 
 #include "Notification.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
 	class NotificationContainer : public Wt::WContainerWidget
 	{
@@ -34,4 +34,4 @@ namespace UserInterface
 
 		private:
 	};
-} // namespace UserInterface
+} // namespace lms::ui

@@ -22,7 +22,7 @@
 #include "RequestContext.hpp"
 #include "SubsonicResponse.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
     Response handleSearch2Request(RequestContext& context);
     Response handleSearch3Request(RequestContext& context);

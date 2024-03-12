@@ -29,13 +29,13 @@
 
 #include "database/UserId.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class Db;
 	class User;
 }
 
-namespace Auth
+namespace lms::auth
 {
 	class IAuthTokenService
 	{
@@ -54,7 +54,7 @@ namespace Auth
 
 				struct AuthTokenInfo
 				{
-					Database::UserId userId;
+					db::UserId userId;
 					Wt::WDateTime expiry;
 				};
 
@@ -66,9 +66,9 @@ namespace Auth
 			virtual AuthTokenProcessResult	processAuthToken(const boost::asio::ip::address& clientAddress, std::string_view tokenValue) = 0;
 
 			// Returns a one time token
-			virtual std::string				createAuthToken(Database::UserId userid, const Wt::WDateTime& expiry) = 0;
-			virtual void					clearAuthTokens(Database::UserId userid) = 0;
+			virtual std::string				createAuthToken(db::UserId userid, const Wt::WDateTime& expiry) = 0;
+			virtual void					clearAuthTokens(db::UserId userid) = 0;
 	};
 
-	std::unique_ptr<IAuthTokenService> createAuthTokenService(Database::Db& db, std::size_t maxThrottlerEntryCount);
+	std::unique_ptr<IAuthTokenService> createAuthTokenService(db::Db& db, std::size_t maxThrottlerEntryCount);
 }

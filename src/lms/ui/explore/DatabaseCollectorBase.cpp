@@ -19,9 +19,9 @@
 
 #include "DatabaseCollectorBase.hpp"
 
-#include "utils/String.hpp"
+#include "core/String.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
     DatabaseCollectorBase::DatabaseCollectorBase(Filters& filters, Mode defaultMode, std::size_t maxCount)
         : _filters{ filters }
@@ -30,9 +30,9 @@ namespace UserInterface
     {
     }
 
-    DatabaseCollectorBase::Range DatabaseCollectorBase::getActualRange(std::optional<Database::Range> requestedRange) const
+    DatabaseCollectorBase::Range DatabaseCollectorBase::getActualRange(std::optional<db::Range> requestedRange) const
     {
-        Database::Range res;
+        db::Range res;
 
         if (!requestedRange)
         {
@@ -59,7 +59,7 @@ namespace UserInterface
     void DatabaseCollectorBase::setSearch(std::string_view searchText)
     {
         _searchText = searchText;
-        _searchKeywords = StringUtils::splitString(_searchText, ' ');
+        _searchKeywords = core::stringUtils::splitString(_searchText, ' ');
     }
 
 } // ns UserInterface

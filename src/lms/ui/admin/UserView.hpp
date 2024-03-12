@@ -21,7 +21,7 @@
 
 #include <Wt/WContainerWidget.h>
 
-namespace UserInterface {
+namespace lms::ui {
 
 class UserView : public Wt::WContainerWidget
 {
@@ -32,6 +32,6 @@ class UserView : public Wt::WContainerWidget
 		void refreshView();
 };
 
-} // namespace UserInterface
+} // namespace lms::ui
 
 

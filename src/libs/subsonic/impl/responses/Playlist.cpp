@@ -24,9 +24,9 @@
 #include "database/User.hpp"
 #include "SubsonicId.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    using namespace Database;
+    using namespace db;
 
     static const std::string_view reportedDummyDate{ "2000-01-01T00:00:00" };
 

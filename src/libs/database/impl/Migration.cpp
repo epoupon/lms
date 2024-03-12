@@ -25,10 +25,10 @@
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "utils/Exception.hpp"
-#include "utils/ILogger.hpp"
+#include "core/Exception.hpp"
+#include "core/ILogger.hpp"
 
-namespace Database
+namespace lms::db
 {
     namespace
     {
@@ -58,7 +58,7 @@ namespace Database
     }
 }
 
-namespace Database::Migration
+namespace lms::db::Migration
 {
     class ScopedNoForeignKeys
     {
@@ -473,14 +473,14 @@ SELECT
             catch (std::exception& e)
             {
                 LMS_LOG(DB, ERROR, "Cannot get database version info: " << e.what());
-                throw LmsException{ outdatedMsg };
+                throw core::LmsException{ outdatedMsg };
             }
 
             if (version > LMS_DATABASE_VERSION)
-                throw LmsException{ "Server binary outdated, please upgrade it to handle this database" };
+                throw core::LmsException{ "Server binary outdated, please upgrade it to handle this database" };
 
             if (version < migrationFunctions.begin()->first)
-                throw LmsException{ outdatedMsg };
+                throw core::LmsException{ outdatedMsg };
 
             while (version < LMS_DATABASE_VERSION)
             {

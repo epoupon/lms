@@ -30,8 +30,8 @@
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/String.hpp"
+#include "core/ILogger.hpp"
+#include "core/String.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"
 #include "resource/DownloadResource.hpp"
@@ -44,28 +44,28 @@
 #include "TrackListHelpers.hpp"
 #include "Utils.hpp"
 
-using namespace Database;
-
-namespace UserInterface
+namespace lms::ui
 {
+    using namespace db;
+    
     namespace
     {
         std::optional<ArtistId> extractArtistIdFromInternalPath()
         {
             if (wApp->internalPathMatches("/artist/mbid/"))
             {
-                const auto mbid{ UUID::fromString(wApp->internalPathNextPart("/artist/mbid/")) };
+                const auto mbid{ core::UUID::fromString(wApp->internalPathNextPart("/artist/mbid/")) };
                 if (mbid)
                 {
                     auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    if (const Database::Artist::pointer artist{ Database::Artist::find(LmsApp->getDbSession(), *mbid) })
+                    if (const db::Artist::pointer artist{ db::Artist::find(LmsApp->getDbSession(), *mbid) })
                         return artist->getId();
                 }
 
                 return std::nullopt;
             }
 
-            return StringUtils::readAs<ArtistId::ValueType>(wApp->internalPathNextPart("/artist/"));
+            return core::stringUtils::readAs<ArtistId::ValueType>(wApp->internalPathNextPart("/artist/"));
         }
     }
 
@@ -110,11 +110,11 @@ namespace UserInterface
         if (!artistId)
             throw ArtistNotFoundException{};
 
-        const auto similarArtistIds{ Service<Recommendation::IRecommendationService>::get()->getSimilarArtists(*artistId, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, 5) };
+        const auto similarArtistIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(*artistId, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, 5) };
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const Database::Artist::pointer artist{ Database::Artist::find(LmsApp->getDbSession(), *artistId) };
+        const db::Artist::pointer artist{ db::Artist::find(LmsApp->getDbSession(), *artistId) };
         if (!artist)
             throw ArtistNotFoundException{};
 
@@ -135,10 +135,10 @@ namespace UserInterface
 
             for (const auto& clusters : clusterGroups)
             {
-                for (const Database::Cluster::pointer& cluster : clusters)
+                for (const db::Cluster::pointer& cluster : clusters)
                 {
-                    const Database::ClusterId clusterId = cluster->getId();
-                    Wt::WInteractWidget* entry{ clusterContainers->addWidget(Utils::createCluster(clusterId)) };
+                    const db::ClusterId clusterId = cluster->getId();
+                    Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createCluster(clusterId)) };
                     entry->clicked().connect([this, clusterId]
                         {
                             _filters.add(clusterId);
@@ -174,19 +174,19 @@ namespace UserInterface
             ->setLink(Wt::WLink{ std::make_unique<DownloadArtistResource>(_artistId) });
 
         {
-            auto isStarred{ [this] { return Service<Feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), _artistId); } };
+            auto isStarred{ [this] { return core::Service<feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), _artistId); } };
 
             Wt::WPushButton* starBtn{ bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
             starBtn->clicked().connect([=, this]
                 {
                     if (isStarred())
                     {
-                        Service<Feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), _artistId);
+                        core::Service<feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), _artistId);
                         starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
                     }
                     else
                     {
-                        Service<Feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), _artistId);
+                        core::Service<feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), _artistId);
                         starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
                     }
                 });
@@ -208,7 +208,7 @@ namespace UserInterface
             // first pass: gather all ids and sort by release type
             for (const ReleaseId releaseId : releases.results)
             {
-                const Database::Release::pointer release{ Database::Release::find(LmsApp->getDbSession(), releaseId) };
+                const db::Release::pointer release{ db::Release::find(LmsApp->getDbSession(), releaseId) };
 
                 ReleaseType releaseType{ parseReleaseType(release->getReleaseTypeNames())};
                 _releaseContainers[releaseType].releases.push_back(releaseId);
@@ -221,7 +221,7 @@ namespace UserInterface
                 Wt::WTemplate* releaseContainer{ releaseContainers->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artist.template.release-container")) };
 
                 if (releaseType.primaryType || !releaseType.customTypes.empty())
-                    releaseContainer->bindString("release-type", ReleaseHelpers::buildReleaseTypeString(releaseType));
+                    releaseContainer->bindString("release-type", releaseHelpers::buildReleaseTypeString(releaseType));
                 else
                     releaseContainer->bindString("release-type", Wt::WString::tr("Lms.Explore.releases")); // fallback when not tagged with MB or custom type
                 
@@ -240,7 +240,7 @@ namespace UserInterface
 
     void Artist::refreshAppearsOnReleases()
     {
-        constexpr EnumSet<TrackArtistLinkType> types
+        constexpr core::EnumSet<TrackArtistLinkType> types
         {
             TrackArtistLinkType::Artist,
             TrackArtistLinkType::Arranger,
@@ -302,7 +302,7 @@ namespace UserInterface
 
         for (const ArtistId artistId : similarArtistsId)
         {
-            const Database::Artist::pointer similarArtist{ Database::Artist::find(LmsApp->getDbSession(), artistId) };
+            const db::Artist::pointer similarArtist{ db::Artist::find(LmsApp->getDbSession(), artistId) };
             if (!similarArtist)
                 continue;
 
@@ -310,7 +310,7 @@ namespace UserInterface
         }
     }
 
-    void Artist::refreshLinks(const Database::Artist::pointer& artist)
+    void Artist::refreshLinks(const db::Artist::pointer& artist)
     {
         const auto mbid{ artist->getMBID() };
         if (mbid)
@@ -324,12 +324,12 @@ namespace UserInterface
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        if (const Database::Artist::pointer artist{ Database::Artist::find(LmsApp->getDbSession(), _artistId) })
+        if (const db::Artist::pointer artist{ db::Artist::find(LmsApp->getDbSession(), _artistId) })
         {
             for (std::size_t i{ static_cast<std::size_t>(releaseContainer.container->getCount()) }; i < releaseContainer.releases.size(); ++i)
             {
-                const Database::Release::pointer release{ Database::Release::find(LmsApp->getDbSession(), releaseContainer.releases[i]) };
-                releaseContainer.container->add(ReleaseListHelpers::createEntryForArtist(release, artist));
+                const db::Release::pointer release{ db::Release::find(LmsApp->getDbSession(), releaseContainer.releases[i]) };
+                releaseContainer.container->add(releaseListHelpers::createEntryForArtist(release, artist));
             }
         }
     }
@@ -363,5 +363,5 @@ namespace UserInterface
         return areTracksAdded;
     }
 
-} // namespace UserInterface
+} // namespace lms::ui
 

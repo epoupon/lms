@@ -28,10 +28,10 @@
 #include <vector>
 
 #include "metadata/IParser.hpp"
-#include "utils/IOContextRunner.hpp"
+#include "core/IOContextRunner.hpp"
 #include "ScanStepBase.hpp"
 
-namespace Scanner
+namespace lms::scanner
 {
     class ScanStepScanFiles : public ScanStepBase
     {
@@ -47,18 +47,18 @@ namespace Scanner
         struct MetaDataScanResult
         {
             std::filesystem::path path;
-            std::unique_ptr<MetaData::Track> trackMetaData;
+            std::unique_ptr<metadata::Track> trackMetaData;
         };
         void processMetaDataScanResults(ScanContext& context, std::span<const MetaDataScanResult> scanResults, const ScannerSettings::MediaLibraryInfo& libraryInfo);
-        void processFileMetaData(ScanContext& context, const std::filesystem::path& file, const MetaData::Track& trackMetadata, const ScannerSettings::MediaLibraryInfo& libraryInfo);
+        void processFileMetaData(ScanContext& context, const std::filesystem::path& file, const metadata::Track& trackMetadata, const ScannerSettings::MediaLibraryInfo& libraryInfo);
 
-        std::unique_ptr<MetaData::IParser>  _metadataParser;
+        std::unique_ptr<metadata::IParser>  _metadataParser;
         const std::vector<std::string>      _extraTagsToParse;
 
         class MetadataScanQueue
         {
             public:
-                MetadataScanQueue(MetaData::IParser& parser, std::size_t threadCount, bool& abort);
+                MetadataScanQueue(metadata::IParser& parser, std::size_t threadCount, bool& abort);
 
                 std::size_t getThreadCount() const { return _scanContextRunner.getThreadCount(); }
 
@@ -70,9 +70,9 @@ namespace Scanner
                 void wait(std::size_t maxScanRequestCount = 0); // wait until ongoing scan request count <= maxScanRequestCount
 
             private:
-                MetaData::IParser& _metadataParser;
+                metadata::IParser& _metadataParser;
                 boost::asio::io_context _scanContext;
-                IOContextRunner _scanContextRunner;
+                core::IOContextRunner _scanContextRunner;
 
                 mutable std::mutex _mutex ;
                 std::size_t _ongoingScanCount{};

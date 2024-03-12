@@ -25,19 +25,18 @@
 #include "AuthServiceBase.hpp"
 #include "LoginThrottler.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class Db;
 	class Session;
 }
 
-namespace Auth
+namespace lms::auth
 {
-
 	class PasswordServiceBase : public IPasswordService, public AuthServiceBase
 	{
 		public:
-			PasswordServiceBase(Database::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService);
+			PasswordServiceBase(db::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService);
 
 			PasswordServiceBase(const PasswordServiceBase&) = delete;
 			PasswordServiceBase& operator=(const PasswordServiceBase&) = delete;
@@ -58,5 +57,4 @@ namespace Auth
 			LoginThrottler				_loginThrottler;
 			IAuthTokenService&			_authTokenService;
 	};
-
-} // namespace Auth
+}

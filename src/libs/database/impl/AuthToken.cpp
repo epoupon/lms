@@ -25,7 +25,7 @@
 #include "StringViewTraits.hpp"
 #include "IdTypeTraits.hpp"
 
-namespace Database
+namespace lms::db
 {
 
 	AuthToken::AuthToken(std::string_view value, const Wt::WDateTime& expiry, ObjectPtr<User> user)

@@ -22,7 +22,7 @@
 #include <string>
 #include "ProtocolVersion.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
     struct ClientInfo
     {

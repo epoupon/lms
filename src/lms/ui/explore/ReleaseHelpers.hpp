@@ -27,22 +27,22 @@
 #include <Wt/WDate.h>
 #include "database/Object.hpp"
 #include "database/Types.hpp"
-#include "utils/EnumSet.hpp"
+#include "core/EnumSet.hpp"
 #include "ReleaseTypes.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Artist;
     class Release;
 }
 
-namespace UserInterface::ReleaseListHelpers
+namespace lms::ui::releaseListHelpers
 {
-    std::unique_ptr<Wt::WTemplate> createEntry(const Database::ObjectPtr<Database::Release>& release);
-    std::unique_ptr<Wt::WTemplate> createEntryForArtist(const Database::ObjectPtr<Database::Release>& release, const Database::ObjectPtr<Database::Artist>& artist);
-} // namespace UserInterface
+    std::unique_ptr<Wt::WTemplate> createEntry(const db::ObjectPtr<db::Release>& release);
+    std::unique_ptr<Wt::WTemplate> createEntryForArtist(const db::ObjectPtr<db::Release>& release, const db::ObjectPtr<db::Artist>& artist);
+} // namespace lms::ui
 
-namespace UserInterface::ReleaseHelpers
+namespace lms::ui::releaseHelpers
 {
     Wt::WString buildReleaseTypeString(const ReleaseType& releaseType);
     Wt::WString buildReleaseYearString(std::optional<int> year, std::optional<int> originalYear);

@@ -35,9 +35,8 @@
 #include "explore/Filters.hpp"
 #include "LmsApplication.hpp"
 
-namespace UserInterface::Utils
+namespace lms::ui::utils
 {
-
     std::string durationToString(std::chrono::milliseconds msDuration)
     {
         const std::chrono::seconds duration{ std::chrono::duration_cast<std::chrono::seconds>(msDuration) };
@@ -63,7 +62,7 @@ namespace UserInterface::Utils
     }
 
 
-    std::unique_ptr<Wt::WImage> createCover(Database::ReleaseId releaseId, CoverResource::Size size)
+    std::unique_ptr<Wt::WImage> createCover(db::ReleaseId releaseId, CoverResource::Size size)
     {
         auto cover{ std::make_unique<Wt::WImage>() };
         cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(releaseId, size));
@@ -72,7 +71,7 @@ namespace UserInterface::Utils
         return cover;
     }
 
-    std::unique_ptr<Wt::WImage> createCover(Database::TrackId trackId, CoverResource::Size size)
+    std::unique_ptr<Wt::WImage> createCover(db::TrackId trackId, CoverResource::Size size)
     {
         auto cover{ std::make_unique<Wt::WImage>() };
         cover->setImageLink(LmsApp->getCoverResource()->getTrackUrl(trackId, size));
@@ -81,15 +80,15 @@ namespace UserInterface::Utils
         return cover;
     }
 
-    std::unique_ptr<Wt::WInteractWidget> createCluster(Database::ClusterId clusterId, bool canDelete)
+    std::unique_ptr<Wt::WInteractWidget> createCluster(db::ClusterId clusterId, bool canDelete)
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const Database::Cluster::pointer cluster{ Database::Cluster::find(LmsApp->getDbSession(), clusterId) };
+        const db::Cluster::pointer cluster{ db::Cluster::find(LmsApp->getDbSession(), clusterId) };
         if (!cluster)
             return {};
 
-        auto getStyleClass{ [](const Database::Cluster::pointer& cluster) -> const char*
+        auto getStyleClass{ [](const db::Cluster::pointer& cluster) -> const char*
         {
             switch (cluster->getType()->getId().getValue() % 8)
             {
@@ -116,9 +115,9 @@ namespace UserInterface::Utils
         return res;
     }
 
-    std::unique_ptr<Wt::WContainerWidget> createArtistAnchorList(const std::vector<Database::ArtistId>& artistIds, std::string_view cssAnchorClass)
+    std::unique_ptr<Wt::WContainerWidget> createArtistAnchorList(const std::vector<db::ArtistId>& artistIds, std::string_view cssAnchorClass)
     {
-        using namespace Database;
+        using namespace db;
 
         std::unique_ptr<Wt::WContainerWidget> artistContainer{ std::make_unique<Wt::WContainerWidget>() };
 
@@ -144,9 +143,9 @@ namespace UserInterface::Utils
         return artistContainer;
     }
 
-    std::unique_ptr<Wt::WContainerWidget> createArtistDisplayNameWithAnchors(std::string_view displayName, const std::vector<Database::ArtistId>& artistIds, std::string_view cssAnchorClass)
+    std::unique_ptr<Wt::WContainerWidget> createArtistDisplayNameWithAnchors(std::string_view displayName, const std::vector<db::ArtistId>& artistIds, std::string_view cssAnchorClass)
     {
-        using namespace Database;
+        using namespace db;
 
         std::size_t matchCount{};
         std::string_view::size_type currentOffset{};
@@ -183,9 +182,9 @@ namespace UserInterface::Utils
         return result;
     }
 
-    std::unique_ptr<Wt::WContainerWidget> createArtistsAnchorsForRelease(Database::ObjectPtr<Database::Release> release, Database::ArtistId omitIfMatchThisArtist, std::string_view cssAnchorClass)
+    std::unique_ptr<Wt::WContainerWidget> createArtistsAnchorsForRelease(db::ObjectPtr<db::Release> release, db::ArtistId omitIfMatchThisArtist, std::string_view cssAnchorClass)
     {
-        using namespace Database;
+        using namespace db;
 
         Artist::FindParameters params;
         params.setRelease(release->getId());
@@ -196,7 +195,7 @@ namespace UserInterface::Utils
             if (releaseArtists.results.size() == 1 && releaseArtists.results.front() == omitIfMatchThisArtist)
                 return {};
 
-            return Utils::createArtistDisplayNameWithAnchors(release->getArtistDisplayName(), releaseArtists.results, cssAnchorClass);
+            return createArtistDisplayNameWithAnchors(release->getArtistDisplayName(), releaseArtists.results, cssAnchorClass);
         }
 
         params.setLinkType(TrackArtistLinkType::Artist);
@@ -206,7 +205,7 @@ namespace UserInterface::Utils
             if (artists.results.front() == omitIfMatchThisArtist)
                 return {};
 
-            return Utils::createArtistAnchorList({ artists.results.front() }, cssAnchorClass);
+            return createArtistAnchorList({ artists.results.front() }, cssAnchorClass);
         }
 
         if (artists.results.size() > 1)
@@ -219,7 +218,7 @@ namespace UserInterface::Utils
         return {};
     }
 
-    Wt::WLink createArtistLink(Database::Artist::pointer artist)
+    Wt::WLink createArtistLink(db::Artist::pointer artist)
     {
         if (const auto mbid{ artist->getMBID() })
             return Wt::WLink{ Wt::LinkType::InternalPath, "/artist/mbid/" + std::string {mbid->getAsString()} };
@@ -227,7 +226,7 @@ namespace UserInterface::Utils
             return Wt::WLink{ Wt::LinkType::InternalPath, "/artist/" + artist->getId().toString() };
     }
 
-    std::unique_ptr<Wt::WAnchor> createArtistAnchor(Database::Artist::pointer artist, bool setText)
+    std::unique_ptr<Wt::WAnchor> createArtistAnchor(db::Artist::pointer artist, bool setText)
     {
         auto res = std::make_unique<Wt::WAnchor>(createArtistLink(artist));
 
@@ -241,7 +240,7 @@ namespace UserInterface::Utils
         return res;
     }
 
-    Wt::WLink createReleaseLink(Database::Release::pointer release)
+    Wt::WLink createReleaseLink(db::Release::pointer release)
     {
         if (const auto mbid{ release->getMBID() })
             return Wt::WLink{ Wt::LinkType::InternalPath, "/release/mbid/" + std::string {mbid->getAsString()} };
@@ -249,7 +248,7 @@ namespace UserInterface::Utils
             return Wt::WLink{ Wt::LinkType::InternalPath, "/release/" + release->getId().toString() };
     }
 
-    std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Database::Release::pointer release, bool setText)
+    std::unique_ptr<Wt::WAnchor> createReleaseAnchor(db::Release::pointer release, bool setText)
     {
         auto res = std::make_unique<Wt::WAnchor>(createReleaseLink(release));
 
@@ -264,7 +263,7 @@ namespace UserInterface::Utils
         return res;
     }
 
-    std::unique_ptr<Wt::WAnchor> createTrackListAnchor(Database::TrackList::pointer trackList, bool setText)
+    std::unique_ptr<Wt::WAnchor> createTrackListAnchor(db::TrackList::pointer trackList, bool setText)
     {
         Wt::WLink link{ Wt::LinkType::InternalPath, "/tracklist/" + trackList->getId().toString() };
         auto res{ std::make_unique<Wt::WAnchor>(link) };
@@ -280,9 +279,9 @@ namespace UserInterface::Utils
         return res;
     }
 
-    std::unique_ptr<Wt::WContainerWidget> createClustersForTrack(Database::Track::pointer track, Filters& filters)
+    std::unique_ptr<Wt::WContainerWidget> createClustersForTrack(db::Track::pointer track, Filters& filters)
     {
-        using namespace Database;
+        using namespace db;
 
         std::unique_ptr<Wt::WContainerWidget> clusterContainer{ std::make_unique<Wt::WContainerWidget>() };
 
@@ -295,7 +294,7 @@ namespace UserInterface::Utils
             for (const Cluster::pointer& cluster : clusters)
             {
                 const ClusterId clusterId{ cluster->getId() };
-                Wt::WInteractWidget* entry{ clusterContainer->addWidget(Utils::createCluster(clusterId)) };
+                Wt::WInteractWidget* entry{ clusterContainer->addWidget(createCluster(clusterId)) };
                 entry->clicked().connect([&filters, clusterId]
                     {
                         filters.add(clusterId);

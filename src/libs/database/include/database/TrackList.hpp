@@ -34,8 +34,8 @@
 #include "database/Types.hpp"
 #include "database/UserId.hpp"
 
-namespace Database {
-
+namespace lms::db
+{
     class Artist;
     class Cluster;
     class ClusterType;
@@ -168,5 +168,5 @@ namespace Database {
         Wt::Dbo::ptr<TrackList>	_tracklist;
     };
 
-} // namespace Database
+} // namespace lms::db
 

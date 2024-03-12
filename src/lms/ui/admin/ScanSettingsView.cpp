@@ -30,18 +30,18 @@
 #include "database/Session.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scanner/IScannerService.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/Service.hpp"
-#include "utils/String.hpp"
+#include "core/ILogger.hpp"
+#include "core/Service.hpp"
+#include "core/String.hpp"
 
 #include "common/MandatoryValidator.hpp"
 #include "common/UppercaseValidator.hpp"
 #include "common/ValueStringModel.hpp"
 #include "LmsApplication.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
-    using namespace Database;
+    using namespace db;
 
     namespace
     {
@@ -128,7 +128,7 @@ namespace UserInterface
                     setValue(SimilarityEngineTypeField, _similarityEngineTypeModel->getString(*similarityEngineTypeRow));
 
                 const auto extraTags{ scanSettings->getExtraTagsToScan() };
-                setValue(ExtraTagsField, StringUtils::joinStrings(extraTags, extraTagsDelimiter));
+                setValue(ExtraTagsField, core::stringUtils::joinStrings(extraTags, extraTagsDelimiter));
 
                 {
                     std::vector<std::string> delimiters{ scanSettings->getArtistTagDelimiters() };
@@ -159,7 +159,7 @@ namespace UserInterface
                 if (similarityEngineTypeRow)
                     scanSettings.modify()->setSimilarityEngineType(_similarityEngineTypeModel->getValue(*similarityEngineTypeRow));
 
-                scanSettings.modify()->setExtraTagsToScan(StringUtils::splitString(valueText(ExtraTagsField).toUTF8(), extraTagsDelimiter));
+                scanSettings.modify()->setExtraTagsToScan(core::stringUtils::splitString(valueText(ExtraTagsField).toUTF8(), extraTagsDelimiter));
                 
                 {
                     std::vector<std::string_view> artistDelimiters;
@@ -267,9 +267,9 @@ namespace UserInterface
                 {
                     model->saveData();
 
-                    Service<Recommendation::IRecommendationService>::get()->load();
+                    core::Service<recommendation::IRecommendationService>::get()->load();
                     // Don't want the scanner to go on with wrong settings
-                    Service<Scanner::IScannerService>::get()->requestStop();
+                    core::Service<scanner::IScannerService>::get()->requestStop();
                     LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.database"), Wt::WString::tr("Lms.settings-saved"));
                 }
 
@@ -287,4 +287,4 @@ namespace UserInterface
         t->updateView(model.get());
     }
 
-} // namespace UserInterface
+} // namespace lms::ui

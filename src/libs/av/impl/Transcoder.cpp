@@ -22,13 +22,13 @@
 #include <atomic>
 #include <iomanip>
 
-#include "utils/IChildProcessManager.hpp"
-#include "utils/IConfig.hpp"
-#include "utils/Path.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/Service.hpp"
+#include "core/IChildProcessManager.hpp"
+#include "core/IConfig.hpp"
+#include "core/Path.hpp"
+#include "core/ILogger.hpp"
+#include "core/Service.hpp"
 
-namespace Av::Transcoding
+namespace lms::av::transcoding
 {
 
 #define LOG(severity, message)	LMS_LOG(TRANSCODING, severity, "[" << _debugId << "] - " << message)
@@ -52,7 +52,7 @@ namespace Av::Transcoding
 
     void Transcoder::init()
     {
-        ffmpegPath = Service<IConfig>::get()->getPath("ffmpeg-file", "/usr/bin/ffmpeg");
+        ffmpegPath = core::Service<core::IConfig>::get()->getPath("ffmpeg-file", "/usr/bin/ffmpeg");
         if (!std::filesystem::exists(ffmpegPath))
             throw Exception{ "File '" + ffmpegPath.string() + "' does not exist!" };
     }
@@ -183,9 +183,9 @@ namespace Av::Transcoding
         // Caution: stdin must have been closed before
         try
         {
-            _childProcess = Service<IChildProcessManager>::get()->spawnChildProcess(ffmpegPath, args);
+            _childProcess = core::Service<core::IChildProcessManager>::get()->spawnChildProcess(ffmpegPath, args);
         }
-        catch (ChildProcessException& exception)
+        catch (core::ChildProcessException& exception)
         {
             throw Exception{ "Cannot execute '" + ffmpegPath.string() + "': " + exception.what() };
         }
@@ -195,7 +195,7 @@ namespace Av::Transcoding
     {
         assert(_childProcess);
 
-        return _childProcess->asyncRead(buffer, bufferSize, [readCallback{ std::move(readCallback) }](IChildProcess::ReadResult /*res*/, std::size_t nbBytesRead)
+        return _childProcess->asyncRead(buffer, bufferSize, [readCallback{ std::move(readCallback) }](core::IChildProcess::ReadResult /*res*/, std::size_t nbBytesRead)
             {
                 readCallback(nbBytesRead);
             });
@@ -215,4 +215,4 @@ namespace Av::Transcoding
         return _childProcess->finished();
     }
 
-} // namespace Av::Transcoding
+} // namespace lms::av::Transcoding

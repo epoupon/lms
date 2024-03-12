@@ -19,7 +19,7 @@
 
 #include "ListenTypes.hpp"
 
-namespace Scrobbling::ListenBrainz
+namespace lms::scrobbling::listenBrainz
 {
 	std::ostream&
 	operator<<(std::ostream& os, const Listen& listen)
@@ -38,4 +38,4 @@ namespace Scrobbling::ListenBrainz
 
 		return os;
 	}
-} // Scrobbling::ListenBrainz
+} // scrobbling::ListenBrainz

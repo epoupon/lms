@@ -23,23 +23,23 @@
 
 #include "database/ReleaseId.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class Db;
 }
 
-namespace Recommendation::PlaylistGeneratorConstraint
+namespace lms::recommendation::PlaylistGeneratorConstraint
 {
 	class ConsecutiveArtists : public IConstraint
 	{
 		public:
-			ConsecutiveArtists(Database::Db& db);
+			ConsecutiveArtists(db::Db& db);
 
 		private:
 			 float computeScore(const TrackContainer& trackIds, std::size_t trackIndex) override;
-			 ArtistContainer getArtists(Database::TrackId trackId);
+			 ArtistContainer getArtists(db::TrackId trackId);
 
-			 Database::Db& _db;
+			 db::Db& _db;
 	};
-} // namespace Recommendation::PlaylistGeneratorConstraint
+} // namespace lms::recommendation::PlaylistGeneratorConstraint
 

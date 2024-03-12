@@ -25,13 +25,13 @@
 #include "database/Session.hpp"
 #include "database/User.hpp"
 
-namespace Scrobbling::ListenBrainz::Utils
+namespace lms::scrobbling::listenBrainz::utils
 {
-    std::optional<UUID> getListenBrainzToken(Database::Session& session, Database::UserId userId)
+    std::optional<core::UUID> getListenBrainzToken(db::Session& session, db::UserId userId)
     {
         auto transaction{ session.createReadTransaction() };
 
-        const Database::User::pointer user{ Database::User::find(session, userId) };
+        const db::User::pointer user{ db::User::find(session, userId) };
         if (!user)
             return std::nullopt;
 

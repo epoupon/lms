@@ -27,14 +27,14 @@
 
 #include "database/Types.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
     class Filters;
 
     class DatabaseCollectorBase
     {
     public:
-        using Range = Database::Range;
+        using Range = db::Range;
 
         virtual ~DatabaseCollectorBase() {}
 

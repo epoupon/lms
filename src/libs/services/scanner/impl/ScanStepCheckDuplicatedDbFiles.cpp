@@ -22,13 +22,13 @@
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
-namespace Scanner
+namespace lms::scanner
 {
     void ScanStepCheckDuplicatedDbFiles::process(ScanContext& context)
     {
-        using namespace Database;
+        using namespace db;
 
         if (_abortScan)
             return;

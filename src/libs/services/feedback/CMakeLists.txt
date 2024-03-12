@@ -19,7 +19,7 @@ target_include_directories(lmsfeedback PRIVATE
 	)
 
 target_link_libraries(lmsfeedback PRIVATE
-	lmsutils
+	lmscore
 	)
 
 target_link_libraries(lmsfeedback PUBLIC

@@ -20,129 +20,130 @@
 #include "Common.hpp"
 #include "database/StarredArtist.hpp"
 
-using namespace Database;
-
-using ScopedStarredArtist = ScopedEntity<Database::StarredArtist>;
-
-TEST_F(DatabaseFixture, StarredArtist)
+namespace lms::db::tests
 {
-    ScopedArtist artist{ session, "MyArtist" };
-    ScopedUser user{ session, "MyUser" };
-    ScopedUser user2{ session, "MyUser2" };
+    using ScopedStarredArtist = ScopedEntity<db::StarredArtist>;
 
+    TEST_F(DatabaseFixture, StarredArtist)
     {
-        auto transaction{ session.createReadTransaction() };
+        ScopedArtist artist{ session, "MyArtist" };
+        ScopedUser user{ session, "MyUser" };
+        ScopedUser user2{ session, "MyUser2" };
 
-        auto starredArtist{ StarredArtist::find(session, artist->getId(), user->getId(), FeedbackBackend::Internal) };
-        EXPECT_FALSE(starredArtist);
-        EXPECT_EQ(StarredArtist::getCount(session), 0);
+        {
+            auto transaction{ session.createReadTransaction() };
 
-        auto artists{ Artist::findIds(session, Artist::FindParameters {}) };
-        EXPECT_EQ(artists.results.size(), 1);
+            auto starredArtist{ StarredArtist::find(session, artist->getId(), user->getId(), FeedbackBackend::Internal) };
+            EXPECT_FALSE(starredArtist);
+            EXPECT_EQ(StarredArtist::getCount(session), 0);
+
+            auto artists{ Artist::findIds(session, Artist::FindParameters {}) };
+            EXPECT_EQ(artists.results.size(), 1);
+        }
+
+        ScopedStarredArtist starredArtist{ session, artist.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto gotArtist{ StarredArtist::find(session, artist->getId(), user->getId(), FeedbackBackend::Internal) };
+            EXPECT_EQ(gotArtist->getId(), starredArtist->getId());
+            EXPECT_EQ(StarredArtist::getCount(session), 1);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto artists{ Artist::findIds(session, Artist::FindParameters {}) };
+            EXPECT_EQ(artists.results.size(), 1);
+
+            artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal));
+            EXPECT_EQ(artists.results.size(), 1);
+
+            artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user2.getId(), FeedbackBackend::Internal));
+            EXPECT_EQ(artists.results.size(), 0);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            user.get().modify()->setFeedbackBackend(FeedbackBackend::ListenBrainz);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto gotArtist{ StarredArtist::find(session, artist->getId(), user->getId()) };
+            EXPECT_EQ(gotArtist, Artist::pointer{});
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            user.get().modify()->setFeedbackBackend(FeedbackBackend::Internal);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            auto gotArtist{ StarredArtist::find(session, artist->getId(), user->getId()) };
+            EXPECT_EQ(gotArtist->getId(), starredArtist->getId());
+        }
     }
 
-    ScopedStarredArtist starredArtist{ session, artist.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
+    TEST_F(DatabaseFixture, StarredArtist_PendingDestroy)
     {
-        auto transaction{ session.createReadTransaction() };
+        ScopedArtist artist{ session, "MyArtist" };
+        ScopedUser user{ session, "MyUser" };
+        ScopedStarredArtist starredArtist{ session, artist.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
 
-        auto gotArtist{ StarredArtist::find(session, artist->getId(), user->getId(), FeedbackBackend::Internal) };
-        EXPECT_EQ(gotArtist->getId(), starredArtist->getId());
-        EXPECT_EQ(StarredArtist::getCount(session), 1);
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            auto artists{ Artist::findIds(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
+            EXPECT_EQ(artists.results.size(), 1);
+
+            starredArtist.get().modify()->setSyncState(SyncState::PendingRemove);
+            artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal));
+            EXPECT_EQ(artists.results.size(), 0);
+        }
     }
 
+    TEST_F(DatabaseFixture, StarredArtist_dateTime)
     {
-        auto transaction{ session.createReadTransaction() };
+        ScopedArtist artist1{ session, "MyArtist1" };
+        ScopedArtist artist2{ session, "MyArtist2" };
+        ScopedUser user{ session, "MyUser" };
 
-        auto artists{ Artist::findIds(session, Artist::FindParameters {}) };
-        EXPECT_EQ(artists.results.size(), 1);
+        ScopedStarredArtist starredArtist1{ session, artist1.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
+        ScopedStarredArtist starredArtist2{ session, artist2.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
 
-        artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal));
-        EXPECT_EQ(artists.results.size(), 1);
+        const Wt::WDateTime dateTime{ Wt::WDate {1950, 1, 2}, Wt::WTime {12, 30, 1} };
 
-        artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user2.getId(), FeedbackBackend::Internal));
-        EXPECT_EQ(artists.results.size(), 0);
-    }
+        {
+            auto transaction{ session.createReadTransaction() };
 
-    {
-        auto transaction{ session.createWriteTransaction() };
-        user.get().modify()->setFeedbackBackend(FeedbackBackend::ListenBrainz);
-    }
+            auto artists{ Artist::find(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
+            EXPECT_EQ(artists.results.size(), 2);
+        }
 
-    {
-        auto transaction{ session.createReadTransaction() };
+        {
+            auto transaction{ session.createWriteTransaction() };
 
-        auto gotArtist{ StarredArtist::find(session, artist->getId(), user->getId()) };
-        EXPECT_EQ(gotArtist, Artist::pointer{});
-    }
+            starredArtist1.get().modify()->setDateTime(dateTime);
+            starredArtist2.get().modify()->setDateTime(dateTime.addSecs(-1));
 
-    {
-        auto transaction{ session.createWriteTransaction() };
-        user.get().modify()->setFeedbackBackend(FeedbackBackend::Internal);
-    }
+            auto artists{ Artist::findIds(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ArtistSortMethod::StarredDateDesc)) };
+            ASSERT_EQ(artists.results.size(), 2);
+            EXPECT_EQ(artists.results[0], starredArtist1->getArtist()->getId());
+            EXPECT_EQ(artists.results[1], starredArtist2->getArtist()->getId());
+        }
+        {
+            auto transaction{ session.createWriteTransaction() };
 
-    {
-        auto transaction{ session.createWriteTransaction() };
-        auto gotArtist{ StarredArtist::find(session, artist->getId(), user->getId()) };
-        EXPECT_EQ(gotArtist->getId(), starredArtist->getId());
-    }
-}
+            starredArtist1.get().modify()->setDateTime(dateTime);
+            starredArtist2.get().modify()->setDateTime(dateTime.addSecs(1));
 
-TEST_F(DatabaseFixture, StarredArtist_PendingDestroy)
-{
-    ScopedArtist artist{ session, "MyArtist" };
-    ScopedUser user{ session, "MyUser" };
-    ScopedStarredArtist starredArtist{ session, artist.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
-
-    {
-        auto transaction{ session.createWriteTransaction() };
-
-        auto artists{ Artist::findIds(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
-        EXPECT_EQ(artists.results.size(), 1);
-
-        starredArtist.get().modify()->setSyncState(SyncState::PendingRemove);
-        artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal));
-        EXPECT_EQ(artists.results.size(), 0);
-    }
-}
-
-TEST_F(DatabaseFixture, StarredArtist_dateTime)
-{
-    ScopedArtist artist1{ session, "MyArtist1" };
-    ScopedArtist artist2{ session, "MyArtist2" };
-    ScopedUser user{ session, "MyUser" };
-
-    ScopedStarredArtist starredArtist1{ session, artist1.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
-    ScopedStarredArtist starredArtist2{ session, artist2.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
-
-    const Wt::WDateTime dateTime{ Wt::WDate {1950, 1, 2}, Wt::WTime {12, 30, 1} };
-
-    {
-        auto transaction{ session.createReadTransaction() };
-
-        auto artists{ Artist::find(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
-        EXPECT_EQ(artists.results.size(), 2);
-    }
-
-    {
-        auto transaction{ session.createWriteTransaction() };
-
-        starredArtist1.get().modify()->setDateTime(dateTime);
-        starredArtist2.get().modify()->setDateTime(dateTime.addSecs(-1));
-
-        auto artists{ Artist::findIds(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ArtistSortMethod::StarredDateDesc)) };
-        ASSERT_EQ(artists.results.size(), 2);
-        EXPECT_EQ(artists.results[0], starredArtist1->getArtist()->getId());
-        EXPECT_EQ(artists.results[1], starredArtist2->getArtist()->getId());
-    }
-    {
-        auto transaction{ session.createWriteTransaction() };
-
-        starredArtist1.get().modify()->setDateTime(dateTime);
-        starredArtist2.get().modify()->setDateTime(dateTime.addSecs(1));
-
-        auto artists{ Artist::findIds(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ArtistSortMethod::StarredDateDesc)) };
-        ASSERT_EQ(artists.results.size(), 2);
-        EXPECT_EQ(artists.results[0], starredArtist2->getArtist()->getId());
-        EXPECT_EQ(artists.results[1], starredArtist1->getArtist()->getId());
+            auto artists{ Artist::findIds(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ArtistSortMethod::StarredDateDesc)) };
+            ASSERT_EQ(artists.results.size(), 2);
+            EXPECT_EQ(artists.results[0], starredArtist2->getArtist()->getId());
+            EXPECT_EQ(artists.results[1], starredArtist1->getArtist()->getId());
+        }
     }
 }

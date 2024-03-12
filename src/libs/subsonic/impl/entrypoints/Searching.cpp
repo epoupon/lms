@@ -30,9 +30,9 @@
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"
  
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    using namespace Database;
+    using namespace db;
 
     namespace
     {
@@ -47,9 +47,9 @@ namespace API::Subsonic
 
             // Symfonium adds extra ""
             if (context.clientInfo.name == "Symfonium")
-                query = StringUtils::stringTrim(query, "\"");
+                query = core::stringUtils::stringTrim(query, "\"");
 
-            std::vector<std::string_view> keywords{ StringUtils::splitString(query, ' ') };
+            std::vector<std::string_view> keywords{ core::stringUtils::splitString(query, ' ') };
 
             // Optional params
             std::size_t artistCount{ getParameterAs<std::size_t>(context.parameters, "artistCount").value_or(20) };

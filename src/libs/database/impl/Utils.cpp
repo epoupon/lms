@@ -19,21 +19,19 @@
 
 #include "Utils.hpp"
 
-#include "utils/String.hpp"
+#include "core/String.hpp"
 
-namespace Database::Utils
+namespace lms::db::utils
 {
-	std::string
-	escapeLikeKeyword(std::string_view keyword)
-	{
-		return StringUtils::escapeString(keyword, "%_", escapeChar);
-	}
+    std::string escapeLikeKeyword(std::string_view keyword)
+    {
+        return core::stringUtils::escapeString(keyword, "%_", escapeChar);
+    }
 
-	Wt::WDateTime
-	normalizeDateTime(const Wt::WDateTime& dateTime)
-	{
-		// force second resolution
-		return Wt::WDateTime::fromTime_t(dateTime.toTime_t());
-	}
-} // namespace Database::Utils
+    Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime)
+    {
+        // force second resolution
+        return Wt::WDateTime::fromTime_t(dateTime.toTime_t());
+    }
+} // namespace lms::db::Utils
 

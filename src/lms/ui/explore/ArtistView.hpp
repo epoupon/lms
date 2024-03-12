@@ -24,17 +24,17 @@
 #include "database/ArtistId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
-#include "utils/EnumSet.hpp"
+#include "core/EnumSet.hpp"
 #include "common/Template.hpp"
 #include "ReleaseTypes.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Artist;
     class Release;
 }
 
-namespace UserInterface
+namespace lms::ui
 {
     class Filters;
     class PlayQueueController;
@@ -50,8 +50,8 @@ namespace UserInterface
         void refreshReleases();
         void refreshAppearsOnReleases();
         void refreshNonReleaseTracks();
-        void refreshSimilarArtists(const std::vector<Database::ArtistId>& similarArtistsId);
-        void refreshLinks(const Database::ObjectPtr<Database::Artist>& artist);
+        void refreshSimilarArtists(const std::vector<db::ArtistId>& similarArtistsId);
+        void refreshLinks(const db::ObjectPtr<db::Artist>& artist);
 
         struct ReleaseContainer;
         void addSomeReleases(ReleaseContainer& releaseContainer);
@@ -67,13 +67,13 @@ namespace UserInterface
         struct ReleaseContainer
         {
             InfiniteScrollingContainer* container{};
-            std::vector<Database::ReleaseId> releases;
+            std::vector<db::ReleaseId> releases;
         };
         std::map<ReleaseType, ReleaseContainer> _releaseContainers;
         ReleaseContainer			_appearsOnReleaseContainer{};
         InfiniteScrollingContainer* _trackContainer{};
-        Database::ArtistId			_artistId{};
+        db::ArtistId			_artistId{};
         bool						_needForceRefresh{};
     };
-} // namespace UserInterface
+} // namespace lms::ui
 

@@ -34,16 +34,16 @@
 #include "database/Session.hpp"
 #include "database/Types.hpp"
 #include "services/scanner/IScannerService.hpp"
-#include "utils/Path.hpp"
+#include "core/Path.hpp"
 #include "IScanStep.hpp"
 #include "ScannerSettings.hpp"
 
-namespace Scanner
+namespace lms::scanner
 {
     class ScannerService : public IScannerService
     {
     public:
-        ScannerService(Database::Db& db);
+        ScannerService(db::Db& db);
         ~ScannerService();
 
         ScannerService(const ScannerService&) = delete;
@@ -88,8 +88,8 @@ namespace Scanner
         boost::asio::system_timer				_scheduleTimer{ _ioService };
         Events									_events;
         std::chrono::system_clock::time_point	_lastScanInProgressEmit{};
-        Database::Db& _db;
-        Database::Session						_dbSession;
+        db::Db& _db;
+        db::Session						_dbSession;
 
         mutable std::shared_mutex			_statusMutex;
         State								_curState{ State::NotScheduled };

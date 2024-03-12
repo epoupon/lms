@@ -24,17 +24,17 @@
 #include "database/TrackArtistLink.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
-#include "utils/ITraceLogger.hpp"
-#include "utils/Service.hpp"
-#include "utils/String.hpp"
+#include "core/ITraceLogger.hpp"
+#include "core/Service.hpp"
+#include "core/String.hpp"
 
 #include "SubsonicId.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    using namespace Database;
+    using namespace db;
 
-    namespace Utils
+    namespace utils
     {
         std::string joinArtistNames(const std::vector<Artist::pointer>& artists)
         {
@@ -50,7 +50,7 @@ namespace API::Subsonic
                     return artist->getName();
                 });
 
-            return StringUtils::joinStrings(names, ", ");
+            return core::stringUtils::joinStrings(names, ", ");
         }
 
         std::string_view toString(TrackArtistLinkType type)
@@ -90,8 +90,8 @@ namespace API::Subsonic
             artistNode.setAttribute("albumCount", count);
         }
 
-        if (const Wt::WDateTime dateTime{ Service<Feedback::IFeedbackService>::get()->getStarredDateTime(user->getId(), artist->getId()) }; dateTime.isValid())
-            artistNode.setAttribute("starred", StringUtils::toISO8601String(dateTime));
+        if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(user->getId(), artist->getId()) }; dateTime.isValid())
+            artistNode.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
 
         // OpenSubsonic specific fields (must always be set)
         if (context.enableOpenSubsonic)
@@ -100,7 +100,7 @@ namespace API::Subsonic
                 artistNode.setAttribute("mediaType", "artist");
 
             {
-                std::optional<UUID> mbid{ artist->getMBID() };
+                std::optional<core::UUID> mbid{ artist->getMBID() };
                 artistNode.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
             }
 
@@ -110,7 +110,7 @@ namespace API::Subsonic
             Response::Node roles;
             artistNode.createEmptyArrayValue("roles");
             for (const TrackArtistLinkType linkType : TrackArtistLink::findUsedTypes(context.dbSession, artist->getId()))
-                artistNode.addArrayValue("roles", Utils::toString(linkType));
+                artistNode.addArrayValue("roles", utils::toString(linkType));
         }
 
         return artistNode;

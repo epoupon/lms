@@ -21,7 +21,7 @@
 
 #include <Wt/WTheme.h>
 
-namespace UserInterface
+namespace lms::ui
 {
 	class LmsTheme : public Wt::WTheme
 	{

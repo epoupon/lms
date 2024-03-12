@@ -25,54 +25,54 @@
 #include "services/feedback/IFeedbackService.hpp"
 #include "IFeedbackBackend.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Db;
 }
 
-namespace Feedback
+namespace lms::feedback
 {
     class FeedbackService : public IFeedbackService
     {
     public:
-        FeedbackService(boost::asio::io_context& ioContext, Database::Db& db);
+        FeedbackService(boost::asio::io_context& ioContext, db::Db& db);
         ~FeedbackService();
 
     private:
         FeedbackService(const FeedbackService&) = delete;
         FeedbackService& operator=(const FeedbackService&) = delete;
 
-        void star(Database::UserId userId, Database::ArtistId artistId) override;
-        void unstar(Database::UserId userId, Database::ArtistId artistId) override;
-        bool isStarred(Database::UserId userId, Database::ArtistId artistId) override;
-        Wt::WDateTime getStarredDateTime(Database::UserId userId, Database::ArtistId artistId) override;
+        void star(db::UserId userId, db::ArtistId artistId) override;
+        void unstar(db::UserId userId, db::ArtistId artistId) override;
+        bool isStarred(db::UserId userId, db::ArtistId artistId) override;
+        Wt::WDateTime getStarredDateTime(db::UserId userId, db::ArtistId artistId) override;
         ArtistContainer	findStarredArtists(const ArtistFindParameters& params) override;
 
-        void star(Database::UserId userId, Database::ReleaseId releaseId) override;
-        void unstar(Database::UserId userId, Database::ReleaseId releaseId) override;
-        bool isStarred(Database::UserId userId, Database::ReleaseId releasedId) override;
-        Wt::WDateTime getStarredDateTime(Database::UserId userId, Database::ReleaseId releasedId) override;
+        void star(db::UserId userId, db::ReleaseId releaseId) override;
+        void unstar(db::UserId userId, db::ReleaseId releaseId) override;
+        bool isStarred(db::UserId userId, db::ReleaseId releasedId) override;
+        Wt::WDateTime getStarredDateTime(db::UserId userId, db::ReleaseId releasedId) override;
         ReleaseContainer findStarredReleases(const FindParameters& params) override;
 
-        void star(Database::UserId userId, Database::TrackId trackId) override;
-        void unstar(Database::UserId userId, Database::TrackId trackId) override;
-        bool isStarred(Database::UserId userId, Database::TrackId trackId) override;
-        Wt::WDateTime getStarredDateTime(Database::UserId userId, Database::TrackId trackId) override;
+        void star(db::UserId userId, db::TrackId trackId) override;
+        void unstar(db::UserId userId, db::TrackId trackId) override;
+        bool isStarred(db::UserId userId, db::TrackId trackId) override;
+        Wt::WDateTime getStarredDateTime(db::UserId userId, db::TrackId trackId) override;
         TrackContainer findStarredTracks(const FindParameters& params) override;
 
-        std::optional<Database::FeedbackBackend> getUserFeedbackBackend(Database::UserId userId);
+        std::optional<db::FeedbackBackend> getUserFeedbackBackend(db::UserId userId);
 
         template <typename ObjType, typename ObjIdType, typename StarredObjType>
-        void star(Database::UserId userId, ObjIdType id);
+        void star(db::UserId userId, ObjIdType id);
         template <typename ObjType, typename ObjIdType, typename StarredObjType>
-        void unstar(Database::UserId userId, ObjIdType id);
+        void unstar(db::UserId userId, ObjIdType id);
         template <typename ObjType, typename ObjIdType, typename StarredObjType>
-        bool isStarred(Database::UserId userId, ObjIdType id);
+        bool isStarred(db::UserId userId, ObjIdType id);
         template <typename ObjType, typename ObjIdType, typename StarredObjType>
-        Wt::WDateTime getStarredDateTime(Database::UserId userId, ObjIdType id);
+        Wt::WDateTime getStarredDateTime(db::UserId userId, ObjIdType id);
 
-        Database::Db& _db;
-        std::unordered_map<Database::FeedbackBackend, std::unique_ptr<IFeedbackBackend>> _backends;
+        db::Db& _db;
+        std::unordered_map<db::FeedbackBackend, std::unique_ptr<IFeedbackBackend>> _backends;
     };
 
 } // ns Feedback

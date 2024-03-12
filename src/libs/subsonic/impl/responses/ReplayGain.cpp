@@ -21,9 +21,9 @@
 
 #include "database/Track.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    Response::Node createReplayGainNode(const Database::ObjectPtr<Database::Track>& track)
+    Response::Node createReplayGainNode(const db::ObjectPtr<db::Track>& track)
     {
         Response::Node replayGainNode;
 

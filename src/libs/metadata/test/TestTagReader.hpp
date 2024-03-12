@@ -23,7 +23,7 @@
 
 #include "Parser.hpp"
 
-namespace MetaData
+namespace lms::metadata
 {
     class TestTagReader : public ITagReader
     {

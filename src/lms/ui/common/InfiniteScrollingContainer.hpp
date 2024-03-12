@@ -28,7 +28,7 @@
 #include <Wt/WString.h>
 #include <Wt/WTemplate.h>
 
-namespace UserInterface
+namespace lms::ui
 {
 	// Atomatically raises onRequestElements signal when the sentinel is displayed
 	// can add elements afterwards by calling setHasMoreElements()

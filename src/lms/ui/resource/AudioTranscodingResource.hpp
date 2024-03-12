@@ -24,12 +24,12 @@
 
 #include "database/TrackId.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class User;
 }
 
-namespace UserInterface
+namespace lms::ui
 {
 	class AudioTranscodingResource : public Wt::WResource
 	{
@@ -37,14 +37,14 @@ namespace UserInterface
 			~AudioTranscodingResource();
 
 			// Url depends on the user since settings are used in parameters
-			std::string getUrl(Database::TrackId trackId) const;
+			std::string getUrl(db::TrackId trackId) const;
 
 			void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response);
 
 		private:
 			static constexpr std::size_t	_chunkSize {262144};
 	};
-} // namespace UserInterface
+} // namespace lms::ui
 
 
 

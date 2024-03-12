@@ -29,12 +29,12 @@
 #include "database/StarredTrack.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
 #include "internal/InternalBackend.hpp"
 #include "listenbrainz/ListenBrainzBackend.hpp"
 
-namespace Feedback
+namespace lms::feedback
 {
     std::unique_ptr<IFeedbackService> createFeedbackService(boost::asio::io_context& ioContext, Db& db)
     {
@@ -45,8 +45,8 @@ namespace Feedback
         : _db{ db }
     {
         LMS_LOG(SCROBBLING, INFO, "Starting service...");
-        _backends.emplace(Database::FeedbackBackend::Internal, std::make_unique<InternalBackend>(_db));
-        _backends.emplace(Database::FeedbackBackend::ListenBrainz, std::make_unique<ListenBrainz::ListenBrainzBackend>(ioContext, _db));
+        _backends.emplace(db::FeedbackBackend::Internal, std::make_unique<InternalBackend>(_db));
+        _backends.emplace(db::FeedbackBackend::ListenBrainz, std::make_unique<listenBrainz::ListenBrainzBackend>(ioContext, _db));
         LMS_LOG(SCROBBLING, INFO, "Service started!");
     }
 
@@ -55,9 +55,9 @@ namespace Feedback
         LMS_LOG(SCROBBLING, INFO, "Service stopped!");
     }
 
-    std::optional<Database::FeedbackBackend> FeedbackService::getUserFeedbackBackend(UserId userId)
+    std::optional<db::FeedbackBackend> FeedbackService::getUserFeedbackBackend(UserId userId)
     {
-        std::optional<Database::FeedbackBackend> feedbackBackend;
+        std::optional<db::FeedbackBackend> feedbackBackend;
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };

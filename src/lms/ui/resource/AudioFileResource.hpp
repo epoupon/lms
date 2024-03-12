@@ -23,17 +23,17 @@
 
 #include "database/TrackId.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
 	class AudioFileResource : public Wt::WResource
 	{
 		public:
 			~AudioFileResource();
 
-			std::string getUrl(Database::TrackId trackId) const;
+			std::string getUrl(db::TrackId trackId) const;
 
 		private:
 			void handleRequest(const Wt::Http::Request& request,
 					Wt::Http::Response& response) override;
 	};
-} // namespace UserInterface
+} // namespace lms::ui

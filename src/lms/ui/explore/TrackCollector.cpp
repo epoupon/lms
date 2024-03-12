@@ -27,18 +27,18 @@
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
-#include "utils/Service.hpp"
+#include "core/Service.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
-    using namespace Database;
+    using namespace db;
 
     RangeResults<TrackId> TrackCollector::get(std::optional<Range> requestedRange)
     {
-        Feedback::IFeedbackService& feedbackService{ *Service<Feedback::IFeedbackService>::get() };
-        Scrobbling::IScrobblingService& scrobblingService{ *Service<Scrobbling::IScrobblingService>::get() };
+        feedback::IFeedbackService& feedbackService{ *core::Service<feedback::IFeedbackService>::get() };
+        scrobbling::IScrobblingService& scrobblingService{ *core::Service<scrobbling::IScrobblingService>::get() };
 
         const Range range{ getActualRange(requestedRange) };
 
@@ -52,7 +52,7 @@ namespace UserInterface
 
         case Mode::Starred:
         {
-            Feedback::IFeedbackService::FindParameters params;
+            feedback::IFeedbackService::FindParameters params;
             params.setClusters(getFilters().getClusterIds());
             params.setRange(range);
             params.setUser(LmsApp->getUserId());
@@ -62,7 +62,7 @@ namespace UserInterface
 
         case TrackCollector::Mode::RecentlyPlayed:
         {
-            Scrobbling::IScrobblingService::FindParameters params;
+            scrobbling::IScrobblingService::FindParameters params;
             params.setUser(LmsApp->getUserId());
             params.setClusters(getFilters().getClusterIds());
             params.setRange(range);
@@ -73,7 +73,7 @@ namespace UserInterface
 
         case Mode::MostPlayed:
         {
-            Scrobbling::IScrobblingService::FindParameters params;
+            scrobbling::IScrobblingService::FindParameters params;
             params.setUser(LmsApp->getUserId());
             params.setClusters(getFilters().getClusterIds());
             params.setRange(range);

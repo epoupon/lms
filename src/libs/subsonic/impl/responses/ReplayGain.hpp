@@ -22,12 +22,12 @@
 #include "database/Object.hpp"
 #include "SubsonicResponse.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Track;
 }
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    Response::Node createReplayGainNode(const Database::ObjectPtr<Database::Track>& track);
+    Response::Node createReplayGainNode(const db::ObjectPtr<db::Track>& track);
 }

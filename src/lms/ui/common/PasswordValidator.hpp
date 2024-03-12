@@ -24,12 +24,12 @@
 
 #include "services/auth/Types.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
-	using PasswordValidationContextGetFunc = std::function<::Auth::PasswordValidationContext()>;
+	using PasswordValidationContextGetFunc = std::function<auth::PasswordValidationContext()>;
 	std::unique_ptr<Wt::WValidator> createPasswordStrengthValidator(PasswordValidationContextGetFunc passwordValidationContextGetFunc);
 
 	// Check current user password
 	std::unique_ptr<Wt::WValidator> createPasswordCheckValidator();
-} // namespace UserInterface
+} // namespace lms::ui
 

@@ -22,7 +22,7 @@
 #include "RequestContext.hpp"
 #include "SubsonicResponse.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
     Response handleGetAlbumListRequest(RequestContext& context);
     Response handleGetAlbumList2Request(RequestContext& context);

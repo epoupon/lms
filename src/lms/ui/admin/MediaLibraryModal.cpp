@@ -26,13 +26,13 @@
 
 #include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
-#include "utils/Path.hpp"
-#include "utils/String.hpp"
+#include "core/Path.hpp"
+#include "core/String.hpp"
 #include "LmsApplication.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
-    using namespace Database;
+    using namespace db;
 
     namespace
     {
@@ -53,12 +53,12 @@ namespace UserInterface
                 auto& session{ LmsApp->getDbSession() };
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-                Database::MediaLibrary::find(session, [&](const Database::MediaLibrary::pointer library)
+                db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer library)
                     {
                         if (library->getId() == _libraryId)
                             return;
 
-                        if (StringUtils::stringCaseInsensitiveEqual(name, library->getName()))
+                        if (core::stringUtils::stringCaseInsensitiveEqual(name, library->getName()))
                             result = Wt::WValidator::Result{ Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.MediaLibrary.name-already-exists") };
                     });
 
@@ -97,15 +97,15 @@ namespace UserInterface
 
                 Wt::WValidator::Result result{ Wt::ValidationState::Valid };
                 const std::filesystem::path rootPath{ std::filesystem::path{input.toUTF8()}.lexically_normal() };
-                Database::MediaLibrary::find(session, [&](const Database::MediaLibrary::pointer library)
+                db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer library)
                     {
                         if (library->getId() == _libraryId)
                             return;
 
                         const std::filesystem::path libraryRootPath{ library->getPath().lexically_normal() };
 
-                        if (PathUtils::isPathInRootPath(rootPath, libraryRootPath)
-                            || PathUtils::isPathInRootPath(libraryRootPath, rootPath))
+                        if (core::pathUtils::isPathInRootPath(rootPath, libraryRootPath)
+                            || core::pathUtils::isPathInRootPath(libraryRootPath, rootPath))
                         {
                             result = Wt::WValidator::Result{ Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.MediaLibrary.path-must-not-overlap") };
                         }
@@ -195,7 +195,7 @@ namespace UserInterface
 
                 if (model->validate())
                 {
-                    Database::MediaLibraryId mediaLibraryId{ model->saveData() };
+                    db::MediaLibraryId mediaLibraryId{ model->saveData() };
                     saved().emit(mediaLibraryId);
                 }
                 else

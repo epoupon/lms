@@ -23,9 +23,9 @@
 #include "database/Session.hpp"
 #include "database/User.hpp"
 
-namespace Feedback
+namespace lms::feedback
 {
-    using namespace Database;
+    using namespace db;
 
     template <typename ObjType, typename ObjIdType, typename StarredObjType>
     void FeedbackService::star(UserId userId, ObjIdType objId)

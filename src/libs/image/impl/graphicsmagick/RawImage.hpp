@@ -31,7 +31,7 @@
 #include "image/IEncodedImage.hpp"
 #include "image/IRawImage.hpp"
 
-namespace Image::GraphicsMagick
+namespace lms::image::GraphicsMagick
 {
 	class RawImage : public IRawImage
 	{

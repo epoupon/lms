@@ -23,19 +23,19 @@
 #include "database/StarredReleaseId.hpp"
 #include "database/StarredTrackId.hpp"
 
-namespace Feedback
+namespace lms::feedback
 {
     class IFeedbackBackend
     {
     public:
         virtual ~IFeedbackBackend() = default;
 
-        virtual void onStarred(Database::StarredArtistId) = 0;
-        virtual void onUnstarred(Database::StarredArtistId) = 0;
-        virtual void onStarred(Database::StarredReleaseId) = 0;
-        virtual void onUnstarred(Database::StarredReleaseId) = 0;
-        virtual void onStarred(Database::StarredTrackId) = 0;
-        virtual void onUnstarred(Database::StarredTrackId) = 0;
+        virtual void onStarred(db::StarredArtistId) = 0;
+        virtual void onUnstarred(db::StarredArtistId) = 0;
+        virtual void onStarred(db::StarredReleaseId) = 0;
+        virtual void onUnstarred(db::StarredReleaseId) = 0;
+        virtual void onStarred(db::StarredTrackId) = 0;
+        virtual void onUnstarred(db::StarredTrackId) = 0;
     };
 
     std::unique_ptr<IFeedbackBackend> createFeedbackBackend(std::string_view backendName);

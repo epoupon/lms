@@ -26,10 +26,10 @@
 #include <sstream>
 #include <unordered_set>
 
-#include "utils/ILogger.hpp"
-#include "utils/Random.hpp"
+#include "core/ILogger.hpp"
+#include "core/Random.hpp"
 
-namespace SOM
+namespace lms::som
 {
 
 void
@@ -93,7 +93,7 @@ _neighbourhoodFunc {defaultNeighbourhoodFunc}
 		for (Coordinate x {}; x < _refVectors.getWidth(); ++x)
 		{
 			for (InputVector::value_type& val : _refVectors.get({x,y}))
-				val = Random::getRealRandom<InputVector::value_type>(0, 1);
+				val = core::random::getRealRandom<InputVector::value_type>(0, 1);
 		}
 	}
 }
@@ -298,7 +298,7 @@ Network::train(const std::vector<InputVector>& inputData, std::size_t nbIteratio
 		if (progressCallback)
 			progressCallback(curIter);
 
-		Random::shuffleContainer(inputDataShuffled);
+		core::random::shuffleContainer(inputDataShuffled);
 
 		const LearningFactor learningFactor {_learningFactorFunc(curIter)};
 
@@ -325,6 +325,6 @@ Network::getRefVector(const Position& position) const
 }
 
 
-} // namespace SOM
+} // namespace lms::som
 
 

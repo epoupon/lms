@@ -25,12 +25,12 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/Path.hpp"
+#include "core/ILogger.hpp"
+#include "core/Path.hpp"
 
-namespace Scanner
+namespace lms::scanner
 {
-    using namespace Database;
+    using namespace db;
 
     namespace
     {
@@ -81,7 +81,7 @@ namespace Scanner
 
     void ScanStepRemoveOrphanDbFiles::removeOrphanTracks(ScanContext& context)
     {
-        using namespace Database;
+        using namespace db;
 
         if (_abortScan)
             return;
@@ -150,25 +150,25 @@ namespace Scanner
     void ScanStepRemoveOrphanDbFiles::removeOrphanClusters()
     {
         LMS_LOG(DBUPDATER, DEBUG, "Checking orphan clusters...");
-        removeOrphanEntries<Database::Cluster>(_db.getTLSSession(), _abortScan);
+        removeOrphanEntries<db::Cluster>(_db.getTLSSession(), _abortScan);
     }
 
     void ScanStepRemoveOrphanDbFiles::removeOrphanClusterTypes()
     {
         LMS_LOG(DBUPDATER, DEBUG, "Checking orphan cluster types...");
-        removeOrphanEntries<Database::ClusterType>(_db.getTLSSession(), _abortScan);
+        removeOrphanEntries<db::ClusterType>(_db.getTLSSession(), _abortScan);
     }
 
     void ScanStepRemoveOrphanDbFiles::removeOrphanArtists()
     {
         LMS_LOG(DBUPDATER, DEBUG, "Checking orphan artists...");
-        removeOrphanEntries<Database::Artist>(_db.getTLSSession(), _abortScan);
+        removeOrphanEntries<db::Artist>(_db.getTLSSession(), _abortScan);
     }
 
     void ScanStepRemoveOrphanDbFiles::removeOrphanReleases()
     {
         LMS_LOG(DBUPDATER, DEBUG, "Checking orphan releases...");
-        removeOrphanEntries<Database::Release>(_db.getTLSSession(), _abortScan);
+        removeOrphanEntries<db::Release>(_db.getTLSSession(), _abortScan);
     }
 
     bool ScanStepRemoveOrphanDbFiles::checkFile(const std::filesystem::path& p)
@@ -186,14 +186,14 @@ namespace Scanner
             if (std::none_of(std::cbegin(_settings.mediaLibraries), std::cend(_settings.mediaLibraries),
                 [&](const ScannerSettings::MediaLibraryInfo& libraryInfo)
                 {
-                    return PathUtils::isPathInRootPath(p, libraryInfo.rootDirectory, &excludeDirFileName);
+                    return core::pathUtils::isPathInRootPath(p, libraryInfo.rootDirectory, &excludeDirFileName);
                 }))
             {
                 LMS_LOG(DBUPDATER, INFO, "Removing '" << p.string() << "': out of media directory");
                 return false;
             }
 
-            if (!PathUtils::hasFileAnyExtension(p, _settings.supportedExtensions))
+            if (!core::pathUtils::hasFileAnyExtension(p, _settings.supportedExtensions))
             {
                 LMS_LOG(DBUPDATER, INFO, "Removing '" << p.string() << "': file format no longer handled");
                 return false;

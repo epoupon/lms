@@ -25,7 +25,7 @@
 
 #include "Types.hpp"
 
-namespace Av::Transcoding
+namespace lms::av::transcoding
 {
     struct InputParameters
     {
@@ -52,5 +52,5 @@ namespace Av::Transcoding
         std::chrono::milliseconds   offset{ 0 };
         bool                        stripMetadata{ true };
     };
-} // namespace Av::Transcoding
+} // namespace lms::av::Transcoding
 

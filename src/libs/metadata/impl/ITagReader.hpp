@@ -22,7 +22,7 @@
 #include <chrono>
 #include <functional>
 
-namespace MetaData
+namespace lms::metadata
 {
     // using picard internal names
     // see https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html
@@ -159,4 +159,4 @@ namespace MetaData
         virtual std::size_t                 getBitsPerSample() const = 0;
         virtual std::size_t                 getSampleRate() const = 0;
     };
-} // namespace MetaData
+} // namespace lms::metadata

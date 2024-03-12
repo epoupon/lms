@@ -28,27 +28,27 @@
 
 #include "Utils.hpp"
 
-using namespace Database;
-
-namespace UserInterface::ReleaseListHelpers
+namespace lms::ui::releaseListHelpers
 {
+    using namespace db;
+
     namespace
     {
         std::unique_ptr<Wt::WTemplate> createEntryInternal(const Release::pointer& release, const std::string& templateKey, const Artist::pointer& artist, const bool showYear)
         {
             auto entry{ std::make_unique<Wt::WTemplate>(Wt::WString::tr(templateKey)) };
 
-            entry->bindWidget("release-name", Utils::createReleaseAnchor(release));
+            entry->bindWidget("release-name", utils::createReleaseAnchor(release));
             entry->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
             {
-                Wt::WAnchor* anchor{ entry->bindWidget("cover", Utils::createReleaseAnchor(release, false)) };
-                auto cover{ Utils::createCover(release->getId(), CoverResource::Size::Large) };
+                Wt::WAnchor* anchor{ entry->bindWidget("cover", utils::createReleaseAnchor(release, false)) };
+                auto cover{ utils::createCover(release->getId(), CoverResource::Size::Large) };
                 cover->addStyleClass("Lms-cover-release Lms-cover-anchor");
                 anchor->setImage(std::move(cover));
             }
 
-            auto artistAnchors{ Utils::createArtistsAnchorsForRelease(release, artist ? artist->getId() : ArtistId{},  "link-secondary") };
+            auto artistAnchors{ utils::createArtistsAnchorsForRelease(release, artist ? artist->getId() : ArtistId{},  "link-secondary") };
             if (artistAnchors)
             {
                 entry->setCondition("if-has-artist", true);
@@ -57,7 +57,7 @@ namespace UserInterface::ReleaseListHelpers
 
             if (showYear)
             {
-                Wt::WString year{ ReleaseHelpers::buildReleaseYearString(release->getYear(), release->getOriginalYear()) };
+                Wt::WString year{ releaseHelpers::buildReleaseYearString(release->getYear(), release->getOriginalYear()) };
                 if (!year.empty())
                 {
                     entry->setCondition("if-has-year", true);
@@ -79,13 +79,13 @@ namespace UserInterface::ReleaseListHelpers
         return createEntry(release, Artist::pointer{}, false /*year*/);
     }
 
-    std::unique_ptr<Wt::WTemplate> createEntryForArtist(const Database::Release::pointer& release, const Database::Artist::pointer& artist)
+    std::unique_ptr<Wt::WTemplate> createEntryForArtist(const db::Release::pointer& release, const db::Artist::pointer& artist)
     {
         return createEntry(release, artist, true);
     }
-} // namespace UserInterface
+} // namespace lms::ui
 
-namespace UserInterface::ReleaseHelpers
+namespace lms::ui::releaseHelpers
 {
     Wt::WString buildReleaseTypeString(const ReleaseType& releaseType)
     {
@@ -151,4 +151,4 @@ namespace UserInterface::ReleaseHelpers
 
         return res;
     }
-} // namespace UserInterface::ReleaseHelpers
+} // namespace lms::ui::releaseHelpers

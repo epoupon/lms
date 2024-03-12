@@ -25,24 +25,24 @@
 #include "database/TrackId.hpp"
 #include "DatabaseCollectorBase.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class Track;
 }
 
-namespace UserInterface
+namespace lms::ui
 {
 	class TrackCollector : public DatabaseCollectorBase
 	{
 		public:
 			using DatabaseCollectorBase::DatabaseCollectorBase;
 
-			Database::RangeResults<Database::TrackId>	get(std::optional<Database::Range> range = std::nullopt);
+			db::RangeResults<db::TrackId>	get(std::optional<db::Range> range = std::nullopt);
 			void reset() { _randomTracks.reset(); }
 
 		private:
-			Database::RangeResults<Database::TrackId> getRandomTracks(Range range);
-			std::optional<Database::RangeResults<Database::TrackId>> _randomTracks;
+			db::RangeResults<db::TrackId> getRandomTracks(Range range);
+			std::optional<db::RangeResults<db::TrackId>> _randomTracks;
 	};
 } // ns UserInterface
 

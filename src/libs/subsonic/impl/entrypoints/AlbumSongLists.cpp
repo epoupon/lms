@@ -30,13 +30,13 @@
 #include "responses/Album.hpp"
 #include "responses/Artist.hpp"
 #include "responses/Song.hpp"
-#include "utils/Service.hpp"
+#include "core/Service.hpp"
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    using namespace Database;
+    using namespace db;
 
     namespace
     {
@@ -55,8 +55,8 @@ namespace API::Subsonic
             const Range range{ offset, size };
 
             RangeResults<ReleaseId> releases;
-            Scrobbling::IScrobblingService& scrobblingService{ *Service<Scrobbling::IScrobblingService>::get() };
-            Feedback::IFeedbackService& feedbackService{ *Service<Feedback::IFeedbackService>::get() };
+            scrobbling::IScrobblingService& scrobblingService{ *core::Service<scrobbling::IScrobblingService>::get() };
+            feedback::IFeedbackService& feedbackService{ *core::Service<feedback::IFeedbackService>::get() };
 
             auto transaction{ context.dbSession.createReadTransaction() };
 
@@ -116,7 +116,7 @@ namespace API::Subsonic
             }
             else if (type == "frequent")
             {
-                Scrobbling::IScrobblingService::FindParameters params;
+                scrobbling::IScrobblingService::FindParameters params;
                 params.setUser(context.userId);
                 params.setRange(range);
                 params.setMediaLibrary(mediaLibraryId);
@@ -145,7 +145,7 @@ namespace API::Subsonic
             }
             else if (type == "recent")
             {
-                Scrobbling::IScrobblingService::FindParameters params;
+                scrobbling::IScrobblingService::FindParameters params;
                 params.setUser(context.userId);
                 params.setRange(range);
                 params.setMediaLibrary(mediaLibraryId);
@@ -154,7 +154,7 @@ namespace API::Subsonic
             }
             else if (type == "starred")
             {
-                Feedback::IFeedbackService::FindParameters params;
+                feedback::IFeedbackService::FindParameters params;
                 params.setUser(context.userId);
                 params.setRange(range);
                 params.setMediaLibrary(mediaLibraryId);
@@ -192,10 +192,10 @@ namespace API::Subsonic
             Response response{ Response::createOkResponse(context.serverProtocolVersion) };
             Response::Node& starredNode{ response.createNode(id3 ? Response::Node::Key{ "starred2" } : Response::Node::Key{ "starred" }) };
 
-            Feedback::IFeedbackService& feedbackService{ *Service<Feedback::IFeedbackService>::get() };
+            feedback::IFeedbackService& feedbackService{ *core::Service<feedback::IFeedbackService>::get() };
 
             {
-                Feedback::IFeedbackService::ArtistFindParameters artistFindParams;
+                feedback::IFeedbackService::ArtistFindParameters artistFindParams;
                 artistFindParams.setUser(context.userId);
                 artistFindParams.setSortMethod(ArtistSortMethod::BySortName);
                 for (const ArtistId artistId : feedbackService.findStarredArtists(artistFindParams).results)
@@ -205,7 +205,7 @@ namespace API::Subsonic
                 }
             }
 
-            Feedback::IFeedbackService::FindParameters findParameters;
+            feedback::IFeedbackService::FindParameters findParameters;
             findParameters.setUser(context.userId);
             findParameters.setMediaLibrary(mediaLibrary);
 

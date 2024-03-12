@@ -22,17 +22,17 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
-#include "utils/IConfig.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/Service.hpp"
+#include "core/IConfig.hpp"
+#include "core/ILogger.hpp"
+#include "core/Service.hpp"
 
-namespace Recommendation
+namespace lms::recommendation
 {
     namespace
     {
         std::filesystem::path getCacheDirectory()
         {
-            return Service<IConfig>::get()->getPath("working-dir") / "cache" / "features";
+            return core::Service<core::IConfig>::get()->getPath("working-dir") / "cache" / "features";
         }
 
         std::filesystem::path getCacheNetworkFilePath()
@@ -45,7 +45,7 @@ namespace Recommendation
             return getCacheDirectory() / "track_positions";
         }
 
-        bool networkToCacheFile(const SOM::Network& network, std::filesystem::path path)
+        bool networkToCacheFile(const som::Network& network, std::filesystem::path path)
         {
             try
             {
@@ -55,12 +55,12 @@ namespace Recommendation
                 root.put("height", network.getHeight());
                 root.put("dim_count", network.getInputDimCount());
 
-                for (SOM::InputVector::value_type weight : network.getDataWeights())
+                for (som::InputVector::value_type weight : network.getDataWeights())
                     root.add("weights.weight", weight);
 
-                for (SOM::Coordinate x = 0; x < network.getWidth(); ++x)
+                for (som::Coordinate x = 0; x < network.getWidth(); ++x)
                 {
-                    for (SOM::Coordinate y = 0; y < network.getWidth(); ++y)
+                    for (som::Coordinate y = 0; y < network.getWidth(); ++y)
                     {
                         const auto& refVector = network.getRefVector({ x, y });
 
@@ -88,7 +88,7 @@ namespace Recommendation
         }
     }
 
-    std::optional<SOM::Network> FeaturesEngineCache::createNetworkFromCacheFile(const std::filesystem::path& path)
+    std::optional<som::Network> FeaturesEngineCache::createNetworkFromCacheFile(const std::filesystem::path& path)
     {
         if (!std::filesystem::exists(path))
             return std::nullopt;
@@ -101,14 +101,14 @@ namespace Recommendation
 
             boost::property_tree::read_xml(path.string(), root);
 
-            SOM::Coordinate width{ root.get<SOM::Coordinate>("width") };
-            SOM::Coordinate height{ root.get<SOM::Coordinate>("height") };
+            som::Coordinate width{ root.get<som::Coordinate>("width") };
+            som::Coordinate height{ root.get<som::Coordinate>("height") };
             std::size_t dimCount{ root.get<std::size_t>("dim_count") };
 
-            SOM::Network res{ width, height, dimCount };
+            som::Network res{ width, height, dimCount };
 
             {
-                SOM::InputVector weights{ dimCount };
+                som::InputVector weights{ dimCount };
                 std::size_t i{};
                 for (const auto& val : root.get_child("weights"))
                     weights[i++] = val.second.get_value<double>();
@@ -118,13 +118,13 @@ namespace Recommendation
 
             for (const auto& node : root.get_child("ref_vectors"))
             {
-                SOM::Coordinate x{ node.second.get<SOM::Coordinate>("coord_x") };
-                SOM::Coordinate y{ node.second.get<SOM::Coordinate>("coord_y") };
+                som::Coordinate x{ node.second.get<som::Coordinate>("coord_x") };
+                som::Coordinate y{ node.second.get<som::Coordinate>("coord_y") };
 
-                SOM::InputVector refVector{ dimCount };
+                som::InputVector refVector{ dimCount };
                 std::size_t i{};
                 for (const auto& val : node.second.get_child("values"))
-                    refVector[i++] = val.second.get_value<SOM::InputVector::value_type>();
+                    refVector[i++] = val.second.get_value<som::InputVector::value_type>();
 
                 res.setRefVector({ x, y }, refVector);
             }
@@ -152,7 +152,7 @@ namespace Recommendation
 
                 node.put("id", id.getValue());
 
-                for (const SOM::Position& position : positions)
+                for (const som::Position& position : positions)
                 {
                     boost::property_tree::ptree positionNode;
                     positionNode.put("x", position.x);
@@ -188,11 +188,11 @@ namespace Recommendation
 
             for (const auto& object : root.get_child("objects"))
             {
-                const Database::TrackId id{ object.second.get<Database::IdType::ValueType>("id") };
+                const db::TrackId id{ object.second.get<db::IdType::ValueType>("id") };
                 for (const auto& position : object.second.get_child("position"))
                 {
-                    auto x = position.second.get<SOM::Coordinate>("x");
-                    auto y = position.second.get<SOM::Coordinate>("y");
+                    auto x = position.second.get<som::Coordinate>("x");
+                    auto y = position.second.get<som::Coordinate>("y");
 
                     res[id].push_back({ x, y });
                 }
@@ -230,7 +230,7 @@ namespace Recommendation
 
     void FeaturesEngineCache::write() const
     {
-        std::filesystem::create_directories(Service<IConfig>::get()->getPath("working-dir") / "cache" / "features");
+        std::filesystem::create_directories(core::Service<core::IConfig>::get()->getPath("working-dir") / "cache" / "features");
 
         if (!networkToCacheFile(_network, getCacheNetworkFilePath())
             || !objectPositionToCacheFile(_trackPositions, getCacheTrackPositionsFilePath()))
@@ -239,10 +239,10 @@ namespace Recommendation
         }
     }
 
-    FeaturesEngineCache::FeaturesEngineCache(SOM::Network network, TrackPositions trackPositions)
+    FeaturesEngineCache::FeaturesEngineCache(som::Network network, TrackPositions trackPositions)
         : _network{ std::move(network) },
         _trackPositions{ std::move(trackPositions) }
     {
     }
 
-} // namespace Recommendation
+} // namespace lms::recommendation

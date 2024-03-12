@@ -25,9 +25,9 @@
 #include "database/Track.hpp"
 #include "database/User.hpp"
 
-namespace Scrobbling
+namespace lms::scrobbling
 {
-    InternalBackend::InternalBackend(Database::Db& db)
+    InternalBackend::InternalBackend(db::Db& db)
         : _db{ db }
     {}
 
@@ -47,22 +47,22 @@ namespace Scrobbling
 
     void InternalBackend::addTimedListen(const TimedListen& listen)
     {
-        Database::Session& session{ _db.getTLSSession() };
+        db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() };
 
-        if (Database::Listen::find(session, listen.userId, listen.trackId, Database::ScrobblingBackend::Internal, listen.listenedAt))
+        if (db::Listen::find(session, listen.userId, listen.trackId, db::ScrobblingBackend::Internal, listen.listenedAt))
             return;
 
-        const Database::User::pointer user{ Database::User::find(session, listen.userId) };
+        const db::User::pointer user{ db::User::find(session, listen.userId) };
         if (!user)
             return;
 
-        const Database::Track::pointer track{ Database::Track::find(session, listen.trackId) };
+        const db::Track::pointer track{ db::Track::find(session, listen.trackId) };
         if (!track)
             return;
 
-        auto dbListen{ session.create<Database::Listen>(user, track, Database::ScrobblingBackend::Internal, listen.listenedAt) };
-        dbListen.modify()->setSyncState(Database::SyncState::Synchronized);
+        auto dbListen{ session.create<db::Listen>(user, track, db::ScrobblingBackend::Internal, listen.listenedAt) };
+        dbListen.modify()->setSyncState(db::SyncState::Synchronized);
     }
 } // Scrobbling
 

@@ -37,16 +37,16 @@
 #include "services/auth/IPasswordService.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "utils/IConfig.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/Service.hpp"
+#include "core/IConfig.hpp"
+#include "core/ILogger.hpp"
+#include "core/Service.hpp"
 
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
-    using namespace Database;
+    using namespace db;
 
     class SettingsModel : public Wt::WFormModel
     {
@@ -74,7 +74,7 @@ namespace UserInterface
         using FeedbackBackendModel = ValueStringModel<FeedbackBackend>;
         using ScrobblingBackendModel = ValueStringModel<ScrobblingBackend>;
 
-        SettingsModel(::Auth::IPasswordService* authPasswordService, bool withOldPassword)
+        SettingsModel(auth::IPasswordService* authPasswordService, bool withOldPassword)
             : _authPasswordService{ authPasswordService }
             , _withOldPassword{ withOldPassword }
         {
@@ -103,7 +103,7 @@ namespace UserInterface
                 }
 
                 addField(PasswordField);
-                setValidator(PasswordField, createPasswordStrengthValidator([] { return ::Auth::PasswordValidationContext{ LmsApp->getUserLoginName(), LmsApp->getUserType() }; }));
+                setValidator(PasswordField, createPasswordStrengthValidator([] { return auth::PasswordValidationContext{ LmsApp->getUserLoginName(), LmsApp->getUserType() }; }));
                 addField(PasswordConfirmField);
             }
 
@@ -184,14 +184,14 @@ namespace UserInterface
                 if (auto feedbackBackendRow{ _feedbackBackendModel->getRowFromString(valueText(FeedbackBackendField)) })
                     user.modify()->setFeedbackBackend(_feedbackBackendModel->getValue(*feedbackBackendRow));
 
-                user.modify()->setListenBrainzToken(UUID::fromString(Wt::asString(value(ListenBrainzTokenField)).toUTF8()));
+                user.modify()->setListenBrainzToken(core::UUID::fromString(Wt::asString(value(ListenBrainzTokenField)).toUTF8()));
             }
 
             {
                 if (auto scrobblingBackendRow{ _scrobblingBackendModel->getRowFromString(valueText(ScrobblingBackendField)) })
                     user.modify()->setScrobblingBackend(_scrobblingBackendModel->getValue(*scrobblingBackendRow));
 
-                user.modify()->setListenBrainzToken(UUID::fromString(Wt::asString(value(ListenBrainzTokenField)).toUTF8()));
+                user.modify()->setListenBrainzToken(core::UUID::fromString(Wt::asString(value(ListenBrainzTokenField)).toUTF8()));
             }
 
             if (_authPasswordService && !valueText(PasswordField).empty())
@@ -356,7 +356,7 @@ namespace UserInterface
             _scrobblingBackendModel->add(Wt::WString::tr("Lms.Settings.backend.listenbrainz"), ScrobblingBackend::ListenBrainz);
         }
 
-        ::Auth::IPasswordService* _authPasswordService{};
+        auth::IPasswordService* _authPasswordService{};
         bool _withOldPassword{};
 
         std::shared_ptr<TranscodingModeModel>	                    _transcodingModeModeModel;
@@ -397,7 +397,7 @@ namespace UserInterface
 
         auto t{ addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.Settings.template")) };
 
-        auto* authPasswordService{ Service<::Auth::IPasswordService>::get() };
+        auto* authPasswordService{ core::Service<auth::IPasswordService>::get() };
         if (authPasswordService && !authPasswordService->canSetPasswords())
             authPasswordService = nullptr;
 
@@ -491,7 +491,7 @@ namespace UserInterface
 
         // Subsonic
         {
-            t->setCondition("if-has-subsonic-api", Service<IConfig>::get()->getBool("api-subsonic", true));
+            t->setCondition("if-has-subsonic-api", core::Service<core::IConfig>::get()->getBool("api-subsonic", true));
 
             // Enable transcoding by default
             t->setFormWidget(SettingsModel::SubsonicEnableTranscodingByDefault, std::make_unique<Wt::WCheckBox>());
@@ -588,4 +588,4 @@ namespace UserInterface
         t->updateView(model.get());
     }
 
-} // namespace UserInterface
+} // namespace lms::ui

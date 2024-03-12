@@ -20,11 +20,11 @@
 #pragma once
 
 #include "database/Types.hpp"
-#include "utils/Exception.hpp"
+#include "core/Exception.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
-	class LmsApplicationException : public LmsException
+	class LmsApplicationException : public core::LmsException
 	{
 		public:
 			LmsApplicationException(const Wt::WString& error) : LmsException {error.toUTF8()} {}

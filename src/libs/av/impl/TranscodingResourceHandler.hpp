@@ -24,10 +24,10 @@
 #include <optional>
 
 #include "av/TranscodingParameters.hpp"
-#include "utils/IResourceHandler.hpp"
+#include "core/IResourceHandler.hpp"
 #include "Transcoder.hpp"
 
-namespace Av::Transcoding
+namespace lms::av::transcoding
 {
     class TranscodingResourceHandler final : public IResourceHandler
     {

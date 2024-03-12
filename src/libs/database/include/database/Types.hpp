@@ -24,7 +24,7 @@
 #include <functional>
 #include <Wt/WDate.h>
 
-namespace Database
+namespace lms::db
 {
     // Caution: do not change enum values if they are set!
 

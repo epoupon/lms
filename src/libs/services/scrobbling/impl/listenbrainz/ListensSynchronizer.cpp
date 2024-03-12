@@ -33,28 +33,28 @@
 #include "database/Track.hpp"
 #include "database/User.hpp"
 #include "services/scrobbling/Exception.hpp"
-#include "utils/IConfig.hpp"
-#include "utils/http/IClient.hpp"
-#include "utils/Service.hpp"
+#include "core/IConfig.hpp"
+#include "core/http/IClient.hpp"
+#include "core/Service.hpp"
 #include "ListensParser.hpp"
 
 #include "Utils.hpp"
 
-namespace Scrobbling::ListenBrainz
+namespace lms::scrobbling::listenBrainz
 {
     namespace
     {
-        std::optional<Wt::Json::Object> listenToJsonPayload(Database::Session& session, const Scrobbling::Listen& listen, const Wt::WDateTime& timePoint)
+        std::optional<Wt::Json::Object> listenToJsonPayload(db::Session& session, const scrobbling::Listen& listen, const Wt::WDateTime& timePoint)
         {
             auto transaction{ session.createReadTransaction() };
 
-            const Database::Track::pointer track{ Database::Track::find(session, listen.trackId) };
+            const db::Track::pointer track{ db::Track::find(session, listen.trackId) };
             if (!track)
                 return std::nullopt;
 
-            auto artists{ track->getArtists({Database::TrackArtistLinkType::Artist}) };
+            auto artists{ track->getArtists({db::TrackArtistLinkType::Artist}) };
             if (artists.empty())
-                artists = track->getArtists({ Database::TrackArtistLinkType::ReleaseArtist });
+                artists = track->getArtists({ db::TrackArtistLinkType::ReleaseArtist });
 
             if (artists.empty())
             {
@@ -75,7 +75,7 @@ namespace Scrobbling::ListenBrainz
 
             {
                 Wt::Json::Array artistMBIDs;
-                for (const Database::Artist::pointer& artist : artists)
+                for (const db::Artist::pointer& artist : artists)
                 {
                     if (auto MBID{ artist->getMBID() })
                         artistMBIDs.push_back(Wt::Json::Value{ std::string {MBID->getAsString()} });
@@ -109,7 +109,7 @@ namespace Scrobbling::ListenBrainz
             return payload;
         }
 
-        std::string listenToJsonString(Database::Session& session, const Scrobbling::Listen& listen, const Wt::WDateTime& timePoint, std::string_view listenType)
+        std::string listenToJsonString(db::Session& session, const scrobbling::Listen& listen, const Wt::WDateTime& timePoint, std::string_view listenType)
         {
             std::string res;
 
@@ -142,9 +142,9 @@ namespace Scrobbling::ListenBrainz
             }
         }
 
-        Database::TrackId tryGetMatchingTrack(Database::Session& session, const Listen& listen)
+        db::TrackId tryGetMatchingTrack(db::Session& session, const Listen& listen)
         {
-            using namespace Database;
+            using namespace db;
 
             auto transaction{ session.createReadTransaction() };
 
@@ -209,12 +209,12 @@ namespace Scrobbling::ListenBrainz
         }
     }
 
-    ListensSynchronizer::ListensSynchronizer(boost::asio::io_context& ioContext, Database::Db& db, Http::IClient& client)
+    ListensSynchronizer::ListensSynchronizer(boost::asio::io_context& ioContext, db::Db& db, core::http::IClient& client)
         : _ioContext{ ioContext }
         , _db{ db }
         , _client{ client }
-        , _maxSyncListenCount{ Service<IConfig>::get()->getULong("listenbrainz-max-sync-listen-count", 1000) }
-        , _syncListensPeriod{ Service<IConfig>::get()->getULong("listenbrainz-sync-listens-period-hours", 1) }
+        , _maxSyncListenCount{ core::Service<core::IConfig>::get()->getULong("listenbrainz-max-sync-listen-count", 1000) }
+        , _syncListensPeriod{ core::Service<core::IConfig>::get()->getULong("listenbrainz-sync-listens-period-hours", 1) }
     {
         LOG(INFO, "Starting Listens synchronizer, maxSyncListenCount = " << _maxSyncListenCount << ", _syncListensPeriod = " << _syncListensPeriod.count() << " hours");
 
@@ -227,28 +227,28 @@ namespace Scrobbling::ListenBrainz
         enqueListen(listen, listen.listenedAt);
     }
 
-    void ListensSynchronizer::enqueListenNow(const Scrobbling::Listen& listen)
+    void ListensSynchronizer::enqueListenNow(const scrobbling::Listen& listen)
     {
         enqueListen(listen, {});
     }
 
-    void ListensSynchronizer::enqueListen(const Scrobbling::Listen& listen, const Wt::WDateTime& timePoint)
+    void ListensSynchronizer::enqueListen(const scrobbling::Listen& listen, const Wt::WDateTime& timePoint)
     {
-        Http::ClientPOSTRequestParameters request;
+        core::http::ClientPOSTRequestParameters request;
         request.relativeUrl = "/1/submit-listens";
 
         if (timePoint.isValid())
         {
             const TimedListen timedListen{ listen, timePoint };
             // We want the listen to be sent again later in case of failure, so we just save it as pending send
-            saveListen(timedListen, Database::SyncState::PendingAdd);
+            saveListen(timedListen, db::SyncState::PendingAdd);
 
-            request.priority = Http::ClientRequestParameters::Priority::Normal;
+            request.priority = core::http::ClientRequestParameters::Priority::Normal;
             request.onSuccessFunc = [this, timedListen](std::string_view)
                 {
                     _strand.dispatch([this, timedListen]
                         {
-                            if (saveListen(timedListen, Database::SyncState::Synchronized))
+                            if (saveListen(timedListen, db::SyncState::Synchronized))
                             {
                                 UserContext& context{ getUserContext(timedListen.userId) };
                                 if (context.listenCount)
@@ -261,7 +261,7 @@ namespace Scrobbling::ListenBrainz
         else
         {
             // We want "listen now" to appear as soon as possible
-            request.priority = Http::ClientRequestParameters::Priority::High;
+            request.priority = core::http::ClientRequestParameters::Priority::High;
             // don't retry on failure
         }
 
@@ -272,7 +272,7 @@ namespace Scrobbling::ListenBrainz
             return;
         }
 
-        const std::optional<UUID> listenBrainzToken{ Utils::getListenBrainzToken(_db.getTLSSession(), listen.userId) };
+        const std::optional<core::UUID> listenBrainzToken{ utils::getListenBrainzToken(_db.getTLSSession(), listen.userId) };
         if (!listenBrainzToken)
         {
             LOG(DEBUG, "No listenbrainz token found: skipping");
@@ -285,14 +285,14 @@ namespace Scrobbling::ListenBrainz
         _client.sendPOSTRequest(std::move(request));
     }
 
-    bool ListensSynchronizer::saveListen(const TimedListen& listen, Database::SyncState scrobblingState)
+    bool ListensSynchronizer::saveListen(const TimedListen& listen, db::SyncState scrobblingState)
     {
-        using namespace Database;
+        using namespace db;
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createWriteTransaction() }; // TODO: unique only if needed
 
-        Database::Listen::pointer dbListen{ Database::Listen::find(session, listen.userId, listen.trackId, Database::ScrobblingBackend::ListenBrainz, listen.listenedAt) };
+        db::Listen::pointer dbListen{ db::Listen::find(session, listen.userId, listen.trackId, db::ScrobblingBackend::ListenBrainz, listen.listenedAt) };
         if (!dbListen)
         {
             const User::pointer user{ User::find(session, listen.userId) };
@@ -303,7 +303,7 @@ namespace Scrobbling::ListenBrainz
             if (!track)
                 return false;
 
-            dbListen = session.create<Database::Listen>(user, track, Database::ScrobblingBackend::ListenBrainz, listen.listenedAt);
+            dbListen = session.create<db::Listen>(user, track, db::ScrobblingBackend::ListenBrainz, listen.listenedAt);
             dbListen.modify()->setSyncState(scrobblingState);
 
             LOG(DEBUG, "LISTEN CREATED for user " << user->getLoginName() << ", track '" << track->getName() << "' AT " << listen.listenedAt.toString());
@@ -323,21 +323,21 @@ namespace Scrobbling::ListenBrainz
         std::vector<TimedListen> pendingListens;
 
         {
-            Database::Session& session{ _db.getTLSSession() };
+            db::Session& session{ _db.getTLSSession() };
 
             auto transaction{ session.createWriteTransaction() };
 
-            Database::Listen::FindParameters params;
-            params.setScrobblingBackend(Database::ScrobblingBackend::ListenBrainz)
-                .setSyncState(Database::SyncState::PendingAdd)
-                .setRange(Database::Range{ 0, 100 }); // don't flood too much?
+            db::Listen::FindParameters params;
+            params.setScrobblingBackend(db::ScrobblingBackend::ListenBrainz)
+                .setSyncState(db::SyncState::PendingAdd)
+                .setRange(db::Range{ 0, 100 }); // don't flood too much?
 
-            const Database::RangeResults results{ Database::Listen::find(session, params) };
+            const db::RangeResults results{ db::Listen::find(session, params) };
             pendingListens.reserve(results.results.size());
 
-            for (Database::ListenId listenId : results.results)
+            for (db::ListenId listenId : results.results)
             {
-                const Database::Listen::pointer listen{ Database::Listen::find(session, listenId) };
+                const db::Listen::pointer listen{ db::Listen::find(session, listenId) };
 
                 TimedListen timedListen;
                 timedListen.listenedAt = listen->getDateTime();
@@ -354,7 +354,7 @@ namespace Scrobbling::ListenBrainz
             enqueListen(pendingListen);
     }
 
-    ListensSynchronizer::UserContext& ListensSynchronizer::getUserContext(Database::UserId userId)
+    ListensSynchronizer::UserContext& ListensSynchronizer::getUserContext(db::UserId userId)
     {
         assert(_strand.running_in_this_thread());
 
@@ -406,14 +406,14 @@ namespace Scrobbling::ListenBrainz
 
         enquePendingListens();
 
-        Database::RangeResults<Database::UserId> userIds;
+        db::RangeResults<db::UserId> userIds;
         {
-            Database::Session& session{ _db.getTLSSession() };
+            db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
-            userIds = Database::User::find(_db.getTLSSession(), Database::User::FindParameters{}.setScrobblingBackend(Database::ScrobblingBackend::ListenBrainz));
+            userIds = db::User::find(_db.getTLSSession(), db::User::FindParameters{}.setScrobblingBackend(db::ScrobblingBackend::ListenBrainz));
         }
 
-        for (const Database::UserId userId : userIds.results)
+        for (const db::UserId userId : userIds.results)
             startSync(getUserContext(userId));
 
         if (!isSyncing())
@@ -448,20 +448,20 @@ namespace Scrobbling::ListenBrainz
     {
         assert(context.listenBrainzUserName.empty());
 
-        const std::optional<UUID> listenBrainzToken{ Utils::getListenBrainzToken(_db.getTLSSession(), context.userId) };
+        const std::optional<core::UUID> listenBrainzToken{ utils::getListenBrainzToken(_db.getTLSSession(), context.userId) };
         if (!listenBrainzToken)
         {
             onSyncEnded(context);
             return;
         }
 
-        Http::ClientGETRequestParameters request;
-        request.priority = Http::ClientRequestParameters::Priority::Low;
+        core::http::ClientGETRequestParameters request;
+        request.priority = core::http::ClientRequestParameters::Priority::Low;
         request.relativeUrl = "/1/validate-token";
         request.headers = { {"Authorization",  "Token " + std::string {listenBrainzToken->getAsString()}} };
         request.onSuccessFunc = [this, &context](std::string_view msgBody)
             {
-                context.listenBrainzUserName = Utils::parseValidateToken(msgBody);
+                context.listenBrainzUserName = utils::parseValidateToken(msgBody);
                 if (context.listenBrainzUserName.empty())
                 {
                     onSyncEnded(context);
@@ -481,9 +481,9 @@ namespace Scrobbling::ListenBrainz
     {
         assert(!context.listenBrainzUserName.empty());
 
-        Http::ClientGETRequestParameters request;
+        core::http::ClientGETRequestParameters request;
         request.relativeUrl = "/1/user/" + std::string{ context.listenBrainzUserName } + "/listen-count";
-        request.priority = Http::ClientRequestParameters::Priority::Low;
+        request.priority = core::http::ClientRequestParameters::Priority::Low;
         request.onSuccessFunc = [this, &context](std::string_view msgBody)
             {
                 const auto listenCount{ parseListenCount(msgBody) };
@@ -517,9 +517,9 @@ namespace Scrobbling::ListenBrainz
     {
         assert(!context.listenBrainzUserName.empty());
 
-        Http::ClientGETRequestParameters request;
+        core::http::ClientGETRequestParameters request;
         request.relativeUrl = "/1/user/" + context.listenBrainzUserName + "/listens?max_ts=" + std::to_string(context.maxDateTime.toTime_t());
-        request.priority = Http::ClientRequestParameters::Priority::Low;
+        request.priority = core::http::ClientRequestParameters::Priority::Low;
         request.onSuccessFunc = [this, &context](std::string_view msgBody)
             {
                 processGetListensResponse(msgBody, context);
@@ -541,7 +541,7 @@ namespace Scrobbling::ListenBrainz
 
     void ListensSynchronizer::processGetListensResponse(std::string_view msgBody, UserContext& context)
     {
-        Database::Session& session{ _db.getTLSSession() };
+        db::Session& session{ _db.getTLSSession() };
 
         context.maxDateTime = {}; // invalidate to break in case no more listens are fetched
         ListensParser::Result result{ ListensParser::parse(msgBody) };
@@ -559,14 +559,14 @@ namespace Scrobbling::ListenBrainz
             if (!context.maxDateTime.isValid() || context.maxDateTime > parsedListen.listenedAt)
                 context.maxDateTime = parsedListen.listenedAt;
 
-            if (const Database::TrackId trackId{ tryGetMatchingTrack(session, parsedListen) }; trackId.isValid())
+            if (const db::TrackId trackId{ tryGetMatchingTrack(session, parsedListen) }; trackId.isValid())
             {
                 context.matchedListenCount++;
 
-                const Scrobbling::TimedListen listen{ {context.userId, trackId}, parsedListen.listenedAt };
-                if (saveListen(listen, Database::SyncState::Synchronized))
+                const scrobbling::TimedListen listen{ {context.userId, trackId}, parsedListen.listenedAt };
+                if (saveListen(listen, db::SyncState::Synchronized))
                     context.importedListenCount++;
             }
         }
     }
-} // namespace Scrobbling::ListenBrainz
+} // namespace lms::scrobbling::listenBrainz

@@ -26,10 +26,10 @@
 #include <string>
 
 #include "database/Types.hpp"
-#include "utils/String.hpp"
+#include "core/String.hpp"
 #include "SubsonicResponse.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
 
     template<typename T>
@@ -43,7 +43,7 @@ namespace API::Subsonic
 
         for (const std::string& param : it->second)
         {
-            auto value{ StringUtils::readAs<T>(param) };
+            auto value{ core::stringUtils::readAs<T>(param) };
             if (value)
                 res.emplace_back(std::move(*value));
         }

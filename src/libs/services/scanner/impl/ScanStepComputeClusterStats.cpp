@@ -21,14 +21,14 @@
 #include "database/Db.hpp"
 #include "database/Cluster.hpp"
 #include "database/Session.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/Path.hpp"
+#include "core/ILogger.hpp"
+#include "core/Path.hpp"
 
-namespace Scanner
+namespace lms::scanner
 {
     void ScanStepComputeClusterStats::process(ScanContext& context)
     {
-        using namespace Database;
+        using namespace db;
 
         if (context.stats.nbChanges() == 0)
             return;

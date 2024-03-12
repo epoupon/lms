@@ -22,7 +22,7 @@
 #include "RequestContext.hpp"
 #include "SubsonicResponse.hpp"
 
-namespace API::Subsonic::Scan
+namespace lms::api::subsonic::Scan
 {
     Response handleGetScanStatus(RequestContext& context);
     Response handleStartScan(RequestContext& context);

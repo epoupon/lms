@@ -48,7 +48,7 @@ target_link_libraries(lmssubsonic PRIVATE
 	lmsscanner
 	lmsscrobbling
 	lmsservice-cover
-	lmsutils
+	lmscore
 	std::filesystem
 	)
 

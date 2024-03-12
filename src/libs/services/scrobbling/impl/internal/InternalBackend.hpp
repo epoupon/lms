@@ -21,24 +21,24 @@
 
 #include "IScrobblingBackend.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Db;
 }
 
-namespace Scrobbling
+namespace lms::scrobbling
 {
     class InternalBackend final : public IScrobblingBackend
     {
     public:
-        InternalBackend(Database::Db& db);
+        InternalBackend(db::Db& db);
 
     private:
         void listenStarted(const Listen& listen) override;
         void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) override;
         void addTimedListen(const TimedListen& listen) override;
 
-        Database::Db& _db;
+        db::Db& _db;
     };
 } // Scrobbling
 

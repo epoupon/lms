@@ -5,7 +5,7 @@ add_executable(lms-metadata
 
 target_link_libraries(lms-metadata PRIVATE
 	lmsmetadata
-	lmsutils
+	lmscore
 	)
 
 install(TARGETS lms-metadata DESTINATION bin)

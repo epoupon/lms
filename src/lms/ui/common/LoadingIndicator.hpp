@@ -21,7 +21,7 @@
 
 #include <Wt/WTemplate.h>
 
-namespace UserInterface
+namespace lms::ui
 {
 	std::unique_ptr<Wt::WTemplate> createLoadingIndicator();
 }

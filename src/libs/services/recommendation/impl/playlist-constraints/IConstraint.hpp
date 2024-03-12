@@ -23,7 +23,7 @@
 
 #include "services/recommendation/Types.hpp"
 
-namespace Recommendation::PlaylistGeneratorConstraint
+namespace lms::recommendation::PlaylistGeneratorConstraint
 {
 	class IConstraint
 	{
@@ -36,4 +36,4 @@ namespace Recommendation::PlaylistGeneratorConstraint
 			// > 1 : violation
 			virtual float computeScore(const TrackContainer& trackIds, std::size_t trackIndex) = 0;
 	};
-} // namespace Recommendation
+} // namespace lms::recommendation

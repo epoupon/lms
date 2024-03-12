@@ -22,7 +22,7 @@
 #include "database/Types.hpp"
 #include "SubsonicResponse.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    Response::Node createDiscTitle(const Database::DiscInfo& discInfo);
+    Response::Node createDiscTitle(const db::DiscInfo& discInfo);
 }

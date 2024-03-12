@@ -21,7 +21,7 @@
 
 #include <Wt/WContainerWidget.h>
 
-namespace UserInterface
+namespace lms::ui
 {
     class ScanSettingsView : public Wt::WContainerWidget
     {
@@ -31,4 +31,4 @@ namespace UserInterface
     private:
         void refreshView();
     };
-} // namespace UserInterface
+} // namespace lms::ui

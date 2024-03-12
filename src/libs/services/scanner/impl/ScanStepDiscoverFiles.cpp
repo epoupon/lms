@@ -19,10 +19,10 @@
 
 #include "ScanStepDiscoverFiles.hpp"
 
-#include "utils/ILogger.hpp"
-#include "utils/Path.hpp"
+#include "core/ILogger.hpp"
+#include "core/Path.hpp"
 
-namespace Scanner
+namespace lms::scanner
 {
     void ScanStepDiscoverFiles::process(ScanContext& context)
     {
@@ -31,12 +31,12 @@ namespace Scanner
         for (const ScannerSettings::MediaLibraryInfo& mediaLibrary : _settings.mediaLibraries)
         {
             std::size_t currentDirectoryProcessElemsCount{};
-            PathUtils::exploreFilesRecursive(mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path)
+            core::pathUtils::exploreFilesRecursive(mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path)
                 {
                     if (_abortScan)
                         return false;
 
-                    if (!ec && PathUtils::hasFileAnyExtension(path, _settings.supportedExtensions))
+                    if (!ec && core::pathUtils::hasFileAnyExtension(path, _settings.supportedExtensions))
                     {
                         context.currentStepStats.processedElems++;
                         currentDirectoryProcessElemsCount++;

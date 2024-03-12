@@ -67,7 +67,7 @@ target_link_libraries(lms PRIVATE
 	lmsscrobbling
 	lmsservice-cover
 	lmssubsonic
-	lmsutils
+	lmscore
 	Wt::Wt
 	Wt::HTTP
 	)

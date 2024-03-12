@@ -27,7 +27,7 @@
 #include "IdTypeTraits.hpp"
 #include "Utils.hpp"
 
-namespace Database
+namespace lms::db
 {
     StarredTrack::StarredTrack(ObjectPtr<Track> track, ObjectPtr<User> user, FeedbackBackend backend)
         : _backend{ backend }
@@ -96,11 +96,11 @@ namespace Database
         if (params.user.isValid())
             query.where("s_t.user_id = ?").bind(params.user);
 
-        return Utils::execQuery<StarredTrackId>(query, params.range);
+        return utils::execQuery<StarredTrackId>(query, params.range);
     }
 
     void StarredTrack::setDateTime(const Wt::WDateTime& dateTime)
     {
-        _dateTime = Utils::normalizeDateTime(dateTime);
+        _dateTime = utils::normalizeDateTime(dateTime);
     }
 }

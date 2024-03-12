@@ -23,7 +23,7 @@
 
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"
 #include "explore/Filters.hpp"
@@ -31,10 +31,10 @@
 #include "explore/TrackListHelpers.hpp"
 #include "LmsApplication.hpp"
 
-using namespace Database;
-
-namespace UserInterface
+namespace lms::ui
 {
+    using namespace db;
+
     Tracks::Tracks(Filters& filters, PlayQueueController& playQueueController)
         : Template{ Wt::WString::tr("Lms.Explore.Tracks.template") }
         , _filters{ filters }
@@ -130,9 +130,9 @@ namespace UserInterface
         }
     }
 
-    std::vector<Database::TrackId> Tracks::getAllTracks()
+    std::vector<db::TrackId> Tracks::getAllTracks()
     {
         RangeResults<TrackId> trackIds{ _trackCollector.get() };
         return std::move(trackIds.results);
     }
-} // namespace UserInterface
+} // namespace lms::ui

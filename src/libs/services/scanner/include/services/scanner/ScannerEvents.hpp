@@ -24,7 +24,7 @@
 
 #include "ScannerStats.hpp"
 
-namespace Scanner
+namespace lms::scanner
 {
 
     struct Events

@@ -26,35 +26,34 @@
 #include "IFeedbackBackend.hpp"
 #include "FeedbacksSynchronizer.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Db;
 }
 
-namespace Feedback::ListenBrainz
+namespace lms::feedback::listenBrainz
 {
     class ListenBrainzBackend final : public IFeedbackBackend
     {
     public:
-        ListenBrainzBackend(boost::asio::io_context& ioContext, Database::Db& db);
+        ListenBrainzBackend(boost::asio::io_context& ioContext, db::Db& db);
         ~ListenBrainzBackend() override;
 
     private:
         ListenBrainzBackend(const ListenBrainzBackend&) = delete;
         ListenBrainzBackend& operator=(const ListenBrainzBackend&) = delete;
 
-        void onStarred(Database::StarredArtistId starredArtistId) override;
-        void onUnstarred(Database::StarredArtistId starredArtistId) override;
-        void onStarred(Database::StarredReleaseId starredReleaseId) override;
-        void onUnstarred(Database::StarredReleaseId starredReleaseId) override;
-        void onStarred(Database::StarredTrackId starredTrackId) override;
-        void onUnstarred(Database::StarredTrackId starredTrackId) override;
+        void onStarred(db::StarredArtistId starredArtistId) override;
+        void onUnstarred(db::StarredArtistId starredArtistId) override;
+        void onStarred(db::StarredReleaseId starredReleaseId) override;
+        void onUnstarred(db::StarredReleaseId starredReleaseId) override;
+        void onStarred(db::StarredTrackId starredTrackId) override;
+        void onUnstarred(db::StarredTrackId starredTrackId) override;
 
         boost::asio::io_context& _ioContext;
-        Database::Db& _db;
+        db::Db& _db;
         std::string                     _baseAPIUrl;
-        std::unique_ptr<Http::IClient>  _client;
+        std::unique_ptr<core::http::IClient>  _client;
         FeedbacksSynchronizer           _feedbacksSynchronizer;
     };
-} // Feedback::ListenBrainz
-
+}

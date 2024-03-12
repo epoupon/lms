@@ -18,16 +18,16 @@
  */
 
 #include "Template.hpp"
-#include "utils/String.hpp"
+#include "core/String.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
     void Template::applyArguments(WWidget* widget, const std::vector<Wt::WString>& args)
     {
         for (const Wt::WString& argStr : args)
         {
             std::string arg{ argStr.toUTF8() };
-            const std::vector<std::string_view> operands{ StringUtils::splitString(arg, '=') };
+            const std::vector<std::string_view> operands{ core::stringUtils::splitString(arg, '=') };
 
             if (operands.size() == 2)
             {
@@ -38,4 +38,4 @@ namespace UserInterface
             }
         }
     }
-} // namespace UserInterface
+} // namespace lms::ui

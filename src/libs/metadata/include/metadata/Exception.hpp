@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include "utils/Exception.hpp"
+#include "core/Exception.hpp"
 
-namespace MetaData
+namespace lms::metadata
 {
-    class Exception : public LmsException
+    class Exception : public core::LmsException
     {
     public:
         using LmsException::LmsException;

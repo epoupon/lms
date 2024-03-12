@@ -19,7 +19,7 @@ target_include_directories(lmsauth PRIVATE
 	)
 
 target_link_libraries(lmsauth PRIVATE
-	lmsutils
+	lmscore
 	lmsdatabase
 	)
 

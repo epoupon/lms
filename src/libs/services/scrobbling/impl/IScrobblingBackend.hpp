@@ -25,14 +25,14 @@
 
 #include "services/scrobbling/Listen.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Session;
     class TrackList;
     class User;
 }
 
-namespace Scrobbling
+namespace lms::scrobbling
 {
     class IScrobblingBackend
     {

@@ -21,9 +21,9 @@
 
 #include "RawImage.hpp"
 #include "image/Exception.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
-namespace Image::GraphicsMagick
+namespace lms::image::GraphicsMagick
 {
 	JPEGImage::JPEGImage(const RawImage& rawImage, unsigned quality)
 	{
@@ -37,7 +37,7 @@ namespace Image::GraphicsMagick
 		catch (Magick::Exception& e)
 		{
 			LMS_LOG(COVER, ERROR, "Caught Magick exception: " << e.what());
-			throw ImageException {std::string {"Magick read error: "} + e.what()};
+			throw Exception {std::string {"Magick read error: "} + e.what()};
 		}
 	}
 

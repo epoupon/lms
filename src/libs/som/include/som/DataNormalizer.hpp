@@ -24,7 +24,7 @@
 
 #include "Network.hpp"
 
-namespace SOM
+namespace lms::som
 {
 
 class DataNormalizer
@@ -57,4 +57,4 @@ class DataNormalizer
 		std::vector<MinMax> _minmax; // Indexed min/max used to normalize data
 };
 
-} // namespace SOM
+} // namespace lms::som

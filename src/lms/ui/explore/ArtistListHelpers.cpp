@@ -23,17 +23,17 @@
 #include "database/Artist.hpp"
 #include "database/Session.hpp"
 #include "database/TrackArtistLink.hpp"
-#include "utils/EnumSet.hpp"
+#include "core/EnumSet.hpp"
 #include "LmsApplication.hpp"
 #include "Utils.hpp"
 
-namespace UserInterface::ArtistListHelpers
+namespace lms::ui::ArtistListHelpers
 {
 	std::unique_ptr<Wt::WTemplate>
-	createEntry(const Database::ObjectPtr<Database::Artist>& artist)
+	createEntry(const db::ObjectPtr<db::Artist>& artist)
 	{
 		auto res {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artists.template.entry"))};
-		res->bindWidget("name", Utils::createArtistAnchor(artist));
+		res->bindWidget("name", utils::createArtistAnchor(artist));
 
 		return res;
 	}
@@ -41,11 +41,11 @@ namespace UserInterface::ArtistListHelpers
 	std::unique_ptr<ArtistLinkTypesModel>
 	createArtistLinkTypesModel()
 	{
-		using namespace Database;
+		using namespace db;
 
 		std::unique_ptr<ArtistLinkTypesModel> linkTypesModel {std::make_unique<ArtistLinkTypesModel>()};
 
-		EnumSet<TrackArtistLinkType> usedLinkTypes;
+		core::EnumSet<TrackArtistLinkType> usedLinkTypes;
 		{
 			auto transaction {LmsApp->getDbSession().createReadTransaction()};
 			usedLinkTypes = TrackArtistLink::findUsedTypes(LmsApp->getDbSession());

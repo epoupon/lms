@@ -29,10 +29,10 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "services/scanner/IScannerService.hpp"
-#include "utils/Service.hpp"
+#include "core/Service.hpp"
 #include "LmsApplication.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
     namespace
     {
@@ -65,10 +65,10 @@ namespace UserInterface
             beingDeleted();
         }
 
-        void setScanStats(const Scanner::ScanStats& stats)
+        void setScanStats(const scanner::ScanStats& stats)
         {
             if (!_stats)
-                _stats = std::make_unique<Scanner::ScanStats>();
+                _stats = std::make_unique<scanner::ScanStats>();
 
             *_stats = stats;
         }
@@ -97,7 +97,7 @@ namespace UserInterface
 
                 for (const auto& duplicate : _stats->duplicates)
                 {
-                    const auto& track{ Database::Track::find(LmsApp->getDbSession(), duplicate.trackId) };
+                    const auto& track{ db::Track::find(LmsApp->getDbSession(), duplicate.trackId) };
                     if (!track)
                         continue;
 
@@ -111,29 +111,29 @@ namespace UserInterface
         }
 
     private:
-        static Wt::WString errorTypeToWString(Scanner::ScanErrorType error)
+        static Wt::WString errorTypeToWString(scanner::ScanErrorType error)
         {
             switch (error)
             {
-            case Scanner::ScanErrorType::CannotReadFile: return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-file");
-            case Scanner::ScanErrorType::CannotParseFile: return Wt::WString::tr("Lms.Admin.ScannerController.cannot-parse-file");
-            case Scanner::ScanErrorType::NoAudioTrack: return Wt::WString::tr("Lms.Admin.ScannerController.no-audio-track");
-            case Scanner::ScanErrorType::BadDuration: return Wt::WString::tr("Lms.Admin.ScannerController.bad-duration");
+            case scanner::ScanErrorType::CannotReadFile: return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-file");
+            case scanner::ScanErrorType::CannotParseFile: return Wt::WString::tr("Lms.Admin.ScannerController.cannot-parse-file");
+            case scanner::ScanErrorType::NoAudioTrack: return Wt::WString::tr("Lms.Admin.ScannerController.no-audio-track");
+            case scanner::ScanErrorType::BadDuration: return Wt::WString::tr("Lms.Admin.ScannerController.bad-duration");
             }
             return "?";
         }
 
-        static Wt::WString duplicateReasonToWString(Scanner::DuplicateReason reason)
+        static Wt::WString duplicateReasonToWString(scanner::DuplicateReason reason)
         {
             switch (reason)
             {
-            case Scanner::DuplicateReason::SameHash: return Wt::WString::tr("Lms.Admin.ScannerController.same-hash");
-            case Scanner::DuplicateReason::SameTrackMBID: return Wt::WString::tr("Lms.Admin.ScannerController.same-mbid");
+            case scanner::DuplicateReason::SameHash: return Wt::WString::tr("Lms.Admin.ScannerController.same-hash");
+            case scanner::DuplicateReason::SameTrackMBID: return Wt::WString::tr("Lms.Admin.ScannerController.same-mbid");
             }
             return "?";
         }
 
-        std::unique_ptr<Scanner::ScanStats> _stats;
+        std::unique_ptr<scanner::ScanStats> _stats;
     };
 
     ScannerController::ScannerController()
@@ -142,7 +142,7 @@ namespace UserInterface
         addFunction("tr", &Wt::WTemplate::Functions::tr);
         addFunction("id", &Wt::WTemplate::Functions::id);
 
-        using namespace Scanner;
+        using namespace scanner;
 
         {
             _reportBtn = bindNew<Wt::WPushButton>("report-btn", Wt::WString::tr("Lms.Admin.ScannerController.get-report"));
@@ -159,13 +159,13 @@ namespace UserInterface
         Wt::WPushButton* scanBtn{ bindNew<Wt::WPushButton>("scan-btn", Wt::WString::tr("Lms.Admin.ScannerController.scan-now")) };
         scanBtn->clicked().connect([]
             {
-                Service<Scanner::IScannerService>::get()->requestImmediateScan(false);
+                core::Service<scanner::IScannerService>::get()->requestImmediateScan(false);
             });
 
         Wt::WPushButton* fullScanBtn{ bindNew<Wt::WPushButton>("full-scan-btn", Wt::WString::tr("Lms.Admin.ScannerController.force-scan-now")) };
         fullScanBtn->clicked().connect([]
             {
-                Service<Scanner::IScannerService>::get()->requestImmediateScan(true);
+                core::Service<scanner::IScannerService>::get()->requestImmediateScan(true);
             });
 
         _lastScanStatus = bindNew<Wt::WLineEdit>("last-scan");
@@ -196,9 +196,9 @@ namespace UserInterface
 
     void ScannerController::refreshContents()
     {
-        using namespace Scanner;
+        using namespace scanner;
 
-        const IScannerService::Status status{ Service<IScannerService>::get()->getStatus() };
+        const IScannerService::Status status{ core::Service<IScannerService>::get()->getStatus() };
         if (status.lastCompleteScanStats)
         {
             _lastScanStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.last-scan-status")
@@ -233,49 +233,49 @@ namespace UserInterface
         case IScannerService::State::InProgress:
             _status->setText(Wt::WString::tr("Lms.Admin.ScannerController.status-in-progress")
                 .arg(static_cast<int>(status.currentScanStepStats->currentStep) + 1)
-                .arg(Scanner::ScanProgressStepCount));
+                .arg(scanner::ScanProgressStepCount));
 
             switch (status.currentScanStepStats->currentStep)
             {
-            case Scanner::ScanStep::CheckingForDuplicateFiles:
+            case scanner::ScanStep::CheckingForDuplicateFiles:
                 _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-checking-for-duplicate-files")
                     .arg(status.currentScanStepStats->processedElems));
                 break;
 
-            case Scanner::ScanStep::ChekingForMissingFiles:
+            case scanner::ScanStep::ChekingForMissingFiles:
                 _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-checking-for-missing-files")
                     .arg(status.currentScanStepStats->progress()));
                 break;
 
-            case Scanner::ScanStep::DiscoveringFiles:
+            case scanner::ScanStep::DiscoveringFiles:
                 _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-discovering-files")
                     .arg(status.currentScanStepStats->processedElems));
                 break;
 
-            case Scanner::ScanStep::ScanningFiles:
+            case scanner::ScanStep::ScanningFiles:
                 _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-scanning-files")
                     .arg(status.currentScanStepStats->processedElems)
                     .arg(status.currentScanStepStats->totalElems)
                     .arg(status.currentScanStepStats->progress()));
                 break;
 
-            case Scanner::ScanStep::FetchingTrackFeatures:
+            case scanner::ScanStep::FetchingTrackFeatures:
                 _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-fetching-track-features")
                     .arg(status.currentScanStepStats->processedElems)
                     .arg(status.currentScanStepStats->totalElems)
                     .arg(status.currentScanStepStats->progress()));
                 break;
 
-            case Scanner::ScanStep::ReloadingSimilarityEngine:
+            case scanner::ScanStep::ReloadingSimilarityEngine:
                 _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-reloading-similarity-engine")
                     .arg(status.currentScanStepStats->progress()));
                 break;
 
-            case Scanner::ScanStep::ComputeClusterStats:
+            case scanner::ScanStep::ComputeClusterStats:
                 _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-compute-cluster-stats")
                     .arg(status.currentScanStepStats->progress()));
             }
             break;
         }
     }
-} // namespace UserInterface
+} // namespace lms::ui

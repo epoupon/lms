@@ -31,9 +31,9 @@
 #include "Utils.hpp"
 #include "ModalManager.hpp"
 
-namespace UserInterface 
+namespace lms::ui 
 {
-    using namespace Database;
+    using namespace db;
 
     void Filters::showDialog()
     {
@@ -128,7 +128,7 @@ namespace UserInterface
         Wt::WInteractWidget* filter{};
 
         {
-            auto cluster{ Utils::createCluster(clusterId, true) };
+            auto cluster{ utils::createCluster(clusterId, true) };
             if (!cluster)
                 return;
 
@@ -162,4 +162,4 @@ namespace UserInterface
 
         _filters = bindNew<Wt::WContainerWidget>("clusters");
     }
-} // namespace UserInterface
+} // namespace lms::ui

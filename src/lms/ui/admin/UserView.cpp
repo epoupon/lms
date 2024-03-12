@@ -30,20 +30,20 @@
 #include "services/auth/IPasswordService.hpp"
 #include "database/User.hpp"
 #include "database/Session.hpp"
-#include "utils/IConfig.hpp"
-#include "utils/Exception.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/Service.hpp"
-#include "utils/String.hpp"
+#include "core/IConfig.hpp"
+#include "core/Exception.hpp"
+#include "core/ILogger.hpp"
+#include "core/Service.hpp"
+#include "core/String.hpp"
 
 #include "common/LoginNameValidator.hpp"
 #include "common/PasswordValidator.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
-    using namespace Database;
+    using namespace db;
 
     class UserModel : public Wt::WFormModel
     {
@@ -52,7 +52,7 @@ namespace UserInterface
         static inline const Field PasswordField{ "password" };
         static inline const Field DemoField{ "demo" };
 
-        UserModel(std::optional<UserId> userId, ::Auth::IPasswordService* authPasswordService)
+        UserModel(std::optional<UserId> userId, auth::IPasswordService* authPasswordService)
             : _userId{ userId }
             , _authPasswordService{ authPasswordService }
         {
@@ -65,7 +65,7 @@ namespace UserInterface
             if (authPasswordService)
             {
                 addField(PasswordField);
-                setValidator(PasswordField, createPasswordStrengthValidator([this] { return ::Auth::PasswordValidationContext{ getLoginName(), getUserType() }; }));
+                setValidator(PasswordField, createPasswordStrengthValidator([this] { return auth::PasswordValidationContext{ getLoginName(), getUserType() }; }));
                 if (!userId)
                     validator(PasswordField)->setMandatory(true);
             }
@@ -176,7 +176,7 @@ namespace UserInterface
         }
 
         std::optional<UserId> _userId;
-        ::Auth::IPasswordService* _authPasswordService{};
+        auth::IPasswordService* _authPasswordService{};
     };
 
     UserView::UserView()
@@ -194,13 +194,13 @@ namespace UserInterface
         if (!wApp->internalPathMatches("/admin/user"))
             return;
 
-        const std::optional<UserId> userId{ StringUtils::readAs<UserId::ValueType>(wApp->internalPathNextPart("/admin/user/")) };
+        const std::optional<UserId> userId{ core::stringUtils::readAs<UserId::ValueType>(wApp->internalPathNextPart("/admin/user/")) };
 
         clear();
 
         Wt::WTemplateFormView* t{ addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.Admin.User.template")) };
 
-        auto* authPasswordService{ Service<::Auth::IPasswordService>::get() };
+        auto* authPasswordService{ core::Service<auth::IPasswordService>::get() };
         if (authPasswordService && !authPasswordService->canSetPasswords())
             authPasswordService = nullptr;
 
@@ -245,7 +245,7 @@ namespace UserInterface
 
         // Demo account
         t->setFormWidget(UserModel::DemoField, std::make_unique<Wt::WCheckBox>());
-        if (!userId && Service<IConfig>::get()->getBool("demo", false))
+        if (!userId && core::Service<core::IConfig>::get()->getBool("demo", false))
             t->setCondition("if-demo", true);
 
         Wt::WPushButton* saveBtn{ t->bindNew<Wt::WPushButton>("save-btn", Wt::WString::tr(userId ? "Lms.save" : "Lms.create")) };
@@ -270,4 +270,4 @@ namespace UserInterface
         t->updateView(model.get());
     }
 
-} // namespace UserInterface
+} // namespace lms::ui

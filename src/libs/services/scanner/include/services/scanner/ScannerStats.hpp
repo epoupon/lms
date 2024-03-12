@@ -26,7 +26,7 @@
 
 #include "database/TrackId.hpp"
 
-namespace Scanner
+namespace lms::scanner
 {
     enum class ScanErrorType
     {
@@ -53,7 +53,7 @@ namespace Scanner
 
     struct ScanDuplicate
     {
-        Database::TrackId	trackId;
+        db::TrackId	trackId;
         DuplicateReason		reason;
     };
 
@@ -104,5 +104,5 @@ namespace Scanner
         std::size_t	nbFiles() const;
         std::size_t	nbChanges() const;
     };
-} // namespace Scanner
+} // namespace lms::scanner
 

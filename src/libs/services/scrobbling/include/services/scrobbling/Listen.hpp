@@ -24,12 +24,12 @@
 #include "database/TrackId.hpp"
 #include "database/UserId.hpp"
 
-namespace Scrobbling
+namespace lms::scrobbling
 {
     struct Listen
     {
-        Database::UserId userId{};
-        Database::TrackId trackId{};
+        db::UserId userId{};
+        db::TrackId trackId{};
     };
 
     struct TimedListen : public Listen

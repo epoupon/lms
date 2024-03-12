@@ -29,39 +29,40 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "services/cover/ICoverService.hpp"
-#include "utils/IConfig.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/Service.hpp"
-#include "utils/StreamLogger.hpp"
+#include "core/IConfig.hpp"
+#include "core/ILogger.hpp"
+#include "core/Service.hpp"
+#include "core/StreamLogger.hpp"
 
-static
-void
-dumpTrackCovers(Database::Session& session, Image::ImageSize width)
+namespace lms
 {
-    using namespace Database;
-
-    RangeResults<Database::TrackId> trackIds;
+    void dumpTrackCovers(db::Session& session, image::ImageSize width)
     {
-        auto transaction{ session.createReadTransaction() };
-        trackIds = Database::Track::findIds(session, Database::Track::FindParameters{});
-    }
+        using namespace db;
 
-    for (const Database::TrackId trackId : trackIds.results)
-    {
-        std::cout << "Getting cover for track id " << trackId.toString() << std::endl;
-        Service<Cover::ICoverService>::get()->getFromTrack(trackId, width);
+        RangeResults<db::TrackId> trackIds;
+        {
+            auto transaction{ session.createReadTransaction() };
+            trackIds = db::Track::findIds(session, db::Track::FindParameters{});
+        }
+
+        for (const db::TrackId trackId : trackIds.results)
+        {
+            std::cout << "Getting cover for track id " << trackId.toString() << std::endl;
+            core::Service<cover::ICoverService>::get()->getFromTrack(trackId, width);
+        }
     }
 }
-
 
 int main(int argc, char* argv[])
 {
     try
     {
+        using namespace lms;
         namespace po = boost::program_options;
 
         // log to stdout
-        Service<ILogger> logger{ std::make_unique<StreamLogger>(std::cout) };
+        core::Service<core::logging::ILogger> logger{ std::make_unique<core::logging::StreamLogger>(std::cout) };
 
         po::options_description desc{ "Allowed options" };
         desc.add_options()
@@ -82,13 +83,13 @@ int main(int argc, char* argv[])
             return EXIT_SUCCESS;
         }
 
-        Service<IConfig> config{ createConfig(vm["conf"].as<std::string>()) };
-        Database::Db db{ config->getPath("working-dir") / "lms.db" };
-        Service<Cover::ICoverService> coverArtService{ Cover::createCoverService(db, argv[0], vm["default-cover"].as<std::string>()) };
+        core::Service<core::IConfig> config{ core::createConfig(vm["conf"].as<std::string>()) };
+        db::Db db{ config->getPath("working-dir") / "lms.db" };
+        core::Service<cover::ICoverService> coverArtService{ cover::createCoverService(db, argv[0], vm["default-cover"].as<std::string>()) };
 
         coverArtService->setJpegQuality(config->getULong("cover-jpeg-quality", vm["quality"].as<unsigned>()));
 
-        Database::Session session{ db };
+        db::Session session{ db };
 
         if (vm.count("tracks"))
             dumpTrackCovers(session, vm["size"].as<unsigned>());

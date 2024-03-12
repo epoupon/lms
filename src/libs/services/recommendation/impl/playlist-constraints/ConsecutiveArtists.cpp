@@ -25,9 +25,9 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
-namespace Recommendation::PlaylistGeneratorConstraint
+namespace lms::recommendation::PlaylistGeneratorConstraint
 {
 	namespace
 	{
@@ -44,12 +44,12 @@ namespace Recommendation::PlaylistGeneratorConstraint
 		}
 	}
 
-	ConsecutiveArtists::ConsecutiveArtists(Database::Db& db)
+	ConsecutiveArtists::ConsecutiveArtists(db::Db& db)
 		: _db {db}
 	{}
 
 	float
-	ConsecutiveArtists::computeScore(const std::vector<Database::TrackId>& trackIds, std::size_t trackIndex)
+	ConsecutiveArtists::computeScore(const std::vector<db::TrackId>& trackIds, std::size_t trackIndex)
 	{
 		assert(!trackIds.empty());
 		assert(trackIndex <= trackIds.size() - 1);
@@ -73,9 +73,9 @@ namespace Recommendation::PlaylistGeneratorConstraint
 	}
 
 	ArtistContainer
-	ConsecutiveArtists::getArtists(Database::TrackId trackId)
+	ConsecutiveArtists::getArtists(db::TrackId trackId)
 	{
-		using namespace Database;
+		using namespace db;
 
 		ArtistContainer res;
 
@@ -93,5 +93,5 @@ namespace Recommendation::PlaylistGeneratorConstraint
 	}
 
 
-} // namespace Recommendation
+} // namespace lms::recommendation
 

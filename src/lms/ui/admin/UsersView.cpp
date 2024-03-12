@@ -26,15 +26,15 @@
 #include "services/auth/IPasswordService.hpp"
 #include "database/User.hpp"
 #include "database/Session.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/Service.hpp"
+#include "core/ILogger.hpp"
+#include "core/Service.hpp"
 
 #include "LmsApplication.hpp"
 #include "ModalManager.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
-    using namespace Database;
+    using namespace db;
 
     UsersView::UsersView()
         : Wt::WTemplate{ Wt::WString::tr("Lms.Admin.Users.template") }
@@ -43,7 +43,7 @@ namespace UserInterface
 
         _container = bindNew<Wt::WContainerWidget>("users");
 
-        if (Service<::Auth::IPasswordService>::get() && Service<::Auth::IPasswordService>::get()->canSetPasswords())
+        if (core::Service<auth::IPasswordService>::get() && core::Service<auth::IPasswordService>::get()->canSetPasswords())
         {
             setCondition("if-can-create-user", true);
 
@@ -133,4 +133,4 @@ namespace UserInterface
                 });
         }
     }
-} // namespace UserInterface
+} // namespace lms::ui

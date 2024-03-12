@@ -24,10 +24,10 @@
 #include <Wt/Json/Value.h>
 #include <Wt/Json/Parser.h>
 
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 #include "Utils.hpp"
 
-namespace Scrobbling::ListenBrainz
+namespace lms::scrobbling::listenBrainz
 {
     namespace
     {
@@ -50,9 +50,9 @@ namespace Scrobbling::ListenBrainz
             if (metadata.type("additional_info") == Wt::Json::Type::Object)
             {
                 const Wt::Json::Object& additionalInfo = metadata.get("additional_info");
-                listen.trackMBID = UUID::fromString(additionalInfo.get("track_mbid").orIfNull(""));
-                listen.recordingMBID = UUID::fromString(additionalInfo.get("recording_mbid").orIfNull(""));
-                listen.releaseMBID = UUID::fromString(additionalInfo.get("release_mbid").orIfNull(""));
+                listen.trackMBID = core::UUID::fromString(additionalInfo.get("track_mbid").orIfNull(""));
+                listen.recordingMBID = core::UUID::fromString(additionalInfo.get("recording_mbid").orIfNull(""));
+                listen.releaseMBID = core::UUID::fromString(additionalInfo.get("release_mbid").orIfNull(""));
 
                 // tracknumber should be an integer but some players encode as strings
                 int trackNumber{ additionalInfo.get("tracknumber").toNumber().orIfNull(-1) };
@@ -102,4 +102,4 @@ namespace Scrobbling::ListenBrainz
 
         return result;
     }
-} // Scrobbling::ListenBrainz
+} // scrobbling::ListenBrainz

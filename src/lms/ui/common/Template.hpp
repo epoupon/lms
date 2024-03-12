@@ -21,7 +21,7 @@
 
 #include <Wt/WTemplate.h>
 
-namespace UserInterface
+namespace lms::ui
 {
 
 	class Template : public Wt::WTemplate
@@ -33,4 +33,4 @@ namespace UserInterface
 			void applyArguments(Wt::WWidget* w, const std::vector<Wt::WString>& args) override;
 	};
 
-} // namespace UserInterface
+} // namespace lms::ui

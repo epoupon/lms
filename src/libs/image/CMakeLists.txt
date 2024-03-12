@@ -12,7 +12,7 @@ target_include_directories(lmsimage PRIVATE
 	)
 
 target_link_libraries(lmsimage PUBLIC
-	lmsutils
+	lmscore
 	std::filesystem
 	)
 
