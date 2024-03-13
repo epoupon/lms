@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,35 +17,24 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <atomic>
+#include <chrono>
+#include <thread>
+#include <vector>
 
-#include <optional>
-#include <string>
-#include <string_view>
+#include <gtest/gtest.h>
 
-#include "core/String.hpp"
+#include "core/UUID.hpp"
 
 namespace lms::core
 {
-    class UUID
+    TEST(UUID, caseInsensitive)
     {
-    public:
-        static std::optional<UUID> fromString(std::string_view str);
-        static UUID generate();
+        const std::optional<UUID> uuid1{ UUID::fromString("3f51c839-bee2-4e9d-a7b7-0693e45178fc") };
+        const std::optional<UUID> uuid2{ UUID::fromString("3f51C839-bEE2-4e9d-a7B7-0693e45178fC") };
 
-        std::string_view getAsString() const { return _value; }
-
-        auto operator<=>(const UUID&) const = default;
-
-    private:
-        UUID(std::string_view value);
-        std::string _value;
-    };
-}
-
-namespace lms::core::stringUtils
-{
-    template <>
-    std::optional<UUID>
-        readAs(std::string_view str);
+        EXPECT_EQ(uuid1, uuid2);
+        EXPECT_TRUE(uuid1 >= uuid2);
+        EXPECT_TRUE(uuid1 <= uuid2);
+    }
 }

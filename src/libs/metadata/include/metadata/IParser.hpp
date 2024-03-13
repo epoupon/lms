@@ -46,7 +46,7 @@ namespace lms::metadata
         Artist(std::string_view _name) : name{ _name } {}
         Artist(std::optional<core::UUID> _mbid, std::string_view _name, std::optional<std::string> _sortName) : mbid{ std::move(_mbid) }, name{ _name }, sortName{ std::move(_sortName) } {}
 
-        bool operator<=>(const Artist&) const = default;
+        auto operator<=>(const Artist&) const = default;
     };
 
     using PerformerContainer = std::map<std::string /*role*/, std::vector<Artist>>;
@@ -62,7 +62,7 @@ namespace lms::metadata
         std::optional<std::size_t>	mediumCount;
         std::vector<std::string>    releaseTypes;
 
-        bool operator<=>(const Release&) const = default;
+        auto operator<=>(const Release&) const = default;
     };
 
     struct Medium
@@ -74,7 +74,7 @@ namespace lms::metadata
         std::optional<std::size_t>  trackCount;
         std::optional<float>        replayGain;
 
-        bool operator<=>(const Medium&) const = default;
+        auto operator<=>(const Medium&) const = default;
 
         bool isDefault() const
         {

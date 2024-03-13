@@ -44,10 +44,10 @@ namespace lms::scanner
             db::MediaLibraryId id;
             std::filesystem::path rootDirectory;
 
-            bool operator<=>(const MediaLibraryInfo& other) const = default;
+            auto operator<=>(const MediaLibraryInfo& other) const = default;
         };
         std::vector<MediaLibraryInfo>			mediaLibraries;
 
-        bool operator<=>(const ScannerSettings& rhs) const = default;
+        bool operator==(const ScannerSettings& rhs) const = default;
     };
 }
