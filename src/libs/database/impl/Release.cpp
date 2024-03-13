@@ -167,10 +167,10 @@ namespace lms::db
             case ReleaseSortMethod::None:
                 break;
             case ReleaseSortMethod::Name:
-                query.orderBy("r.name COLLATE NOCASE");
+                query.orderBy("COALESCE(r.sort_name, r.name) COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::ArtistNameThenName:
-                query.orderBy("a.name COLLATE NOCASE, r.name COLLATE NOCASE");
+                query.orderBy("COALESCE(a.sort_name, a.name) COLLATE NOCASE, COALESCE(r.sort_name, r.name) COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::Random:
                 query.orderBy("RANDOM()");
@@ -179,13 +179,13 @@ namespace lms::db
                 query.orderBy("t.file_last_write DESC");
                 break;
             case ReleaseSortMethod::Date:
-                query.orderBy("COALESCE(t.date, CAST(t.year AS TEXT)), r.name COLLATE NOCASE");
+                query.orderBy("COALESCE(t.date, CAST(t.year AS TEXT)), COALESCE(r.sort_name, r.name) COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::OriginalDate:
-                query.orderBy("COALESCE(original_date, CAST(original_year AS TEXT), date, CAST(year AS TEXT)), r.name COLLATE NOCASE");
+                query.orderBy("COALESCE(original_date, CAST(original_year AS TEXT), date, CAST(year AS TEXT)), COALESCE(r.sort_name, r.name) COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::OriginalDateDesc:
-                query.orderBy("COALESCE(original_date, CAST(original_year AS TEXT), date, CAST(year AS TEXT)) DESC, r.name COLLATE NOCASE");
+                query.orderBy("COALESCE(original_date, CAST(original_year AS TEXT), date, CAST(year AS TEXT)) DESC, COALESCE(r.sort_name, r.name) COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::StarredDateDesc:
                 assert(params.starringUser.isValid());
