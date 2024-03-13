@@ -32,7 +32,7 @@ namespace lms::db
 {
     class Session;
 
-    class MediaLibrary : public Object<MediaLibrary, MediaLibraryId>
+    class MediaLibrary final : public Object<MediaLibrary, MediaLibraryId>
     {
     public:
         static const std::size_t maxNameLength{ 128 };
