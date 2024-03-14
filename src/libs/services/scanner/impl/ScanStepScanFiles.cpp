@@ -368,7 +368,7 @@ namespace lms::scanner
                         _progressCallback(context.currentStepStats);
                     }
 
-                    while (_metadataScanQueue.getResultsCount() > processMetaDataBatchSize)
+                    while (_metadataScanQueue.getResultsCount() > (scanQueueMaxScanRequestCount / 2))
                     {
                         _metadataScanQueue.popResults(scanResults, processMetaDataBatchSize);
                         processMetaDataScanResults(context, scanResults, mediaLibrary);
