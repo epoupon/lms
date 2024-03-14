@@ -198,8 +198,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             auto entries{ trackList.get()->getEntries() };
-            ASSERT_EQ(entries.size(), 1);
-            EXPECT_EQ(entries.front()->getTrack()->getId(), track1.getId());
+            ASSERT_EQ(entries.results.size(), 1);
+            EXPECT_EQ(entries.results.front()->getTrack()->getId(), track1.getId());
         }
 
         {
@@ -210,16 +210,16 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             auto entries{ trackList.get()->getEntries() };
-            ASSERT_EQ(entries.size(), 2);
-            EXPECT_EQ(entries[0]->getTrack()->getId(), track1.getId());
-            EXPECT_EQ(entries[1]->getTrack()->getId(), track2.getId());
+            ASSERT_EQ(entries.results.size(), 2);
+            EXPECT_EQ(entries.results[0]->getTrack()->getId(), track1.getId());
+            EXPECT_EQ(entries.results[1]->getTrack()->getId(), track2.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             auto entries{ trackList.get()->getEntries(Range {1, 1}) };
-            ASSERT_EQ(entries.size(), 1);
-            EXPECT_EQ(entries[0]->getTrack()->getId(), track2.getId());
+            ASSERT_EQ(entries.results.size(), 1);
+            EXPECT_EQ(entries.results[0]->getTrack()->getId(), track2.getId());
         }
     }
 }

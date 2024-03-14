@@ -148,10 +148,11 @@ namespace lms::ui
         shuffleBtn->clicked().connect([this]
             {
                 {
+                    // TODO write scope could be reduced
                     auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
                     db::TrackList::pointer queue{ getQueue() };
-                    auto entries{ queue->getEntries() };
+                    auto entries{ queue->getEntries().results };
                     core::random::shuffleContainer(entries);
 
                     queue.modify()->clear();
@@ -430,9 +431,9 @@ namespace lms::ui
         auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
         db::TrackList::pointer queue{ getQueue() };
-        std::vector<db::TrackListEntry::pointer> entries{ queue->getEntries(db::Range {_trackPos ? *_trackPos + 1 : 0, getCapacity()}) };
-        tracks.reserve(entries.size());
-        for (db::TrackListEntry::pointer entry : entries)
+        auto entries{ queue->getEntries(db::Range {_trackPos ? *_trackPos + 1 : 0, getCapacity()}) };
+        tracks.reserve(entries.results.size());
+        for (db::TrackListEntry::pointer& entry : entries.results)
         {
             tracks.push_back(entry->getTrack()->getId());
             entry.remove();
@@ -492,9 +493,11 @@ namespace lms::ui
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const db::TrackList::pointer queue{ getQueue() };
-        const auto tracklistEntries{ queue->getEntries(db::Range {_entriesContainer->getCount(), _batchSize}) };
-        for (const db::TrackListEntry::pointer& tracklistEntry : tracklistEntries)
+        const auto entries{ queue->getEntries(db::Range {_entriesContainer->getCount(), _batchSize}) };
+        for (const db::TrackListEntry::pointer& tracklistEntry : entries.results)
             addEntry(tracklistEntry);
+
+        _entriesContainer->setHasMore(entries.moreResults);
     }
 
     void PlayQueue::addEntry(const db::TrackListEntry::pointer& tracklistEntry)

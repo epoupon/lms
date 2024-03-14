@@ -343,6 +343,14 @@ namespace lms::db
         utils::execQuery(query, params.range, func);
     }
 
+  void Track::find(Session& session, const FindParameters& params, bool& moreResults, std::function<void(const Track::pointer&)> func)
+    {
+        session.checkReadTransaction();
+
+        auto query{ createQuery<Wt::Dbo::ptr<Track>>(session, params)};
+        utils::execQuery(query, params.range, moreResults, func);
+    }
+
     RangeResults<TrackId> Track::findSimilarTrackIds(Session& session, const std::vector<TrackId>& tracks, std::optional<Range> range)
     {
         assert(!tracks.empty());

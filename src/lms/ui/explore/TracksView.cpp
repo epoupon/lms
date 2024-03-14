@@ -128,6 +128,8 @@ namespace lms::ui
             if (const Track::pointer track{ Track::find(LmsApp->getDbSession(), trackId) })
                 _container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
         }
+
+        _container->setHasMore(trackIds.moreResults);
     }
 
     std::vector<db::TrackId> Tracks::getAllTracks()

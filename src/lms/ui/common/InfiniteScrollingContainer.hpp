@@ -57,11 +57,12 @@ namespace lms::ui
 
 			Wt::Signal<>	onRequestElements;
 
+			void setHasMore(bool hasMore); // can be used to add elements afterwards
+
 		private:
 			void clear() override;
 			void displayLoadingIndicator();
 			void hideLoadingIndicator();
-			void setHasMore(bool hasMore); // can be used to add elements afterwards
 
 			Wt::WContainerWidget*	_elements;
 			Wt::WTemplate*			_loadingIndicator;

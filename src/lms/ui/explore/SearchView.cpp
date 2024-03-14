@@ -159,6 +159,8 @@ namespace lms::ui
                     _artists->add(ArtistListHelpers::createEntry(artist));
             }
         }
+
+        _artists->setHasMore(artistIds.moreResults);
     }
 
     void SearchView::addSomeReleases()
@@ -177,6 +179,8 @@ namespace lms::ui
                     _releases->add(releaseListHelpers::createEntry(release));
             }
         }
+
+        _releases->setHasMore(releaseIds.moreResults);
     }
 
     void SearchView::addSomeTracks()
@@ -196,5 +200,7 @@ namespace lms::ui
                     _tracks->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
             }
         }
+
+        _tracks->setHasMore(trackIds.moreResults);
     }
 }

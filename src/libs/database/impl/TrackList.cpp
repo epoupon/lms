@@ -142,25 +142,21 @@ namespace lms::db
         TrackListEntry::pointer res;
 
         auto entries = getEntries(Range{ pos, 1 });
-        if (!entries.empty())
-            res = entries.front();
+        if (!entries.results.empty())
+            res = entries.results.front();
 
         return res;
     }
 
-    std::vector<TrackListEntry::pointer> TrackList::getEntries(std::optional<Range> range) const
+    RangeResults<ObjectPtr<TrackListEntry>> TrackList::getEntries(std::optional<Range> range) const
     {
         assert(session());
 
-        auto entries{
-            session()->find<TrackListEntry>()
+        auto query{session()->find<TrackListEntry>()
             .where("tracklist_id = ?").bind(getId())
-            .orderBy("id")
-            .limit(range ? static_cast<int>(range->size) + 1 : -1)
-            .offset(range ? static_cast<int>(range->offset) : -1)
-            .resultList() };
+            .orderBy("id") };
 
-        return std::vector<TrackListEntry::pointer>(entries.begin(), entries.end());
+        return utils::execQuery<TrackListEntry::pointer>(query, range);
     }
 
     TrackListEntry::pointer TrackList::getEntryByTrackAndDateTime(ObjectPtr<Track> track, const Wt::WDateTime& dateTime) const
@@ -235,17 +231,6 @@ namespace lms::db
             res.push_back(clusters);
 
         return res;
-    }
-
-    bool TrackList::hasTrack(TrackId trackId) const
-    {
-        assert(session());
-
-        Wt::Dbo::collection<TrackListEntry::pointer> res = session()->query<TrackListEntry::pointer>("SELECT p_e from tracklist_entry p_e INNER JOIN tracklist p ON p_e.tracklist_id = p.id")
-            .where("p_e.track_id = ?").bind(trackId)
-            .where("p.id = ?").bind(getId());
-
-        return res.size() > 0;
     }
 
     std::vector<Track::pointer> TrackList::getSimilarTracks(std::optional<std::size_t> offset, std::optional<std::size_t> size) const

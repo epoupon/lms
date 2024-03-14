@@ -56,15 +56,20 @@ namespace lms::db::utils
         {
             res.range.offset = range->offset;
             applyRange(query, Range{ range->offset, range->size + 1 });
+
+            res.results.reserve(range->size);
         }
 
         auto collection{ query.resultList() };
-        res.results.assign(collection.begin(), collection.end());
-        if (range && res.results.size() == static_cast<std::size_t>(range->size) + 1)
+        for (auto itResult{ collection.begin() }; itResult != collection.end(); ++itResult)
         {
-            // TODO may optim by not actually requesting the last one
-            res.moreResults = true;
-            res.results.pop_back();
+            if (range && res.results.size() == range->size)
+            {
+                res.moreResults = true;
+                break;
+            }
+
+            res.results.push_back(std::move(*itResult));
         }
 
         res.range.size = res.results.size();
@@ -80,6 +85,28 @@ namespace lms::db::utils
 
         for (const auto& res : query.resultList())
         {
+            LMS_SCOPED_TRACE_DETAILED("Database", "ExecQueryResult");
+            func(res);
+        }
+    }
+
+    template <typename ResultType, typename Query>
+    void execQuery(Query& query, std::optional<Range> range, bool& moreResults, std::function<void(const ResultType&)> func)
+    {
+        if (range)
+            applyRange(query, Range{ range->offset, range->size + 1 });
+
+        moreResults = false;
+
+        std::size_t count{};
+        for (const auto& res : query.resultList())
+        {
+            if (range && (count++ == static_cast<std::size_t>(range->size)))
+            {
+                moreResults = true;
+                break;
+            }
+
             LMS_SCOPED_TRACE_DETAILED("Database", "ExecQueryResult");
             func(res);
         }
