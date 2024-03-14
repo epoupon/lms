@@ -63,6 +63,62 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Track_findByRangedIdBased)
+    {
+        ScopedTrack track1{ session, "MyTrackFile1" };
+        ScopedTrack track2{ session, "MyTrackFile1" };
+        ScopedTrack track3{ session, "MyTrackFile1" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            bool moreResults;
+            TrackId lastRetrievedTrackId;
+            std::vector<Track::pointer> visitedTracks;
+            Track::find(session, lastRetrievedTrackId, 10, moreResults, [&](const Track::pointer& track)
+                {
+                    visitedTracks.push_back(track);
+                });
+            ASSERT_EQ(visitedTracks.size(), 3);
+            EXPECT_EQ(visitedTracks[0]->getId(), track1.getId());
+            EXPECT_EQ(visitedTracks[1]->getId(), track2.getId());
+            EXPECT_EQ(visitedTracks[2]->getId(), track3.getId());
+            EXPECT_FALSE(moreResults);
+            EXPECT_EQ(lastRetrievedTrackId, track3.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            bool moreResults;
+            TrackId lastRetrievedTrackId{ track1.getId() };
+            std::vector<Track::pointer> visitedTracks;
+            Track::find(session, lastRetrievedTrackId, 1, moreResults, [&](const Track::pointer& track)
+                {
+                    visitedTracks.push_back(track);
+                });
+            ASSERT_EQ(visitedTracks.size(), 1);
+            EXPECT_EQ(visitedTracks[0]->getId(), track2.getId());
+            EXPECT_TRUE(moreResults);
+            EXPECT_EQ(lastRetrievedTrackId, track2.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            bool moreResults;
+            TrackId lastRetrievedTrackId{ track1.getId() };
+            std::vector<Track::pointer> visitedTracks;
+            Track::find(session, lastRetrievedTrackId, 0, moreResults, [&](const Track::pointer& track)
+                {
+                    visitedTracks.push_back(track);
+                });
+            ASSERT_EQ(visitedTracks.size(), 0);
+            EXPECT_TRUE(moreResults);
+            EXPECT_EQ(lastRetrievedTrackId, track1.getId());
+        }
+    }
+
     TEST_F(DatabaseFixture, Track_MediaLibrary)
     {
         ScopedTrack track{ session, "MyTrackFile" };
