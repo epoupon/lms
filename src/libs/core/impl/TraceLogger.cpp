@@ -182,7 +182,14 @@ namespace lms::core::tracing
 
         os << std::endl;
         os << "\t]," << std::endl;
-        os << "\t\"meta_cpu_count\" : " << std::thread::hardware_concurrency() << std::endl;
+        os << "\t\"meta_cpu_count\" : " << std::thread::hardware_concurrency() << ", " << std::endl;
+        os << "\t\"meta_build_type\" : ";
+#ifndef NDEBUG
+        os << "\"debug\"";
+#else
+        os << "\"release\"";
+#endif
+        os << std::endl;
         os << "}" << std::endl;
     }
 
