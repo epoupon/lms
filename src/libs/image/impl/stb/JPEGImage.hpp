@@ -23,7 +23,7 @@
 
 #include "image/IEncodedImage.hpp"
 
-namespace Image::STB
+namespace lms::image::STB
 {
 	class RawImage;
 	class JPEGImage : public IEncodedImage

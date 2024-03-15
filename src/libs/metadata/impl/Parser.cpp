@@ -22,14 +22,14 @@
 #include <span>
 
 #include "metadata/Exception.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/String.hpp"
+#include "core/ILogger.hpp"
+#include "core/String.hpp"
 
 #include "AvFormatTagReader.hpp"
 #include "TagLibTagReader.hpp"
 #include "Utils.hpp"
 
-namespace MetaData
+namespace lms::metadata
 {
     namespace
     {
@@ -39,24 +39,23 @@ namespace MetaData
                 {
                     auto visitTagIfNonEmpty{ [&](std::string_view tag)
                     {
-                        tag = StringUtils::stringTrim(tag);
+                        tag = core::stringUtils::stringTrim(tag);
                         if (!tag.empty())
                             visitor(tag);
                     } };
 
-                    if (!tagReader.hasMultiValuedTags())
+                    for (std::string_view tagDelimiter : tagDelimiters)
                     {
-                        for (std::string_view tagDelimiter : tagDelimiters)
+                        if (value.find(tagDelimiter) != std::string_view::npos)
                         {
-                            if (value.find(tagDelimiter) != std::string_view::npos)
-                            {
-                                for (std::string_view splitTag : StringUtils::splitString(value, tagDelimiter))
-                                    visitTagIfNonEmpty(splitTag);
-                                return;
-                            }
+                            for (std::string_view splitTag : core::stringUtils::splitString(value, tagDelimiter))
+                                visitTagIfNonEmpty(splitTag);
+
+                            return;
                         }
                     }
 
+                    // no delimiter found, or no delimiter to be used
                     visitTagIfNonEmpty(value);
                 });
         }
@@ -70,10 +69,10 @@ namespace MetaData
             {
                 auto addTagIfNonEmpty{ [&res](std::string_view tag)
                 {
-                    tag = StringUtils::stringTrim(tag);
+                    tag = core::stringUtils::stringTrim(tag);
                     if (!tag.empty())
                     {
-                        std::optional<T> val{ StringUtils::readAs<T>(tag) };
+                        std::optional<T> val{ core::stringUtils::readAs<T>(tag) };
                         if (val)
                             res.emplace_back(std::move(*val));
                     }
@@ -81,17 +80,14 @@ namespace MetaData
 
                 tagReader.visitTagValues(tagType, [&](std::string_view value)
                     {
-                        if (!tagReader.hasMultiValuedTags())
+                        for (std::string_view tagDelimiter : tagDelimiters)
                         {
-                            for (std::string_view tagDelimiter : tagDelimiters)
+                            if (value.find(tagDelimiter) != std::string_view::npos)
                             {
-                                if (value.find(tagDelimiter) != std::string_view::npos)
-                                {
-                                    for (std::string_view splitTag : StringUtils::splitString(value, tagDelimiter))
-                                        addTagIfNonEmpty(splitTag);
+                                for (std::string_view splitTag : core::stringUtils::splitString(value, tagDelimiter))
+                                    addTagIfNonEmpty(splitTag);
 
-                                    return;
-                                }
+                                return;
                             }
                         }
 
@@ -141,7 +137,7 @@ namespace MetaData
                 return {};
 
             std::vector<std::string> artistSortNames{ getTagValuesFirstMatchAs<std::string>(tagReader, artistSortTagNames, artistTagDelimiters) };
-            std::vector<UUID> artistMBIDs{ getTagValuesFirstMatchAs<UUID>(tagReader, artistMBIDTagNames, artistTagDelimiters) };
+            std::vector<core::UUID> artistMBIDs{ getTagValuesFirstMatchAs<core::UUID>(tagReader, artistMBIDTagNames, artistTagDelimiters) };
 
             std::vector<Artist> artists;
             artists.reserve(artistNames.size());
@@ -170,15 +166,15 @@ namespace MetaData
                     if (role.empty())
                     {
                         // "PERFORMER" "artist (role)"
-                        Utils::PerformerArtist performer{ Utils::extractPerformerAndRole(name) };
-                        StringUtils::capitalize(performer.role);
+                        utils::PerformerArtist performer{ utils::extractPerformerAndRole(name) };
+                        core::stringUtils::capitalize(performer.role);
                         performers[performer.role].push_back(std::move(performer.artist));
                     }
                     else
                     {
                         // "PERFORMER:role", "artist" (MP3)
-                        std::string roleCapitalized{ StringUtils::stringToLower(role) };
-                        StringUtils::capitalize(roleCapitalized);
+                        std::string roleCapitalized{ core::stringUtils::stringToLower(role) };
+                        core::stringUtils::capitalize(roleCapitalized);
                         performers[roleCapitalized].push_back(Artist{ name });
                     }
                 });
@@ -199,7 +195,7 @@ namespace MetaData
         switch (_parserBackend)
         {
         case ParserBackend::TagLib:
-            LMS_LOG(METADATA, INFO, "Using TagLib parser with read style = " << Utils::readStyleToString(readStyle));
+            LMS_LOG(METADATA, INFO, "Using TagLib parser with read style = " << utils::readStyleToString(readStyle));
             break;
 
         case ParserBackend::AvFormat:
@@ -256,37 +252,37 @@ namespace MetaData
         track.hasCover = tagReader.hasEmbeddedCover();
 
         track.title = getTagValueAs<std::string>(tagReader, TagType::TrackTitle).value_or("");
-        track.mbid = getTagValueAs<UUID>(tagReader, TagType::MusicBrainzTrackID);
-        track.recordingMBID = getTagValueAs<UUID>(tagReader, TagType::MusicBrainzRecordingID);
-        track.acoustID = getTagValueAs<UUID>(tagReader, TagType::AcoustID);
+        track.mbid = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzTrackID);
+        track.recordingMBID = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzRecordingID);
+        track.acoustID = getTagValueAs<core::UUID>(tagReader, TagType::AcoustID);
         track.position = getTagValueAs<std::size_t>(tagReader, TagType::TrackNumber); // May parse 'Number/Total', that's fine
         if (auto dateStr = getTagValueAs<std::string>(tagReader, TagType::Date))
         {
-            if (const Wt::WDate date{ Utils::parseDate(*dateStr) }; date.isValid())
+            if (const Wt::WDate date{ utils::parseDate(*dateStr) }; date.isValid())
             {
                 track.date = date;
                 track.year = date.year();
             }
             else
             {
-                track.year = Utils::parseYear(*dateStr);
+                track.year = utils::parseYear(*dateStr);
             }
         }
         if (auto dateStr = getTagValueAs<std::string>(tagReader, TagType::OriginalReleaseDate))
         {
-            if (const Wt::WDate date{ Utils::parseDate(*dateStr) }; date.isValid())
+            if (const Wt::WDate date{ utils::parseDate(*dateStr) }; date.isValid())
             {
                 track.originalDate = date;
                 track.originalYear = date.year();
             }
             else
             {
-                track.originalYear = Utils::parseYear(*dateStr);
+                track.originalYear = utils::parseYear(*dateStr);
             }
         }
         if (auto dateStr = getTagValueAs<std::string>(tagReader, TagType::OriginalReleaseYear))
         {
-            track.originalYear = Utils::parseYear(*dateStr);
+            track.originalYear = utils::parseYear(*dateStr);
         }
 
         track.copyright = getTagValueAs<std::string>(tagReader, TagType::Copyright).value_or("");
@@ -298,7 +294,7 @@ namespace MetaData
         {
             visitTagValues(tagReader, userExtraTag, _defaultTagDelimiters, [&](std::string_view value)
                 {
-                    value = StringUtils::stringTrim(value);
+                    value = core::stringUtils::stringTrim(value);
                     if (!value.empty())
                         track.userExtraTags[userExtraTag].push_back(std::string{ value });
                 });
@@ -346,9 +342,9 @@ namespace MetaData
             if (const auto value{ getTagValueAs<std::string>(tagReader, TagType::TrackNumber) })
             {
                 // Expecting 'Number/Total'
-                const std::vector<std::string_view> strings{ StringUtils::splitString(*value, '/') };
+                const std::vector<std::string_view> strings{ core::stringUtils::splitString(*value, '/') };
                 if (strings.size() == 2)
-                    medium->trackCount = StringUtils::readAs<std::size_t>(strings[1]);
+                    medium->trackCount = core::stringUtils::readAs<std::size_t>(strings[1]);
             }
         }
         // Expecting 'Number[/Total]'
@@ -374,8 +370,8 @@ namespace MetaData
         release->name = std::move(*releaseName);
         release->sortName = getTagValueAs<std::string>(tagReader, TagType::AlbumSortOrder).value_or("");
         release->artistDisplayName = getTagValueAs<std::string>(tagReader, TagType::AlbumArtist).value_or(""); // TODO try to join albumartists if present
-        release->mbid = getTagValueAs<UUID>(tagReader, TagType::MusicBrainzReleaseID);
-        release->groupMBID = getTagValueAs<UUID>(tagReader, TagType::MusicBrainzReleaseGroupID);
+        release->mbid = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzReleaseID);
+        release->groupMBID = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzReleaseGroupID);
         release->artists = getArtists(tagReader, { TagType::AlbumArtists, TagType::AlbumArtist }, { TagType::AlbumArtistsSortOrder, TagType::AlbumArtistSortOrder }, { TagType::MusicBrainzReleaseArtistID }, _artistTagDelimiters);
         release->mediumCount = getTagValueAs<std::size_t>(tagReader, TagType::TotalDiscs);
         if (!release->mediumCount)
@@ -384,9 +380,9 @@ namespace MetaData
             if (const auto value{ getTagValueAs<std::string>(tagReader, TagType::DiscNumber) })
             {
                 // Expecting 'Number/Total'
-                const std::vector<std::string_view> strings{ StringUtils::splitString(*value, '/') };
+                const std::vector<std::string_view> strings{ core::stringUtils::splitString(*value, '/') };
                 if (strings.size() == 2)
-                    release->mediumCount = StringUtils::readAs<std::size_t>(strings[1]);
+                    release->mediumCount = core::stringUtils::readAs<std::size_t>(strings[1]);
             }
         }
 
@@ -394,4 +390,4 @@ namespace MetaData
 
         return release;
     }
-} // namespace MetaData
+} // namespace lms::metadata

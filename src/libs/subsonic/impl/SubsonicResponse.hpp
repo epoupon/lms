@@ -25,9 +25,10 @@
 #include <variant>
 #include <vector>
 
+#include "core/LiteralString.hpp"
 #include "RequestContext.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
     // Max count expected from all API methods that expose a count
     static inline constexpr std::size_t defaultMaxCountSize{ 1000 };
@@ -205,18 +206,7 @@ namespace API::Subsonic
         class Node
         {
         public:
-            class Key
-            {
-            public:
-                template<std::size_t N>
-                constexpr Key(const char (&str)[N]) : _str{ str } {}
-                constexpr std::string_view get() const { return _str; }
-
-                bool constexpr operator<(const Key& other) const { return _str < other._str; }
-
-            private:
-                const std::string_view _str;
-            };
+            using Key = core::LiteralString;
 
             void setAttribute(Key key, std::string_view value);
 

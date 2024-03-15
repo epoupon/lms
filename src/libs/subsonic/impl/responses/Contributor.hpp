@@ -22,12 +22,12 @@
 #include "database/Object.hpp"
 #include "SubsonicResponse.hpp"
 
-namespace Database
+namespace lms::db
 {
     class TrackArtistLink;
 }
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    Response::Node createContributorNode(const Database::ObjectPtr<Database::TrackArtistLink>& trackArtistLink);
+    Response::Node createContributorNode(const db::ObjectPtr<db::TrackArtistLink>& trackArtistLink);
 }

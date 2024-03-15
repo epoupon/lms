@@ -1,6 +1,6 @@
 #include "entrypoints/System.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
     Response handlePingRequest(RequestContext& context)
     {

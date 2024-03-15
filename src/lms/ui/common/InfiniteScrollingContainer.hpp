@@ -28,7 +28,7 @@
 #include <Wt/WString.h>
 #include <Wt/WTemplate.h>
 
-namespace UserInterface
+namespace lms::ui
 {
 	// Atomatically raises onRequestElements signal when the sentinel is displayed
 	// can add elements afterwards by calling setHasMoreElements()
@@ -57,11 +57,12 @@ namespace UserInterface
 
 			Wt::Signal<>	onRequestElements;
 
+			void setHasMore(bool hasMore); // can be used to add elements afterwards
+
 		private:
 			void clear() override;
 			void displayLoadingIndicator();
 			void hideLoadingIndicator();
-			void setHasMore(bool hasMore); // can be used to add elements afterwards
 
 			Wt::WContainerWidget*	_elements;
 			Wt::WTemplate*			_loadingIndicator;

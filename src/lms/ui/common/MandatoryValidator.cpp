@@ -19,7 +19,7 @@
 
 #include "MandatoryValidator.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
 	class MandatoryValidator : public Wt::WValidator
 	{
@@ -34,4 +34,4 @@ namespace UserInterface
 		v->setMandatory(true);
 		return v;
 	}
-} // namespace UserInterface
+} // namespace lms::ui

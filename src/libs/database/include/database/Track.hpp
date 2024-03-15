@@ -32,9 +32,8 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "utils/EnumSet.hpp"
-#include "utils/UUID.hpp"
-
+#include "core/EnumSet.hpp"
+#include "core/UUID.hpp"
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
 #include "database/MediaLibraryId.hpp"
@@ -45,8 +44,8 @@
 #include "database/Types.hpp"
 #include "database/UserId.hpp"
 
-namespace Database {
-
+namespace lms::db
+{
     class Artist;
     class Cluster;
     class ClusterType;
@@ -72,7 +71,7 @@ namespace Database {
             std::optional<FeedbackBackend>		feedbackBackend;	// and for this feedback backend
             ArtistId							artist;			// only tracks that involve this artist
             std::string							artistName;		// only tracks that involve this artist name
-            EnumSet<TrackArtistLinkType>		trackArtistLinkTypes; 		//    and for these link types
+            core::EnumSet<TrackArtistLinkType>		trackArtistLinkTypes; 		//    and for these link types
             bool								nonRelease{};	// only tracks that do not belong to a release
             ReleaseId							release;		// matching this release
             std::string							releaseName;	// matching this release name
@@ -88,8 +87,8 @@ namespace Database {
             FindParameters& setRange(std::optional<Range> _range) { range = _range; return *this; }
             FindParameters& setWrittenAfter(const Wt::WDateTime& _after) { writtenAfter = _after; return *this; }
             FindParameters& setStarringUser(UserId _user, FeedbackBackend _feedbackBackend) { starringUser = _user; feedbackBackend = _feedbackBackend; return *this; }
-            FindParameters& setArtist(ArtistId _artist, EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {}) { artist = _artist; trackArtistLinkTypes = _trackArtistLinkTypes; return *this; }
-            FindParameters& setArtistName(std::string_view _artistName, EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {}) { artistName = _artistName; trackArtistLinkTypes = _trackArtistLinkTypes; return *this; }
+            FindParameters& setArtist(ArtistId _artist, core::EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {}) { artist = _artist; trackArtistLinkTypes = _trackArtistLinkTypes; return *this; }
+            FindParameters& setArtistName(std::string_view _artistName, core::EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {}) { artistName = _artistName; trackArtistLinkTypes = _trackArtistLinkTypes; return *this; }
             FindParameters& setNonRelease(bool _nonRelease) { nonRelease = _nonRelease; return *this; }
             FindParameters& setRelease(ReleaseId _release) { release = _release; return *this; }
             FindParameters& setReleaseName(std::string_view _releaseName) { releaseName = _releaseName; return *this; }
@@ -111,14 +110,16 @@ namespace Database {
         static std::size_t				getCount(Session& session);
         static pointer					findByPath(Session& session, const std::filesystem::path& p);
         static pointer 					find(Session& session, TrackId id);
-        static bool						exists(Session& session, TrackId id);
-        static std::vector<pointer>		findByRecordingMBID(Session& session, const UUID& MBID);
-        static std::vector<pointer>		findByMBID(Session& session, const UUID& MBID);
+        static void                     find(Session& session, TrackId& lastRetrievedTrack, std::size_t batchSize, bool& moreResults, const std::function<void(const Track::pointer&)>& func);
+        static bool                     exists(Session& session, TrackId id);
+        static std::vector<pointer>		findByRecordingMBID(Session& session, const core::UUID& MBID);
+        static std::vector<pointer>		findByMBID(Session& session, const core::UUID& MBID);
         static RangeResults<TrackId>	findSimilarTrackIds(Session& session, const std::vector<TrackId>& trackIds, std::optional<Range> range = std::nullopt);
 
         static RangeResults<TrackId>	findIds(Session& session, const FindParameters& parameters);
         static RangeResults<pointer>	find(Session& session, const FindParameters& parameters);
         static void						find(Session& session, const FindParameters& parameters, std::function<void(const Track::pointer&)> func);
+        static void						find(Session& session, const FindParameters& parameters, bool& moreResults, std::function<void(const Track::pointer&)> func);
         static RangeResults<PathResult>	findPaths(Session& session, std::optional<Range> range = std::nullopt);
         static RangeResults<TrackId>	findIdsTrackMBIDDuplicates(Session& session, std::optional<Range> range = std::nullopt);
         static RangeResults<TrackId>	findIdsWithRecordingMBIDAndMissingFeatures(Session& session, std::optional<Range> range = std::nullopt);
@@ -140,8 +141,8 @@ namespace Database {
         void setOriginalDate(const Wt::WDate& date) { _originalDate = date; }
         void setOriginalYear(std::optional<int> year) { _originalYear = year; }
         void setHasCover(bool hasCover) { _hasCover = hasCover; }
-        void setTrackMBID(const std::optional<UUID>& MBID) { _trackMBID = MBID ? MBID->getAsString() : ""; }
-        void setRecordingMBID(const std::optional<UUID>& MBID) { _recordingMBID = MBID ? MBID->getAsString() : ""; }
+        void setTrackMBID(const std::optional<core::UUID>& MBID) { _trackMBID = MBID ? MBID->getAsString() : ""; }
+        void setRecordingMBID(const std::optional<core::UUID>& MBID) { _recordingMBID = MBID ? MBID->getAsString() : ""; }
         void setCopyright(const std::string& copyright) { _copyright = std::string(copyright, 0, _maxCopyrightLength); }
         void setCopyrightURL(const std::string& copyrightURL) { _copyrightURL = std::string(copyrightURL, 0, _maxCopyrightURLLength); }
         void setTrackReplayGain(std::optional<float> replayGain) { _trackReplayGain = replayGain; }
@@ -170,16 +171,16 @@ namespace Database {
         Wt::WDateTime				getLastWriteTime() const { return _fileLastWrite; }
         Wt::WDateTime				getAddedTime() const { return _fileAdded; }
         bool						hasCover() const { return _hasCover; }
-        std::optional<UUID>			getTrackMBID() const { return UUID::fromString(_trackMBID); }
-        std::optional<UUID>			getRecordingMBID() const { return UUID::fromString(_recordingMBID); }
+        std::optional<core::UUID>	getTrackMBID() const { return core::UUID::fromString(_trackMBID); }
+        std::optional<core::UUID>	getRecordingMBID() const { return core::UUID::fromString(_recordingMBID); }
         std::optional<std::string>	getCopyright() const;
         std::optional<std::string>	getCopyrightURL() const;
         std::optional<float>		getTrackReplayGain() const { return _trackReplayGain; }
         std::optional<float>		getReleaseReplayGain() const { return _releaseReplayGain; }
         std::string_view			getArtistDisplayName() const { return _artistDisplayName; }
         // no artistLinkTypes means get all
-        std::vector<ObjectPtr<Artist>>			getArtists(EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
-        std::vector<ArtistId>					getArtistIds(EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
+        std::vector<ObjectPtr<Artist>>			getArtists(core::EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
+        std::vector<ArtistId>					getArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
         std::vector<ObjectPtr<TrackArtistLink>>	getArtistLinks() const;
         ObjectPtr<Release>						getRelease() const { return _release; }
         std::vector<ObjectPtr<Cluster>>			getClusters() const;
@@ -221,7 +222,7 @@ namespace Database {
         }
 
     private:
-        friend class ::Database::Session;
+        friend class Session;
         Track(const std::filesystem::path& p);
         static pointer create(Session& session, const std::filesystem::path& p);
 
@@ -268,7 +269,6 @@ namespace Database {
         };
         std::ostream& operator<<(std::ostream& os, const TrackInfo& trackInfo);
     }
-
-} // namespace database
+} // namespace lms::db
 
 

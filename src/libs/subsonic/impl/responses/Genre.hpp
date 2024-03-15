@@ -22,12 +22,12 @@
 #include "database/Object.hpp"
 #include "SubsonicResponse.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Cluster;
 }
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    Response::Node createGenreNode(const Database::ObjectPtr<Database::Cluster>& cluster);
+    Response::Node createGenreNode(const db::ObjectPtr<db::Cluster>& cluster);
 }

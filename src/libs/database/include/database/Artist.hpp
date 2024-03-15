@@ -27,6 +27,8 @@
 #include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
 
+#include "core/EnumSet.hpp"
+#include "core/UUID.hpp"
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
 #include "database/MediaLibraryId.hpp"
@@ -35,10 +37,8 @@
 #include "database/Types.hpp"
 #include "database/UserId.hpp"
 #include "database/TrackId.hpp"
-#include "utils/EnumSet.hpp"
-#include "utils/UUID.hpp"
 
-namespace Database
+namespace lms::db
 {
 
     class Cluster;
@@ -83,7 +83,7 @@ namespace Database
 
         // Accessors
         static std::size_t				getCount(Session& session);
-        static pointer					find(Session& session, const UUID& MBID);
+        static pointer					find(Session& session, const core::UUID& MBID);
         static pointer					find(Session& session, ArtistId id);
         static std::vector<pointer>		find(Session& session, std::string_view name);		// exact match on name field
         static RangeResults<pointer>	find(Session& session, const FindParameters& parameters);
@@ -95,10 +95,10 @@ namespace Database
         // Accessors
         const std::string& getName() const { return _name; }
         const std::string& getSortName() const { return _sortName; }
-        std::optional<UUID>	getMBID() const { return UUID::fromString(_MBID); }
+        std::optional<core::UUID>	getMBID() const { return core::UUID::fromString(_MBID); }
 
         // No artistLinkTypes means get them all
-        RangeResults<ArtistId>          findSimilarArtistIds(EnumSet<TrackArtistLinkType> artistLinkTypes = {}, std::optional<Range> range = std::nullopt) const;
+        RangeResults<ArtistId>          findSimilarArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes = {}, std::optional<Range> range = std::nullopt) const;
 
         // Get the cluster of the tracks made by this artist
         // Each clusters are grouped by cluster type, sorted by the number of occurence
@@ -106,7 +106,7 @@ namespace Database
         std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(std::vector<ClusterTypeId> clusterTypeIds, std::size_t size) const;
 
         void setName(std::string_view name) { _name = name; }
-        void setMBID(const std::optional<UUID>& mbid) { _MBID = mbid ? mbid->getAsString() : ""; }
+        void setMBID(const std::optional<core::UUID>& mbid) { _MBID = mbid ? mbid->getAsString() : ""; }
         void setSortName(const std::string& sortName);
 
         template<class Action>
@@ -125,8 +125,8 @@ namespace Database
 
         friend class Session;
         // Create
-        Artist(const std::string& name, const std::optional<UUID>& MBID = {});
-        static pointer create(Session& session, const std::string& name, const std::optional<UUID>& UUID = {});
+        Artist(const std::string& name, const std::optional<core::UUID>& MBID = {});
+        static pointer create(Session& session, const std::string& name, const std::optional<core::UUID>& UUID = {});
 
         std::string _name;
         std::string _sortName;
@@ -136,5 +136,5 @@ namespace Database
         Wt::Dbo::collection<Wt::Dbo::ptr<StarredArtist>>	_starredArtists; 	// starred entries for this artist
     };
 
-} // namespace Database
+} // namespace lms::db
 

@@ -24,12 +24,12 @@
 #include "services/recommendation/IRecommendationService.hpp"
 #include "IEngine.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Db;
 }
 
-namespace Recommendation
+namespace lms::recommendation
 {
     enum class EngineType
     {
@@ -40,7 +40,7 @@ namespace Recommendation
     class RecommendationService : public IRecommendationService
     {
     public:
-        RecommendationService(Database::Db& db);
+        RecommendationService(db::Db& db);
         ~RecommendationService() = default;
 
         RecommendationService(const RecommendationService&) = delete;
@@ -49,16 +49,16 @@ namespace Recommendation
     private:
         void load() override;
 
-        TrackContainer findSimilarTracks(Database::TrackListId tracklistId, std::size_t maxCount) const override;
-        TrackContainer findSimilarTracks(const std::vector<Database::TrackId>& tracksId, std::size_t maxCount) const override;
-        ReleaseContainer getSimilarReleases(Database::ReleaseId releaseId, std::size_t maxCount) const override;
-        ArtistContainer getSimilarArtists(Database::ArtistId artistId, EnumSet<Database::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
+        TrackContainer findSimilarTracks(db::TrackListId tracklistId, std::size_t maxCount) const override;
+        TrackContainer findSimilarTracks(const std::vector<db::TrackId>& tracksId, std::size_t maxCount) const override;
+        ReleaseContainer getSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const override;
+        ArtistContainer getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
 
         void setEnginePriorities(const std::vector<EngineType>& engineTypes);
         void clearEngines();
         void loadPendingEngine(EngineType engineType, std::unique_ptr<IEngine> engine, bool forceReload, const ProgressCallback& progressCallback);
 
-        Database::Db& _db;
+        db::Db& _db;
         std::optional<EngineType> _engineType;
         std::unique_ptr<IEngine> _engine;
     };

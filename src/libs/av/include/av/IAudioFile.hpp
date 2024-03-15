@@ -32,7 +32,7 @@
 
 #include "Types.hpp"
 
-namespace Av
+namespace lms::av
 {
     // List should be sync with the codecs shipped in the lms's docker version
     enum class DecodingCodec
@@ -107,5 +107,5 @@ namespace Av
 
     std::string_view getMimeType(const std::filesystem::path& fileExtension);
 
-} // namespace Av
+} // namespace lms::av
 

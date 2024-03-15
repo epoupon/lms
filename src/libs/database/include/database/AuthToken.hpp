@@ -27,7 +27,7 @@
 #include "database/AuthTokenId.hpp"
 #include "database/Object.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class Session;
 

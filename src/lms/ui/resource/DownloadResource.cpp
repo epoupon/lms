@@ -27,14 +27,14 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
-#include "utils/Exception.hpp"
-#include "utils/ILogger.hpp"
+#include "core/Exception.hpp"
+#include "core/ILogger.hpp"
 
 #include "LmsApplication.hpp"
 
 #define LOG(severity, message)	LMS_LOG(UI, severity, "Download resource: " << message)
 
-namespace UserInterface
+namespace lms::ui
 {
     DownloadResource::~DownloadResource()
     {
@@ -45,11 +45,11 @@ namespace UserInterface
     {
         try
         {
-            std::shared_ptr<Zip::IZipper> zipper;
+            std::shared_ptr<zip::IZipper> zipper;
 
             // First, see if this request is for a continuation
             if (Wt::Http::ResponseContinuation * continuation{ request.continuation() })
-                zipper = Wt::cpp17::any_cast<std::shared_ptr<Zip::IZipper>>(continuation->data());
+                zipper = Wt::cpp17::any_cast<std::shared_ptr<zip::IZipper>>(continuation->data());
             else
             {
                 zipper = createZipper();
@@ -63,7 +63,7 @@ namespace UserInterface
                 continuation->setData(zipper);
             }
         }
-        catch (Zip::Exception& exception)
+        catch (zip::Exception& exception)
         {
             LOG(ERROR, "Zipper exception: " << exception.what());
         }
@@ -71,16 +71,16 @@ namespace UserInterface
 
     namespace
     {
-        std::string getArtistPathName(Database::Artist::pointer artist)
+        std::string getArtistPathName(db::Artist::pointer artist)
         {
-            return StringUtils::replaceInString(artist->getName(), "/", "_");
+            return core::stringUtils::replaceInString(artist->getName(), "/", "_");
         }
 
-        std::string getReleaseArtistPathName(Database::Release::pointer release)
+        std::string getReleaseArtistPathName(db::Release::pointer release)
         {
             std::string releaseArtistName;
 
-            std::vector<Database::ObjectPtr<Database::Artist>> artists;
+            std::vector<db::ObjectPtr<db::Artist>> artists;
 
             artists = release->getReleaseArtists();
             if (artists.empty())
@@ -91,18 +91,18 @@ namespace UserInterface
             else if (artists.size() == 1)
                 releaseArtistName = artists.front()->getName();
 
-            releaseArtistName = StringUtils::replaceInString(releaseArtistName, "/", "_");
+            releaseArtistName = core::stringUtils::replaceInString(releaseArtistName, "/", "_");
 
             return releaseArtistName;
         }
 
-        std::string getReleasePathName(Database::Release::pointer release)
+        std::string getReleasePathName(db::Release::pointer release)
         {
             std::string releaseName;
 
             if (const auto year{ release->getYear() })
                 releaseName += std::to_string(*year) + " - ";
-            releaseName += StringUtils::replaceInString(release->getName(), "/", "_");
+            releaseName += core::stringUtils::replaceInString(release->getName(), "/", "_");
 
             return releaseName;
         }
@@ -110,7 +110,7 @@ namespace UserInterface
 
     namespace details
     {
-        std::string getTrackPathName(Database::Track::pointer track)
+        std::string getTrackPathName(db::Track::pointer track)
         {
             std::ostringstream fileName;
 
@@ -119,23 +119,23 @@ namespace UserInterface
             if (auto trackNumber{ track->getTrackNumber() })
                 fileName << std::setw(2) << std::setfill('0') << *trackNumber << " - ";
 
-            fileName << StringUtils::replaceInString(track->getName(), "/", "_") << track->getPath().filename().extension().string();
+            fileName << core::stringUtils::replaceInString(track->getName(), "/", "_") << track->getPath().filename().extension().string();
 
             return fileName.str();
         }
 
-        std::string getTrackListPathName(Database::TrackList::pointer trackList)
+        std::string getTrackListPathName(db::TrackList::pointer trackList)
         {
-            return StringUtils::replaceInString(trackList->getName(), "/", "_");
+            return core::stringUtils::replaceInString(trackList->getName(), "/", "_");
         }
 
-        std::unique_ptr<Zip::IZipper> createZipper(const std::vector<Database::Track::pointer>& tracks)
+        std::unique_ptr<zip::IZipper> createZipper(const std::vector<db::Track::pointer>& tracks)
         {
             if (tracks.empty())
                 return {};
 
-            Zip::EntryContainer files;
-            for (const Database::Track::pointer& track : tracks)
+            zip::EntryContainer files;
+            for (const db::Track::pointer& track : tracks)
             {
                 std::string releaseName;
                 std::string releaseArtistName;
@@ -152,45 +152,45 @@ namespace UserInterface
                     fileName += releaseName + "/";
                 fileName += getTrackPathName(track);
 
-                files.emplace_back(Zip::Entry{ fileName, track->getPath() });
+                files.emplace_back(zip::Entry{ fileName, track->getPath() });
             }
 
-            return Zip::createArchiveZipper(files);
+            return zip::createArchiveZipper(files);
         }
     }
 
-    DownloadArtistResource::DownloadArtistResource(Database::ArtistId artistId)
+    DownloadArtistResource::DownloadArtistResource(db::ArtistId artistId)
         : _artistId{ artistId }
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        Database::Artist::pointer artist{ Database::Artist::find(LmsApp->getDbSession(), artistId) };
+        db::Artist::pointer artist{ db::Artist::find(LmsApp->getDbSession(), artistId) };
         if (artist)
             suggestFileName(getArtistPathName(artist) + ".zip");
     }
 
-    std::unique_ptr<Zip::IZipper> DownloadArtistResource::createZipper()
+    std::unique_ptr<zip::IZipper> DownloadArtistResource::createZipper()
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const auto trackResults{ Database::Track::find(LmsApp->getDbSession(), Database::Track::FindParameters {}.setArtist(_artistId).setSortMethod(Database::TrackSortMethod::DateDescAndRelease)) };
+        const auto trackResults{ db::Track::find(LmsApp->getDbSession(), db::Track::FindParameters {}.setArtist(_artistId).setSortMethod(db::TrackSortMethod::DateDescAndRelease)) };
         return details::createZipper(trackResults.results);
     }
 
-    DownloadReleaseResource::DownloadReleaseResource(Database::ReleaseId releaseId)
+    DownloadReleaseResource::DownloadReleaseResource(db::ReleaseId releaseId)
         : _releaseId{ releaseId }
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        Database::Release::pointer release{ Database::Release::find(LmsApp->getDbSession(), releaseId) };
+        db::Release::pointer release{ db::Release::find(LmsApp->getDbSession(), releaseId) };
         if (release)
             suggestFileName(getReleasePathName(release) + ".zip");
     }
 
 
-    std::unique_ptr<Zip::IZipper> DownloadReleaseResource::createZipper()
+    std::unique_ptr<zip::IZipper> DownloadReleaseResource::createZipper()
     {
-        using namespace Database;
+        using namespace db;
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
@@ -198,21 +198,21 @@ namespace UserInterface
         return details::createZipper(tracks.results);
     }
 
-    DownloadTrackResource::DownloadTrackResource(Database::TrackId trackId)
+    DownloadTrackResource::DownloadTrackResource(db::TrackId trackId)
         : _trackId{ trackId }
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        Database::Track::pointer track{ Database::Track::find(LmsApp->getDbSession(), trackId) };
+        db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), trackId) };
         if (track)
             suggestFileName(details::getTrackPathName(track) + ".zip");
     }
 
-    std::unique_ptr<Zip::IZipper> DownloadTrackResource::createZipper()
+    std::unique_ptr<zip::IZipper> DownloadTrackResource::createZipper()
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const Database::Track::pointer track{ Database::Track::find(LmsApp->getDbSession(), _trackId) };
+        const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), _trackId) };
         if (!track)
         {
             LOG(DEBUG, "Cannot find track");
@@ -222,19 +222,19 @@ namespace UserInterface
         return details::createZipper({ track });
     }
 
-    DownloadTrackListResource::DownloadTrackListResource(Database::TrackListId trackListId)
+    DownloadTrackListResource::DownloadTrackListResource(db::TrackListId trackListId)
         : _trackListId{ trackListId }
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const Database::TrackList::pointer trackList{ Database::TrackList::find(LmsApp->getDbSession(), trackListId) };
+        const db::TrackList::pointer trackList{ db::TrackList::find(LmsApp->getDbSession(), trackListId) };
         if (trackList)
             suggestFileName(details::getTrackListPathName(trackList) + ".zip");
     }
 
-    std::unique_ptr<Zip::IZipper> DownloadTrackListResource::createZipper()
+    std::unique_ptr<zip::IZipper> DownloadTrackListResource::createZipper()
     {
-        using namespace Database;
+        using namespace db;
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         Track::FindParameters params;
@@ -242,4 +242,4 @@ namespace UserInterface
         const auto tracks{ Track::find(LmsApp->getDbSession(), params) };
         return details::createZipper(tracks.results);
     }
-} // namespace UserInterface
+} // namespace lms::ui

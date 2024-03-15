@@ -26,10 +26,10 @@
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 #include "database/TrackListId.hpp"
-#include "utils/IZipper.hpp"
-#include "utils/ZipperResourceHandlerCreator.hpp"
+#include "core/IZipper.hpp"
+#include "core/ZipperResourceHandlerCreator.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
 	class DownloadResource : public Wt::WResource
 	{
@@ -40,47 +40,47 @@ namespace UserInterface
 
 		private:
 			void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
-			virtual std::unique_ptr<Zip::IZipper> createZipper() = 0;
+			virtual std::unique_ptr<zip::IZipper> createZipper() = 0;
 	};
 
 	class DownloadArtistResource : public DownloadResource
 	{
 		public:
-			DownloadArtistResource(Database::ArtistId artistId);
+			DownloadArtistResource(db::ArtistId artistId);
 
 		private:
-			std::unique_ptr<Zip::IZipper> createZipper() override;
-			Database::ArtistId _artistId;
+			std::unique_ptr<zip::IZipper> createZipper() override;
+			db::ArtistId _artistId;
 	};
 
 	class DownloadReleaseResource : public DownloadResource
 	{
 		public:
-			DownloadReleaseResource(Database::ReleaseId releaseId);
+			DownloadReleaseResource(db::ReleaseId releaseId);
 
 		private:
-			std::unique_ptr<Zip::IZipper> createZipper() override;
-			Database::ReleaseId _releaseId;
+			std::unique_ptr<zip::IZipper> createZipper() override;
+			db::ReleaseId _releaseId;
 	};
 
 	class DownloadTrackResource : public DownloadResource
 	{
 		public:
-			DownloadTrackResource(Database::TrackId trackId);
+			DownloadTrackResource(db::TrackId trackId);
 
 		private:
-			std::unique_ptr<Zip::IZipper> createZipper() override;
-			Database::TrackId _trackId;
+			std::unique_ptr<zip::IZipper> createZipper() override;
+			db::TrackId _trackId;
 	};
 
 	class DownloadTrackListResource : public DownloadResource
 	{
 		public:
-			DownloadTrackListResource(Database::TrackListId trackListId);
+			DownloadTrackListResource(db::TrackListId trackListId);
 
 		private:
-			std::unique_ptr<Zip::IZipper> createZipper() override;
-			Database::TrackListId _trackListId;
+			std::unique_ptr<zip::IZipper> createZipper() override;
+			db::TrackListId _trackListId;
 	};
-} // namespace UserInterface
+} // namespace lms::ui
 

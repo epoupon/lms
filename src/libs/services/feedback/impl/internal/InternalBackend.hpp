@@ -21,27 +21,27 @@
 
 #include "IFeedbackBackend.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Db;
 }
 
-namespace Feedback
+namespace lms::feedback
 {
     class InternalBackend final : public IFeedbackBackend
     {
     public:
-        InternalBackend(Database::Db& db);
+        InternalBackend(db::Db& db);
 
     private:
-        void onStarred(Database::StarredArtistId) override;
-        void onUnstarred(Database::StarredArtistId) override;
-        void onStarred(Database::StarredReleaseId) override;
-        void onUnstarred(Database::StarredReleaseId) override;
-        void onStarred(Database::StarredTrackId) override;
-        void onUnstarred(Database::StarredTrackId) override;
+        void onStarred(db::StarredArtistId) override;
+        void onUnstarred(db::StarredArtistId) override;
+        void onStarred(db::StarredReleaseId) override;
+        void onUnstarred(db::StarredReleaseId) override;
+        void onStarred(db::StarredTrackId) override;
+        void onUnstarred(db::StarredTrackId) override;
 
-        Database::Db& _db;
+        db::Db& _db;
     };
 } // Feedback
 

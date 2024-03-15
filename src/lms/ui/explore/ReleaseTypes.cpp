@@ -21,20 +21,20 @@
 #include <unordered_map>
 
 #include "ReleaseTypes.hpp"
-#include "utils/String.hpp"
+#include "core/String.hpp"
 
-namespace StringUtils
+namespace lms::core::stringUtils
 {
     template<>
-    std::optional<UserInterface::PrimaryReleaseType> readAs(std::string_view str)
+    std::optional<ui::PrimaryReleaseType> readAs(std::string_view str)
     {
-        static const std::unordered_map<std::string, UserInterface::PrimaryReleaseType> entries
+        static const std::unordered_map<std::string, ui::PrimaryReleaseType> entries
         {
-            {"album", UserInterface::PrimaryReleaseType::Album},
-            {"single", UserInterface::PrimaryReleaseType::Single},
-            {"ep", UserInterface::PrimaryReleaseType::EP},
-            {"broadcast", UserInterface::PrimaryReleaseType::Broadcast},
-            {"other", UserInterface::PrimaryReleaseType::Other},
+            {"album", ui::PrimaryReleaseType::Album},
+            {"single", ui::PrimaryReleaseType::Single},
+            {"ep", ui::PrimaryReleaseType::EP},
+            {"broadcast", ui::PrimaryReleaseType::Broadcast},
+            {"other", ui::PrimaryReleaseType::Other},
         };
 
         const auto it{ entries.find(stringToLower(stringTrim(str))) };
@@ -45,22 +45,22 @@ namespace StringUtils
     }
 
     template<>
-    std::optional<UserInterface::SecondaryReleaseType> readAs(std::string_view str)
+    std::optional<ui::SecondaryReleaseType> readAs(std::string_view str)
     {
-        static const std::unordered_map<std::string, UserInterface::SecondaryReleaseType> entries
+        static const std::unordered_map<std::string, ui::SecondaryReleaseType> entries
         {
-            {"compilation", UserInterface::SecondaryReleaseType::Compilation},
-            {"soundtrack", UserInterface::SecondaryReleaseType::Soundtrack},
-            {"spokenword", UserInterface::SecondaryReleaseType::Spokenword},
-            {"interview", UserInterface::SecondaryReleaseType::Interview},
-            {"audiobook", UserInterface::SecondaryReleaseType::Audiobook},
-            {"audio drama", UserInterface::SecondaryReleaseType::AudioDrama},
-            {"live", UserInterface::SecondaryReleaseType::Live},
-            {"remix", UserInterface::SecondaryReleaseType::Remix},
-            {"dj-mix", UserInterface::SecondaryReleaseType::DJMix},
-            {"mixtape/street", UserInterface::SecondaryReleaseType::Mixtape_Street},
-            {"demo", UserInterface::SecondaryReleaseType::Demo},
-            {"field recording", UserInterface::SecondaryReleaseType::FieldRecording},
+            {"compilation", ui::SecondaryReleaseType::Compilation},
+            {"soundtrack", ui::SecondaryReleaseType::Soundtrack},
+            {"spokenword", ui::SecondaryReleaseType::Spokenword},
+            {"interview", ui::SecondaryReleaseType::Interview},
+            {"audiobook", ui::SecondaryReleaseType::Audiobook},
+            {"audio drama", ui::SecondaryReleaseType::AudioDrama},
+            {"live", ui::SecondaryReleaseType::Live},
+            {"remix", ui::SecondaryReleaseType::Remix},
+            {"dj-mix", ui::SecondaryReleaseType::DJMix},
+            {"mixtape/street", ui::SecondaryReleaseType::Mixtape_Street},
+            {"demo", ui::SecondaryReleaseType::Demo},
+            {"field recording", ui::SecondaryReleaseType::FieldRecording},
         };
 
         const auto it{ entries.find(stringToLower(stringTrim(str))) };
@@ -71,7 +71,7 @@ namespace StringUtils
     }
 }
 
-namespace UserInterface
+namespace lms::ui
 {
     ReleaseType parseReleaseType(const std::vector<std::string>& releaseTypeNames)
     {
@@ -79,14 +79,14 @@ namespace UserInterface
 
         for (std::string_view releaseTypeName : releaseTypeNames)
         {
-            if (auto primaryType{ StringUtils::readAs<PrimaryReleaseType>(releaseTypeName) })
+            if (auto primaryType{ core::stringUtils::readAs<PrimaryReleaseType>(releaseTypeName) })
             {
                 if (!res.primaryType)
                     res.primaryType = primaryType;
                 else
                     res.customTypes.push_back(std::string{ releaseTypeName });
             }
-            else if (auto secondaryType{ StringUtils::readAs<SecondaryReleaseType>(releaseTypeName) })
+            else if (auto secondaryType{ core::stringUtils::readAs<SecondaryReleaseType>(releaseTypeName) })
             {
                 res.secondaryTypes.insert(*secondaryType);
             }
@@ -107,7 +107,7 @@ namespace UserInterface
             return  static_cast<int>(*typeA) < static_cast<int>(*typeB);
     }
 
-    bool operator<(EnumSet<SecondaryReleaseType> typesA, EnumSet<SecondaryReleaseType> typesB)
+    bool operator<(core::EnumSet<SecondaryReleaseType> typesA, core::EnumSet<SecondaryReleaseType> typesB)
     {
         return typesA.getBitfield() < typesB.getBitfield();
     }
@@ -117,4 +117,4 @@ namespace UserInterface
         // TODO : order custom types and compare for each element (size is not to be compared first)
         return std::tie(primaryType, secondaryTypes, customTypes) < std::tie(other.primaryType, other.secondaryTypes, other.customTypes);
     }
-} // namespace UserInterface
+} // namespace lms::ui

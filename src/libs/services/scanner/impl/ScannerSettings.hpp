@@ -26,13 +26,13 @@
 #include "database/MediaLibraryId.hpp"
 #include "database/ScanSettings.hpp"
 
-namespace Scanner
+namespace lms::scanner
 {
     struct ScannerSettings
     {
         std::size_t								scanVersion{};
         Wt::WTime								startTime;
-        Database::ScanSettings::UpdatePeriod 	updatePeriod{ Database::ScanSettings::UpdatePeriod::Never };
+        db::ScanSettings::UpdatePeriod 	updatePeriod{ db::ScanSettings::UpdatePeriod::Never };
         std::vector<std::filesystem::path>		supportedExtensions;
         bool									skipDuplicateMBID{};
         std::vector<std::string>				extraTags;
@@ -41,13 +41,13 @@ namespace Scanner
 
         struct MediaLibraryInfo
         {
-            Database::MediaLibraryId id;
+            db::MediaLibraryId id;
             std::filesystem::path rootDirectory;
 
-            bool operator<=>(const MediaLibraryInfo& other) const = default;
+            auto operator<=>(const MediaLibraryInfo& other) const = default;
         };
         std::vector<MediaLibraryInfo>			mediaLibraries;
 
-        bool operator<=>(const ScannerSettings& rhs) const = default;
+        bool operator==(const ScannerSettings& rhs) const = default;
     };
 }

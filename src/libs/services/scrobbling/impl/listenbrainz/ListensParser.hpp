@@ -23,7 +23,7 @@
 
 #include "ListenTypes.hpp"
 
-namespace Scrobbling::ListenBrainz
+namespace lms::scrobbling::listenBrainz
 {
 	class ListensParser
 	{
@@ -36,4 +36,4 @@ namespace Scrobbling::ListenBrainz
 
 			static Result parse(std::string_view msgBody);
 	};
-} // Scrobbling::ListenBrainz
+} // scrobbling::ListenBrainz

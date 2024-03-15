@@ -22,12 +22,12 @@
 
 #include <Wt/WResource.h>
 
-namespace Database
+namespace lms::db
 {
 	class Db;
 }
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-	std::unique_ptr<Wt::WResource> createSubsonicResource(Database::Db& db);
+	std::unique_ptr<Wt::WResource> createSubsonicResource(db::Db& db);
 } // namespace

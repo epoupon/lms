@@ -23,20 +23,8 @@
 
 #include "Parser.hpp"
 
-namespace MetaData
+namespace lms::metadata
 {
-    namespace
-    {
-        template <typename TagMapType>
-        bool tagMapHasMultiValuedTags(const TagMapType& m)
-        {
-            return std::any_of(std::cbegin(m), std::cend(m), [](const auto& tagPair)
-                {
-                    return tagPair.second.size() > 1;
-                });
-        }
-    }
-
     class TestTagReader : public ITagReader
     {
     public:
@@ -53,14 +41,6 @@ namespace MetaData
             , _performers{ std::move(performers) }
             , _extraUserTags{ std::move(extraUserTags) }
         {
-            _hasMultiValuedTags = tagMapHasMultiValuedTags(_tags)
-                || tagMapHasMultiValuedTags(_performers)
-                || tagMapHasMultiValuedTags(_extraUserTags);
-        }
-
-        bool hasMultiValuedTags() const override
-        {
-            return _hasMultiValuedTags;
         }
 
         void visitTagValues(TagType tag, TagValueVisitor visitor) const override
@@ -102,6 +82,5 @@ namespace MetaData
         const Tags _tags;
         const Performers _performers;
         const ExtraUserTags _extraUserTags;
-        bool _hasMultiValuedTags;
     };
 }

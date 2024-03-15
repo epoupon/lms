@@ -23,12 +23,12 @@
 #include "database/ReleaseId.hpp"
 #include "common/Template.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class Release;
 }
 
-namespace UserInterface
+namespace lms::ui
 {
 	class Filters;
 	class PlayQueueController;
@@ -40,15 +40,15 @@ namespace UserInterface
 
 		private:
 			void refreshView();
-			void refreshReleaseArtists(const Database::ObjectPtr<Database::Release>& release);
-			void refreshCopyright(const Database::ObjectPtr<Database::Release>& release);
-			void refreshLinks(const Database::ObjectPtr<Database::Release>& release);
-			void refreshSimilarReleases(const std::vector<Database::ReleaseId>& similarReleasesId);
+			void refreshReleaseArtists(const db::ObjectPtr<db::Release>& release);
+			void refreshCopyright(const db::ObjectPtr<db::Release>& release);
+			void refreshLinks(const db::ObjectPtr<db::Release>& release);
+			void refreshSimilarReleases(const std::vector<db::ReleaseId>& similarReleasesId);
 
 			Filters&				_filters;
 			PlayQueueController&	_playQueueController;
-			Database::ReleaseId		_releaseId;
+			db::ReleaseId		_releaseId;
 			bool					_needForceRefresh {};
 	};
-} // namespace UserInterface
+} // namespace lms::ui
 

@@ -24,7 +24,7 @@
 #include <functional>
 #include <Wt/Dbo/ptr.h>
 
-namespace Database
+namespace lms::db
 {
 	class IdType
 	{
@@ -39,17 +39,14 @@ namespace Database
 
 			ValueType getValue() const { return _id; }
 
-			bool operator==(IdType other) const { return other._id == _id; }
-			bool operator!=(IdType other) const { return !(*this == other); }
-			bool operator<(IdType other) const { return _id < other._id; }
-			bool operator>(IdType other) const { return _id > other._id; }
+			auto operator<=>(const IdType& other) const = default;
 
 		private:
 			Wt::Dbo::dbo_default_traits::IdType _id {Wt::Dbo::dbo_default_traits::invalidId()};
 	};
 
 #define LMS_DECLARE_IDTYPE(name) \
-	namespace Database { \
+	namespace lms::db { \
 		class name : public IdType \
 		{ \
 			public: \
@@ -59,14 +56,14 @@ namespace Database
 	namespace std \
 	{ \
 		template<> \
-		class hash<Database::name> \
+		class hash<lms::db::name> \
 		{ \
 			public: \
-					size_t operator()(Database::name id) const \
+					size_t operator()(lms::db::name id) const \
 			{ \
-				return std::hash<Database::name::ValueType>()(id.getValue()); \
+				return std::hash<lms::db::name::ValueType>()(id.getValue()); \
 			} \
 		}; \
 	} // ns std
-} // namespace Database
+} // namespace lms::db
 

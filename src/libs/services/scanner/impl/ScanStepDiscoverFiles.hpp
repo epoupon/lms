@@ -21,7 +21,7 @@
 
 #include "ScanStepBase.hpp"
 
-namespace Scanner
+namespace lms::scanner
 {
 	class ScanStepDiscoverFiles : public ScanStepBase
 	{

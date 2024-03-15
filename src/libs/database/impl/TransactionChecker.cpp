@@ -19,19 +19,13 @@
 
 #include "database/TransactionChecker.hpp"
 
-#include <cassert>
+static_assert(LMS_CHECK_TRANSACTION_ACCESSES, "File should be excluded from build");
 
+#include <cassert>
 #include "database/Session.hpp"
 
-#if !defined(NDEBUG)
-#define LMS_CHECK_TRANSACTION_ACCESSES 1
-#else
-#define LMS_CHECK_TRANSACTION_ACCESSES 0
-#endif
-
-namespace Database
+namespace lms::db
 {
-#if LMS_CHECK_TRANSACTION_ACCESSES
     namespace
     {
         struct StackEntry
@@ -42,7 +36,6 @@ namespace Database
 
         static thread_local std::vector<StackEntry> transactionStack;
     }
-#endif
 
     void TransactionChecker::pushWriteTransaction(Wt::Dbo::Session& session)
     {
@@ -64,26 +57,21 @@ namespace Database
         popTransaction(TransactionType::Read, session);
     }
 
-    void TransactionChecker::pushTransaction([[maybe_unused]] TransactionType type, [[maybe_unused]] Wt::Dbo::Session& session)
+    void TransactionChecker::pushTransaction(TransactionType type, Wt::Dbo::Session& session)
     {
-#if LMS_CHECK_TRANSACTION_ACCESSES
         assert(transactionStack.empty() || transactionStack.back().session == &session);
         transactionStack.push_back(StackEntry{ type, &session });
-#endif // LMS_CHECK_TRANSACTION_ACCESSES
     }
 
-    void TransactionChecker::popTransaction([[maybe_unused]] TransactionType type, [[maybe_unused]] Wt::Dbo::Session& session)
+    void TransactionChecker::popTransaction(TransactionType type, Wt::Dbo::Session& session)
     {
-#if LMS_CHECK_TRANSACTION_ACCESSES
-
         assert(!transactionStack.empty());
         assert(transactionStack.back().type == type);
         assert(transactionStack.back().session == &session);
         transactionStack.pop_back();
-#endif // LMS_CHECK_TRANSACTION_ACCESSES
     }
 
-    void TransactionChecker::checkWriteTransaction([[maybe_unused]] Wt::Dbo::Session& session)
+    void TransactionChecker::checkWriteTransaction(Wt::Dbo::Session& session)
     {
         assert(!transactionStack.empty());
         assert(transactionStack.back().type == TransactionType::Write);
@@ -95,7 +83,7 @@ namespace Database
         checkWriteTransaction(session.getDboSession());
     }
 
-    void TransactionChecker::checkReadTransaction([[maybe_unused]] Wt::Dbo::Session& session)
+    void TransactionChecker::checkReadTransaction(Wt::Dbo::Session& session)
     {
         assert(!transactionStack.empty());
         assert(transactionStack.back().session == &session);

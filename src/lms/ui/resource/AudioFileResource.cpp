@@ -26,21 +26,22 @@
 #include "av/RawResourceHandlerCreator.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/String.hpp"
+#include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
+#include "core/String.hpp"
 #include "LmsApplication.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
 #define LOG(severity, message)	LMS_LOG(UI, severity, "Audio file resource: " << message)
 
     namespace
     {
-        std::optional<std::filesystem::path> getTrackPathFromTrackId(Database::TrackId trackId)
+        std::optional<std::filesystem::path> getTrackPathFromTrackId(db::TrackId trackId)
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-            const Database::Track::pointer track{ Database::Track::find(LmsApp->getDbSession(), trackId) };
+            const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), trackId) };
             if (!track)
             {
                 LOG(ERROR, "Missing track");
@@ -59,7 +60,7 @@ namespace UserInterface
                 return std::nullopt;
             }
 
-            const std::optional<Database::TrackId> trackId{ StringUtils::readAs<Database::TrackId::ValueType>(*trackIdParameter) };
+            const std::optional<db::TrackId> trackId{ core::stringUtils::readAs<db::TrackId::ValueType>(*trackIdParameter) };
             if (!trackId)
             {
                 LOG(ERROR, "Bad trackid URL parameter!");
@@ -76,13 +77,15 @@ namespace UserInterface
         beingDeleted();
     }
 
-    std::string AudioFileResource::getUrl(Database::TrackId trackId) const
+    std::string AudioFileResource::getUrl(db::TrackId trackId) const
     {
         return url() + "&trackid=" + trackId.toString();
     }
 
     void AudioFileResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
     {
+        LMS_SCOPED_TRACE_OVERVIEW("UI", "HandleAudioFileRequest");
+
         std::shared_ptr<IResourceHandler> fileResourceHandler;
 
         if (!request.continuation())
@@ -91,7 +94,7 @@ namespace UserInterface
             if (!trackPath)
                 return;
 
-            fileResourceHandler = Av::createRawResourceHandler(*trackPath);
+            fileResourceHandler = av::createRawResourceHandler(*trackPath);
         }
         else
         {
@@ -102,4 +105,4 @@ namespace UserInterface
         if (continuation)
             continuation->setData(fileResourceHandler);
     }
-} // namespace UserInterface
+} // namespace lms::ui

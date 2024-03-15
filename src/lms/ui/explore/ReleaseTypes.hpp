@@ -24,9 +24,9 @@
 #include <string_view>
 #include <vector>
 
-#include "utils/EnumSet.hpp"
+#include "core/EnumSet.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
     // see https://musicbrainz.org/doc/Release_Group/Type
     enum class PrimaryReleaseType
@@ -57,7 +57,7 @@ namespace UserInterface
     struct ReleaseType
     {
         std::optional<PrimaryReleaseType> primaryType;
-        EnumSet<SecondaryReleaseType> secondaryTypes;
+        core::EnumSet<SecondaryReleaseType> secondaryTypes;
         std::vector<std::string> customTypes;
 
         bool operator<(const ReleaseType& other) const;
@@ -65,4 +65,4 @@ namespace UserInterface
 
     ReleaseType parseReleaseType(const std::vector<std::string>& releaseTypeNames);
 
-} // namespace UserInterface
+} // namespace lms::ui

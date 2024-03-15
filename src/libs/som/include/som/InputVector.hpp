@@ -23,12 +23,12 @@
 #include <vector>
 #include <cmath>
 
-#include "utils/Exception.hpp"
+#include "core/Exception.hpp"
 
-namespace SOM
+namespace lms::som
 {
 
-class Exception : public LmsException
+class Exception : public core::LmsException
 {
 	public:
 		using LmsException::LmsException;

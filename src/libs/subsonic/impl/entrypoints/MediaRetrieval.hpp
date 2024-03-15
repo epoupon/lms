@@ -24,7 +24,7 @@
 
 #include "RequestContext.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
     void handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
     void handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);

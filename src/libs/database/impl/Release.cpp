@@ -26,14 +26,14 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 #include "SqlQuery.hpp"
 #include "EnumSetTraits.hpp"
 #include "IdTypeTraits.hpp"
 #include "StringViewTraits.hpp"
 #include "Utils.hpp"
 
-namespace Database
+namespace lms::db
 {
     namespace
     {
@@ -76,7 +76,7 @@ namespace Database
             }
 
             for (std::string_view keyword : params.keywords)
-                query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + Utils::escapeLikeKeyword(keyword) + "%");
+                query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
 
             if (params.starringUser.isValid())
             {
@@ -227,13 +227,13 @@ namespace Database
             .resultValue();
     }
 
-    Release::Release(const std::string& name, const std::optional<UUID>& MBID)
+    Release::Release(const std::string& name, const std::optional<core::UUID>& MBID)
         : _name{ std::string(name, 0 , _maxNameLength) },
         _MBID{ MBID ? MBID->getAsString() : "" }
     {
     }
 
-    Release::pointer Release::create(Session& session, const std::string& name, const std::optional<UUID>& MBID)
+    Release::pointer Release::create(Session& session, const std::string& name, const std::optional<core::UUID>& MBID)
     {
         return session.getDboSession().add(std::unique_ptr<Release> {new Release{ name, MBID }});
     }
@@ -246,13 +246,13 @@ namespace Database
                             .query<Wt::Dbo::ptr<Release>>("SELECT DISTINCT r from release r")
                             .join("track t ON t.release_id = r.id")
                             .where("r.name = ?").bind(std::string(name, 0, _maxNameLength))
-                            .where("t.file_path LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind(Utils::escapeLikeKeyword(releaseDirectory.string()) + "%")
+                            .where("t.file_path LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind(utils::escapeLikeKeyword(releaseDirectory.string()) + "%")
                             .resultList() };
 
         return std::vector<Release::pointer>(res.begin(), res.end());
     }
 
-    Release::pointer Release::find(Session& session, const UUID& mbid)
+    Release::pointer Release::find(Session& session, const core::UUID& mbid)
     {
         session.checkReadTransaction();
 
@@ -290,7 +290,7 @@ namespace Database
         session.checkReadTransaction();
 
         auto query{ session.getDboSession().query<ReleaseId>("select r.id from release r LEFT OUTER JOIN Track t ON r.id = t.release_id WHERE t.id IS NULL") };
-        return Utils::execQuery<ReleaseId>(query, range);
+        return utils::execQuery<ReleaseId>(query, range);
     }
 
     RangeResults<Release::pointer> Release::find(Session& session, const FindParameters& params)
@@ -298,7 +298,7 @@ namespace Database
         session.checkReadTransaction();
 
         auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, "DISTINCT r", params) };
-        return Utils::execQuery<pointer>(query, params.range);
+        return utils::execQuery<pointer>(query, params.range);
     }
 
     void Release::find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func)
@@ -306,7 +306,7 @@ namespace Database
         session.checkReadTransaction();
 
         auto query{ createQuery<Wt::Dbo::ptr<Release>>(session, "DISTINCT r", params) };
-        Utils::execQuery<pointer>(query, params.range, func);
+        utils::execQuery<pointer>(query, params.range, func);
     }
 
     RangeResults<ReleaseId> Release::findIds(Session& session, const FindParameters& params)
@@ -314,7 +314,7 @@ namespace Database
         session.checkReadTransaction();
 
         auto query{ createQuery<ReleaseId>(session, "DISTINCT r.id", params) };
-        return Utils::execQuery<ReleaseId>(query, params.range);
+        return utils::execQuery<ReleaseId>(query, params.range);
     }
 
     std::size_t Release::getCount(Session& session, const FindParameters& params)
@@ -602,4 +602,4 @@ namespace Database
         return res;
     }
 
-} // namespace Database
+} // namespace lms::db

@@ -21,9 +21,9 @@
 
 #include "database/Cluster.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    Response::Node createGenreNode(const Database::Cluster::pointer& cluster)
+    Response::Node createGenreNode(const db::Cluster::pointer& cluster)
     {
         Response::Node clusterNode;
 

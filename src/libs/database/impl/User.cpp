@@ -23,12 +23,12 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 #include "IdTypeTraits.hpp"
 #include "StringViewTraits.hpp"
 #include "Utils.hpp"
 
-namespace Database {
+namespace lms::db {
 
     User::User(std::string_view loginName)
         : _loginName{ loginName }
@@ -58,7 +58,7 @@ namespace Database {
         if (params.feedbackBackend)
             query.where("feedback_backend = ?").bind(*params.feedbackBackend);
 
-        return Utils::execQuery<UserId>(query, params.range);
+        return utils::execQuery<UserId>(query, params.range);
     }
 
     User::pointer User::findDemoUser(Session& session)
@@ -91,4 +91,4 @@ namespace Database {
         _authTokens.clear();
     }
 
-} // namespace Database
+} // namespace lms::db

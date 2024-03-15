@@ -24,18 +24,15 @@
 
 #include "database/UserId.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
-
-	std::optional<Database::UserId>
-	processAuthToken(const Wt::WEnvironment& env);
+	std::optional<db::UserId> processAuthToken(const Wt::WEnvironment& env);
 
 	class Auth : public Wt::WTemplateFormView
 	{
 		public:
 			Auth();
 
-			Wt::Signal<Database::UserId> userLoggedIn;
+			Wt::Signal<db::UserId> userLoggedIn;
 	};
-
-} // namespace UserInterface
+} // namespace lms::ui

@@ -23,18 +23,18 @@
 #include <Wt/WTemplateFormView.h>
 #include "database/MediaLibraryId.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
     class MediaLibraryModal : public Wt::WTemplateFormView
     {
     public:
-        MediaLibraryModal(Database::MediaLibraryId mediaLibaryId);
+        MediaLibraryModal(db::MediaLibraryId mediaLibaryId);
 
-        Wt::Signal<Database::MediaLibraryId>& saved() { return _saved; };
+        Wt::Signal<db::MediaLibraryId>& saved() { return _saved; };
         Wt::Signal<>& cancelled() { return _cancelled; }
 
     private:
-        Wt::Signal<Database::MediaLibraryId> _saved;
+        Wt::Signal<db::MediaLibraryId> _saved;
         Wt::Signal<> _cancelled;
     };
 }

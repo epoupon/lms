@@ -19,10 +19,18 @@
 
 #pragma once
 
+#if !defined(NDEBUG)
+#define LMS_CHECK_TRANSACTION_ACCESSES 1
+#else
+#define LMS_CHECK_TRANSACTION_ACCESSES 0
+#endif
+
+#if LMS_CHECK_TRANSACTION_ACCESSES
+
 #include <vector>
 #include <Wt/Dbo/Session.h>
 
-namespace Database
+namespace lms::db
 {
     class Session;
 
@@ -51,3 +59,5 @@ namespace Database
         static void popTransaction(TransactionType type, Wt::Dbo::Session& session);
     };
 }
+
+#endif

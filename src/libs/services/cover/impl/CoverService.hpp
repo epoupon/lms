@@ -33,21 +33,21 @@
 #include "image/IEncodedImage.hpp"
 #include "database/Types.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Session;
 }
 
-namespace Av
+namespace lms::av
 {
     class IAudioFile;
 }
 
-namespace Cover
+namespace lms::cover
 {
     struct CacheEntryDesc
     {
-        std::variant<Database::ArtistId, Database::ReleaseId, Database::TrackId> id;
+        std::variant<db::ArtistId, db::ReleaseId, db::TrackId> id;
         std::size_t			size;
 
         bool operator==(const CacheEntryDesc& other) const
@@ -61,64 +61,64 @@ namespace Cover
 namespace std
 {
     template<>
-    class hash<Cover::CacheEntryDesc>
+    class hash<lms::cover::CacheEntryDesc>
     {
     public:
-        size_t operator()(const Cover::CacheEntryDesc& e) const
+        size_t operator()(const lms::cover::CacheEntryDesc& e) const
         {
             size_t h{};
             std::visit([&](auto id)
                 {
                     using IdType = std::decay_t<decltype(id)>;
-                    h ^= std::hash<IdType>()(id);
+                    h ^= std::hash<IdType>{}(id);
                 }, e.id);
-            h ^= std::hash<std::size_t>()(e.size) << 1;
+            h ^= std::hash<std::size_t>{}(e.size) << 1;
             return h;
         }
     };
 
 } // ns std
 
-namespace Cover
+namespace lms::cover
 {
     class CoverService : public ICoverService
     {
     public:
-        CoverService(Database::Db& db, const std::filesystem::path& execPath, const std::filesystem::path& defaultCoverPath);
+        CoverService(db::Db& db, const std::filesystem::path& execPath, const std::filesystem::path& defaultCoverPath);
 
         CoverService(const CoverService&) = delete;
         CoverService& operator=(const CoverService&) = delete;
 
     private:
-        std::shared_ptr<Image::IEncodedImage>   getFromTrack(Database::TrackId trackId, Image::ImageSize width) override;
-        std::shared_ptr<Image::IEncodedImage>   getFromRelease(Database::ReleaseId releaseId, Image::ImageSize width) override;
-        std::shared_ptr<Image::IEncodedImage>   getFromArtist(Database::ArtistId artistId, Image::ImageSize width) override;
-        std::shared_ptr<Image::IEncodedImage>   getDefault(Image::ImageSize width) override;
+        std::shared_ptr<image::IEncodedImage>   getFromTrack(db::TrackId trackId, image::ImageSize width) override;
+        std::shared_ptr<image::IEncodedImage>   getFromRelease(db::ReleaseId releaseId, image::ImageSize width) override;
+        std::shared_ptr<image::IEncodedImage>   getFromArtist(db::ArtistId artistId, image::ImageSize width) override;
+        std::shared_ptr<image::IEncodedImage>   getDefault(image::ImageSize width) override;
         void                                    flushCache() override;
         void                                    setJpegQuality(unsigned quality) override;
 
-        std::shared_ptr<Image::IEncodedImage>   getFromTrack(Database::Session& dbSession, Database::TrackId trackId, Image::ImageSize width, bool allowReleaseFallback);
-        std::unique_ptr<Image::IEncodedImage>   getFromAvMediaFile(const Av::IAudioFile& input, Image::ImageSize width) const;
-        std::unique_ptr<Image::IEncodedImage>   getFromCoverFile(const std::filesystem::path& p, Image::ImageSize width) const;
+        std::shared_ptr<image::IEncodedImage>   getFromTrack(db::Session& dbSession, db::TrackId trackId, image::ImageSize width, bool allowReleaseFallback);
+        std::unique_ptr<image::IEncodedImage>   getFromAvMediaFile(const av::IAudioFile& input, image::ImageSize width) const;
+        std::unique_ptr<image::IEncodedImage>   getFromCoverFile(const std::filesystem::path& p, image::ImageSize width) const;
 
-        std::unique_ptr<Image::IEncodedImage>   getFromTrack(const std::filesystem::path& path, Image::ImageSize width) const;
+        std::unique_ptr<image::IEncodedImage>   getFromTrack(const std::filesystem::path& path, image::ImageSize width) const;
         std::multimap<std::string, std::filesystem::path>   getCoverPaths(const std::filesystem::path& directoryPath) const;
-        std::unique_ptr<Image::IEncodedImage>   getFromDirectory(const std::filesystem::path& directory, Image::ImageSize width, const std::vector<std::string>& preferredFileNames, bool allowPickRandom) const;
-        std::unique_ptr<Image::IEncodedImage>   getFromSameNamedFile(const std::filesystem::path& filePath, Image::ImageSize width) const;
+        std::unique_ptr<image::IEncodedImage>   getFromDirectory(const std::filesystem::path& directory, image::ImageSize width, const std::vector<std::string>& preferredFileNames, bool allowPickRandom) const;
+        std::unique_ptr<image::IEncodedImage>   getFromSameNamedFile(const std::filesystem::path& filePath, image::ImageSize width) const;
 
         bool                                    checkCoverFile(const std::filesystem::path& directoryPath) const;
 
-        Database::Db& _db;
+        db::Db& _db;
 
         std::shared_mutex _cacheMutex;
-        std::unordered_map<CacheEntryDesc, std::shared_ptr<Image::IEncodedImage>> _cache;
-        std::unordered_map<Image::ImageSize, std::shared_ptr<Image::IEncodedImage>> _defaultCoverCache;
+        std::unordered_map<CacheEntryDesc, std::shared_ptr<image::IEncodedImage>> _cache;
+        std::unordered_map<image::ImageSize, std::shared_ptr<image::IEncodedImage>> _defaultCoverCache;
         std::atomic<std::size_t>    _cacheMisses{};
         std::atomic<std::size_t>    _cacheHits{};
         std::size_t                 _cacheSize{};
 
-        void saveToCache(const CacheEntryDesc& entryDesc, std::shared_ptr<Image::IEncodedImage> image);
-        std::shared_ptr<Image::IEncodedImage> loadFromCache(const CacheEntryDesc& entryDesc);
+        void saveToCache(const CacheEntryDesc& entryDesc, std::shared_ptr<image::IEncodedImage> image);
+        std::shared_ptr<image::IEncodedImage> loadFromCache(const CacheEntryDesc& entryDesc);
 
         const std::filesystem::path _defaultCoverPath;
         const std::size_t _maxCacheSize;
@@ -129,5 +129,5 @@ namespace Cover
         unsigned _jpegQuality;
     };
 
-} // namespace Cover
+} // namespace lms::cover
 

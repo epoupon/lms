@@ -25,13 +25,13 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 #include "SqlQuery.hpp"
 #include "Utils.hpp"
 #include "EnumSetTraits.hpp"
 #include "IdTypeTraits.hpp"
 
-namespace Database
+namespace lms::db
 {
     namespace
     {
@@ -67,16 +67,16 @@ namespace Database
                 for (std::string_view keyword : params.keywords)
                 {
                     clauses.push_back("a.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
-                    query.bind("%" + Utils::escapeLikeKeyword(keyword) + "%");
+                    query.bind("%" + utils::escapeLikeKeyword(keyword) + "%");
                 }
 
                 for (std::string_view keyword : params.keywords)
                 {
                     sortClauses.push_back("a.sort_name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
-                    query.bind("%" + Utils::escapeLikeKeyword(keyword) + "%");
+                    query.bind("%" + utils::escapeLikeKeyword(keyword) + "%");
                 }
 
-                query.where("(" + StringUtils::joinStrings(clauses, " AND ") + ") OR (" + StringUtils::joinStrings(sortClauses, " AND ") + ")");
+                query.where("(" + core::stringUtils::joinStrings(clauses, " AND ") + ") OR (" + core::stringUtils::joinStrings(sortClauses, " AND ") + ")");
             }
 
             if (params.starringUser.isValid())
@@ -165,16 +165,16 @@ namespace Database
         }
     }
 
-    Artist::Artist(const std::string& name, const std::optional<UUID>& MBID)
+    Artist::Artist(const std::string& name, const std::optional<core::UUID>& MBID)
         : _name{ std::string(name, 0 , _maxNameLength) },
         _sortName{ _name },
         _MBID{ MBID ? MBID->getAsString() : "" }
     {
     }
 
-    Artist::pointer Artist::create(Session& session, const std::string& name, const std::optional<UUID>& MBID)
+    Artist::pointer Artist::create(Session& session, const std::string& name, const std::optional<core::UUID>& MBID)
     {
-        return session.getDboSession().add(std::unique_ptr<Artist> {new Artist{ name, MBID }});
+        return session.getDboSession().add(std::unique_ptr<Artist>{ new Artist{ name, MBID } });
     }
 
     std::size_t Artist::getCount(Session& session)
@@ -195,7 +195,7 @@ namespace Database
         return std::vector<Artist::pointer>(res.begin(), res.end());
     }
 
-    Artist::pointer Artist::find(Session& session, const UUID& mbid)
+    Artist::pointer Artist::find(Session& session, const core::UUID& mbid)
     {
         session.checkReadTransaction();
         return session.getDboSession().find<Artist>().where("mbid = ?").bind(std::string{ mbid.getAsString() }).resultValue();
@@ -218,7 +218,7 @@ namespace Database
     {
         session.checkReadTransaction();
         auto query{ session.getDboSession().query<ArtistId>("SELECT DISTINCT a.id FROM artist a WHERE NOT EXISTS(SELECT 1 FROM track t INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id WHERE t.id = t_a_l.track_id)") };
-        return Utils::execQuery<ArtistId>(query, range);
+        return utils::execQuery<ArtistId>(query, range);
     }
 
     RangeResults<ArtistId> Artist::findIds(Session& session, const FindParameters& params)
@@ -226,7 +226,7 @@ namespace Database
         session.checkReadTransaction();
 
         auto query{ createQuery<ArtistId>(session, params) };
-        return Utils::execQuery<ArtistId>(query, params.range);
+        return utils::execQuery<ArtistId>(query, params.range);
     }
 
     RangeResults<Artist::pointer> Artist::find(Session& session, const FindParameters& params)
@@ -234,7 +234,7 @@ namespace Database
         session.checkReadTransaction();
 
         auto query{ createQuery<Wt::Dbo::ptr<Artist>>(session, params) };
-        return Utils::execQuery<Artist::pointer>(query, params.range);
+        return utils::execQuery<Artist::pointer>(query, params.range);
     }
 
     void Artist::find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func)
@@ -242,10 +242,10 @@ namespace Database
         session.checkReadTransaction();
 
         auto query{ createQuery<Wt::Dbo::ptr<Artist>>(session, params) };
-        Utils::execQuery(query, params.range, func);
+        utils::execQuery(query, params.range, func);
     }
 
-    RangeResults<ArtistId> Artist::findSimilarArtistIds(EnumSet<TrackArtistLinkType> artistLinkTypes, std::optional<Range> range) const
+    RangeResults<ArtistId> Artist::findSimilarArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes, std::optional<Range> range) const
     {
         assert(session());
 
@@ -289,7 +289,7 @@ namespace Database
         for (TrackArtistLinkType type : artistLinkTypes)
             query.bind(type);
 
-        return Utils::execQuery<ArtistId>(query, range);
+        return utils::execQuery<ArtistId>(query, range);
     }
 
     std::vector<std::vector<Cluster::pointer>> Artist::getClusterGroups(std::vector<ClusterTypeId> clusterTypeIds, std::size_t size) const
@@ -338,4 +338,4 @@ namespace Database
         _sortName = std::string(sortName, 0, _maxNameLength);
     }
 
-} // namespace Database
+} // namespace lms::db

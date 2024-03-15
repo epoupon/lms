@@ -22,13 +22,13 @@
 #include <memory>
 #include "IEngine.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class Db;
 }
 
-namespace Recommendation
+namespace lms::recommendation
 {
-	std::unique_ptr<IEngine> createFeaturesEngine(Database::Db& db);
+	std::unique_ptr<IEngine> createFeaturesEngine(db::Db& db);
 }
 

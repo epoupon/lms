@@ -25,11 +25,10 @@
 #include "database/MediaLibrary.hpp"
 #include "database/TrackFeatures.hpp"
 #include "database/ScanSettings.hpp"
-#include "utils/Exception.hpp"
-#include "utils/IConfig.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/Path.hpp"
-#include "utils/Tuple.hpp"
+#include "core/Exception.hpp"
+#include "core/IConfig.hpp"
+#include "core/ILogger.hpp"
+#include "core/Path.hpp"
 
 #include "ScanStepCheckDuplicatedDbFiles.hpp"
 #include "ScanStepDiscoverFiles.hpp"
@@ -37,9 +36,9 @@
 #include "ScanStepScanFiles.hpp"
 #include "ScanStepComputeClusterStats.hpp"
 
-namespace Scanner
+namespace lms::scanner
 {
-    using namespace Database;
+    using namespace db;
 
     namespace
     {
@@ -357,7 +356,7 @@ namespace Scanner
     {
         ScannerSettings newSettings;
 
-        newSettings.skipDuplicateMBID = Service<IConfig>::get()->getBool("scanner-skip-duplicate-mbid", false);
+        newSettings.skipDuplicateMBID = core::Service<core::IConfig>::get()->getBool("scanner-skip-duplicate-mbid", false);
         {
             auto transaction{ _dbSession.createReadTransaction() };
 
@@ -371,7 +370,7 @@ namespace Scanner
                 const auto fileExtensions{ scanSettings->getAudioFileExtensions() };
                 newSettings.supportedExtensions.reserve(fileExtensions.size());
                 std::transform(std::cbegin(fileExtensions), std::end(fileExtensions), std::back_inserter(newSettings.supportedExtensions),
-                    [](const std::filesystem::path& extension) { return std::filesystem::path{ StringUtils::stringToLower(extension.string()) }; });
+                    [](const std::filesystem::path& extension) { return std::filesystem::path{ core::stringUtils::stringToLower(extension.string()) }; });
             }
 
             MediaLibrary::find(_dbSession, [&](const MediaLibrary::pointer& mediaLibrary)
@@ -411,4 +410,4 @@ namespace Scanner
             notifyInProgress(stepStats);
     }
 
-} // namespace Scanner
+} // namespace lms::scanner

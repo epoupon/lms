@@ -22,21 +22,23 @@
 #include <Wt/WLengthValidator.h>
 #include "database/User.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
-	class LengthValidator : public Wt::WLengthValidator
-	{
-		private:
-			std::string javaScriptValidate() const override { return {}; }
-	};
+    namespace
+    {
+        class LengthValidator : public Wt::WLengthValidator
+        {
+        private:
+            std::string javaScriptValidate() const override { return {}; }
+        };
+    }
 
-	std::unique_ptr<Wt::WValidator>
-	createLoginNameValidator()
-	{
-		auto v = std::make_unique<LengthValidator>();
-		v->setMandatory(true);
-		v->setMinimumLength(::Database::User::MinNameLength);
-		v->setMaximumLength(::Database::User::MaxNameLength);
-		return v;
-	}
-} // namespace UserInterface
+    std::unique_ptr<Wt::WValidator> createLoginNameValidator()
+    {
+        auto v = std::make_unique<LengthValidator>();
+        v->setMandatory(true);
+        v->setMinimumLength(db::User::MinNameLength);
+        v->setMaximumLength(db::User::MaxNameLength);
+        return v;
+    }
+} // namespace lms::ui

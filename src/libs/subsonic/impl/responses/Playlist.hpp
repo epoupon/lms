@@ -22,13 +22,13 @@
 #include "database/Object.hpp"
 #include "SubsonicResponse.hpp"
 
-namespace Database
+namespace lms::db
 {
     class TrackList;
     class Session;
 }
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    Response::Node createPlaylistNode(const Database::ObjectPtr<Database::TrackList>& tracklist, Database::Session& session);
+    Response::Node createPlaylistNode(const db::ObjectPtr<db::TrackList>& tracklist, db::Session& session);
 }

@@ -34,9 +34,8 @@
 #include "database/Types.hpp"
 #include "database/UserId.hpp"
 
-namespace Database
+namespace lms::db
 {
-
     class Session;
     class Track;
     class User;
@@ -135,5 +134,5 @@ namespace Database
         Wt::Dbo::ptr<Track>	_track;
     };
 
-} // namespace Database
+} // namespace lms::db
 

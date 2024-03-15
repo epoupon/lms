@@ -19,11 +19,11 @@ target_include_directories(lmsfeedback PRIVATE
 	)
 
 target_link_libraries(lmsfeedback PRIVATE
-	lmsutils
+	lmscore
 	)
 
 target_link_libraries(lmsfeedback PUBLIC
 	lmsdatabase
 	)
 
-install(TARGETS lmsfeedback DESTINATION lib)
+install(TARGETS lmsfeedback DESTINATION ${CMAKE_INSTALL_LIBDIR})

@@ -28,11 +28,11 @@
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Session;
 
-    class MediaLibrary : public Object<MediaLibrary, MediaLibraryId>
+    class MediaLibrary final : public Object<MediaLibrary, MediaLibraryId>
     {
     public:
         static const std::size_t maxNameLength{ 128 };
@@ -63,11 +63,11 @@ namespace Database
         }
 
     private:
-        friend class ::Database::Session;
+        friend class Session;
         MediaLibrary(const std::filesystem::path& p, std::string_view name);
         static pointer create(Session& session, const std::filesystem::path& p = {}, std::string_view name = {});
 
         std::filesystem::path       _path;
         std::string                 _name;
     };
-} // namespace Database
+} // namespace lms::db

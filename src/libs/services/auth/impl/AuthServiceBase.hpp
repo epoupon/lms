@@ -22,25 +22,25 @@
 #include <string_view>
 #include "database/UserId.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Db;
     class Session;
 }
 
-namespace Auth
+namespace lms::auth
 {
     class AuthServiceBase
     {
     protected:
-        AuthServiceBase(Database::Db& db);
+        AuthServiceBase(db::Db& db);
 
-        Database::UserId    getOrCreateUser(std::string_view loginName);
-        void                onUserAuthenticated(Database::UserId userId);
+        db::UserId    getOrCreateUser(std::string_view loginName);
+        void                onUserAuthenticated(db::UserId userId);
 
-        Database::Session&  getDbSession();
+        db::Session&  getDbSession();
 
     private:
-        Database::Db& _db;
+        db::Db& _db;
     };
 }

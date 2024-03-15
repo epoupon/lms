@@ -24,7 +24,7 @@
 
 #include "database/UserId.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class Db;
 	class Session;
@@ -40,7 +40,7 @@ namespace Wt::Http
 	class Request;
 }
 
-namespace Auth
+namespace lms::auth
 {
 	class IEnvService
 	{
@@ -58,12 +58,12 @@ namespace Auth
 				};
 
 				State state {State::Denied};
-				std::optional<Database::UserId>	userId {};
+				std::optional<db::UserId>	userId {};
 			};
 
 			virtual CheckResult			processEnv(const Wt::WEnvironment& env) = 0;
 			virtual CheckResult			processRequest(const Wt::Http::Request& request) = 0;
 	};
 
-	std::unique_ptr<IEnvService> createEnvService(std::string_view backendName, Database::Db& db);
-} // namespace Auth
+	std::unique_ptr<IEnvService> createEnvService(std::string_view backendName, db::Db& db);
+} // namespace lms::auth

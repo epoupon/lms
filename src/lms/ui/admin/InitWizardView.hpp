@@ -21,7 +21,7 @@
 
 #include <Wt/WTemplateFormView.h>
 
-namespace UserInterface {
+namespace lms::ui {
 
 class InitWizardView : public Wt::WTemplateFormView
 {
@@ -29,6 +29,6 @@ class InitWizardView : public Wt::WTemplateFormView
 		InitWizardView();
 };
 
-} // namespace UserInterface
+} // namespace lms::ui
 
 

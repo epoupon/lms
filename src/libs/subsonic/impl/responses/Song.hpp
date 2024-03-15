@@ -22,14 +22,14 @@
 #include "database/Object.hpp"
 #include "SubsonicResponse.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Track;
     class User;
     class Session;
 }
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    Response::Node createSongNode(RequestContext& context, const Database::ObjectPtr<Database::Track>& track, const Database::ObjectPtr<Database::User>& user);
+    Response::Node createSongNode(RequestContext& context, const db::ObjectPtr<db::Track>& track, const db::ObjectPtr<db::User>& user);
 }

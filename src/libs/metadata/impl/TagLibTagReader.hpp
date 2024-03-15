@@ -27,7 +27,7 @@
 #include "metadata/IParser.hpp"
 #include "ITagReader.hpp"
 
-namespace MetaData
+namespace lms::metadata
 {
     class TagLibTagReader : public ITagReader
     {
@@ -38,7 +38,6 @@ namespace MetaData
         TagLibTagReader(const TagLibTagReader&) = delete;
         TagLibTagReader& operator=(const TagLibTagReader&) = delete;
 
-        bool hasMultiValuedTags() const override { return _hasMultiValuedTags; }
         void visitTagValues(TagType tag, TagValueVisitor visitor) const override;
         void visitTagValues(std::string_view tag, TagValueVisitor visitor) const override;
         void visitPerformerTags(PerformerVisitor visitor) const override;
@@ -49,9 +48,8 @@ namespace MetaData
         std::size_t                 getBitsPerSample() const override;
         std::size_t                 getSampleRate() const override;
 
-        TagLib::FileRef _file;
+        const TagLib::FileRef _file;
         TagLib::PropertyMap _propertyMap; // case-insensitive keys
         bool _hasEmbeddedCover{};
-        bool _hasMultiValuedTags{};
     };
-} // namespace MetaData
+} // namespace lms::metadata

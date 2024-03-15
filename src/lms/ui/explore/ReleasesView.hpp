@@ -24,7 +24,7 @@
 #include "common/Template.hpp"
 #include "ReleaseCollector.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
 	class Filters;
 	class InfiniteScrollingContainer;
@@ -40,7 +40,7 @@ namespace UserInterface
 			void refreshView(ReleaseCollector::Mode mode);
 
 			void addSome();
-			std::vector<Database::ReleaseId> getAllReleases();
+			std::vector<db::ReleaseId> getAllReleases();
 
 			static constexpr std::size_t _maxItemsPerLine {6};
 			static constexpr std::size_t _batchSize {_maxItemsPerLine};
@@ -52,5 +52,5 @@ namespace UserInterface
 			ReleaseCollector			_releaseCollector;
 			static constexpr ReleaseCollector::Mode _defaultMode {ReleaseCollector::Mode::Random};
 	};
-} // namespace UserInterface
+} // namespace lms::ui
 

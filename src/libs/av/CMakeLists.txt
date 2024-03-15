@@ -18,7 +18,7 @@ target_include_directories(lmsav PRIVATE
 	)
 
 target_link_libraries(lmsav PUBLIC
-	lmsutils
+	lmscore
 	std::filesystem
 	)
 
@@ -26,5 +26,5 @@ target_link_libraries(lmsav PRIVATE
 	PkgConfig::LIBAV
 	)
 
-install(TARGETS lmsav DESTINATION lib)
+install(TARGETS lmsav DESTINATION ${CMAKE_INSTALL_LIBDIR})
 

@@ -34,10 +34,11 @@
 #include <taglib/wavpackfile.h>
 
 #include "metadata/Exception.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/String.hpp"
+#include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
+#include "core/String.hpp"
 
-namespace MetaData
+namespace lms::metadata
 {
     namespace
     {
@@ -158,7 +159,7 @@ namespace MetaData
             case ParserReadStyle::Accurate: return TagLib::AudioProperties::ReadStyle::Accurate;
             }
 
-            throw LmsException{ "Cannot convert read style" };
+            throw core::LmsException{ "Cannot convert read style" };
         }
 
         void mergeTagMaps(TagLib::PropertyMap& dst, TagLib::PropertyMap&& src)
@@ -169,12 +170,19 @@ namespace MetaData
                     dst[tag] = std::move(values);
             }
         }
+
+        TagLib::FileRef parseFile(const std::filesystem::path& p, ParserReadStyle parserReadStyle)
+        {
+            LMS_SCOPED_TRACE_DETAILED("MetaData", "TagLibParseFile");
+
+            return TagLib::FileRef{ p.string().c_str()
+                , true // read audio properties
+                , readStyleToTagLibReadStyle(parserReadStyle) };
+        }
     }
 
     TagLibTagReader::TagLibTagReader(const std::filesystem::path& p, ParserReadStyle parserReadStyle, bool debug)
-        : _file{ p.string().c_str()
-            , true // read audio properties
-            , readStyleToTagLibReadStyle(parserReadStyle) }
+        : _file{ parseFile(p, parserReadStyle) }
     {
         if (_file.isNull())
         {
@@ -215,7 +223,7 @@ namespace MetaData
                     if (attributeList.isEmpty())
                         continue;
 
-                    std::string strName{ StringUtils::stringToUpper(name.to8Bit(true)) };
+                    std::string strName{ core::stringUtils::stringToUpper(name.to8Bit(true)) };
                     if (strName.find("WM/") == 0 || _propertyMap.find(strName) != std::cend(_propertyMap))
                         continue;
 
@@ -282,7 +290,7 @@ namespace MetaData
                 _hasEmbeddedCover = true;
         }
 
-        if (debug && Service<ILogger>::get()->isSeverityActive(Severity::DEBUG))
+        if (debug && core::Service<core::logging::ILogger>::get()->isSeverityActive(core::logging::Severity::DEBUG))
         {
             for (const auto& [key, values] : _propertyMap)
             {
@@ -293,8 +301,6 @@ namespace MetaData
             for (const auto& value : _propertyMap.unsupportedData())
                 LMS_LOG(METADATA, DEBUG, "Unknown value: '" << value.to8Bit(true) << "'");
         }
-
-        _hasMultiValuedTags = std::any_of(std::cbegin(_propertyMap), std::cend(_propertyMap), [](const auto& entry) { return entry.second.size() > 1; });
     }
 
     void TagLibTagReader::visitTagValues(TagType tag, TagValueVisitor visitor) const
@@ -374,4 +380,4 @@ namespace MetaData
     {
         return static_cast<std::size_t>(_file.audioProperties()->sampleRate());
     }
-} // namespace MetaData
+} // namespace lms::metadata

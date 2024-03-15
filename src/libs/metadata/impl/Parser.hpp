@@ -22,7 +22,7 @@
 #include "metadata/IParser.hpp"
 #include "ITagReader.hpp"
 
-namespace MetaData
+namespace lms::metadata
 {
     class Parser : public IParser
     {
@@ -50,5 +50,5 @@ namespace MetaData
         std::vector<std::string> _artistTagDelimiters;
         std::vector<std::string> _defaultTagDelimiters;
     };
-} // namespace MetaData
+} // namespace lms::metadata
 

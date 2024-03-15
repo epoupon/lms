@@ -12,7 +12,7 @@ target_include_directories(lmsimage PRIVATE
 	)
 
 target_link_libraries(lmsimage PUBLIC
-	lmsutils
+	lmscore
 	std::filesystem
 	)
 
@@ -34,5 +34,5 @@ else ()
 	message(FATAL_ERROR "Invalid IMAGE_LIBRARY provided")
 endif()
 
-install(TARGETS lmsimage DESTINATION lib)
+install(TARGETS lmsimage DESTINATION ${CMAKE_INSTALL_LIBDIR})
 

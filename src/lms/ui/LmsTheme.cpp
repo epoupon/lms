@@ -9,7 +9,7 @@
 #include <Wt/WApplication.h>
 #include <Wt/WLinkedCssStyleSheet.h>
 
-namespace UserInterface
+namespace lms::ui
 {
 
 	void
@@ -55,5 +55,5 @@ namespace UserInterface
 		}
 	}
 
-} // namespace UserInterface
+} // namespace lms::ui
 

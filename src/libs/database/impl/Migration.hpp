@@ -21,7 +21,7 @@
 
 #include <Wt/Dbo/Dbo.h>
 
-namespace Database
+namespace lms::db
 {
     class Session;
 

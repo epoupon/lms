@@ -24,7 +24,7 @@
 #include "TestTagReader.hpp"
 #include "Parser.hpp"
 
-namespace MetaData
+namespace lms::metadata
 {
     TEST(Parser, generalTest)
     {
@@ -88,15 +88,15 @@ namespace MetaData
 
         std::unique_ptr<Track> track{ parser.parse(testTags) };
 
-        EXPECT_EQ(track->acoustID, UUID::fromString("e987a441-e134-4960-8019-274eddacc418"));
+        EXPECT_EQ(track->acoustID, core::UUID::fromString("e987a441-e134-4960-8019-274eddacc418"));
         EXPECT_EQ(track->artistDisplayName, "MyArtist1 & MyArtist2");
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "MyArtist1");
         EXPECT_EQ(track->artists[0].sortName, "MyArtist1SortName");
-        EXPECT_EQ(track->artists[0].mbid, UUID::fromString("9d2e0c8c-8c5e-4372-a061-590955eaeaae"));
+        EXPECT_EQ(track->artists[0].mbid, core::UUID::fromString("9d2e0c8c-8c5e-4372-a061-590955eaeaae"));
         EXPECT_EQ(track->artists[1].name, "MyArtist2");
         EXPECT_EQ(track->artists[1].sortName, "MyArtist2SortName");
-        EXPECT_EQ(track->artists[1].mbid, UUID::fromString("5e2cf87f-c8d7-4504-8a86-954dc0840229"));
+        EXPECT_EQ(track->artists[1].mbid, core::UUID::fromString("5e2cf87f-c8d7-4504-8a86-954dc0840229"));
         EXPECT_EQ(track->bitrate, TestTagReader::trackBitrate);
         ASSERT_EQ(track->composerArtists.size(), 2);
         EXPECT_EQ(track->composerArtists[0].name, "MyComposer1");
@@ -130,7 +130,7 @@ namespace MetaData
         EXPECT_EQ(track->lyricistArtists[0].name, "MyLyricist1");
         EXPECT_EQ(track->lyricistArtists[1].name, "MyLyricist2");
         ASSERT_TRUE(track->mbid.has_value());
-        EXPECT_EQ(track->mbid.value(), UUID::fromString("0afb190a-6735-46df-a16d-199f48206e4a"));
+        EXPECT_EQ(track->mbid.value(), core::UUID::fromString("0afb190a-6735-46df-a16d-199f48206e4a"));
         ASSERT_EQ(track->mixerArtists.size(), 2);
         EXPECT_EQ(track->mixerArtists[0].name, "MyMixer1");
         EXPECT_EQ(track->mixerArtists[1].name, "MyMixer2");
@@ -156,7 +156,7 @@ namespace MetaData
         EXPECT_EQ(track->producerArtists[0].name, "MyProducer1");
         EXPECT_EQ(track->producerArtists[1].name, "MyProducer2");
         ASSERT_TRUE(track->recordingMBID.has_value());
-        EXPECT_EQ(track->recordingMBID.value(), UUID::fromString("bd3fc666-89de-4ac8-93f6-2dbf028ad8d5"));
+        EXPECT_EQ(track->recordingMBID.value(), core::UUID::fromString("bd3fc666-89de-4ac8-93f6-2dbf028ad8d5"));
         ASSERT_TRUE(track->replayGain.has_value());
         EXPECT_FLOAT_EQ(track->replayGain.value(), -0.33);
         ASSERT_EQ(track->remixerArtists.size(), 2);
@@ -189,13 +189,13 @@ namespace MetaData
         ASSERT_EQ(track->medium->release->artists.size(), 2);
         EXPECT_EQ(track->medium->release->artists[0].name, "MyAlbumArtist1");
         EXPECT_EQ(track->medium->release->artists[0].sortName, "MyAlbumArtist1SortName");
-        EXPECT_EQ(track->medium->release->artists[0].mbid, UUID::fromString("6fbf097c-1487-43e8-874b-50dd074398a7"));
+        EXPECT_EQ(track->medium->release->artists[0].mbid, core::UUID::fromString("6fbf097c-1487-43e8-874b-50dd074398a7"));
         EXPECT_EQ(track->medium->release->artists[1].name, "MyAlbumArtist2");
         EXPECT_EQ(track->medium->release->artists[1].sortName, "MyAlbumArtist2SortName");
-        EXPECT_EQ(track->medium->release->artists[1].mbid, UUID::fromString("5ed3d6b3-2aed-4a03-828c-3c4d4f7406e1"));
+        EXPECT_EQ(track->medium->release->artists[1].mbid, core::UUID::fromString("5ed3d6b3-2aed-4a03-828c-3c4d4f7406e1"));
         ASSERT_TRUE(track->medium->release->mbid.has_value());
-        EXPECT_EQ(track->medium->release->mbid.value(), UUID::fromString("3fa39992-b786-4585-a70e-85d5cc15ef69"));
-        EXPECT_EQ(track->medium->release->groupMBID.value(), UUID::fromString("5b1a5a44-8420-4426-9b86-d25dc8d04838"));
+        EXPECT_EQ(track->medium->release->mbid.value(), core::UUID::fromString("3fa39992-b786-4585-a70e-85d5cc15ef69"));
+        EXPECT_EQ(track->medium->release->groupMBID.value(), core::UUID::fromString("5b1a5a44-8420-4426-9b86-d25dc8d04838"));
         EXPECT_EQ(track->medium->release->mediumCount, 3);
         EXPECT_EQ(track->medium->release->name, "MyAlbum");
         EXPECT_EQ(track->medium->release->sortName, "MyAlbumSortName");
@@ -245,25 +245,5 @@ namespace MetaData
         EXPECT_EQ(track->artists[0].name, "This /  is ; One Artist");
         EXPECT_EQ(track->artists[1].name, "Other Artist");
         EXPECT_EQ(track->artistDisplayName, "This /  is ; One Artist \\  Other Artist");
-    }
-
-    TEST(Parser, customDelimiters_notWithMultiValuedTags)
-    {
-        const TestTagReader testTags{
-            {
-                { TagType::Genre, { "Genre1 ; Genre2" } },
-                { TagType::Language, { "Lang1", "Lang2" } },
-            }
-        };
-
-        Parser parser;
-        static_cast<IParser&>(parser).setDefaultTagDelimiters(std::vector<std::string>{ " ; " });
-        std::unique_ptr<Track> track{ parser.parse(testTags) };
-
-        ASSERT_EQ(track->genres.size(), 1);
-        EXPECT_EQ(track->genres[0], "Genre1 ; Genre2");
-        ASSERT_EQ(track->languages.size(), 2);
-        EXPECT_EQ(track->languages[0], "Lang1");
-        EXPECT_EQ(track->languages[1], "Lang2");
     }
 }

@@ -37,12 +37,12 @@
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"
 
-#include "utils/IConfig.hpp"
-#include "utils/Random.hpp"
-#include "utils/StreamLogger.hpp"
-#include "utils/Service.hpp"
+#include "core/IConfig.hpp"
+#include "core/Random.hpp"
+#include "core/StreamLogger.hpp"
+#include "core/Service.hpp"
 
-namespace
+namespace lms
 {
     struct GeneratorParameters
     {
@@ -60,32 +60,32 @@ namespace
 
     struct GenerationContext
     {
-        Database::Session& session;
-        std::vector<Database::MediaLibrary::pointer> mediaLibraries;
-        std::vector<Database::Cluster::pointer> genres;
-        std::vector<Database::Cluster::pointer> moods;
-        GenerationContext(Database::Session& _session) : session{ _session } {}
+        db::Session& session;
+        std::vector<db::MediaLibrary::pointer> mediaLibraries;
+        std::vector<db::Cluster::pointer> genres;
+        std::vector<db::Cluster::pointer> moods;
+        GenerationContext(db::Session& _session) : session{ _session } {}
     };
 
-    Database::Cluster::pointer generateCluster(Database::Session& session, Database::ClusterType::pointer clusterType)
+    db::Cluster::pointer generateCluster(db::Session& session, db::ClusterType::pointer clusterType)
     {
-        const std::string clusterName{ std::string{ clusterType->getName() } + "-" + std::string{ UUID::generate().getAsString() } };
-        return session.create<Database::Cluster>(clusterType, clusterName);
+        const std::string clusterName{ std::string{ clusterType->getName() } + "-" + std::string{ core::UUID::generate().getAsString() } };
+        return session.create<db::Cluster>(clusterType, clusterName);
     }
 
-    Database::Artist::pointer generateArtist(Database::Session& session)
+    db::Artist::pointer generateArtist(db::Session& session)
     {
-        const UUID artistMBID{ UUID::generate() };
-        const std::string artistName{ "Artist-" + std::string{ UUID::generate().getAsString() } };
-        return session.create<Database::Artist>(artistName, artistMBID);
+        const core::UUID artistMBID{ core::UUID::generate() };
+        const std::string artistName{ "Artist-" + std::string{ core::UUID::generate().getAsString() } };
+        return session.create<db::Artist>(artistName, artistMBID);
     }
 
     void generateRelease(const GeneratorParameters& params, GenerationContext& context)
     {
-        using namespace Database;
+        using namespace db;
 
-        const UUID releaseMBID{ UUID::generate() };
-        const std::string releaseName{ "Release-" + std::string{ UUID::generate().getAsString() } };
+        const core::UUID releaseMBID{ core::UUID::generate() };
+        const std::string releaseName{ "Release-" + std::string{ core::UUID::generate().getAsString() } };
         Release::pointer release{ context.session.create<Release>(releaseName, releaseMBID) };
 
         Artist::pointer artist{ generateArtist(context.session) };
@@ -94,25 +94,25 @@ namespace
         {
             Track::pointer track{ context.session.create<Track>(params.trackPath) };
 
-            track.modify()->setName("Track-" + std::string{ UUID::generate().getAsString() });
+            track.modify()->setName("Track-" + std::string{ core::UUID::generate().getAsString() });
             track.modify()->setDiscNumber(1);
             track.modify()->setTrackNumber(i);
-            track.modify()->setDuration(std::chrono::seconds{ Random::getRandom(30, 300) });
+            track.modify()->setDuration(std::chrono::seconds{ core::random::getRandom(30, 300) });
             track.modify()->setRelease(release);
-            track.modify()->setTrackMBID(UUID::generate());
-            track.modify()->setRecordingMBID(UUID::generate());
+            track.modify()->setTrackMBID(core::UUID::generate());
+            track.modify()->setRecordingMBID(core::UUID::generate());
             track.modify()->setTotalTrack(params.trackCountPerRelease);
             if (!context.mediaLibraries.empty())
-                track.modify()->setMediaLibrary(*Random::pickRandom(context.mediaLibraries));
+                track.modify()->setMediaLibrary(*core::random::pickRandom(context.mediaLibraries));
 
             TrackArtistLink::create(context.session, track, artist, TrackArtistLinkType::Artist);
             TrackArtistLink::create(context.session, track, artist, TrackArtistLinkType::ReleaseArtist);
 
             std::vector<ObjectPtr<Cluster>> clusters;
             if (!context.genres.empty())
-                clusters.push_back(*Random::pickRandom(context.genres));
+                clusters.push_back(*core::random::pickRandom(context.genres));
             if (!context.moods.empty())
-                clusters.push_back(*Random::pickRandom(context.moods));
+                clusters.push_back(*core::random::pickRandom(context.moods));
             track.modify()->setClusters(clusters);
         }
     }
@@ -137,22 +137,22 @@ namespace
 
         // create some random media libraries
         for (std::size_t i{}; i < params.mediaLibraryCount; ++i)
-            context.mediaLibraries.push_back(context.session.create<Database::MediaLibrary>());
+            context.mediaLibraries.push_back(context.session.create<db::MediaLibrary>());
 
         // create some random genres/moods
         {
-            Database::ClusterType::pointer genre{ Database::ClusterType::find(context.session, "GENRE") };
+            db::ClusterType::pointer genre{ db::ClusterType::find(context.session, "GENRE") };
             if (!genre)
-                genre = context.session.create<Database::ClusterType>("GENRE");
+                genre = context.session.create<db::ClusterType>("GENRE");
 
             for (std::size_t i{}; i < params.genreCount; ++i)
                 context.genres.push_back(generateCluster(context.session, genre));
         }
 
         {
-            Database::ClusterType::pointer mood{ Database::ClusterType::find(context.session, "MOOD") };
+            db::ClusterType::pointer mood{ db::ClusterType::find(context.session, "MOOD") };
             if (!mood)
-                mood = context.session.create<Database::ClusterType>("MOOD");
+                mood = context.session.create<db::ClusterType>("MOOD");
 
             for (std::size_t i{}; i < params.moodCount; ++i)
                 context.moods.push_back(generateCluster(context.session, mood));
@@ -164,31 +164,32 @@ int main(int argc, char* argv[])
 {
     try
     {
-        // log to stdout
-        Service<ILogger> logger{ std::make_unique<StreamLogger>(std::cout) };
+        using namespace lms;
+        namespace program_options = boost::program_options;
 
-        namespace po = boost::program_options;
+        // log to stdout
+        core::Service<core::logging::ILogger> logger{ std::make_unique<core::logging::StreamLogger>(std::cout) };
 
         const GeneratorParameters defaultParams;
 
-        po::options_description options{ "Options" };
+        program_options::options_description options{ "Options" };
         options.add_options()
-            ("conf,c", po::value<std::string>()->default_value("/etc/lms.conf"), "lms config file")
-            ("media-library-count", po::value<unsigned>()->default_value(defaultParams.mediaLibraryCount), "Number of media libraries to use")
-            ("release-count-per-batch", po::value<unsigned>()->default_value(defaultParams.releaseCountPerBatch), "Number of releases to generate before committing transaction")
-            ("release-count", po::value<unsigned>()->default_value(defaultParams.releaseCount), "Number of releases to generate")
-            ("track-count-per-release", po::value<unsigned>()->default_value(defaultParams.trackCountPerRelease), "Number of tracks per release")
-            ("compilation-ratio", po::value<float>()->default_value(defaultParams.compilationRatio), "Compilation ratio (compilation means all tracks have a different artist)")
-            ("track-path", po::value<std::string>()->required(), "Path of a valid track file, that will be used for all generated tracks")
-            ("genre-count", po::value<unsigned>()->default_value(defaultParams.genreCount), "Number of genres to generate")
-            ("genre-count-per-track", po::value<unsigned>()->default_value(defaultParams.genreCountPerTrack), "Number of genres to assign to each track")
-            ("mood-count", po::value<unsigned>()->default_value(defaultParams.moodCount), "Number of moods to generate")
-            ("mood-count-per-track", po::value<unsigned>()->default_value(defaultParams.moodCountPerTrack), "Number of moods to assign to each track")
+            ("conf,c", program_options::value<std::string>()->default_value("/etc/lms.conf"), "lms config file")
+            ("media-library-count", program_options::value<unsigned>()->default_value(defaultParams.mediaLibraryCount), "Number of media libraries to use")
+            ("release-count-per-batch", program_options::value<unsigned>()->default_value(defaultParams.releaseCountPerBatch), "Number of releases to generate before committing transaction")
+            ("release-count", program_options::value<unsigned>()->default_value(defaultParams.releaseCount), "Number of releases to generate")
+            ("track-count-per-release", program_options::value<unsigned>()->default_value(defaultParams.trackCountPerRelease), "Number of tracks per release")
+            ("compilation-ratio", program_options::value<float>()->default_value(defaultParams.compilationRatio), "Compilation ratio (compilation means all tracks have a different artist)")
+            ("track-path", program_options::value<std::string>()->required(), "Path of a valid track file, that will be used for all generated tracks")
+            ("genre-count", program_options::value<unsigned>()->default_value(defaultParams.genreCount), "Number of genres to generate")
+            ("genre-count-per-track", program_options::value<unsigned>()->default_value(defaultParams.genreCountPerTrack), "Number of genres to assign to each track")
+            ("mood-count", program_options::value<unsigned>()->default_value(defaultParams.moodCount), "Number of moods to generate")
+            ("mood-count-per-track", program_options::value<unsigned>()->default_value(defaultParams.moodCountPerTrack), "Number of moods to assign to each track")
             ("help,h", "produce help message")
             ;
 
-        po::variables_map vm;
-        po::store(po::parse_command_line(argc, argv, options), vm);
+        program_options::variables_map vm;
+        program_options::store(program_options::parse_command_line(argc, argv, options), vm);
 
         if (vm.count("help")) {
             std::cout << options << "\n";
@@ -196,7 +197,7 @@ int main(int argc, char* argv[])
         }
 
         // notify required params
-        po::notify(vm);
+        program_options::notify(vm);
 
         GeneratorParameters genParams;
         genParams.mediaLibraryCount = vm["media-library-count"].as<unsigned>();
@@ -209,9 +210,9 @@ int main(int argc, char* argv[])
         if (!std::filesystem::exists(genParams.trackPath))
             throw std::runtime_error{ "File '" + genParams.trackPath.string() + "' does not exist!" };
 
-        Service<IConfig> config{ createConfig(vm["conf"].as<std::string>()) };
-        Database::Db db{ config->getPath("working-dir") / "lms.db" };
-        Database::Session session{ db };
+        core::Service<core::IConfig> config{ core::createConfig(vm["conf"].as<std::string>()) };
+        db::Db db{ config->getPath("working-dir") / "lms.db" };
+        db::Session session{ db };
         std::cout << "Starting generation..." << std::endl;
 
         GenerationContext genContext{ session };

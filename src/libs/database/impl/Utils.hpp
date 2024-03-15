@@ -27,8 +27,9 @@
 #include <Wt/WDateTime.h>
 
 #include "database/Types.hpp"
+#include "core/ITraceLogger.hpp"
 
-namespace Database::Utils
+namespace lms::db::utils
 {
 #define ESCAPE_CHAR_STR "\\"
     static inline constexpr char escapeChar{ '\\' };
@@ -47,23 +48,30 @@ namespace Database::Utils
     template <typename ResultType, typename Query>
     RangeResults<ResultType> execQuery(Query& query, std::optional<Range> range)
     {
+        LMS_SCOPED_TRACE_DETAILED("Database", "ExecQueryRange");
+
         RangeResults<ResultType> res;
 
         if (range)
+        {
+            res.range.offset = range->offset;
             applyRange(query, Range{ range->offset, range->size + 1 });
 
-        auto collection{ query.resultList() };
-        res.results.assign(collection.begin(), collection.end());
-        if (range && res.results.size() == static_cast<std::size_t>(range->size) + 1)
-        {
-            // TODO may optim by not actually requesting the last one
-            res.moreResults = true;
-            res.results.pop_back();
+            res.results.reserve(range->size);
         }
-        else
-            res.moreResults = false;
 
-        res.range.offset = range->offset;
+        auto collection{ query.resultList() };
+        for (auto itResult{ collection.begin() }; itResult != collection.end(); ++itResult)
+        {
+            if (range && res.results.size() == range->size)
+            {
+                res.moreResults = true;
+                break;
+            }
+
+            res.results.push_back(std::move(*itResult));
+        }
+
         res.range.size = res.results.size();
 
         return res;
@@ -76,9 +84,34 @@ namespace Database::Utils
             applyRange(query, range);
 
         for (const auto& res : query.resultList())
+        {
+            LMS_SCOPED_TRACE_DETAILED("Database", "ExecQueryResult");
             func(res);
+        }
+    }
+
+    template <typename ResultType, typename Query>
+    void execQuery(Query& query, std::optional<Range> range, bool& moreResults, std::function<void(const ResultType&)> func)
+    {
+        if (range)
+            applyRange(query, Range{ range->offset, range->size + 1 });
+
+        moreResults = false;
+
+        std::size_t count{};
+        for (const auto& res : query.resultList())
+        {
+            if (range && (count++ == static_cast<std::size_t>(range->size)))
+            {
+                moreResults = true;
+                break;
+            }
+
+            LMS_SCOPED_TRACE_DETAILED("Database", "ExecQueryResult");
+            func(res);
+        }
     }
 
     Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime);
-} // namespace Database::Utils
+}
 

@@ -19,23 +19,23 @@
 
 #include "Utils.hpp"
 
-#include "utils/Service.hpp"
-#include "utils/String.hpp"
+#include "core/Service.hpp"
+#include "core/String.hpp"
 #include "services/auth/IPasswordService.hpp"
 #include "SubsonicResponse.hpp"
 
-namespace API::Subsonic::Utils
+namespace lms::api::subsonic::utils
 {
     void checkSetPasswordImplemented()
     {
-        Auth::IPasswordService* passwordService{ Service<Auth::IPasswordService>::get() };
+        auth::IPasswordService* passwordService{ core::Service<auth::IPasswordService>::get() };
         if (!passwordService || !passwordService->canSetPasswords())
             throw NotImplementedGenericError{};
     }
 
     std::string makeNameFilesystemCompatible(std::string_view name)
     {
-        return StringUtils::replaceInString(name, "/", "_");
+        return core::stringUtils::replaceInString(name, "/", "_");
     }
 
 }

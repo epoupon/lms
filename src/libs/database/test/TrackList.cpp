@@ -21,204 +21,205 @@
 
 #include "Common.hpp"
 
-using namespace Database;
-
-TEST_F(DatabaseFixture, SingleTrackList)
+namespace lms::db::tests
 {
-    ScopedUser user{ session, "MyUser" };
+    TEST_F(DatabaseFixture, SingleTrackList)
     {
-        auto transaction{ session.createReadTransaction() };
-        EXPECT_EQ(TrackList::getCount(session), 0);
+        ScopedUser user{ session, "MyUser" };
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(TrackList::getCount(session), 0);
+        }
+
+        ScopedTrackList trackList{ session, "MytrackList", TrackListType::Playlist, false, user.lockAndGet() };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(TrackList::getCount(session), 1);
+        }
     }
 
-    ScopedTrackList trackList{ session, "MytrackList", TrackListType::Playlist, false, user.lockAndGet() };
-
+    TEST_F(DatabaseFixture, SingleTrackListSingleTrack)
     {
-        auto transaction{ session.createReadTransaction() };
-        EXPECT_EQ(TrackList::getCount(session), 1);
-    }
-}
+        ScopedUser user{ session, "MyUser" };
+        ScopedTrackList trackList1{ session, "MyTrackList1", TrackListType::Playlist, false, user.lockAndGet() };
+        ScopedTrackList trackList2{ session, "MyTrackList2", TrackListType::Playlist, false, user.lockAndGet() };
+        ScopedTrack track{ session, "MyTrack" };
 
-TEST_F(DatabaseFixture, SingleTrackListSingleTrack)
-{
-    ScopedUser user{ session, "MyUser" };
-    ScopedTrackList trackList1{ session, "MyTrackList1", TrackListType::Playlist, false, user.lockAndGet() };
-    ScopedTrackList trackList2{ session, "MyTrackList2", TrackListType::Playlist, false, user.lockAndGet() };
-    ScopedTrack track{ session, "MyTrack" };
+        {
+            auto transaction{ session.createReadTransaction() };
 
-    {
-        auto transaction{ session.createReadTransaction() };
+            auto tracks{ Track::findIds(session, Track::FindParameters {}.setTrackList(trackList1.getId())) };
+            EXPECT_EQ(tracks.results.size(), 0);
 
-        auto tracks{ Track::findIds(session, Track::FindParameters {}.setTrackList(trackList1.getId())) };
-        EXPECT_EQ(tracks.results.size(), 0);
+            tracks = Track::findIds(session, Track::FindParameters{}.setTrackList(trackList2.getId()));
+            EXPECT_EQ(tracks.results.size(), 0);
+        }
 
-        tracks = Track::findIds(session, Track::FindParameters{}.setTrackList(trackList2.getId()));
-        EXPECT_EQ(tracks.results.size(), 0);
-    }
+        {
+            auto transaction{ session.createWriteTransaction() };
 
-    {
-        auto transaction{ session.createWriteTransaction() };
+            session.create<TrackListEntry>(track.get(), trackList1.get());
+        }
 
-        session.create<TrackListEntry>(track.get(), trackList1.get());
-    }
+        {
+            auto transaction{ session.createReadTransaction() };
 
-    {
-        auto transaction{ session.createReadTransaction() };
+            auto tracks{ Track::findIds(session, Track::FindParameters {}.setTrackList(trackList1.getId())) };
+            ASSERT_EQ(tracks.results.size(), 1);
+            EXPECT_EQ(tracks.results.front(), track.getId());
 
-        auto tracks{ Track::findIds(session, Track::FindParameters {}.setTrackList(trackList1.getId())) };
-        ASSERT_EQ(tracks.results.size(), 1);
-        EXPECT_EQ(tracks.results.front(), track.getId());
-
-        tracks = Track::findIds(session, Track::FindParameters{}.setTrackList(trackList2.getId()));
-        EXPECT_EQ(tracks.results.size(), 0);
-    }
-}
-
-TEST_F(DatabaseFixture, TrackList_SortMethod)
-{
-    ScopedUser user{ session, "MyUser" };
-    ScopedTrackList trackList2{ session, "MyTrackList2", TrackListType::Playlist, false, user.lockAndGet() };
-    ScopedTrackList trackList1{ session, "MyTrackList1", TrackListType::Playlist, false, user.lockAndGet() };
-    ScopedTrack track{ session, "MyTrack" };
-
-    {
-        auto transaction{ session.createReadTransaction() };
-
-        const auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setSortMethod(TrackListSortMethod::Name)) };
-        ASSERT_EQ(trackLists.results.size(), 2);
-        EXPECT_EQ(trackLists.results[0], trackList1.getId());
-        EXPECT_EQ(trackLists.results[1], trackList2.getId());
+            tracks = Track::findIds(session, Track::FindParameters{}.setTrackList(trackList2.getId()));
+            EXPECT_EQ(tracks.results.size(), 0);
+        }
     }
 
+    TEST_F(DatabaseFixture, TrackList_SortMethod)
     {
-        auto transaction{ session.createWriteTransaction() };
+        ScopedUser user{ session, "MyUser" };
+        ScopedTrackList trackList2{ session, "MyTrackList2", TrackListType::Playlist, false, user.lockAndGet() };
+        ScopedTrackList trackList1{ session, "MyTrackList1", TrackListType::Playlist, false, user.lockAndGet() };
+        ScopedTrack track{ session, "MyTrack" };
 
-        trackList1.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate {1900,1,1} });
-        trackList2.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate {1900,1,2} });
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setSortMethod(TrackListSortMethod::Name)) };
+            ASSERT_EQ(trackLists.results.size(), 2);
+            EXPECT_EQ(trackLists.results[0], trackList1.getId());
+            EXPECT_EQ(trackLists.results[1], trackList2.getId());
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            trackList1.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate {1900,1,1} });
+            trackList2.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate {1900,1,2} });
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setSortMethod(TrackListSortMethod::LastModifiedDesc)) };
+            ASSERT_EQ(trackLists.results.size(), 2);
+            EXPECT_EQ(trackLists.results[0], trackList2.getId());
+            EXPECT_EQ(trackLists.results[1], trackList1.getId());
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            trackList1.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate {1900,1,2} });
+            trackList2.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate {1900,1,1} });
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setSortMethod(TrackListSortMethod::LastModifiedDesc)) };
+            ASSERT_EQ(trackLists.results.size(), 2);
+            EXPECT_EQ(trackLists.results[0], trackList1.getId());
+            EXPECT_EQ(trackLists.results[1], trackList2.getId());
+        }
     }
 
+    TEST_F(DatabaseFixture, SingleTrackListMultipleTrack)
     {
-        auto transaction{ session.createReadTransaction() };
+        ScopedUser user{ session, "MyUser" };
+        ScopedTrackList trackList{ session, "MytrackList", TrackListType::Playlist, false, user.lockAndGet() };
+        std::list<ScopedTrack> tracks;
 
-        const auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setSortMethod(TrackListSortMethod::LastModifiedDesc)) };
-        ASSERT_EQ(trackLists.results.size(), 2);
-        EXPECT_EQ(trackLists.results[0], trackList2.getId());
-        EXPECT_EQ(trackLists.results[1], trackList1.getId());
+        for (std::size_t i{}; i < 10; ++i)
+        {
+            tracks.emplace_back(session, "MyTrack" + std::to_string(i));
+
+            auto transaction{ session.createWriteTransaction() };
+            session.create<TrackListEntry>(tracks.back().get(), trackList.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ASSERT_EQ(trackList->getCount(), tracks.size());
+            const auto trackIds{ trackList->getTrackIds() };
+            ASSERT_EQ(trackIds.size(), tracks.size());
+
+            // Same order
+            std::size_t i{};
+            for (const ScopedTrack& track : tracks)
+                EXPECT_EQ(track.getId(), trackIds[i++]);
+        }
     }
 
+    TEST_F(DatabaseFixture, SingleTrackListSingleTrackWithCluster)
     {
-        auto transaction{ session.createWriteTransaction() };
+        ScopedUser user{ session, "MyUser" };
+        ScopedTrackList trackList1{ session, "MyTrackList1", TrackListType::Playlist, false, user.lockAndGet() };
+        ScopedTrackList trackList2{ session, "MyTrackList2", TrackListType::Playlist, false, user.lockAndGet() };
+        ScopedClusterType clusterType{ session, "MyClusterType" };
+        ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
+        ScopedTrack track{ session, "MyTrack" };
 
-        trackList1.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate {1900,1,2} });
-        trackList2.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate {1900,1,1} });
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setClusters({cluster.getId()})) };
+            EXPECT_EQ(trackLists.results.size(), 0);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            session.create<TrackListEntry>(track.get(), trackList1.get());
+            cluster.get().modify()->addTrack(track.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setClusters({cluster.getId()})) };
+            ASSERT_EQ(trackLists.results.size(), 1);
+            EXPECT_EQ(trackLists.results.front(), trackList1.getId());
+        }
     }
 
+    TEST_F(DatabaseFixture, SingleTrackList_getEntries)
     {
-        auto transaction{ session.createReadTransaction() };
+        ScopedUser user{ session, "MyUser" };
+        ScopedTrackList trackList{ session, "MyTrackList", TrackListType::Playlist, false, user.lockAndGet() };
+        ScopedTrack track1{ session, "MyTrack" };
+        ScopedTrack track2{ session, "MyTrack" };
 
-        const auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setSortMethod(TrackListSortMethod::LastModifiedDesc)) };
-        ASSERT_EQ(trackLists.results.size(), 2);
-        EXPECT_EQ(trackLists.results[0], trackList1.getId());
-        EXPECT_EQ(trackLists.results[1], trackList2.getId());
-    }
-}
+        {
+            auto transaction{ session.createWriteTransaction() };
+            session.create<TrackListEntry>(track1.get(), trackList.get());
+        }
 
-TEST_F(DatabaseFixture, SingleTrackListMultipleTrack)
-{
-    ScopedUser user{ session, "MyUser" };
-    ScopedTrackList trackList{ session, "MytrackList", TrackListType::Playlist, false, user.lockAndGet() };
-    std::list<ScopedTrack> tracks;
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto entries{ trackList.get()->getEntries() };
+            ASSERT_EQ(entries.results.size(), 1);
+            EXPECT_EQ(entries.results.front()->getTrack()->getId(), track1.getId());
+        }
 
-    for (std::size_t i{}; i < 10; ++i)
-    {
-        tracks.emplace_back(session, "MyTrack" + std::to_string(i));
+        {
+            auto transaction{ session.createWriteTransaction() };
+            session.create<TrackListEntry>(track2.get(), trackList.get());
+        }
 
-        auto transaction{ session.createWriteTransaction() };
-        session.create<TrackListEntry>(tracks.back().get(), trackList.get());
-    }
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto entries{ trackList.get()->getEntries() };
+            ASSERT_EQ(entries.results.size(), 2);
+            EXPECT_EQ(entries.results[0]->getTrack()->getId(), track1.getId());
+            EXPECT_EQ(entries.results[1]->getTrack()->getId(), track2.getId());
+        }
 
-    {
-        auto transaction{ session.createReadTransaction() };
-
-        ASSERT_EQ(trackList->getCount(), tracks.size());
-        const auto trackIds{ trackList->getTrackIds() };
-        ASSERT_EQ(trackIds.size(), tracks.size());
-
-        // Same order
-        std::size_t i{};
-        for (const ScopedTrack& track : tracks)
-            EXPECT_EQ(track.getId(), trackIds[i++]);
-    }
-}
-
-TEST_F(DatabaseFixture, SingleTrackListSingleTrackWithCluster)
-{
-    ScopedUser user{ session, "MyUser" };
-    ScopedTrackList trackList1{ session, "MyTrackList1", TrackListType::Playlist, false, user.lockAndGet() };
-    ScopedTrackList trackList2{ session, "MyTrackList2", TrackListType::Playlist, false, user.lockAndGet() };
-    ScopedClusterType clusterType{ session, "MyClusterType" };
-    ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
-    ScopedTrack track{ session, "MyTrack" };
-
-    {
-        auto transaction{ session.createReadTransaction() };
-
-        auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setClusters({cluster.getId()})) };
-        EXPECT_EQ(trackLists.results.size(), 0);
-    }
-
-    {
-        auto transaction{ session.createWriteTransaction() };
-
-        session.create<TrackListEntry>(track.get(), trackList1.get());
-        cluster.get().modify()->addTrack(track.get());
-    }
-
-    {
-        auto transaction{ session.createReadTransaction() };
-
-        auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setClusters({cluster.getId()})) };
-        ASSERT_EQ(trackLists.results.size(), 1);
-        EXPECT_EQ(trackLists.results.front(), trackList1.getId());
-    }
-}
-
-TEST_F(DatabaseFixture, SingleTrackList_getEntries)
-{
-    ScopedUser user{ session, "MyUser" };
-    ScopedTrackList trackList{ session, "MyTrackList", TrackListType::Playlist, false, user.lockAndGet() };
-    ScopedTrack track1{ session, "MyTrack" };
-    ScopedTrack track2{ session, "MyTrack" };
-
-    {
-        auto transaction{ session.createWriteTransaction() };
-        session.create<TrackListEntry>(track1.get(), trackList.get());
-    }
-
-    {
-        auto transaction{ session.createReadTransaction() };
-        auto entries{ trackList.get()->getEntries() };
-        ASSERT_EQ(entries.size(), 1);
-        EXPECT_EQ(entries.front()->getTrack()->getId(), track1.getId());
-    }
-
-    {
-        auto transaction{ session.createWriteTransaction() };
-        session.create<TrackListEntry>(track2.get(), trackList.get());
-    }
-
-    {
-        auto transaction{ session.createReadTransaction() };
-        auto entries{ trackList.get()->getEntries() };
-        ASSERT_EQ(entries.size(), 2);
-        EXPECT_EQ(entries[0]->getTrack()->getId(), track1.getId());
-        EXPECT_EQ(entries[1]->getTrack()->getId(), track2.getId());
-    }
-
-    {
-        auto transaction{ session.createReadTransaction() };
-        auto entries{ trackList.get()->getEntries(Range {1, 1}) };
-        ASSERT_EQ(entries.size(), 1);
-        EXPECT_EQ(entries[0]->getTrack()->getId(), track2.getId());
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto entries{ trackList.get()->getEntries(Range {1, 1}) };
+            ASSERT_EQ(entries.results.size(), 1);
+            EXPECT_EQ(entries.results[0]->getTrack()->getId(), track2.getId());
+        }
     }
 }

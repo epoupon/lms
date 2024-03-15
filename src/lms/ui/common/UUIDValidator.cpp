@@ -21,7 +21,7 @@
 
 #include <Wt/WRegExpValidator.h>
 
-namespace UserInterface
+namespace lms::ui
 {
 	class RegExpValidator : public Wt::WRegExpValidator
 	{
@@ -37,4 +37,4 @@ namespace UserInterface
 	{
 		return std::make_unique<RegExpValidator>("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}");
 	}
-} // namespace UserInterface
+} // namespace lms::ui

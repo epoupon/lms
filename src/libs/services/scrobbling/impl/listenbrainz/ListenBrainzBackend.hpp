@@ -26,17 +26,17 @@
 #include "IScrobblingBackend.hpp"
 #include "ListensSynchronizer.hpp"
 
-namespace Database
+namespace lms::db
 {
     class Db;
 }
 
-namespace Scrobbling::ListenBrainz
+namespace lms::scrobbling::listenBrainz
 {
     class ListenBrainzBackend final : public IScrobblingBackend
     {
     public:
-        ListenBrainzBackend(boost::asio::io_context& ioContext, Database::Db& db);
+        ListenBrainzBackend(boost::asio::io_context& ioContext, db::Db& db);
         ~ListenBrainzBackend() override;
 
     private:
@@ -51,10 +51,10 @@ namespace Scrobbling::ListenBrainz
         void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
 
         boost::asio::io_context&        _ioContext;
-        Database::Db&                   _db;
+        db::Db&                   _db;
         std::string                     _baseAPIUrl;
-        std::unique_ptr<Http::IClient>  _client;
+        std::unique_ptr<core::http::IClient>  _client;
         ListensSynchronizer             _listensSynchronizer;
     };
-} // Scrobbling::ListenBrainz
+} // scrobbling::ListenBrainz
 

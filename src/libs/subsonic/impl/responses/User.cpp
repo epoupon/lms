@@ -21,9 +21,9 @@
 
 #include "database/User.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    using namespace Database;
+    using namespace db;
 
     Response::Node createUserNode(const User::pointer& user)
     {

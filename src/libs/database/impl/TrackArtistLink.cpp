@@ -26,7 +26,7 @@
 #include "IdTypeTraits.hpp"
 #include "Utils.hpp"
 
-namespace Database
+namespace lms::db
 {
     namespace
     {
@@ -84,19 +84,19 @@ namespace Database
         session.checkReadTransaction();
 
         auto query{ createQuery(session, params) };
-        return Utils::execQuery<TrackArtistLinkId>(query, params.range);
+        return utils::execQuery<TrackArtistLinkId>(query, params.range);
     }
 
-    EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session)
+    core::EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session)
     {
         session.checkReadTransaction();
 
         auto res{ session.getDboSession().query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link").resultList() };
 
-        return EnumSet<TrackArtistLinkType>(std::begin(res), std::end(res));
+        return core::EnumSet<TrackArtistLinkType>(std::begin(res), std::end(res));
     }
 
-    EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session, ArtistId artistId)
+    core::EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session, ArtistId artistId)
     {
         session.checkReadTransaction();
 
@@ -105,7 +105,7 @@ namespace Database
             .where("artist_id = ?").bind(artistId)
             .resultList() };
 
-        return EnumSet<TrackArtistLinkType>(std::begin(res), std::end(res));
+        return core::EnumSet<TrackArtistLinkType>(std::begin(res), std::end(res));
     }
 }
 

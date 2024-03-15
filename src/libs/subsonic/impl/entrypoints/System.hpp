@@ -22,7 +22,7 @@
 #include "RequestContext.hpp"
 #include "SubsonicResponse.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
     Response handlePingRequest(RequestContext& context);
     Response handleGetLicenseRequest(RequestContext& context);

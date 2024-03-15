@@ -35,7 +35,7 @@
 
 #include "resource/CoverResource.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class Artist;
 	class Cluster;
@@ -44,29 +44,29 @@ namespace Database
 	class TrackList;
 }
 
-namespace UserInterface
+namespace lms::ui
 {
 	class Filters;
 }
 
-namespace UserInterface::Utils
+namespace lms::ui::utils
 {
 	std::string durationToString(std::chrono::milliseconds msDuration);
 
-	std::unique_ptr<Wt::WImage> createCover(Database::ReleaseId releaseId, CoverResource::Size size);
-	std::unique_ptr<Wt::WImage> createCover(Database::TrackId trackId, CoverResource::Size size);
+	std::unique_ptr<Wt::WImage> createCover(db::ReleaseId releaseId, CoverResource::Size size);
+	std::unique_ptr<Wt::WImage> createCover(db::TrackId trackId, CoverResource::Size size);
 
-	std::unique_ptr<Wt::WInteractWidget> createCluster(Database::ClusterId clusterId, bool canDelete = false);
+	std::unique_ptr<Wt::WInteractWidget> createCluster(db::ClusterId clusterId, bool canDelete = false);
 
-	std::unique_ptr<Wt::WContainerWidget> createArtistAnchorList(const std::vector<Database::ArtistId>& artistIds, std::string_view cssAnchorClass = "link-success");
-	std::unique_ptr<Wt::WContainerWidget> createArtistDisplayNameWithAnchors(std::string_view displayName, const std::vector<Database::ArtistId>& artistIds, std::string_view cssAnchorClass = "link-success");
-	std::unique_ptr<Wt::WContainerWidget> createArtistsAnchorsForRelease(Database::ObjectPtr<Database::Release> release, Database::ArtistId omitIfMatchThisArtist = {}, std::string_view cssAnchorClass = "link-success");
+	std::unique_ptr<Wt::WContainerWidget> createArtistAnchorList(const std::vector<db::ArtistId>& artistIds, std::string_view cssAnchorClass = "link-success");
+	std::unique_ptr<Wt::WContainerWidget> createArtistDisplayNameWithAnchors(std::string_view displayName, const std::vector<db::ArtistId>& artistIds, std::string_view cssAnchorClass = "link-success");
+	std::unique_ptr<Wt::WContainerWidget> createArtistsAnchorsForRelease(db::ObjectPtr<db::Release> release, db::ArtistId omitIfMatchThisArtist = {}, std::string_view cssAnchorClass = "link-success");
 
-	Wt::WLink createArtistLink(Database::ObjectPtr<Database::Artist> artist);
-	std::unique_ptr<Wt::WAnchor> createArtistAnchor(Database::ObjectPtr<Database::Artist> artist, bool setText = true);
-	Wt::WLink createReleaseLink(Database::ObjectPtr<Database::Release> release);
-	std::unique_ptr<Wt::WAnchor> createReleaseAnchor(Database::ObjectPtr<Database::Release> release, bool setText = true);
-	std::unique_ptr<Wt::WAnchor> createTrackListAnchor(Database::ObjectPtr<Database::TrackList> trackList, bool setText = true);
+	Wt::WLink createArtistLink(db::ObjectPtr<db::Artist> artist);
+	std::unique_ptr<Wt::WAnchor> createArtistAnchor(db::ObjectPtr<db::Artist> artist, bool setText = true);
+	Wt::WLink createReleaseLink(db::ObjectPtr<db::Release> release);
+	std::unique_ptr<Wt::WAnchor> createReleaseAnchor(db::ObjectPtr<db::Release> release, bool setText = true);
+	std::unique_ptr<Wt::WAnchor> createTrackListAnchor(db::ObjectPtr<db::TrackList> trackList, bool setText = true);
 
-	std::unique_ptr<Wt::WContainerWidget> createClustersForTrack(Database::ObjectPtr<Database::Track> track, Filters& filters);
+	std::unique_ptr<Wt::WContainerWidget> createClustersForTrack(db::ObjectPtr<db::Track> track, Filters& filters);
 }

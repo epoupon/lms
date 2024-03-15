@@ -20,9 +20,9 @@ target_link_libraries(lmsservice-cover PRIVATE
 target_link_libraries(lmsservice-cover PUBLIC
 	lmsdatabase
 	lmsimage
-	lmsutils
+	lmscore
 	std::filesystem
 	)
 
-install(TARGETS lmsservice-cover DESTINATION lib)
+install(TARGETS lmsservice-cover DESTINATION ${CMAKE_INSTALL_LIBDIR})
 

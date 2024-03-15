@@ -26,13 +26,13 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
+#include "core/UUID.hpp"
 #include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/UserId.hpp"
-#include "utils/UUID.hpp"
 
-namespace Database {
-
+namespace lms::db
+{
     class AuthToken;
     class Session;
 
@@ -95,7 +95,7 @@ namespace Database {
         void setSubsonicArtistListMode(SubsonicArtistListMode mode) { _subsonicArtistListMode = mode; }
         void setFeedbackBackend(FeedbackBackend feedbackBackend) { _feedbackBackend = feedbackBackend; }
         void setScrobblingBackend(ScrobblingBackend scrobblingBackend) { _scrobblingBackend = scrobblingBackend; }
-        void setListenBrainzToken(const std::optional<UUID>& MBID) { _listenbrainzToken = MBID ? MBID->getAsString() : ""; }
+        void setListenBrainzToken(const std::optional<core::UUID>& MBID) { _listenbrainzToken = MBID ? MBID->getAsString() : ""; }
 
         // read
         bool                    isAdmin() const { return _type == UserType::ADMIN; }
@@ -111,7 +111,7 @@ namespace Database {
         SubsonicArtistListMode  getSubsonicArtistListMode() const { return _subsonicArtistListMode; }
         FeedbackBackend         getFeedbackBackend() const { return _feedbackBackend; }
         ScrobblingBackend       getScrobblingBackend() const { return _scrobblingBackend; }
-        std::optional<UUID>     getListenBrainzToken() const { return UUID::fromString(_listenbrainzToken); }
+        std::optional<core::UUID> getListenBrainzToken() const { return core::UUID::fromString(_listenbrainzToken); }
 
         template<class Action>
         void persist(Action& a)

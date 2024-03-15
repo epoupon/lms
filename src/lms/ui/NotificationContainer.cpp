@@ -22,10 +22,10 @@
 #include <sstream>
 #include <Wt/WTemplate.h>
 
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 #include "LmsApplication.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
     namespace
     {

@@ -27,9 +27,9 @@
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
 
-namespace Recommendation {
+namespace lms::recommendation {
 
-    using namespace Database;
+    using namespace db;
 
     std::unique_ptr<IEngine> createClustersEngine(Db& db)
     {
@@ -92,7 +92,7 @@ namespace Recommendation {
         return res;
     }
 
-    ArtistContainer ClusterEngine::getSimilarArtists(ArtistId artistId, EnumSet<TrackArtistLinkType> artistLinkTypes, std::size_t maxCount) const
+    ArtistContainer ClusterEngine::getSimilarArtists(ArtistId artistId, core::EnumSet<TrackArtistLinkType> artistLinkTypes, std::size_t maxCount) const
     {
         if (maxCount == 0)
             return {};
@@ -108,4 +108,4 @@ namespace Recommendation {
         return std::move(similarArtistIds.results);
     }
 
-} // namespace Recommendation
+} // namespace lms::recommendation

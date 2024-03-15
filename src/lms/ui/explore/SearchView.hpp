@@ -31,7 +31,7 @@
 #include "ReleaseCollector.hpp"
 #include "TrackCollector.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
     class InfiniteScrollingContainer;
     class Filters;
@@ -70,7 +70,7 @@ namespace UserInterface
         std::size_t getMaxCount(Mode mode) const;
 
         void refreshView();
-        void refreshView(std::optional<Database::TrackArtistLinkType> linkType);
+        void refreshView(std::optional<db::TrackArtistLinkType> linkType);
         void addSomeArtists();
         void addSomeReleases();
         void addSomeTracks();
@@ -89,5 +89,5 @@ namespace UserInterface
         Wt::WComboBox* _artistLinkType{};
     };
 
-} // namespace UserInterface
+} // namespace lms::ui
 

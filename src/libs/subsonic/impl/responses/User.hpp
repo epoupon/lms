@@ -22,12 +22,12 @@
 #include "database/Object.hpp"
 #include "SubsonicResponse.hpp"
 
-namespace Database
+namespace lms::db
 {
     class User;
 }
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    Response::Node createUserNode(const Database::ObjectPtr<Database::User>& user);
+    Response::Node createUserNode(const db::ObjectPtr<db::User>& user);
 }

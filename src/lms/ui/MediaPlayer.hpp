@@ -30,7 +30,7 @@
 #include "database/TrackId.hpp"
 #include "database/Types.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
     class AudioFileResource;
     class AudioTranscodingResource;
@@ -38,8 +38,8 @@ namespace UserInterface
     class MediaPlayer : public Wt::WTemplate
     {
     public:
-        using Bitrate = Database::Bitrate;
-        using Format = Database::TranscodingOutputFormat;
+        using Bitrate = db::Bitrate;
+        using Format = db::TranscodingOutputFormat;
         using Gain = float;
 
         // Do not change enum values as they may be stored locally in browser
@@ -93,9 +93,9 @@ namespace UserInterface
         MediaPlayer(const MediaPlayer&) = delete;
         MediaPlayer& operator=(const MediaPlayer&) = delete;
 
-        std::optional<Database::TrackId> getTrackLoaded() const { return _trackIdLoaded; }
+        std::optional<db::TrackId> getTrackLoaded() const { return _trackIdLoaded; }
 
-        void loadTrack(Database::TrackId trackId, bool play, float replayGain);
+        void loadTrack(db::TrackId trackId, bool play, float replayGain);
         void stop();
 
         std::optional<Settings>	getSettings() const { return _settings; }
@@ -106,11 +106,11 @@ namespace UserInterface
         // Signals
         Wt::JSignal<> 					playPrevious;
         Wt::JSignal<> 					playNext;
-        Wt::Signal<Database::TrackId>	trackLoaded;
+        Wt::Signal<db::TrackId>	trackLoaded;
         Wt::Signal<>					settingsLoaded;
 
-        Wt::JSignal<Database::TrackId::ValueType>						scrobbleListenNow;
-        Wt::JSignal<Database::TrackId::ValueType, unsigned /* ms */>	scrobbleListenFinished;
+        Wt::JSignal<db::TrackId::ValueType>						scrobbleListenNow;
+        Wt::JSignal<db::TrackId::ValueType, unsigned /* ms */>	scrobbleListenFinished;
 
         Wt::JSignal<>			playbackEnded;
 
@@ -118,7 +118,7 @@ namespace UserInterface
         std::unique_ptr<AudioFileResource>		_audioFileResource;
         std::unique_ptr<AudioTranscodingResource>	_audioTranscodingResource;
 
-        std::optional<Database::TrackId> _trackIdLoaded;
+        std::optional<db::TrackId> _trackIdLoaded;
         std::optional<Settings>		_settings;
 
         Wt::JSignal<std::string> 	_settingsLoaded;
@@ -130,5 +130,5 @@ namespace UserInterface
         Wt::WPushButton* _playQueue{};
     };
 
-} // namespace UserInterface
+} // namespace lms::ui
 

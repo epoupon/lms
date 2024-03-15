@@ -23,10 +23,10 @@
 
 #include <Wt/Dbo/SqlConnectionPool.h>
 
-#include "utils/RecursiveSharedMutex.hpp"
+#include "core/RecursiveSharedMutex.hpp"
 
-namespace Database {
-
+namespace lms::db
+{
     class Session;
     class Db
     {
@@ -43,7 +43,7 @@ namespace Database {
 
         friend class Session;
 
-        RecursiveSharedMutex& getMutex() { return _sharedMutex; }
+        core::RecursiveSharedMutex& getMutex() { return _sharedMutex; }
         Wt::Dbo::SqlConnectionPool& getConnectionPool() { return *_connectionPool; }
 
         class ScopedConnection
@@ -62,13 +62,11 @@ namespace Database {
             std::unique_ptr<Wt::Dbo::SqlConnection> _connection;
         };
 
-        RecursiveSharedMutex				_sharedMutex;
+        core::RecursiveSharedMutex _sharedMutex;
         std::unique_ptr<Wt::Dbo::SqlConnectionPool>	_connectionPool;
 
         std::mutex _tlsSessionsMutex;
         std::vector<std::unique_ptr<Session>> _tlsSessions;
     };
 
-} // namespace Database
-
-
+}

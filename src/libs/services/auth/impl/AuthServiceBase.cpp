@@ -23,11 +23,11 @@
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
-namespace Auth
+namespace lms::auth
 {
-    using namespace Database;
+    using namespace db;
 
     AuthServiceBase::AuthServiceBase(Db& db)
         : _db{ db }
@@ -36,17 +36,28 @@ namespace Auth
     UserId AuthServiceBase::getOrCreateUser(std::string_view loginName)
     {
         Session& session{ getDbSession() };
-        auto transaction{ session.createWriteTransaction() };
 
-        User::pointer user{ User::find(session, loginName) };
+        User::pointer user;
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            user = User::find(session, loginName);
+        }
+
         if (!user)
         {
-            const UserType type{ User::getCount(session) == 0 ? UserType::ADMIN : UserType::REGULAR };
+            auto transaction{ session.createWriteTransaction() };
 
-            LMS_LOG(AUTH, DEBUG, "Creating user '" << loginName << "', admin = " << (type == UserType::ADMIN));
+            user = User::find(session, loginName);
+            if (!user)
+            {
+                const UserType type{ User::getCount(session) == 0 ? UserType::ADMIN : UserType::REGULAR };
 
-            user = session.create<User>(loginName);
-            user.modify()->setType(type);
+                LMS_LOG(AUTH, DEBUG, "Creating user '" << loginName << "', admin = " << (type == UserType::ADMIN));
+
+                user = session.create<User>(loginName);
+                user.modify()->setType(type);
+            }
         }
 
         return user->getId();

@@ -25,12 +25,12 @@
 #include "IScanStep.hpp"
 #include "ScannerSettings.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class Db;
 }
 
-namespace Scanner
+namespace lms::scanner
 {
 	class ScanStepBase : public IScanStep
 	{
@@ -43,7 +43,7 @@ namespace Scanner
 				const ScannerSettings& settings;
 				ProgressCallback progressCallback;
 				bool& abortScan;
-				Database::Db& db;
+				db::Db& db;
 			};
 			ScanStepBase(InitParams& initParams)
 				: _settings {initParams.settings}
@@ -56,6 +56,6 @@ namespace Scanner
 			const ScannerSettings&	_settings;
 			ProgressCallback		_progressCallback;
 			bool&					_abortScan;
-			Database::Db&			_db;
+			db::Db&			_db;
 	};
 }

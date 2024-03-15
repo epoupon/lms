@@ -34,8 +34,8 @@
 #include "database/TrackId.hpp"
 #include "database/Types.hpp"
 
-namespace Database {
-
+namespace lms::db
+{
     class Track;
     class ClusterType;
     class Session;
@@ -149,5 +149,5 @@ namespace Database {
         Wt::Dbo::collection< Wt::Dbo::ptr<Cluster> > _clusters;
     };
 
-} // namespace Database
+} // namespace lms::db
 

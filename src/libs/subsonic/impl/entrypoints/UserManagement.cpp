@@ -3,14 +3,14 @@
 #include "database/Session.hpp"
 #include "database/User.hpp"
 #include "services/auth/IPasswordService.hpp"
-#include "utils/Service.hpp"
+#include "core/Service.hpp"
 #include "responses/User.hpp"
 #include "ParameterParsing.hpp"
 #include "Utils.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    using namespace Database;
+    using namespace db;
 
     namespace {
         void checkUserIsMySelfOrAdmin(RequestContext& context, const std::string& username)
@@ -65,7 +65,7 @@ namespace API::Subsonic
         std::string password{ decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(context.parameters, "password")) };
         // Just ignore all the other fields as we don't handle them
 
-        Database::UserId userId;
+        db::UserId userId;
         {
             auto transaction{ context.dbSession.createWriteTransaction() };
 
@@ -87,19 +87,19 @@ namespace API::Subsonic
 
         try
         {
-            Service<Auth::IPasswordService>::get()->setPassword(userId, password);
+            core::Service<auth::IPasswordService>::get()->setPassword(userId, password);
         }
-        catch (const Auth::PasswordMustMatchLoginNameException&)
+        catch (const auth::PasswordMustMatchLoginNameException&)
         {
             removeCreatedUser();
             throw PasswordMustMatchLoginNameGenericError{};
         }
-        catch (const Auth::PasswordTooWeakException&)
+        catch (const auth::PasswordTooWeakException&)
         {
             removeCreatedUser();
             throw PasswordTooWeakGenericError{};
         }
-        catch (const Auth::Exception& exception)
+        catch (const auth::Exception& exception)
         {
             removeCreatedUser();
             throw UserNotAuthorizedError{};
@@ -145,21 +145,21 @@ namespace API::Subsonic
 
         if (password)
         {
-            Utils::checkSetPasswordImplemented();
+            utils::checkSetPasswordImplemented();
 
             try
             {
-                Service<::Auth::IPasswordService>()->setPassword(userId, decodePasswordIfNeeded(*password));
+                core::Service<auth::IPasswordService>()->setPassword(userId, decodePasswordIfNeeded(*password));
             }
-            catch (const Auth::PasswordMustMatchLoginNameException&)
+            catch (const auth::PasswordMustMatchLoginNameException&)
             {
                 throw PasswordMustMatchLoginNameGenericError{};
             }
-            catch (const Auth::PasswordTooWeakException&)
+            catch (const auth::PasswordTooWeakException&)
             {
                 throw PasswordTooWeakGenericError{};
             }
-            catch (const Auth::Exception&)
+            catch (const auth::Exception&)
             {
                 throw UserNotAuthorizedError{};
             }
@@ -175,7 +175,7 @@ namespace API::Subsonic
 
         try
         {
-            Database::UserId userId;
+            db::UserId userId;
             {
                 auto transaction{ context.dbSession.createReadTransaction() };
 
@@ -188,17 +188,17 @@ namespace API::Subsonic
                 userId = user->getId();
             }
 
-            Service<Auth::IPasswordService>::get()->setPassword(userId, password);
+            core::Service<auth::IPasswordService>::get()->setPassword(userId, password);
         }
-        catch (const Auth::PasswordMustMatchLoginNameException&)
+        catch (const auth::PasswordMustMatchLoginNameException&)
         {
             throw PasswordMustMatchLoginNameGenericError{};
         }
-        catch (const Auth::PasswordTooWeakException&)
+        catch (const auth::PasswordTooWeakException&)
         {
             throw PasswordTooWeakGenericError{};
         }
-        catch (const Auth::Exception& authException)
+        catch (const auth::Exception& authException)
         {
             throw UserNotAuthorizedError{};
         }

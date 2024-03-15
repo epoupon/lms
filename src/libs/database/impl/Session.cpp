@@ -21,8 +21,9 @@
 
 #include <cassert>
 
-#include "utils/Exception.hpp"
-#include "utils/ILogger.hpp"
+#include "core/Exception.hpp"
+#include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
 
 #include "database/Artist.hpp"
 #include "database/AuthToken.hpp"
@@ -46,30 +47,40 @@
 #include "PathTraits.hpp"
 #include "Migration.hpp"
 
-namespace Database
+namespace lms::db
 {
-
-    WriteTransaction::WriteTransaction(RecursiveSharedMutex& mutex, Wt::Dbo::Session& session)
+    WriteTransaction::WriteTransaction(core::RecursiveSharedMutex& mutex, Wt::Dbo::Session& session)
         : _lock{ mutex },
         _transaction{ session }
     {
+#if LMS_CHECK_TRANSACTION_ACCESSES
         TransactionChecker::pushWriteTransaction(_transaction.session());
+#endif
     }
 
     WriteTransaction::~WriteTransaction()
     {
+#if LMS_CHECK_TRANSACTION_ACCESSES
         TransactionChecker::popWriteTransaction(_transaction.session());
+#endif
+
+        core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "Commit" };
+        _transaction.commit();
     }
 
     ReadTransaction::ReadTransaction(Wt::Dbo::Session& session)
         : _transaction{ session }
     {
+#if LMS_CHECK_TRANSACTION_ACCESSES
         TransactionChecker::pushReadTransaction(_transaction.session());
+#endif
     }
 
     ReadTransaction::~ReadTransaction()
     {
+#if LMS_CHECK_TRANSACTION_ACCESSES
         TransactionChecker::popReadTransaction(_transaction.session());
+#endif
     }
 
     Session::Session(Db& db)
@@ -116,6 +127,7 @@ namespace Database
         // Initial creation case
         try
         {
+            auto transaction{ createWriteTransaction() };
             _session.createTables();
             LMS_LOG(DB, INFO, "Tables created");
         }
@@ -147,6 +159,7 @@ namespace Database
             _session.execute("CREATE INDEX IF NOT EXISTS release_name_nocase_idx ON release(name COLLATE NOCASE)");
             _session.execute("CREATE INDEX IF NOT EXISTS release_mbid_idx ON release(mbid)");
             _session.execute("CREATE INDEX IF NOT EXISTS release_type_name_idx ON release_type(name)");
+            _session.execute("CREATE INDEX IF NOT EXISTS track_id_idx ON track(id)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_path_idx ON track(file_path)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_name_idx ON track(name)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_name_nocase_idx ON track(name COLLATE NOCASE)");
@@ -189,6 +202,7 @@ namespace Database
 
     void Session::analyze()
     {
+        LMS_SCOPED_TRACE_DETAILED("Database", "Analyze");
         LMS_LOG(DB, INFO, "Analyzing database...");
         {
             auto transaction{ createWriteTransaction() };
@@ -199,6 +213,7 @@ namespace Database
 
     void Session::optimize()
     {
+        LMS_SCOPED_TRACE_DETAILED("Database", "Optimize");
         LMS_LOG(DB, INFO, "Optimizing database...");
         {
             auto transaction{ createWriteTransaction() };
@@ -207,4 +222,4 @@ namespace Database
         LMS_LOG(DB, INFO, "Database optimizing complete");
     }
 
-} // namespace Database
+} // namespace lms::db

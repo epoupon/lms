@@ -24,11 +24,11 @@
 
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "utils/IConfig.hpp"
-#include "utils/Service.hpp"
-#include "utils/ILogger.hpp"
+#include "core/IConfig.hpp"
+#include "core/Service.hpp"
+#include "core/ILogger.hpp"
 
-namespace Database
+namespace lms::db
 {
     namespace
     {
@@ -89,7 +89,7 @@ namespace Database
         LMS_LOG(DB, INFO, "Creating connection pool on file " << dbPath.string());
 
         auto connection{ std::make_unique<Connection>(dbPath.string()) };
-        if (IConfig * config{ Service<IConfig>::get() })// may not be here on testU
+        if (core::IConfig * config{ core::Service<core::IConfig>::get() })// may not be here on testU
             connection->setProperty("show-queries", config->getBool("db-show-queries", false) ? "true" : "false");
 
         auto connectionPool{ std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), connectionCount) };
@@ -138,4 +138,4 @@ namespace Database
         return _connection.get();
     }
 
-} // namespace Database
+} // namespace lms::db

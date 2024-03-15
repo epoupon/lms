@@ -21,7 +21,7 @@
 
 #include "LmsApplication.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
 	void
 	LmsApplicationManager::registerApplication(LmsApplication& application)

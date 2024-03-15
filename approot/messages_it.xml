@@ -47,6 +47,7 @@
 <message id="Lms.Admin.menu-media-libraries"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Librerie</message>
 <message id="Lms.Admin.menu-scan-settings"><i class="fa fa-fw fa-cogs" aria-hidden="true"></i> Impostazioni di scansione</message>
 <message id="Lms.Admin.menu-scanner"><i class="fa fa-fw fa-wrench" aria-hidden="true"></i> Scanner</message>
+<message id="Lms.Admin.menu-tracing"><i class="fa fa-fw fa-bar-chart" aria-hidden="true"></i> Tracing</message>
 <message id="Lms.Admin.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Utenti</message>
 
 <!--MediaLibraries-->
@@ -64,9 +65,9 @@
 <message id="Lms.Admin.MediaLibrary.root-path">Cartella principale</message>
 
 <!--Scan settings-->
-<message id="Lms.Admin.Database.artist-tag-delimiter">Delimitatore da utilizzare per separare i tag degli artisti (solo se il file non contiene alcun tag con valori multipli)</message>
+<message id="Lms.Admin.Database.artist-tag-delimiter">Delimitatore da utilizzare per separare i tag degli artisti</message>
 <message id="Lms.Admin.Database.daily">Giornaliera</message>
-<message id="Lms.Admin.Database.default-tag-delimiter">Delimitatore da utilizzare per separare gli altri tag (solo se il file non contiene alcun tag con valori multipli)</message>
+<message id="Lms.Admin.Database.default-tag-delimiter">Delimitatore da utilizzare per separare gli altri tag</message>
 <message id="Lms.Admin.Database.extra-tags-to-scan">Tag aggiuntivi da scansionare (usa <kbd>;</kbd> come separatore)</message>
 <message id="Lms.Admin.Database.hourly">Ogni ora</message>
 <message id="Lms.Admin.Database.immediate-scan">Scansiona ora!</message>
@@ -112,6 +113,10 @@
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Ricarica motore di tracce simili: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Scansione files: {1}/{2} files ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-status">Stato passo</message>
+
+<!--Tracing-->
+<message id="Lms.Admin.Tracing.export-current-buffer">Esporta tracce</message>
+<message id="Lms.Admin.Tracing.tracing">Tracing</message>
 
 <!--Users-->
 <message id="Lms.Admin.Users.add">Nuovo utente</message>

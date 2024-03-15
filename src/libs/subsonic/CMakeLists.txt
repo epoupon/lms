@@ -48,7 +48,7 @@ target_link_libraries(lmssubsonic PRIVATE
 	lmsscanner
 	lmsscrobbling
 	lmsservice-cover
-	lmsutils
+	lmscore
 	std::filesystem
 	)
 
@@ -56,5 +56,5 @@ target_link_libraries(lmssubsonic PUBLIC
 	Wt::Wt
 	)
 
-install(TARGETS lmssubsonic DESTINATION lib)
+install(TARGETS lmssubsonic DESTINATION ${CMAKE_INSTALL_LIBDIR})
 

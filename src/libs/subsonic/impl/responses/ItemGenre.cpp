@@ -21,7 +21,7 @@
 
 #include "database/Cluster.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
     Response::Node createItemGenreNode(std::string_view name)
     {

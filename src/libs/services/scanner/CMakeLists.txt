@@ -21,7 +21,7 @@ target_link_libraries(lmsscanner PRIVATE
 	lmsdatabase
 	lmsmetadata
 	lmsrecommendation
-	lmsutils
+	lmscore
 	)
 
 target_link_libraries(lmsscanner PUBLIC
@@ -29,5 +29,5 @@ target_link_libraries(lmsscanner PUBLIC
 	Wt::Wt
 	)
 
-install(TARGETS lmsscanner DESTINATION lib)
+install(TARGETS lmsscanner DESTINATION ${CMAKE_INSTALL_LIBDIR})
 

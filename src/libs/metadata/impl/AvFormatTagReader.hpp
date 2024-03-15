@@ -25,7 +25,7 @@
 #include "metadata/IParser.hpp"
 #include "ITagReader.hpp"
 
-namespace MetaData
+namespace lms::metadata
 {
     class AvFormatTagReader : public ITagReader
     {
@@ -36,7 +36,6 @@ namespace MetaData
         AvFormatTagReader(const AvFormatTagReader&) = delete;
         AvFormatTagReader& operator=(const AvFormatTagReader&) = delete;
 
-        bool hasMultiValuedTags() const override { return false; /* not supported */}
         void visitTagValues(TagType tag, TagValueVisitor visitor) const override;
         void visitTagValues(std::string_view tag, TagValueVisitor visitor) const override;
         void visitPerformerTags(PerformerVisitor visitor) const override;
@@ -47,9 +46,9 @@ namespace MetaData
         std::size_t                 getBitsPerSample() const override { return 0; }
         std::size_t                 getSampleRate() const override { return 0; }
 
-        Av::IAudioFile::MetadataMap _metaDataMap;
-        Av::ContainerInfo _containerInfo;
+        av::IAudioFile::MetadataMap _metaDataMap;
+        av::ContainerInfo _containerInfo;
         bool _hasEmbeddedCover{};
     };
-} // namespace MetaData
+} // namespace lms::metadata
 

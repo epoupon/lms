@@ -14,6 +14,7 @@ add_executable(lms
 	ui/admin/InitWizardView.cpp
 	ui/admin/MediaLibrariesView.cpp
 	ui/admin/MediaLibraryModal.cpp
+	ui/admin/TracingView.cpp
 	ui/admin/ScannerController.cpp
 	ui/admin/ScanSettingsView.cpp
 	ui/admin/UserView.cpp
@@ -66,7 +67,7 @@ target_link_libraries(lms PRIVATE
 	lmsscrobbling
 	lmsservice-cover
 	lmssubsonic
-	lmsutils
+	lmscore
 	Wt::Wt
 	Wt::HTTP
 	)

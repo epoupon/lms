@@ -22,7 +22,7 @@
 #include <chrono>
 #include <functional>
 
-namespace MetaData
+namespace lms::metadata
 {
     // using picard internal names
     // see https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html
@@ -145,8 +145,6 @@ namespace MetaData
     public:
         virtual ~ITagReader() = default;
 
-        virtual bool hasMultiValuedTags() const = 0;
-
         using TagValueVisitor = std::function<void(std::string_view value)>;
         virtual void visitTagValues(TagType tag, TagValueVisitor visitor) const = 0;
         virtual void visitTagValues(std::string_view tag, TagValueVisitor visitor) const = 0;
@@ -161,4 +159,4 @@ namespace MetaData
         virtual std::size_t                 getBitsPerSample() const = 0;
         virtual std::size_t                 getSampleRate() const = 0;
     };
-} // namespace MetaData
+} // namespace lms::metadata

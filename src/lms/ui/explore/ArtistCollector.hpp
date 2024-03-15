@@ -25,26 +25,26 @@
 #include "database/ArtistId.hpp"
 #include "database/Types.hpp"
 
-namespace Database
+namespace lms::db
 {
 	class Artist;
 }
 
-namespace UserInterface
+namespace lms::ui
 {
 	class ArtistCollector : public DatabaseCollectorBase
 	{
 		public:
 			using DatabaseCollectorBase::DatabaseCollectorBase;
 
-			Database::RangeResults<Database::ArtistId>	get(std::optional<Database::Range> range = std::nullopt);
+			db::RangeResults<db::ArtistId>	get(std::optional<db::Range> range = std::nullopt);
 			void reset() { _randomArtists.reset(); }
-			void setArtistLinkType(std::optional<Database::TrackArtistLinkType> linkType) { _linkType = linkType; }
+			void setArtistLinkType(std::optional<db::TrackArtistLinkType> linkType) { _linkType = linkType; }
 
 		private:
-			Database::RangeResults<Database::ArtistId>	getRandomArtists(Range range);
-			std::optional<Database::RangeResults<Database::ArtistId>> _randomArtists;
-			std::optional<Database::TrackArtistLinkType> _linkType;
+			db::RangeResults<db::ArtistId>	getRandomArtists(Range range);
+			std::optional<db::RangeResults<db::ArtistId>> _randomArtists;
+			std::optional<db::TrackArtistLinkType> _linkType;
 	};
 } // ns UserInterface
 

@@ -24,7 +24,7 @@
 #include "common/Template.hpp"
 #include "TrackCollector.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
 	class Filters;
 	class InfiniteScrollingContainer;
@@ -40,7 +40,7 @@ namespace UserInterface
 			void refreshView(TrackCollector::Mode mode);
 			void addSome();
 
-			std::vector<Database::TrackId> getAllTracks();
+			std::vector<db::TrackId> getAllTracks();
 
 			static constexpr TrackCollector::Mode _defaultMode {TrackCollector::Mode::Random};
 			static constexpr std::size_t _batchSize {6};
@@ -52,5 +52,5 @@ namespace UserInterface
 			InfiniteScrollingContainer* _container {};
 			TrackCollector				_trackCollector;
 	};
-} // namespace UserInterface
+} // namespace lms::ui
 

@@ -28,9 +28,9 @@
 
 #include "services/auth/Types.hpp"
 #include "database/Session.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
-namespace Auth
+namespace lms::auth
 {
     namespace
     {
@@ -191,10 +191,10 @@ namespace Auth
         throw NotImplementedException{};
     }
 
-    void PAMPasswordService::setPassword(Database::UserId, std::string_view)
+    void PAMPasswordService::setPassword(db::UserId, std::string_view)
     {
         throw NotImplementedException{};
     }
 
-} // namespace Auth
+} // namespace lms::auth
 

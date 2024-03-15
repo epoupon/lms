@@ -28,7 +28,7 @@
 #include "database/Types.hpp"
 #include "ArtistCollector.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
 	class Filters;
 	class InfiniteScrollingContainer;
@@ -41,7 +41,7 @@ namespace UserInterface
 		private:
 			void refreshView();
 			void refreshView(ArtistCollector::Mode mode);
-			void refreshView(std::optional<Database::TrackArtistLinkType> linkType);
+			void refreshView(std::optional<db::TrackArtistLinkType> linkType);
 			void addSome();
 
 			static constexpr std::size_t _batchSize {30};
@@ -53,5 +53,5 @@ namespace UserInterface
 			Wt::WComboBox*				_linkType {};
 			static constexpr ArtistCollector::Mode _defaultMode {ArtistCollector::Mode::Random};
 	};
-} // namespace UserInterface
+} // namespace lms::ui
 

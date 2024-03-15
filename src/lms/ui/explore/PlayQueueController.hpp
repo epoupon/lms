@@ -26,7 +26,7 @@
 #include "database/TrackId.hpp"
 #include "database/TrackListId.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
 	class Filters;
 	class PlayQueue;
@@ -45,18 +45,18 @@ namespace UserInterface
 				PlayShuffled,
 			};
 
-			void processCommand(Command command, const std::vector<Database::ArtistId>& artists);
-			void processCommand(Command command, const std::vector<Database::ReleaseId>& releases);
-			void processCommand(Command command, const std::vector<Database::TrackId>& tracks);
+			void processCommand(Command command, const std::vector<db::ArtistId>& artists);
+			void processCommand(Command command, const std::vector<db::ReleaseId>& releases);
+			void processCommand(Command command, const std::vector<db::TrackId>& tracks);
 
 			struct Disc
 			{
-				Database::ReleaseId releaseId;
+				db::ReleaseId releaseId;
 				size_t discNumber;
 			};
 			void processCommand(Command command, const std::vector<Disc>& discs);
-			void processCommand(Command command, Database::TrackListId trackList);
-			void playTrackInRelease(Database::TrackId track);
+			void processCommand(Command command, db::TrackListId trackList);
+			void playTrackInRelease(db::TrackId track);
 
 			void setMaxTrackCountToEnqueue(std::size_t maxTrackCount) { _maxTrackCountToEnqueue = maxTrackCount; }
 

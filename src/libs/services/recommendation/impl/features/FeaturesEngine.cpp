@@ -30,12 +30,12 @@
 #include "database/TrackFeatures.hpp"
 #include "database/TrackList.hpp"
 #include "som/DataNormalizer.hpp"
-#include "utils/ILogger.hpp"
-#include "utils/Random.hpp"
+#include "core/ILogger.hpp"
+#include "core/Random.hpp"
 
-namespace Recommendation
+namespace lms::recommendation
 {
-    using namespace Database;
+    using namespace db;
 
     std::unique_ptr<IEngine> createFeaturesEngine(Db& db)
     {
@@ -44,10 +44,10 @@ namespace Recommendation
 
     namespace
     {
-        std::optional<SOM::InputVector> convertFeatureValuesMapToInputVector(const FeatureValuesMap& featureValuesMap, std::size_t nbDimensions)
+        std::optional<som::InputVector> convertFeatureValuesMapToInputVector(const FeatureValuesMap& featureValuesMap, std::size_t nbDimensions)
         {
             std::size_t i{};
-            std::optional<SOM::InputVector> res{ SOM::InputVector {nbDimensions} };
+            std::optional<som::InputVector> res{ som::InputVector {nbDimensions} };
             for (const auto& [featureName, values] : featureValuesMap)
             {
                 if (values.size() != getFeatureDef(featureName).nbDimensions)
@@ -64,9 +64,9 @@ namespace Recommendation
             return res;
         }
 
-        SOM::InputVector getInputVectorWeights(const FeatureSettingsMap& featureSettingsMap, std::size_t nbDimensions)
+        som::InputVector getInputVectorWeights(const FeatureSettingsMap& featureSettingsMap, std::size_t nbDimensions)
         {
-            SOM::InputVector weights{ nbDimensions };
+            som::InputVector weights{ nbDimensions };
             std::size_t index{};
             for (const auto& [featureName, featureSettings] : featureSettingsMap)
             {
@@ -120,7 +120,7 @@ namespace Recommendation
             LMS_LOG(RECOMMENDATION, DEBUG, "Getting Track features DONE (found " << trackFeaturesIds.results.size() << " track features)");
         }
 
-        std::vector<SOM::InputVector> samples;
+        std::vector<som::InputVector> samples;
         std::vector<TrackId> samplesTrackIds;
 
         samples.reserve(trackFeaturesIds.results.size());
@@ -143,7 +143,7 @@ namespace Recommendation
             if (featureValuesMap.empty())
                 continue;
 
-            std::optional<SOM::InputVector> inputVector{ convertFeatureValuesMapToInputVector(featureValuesMap, nbDimensions) };
+            std::optional<som::InputVector> inputVector{ convertFeatureValuesMapToInputVector(featureValuesMap, nbDimensions) };
             if (!inputVector)
                 continue;
 
@@ -159,13 +159,13 @@ namespace Recommendation
         }
 
         LMS_LOG(RECOMMENDATION, DEBUG, "Normalizing data...");
-        SOM::DataNormalizer dataNormalizer{ nbDimensions };
+        som::DataNormalizer dataNormalizer{ nbDimensions };
 
         dataNormalizer.computeNormalizationFactors(samples);
         for (auto& sample : samples)
             dataNormalizer.normalizeData(sample);
 
-        SOM::Coordinate size{ static_cast<SOM::Coordinate>(std::sqrt(samples.size() / trainSettings.sampleCountPerNeuron)) };
+        som::Coordinate size{ static_cast<som::Coordinate>(std::sqrt(samples.size() / trainSettings.sampleCountPerNeuron)) };
         if (size < 2)
         {
             LMS_LOG(RECOMMENDATION, WARNING, "Very few tracks (" << samples.size() << ") are being used by the features engine, expect bad behaviors");
@@ -173,12 +173,12 @@ namespace Recommendation
         }
         LMS_LOG(RECOMMENDATION, INFO, "Found " << samples.size() << " tracks, constructing a " << size << "*" << size << " network");
 
-        SOM::Network network{ size, size, nbDimensions };
+        som::Network network{ size, size, nbDimensions };
 
-        SOM::InputVector weights{ getInputVectorWeights(trainSettings.featureSettingsMap, nbDimensions) };
+        som::InputVector weights{ getInputVectorWeights(trainSettings.featureSettingsMap, nbDimensions) };
         network.setDataWeights(weights);
 
-        auto somProgressCallback{ [&](const SOM::Network::CurrentIteration& iter)
+        auto somProgressCallback{ [&](const som::Network::CurrentIteration& iter)
         {
             LMS_LOG(RECOMMENDATION, DEBUG, "Current pass = " << iter.idIteration << " / " << iter.iterationCount);
             progressCallback(Progress {iter.idIteration, iter.iterationCount});
@@ -186,7 +186,7 @@ namespace Recommendation
 
         LMS_LOG(RECOMMENDATION, DEBUG, "Training network...");
         network.train(samples, trainSettings.iterationCount,
-            progressCallback ? somProgressCallback : SOM::Network::ProgressCallback{},
+            progressCallback ? somProgressCallback : som::Network::ProgressCallback{},
             [this] { return _loadCancelled; });
         LMS_LOG(RECOMMENDATION, DEBUG, "Training network DONE");
 
@@ -197,7 +197,7 @@ namespace Recommendation
             if (_loadCancelled)
                 return;
 
-            const SOM::Position position{ network.getClosestRefVectorPosition(samples[i]) };
+            const som::Position position{ network.getClosestRefVectorPosition(samples[i]) };
 
             trackPositions[samplesTrackIds[i]].push_back(position);
         }
@@ -275,7 +275,7 @@ namespace Recommendation
         return similarReleaseIds;
     }
 
-    ArtistContainer FeaturesEngine::getSimilarArtists(ArtistId artistId, EnumSet<TrackArtistLinkType> linkTypes, std::size_t maxCount) const
+    ArtistContainer FeaturesEngine::getSimilarArtists(ArtistId artistId, core::EnumSet<TrackArtistLinkType> linkTypes, std::size_t maxCount) const
     {
         auto getSimilarArtistIdsForLinkType{ [&](TrackArtistLinkType linkType)
         {
@@ -313,7 +313,7 @@ namespace Recommendation
         }
 
         while (res.size() > maxCount)
-            res.erase(Random::pickRandom(res));
+            res.erase(core::random::pickRandom(res));
 
         return res;
     }
@@ -349,15 +349,15 @@ namespace Recommendation
         _loadCancelled = true;
     }
 
-    void FeaturesEngine::load(const SOM::Network& network, const TrackPositions& trackPositions)
+    void FeaturesEngine::load(const som::Network& network, const TrackPositions& trackPositions)
     {
-        using namespace Database;
+        using namespace db;
 
         _networkRefVectorsDistanceMedian = network.computeRefVectorsDistanceMedian();
         LMS_LOG(RECOMMENDATION, DEBUG, "Median distance betweend ref vectors = " << _networkRefVectorsDistanceMedian);
 
-        const SOM::Coordinate width{ network.getWidth() };
-        const SOM::Coordinate height{ network.getHeight() };
+        const som::Coordinate width{ network.getWidth() };
+        const som::Coordinate height{ network.getHeight() };
 
         _releaseMatrix = ReleaseMatrix{ width, height };
         _trackMatrix = TrackMatrix{ width, height };
@@ -377,22 +377,22 @@ namespace Recommendation
             if (!track)
                 continue;
 
-            for (const SOM::Position& position : positions)
+            for (const som::Position& position : positions)
             {
-                Utils::push_back_if_not_present(_trackPositions[trackId], position);
-                Utils::push_back_if_not_present(_trackMatrix[position], trackId);
+                core::utils::push_back_if_not_present(_trackPositions[trackId], position);
+                core::utils::push_back_if_not_present(_trackMatrix[position], trackId);
 
                 if (Release::pointer release{ track->getRelease() })
                 {
                     const ReleaseId releaseId{ release->getId() };
-                    Utils::push_back_if_not_present(_releasePositions[releaseId], position);
-                    Utils::push_back_if_not_present(_releaseMatrix[position], releaseId);
+                    core::utils::push_back_if_not_present(_releasePositions[releaseId], position);
+                    core::utils::push_back_if_not_present(_releaseMatrix[position], releaseId);
                 }
                 for (const TrackArtistLink::pointer& artistLink : track->getArtistLinks())
                 {
                     const ArtistId artistId{ artistLink->getArtist()->getId() };
 
-                    Utils::push_back_if_not_present(_artistPositions[artistId], position);
+                    core::utils::push_back_if_not_present(_artistPositions[artistId], position);
                     auto itArtists{ _artistMatrix.find(artistLink->getType()) };
                     if (itArtists == std::cend(_artistMatrix))
                     {
@@ -400,12 +400,12 @@ namespace Recommendation
                         assert(inserted);
                         itArtists = it;
                     }
-                    Utils::push_back_if_not_present(itArtists->second[position], artistId);
+                    core::utils::push_back_if_not_present(itArtists->second[position], artistId);
                 }
             }
         }
 
-        _network = std::make_unique<SOM::Network>(network);
+        _network = std::make_unique<som::Network>(network);
 
         LMS_LOG(RECOMMENDATION, INFO, "Classifier successfully loaded!");
     }

@@ -21,9 +21,9 @@
 
 #include <ostream>
 #include <Wt/WDateTime.h>
-#include "utils/UUID.hpp"
+#include "core/UUID.hpp"
 
-namespace Feedback::ListenBrainz
+namespace lms::feedback::listenBrainz
 {
 	// See https://listenbrainz.readthedocs.io/en/production/dev/feedback-json/#feedback-json-doc
 	enum class FeedbackType
@@ -36,10 +36,10 @@ namespace Feedback::ListenBrainz
 	struct Feedback
 	{
 		Wt::WDateTime	created;
-		UUID			recordingMBID;
+		core::UUID		recordingMBID;
 		FeedbackType	score;
 	};
 
 	std::ostream& operator<<(std::ostream& os, const Feedback& feedback);
 
-} // Feedback::ListenBrainz
+} // feedback::ListenBrainz

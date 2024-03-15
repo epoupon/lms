@@ -33,10 +33,10 @@
 #include "ReleaseHelpers.hpp"
 #include "TrackListHelpers.hpp"
 
-using namespace Database;
-
-namespace UserInterface
+namespace lms::ui
 {
+    using namespace db;
+
     SearchView::SearchView(Filters& filters, PlayQueueController& playQueueController)
         : Wt::WTemplate{ Wt::WString::tr("Lms.Explore.Search.template") }
         , _playQueueController{ playQueueController }
@@ -101,7 +101,7 @@ namespace UserInterface
                 refreshView();
             });
 
-        LmsApp->getScannerEvents().scanComplete.connect(this, [this](const Scanner::ScanStats& stats)
+        LmsApp->getScannerEvents().scanComplete.connect(this, [this](const scanner::ScanStats& stats)
             {
                 if (stats.nbChanges())
                     _artistLinkType->setModel(ArtistListHelpers::createArtistLinkTypesModel());
@@ -145,7 +145,7 @@ namespace UserInterface
 
     void SearchView::addSomeArtists()
     {
-        using namespace Database;
+        using namespace db;
 
         const Range range{ _artists->getCount(), getBatchSize(Mode::Artist) };
         const RangeResults<ArtistId> artistIds{ _artistCollector.get(range) };
@@ -159,11 +159,13 @@ namespace UserInterface
                     _artists->add(ArtistListHelpers::createEntry(artist));
             }
         }
+
+        _artists->setHasMore(artistIds.moreResults);
     }
 
     void SearchView::addSomeReleases()
     {
-        using namespace Database;
+        using namespace db;
 
         const Range range{ _releases->getCount(), getBatchSize(Mode::Release) };
         const RangeResults<ReleaseId> releaseIds{ _releaseCollector.get(range) };
@@ -174,14 +176,16 @@ namespace UserInterface
             {
                 const Release::pointer release{ Release::find(LmsApp->getDbSession(), releaseId) };
                 if (release)
-                    _releases->add(ReleaseListHelpers::createEntry(release));
+                    _releases->add(releaseListHelpers::createEntry(release));
             }
         }
+
+        _releases->setHasMore(releaseIds.moreResults);
     }
 
     void SearchView::addSomeTracks()
     {
-        using namespace Database;
+        using namespace db;
 
         const Range range{ _tracks->getCount(), getBatchSize(Mode::Track) };
         const RangeResults<TrackId> trackIds{ _trackCollector.get(range) };
@@ -196,6 +200,7 @@ namespace UserInterface
                     _tracks->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
             }
         }
-    }
-} // namespace UserInterface
 
+        _tracks->setHasMore(trackIds.moreResults);
+    }
+}

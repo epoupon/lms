@@ -24,7 +24,7 @@
 #include "database/IdType.hpp"
 #include "database/TransactionChecker.hpp"
 
-namespace Database
+namespace lms::db
 {
     template <typename T>
     class ObjectPtr
@@ -39,10 +39,19 @@ namespace Database
         bool operator==(const ObjectPtr& other) const { return _obj == other._obj; }
         bool operator!=(const ObjectPtr& other) const { return other._obj != _obj; }
 
-        auto modify() { TransactionChecker::checkWriteTransaction(*_obj.session()); return _obj.modify(); }
+        auto modify()
+        {
+#if LMS_CHECK_TRANSACTION_ACCESSES
+            TransactionChecker::checkWriteTransaction(*_obj.session());
+#endif
+            return _obj.modify();
+        }
+
         void remove()
         {
+#if LMS_CHECK_TRANSACTION_ACCESSES
             TransactionChecker::checkWriteTransaction(*_obj.session());
+#endif
 
             if (_obj->hasOnPreRemove())
                 _obj.modify()->onPreRemove();
@@ -57,8 +66,8 @@ namespace Database
     template <typename T, typename ObjectIdType>
     class Object : public Wt::Dbo::Dbo<T>
     {
-        static_assert(std::is_base_of_v<Database::IdType, ObjectIdType>);
-        static_assert(!std::is_same_v<Database::IdType, ObjectIdType>);
+        static_assert(std::is_base_of_v<db::IdType, ObjectIdType>);
+        static_assert(!std::is_same_v<db::IdType, ObjectIdType>);
 
     public:
         using pointer = ObjectPtr<T>;

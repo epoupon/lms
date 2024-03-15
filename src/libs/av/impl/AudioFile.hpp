@@ -25,7 +25,7 @@
 
 struct AVFormatContext;
 
-namespace Av
+namespace lms::av
 {
 
     class AudioFile final : public IAudioFile
@@ -53,5 +53,5 @@ namespace Av
         AVFormatContext* _context{};
     };
 
-} // namespace Av
+} // namespace lms::av
 

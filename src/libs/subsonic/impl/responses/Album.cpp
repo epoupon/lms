@@ -25,8 +25,9 @@
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
-#include "utils/Service.hpp"
-#include "utils/String.hpp"
+#include "core/ITraceLogger.hpp"
+#include "core/Service.hpp"
+#include "core/String.hpp"
 
 #include "responses/Artist.hpp"
 #include "responses/DiscTitle.hpp"
@@ -34,12 +35,14 @@
 #include "responses/ItemGenre.hpp"
 #include "SubsonicId.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    using namespace Database;
+    using namespace db;
 
     Response::Node createAlbumNode(RequestContext& context, const Release::pointer& release, const User::pointer& user, bool id3)
     {
+        LMS_SCOPED_TRACE_DETAILED("Subsonic", "CreateAlbum");
+
         Response::Node albumNode;
 
         if (id3) {
@@ -56,7 +59,7 @@ namespace API::Subsonic
             albumNode.setAttribute("isDir", true);
         }
 
-        albumNode.setAttribute("created", StringUtils::toISO8601String(release->getLastWritten()));
+        albumNode.setAttribute("created", core::stringUtils::toISO8601String(release->getLastWritten()));
         albumNode.setAttribute("id", idToString(release->getId()));
         albumNode.setAttribute("coverArt", idToString(release->getId()));
         if (const auto year{ release->getYear() })
@@ -75,7 +78,7 @@ namespace API::Subsonic
             if (!release->getArtistDisplayName().empty())
                 albumNode.setAttribute("artist", release->getArtistDisplayName());
             else
-                albumNode.setAttribute("artist", Utils::joinArtistNames(artists));
+                albumNode.setAttribute("artist", utils::joinArtistNames(artists));
 
             if (artists.size() == 1)
             {
@@ -88,7 +91,7 @@ namespace API::Subsonic
             }
         }
 
-        albumNode.setAttribute("playCount", Service<Scrobbling::IScrobblingService>::get()->getCount(user->getId(), release->getId()));
+        albumNode.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(user->getId(), release->getId()));
 
         // Report the first GENRE for this track
         const ClusterType::pointer genreClusterType{ ClusterType::find(context.dbSession, "GENRE") };
@@ -99,8 +102,8 @@ namespace API::Subsonic
                 albumNode.setAttribute("genre", clusters.front().front()->getName());
         }
 
-        if (const Wt::WDateTime dateTime{ Service<Feedback::IFeedbackService>::get()->getStarredDateTime(user->getId(), release->getId()) }; dateTime.isValid())
-            albumNode.setAttribute("starred", StringUtils::toISO8601String(dateTime));
+        if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(user->getId(), release->getId()) }; dateTime.isValid())
+            albumNode.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
 
         if (!context.enableOpenSubsonic)
             return albumNode;
@@ -112,12 +115,12 @@ namespace API::Subsonic
             albumNode.setAttribute("mediaType", "album");
 
         {
-            const Wt::WDateTime dateTime{ Service<Scrobbling::IScrobblingService>::get()->getLastListenDateTime(user->getId(), release->getId()) };
-            albumNode.setAttribute("played", dateTime.isValid() ? StringUtils::toISO8601String(dateTime) : std::string{ "" });
+            const Wt::WDateTime dateTime{ core::Service<scrobbling::IScrobblingService>::get()->getLastListenDateTime(user->getId(), release->getId()) };
+            albumNode.setAttribute("played", dateTime.isValid() ? core::stringUtils::toISO8601String(dateTime) : std::string{ "" });
         }
 
         {
-            std::optional<UUID> mbid{ release->getMBID() };
+            std::optional<core::UUID> mbid{ release->getMBID() };
             albumNode.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
         }
 
@@ -159,7 +162,7 @@ namespace API::Subsonic
             albumNode.createEmptyArrayValue("releaseTypes");
             for (std::string_view releaseType : release->getReleaseTypeNames())
             {
-                if (StringUtils::stringCaseInsensitiveEqual(releaseType, "compilation"))
+                if (core::stringUtils::stringCaseInsensitiveEqual(releaseType, "compilation"))
                     isCompilation = true;
 
                 albumNode.addArrayValue("releaseTypes", releaseType);

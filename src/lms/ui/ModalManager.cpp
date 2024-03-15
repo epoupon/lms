@@ -18,9 +18,9 @@
  */
 
 #include "ModalManager.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
-namespace UserInterface
+namespace lms::ui
 {
     ModalManager::ModalManager()
         : _closed{ this, "closed" }

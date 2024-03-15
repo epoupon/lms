@@ -21,46 +21,47 @@
 
 #include "database/TrackBookmark.hpp"
 
-using ScopedTrackBookmark = ScopedEntity<Database::TrackBookmark>;
-
-using namespace Database;
-
-TEST_F(DatabaseFixture, TrackBookmark)
+namespace lms::db::tests
 {
-	ScopedTrack track {session, "MyTrack"};
-	ScopedUser user {session, "MyUser"};
+    using ScopedTrackBookmark = ScopedEntity<db::TrackBookmark>;
 
-	{
-		auto transaction {session.createReadTransaction()};
-		EXPECT_EQ(TrackBookmark::getCount(session), 0);
-	}
+    TEST_F(DatabaseFixture, TrackBookmark)
+    {
+        ScopedTrack track{ session, "MyTrack" };
+        ScopedUser user{ session, "MyUser" };
 
-	ScopedTrackBookmark bookmark {session, user.lockAndGet(), track.lockAndGet()};
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(TrackBookmark::getCount(session), 0);
+        }
 
-	{
-		auto transaction {session.createWriteTransaction()};
+        ScopedTrackBookmark bookmark{ session, user.lockAndGet(), track.lockAndGet() };
 
-		bookmark.get().modify()->setComment("MyComment");
-		bookmark.get().modify()->setOffset(std::chrono::milliseconds {5});
-	}
+        {
+            auto transaction{ session.createWriteTransaction() };
 
-	{
-		auto transaction {session.createReadTransaction()};
+            bookmark.get().modify()->setComment("MyComment");
+            bookmark.get().modify()->setOffset(std::chrono::milliseconds{ 5 });
+        }
 
-		EXPECT_EQ(TrackBookmark::getCount(session), 1);
+        {
+            auto transaction{ session.createReadTransaction() };
 
-		const auto bookmarks {TrackBookmark::find(session, user.getId())};
-		ASSERT_EQ(bookmarks.results.size(), 1);
-		EXPECT_EQ(bookmarks.results.front(), bookmark.getId());
-	}
-	{
-		auto transaction {session.createReadTransaction()};
+            EXPECT_EQ(TrackBookmark::getCount(session), 1);
 
-		auto userBookmark {TrackBookmark::find(session, user.getId(), track.getId())};
-		ASSERT_TRUE(userBookmark);
-		EXPECT_EQ(userBookmark, bookmark.get());
+            const auto bookmarks{ TrackBookmark::find(session, user.getId()) };
+            ASSERT_EQ(bookmarks.results.size(), 1);
+            EXPECT_EQ(bookmarks.results.front(), bookmark.getId());
+        }
+        {
+            auto transaction{ session.createReadTransaction() };
 
-		EXPECT_EQ(userBookmark->getOffset(), std::chrono::milliseconds {5});
-		EXPECT_EQ(userBookmark->getComment(), "MyComment");
-	}
+            auto userBookmark{ TrackBookmark::find(session, user.getId(), track.getId()) };
+            ASSERT_TRUE(userBookmark);
+            EXPECT_EQ(userBookmark, bookmark.get());
+
+            EXPECT_EQ(userBookmark->getOffset(), std::chrono::milliseconds{ 5 });
+            EXPECT_EQ(userBookmark->getComment(), "MyComment");
+        }
+    }
 }

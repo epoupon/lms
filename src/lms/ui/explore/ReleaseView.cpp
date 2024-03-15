@@ -36,7 +36,7 @@
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
-#include "utils/ILogger.hpp"
+#include "core/ILogger.hpp"
 
 #include "common/Template.hpp"
 #include "resource/DownloadResource.hpp"
@@ -50,17 +50,17 @@
 #include "ModalManager.hpp"
 #include "Utils.hpp"
 
-using namespace Database;
-
-namespace UserInterface
+namespace lms::ui
 {
+    using namespace db;
+
     namespace
     {
-        void showReleaseInfoModal(Database::ReleaseId releaseId)
+        void showReleaseInfoModal(db::ReleaseId releaseId)
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-            const Database::Release::pointer release{ Database::Release::find(LmsApp->getDbSession(), releaseId) };
+            const db::Release::pointer release{ db::Release::find(LmsApp->getDbSession(), releaseId) };
             if (!release)
                 return;
 
@@ -71,7 +71,7 @@ namespace UserInterface
             if (const auto releaseTypeNames{ release->getReleaseTypeNames() }; !releaseTypeNames.empty())
             {
                 releaseInfo->setCondition("if-has-release-type", true);
-                releaseInfo->bindString("release-type", ReleaseHelpers::buildReleaseTypeString(parseReleaseType(releaseTypeNames)));
+                releaseInfo->bindString("release-type", releaseHelpers::buildReleaseTypeString(parseReleaseType(releaseTypeNames)));
             }
 
             std::map<Wt::WString, std::set<ArtistId>> artistMap;
@@ -131,7 +131,7 @@ namespace UserInterface
 
                 for (const auto& [role, artistIds] : artistMap)
                 {
-                    std::unique_ptr<Wt::WContainerWidget> artistContainer{ Utils::createArtistAnchorList(std::vector(std::cbegin(artistIds), std::cend(artistIds))) };
+                    std::unique_ptr<Wt::WContainerWidget> artistContainer{ utils::createArtistAnchorList(std::vector(std::cbegin(artistIds), std::cend(artistIds))) };
                     auto artistsEntry{ std::make_unique<Template>(Wt::WString::tr("Lms.Explore.template.info.artists")) };
                     artistsEntry->bindString("type", role);
                     artistsEntry->bindWidget("artist-container", std::move(artistContainer));
@@ -142,9 +142,9 @@ namespace UserInterface
             // TODO: save in DB and aggregate all this
             for (const Track::pointer& track : Track::find(LmsApp->getDbSession(), Track::FindParameters{}.setRelease(releaseId).setRange(Range{ 0, 1 })).results)
             {
-                if (const auto audioFile{ Av::parseAudioFile(track->getPath()) })
+                if (const auto audioFile{ av::parseAudioFile(track->getPath()) })
                 {
-                    const std::optional<Av::StreamInfo> audioStream{ audioFile->getBestStreamInfo() };
+                    const std::optional<av::StreamInfo> audioStream{ audioFile->getBestStreamInfo() };
                     if (audioStream)
                     {
                         releaseInfo->setCondition("if-has-codec", true);
@@ -160,7 +160,7 @@ namespace UserInterface
                 releaseInfo->bindString("bitrate", std::to_string(meanBitrate / 1000) + " kbps");
             }
 
-            releaseInfo->bindInt("playcount", Service<Scrobbling::IScrobblingService>::get()->getCount(LmsApp->getUserId(), release->getId()));
+            releaseInfo->bindInt("playcount", core::Service<scrobbling::IScrobblingService>::get()->getCount(LmsApp->getUserId(), release->getId()));
 
             Wt::WPushButton* okBtn{ releaseInfo->bindNew<Wt::WPushButton>("ok-btn", Wt::WString::tr("Lms.ok")) };
             okBtn->clicked().connect([=]
@@ -175,18 +175,18 @@ namespace UserInterface
         {
             if (wApp->internalPathMatches("/release/mbid/"))
             {
-                const auto mbid{ UUID::fromString(wApp->internalPathNextPart("/release/mbid/")) };
+                const auto mbid{ core::UUID::fromString(wApp->internalPathNextPart("/release/mbid/")) };
                 if (mbid)
                 {
                     auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    if (const Database::Release::pointer release{ Database::Release::find(LmsApp->getDbSession(), *mbid) })
+                    if (const db::Release::pointer release{ db::Release::find(LmsApp->getDbSession(), *mbid) })
                         return release->getId();
                 }
 
                 return std::nullopt;
             }
 
-            return StringUtils::readAs<ReleaseId::ValueType>(wApp->internalPathNextPart("/release/"));
+            return core::stringUtils::readAs<ReleaseId::ValueType>(wApp->internalPathNextPart("/release/"));
         }
     }
 
@@ -230,11 +230,11 @@ namespace UserInterface
         if (!releaseId)
             throw ReleaseNotFoundException{};
 
-        auto similarReleasesIds{ Service<Recommendation::IRecommendationService>::get()->getSimilarReleases(*releaseId, 6) };
+        auto similarReleasesIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarReleases(*releaseId, 6) };
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const Database::Release::pointer release{ Database::Release::find(LmsApp->getDbSession(), *releaseId) };
+        const db::Release::pointer release{ db::Release::find(LmsApp->getDbSession(), *releaseId) };
         if (!release)
             throw ReleaseNotFoundException{};
 
@@ -247,18 +247,18 @@ namespace UserInterface
 
         bindString("name", Wt::WString::fromUTF8(std::string{ release->getName() }), Wt::TextFormat::Plain);
 
-        Wt::WString year{ ReleaseHelpers::buildReleaseYearString(release->getYear(), release->getOriginalYear()) };
+        Wt::WString year{ releaseHelpers::buildReleaseYearString(release->getYear(), release->getOriginalYear()) };
         if (!year.empty())
         {
             setCondition("if-has-year", true);
             bindString("year", year, Wt::TextFormat::Plain);
         }
 
-        bindString("duration", Utils::durationToString(release->getDuration()), Wt::TextFormat::Plain);
+        bindString("duration", utils::durationToString(release->getDuration()), Wt::TextFormat::Plain);
 
         refreshReleaseArtists(release);
 
-        bindWidget<Wt::WImage>("cover", Utils::createCover(release->getId(), CoverResource::Size::Large));
+        bindWidget<Wt::WImage>("cover", utils::createCover(release->getId(), CoverResource::Size::Large));
 
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
         {
@@ -267,10 +267,10 @@ namespace UserInterface
 
             for (const auto& clusters : clusterGroups)
             {
-                for (const Database::Cluster::pointer& cluster : clusters)
+                for (const db::Cluster::pointer& cluster : clusters)
                 {
                     const ClusterId clusterId{ cluster->getId() };
-                    Wt::WInteractWidget* entry{ clusterContainers->addWidget(Utils::createCluster(clusterId)) };
+                    Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createCluster(clusterId)) };
                     entry->clicked().connect([this, clusterId]
                         {
                             _filters.add(clusterId);
@@ -313,19 +313,19 @@ namespace UserInterface
                 });
 
         {
-            auto isStarred{ [this] { return Service<Feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), _releaseId); } };
+            auto isStarred{ [this] { return core::Service<feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), _releaseId); } };
 
             Wt::WPushButton* starBtn{ bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
             starBtn->clicked().connect([=, this]
                 {
                     if (isStarred())
                     {
-                        Service<Feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), _releaseId);
+                        core::Service<feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), _releaseId);
                         starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
                     }
                     else
                     {
-                        Service<Feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), _releaseId);
+                        core::Service<feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), _releaseId);
                         starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
                     }
                 });
@@ -399,14 +399,14 @@ namespace UserInterface
                 return noDiscTracksContainer;
             };
 
-        Database::Track::FindParameters params;
+        db::Track::FindParameters params;
         params.setRelease(_releaseId);
-        params.setSortMethod(Database::TrackSortMethod::Release);
+        params.setSortMethod(db::TrackSortMethod::Release);
         params.setClusters(_filters.getClusterIds());
 
-        Database::Track::find(LmsApp->getDbSession(), params, [&](const Database::Track::pointer& track)
+        db::Track::find(LmsApp->getDbSession(), params, [&](const db::Track::pointer& track)
             {
-                const Database::TrackId trackId{ track->getId() };
+                const db::TrackId trackId{ track->getId() };
                 const auto discNumber{ track->getDiscNumber() };
 
                 Wt::WContainerWidget* container;
@@ -425,8 +425,8 @@ namespace UserInterface
                 if (variousArtists && !artists.empty())
                 {
                     entry->setCondition("if-has-artists", true);
-                    entry->bindWidget("artists", Utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
-                    entry->bindWidget("artists-md", Utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
+                    entry->bindWidget("artists", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
+                    entry->bindWidget("artists-md", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
                 }
 
                 auto trackNumber{ track->getTrackNumber() };
@@ -460,19 +460,19 @@ namespace UserInterface
                                 _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, { trackId });
                             });
 
-                    auto isStarred{ [=] { return Service<Feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), trackId); } };
+                    auto isStarred{ [=] { return core::Service<feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), trackId); } };
 
                     Wt::WPushButton* starBtn{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
-                    starBtn->clicked().connect([=, this]
+                    starBtn->clicked().connect([=]
                         {
                             if (isStarred())
                             {
-                                Service<Feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), trackId);
+                                core::Service<feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), trackId);
                                 starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
                             }
                             else
                             {
-                                Service<Feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), trackId);
+                                core::Service<feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), trackId);
                                 starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
                             }
                         });
@@ -484,7 +484,7 @@ namespace UserInterface
                         ->clicked().connect([this, trackId] { TrackListHelpers::showTrackInfoModal(trackId, _filters); });
                 }
 
-                entry->bindString("duration", Utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
+                entry->bindString("duration", utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
                 LmsApp->getMediaPlayer().trackLoaded.connect(entry, [=](TrackId loadedTrackId)
                     {
@@ -500,9 +500,9 @@ namespace UserInterface
             });
     }
 
-    void Release::refreshReleaseArtists(const Database::Release::pointer& release)
+    void Release::refreshReleaseArtists(const db::Release::pointer& release)
     {
-        auto container{ Utils::createArtistsAnchorsForRelease(release) };
+        auto container{ utils::createArtistsAnchorsForRelease(release) };
         if (container)
         {
             setCondition("if-has-release-artists", true);
@@ -510,7 +510,7 @@ namespace UserInterface
         }
     }
 
-    void Release::refreshCopyright(const Database::Release::pointer& release)
+    void Release::refreshCopyright(const db::Release::pointer& release)
     {
         std::optional<std::string> copyright{ release->getCopyright() };
         std::optional<std::string> copyrightURL{ release->getCopyrightURL() };
@@ -537,7 +537,7 @@ namespace UserInterface
             bindString("copyright", Wt::WString::fromUTF8(*copyright), Wt::TextFormat::Plain);
     }
 
-    void Release::refreshLinks(const Database::Release::pointer& release)
+    void Release::refreshLinks(const db::Release::pointer& release)
     {
         const auto mbid{ release->getMBID() };
         if (mbid)
@@ -557,12 +557,12 @@ namespace UserInterface
 
         for (const ReleaseId id : similarReleasesId)
         {
-            const Database::Release::pointer similarRelease{ Database::Release::find(LmsApp->getDbSession(), id) };
+            const db::Release::pointer similarRelease{ db::Release::find(LmsApp->getDbSession(), id) };
             if (!similarRelease)
                 continue;
 
-            similarReleasesContainer->addWidget(ReleaseListHelpers::createEntry(similarRelease));
+            similarReleasesContainer->addWidget(releaseListHelpers::createEntry(similarRelease));
         }
     }
 
-} // namespace UserInterface
+} // namespace lms::ui

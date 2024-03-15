@@ -47,6 +47,7 @@
 <message id="Lms.Admin.menu-media-libraries"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Libraries</message>
 <message id="Lms.Admin.menu-scan-settings"><i class="fa fa-fw fa-cogs" aria-hidden="true"></i> Scan settings</message>
 <message id="Lms.Admin.menu-scanner"><i class="fa fa-fw fa-wrench" aria-hidden="true"></i> Scanner</message>
+<message id="Lms.Admin.menu-tracing"><i class="fa fa-fw fa-bar-chart" aria-hidden="true"></i> Tracing</message>
 <message id="Lms.Admin.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Users</message>
 
 <!--MediaLibraries-->
@@ -64,9 +65,9 @@
 <message id="Lms.Admin.MediaLibrary.root-path">Root directory</message>
 
 <!--Scan settings-->
-<message id="Lms.Admin.Database.artist-tag-delimiter">Delimiter to be used for splitting artist tags (only if the file does not contain any multi-valued tag)</message>
+<message id="Lms.Admin.Database.artist-tag-delimiter">Delimiter to be used for splitting artist tags</message>
 <message id="Lms.Admin.Database.daily">Daily</message>
-<message id="Lms.Admin.Database.default-tag-delimiter">Delimiter to be used for splitting other tags (only if the file does not contain any multi-valued tag)</message>
+<message id="Lms.Admin.Database.default-tag-delimiter">Delimiter to be used for splitting other tags</message>
 <message id="Lms.Admin.Database.extra-tags-to-scan">Extra tags to scan (use <kbd>;</kbd> as separator)</message>
 <message id="Lms.Admin.Database.hourly">Hourly</message>
 <message id="Lms.Admin.Database.immediate-scan">Scan now!</message>
@@ -112,6 +113,10 @@
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Reloading similarity engine: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Scanning files: {1}/{2} files ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-status">Step status</message>
+
+<!--Tracing-->
+<message id="Lms.Admin.Tracing.export-current-buffer">Export traces</message>
+<message id="Lms.Admin.Tracing.tracing">Tracing</message>
 
 <!--Users-->
 <message id="Lms.Admin.Users.add">New user</message>

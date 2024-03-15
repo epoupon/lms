@@ -28,9 +28,9 @@
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"
 
-namespace API::Subsonic
+namespace lms::api::subsonic
 {
-    using namespace Database;
+    using namespace db;
 
     Response handleGetPlaylistsRequest(RequestContext& context)
     {
@@ -72,7 +72,7 @@ namespace API::Subsonic
         Response::Node playlistNode{ createPlaylistNode(tracklist, context.dbSession) };
 
         auto entries{ tracklist->getEntries() };
-        for (const TrackListEntry::pointer& entry : entries)
+        for (const TrackListEntry::pointer& entry : entries.results)
             playlistNode.addArrayChild("entry", createSongNode(context, entry->getTrack(), user));
 
         response.addNode("playlist", std::move(playlistNode));
@@ -129,7 +129,7 @@ namespace API::Subsonic
         Response::Node playlistNode{ createPlaylistNode(tracklist, context.dbSession) };
 
         auto entries{ tracklist->getEntries() };
-        for (const TrackListEntry::pointer& entry : entries)
+        for (const TrackListEntry::pointer& entry : entries.results)
             playlistNode.addArrayChild("entry", createSongNode(context, entry->getTrack(), user));
 
         response.addNode("playlist", std::move(playlistNode));

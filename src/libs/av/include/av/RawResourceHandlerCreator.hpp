@@ -22,9 +22,9 @@
 #include <filesystem>
 #include <memory>
 
-#include "utils/IResourceHandler.hpp"
+#include "core/IResourceHandler.hpp"
 
-namespace Av
+namespace lms::av
 {
     std::unique_ptr<IResourceHandler> createRawResourceHandler(const std::filesystem::path& path);
 }
