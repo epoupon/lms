@@ -59,6 +59,9 @@ namespace lms::db
     WriteTransaction::~WriteTransaction()
     {
         TransactionChecker::popWriteTransaction(_transaction.session());
+
+        core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "CommitWriteTransaction" };
+        _transaction.commit();
     }
 
     ReadTransaction::ReadTransaction(Wt::Dbo::Session& session)
