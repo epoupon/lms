@@ -53,26 +53,34 @@ namespace lms::db
         : _lock{ mutex },
         _transaction{ session }
     {
+#if LMS_CHECK_TRANSACTION_ACCESSES
         TransactionChecker::pushWriteTransaction(_transaction.session());
+#endif
     }
 
     WriteTransaction::~WriteTransaction()
     {
+#if LMS_CHECK_TRANSACTION_ACCESSES
         TransactionChecker::popWriteTransaction(_transaction.session());
+#endif
 
-        core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "CommitWriteTransaction" };
+        core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "Commit" };
         _transaction.commit();
     }
 
     ReadTransaction::ReadTransaction(Wt::Dbo::Session& session)
         : _transaction{ session }
     {
+#if LMS_CHECK_TRANSACTION_ACCESSES
         TransactionChecker::pushReadTransaction(_transaction.session());
+#endif
     }
 
     ReadTransaction::~ReadTransaction()
     {
+#if LMS_CHECK_TRANSACTION_ACCESSES
         TransactionChecker::popReadTransaction(_transaction.session());
+#endif
     }
 
     Session::Session(Db& db)
@@ -119,6 +127,7 @@ namespace lms::db
         // Initial creation case
         try
         {
+            auto transaction{ createWriteTransaction() };
             _session.createTables();
             LMS_LOG(DB, INFO, "Tables created");
         }
