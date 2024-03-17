@@ -19,6 +19,10 @@
 
 #include "Searching.hpp"
 
+#include <chrono>
+#include <mutex>
+#include <map>
+
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
@@ -29,42 +33,111 @@
 #include "responses/Song.hpp"
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"
- 
+
 namespace lms::api::subsonic
 {
     using namespace db;
 
     namespace
     {
+        // Search endpoints can be used to scan/sync the database
+        // This class is used to keep track of the current scans, in order to retrieve the last objectId
+        // to speed up the query of the following range (avoid the 'offset' cost)
+        template <typename ObjectId>
+        class ScanTracker
+        {
+        public:
+            ObjectId extractLastRetrievedObjectId(const ClientInfo& info, std::size_t offset);
+            void setObjectId(const ClientInfo& info, std::size_t offset, ObjectId lastRetrievedId);
+            void cleanOutdatedScanEntries();
+
+        private:
+            using ClockType = std::chrono::steady_clock;
+
+            struct Client
+            {
+                std::string clientAddress;
+                std::string clientName;
+                std::string userName;
+                std::size_t offset{};
+                auto operator<=>(const Client&) const = default;
+            };
+            struct Entry
+            {
+                ClockType::time_point timePoint;
+                ObjectId objectId;
+            };
+
+            static constexpr ClockType::duration maxEntryDuration{ std::chrono::seconds{30} };
+
+            std::mutex _mutex;
+            std::map<Client, Entry> _ongoingScans;
+        };
+
+        template<typename ObjectId>
+        ObjectId ScanTracker<ObjectId>::extractLastRetrievedObjectId(const ClientInfo& info, std::size_t offset)
+        {
+            ObjectId res;
+
+            const std::scoped_lock lock{ _mutex };
+            auto it{ _ongoingScans.find({ info.ipAddress, info.name, info.user, offset }) };
+            if (it != _ongoingScans.end())
+            {
+                res = it->second.objectId;
+                _ongoingScans.erase(it);
+            }
+
+            return res;
+        }
+
+        template<typename ObjectId>
+        void ScanTracker<ObjectId>::setObjectId(const ClientInfo& info, std::size_t offset, ObjectId lastRetrievedId)
+        {
+            const std::scoped_lock lock{ _mutex };
+            _ongoingScans[Client{ info.ipAddress, info.name, info.user, offset }] = { ClockType::now(), lastRetrievedId };
+        }
+
+        template<typename ObjectId>
+        void ScanTracker<ObjectId>::cleanOutdatedScanEntries()
+        {
+            const ClockType::time_point now{ ClockType::now() };
+
+            const std::scoped_lock lock{ _mutex };
+            std::erase_if(_ongoingScans, [&](const auto& entry) { return now > entry.second.timePoint + maxEntryDuration; });
+        }
+    }
+
+    namespace
+    {
         Response handleSearchRequestCommon(RequestContext& context, bool id3)
         {
             // Mandatory params
-            std::string queryString{ getMandatoryParameterAs<std::string>(context.parameters, "query") };
+            const std::string queryString{ getMandatoryParameterAs<std::string>(context.parameters, "query") };
             std::string_view query{ queryString };
 
             // Optional params
+            const std::size_t artistCount{ getParameterAs<std::size_t>(context.parameters, "artistCount").value_or(20) };
+            const std::size_t artistOffset{ getParameterAs<std::size_t>(context.parameters, "artistOffset").value_or(0) };
+            const std::size_t albumCount{ getParameterAs<std::size_t>(context.parameters, "albumCount").value_or(20) };
+            const std::size_t albumOffset{ getParameterAs<std::size_t>(context.parameters, "albumOffset").value_or(0) };
+            const std::size_t songCount{ getParameterAs<std::size_t>(context.parameters, "songCount").value_or(20) };
+            const std::size_t songOffset{ getParameterAs<std::size_t>(context.parameters, "songOffset").value_or(0) };
             const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.parameters, "musicFolderId").value_or(MediaLibraryId{}) };
+
+            if (artistCount > defaultMaxCountSize)
+                throw ParameterValueTooHighGenericError{ "artistCount", defaultMaxCountSize };
+            if (albumCount > defaultMaxCountSize)
+                throw ParameterValueTooHighGenericError{ "albumCount", defaultMaxCountSize };
+            if (songCount > defaultMaxCountSize)
+                throw ParameterValueTooHighGenericError{ "songCount", defaultMaxCountSize };
 
             // Symfonium adds extra ""
             if (context.clientInfo.name == "Symfonium")
                 query = core::stringUtils::stringTrim(query, "\"");
 
-            std::vector<std::string_view> keywords{ core::stringUtils::splitString(query, ' ') };
-
-            // Optional params
-            std::size_t artistCount{ getParameterAs<std::size_t>(context.parameters, "artistCount").value_or(20) };
-            std::size_t artistOffset{ getParameterAs<std::size_t>(context.parameters, "artistOffset").value_or(0) };
-            std::size_t albumCount{ getParameterAs<std::size_t>(context.parameters, "albumCount").value_or(20) };
-            std::size_t albumOffset{ getParameterAs<std::size_t>(context.parameters, "albumOffset").value_or(0) };
-            std::size_t songCount{ getParameterAs<std::size_t>(context.parameters, "songCount").value_or(20) };
-            std::size_t songOffset{ getParameterAs<std::size_t>(context.parameters, "songOffset").value_or(0) };
-
-            if (artistCount > defaultMaxCountSize)
-                throw ParameterValueTooHighGenericError{ "artistCount", defaultMaxCountSize };
-            else if (albumCount > defaultMaxCountSize)
-                throw ParameterValueTooHighGenericError{ "albumCount", defaultMaxCountSize };
-            else if (songCount > defaultMaxCountSize)
-                throw ParameterValueTooHighGenericError{ "songCount", defaultMaxCountSize };
+            std::vector<std::string_view> keywords;
+            if (!query.empty())
+                keywords = core::stringUtils::splitString(query, ' ');
 
             Response response{ Response::createOkResponse(context.serverProtocolVersion) };
             Response::Node& searchResult2Node{ response.createNode(id3 ? "searchResult3" : "searchResult2") };
@@ -103,15 +176,47 @@ namespace lms::api::subsonic
 
             if (songCount > 0)
             {
-                Track::FindParameters params;
-                params.setKeywords(keywords);
-                params.setRange(Range{ songOffset, songCount });
-                params.setMediaLibrary(mediaLibrary);
+                static ScanTracker<TrackId> currentScansInProgress;
+                currentScansInProgress.cleanOutdatedScanEntries();
 
-                Track::find(context.dbSession, params, [&](const Track::pointer& track)
+                TrackId lastRetrievedId;
+
+                auto findTracks{ [&]
+                {
+                    Track::FindParameters params;
+                    params.setKeywords(keywords);
+                    params.setRange(Range{ songOffset, songCount });
+                    params.setMediaLibrary(mediaLibrary);
+
+                    Track::find(context.dbSession, params, [&](const Track::pointer& track)
+                        {
+                            searchResult2Node.addArrayChild("song", createSongNode(context, track, user));
+                            lastRetrievedId = track->getId();
+                        });
+                } };
+
+                if (!keywords.empty())
+                {
+                    findTracks();
+                }
+                else
+                {
+                    if (TrackId cachedLastRetrievedId{ currentScansInProgress.extractLastRetrievedObjectId(context.clientInfo, songOffset) }; cachedLastRetrievedId.isValid())
                     {
-                        searchResult2Node.addArrayChild("song", createSongNode(context, track, user));
-                    });
+                        Track::find(context.dbSession, cachedLastRetrievedId, songCount, [&](const Track::pointer& track)
+                            {
+                                searchResult2Node.addArrayChild("song", createSongNode(context, track, user));
+                            }, mediaLibrary);
+                        lastRetrievedId = cachedLastRetrievedId;
+                    }
+                    else
+                    {
+                        findTracks();
+                    }
+
+                    if (lastRetrievedId.isValid())
+                        currentScansInProgress.setObjectId(context.clientInfo, songOffset + songCount, lastRetrievedId);
+                }
             }
 
             return response;
@@ -127,5 +232,4 @@ namespace lms::api::subsonic
     {
         return handleSearchRequestCommon(context, true /* id3 */);
     }
-
 }

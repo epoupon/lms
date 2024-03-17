@@ -25,8 +25,7 @@
 
 namespace lms::core
 {
-    std::unique_ptr<IChildProcessManager>
-        createChildProcessManager(boost::asio::io_context& ioContext)
+    std::unique_ptr<IChildProcessManager> createChildProcessManager(boost::asio::io_context& ioContext)
     {
         return std::make_unique<ChildProcessManager>(ioContext);
     }
@@ -36,8 +35,7 @@ namespace lms::core
     {
     }
 
-    std::unique_ptr<IChildProcess>
-        ChildProcessManager::spawnChildProcess(const std::filesystem::path& path, const IChildProcess::Args& args)
+    std::unique_ptr<IChildProcess> ChildProcessManager::spawnChildProcess(const std::filesystem::path& path, const IChildProcess::Args& args)
     {
         return std::make_unique<ChildProcess>(_ioContext, path, args);
     }

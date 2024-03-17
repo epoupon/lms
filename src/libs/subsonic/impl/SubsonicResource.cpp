@@ -380,12 +380,15 @@ namespace lms::api::subsonic
         }
     }
 
-    ClientInfo SubsonicResource::getClientInfo(const Wt::Http::ParameterMap& parameters)
+    ClientInfo SubsonicResource::getClientInfo(const Wt::Http::Request& request)
     {
+        const auto& parameters{ request.getParameterMap() };
         ClientInfo res;
 
         if (hasParameter(parameters, "t"))
             throw TokenAuthenticationNotSupportedForLDAPUsersError{};
+
+        res.ipAddress = request.clientAddress();
 
         // Mandatory parameters
         res.name = getMandatoryParameterAs<std::string>(parameters, "c");
@@ -399,7 +402,7 @@ namespace lms::api::subsonic
     RequestContext SubsonicResource::buildRequestContext(const Wt::Http::Request& request)
     {
         const Wt::Http::ParameterMap& parameters{ request.getParameterMap() };
-        const ClientInfo clientInfo{ getClientInfo(parameters) };
+        const ClientInfo clientInfo{ getClientInfo(request) };
         const db::UserId userId{ authenticateUser(request, clientInfo) };
         bool enableOpenSubsonic{ _openSubsonicDisabledClients.find(clientInfo.name) == std::cend(_openSubsonicDisabledClients) };
         bool enableDefaultCover{ _defaultCoverClients.find(clientInfo.name) != std::cend(_openSubsonicDisabledClients) };

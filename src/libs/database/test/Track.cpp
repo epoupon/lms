@@ -68,14 +68,20 @@ namespace lms::db::tests
         ScopedTrack track1{ session, "MyTrackFile1" };
         ScopedTrack track2{ session, "MyTrackFile1" };
         ScopedTrack track3{ session, "MyTrackFile1" };
+        ScopedMediaLibrary library{ session };
+        ScopedMediaLibrary otherLibrary{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track2.get().modify()->setMediaLibrary(library.get());
+        }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            bool moreResults;
             TrackId lastRetrievedTrackId;
             std::vector<Track::pointer> visitedTracks;
-            Track::find(session, lastRetrievedTrackId, 10, moreResults, [&](const Track::pointer& track)
+            Track::find(session, lastRetrievedTrackId, 10, [&](const Track::pointer& track)
                 {
                     visitedTracks.push_back(track);
                 });
@@ -83,39 +89,61 @@ namespace lms::db::tests
             EXPECT_EQ(visitedTracks[0]->getId(), track1.getId());
             EXPECT_EQ(visitedTracks[1]->getId(), track2.getId());
             EXPECT_EQ(visitedTracks[2]->getId(), track3.getId());
-            EXPECT_FALSE(moreResults);
             EXPECT_EQ(lastRetrievedTrackId, track3.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            bool moreResults;
             TrackId lastRetrievedTrackId{ track1.getId() };
             std::vector<Track::pointer> visitedTracks;
-            Track::find(session, lastRetrievedTrackId, 1, moreResults, [&](const Track::pointer& track)
+            Track::find(session, lastRetrievedTrackId, 1, [&](const Track::pointer& track)
                 {
                     visitedTracks.push_back(track);
                 });
             ASSERT_EQ(visitedTracks.size(), 1);
             EXPECT_EQ(visitedTracks[0]->getId(), track2.getId());
-            EXPECT_TRUE(moreResults);
             EXPECT_EQ(lastRetrievedTrackId, track2.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            bool moreResults;
             TrackId lastRetrievedTrackId{ track1.getId() };
             std::vector<Track::pointer> visitedTracks;
-            Track::find(session, lastRetrievedTrackId, 0, moreResults, [&](const Track::pointer& track)
+            Track::find(session, lastRetrievedTrackId, 0, [&](const Track::pointer& track)
                 {
                     visitedTracks.push_back(track);
                 });
             ASSERT_EQ(visitedTracks.size(), 0);
-            EXPECT_TRUE(moreResults);
             EXPECT_EQ(lastRetrievedTrackId, track1.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackId lastRetrievedTrackId{};
+            std::vector<Track::pointer> visitedTracks;
+            Track::find(session, lastRetrievedTrackId, 10, [&](const Track::pointer& track)
+                {
+                    visitedTracks.push_back(track);
+                }, otherLibrary.getId());
+            ASSERT_EQ(visitedTracks.size(), 0);
+            EXPECT_EQ(lastRetrievedTrackId, TrackId{});
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackId lastRetrievedTrackId{};
+            std::vector<Track::pointer> visitedTracks;
+            Track::find(session, lastRetrievedTrackId, 10, [&](const Track::pointer& track)
+                {
+                    visitedTracks.push_back(track);
+                }, library.getId());
+            ASSERT_EQ(visitedTracks.size(), 1);
+            EXPECT_EQ(visitedTracks[0]->getId(), track2.getId());
+            EXPECT_EQ(lastRetrievedTrackId, track2.getId());
         }
     }
 

@@ -47,7 +47,7 @@ namespace lms::api::subsonic
             ProtocolVersion getServerProtocolVersion(const std::string& clientName) const;
 
             static void checkProtocolVersion(ProtocolVersion client, ProtocolVersion server);
-            ClientInfo getClientInfo(const Wt::Http::ParameterMap& parameters);
+            ClientInfo getClientInfo(const Wt::Http::Request& request);
             RequestContext buildRequestContext(const Wt::Http::Request& request);
             db::UserId authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo);
 
