@@ -5,7 +5,9 @@ HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false
 FormatStyle:     none
 User:            ''
-CheckOptions:    
+CheckOptions:
+  - key:             misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic   
+    value:           '1'
   - key:             readability-identifier-naming.IgnoreClassesWithAllMemberVariablesBeingPublic
     value:           '1'
   - key:             cppcoreguidelines-avoid-do-while.IgnoreMacros
