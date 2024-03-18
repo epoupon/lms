@@ -47,21 +47,23 @@ namespace lms::api::subsonic
         class ScanTracker
         {
         public:
-            ObjectId extractLastRetrievedObjectId(const ClientInfo& info, std::size_t offset);
-            void setObjectId(const ClientInfo& info, std::size_t offset, ObjectId lastRetrievedId);
+            struct ScanInfo
+            {
+                std::string clientAddress;
+                std::string clientName;
+                std::string userName;
+                MediaLibraryId library;
+                std::size_t offset{};
+                auto operator<=>(const ScanInfo&) const = default;
+            };
+
+            ObjectId extractLastRetrievedObjectId(const ScanInfo& info);
+            void setObjectId(const ScanInfo& info, ObjectId lastRetrievedId);
             void cleanOutdatedScanEntries();
 
         private:
             using ClockType = std::chrono::steady_clock;
 
-            struct Client
-            {
-                std::string clientAddress;
-                std::string clientName;
-                std::string userName;
-                std::size_t offset{};
-                auto operator<=>(const Client&) const = default;
-            };
             struct Entry
             {
                 ClockType::time_point timePoint;
@@ -71,16 +73,16 @@ namespace lms::api::subsonic
             static constexpr ClockType::duration maxEntryDuration{ std::chrono::seconds{30} };
 
             std::mutex _mutex;
-            std::map<Client, Entry> _ongoingScans;
+            std::map<ScanInfo, Entry> _ongoingScans;
         };
 
         template<typename ObjectId>
-        ObjectId ScanTracker<ObjectId>::extractLastRetrievedObjectId(const ClientInfo& info, std::size_t offset)
+        ObjectId ScanTracker<ObjectId>::extractLastRetrievedObjectId(const ScanInfo& scanInfo)
         {
             ObjectId res;
 
             const std::scoped_lock lock{ _mutex };
-            auto it{ _ongoingScans.find({ info.ipAddress, info.name, info.user, offset }) };
+            auto it{ _ongoingScans.find(scanInfo) };
             if (it != _ongoingScans.end())
             {
                 res = it->second.objectId;
@@ -91,10 +93,10 @@ namespace lms::api::subsonic
         }
 
         template<typename ObjectId>
-        void ScanTracker<ObjectId>::setObjectId(const ClientInfo& info, std::size_t offset, ObjectId lastRetrievedId)
+        void ScanTracker<ObjectId>::setObjectId(const ScanInfo& scanInfo, ObjectId lastRetrievedId)
         {
             const std::scoped_lock lock{ _mutex };
-            _ongoingScans[Client{ info.ipAddress, info.name, info.user, offset }] = { ClockType::now(), lastRetrievedId };
+            _ongoingScans[scanInfo] = { ClockType::now(), lastRetrievedId };
         }
 
         template<typename ObjectId>
@@ -201,7 +203,16 @@ namespace lms::api::subsonic
                 }
                 else
                 {
-                    if (TrackId cachedLastRetrievedId{ currentScansInProgress.extractLastRetrievedObjectId(context.clientInfo, songOffset) }; cachedLastRetrievedId.isValid())
+                    ScanTracker<TrackId>::ScanInfo scanInfo
+                    {
+                        .clientAddress = context.clientInfo.ipAddress,
+                        .clientName = context.clientInfo.name,
+                        .userName = context.clientInfo.user,
+                        .library = mediaLibrary,
+                        .offset = songOffset
+                    };
+
+                    if (TrackId cachedLastRetrievedId{ currentScansInProgress.extractLastRetrievedObjectId(scanInfo) }; cachedLastRetrievedId.isValid())
                     {
                         Track::find(context.dbSession, cachedLastRetrievedId, songCount, [&](const Track::pointer& track)
                             {
@@ -215,7 +226,10 @@ namespace lms::api::subsonic
                     }
 
                     if (lastRetrievedId.isValid())
-                        currentScansInProgress.setObjectId(context.clientInfo, songOffset + songCount, lastRetrievedId);
+                    {
+                        scanInfo.offset = songOffset + songCount;
+                        currentScansInProgress.setObjectId(scanInfo, lastRetrievedId);
+                    }
                 }
             }
 
