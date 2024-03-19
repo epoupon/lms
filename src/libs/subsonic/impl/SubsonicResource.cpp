@@ -159,7 +159,7 @@ namespace lms::api::subsonic
             CheckImplementedFunc    checkFunc{};
         };
 
-        static const std::unordered_map<core::LiteralString, RequestEntryPointInfo, core::LiteralStringHash, core::LiteralStringEqual> requestEntryPoints
+        const std::unordered_map<core::LiteralString, RequestEntryPointInfo, core::LiteralStringHash, core::LiteralStringEqual> requestEntryPoints
         {
             // System
             {"/ping",                       {handlePingRequest}},
@@ -266,12 +266,25 @@ namespace lms::api::subsonic
         };
 
         using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::Http::Request&, Wt::Http::Response&)>;
-        static std::unordered_map<core::LiteralString, MediaRetrievalHandlerFunc, core::LiteralStringHash, core::LiteralStringEqual> mediaRetrievalHandlers
+        const std::unordered_map<core::LiteralString, MediaRetrievalHandlerFunc, core::LiteralStringHash, core::LiteralStringEqual> mediaRetrievalHandlers
         {
             // Media retrieval
             {"/download",       handleDownload},
             {"/stream",         handleStream},
             {"/getCoverArt",    handleGetCoverArt},
+        };
+
+        struct TLSMonotonicMemoryResourceCleaner
+        {
+            TLSMonotonicMemoryResourceCleaner() = default;
+            ~TLSMonotonicMemoryResourceCleaner()
+            {
+                TLSMonotonicMemoryResource::getInstance().reset();
+            }
+
+        private:
+            TLSMonotonicMemoryResourceCleaner(const TLSMonotonicMemoryResourceCleaner&) = delete;
+            TLSMonotonicMemoryResourceCleaner& operator=(const TLSMonotonicMemoryResourceCleaner&) = delete;
         };
     }
 
@@ -287,7 +300,8 @@ namespace lms::api::subsonic
     {
         static std::atomic<std::size_t> curRequestId{};
 
-        const std::size_t requestId{ curRequestId++ };
+		const std::size_t requestId{ curRequestId++ };
+		TLSMonotonicMemoryResourceCleaner memoryResourceCleaner;
 
         LMS_LOG(API_SUBSONIC, DEBUG, "Handling request " << requestId << " '" << request.pathInfo() << "', continuation = " << (request.continuation() ? "true" : "false") << ", params = " << parameterMapToDebugString(request.getParameterMap()));
 

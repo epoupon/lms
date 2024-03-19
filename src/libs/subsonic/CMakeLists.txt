@@ -58,3 +58,6 @@ target_link_libraries(lmssubsonic PUBLIC
 
 install(TARGETS lmssubsonic DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
+if (BUILD_BENCHMARKS)
+       add_subdirectory(bench)
+endif()
