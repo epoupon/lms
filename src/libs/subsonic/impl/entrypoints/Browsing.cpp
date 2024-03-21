@@ -43,7 +43,6 @@ namespace lms::api::subsonic
 {
     using namespace db;
 
-    static const std::string_view	reportedDummyDate{ "2000-01-01T00:00:00" };
     static const unsigned long long	reportedDummyDateULong{ 946684800000ULL }; // 2000-01-01T00:00:00 UTC
 
     namespace

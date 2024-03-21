@@ -85,7 +85,7 @@ namespace lms::db
         bool										isEmpty() const;
         std::size_t									getCount() const;
         ObjectPtr<TrackListEntry>					getEntry(std::size_t pos) const;
-        std::vector<ObjectPtr<TrackListEntry>>		getEntries(std::optional<Range> range = {}) const;
+        RangeResults<ObjectPtr<TrackListEntry>>		getEntries(std::optional<Range> range = {}) const;
         ObjectPtr<TrackListEntry>					getEntryByTrackAndDateTime(ObjectPtr<Track> track, const Wt::WDateTime& dateTime) const;
 
         std::vector<TrackId>						getTrackIds() const;
@@ -96,8 +96,6 @@ namespace lms::db
         // Get clusters, order by occurence
         std::vector<ObjectPtr<Cluster>> getClusters() const;
         std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const;
-
-        bool hasTrack(TrackId trackId) const;
 
         // Ordered from most clusters in common
         std::vector<ObjectPtr<Track>> getSimilarTracks(std::optional<std::size_t> offset = {}, std::optional<std::size_t> size = {}) const;

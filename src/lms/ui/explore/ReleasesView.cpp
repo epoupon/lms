@@ -129,6 +129,8 @@ namespace lms::ui
                     _container->add(releaseListHelpers::createEntry(release));
             }
         }
+
+        _container->setHasMore(releaseIds.moreResults);
     }
 
     std::vector<ReleaseId> Releases::getAllReleases()

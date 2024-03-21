@@ -110,7 +110,8 @@ namespace lms::db
         static std::size_t				getCount(Session& session);
         static pointer					findByPath(Session& session, const std::filesystem::path& p);
         static pointer 					find(Session& session, TrackId id);
-        static bool						exists(Session& session, TrackId id);
+        static void                     find(Session& session, TrackId& lastRetrievedTrack, std::size_t batchSize, bool& moreResults, const std::function<void(const Track::pointer&)>& func);
+        static bool                     exists(Session& session, TrackId id);
         static std::vector<pointer>		findByRecordingMBID(Session& session, const core::UUID& MBID);
         static std::vector<pointer>		findByMBID(Session& session, const core::UUID& MBID);
         static RangeResults<TrackId>	findSimilarTrackIds(Session& session, const std::vector<TrackId>& trackIds, std::optional<Range> range = std::nullopt);
@@ -118,6 +119,7 @@ namespace lms::db
         static RangeResults<TrackId>	findIds(Session& session, const FindParameters& parameters);
         static RangeResults<pointer>	find(Session& session, const FindParameters& parameters);
         static void						find(Session& session, const FindParameters& parameters, std::function<void(const Track::pointer&)> func);
+        static void						find(Session& session, const FindParameters& parameters, bool& moreResults, std::function<void(const Track::pointer&)> func);
         static RangeResults<PathResult>	findPaths(Session& session, std::optional<Range> range = std::nullopt);
         static RangeResults<TrackId>	findIdsTrackMBIDDuplicates(Session& session, std::optional<Range> range = std::nullopt);
         static RangeResults<TrackId>	findIdsWithRecordingMBIDAndMissingFeatures(Session& session, std::optional<Range> range = std::nullopt);

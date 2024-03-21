@@ -1,0 +1,15 @@
+---
+Checks:          '-*,bugprone-*,concurrency-*,cppcoreguidelines-*,misc-*,-misc-include-cleaner,-misc-no-recursion,performance*,portability-*,readability-*,-readability-braces-around-statements,-readability-identifier-length,-readability-implicit-bool-conversion'
+WarningsAsErrors: ''
+HeaderFilterRegex: ''
+AnalyzeTemporaryDtors: false
+FormatStyle:     none
+User:            ''
+CheckOptions:
+  - key:             misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic   
+    value:           '1'
+  - key:             readability-identifier-naming.IgnoreClassesWithAllMemberVariablesBeingPublic
+    value:           '1'
+  - key:             cppcoreguidelines-avoid-do-while.IgnoreMacros
+    value:           '1'
+...

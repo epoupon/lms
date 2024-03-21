@@ -18,11 +18,14 @@ add_library(lmsdatabase SHARED
 	impl/SqlQuery.cpp
 	impl/Track.cpp
 	impl/TrackBookmark.cpp
-	impl/TransactionChecker.cpp
 	impl/Types.cpp
 	impl/User.cpp
 	impl/Utils.cpp
 	)
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+	target_sources(lmsdatabase PRIVATE impl/TransactionChecker.cpp)
+endif()
 
 target_include_directories(lmsdatabase INTERFACE
 	include

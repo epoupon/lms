@@ -463,7 +463,7 @@ namespace lms::ui
                     auto isStarred{ [=] { return core::Service<feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), trackId); } };
 
                     Wt::WPushButton* starBtn{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
-                    starBtn->clicked().connect([=, this]
+                    starBtn->clicked().connect([=]
                         {
                             if (isStarred())
                             {

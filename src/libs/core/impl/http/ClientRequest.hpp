@@ -45,7 +45,6 @@ namespace lms::core::http
             return *res;
         }
 
-
         enum class Type
         {
             GET,

@@ -71,8 +71,18 @@ namespace lms::db
         [[nodiscard]] WriteTransaction createWriteTransaction();
         [[nodiscard]] ReadTransaction createReadTransaction();
 
-        void checkWriteTransaction() { TransactionChecker::checkWriteTransaction(_session); }
-        void checkReadTransaction() { TransactionChecker::checkReadTransaction(_session); }
+        void checkWriteTransaction()
+        {
+#if LMS_CHECK_TRANSACTION_ACCESSES
+            TransactionChecker::checkWriteTransaction(_session);
+#endif
+        }
+        void checkReadTransaction()
+        {
+#if LMS_CHECK_TRANSACTION_ACCESSES
+            TransactionChecker::checkReadTransaction(_session);
+#endif
+        }
 
         void analyze();
         void optimize();
@@ -85,7 +95,7 @@ namespace lms::db
         template <typename Object, typename... Args>
         typename Object::pointer create(Args&&... args)
         {
-            TransactionChecker::checkWriteTransaction(_session);
+            checkWriteTransaction();
 
             typename Object::pointer res{ Object::create(*this, std::forward<Args>(args)...) };
             getDboSession().flush();

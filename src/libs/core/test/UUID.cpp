@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,19 +17,24 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "LoadingIndicator.hpp"
+#include <atomic>
+#include <chrono>
+#include <thread>
+#include <vector>
 
-namespace lms::ui
+#include <gtest/gtest.h>
+
+#include "core/UUID.hpp"
+
+namespace lms::core
 {
-    std::unique_ptr<Wt::WTemplate> createLoadingIndicator()
+    TEST(UUID, caseInsensitive)
     {
-        auto res {std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.LoadingIndicator.template"))};
+        const std::optional<UUID> uuid1{ UUID::fromString("3f51c839-bee2-4e9d-a7b7-0693e45178fc") };
+        const std::optional<UUID> uuid2{ UUID::fromString("3f51C839-bEE2-4e9d-a7B7-0693e45178fC") };
 
-        res->addFunction("tr", &Wt::WTemplate::Functions::tr);
-        res->setScrollVisibilityEnabled(true);
-        res->setScrollVisibilityMargin(200);
-
-        return res;
+        EXPECT_EQ(uuid1, uuid2);
+        EXPECT_TRUE(uuid1 >= uuid2);
+        EXPECT_TRUE(uuid1 <= uuid2);
     }
 }
-

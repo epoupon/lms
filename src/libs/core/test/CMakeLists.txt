@@ -8,6 +8,7 @@ add_executable(test-core
 	String.cpp
 	TraceLogger.cpp
 	Utils.cpp
+	UUID.cpp
 	)
 
 target_link_libraries(test-core PRIVATE

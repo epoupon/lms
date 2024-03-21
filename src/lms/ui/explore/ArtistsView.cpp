@@ -125,6 +125,8 @@ namespace lms::ui
                     _container->add(ArtistListHelpers::createEntry(artist));
             }
         }
+
+        _container->setHasMore(artistIds.moreResults);
     }
 
 } // namespace lms::ui

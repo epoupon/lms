@@ -39,10 +39,19 @@ namespace lms::db
         bool operator==(const ObjectPtr& other) const { return _obj == other._obj; }
         bool operator!=(const ObjectPtr& other) const { return other._obj != _obj; }
 
-        auto modify() { TransactionChecker::checkWriteTransaction(*_obj.session()); return _obj.modify(); }
+        auto modify()
+        {
+#if LMS_CHECK_TRANSACTION_ACCESSES
+            TransactionChecker::checkWriteTransaction(*_obj.session());
+#endif
+            return _obj.modify();
+        }
+
         void remove()
         {
+#if LMS_CHECK_TRANSACTION_ACCESSES
             TransactionChecker::checkWriteTransaction(*_obj.session());
+#endif
 
             if (_obj->hasOnPreRemove())
                 _obj.modify()->onPreRemove();

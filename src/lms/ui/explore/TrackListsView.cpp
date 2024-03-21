@@ -121,6 +121,8 @@ namespace lms::ui
             if (const TrackList::pointer trackList{ TrackList::find(LmsApp->getDbSession(), trackListId) })
                 addTracklist(trackList);
         }
+
+        _container->setHasMore(trackListIds.moreResults);
     }
 
     void TrackLists::addTracklist(const ObjectPtr<TrackList>& trackList)

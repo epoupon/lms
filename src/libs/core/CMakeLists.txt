@@ -38,7 +38,7 @@ target_link_libraries(lmscore PUBLIC
 	Wt::Wt
 	)
 
-install(TARGETS lmscore DESTINATION lib ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS lmscore DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 if(BUILD_TESTING)
 	add_subdirectory(test)

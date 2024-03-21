@@ -332,12 +332,13 @@ namespace lms::ui
                 releaseContainer.container->add(releaseListHelpers::createEntryForArtist(release, artist));
             }
         }
+
+        releaseContainer.container->setHasMore(false);
     }
 
     bool Artist::addSomeNonReleaseTracks()
     {
         bool areTracksAdded{};
-        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const Range range{ static_cast<std::size_t>(_trackContainer->getCount()), _tracksBatchSize };
 
@@ -347,6 +348,8 @@ namespace lms::ui
         params.setRange(range);
         params.setSortMethod(TrackSortMethod::Name);
         params.setNonRelease(true);
+
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const auto tracks{ Track::find(LmsApp->getDbSession(), params) };
         for (const Track::pointer& track : tracks.results)
@@ -359,6 +362,8 @@ namespace lms::ui
 
             areTracksAdded = true;
         }
+
+        _trackContainer->setHasMore(tracks.moreResults);
 
         return areTracksAdded;
     }

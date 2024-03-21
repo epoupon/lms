@@ -35,7 +35,7 @@ namespace lms::core
 
         std::string_view getAsString() const { return _value; }
 
-        bool operator<=>(const core::UUID&) const = default;
+        auto operator<=>(const UUID&) const = default;
 
     private:
         UUID(std::string_view value);

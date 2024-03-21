@@ -187,11 +187,14 @@ namespace lms::ui
         params.setTrackList(_trackListId);
         params.setSortMethod(db::TrackSortMethod::TrackList);
         params.setRange(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize });
-
-        db::Track::find(LmsApp->getDbSession(), params, [this](const Track::pointer& track)
+        
+        bool moreResults{};
+        db::Track::find(LmsApp->getDbSession(), params, moreResults, [this](const Track::pointer& track)
             {
                 _container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
             });
+            
+        _container->setHasMore(moreResults);
     }
 } // namespace lms::ui
 

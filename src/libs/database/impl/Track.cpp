@@ -228,6 +228,32 @@ namespace lms::db
             .resultValue();
     }
 
+    void Track::find(Session& session, TrackId& lastRetrievedTrack, std::size_t batchSize, bool& moreResults, const std::function<void(const Track::pointer&)>& func)
+    {
+        session.checkReadTransaction();
+
+        auto collection{ session.getDboSession().find<Track>()
+            .orderBy("id")
+            .where("id > ?").bind(lastRetrievedTrack)
+            .limit(static_cast<int>(batchSize) + 1)
+            .resultList() };
+
+        moreResults = false;
+
+        std::size_t count{};
+        for (auto itResult{ collection.begin() }; itResult != collection.end(); ++itResult)
+        {
+            if (count++ == batchSize)
+            {
+                moreResults = true;
+                break;
+            }
+
+            func(*itResult);
+            lastRetrievedTrack = (*itResult)->getId();
+        }
+    }
+
     bool Track::exists(Session& session, TrackId id)
     {
         session.checkReadTransaction();
@@ -341,6 +367,14 @@ namespace lms::db
 
         auto query{ createQuery<Wt::Dbo::ptr<Track>>(session, params)};
         utils::execQuery(query, params.range, func);
+    }
+
+  void Track::find(Session& session, const FindParameters& params, bool& moreResults, std::function<void(const Track::pointer&)> func)
+    {
+        session.checkReadTransaction();
+
+        auto query{ createQuery<Wt::Dbo::ptr<Track>>(session, params)};
+        utils::execQuery(query, params.range, moreResults, func);
     }
 
     RangeResults<TrackId> Track::findSimilarTrackIds(Session& session, const std::vector<TrackId>& tracks, std::optional<Range> range)

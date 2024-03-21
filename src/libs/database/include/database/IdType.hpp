@@ -39,10 +39,7 @@ namespace lms::db
 
 			ValueType getValue() const { return _id; }
 
-			bool operator==(IdType other) const { return other._id == _id; }
-			bool operator!=(IdType other) const { return !(*this == other); }
-			bool operator<(IdType other) const { return _id < other._id; }
-			bool operator>(IdType other) const { return _id > other._id; }
+			auto operator<=>(const IdType& other) const = default;
 
 		private:
 			Wt::Dbo::dbo_default_traits::IdType _id {Wt::Dbo::dbo_default_traits::invalidId()};
