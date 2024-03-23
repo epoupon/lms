@@ -228,27 +228,22 @@ namespace lms::db
             .resultValue();
     }
 
-    void Track::find(Session& session, TrackId& lastRetrievedTrack, std::size_t batchSize, bool& moreResults, const std::function<void(const Track::pointer&)>& func)
+    void Track::find(Session& session, TrackId& lastRetrievedTrack, std::size_t count, const std::function<void(const Track::pointer&)>& func, MediaLibraryId library)
     {
         session.checkReadTransaction();
 
-        auto collection{ session.getDboSession().find<Track>()
+        auto query{ session.getDboSession().find<Track>()
             .orderBy("id")
             .where("id > ?").bind(lastRetrievedTrack)
-            .limit(static_cast<int>(batchSize) + 1)
-            .resultList() };
+            .limit(static_cast<int>(count)) };
 
-        moreResults = false;
+        if (library.isValid())
+            query.where("media_library_id = ?").bind(library);
 
-        std::size_t count{};
+        auto collection{query.resultList()};
+
         for (auto itResult{ collection.begin() }; itResult != collection.end(); ++itResult)
         {
-            if (count++ == batchSize)
-            {
-                moreResults = true;
-                break;
-            }
-
             func(*itResult);
             lastRetrievedTrack = (*itResult)->getId();
         }

@@ -40,6 +40,7 @@ namespace lms::db
         {
             session.checkReadTransaction();
 
+            // TODO remove distinct and use group by
             auto query{ session.getDboSession().query<ResultType>("SELECT DISTINCT " + std::string{ itemToSelect } + " FROM artist a") };
             if (params.sortMethod == ArtistSortMethod::LastWritten
                 || params.writtenAfter.isValid()
@@ -64,13 +65,13 @@ namespace lms::db
                 std::vector<std::string> clauses;
                 std::vector<std::string> sortClauses;
 
-                for (std::string_view keyword : params.keywords)
+                for (const std::string_view keyword : params.keywords)
                 {
                     clauses.push_back("a.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
                     query.bind("%" + utils::escapeLikeKeyword(keyword) + "%");
                 }
 
-                for (std::string_view keyword : params.keywords)
+                for (const std::string_view keyword : params.keywords)
                 {
                     sortClauses.push_back("a.sort_name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
                     query.bind("%" + utils::escapeLikeKeyword(keyword) + "%");
@@ -153,7 +154,7 @@ namespace lms::db
         Wt::Dbo::Query<ResultType> createQuery(Session& session, const Artist::FindParameters& params)
         {
             std::string_view itemToSelect;
-            
+
             if constexpr (std::is_same_v<ResultType, ArtistId>)
                 itemToSelect = "a.id";
             else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<Artist>>)
@@ -182,6 +183,31 @@ namespace lms::db
         session.checkReadTransaction();
 
         return session.getDboSession().query<int>("SELECT COUNT(*) FROM artist");
+    }
+
+    void Artist::find(Session& session, ArtistId& lastRetrievedArtist, std::size_t count, const std::function<void(const Artist::pointer&)>& func, MediaLibraryId library)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession().query<Wt::Dbo::ptr<Artist>>("SELECT a FROM artist a")
+            .orderBy("a.id")
+            .where("a.id > ?").bind(lastRetrievedArtist)
+            .limit(static_cast<int>(count)) };
+
+        if (library.isValid())
+        {
+            query.join("track t ON t.id = t_a_l.track_id");
+            query.join("track_artist_link t_a_l ON t_a_l.artist_id = a.id");
+            query.where("t.media_library_id = ?").bind(library);
+        }
+
+        auto collection{ query.resultList() };
+
+        for (auto itResult{ collection.begin() }; itResult != collection.end(); ++itResult)
+        {
+            func(*itResult);
+            lastRetrievedArtist = (*itResult)->getId();
+        }
     }
 
     std::vector<Artist::pointer> Artist::find(Session& session, std::string_view name)
@@ -286,7 +312,7 @@ namespace lms::db
             .groupBy("a.id")
             .orderBy("COUNT(*) DESC, RANDOM()") };
 
-        for (TrackArtistLinkType type : artistLinkTypes)
+        for (const TrackArtistLinkType type : artistLinkTypes)
             query.bind(type);
 
         return utils::execQuery<ArtistId>(query, range);
@@ -304,7 +330,7 @@ namespace lms::db
         where.And(WhereClause("a.id = ?")).bind(getId().toString());
         {
             WhereClause clusterClause;
-            for (ClusterTypeId clusterTypeId : clusterTypeIds)
+            for (const ClusterTypeId clusterTypeId : clusterTypeIds)
                 clusterClause.Or(WhereClause("c_type.id = ?")).bind(clusterTypeId.toString());
 
             where.And(clusterClause);
@@ -320,7 +346,7 @@ namespace lms::db
         Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> queryRes = query;
 
         std::map<ClusterTypeId, std::vector<Cluster::pointer>> clustersByType;
-        for (Cluster::pointer cluster : queryRes)
+        for (const Cluster::pointer& cluster : queryRes)
         {
             if (clustersByType[cluster->getType()->getId()].size() < size)
                 clustersByType[cluster->getType()->getId()].push_back(cluster);
