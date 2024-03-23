@@ -87,7 +87,7 @@ namespace lms::db
                     .where("s_r.sync_state <> ?").bind(SyncState::PendingRemove);
             }
 
-            if (params.artist.isValid() 
+            if (params.artist.isValid()
                 || params.sortMethod == ReleaseSortMethod::ArtistNameThenName)
             {
                 query.join("artist a ON a.id = t_a_l.artist_id")
@@ -293,6 +293,30 @@ namespace lms::db
         return utils::execQuery<ReleaseId>(query, range);
     }
 
+    void Release::find(Session& session, ReleaseId& lastRetrievedRelease, std::size_t count, const std::function<void(const Release::pointer&)>& func, MediaLibraryId library)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession().query<Wt::Dbo::ptr<Release>>("SELECT r FROM release r")
+            .orderBy("r.id")
+            .where("r.id > ?").bind(lastRetrievedRelease)
+            .limit(static_cast<int>(count)) };
+
+        if (library.isValid())
+        {
+            query.join("track t ON t.release_id = r.id");
+            query.where("t.media_library_id = ?").bind(library);
+        }
+
+        auto collection{ query.resultList() };
+
+        for (auto itResult{ collection.begin() }; itResult != collection.end(); ++itResult)
+        {
+            func(*itResult);
+            lastRetrievedRelease = (*itResult)->getId();
+        }
+    }
+
     RangeResults<Release::pointer> Release::find(Session& session, const FindParameters& params)
     {
         session.checkReadTransaction();
@@ -382,7 +406,7 @@ namespace lms::db
 
         return dates.front();
     }
-    
+
     std::optional<int> Release::getYear() const
     {
         return getYear(false);
