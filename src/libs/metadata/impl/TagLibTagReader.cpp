@@ -19,6 +19,8 @@
 
 #include "TagLibTagReader.hpp"
 
+#include <unordered_map>
+
 #include <taglib/apetag.h>
 #include <taglib/asffile.h>
 #include <taglib/id3v2tag.h>

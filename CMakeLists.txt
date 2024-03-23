@@ -82,6 +82,10 @@ if (BUILD_BENCHMARKS)
 	message(STATUS "Building benchmarks")
 endif()
 
+if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_definitions(-DNDEBUG)
+endif()
+
 add_subdirectory(src)
 
 install(DIRECTORY approot DESTINATION share/lms)

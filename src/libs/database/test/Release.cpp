@@ -74,6 +74,96 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Release_findByRangedIdBased)
+    {
+        ScopedTrack track1{ session, "MyTrackFile1" };
+        ScopedTrack track2{ session, "MyTrackFile2" };
+        ScopedTrack track3{ session, "MyTrackFile3" };
+        ScopedRelease release1{ session, "MyRelease1" };
+        ScopedRelease release2{ session, "MyRelease2" };
+        ScopedRelease release3{ session, "MyRelease3" };
+        ScopedMediaLibrary library{ session };
+        ScopedMediaLibrary otherLibrary{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track2.get().modify()->setMediaLibrary(library.get());
+            track1.get().modify()->setRelease(release1.get());
+            track2.get().modify()->setRelease(release2.get());
+            track3.get().modify()->setRelease(release3.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ReleaseId lastRetrievedId;
+            std::vector<Release::pointer> visitedReleases;
+            Release::find(session, lastRetrievedId, 10, [&](const Release::pointer& release)
+                {
+                    visitedReleases.push_back(release);
+                });
+            ASSERT_EQ(visitedReleases.size(), 3);
+            EXPECT_EQ(visitedReleases[0]->getId(), release1.getId());
+            EXPECT_EQ(visitedReleases[1]->getId(), release2.getId());
+            EXPECT_EQ(visitedReleases[2]->getId(), release3.getId());
+            EXPECT_EQ(lastRetrievedId, release3.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ReleaseId lastRetrievedId{ release1.getId() };
+            std::vector<Release::pointer> visitedReleases;
+            Release::find(session, lastRetrievedId, 1, [&](const Release::pointer& release)
+                {
+                    visitedReleases.push_back(release);
+                });
+            ASSERT_EQ(visitedReleases.size(), 1);
+            EXPECT_EQ(visitedReleases[0]->getId(), release2.getId());
+            EXPECT_EQ(lastRetrievedId, release2.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ReleaseId lastRetrievedId{ release1.getId() };
+            std::vector<Release::pointer> visitedReleases;
+            Release::find(session, lastRetrievedId, 0, [&](const Release::pointer& release)
+                {
+                    visitedReleases.push_back(release);
+                });
+            ASSERT_EQ(visitedReleases.size(), 0);
+            EXPECT_EQ(lastRetrievedId, release1.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ReleaseId lastRetrievedId;
+            std::vector<Release::pointer> visitedReleases;
+            Release::find(session, lastRetrievedId, 10, [&](const Release::pointer& release)
+                {
+                    visitedReleases.push_back(release);
+                }, otherLibrary.getId());
+            ASSERT_EQ(visitedReleases.size(), 0);
+            EXPECT_EQ(lastRetrievedId, ReleaseId{});
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ReleaseId lastRetrievedId;
+            std::vector<Release::pointer> visitedReleases;
+            Release::find(session, lastRetrievedId, 10, [&](const Release::pointer& release)
+                {
+                    visitedReleases.push_back(release);
+                }, library.getId());
+            ASSERT_EQ(visitedReleases.size(), 1);
+            EXPECT_EQ(visitedReleases[0]->getId(), release2.getId());
+            EXPECT_EQ(lastRetrievedId, release2.getId());
+        }
+    }
+
     TEST_F(DatabaseFixture, Release_singleTrack)
     {
         ScopedRelease release{ session, "MyRelease" };

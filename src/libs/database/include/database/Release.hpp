@@ -122,6 +122,7 @@ namespace lms::db
         static pointer                  find(Session& session, const core::UUID& MBID);
         static std::vector<pointer>     find(Session& session, const std::string& name, const std::filesystem::path& releaseDirectory);
         static pointer                  find(Session& session, ReleaseId id);
+        static void                     find(Session& session, ReleaseId& lastRetrievedRelease, std::size_t count, const std::function<void(const Release::pointer&)>& func, MediaLibraryId library = {});
         static RangeResults<pointer>    find(Session& session, const FindParameters& parameters);
         static void                     find(Session& session, const FindParameters& parameters, std::function<void(const pointer&)> func);
         static RangeResults<ReleaseId>  findIds(Session& session, const FindParameters& parameters);

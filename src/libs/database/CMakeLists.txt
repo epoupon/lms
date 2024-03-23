@@ -23,8 +23,8 @@ add_library(lmsdatabase SHARED
 	impl/Utils.cpp
 	)
 
-if (CMAKE_BUILD_TYPE MATCHES "Debug")
-target_sources(lmsdatabase PRIVATE impl/TransactionChecker.cpp)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+	target_sources(lmsdatabase PRIVATE impl/TransactionChecker.cpp)
 endif()
 
 target_include_directories(lmsdatabase INTERFACE

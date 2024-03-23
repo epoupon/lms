@@ -86,6 +86,7 @@ namespace lms::db
         static pointer					find(Session& session, const core::UUID& MBID);
         static pointer					find(Session& session, ArtistId id);
         static std::vector<pointer>		find(Session& session, std::string_view name);		// exact match on name field
+        static void                     find(Session& session, ArtistId& lastRetrievedArtist, std::size_t count, const std::function<void(const Artist::pointer&)>& func, MediaLibraryId library = {});
         static RangeResults<pointer>	find(Session& session, const FindParameters& parameters);
         static void					    find(Session& session, const FindParameters& parameters, std::function<void(const pointer&)> func);
         static RangeResults<ArtistId>	findIds(Session& session, const FindParameters& parameters);
