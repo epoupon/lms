@@ -91,8 +91,10 @@ namespace lms::db
                 || params.sortMethod == ReleaseSortMethod::ArtistNameThenName)
             {
                 query.join("artist a ON a.id = t_a_l.artist_id")
-                    .join("track_artist_link t_a_l ON t_a_l.track_id = t.id")
-                    .where("a.id = ?").bind(params.artist);
+                    .join("track_artist_link t_a_l ON t_a_l.track_id = t.id");
+
+                if (params.artist.isValid())
+                    query.where("a.id = ?").bind(params.artist);
 
                 if (!params.trackArtistLinkTypes.empty())
                 {
