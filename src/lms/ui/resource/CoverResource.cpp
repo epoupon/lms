@@ -98,7 +98,7 @@ namespace lms::ui
 
             cover = core::Service<cover::ICoverService>::get()->getFromTrack(*trackId, *size);
             if (!cover)
-                cover = core::Service<cover::ICoverService>::get()->getDefault(*size);
+                cover = core::Service<cover::ICoverService>::get()->getDefaultSvgCover();
         }
         else if (releaseIdStr)
         {
@@ -110,7 +110,7 @@ namespace lms::ui
 
             cover = core::Service<cover::ICoverService>::get()->getFromRelease(*releaseId, *size);
             if (!cover)
-                cover = core::Service<cover::ICoverService>::get()->getDefault(*size);
+                cover = core::Service<cover::ICoverService>::get()->getDefaultSvgCover();
         }
         else
         {

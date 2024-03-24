@@ -84,16 +84,16 @@ namespace lms::cover
     class CoverService : public ICoverService
     {
     public:
-        CoverService(db::Db& db, const std::filesystem::path& execPath, const std::filesystem::path& defaultCoverPath);
+        CoverService(db::Db& db, const std::filesystem::path& defaultSvgCoverPath);
 
+    private:
         CoverService(const CoverService&) = delete;
         CoverService& operator=(const CoverService&) = delete;
 
-    private:
         std::shared_ptr<image::IEncodedImage>   getFromTrack(db::TrackId trackId, image::ImageSize width) override;
         std::shared_ptr<image::IEncodedImage>   getFromRelease(db::ReleaseId releaseId, image::ImageSize width) override;
         std::shared_ptr<image::IEncodedImage>   getFromArtist(db::ArtistId artistId, image::ImageSize width) override;
-        std::shared_ptr<image::IEncodedImage>   getDefault(image::ImageSize width) override;
+        std::shared_ptr<image::IEncodedImage>   getDefaultSvgCover() override;
         void                                    flushCache() override;
         void                                    setJpegQuality(unsigned quality) override;
 
@@ -112,7 +112,7 @@ namespace lms::cover
 
         std::shared_mutex _cacheMutex;
         std::unordered_map<CacheEntryDesc, std::shared_ptr<image::IEncodedImage>> _cache;
-        std::unordered_map<image::ImageSize, std::shared_ptr<image::IEncodedImage>> _defaultCoverCache;
+        std::shared_ptr<image::IEncodedImage> _defaultCover;
         std::atomic<std::size_t>    _cacheMisses{};
         std::atomic<std::size_t>    _cacheHits{};
         std::size_t                 _cacheSize{};
@@ -120,7 +120,6 @@ namespace lms::cover
         void saveToCache(const CacheEntryDesc& entryDesc, std::shared_ptr<image::IEncodedImage> image);
         std::shared_ptr<image::IEncodedImage> loadFromCache(const CacheEntryDesc& entryDesc);
 
-        const std::filesystem::path _defaultCoverPath;
         const std::size_t _maxCacheSize;
         static inline const std::vector<std::filesystem::path> _fileExtensions{ ".jpg", ".jpeg", ".png", ".bmp" }; // TODO parametrize
         const std::size_t _maxFileSize;

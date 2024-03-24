@@ -25,7 +25,7 @@
 #include <Wt/WServer.h>
 #include <Wt/WApplication.h>
 
-#include "image/IRawImage.hpp"
+#include "image/Image.hpp"
 #include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/IPasswordService.hpp"
 #include "services/auth/IEnvService.hpp"
@@ -310,7 +310,7 @@ namespace lms
                 throw core::LmsException{ "Bad value '" + authenticationBackend + "' for 'authentication-backend'" };
 
             image::init(argv[0]);
-            core::Service<cover::ICoverService> coverService{ cover::createCoverService(database, argv[0], server.appRoot() + "/images/unknown-cover.jpg") };
+            core::Service<cover::ICoverService> coverService{ cover::createCoverService(database, server.appRoot() + "/images/unknown-cover.svg") };
             core::Service<recommendation::IRecommendationService> recommendationService{ recommendation::createRecommendationService(database) };
             core::Service<recommendation::IPlaylistGeneratorService> playlistGeneratorService{ recommendation::createPlaylistGeneratorService(database, *recommendationService.get()) };
             core::Service<scanner::IScannerService> scannerService{ scanner::createScannerService(database) };

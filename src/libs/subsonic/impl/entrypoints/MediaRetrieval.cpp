@@ -272,7 +272,7 @@ namespace lms::api::subsonic
             cover = core::Service<cover::ICoverService>::get()->getFromArtist(*artistId, size);
 
         if (!cover && context.enableDefaultCover && !artistId)
-            cover = core::Service<cover::ICoverService>::get()->getDefault(size);
+            cover = core::Service<cover::ICoverService>::get()->getDefaultSvgCover();
 
         if (!cover)
         {

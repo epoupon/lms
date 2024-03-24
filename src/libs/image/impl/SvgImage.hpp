@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2015 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,16 +19,24 @@
 
 #pragma once
 
+#include <filesystem>
+#include <memory>
+#include <vector>
+
 #include "image/IEncodedImage.hpp"
 
 namespace lms::image
 {
-    class IRawImage
+    class SvgImage : public IEncodedImage
     {
     public:
-        virtual ~IRawImage() = default;
-        virtual void resize(ImageSize width) = 0;
-        virtual std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const = 0;
+        SvgImage(std::vector<std::byte>&& data) : _data{ std::move(data) } {}
+
+        const std::byte* getData() const { return &_data.front(); }
+        std::size_t getDataSize() const { return _data.size(); }
+        std::string_view getMimeType() const { return "image/svg+xml"; }
+
+    private:
+        const std::vector<std::byte> _data;
     };
 }
-

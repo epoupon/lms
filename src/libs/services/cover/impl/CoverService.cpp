@@ -30,7 +30,7 @@
 #include "database/Track.hpp"
 
 #include "image/Exception.hpp"
-#include "image/IRawImage.hpp"
+#include "image/Image.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/Path.hpp"
@@ -107,18 +107,16 @@ namespace lms::cover
         }
     }
 
-    std::unique_ptr<ICoverService> createCoverService(db::Db& db, const std::filesystem::path& execPath, const std::filesystem::path& defaultCoverPath)
+    std::unique_ptr<ICoverService> createCoverService(db::Db& db, const std::filesystem::path& defaultSvgCoverPath)
     {
-        return std::make_unique<CoverService>(db, execPath, defaultCoverPath);
+        return std::make_unique<CoverService>(db, defaultSvgCoverPath);
     }
 
     using namespace image;
 
     CoverService::CoverService(db::Db& db,
-        const std::filesystem::path& execPath,
-        const std::filesystem::path& defaultCoverPath)
+        const std::filesystem::path& defaultSvgCoverPath)
         : _db{ db }
-        , _defaultCoverPath{ defaultCoverPath }
         , _maxCacheSize{ core::Service<core::IConfig>::get()->getULong("cover-max-cache-size", 30) * 1000 * 1000 }
         , _maxFileSize{ core::Service<core::IConfig>::get()->getULong("cover-max-file-size", 10) * 1000 * 1000 }
         , _preferredFileNames{ constructPreferredFileNames() }
@@ -126,25 +124,12 @@ namespace lms::cover
     {
         setJpegQuality(core::Service<core::IConfig>::get()->getULong("cover-jpeg-quality", 75));
 
-        LMS_LOG(COVER, INFO, "Default cover path = '" << _defaultCoverPath.string() << "'");
+        LMS_LOG(COVER, INFO, "Default cover path = '" << defaultSvgCoverPath.string() << "'");
         LMS_LOG(COVER, INFO, "Max cache size = " << _maxCacheSize);
         LMS_LOG(COVER, INFO, "Max file size = " << _maxFileSize);
         LMS_LOG(COVER, INFO, "Preferred file names: " << core::stringUtils::joinStrings(_preferredFileNames, ","));
 
-#if LMS_SUPPORT_IMAGE_GM
-        GraphicsMagick::init(execPath);
-#else
-        (void)execPath;
-#endif
-
-        try
-        {
-            getDefault(512);
-        }
-        catch (const image::Exception& e)
-        {
-            throw core::LmsException("Cannot read default cover file '" + _defaultCoverPath.string() + "': " + e.what());
-        }
+        _defaultCover = image::readSvgFile(defaultSvgCoverPath); // may throw
     }
 
     std::unique_ptr<IEncodedImage> CoverService::getFromAvMediaFile(const av::IAudioFile& input, ImageSize width) const
@@ -189,27 +174,9 @@ namespace lms::cover
         return image;
     }
 
-    std::shared_ptr<IEncodedImage> CoverService::getDefault(ImageSize width)
+    std::shared_ptr<IEncodedImage> CoverService::getDefaultSvgCover()
     {
-        {
-            std::shared_lock lock{ _cacheMutex };
-
-            if (auto it{ _defaultCoverCache.find(width) }; it != std::cend(_defaultCoverCache))
-                return it->second;
-        }
-
-        {
-            std::unique_lock lock{ _cacheMutex };
-
-            if (auto it{ _defaultCoverCache.find(width) }; it != std::cend(_defaultCoverCache))
-                return it->second;
-
-            std::shared_ptr<IEncodedImage> image{ getFromCoverFile(_defaultCoverPath, width) };
-            _defaultCoverCache[width] = image;
-            LMS_LOG(COVER, DEBUG, "Default cache entries = " << _defaultCoverCache.size());
-
-            return image;
-        }
+        return _defaultCover;
     }
 
     std::unique_ptr<IEncodedImage> CoverService::getFromDirectory(const std::filesystem::path& directory, ImageSize width, const std::vector<std::string>& preferredFileNames, bool allowPickRandom) const
