@@ -489,10 +489,12 @@ namespace lms::ui
         // Events from MediaPlayer
         _mediaPlayer->playNext.connect([this]
             {
+                LMS_LOG(UI, DEBUG, "Received playNext from player");
                 _playQueue->playNext();
             });
         _mediaPlayer->playPrevious.connect([this]
             {
+                LMS_LOG(UI, DEBUG, "Received playPrevious from player");
                 _playQueue->playPrevious();
             });
 
@@ -501,58 +503,59 @@ namespace lms::ui
                 LMS_LOG(UI, DEBUG, "Received ScrobbleListenNow from player for trackId = " << trackId.toString());
                 const scrobbling::Listen listen{ getUserId(), trackId };
                 core::Service<scrobbling::IScrobblingService>::get()->listenStarted(listen);
-                    });
-                _mediaPlayer->scrobbleListenFinished.connect([this](db::TrackId trackId, unsigned durationMs)
-                    {
-                        LMS_LOG(UI, DEBUG, "Received ScrobbleListenFinished from player for trackId = " << trackId.toString() << ", duration = " << (durationMs / 1000) << "s");
-                        const std::chrono::milliseconds duration{ durationMs };
-                        const scrobbling::Listen listen{ getUserId(), trackId };
-                        core::Service<scrobbling::IScrobblingService>::get()->listenFinished(listen, std::chrono::duration_cast<std::chrono::seconds>(duration));
-                            });
+            });
+        _mediaPlayer->scrobbleListenFinished.connect([this](db::TrackId trackId, unsigned durationMs)
+            {
+                LMS_LOG(UI, DEBUG, "Received ScrobbleListenFinished from player for trackId = " << trackId.toString() << ", duration = " << (durationMs / 1000) << "s");
+                const std::chrono::milliseconds duration{ durationMs };
+                const scrobbling::Listen listen{ getUserId(), trackId };
+                core::Service<scrobbling::IScrobblingService>::get()->listenFinished(listen, std::chrono::duration_cast<std::chrono::seconds>(duration));
+            });
 
-                        _mediaPlayer->playbackEnded.connect([this]
-                            {
-                                _playQueue->onPlaybackEnded();
-                            });
+        _mediaPlayer->playbackEnded.connect([this]
+            {
+                LMS_LOG(UI, DEBUG, "Received playbackEnded from player");
+                _playQueue->onPlaybackEnded();
+            });
 
-                        _playQueue->trackSelected.connect([this](db::TrackId trackId, bool play, float replayGain)
-                            {
-                                _mediaPlayer->loadTrack(trackId, play, replayGain);
-                            });
+        _playQueue->trackSelected.connect([this](db::TrackId trackId, bool play, float replayGain)
+            {
+                _mediaPlayer->loadTrack(trackId, play, replayGain);
+            });
 
-                        _playQueue->trackUnselected.connect([this]
-                            {
-                                _mediaPlayer->stop();
-                            });
-                        _playQueue->trackCountChanged.connect([this](std::size_t trackCount)
-                            {
-                                _mediaPlayer->onPlayQueueUpdated(trackCount);
-                            });
-                        _mediaPlayer->onPlayQueueUpdated(_playQueue->getCount());
+        _playQueue->trackUnselected.connect([this]
+            {
+                _mediaPlayer->stop();
+            });
+        _playQueue->trackCountChanged.connect([this](std::size_t trackCount)
+            {
+                _mediaPlayer->onPlayQueueUpdated(trackCount);
+            });
+        _mediaPlayer->onPlayQueueUpdated(_playQueue->getCount());
 
-                        const bool isAdmin{ getUserType() == db::UserType::ADMIN };
-                        if (isAdmin)
-                        {
-                            _scannerEvents.scanComplete.connect([this](const scanner::ScanStats& stats)
-                                {
-                                    notifyMsg(Notification::Type::Info,
-                                    Wt::WString::tr("Lms.Admin.Database.database"),
-                                    Wt::WString::tr("Lms.Admin.Database.scan-complete")
-                                    .arg(static_cast<unsigned>(stats.nbFiles()))
-                                        .arg(static_cast<unsigned>(stats.additions))
-                                        .arg(static_cast<unsigned>(stats.updates))
-                                        .arg(static_cast<unsigned>(stats.deletions))
-                                        .arg(static_cast<unsigned>(stats.duplicates.size()))
-                                        .arg(static_cast<unsigned>(stats.errors.size())));
-                                });
-                        }
+        const bool isAdmin{ getUserType() == db::UserType::ADMIN };
+        if (isAdmin)
+        {
+            _scannerEvents.scanComplete.connect([this](const scanner::ScanStats& stats)
+                {
+                    notifyMsg(Notification::Type::Info,
+                    Wt::WString::tr("Lms.Admin.Database.database"),
+                    Wt::WString::tr("Lms.Admin.Database.scan-complete")
+                    .arg(static_cast<unsigned>(stats.nbFiles()))
+                        .arg(static_cast<unsigned>(stats.additions))
+                        .arg(static_cast<unsigned>(stats.updates))
+                        .arg(static_cast<unsigned>(stats.deletions))
+                        .arg(static_cast<unsigned>(stats.duplicates.size()))
+                        .arg(static_cast<unsigned>(stats.errors.size())));
+                });
+        }
 
-                        internalPathChanged().connect(mainStack, [=]
-                            {
-                                handlePathChange(*mainStack, isAdmin);
-                            });
+        internalPathChanged().connect(mainStack, [=]
+            {
+                handlePathChange(*mainStack, isAdmin);
+            });
 
-                        handlePathChange(*mainStack, isAdmin);
+        handlePathChange(*mainStack, isAdmin);
     }
 
     void LmsApplication::notify(const Wt::WEvent& event)

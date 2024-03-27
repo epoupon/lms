@@ -97,17 +97,21 @@ LMS.mediaplayer = function () {
 		_lastStartPlaying = Date.now();
 	}
 
-	let _stopTimer = function() {
+	let _pauseTimer = function() {
 		if (_lastStartPlaying != null) {
 			_playedDuration += Date.now() - _lastStartPlaying;
+			_lastStartPlaying = null;
 		}
 	}
 
 	let _resetTimer = function() {
 		if (_lastStartPlaying != null)
+			_pauseTimer();
+
+		if (_playedDuration > 0) {
 			Wt.emit(_root, "scrobbleListenFinished", _trackId, _playedDuration);
-		_playedDuration = 0;
-		_lastStartPlaying = null;
+			_playedDuration = 0;
+		}
 	}
 
 	let _durationToString = function (duration) {
@@ -229,7 +233,7 @@ LMS.mediaplayer = function () {
 			navigator.mediaSession.setPositionState({
 				duration: _duration,
 				playbackRate: 1,
-				position: _offset + _elems.audio.currentTime,
+				position: Math.min(_offset + _elems.audio.currentTime, _duration),
 			});
 
 			if (_elems.audio.paused)
@@ -276,9 +280,9 @@ LMS.mediaplayer = function () {
 		_elems.audio.addEventListener("playing", _updateMediaSessionState);
 		_elems.audio.addEventListener("pause", _updateMediaSessionState);
 
-		_elems.audio.addEventListener("pause", _stopTimer);
+		_elems.audio.addEventListener("pause", _pauseTimer);
 		_elems.audio.addEventListener("playing", _startTimer);
-		_elems.audio.addEventListener("waiting", _stopTimer);
+		_elems.audio.addEventListener("waiting", _pauseTimer);
 
 		_elems.audio.addEventListener("timeupdate", function() {
 			_elems.progress.style.width = "" + ((_offset + _elems.audio.currentTime) / _duration) * 100 + "%";
@@ -286,6 +290,7 @@ LMS.mediaplayer = function () {
 		});
 
 		_elems.audio.addEventListener("ended", function() {
+			_resetTimer();
 			Wt.emit(_root, "playbackEnded");
 		});
 
@@ -366,7 +371,6 @@ LMS.mediaplayer = function () {
 	}
 
 	let loadTrack = function(params, autoplay) {
-		_stopTimer();
 		_resetTimer();
 
 		_trackId = params.trackId;

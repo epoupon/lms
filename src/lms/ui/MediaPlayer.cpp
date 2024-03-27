@@ -253,7 +253,7 @@ namespace lms::ui
                 << " trackId :\"" << trackId.toString() << "\","
                 << " nativeResource: \"" << nativeResource << "\","
                 << " transcodingResource: \"" << transcodingResource << "\","
-                << " duration: " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << ","
+                << " duration: " << std::chrono::duration_cast<std::chrono::duration<float>>(track->getDuration()).count() << ","
                 << " replayGain: " << replayGain << ","
                 << " title: \"" << core::stringUtils::jsEscape(track->getName()) << "\","
                 << " artist: \"" << (!artists.empty() ? core::stringUtils::jsEscape(track->getArtistDisplayName()) : "") << "\","
