@@ -27,6 +27,7 @@ target_link_libraries(lmsscanner PRIVATE
 target_link_libraries(lmsscanner PUBLIC
 	std::filesystem
 	Wt::Wt
+	essentia
 	)
 
 install(TARGETS lmsscanner DESTINATION ${CMAKE_INSTALL_LIBDIR})
