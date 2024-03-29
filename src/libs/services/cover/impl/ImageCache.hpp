@@ -58,7 +58,7 @@ namespace lms::cover
 
         struct EntryHasher
         {
-            constexpr std::size_t operator()(const EntryDesc& entry) const
+            std::size_t operator()(const EntryDesc& entry) const
             {
                 return std::hash<EntryDesc::VariantType>{}(entry.id) ^ std::hash<std::size_t>{}(entry.size);
             }
