@@ -117,7 +117,7 @@ namespace lms::cover
     CoverService::CoverService(db::Db& db,
         const std::filesystem::path& defaultSvgCoverPath)
         : _db{ db }
-        , _maxCacheSize{ core::Service<core::IConfig>::get()->getULong("cover-max-cache-size", 30) * 1000 * 1000 }
+        , _cache{ core::Service<core::IConfig>::get()->getULong("cover-max-cache-size", 30) * 1000 * 1000 }
         , _maxFileSize{ core::Service<core::IConfig>::get()->getULong("cover-max-file-size", 10) * 1000 * 1000 }
         , _preferredFileNames{ constructPreferredFileNames() }
         , _artistFileNames{ constructArtistFileNames() }
@@ -125,7 +125,7 @@ namespace lms::cover
         setJpegQuality(core::Service<core::IConfig>::get()->getULong("cover-jpeg-quality", 75));
 
         LMS_LOG(COVER, INFO, "Default cover path = '" << defaultSvgCoverPath.string() << "'");
-        LMS_LOG(COVER, INFO, "Max cache size = " << _maxCacheSize);
+        LMS_LOG(COVER, INFO, "Max cache size = " << _cache.getMaxCacheSize());
         LMS_LOG(COVER, INFO, "Max file size = " << _maxFileSize);
         LMS_LOG(COVER, INFO, "Preferred file names: " << core::stringUtils::joinStrings(_preferredFileNames, ","));
 
@@ -199,7 +199,7 @@ namespace lms::cover
 
         std::unique_ptr<IEncodedImage> image;
 
-        for (std::string_view filename : preferredFileNames)
+        for (const std::string_view filename : preferredFileNames)
         {
             image = tryLoadImageFromFilename(filename);
             if (image)
@@ -267,7 +267,7 @@ namespace lms::cover
         std::error_code ec;
 
         std::filesystem::directory_iterator itPath(directoryPath, ec);
-        std::filesystem::directory_iterator itEnd;
+        const std::filesystem::directory_iterator itEnd;
         while (!ec && itPath != itEnd)
         {
             const std::filesystem::path& path{ *itPath };
@@ -306,9 +306,9 @@ namespace lms::cover
     {
         using namespace db;
 
-        const CacheEntryDesc cacheEntryDesc{ trackId, width };
+        const ImageCache::EntryDesc cacheEntryDesc{ trackId, width };
 
-        std::shared_ptr<IEncodedImage> cover{ loadFromCache(cacheEntryDesc) };
+        std::shared_ptr<IEncodedImage> cover{ _cache.getImage(cacheEntryDesc) };
         if (cover)
             return cover;
 
@@ -331,7 +331,7 @@ namespace lms::cover
         }
 
         if (cover)
-            saveToCache(cacheEntryDesc, cover);
+            _cache.addImage(cacheEntryDesc, cover);
 
         return cover;
     }
@@ -339,9 +339,9 @@ namespace lms::cover
     std::shared_ptr<IEncodedImage> CoverService::getFromRelease(db::ReleaseId releaseId, ImageSize width)
     {
         using namespace db;
-        const CacheEntryDesc cacheEntryDesc{ releaseId, width };
+        const ImageCache::EntryDesc cacheEntryDesc{ releaseId, width };
 
-        std::shared_ptr<IEncodedImage> cover{ loadFromCache(cacheEntryDesc) };
+        std::shared_ptr<IEncodedImage> cover{ _cache.getImage(cacheEntryDesc) };
         if (cover)
             return cover;
 
@@ -380,7 +380,7 @@ namespace lms::cover
         }
 
         if (cover)
-            saveToCache(cacheEntryDesc, cover);
+            _cache.addImage(cacheEntryDesc, cover);
 
         return cover;
     }
@@ -388,9 +388,9 @@ namespace lms::cover
     std::shared_ptr<IEncodedImage> CoverService::getFromArtist(db::ArtistId artistId, ImageSize width)
     {
         using namespace db;
-        const CacheEntryDesc cacheEntryDesc{ artistId, width };
+        const ImageCache::EntryDesc cacheEntryDesc{ artistId, width };
 
-        std::shared_ptr<IEncodedImage> artistImage{ loadFromCache(cacheEntryDesc) };
+        std::shared_ptr<IEncodedImage> artistImage{ _cache.getImage(cacheEntryDesc) };
         if (artistImage)
             return artistImage;
 
@@ -480,20 +480,13 @@ namespace lms::cover
         }
 
         if (artistImage)
-            saveToCache(cacheEntryDesc, artistImage);
+            _cache.addImage(cacheEntryDesc, artistImage);
 
         return artistImage;
     }
 
     void CoverService::flushCache()
     {
-        std::unique_lock lock{ _cacheMutex };
-
-        LMS_LOG(COVER, DEBUG, "Cache stats: hits = " << _cacheHits << ", misses = " << _cacheMisses << ", nb entries = " << _cache.size() << ", size = " << _cacheSize);
-        _cacheHits = 0;
-        _cacheMisses = 0;
-        _cacheSize = 0;
-        _cache.clear();
     }
 
     void CoverService::setJpegQuality(unsigned quality)
@@ -501,36 +494,6 @@ namespace lms::cover
         _jpegQuality = core::utils::clamp<unsigned>(quality, 1, 100);
 
         LMS_LOG(COVER, INFO, "JPEG export quality = " << _jpegQuality);
-    }
-
-    void CoverService::saveToCache(const CacheEntryDesc& entryDesc, std::shared_ptr<IEncodedImage> image)
-    {
-        std::unique_lock lock{ _cacheMutex };
-
-        while (_cacheSize + image->getDataSize() > _maxCacheSize && !_cache.empty())
-        {
-            auto itRandom{ core::random::pickRandom(_cache) };
-            _cacheSize -= itRandom->second->getDataSize();
-            _cache.erase(itRandom);
-        }
-
-        _cacheSize += image->getDataSize();
-        _cache[entryDesc] = image;
-    }
-
-    std::shared_ptr<IEncodedImage> CoverService::loadFromCache(const CacheEntryDesc& entryDesc)
-    {
-        std::shared_lock lock{ _cacheMutex };
-
-        auto it{ _cache.find(entryDesc) };
-        if (it == std::cend(_cache))
-        {
-            ++_cacheMisses;
-            return nullptr;
-        }
-
-        ++_cacheHits;
-        return it->second;
     }
 
 } // namespace lms::cover
