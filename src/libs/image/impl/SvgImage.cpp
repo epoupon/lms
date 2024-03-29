@@ -20,12 +20,15 @@
 #include "SvgImage.hpp"
 
 #include <fstream>
+#include "core/ITraceLogger.hpp"
 #include "image/Exception.hpp"
 
 namespace lms::image
 {
     std::unique_ptr<IEncodedImage> readSvgFile(const std::filesystem::path& p)
     {
+        LMS_SCOPED_TRACE_DETAILED("Image", "ReadSVG");
+
         if (p.extension() != ".svg")
             throw Exception{ "Unexpected file extension: '" + p.extension().string() + "', expected .svg" };
 

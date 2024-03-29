@@ -22,6 +22,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
+#include "core/ITraceLogger.hpp"
 #include "image/Exception.hpp"
 #include "RawImage.hpp"
 
@@ -29,6 +30,8 @@ namespace lms::image::STB
 {
 	JPEGImage::JPEGImage(const RawImage& rawImage, unsigned quality)
 	{
+        LMS_SCOPED_TRACE_DETAILED("Image", "WriteJPEG");
+
 		auto writeCb {[](void* ctx, void* writeData, int writeSize)
 		{
 			auto& output {*reinterpret_cast<std::vector<std::byte>*>(ctx)};
