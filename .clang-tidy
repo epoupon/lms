@@ -12,4 +12,6 @@ CheckOptions:
     value:           '1'
   - key:             cppcoreguidelines-avoid-do-while.IgnoreMacros
     value:           '1'
+  - key:             performance-unnecessary-value-param.AllowedTypes
+    value:           "shared_ptr"
 ...
