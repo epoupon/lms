@@ -1,5 +1,6 @@
 
 add_library(lmsservice-cover SHARED
+	impl/ImageCache.cpp
 	impl/CoverService.cpp
 	)
 
