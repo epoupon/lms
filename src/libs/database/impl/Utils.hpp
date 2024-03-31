@@ -48,14 +48,14 @@ namespace lms::db::utils
     template <typename Query>
     auto execSingleResultQuery(const Query& query)
     {
-        LMS_SCOPED_TRACE_DETAILED("Database", "ExecSingleResultQuery");
+        LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "ExecSingleResultQuery", "Query", query.asString());
         return query.resultValue();
     }
 
     template <typename Query>
     auto execMultiResultQuery(const Query& query)
     {
-        LMS_SCOPED_TRACE_DETAILED("Database", "ExecMultiResultQuery");
+        LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "ExecMultiResultQuery", "Query", query.asString());
         return query.resultList();
     }
 

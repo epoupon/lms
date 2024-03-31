@@ -39,6 +39,14 @@ namespace lms::core
         }
     }
 
+    static void BM_TraceLogger_Overview_withArg(benchmark::State& state)
+    {
+        for (auto _ : state)
+        {
+            LMS_SCOPED_TRACE_OVERVIEW_WITH_ARG("Cat", "Test", "ArgType", "My arg that can be very very long, and even as long as needed");
+        }
+    }
+
     static void BM_TraceLogger_Detailed(benchmark::State& state)
     {
         for (auto _ : state)
@@ -48,8 +56,26 @@ namespace lms::core
         }
     }
 
+    static void BM_TraceLogger_Detailed_withArg(benchmark::State& state)
+    {
+        auto someExpensiveArgComputation{ []() -> std::string
+        {
+            std::this_thread::sleep_for(std::chrono::microseconds{ 1 });
+            return "foo";
+        } };
+
+        for (auto _ : state)
+        {
+            // Should do nothing (and cost nothing)
+            LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Cat", "Test", "ArgType", someExpensiveArgComputation());
+        }
+    }
+
     BENCHMARK(BM_TraceLogger_Overview)->Threads(1)->Threads(std::thread::hardware_concurrency());
+    BENCHMARK(BM_TraceLogger_Overview_withArg)->Threads(1)->Threads(std::thread::hardware_concurrency());
     BENCHMARK(BM_TraceLogger_Detailed)->Threads(1)->Threads(std::thread::hardware_concurrency());
+    BENCHMARK(BM_TraceLogger_Detailed_withArg)->Threads(1)->Threads(std::thread::hardware_concurrency());
+
 }
 
 BENCHMARK_MAIN();

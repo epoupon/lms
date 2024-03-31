@@ -35,8 +35,8 @@ namespace lms::core::tracing::tests
         {
             threads.emplace_back([&]
                 {
-                    ScopedTrace loggedEvent{ "MyCategory", Level::Overview, "MyEventLogged", traceLogger.get() };
-                    ScopedTrace notLoggedEvent{ "MyCategory", Level::Detailed, "MyEventNotLogged", traceLogger.get() };
+                    ScopedTrace loggedEvent{ "MyCategory", Level::Overview, "MyEventLogged", "SomeArgType", "SomeArg", traceLogger.get() };
+                    ScopedTrace notLoggedEvent{ "MyNotLoggedCategory", Level::Detailed, "MyEventNotLogged", "SomeNotLoggedArgType", "SomeNotLoggedArg", traceLogger.get() };
                 });
         }
 
@@ -47,6 +47,13 @@ namespace lms::core::tracing::tests
         traceLogger->dumpCurrentBuffer(oss);
 
         EXPECT_NE(oss.str().find("MyEventLogged"), std::string::npos);
+        EXPECT_NE(oss.str().find("MyCategory"), std::string::npos);
+        EXPECT_NE(oss.str().find("SomeArgType"), std::string::npos);
+        EXPECT_NE(oss.str().find("SomeArg"), std::string::npos);
+
         EXPECT_EQ(oss.str().find("MyEventNotLogged"), std::string::npos);
+        EXPECT_EQ(oss.str().find("MyNotLoggedCategory"), std::string::npos);
+        EXPECT_EQ(oss.str().find("SomeNotLoggedArgType"), std::string::npos);
+        EXPECT_EQ(oss.str().find("SomeNotLoggedArg"), std::string::npos);
     }
 }

@@ -22,9 +22,10 @@
 #include <array>
 #include <deque>
 #include <mutex>
-#include <vector>
+#include <shared_mutex>
 #include <thread>
 #include <unordered_map>
+#include <vector>
 
 #include "core/ITraceLogger.hpp"
 
@@ -42,14 +43,18 @@ namespace lms::core::tracing
         void write(const CompleteEvent& event) override;
         void dumpCurrentBuffer(std::ostream& os) override;
         void setThreadName(std::thread::id id, std::string_view threadName) override;
-        std::uint32_t toTraceThreadId(std::thread::id threadId) const;
+        ArgHashType registerArg(LiteralString argType, std::string_view argValue) override;
 
-        static constexpr std::size_t BufferSize{ 32 * 1024 };
+        static ArgHashType computeArgHash(LiteralString type, std::string_view value);
+        static std::uint32_t toTraceThreadId(std::thread::id threadId);
+
+        static constexpr std::size_t BufferSize{ 64 * 1024 };
 
         struct alignas(64) Buffer
         {
             static constexpr std::size_t CompleteEventCount{ BufferSize / sizeof(CompleteEvent) };
 
+            std::thread::id threadId;
             std::array<CompleteEvent, CompleteEventCount> durationEvents;
             std::atomic<std::size_t> currentDurationIndex{};
         };
@@ -63,9 +68,17 @@ namespace lms::core::tracing
 
         std::vector<Buffer> _buffers; // allocated once during construction
 
+        std::shared_mutex _argMutex;
+        struct ArgEntry
+        {
+            LiteralString type;
+            std::string value;
+        };
+        using ArgEntryMap = std::unordered_map<ArgHashType, ArgEntry>;
+        ArgEntryMap _argEntries; // collisions not handled
+
         std::mutex _threadNameMutex;
         std::unordered_map<std::thread::id, std::string> _threadNames;
-        mutable std::unordered_map<std::thread::id, std::uint32_t> _cachedTraceThreadIds;
 
         std::mutex _mutex;
         std::deque<Buffer*> _freeBuffers;

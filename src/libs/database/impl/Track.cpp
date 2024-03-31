@@ -243,6 +243,7 @@ namespace lms::db
 
         for (auto itResult{ collection.begin() }; itResult != collection.end(); ++itResult)
         {
+            LMS_SCOPED_TRACE_DETAILED("Database", "ExecQueryRangeForEach");
             func(*itResult);
             lastRetrievedTrack = (*itResult)->getId();
         }

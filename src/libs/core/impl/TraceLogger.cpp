@@ -20,6 +20,7 @@
 #include "TraceLogger.hpp"
 
 #include <iomanip>
+#include <iostream>
 #include <memory>
 #include <string>
 #include "core/Exception.hpp"
@@ -68,7 +69,7 @@ namespace lms::core::tracing
         for (Buffer& buffer : _buffers)
             _freeBuffers.push_back(&buffer);
 
-        LMS_LOG(UTILS, INFO, "TraceLogger: using " << _buffers.size() << " buffers. Buffer size = " << std::to_string(BufferSize));
+        LMS_LOG(UTILS, INFO, "TraceLogger: using " << _buffers.size() << " buffers. Buffer size = " << std::to_string(BufferSize) << ", entry size = " << sizeof(CompleteEvent) << ", entry count per buffer = " << Buffer::CompleteEventCount);
     }
 
     bool TraceLogger::isLevelActive(Level level) const
@@ -110,6 +111,7 @@ namespace lms::core::tracing
 
         // Empty new buffer only now (we want to keep history on released buffers since we dump them)
         buffer->currentDurationIndex = 0;
+        buffer->threadId = std::this_thread::get_id();
         return buffer;
     }
 
@@ -154,6 +156,8 @@ namespace lms::core::tracing
 
             for (Buffer& buffer : _buffers)
             {
+                const auto threadId{ toTraceThreadId(buffer.threadId) };
+
                 for (std::size_t i{}; i < buffer.currentDurationIndex; ++i)
                 {
                     // Looks like tracing viewer is not pleased when nested event start at the same timestamp
@@ -171,10 +175,23 @@ namespace lms::core::tracing
                     os << "\"name\" : \"" << event.name.c_str() << "\", ";
                     os << "\"cat\" : \"" << event.category.c_str() << "\", ";
                     os << "\"pid\": 1, ";
-                    os << "\"tid\" : " << toTraceThreadId(event.threadId) << ", ";
+                    os << "\"tid\" : " << threadId << ", ";
                     os << "\"ts\" : " << std::fixed << std::setprecision(3) << std::chrono::duration_cast<clockMicro>(event.start - _start).count() << ", ";
                     os << "\"dur\" : " << std::fixed << std::setprecision(3) << std::chrono::duration_cast<clockMicro>(event.duration).count() << ", ";
                     os << "\"ph\" : \"X\"";
+                    if (event.arg.has_value())
+                    {
+                        ArgEntryMap::const_iterator itArgEntry;
+                        {
+                            std::shared_lock lock{ _argMutex };
+                            itArgEntry = _argEntries.find(*event.arg);
+                            assert(itArgEntry != _argEntries.cend());
+                        }
+
+                        os << ", \"args\" : { \"" << itArgEntry->second.type.c_str() << "\" : \"";
+                        stringUtils::writeJSEscapedString(os, std::string_view{ itArgEntry->second.value });
+                        os << "\" }";
+                    }
                     os << " }";
                 }
             }
@@ -199,14 +216,48 @@ namespace lms::core::tracing
         _threadNames.emplace(id, threadName);
     }
 
-    std::uint32_t TraceLogger::toTraceThreadId(std::thread::id threadId) const
+    TraceLogger::ArgHashType TraceLogger::computeArgHash(LiteralString type, std::string_view value)
     {
+        ArgHashType res{};
+        res ^= std::hash<std::string_view>{}(type.str());
+        res ^= std::hash<std::string_view>{}(value);
+        return res;
+    }
+
+    TraceLogger::ArgHashType TraceLogger::registerArg(LiteralString argType, std::string_view argValue)
+    {
+        const ArgHashType hash{ computeArgHash(argType, argValue) };
+
         {
-            auto it{ _cachedTraceThreadIds.find(threadId) };
-            if (it != std::cend(_cachedTraceThreadIds))
-            return it->second;
+            const std::shared_lock lock{ _argMutex };
+
+            auto itArgEntry{ _argEntries.find(hash) };
+            if (itArgEntry != std::cend(_argEntries))
+            {
+                assert(itArgEntry->second.type == argType);
+                assert(itArgEntry->second.value == argValue);
+                return hash;
+            }
         }
 
+        {
+            const std::unique_lock lock{ _argMutex };
+
+            auto itArgEntry{ _argEntries.find(hash) };
+            if (itArgEntry != std::cend(_argEntries))
+            {
+                assert(itArgEntry->second.type == argType);
+                assert(itArgEntry->second.value == argValue);
+                return hash;
+            }
+
+            _argEntries.emplace(hash, ArgEntry{ argType, std::string{ argValue } });
+            return hash;
+        }
+    }
+
+    std::uint32_t TraceLogger::toTraceThreadId(std::thread::id threadId)
+    {
         // Pefetto UI does not accept 64bits thread ids
         std::ostringstream oss;
         oss << threadId;
@@ -215,8 +266,6 @@ namespace lms::core::tracing
         std::uint64_t id;
         iss >> id;
 
-        const std::uint32_t res{ static_cast<std::uint32_t>(id) };
-        _cachedTraceThreadIds.emplace(threadId, res);
-        return res;
+        return static_cast<std::uint32_t>(id);
     }
 }
