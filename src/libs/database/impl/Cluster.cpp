@@ -66,7 +66,7 @@ namespace lms::db
         Wt::Dbo::Query<ResultType> createQuery(Session& session, const Cluster::FindParameters& params)
         {
             std::string_view itemToSelect;
-            
+
             if constexpr (std::is_same_v<ResultType, ClusterId>)
                 itemToSelect = "c.id";
             else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<Cluster>>)
@@ -96,7 +96,7 @@ namespace lms::db
         return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(*) FROM cluster"));
     }
 
-   RangeResults<ClusterId> Cluster::findIds(Session& session, const FindParameters& params)
+    RangeResults<ClusterId> Cluster::findIds(Session& session, const FindParameters& params)
     {
         session.checkReadTransaction();
         auto query{ createQuery<ClusterId>(session, params) };
@@ -124,7 +124,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return session.getDboSession()->find<Cluster>().where("id = ?").bind(id).resultValue();
+        return utils::execSingleResultQuery(session.getDboSession()->find<Cluster>().where("id = ?").bind(id));
     }
 
     std::size_t Cluster::computeTrackCount(Session& session, ClusterId id)
@@ -236,9 +236,9 @@ namespace lms::db
         assert(self());
         assert(session());
 
-        auto res {utils::execMultiResultQuery(session()->find<Cluster>()
+        auto res{ utils::execMultiResultQuery(session()->find<Cluster>()
             .where("cluster_type_id = ?").bind(getId())
-            .orderBy("name"))};
+            .orderBy("name")) };
 
         return std::vector<Cluster::pointer>(res.begin(), res.end());
     }
