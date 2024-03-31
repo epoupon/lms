@@ -42,6 +42,7 @@ namespace lms::core::tracing
         void write(const CompleteEvent& event) override;
         void dumpCurrentBuffer(std::ostream& os) override;
         void setThreadName(std::thread::id id, std::string_view threadName) override;
+        std::uint32_t toTraceThreadId(std::thread::id threadId) const;
 
         static constexpr std::size_t BufferSize{ 32 * 1024 };
 
@@ -64,6 +65,7 @@ namespace lms::core::tracing
 
         std::mutex _threadNameMutex;
         std::unordered_map<std::thread::id, std::string> _threadNames;
+        mutable std::unordered_map<std::thread::id, std::uint32_t> _cachedTraceThreadIds;
 
         std::mutex _mutex;
         std::deque<Buffer*> _freeBuffers;

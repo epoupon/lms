@@ -141,7 +141,7 @@ namespace lms::core::tracing
                 os << "\t\t{ ";
                 os << "\"name\" : \"thread_name\", ";
                 os << "\"pid\" : 1, ";
-                os << "\"tid\" : " << threadId << ", ";
+                os << "\"tid\" : " << toTraceThreadId(threadId) << ", ";
                 os << "\"ph\" : \"M\", ";
                 os << "\"args\" : { \"name\" : \"" + threadName + "\" }";
                 os << " }";
@@ -171,7 +171,7 @@ namespace lms::core::tracing
                     os << "\"name\" : \"" << event.name.c_str() << "\", ";
                     os << "\"cat\" : \"" << event.category.c_str() << "\", ";
                     os << "\"pid\": 1, ";
-                    os << "\"tid\" : " << event.threadId << ", ";
+                    os << "\"tid\" : " << toTraceThreadId(event.threadId) << ", ";
                     os << "\"ts\" : " << std::fixed << std::setprecision(3) << std::chrono::duration_cast<clockMicro>(event.start - _start).count() << ", ";
                     os << "\"dur\" : " << std::fixed << std::setprecision(3) << std::chrono::duration_cast<clockMicro>(event.duration).count() << ", ";
                     os << "\"ph\" : \"X\"";
@@ -197,5 +197,26 @@ namespace lms::core::tracing
     {
         std::scoped_lock lock{ _threadNameMutex };
         _threadNames.emplace(id, threadName);
+    }
+
+    std::uint32_t TraceLogger::toTraceThreadId(std::thread::id threadId) const
+    {
+        {
+            auto it{ _cachedTraceThreadIds.find(threadId) };
+            if (it != std::cend(_cachedTraceThreadIds))
+            return it->second;
+        }
+
+        // Pefetto UI does not accept 64bits thread ids
+        std::ostringstream oss;
+        oss << threadId;
+
+        std::istringstream iss{ oss.str() };
+        std::uint64_t id;
+        iss >> id;
+
+        const std::uint32_t res{ static_cast<std::uint32_t>(id) };
+        _cachedTraceThreadIds.emplace(threadId, res);
+        return res;
     }
 }
