@@ -38,41 +38,39 @@ namespace lms::db {
 
     TrackFeatures::pointer TrackFeatures::create(Session& session, ObjectPtr<Track> track, const std::string& jsonEncodedFeatures)
     {
-        return session.getDboSession().add(std::unique_ptr<TrackFeatures> {new TrackFeatures{ track, jsonEncodedFeatures }});
+        return session.getDboSession()->add(std::unique_ptr<TrackFeatures> {new TrackFeatures{ track, jsonEncodedFeatures }});
     }
 
     std::size_t TrackFeatures::getCount(Session& session)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().query<int>("SELECT COUNT(*) FROM track_features");
+        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(*) FROM track_features"));
     }
 
     TrackFeatures::pointer TrackFeatures::find(Session& session, TrackFeaturesId id)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().find<TrackFeatures>()
-            .where("id = ?").bind(id)
-            .resultValue();
+        return utils::execSingleResultQuery(session.getDboSession()->find<TrackFeatures>()
+            .where("id = ?").bind(id));
     }
 
     TrackFeatures::pointer TrackFeatures::find(Session& session, TrackId trackId)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().find<TrackFeatures>()
-            .where("track_id = ?").bind(trackId)
-            .resultValue();
+        return utils::execSingleResultQuery(session.getDboSession()->find<TrackFeatures>()
+            .where("track_id = ?").bind(trackId));
     }
 
     RangeResults<TrackFeaturesId> TrackFeatures::find(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
 
-        auto query{ session.getDboSession().query<TrackFeaturesId>("SELECT id from track_features") };
+        auto query{ session.getDboSession()->query<TrackFeaturesId>("SELECT id from track_features") };
 
-        return utils::execQuery<TrackFeaturesId>(query, range);
+        return utils::execRangeQuery<TrackFeaturesId>(query, range);
     }
 
     FeatureValues TrackFeatures::getFeatureValues(const FeatureName& featureNode) const

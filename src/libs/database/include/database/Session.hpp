@@ -41,8 +41,8 @@ namespace lms::db
         WriteTransaction(const WriteTransaction&) = delete;
         WriteTransaction& operator=(const WriteTransaction&) = delete;
 
-        std::unique_lock<core::RecursiveSharedMutex> _lock;
-        core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "WriteTransaction" }; // before actual transaction
+        const std::unique_lock<core::RecursiveSharedMutex> _lock;
+        const core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "WriteTransaction" }; // before actual transaction
         Wt::Dbo::Transaction _transaction;
     };
 
@@ -58,7 +58,7 @@ namespace lms::db
         ReadTransaction(const ReadTransaction&) = delete;
         ReadTransaction& operator=(const ReadTransaction&) = delete;
 
-        core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "ReadTransaction" }; // before actual transaction
+        const core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "ReadTransaction" }; // before actual transaction
         Wt::Dbo::Transaction _transaction;
     };
 
@@ -89,7 +89,8 @@ namespace lms::db
 
         void prepareTables(); // need to run only once at startup
 
-        Wt::Dbo::Session& getDboSession() { return _session; }
+        // returning a ptr here to ease further wrapping using operator->
+        Wt::Dbo::Session* getDboSession() { return &_session; }
         Db& getDb() { return _db; }
 
         template <typename Object, typename... Args>
@@ -98,7 +99,7 @@ namespace lms::db
             checkWriteTransaction();
 
             typename Object::pointer res{ Object::create(*this, std::forward<Args>(args)...) };
-            getDboSession().flush();
+            getDboSession()->flush();
 
             if (res->hasOnPostCreated())
                 res.modify()->onPostCreated();

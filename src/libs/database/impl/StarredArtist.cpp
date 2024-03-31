@@ -38,40 +38,38 @@ namespace lms::db
 
     StarredArtist::pointer StarredArtist::create(Session& session, ObjectPtr<Artist> artist, ObjectPtr<User> user, FeedbackBackend backend)
     {
-        return session.getDboSession().add(std::unique_ptr<StarredArtist> {new StarredArtist{ artist, user, backend }});
+        return session.getDboSession()->add(std::unique_ptr<StarredArtist> {new StarredArtist{ artist, user, backend }});
     }
 
     std::size_t StarredArtist::getCount(Session& session)
     {
         session.checkReadTransaction();
-        return session.getDboSession().query<int>("SELECT COUNT(*) FROM starred_artist");
+        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(*) FROM starred_artist"));
     }
 
     StarredArtist::pointer StarredArtist::find(Session& session, StarredArtistId id)
     {
         session.checkReadTransaction();
-        return session.getDboSession().find<StarredArtist>().where("id = ?").bind(id).resultValue();
+        return utils::execSingleResultQuery(session.getDboSession()->find<StarredArtist>().where("id = ?").bind(id));
     }
 
     StarredArtist::pointer StarredArtist::find(Session& session, ArtistId artistId, UserId userId)
     {
         session.checkReadTransaction();
-        return session.getDboSession().query<Wt::Dbo::ptr<StarredArtist>>("SELECT s_a from starred_artist s_a")
+        return utils::execSingleResultQuery(session.getDboSession()->query<Wt::Dbo::ptr<StarredArtist>>("SELECT s_a from starred_artist s_a")
             .join("user u ON u.id = s_a.user_id")
             .where("s_a.artist_id = ?").bind(artistId)
             .where("s_a.user_id = ?").bind(userId)
-            .where("s_a.backend = u.feedback_backend")
-            .resultValue();
+            .where("s_a.backend = u.feedback_backend"));
     }
 
     StarredArtist::pointer StarredArtist::find(Session& session, ArtistId artistId, UserId userId, FeedbackBackend backend)
     {
         session.checkReadTransaction();
-        return session.getDboSession().find<StarredArtist>()
+        return utils::execSingleResultQuery(session.getDboSession()->find<StarredArtist>()
             .where("artist_id = ?").bind(artistId)
             .where("user_id = ?").bind(userId)
-            .where("backend = ?").bind(backend)
-            .resultValue();
+            .where("backend = ?").bind(backend));
     }
 
     void StarredArtist::setDateTime(const Wt::WDateTime& dateTime)

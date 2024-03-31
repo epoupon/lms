@@ -45,11 +45,23 @@ namespace lms::db::utils
         }
     }
 
-    template <typename ResultType, typename Query>
-    RangeResults<ResultType> execQuery(Query& query, std::optional<Range> range)
+    template <typename Query>
+    auto execSingleResultQuery(const Query& query)
     {
-        LMS_SCOPED_TRACE_DETAILED("Database", "ExecQueryRange");
+        LMS_SCOPED_TRACE_DETAILED("Database", "ExecSingleResultQuery");
+        return query.resultValue();
+    }
 
+    template <typename Query>
+    auto execMultiResultQuery(const Query& query)
+    {
+        LMS_SCOPED_TRACE_DETAILED("Database", "ExecMultiResultQuery");
+        return query.resultList();
+    }
+
+    template <typename ResultType, typename Query>
+    RangeResults<ResultType> execRangeQuery(Query& query, std::optional<Range> range)
+    {
         RangeResults<ResultType> res;
 
         if (range)
@@ -60,7 +72,7 @@ namespace lms::db::utils
             res.results.reserve(range->size);
         }
 
-        auto collection{ query.resultList() };
+        auto collection{ execMultiResultQuery(query) };
         for (auto itResult{ collection.begin() }; itResult != collection.end(); ++itResult)
         {
             if (range && res.results.size() == range->size)
@@ -78,20 +90,21 @@ namespace lms::db::utils
     }
 
     template <typename ResultType, typename Query>
-    void execQuery(Query& query, std::optional<Range> range, std::function<void(const ResultType&)> func)
+    void execRangeQuery(Query& query, std::optional<Range> range, const std::function<void(const ResultType&)>& func)
     {
         if (range)
             applyRange(query, range);
 
-        for (const auto& res : query.resultList())
+        auto collection{ execMultiResultQuery(query) };
+        for (const auto& res : collection)
         {
-            LMS_SCOPED_TRACE_DETAILED("Database", "ExecQueryResult");
+            LMS_SCOPED_TRACE_DETAILED("Database", "ExecQueryRangeForEach");
             func(res);
         }
     }
 
     template <typename ResultType, typename Query>
-    void execQuery(Query& query, std::optional<Range> range, bool& moreResults, std::function<void(const ResultType&)> func)
+    void execRangeQuery(Query& query, std::optional<Range> range, bool& moreResults, const std::function<void(const ResultType&)>& func)
     {
         if (range)
             applyRange(query, Range{ range->offset, range->size + 1 });
@@ -99,7 +112,8 @@ namespace lms::db::utils
         moreResults = false;
 
         std::size_t count{};
-        for (const auto& res : query.resultList())
+        auto collection{ execMultiResultQuery(query) };
+        for (const auto& res : collection)
         {
             if (range && (count++ == static_cast<std::size_t>(range->size)))
             {
@@ -107,7 +121,7 @@ namespace lms::db::utils
                 break;
             }
 
-            LMS_SCOPED_TRACE_DETAILED("Database", "ExecQueryResult");
+            LMS_SCOPED_TRACE_DETAILED("Database", "ExecQueryRangeForEach");
             func(res);
         }
     }

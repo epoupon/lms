@@ -38,7 +38,7 @@ namespace lms::db
         {
             session.checkReadTransaction();
 
-            auto query{ session.getDboSession().query<ResultType>("SELECT DISTINCT " + std::string{ itemToSelect } + " FROM cluster c") };
+            auto query{ session.getDboSession()->query<ResultType>("SELECT DISTINCT " + std::string{ itemToSelect } + " FROM cluster c") };
 
             if (params.track.isValid() || params.release.isValid())
             {
@@ -86,14 +86,14 @@ namespace lms::db
 
     Cluster::pointer Cluster::create(Session& session, ObjectPtr<ClusterType> type, std::string_view name)
     {
-        return session.getDboSession().add(std::unique_ptr<Cluster> {new Cluster{ type, name }});
+        return session.getDboSession()->add(std::unique_ptr<Cluster> {new Cluster{ type, name }});
     }
 
     std::size_t Cluster::getCount(Session& session)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().query<int>("SELECT COUNT(*) FROM cluster");
+        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(*) FROM cluster"));
     }
 
    RangeResults<ClusterId> Cluster::findIds(Session& session, const FindParameters& params)
@@ -101,7 +101,7 @@ namespace lms::db
         session.checkReadTransaction();
         auto query{ createQuery<ClusterId>(session, params) };
 
-        return utils::execQuery<ClusterId>(query, params.range);
+        return utils::execRangeQuery<ClusterId>(query, params.range);
     }
 
     RangeResults<Cluster::pointer> Cluster::find(Session& session, const FindParameters& params)
@@ -109,38 +109,38 @@ namespace lms::db
         session.checkReadTransaction();
         auto query{ createQuery<Wt::Dbo::ptr<Cluster>>(session, params) };
 
-        return utils::execQuery<Cluster::pointer>(query, params.range);
+        return utils::execRangeQuery<Cluster::pointer>(query, params.range);
     }
 
     RangeResults<ClusterId> Cluster::findOrphanIds(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
-        auto query{ session.getDboSession().query<ClusterId>("SELECT DISTINCT c.id FROM cluster c WHERE NOT EXISTS(SELECT 1 FROM track_cluster t_c WHERE t_c.cluster_id = c.id)") };
+        auto query{ session.getDboSession()->query<ClusterId>("SELECT DISTINCT c.id FROM cluster c WHERE NOT EXISTS(SELECT 1 FROM track_cluster t_c WHERE t_c.cluster_id = c.id)") };
 
-        return utils::execQuery<ClusterId>(query, range);
+        return utils::execRangeQuery<ClusterId>(query, range);
     }
 
     Cluster::pointer Cluster::find(Session& session, ClusterId id)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().find<Cluster>().where("id = ?").bind(id).resultValue();
+        return session.getDboSession()->find<Cluster>().where("id = ?").bind(id).resultValue();
     }
 
     std::size_t Cluster::computeTrackCount(Session& session, ClusterId id)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().query<int>("SELECT COUNT(t.id) FROM track t INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
-            .where("t_c.cluster_id = ?").bind(id).resultValue();
+        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(t.id) FROM track t INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
+            .where("t_c.cluster_id = ?").bind(id));
     }
 
     std::size_t Cluster::computeReleaseCount(Session& session, ClusterId id)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().query<int>("SELECT COUNT(DISTINCT r.id) FROM release r INNER JOIN track t on t.release_id = r.id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
-            .where("t_c.cluster_id = ?").bind(id).resultValue();
+        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(DISTINCT r.id) FROM release r INNER JOIN track t on t.release_id = r.id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
+            .where("t_c.cluster_id = ?").bind(id));
     }
 
     void Cluster::addTrack(ObjectPtr<Track> track)
@@ -155,7 +155,7 @@ namespace lms::db
         auto query{ session()->query<TrackId>("SELECT t.id FROM track t INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
                 .where("c.id = ?").bind(getId()) };
 
-        return utils::execQuery<TrackId>(query, range);
+        return utils::execRangeQuery<TrackId>(query, range);
     }
 
     ClusterType::ClusterType(std::string_view name)
@@ -165,61 +165,60 @@ namespace lms::db
 
     ClusterType::pointer ClusterType::create(Session& session, std::string_view name)
     {
-        return session.getDboSession().add(std::unique_ptr<ClusterType> {new ClusterType{ name }});
+        return session.getDboSession()->add(std::unique_ptr<ClusterType> {new ClusterType{ name }});
     }
 
     std::size_t ClusterType::getCount(Session& session)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().query<int>("SELECT COUNT(*) FROM cluster_type");
+        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(*) FROM cluster_type"));
     }
-
 
     RangeResults<ClusterTypeId> ClusterType::findOrphanIds(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
 
-        auto query{ session.getDboSession().query<ClusterTypeId>(
+        auto query{ session.getDboSession()->query<ClusterTypeId>(
                 "SELECT c_t.id from cluster_type c_t"
                 " LEFT OUTER JOIN cluster c ON c_t.id = c.cluster_type_id")
             .where("c.id IS NULL") };
 
-        return utils::execQuery<ClusterTypeId>(query, range);
+        return utils::execRangeQuery<ClusterTypeId>(query, range);
     }
 
     RangeResults<ClusterTypeId> ClusterType::findUsed(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
 
-        auto query{ session.getDboSession().query<ClusterTypeId>(
+        auto query{ session.getDboSession()->query<ClusterTypeId>(
                 "SELECT DISTINCT c_t.id from cluster_type c_t")
             .join("cluster c ON c_t.id = c.cluster_type_id") };
 
-        return utils::execQuery<ClusterTypeId>(query, range);
+        return utils::execRangeQuery<ClusterTypeId>(query, range);
     }
 
     ClusterType::pointer ClusterType::find(Session& session, std::string_view name)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().find<ClusterType>().where("name = ?").bind(std::string{ name }).resultValue();
+        return utils::execSingleResultQuery(session.getDboSession()->find<ClusterType>().where("name = ?").bind(std::string{ name }));
     }
 
     ClusterType::pointer ClusterType::find(Session& session, ClusterTypeId id)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().find<ClusterType>().where("id = ?").bind(id).resultValue();
+        return utils::execSingleResultQuery(session.getDboSession()->find<ClusterType>().where("id = ?").bind(id));
     }
 
     RangeResults<ClusterTypeId> ClusterType::findIds(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
 
-        auto query{ session.getDboSession().query<ClusterTypeId>("SELECT id from cluster_type") };
+        auto query{ session.getDboSession()->query<ClusterTypeId>("SELECT id from cluster_type") };
 
-        return utils::execQuery<ClusterTypeId>(query, range);
+        return utils::execRangeQuery<ClusterTypeId>(query, range);
     }
 
     Cluster::pointer ClusterType::getCluster(const std::string& name) const
@@ -227,9 +226,9 @@ namespace lms::db
         assert(self());
         assert(session());
 
-        return session()->find<Cluster>()
+        return utils::execSingleResultQuery(session()->find<Cluster>()
             .where("name = ?").bind(name)
-            .where("cluster_type_id = ?").bind(getId()).resultValue();
+            .where("cluster_type_id = ?").bind(getId()));
     }
 
     std::vector<Cluster::pointer> ClusterType::getClusters() const
@@ -237,10 +236,9 @@ namespace lms::db
         assert(self());
         assert(session());
 
-        auto res = session()->find<Cluster>()
+        auto res {utils::execMultiResultQuery(session()->find<Cluster>()
             .where("cluster_type_id = ?").bind(getId())
-            .orderBy("name")
-            .resultList();
+            .orderBy("name"))};
 
         return std::vector<Cluster::pointer>(res.begin(), res.end());
     }

@@ -34,7 +34,7 @@ namespace lms::db
         {
             session.checkReadTransaction();
 
-            auto query{ session.getDboSession().query<TrackArtistLinkId>("SELECT DISTINCT t_a_l.id FROM track_artist_link t_a_l") };
+            auto query{ session.getDboSession()->query<TrackArtistLinkId>("SELECT DISTINCT t_a_l.id FROM track_artist_link t_a_l") };
 
             if (params.linkType)
                 query.where("t_a_l.type = ?").bind(*params.linkType);
@@ -67,8 +67,8 @@ namespace lms::db
     {
         session.checkWriteTransaction();
 
-        TrackArtistLink::pointer res{ session.getDboSession().add(std::make_unique<TrackArtistLink>(track, artist, type, subType)) };
-        session.getDboSession().flush();
+        TrackArtistLink::pointer res{ session.getDboSession()->add(std::make_unique<TrackArtistLink>(track, artist, type, subType)) };
+        session.getDboSession()->flush();
 
         return res;
     }
@@ -76,7 +76,7 @@ namespace lms::db
     TrackArtistLink::pointer TrackArtistLink::find(Session& session, TrackArtistLinkId id)
     {
         session.checkReadTransaction();
-        return session.getDboSession().find<TrackArtistLink>().where("id = ?").bind(id).resultValue();
+        return utils::execSingleResultQuery(session.getDboSession()->find<TrackArtistLink>().where("id = ?").bind(id));
     }
 
     RangeResults<TrackArtistLinkId> TrackArtistLink::find(Session& session, const FindParameters& params)
@@ -84,14 +84,14 @@ namespace lms::db
         session.checkReadTransaction();
 
         auto query{ createQuery(session, params) };
-        return utils::execQuery<TrackArtistLinkId>(query, params.range);
+        return utils::execRangeQuery<TrackArtistLinkId>(query, params.range);
     }
 
     core::EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session)
     {
         session.checkReadTransaction();
 
-        auto res{ session.getDboSession().query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link").resultList() };
+        auto res{ utils::execMultiResultQuery(session.getDboSession()->query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link")) };
 
         return core::EnumSet<TrackArtistLinkType>(std::begin(res), std::end(res));
     }
@@ -100,10 +100,8 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        auto res{ session.getDboSession()
-            .query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link")
-            .where("artist_id = ?").bind(artistId)
-            .resultList() };
+        auto res{ utils::execMultiResultQuery(session.getDboSession()->query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link")
+            .where("artist_id = ?").bind(artistId)) };
 
         return core::EnumSet<TrackArtistLinkType>(std::begin(res), std::end(res));
     }
