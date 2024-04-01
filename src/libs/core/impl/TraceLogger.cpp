@@ -68,7 +68,7 @@ namespace lms::core::tracing
         for (Buffer& buffer : _buffers)
             _freeBuffers.push_back(&buffer);
 
-        LMS_LOG(UTILS, INFO, "TraceLogger: using " << _buffers.size() << " buffers. Buffer size = " << std::to_string(BufferSize) << ", entry size = " << sizeof(CompleteEvent) << ", entry count per buffer = " << Buffer::CompleteEventCount);
+        LMS_LOG(UTILS, INFO, "TraceLogger: using " << _buffers.size() << " buffers. Buffer size = " << std::to_string(BufferSize) << ", entry size = " << sizeof(CompleteEventEntry) << ", entry count per buffer = " << Buffer::CompleteEventCount);
     }
 
     bool TraceLogger::isLevelActive(Level level) const
@@ -81,7 +81,12 @@ namespace lms::core::tracing
         if (!_currentBuffer)
             _currentBuffer = acquireBuffer();
 
-        _currentBuffer->durationEvents[_currentBuffer->currentDurationIndex] = event;
+        CompleteEventEntry& entry{ _currentBuffer->durationEvents[_currentBuffer->currentDurationIndex] };
+        entry.start = event.start;
+        entry.duration = event.duration;
+        entry.name = event.name.c_str();
+        entry.category = event.category.c_str();
+        entry.arg = event.arg.value_or(invalidHash);
 
         // update the index after writing the event, in case another thread wants to dump
         if (++_currentBuffer->currentDurationIndex == _currentBuffer->durationEvents.size())
@@ -163,7 +168,7 @@ namespace lms::core::tracing
                     // Hence the double representation as the microsecond unit is not precise enough
                     using clockMicro = std::chrono::duration<double, std::micro>;
 
-                    const CompleteEvent& event{ buffer.durationEvents[i] };
+                    const CompleteEventEntry& event{ buffer.durationEvents[i] };
 
                     if (first)
                         first = false;
@@ -171,24 +176,24 @@ namespace lms::core::tracing
                         os << ", " << std::endl;;
 
                     os << "\t\t{ ";
-                    os << "\"name\" : \"" << event.name.c_str() << "\", ";
-                    os << "\"cat\" : \"" << event.category.c_str() << "\", ";
+                    os << "\"name\" : \"" << event.name << "\", ";
+                    os << "\"cat\" : \"" << event.category << "\", ";
                     os << "\"pid\": 1, ";
                     os << "\"tid\" : " << threadId << ", ";
                     os << "\"ts\" : " << std::fixed << std::setprecision(3) << std::chrono::duration_cast<clockMicro>(event.start - _start).count() << ", ";
                     os << "\"dur\" : " << std::fixed << std::setprecision(3) << std::chrono::duration_cast<clockMicro>(event.duration).count() << ", ";
                     os << "\"ph\" : \"X\"";
-                    if (event.arg.has_value())
+                    if (event.arg != invalidHash)
                     {
                         ArgEntryMap::const_iterator itArgEntry;
                         {
                             std::shared_lock lock{ _argMutex };
-                            itArgEntry = _argEntries.find(*event.arg);
+                            itArgEntry = _argEntries.find(event.arg);
                             assert(itArgEntry != _argEntries.cend());
                         }
 
                         os << ", \"args\" : { \"" << itArgEntry->second.type.c_str() << "\" : \"";
-                        stringUtils::writeJSEscapedString(os, std::string_view{ itArgEntry->second.value });
+                        stringUtils::writeJsonEscapedString(os, std::string_view{ itArgEntry->second.value });
                         os << "\" }";
                     }
                     os << " }";
@@ -198,6 +203,7 @@ namespace lms::core::tracing
 
         os << std::endl;
         os << "\t]," << std::endl;
+        os << "\t\"meta_registered_arg_count\" : " << getRegisteredArgCount() << ", " << std::endl;
         os << "\t\"meta_cpu_count\" : " << std::thread::hardware_concurrency() << ", " << std::endl;
         os << "\t\"meta_build_type\" : ";
 #ifndef NDEBUG
@@ -226,6 +232,7 @@ namespace lms::core::tracing
     TraceLogger::ArgHashType TraceLogger::registerArg(LiteralString argType, std::string_view argValue)
     {
         const ArgHashType hash{ computeArgHash(argType, argValue) };
+        assert(hash != invalidHash);
 
         {
             const std::shared_lock lock{ _argMutex };
@@ -253,6 +260,13 @@ namespace lms::core::tracing
             _argEntries.emplace(hash, ArgEntry{ argType, std::string{ argValue } });
             return hash;
         }
+    }
+
+    std::size_t TraceLogger::getRegisteredArgCount() const
+    {
+        const std::shared_lock lock{ _argMutex };
+
+        return _argEntries.size();
     }
 
     std::uint32_t TraceLogger::toTraceThreadId(std::thread::id threadId)

@@ -44,18 +44,30 @@ namespace lms::core::tracing
         void dumpCurrentBuffer(std::ostream& os) override;
         void setThreadName(std::thread::id id, std::string_view threadName) override;
         ArgHashType registerArg(LiteralString argType, std::string_view argValue) override;
+        std::size_t getRegisteredArgCount() const;
 
         static ArgHashType computeArgHash(LiteralString type, std::string_view value);
         static std::uint32_t toTraceThreadId(std::thread::id threadId);
 
         static constexpr std::size_t BufferSize{ 64 * 1024 };
 
+        // Same as ComplteEvent, but compacted
+        struct CompleteEventEntry
+        {
+            clock::time_point start;
+            clock::duration duration;
+            const char* name;
+            const char* category;
+            ArgHashType arg;
+        };
+        static constexpr ArgHashType invalidHash{ 0 };
+
         struct alignas(64) Buffer
         {
-            static constexpr std::size_t CompleteEventCount{ BufferSize / sizeof(CompleteEvent) };
+            static constexpr std::size_t CompleteEventCount{ BufferSize / sizeof(CompleteEventEntry) };
 
             std::thread::id threadId;
-            std::array<CompleteEvent, CompleteEventCount> durationEvents;
+            std::array<CompleteEventEntry, CompleteEventCount> durationEvents;
             std::atomic<std::size_t> currentDurationIndex{};
         };
 
@@ -68,7 +80,7 @@ namespace lms::core::tracing
 
         std::vector<Buffer> _buffers; // allocated once during construction
 
-        std::shared_mutex _argMutex;
+        mutable std::shared_mutex _argMutex;
         struct ArgEntry
         {
             LiteralString type;
