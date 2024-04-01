@@ -44,19 +44,19 @@ namespace lms::db
     std::size_t StarredArtist::getCount(Session& session)
     {
         session.checkReadTransaction();
-        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(*) FROM starred_artist"));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM starred_artist"));
     }
 
     StarredArtist::pointer StarredArtist::find(Session& session, StarredArtistId id)
     {
         session.checkReadTransaction();
-        return utils::execSingleResultQuery(session.getDboSession()->find<StarredArtist>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<StarredArtist>().where("id = ?").bind(id));
     }
 
     StarredArtist::pointer StarredArtist::find(Session& session, ArtistId artistId, UserId userId)
     {
         session.checkReadTransaction();
-        return utils::execSingleResultQuery(session.getDboSession()->query<Wt::Dbo::ptr<StarredArtist>>("SELECT s_a from starred_artist s_a")
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<StarredArtist>>("SELECT s_a from starred_artist s_a")
             .join("user u ON u.id = s_a.user_id")
             .where("s_a.artist_id = ?").bind(artistId)
             .where("s_a.user_id = ?").bind(userId)
@@ -66,7 +66,7 @@ namespace lms::db
     StarredArtist::pointer StarredArtist::find(Session& session, ArtistId artistId, UserId userId, FeedbackBackend backend)
     {
         session.checkReadTransaction();
-        return utils::execSingleResultQuery(session.getDboSession()->find<StarredArtist>()
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<StarredArtist>()
             .where("artist_id = ?").bind(artistId)
             .where("user_id = ?").bind(userId)
             .where("backend = ?").bind(backend));

@@ -45,14 +45,14 @@ namespace lms::db {
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(*) FROM track_features"));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM track_features"));
     }
 
     TrackFeatures::pointer TrackFeatures::find(Session& session, TrackFeaturesId id)
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->find<TrackFeatures>()
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackFeatures>()
             .where("id = ?").bind(id));
     }
 
@@ -60,7 +60,7 @@ namespace lms::db {
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->find<TrackFeatures>()
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackFeatures>()
             .where("track_id = ?").bind(trackId));
     }
 

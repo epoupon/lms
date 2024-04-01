@@ -42,7 +42,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(*) FROM track_bookmark"));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM track_bookmark"));
     }
 
     RangeResults<TrackBookmarkId> TrackBookmark::find(Session& session, UserId userId, std::optional<Range> range)
@@ -59,7 +59,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->find<TrackBookmark>()
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackBookmark>()
             .where("user_id = ?").bind(userId)
             .where("track_id = ?").bind(trackId));
     }
@@ -68,7 +68,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->find<TrackBookmark>()
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackBookmark>()
             .where("id = ?").bind(id));
     }
 

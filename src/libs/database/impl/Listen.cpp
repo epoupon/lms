@@ -180,13 +180,13 @@ namespace lms::db
     std::size_t Listen::getCount(Session& session)
     {
         session.checkReadTransaction();
-        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(*) FROM listen"));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM listen"));
     }
 
     Listen::pointer Listen::find(Session& session, ListenId id)
     {
         session.checkReadTransaction();
-        return utils::execSingleResultQuery(session.getDboSession()->find<Listen>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<Listen>().where("id = ?").bind(id));
     }
 
     RangeResults<ListenId> Listen::find(Session& session, const FindParameters& parameters)
@@ -212,7 +212,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->find<Listen>()
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<Listen>()
             .where("user_id = ?").bind(userId)
             .where("track_id = ?").bind(trackId)
             .where("backend = ?").bind(backend)
@@ -285,7 +285,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(*) from listen l")
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) from listen l")
             .join("user u ON u.id = l.user_id")
             .where("l.track_id = ?").bind(trackId)
             .where("l.user_id = ?").bind(userId)
@@ -296,7 +296,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->query<int>(
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>(
             "SELECT IFNULL(MIN(count_result), 0)"
             " FROM ("
             " SELECT COUNT(l.track_id) AS count_result"
@@ -314,7 +314,7 @@ namespace lms::db
         session.checkReadTransaction();
 
         // TODO not pending remove?
-        return utils::execSingleResultQuery(session.getDboSession()->query<Wt::Dbo::ptr<Listen>>("SELECT l from listen l")
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Listen>>("SELECT l from listen l")
             .join("track t ON l.track_id = t.id")
             .where("t.release_id = ?").bind(releaseId)
             .where("l.user_id = ?").bind(userId)
@@ -327,7 +327,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
         // TODO not pending remove?
-        return utils::execSingleResultQuery(session.getDboSession()->query<Wt::Dbo::ptr<Listen>>("SELECT l from listen l")
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Listen>>("SELECT l from listen l")
             .where("l.track_id = ?").bind(trackId)
             .where("l.user_id = ?").bind(userId)
             .where("l.backend = ?").bind(backend)

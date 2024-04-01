@@ -28,7 +28,6 @@
 
 namespace lms::db
 {
-
     AuthToken::AuthToken(std::string_view value, const Wt::WDateTime& expiry, ObjectPtr<User> user)
         : _value{ value }
         , _expiry{ expiry }
@@ -52,6 +51,6 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->find<AuthToken>().where("value = ?").bind(value));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<AuthToken>().where("value = ?").bind(value));
     }
 }

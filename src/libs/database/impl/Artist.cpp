@@ -182,7 +182,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(*) FROM artist"));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM artist"));
     }
 
     void Artist::find(Session& session, ArtistId& lastRetrievedArtist, std::size_t count, const std::function<void(const Artist::pointer&)>& func, MediaLibraryId library)
@@ -201,43 +201,38 @@ namespace lms::db
             query.where("t.media_library_id = ?").bind(library);
         }
 
-        auto collection{ utils::execMultiResultQuery(query) };
-
-        for (auto itResult{ collection.begin() }; itResult != collection.end(); ++itResult)
-        {
-            LMS_SCOPED_TRACE_DETAILED("Database", "ExecQueryRangeForEach");
-            func(*itResult);
-            lastRetrievedArtist = (*itResult)->getId();
-        }
+        utils::forEachQueryResult(query, [&](const Artist::pointer& artist)
+            {
+                func(artist);
+                lastRetrievedArtist = artist->getId();
+            });
     }
 
     std::vector<Artist::pointer> Artist::find(Session& session, std::string_view name)
     {
         session.checkReadTransaction();
 
-        Wt::Dbo::collection<Wt::Dbo::ptr<Artist>> res{ utils::execMultiResultQuery(session.getDboSession()->find<Artist>()
+        return utils::fetchQueryResults<Artist::pointer>(session.getDboSession()->find<Artist>()
             .where("name = ?").bind(std::string{ name, 0, _maxNameLength })
-            .orderBy("LENGTH(mbid) DESC")) }; // put mbid entries first
-
-        return std::vector<Artist::pointer>(res.begin(), res.end());
+            .orderBy("LENGTH(mbid) DESC")); // put mbid entries first
     }
 
     Artist::pointer Artist::find(Session& session, const core::UUID& mbid)
     {
         session.checkReadTransaction();
-        return utils::execSingleResultQuery(session.getDboSession()->find<Artist>().where("mbid = ?").bind(std::string{ mbid.getAsString() }));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<Artist>().where("mbid = ?").bind(std::string{ mbid.getAsString() }));
     }
 
     Artist::pointer Artist::find(Session& session, ArtistId id)
     {
         session.checkReadTransaction();
-        return utils::execSingleResultQuery(session.getDboSession()->find<Artist>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<Artist>().where("id = ?").bind(id));
     }
 
     bool Artist::exists(Session& session, ArtistId id)
     {
         session.checkReadTransaction();
-        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT 1 FROM artist").where("id = ?").bind(id))  == 1;
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT 1 FROM artist").where("id = ?").bind(id)) == 1;
     }
 
     RangeResults<ArtistId> Artist::findOrphanIds(Session& session, std::optional<Range> range)
@@ -268,7 +263,7 @@ namespace lms::db
         session.checkReadTransaction();
 
         auto query{ createQuery<Wt::Dbo::ptr<Artist>>(session, params) };
-        utils::execRangeQuery(query, params.range, func);
+        utils::forEachQueryRangeResult(query, params.range, func);
     }
 
     RangeResults<ArtistId> Artist::findSimilarArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes, std::optional<Range> range) const
@@ -343,14 +338,12 @@ namespace lms::db
         for (const std::string& bindArg : where.getBindArgs())
             query.bind(bindArg);
 
-        Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> queryRes{ utils::execMultiResultQuery(query) };
-
         std::map<ClusterTypeId, std::vector<Cluster::pointer>> clustersByType;
-        for (const Cluster::pointer& cluster : queryRes)
-        {
-            if (clustersByType[cluster->getType()->getId()].size() < size)
-                clustersByType[cluster->getType()->getId()].push_back(cluster);
-        }
+        utils::forEachQueryResult(query, [&](const Cluster::pointer& cluster)
+            {
+                if (clustersByType[cluster->getType()->getId()].size() < size)
+                    clustersByType[cluster->getType()->getId()].push_back(cluster);
+            });
 
         std::vector<std::vector<Cluster::pointer>> res;
         for (const auto& [clusterTypeId, clusters] : clustersByType)

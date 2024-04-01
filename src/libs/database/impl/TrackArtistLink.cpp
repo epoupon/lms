@@ -76,7 +76,7 @@ namespace lms::db
     TrackArtistLink::pointer TrackArtistLink::find(Session& session, TrackArtistLinkId id)
     {
         session.checkReadTransaction();
-        return utils::execSingleResultQuery(session.getDboSession()->find<TrackArtistLink>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackArtistLink>().where("id = ?").bind(id));
     }
 
     RangeResults<TrackArtistLinkId> TrackArtistLink::find(Session& session, const FindParameters& params)
@@ -91,19 +91,28 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        auto res{ utils::execMultiResultQuery(session.getDboSession()->query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link")) };
+        const auto query{ session.getDboSession()->query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link") };
 
-        return core::EnumSet<TrackArtistLinkType>(std::begin(res), std::end(res));
+        core::EnumSet<TrackArtistLinkType> res;
+        utils::forEachQueryResult(query, [&](TrackArtistLinkType linkType)
+            {
+                res.insert(linkType);
+            });
+        return res;
     }
 
     core::EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session, ArtistId artistId)
     {
         session.checkReadTransaction();
 
-        auto res{ utils::execMultiResultQuery(session.getDboSession()->query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link")
-            .where("artist_id = ?").bind(artistId)) };
+        const auto query{ session.getDboSession()->query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link")
+            .where("artist_id = ?").bind(artistId) };
 
-        return core::EnumSet<TrackArtistLinkType>(std::begin(res), std::end(res));
+        core::EnumSet<TrackArtistLinkType> res;
+        utils::forEachQueryResult(query, [&](TrackArtistLinkType linkType)
+            {
+                res.insert(linkType);
+            });
+        return res;
     }
 }
-

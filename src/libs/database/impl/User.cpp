@@ -44,7 +44,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(*) FROM user"));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM user"));
     }
 
     RangeResults<UserId> User::find(Session& session, const FindParameters& params)
@@ -65,17 +65,17 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->find<User>().where("type = ?").bind(UserType::DEMO));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<User>().where("type = ?").bind(UserType::DEMO));
     }
 
     User::pointer User::find(Session& session, UserId id)
     {
-        return utils::execSingleResultQuery(session.getDboSession()->find<User>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<User>().where("id = ?").bind(id));
     }
 
     User::pointer User::find(Session& session, std::string_view name)
     {
-        return utils::execSingleResultQuery(session.getDboSession()->find<User>()
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<User>()
             .where("login_name = ?").bind(name));
     }
 

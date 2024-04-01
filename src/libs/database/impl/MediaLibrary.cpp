@@ -44,36 +44,37 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(*) FROM media_library"));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM media_library"));
     }
 
     MediaLibrary::pointer MediaLibrary::find(Session& session, MediaLibraryId id)
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->find<MediaLibrary>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<MediaLibrary>().where("id = ?").bind(id));
     }
 
     MediaLibrary::pointer MediaLibrary::find(Session& session, std::string_view name)
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->find<MediaLibrary>().where("name = ?").bind(name));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<MediaLibrary>().where("name = ?").bind(name));
     }
 
     MediaLibrary::pointer MediaLibrary::find(Session& session, const std::filesystem::path& p)
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->find<MediaLibrary>().where("path = ?").bind(p));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<MediaLibrary>().where("path = ?").bind(p));
     }
 
     void MediaLibrary::find(Session& session, std::function<void(const MediaLibrary::pointer&)> func)
     {
         session.checkReadTransaction();
 
-        auto results{ utils::execMultiResultQuery(session.getDboSession()->find<MediaLibrary>()) };
-        for (const auto& result : results)
-            func(result);
+        utils::forEachQueryResult(session.getDboSession()->find<MediaLibrary>(), [&](const MediaLibrary::pointer& mediaLibrary)
+            {
+                func(mediaLibrary);
+            });
     }
 } // namespace lms::db

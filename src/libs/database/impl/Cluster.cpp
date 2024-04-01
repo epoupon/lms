@@ -93,7 +93,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(*) FROM cluster"));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM cluster"));
     }
 
     RangeResults<ClusterId> Cluster::findIds(Session& session, const FindParameters& params)
@@ -124,14 +124,14 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->find<Cluster>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<Cluster>().where("id = ?").bind(id));
     }
 
     std::size_t Cluster::computeTrackCount(Session& session, ClusterId id)
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(t.id) FROM track t INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(t.id) FROM track t INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
             .where("t_c.cluster_id = ?").bind(id));
     }
 
@@ -139,7 +139,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(DISTINCT r.id) FROM release r INNER JOIN track t on t.release_id = r.id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(DISTINCT r.id) FROM release r INNER JOIN track t on t.release_id = r.id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
             .where("t_c.cluster_id = ?").bind(id));
     }
 
@@ -172,7 +172,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(*) FROM cluster_type"));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM cluster_type"));
     }
 
     RangeResults<ClusterTypeId> ClusterType::findOrphanIds(Session& session, std::optional<Range> range)
@@ -202,14 +202,14 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->find<ClusterType>().where("name = ?").bind(std::string{ name }));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<ClusterType>().where("name = ?").bind(std::string{ name }));
     }
 
     ClusterType::pointer ClusterType::find(Session& session, ClusterTypeId id)
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->find<ClusterType>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<ClusterType>().where("id = ?").bind(id));
     }
 
     RangeResults<ClusterTypeId> ClusterType::findIds(Session& session, std::optional<Range> range)
@@ -226,7 +226,7 @@ namespace lms::db
         assert(self());
         assert(session());
 
-        return utils::execSingleResultQuery(session()->find<Cluster>()
+        return utils::fetchQuerySingleResult(session()->find<Cluster>()
             .where("name = ?").bind(name)
             .where("cluster_type_id = ?").bind(getId()));
     }
@@ -236,10 +236,8 @@ namespace lms::db
         assert(self());
         assert(session());
 
-        auto res{ utils::execMultiResultQuery(session()->find<Cluster>()
+        return utils::fetchQueryResults<Cluster::pointer>(session()->find<Cluster>()
             .where("cluster_type_id = ?").bind(getId())
-            .orderBy("name")) };
-
-        return std::vector<Cluster::pointer>(res.begin(), res.end());
+            .orderBy("name"));
     }
 } // namespace lms::db

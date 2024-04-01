@@ -55,7 +55,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->query<int>("SELECT COUNT(*) FROM tracklist"));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM tracklist"));
     }
 
 
@@ -64,7 +64,7 @@ namespace lms::db
         session.checkReadTransaction();
         assert(userId.isValid());
 
-        return utils::execSingleResultQuery(session.getDboSession()->find<TrackList>()
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackList>()
             .where("name = ?").bind(name)
             .where("type = ?").bind(type)
             .where("user_id = ?").bind(userId));
@@ -124,7 +124,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->find<TrackList>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackList>().where("id = ?").bind(id));
     }
 
     bool TrackList::isEmpty() const
@@ -163,7 +163,7 @@ namespace lms::db
     {
         assert(session());
 
-        return utils::execSingleResultQuery(session()->find<TrackListEntry>()
+        return utils::fetchQuerySingleResult(session()->find<TrackListEntry>()
             .where("tracklist_id = ?").bind(getId())
             .where("track_id = ?").bind(track->getId())
             .where("date_time = ?").bind(utils::normalizeDateTime(dateTime)));
@@ -173,12 +173,12 @@ namespace lms::db
     {
         assert(session());
 
-        auto res{ utils::execMultiResultQuery(session()->query<Wt::Dbo::ptr<Cluster>>("SELECT c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN tracklist_entry p_e ON p_e.track_id = t.id INNER JOIN tracklist p ON p.id = p_e.tracklist_id")
+        const auto query{ session()->query<Wt::Dbo::ptr<Cluster>>("SELECT c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN tracklist_entry p_e ON p_e.track_id = t.id INNER JOIN tracklist p ON p.id = p_e.tracklist_id")
             .where("p.id = ?").bind(getId())
             .groupBy("c.id")
-            .orderBy("COUNT(c.id) DESC")) };
+            .orderBy("COUNT(c.id) DESC") };
 
-        return std::vector<Cluster::pointer>(res.begin(), res.end());
+        return utils::fetchQueryResults<Cluster::pointer>(query);
     }
 
     std::vector<std::vector<Cluster::pointer>> TrackList::getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const
@@ -216,14 +216,12 @@ namespace lms::db
         query.groupBy("c.id");
         query.orderBy("COUNT(c.id) DESC");
 
-        auto queryRes{ utils::execMultiResultQuery(query) };
-
         std::map<ClusterTypeId, std::vector<Cluster::pointer>> clustersByType;
-        for (const Wt::Dbo::ptr<Cluster>& cluster : queryRes)
-        {
-            if (clustersByType[cluster->getType()->getId()].size() < size)
-                clustersByType[cluster->getType()->getId()].push_back(cluster);
-        }
+        utils::forEachQueryResult(query, [&](const Cluster::pointer& cluster)
+            {
+                if (clustersByType[cluster->getType()->getId()].size() < size)
+                    clustersByType[cluster->getType()->getId()].push_back(cluster);
+            });
 
         for (const auto& [clusterTypeId, clusters] : clustersByType)
             res.push_back(clusters);
@@ -235,7 +233,7 @@ namespace lms::db
     {
         assert(session());
 
-        auto res{ utils::execMultiResultQuery(session()->query<Wt::Dbo::ptr<Track>>(
+        auto query{ session()->query<Wt::Dbo::ptr<Track>>(
                 "SELECT t FROM track t"
                 " INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
                     " WHERE "
@@ -247,19 +245,19 @@ namespace lms::db
             .groupBy("t.id")
             .orderBy("COUNT(*) DESC, RANDOM()")
             .limit(size ? static_cast<int>(*size) : -1)
-            .offset(offset ? static_cast<int>(*offset) : -1))};
+            .offset(offset ? static_cast<int>(*offset) : -1) };
 
-        return std::vector<Track::pointer>(res.begin(), res.end());
+        return utils::fetchQueryResults<Track::pointer>(query);
     }
 
     std::vector<TrackId> TrackList::getTrackIds() const
     {
         assert(session());
 
-        auto res {utils::execMultiResultQuery(session()->query<TrackId>("SELECT p_e.track_id from tracklist_entry p_e INNER JOIN tracklist p ON p_e.tracklist_id = p.id")
-            .where("p.id = ?").bind(getId())) };
+        auto query{ session()->query<TrackId>("SELECT p_e.track_id from tracklist_entry p_e INNER JOIN tracklist p ON p_e.tracklist_id = p.id")
+            .where("p.id = ?").bind(getId()) };
 
-        return std::vector<TrackId>(res.begin(), res.end());
+        return utils::fetchQueryResults(query);
     }
 
     std::chrono::milliseconds TrackList::getDuration() const
@@ -268,7 +266,7 @@ namespace lms::db
 
         using milli = std::chrono::duration<int, std::milli>;
 
-        return utils::execSingleResultQuery(session()->query<milli>("SELECT COALESCE(SUM(duration), 0) FROM track t INNER JOIN tracklist_entry p_e ON t.id = p_e.track_id")
+        return utils::fetchQuerySingleResult(session()->query<milli>("SELECT COALESCE(SUM(duration), 0) FROM track t INNER JOIN tracklist_entry p_e ON t.id = p_e.track_id")
             .where("p_e.tracklist_id = ?").bind(getId()));
     }
 
@@ -305,6 +303,6 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->find<TrackListEntry>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackListEntry>().where("id = ?").bind(id));
     }
 } // namespace lms::db

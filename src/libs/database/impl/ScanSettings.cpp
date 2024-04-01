@@ -42,7 +42,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::execSingleResultQuery(session.getDboSession()->find<ScanSettings>());
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<ScanSettings>());
     }
 
     std::vector<std::filesystem::path> ScanSettings::getAudioFileExtensions() const

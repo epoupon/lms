@@ -50,13 +50,13 @@ namespace lms::db
     StarredRelease::pointer StarredRelease::find(Session& session, StarredReleaseId id)
     {
         session.checkReadTransaction();
-        return utils::execSingleResultQuery(session.getDboSession()->find<StarredRelease>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<StarredRelease>().where("id = ?").bind(id));
     }
 
     StarredRelease::pointer StarredRelease::find(Session& session, ReleaseId releaseId, UserId userId)
     {
         session.checkReadTransaction();
-        return utils::execSingleResultQuery(session.getDboSession()->query<Wt::Dbo::ptr<StarredRelease>>("SELECT s_r from starred_release s_r")
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<StarredRelease>>("SELECT s_r from starred_release s_r")
             .join("user u ON u.id = s_r.user_id")
             .where("s_r.release_id = ?").bind(releaseId)
             .where("s_r.user_id = ?").bind(userId)
@@ -66,7 +66,7 @@ namespace lms::db
     StarredRelease::pointer StarredRelease::find(Session& session, ReleaseId releaseId, UserId userId, FeedbackBackend backend)
     {
         session.checkReadTransaction();
-        return utils::execSingleResultQuery(session.getDboSession()->find<StarredRelease>()
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<StarredRelease>()
             .where("release_id = ?").bind(releaseId)
             .where("user_id = ?").bind(userId)
             .where("backend = ?").bind(backend));
