@@ -530,15 +530,17 @@ namespace lms::db
         return getArtists().size() > 1;
     }
 
-    std::size_t Release::getTracksCount() const
+    std::size_t Release::getTrackCount() const
     {
-        return _tracks.size();
+        assert(session());
+        return utils::fetchQuerySingleResult(session()->query<int>("SELECT COUNT(t.id) FROM track t INNER JOIN release r ON r.id = t.release_id")
+            .where("r.id = ?").bind(getId()));
     }
 
-    std::vector<ObjectPtr<ReleaseType>> Release::getReleaseTypes() const
+    std::vector<ReleaseType::pointer> Release::getReleaseTypes() const
     {
         // TODO remove?
-        return std::vector<ObjectPtr<ReleaseType>>(_releaseTypes.begin(), _releaseTypes.end());
+        return utils::fetchQueryResults<ReleaseType::pointer>(_releaseTypes.find());
     }
 
     std::vector<std::string> Release::getReleaseTypeNames() const

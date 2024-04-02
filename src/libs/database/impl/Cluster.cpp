@@ -26,6 +26,7 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "IdTypeTraits.hpp"
+#include "StringViewTraits.hpp"
 #include "SqlQuery.hpp"
 #include "Utils.hpp"
 
@@ -202,7 +203,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ClusterType>().where("name = ?").bind(std::string{ name }));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<ClusterType>().where("name = ?").bind(name));
     }
 
     ClusterType::pointer ClusterType::find(Session& session, ClusterTypeId id)

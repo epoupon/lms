@@ -316,7 +316,7 @@ namespace lms::db
 
     std::vector<Cluster::pointer> Track::getClusters() const
     {
-        return std::vector<Cluster::pointer>(_clusters.begin(), _clusters.end());
+        return utils::fetchQueryResults<Cluster::pointer>(_clusters.find());
     }
 
     std::vector<ClusterId> Track::getClusterIds() const
@@ -490,7 +490,7 @@ namespace lms::db
 
     std::vector<TrackArtistLink::pointer> Track::getArtistLinks() const
     {
-        return std::vector<TrackArtistLink::pointer>(_trackArtistLinks.begin(), _trackArtistLinks.end());
+        return utils::fetchQueryResults<TrackArtistLink::pointer>(_trackArtistLinks.find());
     }
 
     std::vector<std::vector<Cluster::pointer>> Track::getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const

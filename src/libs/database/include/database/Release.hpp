@@ -154,7 +154,7 @@ namespace lms::db
         std::chrono::milliseconds           getDuration() const;
         Wt::WDateTime                       getLastWritten() const;
         std::string_view                    getArtistDisplayName() const { return _artistDisplayName; }
-        std::size_t                         getTracksCount() const;
+        std::size_t                         getTrackCount() const;
         std::vector<ObjectPtr<ReleaseType>> getReleaseTypes() const;
         std::vector<std::string>            getReleaseTypeNames() const;
 

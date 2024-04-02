@@ -47,7 +47,7 @@ namespace lms::api::subsonic
 
         if (id3) {
             albumNode.setAttribute("name", release->getName());
-            albumNode.setAttribute("songCount", release->getTracksCount());
+            albumNode.setAttribute("songCount", release->getTrackCount());
             albumNode.setAttribute(
                 "duration", std::chrono::duration_cast<std::chrono::seconds>(
                     release->getDuration())

@@ -910,4 +910,29 @@ namespace lms::db::tests
         }
         checkExpectedBitrate(192); // 0 should not be taken into account
     }
+
+    TEST_F(DatabaseFixture, Release_trackCount)
+    {
+        ScopedRelease release1{ session, "MyRelease1" };
+        ScopedRelease release2{ session, "MyRelease2" };
+        ScopedRelease release3{ session, "MyRelease2" };
+
+        ScopedTrack track1{ session, "MyTrack1" };
+        ScopedTrack track2{ session, "MyTrack2" };
+        ScopedTrack track3{ session, "MyTrack3" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track1.get().modify()->setRelease(release1.get());
+            track2.get().modify()->setRelease(release1.get());
+            track3.get().modify()->setRelease(release2.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(release1->getTrackCount(), 2);
+            EXPECT_EQ(release2->getTrackCount(), 1);
+            EXPECT_EQ(release3->getTrackCount(), 0);
+        }
+    }
 }
