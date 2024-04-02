@@ -20,7 +20,6 @@
 #include "ScannerService.hpp"
 
 #include <ctime>
-#include <boost/asio/placeholders.hpp>
 
 #include "database/MediaLibrary.hpp"
 #include "database/TrackFeatures.hpp"
@@ -70,7 +69,6 @@ namespace lms::scanner
 
     ScannerService::ScannerService(Db& db)
         : _db{ db }
-        , _dbSession{ db }
     {
         _ioService.setThreadCount(1);
 
@@ -291,7 +289,7 @@ namespace lms::scanner
 
         LMS_LOG(DBUPDATER, INFO, "Scan " << (_abortScan ? "aborted" : "complete") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), features fetched = " << stats.featuresFetched << ",  duplicates = " << stats.duplicates.size());
 
-        _dbSession.analyze();
+        _db.getTLSSession().analyze();
 
         if (!_abortScan)
         {
@@ -358,9 +356,9 @@ namespace lms::scanner
 
         newSettings.skipDuplicateMBID = core::Service<core::IConfig>::get()->getBool("scanner-skip-duplicate-mbid", false);
         {
-            auto transaction{ _dbSession.createReadTransaction() };
+            auto transaction{ _db.getTLSSession().createReadTransaction() };
 
-            const ScanSettings::pointer scanSettings{ ScanSettings::get(_dbSession) };
+            const ScanSettings::pointer scanSettings{ ScanSettings::get(_db.getTLSSession()) };
 
             newSettings.scanVersion = scanSettings->getScanVersion();
             newSettings.startTime = scanSettings->getUpdateStartTime();
@@ -373,7 +371,7 @@ namespace lms::scanner
                     [](const std::filesystem::path& extension) { return std::filesystem::path{ core::stringUtils::stringToLower(extension.string()) }; });
             }
 
-            MediaLibrary::find(_dbSession, [&](const MediaLibrary::pointer& mediaLibrary)
+            MediaLibrary::find(_db.getTLSSession(), [&](const MediaLibrary::pointer& mediaLibrary)
                 {
                     newSettings.mediaLibraries.push_back(ScannerSettings::MediaLibraryInfo{ mediaLibrary->getId(), mediaLibrary->getPath().lexically_normal() });
                 });
@@ -409,5 +407,4 @@ namespace lms::scanner
         if (std::chrono::duration_cast<std::chrono::seconds>(now - _lastScanInProgressEmit).count() > 1)
             notifyInProgress(stepStats);
     }
-
 } // namespace lms::scanner

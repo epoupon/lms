@@ -74,11 +74,9 @@ namespace lms::scanner
         // Helpers
         void refreshScanSettings();
         ScannerSettings readSettings();
-        void reloadRecommendationService();
 
         void notifyInProgressIfNeeded(const ScanStepStats& stats);
         void notifyInProgress(const ScanStepStats& stats);
-        void reloadSimilarityEngine(ScanStats& stats);
 
         std::vector<std::unique_ptr<IScanStep>>	_scanSteps;
 
@@ -89,7 +87,6 @@ namespace lms::scanner
         Events									_events;
         std::chrono::system_clock::time_point	_lastScanInProgressEmit{};
         db::Db& _db;
-        db::Session						_dbSession;
 
         mutable std::shared_mutex			_statusMutex;
         State								_curState{ State::NotScheduled };
