@@ -21,6 +21,7 @@
 
 #include <array>
 #include <deque>
+#include <map>
 #include <mutex>
 #include <shared_mutex>
 #include <thread>
@@ -44,6 +45,8 @@ namespace lms::core::tracing
         void dumpCurrentBuffer(std::ostream& os) override;
         void setThreadName(std::thread::id id, std::string_view threadName) override;
         ArgHashType registerArg(LiteralString argType, std::string_view argValue) override;
+        void setMetadata(std::string_view metadata, std::string_view value) override;
+
         std::size_t getRegisteredArgCount() const;
 
         static ArgHashType computeArgHash(LiteralString type, std::string_view value);
@@ -91,6 +94,9 @@ namespace lms::core::tracing
 
         std::mutex _threadNameMutex;
         std::unordered_map<std::thread::id, std::string> _threadNames;
+
+        std::mutex _metadataMutex;
+        std::map<std::string, std::string> _metadata;
 
         std::mutex _mutex;
         std::deque<Buffer*> _freeBuffers;

@@ -79,6 +79,7 @@ namespace lms::core::tracing
         virtual void write(const CompleteEvent& entry) = 0;
         virtual void dumpCurrentBuffer(std::ostream& os) = 0;
         virtual void setThreadName(std::thread::id id, std::string_view threadName) = 0;
+        virtual void setMetadata(std::string_view metadata, std::string_view value) = 0;
 
         virtual ArgHashType registerArg(LiteralString argType, std::string_view argValue) = 0;
     };

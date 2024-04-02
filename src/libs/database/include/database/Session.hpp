@@ -88,6 +88,7 @@ namespace lms::db
         void optimize();
 
         void prepareTables(); // need to run only once at startup
+        void refreshTracingLoggerStats();
 
         // returning a ptr here to ease further wrapping using operator->
         Wt::Dbo::Session* getDboSession() { return &_session; }

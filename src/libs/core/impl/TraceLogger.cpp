@@ -69,6 +69,15 @@ namespace lms::core::tracing
             _freeBuffers.push_back(&buffer);
 
         LMS_LOG(UTILS, INFO, "TraceLogger: using " << _buffers.size() << " buffers. Buffer size = " << std::to_string(BufferSize) << ", entry size = " << sizeof(CompleteEventEntry) << ", entry count per buffer = " << Buffer::CompleteEventCount);
+
+        setMetadata("cpu_count", std::to_string(std::thread::hardware_concurrency()));
+        setMetadata("build_type", 
+#ifndef NDEBUG
+        "debug"
+#else
+        "release"
+#endif
+        );
     }
 
     bool TraceLogger::isLevelActive(Level level) const
@@ -203,15 +212,16 @@ namespace lms::core::tracing
 
         os << std::endl;
         os << "\t]," << std::endl;
-        os << "\t\"meta_registered_arg_count\" : " << getRegisteredArgCount() << ", " << std::endl;
-        os << "\t\"meta_cpu_count\" : " << std::thread::hardware_concurrency() << ", " << std::endl;
-        os << "\t\"meta_build_type\" : ";
-#ifndef NDEBUG
-        os << "\"debug\"";
-#else
-        os << "\"release\"";
-#endif
-        os << std::endl;
+        {
+            std::scoped_lock lock{ _metadataMutex };
+            for (const auto& [metadata, value] : _metadata)
+            {
+                os << "\t\"meta_" << metadata << "\": \"";
+                stringUtils::writeJsonEscapedString(os, value);
+                os << "\"," << std::endl;
+            }
+        }
+        os << "\t\"meta_registered_arg_count\" : " << getRegisteredArgCount() << std::endl;
         os << "}" << std::endl;
     }
 
@@ -260,6 +270,12 @@ namespace lms::core::tracing
             _argEntries.emplace(hash, ArgEntry{ argType, std::string{ argValue } });
             return hash;
         }
+    }
+
+    void TraceLogger::setMetadata(std::string_view metadata, std::string_view value)
+    {
+        const std::scoped_lock lock{ _metadataMutex };
+        _metadata[std::string{ metadata }] = value;
     }
 
     std::size_t TraceLogger::getRegisteredArgCount() const

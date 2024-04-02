@@ -200,6 +200,27 @@ namespace lms::db
         }
     }
 
+    void Session::refreshTracingLoggerStats()
+    {
+        auto* traceLogger{ core::Service<core::tracing::ITraceLogger>::get() };
+        if (!traceLogger)
+            return;
+
+        auto& dbSession{ _db.getTLSSession() };
+        auto transaction{ dbSession.createReadTransaction() };
+
+        traceLogger->setMetadata("db_artist_count", std::to_string(db::Artist::getCount(dbSession)));
+        traceLogger->setMetadata("db_cluster_count", std::to_string(db::Cluster::getCount(dbSession)));
+        traceLogger->setMetadata("db_cluster_type_count", std::to_string(db::ClusterType::getCount(dbSession)));
+        traceLogger->setMetadata("db_starred_artist_count", std::to_string(db::StarredArtist::getCount(dbSession)));
+        traceLogger->setMetadata("db_starred_release_count", std::to_string(db::StarredRelease::getCount(dbSession)));
+        traceLogger->setMetadata("db_starred_track_count", std::to_string(db::StarredTrack::getCount(dbSession)));
+        traceLogger->setMetadata("db_track_bookmark_count", std::to_string(db::TrackBookmark::getCount(dbSession)));
+        traceLogger->setMetadata("db_listen_count", std::to_string(db::Listen::getCount(dbSession)));
+        traceLogger->setMetadata("db_release_count", std::to_string(db::Release::getCount(dbSession)));
+        traceLogger->setMetadata("db_track_count", std::to_string(db::Track::getCount(dbSession)));
+    }
+
     void Session::analyze()
     {
         LMS_SCOPED_TRACE_DETAILED("Database", "Analyze");
