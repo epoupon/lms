@@ -174,4 +174,3 @@ namespace lms::db::utils
 
     Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime);
 }
-

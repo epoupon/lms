@@ -19,6 +19,9 @@
 
 #include "TracingView.hpp"
 
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+
 #include <Wt/Http/Response.h>
 #include <Wt/WDateTime.h>
 #include <Wt/WPushButton.h>
@@ -46,9 +49,14 @@ namespace lms::ui
 
             void handleRequest(const Wt::Http::Request&, Wt::Http::Response& response)
             {
-                suggestFileName(core::stringUtils::toISO8601String(Wt::WDateTime::currentDateTime()) + "-traces.json");
-                response.setMimeType("application/json");
-                _traceLogger.dumpCurrentBuffer(response.out());
+                response.setMimeType("application/gzip");
+                suggestFileName(core::stringUtils::toISO8601String(Wt::WDateTime::currentDateTime()) + "-traces.json.gz");
+
+                boost::iostreams::filtering_ostream gzipStream;
+                gzipStream.push(boost::iostreams::gzip_compressor{});
+                gzipStream.push(response.out());
+
+                _traceLogger.dumpCurrentBuffer(gzipStream);
             }
 
         private:

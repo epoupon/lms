@@ -58,6 +58,9 @@ target_include_directories(lms PRIVATE
 	)
 
 target_link_libraries(lms PRIVATE
+	Boost::iostreams
+	Wt::Wt
+	Wt::HTTP
 	lmsav
 	lmsauth
 	lmsdatabase
@@ -68,8 +71,6 @@ target_link_libraries(lms PRIVATE
 	lmsservice-cover
 	lmssubsonic
 	lmscore
-	Wt::Wt
-	Wt::HTTP
 	)
 
 install(TARGETS lms DESTINATION bin)

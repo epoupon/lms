@@ -147,6 +147,7 @@ ARG	RUNTIME_PACKAGES=" \
 	lame-libs \
 	zlib \
 	boost-filesystem \
+	boost-iostreams \
 	boost-program_options \
 	boost-system \
 	boost-thread \
