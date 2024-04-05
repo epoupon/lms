@@ -77,7 +77,8 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Release_findByRangedIdBased)
     {
         ScopedTrack track1{ session, "MyTrackFile1" };
-        ScopedTrack track2{ session, "MyTrackFile2" };
+        ScopedTrack track2a{ session, "MyTrackFile2a" };
+        ScopedTrack track2b{ session, "MyTrackFile2b" };
         ScopedTrack track3{ session, "MyTrackFile3" };
         ScopedRelease release1{ session, "MyRelease1" };
         ScopedRelease release2{ session, "MyRelease2" };
@@ -87,9 +88,11 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track2.get().modify()->setMediaLibrary(library.get());
+            track2a.get().modify()->setMediaLibrary(library.get());
+            track2b.get().modify()->setMediaLibrary(library.get());
             track1.get().modify()->setRelease(release1.get());
-            track2.get().modify()->setRelease(release2.get());
+            track2a.get().modify()->setRelease(release2.get());
+            track2b.get().modify()->setRelease(release2.get());
             track3.get().modify()->setRelease(release3.get());
         }
 

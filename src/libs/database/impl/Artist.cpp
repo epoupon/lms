@@ -199,6 +199,7 @@ namespace lms::db
             query.join("track t ON t.id = t_a_l.track_id");
             query.join("track_artist_link t_a_l ON t_a_l.artist_id = a.id");
             query.where("t.media_library_id = ?").bind(library);
+            query.groupBy("a.id");
         }
 
         utils::forEachQueryResult(query, [&](const Artist::pointer& artist)

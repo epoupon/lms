@@ -296,6 +296,7 @@ namespace lms::db
         {
             query.join("track t ON t.release_id = r.id");
             query.where("t.media_library_id = ?").bind(library);
+            query.groupBy("r.id");
         }
 
         utils::forEachQueryResult(query, [&](const Release::pointer& release)

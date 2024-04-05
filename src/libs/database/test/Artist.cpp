@@ -80,7 +80,8 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Artist_findByRangedIdBased)
     {
         ScopedTrack track1{ session, "MyTrackFile1" };
-        ScopedTrack track2{ session, "MyTrackFile2" };
+        ScopedTrack track2a{ session, "MyTrackFile2a" };
+        ScopedTrack track2b{ session, "MyTrackFile2b" };
         ScopedTrack track3{ session, "MyTrackFile3" };
         ScopedArtist artist1{ session, "MyArtist1" };
         ScopedArtist artist2{ session, "MyArtist2" };
@@ -90,9 +91,11 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track2.get().modify()->setMediaLibrary(library.get());
+            track2a.get().modify()->setMediaLibrary(library.get());
+            track2b.get().modify()->setMediaLibrary(library.get());
             TrackArtistLink::create(session, track1.get(), artist1.get(), TrackArtistLinkType::Artist);
-            TrackArtistLink::create(session, track2.get(), artist2.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track2a.get(), artist2.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track2b.get(), artist2.get(), TrackArtistLinkType::Artist);
             TrackArtistLink::create(session, track3.get(), artist3.get(), TrackArtistLinkType::Artist);
         }
 
