@@ -27,6 +27,8 @@
 #include "database/User.hpp"
 #include "core/Exception.hpp"
 #include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
+#include "Utils.hpp"
 
 namespace lms::db
 {
@@ -43,7 +45,7 @@ namespace lms::db
     {
         session.checkWriteTransaction();
 
-        pointer versionInfo{ session.getDboSession()->find<VersionInfo>() };
+        pointer versionInfo{ utils::fetchQuerySingleResult(session.getDboSession()->find<VersionInfo>()) };
         if (!versionInfo)
             return session.getDboSession()->add(std::make_unique<VersionInfo>());
 
@@ -54,7 +56,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return session.getDboSession()->find<VersionInfo>();
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<VersionInfo>());
     }
 }
 
@@ -462,6 +464,7 @@ SELECT
         };
 
         {
+            LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");
             auto transaction{ session.createWriteTransaction() };
 
             Version version;
