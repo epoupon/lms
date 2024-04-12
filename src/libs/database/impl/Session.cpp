@@ -179,6 +179,7 @@ namespace lms::db
             _session.execute("CREATE INDEX IF NOT EXISTS track_original_date_idx ON track(original_date)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_original_year_idx ON track(original_year)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_media_library_idx ON track(media_library_id)");
+            _session.execute("CREATE INDEX IF NOT EXISTS track_media_library_release_idx ON track(media_library_id, release_id)");
             _session.execute("CREATE INDEX IF NOT EXISTS tracklist_name_idx ON tracklist(name)");
             _session.execute("CREATE INDEX IF NOT EXISTS tracklist_user_idx ON tracklist(user_id)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_features_track_idx ON track_features(track_id)");
