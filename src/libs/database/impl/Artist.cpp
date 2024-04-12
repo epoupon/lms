@@ -196,10 +196,8 @@ namespace lms::db
 
         if (library.isValid())
         {
-            query.join("track t ON t.id = t_a_l.track_id");
-            query.join("track_artist_link t_a_l ON t_a_l.artist_id = a.id");
-            query.where("t.media_library_id = ?").bind(library);
-            query.groupBy("a.id");
+            // Faster than using joins
+            query.where("EXISTS (SELECT 1 FROM track_artist_link t_a_l JOIN track t ON t.id = t_a_l.track_id WHERE t_a_l.artist_id = a.id AND t.media_library_id = ?)").bind(library);
         }
 
         utils::forEachQueryResult(query, [&](const Artist::pointer& artist)

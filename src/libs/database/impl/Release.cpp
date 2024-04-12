@@ -294,9 +294,8 @@ namespace lms::db
 
         if (library.isValid())
         {
-            query.join("track t ON t.release_id = r.id");
-            query.where("t.media_library_id = ?").bind(library);
-            query.groupBy("r.id");
+            // Faster than using joins
+            query.where("EXISTS (SELECT 1 FROM track t WHERE t.release_id = r.id AND t.media_library_id = ?)").bind(library);
         }
 
         utils::forEachQueryResult(query, [&](const Release::pointer& release)
