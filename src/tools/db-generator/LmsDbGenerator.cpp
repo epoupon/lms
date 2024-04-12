@@ -90,6 +90,10 @@ namespace lms
 
         Artist::pointer artist{ generateArtist(context.session) };
 
+        MediaLibrary::pointer mediaLibrary;
+        if (!context.mediaLibraries.empty())
+            mediaLibrary = *core::random::pickRandom(context.mediaLibraries);
+
         for (std::size_t i{}; i < params.trackCountPerRelease; ++i)
         {
             Track::pointer track{ context.session.create<Track>(params.trackPath) };
@@ -102,8 +106,8 @@ namespace lms
             track.modify()->setTrackMBID(core::UUID::generate());
             track.modify()->setRecordingMBID(core::UUID::generate());
             track.modify()->setTotalTrack(params.trackCountPerRelease);
-            if (!context.mediaLibraries.empty())
-                track.modify()->setMediaLibrary(*core::random::pickRandom(context.mediaLibraries));
+            if (mediaLibrary)
+                track.modify()->setMediaLibrary(mediaLibrary);
 
             TrackArtistLink::create(context.session, track, artist, TrackArtistLinkType::Artist);
             TrackArtistLink::create(context.session, track, artist, TrackArtistLinkType::ReleaseArtist);
