@@ -30,11 +30,11 @@ namespace lms::db
 {
     namespace
     {
-        Wt::Dbo::Query<TrackArtistLinkId> createQuery(Session& session, const TrackArtistLink::FindParameters& params)
+        Wt::Dbo::Query<Wt::Dbo::ptr<TrackArtistLink>> createQuery(Session& session, const TrackArtistLink::FindParameters& params)
         {
             session.checkReadTransaction();
 
-            auto query{ session.getDboSession()->query<TrackArtistLinkId>("SELECT DISTINCT t_a_l.id FROM track_artist_link t_a_l") };
+            auto query{ session.getDboSession()->query<Wt::Dbo::ptr<TrackArtistLink>>("SELECT t_a_l FROM track_artist_link t_a_l") };
 
             if (params.linkType)
                 query.where("t_a_l.type = ?").bind(*params.linkType);
@@ -50,6 +50,8 @@ namespace lms::db
 
             if (params.track.isValid())
                 query.where("t.id = ?").bind(params.track);
+
+            query.groupBy("t_a_l.id");
 
             return query;
         }
@@ -79,12 +81,14 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackArtistLink>().where("id = ?").bind(id));
     }
 
-    RangeResults<TrackArtistLinkId> TrackArtistLink::find(Session& session, const FindParameters& params)
+    void TrackArtistLink::find(Session& session, const FindParameters& parameters, const std::function<void(const TrackArtistLink::pointer&)>& func)
     {
-        session.checkReadTransaction();
+        const auto query{ createQuery(session, parameters) };
 
-        auto query{ createQuery(session, params) };
-        return utils::execRangeQuery<TrackArtistLinkId>(query, params.range);
+        utils::forEachQueryResult(query, [&](const TrackArtistLink::pointer& link)
+            {
+                func(link);
+            });
     }
 
     core::EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session)

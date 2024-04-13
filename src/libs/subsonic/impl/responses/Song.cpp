@@ -65,7 +65,6 @@ namespace lms::api::subsonic
             std::string path;
 
             // The track path has to be relative from the root
-
             const auto release{ track->getRelease() };
             if (release)
             {
@@ -191,40 +190,31 @@ namespace lms::api::subsonic
             trackResponse.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
         }
 
-        trackResponse.createEmptyArrayChild("contributors");
         {
             TrackArtistLink::FindParameters params;
             params.setTrack(track->getId());
 
-            for (const TrackArtistLinkId linkId : TrackArtistLink::find(context.dbSession, params).results)
+            trackResponse.createEmptyArrayChild("albumartists");
+            trackResponse.createEmptyArrayChild("artists");
+            trackResponse.createEmptyArrayChild("contributors");
+
+            TrackArtistLink::find(context.dbSession, params, [&](const TrackArtistLink::pointer& link)
             {
-                TrackArtistLink::pointer link{ TrackArtistLink::find(context.dbSession, linkId) };
-                // Don't report artists nor release artists as they are set in dedicated fields
-                if (link && link->getType() != TrackArtistLinkType::Artist && link->getType() != TrackArtistLinkType::ReleaseArtist)
-                    trackResponse.addArrayChild("contributors", createContributorNode(link));
-            }
+                switch (link->getType())
+                {
+                    case TrackArtistLinkType::Artist:
+                        trackResponse.addArrayChild("artists", createArtistNode(link->getArtist()));
+                        break;
+                    case TrackArtistLinkType::ReleaseArtist:
+                        trackResponse.addArrayChild("albumartists", createArtistNode(link->getArtist()));
+                        break;
+                    default:
+                        trackResponse.addArrayChild("contributors", createContributorNode(link));
+                }
+            });
         }
 
-        auto addArtistLinks{ [&](Response::Node::Key nodeName, TrackArtistLinkType type)
-        {
-            trackResponse.createEmptyArrayChild(nodeName);
-
-            TrackArtistLink::FindParameters params;
-            params.setTrack(track->getId());
-            params.setLinkType(type);
-
-            for (const TrackArtistLinkId linkId : TrackArtistLink::find(context.dbSession, params).results)
-            {
-                TrackArtistLink::pointer link{ TrackArtistLink::find(context.dbSession, linkId) };
-                if (link)
-                    trackResponse.addArrayChild(nodeName, createArtistNode(link->getArtist()));
-            }
-        } };
-
-        addArtistLinks("artists", TrackArtistLinkType::Artist);
         trackResponse.setAttribute("displayArtist", track->getArtistDisplayName());
-
-        addArtistLinks("albumartists", TrackArtistLinkType::ReleaseArtist);
         if (release)
             trackResponse.setAttribute("displayAlbumArtist", release->getArtistDisplayName());
 

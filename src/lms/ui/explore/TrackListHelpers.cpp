@@ -82,18 +82,11 @@ namespace lms::ui::TrackListHelpers
                 TrackArtistLink::FindParameters params;
                 params.setTrack(trackId);
                 params.setLinkType(TrackArtistLinkType::Performer);
-                const auto links{ TrackArtistLink::find(LmsApp->getDbSession(), params) };
-                if (links.results.empty())
-                    return;
 
-                for (const TrackArtistLinkId linkId : links.results)
-                {
-                    const TrackArtistLink::pointer link{ TrackArtistLink::find(LmsApp->getDbSession(), linkId) };
-                    if (!link)
-                        continue;
-
-                    artistMap[std::string{ link->getSubType() }].insert(link->getArtist()->getId());
-                }
+                TrackArtistLink::find(LmsApp->getDbSession(), params, [&](const TrackArtistLink::pointer& link)
+                    {
+                        artistMap[std::string{ link->getSubType() }].insert(link->getArtist()->getId());
+                    });
             };
 
         addArtists(TrackArtistLinkType::Composer, "Lms.Explore.Artists.linktype-composer");
