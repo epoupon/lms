@@ -342,4 +342,28 @@ namespace lms::db::tests
             EXPECT_EQ(track->getRelativeFilePath(), "foo/file.path");
         }
     }
+
+
+    TEST_F(DatabaseFixture, Track_audioProperties)
+    {
+        ScopedTrack track{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track.get().modify()->setBitrate(128000);
+            track.get().modify()->setBitsPerSample(16);
+            track.get().modify()->setDuration(std::chrono::minutes{ 3 });
+            track.get().modify()->setChannelCount(2);
+            track.get().modify()->setSampleRate(44100);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(track->getBitrate(), 128000);
+            EXPECT_EQ(track->getBitsPerSample(), 16);
+            EXPECT_EQ(track->getDuration(), std::chrono::minutes{ 3 });
+            EXPECT_EQ(track->getChannelCount(), 2);
+            EXPECT_EQ(track->getSampleRate(), 44100);
+        }
+    }
 }

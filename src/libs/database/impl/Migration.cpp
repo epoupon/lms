@@ -34,7 +34,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 55 };
+        static constexpr Version LMS_DATABASE_VERSION{ 56 };
     }
 
     VersionInfo::VersionInfo()
@@ -441,6 +441,16 @@ SELECT
         session.getDboSession()->execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV55(Session& session)
+    {
+        // Add bitsPerSample, channelCount and sampleRate
+        session.getDboSession()->execute("ALTER TABLE track ADD bits_per_sample INTEGER NOT NULL DEFAULT(0)");
+        session.getDboSession()->execute("ALTER TABLE track ADD channel_count INTEGER NOT NULL DEFAULT(0)");
+        session.getDboSession()->execute("ALTER TABLE track ADD sample_rate INTEGER NOT NULL DEFAULT(0)");
+
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        session.getDboSession()->execute("UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
 
     void doDbMigration(Session& session)
     {
@@ -474,6 +484,7 @@ SELECT
             {52, migrateFromV52},
             {53, migrateFromV53},
             {54, migrateFromV54},
+            {55, migrateFromV55},
         };
 
         {

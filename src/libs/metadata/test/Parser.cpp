@@ -88,6 +88,16 @@ namespace lms::metadata
 
         std::unique_ptr<Track> track{ parser.parse(testTags) };
 
+        // Audio properties
+        {
+            const AudioProperties& audioProperties{ testTags.getAudioProperties() };
+            EXPECT_EQ(track->audioProperties.bitrate, audioProperties.bitrate);
+            EXPECT_EQ(track->audioProperties.bitsPerSample, audioProperties.bitsPerSample);
+            EXPECT_EQ(track->audioProperties.channelCount, audioProperties.channelCount);
+            EXPECT_EQ(track->audioProperties.duration, audioProperties.duration);
+            EXPECT_EQ(track->audioProperties.sampleRate, audioProperties.sampleRate);
+        }
+
         EXPECT_EQ(track->acoustID, core::UUID::fromString("e987a441-e134-4960-8019-274eddacc418"));
         EXPECT_EQ(track->artistDisplayName, "MyArtist1 & MyArtist2");
         ASSERT_EQ(track->artists.size(), 2);
@@ -97,7 +107,6 @@ namespace lms::metadata
         EXPECT_EQ(track->artists[1].name, "MyArtist2");
         EXPECT_EQ(track->artists[1].sortName, "MyArtist2SortName");
         EXPECT_EQ(track->artists[1].mbid, core::UUID::fromString("5e2cf87f-c8d7-4504-8a86-954dc0840229"));
-        EXPECT_EQ(track->bitrate, TestTagReader::trackBitrate);
         ASSERT_EQ(track->composerArtists.size(), 2);
         EXPECT_EQ(track->composerArtists[0].name, "MyComposer1");
         EXPECT_EQ(track->composerArtists[0].sortName, "MyComposerSortOrder1");
@@ -112,7 +121,6 @@ namespace lms::metadata
         EXPECT_EQ(track->date.year(), 2020);
         EXPECT_EQ(track->date.month(), 3);
         EXPECT_EQ(track->date.day(), 4);
-        EXPECT_EQ(track->duration, TestTagReader::trackDuration);
         EXPECT_FALSE(track->hasCover);
         ASSERT_EQ(track->genres.size(), 2);
         EXPECT_EQ(track->genres[0], "Genre1");

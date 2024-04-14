@@ -593,7 +593,7 @@ namespace lms::scanner
         }
 
         // We estimate this is an audio file if the duration is not null
-        if (trackMetadata.duration == std::chrono::milliseconds::zero())
+        if (trackMetadata.audioProperties.duration == std::chrono::milliseconds::zero())
         {
             LMS_LOG(DBUPDATER, DEBUG, "Skipped '" << file.string() << "' (duration is 0)");
 
@@ -630,6 +630,13 @@ namespace lms::scanner
 
         // Track related data
         assert(track);
+
+        // Audio properties
+        track.modify()->setBitrate(trackMetadata.audioProperties.bitrate);
+        track.modify()->setBitsPerSample(trackMetadata.audioProperties.bitsPerSample);
+        track.modify()->setChannelCount(trackMetadata.audioProperties.channelCount);
+        track.modify()->setDuration(trackMetadata.audioProperties.duration);
+        track.modify()->setSampleRate(trackMetadata.audioProperties.sampleRate);
 
         track.modify()->setRelativeFilePath(fileInfo->relativePath);
         track.modify()->setFileSize(fileInfo->fileSize);
@@ -683,8 +690,6 @@ namespace lms::scanner
         track.modify()->setDiscSubtitle(trackMetadata.medium ? trackMetadata.medium->name : "");
         track.modify()->setClusters(getOrCreateClusters(dbSession, trackMetadata));
         track.modify()->setName(title);
-        track.modify()->setDuration(trackMetadata.duration);
-        track.modify()->setBitrate(trackMetadata.bitrate);
         track.modify()->setAddedTime(Wt::WDateTime::currentDateTime());
         track.modify()->setTrackNumber(trackMetadata.position);
         track.modify()->setDiscNumber(trackMetadata.medium ? trackMetadata.medium->position : std::nullopt);

@@ -153,10 +153,6 @@ namespace lms::metadata
         virtual void visitPerformerTags(PerformerVisitor visitor) const = 0;
 
         virtual bool hasEmbeddedCover() const = 0;
-
-        virtual std::chrono::milliseconds 	getDuration() const = 0;
-        virtual std::size_t                 getBitrate() const = 0;
-        virtual std::size_t                 getBitsPerSample() const = 0;
-        virtual std::size_t                 getSampleRate() const = 0;
+        virtual const AudioProperties& getAudioProperties() const = 0;
     };
 } // namespace lms::metadata

@@ -40,12 +40,9 @@ namespace lms::metadata
         void visitTagValues(std::string_view tag, TagValueVisitor visitor) const override;
         void visitPerformerTags(PerformerVisitor visitor) const override;
         bool hasEmbeddedCover() const override { return _hasEmbeddedCover; }
+        const AudioProperties& getAudioProperties() const override { return _audioProperties; }
 
-        std::chrono::milliseconds 	getDuration() const override { return _containerInfo.duration; }
-        std::size_t                 getBitrate() const override { return _containerInfo.bitrate; }
-        std::size_t                 getBitsPerSample() const override { return 0; }
-        std::size_t                 getSampleRate() const override { return 0; }
-
+        AudioProperties _audioProperties;
         av::IAudioFile::MetadataMap _metaDataMap;
         av::ContainerInfo _containerInfo;
         bool _hasEmbeddedCover{};

@@ -139,6 +139,10 @@ namespace lms::api::subsonic
         if (!context.enableOpenSubsonic)
             return trackResponse;
 
+        trackResponse.setAttribute("bitDepth", track->getBitsPerSample());
+        trackResponse.setAttribute("samplingRate", track->getSampleRate());
+        trackResponse.setAttribute("channelCount", track->getChannelCount());
+
         trackResponse.setAttribute("mediaType", "song");
 
         {

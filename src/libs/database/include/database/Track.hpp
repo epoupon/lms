@@ -133,10 +133,13 @@ namespace lms::db
         void setAbsoluteFilePath(const std::filesystem::path& filePath);
         void setRelativeFilePath(const std::filesystem::path& filePath);
         void setFileSize(std::size_t fileSize) { _fileSize = fileSize; }
-        void setDuration(std::chrono::milliseconds duration) { _duration = duration; }
-        void setBitrate(std::size_t bitrate) { _bitrate = bitrate; }
         void setLastWriteTime(Wt::WDateTime time) { _fileLastWrite = time; }
         void setAddedTime(Wt::WDateTime time) { _fileAdded = time; }
+        void setBitrate(std::size_t bitrate) { _bitrate = bitrate; }
+        void setBitsPerSample(std::size_t bitsPerSample) { _bitsPerSample = bitsPerSample; }
+        void setDuration(std::chrono::milliseconds duration) { _duration = duration; }
+        void setChannelCount(std::size_t channelCount) { _channelCount = channelCount; }
+        void setSampleRate(std::size_t channelCount) { _sampleRate = channelCount; }
         void setDate(const Wt::WDate& date) { _date = date; }
         void setYear(std::optional<int> year) { _year = year; }
         void setOriginalDate(const Wt::WDate& date) { _originalDate = date; }
@@ -164,8 +167,11 @@ namespace lms::db
         const std::filesystem::path& getAbsoluteFilePath() const { return _absoluteFilePath; }
         const std::filesystem::path& getRelativeFilePath() const { return _relativeFilePath; }
         long long                       getFileSize() const { return _fileSize; }
-        std::chrono::milliseconds       getDuration() const { return _duration; }
         std::size_t                     getBitrate() const { return _bitrate; }
+        std::size_t                     getBitsPerSample() const { return _bitsPerSample; }
+        std::size_t                     getChannelCount() const { return _channelCount; }
+        std::chrono::milliseconds       getDuration() const { return _duration; }
+        std::size_t                     getSampleRate() const { return _sampleRate; }
         const Wt::WDateTime& getLastWritten() const { return _fileLastWrite; }
         const Wt::WDate& getDate() const { return _date; }
         std::optional<int>              getYear() const { return _year; }
@@ -203,6 +209,9 @@ namespace lms::db
             Wt::Dbo::field(a, _name, "name");
             Wt::Dbo::field(a, _duration, "duration");
             Wt::Dbo::field(a, _bitrate, "bitrate");
+            Wt::Dbo::field(a, _bitsPerSample, "bits_per_sample");
+            Wt::Dbo::field(a, _channelCount, "channel_count");
+            Wt::Dbo::field(a, _sampleRate, "sample_rate");
             Wt::Dbo::field(a, _date, "date");
             Wt::Dbo::field(a, _year, "year");
             Wt::Dbo::field(a, _originalDate, "original_date");
@@ -240,8 +249,11 @@ namespace lms::db
         std::optional<int>		_totalTrack{};
         std::string				_discSubtitle;
         std::string				_name;
-        std::chrono::duration<int, std::milli>	_duration{};
         int                     _bitrate{}; // in bps
+        int                     _bitsPerSample{};
+        int                     _channelCount{};
+        std::chrono::duration<int, std::milli>	_duration{};
+        int                     _sampleRate{};
         Wt::WDate				_date;
         std::optional<int>      _year;
         Wt::WDate				_originalDate;

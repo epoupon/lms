@@ -28,10 +28,14 @@ namespace lms::metadata
     class TestTagReader : public ITagReader
     {
     public:
-        static constexpr std::chrono::milliseconds trackDuration{ 180 };
-        static constexpr std::size_t trackBitrate{ 128000 };
-        static constexpr std::size_t trackBitsPerSample{ 16 };
-        static constexpr std::size_t trackSampleRate{ 44000 };
+        static constexpr AudioProperties audioProperties
+        {
+            .bitrate = 128000,
+            .bitsPerSample = 16,
+            .channelCount = 2,
+            .duration = std::chrono::seconds{180},
+            .sampleRate = 44000,
+        };
 
         using Tags = std::unordered_map<TagType, std::vector<std::string_view>>;
         using Performers = std::unordered_map<std::string_view, std::vector<std::string_view>>;
@@ -73,10 +77,7 @@ namespace lms::metadata
 
         bool hasEmbeddedCover() const override { return false; };
 
-        std::chrono::milliseconds 	getDuration() const override { return trackDuration; }
-        std::size_t                 getBitrate() const override { return trackBitrate; }
-        std::size_t                 getBitsPerSample() const override { return trackBitsPerSample; }
-        std::size_t                 getSampleRate() const override { return trackSampleRate; }
+        const AudioProperties& getAudioProperties() const override { return audioProperties; }
 
     private:
         const Tags _tags;

@@ -281,9 +281,12 @@ namespace lms::av
         res.emplace();
         res->index = streamIndex;
         res->bitrate = static_cast<std::size_t>(avstream->codecpar->bit_rate);
+        res->bitsPerSample = static_cast<std::size_t>(avstream->codecpar->bits_per_coded_sample);
+        res->channelCount = static_cast<std::size_t>(avstream->codecpar->ch_layout.nb_channels);
         res->codec = avcodecToDecodingCodec(avstream->codecpar->codec_id);
         res->codecName = ::avcodec_get_name(avstream->codecpar->codec_id);
         assert(!res->codecName.empty()); // doc says it is never NULL
+        res->sampleRate = static_cast<std::size_t>(avstream->codecpar->sample_rate);
 
         return res;
     }

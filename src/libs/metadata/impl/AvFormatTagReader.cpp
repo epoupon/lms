@@ -144,6 +144,17 @@ namespace lms::metadata
         try
         {
             const auto audioFile{ av::parseAudioFile(p) };
+            
+            _audioProperties.duration = audioFile->getContainerInfo().duration;
+
+            const auto bestAudioStream{ audioFile->getBestStreamInfo() };
+            if (bestAudioStream)
+            {
+                _audioProperties.bitrate = bestAudioStream->bitrate;
+                _audioProperties.bitsPerSample = bestAudioStream->bitsPerSample;
+                _audioProperties.channelCount = bestAudioStream->channelCount;
+                _audioProperties.sampleRate = bestAudioStream->sampleRate;
+            }
 
             _containerInfo = audioFile->getContainerInfo();
             _metaDataMap = audioFile->getMetaData();

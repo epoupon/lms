@@ -235,16 +235,10 @@ namespace lms::metadata
     {
         auto track{ std::make_unique<Track>() };
 
-        processAudioProperties(tagReader, *track);
+        track->audioProperties = tagReader.getAudioProperties();
         processTags(tagReader, *track);
 
         return track;
-    }
-
-    void Parser::processAudioProperties(const ITagReader& tagReader, Track& track)
-    {
-        track.duration = tagReader.getDuration();
-        track.bitrate = tagReader.getBitrate();
     }
 
     void Parser::processTags(const ITagReader& tagReader, Track& track)
