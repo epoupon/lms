@@ -282,7 +282,11 @@ namespace lms::av
         res->index = streamIndex;
         res->bitrate = static_cast<std::size_t>(avstream->codecpar->bit_rate);
         res->bitsPerSample = static_cast<std::size_t>(avstream->codecpar->bits_per_coded_sample);
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
+        res->channelCount = static_cast<std::size_t>(avstream->codecpar->channels);
+#else
         res->channelCount = static_cast<std::size_t>(avstream->codecpar->ch_layout.nb_channels);
+#endif
         res->codec = avcodecToDecodingCodec(avstream->codecpar->codec_id);
         res->codecName = ::avcodec_get_name(avstream->codecpar->codec_id);
         assert(!res->codecName.empty()); // doc says it is never NULL
