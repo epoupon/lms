@@ -114,7 +114,7 @@ namespace lms::scanner
                     {
                         endReached = false;
 
-                        if (!checkFile(track->getPath()))
+                        if (!checkFile(track->getAbsoluteFilePath()))
                             tracksToRemove.push_back(track);
 
                         context.currentStepStats.processedElems++;

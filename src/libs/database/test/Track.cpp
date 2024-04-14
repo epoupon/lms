@@ -39,7 +39,7 @@ namespace lms::db::tests
             }
         }
 
-        ScopedTrack track{ session, "MyTrackFile" };
+        ScopedTrack track{ session };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -65,9 +65,9 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Track_findByRangedIdBased)
     {
-        ScopedTrack track1{ session, "MyTrackFile1" };
-        ScopedTrack track2{ session, "MyTrackFile1" };
-        ScopedTrack track3{ session, "MyTrackFile1" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
         ScopedMediaLibrary library{ session };
         ScopedMediaLibrary otherLibrary{ session };
 
@@ -149,7 +149,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Track_MediaLibrary)
     {
-        ScopedTrack track{ session, "MyTrackFile" };
+        ScopedTrack track{ session };
         ScopedMediaLibrary library{ session };
         ScopedMediaLibrary otherLibrary{ session };
 
@@ -173,7 +173,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Track_noMediaLibrary)
     {
-        ScopedTrack track{ session, "MyTrackFile" };
+        ScopedTrack track{ session };
         {
             auto transaction{ session.createReadTransaction() };
             MediaLibrary::pointer mediaLibrary{ track->getMediaLibrary() };
@@ -200,8 +200,8 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, MultipleTracks)
     {
-        ScopedTrack track1{ session, "MyTrackFile1" };
-        ScopedTrack track2{ session, "MyTrackFile2" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -214,12 +214,12 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, MultipleTracksSearchByFilter)
     {
-        ScopedTrack track1{ session, "" };
-        ScopedTrack track2{ session, "" };
-        ScopedTrack track3{ session, "" };
-        ScopedTrack track4{ session, "" };
-        ScopedTrack track5{ session, "" };
-        ScopedTrack track6{ session, "" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+        ScopedTrack track4{ session };
+        ScopedTrack track5{ session };
+        ScopedTrack track6{ session };
 
         {
             auto transaction{ session.createWriteTransaction() };
@@ -260,7 +260,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Track_date)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         const Wt::WDate date{ 1995, 5, 5 };
         const Wt::WDate originalDate{ 1994, 2, 2 };
         {
@@ -298,7 +298,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Track_writtenAfter)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
 
         const Wt::WDateTime dateTime{ Wt::WDate {1950, 1, 1}, Wt::WTime {12, 30, 20} };
 
@@ -323,6 +323,23 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             const auto tracks{ Track::findIds(session, Track::FindParameters {}.setWrittenAfter(dateTime.addSecs(+1))) };
             EXPECT_EQ(tracks.results.size(), 0);
+        }
+    }
+
+    TEST_F(DatabaseFixture, Track_path)
+    {
+        ScopedTrack track{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track.get().modify()->setAbsoluteFilePath("/root/foo/file.path");
+            track.get().modify()->setRelativeFilePath("foo/file.path");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(track->getAbsoluteFilePath(), "/root/foo/file.path");
+            EXPECT_EQ(track->getRelativeFilePath(), "foo/file.path");
         }
     }
 }

@@ -134,7 +134,7 @@ namespace lms::ui
             // TODO: save in DB and aggregate all this
             for (const Track::pointer& track : Track::find(LmsApp->getDbSession(), Track::FindParameters{}.setRelease(releaseId).setRange(Range{ 0, 1 })).results)
             {
-                if (const auto audioFile{ av::parseAudioFile(track->getPath()) })
+                if (const auto audioFile{ av::parseAudioFile(track->getAbsoluteFilePath()) })
                 {
                     const std::optional<av::StreamInfo> audioStream{ audioFile->getBestStreamInfo() };
                     if (audioStream)

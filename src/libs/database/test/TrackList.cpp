@@ -44,7 +44,7 @@ namespace lms::db::tests
         ScopedUser user{ session, "MyUser" };
         ScopedTrackList trackList1{ session, "MyTrackList1", TrackListType::Playlist, false, user.lockAndGet() };
         ScopedTrackList trackList2{ session, "MyTrackList2", TrackListType::Playlist, false, user.lockAndGet() };
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -79,7 +79,7 @@ namespace lms::db::tests
         ScopedUser user{ session, "MyUser" };
         ScopedTrackList trackList2{ session, "MyTrackList2", TrackListType::Playlist, false, user.lockAndGet() };
         ScopedTrackList trackList1{ session, "MyTrackList1", TrackListType::Playlist, false, user.lockAndGet() };
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -131,7 +131,7 @@ namespace lms::db::tests
 
         for (std::size_t i{}; i < 10; ++i)
         {
-            tracks.emplace_back(session, "MyTrack" + std::to_string(i));
+            tracks.emplace_back(session);
 
             auto transaction{ session.createWriteTransaction() };
             session.create<TrackListEntry>(tracks.back().get(), trackList.get());
@@ -158,7 +158,7 @@ namespace lms::db::tests
         ScopedTrackList trackList2{ session, "MyTrackList2", TrackListType::Playlist, false, user.lockAndGet() };
         ScopedClusterType clusterType{ session, "MyClusterType" };
         ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -187,8 +187,8 @@ namespace lms::db::tests
     {
         ScopedUser user{ session, "MyUser" };
         ScopedTrackList trackList{ session, "MyTrackList", TrackListType::Playlist, false, user.lockAndGet() };
-        ScopedTrack track1{ session, "MyTrack" };
-        ScopedTrack track2{ session, "MyTrack" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
 
         {
             auto transaction{ session.createWriteTransaction() };

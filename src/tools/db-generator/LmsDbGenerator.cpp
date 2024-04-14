@@ -96,7 +96,7 @@ namespace lms
 
         for (std::size_t i{}; i < params.trackCountPerRelease; ++i)
         {
-            Track::pointer track{ context.session.create<Track>(params.trackPath) };
+            Track::pointer track{ context.session.create<Track>() };
 
             track.modify()->setName("Track-" + std::string{ core::UUID::generate().getAsString() });
             track.modify()->setDiscNumber(1);

@@ -167,7 +167,7 @@ namespace lms::db
             _session.execute("CREATE INDEX IF NOT EXISTS release_mbid_idx ON release(mbid)");
             _session.execute("CREATE INDEX IF NOT EXISTS release_type_name_idx ON release_type(name)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_id_idx ON track(id)");
-            _session.execute("CREATE INDEX IF NOT EXISTS track_path_idx ON track(file_path)");
+            _session.execute("CREATE INDEX IF NOT EXISTS track_absolute_path_idx ON track(absolute_file_path)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_name_idx ON track(name)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_name_nocase_idx ON track(name COLLATE NOCASE)");
             _session.execute("CREATE INDEX IF NOT EXISTS track_mbid_idx ON track(mbid)");

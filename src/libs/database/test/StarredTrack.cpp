@@ -26,7 +26,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, StarredTrack)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedUser user2{ session, "MyUser2" };
 
@@ -78,7 +78,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Starredtrack_PendingDestroy)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedStarredTrack starredTrack{ session, track.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
 
@@ -96,8 +96,8 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, StarredTrack_dateTime)
     {
-        ScopedTrack track1{ session, "MyTrack1" };
-        ScopedTrack track2{ session, "MyTrack2" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
         ScopedUser user{ session, "MyUser" };
 
         ScopedStarredTrack starredTrack1{ session, track1.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };

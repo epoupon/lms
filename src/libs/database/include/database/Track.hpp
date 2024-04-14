@@ -120,7 +120,6 @@ namespace lms::db
         static RangeResults<pointer>	find(Session& session, const FindParameters& parameters);
         static void						find(Session& session, const FindParameters& parameters, const std::function<void(const Track::pointer&)>& func);
         static void						find(Session& session, const FindParameters& parameters, bool& moreResults, const std::function<void(const Track::pointer&)>& func);
-        static RangeResults<PathResult>	findPaths(Session& session, std::optional<Range> range = std::nullopt);
         static RangeResults<TrackId>	findIdsTrackMBIDDuplicates(Session& session, std::optional<Range> range = std::nullopt);
         static RangeResults<TrackId>	findIdsWithRecordingMBIDAndMissingFeatures(Session& session, std::optional<Range> range = std::nullopt);
 
@@ -131,7 +130,9 @@ namespace lms::db
         void setTotalTrack(std::optional<int> totalTrack) { _totalTrack = totalTrack; }
         void setDiscSubtitle(const std::string& name) { _discSubtitle = name; }
         void setName(const std::string& name) { _name = std::string(name, 0, _maxNameLength); }
-        void setPath(const std::filesystem::path& filePath) { _filePath = filePath; }
+        void setAbsoluteFilePath(const std::filesystem::path& filePath);
+        void setRelativeFilePath(const std::filesystem::path& filePath);
+        void setFileSize(std::size_t fileSize) { _fileSize = fileSize; }
         void setDuration(std::chrono::milliseconds duration) { _duration = duration; }
         void setBitrate(std::size_t bitrate) { _bitrate = bitrate; }
         void setLastWriteTime(Wt::WDateTime time) { _fileLastWrite = time; }
@@ -154,32 +155,34 @@ namespace lms::db
         void setClusters(const std::vector<ObjectPtr<Cluster>>& clusters);
         void setMediaLibrary(ObjectPtr<MediaLibrary> mediaLibrary) { _mediaLibrary = getDboPtr(mediaLibrary); }
 
-        std::size_t 				getScanVersion() const { return _scanVersion; }
-        std::optional<std::size_t>	getTrackNumber() const { return _trackNumber; }
-        std::optional<std::size_t>	getTotalTrack() const { return _totalTrack; }
-        std::optional<std::size_t>	getDiscNumber() const { return _discNumber; }
+        std::size_t                     getScanVersion() const { return _scanVersion; }
+        std::optional<std::size_t>      getTrackNumber() const { return _trackNumber; }
+        std::optional<std::size_t>      getTotalTrack() const { return _totalTrack; }
+        std::optional<std::size_t>      getDiscNumber() const { return _discNumber; }
         const std::string& getDiscSubtitle() const { return _discSubtitle; }
-        std::string 				getName() const { return _name; }
-        std::filesystem::path		getPath() const { return _filePath; }
-        std::chrono::milliseconds	getDuration() const { return _duration; }
-        std::size_t                 getBitrate() const { return _bitrate; }
+        std::string                     getName() const { return _name; }
+        const std::filesystem::path& getAbsoluteFilePath() const { return _absoluteFilePath; }
+        const std::filesystem::path& getRelativeFilePath() const { return _relativeFilePath; }
+        long long                       getFileSize() const { return _fileSize; }
+        std::chrono::milliseconds       getDuration() const { return _duration; }
+        std::size_t                     getBitrate() const { return _bitrate; }
         const Wt::WDateTime& getLastWritten() const { return _fileLastWrite; }
         const Wt::WDate& getDate() const { return _date; }
-        std::optional<int>			getYear() const { return _year; }
+        std::optional<int>              getYear() const { return _year; }
         const Wt::WDate& getOriginalDate() const { return _originalDate; }
-        std::optional<int>			getOriginalYear() const { return _originalYear; };
-        Wt::WDateTime				getLastWriteTime() const { return _fileLastWrite; }
-        Wt::WDateTime				getAddedTime() const { return _fileAdded; }
-        bool						hasCover() const { return _hasCover; }
-        std::optional<core::UUID>	getTrackMBID() const { return core::UUID::fromString(_trackMBID); }
-        std::optional<core::UUID>	getRecordingMBID() const { return core::UUID::fromString(_recordingMBID); }
-        std::optional<std::string>	getCopyright() const;
-        std::optional<std::string>	getCopyrightURL() const;
-        std::optional<float>		getTrackReplayGain() const { return _trackReplayGain; }
-        std::optional<float>		getReleaseReplayGain() const { return _releaseReplayGain; }
-        std::string_view			getArtistDisplayName() const { return _artistDisplayName; }
+        std::optional<int>              getOriginalYear() const { return _originalYear; };
+        const Wt::WDateTime& getLastWriteTime() const { return _fileLastWrite; }
+        const Wt::WDateTime& getAddedTime() const { return _fileAdded; }
+        bool                            hasCover() const { return _hasCover; }
+        std::optional<core::UUID>       getTrackMBID() const { return core::UUID::fromString(_trackMBID); }
+        std::optional<core::UUID>       getRecordingMBID() const { return core::UUID::fromString(_recordingMBID); }
+        std::optional<std::string>      getCopyright() const;
+        std::optional<std::string>      getCopyrightURL() const;
+        std::optional<float>            getTrackReplayGain() const { return _trackReplayGain; }
+        std::optional<float>            getReleaseReplayGain() const { return _releaseReplayGain; }
+        std::string_view                getArtistDisplayName() const { return _artistDisplayName; }
         // no artistLinkTypes means get all
-        std::vector<ObjectPtr<Artist>>			getArtists(core::EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
+        std::vector<ObjectPtr<Artist>>          getArtists(core::EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
         std::vector<ArtistId>					getArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
         std::vector<ObjectPtr<TrackArtistLink>>	getArtistLinks() const;
         ObjectPtr<Release>						getRelease() const { return _release; }
@@ -204,7 +207,9 @@ namespace lms::db
             Wt::Dbo::field(a, _year, "year");
             Wt::Dbo::field(a, _originalDate, "original_date");
             Wt::Dbo::field(a, _originalYear, "original_year");
-            Wt::Dbo::field(a, _filePath, "file_path");
+            Wt::Dbo::field(a, _absoluteFilePath, "absolute_file_path");
+            Wt::Dbo::field(a, _relativeFilePath, "relative_file_path");
+            Wt::Dbo::field(a, _fileSize, "file_size");
             Wt::Dbo::field(a, _fileLastWrite, "file_last_write");
             Wt::Dbo::field(a, _fileAdded, "file_added");
             Wt::Dbo::field(a, _hasCover, "has_cover");
@@ -223,8 +228,7 @@ namespace lms::db
 
     private:
         friend class Session;
-        Track(const std::filesystem::path& p);
-        static pointer create(Session& session, const std::filesystem::path& p);
+        static pointer create(Session& session);
 
         static constexpr std::size_t _maxNameLength{ 256 };
         static constexpr std::size_t _maxCopyrightLength{ 256 };
@@ -237,12 +241,14 @@ namespace lms::db
         std::string				_discSubtitle;
         std::string				_name;
         std::chrono::duration<int, std::milli>	_duration{};
-        int                     _bitrate; // in bps
+        int                     _bitrate{}; // in bps
         Wt::WDate				_date;
         std::optional<int>      _year;
         Wt::WDate				_originalDate;
         std::optional<int>      _originalYear;
-        std::string				_filePath;
+        std::filesystem::path	_absoluteFilePath; // full path
+        std::filesystem::path	_relativeFilePath; // relative to root (that may be deleted)
+        long long    			_fileSize{};
         Wt::WDateTime			_fileLastWrite;
         Wt::WDateTime			_fileAdded;
         bool					_hasCover{};
@@ -270,5 +276,3 @@ namespace lms::db
         std::ostream& operator<<(std::ostream& os, const TrackInfo& trackInfo);
     }
 } // namespace lms::db
-
-

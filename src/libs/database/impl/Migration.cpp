@@ -34,7 +34,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 54 };
+        static constexpr Version LMS_DATABASE_VERSION{ 55 };
     }
 
     VersionInfo::VersionInfo()
@@ -430,6 +430,18 @@ SELECT
         session.getDboSession()->execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV54(Session& session)
+    {
+        // Add file size + relative file path
+        session.getDboSession()->execute("ALTER TABLE track RENAME COLUMN file_path TO absolute_file_path");
+        session.getDboSession()->execute("ALTER TABLE track ADD file_size BIGINT NOT NULL DEFAULT(0)");
+        session.getDboSession()->execute("ALTER TABLE track ADD relative_file_path TEXT NOT NULL DEFAULT ''");
+
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        session.getDboSession()->execute("UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
+
+
     void doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -461,6 +473,7 @@ SELECT
             {51, migrateFromV51},
             {52, migrateFromV52},
             {53, migrateFromV53},
+            {54, migrateFromV54},
         };
 
         {
@@ -487,6 +500,7 @@ SELECT
 
             while (version < LMS_DATABASE_VERSION)
             {
+                LMS_SCOPED_TRACE_DETAILED("Database", "MigrationStep");
                 LMS_LOG(DB, INFO, "Migrating database from version " << version << " to " << version + 1 << "...");
 
                 auto itMigrationFunc{ migrationFunctions.find(version) };

@@ -26,7 +26,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getAll)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
 
         {
@@ -59,7 +59,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_get)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 1}} };
 
@@ -93,7 +93,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_get_multi)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedListen listen3{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 3}} };
         ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 1}} };
@@ -112,7 +112,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_get_byDateTime)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime1{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
         const Wt::WDateTime dateTime2{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 2} };
@@ -145,7 +145,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getTopArtists)
     {
-        ScopedTrack track1{ session, "MyTrack" };
+        ScopedTrack track1{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime1{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
         ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
@@ -162,7 +162,7 @@ namespace lms::db::tests
             EXPECT_EQ(artists.moreResults, false);
         }
 
-        ScopedTrack track2{ session, "MyTrack2" };
+        ScopedTrack track2{ session };
         ScopedArtist artist1{ session, "MyArtist1" };
         ScopedListen listen2{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime1.addSecs(1) };
 
@@ -226,9 +226,9 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Listen_getTopArtists_multi)
     {
         ScopedUser user{ session, "MyUser" };
-        ScopedTrack track1{ session, "MyTrack1" };
+        ScopedTrack track1{ session };
         ScopedArtist artist1{ session, "MyArtist1" };
-        ScopedTrack track2{ session, "MyTrack2" };
+        ScopedTrack track2{ session };
         ScopedArtist artist2{ session, "MyArtist2" };
         const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
 
@@ -293,7 +293,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getTopArtists_cluster)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedArtist artist{ session, "MyArtist" };
         const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
@@ -337,7 +337,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getTopArtists_mediaLibrary)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedArtist artist{ session, "MyArtist" };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime1{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
@@ -403,7 +403,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getTopReleases)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
         ScopedRelease release{ session, "MyRelease" };
@@ -453,8 +453,8 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getTopReleases_multi)
     {
-        ScopedTrack track1{ session, "MyTrack" };
-        ScopedTrack track2{ session, "MyTrack" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
         ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime };
@@ -513,7 +513,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getTopReleases_cluster)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
         ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
@@ -558,7 +558,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getTopReleases_mediaLibrary)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
         ScopedRelease release{ session, "MyRelease" };
@@ -615,7 +615,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getTopTracks)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
 
@@ -660,7 +660,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getTopTracks_artist)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedArtist artist{ session, "MyArtist" };
         const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
@@ -714,8 +714,8 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getTopTrack_multi)
     {
-        ScopedTrack track1{ session, "MyTrack1" };
-        ScopedTrack track2{ session, "MyTrack2" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
         ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime };
@@ -766,7 +766,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getTopTracks_cluster)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
         ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
@@ -805,7 +805,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getTopTracks_mediaLibrary)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
         ScopedMediaLibrary library{ session };
@@ -860,7 +860,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getRecentArtists)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedArtist artist{ session, "MyArtist" };
 
@@ -937,9 +937,9 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Listen_getRecentArtists_multi)
     {
         ScopedUser user{ session, "MyUser" };
-        ScopedTrack track1{ session, "MyTrack1" };
+        ScopedTrack track1{ session };
         ScopedArtist artist1{ session, "MyArtist1" };
-        ScopedTrack track2{ session, "MyTrack2" };
+        ScopedTrack track2{ session };
         ScopedArtist artist2{ session, "MyArtist2" };
         const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
 
@@ -1003,7 +1003,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getRecentArtists_cluster)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedArtist artist{ session, "MyArtist" };
         const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
@@ -1048,7 +1048,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getRecentArtists_mediaLibrary)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedArtist artist{ session, "MyArtist" };
         ScopedMediaLibrary library{ session };
@@ -1086,7 +1086,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getRecentReleases)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedRelease release{ session, "MyRelease" };
 
@@ -1137,7 +1137,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getMostRecentRelease)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedRelease release{ session, "MyRelease" };
 
@@ -1189,8 +1189,8 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getRecentReleases_multi)
     {
-        ScopedTrack track1{ session, "MyTrack1" };
-        ScopedTrack track2{ session, "MyTrack2" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedRelease release1{ session, "MyRelease1" };
         ScopedRelease release2{ session, "MyRelease2" };
@@ -1265,7 +1265,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getRecentReleases_cluster)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedClusterType clusterType{ session, "MyType" };
         ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
@@ -1322,7 +1322,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getRecentReleases_mediaLibrary)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedRelease release{ session, "MyRelease" };
         ScopedMediaLibrary library{ session };
@@ -1362,7 +1362,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getRecentTracks)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
 
         {
@@ -1409,7 +1409,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getRecentTracks_mediaLibrary)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedMediaLibrary library{ session };
         ScopedMediaLibrary otherLibrary{ session };
@@ -1448,7 +1448,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getCount_track)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
 
         {
@@ -1482,8 +1482,8 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getCount_release)
     {
-        ScopedTrack track1{ session, "MyTrack" };
-        ScopedTrack track2{ session, "MyTrack" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedRelease release{ session, "MyRelease" };
 
@@ -1530,7 +1530,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getMostRecentTrack)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
 
         {
@@ -1576,8 +1576,8 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getRecentTracks_multi)
     {
-        ScopedTrack track1{ session, "MyTrack1" };
-        ScopedTrack track2{ session, "MyTrack2" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
         ScopedUser user{ session, "MyUser" };
 
         const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
@@ -1644,7 +1644,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Listen_getRecentTracks_cluster)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
         ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };

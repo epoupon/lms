@@ -137,7 +137,7 @@ namespace lms::api::subsonic
             if (!track)
                 throw RequestedDataNotFoundError{};
 
-            parameters.inputParameters.trackPath = track->getPath();
+            parameters.inputParameters.trackPath = track->getAbsoluteFilePath();
             parameters.inputParameters.duration = track->getDuration();
             parameters.estimateContentLength = estimateContentLength;
 
@@ -161,7 +161,7 @@ namespace lms::api::subsonic
             //  same codec => apply max bitrate
             //  otherwise => apply default bitrate (because we can't really compare bitrates between formats) + max bitrate)
             std::size_t bitrate{};
-            if (requestedFormat && isOutputFormatCompatible(track->getPath(), *requestedFormat))
+            if (requestedFormat && isOutputFormatCompatible(track->getAbsoluteFilePath(), *requestedFormat))
             {
                 if (maxBitRate == 0 || track->getBitrate() <= maxBitRate)
                 {
@@ -205,7 +205,7 @@ namespace lms::api::subsonic
                 if (!track)
                     throw RequestedDataNotFoundError{};
 
-                trackPath = track->getPath();
+                trackPath = track->getAbsoluteFilePath();
             }
 
             resourceHandler = av::createRawResourceHandler(trackPath);

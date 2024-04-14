@@ -119,7 +119,7 @@ namespace lms::ui::TrackListHelpers
             }
         }
 
-        if (const auto audioFile{ av::parseAudioFile(track->getPath()) })
+        if (const auto audioFile{ av::parseAudioFile(track->getAbsoluteFilePath()) })
         {
             const std::optional<av::StreamInfo> audioStream{ audioFile->getBestStreamInfo() };
             if (audioStream)

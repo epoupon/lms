@@ -63,7 +63,7 @@ namespace lms::cover
             res = TrackInfo{};
 
             res->hasCover = track->hasCover();
-            res->trackPath = track->getPath();
+            res->trackPath = track->getAbsoluteFilePath();
 
             if (const db::Release::pointer & release{ track->getRelease() })
             {
@@ -366,7 +366,7 @@ namespace lms::cover
                 const Track::pointer& track{ tracks.results.front() };
                 res = ReleaseInfo{};
                 res->firstTrackId = track->getId();
-                res->releaseDirectory = track->getPath().parent_path();
+                res->releaseDirectory = track->getAbsoluteFilePath().parent_path();
             }
 
             return res;
@@ -424,9 +424,9 @@ namespace lms::cover
 
                     const auto releaseArtists{ Artist::findIds(session, artistFindParams) };
                     if (releaseArtists.results.size() == 1)
-                        releasePaths.insert(track->getPath().parent_path());
+                        releasePaths.insert(track->getAbsoluteFilePath().parent_path());
                     else
-                        multiArtistReleasePaths.insert(track->getPath().parent_path());
+                        multiArtistReleasePaths.insert(track->getAbsoluteFilePath().parent_path());
                 });
         }
 

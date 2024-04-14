@@ -101,7 +101,7 @@ namespace lms::ui
                     if (!track)
                         continue;
 
-                    response.out() << track->getPath().string();
+                    response.out() << track->getAbsoluteFilePath().string();
                     if (auto mbid{ track->getTrackMBID() })
                         response.out() << " (Track MBID " << mbid->getAsString() << ")";
 

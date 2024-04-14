@@ -42,6 +42,66 @@ namespace lms::scanner
 
     namespace
     {
+        struct FileInfo
+        {
+            Wt::WDateTime lastWriteTime;
+            std::filesystem::path relativePath;
+            std::size_t fileSize{};
+        };
+
+        Wt::WDateTime retrieveFileGetLastWrite(const std::filesystem::path& file)
+        {
+            Wt::WDateTime res;
+
+            try
+            {
+                res = core::pathUtils::getLastWriteTime(file);
+            }
+            catch (core::LmsException& e)
+            {
+                LMS_LOG(DBUPDATER, ERROR, "Cannot get last write time: " << e.what());
+            }
+
+            return res;
+        }
+
+        std::optional<FileInfo> retrieveFileInfo(const std::filesystem::path& file, const std::filesystem::path& rootPath)
+        {
+            std::optional<FileInfo> res;
+            res.emplace();
+
+            res->lastWriteTime = retrieveFileGetLastWrite(file);
+            if (!res->lastWriteTime.isValid())
+            {
+                res.reset();
+                return res;
+            }
+
+            {
+                std::error_code ec;
+                res->relativePath = std::filesystem::relative(file, rootPath, ec);
+                if (ec)
+                {
+                    LMS_LOG(DBUPDATER, ERROR, "Cannot get relative file path for '" << file.string() << "' from '" << rootPath.string() << "': " << ec.message());
+                    res.reset();
+                    return res;
+                }
+            }
+
+            {
+                std::error_code ec;
+                res->fileSize = std::filesystem::file_size(file, ec);
+                if (ec)
+                {
+                    LMS_LOG(DBUPDATER, ERROR, "Cannot get file size for '" << file.string() << "': " << ec.message());
+                    res.reset();
+                    return res;
+                }
+            }
+
+            return res;
+        }
+
         Artist::pointer createArtist(Session& session, const metadata::Artist& artistInfo)
         {
             Artist::pointer artist{ session.create<Artist>(artistInfo.name) };
@@ -389,14 +449,11 @@ namespace lms::scanner
     bool ScanStepScanFiles::checkFileNeedScan(ScanContext& context, const std::filesystem::path& file, const ScannerSettings::MediaLibraryInfo& libraryInfo)
     {
         ScanStats& stats{ context.stats };
-        Wt::WDateTime lastWriteTime;
-        try
+
+        Wt::WDateTime lastWriteTime{ retrieveFileGetLastWrite(file) };
+        // Should rarely fail as we are currently iterating it
+        if (!lastWriteTime.isValid())
         {
-            lastWriteTime = core::pathUtils::getLastWriteTime(file);
-        }
-        catch (core::LmsException& e)
-        {
-            LMS_LOG(DBUPDATER, ERROR, e.what());
             stats.skips++;
             return false;
         }
@@ -416,7 +473,7 @@ namespace lms::scanner
                 )
             {
                 // this file may have been moved from one library to another, then we just need to update the media library id instead of a full rescan
-                auto trackMediaLibrary{ track->getMediaLibrary() };
+                const auto trackMediaLibrary{ track->getMediaLibrary() };
                 if (trackMediaLibrary && trackMediaLibrary->getId() == libraryInfo.id)
                 {
                     stats.skips++;
@@ -451,6 +508,8 @@ namespace lms::scanner
 
         for (const MetaDataScanResult& scanResult : scanResults)
         {
+            LMS_SCOPED_TRACE_DETAILED("Scanner", "ProcessScanResult");
+
             if (_abortScan)
                 return;
 
@@ -474,14 +533,10 @@ namespace lms::scanner
     void ScanStepScanFiles::processFileMetaData(ScanContext& context, const std::filesystem::path& file, const metadata::Track& trackMetadata, const ScannerSettings::MediaLibraryInfo& libraryInfo)
     {
         ScanStats& stats{ context.stats };
-        Wt::WDateTime lastWriteTime;
-        try
+
+        const std::optional<FileInfo> fileInfo{ retrieveFileInfo(file, libraryInfo.rootDirectory) };
+        if (!fileInfo)
         {
-            lastWriteTime = core::pathUtils::getLastWriteTime(file);
-        }
-        catch (core::LmsException& e)
-        {
-            LMS_LOG(DBUPDATER, ERROR, e.what());
             stats.skips++;
             return;
         }
@@ -493,23 +548,23 @@ namespace lms::scanner
         {
             std::vector<Track::pointer> duplicateTracks{ Track::findByMBID(dbSession, *trackMetadata.mbid) };
 
-            // find for existing MBIDs as the file may have just been moved
+            // find for an existing track MBID as the file may have just been moved
             if (!track && duplicateTracks.size() == 1)
             {
                 Track::pointer otherTrack{ duplicateTracks.front() };
                 std::error_code ec;
-                if (!std::filesystem::exists(otherTrack->getPath(), ec))
+                if (!std::filesystem::exists(otherTrack->getAbsoluteFilePath(), ec))
                 {
-                    LMS_LOG(DBUPDATER, DEBUG, "Considering track '" << file.string() << "' moved from '" << otherTrack->getPath() << "'");
+                    LMS_LOG(DBUPDATER, DEBUG, "Considering track '" << file.string() << "' moved from '" << otherTrack->getAbsoluteFilePath() << "'");
                     track = otherTrack;
-                    track.modify()->setPath(file);
+                    track.modify()->setAbsoluteFilePath(file);
                 }
             }
 
             // Skip duplicate track MBID
             if (_settings.skipDuplicateMBID)
             {
-                for (Track::pointer otherTrack : duplicateTracks)
+                for (Track::pointer& otherTrack : duplicateTracks)
                 {
                     // Skip ourselves
                     if (track && track->getId() == otherTrack->getId())
@@ -525,7 +580,7 @@ namespace lms::scanner
                         continue;
                     }
 
-                    LMS_LOG(DBUPDATER, DEBUG, "Skipped '" << file.string() << "' (similar MBID in '" << otherTrack->getPath().string() << "')");
+                    LMS_LOG(DBUPDATER, DEBUG, "Skipped '" << file.string() << "' (similar MBID in '" << otherTrack->getAbsoluteFilePath().string() << "')");
                     // As this MBID already exists, just remove what we just scanned
                     if (track)
                     {
@@ -565,21 +620,20 @@ namespace lms::scanner
 
         // If file already exists, update its data
         // Otherwise, create it
+        bool added{};
         if (!track)
         {
-            track = dbSession.create<Track>(file);
-            LMS_LOG(DBUPDATER, DEBUG, "Adding '" << file.string() << "'");
-            stats.additions++;
-        }
-        else
-        {
-            LMS_LOG(DBUPDATER, DEBUG, "Updating '" << file.string() << "'");
-
-            stats.updates++;
+            track = dbSession.create<Track>();
+            track.modify()->setAbsoluteFilePath(file);
+            added = true;
         }
 
         // Track related data
         assert(track);
+
+        track.modify()->setRelativeFilePath(fileInfo->relativePath);
+        track.modify()->setFileSize(fileInfo->fileSize);
+        track.modify()->setLastWriteTime(fileInfo->lastWriteTime);
 
         track.modify()->setMediaLibrary(MediaLibrary::find(dbSession, libraryInfo.id)); // may be null if settings are updated in // => next scan will correct this
         track.modify()->clearArtistLinks();
@@ -628,7 +682,6 @@ namespace lms::scanner
         track.modify()->setReleaseReplayGain(trackMetadata.medium ? trackMetadata.medium->replayGain : std::nullopt);
         track.modify()->setDiscSubtitle(trackMetadata.medium ? trackMetadata.medium->name : "");
         track.modify()->setClusters(getOrCreateClusters(dbSession, trackMetadata));
-        track.modify()->setLastWriteTime(lastWriteTime);
         track.modify()->setName(title);
         track.modify()->setDuration(trackMetadata.duration);
         track.modify()->setBitrate(trackMetadata.bitrate);
@@ -657,5 +710,16 @@ namespace lms::scanner
         track.modify()->setCopyrightURL(trackMetadata.copyrightURL);
         track.modify()->setTrackReplayGain(trackMetadata.replayGain);
         track.modify()->setArtistDisplayName(trackMetadata.artistDisplayName);
+
+        if (added)
+        {
+            LMS_LOG(DBUPDATER, DEBUG, "Added '" << file.string() << "'");
+            stats.additions++;
+        }
+        else
+        {
+            LMS_LOG(DBUPDATER, DEBUG, "Updated '" << file.string() << "'");
+            stats.updates++;
+        }
     }
 }

@@ -79,10 +79,10 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Artist_findByRangedIdBased)
     {
-        ScopedTrack track1{ session, "MyTrackFile1" };
-        ScopedTrack track2a{ session, "MyTrackFile2a" };
-        ScopedTrack track2b{ session, "MyTrackFile2b" };
-        ScopedTrack track3{ session, "MyTrackFile3" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2a{ session };
+        ScopedTrack track2b{ session };
+        ScopedTrack track3{ session };
         ScopedArtist artist1{ session, "MyArtist1" };
         ScopedArtist artist2{ session, "MyArtist2" };
         ScopedArtist artist3{ session, "MyArtist3" };
@@ -232,7 +232,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Artist_singleTrack)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedArtist artist{ session, "MyArtist" };
 
         {
@@ -302,7 +302,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Artist_singleTrack_mediaLibrary)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedArtist artist{ session, "MyArtist" };
         ScopedMediaLibrary library{ session };
         ScopedMediaLibrary otherLibrary{ session };
@@ -335,7 +335,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Artist_singleTracktMultiRoles)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedArtist artist{ session, "MyArtist" };
         {
             auto transaction{ session.createWriteTransaction() };
@@ -398,7 +398,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Artist_singleTrackMultiArtists)
     {
-        ScopedTrack track{ session, "track" };
+        ScopedTrack track{ session };
         ScopedArtist artist1{ session, "artist1" };
         ScopedArtist artist2{ session, "artist2" };
         ASSERT_NE(artist1.getId(), artist2.getId());
@@ -458,7 +458,7 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Artist_findByName)
     {
         ScopedArtist artist{ session, "AAA" };
-        ScopedTrack track{ session, "MyTrack" }; // filters does not work on orphans
+        ScopedTrack track{ session }; // filters does not work on orphans
 
         {
             auto transaction{ session.createWriteTransaction() };
@@ -576,8 +576,8 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Artist_nonReleaseTracks)
     {
         ScopedArtist artist{ session, "artist" };
-        ScopedTrack track1{ session, "MyTrack1" };
-        ScopedTrack track2{ session, "MyTrack2" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
         ScopedRelease release{ session, "MyRelease" };
 
         {
@@ -608,7 +608,7 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Artist_findByRelease)
     {
         ScopedArtist artist{ session, "artist" };
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedRelease release{ session, "MyRelease" };
 
         {

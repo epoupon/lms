@@ -45,7 +45,7 @@ namespace lms::scanner
             const Track::pointer track{ Track::find(session, trackId) };
             if (auto trackMBID{ track->getTrackMBID() })
             {
-                LMS_LOG(DBUPDATER, INFO, "Found duplicated track MBID [" << trackMBID->getAsString() << "], file: " << track->getPath().string() << " - " << track->getName());
+                LMS_LOG(DBUPDATER, INFO, "Found duplicated track MBID [" << trackMBID->getAsString() << "], file: " << track->getAbsoluteFilePath().string() << " - " << track->getName());
                 context.stats.duplicates.emplace_back(ScanDuplicate{ track->getId(), DuplicateReason::SameTrackMBID });
                 context.currentStepStats.processedElems++;
                 _progressCallback(context.currentStepStats);

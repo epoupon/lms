@@ -32,6 +32,7 @@
 #include "core/ILogger.hpp"
 
 #include "IdTypeTraits.hpp"
+#include "PathTraits.hpp"
 #include "SqlQuery.hpp"
 #include "StringViewTraits.hpp"
 #include "Utils.hpp"
@@ -195,14 +196,9 @@ namespace lms::db
         }
     }
 
-    Track::Track(const std::filesystem::path& p)
-        : _filePath{ p.string() }
+    Track::pointer Track::create(Session& session)
     {
-    }
-
-    Track::pointer Track::create(Session& session, const std::filesystem::path& p)
-    {
-        return session.getDboSession()->add(std::unique_ptr<Track> {new Track{ p }});
+        return session.getDboSession()->add(std::make_unique<Track>());
     }
 
     std::size_t Track::getCount(Session& session)
@@ -216,7 +212,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Track>().where("file_path = ?").bind(p.string()));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<Track>().where("absolute_file_path = ?").bind(p.string()));
     }
 
     Track::pointer Track::find(Session& session, TrackId id)
@@ -267,30 +263,6 @@ namespace lms::db
 
         return utils::fetchQueryResults<Track::pointer>(session.getDboSession()->find<Track>()
             .where("recording_mbid = ?").bind(mbid.getAsString()));
-    }
-
-    RangeResults<Track::PathResult> Track::findPaths(Session& session, std::optional<Range> range)
-    {
-        using QueryResultType = std::tuple<TrackId, std::string>;
-        session.checkReadTransaction();
-
-        // TODO Dbo traits on filesystem
-        auto query{ session.getDboSession()->query<QueryResultType>("SELECT id, file_path FROM track") };
-
-        RangeResults<QueryResultType> queryResults{ utils::execRangeQuery<QueryResultType>(query, range) };
-
-        RangeResults<PathResult> res;
-        res.range = queryResults.range;
-        res.moreResults = queryResults.moreResults;
-        res.results.reserve(queryResults.results.size());
-
-        std::transform(std::cbegin(queryResults.results), std::cend(queryResults.results), std::back_inserter(res.results),
-            [](const QueryResultType& queryResult)
-            {
-                return PathResult{ std::get<TrackId>(queryResult), std::move(std::get<std::string>(queryResult)) };
-            });
-
-        return res;
     }
 
     RangeResults<TrackId> Track::findIdsTrackMBIDDuplicates(Session& session, std::optional<Range> range)
@@ -390,6 +362,18 @@ namespace lms::db
             query.bind(trackId);
 
         return utils::execRangeQuery<TrackId>(query, range);
+    }
+
+    void Track::setAbsoluteFilePath(const std::filesystem::path& filePath)
+    {
+        assert(filePath.is_absolute());
+        _absoluteFilePath = filePath;
+    }
+
+    void Track::setRelativeFilePath(const std::filesystem::path& filePath)
+    {
+        assert(filePath.is_relative());
+        _relativeFilePath = filePath;
     }
 
     void Track::clearArtistLinks()
