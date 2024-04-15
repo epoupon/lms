@@ -58,7 +58,6 @@ namespace lms::cover
 
         ++_cacheHits;
         return it->second;
-
     }
 
     void ImageCache::flush()
