@@ -24,10 +24,11 @@
 
 namespace lms::db
 {
+    class Artist;
     class TrackArtistLink;
 }
 
 namespace lms::api::subsonic
 {
-    Response::Node createContributorNode(const db::ObjectPtr<db::TrackArtistLink>& trackArtistLink);
+    Response::Node createContributorNode(const db::ObjectPtr<db::TrackArtistLink>& trackArtistLink, const db::ObjectPtr<db::Artist>& artist);
 }

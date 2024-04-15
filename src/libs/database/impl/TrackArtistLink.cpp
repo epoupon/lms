@@ -39,19 +39,17 @@ namespace lms::db
             if (params.linkType)
                 query.where("t_a_l.type = ?").bind(*params.linkType);
 
-            if (params.track.isValid() || params.release.isValid())
-                query.join("track t ON t.id = t_a_l.track_id");
+            if (params.track.isValid())
+                query.where("t_a_l.track_id = ?").bind(params.track);
 
             if (params.artist.isValid())
-                query.join("artist a ON a.id = t_a_l.artist_id");
+                query.where("t_a_l.artist_id = ?").bind(params.artist);
 
             if (params.release.isValid())
+            {
+                query.join("track t ON t.id = t_a_l.track_id");
                 query.where("t.release_id = ?").bind(params.release);
-
-            if (params.track.isValid())
-                query.where("t.id = ?").bind(params.track);
-
-            query.groupBy("t_a_l.id");
+            }
 
             return query;
         }
@@ -79,6 +77,22 @@ namespace lms::db
     {
         session.checkReadTransaction();
         return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackArtistLink>().where("id = ?").bind(id));
+    }
+
+    void TrackArtistLink::find(Session& session, TrackId trackId, const std::function<void(const TrackArtistLink::pointer& link, const ObjectPtr<Artist>& artist)>& func)
+    {
+        session.checkReadTransaction();
+
+        using ResultType = std::tuple < Wt::Dbo::ptr<TrackArtistLink>, Wt::Dbo::ptr<Artist>>;
+
+        const auto query{ session.getDboSession()->query<ResultType>("SELECT t_a_l, a FROM track_artist_link t_a_l")
+        .join("artist a ON t_a_l.artist_id = a.id")
+        .where("t_a_l.track_id = ?").bind(trackId) };
+
+        utils::forEachQueryResult(query, [&](const ResultType& result)
+            {
+                func(std::get<Wt::Dbo::ptr<TrackArtistLink>>(result), std::get<Wt::Dbo::ptr<Artist>>(result));
+            });
     }
 
     void TrackArtistLink::find(Session& session, const FindParameters& parameters, const std::function<void(const TrackArtistLink::pointer&)>& func)

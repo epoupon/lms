@@ -62,6 +62,7 @@ namespace lms::db
         TrackArtistLink() = default;
         TrackArtistLink(ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type, std::string_view subType);
 
+        static void                             find(Session& session, TrackId trackId, const std::function<void(const TrackArtistLink::pointer&, const ObjectPtr<Artist>&)>&);
         static void                             find(Session& session, const FindParameters& parameters, const std::function<void(const TrackArtistLink::pointer&)>&);
         static pointer 							find(Session& session, TrackArtistLinkId linkId);
         static pointer							create(Session& session, ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type, std::string_view subType = {});

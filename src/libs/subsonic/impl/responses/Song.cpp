@@ -156,25 +156,22 @@ namespace lms::api::subsonic
         }
 
         {
-            TrackArtistLink::FindParameters params;
-            params.setTrack(track->getId());
-
             trackResponse.createEmptyArrayChild("albumartists");
             trackResponse.createEmptyArrayChild("artists");
             trackResponse.createEmptyArrayChild("contributors");
 
-            TrackArtistLink::find(context.dbSession, params, [&](const TrackArtistLink::pointer& link)
+            TrackArtistLink::find(context.dbSession, track->getId(), [&](const TrackArtistLink::pointer& link, const Artist::pointer& artist)
             {
                 switch (link->getType())
                 {
                     case TrackArtistLinkType::Artist:
-                        trackResponse.addArrayChild("artists", createArtistNode(link->getArtist()));
+                        trackResponse.addArrayChild("artists", createArtistNode(artist));
                         break;
                     case TrackArtistLinkType::ReleaseArtist:
-                        trackResponse.addArrayChild("albumartists", createArtistNode(link->getArtist()));
+                        trackResponse.addArrayChild("albumartists", createArtistNode(artist));
                         break;
                     default:
-                        trackResponse.addArrayChild("contributors", createContributorNode(link));
+                        trackResponse.addArrayChild("contributors", createContributorNode(link, artist));
                 }
             });
         }

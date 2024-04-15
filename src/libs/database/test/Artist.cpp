@@ -394,6 +394,29 @@ namespace lms::db::tests
             EXPECT_TRUE(types.contains(TrackArtistLinkType::Writer));
             EXPECT_FALSE(types.contains(TrackArtistLinkType::Composer));
         }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::vector<TrackArtistLink::pointer> visitedLinks;
+            TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setTrack(track.getId()), [&](const TrackArtistLink::pointer& link)
+                {
+                    visitedLinks.push_back(link);
+                });
+            ASSERT_EQ(visitedLinks.size(), 3);
+            EXPECT_EQ(visitedLinks[0]->getArtist()->getId(), artist.getId());
+            EXPECT_EQ(visitedLinks[1]->getArtist()->getId(), artist.getId());
+            EXPECT_EQ(visitedLinks[2]->getArtist()->getId(), artist.getId());
+
+            auto containsType = [&](TrackArtistLinkType type)
+                {
+                    return std::any_of(std::cbegin(visitedLinks), std::cend(visitedLinks), [type](const TrackArtistLink::pointer& link) { return link->getType() == type;});
+                };
+
+            EXPECT_TRUE(containsType(TrackArtistLinkType::Artist));
+            EXPECT_TRUE(containsType(TrackArtistLinkType::ReleaseArtist));
+            EXPECT_TRUE(containsType(TrackArtistLinkType::Writer));
+        }
     }
 
     TEST_F(DatabaseFixture, Artist_singleTrackMultiArtists)
@@ -452,6 +475,47 @@ namespace lms::db::tests
 
             tracks = Track::findIds(session, Track::FindParameters{}.setArtist(artist2->getId(), { TrackArtistLinkType::Artist }));
             EXPECT_EQ(tracks.results.size(), 1);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::vector<TrackArtistLink::pointer> visitedLinks;
+            TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setTrack(track.getId()), [&](const TrackArtistLink::pointer& link)
+                {
+                    visitedLinks.push_back(link);
+                });
+            ASSERT_EQ(visitedLinks.size(), 2);
+            EXPECT_EQ(visitedLinks[0]->getArtist()->getId(), artist1.getId());
+            EXPECT_EQ(visitedLinks[1]->getArtist()->getId(), artist2.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::vector<TrackArtistLink::pointer> visitedLinks;
+            TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setArtist(artist2.getId()), [&](const TrackArtistLink::pointer& link)
+                {
+                    visitedLinks.push_back(link);
+                });
+            ASSERT_EQ(visitedLinks.size(), 1);
+            EXPECT_EQ(visitedLinks[0]->getArtist()->getId(), artist2.getId());
+            EXPECT_EQ(visitedLinks[0]->getTrack()->getId(), track.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::vector<std::pair<TrackArtistLink::pointer, Artist::pointer>> visitedEntries;
+            TrackArtistLink::find(session, track.getId(), [&](const TrackArtistLink::pointer& link, const Artist::pointer& artist)
+                {
+                    visitedEntries.push_back(std::make_pair(link, artist));
+                });
+            ASSERT_EQ(visitedEntries.size(), 2);
+            EXPECT_EQ(visitedEntries[0].first->getArtist()->getId(), artist1.getId());
+            EXPECT_EQ(visitedEntries[0].second->getId(), artist1.getId());
+            EXPECT_EQ(visitedEntries[1].first->getArtist()->getId(), artist2.getId());
+            EXPECT_EQ(visitedEntries[1].second->getId(), artist2.getId());
         }
     }
 
