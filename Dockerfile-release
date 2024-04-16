@@ -1,4 +1,4 @@
-FROM	alpine:3.18 AS build
+FROM	alpine:3.19 AS build
 
 WORKDIR	/tmp/workdir
 
@@ -31,6 +31,7 @@ ARG	BUILD_PACKAGES=" \
 	libarchive-dev \
 	libconfig-dev \
 	taglib-dev \
+	sqlite-dev \
 	gtest-dev"
 
 RUN	apk add --no-cache --update ${BUILD_PACKAGES}
@@ -78,7 +79,7 @@ RUN \
 	make distclean
 
 # WT
-ARG	WT_VERSION=4.10.2
+ARG	WT_VERSION=4.10.4
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/emweb/wt/archive/${WT_VERSION}.tar.gz && \
@@ -86,7 +87,7 @@ RUN \
 
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
-	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF && \
+	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF -DUSE_SYSTEM_SQLITE3=ON && \
 	make -j$(nproc) && \
 	make install
 
@@ -133,8 +134,8 @@ RUN \
 	rm -rf /tmp/fakeroot/share/Wt/resources/themes
 
 ## Release Stage
-FROM		alpine:3.18 AS release
-LABEL		maintainer="Emeric Poupon <itmfr@yahoo.fr>"
+FROM		alpine:3.19 AS release
+LABEL		maintainer="Emeric Poupon <emeric.poupon@laposte.net>"
 
 ARG	RUNTIME_PACKAGES=" \
 	libssl3 \
@@ -153,6 +154,7 @@ ARG	RUNTIME_PACKAGES=" \
 	boost-thread \
 	libarchive \
 	libconfig++ \
+	sqlite \
 	taglib"
 
 ARG	LMS_USER=lms
