@@ -90,11 +90,13 @@ namespace lms::db
             if (params.artist.isValid()
                 || params.sortMethod == ReleaseSortMethod::ArtistNameThenName)
             {
-                query.join("artist a ON a.id = t_a_l.artist_id")
-                    .join("track_artist_link t_a_l ON t_a_l.track_id = t.id");
+                query.join("track_artist_link t_a_l ON t_a_l.track_id = t.id");
 
                 if (params.artist.isValid())
-                    query.where("a.id = ?").bind(params.artist);
+                    query.where("t_a_l.artist_id = ?").bind(params.artist);
+
+                if (params.sortMethod == ReleaseSortMethod::ArtistNameThenName)
+                    query.join("artist a ON a.id = t_a_l.artist_id");
 
                 if (!params.trackArtistLinkTypes.empty())
                 {
@@ -117,10 +119,9 @@ namespace lms::db
                 {
                     std::ostringstream oss;
                     oss << "r.id NOT IN (SELECT DISTINCT r.id FROM release r"
-                        " INNER JOIN artist a ON a.id = t_a_l.artist_id"
                         " INNER JOIN track_artist_link t_a_l ON t_a_l.track_id = t.id"
                         " INNER JOIN track t ON t.release_id = r.id"
-                        " WHERE (a.id = ? AND (";
+                        " WHERE (t_a_l.artist_id = ? AND (";
 
                     query.bind(params.artist);
 
