@@ -145,6 +145,8 @@ namespace lms::db
 
         // Indexes
         {
+            LMS_SCOPED_TRACE_OVERVIEW("Database", "IndexCreation");
+
             auto transaction{ createWriteTransaction() };
             _session.execute("CREATE INDEX IF NOT EXISTS artist_id_idx ON artist(id)");
             _session.execute("CREATE INDEX IF NOT EXISTS artist_name_idx ON artist(name)");
