@@ -39,7 +39,8 @@ namespace lms::db
         {
             session.checkReadTransaction();
 
-            auto query{ session.getDboSession()->query<ResultType>("SELECT DISTINCT " + std::string{ itemToSelect } + " FROM cluster c") };
+            auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM cluster c") };
+            query.groupBy("c.id");
 
             if (params.track.isValid() || params.release.isValid())
             {
@@ -56,7 +57,7 @@ namespace lms::db
 
             assert(!params.clusterType.isValid() || params.clusterTypeName.empty());
             if (params.clusterType.isValid())
-                query.where("c.cluster_type_id = ?").bind(params.clusterType);
+                query.where("+c.cluster_type_id = ?").bind(params.clusterType); // Exclude this since the query planner does not do a good job when db is not analyzed
             else if (!params.clusterTypeName.empty())
                 query.where("c_t.name = ?").bind(params.clusterTypeName);
 
