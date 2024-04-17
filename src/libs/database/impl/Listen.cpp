@@ -53,21 +53,18 @@ namespace lms::db
             if (!params.clusters.empty())
             {
                 std::ostringstream oss;
-                oss << "a.id IN (SELECT DISTINCT a.id FROM artist a"
-                    " INNER JOIN track t ON t.id = t_a_l.track_id"
-                    " INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id"
-                    " INNER JOIN cluster c ON c.id = t_c.cluster_id"
-                    " INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
+                oss << "a.id IN (SELECT DISTINCT t_a_l.artist_id FROM track_artist_link t_a_l"
+                    " INNER JOIN track_cluster t_c ON t_c.track_id = t_a_l.track_id";
 
                 WhereClause clusterClause;
                 for (auto id : params.clusters)
                 {
-                    clusterClause.Or(WhereClause("c.id = ?"));
+                    clusterClause.Or(WhereClause("t_c.cluster_id = ?"));
                     query.bind(id);
                 }
 
                 oss << " " << clusterClause.get();
-                oss << " GROUP BY t.id,a.id HAVING COUNT(DISTINCT c.id) = " << params.clusters.size() << ")";
+                oss << " GROUP BY t_a_l.track_id,t_a_l.artist_id HAVING COUNT(DISTINCT t_c.cluster_id) = " << params.clusters.size() << ")";
 
                 query.where(oss.str());
             }
