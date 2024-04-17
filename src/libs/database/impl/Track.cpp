@@ -296,8 +296,9 @@ namespace lms::db
         assert(session());
 
         const auto query{ session()->query<ClusterId>
-            ("SELECT DISTINCT c.id FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id INNER JOIN track t ON t.id = t_c.track_id")
-            .where("t.id = ?").bind(getId()) };
+            ("SELECT t_c.cluster_id FROM track_cluster t_c")
+            .where("t_c.track_id = ?").bind(getId())
+            .groupBy("t_c.cluster_id") };
 
         return utils::fetchQueryResults(query);
     }
@@ -444,8 +445,7 @@ namespace lms::db
 
         std::ostringstream oss;
         oss <<
-            "SELECT DISTINCT a.id from artist a"
-            " INNER JOIN track_artist_link t_a_l ON a.id = t_a_l.artist_id"
+            "SELECT t_a_l.artist_id FROM track_artist_link t_a_l"
             " INNER JOIN track t ON t.id = t_a_l.track_id";
 
         if (!linkTypes.empty())
@@ -468,6 +468,7 @@ namespace lms::db
             query.bind(type);
 
         query.where("t.id = ?").bind(getId());
+        query.groupBy("t_a_l.artist_id");
 
         return utils::fetchQueryResults(query);
     }
