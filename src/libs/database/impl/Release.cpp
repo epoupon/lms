@@ -148,8 +148,7 @@ namespace lms::db
             else if (params.clusters.size() > 1)
             {
                 std::ostringstream oss;
-                oss << "r.id IN (SELECT DISTINCT r.id FROM release r"
-                    " INNER JOIN track t ON t.release_id = r.id"
+                oss << "r.id IN (SELECT DISTINCT t.release_id FROM track t"
                     " INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
 
                 WhereClause clusterClause;
@@ -334,17 +333,14 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(createQuery<int>(session, "COUNT(DISTINCT r.id)", params));
+        return utils::fetchQuerySingleResult(createQuery<int>(session, "COUNT(r.id)", params));
     }
 
     std::size_t Release::getDiscCount() const
     {
         assert(session());
         int res{ utils::fetchQuerySingleResult(session()->query<int>("SELECT COUNT(DISTINCT disc_number) FROM track t")
-            .join("release r ON r.id = t.release_id")
-            .where("r.id = ?")
-            .bind(getId())) };
-
+            .where("t.release_id = ?").bind(getId()))};
         return res;
     }
 
@@ -352,13 +348,10 @@ namespace lms::db
     {
         assert(session());
 
-
         using ResultType = std::tuple<int, std::string>;
         const auto query{ session()->query<ResultType>("SELECT DISTINCT disc_number, disc_subtitle FROM track t")
-            .join("release r ON r.id = t.release_id")
-            .where("r.id = ?")
-            .orderBy("disc_number")
-            .bind(getId()) };
+            .where("t.release_id = ?").bind(getId())
+            .orderBy("disc_number")};
 
         std::vector<DiscInfo> discs;
         utils::forEachQueryResult(query, [&](ResultType&& res)
@@ -384,8 +377,8 @@ namespace lms::db
         assert(session());
 
         const char* field{ original ? "original_date" : "date" };
-        auto query{ (session()->query<Wt::WDate>(std::string {"SELECT "} + "t." + field + " FROM track t INNER JOIN release r ON r.id = t.release_id")
-            .where("r.id = ?")
+        auto query{ (session()->query<Wt::WDate>(std::string {"SELECT "} + "t." + field + " FROM track t")
+            .where("t.release_id = ?")
             .groupBy(field)
             .bind(getId())) };
 
@@ -413,8 +406,8 @@ namespace lms::db
         assert(session());
 
         const char* field{ original ? "original_year" : "year" };
-        auto query{ session()->query<std::optional<int>>(std::string {"SELECT "} + "t." + field + " FROM track t INNER JOIN release r ON r.id = t.release_id")
-            .where("r.id = ?").bind(getId())
+        auto query{ session()->query<std::optional<int>>(std::string {"SELECT "} + "t." + field + " FROM track t")
+            .where("t.release_id = ?").bind(getId())
             .groupBy(field) };
 
         const auto years{ utils::fetchQueryResults(query) };
@@ -477,12 +470,12 @@ namespace lms::db
         assert(session());
 
         const auto query{ session()->query<Wt::Dbo::ptr<Artist>>(
-                "SELECT DISTINCT a FROM artist a"
+                "SELECT a FROM artist a"
                 " INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id"
-                " INNER JOIN track t ON t.id = t_a_l.track_id"
-                " INNER JOIN release r ON r.id = t.release_id")
-            .where("r.id = ?").bind(getId())
-            .where("t_a_l.type = ?").bind(linkType) };
+                " INNER JOIN track t ON t.id = t_a_l.track_id")
+            .where("t.release_id = ?").bind(getId())
+            .where("+t_a_l.type = ?").bind(linkType) // adding + since the query planner does not a good job when analyze is not performed
+            .groupBy("a.id") };
 
         return utils::fetchQueryResults<Artist::pointer>(query);
     }
@@ -560,16 +553,16 @@ namespace lms::db
 
         using milli = std::chrono::duration<int, std::milli>;
 
-        return utils::fetchQuerySingleResult(session()->query<milli>("SELECT COALESCE(SUM(duration), 0) FROM track t INNER JOIN release r ON t.release_id = r.id")
-            .where("r.id = ?").bind(getId()));
+        return utils::fetchQuerySingleResult(session()->query<milli>("SELECT COALESCE(SUM(duration), 0) FROM track t")
+            .where("t.release_id = ?").bind(getId()));
     }
 
     Wt::WDateTime Release::getLastWritten() const
     {
         assert(session());
 
-        return utils::fetchQuerySingleResult(session()->query<Wt::WDateTime>("SELECT COALESCE(MAX(file_last_write), '1970-01-01T00:00:00') FROM track t INNER JOIN release r ON t.release_id = r.id")
-            .where("r.id = ?").bind(getId()));
+        return utils::fetchQuerySingleResult(session()->query<Wt::WDateTime>("SELECT COALESCE(MAX(file_last_write), '1970-01-01T00:00:00') FROM track t")
+            .where("t.release_id = ?").bind(getId()));
     }
 
     std::vector<std::vector<Cluster::pointer>> Release::getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const
@@ -580,13 +573,13 @@ namespace lms::db
 
         std::ostringstream oss;
 
-        oss << "SELECT c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN cluster_type c_type ON c.cluster_type_id = c_type.id INNER JOIN release r ON t.release_id = r.id ";
+        oss << "SELECT c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN cluster_type c_type ON c.cluster_type_id = c_type.id ";
 
-        where.And(WhereClause("r.id = ?")).bind(getId().toString());
+        where.And(WhereClause("t.release_id = ?")).bind(getId().toString());
         {
             WhereClause clusterClause;
             for (const ClusterTypeId clusterTypeId : clusterTypeIds)
-                clusterClause.Or(WhereClause("c_type.id = ?")).bind(clusterTypeId.toString());
+                clusterClause.Or(WhereClause("+c_type.id = ?")).bind(clusterTypeId.toString()); // Exclude this since the query planner does not do a good job when db is not analyzed
             where.And(clusterClause);
         }
         oss << " " << where.get();
