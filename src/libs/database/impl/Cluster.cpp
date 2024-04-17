@@ -113,6 +113,14 @@ namespace lms::db
         return utils::execRangeQuery<Cluster::pointer>(query, params.range);
     }
 
+    void Cluster::find(Session& session, const FindParameters& params, std::function<void(const pointer& cluster)> _func)
+    {
+        session.checkReadTransaction();
+        auto query{ createQuery<Wt::Dbo::ptr<Cluster>>(session, params) };
+
+        return utils::forEachQueryResult(query, _func);
+    }
+
     RangeResults<ClusterId> Cluster::findOrphanIds(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
