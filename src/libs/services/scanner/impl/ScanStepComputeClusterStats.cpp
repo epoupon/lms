@@ -79,6 +79,7 @@ namespace lms::scanner
                     }
 
                     context.currentStepStats.processedElems++;
+                    _progressCallback(context.currentStepStats);
                 }
 
                 return true;

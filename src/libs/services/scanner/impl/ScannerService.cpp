@@ -25,15 +25,17 @@
 #include "database/TrackFeatures.hpp"
 #include "database/ScanSettings.hpp"
 #include "core/Exception.hpp"
+#include "core/Path.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
-#include "core/Path.hpp"
+#include "core/ITraceLogger.hpp"
 
+#include "ScanStepAnalyze.hpp"
 #include "ScanStepCheckDuplicatedDbFiles.hpp"
+#include "ScanStepComputeClusterStats.hpp"
 #include "ScanStepDiscoverFiles.hpp"
 #include "ScanStepRemoveOrphanDbFiles.hpp"
 #include "ScanStepScanFiles.hpp"
-#include "ScanStepComputeClusterStats.hpp"
 
 namespace lms::scanner
 {
@@ -259,6 +261,8 @@ namespace lms::scanner
 
     void ScannerService::scan(bool forceScan)
     {
+        LMS_SCOPED_TRACE_OVERVIEW("Scanner", "Scan");
+
         _events.scanStarted.emit();
 
         {
@@ -278,6 +282,8 @@ namespace lms::scanner
 
         for (auto& scanStep : _scanSteps)
         {
+            LMS_SCOPED_TRACE_OVERVIEW("Scanner", scanStep->getStepName());
+
             LMS_LOG(DBUPDATER, DEBUG, "Starting scan step '" << scanStep->getStepName() << "'");
             scanContext.currentStepStats = ScanStepStats{ Wt::WDateTime::currentDateTime(), scanStep->getStep() };
 
@@ -288,8 +294,6 @@ namespace lms::scanner
         }
 
         LMS_LOG(DBUPDATER, INFO, "Scan " << (_abortScan ? "aborted" : "complete") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), features fetched = " << stats.featuresFetched << ",  duplicates = " << stats.duplicates.size());
-
-        _db.getTLSSession().analyze();
 
         if (!_abortScan)
         {
@@ -348,6 +352,7 @@ namespace lms::scanner
         _scanSteps.push_back(std::make_unique<ScanStepRemoveOrphanDbFiles>(params));
         _scanSteps.push_back(std::make_unique<ScanStepComputeClusterStats>(params));
         _scanSteps.push_back(std::make_unique<ScanStepCheckDuplicatedDbFiles>(params));
+        _scanSteps.push_back(std::make_unique<ScanStepAnalyze>(params));
     }
 
     ScannerSettings ScannerService::readSettings()

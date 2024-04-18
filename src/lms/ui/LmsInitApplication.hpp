@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,18 +19,15 @@
 
 #pragma once
 
-#include "ScanStepBase.hpp"
+#include <Wt/WApplication.h>
 
-namespace lms::scanner
+namespace lms::ui
 {
-	class ScanStepDiscoverFiles : public ScanStepBase
-	{
-		public:
-			using ScanStepBase::ScanStepBase;
+    class LmsInitApplication : public Wt::WApplication
+    {
+    public:
+        LmsInitApplication(const Wt::WEnvironment& env);
 
-		private:
-			ScanStep getStep() const override { return ScanStep::DiscoveringFiles; }
-			core::LiteralString getStepName() const override { return "Discovering files"; }
-			void process(ScanContext& context) override;
-	};
-}
+        static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env);
+    };
+} // namespace lms::ui

@@ -105,6 +105,7 @@
 <message id="Lms.Admin.ScannerController.status-not-scheduled">Non planifié</message>
 <message id="Lms.Admin.ScannerController.status-scheduled">Planifié le {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">En cours de scan : étape {1}/{2}</message>
+<message id="Lms.Admin.ScannerController.step-analyze">Analyze de la base de données... {1}/{2} entrées ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">Vérification des fichiers dupliqués... {1} fichiers</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-missing-files">Vérification des fichiers... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Calcul des statistiques... {1}%</message>

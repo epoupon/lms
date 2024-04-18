@@ -274,6 +274,13 @@ namespace lms::ui
             case scanner::ScanStep::ComputeClusterStats:
                 _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-compute-cluster-stats")
                     .arg(status.currentScanStepStats->progress()));
+
+            case scanner::ScanStep::        Analyze:
+                _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-analyze")
+                    .arg(status.currentScanStepStats->processedElems)
+                    .arg(status.currentScanStepStats->totalElems)
+                    .arg(status.currentScanStepStats->progress()));
+                break;
             }
             break;
         }

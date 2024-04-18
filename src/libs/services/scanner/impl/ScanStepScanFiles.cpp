@@ -518,10 +518,6 @@ namespace lms::scanner
                 context.stats.scans++;
 
                 processFileMetaData(context, scanResult.path, *scanResult.trackMetaData, libraryInfo);
-
-                // optimize the database during scan (if we import a very large database, it may be too late to do it once at end)
-                if ((context.stats.scans % 1'000) == 0)
-                    _db.getTLSSession().optimize();
             }
             else
             {

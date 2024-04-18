@@ -20,6 +20,7 @@
 #pragma once
 
 #include <cstddef>
+#include <ostream>
 #include <string>
 #include <string_view>
 
@@ -41,6 +42,12 @@ namespace lms::core
     private:
         std::string_view _str;
     };
+
+    inline std::ostream& operator<<(std::ostream& os, const LiteralString& str)
+    {
+        os << str.str();
+        return os;
+    }
 }
 
 namespace std

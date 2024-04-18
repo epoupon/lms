@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,20 +17,22 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <Wt/WContainerWidget.h>
+#include <Wt/WText.h>
 
-#include "ScanStepBase.hpp"
+#include "LmsInitApplication.hpp"
 
-namespace lms::scanner
+namespace lms::ui
 {
-	class ScanStepDiscoverFiles : public ScanStepBase
-	{
-		public:
-			using ScanStepBase::ScanStepBase;
+    LmsInitApplication::LmsInitApplication(const Wt::WEnvironment& env)
+        : Wt::WApplication{ env }
+    {
+        enableUpdates(true);
+        root()->addNew<Wt::WText>("LMS is initializing. This may take a while, please wait...");
+    }
 
-		private:
-			ScanStep getStep() const override { return ScanStep::DiscoveringFiles; }
-			core::LiteralString getStepName() const override { return "Discovering files"; }
-			void process(ScanContext& context) override;
-	};
-}
+    std::unique_ptr<Wt::WApplication> LmsInitApplication::create(const Wt::WEnvironment& env)
+    {
+        return std::make_unique<LmsInitApplication>(env);
+    }
+} // namespace lms::ui

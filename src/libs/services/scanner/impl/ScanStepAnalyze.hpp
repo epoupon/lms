@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -23,14 +23,14 @@
 
 namespace lms::scanner
 {
-	class ScanStepDiscoverFiles : public ScanStepBase
+	class ScanStepAnalyze : public ScanStepBase
 	{
 		public:
 			using ScanStepBase::ScanStepBase;
 
 		private:
-			ScanStep getStep() const override { return ScanStep::DiscoveringFiles; }
-			core::LiteralString getStepName() const override { return "Discovering files"; }
+			ScanStep getStep() const override { return ScanStep::Analyze; }
+			core::LiteralString getStepName() const override { return "Analyze"; }
 			void process(ScanContext& context) override;
 	};
 }

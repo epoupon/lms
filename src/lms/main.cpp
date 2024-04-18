@@ -40,6 +40,7 @@
 #include "subsonic/SubsonicResource.hpp"
 #include "ui/LmsApplication.hpp"
 #include "ui/LmsApplicationManager.hpp"
+#include "ui/LmsInitApplication.hpp"
 #include "core/IChildProcessManager.hpp"
 #include "core/IConfig.hpp"
 #include "core/IOContextRunner.hpp"
@@ -275,20 +276,34 @@ namespace lms
             Wt::WServer server{ argv[0] };
             server.setServerConfiguration(wtServerArgs.size(), const_cast<char**>(&wtArgv[0]));
 
+            // As initialization can take a while (db migration, analyze, etc.), we bind a temporary init entry point to warn the user
+            server.addEntryPoint(Wt::EntryPointType::Application,
+                [&](const Wt::WEnvironment& env)
+                {
+                    return ui::LmsInitApplication::create(env);
+                });
+
+            LMS_LOG(MAIN, INFO, "Starting init web server...");
+            server.start();
+
             core::IOContextRunner ioContextRunner{ ioContext, getThreadCount(), "Misc" };
 
             // Connection pool size must be twice the number of threads: we have at least 2 io pools with getThreadCount() each and they all may access the database
             db::Db database{ config->getPath("working-dir") / "lms.db", getThreadCount() * 2 };
             {
                 db::Session session{ database };
-                session.prepareTables();
+                session.prepareTablesIfNeeded();
+                session.createIndexesIfNeeded();
+
+                // As this may be quite long, we only do it during startup
+                session.vacuumIfNeeded();
 
                 // force optimize in case scanner aborted during a large import:
-                // queries may be too slow to even be able to relaunch a scan sing the web interface
-                session.analyze();
+                // queries may be too slow to even be able to relaunch a scan using the web interface
+                session.fullAnalyze();
                 database.getTLSSession().refreshTracingLoggerStats();
             }
-
+ 
             ui::LmsApplicationManager appManager;
 
             // Service initialization order is important (reverse-order for deinit)
@@ -327,8 +342,12 @@ namespace lms
             core::Service<feedback::IFeedbackService> feedbackService{ feedback::createFeedbackService(ioContext, database) };
             core::Service<scrobbling::IScrobblingService> scrobblingService{ scrobbling::createScrobblingService(ioContext, database) };
 
-            std::unique_ptr<Wt::WResource> subsonicResource;
+            LMS_LOG(MAIN, INFO, "Stopping init web server...");
+            server.stop();
 
+            server.removeEntryPoint("");
+
+            std::unique_ptr<Wt::WResource> subsonicResource;
             // bind API resources
             if (config->getBool("api-subsonic", true))
             {
@@ -345,7 +364,7 @@ namespace lms
 
             proxyScannerEventsToApplication(*scannerService, server);
 
-            LMS_LOG(MAIN, INFO, "Starting server...");
+            LMS_LOG(MAIN, INFO, "Starting init web server...");
             server.start();
 
             LMS_LOG(MAIN, INFO, "Now running...");

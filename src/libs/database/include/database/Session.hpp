@@ -22,6 +22,8 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/Dbo/SqlConnectionPool.h>
 
+#include <string>
+#include <vector>
 #include "core/ITraceLogger.hpp"
 #include "core/RecursiveSharedMutex.hpp"
 #include "database/Object.hpp"
@@ -84,10 +86,15 @@ namespace lms::db
 #endif
         }
 
-        void analyze();
-        void optimize();
+        // All these methods will acquire transactions
+        void fullAnalyze(); // helper for retrieveEntriesToAnalyze + analyzeEntry
+        void retrieveEntriesToAnalyze(std::vector<std::string>& entryList);
+        void analyzeEntry(const std::string& entry);
 
-        void prepareTables(); // need to run only once at startup
+        void prepareTablesIfNeeded(); // need to run only once at startup
+        void migrateIfNeeded();
+        void createIndexesIfNeeded();
+        void vacuumIfNeeded();
         void refreshTracingLoggerStats();
 
         // returning a ptr here to ease further wrapping using operator->

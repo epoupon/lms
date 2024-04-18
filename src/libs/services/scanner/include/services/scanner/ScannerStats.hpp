@@ -66,8 +66,9 @@ namespace lms::scanner
         FetchingTrackFeatures,
         ReloadingSimilarityEngine,
         ComputeClusterStats,
+        Analyze,
     };
-    static inline constexpr unsigned ScanProgressStepCount{ 7 };
+    static inline constexpr unsigned ScanProgressStepCount{ 8 };
 
     // reduced scan stats
     struct ScanStepStats

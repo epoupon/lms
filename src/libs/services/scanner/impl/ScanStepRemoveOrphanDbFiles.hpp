@@ -31,7 +31,7 @@ namespace lms::scanner
 			using ScanStepBase::ScanStepBase;
 
 		private:
-			std::string_view getStepName() const override { return "Checking orphaned entries"; }
+			core::LiteralString getStepName() const override { return "Checking orphaned entries"; }
 			ScanStep getStep() const override { return ScanStep::ChekingForMissingFiles; }
 			void process(ScanContext& context) override;
 

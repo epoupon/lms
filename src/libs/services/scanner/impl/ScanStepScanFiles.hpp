@@ -40,7 +40,7 @@ namespace lms::scanner
 
     private:
         ScanStep getStep() const override { return ScanStep::ScanningFiles; }
-        std::string_view getStepName() const override { return "Scanning files"; }
+        core::LiteralString getStepName() const override { return "Scanning files"; }
         void process(ScanContext& context) override;
 
         bool checkFileNeedScan(ScanContext& context, const std::filesystem::path& file, const ScannerSettings::MediaLibraryInfo& libraryInfo);
