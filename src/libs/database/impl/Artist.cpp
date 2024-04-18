@@ -50,15 +50,28 @@ namespace lms::db
                 || params.clusters.size() == 1
                 || params.mediaLibrary.isValid())
             {
-                query.join("track t ON t.id = t_a_l.track_id");
                 query.join("track_artist_link t_a_l ON t_a_l.artist_id = a.id");
             }
 
-            if (params.linkType)
-                query.where("t_a_l.type = ?").bind(*params.linkType);
+            if (params.sortMethod == ArtistSortMethod::LastWritten
+                || params.writtenAfter.isValid()
+                || params.release.isValid()
+                || params.mediaLibrary.isValid())
+            {
+                query.join("track t ON t.id = t_a_l.track_id");
 
-            if (params.writtenAfter.isValid())
-                query.where("t.file_last_write > ?").bind(params.writtenAfter);
+                if (params.writtenAfter.isValid())
+                    query.where("t.file_last_write > ?").bind(params.writtenAfter);
+
+                if (params.release.isValid())
+                    query.where("t.release_id = ?").bind(params.release);
+
+                if (params.mediaLibrary.isValid())
+                    query.where("t.media_library_id = ?").bind(params.mediaLibrary);
+            }
+
+            if (params.linkType)
+                query.where("+t_a_l.type = ?").bind(*params.linkType); // Exclude this since the query planner does not do a good job when db is not analyzed
 
             if (!params.keywords.empty())
             {
@@ -91,7 +104,7 @@ namespace lms::db
 
             if (params.clusters.size() == 1)
             {
-                query.join("track_cluster t_c ON t_c.track_id = t.id")
+                query.join("track_cluster t_c ON t_c.track_id = t_a_l.track_id")
                     .where("t_c.cluster_id = ?").bind(params.clusters.front());
             }
             else if (params.clusters.size() > 1)
@@ -114,13 +127,7 @@ namespace lms::db
             }
 
             if (params.track.isValid())
-                query.where("t.id = ?").bind(params.track);
-
-            if (params.release.isValid())
-                query.where("t.release_id = ?").bind(params.release);
-
-            if (params.mediaLibrary.isValid())
-                query.where("t.media_library_id = ?").bind(params.mediaLibrary);
+                query.where("t_a_l.track_id = ?").bind(params.track);
 
             switch (params.sortMethod)
             {
