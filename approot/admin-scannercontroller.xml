@@ -18,7 +18,7 @@
 				${step-status class="form-control"}
 			</div>
 			<div class="col-12">
-				<label class="form-label" for="{id:last-scan}">
+				<label class="form-label" for="${id:last-scan}">
 					${tr:Lms.Admin.ScannerController.last-scan}
 				</label>
 				<div class="input-group">
