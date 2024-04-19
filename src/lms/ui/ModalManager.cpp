@@ -69,7 +69,7 @@ namespace lms::ui
             << R"({const modalElementParent = document.getElementById(')" << modalWidget->id() << R"(');)"
             << R"(const modalElement = modalElementParent.getElementsByClassName('modal')[0];)"
             << R"(const modal = bootstrap.Modal.getInstance(modalElement);)"
-            << R"(modal.hide();)"
+            << R"(if (modal) { modal.hide(); })" // may already be removed client side
             << R"(})";
 
         LMS_LOG(UI, DEBUG, "Running JS '" << oss.str() << "'");
