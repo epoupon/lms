@@ -274,6 +274,7 @@ namespace lms::ui
             case scanner::ScanStep::ComputeClusterStats:
                 _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-compute-cluster-stats")
                     .arg(status.currentScanStepStats->progress()));
+                break;
 
             case scanner::ScanStep::        Analyze:
                 _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-analyze")
