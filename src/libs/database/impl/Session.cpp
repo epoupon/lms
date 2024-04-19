@@ -143,20 +143,23 @@ namespace lms::db
         }
     }
 
-    void Session::migrateIfNeeded()
+    bool Session::migrateSchemaIfNeeded()
     {
-        Migration::doDbMigration(*this);
+        const bool migrationPerformed{ Migration::doDbMigration(*this) };
 
         // TODO: move this elsewhere
         {
             auto uniqueTransaction{ createWriteTransaction() };
             ScanSettings::init(*this);
         }
+
+        return migrationPerformed;
     }
 
     void Session::createIndexesIfNeeded()
     {
         LMS_SCOPED_TRACE_OVERVIEW("Database", "IndexCreation");
+        LMS_LOG(DB, INFO, "Creating indexes... This may take a while...");
 
         auto transaction{ createWriteTransaction() };
         _session.execute("CREATE INDEX IF NOT EXISTS artist_id_idx ON artist(id)");
@@ -227,6 +230,8 @@ namespace lms::db
 
         _session.execute("CREATE INDEX IF NOT EXISTS starred_track_user_backend_idx ON starred_track(user_id,backend)");
         _session.execute("CREATE INDEX IF NOT EXISTS starred_track_track_user_backend_idx ON starred_track(track_id,user_id,backend)");
+
+        LMS_LOG(DB, INFO, "Indexes created!");
     }
 
     void Session::vacuumIfNeeded()
@@ -242,18 +247,21 @@ namespace lms::db
 
         LMS_LOG(DB, INFO, "page stats: page_count = " << pageCount << ", freelist_count = " << freeListCount);
         if (freeListCount >= (pageCount / 10))
+            vacuum();
+    }
+
+    void Session::vacuum()
+    {
+        LMS_SCOPED_TRACE_OVERVIEW("Database", "Vacuum");
+        LMS_LOG(DB, INFO, "Performing vacuum... This may take a while...");
+
+        // We manually take a lock here since vacuum cannot be inside a transaction
         {
-            LMS_SCOPED_TRACE_OVERVIEW("Database", "Vacuum");
-            LMS_LOG(DB, INFO, "Performing vacuum... This may take a while...");
-
-            // We manually take a lock here since vacuum cannot be inside a transaction
-            {
-                std::unique_lock lock{ _db.getMutex() };
-                _db.executeSql("VACUUM");
-            }
-
-            LMS_LOG(DB, INFO, "Vacuum complete!");
+            std::unique_lock lock{ _db.getMutex() };
+            _db.executeSql("VACUUM");
         }
+
+        LMS_LOG(DB, INFO, "Vacuum complete!");
     }
 
     void Session::refreshTracingLoggerStats()

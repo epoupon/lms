@@ -460,7 +460,7 @@ SELECT
             session.getDboSession()->execute("DROP INDEX " + indexName);
     }
 
-    void doDbMigration(Session& session)
+    bool doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
 
@@ -496,6 +496,7 @@ SELECT
             {56, migrateFromV56},
         };
 
+        bool migrationPerformed{};
         {
             LMS_SCOPED_TRACE_OVERVIEW("Database", "Migration");
             auto transaction{ session.createWriteTransaction() };
@@ -530,7 +531,10 @@ SELECT
                 VersionInfo::get(session).modify()->setVersion(++version);
 
                 LMS_LOG(DB, INFO, "Migration complete to version " << version);
+                migrationPerformed = true;
             }
         }
+
+        return migrationPerformed;
     }
 }

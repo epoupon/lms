@@ -293,11 +293,14 @@ namespace lms
             {
                 db::Session session{ database };
                 session.prepareTablesIfNeeded();
-                session.migrateIfNeeded();
+                bool migrationPerformed{ session.migrateSchemaIfNeeded() };
                 session.createIndexesIfNeeded();
 
                 // As this may be quite long, we only do it during startup
-                session.vacuumIfNeeded();
+                if (migrationPerformed)
+                    session.vacuum();
+                else
+                    session.vacuumIfNeeded();
 
                 // force optimize in case scanner aborted during a large import:
                 // queries may be too slow to even be able to relaunch a scan using the web interface

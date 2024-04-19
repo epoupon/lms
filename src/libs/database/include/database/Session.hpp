@@ -92,9 +92,10 @@ namespace lms::db
         void analyzeEntry(const std::string& entry);
 
         void prepareTablesIfNeeded(); // need to run only once at startup
-        void migrateIfNeeded();
+        bool migrateSchemaIfNeeded(); // returns true if migration was performed
         void createIndexesIfNeeded();
         void vacuumIfNeeded();
+        void vacuum();
         void refreshTracingLoggerStats();
 
         // returning a ptr here to ease further wrapping using operator->
