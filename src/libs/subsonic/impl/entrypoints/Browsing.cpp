@@ -109,7 +109,7 @@ namespace lms::api::subsonic
                 if (!user)
                     throw UserNotAuthorizedError{};
 
-                parameters.setSortMethod(ArtistSortMethod::BySortName);
+                parameters.setSortMethod(ArtistSortMethod::SortName);
                 switch (user->getSubsonicArtistListMode())
                 {
                 case SubsonicArtistListMode::AllArtists:
@@ -329,7 +329,7 @@ namespace lms::api::subsonic
             directoryNode.setAttribute("name", "Music");
 
             // TODO: this does not scale when a lot of artists are present
-            Artist::find(context.dbSession, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::BySortName), [&](const Artist::pointer& artist)
+            Artist::find(context.dbSession, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::SortName), [&](const Artist::pointer& artist)
                 {
                     directoryNode.addArrayChild("child", createArtistNode(context, artist, user, false /* no id3 */));
                 });

@@ -168,6 +168,9 @@ namespace lms::db
             {
             case ReleaseSortMethod::None:
                 break;
+            case ReleaseSortMethod::Id:
+                query.orderBy("r.id");
+                break;
             case ReleaseSortMethod::Name:
                 query.orderBy("r.name COLLATE NOCASE");
                 break;

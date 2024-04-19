@@ -588,21 +588,21 @@ namespace lms::db::tests
             }
 
             {
-                const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"MyArtist%"}).setSortMethod(ArtistSortMethod::ByName)) };
+                const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"MyArtist%"}).setSortMethod(ArtistSortMethod::Name)) };
                 ASSERT_EQ(artists.results.size(), 2);
                 EXPECT_EQ(artists.results[0], artist1.getId());
                 EXPECT_EQ(artists.results[1], artist4.getId());
             }
 
             {
-                const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"%MyArtist"}).setSortMethod(ArtistSortMethod::ByName)) };
+                const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"%MyArtist"}).setSortMethod(ArtistSortMethod::Name)) };
                 ASSERT_EQ(artists.results.size(), 2);
                 EXPECT_EQ(artists.results[0], artist2.getId());
                 EXPECT_EQ(artists.results[1], artist5.getId());
             }
 
             {
-                const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"_MyArtist"}).setSortMethod(ArtistSortMethod::ByName)) };
+                const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"_MyArtist"}).setSortMethod(ArtistSortMethod::Name)) };
                 ASSERT_EQ(artists.results.size(), 1);
                 EXPECT_EQ(artists.results[0], artist3.getId());
             }
@@ -624,8 +624,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto allArtistsByName{ Artist::findIds(session, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::ByName)) };
-            auto allArtistsBySortName{ Artist::findIds(session, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::BySortName)) };
+            auto allArtistsByName{ Artist::findIds(session, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::Name)) };
+            auto allArtistsBySortName{ Artist::findIds(session, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::SortName)) };
 
             ASSERT_EQ(allArtistsByName.results.size(), 2);
             EXPECT_EQ(allArtistsByName.results.front(), artistA.getId());

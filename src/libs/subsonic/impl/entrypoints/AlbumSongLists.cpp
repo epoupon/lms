@@ -197,7 +197,7 @@ namespace lms::api::subsonic
             {
                 feedback::IFeedbackService::ArtistFindParameters artistFindParams;
                 artistFindParams.setUser(context.userId);
-                artistFindParams.setSortMethod(ArtistSortMethod::BySortName);
+                artistFindParams.setSortMethod(ArtistSortMethod::SortName);
                 for (const ArtistId artistId : feedbackService.findStarredArtists(artistFindParams).results)
                 {
                     if (auto artist{ Artist::find(context.dbSession, artistId) })

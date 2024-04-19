@@ -133,10 +133,13 @@ namespace lms::db
             {
             case ArtistSortMethod::None:
                 break;
-            case ArtistSortMethod::ByName:
+            case ArtistSortMethod::Id:
+                query.orderBy("a.id");
+                break;
+            case ArtistSortMethod::Name:
                 query.orderBy("a.name COLLATE NOCASE");
                 break;
-            case ArtistSortMethod::BySortName:
+            case ArtistSortMethod::SortName:
                 query.orderBy("a.sort_name COLLATE NOCASE");
                 break;
             case ArtistSortMethod::Random:

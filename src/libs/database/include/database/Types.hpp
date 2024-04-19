@@ -108,8 +108,9 @@ namespace lms::db
     enum class ArtistSortMethod
     {
         None,
-        ByName,
-        BySortName,
+        Id,
+        Name,
+        SortName,
         Random,
         LastWritten,
         StarredDateDesc,
@@ -118,6 +119,7 @@ namespace lms::db
     enum class ReleaseSortMethod
     {
         None,
+        Id,
         Name,
         ArtistNameThenName,
         Date,
@@ -138,6 +140,7 @@ namespace lms::db
     enum class TrackSortMethod
     {
         None,
+        Id,
         Random,
         LastWritten,
         StarredDateDesc,

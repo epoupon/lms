@@ -153,6 +153,9 @@ namespace lms::db
             {
             case TrackSortMethod::None:
                 break;
+            case TrackSortMethod::Id:
+                query.orderBy("t.id");
+                break;
             case TrackSortMethod::LastWritten:
                 query.orderBy("t.file_last_write DESC");
                 break;
