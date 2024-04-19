@@ -293,6 +293,7 @@ namespace lms
             {
                 db::Session session{ database };
                 session.prepareTablesIfNeeded();
+                session.migrateIfNeeded();
                 session.createIndexesIfNeeded();
 
                 // As this may be quite long, we only do it during startup
