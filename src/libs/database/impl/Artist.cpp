@@ -41,7 +41,7 @@ namespace lms::db
             session.checkReadTransaction();
 
             // TODO remove distinct and use group by
-            auto query{ session.getDboSession()->query<ResultType>("SELECT DISTINCT " + std::string{ itemToSelect } + " FROM artist a") };
+            auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM artist a") };
             if (params.sortMethod == ArtistSortMethod::LastWritten
                 || params.writtenAfter.isValid()
                 || params.linkType
@@ -153,6 +153,8 @@ namespace lms::db
                 query.orderBy("s_a.date_time DESC");
                 break;
             }
+
+            query.groupBy("a.id");
 
             return query;
         }
