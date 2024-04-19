@@ -34,7 +34,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 56 };
+        static constexpr Version LMS_DATABASE_VERSION{ 57 };
     }
 
     VersionInfo::VersionInfo()
@@ -452,6 +452,14 @@ SELECT
         session.getDboSession()->execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV56(Session& session)
+    {
+        // Make sure we remove all the previoulsy created index, the createIndexesIfNeeded will recreate them all
+        std::vector<std::string> indexeNames{ utils::fetchQueryResults(session.getDboSession()->query<std::string>(R"(SELECT name FROM sqlite_master  WHERE type = 'index' AND name LIKE '%_idx')")) };
+        for (const auto& indexName : indexeNames)
+            session.getDboSession()->execute("DROP INDEX " + indexName);
+    }
+
     void doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -485,6 +493,7 @@ SELECT
             {53, migrateFromV53},
             {54, migrateFromV54},
             {55, migrateFromV55},
+            {56, migrateFromV56},
         };
 
         {

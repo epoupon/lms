@@ -175,6 +175,7 @@ namespace lms::db
         _session.execute("CREATE INDEX IF NOT EXISTS listen_backend_idx ON listen(backend)");
         _session.execute("CREATE INDEX IF NOT EXISTS listen_id_idx ON listen(id)");
         _session.execute("CREATE INDEX IF NOT EXISTS listen_user_backend_idx ON listen(user_id,backend)");
+        _session.execute("CREATE INDEX IF NOT EXISTS listen_user_backend_date_time ON listen(user_id, backend, date_time DESC)");
         _session.execute("CREATE INDEX IF NOT EXISTS listen_track_user_backend_idx ON listen(track_id,user_id,backend)");
         _session.execute("CREATE INDEX IF NOT EXISTS listen_user_track_backend_date_time_idx ON listen(user_id,track_id,backend,date_time)");
 
@@ -191,6 +192,8 @@ namespace lms::db
         _session.execute("CREATE INDEX IF NOT EXISTS track_mbid_idx ON track(mbid)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_recording_mbid_idx ON track(recording_mbid)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_release_idx ON track(release_id)");
+        _session.execute("CREATE INDEX IF NOT EXISTS track_release_file_last_write_idx ON track(release_id, file_last_write)");
+        _session.execute("CREATE INDEX IF NOT EXISTS track_release_year_idx ON track(release_id, year)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_file_last_write_idx ON track(file_last_write)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_date_idx ON track(date)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_year_idx ON track(year)");
@@ -206,8 +209,10 @@ namespace lms::db
         _session.execute("CREATE INDEX IF NOT EXISTS track_features_track_idx ON track_features(track_id)");
 
         _session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_artist_idx ON track_artist_link(artist_id)");
+        _session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_artist_track_idx ON track_artist_link(artist_id, track_id)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_artist_type_idx ON track_artist_link(artist_id,type)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_track_idx ON track_artist_link(track_id)");
+        _session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_track_artist_idx ON track_artist_link(track_id, artist_id)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_track_type_idx ON track_artist_link(track_id,type)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_type_idx ON track_artist_link(type)");
 
