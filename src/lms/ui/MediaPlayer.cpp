@@ -286,11 +286,11 @@ namespace lms::ui
                 needSeparator = false;
             }
 
-            if (track->getRelease())
+            if (const db::Release::pointer release{ track->getRelease() })
             {
                 _release->setTextFormat(Wt::TextFormat::Plain);
-                _release->setText(Wt::WString::fromUTF8(std::string{ track->getRelease()->getName() }));
-                _release->setLink(utils::createReleaseLink(track->getRelease()));
+                _release->setText(Wt::WString::fromUTF8(std::string{ release->getName() }));
+                _release->setLink(utils::createReleaseLink(release));
             }
             else
             {
