@@ -576,13 +576,13 @@ namespace lms::db
 
         std::ostringstream oss;
 
-        oss << "SELECT c from cluster c INNER JOIN track t ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id INNER JOIN cluster_type c_type ON c.cluster_type_id = c_type.id ";
+        oss << "SELECT c from cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id INNER JOIN track t ON t.id = t_c.track_id ";
 
         where.And(WhereClause("t.release_id = ?")).bind(getId().toString());
         {
             WhereClause clusterClause;
             for (const ClusterTypeId clusterTypeId : clusterTypeIds)
-                clusterClause.Or(WhereClause("+c_type.id = ?")).bind(clusterTypeId.toString()); // Exclude this since the query planner does not do a good job when db is not analyzed
+                clusterClause.Or(WhereClause("c.cluster_type_id = ?")).bind(clusterTypeId.toString());
             where.And(clusterClause);
         }
         oss << " " << where.get();
@@ -592,12 +592,14 @@ namespace lms::db
         for (const std::string& bindArg : where.getBindArgs())
             query.bind(bindArg);
 
+        auto queryRes{ query.resultList() };
+
         std::map<ClusterTypeId, std::vector<Cluster::pointer>> clustersByType;
-        utils::forEachQueryResult(query, [&](const Cluster::pointer& cluster)
-            {
-                if (clustersByType[cluster->getType()->getId()].size() < size)
-                    clustersByType[cluster->getType()->getId()].push_back(cluster);
-            });
+        for (const Wt::Dbo::ptr<Cluster>& cluster : queryRes)
+        {
+            if (clustersByType[cluster->getType()->getId()].size() < size)
+                clustersByType[cluster->getType()->getId()].push_back(cluster);
+        }
 
         std::vector<std::vector<Cluster::pointer>> res;
         for (const auto& [clusterTypeId, clusters] : clustersByType)
