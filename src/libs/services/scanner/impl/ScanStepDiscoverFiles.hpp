@@ -29,8 +29,8 @@ namespace lms::scanner
 			using ScanStepBase::ScanStepBase;
 
 		private:
-			ScanStep getStep() const override { return ScanStep::DiscoveringFiles; }
-			core::LiteralString getStepName() const override { return "Discovering files"; }
+			ScanStep getStep() const override { return ScanStep::DiscoverFiles; }
+			core::LiteralString getStepName() const override { return "Discover files"; }
 			void process(ScanContext& context) override;
 	};
 }

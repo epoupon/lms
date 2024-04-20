@@ -22,47 +22,46 @@
 #include <optional>
 
 #include "ScannerEvents.hpp"
+#include "ScannerOptions.hpp"
 #include "ScannerStats.hpp"
 
 namespace lms::db
 {
-	class Db;
+    class Db;
 }
 
 namespace lms::scanner
 {
+    class IScannerService
+    {
+    public:
+        virtual ~IScannerService() = default;
 
-	class IScannerService
-	{
-		public:
-			virtual ~IScannerService() = default;
+        // Async requests
+        virtual void requestStop() = 0;
+        virtual void requestReload() = 0;
 
-			// Async requests
-			virtual void requestStop() = 0;
-			virtual void requestReload() = 0;
-			virtual void requestImmediateScan(bool force) = 0;
+        virtual void requestImmediateScan(const ScanOptions& options = {}) = 0;
 
-			enum class State
-			{
-				NotScheduled,
-				Scheduled,
-				InProgress,
-			};
+        enum class State
+        {
+            NotScheduled,
+            Scheduled,
+            InProgress,
+        };
 
-			struct Status
-			{
-				State								currentState {State::NotScheduled};
-				Wt::WDateTime						nextScheduledScan;
-				std::optional<ScanStats>			lastCompleteScanStats;
-				std::optional<ScanStepStats> 		currentScanStepStats;
-			};
+        struct Status
+        {
+            State								currentState{ State::NotScheduled };
+            Wt::WDateTime						nextScheduledScan;
+            std::optional<ScanStats>			lastCompleteScanStats;
+            std::optional<ScanStepStats> 		currentScanStepStats;
+        };
 
-			virtual Status getStatus() const = 0;
+        virtual Status getStatus() const = 0;
 
-			virtual Events& getEvents() = 0;
-	};
+        virtual Events& getEvents() = 0;
+    };
 
-	std::unique_ptr<IScannerService> createScannerService(db::Db& db);
-
+    std::unique_ptr<IScannerService> createScannerService(db::Db& db);
 } // Scanner
-

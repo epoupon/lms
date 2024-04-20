@@ -39,7 +39,7 @@ namespace lms::api::subsonic::Scan
             {
                 std::size_t count{};
 
-                if (scanStatus.currentScanStepStats && scanStatus.currentScanStepStats->currentStep == ScanStep::ScanningFiles)
+                if (scanStatus.currentScanStepStats && scanStatus.currentScanStepStats->currentStep == ScanStep::ScanFiles)
                     count = scanStatus.currentScanStepStats->processedElems;
 
                 statusResponse.setAttribute("count", count);
@@ -59,7 +59,7 @@ namespace lms::api::subsonic::Scan
 
     Response handleStartScan(RequestContext& context)
     {
-        core::Service<IScannerService>::get()->requestImmediateScan(false);
+        core::Service<IScannerService>::get()->requestImmediateScan();
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
         response.addNode("scanStatus", createStatusResponseNode());

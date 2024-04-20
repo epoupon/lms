@@ -30,10 +30,11 @@
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 
-#include "ScanStepAnalyze.hpp"
 #include "ScanStepCheckDuplicatedDbFiles.hpp"
+#include "ScanStepCompact.hpp"
 #include "ScanStepComputeClusterStats.hpp"
 #include "ScanStepDiscoverFiles.hpp"
+#include "ScanStepOptimize.hpp"
 #include "ScanStepRemoveOrphanDbFiles.hpp"
 #include "ScanStepScanFiles.hpp"
 
@@ -135,15 +136,15 @@ namespace lms::scanner
             _events.scanAborted.emit();
     }
 
-    void ScannerService::requestImmediateScan(bool force)
+    void ScannerService::requestImmediateScan(const ScanOptions& scanOptions)
     {
         abortScan();
-        _ioService.post([this, force]
+        _ioService.post([this, scanOptions]
             {
                 if (_abortScan)
                     return;
 
-                scheduleScan(force);
+                scheduleScan(scanOptions);
             });
     }
 
@@ -220,7 +221,7 @@ namespace lms::scanner
         }
 
         if (nextScanDateTime.isValid())
-            scheduleScan(false, nextScanDateTime);
+            scheduleScan(ScanOptions{}, nextScanDateTime);
 
         {
             std::unique_lock lock{ _statusMutex };
@@ -231,14 +232,14 @@ namespace lms::scanner
         _events.scanScheduled.emit(_nextScheduledScan);
     }
 
-    void ScannerService::scheduleScan(bool force, const Wt::WDateTime& dateTime)
+    void ScannerService::scheduleScan(const ScanOptions& scanOptions, const Wt::WDateTime& dateTime)
     {
-        auto cb{ [this, force](boost::system::error_code ec)
+        auto cb{ [this, scanOptions](boost::system::error_code ec)
         {
             if (ec)
                 return;
 
-            scan(force);
+            scan(scanOptions);
         } };
 
         if (dateTime.isNull())
@@ -259,7 +260,7 @@ namespace lms::scanner
         }
     }
 
-    void ScannerService::scan(bool forceScan)
+    void ScannerService::scan(const ScanOptions& scanOptions)
     {
         LMS_SCOPED_TRACE_OVERVIEW("Scanner", "Scan");
 
@@ -276,16 +277,17 @@ namespace lms::scanner
 
         refreshScanSettings();
 
-        IScanStep::ScanContext scanContext{ forceScan, ScanStats {}, ScanStepStats {} };
+        IScanStep::ScanContext scanContext{ scanOptions, ScanStats {}, ScanStepStats {} };
         ScanStats& stats{ scanContext.stats };
         stats.startTime = Wt::WDateTime::currentDateTime();
 
+        std::size_t stepIndex{};
         for (auto& scanStep : _scanSteps)
         {
             LMS_SCOPED_TRACE_OVERVIEW("Scanner", scanStep->getStepName());
 
             LMS_LOG(DBUPDATER, DEBUG, "Starting scan step '" << scanStep->getStepName() << "'");
-            scanContext.currentStepStats = ScanStepStats{ Wt::WDateTime::currentDateTime(), scanStep->getStep() };
+            scanContext.currentStepStats = ScanStepStats{ .startTime = Wt::WDateTime::currentDateTime(), .stepIndex = stepIndex++, .currentStep = scanStep->getStep() };
 
             notifyInProgress(scanContext.currentStepStats);
             scanStep->process(scanContext);
@@ -350,9 +352,10 @@ namespace lms::scanner
         _scanSteps.push_back(std::make_unique<ScanStepDiscoverFiles>(params));
         _scanSteps.push_back(std::make_unique<ScanStepScanFiles>(params));
         _scanSteps.push_back(std::make_unique<ScanStepRemoveOrphanDbFiles>(params));
+        _scanSteps.push_back(std::make_unique<ScanStepCompact>(params));
+        _scanSteps.push_back(std::make_unique<ScanStepOptimize>(params));
         _scanSteps.push_back(std::make_unique<ScanStepComputeClusterStats>(params));
         _scanSteps.push_back(std::make_unique<ScanStepCheckDuplicatedDbFiles>(params));
-        _scanSteps.push_back(std::make_unique<ScanStepAnalyze>(params));
     }
 
     ScannerSettings ScannerService::readSettings()

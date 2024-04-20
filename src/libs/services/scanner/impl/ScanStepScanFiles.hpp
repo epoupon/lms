@@ -39,8 +39,8 @@ namespace lms::scanner
         ScanStepScanFiles(InitParams& initParams);
 
     private:
-        ScanStep getStep() const override { return ScanStep::ScanningFiles; }
-        core::LiteralString getStepName() const override { return "Scanning files"; }
+        ScanStep getStep() const override { return ScanStep::ScanFiles; }
+        core::LiteralString getStepName() const override { return "Scan files"; }
         void process(ScanContext& context) override;
 
         bool checkFileNeedScan(ScanContext& context, const std::filesystem::path& file, const ScannerSettings::MediaLibraryInfo& libraryInfo);

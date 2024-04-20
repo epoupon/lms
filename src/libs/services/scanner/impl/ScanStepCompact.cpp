@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,30 +17,17 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "ScanStepCompact.hpp"
 
-#include <vector>
-
-#include "core/LiteralString.hpp"
-#include "services/scanner/ScannerOptions.hpp"
-#include "services/scanner/ScannerStats.hpp"
+#include "database/Db.hpp"
+#include "database/Session.hpp"
 
 namespace lms::scanner
 {
-    class IScanStep
+    void ScanStepCompact::process(ScanContext& context)
     {
-    public:
-        virtual ~IScanStep() = default;
-
-        virtual ScanStep getStep() const = 0;
-        virtual core::LiteralString getStepName() const = 0;
-
-        struct ScanContext
-        {
-            ScanOptions scanOptions;
-            ScanStats stats;
-            ScanStepStats currentStepStats;
-        };
-        virtual void process(ScanContext& context) = 0;
-    };
+        // Don't auto compact as it may be too annoying to block the whole application
+        if (context.scanOptions.compact)
+            _db.getTLSSession().vacuum();
+    }
 }

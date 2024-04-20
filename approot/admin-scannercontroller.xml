@@ -2,42 +2,63 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Admin.ScannerController.template">
-	<form>
-		<legend>${tr:Lms.Admin.ScannerController.scanner}</legend>
-		<div class="row g-3">
-			<div class="col-lg-6">
-				<label class="form-label" for="${id:status}">
-					${tr:Lms.Admin.ScannerController.status}
-				</label>
-				${status class="form-control"}
+	<legend>${tr:Lms.Admin.ScannerController.scanner}</legend>
+	<div class="row g-3">
+		<div class="col-lg-6">
+			<label class="form-label" for="${id:status}">
+				${tr:Lms.Admin.ScannerController.status}
+			</label>
+			${status class="form-control"}
+		</div>
+		<div class="col-lg-6">
+			<label class="form-label" for="${id:step-status}">
+				${tr:Lms.Admin.ScannerController.step-status}
+			</label>
+			${step-status class="form-control"}
+		</div>
+		<div class="col-12">
+			<label class="form-label" for="${id:last-scan}">
+				${tr:Lms.Admin.ScannerController.last-scan}
+			</label>
+			<div class="input-group">
+				${last-scan class="form-control"}
+				${report-btn class="btn btn-outline-info"}
 			</div>
-			<div class="col-lg-6">
-				<label class="form-label" for="${id:step-status}">
-					${tr:Lms.Admin.ScannerController.step-status}
-				</label>
-				${step-status class="form-control"}
-			</div>
-			<div class="col-12">
-				<label class="form-label" for="${id:last-scan}">
-					${tr:Lms.Admin.ScannerController.last-scan}
-				</label>
-				<div class="input-group">
-					${last-scan class="form-control"}
-					${report-btn class="btn btn-outline-info"}
-				</div>
-			</div>
-			<div class="col-12">
-				<div class="btn-group">
-					${scan-btn class="btn btn-primary"}
-					<button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
-					</button>
-					<ul class="dropdown-menu">
-						<li>${full-scan-btn class="dropdown-item"}</li>
-					</ul>
+		</div>
+		<div class="col-12">
+			<div class="collapse" id="scanOptions">
+				<div class="card bg-dark">
+					<div class="card-header">
+						${tr:Lms.Admin.ScannerController.scan-options}
+					</div>
+					<div class="card-body">
+						<div class="form-check mb-1">
+							${full-scan class="form-check-input"}
+							<label class="form-check-label" for="${id:full-scan}">
+								${tr:Lms.Admin.ScannerController.full-scan}
+							</label>
+						</div>
+						<div class="form-check mb-1">
+							${force-optimize class="form-check-input"}
+							<label class="form-check-label" for="${id:force-optimize}">
+								${tr:Lms.Admin.ScannerController.force-optimize}
+							</label>
+						</div>
+						<div class="form-check">
+							${compact class="form-check-input"}
+							<label class="form-check-label" for="${id:compact}">
+								${tr:Lms.Admin.ScannerController.compact}
+							</label>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
-	</form>
+		<div class="col-12">
+			${scan-btn class="btn btn-primary me-2"}
+			<button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#scanOptions" aria-expanded="false" aria-controls="scanOptions">${tr:Lms.Admin.ScannerController.scan-options}</button>
+		</div>
+	</div>
 </message>
 
 </messages>

@@ -59,22 +59,24 @@ namespace lms::scanner
 
     enum class ScanStep
     {
-        DiscoveringFiles,
-        ScanningFiles,
-        ChekingForMissingFiles,
-        CheckingForDuplicateFiles,
-        FetchingTrackFeatures,
-        ReloadingSimilarityEngine,
+        CheckForMissingFiles,
+        CheckForDuplicateFiles,
         ComputeClusterStats,
-        Analyze,
+        Compact,
+        DiscoverFiles,
+        FetchTrackFeatures,
+        Optimize,
+        ReloadSimilarityEngine,
+        ScanFiles,
     };
-    static inline constexpr unsigned ScanProgressStepCount{ 8 };
+    static inline constexpr unsigned ScanProgressStepCount{ 9 };
 
     // reduced scan stats
     struct ScanStepStats
     {
         Wt::WDateTime   startTime;
 
+        std::size_t stepIndex{};
         ScanStep currentStep;
 
         std::size_t	totalElems{};

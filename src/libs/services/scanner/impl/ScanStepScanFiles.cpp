@@ -459,7 +459,7 @@ namespace lms::scanner
         }
 
         bool needUpdateLibrary{};
-        if (!context.forceScan)
+        if (!context.scanOptions.fullScan)
         {
             // Skip file if last write is the same
             db::Session& dbSession{ _db.getTLSSession() };

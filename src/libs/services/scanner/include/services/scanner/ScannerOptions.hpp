@@ -19,18 +19,12 @@
 
 #pragma once
 
-#include "ScanStepBase.hpp"
-
 namespace lms::scanner
 {
-	class ScanStepAnalyze : public ScanStepBase
-	{
-		public:
-			using ScanStepBase::ScanStepBase;
-
-		private:
-			ScanStep getStep() const override { return ScanStep::Analyze; }
-			core::LiteralString getStepName() const override { return "Analyze"; }
-			void process(ScanContext& context) override;
-	};
+    struct ScanOptions
+    {
+        bool fullScan{}; // scan files even if not changed
+        bool forceOptimize{}; // force optimize database
+        bool compact{}; // compact the database
+    };
 }

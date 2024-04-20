@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,28 +19,18 @@
 
 #pragma once
 
-#include <vector>
-
-#include "core/LiteralString.hpp"
-#include "services/scanner/ScannerOptions.hpp"
-#include "services/scanner/ScannerStats.hpp"
+#include "ScanStepBase.hpp"
 
 namespace lms::scanner
 {
-    class IScanStep
-    {
-    public:
-        virtual ~IScanStep() = default;
+	class ScanStepOptimize : public ScanStepBase
+	{
+		public:
+			using ScanStepBase::ScanStepBase;
 
-        virtual ScanStep getStep() const = 0;
-        virtual core::LiteralString getStepName() const = 0;
-
-        struct ScanContext
-        {
-            ScanOptions scanOptions;
-            ScanStats stats;
-            ScanStepStats currentStepStats;
-        };
-        virtual void process(ScanContext& context) = 0;
-    };
+		private:
+			ScanStep getStep() const override { return ScanStep::Optimize; }
+			core::LiteralString getStepName() const override { return "Optimize"; }
+			void process(ScanContext& context) override;
+	};
 }

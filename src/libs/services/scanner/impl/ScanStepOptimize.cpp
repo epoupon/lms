@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ScanStepAnalyze.hpp"
+#include "ScanStepOptimize.hpp"
 
 #include "core/ILogger.hpp"
 #include "database/Db.hpp"
@@ -25,19 +25,20 @@
 
 namespace lms::scanner
 {
-    void ScanStepAnalyze::process(ScanContext& context)
+    void ScanStepOptimize::process(ScanContext& context)
     {
         ScanStats& stats{ context.stats };
 
-        if (stats.nbChanges() > (stats.nbFiles() / 5))
+        if (context.scanOptions.forceOptimize || (stats.nbChanges() > (stats.nbFiles() / 5)))
         {
-            LMS_LOG(DBUPDATER, INFO, "Database changed substantially: triggering full analyze");
+            LMS_LOG(DBUPDATER, INFO, "Database analyze started");
 
             auto& session{ _db.getTLSSession() };
 
             std::vector<std::string> entries;
             session.retrieveEntriesToAnalyze(entries);
             context.currentStepStats.totalElems = entries.size();
+            _progressCallback(context.currentStepStats);
 
             for (const std::string& entry : entries)
             {
@@ -48,6 +49,8 @@ namespace lms::scanner
                 context.currentStepStats.processedElems++;
                 _progressCallback(context.currentStepStats);
             }
+
+            LMS_LOG(DBUPDATER, INFO, "Database analyze complete");
         }
     }
 }

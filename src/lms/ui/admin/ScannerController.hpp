@@ -23,6 +23,8 @@
 #include <Wt/WTemplate.h>
 #include <Wt/WLineEdit.h>
 
+#include "services/scanner/IScannerService.hpp"
+
 namespace lms::ui
 {
     class ScannerController : public Wt::WTemplate
@@ -32,6 +34,9 @@ namespace lms::ui
 
     private:
         void refreshContents();
+        void refreshLastScanStatus(const scanner::IScannerService::Status& status);
+        void refreshStatus(const scanner::IScannerService::Status& status);
+        void refreshCurrentStep(const scanner::ScanStepStats& stepStats);
 
         Wt::WPushButton* _reportBtn;
         Wt::WLineEdit* _lastScanStatus;
