@@ -38,17 +38,16 @@ namespace lms::metadata
         TagLibTagReader(const TagLibTagReader&) = delete;
         TagLibTagReader& operator=(const TagLibTagReader&) = delete;
 
+        void computeAudioProperties();
         void visitTagValues(TagType tag, TagValueVisitor visitor) const override;
         void visitTagValues(std::string_view tag, TagValueVisitor visitor) const override;
         void visitPerformerTags(PerformerVisitor visitor) const override;
         bool hasEmbeddedCover() const override { return _hasEmbeddedCover; }
 
-        std::chrono::milliseconds 	getDuration() const override;
-        std::size_t                 getBitrate() const override;
-        std::size_t                 getBitsPerSample() const override;
-        std::size_t                 getSampleRate() const override;
+        const AudioProperties& getAudioProperties() const override { return _audioProperties; }
 
         const TagLib::FileRef _file;
+        AudioProperties _audioProperties;
         TagLib::PropertyMap _propertyMap; // case-insensitive keys
         bool _hasEmbeddedCover{};
     };

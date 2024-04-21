@@ -74,12 +74,105 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Release_findByRangedIdBased)
+    {
+        ScopedTrack track1{ session };
+        ScopedTrack track2a{ session };
+        ScopedTrack track2b{ session };
+        ScopedTrack track3{ session };
+        ScopedRelease release1{ session, "MyRelease1" };
+        ScopedRelease release2{ session, "MyRelease2" };
+        ScopedRelease release3{ session, "MyRelease3" };
+        ScopedMediaLibrary library{ session };
+        ScopedMediaLibrary otherLibrary{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track2a.get().modify()->setMediaLibrary(library.get());
+            track2b.get().modify()->setMediaLibrary(library.get());
+            track1.get().modify()->setRelease(release1.get());
+            track2a.get().modify()->setRelease(release2.get());
+            track2b.get().modify()->setRelease(release2.get());
+            track3.get().modify()->setRelease(release3.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ReleaseId lastRetrievedId;
+            std::vector<Release::pointer> visitedReleases;
+            Release::find(session, lastRetrievedId, 10, [&](const Release::pointer& release)
+                {
+                    visitedReleases.push_back(release);
+                });
+            ASSERT_EQ(visitedReleases.size(), 3);
+            EXPECT_EQ(visitedReleases[0]->getId(), release1.getId());
+            EXPECT_EQ(visitedReleases[1]->getId(), release2.getId());
+            EXPECT_EQ(visitedReleases[2]->getId(), release3.getId());
+            EXPECT_EQ(lastRetrievedId, release3.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ReleaseId lastRetrievedId{ release1.getId() };
+            std::vector<Release::pointer> visitedReleases;
+            Release::find(session, lastRetrievedId, 1, [&](const Release::pointer& release)
+                {
+                    visitedReleases.push_back(release);
+                });
+            ASSERT_EQ(visitedReleases.size(), 1);
+            EXPECT_EQ(visitedReleases[0]->getId(), release2.getId());
+            EXPECT_EQ(lastRetrievedId, release2.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ReleaseId lastRetrievedId{ release1.getId() };
+            std::vector<Release::pointer> visitedReleases;
+            Release::find(session, lastRetrievedId, 0, [&](const Release::pointer& release)
+                {
+                    visitedReleases.push_back(release);
+                });
+            ASSERT_EQ(visitedReleases.size(), 0);
+            EXPECT_EQ(lastRetrievedId, release1.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ReleaseId lastRetrievedId;
+            std::vector<Release::pointer> visitedReleases;
+            Release::find(session, lastRetrievedId, 10, [&](const Release::pointer& release)
+                {
+                    visitedReleases.push_back(release);
+                }, otherLibrary.getId());
+            ASSERT_EQ(visitedReleases.size(), 0);
+            EXPECT_EQ(lastRetrievedId, ReleaseId{});
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ReleaseId lastRetrievedId;
+            std::vector<Release::pointer> visitedReleases;
+            Release::find(session, lastRetrievedId, 10, [&](const Release::pointer& release)
+                {
+                    visitedReleases.push_back(release);
+                }, library.getId());
+            ASSERT_EQ(visitedReleases.size(), 1);
+            EXPECT_EQ(visitedReleases[0]->getId(), release2.getId());
+            EXPECT_EQ(lastRetrievedId, release2.getId());
+        }
+    }
+
     TEST_F(DatabaseFixture, Release_singleTrack)
     {
         ScopedRelease release{ session, "MyRelease" };
 
         {
-            ScopedTrack track{ session, "MyTrack" };
+            ScopedTrack track{ session };
             {
                 auto transaction{ session.createWriteTransaction() };
 
@@ -136,7 +229,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Release_singleTrack_mediaLibrary)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedRelease release{ session, "MyRelease" };
         ScopedMediaLibrary library{ session };
         ScopedMediaLibrary otherLibrary{ session };
@@ -164,17 +257,17 @@ namespace lms::db::tests
     {
         ScopedRelease release1{ session, "MyRelease" };
         ScopedRelease release2{ session, "MyRelease" };
-        ScopedTrack track1{ session, "MyTrack" };
-        ScopedTrack track2{ session, "MyTrack" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
             track1.get().modify()->setRelease(release1.get());
-            track1.get().modify()->setPath("/tmp/foo/foo.mp3");
+            track1.get().modify()->setAbsoluteFilePath("/tmp/foo/foo.mp3");
 
             track2.get().modify()->setRelease(release2.get());
-            track2.get().modify()->setPath("/tmp/bar/bar.mp3");
+            track2.get().modify()->setAbsoluteFilePath("/tmp/bar/bar.mp3");
         }
 
         {
@@ -203,12 +296,12 @@ namespace lms::db::tests
         ScopedRelease release6{ session, "_yRelease" };
 
         // filters does not work on orphans
-        ScopedTrack track1{ session, "MyTrack" };
-        ScopedTrack track2{ session, "MyTrack" };
-        ScopedTrack track3{ session, "MyTrack" };
-        ScopedTrack track4{ session, "MyTrack" };
-        ScopedTrack track5{ session, "MyTrack" };
-        ScopedTrack track6{ session, "MyTrack" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+        ScopedTrack track4{ session };
+        ScopedTrack track5{ session };
+        ScopedTrack track6{ session };
 
         {
             auto transaction{ session.createWriteTransaction() };
@@ -269,7 +362,7 @@ namespace lms::db::tests
             EXPECT_FALSE(release1->getTotalDisc());
         }
 
-        ScopedTrack track1{ session, "MyTrack" };
+        ScopedTrack track1{ session };
         {
             auto transaction{ session.createWriteTransaction() };
 
@@ -298,7 +391,7 @@ namespace lms::db::tests
             EXPECT_EQ(*release1->getTotalDisc(), 6);
         }
 
-        ScopedTrack track2{ session, "MyTrack2" };
+        ScopedTrack track2{ session };
         {
             auto transaction{ session.createWriteTransaction() };
 
@@ -323,7 +416,7 @@ namespace lms::db::tests
             EXPECT_FALSE(release2->getTotalDisc());
         }
 
-        ScopedTrack track3{ session, "MyTrack3" };
+        ScopedTrack track3{ session };
         {
             auto transaction{ session.createWriteTransaction() };
 
@@ -350,10 +443,10 @@ namespace lms::db::tests
         ScopedRelease release1{ session, "MyRelease1" };
         ScopedRelease release2{ session, "MyRelease2" };
 
-        ScopedTrack track1A{ session, "MyTrack1A" };
-        ScopedTrack track1B{ session, "MyTrack1B" };
-        ScopedTrack track2A{ session, "MyTrack2A" };
-        ScopedTrack track2B{ session, "MyTrack2B" };
+        ScopedTrack track1A{ session };
+        ScopedTrack track1B{ session };
+        ScopedTrack track2A{ session };
+        ScopedTrack track2B{ session };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -403,10 +496,10 @@ namespace lms::db::tests
         const Wt::WDate release1Date{ Wt::WDate {1994, 2, 3} };
         const Wt::WDate release1OriginalDate{ Wt::WDate {1993, 4, 5} };
 
-        ScopedTrack track1A{ session, "MyTrack1A" };
-        ScopedTrack track1B{ session, "MyTrack1B" };
-        ScopedTrack track2A{ session, "MyTrack2A" };
-        ScopedTrack track2B{ session, "MyTrack2B" };
+        ScopedTrack track1A{ session };
+        ScopedTrack track1B{ session };
+        ScopedTrack track2A{ session };
+        ScopedTrack track2B{ session };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -455,10 +548,10 @@ namespace lms::db::tests
         const int release1Year{ 1994 };
         const int release1OriginalYear{ 1993 };
 
-        ScopedTrack track1A{ session, "MyTrack1A" };
-        ScopedTrack track1B{ session, "MyTrack1B" };
-        ScopedTrack track2A{ session, "MyTrack2A" };
-        ScopedTrack track2B{ session, "MyTrack2B" };
+        ScopedTrack track1A{ session };
+        ScopedTrack track1B{ session };
+        ScopedTrack track2A{ session };
+        ScopedTrack track2B{ session };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -504,7 +597,7 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Release_writtenAfter)
     {
         ScopedRelease release{ session, "MyRelease" };
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
 
         const Wt::WDateTime dateTime{ Wt::WDate {1950, 1, 1}, Wt::WTime {12, 30, 20} };
 
@@ -536,7 +629,7 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Release_artist)
     {
         ScopedRelease release{ session, "MyRelease" };
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedArtist artist{ session, "MyArtist" };
         ScopedArtist artist2{ session, "MyArtist2" };
         {
@@ -597,8 +690,8 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Release_getDiscCount)
     {
         ScopedRelease release{ session, "MyRelease" };
-        ScopedTrack track{ session, "MyTrack" };
-        ScopedTrack track2{ session, "MyTrack2" };
+        ScopedTrack track{ session };
+        ScopedTrack track2{ session };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -723,8 +816,8 @@ namespace lms::db::tests
         ScopedRelease release2{ session, "MyRelease2" };
         const Wt::WDate release2Date{ Wt::WDate {1994, 2, 3} };
 
-        ScopedTrack track1{ session, "MyTrack1" };
-        ScopedTrack track2{ session, "MyTrack2" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
 
         ASSERT_LT(release2Date, release1Date);
         ASSERT_GT(release2Date, release1OriginalDate);
@@ -786,9 +879,9 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Release_meanBitrate)
     {
         ScopedRelease release1{ session, "MyRelease1" };
-        ScopedTrack track1{ session, "MyTrack1" };
-        ScopedTrack track2{ session, "MyTrack2" };
-        ScopedTrack track3{ session, "MyTrack3" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
 
         auto checkExpectedBitrate = [&](std::size_t bitrate)
             {
@@ -819,5 +912,30 @@ namespace lms::db::tests
             track3.get().modify()->setRelease(release1.get());
         }
         checkExpectedBitrate(192); // 0 should not be taken into account
+    }
+
+    TEST_F(DatabaseFixture, Release_trackCount)
+    {
+        ScopedRelease release1{ session, "MyRelease1" };
+        ScopedRelease release2{ session, "MyRelease2" };
+        ScopedRelease release3{ session, "MyRelease2" };
+
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track1.get().modify()->setRelease(release1.get());
+            track2.get().modify()->setRelease(release1.get());
+            track3.get().modify()->setRelease(release2.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(release1->getTrackCount(), 2);
+            EXPECT_EQ(release2->getTrackCount(), 1);
+            EXPECT_EQ(release3->getTrackCount(), 0);
+        }
     }
 }

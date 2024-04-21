@@ -99,8 +99,8 @@ namespace lms::scanner
         std::vector<Track::pointer> tracksToRemove;
 
         TrackId lastCheckedTrackID;
-        bool moreResults{ true };
-        while (moreResults)
+        bool endReached{};
+        while (!endReached)
         {
             if (_abortScan)
                 break;
@@ -108,13 +108,17 @@ namespace lms::scanner
             tracksToRemove.clear();
             {
                 auto transaction{ session.createReadTransaction() };
-                Track::find(session, lastCheckedTrackID, batchSize, moreResults, [&](const Track::pointer& track)
-                {
-                    if (!checkFile(track->getPath()))
-                        tracksToRemove.push_back(track);
 
-                    context.currentStepStats.processedElems++;
-                });
+                endReached = true;
+                Track::find(session, lastCheckedTrackID, batchSize, [&](const Track::pointer& track)
+                    {
+                        endReached = false;
+
+                        if (!checkFile(track->getAbsoluteFilePath()))
+                            tracksToRemove.push_back(track);
+
+                        context.currentStepStats.processedElems++;
+                    });
             }
 
             if (!tracksToRemove.empty())

@@ -26,6 +26,7 @@ namespace lms::api::subsonic
 {
     struct ClientInfo
     {
+        std::string ipAddress;
         std::string name;
         std::string user;
         std::string password;

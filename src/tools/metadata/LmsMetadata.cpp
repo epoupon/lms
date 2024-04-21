@@ -32,6 +32,17 @@
 
 namespace lms::metadata
 {
+    std::ostream& operator<<(std::ostream& os, const AudioProperties& audioProperties)
+    {
+        os << "\tBitrate: " << audioProperties.bitrate << " bps" << std::endl;
+        os << "\tBitsPerSample: " << audioProperties.bitsPerSample << std::endl;
+        os << "\tChannelCount: " << audioProperties.channelCount << std::endl;
+        os << "\tDuration: " << std::fixed << std::setprecision(2) << audioProperties.duration.count() / 1000. << "s" << std::endl;
+        os << "\tSampleRate: " << audioProperties.sampleRate << std::endl;
+
+        return os;
+    }
+
     std::ostream& operator<<(std::ostream& os, const Artist& artist)
     {
         os << artist.name;
@@ -107,6 +118,8 @@ namespace lms::metadata
 
         std::cout << "Parsing time: " << std::fixed << std::setprecision(2) << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000. << "ms" << std::endl;
 
+        std::cout << "Audio properties:\n" << track->audioProperties << std::endl;
+
         std::cout << "Parsed metadata:" << std::endl;
 
         if (!track->artistDisplayName.empty())
@@ -177,9 +190,6 @@ namespace lms::metadata
                 std::cout << "\t" << value << std::endl;
             }
         }
-
-        std::cout << "Duration: " << std::fixed << std::setprecision(2) << track->duration.count() / 1000. << "s" << std::endl;
-        std::cout << "Bitrate: " << track->bitrate << " bps" << std::endl;
 
         if (track->position)
             std::cout << "Position: " << *track->position << std::endl;

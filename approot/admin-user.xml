@@ -6,7 +6,7 @@
 		<legend>${title}</legend>
 		${<if-has-last-login>}
 			<div class="col-lg-6">
-				<label class="form-label" for="{id:last-login}">
+				<label class="form-label" for="${id:last-login}">
 					${tr:Lms.Admin.User.last-login}
 				</label>
 				<input type="text" readonly="readonly" class="form-control" id="status" value="${last-login}"/>

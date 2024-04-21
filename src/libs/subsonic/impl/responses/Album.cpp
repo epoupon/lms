@@ -47,7 +47,7 @@ namespace lms::api::subsonic
 
         if (id3) {
             albumNode.setAttribute("name", release->getName());
-            albumNode.setAttribute("songCount", release->getTracksCount());
+            albumNode.setAttribute("songCount", release->getTrackCount());
             albumNode.setAttribute(
                 "duration", std::chrono::duration_cast<std::chrono::seconds>(
                     release->getDuration())
@@ -132,9 +132,11 @@ namespace lms::api::subsonic
             params.setRelease(release->getId());
             params.setClusterTypeName(clusterTypeName);
 
-            for (const auto& cluster : Cluster::find(context.dbSession, params).results)
-                albumNode.addArrayValue(field, cluster->getName());
-        } };
+            Cluster::find(context.dbSession, params, [&](const Cluster::pointer& cluster)
+                {
+                    albumNode.addArrayValue(field, cluster->getName());
+                });
+        }};
 
         addClusters("moods", "MOOD");
 
@@ -146,8 +148,10 @@ namespace lms::api::subsonic
             params.setRelease(release->getId());
             params.setClusterType(genreClusterType->getId());
 
-            for (const auto& cluster : Cluster::find(context.dbSession, params).results)
-                albumNode.addArrayChild("genres", createItemGenreNode(cluster->getName()));
+            Cluster::find(context.dbSession, params, [&](const Cluster::pointer& cluster)
+                {
+                    albumNode.addArrayChild("genres", createItemGenreNode(cluster->getName()));
+                });
         }
 
         albumNode.createEmptyArrayChild("artists");

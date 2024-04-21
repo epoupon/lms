@@ -75,6 +75,9 @@ namespace lms::av
     {
         size_t			index{};
         std::size_t     bitrate{};
+        std::size_t     bitsPerSample{};
+        std::size_t     channelCount{};
+        std::size_t     sampleRate{};
         DecodingCodec   codec;
         std::string 	codecName;
     };

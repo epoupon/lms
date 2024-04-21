@@ -20,21 +20,23 @@
 #include "ScannerService.hpp"
 
 #include <ctime>
-#include <boost/asio/placeholders.hpp>
 
 #include "database/MediaLibrary.hpp"
 #include "database/TrackFeatures.hpp"
 #include "database/ScanSettings.hpp"
 #include "core/Exception.hpp"
+#include "core/Path.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
-#include "core/Path.hpp"
+#include "core/ITraceLogger.hpp"
 
 #include "ScanStepCheckDuplicatedDbFiles.hpp"
+#include "ScanStepCompact.hpp"
+#include "ScanStepComputeClusterStats.hpp"
 #include "ScanStepDiscoverFiles.hpp"
+#include "ScanStepOptimize.hpp"
 #include "ScanStepRemoveOrphanDbFiles.hpp"
 #include "ScanStepScanFiles.hpp"
-#include "ScanStepComputeClusterStats.hpp"
 
 namespace lms::scanner
 {
@@ -70,7 +72,6 @@ namespace lms::scanner
 
     ScannerService::ScannerService(Db& db)
         : _db{ db }
-        , _dbSession{ db }
     {
         _ioService.setThreadCount(1);
 
@@ -135,15 +136,15 @@ namespace lms::scanner
             _events.scanAborted.emit();
     }
 
-    void ScannerService::requestImmediateScan(bool force)
+    void ScannerService::requestImmediateScan(const ScanOptions& scanOptions)
     {
         abortScan();
-        _ioService.post([this, force]
+        _ioService.post([this, scanOptions]
             {
                 if (_abortScan)
                     return;
 
-                scheduleScan(force);
+                scheduleScan(scanOptions);
             });
     }
 
@@ -220,7 +221,7 @@ namespace lms::scanner
         }
 
         if (nextScanDateTime.isValid())
-            scheduleScan(false, nextScanDateTime);
+            scheduleScan(ScanOptions{}, nextScanDateTime);
 
         {
             std::unique_lock lock{ _statusMutex };
@@ -231,14 +232,14 @@ namespace lms::scanner
         _events.scanScheduled.emit(_nextScheduledScan);
     }
 
-    void ScannerService::scheduleScan(bool force, const Wt::WDateTime& dateTime)
+    void ScannerService::scheduleScan(const ScanOptions& scanOptions, const Wt::WDateTime& dateTime)
     {
-        auto cb{ [this, force](boost::system::error_code ec)
+        auto cb{ [this, scanOptions](boost::system::error_code ec)
         {
             if (ec)
                 return;
 
-            scan(force);
+            scan(scanOptions);
         } };
 
         if (dateTime.isNull())
@@ -259,8 +260,10 @@ namespace lms::scanner
         }
     }
 
-    void ScannerService::scan(bool forceScan)
+    void ScannerService::scan(const ScanOptions& scanOptions)
     {
+        LMS_SCOPED_TRACE_OVERVIEW("Scanner", "Scan");
+
         _events.scanStarted.emit();
 
         {
@@ -274,14 +277,17 @@ namespace lms::scanner
 
         refreshScanSettings();
 
-        IScanStep::ScanContext scanContext{ forceScan, ScanStats {}, ScanStepStats {} };
+        IScanStep::ScanContext scanContext{ scanOptions, ScanStats {}, ScanStepStats {} };
         ScanStats& stats{ scanContext.stats };
         stats.startTime = Wt::WDateTime::currentDateTime();
 
+        std::size_t stepIndex{};
         for (auto& scanStep : _scanSteps)
         {
+            LMS_SCOPED_TRACE_OVERVIEW("Scanner", scanStep->getStepName());
+
             LMS_LOG(DBUPDATER, DEBUG, "Starting scan step '" << scanStep->getStepName() << "'");
-            scanContext.currentStepStats = ScanStepStats{ Wt::WDateTime::currentDateTime(), scanStep->getStep() };
+            scanContext.currentStepStats = ScanStepStats{ .startTime = Wt::WDateTime::currentDateTime(), .stepIndex = stepIndex++, .currentStep = scanStep->getStep() };
 
             notifyInProgress(scanContext.currentStepStats);
             scanStep->process(scanContext);
@@ -290,8 +296,6 @@ namespace lms::scanner
         }
 
         LMS_LOG(DBUPDATER, INFO, "Scan " << (_abortScan ? "aborted" : "complete") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), features fetched = " << stats.featuresFetched << ",  duplicates = " << stats.duplicates.size());
-
-        _dbSession.analyze();
 
         if (!_abortScan)
         {
@@ -348,6 +352,8 @@ namespace lms::scanner
         _scanSteps.push_back(std::make_unique<ScanStepDiscoverFiles>(params));
         _scanSteps.push_back(std::make_unique<ScanStepScanFiles>(params));
         _scanSteps.push_back(std::make_unique<ScanStepRemoveOrphanDbFiles>(params));
+        _scanSteps.push_back(std::make_unique<ScanStepCompact>(params));
+        _scanSteps.push_back(std::make_unique<ScanStepOptimize>(params));
         _scanSteps.push_back(std::make_unique<ScanStepComputeClusterStats>(params));
         _scanSteps.push_back(std::make_unique<ScanStepCheckDuplicatedDbFiles>(params));
     }
@@ -358,9 +364,9 @@ namespace lms::scanner
 
         newSettings.skipDuplicateMBID = core::Service<core::IConfig>::get()->getBool("scanner-skip-duplicate-mbid", false);
         {
-            auto transaction{ _dbSession.createReadTransaction() };
+            auto transaction{ _db.getTLSSession().createReadTransaction() };
 
-            const ScanSettings::pointer scanSettings{ ScanSettings::get(_dbSession) };
+            const ScanSettings::pointer scanSettings{ ScanSettings::get(_db.getTLSSession()) };
 
             newSettings.scanVersion = scanSettings->getScanVersion();
             newSettings.startTime = scanSettings->getUpdateStartTime();
@@ -373,7 +379,7 @@ namespace lms::scanner
                     [](const std::filesystem::path& extension) { return std::filesystem::path{ core::stringUtils::stringToLower(extension.string()) }; });
             }
 
-            MediaLibrary::find(_dbSession, [&](const MediaLibrary::pointer& mediaLibrary)
+            MediaLibrary::find(_db.getTLSSession(), [&](const MediaLibrary::pointer& mediaLibrary)
                 {
                     newSettings.mediaLibraries.push_back(ScannerSettings::MediaLibraryInfo{ mediaLibrary->getId(), mediaLibrary->getPath().lexically_normal() });
                 });
@@ -409,5 +415,4 @@ namespace lms::scanner
         if (std::chrono::duration_cast<std::chrono::seconds>(now - _lastScanInProgressEmit).count() > 1)
             notifyInProgress(stepStats);
     }
-
 } // namespace lms::scanner

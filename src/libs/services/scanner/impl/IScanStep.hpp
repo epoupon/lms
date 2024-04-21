@@ -19,9 +19,10 @@
 
 #pragma once
 
-#include <string_view>
 #include <vector>
 
+#include "core/LiteralString.hpp"
+#include "services/scanner/ScannerOptions.hpp"
 #include "services/scanner/ScannerStats.hpp"
 
 namespace lms::scanner
@@ -32,11 +33,11 @@ namespace lms::scanner
         virtual ~IScanStep() = default;
 
         virtual ScanStep getStep() const = 0;
-        virtual std::string_view getStepName() const = 0;
+        virtual core::LiteralString getStepName() const = 0;
 
         struct ScanContext
         {
-            const bool forceScan;
+            ScanOptions scanOptions;
             ScanStats stats;
             ScanStepStats currentStepStats;
         };

@@ -59,40 +59,6 @@ namespace lms::api::subsonic
 
             return "";
         }
-
-        std::string getTrackPath(const Track::pointer& track)
-        {
-            std::string path;
-
-            // The track path has to be relative from the root
-
-            const auto release{ track->getRelease() };
-            if (release)
-            {
-                auto artists{ release->getReleaseArtists() };
-                if (artists.empty())
-                    artists = release->getArtists();
-
-                if (artists.size() > 1)
-                    path = "Various Artists/";
-                else if (artists.size() == 1)
-                    path = utils::makeNameFilesystemCompatible(artists.front()->getName()) + "/";
-
-                path += utils::makeNameFilesystemCompatible(track->getRelease()->getName()) + "/";
-            }
-
-            if (track->getDiscNumber())
-                path += std::to_string(*track->getDiscNumber()) + "-";
-            if (track->getTrackNumber())
-                path += std::to_string(*track->getTrackNumber()) + "-";
-
-            path += utils::makeNameFilesystemCompatible(track->getName());
-
-            if (track->getPath().has_extension())
-                path += track->getPath().extension();
-
-            return path;
-        }
     }
 
     Response::Node createSongNode(RequestContext& context, const Track::pointer& track, const User::pointer& user)
@@ -111,19 +77,13 @@ namespace lms::api::subsonic
         if (track->getYear())
             trackResponse.setAttribute("year", *track->getYear());
         trackResponse.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(user->getId(), track->getId()));
-        trackResponse.setAttribute("path", getTrackPath(track));
-        {
-            // TODO, store this in DB
-            std::error_code ec;
-            const auto fileSize{ std::filesystem::file_size(track->getPath(), ec) };
-            if (!ec)
-                trackResponse.setAttribute("size", fileSize);
-        }
+        trackResponse.setAttribute("path", track->getRelativeFilePath().string());
+        trackResponse.setAttribute("size", track->getFileSize());
 
-        if (track->getPath().has_extension())
+        if (track->getAbsoluteFilePath().has_extension())
         {
-            auto extension{ track->getPath().extension() };
-            trackResponse.setAttribute("suffix", extension.string().substr(1));
+            auto extension{ track->getAbsoluteFilePath().extension() };
+            trackResponse.setAttribute("suffix", extension.string().substr(1) /* skip leading .*/);
         }
 
         {
@@ -158,7 +118,7 @@ namespace lms::api::subsonic
         trackResponse.setAttribute("bitRate", (track->getBitrate() / 1000));
         trackResponse.setAttribute("type", "music");
         trackResponse.setAttribute("created", core::stringUtils::toISO8601String(track->getLastWritten()));
-        trackResponse.setAttribute("contentType", av::getMimeType(track->getPath().extension()));
+        trackResponse.setAttribute("contentType", av::getMimeType(track->getAbsoluteFilePath().extension()));
 
         if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(user->getId(), track->getId()) }; dateTime.isValid())
             trackResponse.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
@@ -179,6 +139,10 @@ namespace lms::api::subsonic
         if (!context.enableOpenSubsonic)
             return trackResponse;
 
+        trackResponse.setAttribute("bitDepth", track->getBitsPerSample());
+        trackResponse.setAttribute("samplingRate", track->getSampleRate());
+        trackResponse.setAttribute("channelCount", track->getChannelCount());
+
         trackResponse.setAttribute("mediaType", "song");
 
         {
@@ -191,40 +155,28 @@ namespace lms::api::subsonic
             trackResponse.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
         }
 
-        trackResponse.createEmptyArrayChild("contributors");
         {
-            TrackArtistLink::FindParameters params;
-            params.setTrack(track->getId());
+            trackResponse.createEmptyArrayChild("albumartists");
+            trackResponse.createEmptyArrayChild("artists");
+            trackResponse.createEmptyArrayChild("contributors");
 
-            for (const TrackArtistLinkId linkId : TrackArtistLink::find(context.dbSession, params).results)
+            TrackArtistLink::find(context.dbSession, track->getId(), [&](const TrackArtistLink::pointer& link, const Artist::pointer& artist)
             {
-                TrackArtistLink::pointer link{ TrackArtistLink::find(context.dbSession, linkId) };
-                // Don't report artists nor release artists as they are set in dedicated fields
-                if (link && link->getType() != TrackArtistLinkType::Artist && link->getType() != TrackArtistLinkType::ReleaseArtist)
-                    trackResponse.addArrayChild("contributors", createContributorNode(link));
-            }
+                switch (link->getType())
+                {
+                    case TrackArtistLinkType::Artist:
+                        trackResponse.addArrayChild("artists", createArtistNode(artist));
+                        break;
+                    case TrackArtistLinkType::ReleaseArtist:
+                        trackResponse.addArrayChild("albumartists", createArtistNode(artist));
+                        break;
+                    default:
+                        trackResponse.addArrayChild("contributors", createContributorNode(link, artist));
+                }
+            });
         }
 
-        auto addArtistLinks{ [&](Response::Node::Key nodeName, TrackArtistLinkType type)
-        {
-            trackResponse.createEmptyArrayChild(nodeName);
-
-            TrackArtistLink::FindParameters params;
-            params.setTrack(track->getId());
-            params.setLinkType(type);
-
-            for (const TrackArtistLinkId linkId : TrackArtistLink::find(context.dbSession, params).results)
-            {
-                TrackArtistLink::pointer link{ TrackArtistLink::find(context.dbSession, linkId) };
-                if (link)
-                    trackResponse.addArrayChild(nodeName, createArtistNode(link->getArtist()));
-            }
-        } };
-
-        addArtistLinks("artists", TrackArtistLinkType::Artist);
         trackResponse.setAttribute("displayArtist", track->getArtistDisplayName());
-
-        addArtistLinks("albumartists", TrackArtistLinkType::ReleaseArtist);
         if (release)
             trackResponse.setAttribute("displayAlbumArtist", release->getArtistDisplayName());
 

@@ -119,7 +119,7 @@ namespace lms::ui
             Artist::FindParameters params;
             params.setClusters(getFilters().getClusterIds());
             params.setLinkType(_linkType);
-            params.setSortMethod(ArtistSortMethod::BySortName);
+            params.setSortMethod(ArtistSortMethod::SortName);
             params.setRange(range);
 
             {

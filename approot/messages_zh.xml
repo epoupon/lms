@@ -89,9 +89,11 @@
 <message id="Lms.Admin.ScannerController.bad-duration">无法获得音轨时间</message>
 <message id="Lms.Admin.ScannerController.cannot-parse-file">无法解析文件</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">无法读取文件</message>
+
 <message id="Lms.Admin.ScannerController.duplicates-header">{1} 个重复文件：</message>
 <message id="Lms.Admin.ScannerController.errors-header">{1} 个错误：</message>
-<message id="Lms.Admin.ScannerController.force-scan-now">立即强制全盘扫描</message>
+
+
 <message id="Lms.Admin.ScannerController.get-report">生成报告</message>
 <message id="Lms.Admin.ScannerController.last-scan">最后扫描</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">不可用</message>
@@ -100,6 +102,7 @@
 <message id="Lms.Admin.ScannerController.same-hash">相同文件哈希值</message>
 <message id="Lms.Admin.ScannerController.same-mbid">相同 MBID</message>
 <message id="Lms.Admin.ScannerController.scan-now">立即扫描</message>
+
 <message id="Lms.Admin.ScannerController.scanner">扫描器</message>
 <message id="Lms.Admin.ScannerController.status">状态</message>
 <message id="Lms.Admin.ScannerController.status-not-scheduled">无计划</message>
@@ -108,8 +111,10 @@
 
 <message id="Lms.Admin.ScannerController.step-checking-for-missing-files">检查文件中... {1}%</message>
 
+
 <message id="Lms.Admin.ScannerController.step-discovering-files">检索文件中: {1} 文件</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">从 AcousticBrainz 获取音轨特征: {1}/{2} 音轨 ({3}%)...</message>
+
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">重载相似引擎中 {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">扫描文件中: {1}/{2} 个文件 ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-status">当前步骤状态</message>

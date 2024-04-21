@@ -48,6 +48,7 @@ namespace lms::ui
         addFunction("tr", &Wt::WTemplate::Functions::tr);
 
         _stack = bindNew<Wt::WStackedWidget>("results");
+        _stack->setOverflow(Wt::Overflow::Visible); // wt makes it hidden by default
 
         // releases
         _releases = _stack->addNew<InfiniteScrollingContainer>(Wt::WString::tr("Lms.Explore.Releases.template.container"));

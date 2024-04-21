@@ -31,7 +31,8 @@ namespace lms::db
     {
     public:
         ObjectPtr() = default;
-        ObjectPtr(Wt::Dbo::ptr<T> obj) : _obj{ obj } {}
+        ObjectPtr(const Wt::Dbo::ptr<T>& obj) : _obj{ obj } {}
+        ObjectPtr(Wt::Dbo::ptr<T>&& obj) : _obj{ std::move(obj) } {}
 
         const T* operator->() const { return _obj.get(); }
         operator bool() const { return _obj.get(); }

@@ -32,7 +32,7 @@ namespace lms::db::tests
 
         for (std::size_t i{}; i < nbTracks; ++i)
         {
-            tracks.emplace_back(session, "MyTrack" + std::to_string(i));
+            tracks.emplace_back(session);
 
             auto transaction{ session.createWriteTransaction() };
 
@@ -60,7 +60,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtist)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedRelease release{ session, "MyRelease" };
         ScopedArtist artist{ session, "MyArtist" };
 

@@ -19,6 +19,9 @@
 
 #include "TagLibTagReader.hpp"
 
+#include <unordered_map>
+
+#include <taglib/apeproperties.h>
 #include <taglib/apetag.h>
 #include <taglib/asffile.h>
 #include <taglib/id3v2tag.h>
@@ -196,6 +199,8 @@ namespace lms::metadata
             throw ParsingFailedException{};
         }
 
+        computeAudioProperties();
+
         _propertyMap = _file.file()->properties();
 
         // Some tags may not be known by TagLib
@@ -303,6 +308,28 @@ namespace lms::metadata
         }
     }
 
+    void TagLibTagReader::computeAudioProperties()
+    {
+        const TagLib::AudioProperties* properties{ _file.audioProperties() };
+
+        // Common properties
+        _audioProperties.bitrate = static_cast<std::size_t>(properties->bitrate() * 1000);
+        _audioProperties.channelCount = static_cast<std::size_t>(_file.audioProperties()->channels());
+        _audioProperties.duration = std::chrono::milliseconds{ properties->lengthInMilliseconds() };
+        _audioProperties.sampleRate = static_cast<std::size_t>(properties->sampleRate());
+
+        if (const auto * apeProperties{ dynamic_cast<const TagLib::APE::Properties*>(properties) })
+            _audioProperties.bitsPerSample = apeProperties->bitsPerSample();
+        if (const auto * asfProperties{ dynamic_cast<const TagLib::ASF::Properties*>(properties) })
+            _audioProperties.bitsPerSample = asfProperties->bitsPerSample();
+        else if (const auto * flacProperties{ dynamic_cast<const TagLib::FLAC::Properties*>(properties) })
+            _audioProperties.bitsPerSample = flacProperties->bitsPerSample();
+        else if (const auto * mp4Properties{ dynamic_cast<const TagLib::MP4::Properties*>(properties) })
+            _audioProperties.bitsPerSample = mp4Properties->bitsPerSample();
+        else if (const auto * wavePackProperties{ dynamic_cast<const TagLib::WavPack::Properties*>(properties) })
+            _audioProperties.bitsPerSample = wavePackProperties->bitsPerSample();
+    }
+
     void TagLibTagReader::visitTagValues(TagType tag, TagValueVisitor visitor) const
     {
         auto itTagNames{ tagMapping.find(tag) };
@@ -359,25 +386,5 @@ namespace lms::metadata
                 }
             }
         }
-    }
-
-    std::chrono::milliseconds TagLibTagReader::getDuration() const
-    {
-        return std::chrono::milliseconds{ _file.audioProperties()->lengthInMilliseconds() };
-    }
-
-    std::size_t TagLibTagReader::getBitrate() const
-    {
-        return static_cast<std::size_t>(_file.audioProperties()->bitrate() * 1000);
-    }
-
-    std::size_t TagLibTagReader::getBitsPerSample() const
-    {
-        return 0; // TODO 
-    }
-
-    std::size_t TagLibTagReader::getSampleRate() const
-    {
-        return static_cast<std::size_t>(_file.audioProperties()->sampleRate());
     }
 } // namespace lms::metadata

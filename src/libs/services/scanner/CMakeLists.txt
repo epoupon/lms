@@ -3,8 +3,10 @@ add_library(lmsscanner SHARED
 	impl/ScannerService.cpp
 	impl/ScannerStats.cpp
 	impl/ScanStepCheckDuplicatedDbFiles.cpp
+	impl/ScanStepCompact.cpp
 	impl/ScanStepComputeClusterStats.cpp
 	impl/ScanStepDiscoverFiles.cpp
+	impl/ScanStepOptimize.cpp
 	impl/ScanStepRemoveOrphanDbFiles.cpp
 	impl/ScanStepScanFiles.cpp
 	)

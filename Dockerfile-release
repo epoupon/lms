@@ -31,6 +31,7 @@ ARG	BUILD_PACKAGES=" \
 	libarchive-dev \
 	libconfig-dev \
 	taglib-dev \
+	sqlite-dev \
 	gtest-dev"
 
 RUN	apk add --no-cache --update ${BUILD_PACKAGES}
@@ -86,7 +87,7 @@ RUN \
 
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
-	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF && \
+	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF -DUSE_SYSTEM_SQLITE3=ON && \
 	make -j$(nproc) && \
 	make install
 
@@ -147,11 +148,13 @@ ARG	RUNTIME_PACKAGES=" \
 	lame-libs \
 	zlib \
 	boost-filesystem \
+	boost-iostreams \
 	boost-program_options \
 	boost-system \
 	boost-thread \
 	libarchive \
 	libconfig++ \
+	sqlite-libs \
 	taglib"
 
 ARG	LMS_USER=lms

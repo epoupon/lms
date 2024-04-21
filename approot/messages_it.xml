@@ -89,9 +89,11 @@
 <message id="Lms.Admin.ScannerController.bad-duration">Non sono stato in grado di determinare la durata della traccia</message>
 <message id="Lms.Admin.ScannerController.cannot-parse-file">Non in grado di analizzare il file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">Non in grado di leggere il file</message>
+<message id="Lms.Admin.ScannerController.compact">Compatta il database. <strong>Attenzione:</strong> ciò potrebbe richiedere del tempo e bloccherà l'intera applicazione durante il passaggio di compattazione!</message>
 <message id="Lms.Admin.ScannerController.duplicates-header">{1} file duplicati:</message>
 <message id="Lms.Admin.ScannerController.errors-header">{1} errori:</message>
-<message id="Lms.Admin.ScannerController.force-scan-now">Forza una nuova scansione completa</message>
+<message id="Lms.Admin.ScannerController.force-optimize">Forza l'ottimizzazione del database</message>
+<message id="Lms.Admin.ScannerController.full-scan">Forza la scansione di tutti i file</message>
 <message id="Lms.Admin.ScannerController.get-report">Scarica un resoconto</message>
 <message id="Lms.Admin.ScannerController.last-scan">Ultima scansione</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Non disponibile</message>
@@ -100,6 +102,7 @@
 <message id="Lms.Admin.ScannerController.same-hash">Hash doppio</message>
 <message id="Lms.Admin.ScannerController.same-mbid">Track MBID doppio</message>
 <message id="Lms.Admin.ScannerController.scan-now">Scansiona ora</message>
+<message id="Lms.Admin.ScannerController.scan-options">Opzioni di scansione</message>
 <message id="Lms.Admin.ScannerController.scanner">Scanner</message>
 <message id="Lms.Admin.ScannerController.status">Stato</message>
 <message id="Lms.Admin.ScannerController.status-not-scheduled">Non pianificato</message>
@@ -110,6 +113,7 @@
 <message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Calcolo statistiche... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-discovering-files">File trovati: {1} files</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Recupero metadati da AcousticBrainz: {1}/{2} tracce ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-optimize">Ottimizzazione del database... {1}/{2} voci ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Ricarica motore di tracce simili: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Scansione files: {1}/{2} files ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-status">Stato passo</message>

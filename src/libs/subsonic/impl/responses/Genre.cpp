@@ -28,7 +28,7 @@ namespace lms::api::subsonic
         Response::Node clusterNode;
 
         clusterNode.setValue(cluster->getName());
-        clusterNode.setAttribute("songCount", cluster->getTracksCount());
+        clusterNode.setAttribute("songCount", cluster->getTrackCount());
         clusterNode.setAttribute("albumCount", cluster->getReleasesCount());
 
         return clusterNode;

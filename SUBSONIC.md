@@ -11,6 +11,7 @@ OpenSubsonic is an initiative to patch and extend the legacy Subsonic API. You'l
 ## Extra fields
 The following extra fields are implemented:
 * `Album` response:
+  * `mediaType`
   * `played`
   * `musicBrainzId`
   * `genres`
@@ -22,6 +23,10 @@ The following extra fields are implemented:
   * `isCompilation`
   * `discTitles`: discs with no subtitle are omitted
 * `Child` response:
+  * `bitDepth`
+  * `samplingRate`
+  * `channelCount`
+  * `mediaType`
   * `played`
   * `musicBrainzId`: note this is actually the recording MBID when this response refers to a song
   * `genres`
@@ -33,6 +38,7 @@ The following extra fields are implemented:
   * `moods`
   * `replayGain`
 * `Artist` response:
+  * `mediaType`
   * `musicBrainzId`
   * `sortName`
   * `roles`

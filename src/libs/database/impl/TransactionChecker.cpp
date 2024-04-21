@@ -80,7 +80,7 @@ namespace lms::db
 
     void TransactionChecker::checkWriteTransaction(Session& session)
     {
-        checkWriteTransaction(session.getDboSession());
+        checkWriteTransaction(*session.getDboSession());
     }
 
     void TransactionChecker::checkReadTransaction(Wt::Dbo::Session& session)
@@ -91,6 +91,6 @@ namespace lms::db
 
     void TransactionChecker::checkReadTransaction(Session& session)
     {
-        checkReadTransaction(session.getDboSession());
+        checkReadTransaction(*session.getDboSession());
     }
 }

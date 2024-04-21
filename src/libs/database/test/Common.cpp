@@ -60,8 +60,8 @@ namespace lms::db::tests
         _tmpDb = std::make_unique<TmpDatabase>();
         {
             db::Session s{ _tmpDb->getDb() };
-            s.prepareTables();
-            s.analyze();
+            s.prepareTablesIfNeeded();
+            s.createIndexesIfNeeded();
         }
     }
 

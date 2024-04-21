@@ -43,14 +43,14 @@ namespace lms::cover
         virtual std::shared_ptr<image::IEncodedImage> getFromRelease(db::ReleaseId releaseId, image::ImageSize width) = 0;
         virtual std::shared_ptr<image::IEncodedImage> getFromArtist(db::ArtistId artistId, image::ImageSize width) = 0;
 
-        virtual std::shared_ptr<image::IEncodedImage> getDefault(image::ImageSize width) = 0;
+        virtual std::shared_ptr<image::IEncodedImage> getDefaultSvgCover() = 0;
 
         virtual void flushCache() = 0;
 
         virtual void setJpegQuality(unsigned quality) = 0; // from 1 to 100
     };
 
-    std::unique_ptr<ICoverService> createCoverService(db::Db& db, const std::filesystem::path& execPath, const std::filesystem::path& defaultCoverPath);
+    std::unique_ptr<ICoverService> createCoverService(db::Db& db, const std::filesystem::path& defaultSvgCoverPath);
 
 } // namespace lms::coverArt
 

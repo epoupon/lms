@@ -119,7 +119,7 @@ namespace lms::ui
             if (auto trackNumber{ track->getTrackNumber() })
                 fileName << std::setw(2) << std::setfill('0') << *trackNumber << " - ";
 
-            fileName << core::stringUtils::replaceInString(track->getName(), "/", "_") << track->getPath().filename().extension().string();
+            fileName << core::stringUtils::replaceInString(track->getName(), "/", "_") << track->getAbsoluteFilePath().extension().string();
 
             return fileName.str();
         }
@@ -152,7 +152,7 @@ namespace lms::ui
                     fileName += releaseName + "/";
                 fileName += getTrackPathName(track);
 
-                files.emplace_back(zip::Entry{ fileName, track->getPath() });
+                files.emplace_back(zip::Entry{ fileName, track->getAbsoluteFilePath() });
             }
 
             return zip::createArchiveZipper(files);

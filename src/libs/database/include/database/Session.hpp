@@ -22,6 +22,8 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/Dbo/SqlConnectionPool.h>
 
+#include <string>
+#include <vector>
 #include "core/ITraceLogger.hpp"
 #include "core/RecursiveSharedMutex.hpp"
 #include "database/Object.hpp"
@@ -41,8 +43,8 @@ namespace lms::db
         WriteTransaction(const WriteTransaction&) = delete;
         WriteTransaction& operator=(const WriteTransaction&) = delete;
 
-        std::unique_lock<core::RecursiveSharedMutex> _lock;
-        core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "WriteTransaction" }; // before actual transaction
+        const std::unique_lock<core::RecursiveSharedMutex> _lock;
+        const core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "WriteTransaction" }; // before actual transaction
         Wt::Dbo::Transaction _transaction;
     };
 
@@ -58,7 +60,7 @@ namespace lms::db
         ReadTransaction(const ReadTransaction&) = delete;
         ReadTransaction& operator=(const ReadTransaction&) = delete;
 
-        core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "ReadTransaction" }; // before actual transaction
+        const core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "ReadTransaction" }; // before actual transaction
         Wt::Dbo::Transaction _transaction;
     };
 
@@ -84,12 +86,20 @@ namespace lms::db
 #endif
         }
 
-        void analyze();
-        void optimize();
+        // All these methods will acquire transactions
+        void fullAnalyze(); // helper for retrieveEntriesToAnalyze + analyzeEntry
+        void retrieveEntriesToAnalyze(std::vector<std::string>& entryList);
+        void analyzeEntry(const std::string& entry);
 
-        void prepareTables(); // need to run only once at startup
+        void prepareTablesIfNeeded(); // need to run only once at startup
+        bool migrateSchemaIfNeeded(); // returns true if migration was performed
+        void createIndexesIfNeeded();
+        void vacuumIfNeeded();
+        void vacuum();
+        void refreshTracingLoggerStats();
 
-        Wt::Dbo::Session& getDboSession() { return _session; }
+        // returning a ptr here to ease further wrapping using operator->
+        Wt::Dbo::Session* getDboSession() { return &_session; }
         Db& getDb() { return _db; }
 
         template <typename Object, typename... Args>
@@ -98,7 +108,7 @@ namespace lms::db
             checkWriteTransaction();
 
             typename Object::pointer res{ Object::create(*this, std::forward<Args>(args)...) };
-            getDboSession().flush();
+            getDboSession()->flush();
 
             if (res->hasOnPostCreated())
                 res.modify()->onPostCreated();

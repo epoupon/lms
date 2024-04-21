@@ -37,7 +37,6 @@ namespace lms::metadata
         void setArtistTagDelimiters(std::span<const std::string> delimiters) override { _artistTagDelimiters.assign(std::cbegin(delimiters), std::cend(delimiters)); }
         void setDefaultTagDelimiters(std::span<const std::string> delimiters) override { _defaultTagDelimiters.assign(std::cbegin(delimiters), std::cend(delimiters)); }
 
-        void processAudioProperties(const ITagReader& reader, Track& track);
         void processTags(const ITagReader& reader, Track& track);
 
         std::optional<Medium> getMedium(const ITagReader& tagReader);

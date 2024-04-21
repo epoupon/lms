@@ -86,7 +86,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Cluster_singleTrack)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedClusterType clusterType{ session, "MyClusterType" };
 
         {
@@ -160,7 +160,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Cluster_singleTrackWithSeveralClusters)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedClusterType clusterType{ session, "MyClusterType" };
 
         ScopedCluster cluster1{ session, clusterType.lockAndGet(), "MyCluster1" };
@@ -215,7 +215,7 @@ namespace lms::db::tests
 
         for (std::size_t i{}; i < 10; ++i)
         {
-            tracks.emplace_back(session, "MyTrack" + std::to_string(i));
+            tracks.emplace_back(session);
 
             {
                 auto transaction{ session.createWriteTransaction() };
@@ -270,7 +270,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Cluster_singleTrackSingleReleaseSingleCluster)
     {
-        ScopedTrack track{ session, "MyTrackFile" };
+        ScopedTrack track{ session };
         ScopedRelease release{ session, "MyRelease" };
 
         {
@@ -345,7 +345,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiClusters)
     {
-        ScopedTrack track{ session, "MyTrackFile" };
+        ScopedTrack track{ session };
         ScopedArtist artist{ session, "MyArtist" };
         ScopedClusterType clusterType{ session, "MyType" };
         ScopedCluster cluster1{ session, clusterType.lockAndGet(), "Cluster1" };
@@ -406,7 +406,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, SingleTrackSingleArtistMultiRolesMultiClusters)
     {
-        ScopedTrack track{ session, "MyTrackFile" };
+        ScopedTrack track{ session };
         ScopedArtist artist{ session, "MyArtist" };
         ScopedClusterType clusterType{ session, "MyType" };
         ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
@@ -450,7 +450,7 @@ namespace lms::db::tests
 
         for (std::size_t i{}; i < nbTracks; ++i)
         {
-            tracks.emplace_back(session, "MyTrackFile" + std::to_string(i));
+            tracks.emplace_back(session);
 
             auto transaction{ session.createWriteTransaction() };
             TrackArtistLink::create(session, tracks.back().get(), artist.get(), TrackArtistLinkType::Artist);
@@ -486,7 +486,7 @@ namespace lms::db::tests
 
         for (std::size_t i{}; i < 10; ++i)
         {
-            tracks.emplace_back(session, "MyTrack" + std::to_string(i));
+            tracks.emplace_back(session);
 
             {
                 auto transaction{ session.createWriteTransaction() };
@@ -515,7 +515,7 @@ namespace lms::db::tests
 
         for (std::size_t i{}; i < 5; ++i)
         {
-            tracks.emplace_back(session, "MyTrack" + std::to_string(i));
+            tracks.emplace_back(session);
 
             {
                 auto transaction{ session.createWriteTransaction() };
@@ -525,7 +525,7 @@ namespace lms::db::tests
 
         for (std::size_t i{ 5 }; i < 10; ++i)
         {
-            tracks.emplace_back(session, "MyTrack" + std::to_string(i));
+            tracks.emplace_back(session);
 
             {
                 auto transaction{ session.createWriteTransaction() };
@@ -555,7 +555,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistSingleCluster)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedRelease release{ session, "MyRelease" };
         ScopedArtist artist{ session, "MyArtist" };
         ScopedClusterType clusterType{ session, "MyType" };
@@ -597,7 +597,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, SingleTrackSingleReleaseSingleArtistMultiClusters)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedRelease release{ session, "MyRelease" };
         ScopedArtist artist{ session, "MyArtist" };
         ScopedClusterType clusterType{ session, "MyClusterType" };
@@ -636,7 +636,7 @@ namespace lms::db::tests
 
         for (std::size_t i{}; i < 20; ++i)
         {
-            tracks.emplace_back(session, "MyTrack" + std::to_string(i));
+            tracks.emplace_back(session);
 
             auto transaction{ session.createWriteTransaction() };
 
@@ -669,7 +669,7 @@ namespace lms::db::tests
 
         for (std::size_t i{}; i < 20; ++i)
         {
-            tracks.emplace_back(session, "MyTrack" + std::to_string(i));
+            tracks.emplace_back(session);
 
             auto transaction{ session.createWriteTransaction() };
 
@@ -729,7 +729,7 @@ namespace lms::db::tests
         std::list<ScopedTrack> tracks;
         for (std::size_t i{}; i < 10; ++i)
         {
-            tracks.emplace_back(session, "MyTrack" + std::to_string(i));
+            tracks.emplace_back(session);
 
             auto transaction{ session.createWriteTransaction() };
 
@@ -744,7 +744,7 @@ namespace lms::db::tests
             cluster1.get().modify()->addTrack(tracks.back().get());
         }
 
-        tracks.emplace_back(session, "MyTrack" + std::to_string(tracks.size()));
+        tracks.emplace_back(session);
         {
             auto transaction{ session.createWriteTransaction() };
             TrackArtistLink::create(session, tracks.back().get(), artist3.get(), TrackArtistLinkType::Artist);
@@ -810,7 +810,7 @@ namespace lms::db::tests
         std::list<ScopedTrack> tracks;
         for (std::size_t i{}; i < 10; ++i)
         {
-            tracks.emplace_back(session, "MyTrack" + std::to_string(i));
+            tracks.emplace_back(session);
 
             auto transaction{ session.createWriteTransaction() };
 
@@ -825,7 +825,7 @@ namespace lms::db::tests
             cluster1.get().modify()->addTrack(tracks.back().get());
         }
 
-        tracks.emplace_back(session, "MyTrack" + std::to_string(tracks.size()));
+        tracks.emplace_back(session);
         {
             auto transaction{ session.createWriteTransaction() };
             tracks.back().get().modify()->setRelease(release3.get());

@@ -253,7 +253,7 @@ namespace lms::ui
                 << " trackId :\"" << trackId.toString() << "\","
                 << " nativeResource: \"" << nativeResource << "\","
                 << " transcodingResource: \"" << transcodingResource << "\","
-                << " duration: " << std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count() << ","
+                << " duration: " << std::chrono::duration_cast<std::chrono::duration<float>>(track->getDuration()).count() << ","
                 << " replayGain: " << replayGain << ","
                 << " title: \"" << core::stringUtils::jsEscape(track->getName()) << "\","
                 << " artist: \"" << (!artists.empty() ? core::stringUtils::jsEscape(track->getArtistDisplayName()) : "") << "\","
@@ -286,11 +286,11 @@ namespace lms::ui
                 needSeparator = false;
             }
 
-            if (track->getRelease())
+            if (const db::Release::pointer release{ track->getRelease() })
             {
                 _release->setTextFormat(Wt::TextFormat::Plain);
-                _release->setText(Wt::WString::fromUTF8(std::string{ track->getRelease()->getName() }));
-                _release->setLink(utils::createReleaseLink(track->getRelease()));
+                _release->setText(Wt::WString::fromUTF8(std::string{ release->getName() }));
+                _release->setLink(utils::createReleaseLink(release));
             }
             else
             {

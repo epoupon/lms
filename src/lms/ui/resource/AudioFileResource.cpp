@@ -48,7 +48,7 @@ namespace lms::ui
                 return std::nullopt;
             }
 
-            return track->getPath();
+            return track->getAbsoluteFilePath();
         }
 
         std::optional<std::filesystem::path> getTrackPathFromURLArgs(const Wt::Http::Request& request)

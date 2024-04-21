@@ -29,8 +29,8 @@ namespace lms::scanner
 			using ScanStepBase::ScanStepBase;
 
 		private:
-			std::string_view getStepName() const override { return "Checking for duplicated files"; }
-			ScanStep getStep() const override { return ScanStep::CheckingForDuplicateFiles; }
+			core::LiteralString getStepName() const override { return "Check for duplicated files"; }
+			ScanStep getStep() const override { return ScanStep::CheckForDuplicateFiles; }
 			void process(ScanContext& context) override;
 	};
 }

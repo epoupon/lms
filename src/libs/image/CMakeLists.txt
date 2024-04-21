@@ -1,5 +1,6 @@
 
 add_library(lmsimage SHARED
+	impl/SvgImage.cpp
 	)
 
 target_include_directories(lmsimage INTERFACE

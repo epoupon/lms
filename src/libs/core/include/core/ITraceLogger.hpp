@@ -21,6 +21,7 @@
 
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <string_view>
 #include <thread>
@@ -34,14 +35,19 @@
 #define LMS_CONCAT(x, y) LMS_CONCAT_IMPL(x, y)
 
 #if LMS_SUPPORT_TRACING 
-#define LMS_SCOPED_TRACE(CATEGORY, LEVEL, NAME) ::lms::core::tracing::ScopedTrace LMS_CONCAT(ScopedTrace_, __LINE__){ CATEGORY, LEVEL, NAME }
-
+#define LMS_SCOPED_TRACE(CATEGORY, LEVEL, NAME, ARGTYPE, ARGVALUE) \
+std::optional<::lms::core::tracing::ScopedTrace> LMS_CONCAT(ScopedTrace_, __LINE__); \
+if (::lms::core::tracing::ITraceLogger* traceLogger{ ::lms::core::Service<::lms::core::tracing::ITraceLogger>::get() }; traceLogger && traceLogger->isLevelActive(LEVEL)) \
+    LMS_CONCAT(ScopedTrace_, __LINE__).emplace(CATEGORY, LEVEL, NAME, ARGTYPE, ARGVALUE, traceLogger);
 #else
 #define LMS_SCOPED_TRACE(CATEGORY, LEVEL, NAME)      (void)0
 #endif
 
-#define LMS_SCOPED_TRACE_OVERVIEW(CATEGORY, NAME)   LMS_SCOPED_TRACE(CATEGORY, ::lms::core::tracing::Level::Overview, NAME)
-#define LMS_SCOPED_TRACE_DETAILED(CATEGORY, NAME)   LMS_SCOPED_TRACE(CATEGORY, ::lms::core::tracing::Level::Detailed, NAME)
+#define LMS_SCOPED_TRACE_OVERVIEW_WITH_ARG(CATEGORY, NAME, ARGTYPE, ARGVALUE)   LMS_SCOPED_TRACE(CATEGORY, ::lms::core::tracing::Level::Overview, NAME, ARGTYPE, ARGVALUE)
+#define LMS_SCOPED_TRACE_DETAILED_WITH_ARG(CATEGORY, NAME, ARGTYPE, ARGVALUE)   LMS_SCOPED_TRACE(CATEGORY, ::lms::core::tracing::Level::Detailed, NAME, ARGTYPE, ARGVALUE)
+
+#define LMS_SCOPED_TRACE_OVERVIEW(CATEGORY, NAME)   LMS_SCOPED_TRACE_OVERVIEW_WITH_ARG(CATEGORY, NAME, "", "")
+#define LMS_SCOPED_TRACE_DETAILED(CATEGORY, NAME)   LMS_SCOPED_TRACE_DETAILED_WITH_ARG(CATEGORY, NAME, "", "")
 
 namespace lms::core::tracing
 {
@@ -56,13 +62,15 @@ namespace lms::core::tracing
     class ITraceLogger
     {
     public:
+        using ArgHashType = std::size_t;
+
         struct CompleteEvent
         {
             clock::time_point start;
             clock::duration duration;
-            std::thread::id threadId;
             LiteralString name;
             LiteralString category;
+            std::optional<ArgHashType> arg;
         };
 
         virtual ~ITraceLogger() = default;
@@ -71,6 +79,9 @@ namespace lms::core::tracing
         virtual void write(const CompleteEvent& entry) = 0;
         virtual void dumpCurrentBuffer(std::ostream& os) = 0;
         virtual void setThreadName(std::thread::id id, std::string_view threadName) = 0;
+        virtual void setMetadata(std::string_view metadata, std::string_view value) = 0;
+
+        virtual ArgHashType registerArg(LiteralString argType, std::string_view argValue) = 0;
     };
 
     static constexpr std::size_t MinBufferSizeInMBytes = 16;
@@ -79,16 +90,17 @@ namespace lms::core::tracing
     class ScopedTrace
     {
     public:
-        ScopedTrace(LiteralString category, Level level, LiteralString name, ITraceLogger* traceLogger = Service<ITraceLogger>::get())
+        ScopedTrace(LiteralString category, Level level, LiteralString name, LiteralString argType = {}, std::string_view argValue = {}, ITraceLogger* traceLogger = Service<ITraceLogger>::get())
         {
             if (traceLogger && traceLogger->isLevelActive(level))
             {
                 _traceLogger = traceLogger;
 
                 _event.start = clock::now();
-                _event.threadId = std::this_thread::get_id();
                 _event.name = name;
                 _event.category = category;
+                if (!argType.empty() && !argValue.empty())
+                    _event.arg = traceLogger->registerArg(argType, argValue);
             }
             else
             {

@@ -24,6 +24,7 @@
 #include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
 #include "core/String.hpp"
+#include "Utils.hpp"
 
 namespace lms::db
 {
@@ -34,14 +35,14 @@ namespace lms::db
         if (pointer settings{ get(session) })
             return;
 
-        session.getDboSession().add(std::make_unique<ScanSettings>());
+        session.getDboSession()->add(std::make_unique<ScanSettings>());
     }
 
     ScanSettings::pointer ScanSettings::get(Session& session)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().find<ScanSettings>().resultValue();
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<ScanSettings>());
     }
 
     std::vector<std::filesystem::path> ScanSettings::getAudioFileExtensions() const

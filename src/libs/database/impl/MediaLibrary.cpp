@@ -25,6 +25,7 @@
 #include "IdTypeTraits.hpp"
 #include "PathTraits.hpp"
 #include "StringViewTraits.hpp"
+#include "Utils.hpp"
 
 namespace lms::db
 {
@@ -36,43 +37,44 @@ namespace lms::db
 
     MediaLibrary::pointer MediaLibrary::create(Session& session, const std::filesystem::path& p, std::string_view name)
     {
-        return session.getDboSession().add(std::unique_ptr<MediaLibrary>{ new MediaLibrary{ p, name } });
+        return session.getDboSession()->add(std::unique_ptr<MediaLibrary>{ new MediaLibrary{ p, name } });
     }
 
     std::size_t MediaLibrary::getCount(Session& session)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().query<int>("SELECT COUNT(*) FROM media_library");
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM media_library"));
     }
 
     MediaLibrary::pointer MediaLibrary::find(Session& session, MediaLibraryId id)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().find<MediaLibrary>().where("id = ?").bind(id).resultValue();
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<MediaLibrary>().where("id = ?").bind(id));
     }
 
     MediaLibrary::pointer MediaLibrary::find(Session& session, std::string_view name)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().find<MediaLibrary>().where("name = ?").bind(name).resultValue();
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<MediaLibrary>().where("name = ?").bind(name));
     }
 
     MediaLibrary::pointer MediaLibrary::find(Session& session, const std::filesystem::path& p)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().find<MediaLibrary>().where("path = ?").bind(p).resultValue();
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<MediaLibrary>().where("path = ?").bind(p));
     }
 
     void MediaLibrary::find(Session& session, std::function<void(const MediaLibrary::pointer&)> func)
     {
         session.checkReadTransaction();
 
-        auto results{ session.getDboSession().find<MediaLibrary>().resultList() };
-        for (const auto& result : results)
-            func(result);
+        utils::forEachQueryResult(session.getDboSession()->find<MediaLibrary>(), [&](const MediaLibrary::pointer& mediaLibrary)
+            {
+                func(mediaLibrary);
+            });
     }
 } // namespace lms::db

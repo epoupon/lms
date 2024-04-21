@@ -77,6 +77,99 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Artist_findByRangedIdBased)
+    {
+        ScopedTrack track1{ session };
+        ScopedTrack track2a{ session };
+        ScopedTrack track2b{ session };
+        ScopedTrack track3{ session };
+        ScopedArtist artist1{ session, "MyArtist1" };
+        ScopedArtist artist2{ session, "MyArtist2" };
+        ScopedArtist artist3{ session, "MyArtist3" };
+        ScopedMediaLibrary library{ session };
+        ScopedMediaLibrary otherLibrary{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track2a.get().modify()->setMediaLibrary(library.get());
+            track2b.get().modify()->setMediaLibrary(library.get());
+            TrackArtistLink::create(session, track1.get(), artist1.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track2a.get(), artist2.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track2b.get(), artist2.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track3.get(), artist3.get(), TrackArtistLinkType::Artist);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ArtistId lastRetrievedId;
+            std::vector<Artist::pointer> visitedArtists;
+            Artist::find(session, lastRetrievedId, 10, [&](const Artist::pointer& artist)
+                {
+                    visitedArtists.push_back(artist);
+                });
+            ASSERT_EQ(visitedArtists.size(), 3);
+            EXPECT_EQ(visitedArtists[0]->getId(), artist1.getId());
+            EXPECT_EQ(visitedArtists[1]->getId(), artist2.getId());
+            EXPECT_EQ(visitedArtists[2]->getId(), artist3.getId());
+            EXPECT_EQ(lastRetrievedId, artist3.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ArtistId lastRetrievedId{ artist1.getId() };
+            std::vector<Artist::pointer> visitedArtists;
+            Artist::find(session, lastRetrievedId, 1, [&](const Artist::pointer& artist)
+                {
+                    visitedArtists.push_back(artist);
+                });
+            ASSERT_EQ(visitedArtists.size(), 1);
+            EXPECT_EQ(visitedArtists[0]->getId(), artist2.getId());
+            EXPECT_EQ(lastRetrievedId, artist2.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ArtistId lastRetrievedId{ artist1.getId() };
+            std::vector<Artist::pointer> visitedArtists;
+            Artist::find(session, lastRetrievedId, 0, [&](const Artist::pointer& artist)
+                {
+                    visitedArtists.push_back(artist);
+                });
+            ASSERT_EQ(visitedArtists.size(), 0);
+            EXPECT_EQ(lastRetrievedId, artist1.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ArtistId lastRetrievedId;
+            std::vector<Artist::pointer> visitedArtists;
+            Artist::find(session, lastRetrievedId, 10, [&](const Artist::pointer& artist)
+                {
+                    visitedArtists.push_back(artist);
+                }, otherLibrary.getId());
+            ASSERT_EQ(visitedArtists.size(), 0);
+            EXPECT_EQ(lastRetrievedId, ArtistId{});
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ArtistId lastRetrievedId;
+            std::vector<Artist::pointer> visitedArtists;
+            Artist::find(session, lastRetrievedId, 10, [&](const Artist::pointer& artist)
+                {
+                    visitedArtists.push_back(artist);
+                }, library.getId());
+            ASSERT_EQ(visitedArtists.size(), 1);
+            EXPECT_EQ(visitedArtists[0]->getId(), artist2.getId());
+            EXPECT_EQ(lastRetrievedId, artist2.getId());
+        }
+    }
+
     TEST_F(DatabaseFixture, MultipleArtists)
     {
         {
@@ -139,7 +232,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Artist_singleTrack)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedArtist artist{ session, "MyArtist" };
 
         {
@@ -209,7 +302,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Artist_singleTrack_mediaLibrary)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedArtist artist{ session, "MyArtist" };
         ScopedMediaLibrary library{ session };
         ScopedMediaLibrary otherLibrary{ session };
@@ -242,7 +335,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Artist_singleTracktMultiRoles)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedArtist artist{ session, "MyArtist" };
         {
             auto transaction{ session.createWriteTransaction() };
@@ -301,11 +394,34 @@ namespace lms::db::tests
             EXPECT_TRUE(types.contains(TrackArtistLinkType::Writer));
             EXPECT_FALSE(types.contains(TrackArtistLinkType::Composer));
         }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::vector<TrackArtistLink::pointer> visitedLinks;
+            TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setTrack(track.getId()), [&](const TrackArtistLink::pointer& link)
+                {
+                    visitedLinks.push_back(link);
+                });
+            ASSERT_EQ(visitedLinks.size(), 3);
+            EXPECT_EQ(visitedLinks[0]->getArtist()->getId(), artist.getId());
+            EXPECT_EQ(visitedLinks[1]->getArtist()->getId(), artist.getId());
+            EXPECT_EQ(visitedLinks[2]->getArtist()->getId(), artist.getId());
+
+            auto containsType = [&](TrackArtistLinkType type)
+                {
+                    return std::any_of(std::cbegin(visitedLinks), std::cend(visitedLinks), [type](const TrackArtistLink::pointer& link) { return link->getType() == type;});
+                };
+
+            EXPECT_TRUE(containsType(TrackArtistLinkType::Artist));
+            EXPECT_TRUE(containsType(TrackArtistLinkType::ReleaseArtist));
+            EXPECT_TRUE(containsType(TrackArtistLinkType::Writer));
+        }
     }
 
     TEST_F(DatabaseFixture, Artist_singleTrackMultiArtists)
     {
-        ScopedTrack track{ session, "track" };
+        ScopedTrack track{ session };
         ScopedArtist artist1{ session, "artist1" };
         ScopedArtist artist2{ session, "artist2" };
         ASSERT_NE(artist1.getId(), artist2.getId());
@@ -360,12 +476,53 @@ namespace lms::db::tests
             tracks = Track::findIds(session, Track::FindParameters{}.setArtist(artist2->getId(), { TrackArtistLinkType::Artist }));
             EXPECT_EQ(tracks.results.size(), 1);
         }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::vector<TrackArtistLink::pointer> visitedLinks;
+            TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setTrack(track.getId()), [&](const TrackArtistLink::pointer& link)
+                {
+                    visitedLinks.push_back(link);
+                });
+            ASSERT_EQ(visitedLinks.size(), 2);
+            EXPECT_EQ(visitedLinks[0]->getArtist()->getId(), artist1.getId());
+            EXPECT_EQ(visitedLinks[1]->getArtist()->getId(), artist2.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::vector<TrackArtistLink::pointer> visitedLinks;
+            TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setArtist(artist2.getId()), [&](const TrackArtistLink::pointer& link)
+                {
+                    visitedLinks.push_back(link);
+                });
+            ASSERT_EQ(visitedLinks.size(), 1);
+            EXPECT_EQ(visitedLinks[0]->getArtist()->getId(), artist2.getId());
+            EXPECT_EQ(visitedLinks[0]->getTrack()->getId(), track.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::vector<std::pair<TrackArtistLink::pointer, Artist::pointer>> visitedEntries;
+            TrackArtistLink::find(session, track.getId(), [&](const TrackArtistLink::pointer& link, const Artist::pointer& artist)
+                {
+                    visitedEntries.push_back(std::make_pair(link, artist));
+                });
+            ASSERT_EQ(visitedEntries.size(), 2);
+            EXPECT_EQ(visitedEntries[0].first->getArtist()->getId(), artist1.getId());
+            EXPECT_EQ(visitedEntries[0].second->getId(), artist1.getId());
+            EXPECT_EQ(visitedEntries[1].first->getArtist()->getId(), artist2.getId());
+            EXPECT_EQ(visitedEntries[1].second->getId(), artist2.getId());
+        }
     }
 
     TEST_F(DatabaseFixture, Artist_findByName)
     {
         ScopedArtist artist{ session, "AAA" };
-        ScopedTrack track{ session, "MyTrack" }; // filters does not work on orphans
+        ScopedTrack track{ session }; // filters does not work on orphans
 
         {
             auto transaction{ session.createWriteTransaction() };
@@ -409,46 +566,46 @@ namespace lms::db::tests
                 EXPECT_EQ(artists.front()->getId(), artist1.getId());
                 EXPECT_EQ(Artist::find(session, R"(MyArtistFoo)").size(), 0);
             }
-{
-            const auto artists{ Artist::find(session, R"(%MyArtist)") };
-            ASSERT_TRUE(artists.size() == 1);
-            EXPECT_EQ(artists.front()->getId(), artist2.getId());
+            {
+                const auto artists{ Artist::find(session, R"(%MyArtist)") };
+                ASSERT_TRUE(artists.size() == 1);
+                EXPECT_EQ(artists.front()->getId(), artist2.getId());
                 EXPECT_EQ(Artist::find(session, R"(FooMyArtist)").size(), 0);
+            }
+            {
+                const auto artists{ Artist::find(session, R"(%_MyArtist)") };
+                ASSERT_TRUE(artists.size() == 1);
+                ASSERT_EQ(artists.front()->getId(), artist3.getId());
+                EXPECT_EQ(Artist::find(session, R"(%CMyArtist)").size(), 0);
+            }
         }
+
         {
-            const auto artists{ Artist::find(session, R"(%_MyArtist)") };
-            ASSERT_TRUE(artists.size() == 1);
-            ASSERT_EQ(artists.front()->getId(), artist3.getId());
-            EXPECT_EQ(Artist::find(session, R"(%CMyArtist)").size(), 0);
-}
+            auto transaction{ session.createReadTransaction() };
+            {
+                const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"MyArtist"})) };
+                EXPECT_EQ(artists.results.size(), 6);
             }
 
             {
-                auto transaction{ session.createReadTransaction() };
-{
-            const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"MyArtist"})) };
-                EXPECT_EQ(artists.results.size(), 6);
-        }
-
-        {
-            const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"MyArtist%"}).setSortMethod(ArtistSortMethod::ByName)) };
-            ASSERT_EQ(artists.results.size(), 2);
+                const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"MyArtist%"}).setSortMethod(ArtistSortMethod::Name)) };
+                ASSERT_EQ(artists.results.size(), 2);
                 EXPECT_EQ(artists.results[0], artist1.getId());
-            EXPECT_EQ(artists.results[1], artist4.getId());
-        }
+                EXPECT_EQ(artists.results[1], artist4.getId());
+            }
 
-        {
-            const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"%MyArtist"}).setSortMethod(ArtistSortMethod::ByName)) };
+            {
+                const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"%MyArtist"}).setSortMethod(ArtistSortMethod::Name)) };
                 ASSERT_EQ(artists.results.size(), 2);
                 EXPECT_EQ(artists.results[0], artist2.getId());
-            EXPECT_EQ(artists.results[1], artist5.getId());
+                EXPECT_EQ(artists.results[1], artist5.getId());
             }
 
             {
-                const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"_MyArtist"}).setSortMethod(ArtistSortMethod::ByName)) };
-            ASSERT_EQ(artists.results.size(), 1);
-            EXPECT_EQ(artists.results[0], artist3.getId());
-                    }
+                const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"_MyArtist"}).setSortMethod(ArtistSortMethod::Name)) };
+                ASSERT_EQ(artists.results.size(), 1);
+                EXPECT_EQ(artists.results[0], artist3.getId());
+            }
         }
     }
 
@@ -467,8 +624,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto allArtistsByName{ Artist::findIds(session, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::ByName)) };
-            auto allArtistsBySortName{ Artist::findIds(session, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::BySortName)) };
+            auto allArtistsByName{ Artist::findIds(session, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::Name)) };
+            auto allArtistsBySortName{ Artist::findIds(session, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::SortName)) };
 
             ASSERT_EQ(allArtistsByName.results.size(), 2);
             EXPECT_EQ(allArtistsByName.results.front(), artistA.getId());
@@ -483,8 +640,8 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Artist_nonReleaseTracks)
     {
         ScopedArtist artist{ session, "artist" };
-        ScopedTrack track1{ session, "MyTrack1" };
-        ScopedTrack track2{ session, "MyTrack2" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
         ScopedRelease release{ session, "MyRelease" };
 
         {
@@ -515,7 +672,7 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Artist_findByRelease)
     {
         ScopedArtist artist{ session, "artist" };
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedRelease release{ session, "MyRelease" };
 
         {

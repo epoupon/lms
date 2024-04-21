@@ -20,6 +20,7 @@
 #pragma once
 
 #include <cstddef>
+#include <ostream>
 #include <string>
 #include <string_view>
 
@@ -32,6 +33,7 @@ namespace lms::core
         template<std::size_t N>
         constexpr LiteralString(const char(&str)[N]) noexcept : _str{ str, N - 1 } { static_assert(N > 0); }
 
+        constexpr bool empty() const noexcept { return _str.empty(); }
         constexpr const char* c_str() const noexcept { return _str.data(); }
         constexpr std::size_t length() const noexcept { return _str.length(); }
         constexpr std::string_view str() const noexcept { return _str; }
@@ -40,6 +42,12 @@ namespace lms::core
     private:
         std::string_view _str;
     };
+
+    inline std::ostream& operator<<(std::ostream& os, const LiteralString& str)
+    {
+        os << str.str();
+        return os;
+    }
 }
 
 namespace std

@@ -95,18 +95,10 @@ namespace lms::ui
                     TrackArtistLink::FindParameters params;
                     params.setRelease(releaseId);
                     params.setLinkType(TrackArtistLinkType::Performer);
-                    const auto links{ TrackArtistLink::find(LmsApp->getDbSession(), params) };
-                    if (links.results.empty())
-                        return;
-
-                    for (const TrackArtistLinkId linkId : links.results)
-                    {
-                        const TrackArtistLink::pointer link{ TrackArtistLink::find(LmsApp->getDbSession(), linkId) };
-                        if (!link)
-                            continue;
-
-                        artistMap[std::string{ link->getSubType() }].insert(link->getArtist()->getId());
-                    }
+                    TrackArtistLink::find(LmsApp->getDbSession(), params, [&](const TrackArtistLink::pointer& link)
+                        {
+                            artistMap[std::string{ link->getSubType() }].insert(link->getArtist()->getId());
+                        });
                 };
 
             addArtists(TrackArtistLinkType::Composer, "Lms.Explore.Artists.linktype-composer");
@@ -142,7 +134,7 @@ namespace lms::ui
             // TODO: save in DB and aggregate all this
             for (const Track::pointer& track : Track::find(LmsApp->getDbSession(), Track::FindParameters{}.setRelease(releaseId).setRange(Range{ 0, 1 })).results)
             {
-                if (const auto audioFile{ av::parseAudioFile(track->getPath()) })
+                if (const auto audioFile{ av::parseAudioFile(track->getAbsoluteFilePath()) })
                 {
                     const std::optional<av::StreamInfo> audioStream{ audioFile->getBestStreamInfo() };
                     if (audioStream)

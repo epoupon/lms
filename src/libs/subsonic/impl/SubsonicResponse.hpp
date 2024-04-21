@@ -27,6 +27,7 @@
 
 #include "core/LiteralString.hpp"
 #include "RequestContext.hpp"
+#include "SubsonicResponseAllocator.hpp"
 
 namespace lms::api::subsonic
 {
@@ -240,14 +241,23 @@ namespace lms::api::subsonic
             void setVersionAttribute(ProtocolVersion version);
 
             friend class Response;
-            using ValueType = std::variant<std::string, bool, float, long long>;
-            std::map<Key, ValueType> _attributes;
-            std::optional<ValueType> _value;
-            std::map<Key, Node> _children;
-            std::map<Key, std::vector<Node>> _childrenArrays;
 
-            using ValuesType = std::vector<ValueType>;
-            std::map<Key, ValuesType> _childrenValues;
+            template <typename Key, typename Value>
+            using map = std::map< Key, Value, std::less<Key>, ResponseAllocator<std::pair<const Key, Value>>>;
+
+            template <typename T>
+            using vector = std::vector<T, ResponseAllocator<T>>;
+
+            using string = std::basic_string<char, std::char_traits<char>, ResponseAllocator<char>>;
+
+            using ValueType = std::variant<string, bool, float, long long>;
+            map<Key, ValueType> _attributes;
+            std::optional<ValueType> _value;
+            map<Key, Node> _children;
+            map<Key, vector<Node>> _childrenArrays;
+
+            using ValuesType = vector<ValueType>;
+            map<Key, ValuesType> _childrenValues;
         };
 
         static Response createOkResponse(ProtocolVersion protocolVersion);
@@ -272,7 +282,7 @@ namespace lms::api::subsonic
         {
             public:
             void serializeNode(std::ostream& os, const Node& node);
-            void serializeValue(std::ostream& os, const Node::ValueType& node);
+            void serializeValue(std::ostream& os, const Node::ValueType& value);
             void serializeEscapedString(std::ostream&, std::string_view str);
         };
 

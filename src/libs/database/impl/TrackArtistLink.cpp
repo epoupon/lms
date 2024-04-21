@@ -30,26 +30,26 @@ namespace lms::db
 {
     namespace
     {
-        Wt::Dbo::Query<TrackArtistLinkId> createQuery(Session& session, const TrackArtistLink::FindParameters& params)
+        Wt::Dbo::Query<Wt::Dbo::ptr<TrackArtistLink>> createQuery(Session& session, const TrackArtistLink::FindParameters& params)
         {
             session.checkReadTransaction();
 
-            auto query{ session.getDboSession().query<TrackArtistLinkId>("SELECT DISTINCT t_a_l.id FROM track_artist_link t_a_l") };
+            auto query{ session.getDboSession()->query<Wt::Dbo::ptr<TrackArtistLink>>("SELECT t_a_l FROM track_artist_link t_a_l") };
 
             if (params.linkType)
                 query.where("t_a_l.type = ?").bind(*params.linkType);
 
-            if (params.track.isValid() || params.release.isValid())
-                query.join("track t ON t.id = t_a_l.track_id");
+            if (params.track.isValid())
+                query.where("t_a_l.track_id = ?").bind(params.track);
 
             if (params.artist.isValid())
-                query.join("artist a ON a.id = t_a_l.artist_id");
+                query.where("t_a_l.artist_id = ?").bind(params.artist);
 
             if (params.release.isValid())
+            {
+                query.join("track t ON t.id = t_a_l.track_id");
                 query.where("t.release_id = ?").bind(params.release);
-
-            if (params.track.isValid())
-                query.where("t.id = ?").bind(params.track);
+            }
 
             return query;
         }
@@ -67,8 +67,8 @@ namespace lms::db
     {
         session.checkWriteTransaction();
 
-        TrackArtistLink::pointer res{ session.getDboSession().add(std::make_unique<TrackArtistLink>(track, artist, type, subType)) };
-        session.getDboSession().flush();
+        TrackArtistLink::pointer res{ session.getDboSession()->add(std::make_unique<TrackArtistLink>(track, artist, type, subType)) };
+        session.getDboSession()->flush();
 
         return res;
     }
@@ -76,36 +76,61 @@ namespace lms::db
     TrackArtistLink::pointer TrackArtistLink::find(Session& session, TrackArtistLinkId id)
     {
         session.checkReadTransaction();
-        return session.getDboSession().find<TrackArtistLink>().where("id = ?").bind(id).resultValue();
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackArtistLink>().where("id = ?").bind(id));
     }
 
-    RangeResults<TrackArtistLinkId> TrackArtistLink::find(Session& session, const FindParameters& params)
+    void TrackArtistLink::find(Session& session, TrackId trackId, const std::function<void(const TrackArtistLink::pointer& link, const ObjectPtr<Artist>& artist)>& func)
     {
         session.checkReadTransaction();
 
-        auto query{ createQuery(session, params) };
-        return utils::execQuery<TrackArtistLinkId>(query, params.range);
+        using ResultType = std::tuple < Wt::Dbo::ptr<TrackArtistLink>, Wt::Dbo::ptr<Artist>>;
+
+        const auto query{ session.getDboSession()->query<ResultType>("SELECT t_a_l, a FROM track_artist_link t_a_l")
+        .join("artist a ON t_a_l.artist_id = a.id")
+        .where("t_a_l.track_id = ?").bind(trackId) };
+
+        utils::forEachQueryResult(query, [&](const ResultType& result)
+            {
+                func(std::get<Wt::Dbo::ptr<TrackArtistLink>>(result), std::get<Wt::Dbo::ptr<Artist>>(result));
+            });
+    }
+
+    void TrackArtistLink::find(Session& session, const FindParameters& parameters, const std::function<void(const TrackArtistLink::pointer&)>& func)
+    {
+        const auto query{ createQuery(session, parameters) };
+
+        utils::forEachQueryResult(query, [&](const TrackArtistLink::pointer& link)
+            {
+                func(link);
+            });
     }
 
     core::EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session)
     {
         session.checkReadTransaction();
 
-        auto res{ session.getDboSession().query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link").resultList() };
+        const auto query{ session.getDboSession()->query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link") };
 
-        return core::EnumSet<TrackArtistLinkType>(std::begin(res), std::end(res));
+        core::EnumSet<TrackArtistLinkType> res;
+        utils::forEachQueryResult(query, [&](TrackArtistLinkType linkType)
+            {
+                res.insert(linkType);
+            });
+        return res;
     }
 
     core::EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session, ArtistId artistId)
     {
         session.checkReadTransaction();
 
-        auto res{ session.getDboSession()
-            .query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link")
-            .where("artist_id = ?").bind(artistId)
-            .resultList() };
+        const auto query{ session.getDboSession()->query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link")
+            .where("artist_id = ?").bind(artistId) };
 
-        return core::EnumSet<TrackArtistLinkType>(std::begin(res), std::end(res));
+        core::EnumSet<TrackArtistLinkType> res;
+        utils::forEachQueryResult(query, [&](TrackArtistLinkType linkType)
+            {
+                res.insert(linkType);
+            });
+        return res;
     }
 }
-

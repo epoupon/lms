@@ -28,8 +28,8 @@
 #include "StringViewTraits.hpp"
 #include "Utils.hpp"
 
-namespace lms::db {
-
+namespace lms::db
+{
     User::User(std::string_view loginName)
         : _loginName{ loginName }
     {
@@ -37,47 +37,46 @@ namespace lms::db {
 
     User::pointer User::create(Session& session, std::string_view loginName)
     {
-        return session.getDboSession().add(std::unique_ptr<User> {new User{ loginName }});
+        return session.getDboSession()->add(std::unique_ptr<User> {new User{ loginName }});
     }
 
     std::size_t User::getCount(Session& session)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().query<int>("SELECT COUNT(*) FROM user");
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM user"));
     }
 
     RangeResults<UserId> User::find(Session& session, const FindParameters& params)
     {
         session.checkReadTransaction();
 
-        auto query{ session.getDboSession().query<UserId>("SELECT id FROM user") };
+        auto query{ session.getDboSession()->query<UserId>("SELECT id FROM user") };
 
         if (params.scrobblingBackend)
             query.where("scrobbling_backend = ?").bind(*params.scrobblingBackend);
         if (params.feedbackBackend)
             query.where("feedback_backend = ?").bind(*params.feedbackBackend);
 
-        return utils::execQuery<UserId>(query, params.range);
+        return utils::execRangeQuery<UserId>(query, params.range);
     }
 
     User::pointer User::findDemoUser(Session& session)
     {
         session.checkReadTransaction();
 
-        return session.getDboSession().find<User>().where("type = ?").bind(UserType::DEMO).resultValue();
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<User>().where("type = ?").bind(UserType::DEMO));
     }
 
     User::pointer User::find(Session& session, UserId id)
     {
-        return session.getDboSession().find<User>().where("id = ?").bind(id).resultValue();
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<User>().where("id = ?").bind(id));
     }
 
     User::pointer User::find(Session& session, std::string_view name)
     {
-        return session.getDboSession().find<User>()
-            .where("login_name = ?").bind(name)
-            .resultValue();
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<User>()
+            .where("login_name = ?").bind(name));
     }
 
     void User::setSubsonicDefaultTranscodingOutputBitrate(Bitrate bitrate)

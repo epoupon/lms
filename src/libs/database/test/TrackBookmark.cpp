@@ -27,7 +27,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, TrackBookmark)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
 
         {

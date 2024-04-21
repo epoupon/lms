@@ -24,38 +24,33 @@
 #include "database/User.hpp"
 #include "StringViewTraits.hpp"
 #include "IdTypeTraits.hpp"
+#include "Utils.hpp"
 
 namespace lms::db
 {
+    AuthToken::AuthToken(std::string_view value, const Wt::WDateTime& expiry, ObjectPtr<User> user)
+        : _value{ value }
+        , _expiry{ expiry }
+        , _user{ getDboPtr(user) }
+    {
+    }
 
-	AuthToken::AuthToken(std::string_view value, const Wt::WDateTime& expiry, ObjectPtr<User> user)
-	: _value {value}
-	, _expiry {expiry}
-	, _user {getDboPtr(user)}
-	{
-	}
+    AuthToken::pointer AuthToken::create(Session& session, std::string_view value, const Wt::WDateTime& expiry, ObjectPtr<User> user)
+    {
+        return session.getDboSession()->add(std::unique_ptr<AuthToken> {new AuthToken{ value, expiry, user }});
+    }
 
-	AuthToken::pointer
-	AuthToken::create(Session& session, std::string_view value, const Wt::WDateTime& expiry, ObjectPtr<User> user)
-	{
-		return session.getDboSession().add(std::unique_ptr<AuthToken> {new AuthToken {value, expiry, user}});
-	}
+    void AuthToken::removeExpiredTokens(Session& session, const Wt::WDateTime& now)
+    {
+        session.checkWriteTransaction();
 
-	void
-	AuthToken::removeExpiredTokens(Session& session, const Wt::WDateTime& now)
-	{
-		session.checkWriteTransaction();
+        session.getDboSession()->execute("DELETE FROM auth_token WHERE expiry < ?").bind(now);
+    }
 
-		session.getDboSession().execute("DELETE FROM auth_token WHERE expiry < ?").bind(now);
-	}
+    AuthToken::pointer AuthToken::find(Session& session, std::string_view value)
+    {
+        session.checkReadTransaction();
 
-	AuthToken::pointer
-	AuthToken::find(Session& session, std::string_view value)
-	{
-		session.checkReadTransaction();
-
-		return session.getDboSession().find<AuthToken>()
-			.where("value = ?").bind(value)
-			.resultValue();
-	}
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<AuthToken>().where("value = ?").bind(value));
+    }
 }

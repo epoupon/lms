@@ -25,8 +25,9 @@
 #include "database/Session.hpp"
 #include "database/User.hpp"
 #include "core/IConfig.hpp"
-#include "core/Service.hpp"
 #include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
+#include "core/Service.hpp"
 
 namespace lms::db
 {
@@ -49,7 +50,7 @@ namespace lms::db
                 prepare();
             }
 
-            ~Connection()
+            ~Connection() override
             {
                 // make use of per-connection usage stats to optimize
                 optimize();
@@ -66,16 +67,15 @@ namespace lms::db
             void prepare()
             {
                 LMS_LOG(DB, DEBUG, "Setting per-connection settings...");
-                executeSql("pragma journal_mode=WAL");
-                executeSql("pragma synchronous=normal");
-                executeSql("pragma analysis_limit=2000"); // to help make analyze command faster, 1000 does not seem to be enough to speed up all queries
+                executeSql("PRAGMA journal_mode=WAL");
+                executeSql("PRAGMA synchronous=normal");
                 LMS_LOG(DB, DEBUG, "Setting per-connection settings done!");
             }
 
             void optimize()
             {
                 LMS_LOG(DB, DEBUG, "connection close: Running pragma optimize...");
-                executeSql("pragma optimize");
+                executeSql("PRAGMA optimize");
                 LMS_LOG(DB, DEBUG, "connection close: pragma optimize complete");
             }
 

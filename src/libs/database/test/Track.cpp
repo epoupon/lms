@@ -39,7 +39,7 @@ namespace lms::db::tests
             }
         }
 
-        ScopedTrack track{ session, "MyTrackFile" };
+        ScopedTrack track{ session };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -65,17 +65,23 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Track_findByRangedIdBased)
     {
-        ScopedTrack track1{ session, "MyTrackFile1" };
-        ScopedTrack track2{ session, "MyTrackFile1" };
-        ScopedTrack track3{ session, "MyTrackFile1" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+        ScopedMediaLibrary library{ session };
+        ScopedMediaLibrary otherLibrary{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track2.get().modify()->setMediaLibrary(library.get());
+        }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            bool moreResults;
             TrackId lastRetrievedTrackId;
             std::vector<Track::pointer> visitedTracks;
-            Track::find(session, lastRetrievedTrackId, 10, moreResults, [&](const Track::pointer& track)
+            Track::find(session, lastRetrievedTrackId, 10, [&](const Track::pointer& track)
                 {
                     visitedTracks.push_back(track);
                 });
@@ -83,45 +89,67 @@ namespace lms::db::tests
             EXPECT_EQ(visitedTracks[0]->getId(), track1.getId());
             EXPECT_EQ(visitedTracks[1]->getId(), track2.getId());
             EXPECT_EQ(visitedTracks[2]->getId(), track3.getId());
-            EXPECT_FALSE(moreResults);
             EXPECT_EQ(lastRetrievedTrackId, track3.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            bool moreResults;
             TrackId lastRetrievedTrackId{ track1.getId() };
             std::vector<Track::pointer> visitedTracks;
-            Track::find(session, lastRetrievedTrackId, 1, moreResults, [&](const Track::pointer& track)
+            Track::find(session, lastRetrievedTrackId, 1, [&](const Track::pointer& track)
                 {
                     visitedTracks.push_back(track);
                 });
             ASSERT_EQ(visitedTracks.size(), 1);
             EXPECT_EQ(visitedTracks[0]->getId(), track2.getId());
-            EXPECT_TRUE(moreResults);
             EXPECT_EQ(lastRetrievedTrackId, track2.getId());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            bool moreResults;
             TrackId lastRetrievedTrackId{ track1.getId() };
             std::vector<Track::pointer> visitedTracks;
-            Track::find(session, lastRetrievedTrackId, 0, moreResults, [&](const Track::pointer& track)
+            Track::find(session, lastRetrievedTrackId, 0, [&](const Track::pointer& track)
                 {
                     visitedTracks.push_back(track);
                 });
             ASSERT_EQ(visitedTracks.size(), 0);
-            EXPECT_TRUE(moreResults);
             EXPECT_EQ(lastRetrievedTrackId, track1.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackId lastRetrievedTrackId{};
+            std::vector<Track::pointer> visitedTracks;
+            Track::find(session, lastRetrievedTrackId, 10, [&](const Track::pointer& track)
+                {
+                    visitedTracks.push_back(track);
+                }, otherLibrary.getId());
+            ASSERT_EQ(visitedTracks.size(), 0);
+            EXPECT_EQ(lastRetrievedTrackId, TrackId{});
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackId lastRetrievedTrackId{};
+            std::vector<Track::pointer> visitedTracks;
+            Track::find(session, lastRetrievedTrackId, 10, [&](const Track::pointer& track)
+                {
+                    visitedTracks.push_back(track);
+                }, library.getId());
+            ASSERT_EQ(visitedTracks.size(), 1);
+            EXPECT_EQ(visitedTracks[0]->getId(), track2.getId());
+            EXPECT_EQ(lastRetrievedTrackId, track2.getId());
         }
     }
 
     TEST_F(DatabaseFixture, Track_MediaLibrary)
     {
-        ScopedTrack track{ session, "MyTrackFile" };
+        ScopedTrack track{ session };
         ScopedMediaLibrary library{ session };
         ScopedMediaLibrary otherLibrary{ session };
 
@@ -145,7 +173,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Track_noMediaLibrary)
     {
-        ScopedTrack track{ session, "MyTrackFile" };
+        ScopedTrack track{ session };
         {
             auto transaction{ session.createReadTransaction() };
             MediaLibrary::pointer mediaLibrary{ track->getMediaLibrary() };
@@ -172,8 +200,8 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, MultipleTracks)
     {
-        ScopedTrack track1{ session, "MyTrackFile1" };
-        ScopedTrack track2{ session, "MyTrackFile2" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -186,12 +214,12 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, MultipleTracksSearchByFilter)
     {
-        ScopedTrack track1{ session, "" };
-        ScopedTrack track2{ session, "" };
-        ScopedTrack track3{ session, "" };
-        ScopedTrack track4{ session, "" };
-        ScopedTrack track5{ session, "" };
-        ScopedTrack track6{ session, "" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+        ScopedTrack track4{ session };
+        ScopedTrack track5{ session };
+        ScopedTrack track6{ session };
 
         {
             auto transaction{ session.createWriteTransaction() };
@@ -232,7 +260,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Track_date)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
         const Wt::WDate date{ 1995, 5, 5 };
         const Wt::WDate originalDate{ 1994, 2, 2 };
         {
@@ -270,7 +298,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Track_writtenAfter)
     {
-        ScopedTrack track{ session, "MyTrack" };
+        ScopedTrack track{ session };
 
         const Wt::WDateTime dateTime{ Wt::WDate {1950, 1, 1}, Wt::WTime {12, 30, 20} };
 
@@ -295,6 +323,47 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             const auto tracks{ Track::findIds(session, Track::FindParameters {}.setWrittenAfter(dateTime.addSecs(+1))) };
             EXPECT_EQ(tracks.results.size(), 0);
+        }
+    }
+
+    TEST_F(DatabaseFixture, Track_path)
+    {
+        ScopedTrack track{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track.get().modify()->setAbsoluteFilePath("/root/foo/file.path");
+            track.get().modify()->setRelativeFilePath("foo/file.path");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(track->getAbsoluteFilePath(), "/root/foo/file.path");
+            EXPECT_EQ(track->getRelativeFilePath(), "foo/file.path");
+        }
+    }
+
+
+    TEST_F(DatabaseFixture, Track_audioProperties)
+    {
+        ScopedTrack track{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track.get().modify()->setBitrate(128000);
+            track.get().modify()->setBitsPerSample(16);
+            track.get().modify()->setDuration(std::chrono::minutes{ 3 });
+            track.get().modify()->setChannelCount(2);
+            track.get().modify()->setSampleRate(44100);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(track->getBitrate(), 128000);
+            EXPECT_EQ(track->getBitsPerSample(), 16);
+            EXPECT_EQ(track->getDuration(), std::chrono::minutes{ 3 });
+            EXPECT_EQ(track->getChannelCount(), 2);
+            EXPECT_EQ(track->getSampleRate(), 44100);
         }
     }
 }

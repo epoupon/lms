@@ -146,7 +146,7 @@ namespace lms::ui
                     return std::nullopt;
                 }
 
-                parameters.inputParameters.trackPath = track->getPath();
+                parameters.inputParameters.trackPath = track->getAbsoluteFilePath();
                 parameters.inputParameters.duration = track->getDuration();
             }
 

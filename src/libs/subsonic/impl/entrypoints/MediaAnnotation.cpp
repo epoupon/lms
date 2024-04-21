@@ -94,15 +94,11 @@ namespace lms::api::subsonic
         const std::vector<unsigned long> times{ getMultiParametersAs<unsigned long>(context.parameters, "time") };
         const bool submission{ getParameterAs<bool>(context.parameters, "submission").value_or(true) };
 
-        // playing now => no time to be provided
-        if (!submission && !times.empty())
-            throw BadParameterGenericError{ "time" };
-
         // playing now => only one at a time
         if (!submission && ids.size() > 1)
             throw BadParameterGenericError{ "id" };
 
-        // if multiple submissions, must have times
+        // if multiple submissions, must have all times
         if (ids.size() > 1 && ids.size() != times.size())
             throw BadParameterGenericError{ "time" };
 

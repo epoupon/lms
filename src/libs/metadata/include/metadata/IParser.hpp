@@ -83,8 +83,18 @@ namespace lms::metadata
         }
     };
 
+    struct AudioProperties
+    {
+        std::size_t                 bitrate{};
+        std::size_t                 bitsPerSample{};
+        std::size_t                 channelCount{};
+        std::chrono::milliseconds 	duration{};
+        std::size_t                 sampleRate{};
+    };
+
     struct Track
     {
+        AudioProperties             audioProperties;
         std::optional<core::UUID>	mbid;
         std::optional<core::UUID>	recordingMBID;
         std::string					title;
@@ -96,8 +106,6 @@ namespace lms::metadata
         std::vector<std::string>    labels;
         std::vector<std::string>    languages;
         Tags                        userExtraTags;
-        std::chrono::milliseconds 	duration{};
-        std::size_t                 bitrate{};
         std::optional<int>          year{};
         Wt::WDate					date;
         std::optional<int>          originalYear{};

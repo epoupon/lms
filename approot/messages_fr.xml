@@ -89,9 +89,11 @@
 <message id="Lms.Admin.ScannerController.bad-duration">Impossible de récupérer la durée de la piste</message>
 <message id="Lms.Admin.ScannerController.cannot-parse-file">Impossible d'analyser le fichier</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">Impossible de lire le fichier</message>
+<message id="Lms.Admin.ScannerController.compact">Compacter la base de données. <strong>Attention :</strong> cette opération peut prendre du temps et va vérouiller l'application pendant toute l'étape de compactage!</message>
 <message id="Lms.Admin.ScannerController.duplicates-header">{1} fichiers dupliqués :</message>
 <message id="Lms.Admin.ScannerController.errors-header">{1} erreurs :</message>
-<message id="Lms.Admin.ScannerController.force-scan-now">Forcer un rescan complet</message>
+<message id="Lms.Admin.ScannerController.force-optimize">Forcer l'optimisation de la base de données</message>
+<message id="Lms.Admin.ScannerController.full-scan">Rescanner tous les fichiers</message>
 <message id="Lms.Admin.ScannerController.get-report">Rapport</message>
 <message id="Lms.Admin.ScannerController.last-scan">Dernier scan</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Non disponible</message>
@@ -100,6 +102,7 @@
 <message id="Lms.Admin.ScannerController.same-hash">Hash dupliqué</message>
 <message id="Lms.Admin.ScannerController.same-mbid">Track MBID dupliqué</message>
 <message id="Lms.Admin.ScannerController.scan-now">Lancer un scan</message>
+<message id="Lms.Admin.ScannerController.scan-options">Options de scan</message>
 <message id="Lms.Admin.ScannerController.scanner">Scanner</message>
 <message id="Lms.Admin.ScannerController.status">Statut</message>
 <message id="Lms.Admin.ScannerController.status-not-scheduled">Non planifié</message>
@@ -107,9 +110,11 @@
 <message id="Lms.Admin.ScannerController.status-in-progress">En cours de scan : étape {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">Vérification des fichiers dupliqués... {1} fichiers</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-missing-files">Vérification des fichiers... {1}%</message>
+<message id="Lms.Admin.ScannerController.step-compact">Compactage de la base de données...</message>
 <message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Calcul des statistiques... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-discovering-files">Découverte des fichiers : {1} fichiers</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Récupération des métadonnées AcousticBrainz : {1}/{2} fichiers ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-optimize">Optimisation de la base de données... {1}/{2} entrées ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Rechargement du moteur de recommandation : {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Scan des fichiers : {1}/{2} fichiers ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-status">Statut de l'étape</message>
