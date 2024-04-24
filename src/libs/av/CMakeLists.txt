@@ -1,3 +1,4 @@
+pkg_check_modules(LIBAV IMPORTED_TARGET libavcodec libavutil libavformat)
 
 add_library(lmsav SHARED
 	impl/AudioFile.cpp
@@ -27,4 +28,3 @@ target_link_libraries(lmsav PRIVATE
 	)
 
 install(TARGETS lmsav DESTINATION ${CMAKE_INSTALL_LIBDIR})
-

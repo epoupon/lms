@@ -17,23 +17,34 @@ target_link_libraries(lmsimage PUBLIC
 	std::filesystem
 	)
 
-if (IMAGE_LIBRARY STREQUAL STB)
+set(IMAGE_LIBRARY "StbImage" CACHE STRING "Image library")
+set_property(CACHE IMAGE_LIBRARY PROPERTY STRINGS "StbImage" "GraphicsMagick++")
+
+if (${IMAGE_LIBRARY} STREQUAL "StbImage")
+	find_package(StbImage REQUIRED)
+	message(STATUS "Using StbImage (resize version ${STB_IMAGE_RESIZE_VERSION})")
+
 	target_sources(lmsimage PRIVATE
 		impl/stb/JPEGImage.cpp
 		impl/stb/RawImage.cpp
-		)
+	)
 	target_compile_options(lmsimage PRIVATE "-DLMS_SUPPORT_IMAGE_STB")
-	target_include_directories(lmsimage PRIVATE ${STB_INCLUDE_DIR})
-elseif (IMAGE_LIBRARY STREQUAL GraphicsMagick++)
+	target_include_directories(lmsimage PRIVATE ${STB_IMAGE_INCLUDE_DIR})
+
+elseif (IMAGE_LIBRARY STREQUAL "GraphicsMagick++")
+	pkg_check_modules(GraphicsMagick++ REQUIRED IMPORTED_TARGET GraphicsMagick++)
+	message(STATUS "Using GraphicsMagick++")
+
 	target_sources(lmsimage PRIVATE
 		impl/graphicsmagick/JPEGImage.cpp
 		impl/graphicsmagick/RawImage.cpp
-		)
+	)
 	target_compile_options(lmsimage PRIVATE "-DLMS_SUPPORT_IMAGE_GM")
 	target_link_libraries(lmsimage PRIVATE PkgConfig::GraphicsMagick++)
+
 else ()
-	message(FATAL_ERROR "Invalid IMAGE_LIBRARY provided")
-endif()
+	message(FATAL_ERROR "Invalid image library")
+endif ()
 
 install(TARGETS lmsimage DESTINATION ${CMAKE_INSTALL_LIBDIR})
 

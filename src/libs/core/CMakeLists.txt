@@ -1,3 +1,6 @@
+pkg_check_modules(Config++ REQUIRED IMPORTED_TARGET libconfig++)
+pkg_check_modules(Archive REQUIRED IMPORTED_TARGET libarchive)
+
 add_library(lmscore SHARED
 	impl/http/Client.cpp
 	impl/http/SendQueue.cpp
