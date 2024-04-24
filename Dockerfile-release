@@ -1,4 +1,4 @@
-FROM	alpine:3.18 AS build
+FROM	alpine:3.19 AS build
 
 WORKDIR	/tmp/workdir
 
@@ -37,7 +37,7 @@ ARG	BUILD_PACKAGES=" \
 RUN	apk add --no-cache --update ${BUILD_PACKAGES}
 
 # ffmpeg
-ARG	FFMPEG_VERSION=4.3.5
+ARG	FFMPEG_VERSION=6.1.1
 RUN  \
 	DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
@@ -79,7 +79,7 @@ RUN \
 	make distclean
 
 # WT
-ARG	WT_VERSION=4.10.2
+ARG	WT_VERSION=4.10.4
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/emweb/wt/archive/${WT_VERSION}.tar.gz && \
@@ -92,7 +92,7 @@ RUN \
 	make install
 
 # STB
-ARG	STB_VERSION=5736b15f7ea0ffb08dd38af21067c314d6a3aae9
+ARG	STB_VERSION=ae721c50eaf761660b4f90cc590453cdb0c2acd0
 RUN \
 	DIR=/tmp/stb && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/nothings/stb/archive/${STB_VERSION}.tar.gz && \
@@ -134,7 +134,7 @@ RUN \
 	rm -rf /tmp/fakeroot/share/Wt/resources/themes
 
 ## Release Stage
-FROM		alpine:3.18 AS release
+FROM		alpine:3.19 AS release
 LABEL		maintainer="Emeric Poupon <itmfr@yahoo.fr>"
 
 ARG	RUNTIME_PACKAGES=" \
@@ -179,4 +179,3 @@ COPY	--from=build /tmp/fakeroot/share/lms/lms.conf /etc/lms.conf
 EXPOSE	5082
 
 ENTRYPOINT	["/usr/bin/lms"]
-

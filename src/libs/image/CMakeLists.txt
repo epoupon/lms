@@ -28,7 +28,8 @@ if (${IMAGE_LIBRARY} STREQUAL "StbImage")
 		impl/stb/JPEGImage.cpp
 		impl/stb/RawImage.cpp
 	)
-	target_compile_options(lmsimage PRIVATE "-DLMS_SUPPORT_IMAGE_STB")
+	target_compile_options(lmsimage PRIVATE "-DLMS_IMAGE_LIBRARY_STB_IMAGE")
+	target_compile_options(lmsimage PRIVATE "-DLMS_IMAGE_LIBRARY_STB_RESIZE_VERSION=${STB_IMAGE_RESIZE_VERSION}")
 	target_include_directories(lmsimage PRIVATE ${STB_IMAGE_INCLUDE_DIR})
 
 elseif (IMAGE_LIBRARY STREQUAL "GraphicsMagick++")
@@ -39,7 +40,7 @@ elseif (IMAGE_LIBRARY STREQUAL "GraphicsMagick++")
 		impl/graphicsmagick/JPEGImage.cpp
 		impl/graphicsmagick/RawImage.cpp
 	)
-	target_compile_options(lmsimage PRIVATE "-DLMS_SUPPORT_IMAGE_GM")
+	target_compile_options(lmsimage PRIVATE "-DLMS_IMAGE_LIBRARY_GM")
 	target_link_libraries(lmsimage PRIVATE PkgConfig::GraphicsMagick++)
 
 else ()
