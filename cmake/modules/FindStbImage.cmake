@@ -1,4 +1,9 @@
 find_path(STB_IMAGE_INCLUDE_DIR stb_image.h PATH_SUFFIXES stb)
+if (STB_IMAGE_INCLUDE_DIR)
+	message(STATUS "Found STB: ${STB_IMAGE_INCLUDE_DIR}")
+else()
+	message(STATUS "NOT found STB")
+endif()
 
 find_path(STB_IMAGE_RESIZE2_INCLUDE_DIR stb_image_resize2.h PATH_SUFFIXES stb)
 if(STB_IMAGE_RESIZE2_INCLUDE_DIR)
