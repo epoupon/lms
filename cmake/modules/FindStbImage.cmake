@@ -1,9 +1,20 @@
 find_path(STB_IMAGE_INCLUDE_DIR stb_image.h PATH_SUFFIXES stb)
-if (STB_IMAGE_INCLUDE_DIR)
-	message(STATUS "Found STB: ${STB_IMAGE_INCLUDE_DIR}")
+
+message("Current include paths:")
+foreach(path ${CMAKE_INCLUDE_PATH})
+    message(" - ${path}")
+endforeach()
+
+execute_process(COMMAND tree /usr/include
+                OUTPUT_VARIABLE tree_output
+                RESULT_VARIABLE tree_result)
+
+if(tree_result EQUAL 0)
+    message("Tree output for /usr/include:\n${tree_output}")
 else()
-	message(STATUS "NOT found STB")
+    message("Failed to execute 'tree /usr/include' command")
 endif()
+
 
 find_path(STB_IMAGE_RESIZE2_INCLUDE_DIR stb_image_resize2.h PATH_SUFFIXES stb)
 if(STB_IMAGE_RESIZE2_INCLUDE_DIR)
