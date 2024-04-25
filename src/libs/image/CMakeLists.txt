@@ -17,30 +17,28 @@ target_link_libraries(lmsimage PUBLIC
 	std::filesystem
 	)
 
-set(IMAGE_LIBRARY "StbImage" CACHE STRING "Image library")
-set_property(CACHE IMAGE_LIBRARY PROPERTY STRINGS "StbImage" "GraphicsMagick++")
+set(LMS_IMAGE_BACKEND "stb" CACHE STRING "Image library")
+set_property(CACHE LMS_IMAGE_BACKEND PROPERTY STRINGS "stb" "graphicsmagick")
 
-if (${IMAGE_LIBRARY} STREQUAL "StbImage")
+if (${LMS_IMAGE_BACKEND} STREQUAL "stb")
 	find_package(StbImage REQUIRED)
-	message(STATUS "Using StbImage (resize version ${STB_IMAGE_RESIZE_VERSION})")
+	message(STATUS "Using stb (resize version ${STB_IMAGE_RESIZE_VERSION})")
 
 	target_sources(lmsimage PRIVATE
 		impl/stb/JPEGImage.cpp
 		impl/stb/RawImage.cpp
 	)
-	target_compile_options(lmsimage PRIVATE "-DLMS_IMAGE_LIBRARY_STB_IMAGE")
-	target_compile_options(lmsimage PRIVATE "-DLMS_IMAGE_LIBRARY_STB_RESIZE_VERSION=${STB_IMAGE_RESIZE_VERSION}")
+	target_compile_options(lmsimage PRIVATE "-DSTB_IMAGE_RESIZE_VERSION=${STB_IMAGE_RESIZE_VERSION}")
 	target_include_directories(lmsimage PRIVATE ${STB_IMAGE_INCLUDE_DIR})
 
-elseif (IMAGE_LIBRARY STREQUAL "GraphicsMagick++")
+elseif (${LMS_IMAGE_BACKEND} STREQUAL "graphicsmagick")
 	pkg_check_modules(GraphicsMagick++ REQUIRED IMPORTED_TARGET GraphicsMagick++)
-	message(STATUS "Using GraphicsMagick++")
+	message(STATUS "Using graphicsmagick")
 
 	target_sources(lmsimage PRIVATE
 		impl/graphicsmagick/JPEGImage.cpp
 		impl/graphicsmagick/RawImage.cpp
 	)
-	target_compile_options(lmsimage PRIVATE "-DLMS_IMAGE_LIBRARY_GM")
 	target_link_libraries(lmsimage PRIVATE PkgConfig::GraphicsMagick++)
 
 else ()

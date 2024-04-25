@@ -19,10 +19,6 @@
 
 #pragma once
 
-#ifndef LMS_SUPPORT_IMAGE_GM
-#error "Bad configuration"
-#endif
-
 #include <Magick++.h>
 
 #include <cstddef>
