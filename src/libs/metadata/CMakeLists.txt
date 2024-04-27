@@ -1,3 +1,4 @@
+pkg_check_modules(Taglib REQUIRED IMPORTED_TARGET taglib)
 
 if(BUILD_TESTING)
 	add_subdirectory(test)

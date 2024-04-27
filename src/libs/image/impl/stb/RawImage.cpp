@@ -28,7 +28,13 @@
 #define STBI_FAILURE_USERMSG
 
 #include <stb_image.h>
+#if STB_IMAGE_RESIZE_VERSION == 1
 #include <stb_image_resize.h>
+#elif STB_IMAGE_RESIZE_VERSION == 2
+#include <stb_image_resize2.h>
+#else
+#error "Unhandled STB image resize version"!
+#endif
 
 #include "core/ITraceLogger.hpp"
 #include "image/Exception.hpp"
@@ -94,9 +100,17 @@ namespace lms::image::STB
         if (!resizedData)
             throw Exception{ "Cannot allocate memory for resized image!" };
 
+#if STB_IMAGE_RESIZE_VERSION == 1
         if (::stbir_resize_uint8_srgb(reinterpret_cast<const unsigned char*>(_data.get()), _width, _height, 0,
             reinterpret_cast<unsigned char*>(resizedData.get()), width, height, 0,
             3, STBIR_ALPHA_CHANNEL_NONE, 0) == 0)
+#elif STB_IMAGE_RESIZE_VERSION == 2
+        if (::stbir_resize_uint8_srgb(reinterpret_cast<const unsigned char*>(_data.get()), _width, _height, 0,
+            reinterpret_cast<unsigned char*>(resizedData.get()), width, height, 0,
+            STBIR_RGB) == 0)
+#else
+    #error "Unhandled STB image resize version"!
+#endif
         {
             throw Exception{ "Failed to resize image:" + std::string{ ::stbi_failure_reason() } };
         }

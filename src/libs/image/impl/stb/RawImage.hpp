@@ -19,10 +19,6 @@
 
 #pragma once
 
-#ifndef LMS_SUPPORT_IMAGE_STB
-#error "Bad configuration"
-#endif
-
 #include <cstddef>
 #include <filesystem>
 

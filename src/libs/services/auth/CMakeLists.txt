@@ -27,6 +27,22 @@ target_link_libraries(lmsauth PUBLIC
 	Boost::system
 	Wt::Wt
 	)
+	
+# PAM
+option(USE_PAM "Use the PAM backend authentication API" ON)
+if (USE_PAM)
+	find_package(PAM QUIET)
+	if (USE_PAM AND NOT PAM_FOUND)
+		message(WARNING "PAM library not found: disabling")
+		set(USE_PAM OFF)
+	endif ()
+endif ()
+
+if (USE_PAM)
+	message(STATUS "Using PAM authentication backend")
+else ()
+	message(STATUS "NOT using PAM authentication backend")
+endif ()
 
 if (USE_PAM)
 	target_compile_options(lmsauth PRIVATE "-DLMS_SUPPORT_PAM")

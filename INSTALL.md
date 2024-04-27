@@ -54,7 +54,7 @@ cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
 ```
 __Notes__:
 * you can customize the installation directory using `-DCMAKE_INSTALL_PREFIX=path` (defaults to `/usr/local`).
-* you can customize the image library using `-DIMAGE_LIBRARY=<STB|GraphicsMagick++>`
+* you can customize the image library using `-DLMS_IMAGE_BACKEND=<stb|graphicsmagick>` (defaults to `stb`)
 ```sh
 make
 ```
