@@ -13,6 +13,7 @@ add_executable(test-database
 	TrackBookmark.cpp
 	TrackFeatures.cpp
 	TrackList.cpp
+	User.cpp
 	)
 
 target_link_libraries(test-database PRIVATE

@@ -61,6 +61,18 @@ namespace lms::db
         return utils::execRangeQuery<UserId>(query, params.range);
     }
 
+    void User::find(Session& session, const FindParameters& params, const std::function<void(const User::pointer&)>& func)
+    {
+        auto query{ session.getDboSession()->find<User>() };
+
+        if (params.scrobblingBackend)
+            query.where("scrobbling_backend = ?").bind(*params.scrobblingBackend);
+        if (params.feedbackBackend)
+            query.where("feedback_backend = ?").bind(*params.feedbackBackend);
+
+        return utils::forEachQueryRangeResult(query, params.range, func);
+    }
+
     User::pointer User::findDemoUser(Session& session)
     {
         session.checkReadTransaction();

@@ -72,6 +72,7 @@ namespace lms::db
         static pointer              find(Session& session, UserId id);
         static pointer              find(Session& session, std::string_view loginName);
         static RangeResults<UserId> find(Session& session, const FindParameters& params);
+        static void                 find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
         static pointer              findDemoUser(Session& session);
 
         // accessors
