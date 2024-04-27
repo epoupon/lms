@@ -334,13 +334,9 @@ namespace lms::api::subsonic
 
             auto transaction{ context.dbSession.createReadTransaction() };
 
-            User::pointer user{ User::find(context.dbSession, context.userId) };
-            if (!user)
-                throw UserNotAuthorizedError{};
-
-            findRequestedArtists(context, id3, keywords, mediaLibrary, user, searchResultNode);
-            findRequestedAlbums(context, id3, keywords, mediaLibrary, user, searchResultNode);
-            findRequestedTracks(context, keywords, mediaLibrary, user, searchResultNode);
+            findRequestedArtists(context, id3, keywords, mediaLibrary, context.user, searchResultNode);
+            findRequestedAlbums(context, id3, keywords, mediaLibrary, context.user, searchResultNode);
+            findRequestedTracks(context, keywords, mediaLibrary, context.user, searchResultNode);
 
             return response;
         }

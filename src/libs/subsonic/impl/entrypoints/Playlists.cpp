@@ -40,7 +40,7 @@ namespace lms::api::subsonic
         Response::Node& playlistsNode{ response.createNode("playlists") };
 
         TrackList::FindParameters params;
-        params.setUser(context.userId);
+        params.setUser(context.user->getId());
         params.setType(TrackListType::Playlist);
 
         auto tracklistIds{ TrackList::find(context.dbSession, params) };
@@ -60,10 +60,6 @@ namespace lms::api::subsonic
 
         auto transaction{ context.dbSession.createReadTransaction() };
 
-        User::pointer user{ User::find(context.dbSession, context.userId) };
-        if (!user)
-            throw UserNotAuthorizedError{};
-
         TrackList::pointer tracklist{ TrackList::find(context.dbSession, trackListId) };
         if (!tracklist)
             throw RequestedDataNotFoundError{};
@@ -73,7 +69,7 @@ namespace lms::api::subsonic
 
         auto entries{ tracklist->getEntries() };
         for (const TrackListEntry::pointer& entry : entries.results)
-            playlistNode.addArrayChild("entry", createSongNode(context, entry->getTrack(), user));
+            playlistNode.addArrayChild("entry", createSongNode(context, entry->getTrack(), context.user));
 
         response.addNode("playlist", std::move(playlistNode));
 
@@ -93,16 +89,12 @@ namespace lms::api::subsonic
 
         auto transaction{ context.dbSession.createWriteTransaction() };
 
-        User::pointer user{ User::find(context.dbSession, context.userId) };
-        if (!user)
-            throw UserNotAuthorizedError{};
-
         TrackList::pointer tracklist;
         if (id)
         {
             tracklist = TrackList::find(context.dbSession, *id);
             if (!tracklist
-                || tracklist->getUser() != user
+                || tracklist->getUser() != context.user
                 || tracklist->getType() != TrackListType::Playlist)
             {
                 throw RequestedDataNotFoundError{};
@@ -113,7 +105,7 @@ namespace lms::api::subsonic
         }
         else
         {
-            tracklist = context.dbSession.create<TrackList>(*name, TrackListType::Playlist, false, user);
+            tracklist = context.dbSession.create<TrackList>(*name, TrackListType::Playlist, false, context.user);
         }
 
         for (const TrackId trackId : trackIds)
@@ -130,7 +122,7 @@ namespace lms::api::subsonic
 
         auto entries{ tracklist->getEntries() };
         for (const TrackListEntry::pointer& entry : entries.results)
-            playlistNode.addArrayChild("entry", createSongNode(context, entry->getTrack(), user));
+            playlistNode.addArrayChild("entry", createSongNode(context, entry->getTrack(), context.user));
 
         response.addNode("playlist", std::move(playlistNode));
 
@@ -151,13 +143,9 @@ namespace lms::api::subsonic
 
         auto transaction{ context.dbSession.createWriteTransaction() };
 
-        User::pointer user{ User::find(context.dbSession, context.userId) };
-        if (!user)
-            throw UserNotAuthorizedError{};
-
         TrackList::pointer tracklist{ TrackList::find(context.dbSession, id) };
         if (!tracklist
-            || tracklist->getUser() != user
+            || tracklist->getUser() != context.user
             || tracklist->getType() != TrackListType::Playlist)
         {
             throw RequestedDataNotFoundError{};
@@ -200,13 +188,9 @@ namespace lms::api::subsonic
 
         auto transaction{ context.dbSession.createWriteTransaction() };
 
-        User::pointer user{ User::find(context.dbSession, context.userId) };
-        if (!user)
-            throw UserNotAuthorizedError{};
-
         TrackList::pointer tracklist{ TrackList::find(context.dbSession, id) };
         if (!tracklist
-            || tracklist->getUser() != user
+            || tracklist->getUser() != context.user
             || tracklist->getType() != TrackListType::Playlist)
         {
             throw RequestedDataNotFoundError{};

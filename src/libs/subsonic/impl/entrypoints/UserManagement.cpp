@@ -15,11 +15,7 @@ namespace lms::api::subsonic
     namespace {
         void checkUserIsMySelfOrAdmin(RequestContext& context, const std::string& username)
         {
-            User::pointer currentUser{ User::find(context.dbSession, context.userId) };
-            if (!currentUser)
-                throw RequestedDataNotFoundError{};
-
-            if (currentUser->getLoginName() != username && !currentUser->isAdmin())
+            if (context.user->getLoginName() != username && !context.user->isAdmin())
                 throw UserNotAuthorizedError{};
         }
     }
@@ -44,17 +40,14 @@ namespace lms::api::subsonic
 
     Response handleGetUsersRequest(RequestContext& context)
     {
-        auto transaction{ context.dbSession.createReadTransaction() };
-
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
         Response::Node& usersNode{ response.createNode("users") };
 
-        const auto userIds{ User::find(context.dbSession, User::FindParameters {}) };
-        for (const UserId userId : userIds.results)
-        {
-            const User::pointer user{ User::find(context.dbSession, userId) };
-            usersNode.addArrayChild("user", createUserNode(user));
-        }
+        auto transaction{ context.dbSession.createReadTransaction() };
+        User::find(context.dbSession, User::FindParameters{}, [&](const User::pointer& user)
+            {
+                usersNode.addArrayChild("user", createUserNode(user));
+            });
 
         return response;
     }
@@ -77,13 +70,13 @@ namespace lms::api::subsonic
             userId = user->getId();
         }
 
-        auto removeCreatedUser{ [&]()
-        {
-            auto transaction {context.dbSession.createWriteTransaction()};
-            User::pointer user {User::find(context.dbSession, userId)};
-            if (user)
-                user.remove();
-        } };
+        auto removeCreatedUser{ [&]
+            {
+                auto transaction {context.dbSession.createWriteTransaction()};
+                User::pointer user{ User::find(context.dbSession, userId) };
+                if (user)
+                    user.remove();
+            } };
 
         try
         {
@@ -119,7 +112,7 @@ namespace lms::api::subsonic
             throw RequestedDataNotFoundError{};
 
         // cannot delete ourself
-        if (user->getId() == context.userId)
+        if (user->getId() == context.user->getId())
             throw UserNotAuthorizedError{};
 
         user.remove();

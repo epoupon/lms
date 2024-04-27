@@ -129,10 +129,6 @@ namespace lms::api::subsonic
 
             auto transaction{ context.dbSession.createReadTransaction() };
 
-            const User::pointer user{ User::find(context.dbSession, context.userId) };
-            if (!user)
-                throw UserNotAuthorizedError{};
-
             const auto track{ Track::find(context.dbSession, id) };
             if (!track)
                 throw RequestedDataNotFoundError{};
@@ -147,8 +143,8 @@ namespace lms::api::subsonic
             std::optional<av::transcoding::OutputFormat> requestedFormat{ subsonicStreamFormatToAvOutputFormat(format) };
             if (!requestedFormat)
             {
-                if (user->getSubsonicEnableTranscodingByDefault())
-                    requestedFormat = userTranscodeFormatToAvFormat(user->getSubsonicDefaultTranscodingOutputFormat());
+                if (context.user->getSubsonicEnableTranscodingByDefault())
+                    requestedFormat = userTranscodeFormatToAvFormat(context.user->getSubsonicDefaultTranscodingOutputFormat());
             }
 
             if (!requestedFormat && (maxBitRate == 0 || track->getBitrate() <= maxBitRate ))
@@ -172,9 +168,9 @@ namespace lms::api::subsonic
             }
             
             if (!requestedFormat)
-                requestedFormat = userTranscodeFormatToAvFormat(user->getSubsonicDefaultTranscodingOutputFormat());
+                requestedFormat = userTranscodeFormatToAvFormat(context.user->getSubsonicDefaultTranscodingOutputFormat());
             if (!bitrate)
-                bitrate = std::min<std::size_t>(user->getSubsonicDefaultTranscodingOutputBitrate(), maxBitRate);
+                bitrate = std::min<std::size_t>(context.user->getSubsonicDefaultTranscodingOutputBitrate(), maxBitRate);
 
             av::transcoding::OutputParameters& outputParameters{ parameters.outputParameters.emplace() };
 
