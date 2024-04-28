@@ -35,6 +35,79 @@
 
 namespace lms::db
 {
+    namespace
+    {
+        template <typename ResultType>
+        Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const TrackList::FindParameters& params)
+        {
+            auto query{ session.getDboSession()->query<ResultType>("SELECT DISTINCT " + std::string{ itemToSelect } + " FROM tracklist t_l") };
+
+            if (!params.clusters.empty() || params.mediaLibrary.isValid())
+                query.join("tracklist_entry t_l_e ON t_l_e.tracklist_id = t_l.id");
+
+            if (params.mediaLibrary.isValid())
+                query.join("track t ON t.id = t_l_e.track_id");
+
+            if (params.mediaLibrary.isValid())
+                query.where("t.media_library_id = ?").bind(params.mediaLibrary);
+
+            if (params.user.isValid())
+                query.where("t_l.user_id = ?").bind(params.user);
+
+            if (params.type)
+                query.where("t_l.type = ?").bind(*params.type);
+
+            if (!params.clusters.empty())
+            {
+                std::ostringstream oss;
+                oss << "t_l_e.track_id IN (SELECT DISTINCT t.id FROM track t"
+                    " INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
+                    " INNER JOIN cluster c ON c.id = t_c.cluster_id";
+
+                WhereClause clusterClause;
+                for (const ClusterId clusterId : params.clusters)
+                {
+                    clusterClause.Or(WhereClause("c.id = ?"));
+                    query.bind(clusterId);
+                }
+
+                oss << " " << clusterClause.get();
+                oss << " GROUP BY t.id HAVING COUNT(*) = " << params.clusters.size() << ")";
+
+                query.where(oss.str());
+            }
+
+            switch (params.sortMethod)
+            {
+            case TrackListSortMethod::None:
+                break;
+            case TrackListSortMethod::Name:
+                query.orderBy("t_l.name COLLATE NOCASE");
+                break;
+            case TrackListSortMethod::LastModifiedDesc:
+                query.orderBy("t_l.last_modified_date_time DESC");
+                break;
+            }
+
+            return query;
+        }
+
+        template <typename ResultType>
+        Wt::Dbo::Query<ResultType> createQuery(Session& session, const TrackList::FindParameters& params)
+        {
+            std::string_view itemToSelect;
+
+            if constexpr (std::is_same_v<ResultType, TrackListId>)
+                itemToSelect = "t_l.id";
+            else if constexpr (std::is_same_v<ResultType, Wt::Dbo::ptr<TrackList>>)
+                itemToSelect = "t_l";
+            else
+                static_assert("Unhandled type");
+
+            return createQuery<ResultType>(session, itemToSelect, params);
+        }
+    }
+
     TrackList::TrackList(std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user)
         : _name{ name }
         , _type{ type }
@@ -58,7 +131,6 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM tracklist"));
     }
 
-
     TrackList::pointer TrackList::find(Session& session, std::string_view name, TrackListType type, UserId userId)
     {
         session.checkReadTransaction();
@@ -73,51 +145,15 @@ namespace lms::db
     RangeResults<TrackListId> TrackList::find(Session& session, const FindParameters& params)
     {
         session.checkReadTransaction();
-
-        auto query{ session.getDboSession()->query<TrackListId>("SELECT DISTINCT t_l.id FROM tracklist t_l") };
-
-        if (params.user.isValid())
-            query.where("t_l.user_id = ?").bind(params.user);
-
-        if (params.type)
-            query.where("t_l.type = ?").bind(*params.type);
-
-        if (!params.clusters.empty())
-        {
-            query.join("tracklist_entry t_l_e ON t_l_e.tracklist_id = t_l.id");
-            query.join("track t ON t.id = t_l_e.track_id");
-
-            std::ostringstream oss;
-            oss << "t.id IN (SELECT DISTINCT t.id FROM track t"
-                " INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
-                " INNER JOIN cluster c ON c.id = t_c.cluster_id";
-
-            WhereClause clusterClause;
-            for (const ClusterId clusterId : params.clusters)
-            {
-                clusterClause.Or(WhereClause("c.id = ?"));
-                query.bind(clusterId);
-            }
-
-            oss << " " << clusterClause.get();
-            oss << " GROUP BY t.id HAVING COUNT(*) = " << params.clusters.size() << ")";
-
-            query.where(oss.str());
-        }
-
-        switch (params.sortMethod)
-        {
-        case TrackListSortMethod::None:
-            break;
-        case TrackListSortMethod::Name:
-            query.orderBy("t_l.name COLLATE NOCASE");
-            break;
-        case TrackListSortMethod::LastModifiedDesc:
-            query.orderBy("t_l.last_modified_date_time DESC");
-            break;
-        }
-
+        auto query{ createQuery<TrackListId>(session, params) };
         return utils::execRangeQuery<TrackListId>(query, params.range);
+    }
+
+    void TrackList::find(Session& session, const FindParameters& params, const std::function<void(const TrackList::pointer&)>& func)
+    {
+        session.checkReadTransaction();
+        auto query{ createQuery<Wt::Dbo::ptr<TrackList>>(session, params) };
+        utils::forEachQueryRangeResult(query, params.range, func);
     }
 
     TrackList::pointer TrackList::find(Session& session, TrackListId id)

@@ -172,7 +172,6 @@ namespace lms::db
         _session.execute("CREATE INDEX IF NOT EXISTS auth_token_value_idx ON auth_token(value)");
 
         _session.execute("CREATE INDEX IF NOT EXISTS cluster_cluster_type_idx ON cluster(cluster_type_id)");
-        _session.execute("CREATE INDEX IF NOT EXISTS cluster_name_idx ON cluster(name)");
         _session.execute("CREATE INDEX IF NOT EXISTS cluster_type_name_idx ON cluster_type(name)");
 
         _session.execute("CREATE INDEX IF NOT EXISTS listen_backend_idx ON listen(backend)");

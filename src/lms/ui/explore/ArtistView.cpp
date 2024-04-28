@@ -138,7 +138,7 @@ namespace lms::ui
                 for (const db::Cluster::pointer& cluster : clusters)
                 {
                     const db::ClusterId clusterId = cluster->getId();
-                    Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createCluster(clusterId)) };
+                    Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterCluster(clusterId)) };
                     entry->clicked().connect([this, clusterId]
                         {
                             _filters.add(clusterId);
@@ -198,7 +198,8 @@ namespace lms::ui
         _releaseContainers.clear();
 
         Release::FindParameters params;
-        params.setClusters(_filters.getClusterIds());
+        params.setClusters(_filters.getClusters());
+        params.setMediaLibrary(_filters.getMediaLibrary());
         params.setArtist(_artistId, { TrackArtistLinkType::ReleaseArtist }, {});
         params.setSortMethod(ReleaseSortMethod::OriginalDateDesc);
 
@@ -257,7 +258,8 @@ namespace lms::ui
         _appearsOnReleaseContainer = {};
 
         Release::FindParameters params;
-        params.setClusters(_filters.getClusterIds());
+        params.setClusters(_filters.getClusters());
+        params.setMediaLibrary(_filters.getMediaLibrary());
         params.setArtist(_artistId, types, { TrackArtistLinkType::ReleaseArtist });
         params.setSortMethod(ReleaseSortMethod::OriginalDateDesc);
 
@@ -343,7 +345,8 @@ namespace lms::ui
         const Range range{ static_cast<std::size_t>(_trackContainer->getCount()), _tracksBatchSize };
 
         Track::FindParameters params;
-        params.setClusters(_filters.getClusterIds());
+        params.setClusters(_filters.getClusters());
+        params.setMediaLibrary(_filters.getMediaLibrary());
         params.setArtist(_artistId);
         params.setRange(range);
         params.setSortMethod(TrackSortMethod::Name);

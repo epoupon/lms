@@ -88,7 +88,7 @@ namespace lms::api::subsonic
                     if (const Cluster::pointer cluster{ clusterType->getCluster(genre) })
                     {
                         Release::FindParameters params;
-                        params.setClusters({ cluster->getId() });
+                        params.setClusters(std::initializer_list<ClusterId>{ cluster->getId() });
                         params.setSortMethod(ReleaseSortMethod::Name);
                         params.setRange(range);
                         params.setMediaLibrary(mediaLibraryId);
@@ -280,7 +280,7 @@ namespace lms::api::subsonic
         Response::Node& songsByGenreNode{ response.createNode("songsByGenre") };
 
         Track::FindParameters params;
-        params.setClusters({ cluster->getId() });
+        params.setClusters(std::initializer_list<ClusterId>{ cluster->getId() });
         params.setRange(Range{ offset, count });
         params.setMediaLibrary(mediaLibrary);
 

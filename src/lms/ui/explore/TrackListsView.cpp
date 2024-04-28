@@ -101,7 +101,8 @@ namespace lms::ui
         auto transaction{ session.createReadTransaction() };
 
         TrackList::FindParameters params;
-        params.setClusters(_filters.getClusterIds());
+        params.setClusters(_filters.getClusters());
+        params.setMediaLibrary(_filters.getMediaLibrary());
         params.setUser(LmsApp->getUserId());
         params.setType(TrackListType::Playlist);
         params.setRange(range);

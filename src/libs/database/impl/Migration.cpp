@@ -34,7 +34,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 57 };
+        static constexpr Version LMS_DATABASE_VERSION{ 58 };
     }
 
     VersionInfo::VersionInfo()
@@ -455,9 +455,15 @@ SELECT
     void migrateFromV56(Session& session)
     {
         // Make sure we remove all the previoulsy created index, the createIndexesIfNeeded will recreate them all
-        std::vector<std::string> indexeNames{ utils::fetchQueryResults(session.getDboSession()->query<std::string>(R"(SELECT name FROM sqlite_master  WHERE type = 'index' AND name LIKE '%_idx')")) };
+        std::vector<std::string> indexeNames{ utils::fetchQueryResults(session.getDboSession()->query<std::string>(R"(SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE '%_idx')")) };
         for (const auto& indexName : indexeNames)
             session.getDboSession()->execute("DROP INDEX " + indexName);
+    }
+
+    void migrateFromV57(Session& session)
+    {
+        // useless index
+        session.getDboSession()->execute("DROP INDEX cluster_name_idx");
     }
 
     bool doDbMigration(Session& session)
@@ -494,6 +500,7 @@ SELECT
             {54, migrateFromV54},
             {55, migrateFromV55},
             {56, migrateFromV56},
+            {57, migrateFromV57},
         };
 
         bool migrationPerformed{};

@@ -46,12 +46,14 @@ namespace lms::db
         struct FindParameters
         {
             std::optional<Range>    range;
+            ClusterSortMethod       sortMethod;
             ClusterTypeId           clusterType;    // if non empty, clusters that belong to this cluster type
             std::string             clusterTypeName; // if non empty, clusters that belong to this cluster type
             TrackId                 track;        // if set, clusters involved in this track
             ReleaseId               release;      // if set, clusters involved in this release
 
             FindParameters& setRange(std::optional<Range> _range) { range = _range; return *this; }
+            FindParameters& setSortMethod(ClusterSortMethod _method) { sortMethod = _method; return *this; }
             FindParameters& setClusterType(ClusterTypeId _clusterType) { clusterType = _clusterType; return *this; }
             FindParameters& setClusterTypeName(std::string_view _name) { clusterTypeName = _name; return *this; }
             FindParameters& setTrack(TrackId _track) { track = _track; return *this; }
@@ -119,6 +121,7 @@ namespace lms::db
         // Getters
         static std::size_t					getCount(Session& session);
         static RangeResults<ClusterTypeId>	findIds(Session& session, std::optional<Range> range = std::nullopt);
+        static void                         find(Session& session, const std::function<void(const pointer&)>& func);
         static pointer 						find(Session& session, std::string_view name);
         static pointer						find(Session& session, ClusterTypeId id);
         static RangeResults<ClusterTypeId>	findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);

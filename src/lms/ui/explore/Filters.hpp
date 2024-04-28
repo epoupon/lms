@@ -19,12 +19,14 @@
 
 #pragma once
 
+#include <span>
 #include <vector>
 #include <Wt/WContainerWidget.h>
 #include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
 
 #include "database/ClusterId.hpp"
+#include "database/MediaLibraryId.hpp"
 
 #include "Filters.hpp"
 
@@ -35,17 +37,24 @@ namespace lms::ui
     public:
         Filters();
 
-        const std::vector<db::ClusterId>& getClusterIds() const { return _clusterIds; }
+        std::span<const db::ClusterId> getClusters() const { return _clusterIds; }
+        db::MediaLibraryId getMediaLibrary() const { return _mediaLibraryId; }
+
         void add(db::ClusterId clusterId);
 
         Wt::Signal<>& updated() { return _sigUpdated; }
 
     private:
         void showDialog();
+        void set(db::MediaLibraryId mediaLibraryId);
+        void emitFilterAddedNotification();
 
-        Wt::WContainerWidget* _filters;
+        Wt::WContainerWidget* _filters{};
         Wt::Signal<> _sigUpdated;
         std::vector<db::ClusterId> _clusterIds;
+
+        Wt::WInteractWidget* _mediaLibraryFilter{};
+        db::MediaLibraryId _mediaLibraryId;
     };
 } // namespace lms::ui
 

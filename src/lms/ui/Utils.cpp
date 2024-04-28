@@ -80,7 +80,18 @@ namespace lms::ui::utils
         return cover;
     }
 
-    std::unique_ptr<Wt::WInteractWidget> createCluster(db::ClusterId clusterId, bool canDelete)
+    std::unique_ptr<Wt::WInteractWidget> createFilter(const Wt::WString& name, const Wt::WString& tooltip, std::string_view colorStyleClass, bool canDelete)
+    {
+        auto res{ std::make_unique<Wt::WText>(Wt::WString{ canDelete ? "<i class=\"fa fa-times-circle\"></i> " : "" } + name, Wt::TextFormat::UnsafeXHTML) };
+
+        res->setStyleClass("Lms-badge-cluster badge me-1 " + std::string{ colorStyleClass }); // HACK
+        res->setToolTip(tooltip, Wt::TextFormat::Plain);
+        res->setInline(true);
+
+        return res;
+    }
+
+    std::unique_ptr<Wt::WInteractWidget> createFilterCluster(db::ClusterId clusterId, bool canDelete)
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
@@ -88,7 +99,7 @@ namespace lms::ui::utils
         if (!cluster)
             return {};
 
-        auto getStyleClass{ [](const db::Cluster::pointer& cluster) -> const char*
+        auto getStyleClass{ [](const db::Cluster::pointer& cluster) -> std::string_view
         {
             switch (cluster->getType()->getId().getValue() % 8)
             {
@@ -105,14 +116,33 @@ namespace lms::ui::utils
             return "bg-primary";
         } };
 
-        const std::string styleClass{ getStyleClass(cluster) };
-        auto res{ std::make_unique<Wt::WText>(std::string {} + (canDelete ? "<i class=\"fa fa-times-circle\"></i> " : "") + Wt::WString::fromUTF8(std::string{ cluster->getName() }), Wt::TextFormat::UnsafeXHTML) };
+        return createFilter(Wt::WString::fromUTF8(std::string{ cluster->getName() }), Wt::WString::fromUTF8(std::string{ cluster->getType()->getName() }), getStyleClass(cluster), canDelete);
+    }
 
-        res->setStyleClass("Lms-badge-cluster badge me-1 " + styleClass); // HACK
-        res->setToolTip(std::string{ cluster->getType()->getName() }, Wt::TextFormat::Plain);
-        res->setInline(true);
+    std::unique_ptr<Wt::WContainerWidget> createFilterClustersForTrack(db::Track::pointer track, Filters& filters)
+    {
+        using namespace db;
 
-        return res;
+        std::unique_ptr<Wt::WContainerWidget> clusterContainer{ std::make_unique<Wt::WContainerWidget>() };
+
+        // TODO: optimize this
+        const auto clusterTypes{ ClusterType::findIds(LmsApp->getDbSession()).results };
+        const auto clusterGroups{ track->getClusterGroups(clusterTypes, 3) };
+
+        for (const auto& clusters : clusterGroups)
+        {
+            for (const Cluster::pointer& cluster : clusters)
+            {
+                const ClusterId clusterId{ cluster->getId() };
+                Wt::WInteractWidget* entry{ clusterContainer->addWidget(createFilterCluster(clusterId)) };
+                entry->clicked().connect([&filters, clusterId]
+                    {
+                        filters.add(clusterId);
+                    });
+            }
+        }
+
+        return clusterContainer;
     }
 
     std::unique_ptr<Wt::WContainerWidget> createArtistAnchorList(const std::vector<db::ArtistId>& artistIds, std::string_view cssAnchorClass)
@@ -277,31 +307,5 @@ namespace lms::ui::utils
         }
 
         return res;
-    }
-
-    std::unique_ptr<Wt::WContainerWidget> createClustersForTrack(db::Track::pointer track, Filters& filters)
-    {
-        using namespace db;
-
-        std::unique_ptr<Wt::WContainerWidget> clusterContainer{ std::make_unique<Wt::WContainerWidget>() };
-
-        // TODO: optimize this
-        const auto clusterTypes{ ClusterType::findIds(LmsApp->getDbSession()).results };
-        const auto clusterGroups{ track->getClusterGroups(clusterTypes, 3) };
-
-        for (const auto& clusters : clusterGroups)
-        {
-            for (const Cluster::pointer& cluster : clusters)
-            {
-                const ClusterId clusterId{ cluster->getId() };
-                Wt::WInteractWidget* entry{ clusterContainer->addWidget(createCluster(clusterId)) };
-                entry->clicked().connect([&filters, clusterId]
-                    {
-                        filters.add(clusterId);
-                    });
-            }
-        }
-
-        return clusterContainer;
     }
 }

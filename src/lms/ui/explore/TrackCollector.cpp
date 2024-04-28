@@ -53,7 +53,8 @@ namespace lms::ui
         case Mode::Starred:
         {
             feedback::IFeedbackService::FindParameters params;
-            params.setClusters(getFilters().getClusterIds());
+            params.setClusters(getFilters().getClusters());
+            params.setMediaLibrary(getFilters().getMediaLibrary());
             params.setRange(range);
             params.setUser(LmsApp->getUserId());
             tracks = feedbackService.findStarredTracks(params);
@@ -64,7 +65,8 @@ namespace lms::ui
         {
             scrobbling::IScrobblingService::FindParameters params;
             params.setUser(LmsApp->getUserId());
-            params.setClusters(getFilters().getClusterIds());
+            params.setClusters(getFilters().getClusters());
+            params.setMediaLibrary(getFilters().getMediaLibrary());
             params.setRange(range);
 
             tracks = scrobblingService.getRecentTracks(params);
@@ -75,7 +77,8 @@ namespace lms::ui
         {
             scrobbling::IScrobblingService::FindParameters params;
             params.setUser(LmsApp->getUserId());
-            params.setClusters(getFilters().getClusterIds());
+            params.setClusters(getFilters().getClusters());
+            params.setMediaLibrary(getFilters().getMediaLibrary());
             params.setRange(range);
 
             tracks = scrobblingService.getTopTracks(params);
@@ -85,7 +88,8 @@ namespace lms::ui
         case Mode::RecentlyAdded:
         {
             Track::FindParameters params;
-            params.setClusters(getFilters().getClusterIds());
+            params.setClusters(getFilters().getClusters());
+            params.setMediaLibrary(getFilters().getMediaLibrary());
             params.setSortMethod(TrackSortMethod::LastWritten);
             params.setRange(range);
 
@@ -99,7 +103,8 @@ namespace lms::ui
         case Mode::Search:
         {
             Track::FindParameters params;
-            params.setClusters(getFilters().getClusterIds());
+            params.setClusters(getFilters().getClusters());
+            params.setMediaLibrary(getFilters().getMediaLibrary());
             params.setKeywords(getSearchKeywords());
             params.setRange(range);
 
@@ -113,7 +118,8 @@ namespace lms::ui
         case Mode::All:
         {
             Track::FindParameters params;
-            params.setClusters(getFilters().getClusterIds());
+            params.setClusters(getFilters().getClusters());
+            params.setMediaLibrary(getFilters().getMediaLibrary());
             params.setRange(range);
 
             {
@@ -137,7 +143,8 @@ namespace lms::ui
         if (!_randomTracks)
         {
             Track::FindParameters params;
-            params.setClusters(getFilters().getClusterIds());
+            params.setClusters(getFilters().getClusters());
+            params.setMediaLibrary(getFilters().getMediaLibrary());
             params.setSortMethod(TrackSortMethod::Random);
             params.setRange(Range{ 0, getMaxCount() });
 

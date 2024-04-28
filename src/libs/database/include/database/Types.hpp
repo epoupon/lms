@@ -116,6 +116,12 @@ namespace lms::db
         StarredDateDesc,
     };
 
+    enum class ClusterSortMethod
+    {
+        None,
+        Name,
+    };
+
     enum class ReleaseSortMethod
     {
         None,

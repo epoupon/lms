@@ -138,7 +138,7 @@ namespace lms::ui::TrackListHelpers
 
         trackInfo->bindInt("playcount", core::Service<scrobbling::IScrobblingService>::get()->getCount(LmsApp->getUserId(), track->getId()));
 
-        Wt::WContainerWidget* clusterContainer{ trackInfo->bindWidget("clusters", utils::createClustersForTrack(track, filters)) };
+        Wt::WContainerWidget* clusterContainer{ trackInfo->bindWidget("clusters", utils::createFilterClustersForTrack(track, filters)) };
         if (clusterContainer->count() > 0)
             trackInfo->setCondition("if-has-clusters", true);
 

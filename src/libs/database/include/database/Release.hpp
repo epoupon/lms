@@ -21,6 +21,7 @@
 
 #include <filesystem>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -96,7 +97,7 @@ namespace lms::db
             std::string                         releaseType;    // If set, albums that has this release type
             MediaLibraryId                      mediaLibrary;   // If set, releases that has at least a track in this library
 
-            FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
+            FindParameters& setClusters(std::span<const ClusterId> _clusters) { clusters.assign(std::cbegin(_clusters), std::cend(_clusters)); return *this; }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
             FindParameters& setSortMethod(ReleaseSortMethod _sortMethod) { sortMethod = _sortMethod; return *this; }
             FindParameters& setRange(std::optional<Range> _range) { range = _range; return *this; }

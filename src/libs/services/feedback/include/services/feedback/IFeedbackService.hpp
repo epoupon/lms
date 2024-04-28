@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <optional>
+#include <span>
 #include <boost/asio/io_service.hpp>
 #include <Wt/WDateTime.h>
 
@@ -57,7 +58,7 @@ namespace lms::feedback
             db::MediaLibraryId                      library;
 
             FindParameters& setUser(const db::UserId _user) { user = _user; return *this; }
-            FindParameters& setClusters(const std::vector<db::ClusterId>& _clusters) { clusters = _clusters; return *this; }
+            FindParameters& setClusters(std::span<const db::ClusterId> _clusters) { clusters.assign(std::cbegin(_clusters), std::cend(_clusters)); return *this; }
             FindParameters& setRange(std::optional<db::Range> _range) { range = _range; return *this; }
             FindParameters& setMediaLibrary(db::MediaLibraryId _library) { library  = _library; return *this; }
         };

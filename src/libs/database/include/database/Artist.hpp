@@ -20,6 +20,7 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -67,7 +68,7 @@ namespace lms::db
             ReleaseId							release;	// artists involved in this release
             MediaLibraryId                      mediaLibrary; // artists that belong to this library
 
-            FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
+            FindParameters& setClusters(std::span<const ClusterId> _clusters) { clusters.assign(std::cbegin(_clusters), std::cend(_clusters)); return *this; }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
             FindParameters& setLinkType(std::optional<TrackArtistLinkType> _linkType) { linkType = _linkType; return *this; }
             FindParameters& setSortMethod(ArtistSortMethod _sortMethod) { sortMethod = _sortMethod; return *this; }
