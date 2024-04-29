@@ -148,11 +148,6 @@ namespace lms::scanner
             });
     }
 
-    void ScannerService::requestStop()
-    {
-        abortScan();
-    }
-
     void ScannerService::requestReload()
     {
         abortScan();

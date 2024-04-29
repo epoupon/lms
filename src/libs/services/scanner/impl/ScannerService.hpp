@@ -50,7 +50,6 @@ namespace lms::scanner
         ScannerService(const ScannerService&) = delete;
         ScannerService& operator=(const ScannerService&) = delete;
 
-        void requestStop() override;
         void requestReload() override;
         void requestImmediateScan(const ScanOptions& scanOptions) override;
 

@@ -38,9 +38,7 @@ namespace lms::scanner
         virtual ~IScannerService() = default;
 
         // Async requests
-        virtual void requestStop() = 0;
-        virtual void requestReload() = 0;
-
+        virtual void requestReload() = 0; // will stop/reschedule scan
         virtual void requestImmediateScan(const ScanOptions& options = {}) = 0;
 
         enum class State
