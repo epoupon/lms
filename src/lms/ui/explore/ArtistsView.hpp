@@ -51,7 +51,7 @@ namespace lms::ui
         InfiniteScrollingContainer* _container{};
         ArtistCollector				_artistCollector;
         static constexpr ArtistCollector::Mode _defaultSortMode{ ArtistCollector::Mode::Random };
-        static constexpr std::optional<db::TrackArtistLinkType> _defaultLinkType;
+        static constexpr std::optional<db::TrackArtistLinkType> _defaultLinkType{ std::nullopt };
     };
 } // namespace lms::ui
 
