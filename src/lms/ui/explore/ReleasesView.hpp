@@ -38,6 +38,7 @@ namespace lms::ui
     private:
         void refreshView();
         void refreshView(ReleaseCollector::Mode mode);
+        void refreshView(const Wt::WString& searchText);
 
         void addSome();
         std::vector<db::ReleaseId> getAllReleases();

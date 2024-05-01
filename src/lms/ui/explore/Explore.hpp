@@ -34,7 +34,6 @@ namespace lms::ui
     public:
         Explore(Filters& filters, PlayQueue& playQueue);
 
-        void search(const Wt::WString& searchText);
         PlayQueueController& getPlayQueueController() { return _playQueueController; }
 
     private:

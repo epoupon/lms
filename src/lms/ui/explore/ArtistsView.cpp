@@ -38,10 +38,18 @@ namespace lms::ui
     using namespace db;
 
     Artists::Artists(Filters& filters)
-        : Wt::WTemplate{ Wt::WString::tr("Lms.Explore.Artists.template") }
+        : Template{ Wt::WString::tr("Lms.Explore.Artists.template") }
         , _artistCollector{ filters, _defaultSortMode, _maxCount }
     {
         addFunction("tr", &Wt::WTemplate::Functions::tr);
+        addFunction("id", &Wt::WTemplate::Functions::id);
+
+        Wt::WLineEdit* searEdit{ bindNew<Wt::WLineEdit>("search") };
+        searEdit->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
+        searEdit->textInput().connect([this, searEdit]
+            {
+                refreshView(searEdit->text());
+            });
 
         SortModeSelector* sortModeSelector{ bindNew<SortModeSelector>("sort-mode", _defaultSortMode) };
         sortModeSelector->sortModeChanged.connect([this](ArtistCollector::Mode sortMode)
@@ -84,6 +92,12 @@ namespace lms::ui
     void Artists::refreshView(std::optional<TrackArtistLinkType> linkType)
     {
         _artistCollector.setArtistLinkType(linkType);
+        refreshView();
+    }
+
+    void Artists::refreshView(const Wt::WString& searchText)
+    {
+        _artistCollector.setSearch(searchText.toUTF8());
         refreshView();
     }
 

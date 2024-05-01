@@ -5,7 +5,7 @@
 
 <message id="Lms.Explore.Tracks.template">
 	<div class="d-flex justify-content-between align-items-center mb-3">
-		<div class="btn-group">
+		<div class="btn-group me-1">
 			${play-btn class="btn btn-primary"}
 			<button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"/>
 			<ul class="dropdown-menu">
@@ -14,7 +14,10 @@
 				<li>${play-shuffled class="dropdown-item"}</li>
 			</ul>
 		</div>
-		${sort-mode}
+		<div class="d-flex">
+			${search class="form-control me-1" type="search"}
+			${sort-mode}
+		</div>
 	</div>
 	${tracks}
 </message>

@@ -92,8 +92,8 @@ namespace lms::db
             UserId                              starringUser;				// only releases starred by this user
             std::optional<FeedbackBackend>      feedbackBackend;		    //    and for this backend
             ArtistId                            artist;						// only releases that involved this user
-            core::EnumSet<TrackArtistLinkType>        trackArtistLinkTypes; 			//    and for these link types
-            core::EnumSet<TrackArtistLinkType>        excludedTrackArtistLinkTypes; 	//    but not for these link types
+            core::EnumSet<TrackArtistLinkType>  trackArtistLinkTypes; 			//    and for these link types
+            core::EnumSet<TrackArtistLinkType>  excludedTrackArtistLinkTypes; 	//    but not for these link types
             std::string                         releaseType;    // If set, albums that has this release type
             MediaLibraryId                      mediaLibrary;   // If set, releases that has at least a track in this library
 

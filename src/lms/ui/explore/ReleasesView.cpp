@@ -19,6 +19,7 @@
 
 #include "ReleasesView.hpp"
 
+#include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
 #include "database/Release.hpp"
@@ -43,6 +44,13 @@ namespace lms::ui
     {
         addFunction("tr", &Wt::WTemplate::Functions::tr);
         addFunction("id", &Wt::WTemplate::Functions::id);
+
+        Wt::WLineEdit* searEdit{ bindNew<Wt::WLineEdit>("search") };
+        searEdit->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
+        searEdit->textInput().connect([this, searEdit]
+            {
+                refreshView(searEdit->text());
+            });
 
         SortModeSelector* sortMode{ bindNew<SortModeSelector>("sort-mode", _defaultMode) };
         sortMode->sortModeChanged.connect([this](ReleaseCollector::Mode sortMode)
@@ -95,6 +103,12 @@ namespace lms::ui
     void Releases::refreshView(ReleaseCollector::Mode mode)
     {
         _releaseCollector.setMode(mode);
+        refreshView();
+    }
+
+    void Releases::refreshView(const Wt::WString& searchText)
+    {
+        _releaseCollector.setSearch(searchText.toUTF8());
         refreshView();
     }
 

@@ -26,6 +26,7 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
+#include "common/Template.hpp"
 #include "ArtistCollector.hpp"
 
 namespace lms::ui
@@ -33,7 +34,7 @@ namespace lms::ui
     class Filters;
     class InfiniteScrollingContainer;
 
-    class Artists : public Wt::WTemplate
+    class Artists : public Template
     {
     public:
         Artists(Filters& filters);
@@ -42,6 +43,7 @@ namespace lms::ui
         void refreshView();
         void refreshView(ArtistCollector::Mode mode);
         void refreshView(std::optional<db::TrackArtistLinkType> linkType);
+        void refreshView(const Wt::WString& searchText);
         void addSome();
 
         static constexpr std::size_t _batchSize{ 30 };

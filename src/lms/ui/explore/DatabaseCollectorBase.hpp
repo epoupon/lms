@@ -45,7 +45,6 @@ namespace lms::ui
             RecentlyPlayed,
             RecentlyAdded,
             MostPlayed,
-            Search,
             All
         };
 

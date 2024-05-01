@@ -53,6 +53,7 @@ namespace lms::ui
             params.setUser(LmsApp->getUserId());
             params.setClusters(getFilters().getClusters());
             params.setMediaLibrary(getFilters().getMediaLibrary());
+            params.setKeywords(getSearchKeywords());
             params.setRange(range);
             releases = feedbackService.findStarredReleases(params);
             break;
@@ -64,6 +65,7 @@ namespace lms::ui
             params.setUser(LmsApp->getUserId());
             params.setClusters(getFilters().getClusters());
             params.setMediaLibrary(getFilters().getMediaLibrary());
+            params.setKeywords(getSearchKeywords());
             params.setRange(range);
 
             releases = scrobblingService.getRecentReleases(params);
@@ -76,6 +78,7 @@ namespace lms::ui
             params.setUser(LmsApp->getUserId());
             params.setClusters(getFilters().getClusters());
             params.setMediaLibrary(getFilters().getMediaLibrary());
+            params.setKeywords(getSearchKeywords());
             params.setRange(range);
 
             releases = scrobblingService.getTopReleases(params);
@@ -87,22 +90,8 @@ namespace lms::ui
             Release::FindParameters params;
             params.setClusters(getFilters().getClusters());
             params.setMediaLibrary(getFilters().getMediaLibrary());
-            params.setSortMethod(ReleaseSortMethod::LastWritten);
-            params.setRange(range);
-
-            {
-                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                releases = Release::findIds(LmsApp->getDbSession(), params);
-            }
-            break;
-        }
-
-        case Mode::Search:
-        {
-            Release::FindParameters params;
-            params.setClusters(getFilters().getClusters());
-            params.setMediaLibrary(getFilters().getMediaLibrary());
             params.setKeywords(getSearchKeywords());
+            params.setSortMethod(ReleaseSortMethod::LastWritten);
             params.setRange(range);
 
             {
@@ -118,6 +107,7 @@ namespace lms::ui
             params.setClusters(getFilters().getClusters());
             params.setMediaLibrary(getFilters().getMediaLibrary());
             params.setSortMethod(ReleaseSortMethod::Name);
+            params.setKeywords(getSearchKeywords());
             params.setRange(range);
 
             {
@@ -143,6 +133,7 @@ namespace lms::ui
             Release::FindParameters params;
             params.setClusters(getFilters().getClusters());
             params.setMediaLibrary(getFilters().getMediaLibrary());
+            params.setKeywords(getSearchKeywords());
             params.setSortMethod(ReleaseSortMethod::Random);
             params.setRange(Range{ 0, getMaxCount() });
 

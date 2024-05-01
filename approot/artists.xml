@@ -4,8 +4,11 @@
 
 <message id="Lms.Explore.Artists.template">
 	<div class="d-flex justify-content-between align-items-center mb-3">
-		${link-type}
-		${sort-mode}
+		${link-type class="me-1"}
+		<div class="d-flex">
+			${search class="form-control me-1" type="search"}
+			${sort-mode}
+		</div>
 	</div>
 	${artists}
 </message>

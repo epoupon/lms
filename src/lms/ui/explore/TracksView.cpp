@@ -19,6 +19,7 @@
 
 #include "TracksView.hpp"
 
+#include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
 #include "database/Session.hpp"
@@ -44,6 +45,13 @@ namespace lms::ui
     {
         addFunction("tr", &Wt::WTemplate::Functions::tr);
         addFunction("id", &Wt::WTemplate::Functions::id);
+
+        Wt::WLineEdit* searEdit{ bindNew<Wt::WLineEdit>("search") };
+        searEdit->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
+        searEdit->textInput().connect([this, searEdit]
+            {
+                refreshView(searEdit->text());
+            });
 
         SortModeSelector* sortMode{ bindNew<SortModeSelector>("sort-mode", _defaultMode) };
         sortMode->sortModeChanged.connect([this](TrackCollector::Mode mode)
@@ -96,6 +104,12 @@ namespace lms::ui
     void Tracks::refreshView(TrackCollector::Mode mode)
     {
         _trackCollector.setMode(mode);
+        refreshView();
+    }
+
+    void Tracks::refreshView(const Wt::WString& searchText)
+    {
+        _trackCollector.setSearch(searchText.toUTF8());
         refreshView();
     }
 

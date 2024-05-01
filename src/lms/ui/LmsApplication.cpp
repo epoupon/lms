@@ -97,7 +97,6 @@ namespace lms::ui
             res->use(appRoot + "playqueue");
             res->use(appRoot + "release");
             res->use(appRoot + "releases");
-            res->use(appRoot + "search");
             res->use(appRoot + "settings");
             res->use(appRoot + "tracklist");
             res->use(appRoot + "tracklists");
@@ -139,7 +138,6 @@ namespace lms::ui
                 { "/artist",			    IdxExplore,			    false,	std::nullopt },
                 { "/releases",			    IdxExplore,			    false,	Wt::WString::tr("Lms.Explore.releases") },
                 { "/release",			    IdxExplore,			    false,	std::nullopt },
-                { "/search",			    IdxExplore,			    false,	Wt::WString::tr("Lms.Explore.search") },
                 { "/tracks",			    IdxExplore,			    false,	Wt::WString::tr("Lms.Explore.tracks") },
                 { "/tracklists",		    IdxExplore,			    false,	Wt::WString::tr("Lms.Explore.tracklists") },
                 { "/tracklist",			    IdxExplore,			    false,	std::nullopt },
@@ -435,9 +433,6 @@ namespace lms::ui
             logout->clicked().connect(this, &LmsApplication::logoutUser);
         }
 
-        Wt::WLineEdit* searchEdit{ navbar->bindNew<Wt::WLineEdit>("search") };
-        searchEdit->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
-
         if (LmsApp->getUserType() == db::UserType::ADMIN)
         {
             navbar->setCondition("if-is-admin", true);
@@ -461,17 +456,6 @@ namespace lms::ui
         Explore* explore{ mainStack->addNew<Explore>(*filters, *playQueue) };
         _playQueue = mainStack->addWidget(std::move(playQueue));
         mainStack->addNew<SettingsView>();
-
-        searchEdit->enterPressed().connect([this]
-            {
-                setInternalPath("/search", true);
-            });
-
-        searchEdit->textInput().connect([this, explore, searchEdit]
-            {
-                setInternalPath("/search", true);
-                explore->search(searchEdit->text());
-            });
 
         // Admin stuff
         if (getUserType() == db::UserType::ADMIN)

@@ -42,7 +42,6 @@ add_executable(lms
 	ui/explore/ReleasesView.cpp
 	ui/explore/ReleaseView.cpp
 	ui/explore/ReleaseTypes.cpp
-	ui/explore/SearchView.cpp
 	ui/explore/SortModeSelector.cpp
 	ui/explore/TrackArtistLinkTypeSelector.cpp
 	ui/explore/TrackCollector.cpp

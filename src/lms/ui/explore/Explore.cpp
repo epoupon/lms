@@ -27,7 +27,6 @@
 #include "Filters.hpp"
 #include "ReleasesView.hpp"
 #include "ReleaseView.hpp"
-#include "SearchView.hpp"
 #include "TrackListView.hpp"
 #include "TrackListsView.hpp"
 #include "TracksView.hpp"
@@ -46,7 +45,6 @@ namespace lms::ui
                 IdxTrackList,
                 IdxReleases,
                 IdxRelease,
-                IdxSearch,
                 IdxTracks,
             };
 
@@ -58,7 +56,6 @@ namespace lms::ui
                 { "/tracklist",		IdxTrackList },
                 { "/releases",		IdxReleases },
                 { "/release",		IdxRelease },
-                { "/search",		IdxSearch },
                 { "/tracks",		IdxTracks },
             };
 
@@ -103,10 +100,6 @@ namespace lms::ui
         auto release = std::make_unique<Release>(filters, _playQueueController);
         contentsStack->addWidget(std::move(release));
 
-        auto search = std::make_unique<SearchView>(filters, _playQueueController);
-        _search = search.get();
-        contentsStack->addWidget(std::move(search));
-
         auto tracks = std::make_unique<Tracks>(filters, _playQueueController);
         contentsStack->addWidget(std::move(tracks));
 
@@ -116,10 +109,5 @@ namespace lms::ui
             });
 
         handleContentsPathChange(contentsStack);
-    }
-
-    void Explore::search(const Wt::WString& searchText)
-    {
-        _search->refreshView(searchText);
     }
 } // namespace lms::ui

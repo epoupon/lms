@@ -54,11 +54,13 @@ namespace lms::feedback
         {
             db::UserId                              user;
             std::vector<db::ClusterId>              clusters;	// if non empty, at least one artist that belongs to these clusters
+            std::vector<std::string_view>   keywords; // if non empty, name must match all of these keywords
             std::optional<db::Range>                range;
             db::MediaLibraryId                      library;
 
             FindParameters& setUser(const db::UserId _user) { user = _user; return *this; }
             FindParameters& setClusters(std::span<const db::ClusterId> _clusters) { clusters.assign(std::cbegin(_clusters), std::cend(_clusters)); return *this; }
+            FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
             FindParameters& setRange(std::optional<db::Range> _range) { range = _range; return *this; }
             FindParameters& setMediaLibrary(db::MediaLibraryId _library) { library  = _library; return *this; }
         };

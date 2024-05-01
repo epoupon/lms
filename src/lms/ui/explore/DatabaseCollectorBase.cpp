@@ -59,7 +59,10 @@ namespace lms::ui
     void DatabaseCollectorBase::setSearch(std::string_view searchText)
     {
         _searchText = searchText;
-        _searchKeywords = core::stringUtils::splitString(_searchText, ' ');
+        if (!searchText.empty())
+            _searchKeywords = core::stringUtils::splitString(_searchText, ' ');
+        else
+            _searchKeywords.clear();
     }
 
 } // ns UserInterface
