@@ -30,6 +30,7 @@
 #include "explore/PlayQueueController.hpp"
 #include "explore/TrackListHelpers.hpp"
 #include "LmsApplication.hpp"
+#include "SortModeSelector.hpp"
 
 namespace lms::ui
 {
@@ -44,30 +45,11 @@ namespace lms::ui
         addFunction("tr", &Wt::WTemplate::Functions::tr);
         addFunction("id", &Wt::WTemplate::Functions::id);
 
-        auto bindMenuItem{ [this](const std::string& var, const Wt::WString& title, TrackCollector::Mode mode)
-        {
-            auto* menuItem {bindNew<Wt::WPushButton>(var, title)};
-            menuItem->clicked().connect([this, mode, menuItem]
+        SortModeSelector* sortMode{ bindNew<SortModeSelector>("sort-mode", _defaultMode) };
+        sortMode->sortModeChanged.connect([this](TrackCollector::Mode mode)
             {
                 refreshView(mode);
-                _currentActiveItem->removeStyleClass("active");
-                menuItem->addStyleClass("active");
-                _currentActiveItem = menuItem;
             });
-
-            if (mode == _defaultMode)
-            {
-                _currentActiveItem = menuItem;
-                _currentActiveItem->addStyleClass("active");
-            }
-        } };
-
-        bindMenuItem("random", Wt::WString::tr("Lms.Explore.random"), TrackCollector::Mode::Random);
-        bindMenuItem("starred", Wt::WString::tr("Lms.Explore.starred"), TrackCollector::Mode::Starred);
-        bindMenuItem("recently-played", Wt::WString::tr("Lms.Explore.recently-played"), TrackCollector::Mode::RecentlyPlayed);
-        bindMenuItem("most-played", Wt::WString::tr("Lms.Explore.most-played"), TrackCollector::Mode::MostPlayed);
-        bindMenuItem("recently-added", Wt::WString::tr("Lms.Explore.recently-added"), TrackCollector::Mode::RecentlyAdded);
-        bindMenuItem("all", Wt::WString::tr("Lms.Explore.all"), TrackCollector::Mode::All);
 
         bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
             ->clicked().connect([this]

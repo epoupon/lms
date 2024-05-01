@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,26 +19,22 @@
 
 #pragma once
 
-#include <memory>
-
+#include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
 
-#include "common/ValueStringModel.hpp"
-#include "database/Object.hpp"
-#include "database/Types.hpp"
-
-namespace lms::db
-{
-	class Artist;
-}
+#include "DatabaseCollectorBase.hpp"
 
 namespace lms::ui
 {
-	using ArtistLinkTypesModel = ValueStringModel<std::optional<db::TrackArtistLinkType>>;
+    class SortModeSelector : public Wt::WTemplate
+    {
+    public:
+        SortModeSelector(DatabaseCollectorBase::Mode defaultMode);
 
-	namespace ArtistListHelpers
-	{
-		std::unique_ptr<Wt::WTemplate> createEntry(const db::ObjectPtr<db::Artist>& artist);
-	}
-}
+        Wt::Signal<DatabaseCollectorBase::Mode> sortModeChanged;
+
+    private:
+        Wt::WWidget* _currentActiveItem{};
+    };
+} // namespace lms::ui
 

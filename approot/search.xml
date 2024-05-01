@@ -20,10 +20,8 @@
 </message>
 
 <message id="Lms.Explore.Search.template.artists">
-	<div class="row mb-3">
-		<div class="col-lg-3">
-			${link-type class="form-select"}
-		</div>
+	<div class="mb-3">
+		${link-type}
 	</div>
 	${artists}
 </message>

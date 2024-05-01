@@ -85,8 +85,6 @@ namespace lms::ui
         InfiniteScrollingContainer* _artists{};
         InfiniteScrollingContainer* _releases{};
         InfiniteScrollingContainer* _tracks{};
-
-        Wt::WComboBox* _artistLinkType{};
     };
 
 } // namespace lms::ui

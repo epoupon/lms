@@ -31,6 +31,7 @@
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "ReleaseHelpers.hpp"
+#include "TrackArtistLinkTypeSelector.hpp"
 #include "TrackListHelpers.hpp"
 
 namespace lms::ui
@@ -58,11 +59,9 @@ namespace lms::ui
         {
             Wt::WTemplate* artistResults{ _stack->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Search.template.artists")) };
 
-            _artistLinkType = artistResults->bindNew<Wt::WComboBox>("link-type");
-            _artistLinkType->setModel(ArtistListHelpers::createArtistLinkTypesModel());
-            _artistLinkType->changed().connect([this]
+            TrackArtistLinkTypeSelector* linkTypeSelector{ artistResults->bindNew<TrackArtistLinkTypeSelector>("link-type", std::nullopt)};
+            linkTypeSelector->linkTypeChanged.connect([this](std::optional<TrackArtistLinkType> linkType)
                 {
-                    const std::optional<TrackArtistLinkType> linkType{ static_cast<ArtistLinkTypesModel*>(_artistLinkType->model().get())->getValue(_artistLinkType->currentIndex()) };
                     refreshView(linkType);
                 });
 
@@ -100,12 +99,6 @@ namespace lms::ui
         filters.updated().connect([this]
             {
                 refreshView();
-            });
-
-        LmsApp->getScannerEvents().scanComplete.connect(this, [this](const scanner::ScanStats& stats)
-            {
-                if (stats.nbChanges())
-                    _artistLinkType->setModel(ArtistListHelpers::createArtistLinkTypesModel());
             });
     }
 

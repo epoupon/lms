@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,26 +19,24 @@
 
 #pragma once
 
-#include <memory>
+#include <optional>
 
+#include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
 
-#include "common/ValueStringModel.hpp"
-#include "database/Object.hpp"
 #include "database/Types.hpp"
-
-namespace lms::db
-{
-	class Artist;
-}
 
 namespace lms::ui
 {
-	using ArtistLinkTypesModel = ValueStringModel<std::optional<db::TrackArtistLinkType>>;
+    class TrackArtistLinkTypeSelector : public Wt::WTemplate
+    {
+    public:
+        TrackArtistLinkTypeSelector(std::optional<db::TrackArtistLinkType> defaultLinkType);
 
-	namespace ArtistListHelpers
-	{
-		std::unique_ptr<Wt::WTemplate> createEntry(const db::ObjectPtr<db::Artist>& artist);
-	}
-}
+        Wt::Signal<std::optional<db::TrackArtistLinkType>> linkTypeChanged;
+
+    private:
+        Wt::WWidget* _currentActiveItem{};
+    };
+} // namespace lms::ui
 

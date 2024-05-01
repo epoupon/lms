@@ -30,6 +30,7 @@
 #include "explore/PlayQueueController.hpp"
 #include "explore/ReleaseHelpers.hpp"
 #include "LmsApplication.hpp"
+#include "SortModeSelector.hpp"
 
 namespace lms::ui
 {
@@ -43,30 +44,11 @@ namespace lms::ui
         addFunction("tr", &Wt::WTemplate::Functions::tr);
         addFunction("id", &Wt::WTemplate::Functions::id);
 
-        auto bindMenuItem{ [this](const std::string& var, const Wt::WString& title, ReleaseCollector::Mode mode)
-        {
-            auto* menuItem {bindNew<Wt::WPushButton>(var, title)};
-            menuItem->clicked().connect([this, mode, menuItem]
+        SortModeSelector* sortMode{ bindNew<SortModeSelector>("sort-mode", _defaultMode) };
+        sortMode->sortModeChanged.connect([this](ReleaseCollector::Mode sortMode)
             {
-                refreshView(mode);
-                _currentActiveItem->removeStyleClass("active");
-                menuItem->addStyleClass("active");
-                _currentActiveItem = menuItem;
+                refreshView(sortMode);
             });
-
-            if (mode == _defaultMode)
-            {
-                _currentActiveItem = menuItem;
-                _currentActiveItem->addStyleClass("active");
-            }
-        } };
-
-        bindMenuItem("random", Wt::WString::tr("Lms.Explore.random"), ReleaseCollector::Mode::Random);
-        bindMenuItem("starred", Wt::WString::tr("Lms.Explore.starred"), ReleaseCollector::Mode::Starred);
-        bindMenuItem("recently-played", Wt::WString::tr("Lms.Explore.recently-played"), ReleaseCollector::Mode::RecentlyPlayed);
-        bindMenuItem("most-played", Wt::WString::tr("Lms.Explore.most-played"), ReleaseCollector::Mode::MostPlayed);
-        bindMenuItem("recently-added", Wt::WString::tr("Lms.Explore.recently-added"), ReleaseCollector::Mode::RecentlyAdded);
-        bindMenuItem("all", Wt::WString::tr("Lms.Explore.all"), ReleaseCollector::Mode::All);
 
         Wt::WPushButton* playBtn{ bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML) };
         playBtn->clicked().connect([this]
