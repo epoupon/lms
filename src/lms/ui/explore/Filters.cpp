@@ -47,7 +47,6 @@ namespace lms::ui
         std::unique_ptr<TypeModel> createTypeModel()
         {
             auto typeModel{ std::make_unique<TypeModel>() };
-            typeModel->add(Wt::WString::tr("Lms.Explore.media-library"), MediaLibraryTag{});
 
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
@@ -55,6 +54,8 @@ namespace lms::ui
                 {
                     typeModel->add(Wt::WString::fromUTF8(std::string{ clusterType->getName() }), clusterType->getId());
                 });
+
+            typeModel->add(Wt::WString::tr("Lms.Explore.media-library"), MediaLibraryTag{});
 
             return typeModel;
         }
