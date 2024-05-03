@@ -14,7 +14,7 @@
 			</ul>
 		</div>
 		<div class="d-flex">
-			${search class="form-control me-1" type="search"}
+			${search class="form-control form-control-sm me-1" type="search"}
 			${sort-mode}
 		</div>
 	</div>

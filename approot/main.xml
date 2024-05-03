@@ -32,7 +32,7 @@
 						${tracklists class="nav-link"}
 					</li>
 					<li class="nav-item">
-						${filters class="nav-link d-flex align-items-center"}
+						${filters class="d-flex align-items-center"}
 					</li>
 				</ul>
 				<div class="navbar-nav align-items-md-center mb-lg-0">
