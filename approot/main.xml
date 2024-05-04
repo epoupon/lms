@@ -18,7 +18,7 @@
 				<span class="navbar-toggler-icon"></span>
 			</button>
 			<div class="collapse navbar-collapse" id="navbarSupportedContent">
-				<ul class="navbar-nav me-auto align-items-md-center mb-lg-0">
+				<ul class="navbar-nav align-items-md-center me-md-2 mb-2 mb-md-0">
 					<li class="nav-item">
 						${releases class="nav-link"}
 					</li>
@@ -31,11 +31,9 @@
 					<li class="nav-item">
 						${tracklists class="nav-link"}
 					</li>
-					<li class="nav-item">
-						${filters class="d-flex align-items-center"}
-					</li>
 				</ul>
-				<div class="navbar-nav align-items-md-center mb-lg-0">
+				${filters class="d-flex align-items-center me-auto mb-2 mb-md-0"}
+				<div class="navbar-nav align-items-md-center">
 				${<if-is-admin>}
 					<li class="nav-item dropdown">
 						<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="${tr:Lms.administration}">
