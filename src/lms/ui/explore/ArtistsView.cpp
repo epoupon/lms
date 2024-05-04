@@ -52,13 +52,13 @@ namespace lms::ui
             });
 
         SortModeSelector* sortModeSelector{ bindNew<SortModeSelector>("sort-mode", _defaultSortMode) };
-        sortModeSelector->sortModeChanged.connect([this](ArtistCollector::Mode sortMode)
+        sortModeSelector->itemSelected.connect([this](ArtistCollector::Mode sortMode)
             {
                 refreshView(sortMode);
             });
 
         TrackArtistLinkTypeSelector* linkTypeSelector{ bindNew<TrackArtistLinkTypeSelector>("link-type", _defaultLinkType) };
-        linkTypeSelector->linkTypeChanged.connect([this](std::optional<TrackArtistLinkType> linkType)
+        linkTypeSelector->itemSelected.connect([this](std::optional<TrackArtistLinkType> linkType)
             {
                 refreshView(linkType);
             });

@@ -53,7 +53,7 @@ namespace lms::ui
             });
 
         SortModeSelector* sortMode{ bindNew<SortModeSelector>("sort-mode", _defaultMode) };
-        sortMode->sortModeChanged.connect([this](ReleaseCollector::Mode sortMode)
+        sortMode->itemSelected.connect([this](ReleaseCollector::Mode sortMode)
             {
                 refreshView(sortMode);
             });

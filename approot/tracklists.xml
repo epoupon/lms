@@ -3,17 +3,22 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Explore.TrackLists.template">
-	<div class="mb-3">
-		<ul class="nav nav-pills">
-			<li class="nav-item">
-				${recently-modified class="nav-link"}
-			</li>
-			<li class="nav-item">
-				${all class="nav-link"}
-			</li>
-		</ul>
+	<div class="d-flex flex-row-reverse">
+		${sort-mode}
 	</div>
 	${tracklists}
+</message>
+
+<message id="Lms.Explore.TrackLists.template.sort-mode">
+	<div class="dropdown">
+		<button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+			${selected-item}
+		</button>
+		<ul class="dropdown-menu">
+			<li>${all class="dropdown-item"}</li>
+			<li>${recently-modified class="dropdown-item"}</li>
+		</ul>
+	</div>
 </message>
 
 <message id="Lms.Explore.TrackLists.template.entry">

@@ -48,12 +48,13 @@ namespace lms::ui
         {
             auto typeModel{ std::make_unique<TypeModel>() };
 
-            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-
-            db::ClusterType::find(LmsApp->getDbSession(), [&](const db::ClusterType::pointer& clusterType)
-                {
-                    typeModel->add(Wt::WString::fromUTF8(std::string{ clusterType->getName() }), clusterType->getId());
-                });
+            {
+                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+                db::ClusterType::find(LmsApp->getDbSession(), [&](const db::ClusterType::pointer& clusterType)
+                    {
+                        typeModel->add(Wt::WString::fromUTF8(std::string{ clusterType->getName() }), clusterType->getId());
+                    });
+            }
 
             typeModel->add(Wt::WString::tr("Lms.Explore.media-library"), MediaLibraryTag{});
 

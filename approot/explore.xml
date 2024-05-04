@@ -55,7 +55,7 @@
 <message id="Lms.Explore.template.sort-mode-selector">
 	<div class="dropdown">
 		<button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-			${sort-mode}
+			${selected-item}
 		</button>
 		<ul class="dropdown-menu">
 			<li>${random class="dropdown-item"}</li>
