@@ -24,7 +24,7 @@
 
 <message id="Lms.Explore.Artists.template.track-artist-link-type-selector">
 	<div class="dropdown">
-		<button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+		<button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
 			${link-type}
 		</button>
 		<ul class="dropdown-menu">
