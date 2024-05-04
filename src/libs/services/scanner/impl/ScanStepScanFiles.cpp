@@ -441,7 +441,7 @@ namespace lms::scanner
 
             _metadataScanQueue.wait();
 
-            while (_metadataScanQueue.popResults(scanResults, processMetaDataBatchSize) > 0)
+            while (!_abortScan && _metadataScanQueue.popResults(scanResults, processMetaDataBatchSize) > 0)
                 processMetaDataScanResults(context, scanResults, mediaLibrary);
         }
     }
