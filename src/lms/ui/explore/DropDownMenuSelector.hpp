@@ -43,7 +43,7 @@ namespace lms::ui
         void bindItem(const std::string& var, const Wt::WString& title, ItemType item)
         {
             auto* menuItem{ bindNew<Wt::WPushButton>(var, title) };
-            menuItem->clicked().connect([=]
+            menuItem->clicked().connect([this, menuItem, title, item]
                 {
                     _currentActiveItem->removeStyleClass("active");
                     menuItem->addStyleClass("active");
