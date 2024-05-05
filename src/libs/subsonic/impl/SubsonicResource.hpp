@@ -26,6 +26,7 @@
 #include <Wt/Http/Response.h>
 
 #include "database/Types.hpp"
+#include "database/UserId.hpp"
 #include "ClientInfo.hpp"
 #include "RequestContext.hpp"
 

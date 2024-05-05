@@ -19,6 +19,7 @@
 
 #include "TracksView.hpp"
 
+#include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
 #include "database/Session.hpp"
@@ -30,6 +31,7 @@
 #include "explore/PlayQueueController.hpp"
 #include "explore/TrackListHelpers.hpp"
 #include "LmsApplication.hpp"
+#include "SortModeSelector.hpp"
 
 namespace lms::ui
 {
@@ -44,30 +46,18 @@ namespace lms::ui
         addFunction("tr", &Wt::WTemplate::Functions::tr);
         addFunction("id", &Wt::WTemplate::Functions::id);
 
-        auto bindMenuItem{ [this](const std::string& var, const Wt::WString& title, TrackCollector::Mode mode)
-        {
-            auto* menuItem {bindNew<Wt::WPushButton>(var, title)};
-            menuItem->clicked().connect([this, mode, menuItem]
+        Wt::WLineEdit* searEdit{ bindNew<Wt::WLineEdit>("search") };
+        searEdit->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
+        searEdit->textInput().connect([this, searEdit]
             {
-                refreshView(mode);
-                _currentActiveItem->removeStyleClass("active");
-                menuItem->addStyleClass("active");
-                _currentActiveItem = menuItem;
+                refreshView(searEdit->text());
             });
 
-            if (mode == _defaultMode)
+        SortModeSelector* sortMode{ bindNew<SortModeSelector>("sort-mode", _defaultMode) };
+        sortMode->itemSelected.connect([this](TrackCollector::Mode mode)
             {
-                _currentActiveItem = menuItem;
-                _currentActiveItem->addStyleClass("active");
-            }
-        } };
-
-        bindMenuItem("random", Wt::WString::tr("Lms.Explore.random"), TrackCollector::Mode::Random);
-        bindMenuItem("starred", Wt::WString::tr("Lms.Explore.starred"), TrackCollector::Mode::Starred);
-        bindMenuItem("recently-played", Wt::WString::tr("Lms.Explore.recently-played"), TrackCollector::Mode::RecentlyPlayed);
-        bindMenuItem("most-played", Wt::WString::tr("Lms.Explore.most-played"), TrackCollector::Mode::MostPlayed);
-        bindMenuItem("recently-added", Wt::WString::tr("Lms.Explore.recently-added"), TrackCollector::Mode::RecentlyAdded);
-        bindMenuItem("all", Wt::WString::tr("Lms.Explore.all"), TrackCollector::Mode::All);
+                refreshView(mode);
+            });
 
         bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
             ->clicked().connect([this]
@@ -114,6 +104,12 @@ namespace lms::ui
     void Tracks::refreshView(TrackCollector::Mode mode)
     {
         _trackCollector.setMode(mode);
+        refreshView();
+    }
+
+    void Tracks::refreshView(const Wt::WString& searchText)
+    {
+        _trackCollector.setSearch(searchText.toUTF8());
         refreshView();
     }
 

@@ -70,6 +70,7 @@ namespace lms::db
             UserId                              user;
             std::optional<ScrobblingBackend>    backend;
             std::vector<ClusterId>              clusters; // if non empty, entities that belong to these clusters
+            std::vector<std::string_view>   keywords; // if non empty, name must match all of these keywords
             std::optional<Range>                range;
             ArtistId                            artist; // if set, matching this artist
             MediaLibraryId                      library;
@@ -77,6 +78,7 @@ namespace lms::db
             StatsFindParameters& setUser(UserId _user) { user = _user; return *this; }
             StatsFindParameters& setScrobblingBackend(std::optional<ScrobblingBackend> _backend) { backend = _backend; return *this; }
             StatsFindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
+            StatsFindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
             StatsFindParameters& setRange(std::optional<Range> _range) { range = _range; return *this; }
             StatsFindParameters& setArtist(ArtistId _artist) { artist = _artist; return *this; }
             StatsFindParameters& setMediaLibrary(MediaLibraryId _library) { library = _library; return *this; }

@@ -110,6 +110,7 @@
 <message id="Lms.Admin.ScannerController.status-in-progress">Scansione: passo {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">Controllo duplicati... {1} files</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-missing-files">Controllo file... {1}%</message>
+<message id="Lms.Admin.ScannerController.step-compact">Compattazione del database...</message>
 <message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Calcolo statistiche... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-discovering-files">File trovati: {1} files</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Recupero metadati da AcousticBrainz: {1}/{2} tracce ({3}%)...</message>
@@ -157,6 +158,7 @@
 <message id="Lms.Explore.duration">Durata</message>
 <message id="Lms.Explore.filter-added">Filtro aggiunto</message>
 <message id="Lms.Explore.filters">Filtri</message>
+<message id="Lms.Explore.media-library">Libreria musicale</message>
 <message id="Lms.Explore.most-played">Più ascoltati</message>
 <message id="Lms.Explore.musicbrainz-artist">Artista MusicBrainz</message>
 <message id="Lms.Explore.musicbrainz-release">Album MusicBrainz</message>

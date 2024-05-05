@@ -3,28 +3,8 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Explore.Releases.template">
-	<div class="mb-3">
-		<ul class="nav nav-pills mb-2">
-			<li class="nav-item">
-				${random class="nav-link"}
-			</li>
-			<li class="nav-item">
-				${starred class="nav-link"}
-			</li>
-			<li class="nav-item">
-				${recently-played class="nav-link"}
-			</li>
-			<li class="nav-item">
-				${most-played class="nav-link"}
-			</li>
-			<li class="nav-item">
-				${recently-added class="nav-link"}
-			</li>
-			<li class="nav-item">
-				${all class="nav-link"}
-			</li>
-		</ul>
-		<div class="btn-group">
+	<div class="d-flex justify-content-between align-items-start mb-3">
+		<div class="btn-group me-1">
 			${play-btn class="btn btn-primary"}
 			<button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"/>
 			<ul class="dropdown-menu">
@@ -32,6 +12,10 @@
 				<li>${play-last class="dropdown-item"}</li>
 				<li>${play-shuffled class="dropdown-item"}</li>
 			</ul>
+		</div>
+		<div class="d-flex">
+			${search class="form-control form-control-sm me-1" type="search"}
+			${sort-mode}
 		</div>
 	</div>
 	${releases}

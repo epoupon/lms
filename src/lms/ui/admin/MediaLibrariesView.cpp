@@ -106,7 +106,7 @@ namespace lms::ui
                 }
 
                 // Don't want the scanner to go on with wrong settings
-                core::Service<scanner::IScannerService>::get()->requestStop();
+                core::Service<scanner::IScannerService>::get()->requestReload();
                 LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries"), Wt::WString::tr("Lms.Admin.MediaLibrary.library-deleted"));
 
                 _libraries->removeWidget(libraryEntry);
@@ -148,7 +148,7 @@ namespace lms::ui
                         updateEntry(newMediaLibraryId, entry);
 
                         // Don't want the scanner to go on with wrong settings
-                        core::Service<scanner::IScannerService>::get()->requestStop();        
+                        core::Service<scanner::IScannerService>::get()->requestReload();        
                         LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries"), Wt::WString::tr("Lms.settings-saved"));
 
                         LmsApp->getModalManager().dispose(mediaLibraryModalPtr);

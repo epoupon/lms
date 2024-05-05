@@ -39,6 +39,7 @@ namespace lms::ui
         scrobbling::IScrobblingService& scrobblingService{ *core::Service<scrobbling::IScrobblingService>::get() };
 
         const Range range{ getActualRange(requestedRange) };
+        const Filters& filters{ getFilters() };
 
         RangeResults<ArtistId> artists;
 
@@ -52,7 +53,9 @@ namespace lms::ui
         {
             feedback::IFeedbackService::ArtistFindParameters params;
             params.setUser(LmsApp->getUserId());
-            params.setClusters(getFilters().getClusterIds());
+            params.setClusters(filters.getClusters());
+            params.setKeywords(getSearchKeywords());
+            params.setMediaLibrary(filters.getMediaLibrary());
             params.setLinkType(_linkType);
             params.setSortMethod(ArtistSortMethod::StarredDateDesc);
             params.setRange(range);
@@ -64,7 +67,9 @@ namespace lms::ui
         {
             scrobbling::IScrobblingService::ArtistFindParameters params;
             params.setUser(LmsApp->getUserId());
-            params.setClusters(getFilters().getClusterIds());
+            params.setClusters(filters.getClusters());
+            params.setKeywords(getSearchKeywords());
+            params.setMediaLibrary(filters.getMediaLibrary());
             params.setLinkType(_linkType);
             params.setRange(range);
 
@@ -76,7 +81,9 @@ namespace lms::ui
         {
             scrobbling::IScrobblingService::ArtistFindParameters params;
             params.setUser(LmsApp->getUserId());
-            params.setClusters(getFilters().getClusterIds());
+            params.setClusters(filters.getClusters());
+            params.setKeywords(getSearchKeywords());
+            params.setMediaLibrary(filters.getMediaLibrary());
             params.setLinkType(_linkType);
             params.setRange(range);
 
@@ -87,24 +94,11 @@ namespace lms::ui
         case Mode::RecentlyAdded:
         {
             Artist::FindParameters params;
-            params.setClusters(getFilters().getClusterIds());
+            params.setClusters(filters.getClusters());
+            params.setKeywords(getSearchKeywords());
+            params.setMediaLibrary(filters.getMediaLibrary());
             params.setLinkType(_linkType);
             params.setSortMethod(ArtistSortMethod::LastWritten);
-            params.setRange(range);
-
-            {
-                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                artists = Artist::findIds(LmsApp->getDbSession(), params);
-            }
-            break;
-        }
-
-        case Mode::Search:
-        {
-            Artist::FindParameters params;
-            params.setClusters(getFilters().getClusterIds());
-            params.setKeywords(getSearchKeywords());
-            params.setLinkType(_linkType);
             params.setRange(range);
 
             {
@@ -117,7 +111,9 @@ namespace lms::ui
         case Mode::All:
         {
             Artist::FindParameters params;
-            params.setClusters(getFilters().getClusterIds());
+            params.setClusters(filters.getClusters());
+            params.setMediaLibrary(filters.getMediaLibrary());
+            params.setKeywords(getSearchKeywords());
             params.setLinkType(_linkType);
             params.setSortMethod(ArtistSortMethod::SortName);
             params.setRange(range);
@@ -143,7 +139,9 @@ namespace lms::ui
         if (!_randomArtists)
         {
             Artist::FindParameters params;
-            params.setClusters(getFilters().getClusterIds());
+            params.setClusters(getFilters().getClusters());
+            params.setMediaLibrary(getFilters().getMediaLibrary());
+            params.setKeywords(getSearchKeywords());
             params.setLinkType(_linkType);
             params.setSortMethod(ArtistSortMethod::Random);
             params.setRange(Range{ 0, getMaxCount() });

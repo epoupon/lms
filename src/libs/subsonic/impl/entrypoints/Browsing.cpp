@@ -75,15 +75,11 @@ namespace lms::api::subsonic
             {
                 auto transaction{ context.dbSession.createReadTransaction() };
 
-                User::pointer user{ User::find(context.dbSession, context.userId) };
-                if (!user)
-                    throw UserNotAuthorizedError{};
-
                 for (const ArtistId similarArtistId : similarArtistsId)
                 {
                     const Artist::pointer similarArtist{ Artist::find(context.dbSession, similarArtistId) };
                     if (similarArtist)
-                        artistInfoNode.addArrayChild("similarArtist", createArtistNode(context, similarArtist, user, id3));
+                        artistInfoNode.addArrayChild("similarArtist", createArtistNode(context, similarArtist, context.user, id3));
                 }
             }
 
@@ -105,12 +101,8 @@ namespace lms::api::subsonic
             {
                 auto transaction{ context.dbSession.createReadTransaction() };
 
-                User::pointer user{ User::find(context.dbSession, context.userId) };
-                if (!user)
-                    throw UserNotAuthorizedError{};
-
                 parameters.setSortMethod(ArtistSortMethod::SortName);
-                switch (user->getSubsonicArtistListMode())
+                switch (context.user->getSubsonicArtistListMode())
                 {
                 case SubsonicArtistListMode::AllArtists:
                     break;
@@ -165,12 +157,9 @@ namespace lms::api::subsonic
                 for (const ArtistId artistId : artistIds)
                 {
                     auto transaction{ context.dbSession.createReadTransaction() };
-                    User::pointer user{ User::find(context.dbSession, context.userId) };
-                    if (!user)
-                        throw UserNotAuthorizedError{};
 
                     if (const Artist::pointer artist{ Artist::find(context.dbSession, artistId) })
-                        indexNode.addArrayChild("artist", createArtistNode(context, artist, user, id3));
+                        indexNode.addArrayChild("artist", createArtistNode(context, artist, context.user, id3));
                 }
             }
 
@@ -265,16 +254,12 @@ namespace lms::api::subsonic
 
             auto transaction{ context.dbSession.createReadTransaction() };
 
-            User::pointer user{ User::find(context.dbSession, context.userId) };
-            if (!user)
-                throw UserNotAuthorizedError{};
-
             Response response{ Response::createOkResponse(context.serverProtocolVersion) };
             Response::Node& similarSongsNode{ response.createNode(id3 ? Response::Node::Key{ "similarSongs2" } : Response::Node::Key{ "similarSongs" }) };
             for (const TrackId trackId : tracks)
             {
                 const Track::pointer track{ Track::find(context.dbSession, trackId) };
-                similarSongsNode.addArrayChild("song", createSongNode(context, track, user));
+                similarSongsNode.addArrayChild("song", createSongNode(context, track, context.user));
             }
 
             return response;
@@ -319,10 +304,6 @@ namespace lms::api::subsonic
 
         auto transaction{ context.dbSession.createReadTransaction() };
 
-        User::pointer user{ User::find(context.dbSession, context.userId) };
-        if (!user)
-            throw UserNotAuthorizedError{};
-
         if (root)
         {
             directoryNode.setAttribute("id", idToString(RootId{}));
@@ -331,7 +312,7 @@ namespace lms::api::subsonic
             // TODO: this does not scale when a lot of artists are present
             Artist::find(context.dbSession, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::SortName), [&](const Artist::pointer& artist)
                 {
-                    directoryNode.addArrayChild("child", createArtistNode(context, artist, user, false /* no id3 */));
+                    directoryNode.addArrayChild("child", createArtistNode(context, artist, context.user, false /* no id3 */));
                 });
         }
         else if (artistId)
@@ -346,7 +327,7 @@ namespace lms::api::subsonic
 
             Release::find(context.dbSession, Release::FindParameters{}.setArtist(*artistId), [&](const Release::pointer& release)
                 {
-                    directoryNode.addArrayChild("child", createAlbumNode(context, release, user, false /* no id3 */));
+                    directoryNode.addArrayChild("child", createAlbumNode(context, release, context.user, false /* no id3 */));
                 });
         }
         else if (releaseId)
@@ -361,7 +342,7 @@ namespace lms::api::subsonic
 
             Track::find(context.dbSession, Track::FindParameters{}.setRelease(*releaseId).setSortMethod(TrackSortMethod::Release), [&](const Track::pointer& track)
                 {
-                    directoryNode.addArrayChild("child", createSongNode(context, track, user));
+                    directoryNode.addArrayChild("child", createSongNode(context, track, context.user));
                 });
         }
         else
@@ -406,16 +387,12 @@ namespace lms::api::subsonic
         if (!artist)
             throw RequestedDataNotFoundError{};
 
-        User::pointer user{ User::find(context.dbSession, context.userId) };
-        if (!user)
-            throw UserNotAuthorizedError{};
-
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-        Response::Node artistNode{ createArtistNode(context, artist, user, true /* id3 */) };
+        Response::Node artistNode{ createArtistNode(context, artist, context.user, true /* id3 */) };
 
         const auto releases{ Release::find(context.dbSession, Release::FindParameters {}.setArtist(artist->getId())) };
         for (const Release::pointer& release : releases.results)
-            artistNode.addArrayChild("album", createAlbumNode(context, release, user, true /* id3 */));
+            artistNode.addArrayChild("album", createAlbumNode(context, release, context.user, true /* id3 */));
 
         response.addNode("artist", std::move(artistNode));
 
@@ -433,16 +410,12 @@ namespace lms::api::subsonic
         if (!release)
             throw RequestedDataNotFoundError{};
 
-        User::pointer user{ User::find(context.dbSession, context.userId) };
-        if (!user)
-            throw UserNotAuthorizedError{};
-
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-        Response::Node albumNode{ createAlbumNode(context, release, user, true /* id3 */) };
+        Response::Node albumNode{ createAlbumNode(context, release, context.user, true /* id3 */) };
 
-        const auto tracks{ Track::find(context.dbSession, Track::FindParameters {}.setRelease(id).setSortMethod(TrackSortMethod::Release)) };
+        const auto tracks{ Track::find(context.dbSession, Track::FindParameters{}.setRelease(id).setSortMethod(TrackSortMethod::Release)) };
         for (const Track::pointer& track : tracks.results)
-            albumNode.addArrayChild("song", createSongNode(context, track, user));
+            albumNode.addArrayChild("song", createSongNode(context, track, context.user));
 
         response.addNode("album", std::move(albumNode));
 
@@ -460,12 +433,8 @@ namespace lms::api::subsonic
         if (!track)
             throw RequestedDataNotFoundError{};
 
-        User::pointer user{ User::find(context.dbSession, context.userId) };
-        if (!user)
-            throw UserNotAuthorizedError{};
-
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-        response.addNode("song", createSongNode(context, track, user));
+        response.addNode("song", createSongNode(context, track, context.user));
 
         return response;
     }
@@ -504,15 +473,11 @@ namespace lms::api::subsonic
         if (artists.size() != 1)
             throw RequestedDataNotFoundError{};
 
-        User::pointer user{ User::find(context.dbSession, context.userId) };
-        if (!user)
-            throw UserNotAuthorizedError{};
-
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
         Response::Node& topSongs{ response.createNode("topSongs") };
 
         scrobbling::IScrobblingService::FindParameters params;
-        params.setUser(context.userId);
+        params.setUser(context.user->getId());
         params.setRange(db::Range{ 0, count });
         params.setArtist(artists.front()->getId());
 
@@ -520,7 +485,7 @@ namespace lms::api::subsonic
         for (const TrackId trackId : trackIds.results)
         {
             if (Track::pointer track{ Track::find(context.dbSession, trackId) })
-                topSongs.addArrayChild("song", createSongNode(context, track, user));
+                topSongs.addArrayChild("song", createSongNode(context, track, context.user));
         }
 
         return response;

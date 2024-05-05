@@ -23,6 +23,7 @@
 #include <filesystem>
 #include <ostream>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -80,7 +81,7 @@ namespace lms::db
             std::optional<int>					discNumber;	    // matching this disc number
             MediaLibraryId                      mediaLibrary;   // If set, tracks in this library
 
-            FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
+            FindParameters& setClusters(std::span<const ClusterId> _clusters) { clusters.assign(std::cbegin(_clusters), std::cend(_clusters)); return *this; }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
             FindParameters& setName(std::string_view _name) { name = _name; return *this; }
             FindParameters& setSortMethod(TrackSortMethod _method) { sortMethod = _method; return *this; }

@@ -107,7 +107,7 @@ namespace lms::ui
                 for (const db::Cluster::pointer& cluster : clusters)
                 {
                     const ClusterId clusterId{ cluster->getId() };
-                    Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createCluster(clusterId)) };
+                    Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterCluster(clusterId)) };
                     entry->clicked().connect([this, clusterId]
                         {
                             _filters.add(clusterId);
@@ -183,7 +183,8 @@ namespace lms::ui
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         db::Track::FindParameters params;
-        params.setClusters(_filters.getClusterIds());
+        params.setClusters(_filters.getClusters());
+        params.setMediaLibrary(_filters.getMediaLibrary());
         params.setTrackList(_trackListId);
         params.setSortMethod(db::TrackSortMethod::TrackList);
         params.setRange(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize });

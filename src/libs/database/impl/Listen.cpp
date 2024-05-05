@@ -32,9 +32,8 @@ namespace lms::db
         Wt::Dbo::Query<ArtistId> createArtistsQuery(Session& session, const Listen::ArtistStatsFindParameters& params)
         {
             auto query{ session.getDboSession()->query<ArtistId>("SELECT a.id from artist a")
-                            .join("track t ON t.id = t_a_l.track_id")
                             .join("track_artist_link t_a_l ON t_a_l.artist_id = a.id")
-                            .join("listen l ON l.track_id = t.id") };
+                            .join("listen l ON l.track_id = t_a_l.track_id") };
 
             if (params.user.isValid())
                 query.where("l.user_id = ?").bind(params.user);
@@ -45,7 +44,10 @@ namespace lms::db
             assert(!params.artist.isValid()); // poor check
 
             if (params.library.isValid())
+            {
+                query.join("track t ON t.id = t_a_l.track_id");
                 query.where("t.media_library_id = ?").bind(params.library);
+            }
 
             if (params.linkType)
                 query.where("t_a_l.type = ?").bind(*params.linkType);
@@ -67,6 +69,26 @@ namespace lms::db
                 oss << " GROUP BY t_a_l.track_id,t_a_l.artist_id HAVING COUNT(DISTINCT t_c.cluster_id) = " << params.clusters.size() << ")";
 
                 query.where(oss.str());
+            }
+
+            if (!params.keywords.empty())
+            {
+                std::vector<std::string> clauses;
+                std::vector<std::string> sortClauses;
+
+                for (const std::string_view keyword : params.keywords)
+                {
+                    clauses.push_back("a.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
+                    query.bind("%" + utils::escapeLikeKeyword(keyword) + "%");
+                }
+
+                for (const std::string_view keyword : params.keywords)
+                {
+                    sortClauses.push_back("a.sort_name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
+                    query.bind("%" + utils::escapeLikeKeyword(keyword) + "%");
+                }
+
+                query.where("(" + core::stringUtils::joinStrings(clauses, " AND ") + ") OR (" + core::stringUtils::joinStrings(sortClauses, " AND ") + ")");
             }
 
             return query;
@@ -114,6 +136,9 @@ namespace lms::db
                 query.where(oss.str());
             }
 
+            for (std::string_view keyword : params.keywords)
+                query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
+
             return query;
         }
 
@@ -156,6 +181,9 @@ namespace lms::db
 
                 query.where(oss.str());
             }
+
+            for (std::string_view keyword : params.keywords)
+                query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
 
             return query;
         }

@@ -21,63 +21,46 @@
 
 #include <Wt/WPushButton.h>
 
+#include "core/ILogger.hpp"
 #include "database/Artist.hpp"
 #include "database/Session.hpp"
 #include "database/TrackArtistLink.hpp"
-#include "core/ILogger.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"
 #include "ArtistListHelpers.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
+#include "SortModeSelector.hpp"
+#include "TrackArtistLinkTypeSelector.hpp"
 
 namespace lms::ui
 {
     using namespace db;
 
     Artists::Artists(Filters& filters)
-        : Wt::WTemplate{ Wt::WString::tr("Lms.Explore.Artists.template") }
-        , _artistCollector{ filters, _defaultMode, _maxCount }
+        : Template{ Wt::WString::tr("Lms.Explore.Artists.template") }
+        , _artistCollector{ filters, _defaultSortMode, _maxCount }
     {
         addFunction("tr", &Wt::WTemplate::Functions::tr);
+        addFunction("id", &Wt::WTemplate::Functions::id);
 
-        auto bindMenuItem{ [this](const std::string& var, const Wt::WString& title, ArtistCollector::Mode mode)
-        {
-            auto* menuItem {bindNew<Wt::WPushButton>(var, title)};
-            menuItem->clicked().connect([=, this]
+        Wt::WLineEdit* searEdit{ bindNew<Wt::WLineEdit>("search") };
+        searEdit->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
+        searEdit->textInput().connect([this, searEdit]
             {
-                refreshView(mode);
-                _currentActiveItem->removeStyleClass("active");
-                menuItem->addStyleClass("active");
-                _currentActiveItem = menuItem;
+                refreshView(searEdit->text());
             });
 
-            if (mode == _defaultMode)
+        SortModeSelector* sortModeSelector{ bindNew<SortModeSelector>("sort-mode", _defaultSortMode) };
+        sortModeSelector->itemSelected.connect([this](ArtistCollector::Mode sortMode)
             {
-                _currentActiveItem = menuItem;
-                _currentActiveItem->addStyleClass("active");
-            }
-        } };
+                refreshView(sortMode);
+            });
 
-        bindMenuItem("random", Wt::WString::tr("Lms.Explore.random"), ArtistCollector::Mode::Random);
-        bindMenuItem("starred", Wt::WString::tr("Lms.Explore.starred"), ArtistCollector::Mode::Starred);
-        bindMenuItem("recently-played", Wt::WString::tr("Lms.Explore.recently-played"), ArtistCollector::Mode::RecentlyPlayed);
-        bindMenuItem("most-played", Wt::WString::tr("Lms.Explore.most-played"), ArtistCollector::Mode::MostPlayed);
-        bindMenuItem("recently-added", Wt::WString::tr("Lms.Explore.recently-added"), ArtistCollector::Mode::RecentlyAdded);
-        bindMenuItem("all", Wt::WString::tr("Lms.Explore.all"), ArtistCollector::Mode::All);
-
-        _linkType = bindNew<Wt::WComboBox>("link-type");
-        _linkType->setModel(ArtistListHelpers::createArtistLinkTypesModel());
-        _linkType->changed().connect([this]
+        TrackArtistLinkTypeSelector* linkTypeSelector{ bindNew<TrackArtistLinkTypeSelector>("link-type", _defaultLinkType) };
+        linkTypeSelector->itemSelected.connect([this](std::optional<TrackArtistLinkType> linkType)
             {
-                const std::optional<TrackArtistLinkType> linkType{ static_cast<ArtistLinkTypesModel*>(_linkType->model().get())->getValue(_linkType->currentIndex()) };
                 refreshView(linkType);
-            });
-
-        LmsApp->getScannerEvents().scanComplete.connect(this, [this](const scanner::ScanStats& stats)
-            {
-                if (stats.nbChanges())
-                    _linkType->setModel(ArtistListHelpers::createArtistLinkTypesModel());
             });
 
         _container = bindNew<InfiniteScrollingContainer>("artists", Wt::WString::tr("Lms.Explore.Artists.template.container"));
@@ -109,6 +92,12 @@ namespace lms::ui
     void Artists::refreshView(std::optional<TrackArtistLinkType> linkType)
     {
         _artistCollector.setArtistLinkType(linkType);
+        refreshView();
+    }
+
+    void Artists::refreshView(const Wt::WString& searchText)
+    {
+        _artistCollector.setSearch(searchText.toUTF8());
         refreshView();
     }
 

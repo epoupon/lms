@@ -87,9 +87,7 @@ namespace lms::ui
                 return trackListModel->getValue(*row);
             }
 
-            static
-                std::shared_ptr<TrackListModel>
-                createTrackListModel()
+            static std::shared_ptr<TrackListModel> createTrackListModel()
             {
                 using namespace db;
 
@@ -102,12 +100,10 @@ namespace lms::ui
                 params.setUser(LmsApp->getUserId());
                 params.setSortMethod(TrackListSortMethod::Name);
 
-                auto tracklists{ TrackList::find(LmsApp->getDbSession(), params) };
-                for (const TrackListId trackListId : tracklists.results)
-                {
-                    const TrackList::pointer trackList{ TrackList::find(LmsApp->getDbSession(), trackListId) };
-                    model->add(Wt::WString::fromUTF8(std::string{ trackList->getName() }), trackListId);
-                }
+                TrackList::find(LmsApp->getDbSession(), params, [&](const TrackList::pointer& trackList)
+                    {
+                        model->add(Wt::WString::fromUTF8(std::string{ trackList->getName() }), trackList->getId());
+                    });
 
                 return model;
             }

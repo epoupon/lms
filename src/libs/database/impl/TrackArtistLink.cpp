@@ -105,20 +105,6 @@ namespace lms::db
             });
     }
 
-    core::EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session)
-    {
-        session.checkReadTransaction();
-
-        const auto query{ session.getDboSession()->query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link") };
-
-        core::EnumSet<TrackArtistLinkType> res;
-        utils::forEachQueryResult(query, [&](TrackArtistLinkType linkType)
-            {
-                res.insert(linkType);
-            });
-        return res;
-    }
-
     core::EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session, ArtistId artistId)
     {
         session.checkReadTransaction();

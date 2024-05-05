@@ -24,6 +24,7 @@
 #include "database/ArtistId.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
+#include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "core/Service.hpp"
@@ -61,13 +62,13 @@ namespace lms::api::subsonic
         StarParameters params{ getStarParameters(context.parameters) };
 
         for (const ArtistId id : params.artistIds)
-            core::Service<feedback::IFeedbackService>::get()->star(context.userId, id);
+            core::Service<feedback::IFeedbackService>::get()->star(context.user->getId(), id);
 
         for (const ReleaseId id : params.releaseIds)
-            core::Service<feedback::IFeedbackService>::get()->star(context.userId, id);
+            core::Service<feedback::IFeedbackService>::get()->star(context.user->getId(), id);
 
         for (const TrackId id : params.trackIds)
-            core::Service<feedback::IFeedbackService>::get()->star(context.userId, id);
+            core::Service<feedback::IFeedbackService>::get()->star(context.user->getId(), id);
 
         return Response::createOkResponse(context.serverProtocolVersion);
     }
@@ -77,13 +78,13 @@ namespace lms::api::subsonic
         StarParameters params{ getStarParameters(context.parameters) };
 
         for (const ArtistId id : params.artistIds)
-            core::Service<feedback::IFeedbackService>::get()->unstar(context.userId, id);
+            core::Service<feedback::IFeedbackService>::get()->unstar(context.user->getId(), id);
 
         for (const ReleaseId id : params.releaseIds)
-            core::Service<feedback::IFeedbackService>::get()->unstar(context.userId, id);
+            core::Service<feedback::IFeedbackService>::get()->unstar(context.user->getId(), id);
 
         for (const TrackId id : params.trackIds)
-            core::Service<feedback::IFeedbackService>::get()->unstar(context.userId, id);
+            core::Service<feedback::IFeedbackService>::get()->unstar(context.user->getId(), id);
 
         return Response::createOkResponse(context.serverProtocolVersion);
     }
@@ -104,13 +105,13 @@ namespace lms::api::subsonic
 
         if (!submission)
         {
-            core::Service<scrobbling::IScrobblingService>::get()->listenStarted({ context.userId, ids.front() });
+            core::Service<scrobbling::IScrobblingService>::get()->listenStarted({ context.user->getId(), ids.front() });
         }
         else
         {
             if (times.empty())
             {
-                core::Service<scrobbling::IScrobblingService>::get()->listenFinished({ context.userId, ids.front() });
+                core::Service<scrobbling::IScrobblingService>::get()->listenFinished({ context.user->getId(), ids.front() });
             }
             else
             {
@@ -118,7 +119,7 @@ namespace lms::api::subsonic
                 {
                     const TrackId trackId{ ids[i] };
                     const unsigned long time{ times[i] };
-                    core::Service<scrobbling::IScrobblingService>::get()->addTimedListen({ {context.userId, trackId}, Wt::WDateTime::fromTime_t(static_cast<std::time_t>(time / 1000)) });
+                    core::Service<scrobbling::IScrobblingService>::get()->addTimedListen({ {context.user->getId(), trackId}, Wt::WDateTime::fromTime_t(static_cast<std::time_t>(time / 1000)) });
                 }
             }
         }

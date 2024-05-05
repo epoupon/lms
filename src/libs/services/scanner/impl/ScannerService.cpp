@@ -148,11 +148,6 @@ namespace lms::scanner
             });
     }
 
-    void ScannerService::requestStop()
-    {
-        abortScan();
-    }
-
     void ScannerService::requestReload()
     {
         abortScan();
@@ -295,16 +290,22 @@ namespace lms::scanner
             LMS_LOG(DBUPDATER, DEBUG, "Completed scan step '" << scanStep->getStepName() << "'");
         }
 
+        {
+            std::unique_lock lock{ _statusMutex };
+
+            _curState = State::NotScheduled;
+            _currentScanStepStats.reset(); // must be sync with _curState
+        }
+
         LMS_LOG(DBUPDATER, INFO, "Scan " << (_abortScan ? "aborted" : "complete") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), features fetched = " << stats.featuresFetched << ",  duplicates = " << stats.duplicates.size());
 
         if (!_abortScan)
         {
             stats.stopTime = Wt::WDateTime::currentDateTime();
+
             {
                 std::unique_lock lock{ _statusMutex };
-
                 _lastCompleteScanStats = stats;
-                _currentScanStepStats.reset();
             }
 
             LMS_LOG(DBUPDATER, DEBUG, "Scan not aborted, scheduling next scan!");
@@ -315,11 +316,6 @@ namespace lms::scanner
         else
         {
             LMS_LOG(DBUPDATER, DEBUG, "Scan aborted, not scheduling next scan!");
-
-            std::unique_lock lock{ _statusMutex };
-
-            _curState = State::NotScheduled;
-            _currentScanStepStats.reset();
         }
     }
 

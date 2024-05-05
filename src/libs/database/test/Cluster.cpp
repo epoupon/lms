@@ -137,11 +137,11 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto tracks{ Track::findIds(session, Track::FindParameters {}.setClusters({cluster1.getId()})) };
+            auto tracks{ Track::findIds(session, Track::FindParameters {}.setClusters(std::initializer_list<ClusterId>{cluster1.getId()})) };
             ASSERT_EQ(tracks.results.size(), 1);
             EXPECT_EQ(tracks.results.front(), track.getId());
 
-            tracks = Track::findIds(session, Track::FindParameters{}.setClusters({ cluster2.getId() }));
+            tracks = Track::findIds(session, Track::FindParameters{}.setClusters(std::initializer_list<ClusterId>{ cluster2.getId() }));
             EXPECT_EQ(tracks.results.size(), 0);
         }
 
@@ -237,6 +237,35 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, ClusterType)
+    {
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            bool visited{};
+            ClusterType::find(session, [&](const ClusterType::pointer&)
+                {
+                    visited = true;
+                });
+            EXPECT_FALSE(visited);
+        }
+
+        ScopedClusterType clusterType1{ session, "MyClusterType1" };
+        ScopedClusterType clusterType2{ session, "MyClusterType2" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::vector<ClusterTypeId> visitedClusterTypes;
+            ClusterType::find(session, [&](const ClusterType::pointer& clusterType)
+                {
+                    visitedClusterTypes.push_back(clusterType->getId());
+                });
+            ASSERT_EQ(visitedClusterTypes.size(), 2);
+            EXPECT_EQ(visitedClusterTypes[0], clusterType1->getId());
+            EXPECT_EQ(visitedClusterTypes[1], clusterType2->getId());
+        }
+    }
 
     TEST_F(DatabaseFixture, ClusterType_singleTrack)
     {
@@ -285,7 +314,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             ASSERT_EQ(Cluster::findOrphanIds(session).results.size(), 2);
-            EXPECT_EQ(Release::find(session, Release::FindParameters{}.setClusters({ unusedCluster.getId() })).results.size(), 0);
+            EXPECT_EQ(Release::find(session, Release::FindParameters{}.setClusters(std::initializer_list<ClusterId>{ unusedCluster.getId() })).results.size(), 0);
             EXPECT_EQ(Release::find(session, Release::FindParameters{}).results.size(), 1);
             EXPECT_EQ(Cluster::computeReleaseCount(session, cluster.getId()), 0);
             EXPECT_EQ(Cluster::computeReleaseCount(session, unusedCluster.getId()), 0);
@@ -321,7 +350,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::findIds(session, Release::FindParameters {}.setClusters({cluster.getId()})) };
+            const auto releases{ Release::findIds(session, Release::FindParameters {}.setClusters(std::initializer_list<ClusterId>{cluster.getId()})) };
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release.getId());
         }
@@ -329,7 +358,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::findIds(session, Release::FindParameters {}.setClusters({unusedCluster.getId()})) };
+            const auto releases{ Release::findIds(session, Release::FindParameters {}.setClusters(std::initializer_list<ClusterId>{unusedCluster.getId()})) };
             EXPECT_EQ(releases.results.size(), 0);
         }
 
@@ -375,12 +404,12 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters({cluster1.getId()})) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters(std::initializer_list<ClusterId>{cluster1.getId()})) };
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist.getId());
 
-            EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster2.getId() })).results.size(), 0);
-            EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster3.getId() })).results.size(), 0);
+            EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setClusters(std::initializer_list<ClusterId>{ cluster2.getId() })).results.size(), 0);
+            EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setClusters(std::initializer_list<ClusterId>{ cluster3.getId() })).results.size(), 0);
 
             cluster2.get().modify()->addTrack(track.get());
         }
@@ -388,19 +417,19 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters({cluster1.getId()})) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters(std::initializer_list<ClusterId>{cluster1.getId()})) };
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist.getId());
 
-            artists = Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster2.getId() }));
+            artists = Artist::findIds(session, Artist::FindParameters{}.setClusters(std::initializer_list<ClusterId>{ cluster2.getId() }));
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist.getId());
 
-            artists = Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster1.getId() }));
+            artists = Artist::findIds(session, Artist::FindParameters{}.setClusters(std::initializer_list<ClusterId>{ cluster1.getId() }));
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist.getId());
 
-            EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setClusters({ cluster3.getId() })).results.size(), 0);
+            EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setClusters(std::initializer_list<ClusterId>{ cluster3.getId() })).results.size(), 0);
         }
     }
 
@@ -429,7 +458,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters({cluster.getId()})) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters(std::initializer_list<ClusterId>{cluster.getId()})) };
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist.getId());
         }
@@ -581,7 +610,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters({cluster.getId()})) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters {}.setClusters(std::initializer_list<ClusterId>{cluster.getId()})) };
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist.getId());
 
@@ -589,7 +618,7 @@ namespace lms::db::tests
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release.getId());
 
-            releases = Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId()).setClusters({ cluster.getId() }));
+            releases = Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId()).setClusters(std::initializer_list<ClusterId>{ cluster.getId() }));
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release.getId());
         }
@@ -620,7 +649,7 @@ namespace lms::db::tests
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release.getId());
 
-            releases = Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId()).setClusters({ cluster1.getId(), cluster2.getId() }));
+            releases = Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId()).setClusters(std::initializer_list<ClusterId>{ cluster1.getId(), cluster2.getId() }));
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release.getId());
         }

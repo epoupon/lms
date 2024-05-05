@@ -45,7 +45,6 @@ namespace lms::ui
             RecentlyPlayed,
             RecentlyAdded,
             MostPlayed,
-            Search,
             All
         };
 
@@ -58,7 +57,7 @@ namespace lms::ui
     protected:
         Range       getActualRange(std::optional<Range> range) const;
         std::size_t getMaxCount() const;
-        Filters&    getFilters() { return _filters; }
+        const Filters&    getFilters() { return _filters; }
         const std::vector<std::string_view>& getSearchKeywords() const { return _searchKeywords; }
 
     private:

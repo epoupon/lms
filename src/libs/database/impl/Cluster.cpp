@@ -43,23 +43,36 @@ namespace lms::db
             query.groupBy("c.id");
 
             if (params.track.isValid() || params.release.isValid())
-            {
                 query.join("track_cluster t_c ON t_c.cluster_id = c.id");
-                query.join("track t ON t.id = t_c.track_id");
-            }
+            
             if (!params.clusterTypeName.empty())
                 query.join("cluster_type c_t ON c_t.id = c.cluster_type_id");
 
             if (params.track.isValid())
-                query.where("t.id = ?").bind(params.track);
+                query.where("t_c.track_id = ?").bind(params.track);
+
             if (params.release.isValid())
+            {
+                query.join("track t ON t.id = t_c.track_id");
                 query.where("t.release_id = ?").bind(params.release);
+            }
 
             assert(!params.clusterType.isValid() || params.clusterTypeName.empty());
             if (params.clusterType.isValid())
                 query.where("+c.cluster_type_id = ?").bind(params.clusterType); // Exclude this since the query planner does not do a good job when db is not analyzed
             else if (!params.clusterTypeName.empty())
                 query.where("c_t.name = ?").bind(params.clusterTypeName);
+
+            switch (params.sortMethod)
+            {
+            case ClusterSortMethod::None:
+                break;
+            case ClusterSortMethod::Name:
+                query.orderBy("c.name COLLATE NOCASE");
+                break;
+            }
+
+            query.groupBy("c.id");
 
             return query;
         }
@@ -206,6 +219,12 @@ namespace lms::db
             .join("cluster c ON c_t.id = c.cluster_type_id") };
 
         return utils::execRangeQuery<ClusterTypeId>(query, range);
+    }
+
+    void ClusterType::find(Session& session, const std::function<void(const pointer&)>& func)
+    {
+        auto query{ session.getDboSession()->find<ClusterType>() };
+        return utils::forEachQueryResult(query, func);
     }
 
     ClusterType::pointer ClusterType::find(Session& session, std::string_view name)

@@ -30,40 +30,40 @@
 
 namespace lms::db
 {
-	class TrackList;
+    class TrackList;
 }
 
 namespace lms::ui
 {
-	class Filters;
-	class InfiniteScrollingContainer;
+    class Filters;
+    class InfiniteScrollingContainer;
 
-	class TrackLists : public Template
-	{
-		public:
-			TrackLists(Filters& filters);
+    class TrackLists : public Template
+    {
+    public:
+        TrackLists(Filters& filters);
 
-			void onTrackListDeleted(db::TrackListId trackListId);
+        void onTrackListDeleted(db::TrackListId trackListId);
 
-		private:
-			enum class Mode
-			{
-				RecentlyModified,
-				All,
-			};
+    private:
+        enum class Mode
+        {
+            RecentlyModified,
+            All,
+        };
 
-			void refreshView();
-			void addSome();
-			void addTracklist(const db::ObjectPtr<db::TrackList>& trackList);
+        void refreshView();
+        void addSome();
+        void addTracklist(const db::ObjectPtr<db::TrackList>& trackList);
 
-			static constexpr std::size_t _batchSize {30};
-			static constexpr std::size_t _maxCount {500};
+        static constexpr std::size_t _batchSize{ 30 };
+        static constexpr std::size_t _maxCount{ 500 };
 
-			Mode						_mode {Mode::RecentlyModified};
-			Filters&					_filters;
-			Wt::WWidget*				_currentActiveItem {};
-			InfiniteScrollingContainer* _container {};
-			std::unordered_map<db::TrackListId, Wt::WWidget*> _trackListWidgets;
-	};
+        Mode _mode{ Mode::RecentlyModified };
+        Filters& _filters;
+        Wt::WWidget* _currentActiveItem{};
+        InfiniteScrollingContainer* _container{};
+        std::unordered_map<db::TrackListId, Wt::WWidget*> _trackListWidgets;
+    };
 } // namespace lms::ui
 

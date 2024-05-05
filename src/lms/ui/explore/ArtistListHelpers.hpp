@@ -39,7 +39,6 @@ namespace lms::ui
 	namespace ArtistListHelpers
 	{
 		std::unique_ptr<Wt::WTemplate> createEntry(const db::ObjectPtr<db::Artist>& artist);
-		std::unique_ptr<ArtistLinkTypesModel> createArtistLinkTypesModel();
 	}
 }
 

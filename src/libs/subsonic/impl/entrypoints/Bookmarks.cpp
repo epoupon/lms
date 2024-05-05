@@ -36,11 +36,7 @@ namespace lms::api::subsonic
     {
         auto transaction{ context.dbSession.createReadTransaction() };
 
-        User::pointer user{ User::find(context.dbSession, context.userId) };
-        if (!user)
-            throw UserNotAuthorizedError{};
-
-        const auto bookmarkIds{ TrackBookmark::find(context.dbSession, user->getId()) };
+        const auto bookmarkIds{ TrackBookmark::find(context.dbSession, context.user->getId()) };
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
         Response::Node& bookmarksNode{ response.createNode("bookmarks") };
@@ -49,7 +45,7 @@ namespace lms::api::subsonic
         {
             const TrackBookmark::pointer bookmark{ TrackBookmark::find(context.dbSession, bookmarkId) };
             Response::Node bookmarkNode{ createBookmarkNode(bookmark) };
-            bookmarkNode.addChild("entry", createSongNode(context, bookmark->getTrack(), user));
+            bookmarkNode.addChild("entry", createSongNode(context, bookmark->getTrack(), context.user));
             bookmarksNode.addArrayChild("bookmark", std::move(bookmarkNode));
         }
 
@@ -65,18 +61,14 @@ namespace lms::api::subsonic
 
         auto transaction{ context.dbSession.createWriteTransaction() };
 
-        const User::pointer user{ User::find(context.dbSession, context.userId) };
-        if (!user)
-            throw UserNotAuthorizedError{};
-
         const Track::pointer track{ Track::find(context.dbSession, trackId) };
         if (!track)
             throw RequestedDataNotFoundError{};
 
         // Replace any existing bookmark
-        auto bookmark{ TrackBookmark::find(context.dbSession, user->getId(), trackId) };
+        auto bookmark{ TrackBookmark::find(context.dbSession, context.user->getId(), trackId) };
         if (!bookmark)
-            bookmark = context.dbSession.create<TrackBookmark>(user, track);
+            bookmark = context.dbSession.create<TrackBookmark>(context.user, track);
 
         bookmark.modify()->setOffset(std::chrono::milliseconds{ position });
         if (comment)
@@ -92,7 +84,7 @@ namespace lms::api::subsonic
 
         auto transaction{ context.dbSession.createWriteTransaction() };
 
-        auto bookmark{ TrackBookmark::find(context.dbSession, context.userId, trackId) };
+        auto bookmark{ TrackBookmark::find(context.dbSession, context.user->getId(), trackId) };
         if (!bookmark)
             throw RequestedDataNotFoundError{};
 

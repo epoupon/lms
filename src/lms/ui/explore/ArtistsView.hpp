@@ -26,32 +26,34 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
+#include "common/Template.hpp"
 #include "ArtistCollector.hpp"
 
 namespace lms::ui
 {
-	class Filters;
-	class InfiniteScrollingContainer;
+    class Filters;
+    class InfiniteScrollingContainer;
 
-	class Artists : public Wt::WTemplate
-	{
-		public:
-			Artists(Filters& filters);
+    class Artists : public Template
+    {
+    public:
+        Artists(Filters& filters);
 
-		private:
-			void refreshView();
-			void refreshView(ArtistCollector::Mode mode);
-			void refreshView(std::optional<db::TrackArtistLinkType> linkType);
-			void addSome();
+    private:
+        void refreshView();
+        void refreshView(ArtistCollector::Mode mode);
+        void refreshView(std::optional<db::TrackArtistLinkType> linkType);
+        void refreshView(const Wt::WString& searchText);
+        void addSome();
 
-			static constexpr std::size_t _batchSize {30};
-			static constexpr std::size_t _maxCount {8000};
+        static constexpr std::size_t _batchSize{ 30 };
+        static constexpr std::size_t _maxCount{ 8000 };
 
-			Wt::WWidget*				_currentActiveItem {};
-			InfiniteScrollingContainer* _container {};
-			ArtistCollector				_artistCollector;
-			Wt::WComboBox*				_linkType {};
-			static constexpr ArtistCollector::Mode _defaultMode {ArtistCollector::Mode::Random};
-	};
+        Wt::WWidget* _currentLinkTypeActiveItem{};
+        InfiniteScrollingContainer* _container{};
+        ArtistCollector				_artistCollector;
+        static constexpr ArtistCollector::Mode _defaultSortMode{ ArtistCollector::Mode::Random };
+        static constexpr std::optional<db::TrackArtistLinkType> _defaultLinkType{ std::nullopt };
+    };
 } // namespace lms::ui
 

@@ -20,6 +20,7 @@
 #pragma once
 
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -28,6 +29,7 @@
 #include <Wt/WDateTime.h>
 
 #include "database/ClusterId.hpp"
+#include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 #include "database/TrackId.hpp"
 #include "database/TrackListId.hpp"
@@ -57,18 +59,21 @@ namespace lms::db
             std::optional<Range>            range;
             std::optional<TrackListType>	type;
             UserId							user;		// only tracklists owned by this user
+            MediaLibraryId                  mediaLibrary; // only tracklists that have songs in this media library
             TrackListSortMethod				sortMethod{ TrackListSortMethod::None };
 
-            FindParameters& setClusters(const std::vector<ClusterId>& _clusters) { clusters = _clusters; return *this; }
+            FindParameters& setClusters(std::span<const ClusterId> _clusters) { clusters.assign(std::cbegin(_clusters), std::cend(_clusters)); return *this; }
             FindParameters& setRange(std::optional<Range> _range) { range = _range; return *this; }
             FindParameters& setType(TrackListType _type) { type = _type; return *this; }
             FindParameters& setUser(UserId _user) { user = _user; return *this; }
+            FindParameters& setMediaLibrary(MediaLibraryId  _mediaLibrary) { mediaLibrary = _mediaLibrary; return *this; }
             FindParameters& setSortMethod(TrackListSortMethod _sortMethod) { sortMethod = _sortMethod; return *this; }
         };
         static std::size_t					getCount(Session& session);
         static pointer						find(Session& session, std::string_view name, TrackListType type, UserId userId);
         static pointer						find(Session& session, TrackListId tracklistId);
         static RangeResults<TrackListId>	find(Session& session, const FindParameters& params);
+        static void                         find(Session& session, const FindParameters& params, const std::function<void(const TrackList::pointer&)>& func);
 
         // Accessors
         std::string_view	getName() const { return _name; }

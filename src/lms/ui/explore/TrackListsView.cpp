@@ -29,6 +29,7 @@
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "Utils.hpp"
+#include "DropDownMenuSelector.hpp"
 
 namespace lms::ui
 {
@@ -41,27 +42,16 @@ namespace lms::ui
         addFunction("tr", &Wt::WTemplate::Functions::tr);
         addFunction("id", &Wt::WTemplate::Functions::id);
 
-        auto bindMenuItem{ [this](const std::string& var, const Wt::WString& title, Mode mode)
+        using SortModeSelector = DropDownMenuSelector<TrackLists::Mode>;
+        SortModeSelector* sortModeSelector{ bindNew<SortModeSelector>("sort-mode", Wt::WString::tr("Lms.Explore.TrackLists.template.sort-mode"), _mode) };
+        sortModeSelector->bindItem("recently-modified", Wt::WString::tr("Lms.Explore.recently-modified"), Mode::RecentlyModified);
+        sortModeSelector->bindItem("all", Wt::WString::tr("Lms.Explore.all"), Mode::All);
+
+        sortModeSelector->itemSelected.connect(this, [this](TrackLists::Mode mode)
         {
-            auto* menuItem {bindNew<Wt::WPushButton>(var, title)};
-            menuItem->clicked().connect([this, mode, menuItem]
-            {
-                _mode = mode;
-                refreshView();
-                _currentActiveItem->removeStyleClass("active");
-                menuItem->addStyleClass("active");
-                _currentActiveItem = menuItem;
-            });
-
-            if (mode == _mode)
-            {
-                _currentActiveItem = menuItem;
-                _currentActiveItem->addStyleClass("active");
-            }
-        } };
-
-        bindMenuItem("recently-modified", Wt::WString::tr("Lms.Explore.recently-modified"), Mode::RecentlyModified);
-        bindMenuItem("all", Wt::WString::tr("Lms.Explore.all"), Mode::All);
+            _mode = mode;
+            refreshView();
+        });
 
         _container = bindNew<InfiniteScrollingContainer>("tracklists", Wt::WString::tr("Lms.Explore.TrackLists.template.container"));
         _container->onRequestElements.connect([this]
@@ -75,66 +65,67 @@ namespace lms::ui
             });
 
         refreshView();
-    }
-
-    void TrackLists::onTrackListDeleted(db::TrackListId trackListId)
-    {
-        auto itTrackList{ _trackListWidgets.find(trackListId) };
-        if (itTrackList == std::end(_trackListWidgets))
-            return;
-
-        _container->remove(*itTrackList->second);
-        _trackListWidgets.erase(itTrackList);
-    }
-
-    void TrackLists::refreshView()
-    {
-        _container->reset();
-        _trackListWidgets.clear();
-    }
-
-    void TrackLists::addSome()
-    {
-        const Range range{ static_cast<std::size_t>(_container->getCount()), _batchSize };
-
-        Session& session{ LmsApp->getDbSession() };
-        auto transaction{ session.createReadTransaction() };
-
-        TrackList::FindParameters params;
-        params.setClusters(_filters.getClusterIds());
-        params.setUser(LmsApp->getUserId());
-        params.setType(TrackListType::Playlist);
-        params.setRange(range);
-        switch (_mode)
-        {
-        case Mode::All:
-            params.setSortMethod(TrackListSortMethod::Name);
-            break;
-        case Mode::RecentlyModified:
-            params.setSortMethod(TrackListSortMethod::LastModifiedDesc);
-            break;
         }
 
-        const auto trackListIds{ TrackList::find(session, params) };
-        for (const TrackListId trackListId : trackListIds.results)
+            void TrackLists::onTrackListDeleted(db::TrackListId trackListId)
         {
-            if (const TrackList::pointer trackList{ TrackList::find(LmsApp->getDbSession(), trackListId) })
-                addTracklist(trackList);
+            auto itTrackList{ _trackListWidgets.find(trackListId) };
+            if (itTrackList == std::end(_trackListWidgets))
+                return;
+
+            _container->remove(*itTrackList->second);
+            _trackListWidgets.erase(itTrackList);
         }
 
-        _container->setHasMore(trackListIds.moreResults);
-    }
+        void TrackLists::refreshView()
+        {
+            _container->reset();
+            _trackListWidgets.clear();
+        }
 
-    void TrackLists::addTracklist(const ObjectPtr<TrackList>& trackList)
-    {
-        const TrackListId trackListId{ trackList->getId() };
+        void TrackLists::addSome()
+        {
+            const Range range{ static_cast<std::size_t>(_container->getCount()), _batchSize };
 
-        WTemplate* entry{ _container->addNew<Template>(Wt::WString::tr("Lms.Explore.TrackLists.template.entry")) };
-        entry->bindWidget("name", utils::createTrackListAnchor(trackList));
+            Session& session{ LmsApp->getDbSession() };
+            auto transaction{ session.createReadTransaction() };
 
-        assert(_trackListWidgets.find(trackListId) == std::cend(_trackListWidgets));
-        _trackListWidgets.emplace(trackListId, entry);
-    }
+            TrackList::FindParameters params;
+            params.setClusters(_filters.getClusters());
+            params.setMediaLibrary(_filters.getMediaLibrary());
+            params.setUser(LmsApp->getUserId());
+            params.setType(TrackListType::Playlist);
+            params.setRange(range);
+            switch (_mode)
+            {
+            case Mode::All:
+                params.setSortMethod(TrackListSortMethod::Name);
+                break;
+            case Mode::RecentlyModified:
+                params.setSortMethod(TrackListSortMethod::LastModifiedDesc);
+                break;
+            }
 
-} // namespace lms::ui
+            const auto trackListIds{ TrackList::find(session, params) };
+            for (const TrackListId trackListId : trackListIds.results)
+            {
+                if (const TrackList::pointer trackList{ TrackList::find(LmsApp->getDbSession(), trackListId) })
+                    addTracklist(trackList);
+            }
+
+            _container->setHasMore(trackListIds.moreResults);
+        }
+
+        void TrackLists::addTracklist(const ObjectPtr<TrackList>& trackList)
+        {
+            const TrackListId trackListId{ trackList->getId() };
+
+            WTemplate* entry{ _container->addNew<Template>(Wt::WString::tr("Lms.Explore.TrackLists.template.entry")) };
+            entry->bindWidget("name", utils::createTrackListAnchor(trackList));
+
+            assert(_trackListWidgets.find(trackListId) == std::cend(_trackListWidgets));
+            _trackListWidgets.emplace(trackListId, entry);
+        }
+
+    } // namespace lms::ui
 

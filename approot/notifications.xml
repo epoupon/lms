@@ -2,7 +2,7 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.notifications.template.entry">
-	<div class="toast align-items-center ${bg-color} text-${text-color} border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="${duration}">
+	<div class="toast align-items-center ${bg-color} text-${text-color} border-0 m-1" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="${duration}">
 		<div class="d-flex">
 			<div class="toast-body">
 				${message}

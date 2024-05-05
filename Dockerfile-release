@@ -1,4 +1,4 @@
-FROM	alpine:3.18 AS build
+FROM	alpine:3.19 AS build
 
 WORKDIR	/tmp/workdir
 
@@ -30,14 +30,14 @@ ARG	BUILD_PACKAGES=" \
 	boost-dev \
 	libarchive-dev \
 	libconfig-dev \
-	taglib-dev \
+	utfcpp \
 	sqlite-dev \
 	gtest-dev"
 
 RUN	apk add --no-cache --update ${BUILD_PACKAGES}
 
 # ffmpeg
-ARG	FFMPEG_VERSION=4.3.5
+ARG	FFMPEG_VERSION=6.1.1
 RUN  \
 	DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
@@ -67,9 +67,9 @@ RUN \
 	--enable-libopus \
 	--enable-libvorbis \
 	--disable-everything \
-	--enable-decoder=aac*,ac3*,alac,als,flac,mp3*,libopus,pcm*,libvorbis,wavpack,wma*,libopenjpg,png \
+	--enable-decoder=aac*,ac3*,alac,als,dsd*,flac,mp3*,libopus,pcm*,libvorbis,wavpack,wma*,libopenjpg,png \
 	--enable-encoder=libmp3lame,libopus,libvorbis \
-	--enable-demuxer=aac,aiff,asf,flac,ipod,ogg,matroska,mov,mp3,mp4,wav,wv,webm \
+	--enable-demuxer=aac,aiff,asf,dsf,flac,ipod,ogg,matroska,mov,mp3,mp4,wav,wv,webm \
 	--enable-muxer=ogg,matroska,mp3,webm \
 	--enable-protocol=file,pipe \
 	--enable-filter=aresample \
@@ -79,7 +79,7 @@ RUN \
 	make distclean
 
 # WT
-ARG	WT_VERSION=4.10.2
+ARG	WT_VERSION=4.10.4
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/emweb/wt/archive/${WT_VERSION}.tar.gz && \
@@ -92,13 +92,26 @@ RUN \
 	make install
 
 # STB
-ARG	STB_VERSION=5736b15f7ea0ffb08dd38af21067c314d6a3aae9
+ARG	STB_VERSION=ae721c50eaf761660b4f90cc590453cdb0c2acd0
 RUN \
 	DIR=/tmp/stb && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/nothings/stb/archive/${STB_VERSION}.tar.gz && \
 	tar -x --strip-components=1 -f ${STB_VERSION}.tar.gz && \
 	mkdir -p ${PREFIX}/include/stb && \
 	cp ./*.h ${PREFIX}/include/stb
+
+# TAGLIB
+ARG TAGLIB_VERSION=v2.0.1
+RUN \
+	DIR=/tmp/taglib && mkdir -p ${DIR} && cd ${DIR} && \
+	curl -sLO https://github.com/taglib/taglib/archive/${TAGLIB_VERSION}.tar.gz && \
+	tar -x --strip-components=1 -f ${TAGLIB_VERSION}.tar.gz
+
+RUN \
+	DIR=/tmp/taglib && mkdir -p ${DIR} && cd ${DIR} && \
+	CXXFLAGS="-I/usr/include/utf8cpp" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=ON -DBUILD_EXAMPLES=OFF -DBUILD_BINDINGS=OFF -DBUILD_TESTING=OFF -DTRACE_IN_RELEASE=OFF -DWITH_ZLIB=ON  && \
+	make -j$(nproc) && \
+	make install
 
 # LMS
 COPY . /tmp/lms/
@@ -134,7 +147,7 @@ RUN \
 	rm -rf /tmp/fakeroot/share/Wt/resources/themes
 
 ## Release Stage
-FROM		alpine:3.18 AS release
+FROM		alpine:3.19 AS release
 LABEL		maintainer="Emeric Poupon <itmfr@yahoo.fr>"
 
 ARG	RUNTIME_PACKAGES=" \
@@ -154,8 +167,7 @@ ARG	RUNTIME_PACKAGES=" \
 	boost-thread \
 	libarchive \
 	libconfig++ \
-	sqlite-libs \
-	taglib"
+	sqlite-libs"
 
 ARG	LMS_USER=lms
 ARG	LMS_GROUP=lms
@@ -179,4 +191,3 @@ COPY	--from=build /tmp/fakeroot/share/lms/lms.conf /etc/lms.conf
 EXPOSE	5082
 
 ENTRYPOINT	["/usr/bin/lms"]
-

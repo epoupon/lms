@@ -52,5 +52,20 @@
 	</div>
 </message>
 
+<message id="Lms.Explore.template.sort-mode-selector">
+	<div class="dropdown">
+		<button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+			${selected-item}
+		</button>
+		<ul class="dropdown-menu">
+			<li>${random class="dropdown-item"}</li>
+			<li>${starred class="dropdown-item"}</li>
+			<li>${recently-played class="dropdown-item"}</li>
+			<li>${most-played class="dropdown-item"}</li>
+			<li>${recently-added class="dropdown-item"}</li>
+			<li>${all class="dropdown-item"}</li>
+		</ul>
+	</div>
+</message>
 
 </messages>

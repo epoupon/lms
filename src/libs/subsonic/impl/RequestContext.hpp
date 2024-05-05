@@ -23,13 +23,14 @@
 
 #include <Wt/Http/Request.h>
 
-#include "database/UserId.hpp"
+#include "database/Object.hpp"
 #include "ClientInfo.hpp"
 #include "ProtocolVersion.hpp"
 
 namespace lms::db
 {
     class Session;
+    class User;
 }
 
 namespace lms::api::subsonic
@@ -38,7 +39,7 @@ namespace lms::api::subsonic
     {
         const Wt::Http::ParameterMap& parameters;
         db::Session& dbSession;
-        db::UserId userId;
+        const db::ObjectPtr<db::User> user;
         ClientInfo clientInfo;
         ProtocolVersion serverProtocolVersion;
         bool enableOpenSubsonic{ true };

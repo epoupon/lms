@@ -60,10 +60,6 @@ namespace lms::api::subsonic
 
             auto transaction{ context.dbSession.createReadTransaction() };
 
-            User::pointer user{ User::find(context.dbSession, context.userId) };
-            if (!user)
-                throw UserNotAuthorizedError{};
-
             if (type == "alphabeticalByName")
             {
                 Release::FindParameters params;
@@ -92,7 +88,7 @@ namespace lms::api::subsonic
                     if (const Cluster::pointer cluster{ clusterType->getCluster(genre) })
                     {
                         Release::FindParameters params;
-                        params.setClusters({ cluster->getId() });
+                        params.setClusters(std::initializer_list<ClusterId>{ cluster->getId() });
                         params.setSortMethod(ReleaseSortMethod::Name);
                         params.setRange(range);
                         params.setMediaLibrary(mediaLibraryId);
@@ -117,7 +113,7 @@ namespace lms::api::subsonic
             else if (type == "frequent")
             {
                 scrobbling::IScrobblingService::FindParameters params;
-                params.setUser(context.userId);
+                params.setUser(context.user->getId());
                 params.setRange(range);
                 params.setMediaLibrary(mediaLibraryId);
 
@@ -146,7 +142,7 @@ namespace lms::api::subsonic
             else if (type == "recent")
             {
                 scrobbling::IScrobblingService::FindParameters params;
-                params.setUser(context.userId);
+                params.setUser(context.user->getId());
                 params.setRange(range);
                 params.setMediaLibrary(mediaLibraryId);
 
@@ -155,7 +151,7 @@ namespace lms::api::subsonic
             else if (type == "starred")
             {
                 feedback::IFeedbackService::FindParameters params;
-                params.setUser(context.userId);
+                params.setUser(context.user->getId());
                 params.setRange(range);
                 params.setMediaLibrary(mediaLibraryId);
 
@@ -172,7 +168,7 @@ namespace lms::api::subsonic
             for (const ReleaseId releaseId : releases.results)
             {
                 const Release::pointer release{ Release::find(context.dbSession, releaseId) };
-                albumListNode.addArrayChild("album", createAlbumNode(context, release, user, id3));
+                albumListNode.addArrayChild("album", createAlbumNode(context, release, context.user, id3));
             }
 
             return response;
@@ -185,10 +181,6 @@ namespace lms::api::subsonic
 
             auto transaction{ context.dbSession.createReadTransaction() };
 
-            User::pointer user{ User::find(context.dbSession, context.userId) };
-            if (!user)
-                throw UserNotAuthorizedError{};
-
             Response response{ Response::createOkResponse(context.serverProtocolVersion) };
             Response::Node& starredNode{ response.createNode(id3 ? Response::Node::Key{ "starred2" } : Response::Node::Key{ "starred" }) };
 
@@ -196,29 +188,29 @@ namespace lms::api::subsonic
 
             {
                 feedback::IFeedbackService::ArtistFindParameters artistFindParams;
-                artistFindParams.setUser(context.userId);
+                artistFindParams.setUser(context.user->getId());
                 artistFindParams.setSortMethod(ArtistSortMethod::SortName);
                 for (const ArtistId artistId : feedbackService.findStarredArtists(artistFindParams).results)
                 {
                     if (auto artist{ Artist::find(context.dbSession, artistId) })
-                        starredNode.addArrayChild("artist", createArtistNode(context, artist, user, id3));
+                        starredNode.addArrayChild("artist", createArtistNode(context, artist, context.user, id3));
                 }
             }
 
             feedback::IFeedbackService::FindParameters findParameters;
-            findParameters.setUser(context.userId);
+            findParameters.setUser(context.user->getId());
             findParameters.setMediaLibrary(mediaLibrary);
 
             for (const ReleaseId releaseId : feedbackService.findStarredReleases(findParameters).results)
             {
                 if (auto release{ Release::find(context.dbSession, releaseId) })
-                    starredNode.addArrayChild("album", createAlbumNode(context, release, user, id3));
+                    starredNode.addArrayChild("album", createAlbumNode(context, release, context.user, id3));
             }
 
             for (const TrackId trackId : feedbackService.findStarredTracks(findParameters).results)
             {
                 if (auto track{ Track::find(context.dbSession, trackId) })
-                    starredNode.addArrayChild("song", createSongNode(context, track, user));
+                    starredNode.addArrayChild("song", createSongNode(context, track, context.user));
             }
 
             return response;
@@ -243,14 +235,10 @@ namespace lms::api::subsonic
         if (size > defaultMaxCountSize)
             throw ParameterValueTooHighGenericError{ "size", defaultMaxCountSize };
 
-        auto transaction{ context.dbSession.createReadTransaction() };
-
-        User::pointer user{ User::find(context.dbSession, context.userId) };
-        if (!user)
-            throw UserNotAuthorizedError{};
-
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
         Response::Node& randomSongsNode{ response.createNode("randomSongs") };
+
+        auto transaction{ context.dbSession.createReadTransaction() };
 
         Track::FindParameters params;
         params.setSortMethod(TrackSortMethod::Random);
@@ -259,7 +247,7 @@ namespace lms::api::subsonic
 
         Track::find(context.dbSession, params, [&](const Track::pointer& track)
             {
-                randomSongsNode.addArrayChild("song", createSongNode(context, track, user));
+                randomSongsNode.addArrayChild("song", createSongNode(context, track, context.user));
             });
 
         return response;
@@ -288,21 +276,17 @@ namespace lms::api::subsonic
         if (!cluster)
             throw RequestedDataNotFoundError{};
 
-        User::pointer user{ User::find(context.dbSession, context.userId) };
-        if (!user)
-            throw UserNotAuthorizedError{};
-
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
         Response::Node& songsByGenreNode{ response.createNode("songsByGenre") };
 
         Track::FindParameters params;
-        params.setClusters({ cluster->getId() });
+        params.setClusters(std::initializer_list<ClusterId>{ cluster->getId() });
         params.setRange(Range{ offset, count });
         params.setMediaLibrary(mediaLibrary);
 
         Track::find(context.dbSession, params, [&](const Track::pointer& track)
             {
-                songsByGenreNode.addArrayChild("song", createSongNode(context, track, user));
+                songsByGenreNode.addArrayChild("song", createSongNode(context, track, context.user));
             });
 
         return response;

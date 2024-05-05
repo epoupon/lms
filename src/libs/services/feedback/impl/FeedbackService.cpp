@@ -96,6 +96,7 @@ namespace lms::feedback
         Artist::FindParameters searchParams;
         searchParams.setStarringUser(params.user, *backend);
         searchParams.setClusters(params.clusters);
+        searchParams.setKeywords(params.keywords);
         searchParams.setLinkType(params.linkType);
         searchParams.setSortMethod(params.sortMethod);
         searchParams.setRange(params.range);
@@ -136,6 +137,7 @@ namespace lms::feedback
         Release::FindParameters searchParams;
         searchParams.setStarringUser(params.user, *backend);
         searchParams.setClusters(params.clusters);
+        searchParams.setKeywords(params.keywords);
         searchParams.setSortMethod(ReleaseSortMethod::StarredDateDesc);
         searchParams.setRange(params.range);
         searchParams.setMediaLibrary(params.library);
@@ -175,6 +177,7 @@ namespace lms::feedback
         Track::FindParameters searchParams;
         searchParams.setStarringUser(params.user, *backend);
         searchParams.setClusters(params.clusters);
+        searchParams.setKeywords(params.keywords);
         searchParams.setSortMethod(TrackSortMethod::StarredDateDesc);
         searchParams.setRange(params.range);
         searchParams.setMediaLibrary(params.library);

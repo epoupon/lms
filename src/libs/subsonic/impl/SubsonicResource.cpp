@@ -135,13 +135,7 @@ namespace lms::api::subsonic
 
         void checkUserTypeIsAllowed(RequestContext& context, core::EnumSet<db::UserType> allowedUserTypes)
         {
-            auto transaction{ context.dbSession.createReadTransaction() };
-
-            db::User::pointer currentUser{ db::User::find(context.dbSession, context.userId) };
-            if (!currentUser)
-                throw RequestedDataNotFoundError{};
-
-            if (!allowedUserTypes.contains(currentUser->getType()))
+            if (!allowedUserTypes.contains(context.user->getType()))
                 throw UserNotAuthorizedError{};
         }
 
@@ -421,7 +415,17 @@ namespace lms::api::subsonic
         bool enableOpenSubsonic{ _openSubsonicDisabledClients.find(clientInfo.name) == std::cend(_openSubsonicDisabledClients) };
         bool enableDefaultCover{ _defaultCoverClients.find(clientInfo.name) != std::cend(_openSubsonicDisabledClients) };
 
-        return { parameters, _db.getTLSSession(), userId, clientInfo, getServerProtocolVersion(clientInfo.name), enableOpenSubsonic, enableDefaultCover };
+        db::User::pointer user;
+        {
+            db::Session& session{ _db.getTLSSession() };
+            auto transaction{ session.createReadTransaction() };
+
+            user = db::User::find(session, userId);
+            if (!user)
+                throw UserNotAuthorizedError{};
+        }
+
+        return { parameters, _db.getTLSSession(), user, clientInfo, getServerProtocolVersion(clientInfo.name), enableOpenSubsonic, enableDefaultCover };
     }
 
     db::UserId SubsonicResource::authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo)

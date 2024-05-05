@@ -71,66 +71,66 @@ namespace lms::ui
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const User::IdType currentUserId{ LmsApp->getUser() };
-        for (const UserId userId : User::find(LmsApp->getDbSession(), User::FindParameters{}).results)
-        {
-            const User::pointer user{ User::find(LmsApp->getDbSession(), userId) };
-
-            Wt::WTemplate* entry{ _container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.entry")) };
-
-            entry->bindString("name", user->getLoginName(), Wt::TextFormat::Plain);
-
-            // Create tag
-            if (user->isAdmin() || user->isDemo())
+        const UserId currentUserId{ LmsApp->getUserId() };
+        User::find(LmsApp->getDbSession(), User::FindParameters{}, [&](const User::pointer& user)
             {
-                entry->setCondition("if-tag", true);
-                entry->bindString("tag", Wt::WString::tr(user->isAdmin() ? "Lms.Admin.Users.admin" : "Lms.Admin.Users.demo"));
-            }
+                const UserId userId{ user->getId() };
 
-            // Don't edit ourself this way
-            if (user->getId() == currentUserId)
-                continue;
+                Wt::WTemplate* entry{ _container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.entry")) };
 
-            entry->setCondition("if-edit", true);
-            Wt::WPushButton* editBtn = entry->bindNew<Wt::WPushButton>("edit-btn", Wt::WString::tr("Lms.template.edit-btn"), Wt::TextFormat::XHTML);
-            editBtn->setToolTip(Wt::WString::tr("Lms.edit"));
-            editBtn->clicked().connect([=]()
+                entry->bindString("name", user->getLoginName(), Wt::TextFormat::Plain);
+
+                // Create tag
+                if (user->isAdmin() || user->isDemo())
                 {
-                    LmsApp->setInternalPath("/admin/user/" + userId.toString(), true);
-                });
+                    entry->setCondition("if-tag", true);
+                    entry->bindString("tag", Wt::WString::tr(user->isAdmin() ? "Lms.Admin.Users.admin" : "Lms.Admin.Users.demo"));
+                }
 
-            Wt::WPushButton* delBtn = entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.template.trash-btn"), Wt::TextFormat::XHTML);
-            delBtn->setToolTip(Wt::WString::tr("Lms.delete"));
-            delBtn->clicked().connect([this, userId, entry]
-                {
-                    auto modal{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.delete-user")) };
-                    modal->addFunction("tr", &Wt::WTemplate::Functions::tr);
-                    Wt::WWidget* modalPtr{ modal.get() };
+                // Don't edit ourself this way
+                if (user->getId() == currentUserId)
+                    return;
 
-                    auto* delBtn{ modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.delete")) };
-                    delBtn->clicked().connect([=, this]
-                        {
+                entry->setCondition("if-edit", true);
+                Wt::WPushButton* editBtn = entry->bindNew<Wt::WPushButton>("edit-btn", Wt::WString::tr("Lms.template.edit-btn"), Wt::TextFormat::XHTML);
+                editBtn->setToolTip(Wt::WString::tr("Lms.edit"));
+                editBtn->clicked().connect([userId]()
+                    {
+                        LmsApp->setInternalPath("/admin/user/" + userId.toString(), true);
+                    });
+
+                Wt::WPushButton* delBtn = entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.template.trash-btn"), Wt::TextFormat::XHTML);
+                delBtn->setToolTip(Wt::WString::tr("Lms.delete"));
+                delBtn->clicked().connect([this, userId, entry]
+                    {
+                        auto modal{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.delete-user")) };
+                        modal->addFunction("tr", &Wt::WTemplate::Functions::tr);
+                        Wt::WWidget* modalPtr{ modal.get() };
+
+                        auto* delBtn{ modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.delete")) };
+                        delBtn->clicked().connect([=, this]
                             {
-                                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
+                                {
+                                    auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-                                User::pointer user{ User::find(LmsApp->getDbSession(), userId) };
-                                if (user)
-                                    user.remove();
-                            }
+                                    User::pointer user{ User::find(LmsApp->getDbSession(), userId) };
+                                    if (user)
+                                        user.remove();
+                                }
 
-                            _container->removeWidget(entry);
+                                _container->removeWidget(entry);
 
-                            LmsApp->getModalManager().dispose(modalPtr);
-                        });
+                                LmsApp->getModalManager().dispose(modalPtr);
+                            });
 
-                    auto* cancelBtn{ modal->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel")) };
-                    cancelBtn->clicked().connect([=]
-                        {
-                            LmsApp->getModalManager().dispose(modalPtr);
-                        });
+                        auto* cancelBtn{ modal->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel")) };
+                        cancelBtn->clicked().connect([=]
+                            {
+                                LmsApp->getModalManager().dispose(modalPtr);
+                            });
 
-                    LmsApp->getModalManager().show(std::move(modal));
-                });
-        }
+                        LmsApp->getModalManager().show(std::move(modal));
+                    });
+            });
     }
 } // namespace lms::ui

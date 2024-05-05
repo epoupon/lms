@@ -37,7 +37,6 @@ namespace lms::db
 
 namespace lms::auth
 {
-
 	class IAuthTokenService;
 
 	class IPasswordService

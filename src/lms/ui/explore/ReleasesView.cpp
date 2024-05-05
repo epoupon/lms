@@ -19,6 +19,7 @@
 
 #include "ReleasesView.hpp"
 
+#include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
 #include "database/Release.hpp"
@@ -30,6 +31,7 @@
 #include "explore/PlayQueueController.hpp"
 #include "explore/ReleaseHelpers.hpp"
 #include "LmsApplication.hpp"
+#include "SortModeSelector.hpp"
 
 namespace lms::ui
 {
@@ -43,30 +45,18 @@ namespace lms::ui
         addFunction("tr", &Wt::WTemplate::Functions::tr);
         addFunction("id", &Wt::WTemplate::Functions::id);
 
-        auto bindMenuItem{ [this](const std::string& var, const Wt::WString& title, ReleaseCollector::Mode mode)
-        {
-            auto* menuItem {bindNew<Wt::WPushButton>(var, title)};
-            menuItem->clicked().connect([this, mode, menuItem]
+        Wt::WLineEdit* searEdit{ bindNew<Wt::WLineEdit>("search") };
+        searEdit->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
+        searEdit->textInput().connect([this, searEdit]
             {
-                refreshView(mode);
-                _currentActiveItem->removeStyleClass("active");
-                menuItem->addStyleClass("active");
-                _currentActiveItem = menuItem;
+                refreshView(searEdit->text());
             });
 
-            if (mode == _defaultMode)
+        SortModeSelector* sortMode{ bindNew<SortModeSelector>("sort-mode", _defaultMode) };
+        sortMode->itemSelected.connect([this](ReleaseCollector::Mode sortMode)
             {
-                _currentActiveItem = menuItem;
-                _currentActiveItem->addStyleClass("active");
-            }
-        } };
-
-        bindMenuItem("random", Wt::WString::tr("Lms.Explore.random"), ReleaseCollector::Mode::Random);
-        bindMenuItem("starred", Wt::WString::tr("Lms.Explore.starred"), ReleaseCollector::Mode::Starred);
-        bindMenuItem("recently-played", Wt::WString::tr("Lms.Explore.recently-played"), ReleaseCollector::Mode::RecentlyPlayed);
-        bindMenuItem("most-played", Wt::WString::tr("Lms.Explore.most-played"), ReleaseCollector::Mode::MostPlayed);
-        bindMenuItem("recently-added", Wt::WString::tr("Lms.Explore.recently-added"), ReleaseCollector::Mode::RecentlyAdded);
-        bindMenuItem("all", Wt::WString::tr("Lms.Explore.all"), ReleaseCollector::Mode::All);
+                refreshView(sortMode);
+            });
 
         Wt::WPushButton* playBtn{ bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML) };
         playBtn->clicked().connect([this]
@@ -113,6 +103,12 @@ namespace lms::ui
     void Releases::refreshView(ReleaseCollector::Mode mode)
     {
         _releaseCollector.setMode(mode);
+        refreshView();
+    }
+
+    void Releases::refreshView(const Wt::WString& searchText)
+    {
+        _releaseCollector.setSearch(searchText.toUTF8());
         refreshView();
     }
 

@@ -3,31 +3,11 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.Artists.template">
-	<div class="mb-3">
-		<ul class="nav nav-pills mb-2">
-			<li class="nav-item">
-				${random class="nav-link"}
-			</li>
-			<li class="nav-item">
-				${starred class="nav-link"}
-			</li>
-			<li class="nav-item">
-				${recently-played class="nav-link"}
-			</li>
-			<li class="nav-item">
-				${most-played class="nav-link"}
-			</li>
-			<li class="nav-item">
-				${recently-added class="nav-link"}
-			</li>
-			<li class="nav-item">
-				${all class="nav-link"}
-			</li>
-		</ul>
-		<div class="row">
-			<div class="col-lg-3">
-				${link-type class="form-select"}
-			</div>
+	<div class="d-flex justify-content-between align-items-center mb-3">
+		${link-type class="me-1"}
+		<div class="d-flex">
+			${search class="form-control form-control-sm me-1" type="search"}
+			${sort-mode}
 		</div>
 	</div>
 	${artists}
@@ -40,6 +20,26 @@
 <message id="Lms.Explore.Artists.template.container">
 	${elements class="d-grid gap-3"}
 	${loading-indicator}
+</message>
+
+<message id="Lms.Explore.Artists.template.track-artist-link-type-selector">
+	<div class="dropdown">
+		<button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+			${selected-item}
+		</button>
+		<ul class="dropdown-menu">
+			<li>${link-type-all class="dropdown-item"}</li>
+			<li>${link-type-artist class="dropdown-item"}</li>
+			<li>${link-type-releaseartist class="dropdown-item"}</li>
+			<li>${link-type-composer class="dropdown-item"}</li>
+			<li>${link-type-conductor class="dropdown-item"}</li>
+			<li>${link-type-lyricist class="dropdown-item"}</li>
+			<li>${link-type-mixer class="dropdown-item"}</li>
+			<li>${link-type-performer class="dropdown-item"}</li>
+			<li>${link-type-producer class="dropdown-item"}</li>
+			<li>${link-type-remixer class="dropdown-item"}</li>
+		</ul>
+	</div>
 </message>
 
 </messages>
