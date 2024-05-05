@@ -302,7 +302,12 @@ namespace lms::scanner
         if (!_abortScan)
         {
             stats.stopTime = Wt::WDateTime::currentDateTime();
-          
+
+            {
+                std::unique_lock lock{ _statusMutex };
+                _lastCompleteScanStats = stats;
+            }
+
             LMS_LOG(DBUPDATER, DEBUG, "Scan not aborted, scheduling next scan!");
             scheduleNextScan();
 
