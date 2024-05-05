@@ -24,6 +24,9 @@
 #include <taglib/apeproperties.h>
 #include <taglib/apetag.h>
 #include <taglib/asffile.h>
+#if TAGLIB_MAJOR_VERSION >= 2
+#include <taglib/dsffile.h>
+#endif
 #include <taglib/id3v2tag.h>
 #include <taglib/fileref.h>
 #include <taglib/flacfile.h>
@@ -328,6 +331,10 @@ namespace lms::metadata
             _audioProperties.bitsPerSample = mp4Properties->bitsPerSample();
         else if (const auto * wavePackProperties{ dynamic_cast<const TagLib::WavPack::Properties*>(properties) })
             _audioProperties.bitsPerSample = wavePackProperties->bitsPerSample();
+#if TAGLIB_MAJOR_VERSION >= 2
+        else if (const auto * dsfProperties{ dynamic_cast<const TagLib::DSF::Properties*>(properties) })
+            _audioProperties.bitsPerSample = dsfProperties->bitsPerSample();
+#endif
     }
 
     void TagLibTagReader::visitTagValues(TagType tag, TagValueVisitor visitor) const

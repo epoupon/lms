@@ -99,7 +99,7 @@ namespace lms::db
         Wt::WTime               _startTime = Wt::WTime{ 0,0,0 };
         UpdatePeriod            _updatePeriod{ UpdatePeriod::Never };
         SimilarityEngineType    _similarityEngineType{ SimilarityEngineType::Clusters };
-        std::string             _audioFileExtensions{ ".alac .mp3 .ogg .oga .aac .m4a .m4b .flac .wav .wma .aif .aiff .ape .mpc .shn .opus .wv" };
+        std::string             _audioFileExtensions{ ".alac .mp3 .ogg .oga .aac .m4a .m4b .flac .wav .wma .aif .aiff .ape .mpc .shn .opus .wv .dsf" };
         std::string             _extraTagsToScan;
         std::string             _artistTagDelimiters;
         std::string             _defaultTagDelimiters;

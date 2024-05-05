@@ -30,7 +30,7 @@ ARG	BUILD_PACKAGES=" \
 	boost-dev \
 	libarchive-dev \
 	libconfig-dev \
-	taglib-dev \
+	utfcpp \
 	sqlite-dev \
 	gtest-dev"
 
@@ -67,9 +67,9 @@ RUN \
 	--enable-libopus \
 	--enable-libvorbis \
 	--disable-everything \
-	--enable-decoder=aac*,ac3*,alac,als,flac,mp3*,libopus,pcm*,libvorbis,wavpack,wma*,libopenjpg,png \
+	--enable-decoder=aac*,ac3*,alac,als,dsd*,flac,mp3*,libopus,pcm*,libvorbis,wavpack,wma*,libopenjpg,png \
 	--enable-encoder=libmp3lame,libopus,libvorbis \
-	--enable-demuxer=aac,aiff,asf,flac,ipod,ogg,matroska,mov,mp3,mp4,wav,wv,webm \
+	--enable-demuxer=aac,aiff,asf,dsf,flac,ipod,ogg,matroska,mov,mp3,mp4,wav,wv,webm \
 	--enable-muxer=ogg,matroska,mp3,webm \
 	--enable-protocol=file,pipe \
 	--enable-filter=aresample \
@@ -99,6 +99,19 @@ RUN \
 	tar -x --strip-components=1 -f ${STB_VERSION}.tar.gz && \
 	mkdir -p ${PREFIX}/include/stb && \
 	cp ./*.h ${PREFIX}/include/stb
+
+# TAGLIB
+ARG TAGLIB_VERSION=v2.0.1
+RUN \
+	DIR=/tmp/taglib && mkdir -p ${DIR} && cd ${DIR} && \
+	curl -sLO https://github.com/taglib/taglib/archive/${TAGLIB_VERSION}.tar.gz && \
+	tar -x --strip-components=1 -f ${TAGLIB_VERSION}.tar.gz
+
+RUN \
+	DIR=/tmp/taglib && mkdir -p ${DIR} && cd ${DIR} && \
+	CXXFLAGS="-I/usr/include/utf8cpp" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=ON -DBUILD_EXAMPLES=OFF -DBUILD_BINDINGS=OFF -DBUILD_TESTING=OFF -DTRACE_IN_RELEASE=OFF -DWITH_ZLIB=ON  && \
+	make -j$(nproc) && \
+	make install
 
 # LMS
 COPY . /tmp/lms/
@@ -154,8 +167,7 @@ ARG	RUNTIME_PACKAGES=" \
 	boost-thread \
 	libarchive \
 	libconfig++ \
-	sqlite-libs \
-	taglib"
+	sqlite-libs"
 
 ARG	LMS_USER=lms
 ARG	LMS_GROUP=lms

@@ -34,7 +34,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 58 };
+        static constexpr Version LMS_DATABASE_VERSION{ 59 };
     }
 
     VersionInfo::VersionInfo()
@@ -466,6 +466,12 @@ SELECT
         session.getDboSession()->execute("DROP INDEX cluster_name_idx");
     }
 
+    void migrateFromV58(Session& session)
+    {
+        // DSF support
+        session.getDboSession()->execute("UPDATE scan_settings SET audio_file_extensions = audio_file_extensions || ' .dsf'");
+    }
+
     bool doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -501,6 +507,7 @@ SELECT
             {55, migrateFromV55},
             {56, migrateFromV56},
             {57, migrateFromV57},
+            {58, migrateFromV58},
         };
 
         bool migrationPerformed{};
