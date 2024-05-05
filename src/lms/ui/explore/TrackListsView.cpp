@@ -44,10 +44,10 @@ namespace lms::ui
 
         using SortModeSelector = DropDownMenuSelector<TrackLists::Mode>;
         SortModeSelector* sortModeSelector{ bindNew<SortModeSelector>("sort-mode", Wt::WString::tr("Lms.Explore.TrackLists.template.sort-mode"), _mode) };
-        sortModeSelector->bindEntry("recently-modified", Wt::WString::tr("Lms.Explore.recently-modified"), Mode::RecentlyModified);
-        sortModeSelector->bindEntry("all", Wt::WString::tr("Lms.Explore.all"), Mode::All);
+        sortModeSelector->bindItem("recently-modified", Wt::WString::tr("Lms.Explore.recently-modified"), Mode::RecentlyModified);
+        sortModeSelector->bindItem("all", Wt::WString::tr("Lms.Explore.all"), Mode::All);
 
-        sortModeSelector->entrySelected.connect(this, [this](TrackLists::Mode mode)
+        sortModeSelector->itemSelected.connect(this, [this](TrackLists::Mode mode)
         {
             _mode = mode;
             refreshView();
