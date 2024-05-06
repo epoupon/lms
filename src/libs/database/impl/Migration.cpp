@@ -462,8 +462,8 @@ SELECT
 
     void migrateFromV57(Session& session)
     {
-        // useless index
-        session.getDboSession()->execute("DROP INDEX cluster_name_idx");
+        // useless index, may have been already removed in the previous step
+        session.getDboSession()->execute("DROP INDEX IF EXISTS cluster_name_idx");
     }
 
     void migrateFromV58(Session& session)

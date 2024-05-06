@@ -8,7 +8,6 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
 
 ## Main features
 * Recommendation engine
-* Audio transcoding for maximum interoperability and reduced bandwith requirements
 * Multi-valued tags: `genre`, `mood`, `artists`, ...
 * Artist relationships: `composer`, `conductor`, `lyricist`, `mixer`, `performer`, `producer`, `remixer`
 * [Release types](https://musicbrainz.org/doc/Release_Group/Type): `album`, `single`, `EP`, `compilation`, `live`, ...
@@ -16,6 +15,8 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
 * [ListenBrainz](https://listenbrainz.org) support for:
   * Scrobbling and synchronizing listens
   * Synchronizing 'love' feedbacks
+* Audio transcoding for maximum interoperability and reduced bandwith requirements
+* Multi-library support
 * ReplayGain support
 * User management, with several [authentication backends](INSTALL.md#authentication-backend)
 * [Subsonic/OpenSubsonic API](SUBSONIC.md) support
