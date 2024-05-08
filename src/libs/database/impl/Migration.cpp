@@ -73,13 +73,12 @@ namespace lms::db::Migration
         {
             _db.executeSql("PRAGMA foreign_keys=ON");
         }
-
+    private:
         ScopedNoForeignKeys(const ScopedNoForeignKeys&) = delete;
         ScopedNoForeignKeys(ScopedNoForeignKeys&&) = delete;
         ScopedNoForeignKeys& operator=(const ScopedNoForeignKeys&) = delete;
         ScopedNoForeignKeys& operator=(ScopedNoForeignKeys&&) = delete;
 
-    private:
         Db& _db;
     };
 

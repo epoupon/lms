@@ -50,12 +50,6 @@ namespace lms::db
                 prepare();
             }
 
-            ~Connection() override
-            {
-                // make use of per-connection usage stats to optimize
-                optimize();
-            }
-
         private:
             Connection& operator=(const Connection&) = delete;
 
@@ -70,13 +64,6 @@ namespace lms::db
                 executeSql("PRAGMA journal_mode=WAL");
                 executeSql("PRAGMA synchronous=normal");
                 LMS_LOG(DB, DEBUG, "Setting per-connection settings done!");
-            }
-
-            void optimize()
-            {
-                LMS_LOG(DB, DEBUG, "connection close: Running pragma optimize...");
-                executeSql("PRAGMA optimize");
-                LMS_LOG(DB, DEBUG, "connection close: pragma optimize complete");
             }
 
             std::filesystem::path _dbPath;
@@ -118,6 +105,9 @@ namespace lms::db
                 _tlsSessions.push_back(std::move(newSession));
             }
         }
+
+        // For now, multiple databases are not handled
+        assert(&tlsSession->getDb() == this);
 
         return *tlsSession;
     }

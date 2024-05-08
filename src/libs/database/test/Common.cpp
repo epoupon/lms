@@ -91,10 +91,18 @@ namespace lms::db::tests
         EXPECT_EQ(User::getCount(session), 0);
     }
 
+    TEST_F(DatabaseFixture, vacuum)
+    {
+        session.vacuum();
+    }
+
+    TEST_F(DatabaseFixture, analyze)
+    {
+        session.fullAnalyze();
+    }
+
     TEST_F(DatabaseFixture, Common_subRangeEmpty)
     {
-        using namespace db;
-
         RangeResults<int> results;
         results.range = Range{ 0, 0 };
         results.results = {};
@@ -115,8 +123,6 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Common_subRangeForeach)
     {
-        using namespace db;
-
         struct TestCase
         {
             Range range;
@@ -153,8 +159,6 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Common_IdType)
     {
-        using namespace db;
-
         {
             const IdType id{};
             EXPECT_FALSE(id.isValid());
@@ -182,8 +186,6 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, Common_subRange)
     {
-        using namespace db;
-
         RangeResults<int> results;
         results.range = Range{ 0, 2 };
         results.results = { 5, 6 };

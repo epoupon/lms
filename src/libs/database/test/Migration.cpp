@@ -27,8 +27,6 @@ namespace lms::db::tests
     {
         void executeStatements(db::Session& session, std::string_view statements)
         {
-            auto transaction{ session.createWriteTransaction() };
-
             for (std::string_view statement : core::stringUtils::splitString(statements, ';'))
             {
                 statement = core::stringUtils::stringTrim(statement, " \t\r\n");

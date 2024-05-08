@@ -19,8 +19,6 @@
 
 #include "database/Session.hpp"
 
-#include <cassert>
-
 #include "core/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
