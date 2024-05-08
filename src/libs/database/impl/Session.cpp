@@ -121,6 +121,11 @@ namespace lms::db
         return ReadTransaction{ _session };
     }
 
+    void Session::execute(std::string_view statement)
+    {
+        _session.execute(std::string{ statement });
+    }
+
     void Session::prepareTablesIfNeeded()
     {
         LMS_LOG(DB, INFO, "Preparing tables...");

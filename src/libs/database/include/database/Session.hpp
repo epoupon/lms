@@ -86,6 +86,8 @@ namespace lms::db
 #endif
         }
 
+        void execute(std::string_view statement);
+
         // All these methods will acquire transactions
         void fullAnalyze(); // helper for retrieveEntriesToAnalyze + analyzeEntry
         void retrieveEntriesToAnalyze(std::vector<std::string>& entryList);
