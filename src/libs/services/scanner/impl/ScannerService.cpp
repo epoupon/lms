@@ -263,10 +263,8 @@ namespace lms::scanner
 
         {
             std::unique_lock lock{ _statusMutex };
-            _curState = State::InProgress;
             _nextScheduledScan = {};
         }
-
 
         LMS_LOG(UI, INFO, "New scan started!");
 
@@ -396,6 +394,8 @@ namespace lms::scanner
     {
         {
             std::unique_lock lock{ _statusMutex };
+
+            _curState = State::InProgress;
             _currentScanStepStats = stepStats;
         }
 

@@ -249,6 +249,8 @@ namespace lms::ui
             break;
 
         case IScannerService::State::InProgress:
+            assert(status.currentScanStepStats);
+
             _status->setText(Wt::WString::tr("Lms.Admin.ScannerController.status-in-progress")
                 .arg(status.currentScanStepStats->stepIndex + 1)
                 .arg(scanner::ScanProgressStepCount));
