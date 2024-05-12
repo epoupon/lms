@@ -72,22 +72,27 @@ namespace lms::av
         {
             switch (codec)
             {
-            case AV_CODEC_ID_MP3:          return DecodingCodec::MP3;
-            case AV_CODEC_ID_AAC:          return DecodingCodec::AAC;
-            case AV_CODEC_ID_AC3:          return DecodingCodec::AC3;
-            case AV_CODEC_ID_VORBIS:       return DecodingCodec::VORBIS;
-            case AV_CODEC_ID_WMAV1:        return DecodingCodec::WMAV1;
-            case AV_CODEC_ID_WMAV2:        return DecodingCodec::WMAV2;
-            case AV_CODEC_ID_FLAC:         return DecodingCodec::FLAC;
-            case AV_CODEC_ID_ALAC:         return DecodingCodec::ALAC;
-            case AV_CODEC_ID_WAVPACK:      return DecodingCodec::WAVPACK;
-            case AV_CODEC_ID_MUSEPACK7:    return DecodingCodec::MUSEPACK7;
-            case AV_CODEC_ID_MUSEPACK8:    return DecodingCodec::MUSEPACK8;
-            case AV_CODEC_ID_APE:          return DecodingCodec::APE;
-            case AV_CODEC_ID_EAC3:         return DecodingCodec::EAC3;
-            case AV_CODEC_ID_MP4ALS:       return DecodingCodec::MP4ALS;
-            case AV_CODEC_ID_OPUS:         return DecodingCodec::OPUS;
-            case AV_CODEC_ID_SHORTEN:      return DecodingCodec::SHORTEN;
+            case AV_CODEC_ID_MP3:               return DecodingCodec::MP3;
+            case AV_CODEC_ID_AAC:               return DecodingCodec::AAC;
+            case AV_CODEC_ID_AC3:               return DecodingCodec::AC3;
+            case AV_CODEC_ID_VORBIS:            return DecodingCodec::VORBIS;
+            case AV_CODEC_ID_WMAV1:             return DecodingCodec::WMAV1;
+            case AV_CODEC_ID_WMAV2:             return DecodingCodec::WMAV2;
+            case AV_CODEC_ID_FLAC:              return DecodingCodec::FLAC;
+            case AV_CODEC_ID_ALAC:              return DecodingCodec::ALAC;
+            case AV_CODEC_ID_WAVPACK:           return DecodingCodec::WAVPACK;
+            case AV_CODEC_ID_MUSEPACK7:         return DecodingCodec::MUSEPACK7;
+            case AV_CODEC_ID_MUSEPACK8:         return DecodingCodec::MUSEPACK8;
+            case AV_CODEC_ID_APE:               return DecodingCodec::APE;
+            case AV_CODEC_ID_EAC3:              return DecodingCodec::EAC3;
+            case AV_CODEC_ID_MP4ALS:            return DecodingCodec::MP4ALS;
+            case AV_CODEC_ID_OPUS:              return DecodingCodec::OPUS;
+            case AV_CODEC_ID_SHORTEN:           return DecodingCodec::SHORTEN;
+            case AV_CODEC_ID_DSD_LSBF:          return DecodingCodec::DSD_LSBF;
+            case AV_CODEC_ID_DSD_LSBF_PLANAR:   return DecodingCodec::DSD_LSBF_PLANAR;
+            case AV_CODEC_ID_DSD_MSBF:          return DecodingCodec::DSD_MSBF;
+            case AV_CODEC_ID_DSD_MSBF_PLANAR:   return DecodingCodec::DSD_MSBF_PLANAR;
+
             default:
                 return DecodingCodec::UNKNOWN;
             }
@@ -300,7 +305,7 @@ namespace lms::av
         // List should be sync with the demuxers shipped in the lms's docker version
         // + the _audioFileExtensions in ScanSettings
         // std::filesystem::path does not seem to have std::hash specialization on freebsd
-        static const std::unordered_map<std::string_view, std::string_view> entries
+        static const std::unordered_map<std::string, std::string_view> entries
         {
             {".mp3",    "audio/mpeg"},
             {".ogg",    "audio/ogg"},
