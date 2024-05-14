@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,26 +19,25 @@
 
 #pragma once
 
-#include <Wt/WTemplate.h>
+#include <optional>
 
-#include "PlayQueueController.hpp"
+#include "database/Object.hpp"
+#include "database/TrackId.hpp"
+#include "DatabaseCollectorBase.hpp"
+
+namespace lms::db
+{
+	class Track;
+}
 
 namespace lms::ui
 {
-    class Filters;
-    class SearchView;
-    class PlayQueue;
+	class MultisearchCollector : public DatabaseCollectorBase
+	{
+		public:
+			using DatabaseCollectorBase::DatabaseCollectorBase;
 
-    class Explore : public Wt::WTemplate
-    {
-    public:
-        Explore(Filters& filters, PlayQueue& playQueue, Wt::WLineEdit& multisearchEdit);
-
-        PlayQueueController& getPlayQueueController() { return _playQueueController; }
-
-    private:
-        PlayQueueController _playQueueController;
-        SearchView* _search{};
-    };
-} // namespace lms::ui
+			[[nodiscard]] db::RangeResults<db::TrackId>	get(const std::optional<db::Range>& requestedRange = std::nullopt) const ;
+	};
+} // ns UserInterface
 

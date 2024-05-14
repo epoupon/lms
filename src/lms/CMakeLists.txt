@@ -36,6 +36,8 @@ add_executable(lms
 	ui/explore/DatabaseCollectorBase.cpp
 	ui/explore/Explore.cpp
 	ui/explore/Filters.cpp
+	ui/explore/MultisearchCollector.cpp
+	ui/explore/MultisearchView.cpp
 	ui/explore/PlayQueueController.cpp
 	ui/explore/ReleaseCollector.cpp
 	ui/explore/ReleaseHelpers.cpp
@@ -51,7 +53,7 @@ add_executable(lms
 	ui/resource/AudioTranscodingResource.cpp
 	ui/resource/CoverResource.cpp
 	ui/resource/DownloadResource.cpp
-	)
+)
 
 target_include_directories(lms PRIVATE
 	ui/

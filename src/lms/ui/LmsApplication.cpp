@@ -93,6 +93,7 @@ namespace lms::ui
             res->use(appRoot + "mediaplayer");
             res->use(appRoot + "messages");
             res->use(appRoot + "misc");
+            res->use(appRoot + "multisearch");
             res->use(appRoot + "notifications");
             res->use(appRoot + "playqueue");
             res->use(appRoot + "release");
@@ -141,6 +142,7 @@ namespace lms::ui
                 { "/tracks",			    IdxExplore,			    false,	Wt::WString::tr("Lms.Explore.tracks") },
                 { "/tracklists",		    IdxExplore,			    false,	Wt::WString::tr("Lms.Explore.tracklists") },
                 { "/tracklist",			    IdxExplore,			    false,	std::nullopt },
+                { "/multisearch",            IdxExplore,               true,     std::nullopt },
                 { "/playqueue",			    IdxPlayQueue,		    false,	Wt::WString::tr("Lms.PlayQueue.playqueue") },
                 { "/settings",			    IdxSettings,		    false,	Wt::WString::tr("Lms.Settings.settings") },
                 { "/admin/libraries",	    IdxAdminLibraries,	    true,	Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries") },
@@ -424,6 +426,7 @@ namespace lms::ui
         navbar->bindNew<Wt::WAnchor>("tracklists", Wt::WLink{ Wt::LinkType::InternalPath, "/tracklists" }, Wt::WString::tr("Lms.Explore.tracklists"));
 
         Filters* filters{ navbar->bindNew<Filters>("filters") };
+
         navbar->bindString("username", getUserLoginName(), Wt::TextFormat::Plain);
         navbar->bindNew<Wt::WAnchor>("settings", Wt::WLink{ Wt::LinkType::InternalPath, "/settings" }, Wt::WString::tr("Lms.Settings.menu-settings"));
 
@@ -453,7 +456,8 @@ namespace lms::ui
         mainStack->setOverflow(Wt::Overflow::Visible); // wt makes it hidden by default
 
         std::unique_ptr<PlayQueue> playQueue{ std::make_unique<PlayQueue>() };
-        Explore* explore{ mainStack->addNew<Explore>(*filters, *playQueue) };
+        auto* searEdit = navbar->bindNew<Wt::WLineEdit>("multisearch");
+        Explore* explore{ mainStack->addNew<Explore>(*filters, *playQueue, *searEdit) };
         _playQueue = mainStack->addWidget(std::move(playQueue));
         mainStack->addNew<SettingsView>();
 

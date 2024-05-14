@@ -25,6 +25,7 @@
 #include "ArtistsView.hpp"
 #include "ArtistView.hpp"
 #include "Filters.hpp"
+#include "MultisearchView.hpp"
 #include "ReleasesView.hpp"
 #include "ReleaseView.hpp"
 #include "TrackListView.hpp"
@@ -46,6 +47,7 @@ namespace lms::ui
                 IdxReleases,
                 IdxRelease,
                 IdxTracks,
+                IdxMultisearch
             };
 
             static const std::map<std::string, int> indexes =
@@ -57,6 +59,7 @@ namespace lms::ui
                 { "/releases",		IdxReleases },
                 { "/release",		IdxRelease },
                 { "/tracks",		IdxTracks },
+                { "/multisearch",   IdxMultisearch }
             };
 
             for (const auto& index : indexes)
@@ -71,7 +74,7 @@ namespace lms::ui
 
     } // namespace
 
-    Explore::Explore(Filters& filters, PlayQueue& playQueue)
+    Explore::Explore(Filters& filters, PlayQueue& playQueue, Wt::WLineEdit& multisearchEdit)
         : Wt::WTemplate{ Wt::WString::tr("Lms.Explore.template") }
         , _playQueueController{ filters, playQueue }
     {
@@ -102,6 +105,9 @@ namespace lms::ui
 
         auto tracks = std::make_unique<Tracks>(filters, _playQueueController);
         contentsStack->addWidget(std::move(tracks));
+
+        auto multisearch = std::make_unique<Multisearch>(filters, _playQueueController, multisearchEdit);
+        contentsStack->addWidget(std::move(multisearch));
 
         wApp->internalPathChanged().connect(this, [contentsStack]
             {
