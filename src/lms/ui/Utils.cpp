@@ -80,6 +80,15 @@ namespace lms::ui::utils
         return cover;
     }
 
+    std::unique_ptr<Wt::WImage> createCover(db::ArtistId artistId, CoverResource::Size size)
+    {
+        auto cover{ std::make_unique<Wt::WImage>() };
+        cover->setImageLink(LmsApp->getCoverResource()->getArtistUrl(artistId, size));
+        cover->setStyleClass("Lms-cover img-fluid"); // HACK
+        cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)"); // HACK
+        return cover;
+    }
+
     std::unique_ptr<Wt::WInteractWidget> createFilter(const Wt::WString& name, const Wt::WString& tooltip, std::string_view colorStyleClass, bool canDelete)
     {
         auto res{ std::make_unique<Wt::WText>(Wt::WString{ canDelete ? "<i class=\"fa fa-times-circle\"></i> " : "" } + name, Wt::TextFormat::UnsafeXHTML) };
@@ -145,6 +154,29 @@ namespace lms::ui::utils
         return clusterContainer;
     }
 
+    std::unique_ptr<Wt::WContainerWidget> createArtistAnchorList(const std::vector<db::Artist::pointer>& artists, std::string_view cssAnchorClass)
+    {
+        using namespace db;
+
+        std::unique_ptr<Wt::WContainerWidget> artistContainer{ std::make_unique<Wt::WContainerWidget>() };
+
+        bool firstArtist{ true };
+
+        for (const auto& artist : artists)
+        {
+            if (!firstArtist)
+                artistContainer->addNew<Wt::WText>(" · ");
+
+            auto anchor{ createArtistAnchor(artist) };
+            anchor->addStyleClass("text-decoration-none"); // hack
+            anchor->addStyleClass(std::string{ cssAnchorClass });
+            artistContainer->addWidget(std::move(anchor));
+            firstArtist = false;
+        }
+
+        return artistContainer;
+    }
+
     std::unique_ptr<Wt::WContainerWidget> createArtistAnchorList(const std::vector<db::ArtistId>& artistIds, std::string_view cssAnchorClass)
     {
         using namespace db;
@@ -171,6 +203,40 @@ namespace lms::ui::utils
         }
 
         return artistContainer;
+    }
+
+    std::unique_ptr<Wt::WContainerWidget> createArtistDisplayNameWithAnchors(std::string_view displayName, const std::vector<db::Artist::pointer>& artists, std::string_view cssAnchorClass)
+    {
+        using namespace db;
+
+        std::size_t matchCount{};
+        std::string_view::size_type currentOffset{};
+
+        auto result{ std::make_unique<Wt::WContainerWidget>() };
+
+        // consider order is guaranteed + we will likely succeed
+        for (const auto& artist : artists)
+        {
+            const auto pos{ displayName.find(artist->getName(), currentOffset) };
+            if (pos == std::string_view::npos)
+                break;
+
+            assert(pos >= currentOffset);
+            if (pos != currentOffset)
+                result->addNew<Wt::WText>(std::string{ displayName.substr(currentOffset, pos - currentOffset) }, Wt::TextFormat::Plain);
+
+            auto anchor{ createArtistAnchor(artist) };
+            anchor->addStyleClass("text-decoration-none"); // hack
+            anchor->addStyleClass(std::string{ cssAnchorClass }); // hack
+            result->addWidget(std::move(anchor));
+            currentOffset = pos + artist->getName().size();
+            matchCount += 1;
+        }
+
+        if (matchCount != artists.size())
+            return createArtistAnchorList(artists, cssAnchorClass);
+
+        return result;
     }
 
     std::unique_ptr<Wt::WContainerWidget> createArtistDisplayNameWithAnchors(std::string_view displayName, const std::vector<db::ArtistId>& artistIds, std::string_view cssAnchorClass)

@@ -30,7 +30,11 @@
 #include "database/Types.hpp"
 #include "database/UserId.hpp"
 
-LMS_DECLARE_IDTYPE(TrackBookmarkId)
+namespace lms::db {
+    class TrackBookmark;
+}
+
+LMS_DECLARE_IDTYPE(TrackBookmarkId, lms::db::TrackBookmark)
 
 namespace lms::db
 {

@@ -12,8 +12,11 @@
 	${loading-indicator}
 </message>
 
-<message id="Lms.Explore.Multisearch.template.entry">
+<message id="Lms.Explore.Multisearch.template.entry-track">
 	<div class="d-flex align-items-center mb-2">
+		<div class="p-1">
+			<i class="fa fa-music" aria-hidden="true"></i>
+		</div>
 		<div class="p-1">
 			${cover}
 		</div>
@@ -51,73 +54,43 @@
 	</div>
 </message>
 
-<message id="Lms.Explore.Multisearch.template.track-info">
-	<div class="modal fade" tabindex="-1">
-		<div class="modal-dialog modal-dialog-scrollable">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title">${tr:Lms.Explore.track-info}</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-				<div class="modal-body">
-					<div class="container-fluid d-grid gap-2">
-						${<if-has-clusters>}
-						<div class="row align-items-center">
-							<div class="col-4">
-								${tr:Lms.clusters}
-							</div>
-							<div class="col">
-								${clusters}
-							</div>
-						</div>
-						${</if-has-clusters>}
-						${<if-has-artist>}
-						${artist-table class="d-grid gap-2"}
-						${</if-has-artist>}
-						<div class="row align-items-center">
-							<div class="col-4">
-								${tr:Lms.Explore.duration}
-							</div>
-							<div class="col">
-								${duration}
-							</div>
-						</div>
-						${<if-has-codec>}
-						<div class="row align-items-center">
-							<div class="col-4">
-								${tr:Lms.Explore.codec}
-							</div>
-							<div class="col">
-								${codec}
-							</div>
-						</div>
-						${</if-has-codec>}
-						${<if-has-bitrate>}
-						<div class="row align-items-center">
-							<div class="col-4">
-								${tr:Lms.Explore.bitrate}
-							</div>
-							<div class="col">
-								${bitrate}
-							</div>
-						</div>
-						${</if-has-bitrate>}
-						<div class="row align-items-center">
-							<div class="col-4">
-								${tr:Lms.Explore.playcount}
-							</div>
-							<div class="col">
-								${playcount}
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="modal-footer">
-					${ok-btn class="btn btn-primary"}
+
+<message id="Lms.Explore.Multisearch.template.entry-release">
+	<div class="d-flex align-items-center mb-2">
+		<div class="p-1">
+			<i class="fa fa-list" aria-hidden="true"></i>
+		</div>
+		<div class="p-1">
+			${cover}
+		</div>
+		<div class="row align-items-center flex-fill overflow-hidden">
+			<div class="col-12 col-md-6 col-lg-4">
+				<div class="p-2 overflow-hidden">
+					<div class="d-block text-truncate">${name class="link-success"}</div>
+					${<if-has-artists>}${artists class="d-block d-md-none text-truncate"}${</if-has-artists>}
 				</div>
 			</div>
+			<div class="col-md-6 col-lg-8">
+				${<if-has-artists>}${artists-md class="d-none d-md-block text-truncate"}${</if-has-artists>}
+			</div>
+		</div>
+		<div class="p-2 d-none d-sm-block text-muted text-center Lms-tracks-entry-duration">
+			${duration}
 		</div>
 	</div>
+</message>
+
+<message id="Lms.Explore.Multisearch.template.entry-artist">	<div class="d-flex align-items-center mb-2">
+	<div class="p-1">
+		<i class="fa fa-user" aria-hidden="true"></i>
+	</div>
+	<div class="p-1">
+		${cover}
+	</div>
+	<div class="row align-items-center flex-fill overflow-hidden">
+		<div class="d-block text-truncate">${name class="link-success"}</div>
+	</div>
+</div>
 </message>
 
 </messages>

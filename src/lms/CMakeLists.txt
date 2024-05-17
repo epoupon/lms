@@ -37,6 +37,7 @@ add_executable(lms
 	ui/explore/Explore.cpp
 	ui/explore/Filters.cpp
 	ui/explore/MultisearchCollector.cpp
+	ui/explore/MultisearchListHelpers.cpp
 	ui/explore/MultisearchView.cpp
 	ui/explore/PlayQueueController.cpp
 	ui/explore/ReleaseCollector.cpp

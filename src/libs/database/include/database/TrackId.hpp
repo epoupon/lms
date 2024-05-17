@@ -21,4 +21,8 @@
 
 #include "database/IdType.hpp"
 
-LMS_DECLARE_IDTYPE(TrackId)
+namespace lms::db {
+ class Track;
+}
+
+LMS_DECLARE_IDTYPE(TrackId, lms::db::Track)

@@ -19,18 +19,22 @@
 
 #include "MultisearchView.hpp"
 
+#include <database/Artist.hpp>
+#include <database/Release.hpp>
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
+#include "ArtistListHelpers.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "core/ILogger.hpp"
 
 #include "common/InfiniteScrollingContainer.hpp"
 #include "explore/Filters.hpp"
-#include "explore/PlayQueueController.hpp"
 #include "explore/TrackListHelpers.hpp"
 #include "LmsApplication.hpp"
+#include "MultisearchListHelpers.hpp"
+#include "ReleaseHelpers.hpp"
 
 namespace lms::ui
 {
@@ -79,15 +83,23 @@ namespace lms::ui
         refreshView();
     }
 
+    namespace {
+        template<typename IdT>
+        void findAndAdd(const IdT& mediumId, Filters& filters, PlayQueueController& playQueueController, InfiniteScrollingContainer& container) {
+            if (const auto result = IdT::Target::find(LmsApp->getDbSession(), mediumId))
+                container.add(MultisearchListHelpers::createEntry(result, playQueueController, filters));
+        }
+    }
+
     void Multisearch::addSome()
     {
         const auto [_, results, moreResults] = _multisearchCollector.get(Range {_container->getCount(), _batchSize});
 
         auto transaction = LmsApp->getDbSession().createReadTransaction();
-        for (const TrackId trackId : results)
+        for (const auto mediumId : results)
         {
-            if (const Track::pointer track = Track::find(LmsApp->getDbSession(), trackId))
-                _container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
+            std::visit([this](auto&& mediumId){ findAndAdd(mediumId, _filters, _playQueueController, *_container); }, mediumId);
+
         }
 
         _container->setHasMore(moreResults);

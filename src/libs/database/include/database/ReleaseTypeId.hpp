@@ -21,4 +21,8 @@
 
 #include "database/IdType.hpp"
 
-LMS_DECLARE_IDTYPE(ReleaseTypeId)
+namespace lms::db {
+ class ReleaseType;
+}
+
+LMS_DECLARE_IDTYPE(ReleaseTypeId, lms::db::ReleaseType)

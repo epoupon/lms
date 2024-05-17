@@ -22,6 +22,7 @@
 #include <chrono>
 #include <string>
 #include <string_view>
+#include <database/Artist.hpp>
 
 #include <Wt/WContainerWidget.h>
 #include <Wt/WImage.h>
@@ -56,6 +57,7 @@ namespace lms::ui::utils
 
 	std::unique_ptr<Wt::WImage> createCover(db::ReleaseId releaseId, CoverResource::Size size);
 	std::unique_ptr<Wt::WImage> createCover(db::TrackId trackId, CoverResource::Size size);
+	std::unique_ptr<Wt::WImage> createCover(db::ArtistId artistId, CoverResource::Size size);
 
 	std::unique_ptr<Wt::WInteractWidget> createFilter(const Wt::WString& name, const Wt::WString& tooltip, std::string_view colorStyleClass, bool canDelete = false);
 	std::unique_ptr<Wt::WInteractWidget> createFilterCluster(db::ClusterId clusterId, bool canDelete = false);
@@ -63,6 +65,7 @@ namespace lms::ui::utils
 
 	std::unique_ptr<Wt::WContainerWidget> createArtistAnchorList(const std::vector<db::ArtistId>& artistIds, std::string_view cssAnchorClass = "link-success");
 	std::unique_ptr<Wt::WContainerWidget> createArtistDisplayNameWithAnchors(std::string_view displayName, const std::vector<db::ArtistId>& artistIds, std::string_view cssAnchorClass = "link-success");
+	std::unique_ptr<Wt::WContainerWidget> createArtistDisplayNameWithAnchors(std::string_view displayName, const std::vector<db::Artist::pointer>& artistIds, std::string_view cssAnchorClass = "link-success");
 	std::unique_ptr<Wt::WContainerWidget> createArtistsAnchorsForRelease(db::ObjectPtr<db::Release> release, db::ArtistId omitIfMatchThisArtist = {}, std::string_view cssAnchorClass = "link-success");
 
 	Wt::WLink createArtistLink(db::ObjectPtr<db::Artist> artist);

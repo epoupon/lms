@@ -20,6 +20,8 @@
 #include "MultisearchCollector.hpp"
 
 #include <algorithm>
+#include <database/Artist.hpp>
+#include <database/Release.hpp>
 
 #include "database/Session.hpp"
 #include "database/Track.hpp"
@@ -31,14 +33,33 @@ namespace lms::ui
 {
     using namespace db;
 
-    // TODO: search other things
     // TODO: calculate relevance
     // TODO: restore filter by star
-    RangeResults<TrackId> MultisearchCollector::get(const std::optional<Range>& requestedRange) const
+    RangeResults<MediumId> MultisearchCollector::get(const std::optional<Range>& requestedRange) const
     {
+        auto tracks = getTracks(requestedRange);
+        auto releases = getReleases(requestedRange);
+        auto artists = getArtists(requestedRange);
+
+        std::vector<MediumId> results(tracks.results.size() + artists.results.size() + releases.results.size());
+        for (auto e: tracks.results)
+            results.emplace_back(e);
+        for (auto e: releases.results)
+            results.emplace_back(e);
+        for (auto e: artists.results)
+            results.emplace_back(e);
+
+        return {
+            Range{},
+            results,
+            tracks.moreResults || releases.moreResults || artists.moreResults
+        };
+    }
+
+    db::RangeResults<db::TrackId> MultisearchCollector::getTracks(const std::optional<db::Range> &requestedRange) const {
         const Range range{ getActualRange(requestedRange) };
 
-        RangeResults<TrackId> tracks;
+        RangeResults<TrackId> results;
 
         Track::FindParameters params;
         params.setClusters(getFilters().getClusters());
@@ -48,13 +69,59 @@ namespace lms::ui
 
         {
             auto transaction = LmsApp->getDbSession().createReadTransaction();
-            tracks = Track::findIds(LmsApp->getDbSession(), params);
+            results = Track::findIds(LmsApp->getDbSession(), params);
         }
 
         if (range.offset + range.size >= getMaxCount())
-            tracks.moreResults = false;
+            results.moreResults = false;
 
-        return tracks;
+        return results;
+
     }
 
+    db::RangeResults<db::ReleaseId> MultisearchCollector::getReleases(const std::optional<db::Range> &requestedRange) const {
+        const Range range{ getActualRange(requestedRange) };
+
+        RangeResults<ReleaseId> results;
+
+        Release::FindParameters params;
+        params.setClusters(getFilters().getClusters());
+        params.setMediaLibrary(getFilters().getMediaLibrary());
+        params.setKeywords(getSearchKeywords());
+        params.setRange(range);
+
+        {
+            auto transaction = LmsApp->getDbSession().createReadTransaction();
+            results = Release::findIds(LmsApp->getDbSession(), params);
+        }
+
+        if (range.offset + range.size >= getMaxCount())
+            results.moreResults = false;
+
+        return results;
+
+    }
+
+    db::RangeResults<db::ArtistId> MultisearchCollector::getArtists(const std::optional<db::Range> &requestedRange) const {
+        const Range range{ getActualRange(requestedRange) };
+
+        RangeResults<ArtistId> results;
+
+        Artist::FindParameters params;
+        params.setClusters(getFilters().getClusters());
+        params.setMediaLibrary(getFilters().getMediaLibrary());
+        params.setKeywords(getSearchKeywords());
+        params.setRange(range);
+
+        {
+            auto transaction = LmsApp->getDbSession().createReadTransaction();
+            results = Artist::findIds(LmsApp->getDbSession(), params);
+        }
+
+        if (range.offset + range.size >= getMaxCount())
+            results.moreResults = false;
+
+        return results;
+
+    }
 } // ns UserInterface

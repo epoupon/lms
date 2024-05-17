@@ -32,7 +32,11 @@
 #include "database/TrackId.hpp"
 #include "database/Types.hpp"
 
-LMS_DECLARE_IDTYPE(TrackFeaturesId)
+namespace lms::db {
+    class TrackFeatures;
+}
+
+LMS_DECLARE_IDTYPE(TrackFeaturesId, lms::db::TrackFeatures)
 
 namespace lms::db
 {
