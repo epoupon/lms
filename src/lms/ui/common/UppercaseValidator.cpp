@@ -21,6 +21,7 @@
 
 #include <string>
 #include <string_view>
+#include <algorithm>
 
 namespace lms::ui
 {
