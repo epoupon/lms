@@ -66,7 +66,7 @@
 		<div class="row align-items-center flex-fill overflow-hidden">
 			<div class="col-12 col-md-6 col-lg-4">
 				<div class="p-2 overflow-hidden">
-					<div class="d-block text-truncate">${name class="link-success"}</div>
+					<div class="d-block text-truncate">${name class="text-decoration-none link-success"}</div>
 					${<if-has-artists>}${artists class="d-block d-md-none text-truncate"}${</if-has-artists>}
 				</div>
 			</div>
@@ -77,20 +77,43 @@
 		<div class="p-2 d-none d-sm-block text-muted text-center Lms-tracks-entry-duration">
 			${duration}
 		</div>
+		<div class="p-2 d-flex">
+			${play-btn class="d-none d-sm-block btn btn-sm btn-outline-secondary border-0"}
+			<div class="dropdown d-inline-block">
+				${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-sm btn-outline-secondary border-0"}
+				<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">
+					<li class="d-block d-sm-none">${play class="dropdown-item"}</li>
+					<li>${play-next class="dropdown-item"}</li>
+					<li>${play-last class="dropdown-item"}</li>
+					<li>${play-shuffled class="dropdown-item"}</li>
+					<li>${star class="dropdown-item"}</li>
+					${<if-has-mbid>}
+					<li><a href="${mbid-link}" target="_blank" class="dropdown-item">${tr:Lms.Explore.musicbrainz-release}</a></li>
+					${</if-has-mbid>}
+					<li>${download class="dropdown-item"}</li>
+					<li>${release-info class="dropdown-item"}</li>
+				</ul>
+			</div>
+		</div>
 	</div>
 </message>
 
-<message id="Lms.Explore.Multisearch.template.entry-artist">	<div class="d-flex align-items-center mb-2">
-	<div class="p-1">
-		<i class="fa fa-user" aria-hidden="true"></i>
+<message id="Lms.Explore.Multisearch.template.entry-artist">
+	<div class="d-flex align-items-center mb-2">
+		<div class="p-1">
+			<i class="fa fa-user" aria-hidden="true"></i>
+		</div>
+		<div class="p-1">
+			${cover}
+		</div>
+		<div class="row align-items-center flex-fill overflow-hidden">
+			<div class="col-12 col-md-6 col-lg-4">
+				<div class="p-2 overflow-hidden">
+					<div class="d-block text-truncate">${name class="text-decoration-none link-success"}</div>
+				</div>
+			</div>
+		</div>
 	</div>
-	<div class="p-1">
-		${cover}
-	</div>
-	<div class="row align-items-center flex-fill overflow-hidden">
-		<div class="d-block text-truncate">${name class="link-success"}</div>
-	</div>
-</div>
 </message>
 
 </messages>

@@ -24,14 +24,12 @@
 
 #include <Wt/WString.h>
 #include <Wt/WTemplate.h>
-#include <Wt/WDate.h>
 #include "database/Object.hpp"
-#include "database/Types.hpp"
-#include "core/EnumSet.hpp"
 #include "ReleaseTypes.hpp"
 
 namespace lms::db
 {
+    class ReleaseId;
     class Artist;
     class Release;
 }
@@ -46,4 +44,5 @@ namespace lms::ui::releaseHelpers
 {
     Wt::WString buildReleaseTypeString(const ReleaseType& releaseType);
     Wt::WString buildReleaseYearString(std::optional<int> year, std::optional<int> originalYear);
+    void showReleaseInfoModal(db::ReleaseId releaseId);
 }

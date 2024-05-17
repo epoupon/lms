@@ -14,7 +14,7 @@ namespace lms::ui
 {
     using namespace db;
 
-    // TODO: calculate relevance
+    // TODO: merge results and sort by relevance
     // TODO: restore filter by star
     RangeResults<MediumId> MultisearchCollector::get(const std::optional<Range>& requestedRange) const
     {

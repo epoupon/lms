@@ -14,6 +14,7 @@
 #include <Wt/WPushButton.h>
 
 #include "PlayQueueController.hpp"
+#include "ReleaseHelpers.hpp"
 #include "TrackListHelpers.hpp"
 #include "Utils.hpp"
 
@@ -106,23 +107,13 @@ namespace lms::ui::MultisearchListHelpers {
         entry->bindNew<Wt::WPushButton>("track-info", Wt::WString::tr("Lms.Explore.track-info"))
             ->clicked().connect([trackId, &filters] { TrackListHelpers::showTrackInfoModal(trackId, filters); });
 
-        LmsApp->getMediaPlayer().trackLoaded.connect(entryPtr, [=](db::TrackId loadedTrackId)
-            {
-                entryPtr->toggleStyleClass("Lms-entry-playing", loadedTrackId == trackId);
-            });
-
-        if (auto trackIdLoaded{ LmsApp->getMediaPlayer().getTrackLoaded() })
-        {
-            entryPtr->toggleStyleClass("Lms-entry-playing", *trackIdLoaded == trackId);
-        }
-        else
-            entry->removeStyleClass("Lms-entry-playing");
-
         return entry;
     }
 
-    std::unique_ptr<Wt::WWidget> createEntry(const db::ObjectPtr<db::Release>& release, PlayQueueController&, Filters&) {
+    std::unique_ptr<Wt::WWidget> createEntry(const db::ObjectPtr<db::Release>& release, PlayQueueController& playQueueController, Filters&) {
         auto entry = std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Multisearch.template.entry-release"));
+        entry->addFunction("tr", &Wt::WTemplate::Functions::tr);
+        entry->addFunction("id", &Wt::WTemplate::Functions::id);
 
         entry->bindWidget("name", utils::createReleaseAnchor(release));
         Wt::WAnchor* anchor{ entry->bindWidget("cover", utils::createReleaseAnchor(release, false)) };
@@ -139,6 +130,72 @@ namespace lms::ui::MultisearchListHelpers {
         }
 
         entry->bindString("duration", utils::durationToString(release->getDuration()), Wt::TextFormat::Plain);
+
+        auto releaseId = release->getId();
+
+        Wt::WPushButton* playBtn{ entry->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.template.play-btn"), Wt::TextFormat::XHTML) };
+        playBtn->clicked().connect([releaseId, &playQueueController]
+            {
+                playQueueController.processCommand(PlayQueueController::Command::Play, { releaseId });
+            });
+
+        entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML);
+        entry->bindNew<Wt::WPushButton>("play", Wt::WString::tr("Lms.Explore.play"))
+            ->clicked().connect([releaseId, &playQueueController]
+                {
+                    playQueueController.processCommand(PlayQueueController::Command::Play, { releaseId });
+                });
+        entry->bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"))
+            ->clicked().connect([releaseId, &playQueueController]
+                {
+                    playQueueController.processCommand(PlayQueueController::Command::PlayNext, { releaseId });
+                });
+        entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
+            ->clicked().connect([releaseId, &playQueueController]
+                {
+                    playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, { releaseId });
+                });
+        entry->bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"))
+            ->clicked().connect([releaseId, &playQueueController]
+                {
+                    playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, { releaseId });
+                });
+
+        {
+            auto isStarred{ [=] { return core::Service<feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), releaseId); } };
+
+            Wt::WPushButton* starBtn{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
+            starBtn->clicked().connect([=]
+                {
+                    auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
+
+                    if (isStarred())
+                    {
+                        core::Service<feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), releaseId);
+                        starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
+                    }
+                    else
+                    {
+                        core::Service<feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), releaseId);
+                        starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
+                    }
+                });
+        }
+
+        if (const auto mbid = release->getMBID())
+        {
+            entry->setCondition("if-has-mbid", true);
+            entry->bindString("mbid-link", std::string{ "https://musicbrainz.org/release/" } + std::string{ mbid->getAsString() });
+        }
+
+        entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
+            ->setLink(Wt::WLink{ std::make_unique<DownloadReleaseResource>(releaseId) });
+
+        entry->bindNew<Wt::WPushButton>("release-info", Wt::WString::tr("Lms.Explore.release-info"))
+            ->clicked().connect([releaseId]
+                {
+                    releaseHelpers::showReleaseInfoModal(releaseId);
+                });
 
         return entry;
     }
