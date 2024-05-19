@@ -80,7 +80,6 @@ namespace lms::ui
         for (const auto mediumId : results)
         {
             std::visit([this](auto&& mediumId){ findAndAdd(mediumId, _filters, _playQueueController, *_container); }, mediumId);
-
         }
 
         _container->setHasMore(moreResults);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <variant>
 
 #include "database/TrackId.hpp"
 #include "database/ArtistId.hpp"

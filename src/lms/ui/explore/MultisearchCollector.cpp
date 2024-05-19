@@ -57,7 +57,6 @@ namespace lms::ui
             results.moreResults = false;
 
         return results;
-
     }
 
     db::RangeResults<db::ReleaseId> MultisearchCollector::getReleases(const std::optional<db::Range> &requestedRange) const {
@@ -80,7 +79,6 @@ namespace lms::ui
             results.moreResults = false;
 
         return results;
-
     }
 
     db::RangeResults<db::ArtistId> MultisearchCollector::getArtists(const std::optional<db::Range> &requestedRange) const {
@@ -103,6 +101,5 @@ namespace lms::ui
             results.moreResults = false;
 
         return results;
-
     }
 } // ns UserInterface

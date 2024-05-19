@@ -24,7 +24,6 @@ namespace lms::ui::MultisearchListHelpers {
     std::unique_ptr<Wt::WWidget> createEntry(const db::ObjectPtr<db::Track>& track, PlayQueueController& playQueueController, Filters& filters)
     {
         auto entry = std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Multisearch.template.entry-track"));
-        auto* entryPtr{ entry.get() };
 
         entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
