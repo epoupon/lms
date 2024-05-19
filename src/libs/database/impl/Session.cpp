@@ -236,6 +236,49 @@ namespace lms::db
         LMS_LOG(DB, INFO, "Indexes created!");
     }
 
+    void Session::createViewsIfNeeded()
+    {
+        LMS_SCOPED_TRACE_OVERVIEW("Database", "ViewCreation");
+        LMS_LOG(DB, INFO, "Creating views...");
+
+        auto transaction{ createWriteTransaction() };
+        _session.execute(R"(
+            CREATE VIEW IF NOT EXISTS keywords (type, id, weight, value) AS
+            SELECT *
+            FROM (SELECT "artist", id, 3, name
+                  FROM artist
+                  UNION
+                  SELECT "track", id, 3, name
+                  FROM track
+                  UNION
+                  SELECT "track", track_id, 1, artist.name
+                  FROM track_artist_link
+                           JOIN artist ON (track_artist_link.artist_id = artist.id)
+                  UNION
+                  SELECT "release", id, 3, name
+                  FROM "release"
+                  UNION
+                  SELECT "release", r.id, 1, a.name
+                  FROM "release" r
+                           JOIN track t ON (r.id = t.release_id)
+                           JOIN track_artist_link tal ON (tal.track_id = t.id)
+                           JOIN artist a ON (a.id = tal.artist_id))
+        )");
+
+        LMS_LOG(DB, INFO, "Views created!");
+    }
+
+    void Session::dropViews()
+    {
+        LMS_SCOPED_TRACE_OVERVIEW("Database", "ViewDestruction");
+        LMS_LOG(DB, INFO, "Dropping views...");
+
+        auto transaction{ createWriteTransaction() };
+        _session.execute("DROP VIEW IF EXISTS keywords");
+
+        LMS_LOG(DB, INFO, "Views dropped!");
+    }
+
     void Session::vacuumIfNeeded()
     {
         long pageCount{};

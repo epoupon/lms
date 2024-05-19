@@ -1,4 +1,5 @@
 add_library(lmsdatabase SHARED
+	impl/AnyMedium.cpp
 	impl/Artist.cpp
 	impl/AuthToken.cpp
 	impl/Cluster.cpp
