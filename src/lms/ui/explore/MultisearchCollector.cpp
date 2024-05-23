@@ -3,6 +3,8 @@
 #include <LmsApplication.hpp>
 #include <database/Session.hpp>
 
+#include "Filters.hpp"
+
 namespace lms::ui
 {
     using namespace db;
@@ -13,7 +15,7 @@ namespace lms::ui
         const Range range = getActualRange(requestedRange);
 
         auto transaction = LmsApp->getDbSession().createReadTransaction();
-        auto results = any_medium::findIds(LmsApp->getDbSession(), getSearchKeywords(), range);
+        auto results = any_medium::findIds(LmsApp->getDbSession(), getSearchKeywords(), getFilters().getClusters(), getFilters().getMediaLibrary(), range);
 
         if (range.offset + range.size >= getMaxCount())
             results.moreResults = false;

@@ -62,6 +62,7 @@ namespace lms::db::tests
             db::Session s{ _tmpDb->getDb() };
             s.prepareTablesIfNeeded();
             s.createIndexesIfNeeded();
+            s.createViewsIfNeeded();
         }
     }
 

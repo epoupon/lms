@@ -243,26 +243,88 @@ namespace lms::db
 
         auto transaction{ createWriteTransaction() };
         _session.execute(R"(
-            CREATE VIEW IF NOT EXISTS keywords (type, id, weight, value) AS
-            SELECT *
-            FROM (SELECT "artist", id, 3, name
-                  FROM artist
-                  UNION
-                  SELECT "track", id, 3, name
-                  FROM track
-                  UNION
-                  SELECT "track", track_id, 1, artist.name
-                  FROM track_artist_link
-                           JOIN artist ON (track_artist_link.artist_id = artist.id)
-                  UNION
-                  SELECT "release", id, 3, name
-                  FROM "release"
-                  UNION
-                  SELECT "release", r.id, 1, a.name
-                  FROM "release" r
-                           JOIN track t ON (r.id = t.release_id)
-                           JOIN track_artist_link tal ON (tal.track_id = t.id)
-                           JOIN artist a ON (a.id = tal.artist_id))
+            CREATE VIEW IF NOT EXISTS keywords(type, id, weight, value, media_library_ids, cluster_ids) AS
+            WITH tracks AS (WITH keywords AS (SELECT id, 5 as weight, name
+                                              FROM track
+                                              UNION ALL
+                                              SELECT DISTINCT track_id, 1, artist.name
+                                              FROM track_artist_link
+                                                       JOIN artist ON track_artist_link.artist_id = artist.id),
+                                 media_libs AS (SELECT id, json_array(media_library_id) as media_library_ids
+                                                FROM track
+                                                WHERE media_library_id IS NOT NULL),
+                                 clusters AS (SELECT track_id as id, json_group_array(cluster_id) as cluster_ids
+                                              FROM track_cluster
+                                              GROUP BY track_id)
+                            SELECT keywords.id,
+                                   weight,
+                                   name,
+                                   IFNULL(media_libs.media_library_ids, json_array()) AS media_library_ids,
+                                   IFNULL(clusters.cluster_ids, json_array())         AS cluster_ids
+                            FROM keywords
+                                     LEFT JOIN media_libs ON media_libs.id = keywords.id
+                                     LEFT JOIN clusters ON clusters.id = keywords.id),
+
+                 artists AS (WITH keywords AS (SELECT id, 5 as weight, name
+                                               FROM artist),
+                                  media_libs AS (SELECT artist_id as id, json_group_array(media_library_id) as media_library_ids
+                                                 FROM (SELECT DISTINCT artist_id, media_library_id
+                                                       FROM track_artist_link
+                                                                JOIN track ON track_artist_link.track_id = track.id
+                                                       WHERE media_library_id IS NOT NULL)
+                                                 GROUP BY artist_id),
+                                  clusters AS (SELECT artist_id as id, json_group_array(cluster_id) as cluster_ids
+                                               FROM (SELECT DISTINCT artist_id, cluster_id
+                                                     FROM track_artist_link
+                                                              JOIN track_cluster on track_artist_link.track_id = track_cluster.track_id)
+                                               GROUP BY artist_id)
+                             SELECT keywords.id,
+                                    weight,
+                                    name,
+                                    IFNULL(media_libs.media_library_ids, json_array()) AS media_library_ids,
+                                    IFNULL(clusters.cluster_ids, json_array())         AS cluster_ids
+                             FROM keywords
+                                      LEFT JOIN media_libs ON media_libs.id = keywords.id
+                                      LEFT JOIN clusters ON clusters.id = keywords.id),
+
+                 releases AS (WITH keywords AS (SELECT id, 5 as weight, name
+                                                FROM "release"
+                                                UNION ALL
+                                                SELECT id, 1 as weight, artist_display_name
+                                                FROM "release"
+                                                UNION ALL
+                                                SELECT DISTINCT r.id, 1, a.name
+                                                FROM "release" r
+                                                         JOIN track t ON r.id = t.release_id
+                                                         JOIN track_artist_link tal ON tal.track_id = t.id
+                                                         JOIN artist a ON a.id = tal.artist_id),
+                                   media_libs AS (SELECT release_id as id, json_group_array(media_library_id) as media_library_ids
+                                                  FROM (SELECT DISTINCT release_id, media_library_id
+                                                        FROM track
+                                                        WHERE media_library_id IS NOT NULL)
+                                                  GROUP BY release_id),
+                                   clusters AS (SELECT release_id as id, json_group_array(cluster_id) as cluster_ids
+                                                FROM (SELECT DISTINCT release_id, cluster_id
+                                                      FROM track
+                                                               JOIN track_cluster on track.id = track_cluster.track_id)
+                                                GROUP BY release_id)
+                              SELECT keywords.id,
+                                     weight,
+                                     name,
+                                     IFNULL(media_libs.media_library_ids, json_array()) AS media_library_ids,
+                                     IFNULL(clusters.cluster_ids, json_array())         AS cluster_ids
+                              FROM keywords
+                                       LEFT JOIN media_libs ON media_libs.id = keywords.id
+                                       LEFT JOIN clusters ON clusters.id = keywords.id)
+
+            SELECT "track", id, weight, name, media_library_ids, cluster_ids
+            FROM tracks
+            UNION ALL
+            SELECT "artist", id, weight, name, media_library_ids, cluster_ids
+            FROM artists
+            UNION ALL
+            SELECT "release", id, weight, name, media_library_ids, cluster_ids
+            FROM releases
         )");
 
         LMS_LOG(DB, INFO, "Views created!");
