@@ -120,7 +120,7 @@ namespace lms::ui::MultisearchListHelpers {
         cover->addStyleClass("Lms-cover-track Lms-cover-anchor"); // HACK
         anchor->setImage(std::move(cover));
 
-        const auto artists = release->getArtists({db::TrackArtistLinkType::Artist});;
+        const auto artists = release->getReleaseArtists();
         if (!artists.empty())
         {
             entry->setCondition("if-has-artists", true);
