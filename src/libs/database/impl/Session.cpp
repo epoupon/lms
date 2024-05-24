@@ -243,7 +243,7 @@ namespace lms::db
 
         auto transaction{ createWriteTransaction() };
         _session.execute(R"(
-            CREATE VIEW IF NOT EXISTS keywords(type, id, weight, value, media_library_ids, cluster_ids) AS
+            CREATE TABLE IF NOT EXISTS keywords AS
             WITH tracks AS (WITH keywords AS (SELECT id, 5 as weight, name
                                               FROM track
                                               UNION ALL
@@ -317,7 +317,7 @@ namespace lms::db
                                        LEFT JOIN media_libs ON media_libs.id = keywords.id
                                        LEFT JOIN clusters ON clusters.id = keywords.id)
 
-            SELECT "track", id, weight, name, media_library_ids, cluster_ids
+            SELECT "track" as type, id, weight, name as value, media_library_ids, cluster_ids
             FROM tracks
             UNION ALL
             SELECT "artist", id, weight, name, media_library_ids, cluster_ids
@@ -336,7 +336,7 @@ namespace lms::db
         LMS_LOG(DB, INFO, "Dropping views...");
 
         auto transaction{ createWriteTransaction() };
-        _session.execute("DROP VIEW IF EXISTS keywords");
+        _session.execute("DROP TABLE IF EXISTS keywords");
 
         LMS_LOG(DB, INFO, "Views dropped!");
     }

@@ -15,10 +15,10 @@
 <message id="Lms.Explore.Multisearch.template.entry-track">
 	<div class="d-flex align-items-center mb-2">
 		<div class="p-1">
-			<i class="fa fa-music" aria-hidden="true"></i>
+			${cover}
 		</div>
 		<div class="p-1">
-			${cover}
+			<i class="fa fa-music text-secondary" aria-hidden="true"></i>
 		</div>
 		<div class="row align-items-center flex-fill overflow-hidden">
 			<div class="col-12 col-md-6 col-lg-4">
@@ -58,10 +58,10 @@
 <message id="Lms.Explore.Multisearch.template.entry-release">
 	<div class="d-flex align-items-center mb-2">
 		<div class="p-1">
-			<i class="fa fa-list" aria-hidden="true"></i>
+			${cover}
 		</div>
 		<div class="p-1">
-			${cover}
+			<i class="fa fa-list text-primary" aria-hidden="true"></i>
 		</div>
 		<div class="row align-items-center flex-fill overflow-hidden">
 			<div class="col-12 col-md-6 col-lg-4">
@@ -101,10 +101,10 @@
 <message id="Lms.Explore.Multisearch.template.entry-artist">
 	<div class="d-flex align-items-center mb-2">
 		<div class="p-1">
-			<i class="fa fa-user" aria-hidden="true"></i>
+			${cover}
 		</div>
 		<div class="p-1">
-			${cover}
+			<i class="fa fa-user text-info" aria-hidden="true"></i>
 		</div>
 		<div class="row align-items-center flex-fill overflow-hidden">
 			<div class="col-12 col-md-6 col-lg-4">

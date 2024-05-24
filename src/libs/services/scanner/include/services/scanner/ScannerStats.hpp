@@ -66,6 +66,7 @@ namespace lms::scanner
         DiscoverFiles,
         FetchTrackFeatures,
         Optimize,
+        RecreateViews,
         ReloadSimilarityEngine,
         ScanFiles,
     };
