@@ -17,6 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <benchmark/benchmark.h>
 #include <iostream>
 #include <thread>
 #include <benchmark/benchmark.h>
