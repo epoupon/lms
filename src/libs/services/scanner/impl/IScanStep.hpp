@@ -43,4 +43,4 @@ namespace lms::scanner
         };
         virtual void process(ScanContext& context) = 0;
     };
-}
+} // namespace lms::scanner

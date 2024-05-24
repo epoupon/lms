@@ -20,6 +20,7 @@
 #include "LoginNameValidator.hpp"
 
 #include <Wt/WLengthValidator.h>
+
 #include "database/User.hpp"
 
 namespace lms::ui
@@ -31,7 +32,7 @@ namespace lms::ui
         private:
             std::string javaScriptValidate() const override { return {}; }
         };
-    }
+    } // namespace
 
     std::unique_ptr<Wt::WValidator> createLoginNameValidator()
     {

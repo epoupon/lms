@@ -59,4 +59,4 @@ namespace lms::scrobbling::listenBrainz::utils
         listenBrainzUserName = root.get("user_name").orIfNull("");
         return listenBrainzUserName;
     }
-}
+} // namespace lms::scrobbling::listenBrainz::utils

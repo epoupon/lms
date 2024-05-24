@@ -32,14 +32,13 @@ namespace lms::core::pathUtils::tests
             std::filesystem::path expectedCommonPath;
         };
 
-        TestCase tests[]
-        {
-            {"foo.txt", "/foo/foo.txt", ""},
-            {"/", "/file.txt", "/"},
-            {"/foo/bar/file1.txt", "/foo/bar/file2.txt", "/foo/bar"},
-            {"/foo/bar/file.txt", "/foo/bar/file.txt", "/foo/bar/file.txt"},
-            {"/dir1/file.txt", "/dir2/file.txt", "/"},
-            {"/prefix/folder/file.txt", "/prefix/folder/subfolder/file.txt", "/prefix/folder"},
+        TestCase tests[]{
+            { "foo.txt", "/foo/foo.txt", "" },
+            { "/", "/file.txt", "/" },
+            { "/foo/bar/file1.txt", "/foo/bar/file2.txt", "/foo/bar" },
+            { "/foo/bar/file.txt", "/foo/bar/file.txt", "/foo/bar/file.txt" },
+            { "/dir1/file.txt", "/dir2/file.txt", "/" },
+            { "/prefix/folder/file.txt", "/prefix/folder/subfolder/file.txt", "/prefix/folder" },
         };
 
         for (const TestCase& test : tests)
@@ -47,7 +46,6 @@ namespace lms::core::pathUtils::tests
             EXPECT_EQ(core::pathUtils::getLongestCommonPath(test.path1, test.path2), test.expectedCommonPath);
         }
     }
-
 
     TEST(Path, getLongestCommonPathIterator)
     {
@@ -57,17 +55,16 @@ namespace lms::core::pathUtils::tests
             std::filesystem::path expectedCommonPath;
         };
 
-        TestCase tests[]
-        {
-            {{}, ""},
-            {{"/"}, "/"},
-            {{"/foo", "/bar"}, "/"},
-            {{"/foo/bar/file1.txt", "/foo/bar/file2.txt"}, "/foo/bar"},
-            {{"/foo", "/foo/"}, "/foo"},
-            {{"/foo", "/foo"}, "/foo"},
-            {{"/foo/", "/foo/"}, "/foo/"},
-            {{"/foo/", "/foo/", "/bar"}, "/"},
-            {{"/foo/", "/foo/", "/foo/bar"}, "/foo"},
+        TestCase tests[]{
+            { {}, "" },
+            { { "/" }, "/" },
+            { { "/foo", "/bar" }, "/" },
+            { { "/foo/bar/file1.txt", "/foo/bar/file2.txt" }, "/foo/bar" },
+            { { "/foo", "/foo/" }, "/foo" },
+            { { "/foo", "/foo" }, "/foo" },
+            { { "/foo/", "/foo/" }, "/foo/" },
+            { { "/foo/", "/foo/", "/bar" }, "/" },
+            { { "/foo/", "/foo/", "/foo/bar" }, "/foo" },
         };
 
         for (const TestCase& test : tests)
@@ -85,19 +82,18 @@ namespace lms::core::pathUtils::tests
             bool expectedResult;
         };
 
-        TestCase tests[]
-        {
-            {"/file.txt", "/", true},
-            {"/root/folder/file.txt", "/root", true},
-            {"/root/file.txt", "/root", true},
-            {"/root/file.txt", "/root/", true},
-            {"/root", "/root", true},
-            {"/root", "/root/", true},
-            {"/root/", "/root", true},
-            {"/root/", "/root/", true},
-            {"/folder/file.txt", "/root", false},
-            {"/folder/file.txt", "/root/", false},
-            {"", "/root", false},
+        TestCase tests[]{
+            { "/file.txt", "/", true },
+            { "/root/folder/file.txt", "/root", true },
+            { "/root/file.txt", "/root", true },
+            { "/root/file.txt", "/root/", true },
+            { "/root", "/root", true },
+            { "/root", "/root/", true },
+            { "/root/", "/root", true },
+            { "/root/", "/root/", true },
+            { "/folder/file.txt", "/root", false },
+            { "/folder/file.txt", "/root/", false },
+            { "", "/root", false },
         };
 
         for (const TestCase& test : tests)
@@ -105,4 +101,4 @@ namespace lms::core::pathUtils::tests
             EXPECT_EQ(core::pathUtils::isPathInRootPath(test.path, test.rootPath), test.expectedResult) << "Failed: path = " << test.path << ", rootPath = " << test.rootPath;
         }
     }
-}
+} // namespace lms::core::pathUtils::tests

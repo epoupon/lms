@@ -27,9 +27,8 @@ int main(int argc, char** argv)
 {
     using namespace lms;
     // log to stdout
-    core::Service<core::logging::ILogger> logger{ std::make_unique<core::logging::StreamLogger>(std::cout, core::EnumSet<core::logging::Severity> {core::logging::Severity::FATAL, core::logging::Severity::ERROR}) };
+    core::Service<core::logging::ILogger> logger{ std::make_unique<core::logging::StreamLogger>(std::cout, core::EnumSet<core::logging::Severity>{ core::logging::Severity::FATAL, core::logging::Severity::ERROR }) };
 
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
-

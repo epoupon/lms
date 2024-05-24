@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <string>
 #include <sstream>
+#include <string>
 
+#include "core/Service.hpp"
 #include "core/String.hpp"
-#include "Service.hpp"
 
 namespace lms::core::logging
 {
@@ -93,11 +93,11 @@ namespace lms::core::logging
         virtual bool isSeverityActive(Severity severity) const = 0;
         virtual void processLog(const Log& log) = 0;
     };
-}
+} // namespace lms::core::logging
 
-#define LMS_LOG(module, severity, message) \
-    do \
-    { \
-        if (auto* logger_ {::lms::core::Service<::lms::core::logging::ILogger>::get()}; logger_ && logger_->isSeverityActive(::lms::core::logging::Severity::severity)) \
-            ::lms::core::logging::Log{ *logger_, ::lms::core::logging::Module::module, ::lms::core::logging::Severity::severity }.getOstream() << message; \
-    } while(0)
+#define LMS_LOG(module, severity, message)                                                                                                                               \
+    do                                                                                                                                                                   \
+    {                                                                                                                                                                    \
+        if (auto* logger_{ ::lms::core::Service<::lms::core::logging::ILogger>::get() }; logger_ && logger_->isSeverityActive(::lms::core::logging::Severity::severity)) \
+            ::lms::core::logging::Log{ *logger_, ::lms::core::logging::Module::module, ::lms::core::logging::Severity::severity }.getOstream() << message;               \
+    } while (0)

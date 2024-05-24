@@ -20,12 +20,14 @@
 #include "SubsonicResponse.hpp"
 
 #include <cassert>
-#include <cmath>
 #include <climits>
+#include <cmath>
+
 #include <boost/property_tree/xml_parser.hpp>
 
 #include "core/Exception.hpp"
 #include "core/String.hpp"
+
 #include "ProtocolVersion.hpp"
 
 namespace lms::api::subsonic
@@ -34,8 +36,10 @@ namespace lms::api::subsonic
     {
         switch (format)
         {
-        case ResponseFormat::xml: return "text/xml";
-        case ResponseFormat::json: return "application/json";
+        case ResponseFormat::xml:
+            return "text/xml";
+        case ResponseFormat::json:
+            return "application/json";
         }
 
         return "";
@@ -92,7 +96,7 @@ namespace lms::api::subsonic
         assert(!_children.contains(key));
         auto& values{ _childrenValues[key] };
         values.emplace_back(string{ value });
-        assert(std::all_of(std::cbegin(values) + 1, std::cend(values), [&](const ValueType& value) {return value.index() == values.front().index();}));
+        assert(std::all_of(std::cbegin(values) + 1, std::cend(values), [&](const ValueType& value) { return value.index() == values.front().index(); }));
     }
 
     void Response::Node::addArrayValue(Key key, long long value)
@@ -100,7 +104,7 @@ namespace lms::api::subsonic
         assert(!_value);
         auto& values{ _childrenValues[key] };
         values.emplace_back(value);
-        assert(std::all_of(std::cbegin(values) + 1, std::cend(values), [&](const ValueType& value) {return value.index() == values.front().index();}));
+        assert(std::all_of(std::cbegin(values) + 1, std::cend(values), [&](const ValueType& value) { return value.index() == values.front().index(); }));
     }
 
     Response::Node& Response::Node::createChild(Key key)
@@ -186,59 +190,57 @@ namespace lms::api::subsonic
 
     void Response::writeXML(std::ostream& os) const
     {
-        std::function<boost::property_tree::ptree(const Node&)> nodeToPropertyTree = [&](const Node& node)
+        std::function<boost::property_tree::ptree(const Node&)> nodeToPropertyTree = [&](const Node& node) {
+            boost::property_tree::ptree res;
+
+            for (const auto& [key, value] : node._attributes)
             {
+                if (std::holds_alternative<Node::string>(value))
+                    res.put("<xmlattr>." + std::string{ key.str() }, std::get<Node::string>(value));
+                else if (std::holds_alternative<bool>(value))
+                    res.put("<xmlattr>." + std::string{ key.str() }, std::get<bool>(value));
+                else if (std::holds_alternative<float>(value))
+                    res.put("<xmlattr>." + std::string{ key.str() }, std::get<float>(value));
+                else if (std::holds_alternative<long long>(value))
+                    res.put("<xmlattr>." + std::string{ key.str() }, std::get<long long>(value));
+            }
+
+            auto valueToPropertyTree = [](const Node::ValueType& value) {
                 boost::property_tree::ptree res;
-
-                for (const auto& [key, value] : node._attributes)
-                {
-                    if (std::holds_alternative<Node::string>(value))
-                        res.put("<xmlattr>." + std::string{ key.str() }, std::get<Node::string>(value));
-                    else if (std::holds_alternative<bool>(value))
-                        res.put("<xmlattr>." + std::string{ key.str() }, std::get<bool>(value));
-                    else if (std::holds_alternative<float>(value))
-                        res.put("<xmlattr>." + std::string{ key.str() }, std::get<float>(value));
-                    else if (std::holds_alternative<long long>(value))
-                        res.put("<xmlattr>." + std::string{ key.str() }, std::get<long long>(value));
-                }
-
-                auto valueToPropertyTree = [](const Node::ValueType& value)
-                    {
-                        boost::property_tree::ptree res;
-                        std::visit([&](const auto& rawValue)
-                            {
-                                res.put_value(rawValue);
-                            }, value);
-
-                        return res;
-                    };
-
-                if (node._value)
-                {
-                    res = valueToPropertyTree(*node._value);
-                }
-                else
-                {
-                    for (const auto& [key, childNode] : node._children)
-                    {
-                        res.add_child(std::string{ key.str() }, nodeToPropertyTree(childNode));
-                    }
-
-                    for (const auto& [key, childArrayNodes] : node._childrenArrays)
-                    {
-                        for (const Node& childNode : childArrayNodes)
-                            res.add_child(std::string{ key.str() }, nodeToPropertyTree(childNode));
-                    }
-
-                    for (const auto& [key, childArrayValues] : node._childrenValues)
-                    {
-                        for (const Response::Node::ValueType& value : childArrayValues)
-                            res.add_child(std::string{ key.str() }, valueToPropertyTree(value));
-                    }
-                }
+                std::visit([&](const auto& rawValue) {
+                    res.put_value(rawValue);
+                },
+                    value);
 
                 return res;
             };
+
+            if (node._value)
+            {
+                res = valueToPropertyTree(*node._value);
+            }
+            else
+            {
+                for (const auto& [key, childNode] : node._children)
+                {
+                    res.add_child(std::string{ key.str() }, nodeToPropertyTree(childNode));
+                }
+
+                for (const auto& [key, childArrayNodes] : node._childrenArrays)
+                {
+                    for (const Node& childNode : childArrayNodes)
+                        res.add_child(std::string{ key.str() }, nodeToPropertyTree(childNode));
+                }
+
+                for (const auto& [key, childArrayValues] : node._childrenValues)
+                {
+                    for (const Response::Node::ValueType& value : childArrayValues)
+                        res.add_child(std::string{ key.str() }, valueToPropertyTree(value));
+                }
+            }
+
+            return res;
+        };
 
         const boost::property_tree::ptree root{ nodeToPropertyTree(_root) };
         boost::property_tree::write_xml(os, root);
@@ -376,4 +378,4 @@ namespace lms::api::subsonic
         serializer.serializeNode(os, _root);
     }
 
-} // namespace
+} // namespace lms::api::subsonic

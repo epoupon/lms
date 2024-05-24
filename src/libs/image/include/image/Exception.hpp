@@ -25,7 +25,7 @@ namespace lms::image
 {
     class Exception : public core::LmsException
     {
-       public:
-           using LmsException::LmsException;
+    public:
+        using LmsException::LmsException;
     };
-} // namespace lms::cover
+} // namespace lms::image

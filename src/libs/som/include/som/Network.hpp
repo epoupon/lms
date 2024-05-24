@@ -19,17 +19,16 @@
 
 #pragma once
 
-#include <vector>
+#include <functional>
 #include <optional>
 #include <ostream>
-#include <functional>
+#include <vector>
 
 #include "InputVector.hpp"
 #include "Matrix.hpp"
 
 namespace lms::som
 {
-
     using LearningFactor = InputVector::value_type;
     using Norm = InputVector::value_type;
 
@@ -92,16 +91,14 @@ namespace lms::som
         void setNeighbourhoodFunc(NeighbourhoodFunc neighbourhoodFunc);
 
     private:
-
         void updateRefVectors(const Position& closestRefVectorPosition, const InputVector& input, LearningFactor learningFactor, const CurrentIteration& iteration);
 
         std::size_t _inputDimCount{};
-        InputVector _weights;	// weight for each dimension
+        InputVector _weights; // weight for each dimension
         Matrix<InputVector> _refVectors;
 
         DistanceFunc _distanceFunc;
         LearningFactorFunc _learningFactorFunc;
         NeighbourhoodFunc _neighbourhoodFunc;
     };
-
 } // namespace lms::som

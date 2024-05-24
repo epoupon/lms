@@ -19,11 +19,12 @@
 
 #include "database/User.hpp"
 
+#include "core/ILogger.hpp"
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "core/ILogger.hpp"
+
 #include "IdTypeTraits.hpp"
 #include "StringViewTraits.hpp"
 #include "Utils.hpp"
@@ -37,7 +38,7 @@ namespace lms::db
 
     User::pointer User::create(Session& session, std::string_view loginName)
     {
-        return session.getDboSession()->add(std::unique_ptr<User> {new User{ loginName }});
+        return session.getDboSession()->add(std::unique_ptr<User>{ new User{ loginName } });
     }
 
     std::size_t User::getCount(Session& session)
@@ -87,8 +88,7 @@ namespace lms::db
 
     User::pointer User::find(Session& session, std::string_view name)
     {
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<User>()
-            .where("login_name = ?").bind(name));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<User>().where("login_name = ?").bind(name));
     }
 
     void User::setSubsonicDefaultTranscodingOutputBitrate(Bitrate bitrate)

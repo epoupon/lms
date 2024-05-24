@@ -20,8 +20,8 @@
 #include "Searching.hpp"
 
 #include <chrono>
-#include <mutex>
 #include <map>
+#include <mutex>
 
 #include "core/Random.hpp"
 #include "database/Artist.hpp"
@@ -29,11 +29,12 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
+
+#include "ParameterParsing.hpp"
+#include "SubsonicId.hpp"
 #include "responses/Album.hpp"
 #include "responses/Artist.hpp"
 #include "responses/Song.hpp"
-#include "ParameterParsing.hpp"
-#include "SubsonicId.hpp"
 
 namespace lms::api::subsonic
 {
@@ -44,7 +45,7 @@ namespace lms::api::subsonic
         // Search endpoints can be used to scan/sync the database
         // This class is used to keep track of the current scans, in order to retrieve the last objectId
         // to speed up the query of the following range (avoid the 'offset' cost)
-        template <typename ObjectId>
+        template<typename ObjectId>
         class ScanTracker
         {
         public:
@@ -71,7 +72,7 @@ namespace lms::api::subsonic
             };
 
             static constexpr std::size_t maxScanCount{ 50 };
-            static constexpr ClockType::duration maxEntryDuration{ std::chrono::seconds{30} };
+            static constexpr ClockType::duration maxEntryDuration{ std::chrono::seconds{ 30 } };
 
             std::mutex _mutex;
             std::map<ScanInfo, Entry> _ongoingScans;
@@ -126,20 +127,18 @@ namespace lms::api::subsonic
             const std::size_t artistOffset{ getParameterAs<std::size_t>(context.parameters, "artistOffset").value_or(0) };
 
             ArtistId lastRetrievedId;
-            auto findArtists{ [&]
-            {
-                    Artist::FindParameters params;
-                    params.setKeywords(keywords);
-                    params.setRange(Range{ artistOffset, artistCount });
-                    params.setMediaLibrary(mediaLibrary);
-                    params.setSortMethod(ArtistSortMethod::Id); // must be consistent with both methods
+            auto findArtists{ [&] {
+                Artist::FindParameters params;
+                params.setKeywords(keywords);
+                params.setRange(Range{ artistOffset, artistCount });
+                params.setMediaLibrary(mediaLibrary);
+                params.setSortMethod(ArtistSortMethod::Id); // must be consistent with both methods
 
-                    Artist::find(context.dbSession, params, [&](const Artist::pointer& artist)
-                        {
-                            searchResultNode.addArrayChild("artist", createArtistNode(context, artist, user, id3));
-                            lastRetrievedId = artist->getId();
-                        });
-                } };
+                Artist::find(context.dbSession, params, [&](const Artist::pointer& artist) {
+                    searchResultNode.addArrayChild("artist", createArtistNode(context, artist, user, id3));
+                    lastRetrievedId = artist->getId();
+                });
+            } };
 
             if (!keywords.empty())
             {
@@ -147,8 +146,7 @@ namespace lms::api::subsonic
             }
             else
             {
-                ScanTracker<ArtistId>::ScanInfo scanInfo
-                {
+                ScanTracker<ArtistId>::ScanInfo scanInfo{
                     .clientAddress = context.clientInfo.ipAddress,
                     .clientName = context.clientInfo.name,
                     .userName = context.clientInfo.user,
@@ -158,10 +156,11 @@ namespace lms::api::subsonic
 
                 if (ArtistId cachedLastRetrievedId{ currentScansInProgress.extractLastRetrievedObjectId(scanInfo) }; cachedLastRetrievedId.isValid())
                 {
-                    Artist::find(context.dbSession, cachedLastRetrievedId, artistCount, [&](const Artist::pointer& artist)
-                        {
+                    Artist::find(
+                        context.dbSession, cachedLastRetrievedId, artistCount, [&](const Artist::pointer& artist) {
                             searchResultNode.addArrayChild("artist", createArtistNode(context, artist, user, id3));
-                        }, mediaLibrary);
+                        },
+                        mediaLibrary);
                     lastRetrievedId = cachedLastRetrievedId;
                 }
                 else
@@ -192,19 +191,17 @@ namespace lms::api::subsonic
 
             ReleaseId lastRetrievedId;
 
-            auto findReleases{ [&]
-            {
+            auto findReleases{ [&] {
                 Release::FindParameters params;
                 params.setKeywords(keywords);
                 params.setRange(Range{ albumOffset, albumCount });
                 params.setMediaLibrary(mediaLibrary);
                 params.setSortMethod(ReleaseSortMethod::Id); // must be consistent with both methods
 
-                Release::find(context.dbSession, params, [&](const Release::pointer& release)
-                    {
-                        searchResultNode.addArrayChild("album", createAlbumNode(context, release, user, id3));
-                        lastRetrievedId = release->getId();
-                    });
+                Release::find(context.dbSession, params, [&](const Release::pointer& release) {
+                    searchResultNode.addArrayChild("album", createAlbumNode(context, release, user, id3));
+                    lastRetrievedId = release->getId();
+                });
             } };
 
             if (!keywords.empty())
@@ -213,8 +210,7 @@ namespace lms::api::subsonic
             }
             else
             {
-                ScanTracker<ReleaseId>::ScanInfo scanInfo
-                {
+                ScanTracker<ReleaseId>::ScanInfo scanInfo{
                     .clientAddress = context.clientInfo.ipAddress,
                     .clientName = context.clientInfo.name,
                     .userName = context.clientInfo.user,
@@ -224,10 +220,11 @@ namespace lms::api::subsonic
 
                 if (ReleaseId cachedLastRetrievedId{ currentScansInProgress.extractLastRetrievedObjectId(scanInfo) }; cachedLastRetrievedId.isValid())
                 {
-                    Release::find(context.dbSession, cachedLastRetrievedId, albumCount, [&](const Release::pointer& release)
-                        {
+                    Release::find(
+                        context.dbSession, cachedLastRetrievedId, albumCount, [&](const Release::pointer& release) {
                             searchResultNode.addArrayChild("album", createAlbumNode(context, release, user, id3));
-                        }, mediaLibrary);
+                        },
+                        mediaLibrary);
                     lastRetrievedId = cachedLastRetrievedId;
                 }
                 else
@@ -258,19 +255,17 @@ namespace lms::api::subsonic
 
             TrackId lastRetrievedId;
 
-            auto findTracks{ [&]
-            {
+            auto findTracks{ [&] {
                 Track::FindParameters params;
                 params.setKeywords(keywords);
                 params.setRange(Range{ songOffset, songCount });
                 params.setMediaLibrary(mediaLibrary);
                 params.setSortMethod(TrackSortMethod::Id); // must be consistent with both methods
 
-                Track::find(context.dbSession, params, [&](const Track::pointer& track)
-                    {
-                        searchResultNode.addArrayChild("song", createSongNode(context, track, user));
-                        lastRetrievedId = track->getId();
-                    });
+                Track::find(context.dbSession, params, [&](const Track::pointer& track) {
+                    searchResultNode.addArrayChild("song", createSongNode(context, track, user));
+                    lastRetrievedId = track->getId();
+                });
             } };
 
             if (!keywords.empty())
@@ -279,8 +274,7 @@ namespace lms::api::subsonic
             }
             else
             {
-                ScanTracker<TrackId>::ScanInfo scanInfo
-                {
+                ScanTracker<TrackId>::ScanInfo scanInfo{
                     .clientAddress = context.clientInfo.ipAddress,
                     .clientName = context.clientInfo.name,
                     .userName = context.clientInfo.user,
@@ -290,10 +284,11 @@ namespace lms::api::subsonic
 
                 if (TrackId cachedLastRetrievedId{ currentScansInProgress.extractLastRetrievedObjectId(scanInfo) }; cachedLastRetrievedId.isValid())
                 {
-                    Track::find(context.dbSession, cachedLastRetrievedId, songCount, [&](const Track::pointer& track)
-                        {
+                    Track::find(
+                        context.dbSession, cachedLastRetrievedId, songCount, [&](const Track::pointer& track) {
                             searchResultNode.addArrayChild("song", createSongNode(context, track, user));
-                        }, mediaLibrary);
+                        },
+                        mediaLibrary);
                     lastRetrievedId = cachedLastRetrievedId;
                 }
                 else
@@ -308,7 +303,7 @@ namespace lms::api::subsonic
                 }
             }
         }
-    }
+    } // namespace
 
     namespace
     {
@@ -340,7 +335,7 @@ namespace lms::api::subsonic
 
             return response;
         }
-    }
+    } // namespace
 
     Response handleSearch2Request(RequestContext& context)
     {
@@ -351,4 +346,4 @@ namespace lms::api::subsonic
     {
         return handleSearchRequestCommon(context, true /* id3 */);
     }
-}
+} // namespace lms::api::subsonic

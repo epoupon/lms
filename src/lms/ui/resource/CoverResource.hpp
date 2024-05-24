@@ -20,30 +20,30 @@
 #pragma once
 
 #include <Wt/WResource.h>
+
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 
 namespace lms::ui
 {
-	class CoverResource : public Wt::WResource
-	{
-		public:
-			static const std::size_t maxSize {512};
+    class CoverResource : public Wt::WResource
+    {
+    public:
+        static const std::size_t maxSize{ 512 };
 
-			CoverResource();
-			~CoverResource();
+        CoverResource();
+        ~CoverResource();
 
-			enum class Size : std::size_t
-			{
-				Small = 128,
-				Large = 512,
-			};
+        enum class Size : std::size_t
+        {
+            Small = 128,
+            Large = 512,
+        };
 
-			std::string getReleaseUrl(db::ReleaseId releaseId, Size size) const;
-			std::string getTrackUrl(db::TrackId trackId, Size size) const;
+        std::string getReleaseUrl(db::ReleaseId releaseId, Size size) const;
+        std::string getTrackUrl(db::TrackId trackId, Size size) const;
 
-		private:
-			void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
-	};
+    private:
+        void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
+    };
 } // namespace lms::ui
-

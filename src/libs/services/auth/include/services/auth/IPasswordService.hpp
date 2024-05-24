@@ -19,59 +19,59 @@
 
 #pragma once
 
-#include <string_view>
 #include <optional>
+#include <string_view>
 
-#include <boost/asio/ip/address.hpp>
-#include <Wt/WDateTime.h>
 #include <Wt/Dbo/ptr.h>
+#include <Wt/WDateTime.h>
+#include <boost/asio/ip/address.hpp>
 
-#include "services/auth/Types.hpp"
 #include "database/UserId.hpp"
+#include "services/auth/Types.hpp"
 
 namespace lms::db
 {
-	class Db;
-	class User;
-}
+    class Db;
+    class User;
+} // namespace lms::db
 
 namespace lms::auth
 {
-	class IAuthTokenService;
+    class IAuthTokenService;
 
-	class IPasswordService
-	{
-		public:
-			virtual ~IPasswordService() = default;
+    class IPasswordService
+    {
+    public:
+        virtual ~IPasswordService() = default;
 
-			struct CheckResult
-			{
-				enum class State
-				{
-					Granted,
-					Denied,
-					Throttled,
-				};
-				State state {State::Denied};
-				std::optional<db::UserId> userId {};
-				std::optional<Wt::WDateTime> expiry {};
-			};
-			virtual CheckResult		checkUserPassword(const boost::asio::ip::address& clientAddress,
-														std::string_view loginName,
-														std::string_view password) = 0;
+        struct CheckResult
+        {
+            enum class State
+            {
+                Granted,
+                Denied,
+                Throttled,
+            };
+            State state{ State::Denied };
+            std::optional<db::UserId> userId{};
+            std::optional<Wt::WDateTime> expiry{};
+        };
+        virtual CheckResult checkUserPassword(const boost::asio::ip::address& clientAddress,
+            std::string_view loginName,
+            std::string_view password)
+            = 0;
 
-			virtual bool			canSetPasswords() const = 0;
+        virtual bool canSetPasswords() const = 0;
 
-			enum class PasswordAcceptabilityResult
-			{
-				OK,
-				TooWeak,
-				MustMatchLoginName,
-			};
-			virtual PasswordAcceptabilityResult	checkPasswordAcceptability(std::string_view password, const PasswordValidationContext& context) const = 0;
-			virtual void						setPassword(db::UserId userId, std::string_view newPassword) = 0;
-	};
+        enum class PasswordAcceptabilityResult
+        {
+            OK,
+            TooWeak,
+            MustMatchLoginName,
+        };
+        virtual PasswordAcceptabilityResult checkPasswordAcceptability(std::string_view password, const PasswordValidationContext& context) const = 0;
+        virtual void setPassword(db::UserId userId, std::string_view newPassword) = 0;
+    };
 
-	std::unique_ptr<IPasswordService>	createPasswordService(std::string_view authPasswordBackend, db::Db& db, std::size_t maxThrottlerEntryCount, IAuthTokenService& authTokenService);
-}
-
+    std::unique_ptr<IPasswordService> createPasswordService(std::string_view authPasswordBackend, db::Db& db, std::size_t maxThrottlerEntryCount, IAuthTokenService& authTokenService);
+} // namespace lms::auth

@@ -24,27 +24,32 @@
 
 #include "core/IChildProcessManager.hpp"
 #include "core/IConfig.hpp"
-#include "core/Path.hpp"
 #include "core/ILogger.hpp"
+#include "core/Path.hpp"
 #include "core/Service.hpp"
 
 namespace lms::av::transcoding
 {
 
-#define LOG(severity, message)	LMS_LOG(TRANSCODING, severity, "[" << _debugId << "] - " << message)
+#define LOG(severity, message) LMS_LOG(TRANSCODING, severity, "[" << _debugId << "] - " << message)
 
-    static std::atomic<size_t>		globalId{};
-    static std::filesystem::path	ffmpegPath;
+    static std::atomic<size_t> globalId{};
+    static std::filesystem::path ffmpegPath;
 
     std::string_view formatToMimetype(OutputFormat format)
     {
         switch (format)
         {
-        case OutputFormat::MP3:             return "audio/mpeg";
-        case OutputFormat::OGG_OPUS:        return "audio/opus";
-        case OutputFormat::MATROSKA_OPUS:   return "audio/x-matroska";
-        case OutputFormat::OGG_VORBIS:      return "audio/ogg";
-        case OutputFormat::WEBM_VORBIS:     return "audio/webm";
+        case OutputFormat::MP3:
+            return "audio/mpeg";
+        case OutputFormat::OGG_OPUS:
+            return "audio/opus";
+        case OutputFormat::MATROSKA_OPUS:
+            return "audio/x-matroska";
+        case OutputFormat::OGG_VORBIS:
+            return "audio/ogg";
+        case OutputFormat::WEBM_VORBIS:
+            return "audio/webm";
         }
 
         throw Exception{ "Invalid encoding" };
@@ -195,10 +200,9 @@ namespace lms::av::transcoding
     {
         assert(_childProcess);
 
-        return _childProcess->asyncRead(buffer, bufferSize, [readCallback{ std::move(readCallback) }](core::IChildProcess::ReadResult /*res*/, std::size_t nbBytesRead)
-            {
-                readCallback(nbBytesRead);
-            });
+        return _childProcess->asyncRead(buffer, bufferSize, [readCallback{ std::move(readCallback) }](core::IChildProcess::ReadResult /*res*/, std::size_t nbBytesRead) {
+            readCallback(nbBytesRead);
+        });
     }
 
     std::size_t Transcoder::readSome(std::byte* buffer, std::size_t bufferSize)
@@ -215,4 +219,4 @@ namespace lms::av::transcoding
         return _childProcess->finished();
     }
 
-} // namespace lms::av::Transcoding
+} // namespace lms::av::transcoding

@@ -20,13 +20,14 @@
 #pragma once
 
 #include <string_view>
+
 #include "database/UserId.hpp"
 
 namespace lms::db
 {
     class Db;
     class Session;
-}
+} // namespace lms::db
 
 namespace lms::auth
 {
@@ -35,12 +36,12 @@ namespace lms::auth
     protected:
         AuthServiceBase(db::Db& db);
 
-        db::UserId    getOrCreateUser(std::string_view loginName);
-        void                onUserAuthenticated(db::UserId userId);
+        db::UserId getOrCreateUser(std::string_view loginName);
+        void onUserAuthenticated(db::UserId userId);
 
-        db::Session&  getDbSession();
+        db::Session& getDbSession();
 
     private:
         db::Db& _db;
     };
-}
+} // namespace lms::auth

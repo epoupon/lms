@@ -36,7 +36,7 @@ namespace lms::core::http
             Low,
         };
 
-        Priority	priority{ Priority::Normal };
+        Priority priority{ Priority::Normal };
         std::string relativeUrl; // relative to baseUrl used by the client
 
         using OnSuccessFunc = std::function<void(std::string_view msgBody)>;
@@ -56,4 +56,4 @@ namespace lms::core::http
         Wt::Http::Message message;
     };
 
-}
+} // namespace lms::core::http

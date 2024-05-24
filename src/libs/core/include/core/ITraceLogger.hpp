@@ -34,20 +34,20 @@
 #define LMS_CONCAT_IMPL(x, y) x##y
 #define LMS_CONCAT(x, y) LMS_CONCAT_IMPL(x, y)
 
-#if LMS_SUPPORT_TRACING 
-#define LMS_SCOPED_TRACE(CATEGORY, LEVEL, NAME, ARGTYPE, ARGVALUE) \
-std::optional<::lms::core::tracing::ScopedTrace> LMS_CONCAT(ScopedTrace_, __LINE__); \
-if (::lms::core::tracing::ITraceLogger* traceLogger{ ::lms::core::Service<::lms::core::tracing::ITraceLogger>::get() }; traceLogger && traceLogger->isLevelActive(LEVEL)) \
-    LMS_CONCAT(ScopedTrace_, __LINE__).emplace(CATEGORY, LEVEL, NAME, ARGTYPE, ARGVALUE, traceLogger);
+#if LMS_SUPPORT_TRACING
+    #define LMS_SCOPED_TRACE(CATEGORY, LEVEL, NAME, ARGTYPE, ARGVALUE)                                                                                                             \
+        std::optional<::lms::core::tracing::ScopedTrace> LMS_CONCAT(ScopedTrace_, __LINE__);                                                                                       \
+        if (::lms::core::tracing::ITraceLogger * traceLogger{ ::lms::core::Service<::lms::core::tracing::ITraceLogger>::get() }; traceLogger && traceLogger->isLevelActive(LEVEL)) \
+            LMS_CONCAT(ScopedTrace_, __LINE__).emplace(CATEGORY, LEVEL, NAME, ARGTYPE, ARGVALUE, traceLogger);
 #else
-#define LMS_SCOPED_TRACE(CATEGORY, LEVEL, NAME)      (void)0
+    #define LMS_SCOPED_TRACE(CATEGORY, LEVEL, NAME) (void)0
 #endif
 
-#define LMS_SCOPED_TRACE_OVERVIEW_WITH_ARG(CATEGORY, NAME, ARGTYPE, ARGVALUE)   LMS_SCOPED_TRACE(CATEGORY, ::lms::core::tracing::Level::Overview, NAME, ARGTYPE, ARGVALUE)
-#define LMS_SCOPED_TRACE_DETAILED_WITH_ARG(CATEGORY, NAME, ARGTYPE, ARGVALUE)   LMS_SCOPED_TRACE(CATEGORY, ::lms::core::tracing::Level::Detailed, NAME, ARGTYPE, ARGVALUE)
+#define LMS_SCOPED_TRACE_OVERVIEW_WITH_ARG(CATEGORY, NAME, ARGTYPE, ARGVALUE) LMS_SCOPED_TRACE(CATEGORY, ::lms::core::tracing::Level::Overview, NAME, ARGTYPE, ARGVALUE)
+#define LMS_SCOPED_TRACE_DETAILED_WITH_ARG(CATEGORY, NAME, ARGTYPE, ARGVALUE) LMS_SCOPED_TRACE(CATEGORY, ::lms::core::tracing::Level::Detailed, NAME, ARGTYPE, ARGVALUE)
 
-#define LMS_SCOPED_TRACE_OVERVIEW(CATEGORY, NAME)   LMS_SCOPED_TRACE_OVERVIEW_WITH_ARG(CATEGORY, NAME, "", "")
-#define LMS_SCOPED_TRACE_DETAILED(CATEGORY, NAME)   LMS_SCOPED_TRACE_DETAILED_WITH_ARG(CATEGORY, NAME, "", "")
+#define LMS_SCOPED_TRACE_OVERVIEW(CATEGORY, NAME) LMS_SCOPED_TRACE_OVERVIEW_WITH_ARG(CATEGORY, NAME, "", "")
+#define LMS_SCOPED_TRACE_DETAILED(CATEGORY, NAME) LMS_SCOPED_TRACE_DETAILED_WITH_ARG(CATEGORY, NAME, "", "")
 
 namespace lms::core::tracing
 {
@@ -124,4 +124,4 @@ namespace lms::core::tracing
         ITraceLogger* _traceLogger;
         ITraceLogger::CompleteEvent _event;
     };
-}
+} // namespace lms::core::tracing

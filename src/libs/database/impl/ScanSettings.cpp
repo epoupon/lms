@@ -21,9 +21,10 @@
 
 #include <Wt/Dbo/WtSqlTraits.h>
 
+#include "core/String.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
-#include "core/String.hpp"
+
 #include "Utils.hpp"
 
 namespace lms::db

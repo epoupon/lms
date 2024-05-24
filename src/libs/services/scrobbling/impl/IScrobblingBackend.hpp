@@ -30,7 +30,7 @@ namespace lms::db
     class Session;
     class TrackList;
     class User;
-}
+} // namespace lms::db
 
 namespace lms::scrobbling
 {
@@ -44,5 +44,4 @@ namespace lms::scrobbling
         virtual void listenFinished(const Listen& listen, std::optional<std::chrono::seconds> duration) = 0;
         virtual void addTimedListen(const TimedListen& listen) = 0;
     };
-} // ns Scrobbling
-
+} // namespace lms::scrobbling

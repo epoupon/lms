@@ -22,23 +22,23 @@
 #include <memory>
 
 #include <Wt/WWidget.h>
+
 #include "database/Object.hpp"
 #include "database/TrackId.hpp"
 
 namespace lms::db
 {
-	class Track;
+    class Track;
 }
 
 namespace lms::ui
 {
-	class PlayQueueController;
-	class Filters;
-}
+    class PlayQueueController;
+    class Filters;
+} // namespace lms::ui
 
 namespace lms::ui::TrackListHelpers
 {
-	void showTrackInfoModal(db::TrackId trackId, Filters& filters);
-	std::unique_ptr<Wt::WWidget> createEntry(const db::ObjectPtr<db::Track>& track, PlayQueueController& playQueueController, Filters& filters);
-} // namespace lms::ui
-
+    void showTrackInfoModal(db::TrackId trackId, Filters& filters);
+    std::unique_ptr<Wt::WWidget> createEntry(const db::ObjectPtr<db::Track>& track, PlayQueueController& playQueueController, Filters& filters);
+} // namespace lms::ui::TrackListHelpers

@@ -24,10 +24,11 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WTemplateFormView.h>
 
-#include "database/MediaLibrary.hpp"
-#include "database/Session.hpp"
 #include "core/Path.hpp"
 #include "core/String.hpp"
+#include "database/MediaLibrary.hpp"
+#include "database/Session.hpp"
+
 #include "LmsApplication.hpp"
 
 namespace lms::ui
@@ -39,7 +40,8 @@ namespace lms::ui
         class LibraryNameValidator : public Wt::WValidator
         {
         public:
-            LibraryNameValidator(MediaLibraryId libraryId) : _libraryId{ libraryId } {}
+            LibraryNameValidator(MediaLibraryId libraryId)
+                : _libraryId{ libraryId } {}
 
         private:
             Wt::WValidator::Result validate(const Wt::WString& input) const override
@@ -53,14 +55,13 @@ namespace lms::ui
                 auto& session{ LmsApp->getDbSession() };
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-                db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer library)
-                    {
-                        if (library->getId() == _libraryId)
-                            return;
+                db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer library) {
+                    if (library->getId() == _libraryId)
+                        return;
 
-                        if (core::stringUtils::stringCaseInsensitiveEqual(name, library->getName()))
-                            result = Wt::WValidator::Result{ Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.MediaLibrary.name-already-exists") };
-                    });
+                    if (core::stringUtils::stringCaseInsensitiveEqual(name, library->getName()))
+                        result = Wt::WValidator::Result{ Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.MediaLibrary.name-already-exists") };
+                });
 
                 return result;
             }
@@ -71,7 +72,8 @@ namespace lms::ui
         class LibraryRootPathValidator : public Wt::WValidator
         {
         public:
-            LibraryRootPathValidator(MediaLibraryId libraryId) : _libraryId{ libraryId } {}
+            LibraryRootPathValidator(MediaLibraryId libraryId)
+                : _libraryId{ libraryId } {}
 
         private:
             Wt::WValidator::Result validate(const Wt::WString& input) const override
@@ -96,20 +98,19 @@ namespace lms::ui
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
                 Wt::WValidator::Result result{ Wt::ValidationState::Valid };
-                const std::filesystem::path rootPath{ std::filesystem::path{input.toUTF8()}.lexically_normal() };
-                db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer library)
+                const std::filesystem::path rootPath{ std::filesystem::path{ input.toUTF8() }.lexically_normal() };
+                db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer library) {
+                    if (library->getId() == _libraryId)
+                        return;
+
+                    const std::filesystem::path libraryRootPath{ library->getPath().lexically_normal() };
+
+                    if (core::pathUtils::isPathInRootPath(rootPath, libraryRootPath)
+                        || core::pathUtils::isPathInRootPath(libraryRootPath, rootPath))
                     {
-                        if (library->getId() == _libraryId)
-                            return;
-
-                        const std::filesystem::path libraryRootPath{ library->getPath().lexically_normal() };
-
-                        if (core::pathUtils::isPathInRootPath(rootPath, libraryRootPath)
-                            || core::pathUtils::isPathInRootPath(libraryRootPath, rootPath))
-                        {
-                            result = Wt::WValidator::Result{ Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.MediaLibrary.path-must-not-overlap") };
-                        }
-                    });
+                        result = Wt::WValidator::Result{ Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.MediaLibrary.path-must-not-overlap") };
+                    }
+                });
 
                 return result;
             }
@@ -176,7 +177,7 @@ namespace lms::ui
 
             const MediaLibraryId _libraryId;
         };
-    }
+    } // namespace
 
     MediaLibraryModal::MediaLibraryModal(MediaLibraryId mediaLibraryId)
         : Wt::WTemplateFormView{ Wt::WString::tr("Lms.Admin.MediaLibrary.template") }
@@ -189,24 +190,23 @@ namespace lms::ui
         setFormWidget(MediaLibraryModel::DirectoryField, std::make_unique<Wt::WLineEdit>());
 
         Wt::WPushButton* saveBtn{ bindNew<Wt::WPushButton>("save-btn", Wt::WString::tr(mediaLibraryId.isValid() ? "Lms.save" : "Lms.create")) };
-        saveBtn->clicked().connect(this, [this, model]
-            {
-                updateModel(model.get());
+        saveBtn->clicked().connect(this, [this, model] {
+            updateModel(model.get());
 
-                if (model->validate())
-                {
-                    db::MediaLibraryId mediaLibraryId{ model->saveData() };
-                    saved().emit(mediaLibraryId);
-                }
-                else
-                {
-                    updateView(model.get());
-                }
-            });
+            if (model->validate())
+            {
+                db::MediaLibraryId mediaLibraryId{ model->saveData() };
+                saved().emit(mediaLibraryId);
+            }
+            else
+            {
+                updateView(model.get());
+            }
+        });
 
         Wt::WPushButton* cancelBtn{ bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel")) };
         cancelBtn->clicked().connect(this, [this] { cancelled().emit(); });
 
         updateView(model.get());
     }
-}
+} // namespace lms::ui

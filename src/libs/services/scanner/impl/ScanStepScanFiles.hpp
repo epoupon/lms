@@ -27,8 +27,9 @@
 #include <string>
 #include <vector>
 
-#include "metadata/IParser.hpp"
 #include "core/IOContextRunner.hpp"
+#include "metadata/IParser.hpp"
+
 #include "ScanStepBase.hpp"
 
 namespace lms::scanner
@@ -52,36 +53,36 @@ namespace lms::scanner
         void processMetaDataScanResults(ScanContext& context, std::span<const MetaDataScanResult> scanResults, const ScannerSettings::MediaLibraryInfo& libraryInfo);
         void processFileMetaData(ScanContext& context, const std::filesystem::path& file, const metadata::Track& trackMetadata, const ScannerSettings::MediaLibraryInfo& libraryInfo);
 
-        std::unique_ptr<metadata::IParser>  _metadataParser;
-        const std::vector<std::string>      _extraTagsToParse;
+        std::unique_ptr<metadata::IParser> _metadataParser;
+        const std::vector<std::string> _extraTagsToParse;
 
         class MetadataScanQueue
         {
-            public:
-                MetadataScanQueue(metadata::IParser& parser, std::size_t threadCount, bool& abort);
+        public:
+            MetadataScanQueue(metadata::IParser& parser, std::size_t threadCount, bool& abort);
 
-                std::size_t getThreadCount() const { return _scanContextRunner.getThreadCount(); }
+            std::size_t getThreadCount() const { return _scanContextRunner.getThreadCount(); }
 
-                void pushScanRequest(const std::filesystem::path& path);
+            void pushScanRequest(const std::filesystem::path& path);
 
-                std::size_t getResultsCount() const;
-                size_t popResults(std::vector<MetaDataScanResult>& results, std::size_t maxCount);
+            std::size_t getResultsCount() const;
+            size_t popResults(std::vector<MetaDataScanResult>& results, std::size_t maxCount);
 
-                void wait(std::size_t maxScanRequestCount = 0); // wait until ongoing scan request count <= maxScanRequestCount
+            void wait(std::size_t maxScanRequestCount = 0); // wait until ongoing scan request count <= maxScanRequestCount
 
-            private:
-                metadata::IParser& _metadataParser;
-                boost::asio::io_context _scanContext;
-                core::IOContextRunner _scanContextRunner;
+        private:
+            metadata::IParser& _metadataParser;
+            boost::asio::io_context _scanContext;
+            core::IOContextRunner _scanContextRunner;
 
-                mutable std::mutex _mutex ;
-                std::size_t _ongoingScanCount{};
-                std::deque<MetaDataScanResult> _scanResults;
-                std::condition_variable _condVar;
-                bool& _abort;
+            mutable std::mutex _mutex;
+            std::size_t _ongoingScanCount{};
+            std::deque<MetaDataScanResult> _scanResults;
+            std::condition_variable _condVar;
+            bool& _abort;
         };
         MetadataScanQueue _metadataScanQueue;
 
         std::deque<MetaDataScanResult> _metaDataScanResults;
     };
-}
+} // namespace lms::scanner

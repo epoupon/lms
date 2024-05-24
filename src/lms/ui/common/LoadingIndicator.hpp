@@ -23,6 +23,5 @@
 
 namespace lms::ui
 {
-	std::unique_ptr<Wt::WTemplate> createLoadingIndicator();
+    std::unique_ptr<Wt::WTemplate> createLoadingIndicator();
 }
-

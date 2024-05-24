@@ -22,6 +22,7 @@
 #include "core/Service.hpp"
 #include "core/String.hpp"
 #include "services/auth/IPasswordService.hpp"
+
 #include "SubsonicResponse.hpp"
 
 namespace lms::api::subsonic::utils
@@ -38,4 +39,4 @@ namespace lms::api::subsonic::utils
         return core::stringUtils::replaceInString(name, "/", "_");
     }
 
-}
+} // namespace lms::api::subsonic::utils

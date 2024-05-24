@@ -19,21 +19,21 @@
 
 #include "responses/Album.hpp"
 
+#include "core/ITraceLogger.hpp"
+#include "core/Service.hpp"
+#include "core/String.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
-#include "core/ITraceLogger.hpp"
-#include "core/Service.hpp"
-#include "core/String.hpp"
 
+#include "SubsonicId.hpp"
 #include "responses/Artist.hpp"
 #include "responses/DiscTitle.hpp"
 #include "responses/ItemDate.hpp"
 #include "responses/ItemGenre.hpp"
-#include "SubsonicId.hpp"
 
 namespace lms::api::subsonic
 {
@@ -45,13 +45,14 @@ namespace lms::api::subsonic
 
         Response::Node albumNode;
 
-        if (id3) {
+        if (id3)
+        {
             albumNode.setAttribute("name", release->getName());
             albumNode.setAttribute("songCount", release->getTrackCount());
             albumNode.setAttribute(
                 "duration", std::chrono::duration_cast<std::chrono::seconds>(
-                    release->getDuration())
-                .count());
+                                release->getDuration())
+                                .count());
         }
         else
         {
@@ -97,7 +98,7 @@ namespace lms::api::subsonic
         const ClusterType::pointer genreClusterType{ ClusterType::find(context.dbSession, "GENRE") };
         if (genreClusterType)
         {
-            auto clusters{ release->getClusterGroups({genreClusterType->getId()}, 1) };
+            auto clusters{ release->getClusterGroups({ genreClusterType->getId() }, 1) };
             if (!clusters.empty() && !clusters.front().empty())
                 albumNode.setAttribute("genre", clusters.front().front()->getName());
         }
@@ -124,19 +125,17 @@ namespace lms::api::subsonic
             albumNode.setAttribute("musicBrainzId", mbid ? mbid->getAsString() : "");
         }
 
-        auto addClusters{ [&](Response::Node::Key field, std::string_view clusterTypeName)
-        {
+        auto addClusters{ [&](Response::Node::Key field, std::string_view clusterTypeName) {
             albumNode.createEmptyArrayValue(field);
 
             Cluster::FindParameters params;
             params.setRelease(release->getId());
             params.setClusterTypeName(clusterTypeName);
 
-            Cluster::find(context.dbSession, params, [&](const Cluster::pointer& cluster)
-                {
-                    albumNode.addArrayValue(field, cluster->getName());
-                });
-        }};
+            Cluster::find(context.dbSession, params, [&](const Cluster::pointer& cluster) {
+                albumNode.addArrayValue(field, cluster->getName());
+            });
+        } };
 
         addClusters("moods", "MOOD");
 
@@ -148,10 +147,9 @@ namespace lms::api::subsonic
             params.setRelease(release->getId());
             params.setClusterType(genreClusterType->getId());
 
-            Cluster::find(context.dbSession, params, [&](const Cluster::pointer& cluster)
-                {
-                    albumNode.addArrayChild("genres", createItemGenreNode(cluster->getName()));
-                });
+            Cluster::find(context.dbSession, params, [&](const Cluster::pointer& cluster) {
+                albumNode.addArrayChild("genres", createItemGenreNode(cluster->getName()));
+            });
         }
 
         albumNode.createEmptyArrayChild("artists");
@@ -186,4 +184,4 @@ namespace lms::api::subsonic
 
         return albumNode;
     }
-}
+} // namespace lms::api::subsonic

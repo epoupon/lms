@@ -20,6 +20,7 @@
 #pragma once
 
 #include <string_view>
+
 #include <Wt/Dbo/SqlTraits.h>
 
 namespace Wt::Dbo
@@ -32,5 +33,4 @@ namespace Wt::Dbo
             statement->bind(column, std::string{ str });
         }
     };
-}
-
+} // namespace Wt::Dbo

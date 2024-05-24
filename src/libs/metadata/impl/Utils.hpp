@@ -22,22 +22,23 @@
 
 #include <optional>
 #include <string_view>
+
 #include <Wt/WDate.h>
 
 #include "metadata/IParser.hpp"
 
 namespace lms::metadata::utils
 {
-	Wt::WDate parseDate(std::string_view dateStr);
-	std::optional<int> parseYear(std::string_view yearStr);
-	std::string_view readStyleToString(ParserReadStyle readStyle);
+    Wt::WDate parseDate(std::string_view dateStr);
+    std::optional<int> parseYear(std::string_view yearStr);
+    std::string_view readStyleToString(ParserReadStyle readStyle);
 
-	struct PerformerArtist
-	{
-		Artist artist;
-		std::string role;
-	};
+    struct PerformerArtist
+    {
+        Artist artist;
+        std::string role;
+    };
 
-	// format is "artist name (role)"
-	PerformerArtist extractPerformerAndRole(std::string_view entry);
-}
+    // format is "artist name (role)"
+    PerformerArtist extractPerformerAndRole(std::string_view entry);
+} // namespace lms::metadata::utils

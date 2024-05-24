@@ -20,6 +20,7 @@
 #pragma once
 
 #include "database/Object.hpp"
+
 #include "SubsonicResponse.hpp"
 
 namespace lms::db
@@ -27,7 +28,7 @@ namespace lms::db
     class Release;
     class User;
     class Session;
-}
+} // namespace lms::db
 
 namespace lms::api::subsonic
 {

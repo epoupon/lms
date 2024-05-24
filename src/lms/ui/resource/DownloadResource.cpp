@@ -22,17 +22,17 @@
 #include <Wt/Http/Response.h>
 #include <Wt/WDateTime.h>
 
+#include "core/Exception.hpp"
+#include "core/ILogger.hpp"
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
-#include "core/Exception.hpp"
-#include "core/ILogger.hpp"
 
 #include "LmsApplication.hpp"
 
-#define LOG(severity, message)	LMS_LOG(UI, severity, "Download resource: " << message)
+#define LOG(severity, message) LMS_LOG(UI, severity, "Download resource: " << message)
 
 namespace lms::ui
 {
@@ -106,7 +106,7 @@ namespace lms::ui
 
             return releaseName;
         }
-    }
+    } // namespace
 
     namespace details
     {
@@ -157,7 +157,7 @@ namespace lms::ui
 
             return zip::createArchiveZipper(files);
         }
-    }
+    } // namespace details
 
     DownloadArtistResource::DownloadArtistResource(db::ArtistId artistId)
         : _artistId{ artistId }
@@ -173,7 +173,7 @@ namespace lms::ui
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const auto trackResults{ db::Track::find(LmsApp->getDbSession(), db::Track::FindParameters {}.setArtist(_artistId).setSortMethod(db::TrackSortMethod::DateDescAndRelease)) };
+        const auto trackResults{ db::Track::find(LmsApp->getDbSession(), db::Track::FindParameters{}.setArtist(_artistId).setSortMethod(db::TrackSortMethod::DateDescAndRelease)) };
         return details::createZipper(trackResults.results);
     }
 
@@ -187,14 +187,13 @@ namespace lms::ui
             suggestFileName(getReleasePathName(release) + ".zip");
     }
 
-
     std::unique_ptr<zip::IZipper> DownloadReleaseResource::createZipper()
     {
         using namespace db;
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        auto tracks{ Track::find(LmsApp->getDbSession(), Track::FindParameters {}.setRelease(_releaseId).setSortMethod(TrackSortMethod::Release)) };
+        auto tracks{ Track::find(LmsApp->getDbSession(), Track::FindParameters{}.setRelease(_releaseId).setSortMethod(TrackSortMethod::Release)) };
         return details::createZipper(tracks.results);
     }
 

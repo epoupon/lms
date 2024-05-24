@@ -39,4 +39,4 @@ namespace lms::api::subsonic
 
         return trackBookmarkNode;
     }
-}
+} // namespace lms::api::subsonic

@@ -28,42 +28,41 @@
 
 namespace lms::ui
 {
-	class Filters;
-	class PlayQueue;
+    class Filters;
+    class PlayQueue;
 
-	// Used to interact with the play queue, using the current exploration filters
-	class PlayQueueController
-	{
-		public:
-			PlayQueueController(Filters& filters, PlayQueue& playQueue);
+    // Used to interact with the play queue, using the current exploration filters
+    class PlayQueueController
+    {
+    public:
+        PlayQueueController(Filters& filters, PlayQueue& playQueue);
 
-			enum class Command
-			{
-				Play,
-				PlayNext,
-				PlayOrAddLast,
-				PlayShuffled,
-			};
+        enum class Command
+        {
+            Play,
+            PlayNext,
+            PlayOrAddLast,
+            PlayShuffled,
+        };
 
-			void processCommand(Command command, const std::vector<db::ArtistId>& artists);
-			void processCommand(Command command, const std::vector<db::ReleaseId>& releases);
-			void processCommand(Command command, const std::vector<db::TrackId>& tracks);
+        void processCommand(Command command, const std::vector<db::ArtistId>& artists);
+        void processCommand(Command command, const std::vector<db::ReleaseId>& releases);
+        void processCommand(Command command, const std::vector<db::TrackId>& tracks);
 
-			struct Disc
-			{
-				db::ReleaseId releaseId;
-				size_t discNumber;
-			};
-			void processCommand(Command command, const std::vector<Disc>& discs);
-			void processCommand(Command command, db::TrackListId trackList);
-			void playTrackInRelease(db::TrackId track);
+        struct Disc
+        {
+            db::ReleaseId releaseId;
+            size_t discNumber;
+        };
+        void processCommand(Command command, const std::vector<Disc>& discs);
+        void processCommand(Command command, db::TrackListId trackList);
+        void playTrackInRelease(db::TrackId track);
 
-			void setMaxTrackCountToEnqueue(std::size_t maxTrackCount) { _maxTrackCountToEnqueue = maxTrackCount; }
+        void setMaxTrackCountToEnqueue(std::size_t maxTrackCount) { _maxTrackCountToEnqueue = maxTrackCount; }
 
-		private:
-			Filters& _filters;
-			PlayQueue& _playQueue;
-			std::size_t _maxTrackCountToEnqueue {};
-	};
-}
-
+    private:
+        Filters& _filters;
+        PlayQueue& _playQueue;
+        std::size_t _maxTrackCountToEnqueue{};
+    };
+} // namespace lms::ui

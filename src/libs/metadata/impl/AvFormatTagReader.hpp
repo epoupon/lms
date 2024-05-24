@@ -23,13 +23,14 @@
 
 #include "av/IAudioFile.hpp"
 #include "metadata/IParser.hpp"
+
 #include "ITagReader.hpp"
 
 namespace lms::metadata
 {
     class AvFormatTagReader : public ITagReader
     {
-   public:
+    public:
         AvFormatTagReader(const std::filesystem::path& path, bool debug);
 
     private:
@@ -48,4 +49,3 @@ namespace lms::metadata
         bool _hasEmbeddedCover{};
     };
 } // namespace lms::metadata
-

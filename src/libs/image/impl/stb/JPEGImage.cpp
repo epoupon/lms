@@ -24,41 +24,41 @@
 
 #include "core/ITraceLogger.hpp"
 #include "image/Exception.hpp"
+
 #include "RawImage.hpp"
 
 namespace lms::image::STB
 {
-	JPEGImage::JPEGImage(const RawImage& rawImage, unsigned quality)
-	{
+    JPEGImage::JPEGImage(const RawImage& rawImage, unsigned quality)
+    {
         LMS_SCOPED_TRACE_DETAILED("Image", "WriteJPEG");
 
-		auto writeCb {[](void* ctx, void* writeData, int writeSize)
-		{
-			auto& output {*reinterpret_cast<std::vector<std::byte>*>(ctx)};
-			const std::size_t currentOutputSize {output.size()};
-			output.resize(currentOutputSize + writeSize);
-			std::copy(reinterpret_cast<const std::byte*>(writeData), reinterpret_cast<const std::byte*>(writeData) + writeSize, output.data() + currentOutputSize);
-		}};
+        auto writeCb{ [](void* ctx, void* writeData, int writeSize) {
+            auto& output{ *reinterpret_cast<std::vector<std::byte>*>(ctx) };
+            const std::size_t currentOutputSize{ output.size() };
+            output.resize(currentOutputSize + writeSize);
+            std::copy(reinterpret_cast<const std::byte*>(writeData), reinterpret_cast<const std::byte*>(writeData) + writeSize, output.data() + currentOutputSize);
+        } };
 
-		if (stbi_write_jpg_to_func(writeCb, &_data, rawImage.getWidth(), rawImage.getHeight(), 3, rawImage.getData(), quality) == 0)
-		{
-			_data.clear();
-			throw Exception {"Failed to export in jpeg format!"};
-		}
-	}
+        if (stbi_write_jpg_to_func(writeCb, &_data, rawImage.getWidth(), rawImage.getHeight(), 3, rawImage.getData(), quality) == 0)
+        {
+            _data.clear();
+            throw Exception{ "Failed to export in jpeg format!" };
+        }
+    }
 
-	const std::byte*
-	JPEGImage::getData() const
-	{
-		if (_data.empty())
-				return nullptr;
+    const std::byte*
+    JPEGImage::getData() const
+    {
+        if (_data.empty())
+            return nullptr;
 
-		return &_data.front();
-	}
+        return &_data.front();
+    }
 
-	std::size_t
-	JPEGImage::getDataSize() const
-	{
-		return _data.size();
-	}
-}
+    std::size_t
+    JPEGImage::getDataSize() const
+    {
+        return _data.size();
+    }
+} // namespace lms::image::STB

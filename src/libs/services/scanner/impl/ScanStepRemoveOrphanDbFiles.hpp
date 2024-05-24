@@ -25,21 +25,21 @@
 
 namespace lms::scanner
 {
-	class ScanStepRemoveOrphanDbFiles : public ScanStepBase
-	{
-		public:
-			using ScanStepBase::ScanStepBase;
+    class ScanStepRemoveOrphanDbFiles : public ScanStepBase
+    {
+    public:
+        using ScanStepBase::ScanStepBase;
 
-		private:
-			core::LiteralString getStepName() const override { return "Check orphaned entries"; }
-			ScanStep getStep() const override { return ScanStep::CheckForMissingFiles; }
-			void process(ScanContext& context) override;
+    private:
+        core::LiteralString getStepName() const override { return "Check orphaned entries"; }
+        ScanStep getStep() const override { return ScanStep::CheckForMissingFiles; }
+        void process(ScanContext& context) override;
 
-			void removeOrphanTracks(ScanContext& context);
-			void removeOrphanClusters();
-			void removeOrphanClusterTypes();
-			void removeOrphanArtists();
-			void removeOrphanReleases();
-			bool checkFile(const std::filesystem::path& p);
-	};
-}
+        void removeOrphanTracks(ScanContext& context);
+        void removeOrphanClusters();
+        void removeOrphanClusterTypes();
+        void removeOrphanArtists();
+        void removeOrphanReleases();
+        bool checkFile(const std::filesystem::path& p);
+    };
+} // namespace lms::scanner

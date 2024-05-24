@@ -20,10 +20,12 @@
 #include "database/AuthToken.hpp"
 
 #include <Wt/Dbo/WtSqlTraits.h>
+
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "StringViewTraits.hpp"
+
 #include "IdTypeTraits.hpp"
+#include "StringViewTraits.hpp"
 #include "Utils.hpp"
 
 namespace lms::db
@@ -37,7 +39,7 @@ namespace lms::db
 
     AuthToken::pointer AuthToken::create(Session& session, std::string_view value, const Wt::WDateTime& expiry, ObjectPtr<User> user)
     {
-        return session.getDboSession()->add(std::unique_ptr<AuthToken> {new AuthToken{ value, expiry, user }});
+        return session.getDboSession()->add(std::unique_ptr<AuthToken>{ new AuthToken{ value, expiry, user } });
     }
 
     void AuthToken::removeExpiredTokens(Session& session, const Wt::WDateTime& now)
@@ -53,4 +55,4 @@ namespace lms::db
 
         return utils::fetchQuerySingleResult(session.getDboSession()->find<AuthToken>().where("value = ?").bind(value));
     }
-}
+} // namespace lms::db

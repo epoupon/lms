@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
+#include <Wt/WDateTime.h>
 
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
@@ -47,8 +47,8 @@ namespace lms::db
 
         // Accessors
         ObjectPtr<Release> getRelease() const { return _release; }
-        ObjectPtr<User>    getUser() const { return _user; }
-        FeedbackBackend  getFeedbackBackend() const { return _backend; }
+        ObjectPtr<User> getUser() const { return _user; }
+        FeedbackBackend getFeedbackBackend() const { return _backend; }
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
         SyncState getSyncState() const { return _syncState; }
 
@@ -72,12 +72,11 @@ namespace lms::db
         StarredRelease(ObjectPtr<Release> release, ObjectPtr<User> user, FeedbackBackend backend);
         static pointer create(Session& session, ObjectPtr<Release> release, ObjectPtr<User> user, FeedbackBackend backend);
 
-        FeedbackBackend		_backend;			// for which backend
-        SyncState	_syncState{ SyncState::PendingAdd };
-        Wt::WDateTime	_dateTime;			// when it was starred
+        FeedbackBackend _backend; // for which backend
+        SyncState _syncState{ SyncState::PendingAdd };
+        Wt::WDateTime _dateTime; // when it was starred
 
-        Wt::Dbo::ptr<Release>	_release;
-        Wt::Dbo::ptr<User>		_user;
+        Wt::Dbo::ptr<Release> _release;
+        Wt::Dbo::ptr<User> _user;
     };
 } // namespace lms::db
-

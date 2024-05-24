@@ -29,4 +29,4 @@ namespace lms::av
         std::string_view mimeType{ getMimeType(path.extension()) };
         return createFileResourceHandler(path, mimeType.empty() ? "application/octet-stream" : mimeType);
     }
-}
+} // namespace lms::av

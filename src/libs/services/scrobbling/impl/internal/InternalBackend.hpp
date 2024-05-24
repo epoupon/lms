@@ -40,5 +40,4 @@ namespace lms::scrobbling
 
         db::Db& _db;
     };
-} // Scrobbling
-
+} // namespace lms::scrobbling

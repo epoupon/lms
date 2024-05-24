@@ -29,7 +29,7 @@ namespace lms::av::transcoding
             const std::size_t estimatedContentLength{ outputParameters.bitrate / 8 * static_cast<std::size_t>(std::chrono::duration_cast<std::chrono::milliseconds>(inputParameters.duration).count()) / 1000 };
             return estimatedContentLength;
         }
-    }
+    } // namespace
 
     std::unique_ptr<IResourceHandler> createResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength)
     {
@@ -68,14 +68,13 @@ namespace lms::av::transcoding
         {
             Wt::Http::ResponseContinuation* continuation{ response.createContinuation() };
             continuation->waitForMoreData();
-            _transcoder.asyncRead(_buffer.data(), _buffer.size(), [this, continuation](std::size_t nbBytesRead)
-                {
-                    LMS_LOG(TRANSCODING, DEBUG, "Have " << nbBytesRead << " more bytes to send back");
+            _transcoder.asyncRead(_buffer.data(), _buffer.size(), [this, continuation](std::size_t nbBytesRead) {
+                LMS_LOG(TRANSCODING, DEBUG, "Have " << nbBytesRead << " more bytes to send back");
 
-                    assert(_bytesReadyCount == 0);
-                    _bytesReadyCount = nbBytesRead;
-                    continuation->haveMoreData();
-                });
+                assert(_bytesReadyCount == 0);
+                _bytesReadyCount = nbBytesRead;
+                continuation->haveMoreData();
+            });
 
             return continuation;
         }
@@ -99,5 +98,4 @@ namespace lms::av::transcoding
 
         return {};
     }
-}
-
+} // namespace lms::av::transcoding

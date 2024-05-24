@@ -21,6 +21,7 @@
 
 #include <cstddef>
 #include <memory>
+
 #include "core/IZipper.hpp"
 
 extern "C"
@@ -77,4 +78,4 @@ namespace lms::zip
         std::uint64_t _bytesWrittenInCurrentOutputStream{};
     };
 
-}
+} // namespace lms::zip

@@ -19,22 +19,23 @@
 
 #include "ListenBrainzBackend.hpp"
 
+#include "core/IConfig.hpp"
+#include "core/ILogger.hpp"
+#include "core/Service.hpp"
+#include "core/http/IClient.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/StarredArtist.hpp"
 #include "database/StarredRelease.hpp"
 #include "database/Track.hpp"
-#include "core/IConfig.hpp"
-#include "core/http/IClient.hpp"
-#include "core/ILogger.hpp"
-#include "core/Service.hpp"
+
 #include "Utils.hpp"
 
 namespace lms::feedback::listenBrainz
 {
     namespace details
     {
-        template <typename StarredObjType>
+        template<typename StarredObjType>
         void onStarred(db::Session& session, typename StarredObjType::IdType id)
         {
             auto transaction{ session.createWriteTransaction() };
@@ -46,7 +47,7 @@ namespace lms::feedback::listenBrainz
             }
         }
 
-        template <typename StarredObjType>
+        template<typename StarredObjType>
         void onUnstarred(db::Session& session, typename StarredObjType::IdType id)
         {
             auto transaction{ session.createWriteTransaction() };
@@ -54,7 +55,7 @@ namespace lms::feedback::listenBrainz
             if (auto starredObj{ StarredObjType::find(session, id) })
                 starredObj.remove();
         }
-    }
+    } // namespace details
 
     ListenBrainzBackend::ListenBrainzBackend(boost::asio::io_context& ioContext, db::Db& db)
         : _ioContext{ ioContext }
@@ -100,4 +101,4 @@ namespace lms::feedback::listenBrainz
     {
         _feedbacksSynchronizer.enqueFeedback(FeedbackType::Erase, starredtrackId);
     }
-} // namespace lms::scrobbling::listenBrainz
+} // namespace lms::feedback::listenBrainz

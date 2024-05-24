@@ -53,7 +53,7 @@ namespace lms::db
 
             return query;
         }
-    }
+    } // namespace
 
     TrackArtistLink::TrackArtistLink(ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type, std::string_view subType)
         : _type{ type }
@@ -83,40 +83,34 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        using ResultType = std::tuple < Wt::Dbo::ptr<TrackArtistLink>, Wt::Dbo::ptr<Artist>>;
+        using ResultType = std::tuple<Wt::Dbo::ptr<TrackArtistLink>, Wt::Dbo::ptr<Artist>>;
 
-        const auto query{ session.getDboSession()->query<ResultType>("SELECT t_a_l, a FROM track_artist_link t_a_l")
-        .join("artist a ON t_a_l.artist_id = a.id")
-        .where("t_a_l.track_id = ?").bind(trackId) };
+        const auto query{ session.getDboSession()->query<ResultType>("SELECT t_a_l, a FROM track_artist_link t_a_l").join("artist a ON t_a_l.artist_id = a.id").where("t_a_l.track_id = ?").bind(trackId) };
 
-        utils::forEachQueryResult(query, [&](const ResultType& result)
-            {
-                func(std::get<Wt::Dbo::ptr<TrackArtistLink>>(result), std::get<Wt::Dbo::ptr<Artist>>(result));
-            });
+        utils::forEachQueryResult(query, [&](const ResultType& result) {
+            func(std::get<Wt::Dbo::ptr<TrackArtistLink>>(result), std::get<Wt::Dbo::ptr<Artist>>(result));
+        });
     }
 
     void TrackArtistLink::find(Session& session, const FindParameters& parameters, const std::function<void(const TrackArtistLink::pointer&)>& func)
     {
         const auto query{ createQuery(session, parameters) };
 
-        utils::forEachQueryResult(query, [&](const TrackArtistLink::pointer& link)
-            {
-                func(link);
-            });
+        utils::forEachQueryResult(query, [&](const TrackArtistLink::pointer& link) {
+            func(link);
+        });
     }
 
     core::EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session, ArtistId artistId)
     {
         session.checkReadTransaction();
 
-        const auto query{ session.getDboSession()->query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link")
-            .where("artist_id = ?").bind(artistId) };
+        const auto query{ session.getDboSession()->query<TrackArtistLinkType>("SELECT DISTINCT type from track_artist_link").where("artist_id = ?").bind(artistId) };
 
         core::EnumSet<TrackArtistLinkType> res;
-        utils::forEachQueryResult(query, [&](TrackArtistLinkType linkType)
-            {
-                res.insert(linkType);
-            });
+        utils::forEachQueryResult(query, [&](TrackArtistLinkType linkType) {
+            res.insert(linkType);
+        });
         return res;
     }
-}
+} // namespace lms::db

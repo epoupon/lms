@@ -24,27 +24,27 @@
 namespace lms::recommendation
 {
 
-	class ClusterEngine : public IEngine
-	{
-		public:
-			ClusterEngine(db::Db& db) : _db {db} {}
+    class ClusterEngine : public IEngine
+    {
+    public:
+        ClusterEngine(db::Db& db)
+            : _db{ db } {}
 
-			ClusterEngine(const ClusterEngine&) = delete;
-			ClusterEngine(ClusterEngine&&) = delete;
-			ClusterEngine& operator=(const ClusterEngine&) = delete;
-			ClusterEngine& operator=(ClusterEngine&&) = delete;
+        ClusterEngine(const ClusterEngine&) = delete;
+        ClusterEngine(ClusterEngine&&) = delete;
+        ClusterEngine& operator=(const ClusterEngine&) = delete;
+        ClusterEngine& operator=(ClusterEngine&&) = delete;
 
-		private:
-			void load(bool, const ProgressCallback&) override {}
-			void requestCancelLoad() override {}
+    private:
+        void load(bool, const ProgressCallback&) override {}
+        void requestCancelLoad() override {}
 
-			TrackContainer		findSimilarTracksFromTrackList(db::TrackListId tracklistId, std::size_t maxCount) const override;
-			TrackContainer		findSimilarTracks(const std::vector<db::TrackId>& tracksId, std::size_t maxCount) const override;
-			ReleaseContainer	getSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const override;
-			ArtistContainer		getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
+        TrackContainer findSimilarTracksFromTrackList(db::TrackListId tracklistId, std::size_t maxCount) const override;
+        TrackContainer findSimilarTracks(const std::vector<db::TrackId>& tracksId, std::size_t maxCount) const override;
+        ReleaseContainer getSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const override;
+        ArtistContainer getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
 
-			db::Db& _db;
-	};
+        db::Db& _db;
+    };
 
 } // namespace lms::recommendation
-

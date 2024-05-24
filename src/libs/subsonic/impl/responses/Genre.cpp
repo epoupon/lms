@@ -33,4 +33,4 @@ namespace lms::api::subsonic
 
         return clusterNode;
     }
-}
+} // namespace lms::api::subsonic

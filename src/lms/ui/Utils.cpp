@@ -32,8 +32,9 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
-#include "explore/Filters.hpp"
+
 #include "LmsApplication.hpp"
+#include "explore/Filters.hpp"
 
 namespace lms::ui::utils
 {
@@ -61,12 +62,11 @@ namespace lms::ui::utils
         return oss.str();
     }
 
-
     std::unique_ptr<Wt::WImage> createCover(db::ReleaseId releaseId, CoverResource::Size size)
     {
         auto cover{ std::make_unique<Wt::WImage>() };
         cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(releaseId, size));
-        cover->setStyleClass("Lms-cover img-fluid"); // HACK
+        cover->setStyleClass("Lms-cover img-fluid");                                          // HACK
         cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)"); // HACK
         return cover;
     }
@@ -75,7 +75,7 @@ namespace lms::ui::utils
     {
         auto cover{ std::make_unique<Wt::WImage>() };
         cover->setImageLink(LmsApp->getCoverResource()->getTrackUrl(trackId, size));
-        cover->setStyleClass("Lms-cover img-fluid"); // HACK
+        cover->setStyleClass("Lms-cover img-fluid");                                          // HACK
         cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)"); // HACK
         return cover;
     }
@@ -99,18 +99,25 @@ namespace lms::ui::utils
         if (!cluster)
             return {};
 
-        auto getStyleClass{ [](const db::Cluster::pointer& cluster) -> std::string_view
-        {
+        auto getStyleClass{ [](const db::Cluster::pointer& cluster) -> std::string_view {
             switch (cluster->getType()->getId().getValue() % 8)
             {
-                case 0: return "bg-primary";
-                case 1: return "bg-secondary";
-                case 2: return "bg-success";
-                case 3: return "bg-danger";
-                case 4: return "bg-warning text-dark";
-                case 5: return "bg-info text-dark";
-                case 6: return "bg-light text-dark";
-                case 7: return "bg-dark";
+            case 0:
+                return "bg-primary";
+            case 1:
+                return "bg-secondary";
+            case 2:
+                return "bg-success";
+            case 3:
+                return "bg-danger";
+            case 4:
+                return "bg-warning text-dark";
+            case 5:
+                return "bg-info text-dark";
+            case 6:
+                return "bg-light text-dark";
+            case 7:
+                return "bg-dark";
             }
 
             return "bg-primary";
@@ -135,10 +142,9 @@ namespace lms::ui::utils
             {
                 const ClusterId clusterId{ cluster->getId() };
                 Wt::WInteractWidget* entry{ clusterContainer->addWidget(createFilterCluster(clusterId)) };
-                entry->clicked().connect([&filters, clusterId]
-                    {
-                        filters.add(clusterId);
-                    });
+                entry->clicked().connect([&filters, clusterId] {
+                    filters.add(clusterId);
+                });
             }
         }
 
@@ -199,7 +205,7 @@ namespace lms::ui::utils
                 result->addNew<Wt::WText>(std::string{ displayName.substr(currentOffset, pos - currentOffset) }, Wt::TextFormat::Plain);
 
             auto anchor{ createArtistAnchor(artist) };
-            anchor->addStyleClass("text-decoration-none"); // hack
+            anchor->addStyleClass("text-decoration-none");        // hack
             anchor->addStyleClass(std::string{ cssAnchorClass }); // hack
             result->addWidget(std::move(anchor));
             currentOffset = pos + artist->getName().size();
@@ -251,7 +257,7 @@ namespace lms::ui::utils
     Wt::WLink createArtistLink(db::Artist::pointer artist)
     {
         if (const auto mbid{ artist->getMBID() })
-            return Wt::WLink{ Wt::LinkType::InternalPath, "/artist/mbid/" + std::string {mbid->getAsString()} };
+            return Wt::WLink{ Wt::LinkType::InternalPath, "/artist/mbid/" + std::string{ mbid->getAsString() } };
         else
             return Wt::WLink{ Wt::LinkType::InternalPath, "/artist/" + artist->getId().toString() };
     }
@@ -273,7 +279,7 @@ namespace lms::ui::utils
     Wt::WLink createReleaseLink(db::Release::pointer release)
     {
         if (const auto mbid{ release->getMBID() })
-            return Wt::WLink{ Wt::LinkType::InternalPath, "/release/mbid/" + std::string {mbid->getAsString()} };
+            return Wt::WLink{ Wt::LinkType::InternalPath, "/release/mbid/" + std::string{ mbid->getAsString() } };
         else
             return Wt::WLink{ Wt::LinkType::InternalPath, "/release/" + release->getId().toString() };
     }
@@ -300,7 +306,7 @@ namespace lms::ui::utils
 
         if (setText)
         {
-            const Wt::WString name{ Wt::WString::fromUTF8(std::string {trackList->getName()}) };
+            const Wt::WString name{ Wt::WString::fromUTF8(std::string{ trackList->getName() }) };
             res->setTextFormat(Wt::TextFormat::Plain);
             res->setText(name);
             res->setToolTip(name, Wt::TextFormat::Plain);
@@ -308,4 +314,4 @@ namespace lms::ui::utils
 
         return res;
     }
-}
+} // namespace lms::ui::utils

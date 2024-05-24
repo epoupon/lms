@@ -19,6 +19,7 @@
 
 #include "ScrobblingService.hpp"
 
+#include "core/ILogger.hpp"
 #include "database/Artist.hpp"
 #include "database/Db.hpp"
 #include "database/Listen.hpp"
@@ -26,7 +27,6 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
-#include "core/ILogger.hpp"
 
 #include "internal/InternalBackend.hpp"
 #include "listenbrainz/ListenBrainzBackend.hpp"
@@ -54,7 +54,7 @@ namespace lms::scrobbling
         {
             return db::Listen::ArtistStatsFindParameters{ convertToListenFindParameters(static_cast<const ScrobblingService::FindParameters&>(params)), params.linkType };
         }
-    }
+    } // namespace
 
     std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_context& ioContext, Db& db)
     {
@@ -253,5 +253,4 @@ namespace lms::scrobbling
         res = db::Listen::getTopTracks(session, listenFindParams);
         return res;
     }
-} // ns Scrobbling
-
+} // namespace lms::scrobbling

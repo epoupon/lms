@@ -24,6 +24,7 @@
 
 #include <string>
 #include <vector>
+
 #include "core/ITraceLogger.hpp"
 #include "core/RecursiveSharedMutex.hpp"
 #include "database/Object.hpp"
@@ -101,10 +102,16 @@ namespace lms::db
         void refreshTracingLoggerStats();
 
         // returning a ptr here to ease further wrapping using operator->
-        Wt::Dbo::Session* getDboSession() { return &_session; }
-        Db& getDb() { return _db; }
+        Wt::Dbo::Session* getDboSession()
+        {
+            return &_session;
+        }
+        Db& getDb()
+        {
+            return _db;
+        }
 
-        template <typename Object, typename... Args>
+        template<typename Object, typename... Args>
         typename Object::pointer create(Args&&... args)
         {
             checkWriteTransaction();
@@ -123,6 +130,6 @@ namespace lms::db
         Session& operator=(const Session&) = delete;
 
         Db& _db;
-        Wt::Dbo::Session	_session;
+        Wt::Dbo::Session _session;
     };
 } // namespace lms::db

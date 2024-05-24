@@ -52,4 +52,4 @@ namespace lms::metadata
         Accurate,
     };
     std::unique_ptr<IParser> createParser(ParserBackend parserBackend, ParserReadStyle parserReadStyle);
-}
+} // namespace lms::metadata

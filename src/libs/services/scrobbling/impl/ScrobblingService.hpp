@@ -24,6 +24,7 @@
 #include <unordered_map>
 
 #include "services/scrobbling/IScrobblingService.hpp"
+
 #include "IScrobblingBackend.hpp"
 
 namespace lms::scrobbling
@@ -59,5 +60,4 @@ namespace lms::scrobbling
         std::unordered_map<db::ScrobblingBackend, std::unique_ptr<IScrobblingBackend>> _scrobblingBackends;
     };
 
-} // ns Scrobbling
-
+} // namespace lms::scrobbling

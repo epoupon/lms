@@ -46,11 +46,10 @@ namespace lms::av::transcoding
 
     struct OutputParameters
     {
-        OutputFormat                format;
-        std::size_t                 bitrate{ 128000 };
-        std::optional<std::size_t>  stream; // Id of the stream to be transcoded (auto detect by default)
-        std::chrono::milliseconds   offset{ 0 };
-        bool                        stripMetadata{ true };
+        OutputFormat format;
+        std::size_t bitrate{ 128000 };
+        std::optional<std::size_t> stream; // Id of the stream to be transcoded (auto detect by default)
+        std::chrono::milliseconds offset{ 0 };
+        bool stripMetadata{ true };
     };
-} // namespace lms::av::Transcoding
-
+} // namespace lms::av::transcoding

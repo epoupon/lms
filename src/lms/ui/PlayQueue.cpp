@@ -23,11 +23,16 @@
 #include <Wt/WComboBox.h>
 #include <Wt/WFormModel.h>
 #include <Wt/WLineEdit.h>
-#include <Wt/WRadioButton.h>
 #include <Wt/WPushButton.h>
+#include <Wt/WRadioButton.h>
 #include <Wt/WStackedWidget.h>
 #include <Wt/WTemplateFormView.h>
 
+#include "core/IConfig.hpp"
+#include "core/ILogger.hpp"
+#include "core/Random.hpp"
+#include "core/Service.hpp"
+#include "core/String.hpp"
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
@@ -36,20 +41,15 @@
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IPlaylistGeneratorService.hpp"
-#include "core/IConfig.hpp"
-#include "core/ILogger.hpp"
-#include "core/Random.hpp"
-#include "core/Service.hpp"
-#include "core/String.hpp"
 
-#include "common/InfiniteScrollingContainer.hpp"
-#include "common/MandatoryValidator.hpp"
-#include "common/ValueStringModel.hpp"
-#include "resource/DownloadResource.hpp"
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
 #include "ModalManager.hpp"
 #include "Utils.hpp"
+#include "common/InfiniteScrollingContainer.hpp"
+#include "common/MandatoryValidator.hpp"
+#include "common/ValueStringModel.hpp"
+#include "resource/DownloadResource.hpp"
 
 namespace lms::ui
 {
@@ -100,17 +100,16 @@ namespace lms::ui
                 params.setUser(LmsApp->getUserId());
                 params.setSortMethod(TrackListSortMethod::Name);
 
-                TrackList::find(LmsApp->getDbSession(), params, [&](const TrackList::pointer& trackList)
-                    {
-                        model->add(Wt::WString::fromUTF8(std::string{ trackList->getName() }), trackList->getId());
-                    });
+                TrackList::find(LmsApp->getDbSession(), params, [&](const TrackList::pointer& trackList) {
+                    model->add(Wt::WString::fromUTF8(std::string{ trackList->getName() }), trackList->getId());
+                });
 
                 return model;
             }
 
             std::shared_ptr<TrackListModel> trackListModel{ createTrackListModel() };
         };
-    }
+    } // namespace
 
     PlayQueue::PlayQueue()
         : Template{ Wt::WString::tr("Lms.PlayQueue.template") }
@@ -122,51 +121,46 @@ namespace lms::ui
         addFunction("tr", &Wt::WTemplate::Functions::tr);
 
         Wt::WPushButton* clearBtn{ bindNew<Wt::WPushButton>("clear-btn", Wt::WString::tr("Lms.PlayQueue.template.clear-btn"), Wt::TextFormat::XHTML) };
-        clearBtn->clicked().connect([this]
-            {
-                clearTracks();
-            });
+        clearBtn->clicked().connect([this] {
+            clearTracks();
+        });
 
         Wt::WPushButton* saveBtn{ bindNew<Wt::WPushButton>("save-btn", Wt::WString::tr("Lms.PlayQueue.template.save-btn"), Wt::TextFormat::XHTML) };
-        saveBtn->clicked().connect([this]
-            {
-                saveAsTrackList();
-            });
+        saveBtn->clicked().connect([this] {
+            saveAsTrackList();
+        });
 
         _entriesContainer = bindNew<InfiniteScrollingContainer>("entries", Wt::WString::tr("Lms.PlayQueue.template.entry-container"));
-        _entriesContainer->onRequestElements.connect([this]
-            {
-                addSome();
-                updateCurrentTrack(true);
-            });
+        _entriesContainer->onRequestElements.connect([this] {
+            addSome();
+            updateCurrentTrack(true);
+        });
 
         Wt::WPushButton* shuffleBtn{ bindNew<Wt::WPushButton>("shuffle-btn", Wt::WString::tr("Lms.PlayQueue.template.shuffle-btn"), Wt::TextFormat::XHTML) };
-        shuffleBtn->clicked().connect([this]
+        shuffleBtn->clicked().connect([this] {
             {
-                {
-                    // TODO write scope could be reduced
-                    auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-
-                    db::TrackList::pointer queue{ getQueue() };
-                    auto entries{ queue->getEntries().results };
-                    core::random::shuffleContainer(entries);
-
-                    queue.modify()->clear();
-                    for (const db::TrackListEntry::pointer& entry : entries)
-                        LmsApp->getDbSession().create<db::TrackListEntry>(entry->getTrack(), queue);
-                }
-                _entriesContainer->reset();
-                addSome();
-            });
-
-        _repeatBtn = bindNew<Wt::WCheckBox>("repeat-btn");
-        _repeatBtn->clicked().connect([this]
-            {
+                // TODO write scope could be reduced
                 auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-                if (!LmsApp->getUser()->isDemo())
-                    LmsApp->getUser().modify()->setRepeatAll(isRepeatAllSet());
-            });
+                db::TrackList::pointer queue{ getQueue() };
+                auto entries{ queue->getEntries().results };
+                core::random::shuffleContainer(entries);
+
+                queue.modify()->clear();
+                for (const db::TrackListEntry::pointer& entry : entries)
+                    LmsApp->getDbSession().create<db::TrackListEntry>(entry->getTrack(), queue);
+            }
+            _entriesContainer->reset();
+            addSome();
+        });
+
+        _repeatBtn = bindNew<Wt::WCheckBox>("repeat-btn");
+        _repeatBtn->clicked().connect([this] {
+            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
+
+            if (!LmsApp->getUser()->isDemo())
+                LmsApp->getUser().modify()->setRepeatAll(isRepeatAllSet());
+        });
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
             if (LmsApp->getUser()->isRepeatAllSet())
@@ -174,17 +168,16 @@ namespace lms::ui
         }
 
         _radioBtn = bindNew<Wt::WCheckBox>("radio-btn");
-        _radioBtn->clicked().connect([this]
+        _radioBtn->clicked().connect([this] {
             {
-                {
-                    auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
+                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-                    if (!LmsApp->getUser()->isDemo())
-                        LmsApp->getUser().modify()->setRadio(isRadioModeSet());
-                }
-                if (isRadioModeSet())
-                    enqueueRadioTracksIfNeeded();
-            });
+                if (!LmsApp->getUser()->isDemo())
+                    LmsApp->getUser().modify()->setRadio(isRadioModeSet());
+            }
+            if (isRadioModeSet())
+                enqueueRadioTracksIfNeeded();
+        });
 
         bool isRadioModeSet{};
         {
@@ -200,34 +193,32 @@ namespace lms::ui
         _nbTracks = bindNew<Wt::WText>("track-count");
         _duration = bindNew<Wt::WText>("duration");
 
-        LmsApp->getMediaPlayer().settingsLoaded.connect([this]
+        LmsApp->getMediaPlayer().settingsLoaded.connect([this] {
+            if (_mediaPlayerSettingsLoaded)
+                return;
+
+            _mediaPlayerSettingsLoaded = true;
+
+            std::size_t trackPos{};
+
             {
-                if (_mediaPlayerSettingsLoaded)
-                    return;
+                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+                trackPos = LmsApp->getUser()->getCurPlayingTrackPos();
+            }
 
-                _mediaPlayerSettingsLoaded = true;
+            loadTrack(trackPos, false);
+        });
 
-                std::size_t trackPos{};
+        LmsApp->preQuit().connect([this] {
+            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-                {
-                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    trackPos = LmsApp->getUser()->getCurPlayingTrackPos();
-                }
-
-                loadTrack(trackPos, false);
-            });
-
-        LmsApp->preQuit().connect([this]
+            if (LmsApp->getUser()->isDemo())
             {
-                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-
-                if (LmsApp->getUser()->isDemo())
-                {
-                    LMS_LOG(UI, DEBUG, "Removing queue (tracklist id " << _queueId.toString() << ")");
-                    if (db::TrackList::pointer queue{ getQueue() })
-                        queue.remove();
-                }
-            });
+                LMS_LOG(UI, DEBUG, "Removing queue (tracklist id " << _queueId.toString() << ")");
+                if (db::TrackList::pointer queue{ getQueue() })
+                    queue.remove();
+            }
+        });
 
         updateInfo();
     }
@@ -427,7 +418,7 @@ namespace lms::ui
         auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
         db::TrackList::pointer queue{ getQueue() };
-        auto entries{ queue->getEntries(db::Range {_trackPos ? *_trackPos + 1 : 0, getCapacity()}) };
+        auto entries{ queue->getEntries(db::Range{ _trackPos ? *_trackPos + 1 : 0, getCapacity() }) };
         tracks.reserve(entries.results.size());
         for (db::TrackListEntry::pointer& entry : entries.results)
         {
@@ -489,7 +480,7 @@ namespace lms::ui
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const db::TrackList::pointer queue{ getQueue() };
-        const auto entries{ queue->getEntries(db::Range {_entriesContainer->getCount(), _batchSize}) };
+        const auto entries{ queue->getEntries(db::Range{ _entriesContainer->getCount(), _batchSize }) };
         for (const db::TrackListEntry::pointer& tracklistEntry : entries.results)
             addEntry(tracklistEntry);
 
@@ -507,7 +498,7 @@ namespace lms::ui
 
         entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
-        const auto artists{ track->getArtistIds({db::TrackArtistLinkType::Artist}) };
+        const auto artists{ track->getArtistIds({ db::TrackArtistLinkType::Artist }) };
         if (!artists.empty())
         {
             entry->setCondition("if-has-artists", true);
@@ -536,66 +527,63 @@ namespace lms::ui
         entry->bindString("duration", utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
         Wt::WPushButton* playBtn{ entry->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.template.play-btn"), Wt::TextFormat::XHTML) };
-        playBtn->clicked().connect([this, entry]
+        playBtn->clicked().connect([this, entry] {
+            const std::optional<std::size_t> pos{ _entriesContainer->getIndexOf(*entry) };
+            if (pos)
+                loadTrack(*pos, true);
+        });
+
+        Wt::WPushButton* delBtn{ entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.template.delete-btn"), Wt::TextFormat::XHTML) };
+        delBtn->setToolTip(Wt::WString::tr("Lms.delete"));
+        delBtn->clicked().connect([this, tracklistEntryId, entry] {
+            // Remove the entry n both the widget tree and the playqueue
             {
+                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
+
+                db::TrackListEntry::pointer entryToRemove{ db::TrackListEntry::getById(LmsApp->getDbSession(), tracklistEntryId) };
+                entryToRemove.remove();
+            }
+
+            if (_trackPos)
+            {
+                const std::optional<std::size_t> pos{ _entriesContainer->getIndexOf(*entry) };
+                if (pos && *_trackPos >= *pos)
+                    (*_trackPos)--;
+                else if (*_trackPos >= _entriesContainer->getCount())
+                    _trackPos.reset();
+            }
+
+            _entriesContainer->remove(*entry);
+
+            updateInfo();
+        });
+
+        entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML);
+        entry->bindNew<Wt::WPushButton>("play", Wt::WString::tr("Lms.Explore.play"))
+            ->clicked()
+            .connect([this, entry] {
                 const std::optional<std::size_t> pos{ _entriesContainer->getIndexOf(*entry) };
                 if (pos)
                     loadTrack(*pos, true);
             });
 
-        Wt::WPushButton* delBtn{ entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.template.delete-btn"), Wt::TextFormat::XHTML) };
-        delBtn->setToolTip(Wt::WString::tr("Lms.delete"));
-        delBtn->clicked().connect([this, tracklistEntryId, entry]
-            {
-                // Remove the entry n both the widget tree and the playqueue
-                {
-                    auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-
-                    db::TrackListEntry::pointer entryToRemove{ db::TrackListEntry::getById(LmsApp->getDbSession(), tracklistEntryId) };
-                    entryToRemove.remove();
-                }
-
-                if (_trackPos)
-                {
-                    const std::optional<std::size_t> pos{ _entriesContainer->getIndexOf(*entry) };
-                    if (pos && *_trackPos >= *pos)
-                        (*_trackPos)--;
-                    else if (*_trackPos >= _entriesContainer->getCount())
-                        _trackPos.reset();
-                }
-
-                _entriesContainer->remove(*entry);
-
-                updateInfo();
-            });
-
-        entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML);
-        entry->bindNew<Wt::WPushButton>("play", Wt::WString::tr("Lms.Explore.play"))
-            ->clicked().connect([this, entry]
-                {
-                    const std::optional<std::size_t> pos{ _entriesContainer->getIndexOf(*entry) };
-                    if (pos)
-                        loadTrack(*pos, true);
-                });
-
         auto isStarred{ [=] { return core::Service<feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), trackId); } };
 
         Wt::WPushButton* starBtn{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
-        starBtn->clicked().connect([=]
-            {
-                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
+        starBtn->clicked().connect([=] {
+            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-                if (isStarred())
-                {
-                    core::Service<feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), trackId);
-                    starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
-                }
-                else
-                {
-                    core::Service<feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), trackId);
-                    starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
-                }
-            });
+            if (isStarred())
+            {
+                core::Service<feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), trackId);
+                starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
+            }
+            else
+            {
+                core::Service<feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), trackId);
+                starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
+            }
+        });
 
         entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
             ->setLink(Wt::WLink{ std::make_unique<DownloadTrackResource>(trackId) });
@@ -651,27 +639,26 @@ namespace lms::ui
             break;
 
         case MediaPlayer::Settings::ReplayGain::Mode::Auto:
-        {
-            const db::TrackList::pointer queue{ getQueue() };
-            const db::TrackListEntry::pointer prevEntry{ pos > 0 ? queue->getEntry(pos - 1) : db::TrackListEntry::pointer {} };
-            const db::TrackListEntry::pointer nextEntry{ queue->getEntry(pos + 1) };
-            const db::Track::pointer prevTrack{ prevEntry ? prevEntry->getTrack() : db::Track::pointer {} };
-            const db::Track::pointer nextTrack{ nextEntry ? nextEntry->getTrack() : db::Track::pointer {} };
+            {
+                const db::TrackList::pointer queue{ getQueue() };
+                const db::TrackListEntry::pointer prevEntry{ pos > 0 ? queue->getEntry(pos - 1) : db::TrackListEntry::pointer{} };
+                const db::TrackListEntry::pointer nextEntry{ queue->getEntry(pos + 1) };
+                const db::Track::pointer prevTrack{ prevEntry ? prevEntry->getTrack() : db::Track::pointer{} };
+                const db::Track::pointer nextTrack{ nextEntry ? nextEntry->getTrack() : db::Track::pointer{} };
 
-            if ((prevTrack && prevTrack->getRelease() && prevTrack->getRelease() == track->getRelease())
-                ||
-                (nextTrack && nextTrack->getRelease() && nextTrack->getRelease() == track->getRelease()))
-            {
-                gain = track->getReleaseReplayGain();
-                if (!gain)
+                if ((prevTrack && prevTrack->getRelease() && prevTrack->getRelease() == track->getRelease())
+                    || (nextTrack && nextTrack->getRelease() && nextTrack->getRelease() == track->getRelease()))
+                {
+                    gain = track->getReleaseReplayGain();
+                    if (!gain)
+                        gain = track->getTrackReplayGain();
+                }
+                else
+                {
                     gain = track->getTrackReplayGain();
+                }
+                break;
             }
-            else
-            {
-                gain = track->getTrackReplayGain();
-            }
-            break;
-        }
         }
 
         if (gain)
@@ -688,10 +675,9 @@ namespace lms::ui
         Wt::WWidget* modalPtr{ modal.get() };
 
         auto* cancelBtn{ modal->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel")) };
-        cancelBtn->clicked().connect([=]
-            {
-                LmsApp->getModalManager().dispose(modalPtr);
-            });
+        cancelBtn->clicked().connect([=] {
+            LmsApp->getModalManager().dispose(modalPtr);
+        });
 
         Wt::WStackedWidget* contentStack{ modal->bindNew<Wt::WStackedWidget>("contents") };
 
@@ -703,17 +689,16 @@ namespace lms::ui
         };
         {
             modal->bindNew<Wt::WRadioButton>("replace-tracklist-btn")
-                ->clicked().connect([=]
-                    {
-                        contentStack->setCurrentIndex(Index::ReplaceTrackList);
-                    });
+                ->clicked()
+                .connect([=] {
+                    contentStack->setCurrentIndex(Index::ReplaceTrackList);
+                });
 
             Wt::WRadioButton* createTrackListBtn{ modal->bindNew<Wt::WRadioButton>("create-tracklist-btn") };
             createTrackListBtn->setChecked();
-            createTrackListBtn->clicked().connect([=]
-                {
-                    contentStack->setCurrentIndex(Index::CreateTrackList);
-                });
+            createTrackListBtn->clicked().connect([=] {
+                contentStack->setCurrentIndex(Index::CreateTrackList);
+            });
         }
 
         // Create TrackList
@@ -733,35 +718,34 @@ namespace lms::ui
         replaceTrackList->updateView(replaceTrackListModel.get());
 
         auto* saveBtn{ modal->bindNew<Wt::WPushButton>("save-btn", Wt::WString::tr("Lms.save")) };
-        saveBtn->clicked().connect([=, this]
+        saveBtn->clicked().connect([=, this] {
+            bool success{};
+            switch (contentStack->currentIndex())
             {
-                bool success{};
-                switch (contentStack->currentIndex())
+            case Index::CreateTrackList:
+                createTrackList->updateModel(createTrackListModel.get());
+                if (createTrackListModel->validate())
                 {
-                case Index::CreateTrackList:
-                    createTrackList->updateModel(createTrackListModel.get());
-                    if (createTrackListModel->validate())
-                    {
-                        exportToNewTrackList(createTrackListModel->getName());
-                        success = true;
-                    }
-                    createTrackList->updateView(createTrackListModel.get());
-                    break;
-
-                case Index::ReplaceTrackList:
-                    replaceTrackList->updateModel(replaceTrackListModel.get());
-                    if (replaceTrackListModel->validate())
-                    {
-                        exportToTrackList(replaceTrackListModel->getTrackListId());
-                        success = true;
-                    }
-                    replaceTrackList->updateView(replaceTrackListModel.get());
-                    break;
+                    exportToNewTrackList(createTrackListModel->getName());
+                    success = true;
                 }
+                createTrackList->updateView(createTrackListModel.get());
+                break;
 
-                if (success)
-                    LmsApp->getModalManager().dispose(modalPtr);
-            });
+            case Index::ReplaceTrackList:
+                replaceTrackList->updateModel(replaceTrackListModel.get());
+                if (replaceTrackListModel->validate())
+                {
+                    exportToTrackList(replaceTrackListModel->getTrackListId());
+                    success = true;
+                }
+                replaceTrackList->updateView(replaceTrackListModel.get());
+                break;
+            }
+
+            if (success)
+                LmsApp->getModalManager().dispose(modalPtr);
+        });
 
         LmsApp->getModalManager().show(std::move(modal));
     }
@@ -796,9 +780,8 @@ namespace lms::ui
         params.setTrackList(_queueId);
         params.setSortMethod(TrackSortMethod::TrackList);
 
-        Track::find(session, params, [&](const Track::pointer& track)
-            {
-                session.create<TrackListEntry>(track, trackList);
-            });
+        Track::find(session, params, [&](const Track::pointer& track) {
+            session.create<TrackListEntry>(track, trackList);
+        });
     }
 } // namespace lms::ui

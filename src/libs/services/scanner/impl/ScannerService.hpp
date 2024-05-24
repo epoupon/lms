@@ -20,23 +20,22 @@
 #pragma once
 
 #include <chrono>
-#include <shared_mutex>
 #include <optional>
+#include <shared_mutex>
 #include <vector>
 
 #include <Wt/WDateTime.h>
 #include <Wt/WIOService.h>
 #include <Wt/WSignal.h>
-
 #include <boost/asio/system_timer.hpp>
 
+#include "IScanStep.hpp"
+#include "ScannerSettings.hpp"
+#include "core/Path.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/Types.hpp"
 #include "services/scanner/IScannerService.hpp"
-#include "core/Path.hpp"
-#include "IScanStep.hpp"
-#include "ScannerSettings.hpp"
 
 namespace lms::scanner
 {
@@ -53,7 +52,7 @@ namespace lms::scanner
         void requestReload() override;
         void requestImmediateScan(const ScanOptions& scanOptions) override;
 
-        Status	getStatus() const override;
+        Status getStatus() const override;
         Events& getEvents() override { return _events; }
 
     private:
@@ -78,23 +77,22 @@ namespace lms::scanner
         void notifyInProgressIfNeeded(const ScanStepStats& stats);
         void notifyInProgress(const ScanStepStats& stats);
 
-        std::vector<std::unique_ptr<IScanStep>>	_scanSteps;
+        std::vector<std::unique_ptr<IScanStep>> _scanSteps;
 
-        std::mutex								_controlMutex;
-        bool									_abortScan{};
-        Wt::WIOService							_ioService;
-        boost::asio::system_timer				_scheduleTimer{ _ioService };
-        Events									_events;
-        std::chrono::system_clock::time_point	_lastScanInProgressEmit{};
+        std::mutex _controlMutex;
+        bool _abortScan{};
+        Wt::WIOService _ioService;
+        boost::asio::system_timer _scheduleTimer{ _ioService };
+        Events _events;
+        std::chrono::system_clock::time_point _lastScanInProgressEmit{};
         db::Db& _db;
 
-        mutable std::shared_mutex			_statusMutex;
-        State								_curState{ State::NotScheduled };
-        std::optional<ScanStats> 			_lastCompleteScanStats;
-        std::optional<ScanStepStats> 		_currentScanStepStats;
-        Wt::WDateTime						_nextScheduledScan;
+        mutable std::shared_mutex _statusMutex;
+        State _curState{ State::NotScheduled };
+        std::optional<ScanStats> _lastCompleteScanStats;
+        std::optional<ScanStepStats> _currentScanStepStats;
+        Wt::WDateTime _nextScheduledScan;
 
-        ScannerSettings						_settings;
+        ScannerSettings _settings;
     };
-} // Scanner
-
+} // namespace lms::scanner

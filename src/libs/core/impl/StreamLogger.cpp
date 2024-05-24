@@ -35,4 +35,4 @@ namespace lms::core::logging
         assert(isSeverityActive(log.getSeverity()));
         _os << std::this_thread::get_id() << " [" << getSeverityName(log.getSeverity()) << "] [" << getModuleName(log.getModule()) << "] " << log.getMessage() << std::endl;
     }
-}
+} // namespace lms::core::logging

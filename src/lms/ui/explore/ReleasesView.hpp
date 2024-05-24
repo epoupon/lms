@@ -21,8 +21,8 @@
 
 #include "database/Types.hpp"
 
-#include "common/Template.hpp"
 #include "ReleaseCollector.hpp"
+#include "common/Template.hpp"
 
 namespace lms::ui
 {
@@ -49,8 +49,7 @@ namespace lms::ui
 
         PlayQueueController& _playQueueController;
         InfiniteScrollingContainer* _container{};
-        ReleaseCollector			_releaseCollector;
+        ReleaseCollector _releaseCollector;
         static constexpr ReleaseCollector::Mode _defaultMode{ ReleaseCollector::Mode::Random };
     };
 } // namespace lms::ui
-

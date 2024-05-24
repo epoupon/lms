@@ -26,18 +26,18 @@
 #include <Wt/WString.h>
 #include <Wt/WTemplateFormView.h>
 
+#include "core/ILogger.hpp"
+#include "core/Service.hpp"
+#include "core/String.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scanner/IScannerService.hpp"
-#include "core/ILogger.hpp"
-#include "core/Service.hpp"
-#include "core/String.hpp"
 
+#include "LmsApplication.hpp"
 #include "common/MandatoryValidator.hpp"
 #include "common/UppercaseValidator.hpp"
 #include "common/ValueStringModel.hpp"
-#include "LmsApplication.hpp"
 
 namespace lms::ui
 {
@@ -56,7 +56,7 @@ namespace lms::ui
                 std::string inputStr{ input.toUTF8() };
                 if (std::all_of(std::cbegin(inputStr), std::cend(inputStr), [](char c) { return std::isspace(c); }))
                     return Wt::WValidator::Result{ Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.Database.tag-delimiter-must-not-contain-only-spaces") };
-                    
+
                 return Wt::WValidator::Result{ Wt::ValidationState::Valid };
             }
 
@@ -160,7 +160,7 @@ namespace lms::ui
                     scanSettings.modify()->setSimilarityEngineType(_similarityEngineTypeModel->getValue(*similarityEngineTypeRow));
 
                 scanSettings.modify()->setExtraTagsToScan(core::stringUtils::splitString(valueText(ExtraTagsField).toUTF8(), extraTagsDelimiter));
-                
+
                 {
                     std::vector<std::string_view> artistDelimiters;
                     if (std::string artistDelimiter{ valueText(ArtistTagDelimiterField).toUTF8() }; !artistDelimiter.empty())
@@ -168,7 +168,7 @@ namespace lms::ui
                     scanSettings.modify()->setArtistTagDelimiters(artistDelimiters);
                 }
 
-                 {
+                {
                     std::vector<std::string_view> defaultDelimiters;
                     if (std::string defaultDelimiter{ valueText(DefaultTagDelimiterField).toUTF8() }; !defaultDelimiter.empty())
                         defaultDelimiters.push_back(std::move(defaultDelimiter));
@@ -198,18 +198,17 @@ namespace lms::ui
                 _similarityEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.similarity-engine-type.none"), ScanSettings::SimilarityEngineType::None);
             }
 
-            std::shared_ptr<UpdatePeriodModel>											_updatePeriodModel;
-            std::shared_ptr<ValueStringModel<Wt::WTime>>								_updateStartTimeModel;
-            std::shared_ptr<ValueStringModel<ScanSettings::SimilarityEngineType>>	_similarityEngineTypeModel;
+            std::shared_ptr<UpdatePeriodModel> _updatePeriodModel;
+            std::shared_ptr<ValueStringModel<Wt::WTime>> _updateStartTimeModel;
+            std::shared_ptr<ValueStringModel<ScanSettings::SimilarityEngineType>> _similarityEngineTypeModel;
         };
-    }
+    } // namespace
 
     ScanSettingsView::ScanSettingsView()
     {
-        wApp->internalPathChanged().connect(this, [this]()
-            {
-                refreshView();
-            });
+        wApp->internalPathChanged().connect(this, [this]() {
+            refreshView();
+        });
 
         refreshView();
     }
@@ -227,13 +226,12 @@ namespace lms::ui
         // Update Period
         auto updatePeriod{ std::make_unique<Wt::WComboBox>() };
         updatePeriod->setModel(model->updatePeriodModel());
-        updatePeriod->activated().connect([=](int row)
-            {
-                const ScanSettings::UpdatePeriod period{ model->updatePeriodModel()->getValue(row) };
-                model->setReadOnly(DatabaseSettingsModel::UpdateStartTimeField, period == ScanSettings::UpdatePeriod::Hourly || period == ScanSettings::UpdatePeriod::Never);
-                t->updateModel(model.get());
-                t->updateView(model.get());
-            });
+        updatePeriod->activated().connect([=](int row) {
+            const ScanSettings::UpdatePeriod period{ model->updatePeriodModel()->getValue(row) };
+            model->setReadOnly(DatabaseSettingsModel::UpdateStartTimeField, period == ScanSettings::UpdatePeriod::Hourly || period == ScanSettings::UpdatePeriod::Never);
+            t->updateModel(model.get());
+            t->updateView(model.get());
+        });
         t->setFormWidget(DatabaseSettingsModel::UpdatePeriodField, std::move(updatePeriod));
 
         // Update Start Time
@@ -259,30 +257,28 @@ namespace lms::ui
         Wt::WPushButton* saveBtn = t->bindWidget("save-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.save")));
         Wt::WPushButton* discardBtn = t->bindWidget("discard-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.discard")));
 
-        saveBtn->clicked().connect([=]
+        saveBtn->clicked().connect([=] {
+            t->updateModel(model.get());
+
+            if (model->validate())
             {
-                t->updateModel(model.get());
+                model->saveData();
 
-                if (model->validate())
-                {
-                    model->saveData();
+                core::Service<recommendation::IRecommendationService>::get()->load();
+                // Don't want the scanner to go on with wrong settings
+                core::Service<scanner::IScannerService>::get()->requestReload();
+                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.database"), Wt::WString::tr("Lms.settings-saved"));
+            }
 
-                    core::Service<recommendation::IRecommendationService>::get()->load();
-                    // Don't want the scanner to go on with wrong settings
-                    core::Service<scanner::IScannerService>::get()->requestReload();
-                    LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.database"), Wt::WString::tr("Lms.settings-saved"));
-                }
+            // Udate the view: Delete any validation message in the view, etc.
+            t->updateView(model.get());
+        });
 
-                // Udate the view: Delete any validation message in the view, etc.
-                t->updateView(model.get());
-            });
-
-        discardBtn->clicked().connect([=]
-            {
-                model->loadData();
-                model->validate();
-                t->updateView(model.get());
-            });
+        discardBtn->clicked().connect([=] {
+            model->loadData();
+            model->validate();
+            t->updateView(model.get());
+        });
 
         t->updateView(model.get());
     }

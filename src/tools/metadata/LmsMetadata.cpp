@@ -18,17 +18,17 @@
  */
 
 #include <chrono>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <optional>
 #include <stdexcept>
 #include <stdlib.h>
 
 #include <Wt/WDate.h>
 
+#include "core/StreamLogger.hpp"
 #include "metadata/Exception.hpp"
 #include "metadata/IParser.hpp"
-#include "core/StreamLogger.hpp"
 
 namespace lms::metadata
 {
@@ -118,7 +118,8 @@ namespace lms::metadata
 
         std::cout << "Parsing time: " << std::fixed << std::setprecision(2) << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000. << "ms" << std::endl;
 
-        std::cout << "Audio properties:\n" << track->audioProperties << std::endl;
+        std::cout << "Audio properties:\n"
+                  << track->audioProperties << std::endl;
 
         std::cout << "Parsed metadata:" << std::endl;
 
@@ -220,7 +221,7 @@ namespace lms::metadata
 
         std::cout << std::endl;
     }
-}
+} // namespace lms::metadata
 
 int main(int argc, char* argv[])
 {
@@ -233,7 +234,7 @@ int main(int argc, char* argv[])
     try
     {
         using namespace lms;
-        
+
         // log to stdout
         core::Service<core::logging::ILogger> logger{ std::make_unique<core::logging::StreamLogger>(std::cout, core::logging::StreamLogger::allSeverities) };
 

@@ -19,11 +19,12 @@
 
 #pragma once
 
-#include <unordered_map>
-#include <string>
 #include <shared_mutex>
+#include <string>
+#include <unordered_map>
 
 #include "core/http/IClient.hpp"
+
 #include "SendQueue.hpp"
 
 namespace lms::core::http
@@ -33,7 +34,8 @@ namespace lms::core::http
     public:
         Client(boost::asio::io_context& ioContext, std::string_view baseUrl)
             : _sendQueue{ ioContext, baseUrl }
-        {}
+        {
+        }
 
     private:
         void sendGETRequest(ClientGETRequestParameters&& request) override;
@@ -41,4 +43,4 @@ namespace lms::core::http
 
         SendQueue _sendQueue;
     };
-}
+} // namespace lms::core::http

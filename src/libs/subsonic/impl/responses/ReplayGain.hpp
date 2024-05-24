@@ -20,6 +20,7 @@
 #pragma once
 
 #include "database/Object.hpp"
+
 #include "SubsonicResponse.hpp"
 
 namespace lms::db

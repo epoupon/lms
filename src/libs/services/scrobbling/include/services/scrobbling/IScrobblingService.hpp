@@ -23,16 +23,17 @@
 #include <memory>
 #include <optional>
 #include <span>
-#include <boost/asio/io_service.hpp>
-#include <Wt/WDateTime.h>
 
-#include "services/scrobbling/Listen.hpp"
+#include <Wt/WDateTime.h>
+#include <boost/asio/io_service.hpp>
+
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 #include "database/Types.hpp"
+#include "services/scrobbling/Listen.hpp"
 
 namespace lms::db
 {
@@ -59,29 +60,61 @@ namespace lms::scrobbling
 
         struct FindParameters
         {
-            db::UserId                      user;
-            std::vector<db::ClusterId>      clusters;	// if non empty, at least one artist that belongs to these clusters
-            std::vector<std::string_view>   keywords; // if non empty, name must match all of these keywords
-            std::optional<db::Range>        range;
-            db::MediaLibraryId              library; // if set, match this library
-            db::ArtistId                    artist; // if set, match this artist
+            db::UserId user;
+            std::vector<db::ClusterId> clusters;    // if non empty, at least one artist that belongs to these clusters
+            std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords
+            std::optional<db::Range> range;
+            db::MediaLibraryId library; // if set, match this library
+            db::ArtistId artist;        // if set, match this artist
 
-            FindParameters& setUser(const db::UserId _user) { user = _user; return *this; }
-            FindParameters& setClusters(std::span<const db::ClusterId> _clusters) { clusters.assign(std::cbegin(_clusters), std::cend(_clusters)); return *this; }
-            FindParameters& setKeywords(const std::vector<std::string_view>& _keywords) { keywords = _keywords; return *this; }
-            FindParameters& setRange(std::optional<db::Range> _range) { range = _range; return *this; }
-            FindParameters& setMediaLibrary(db::MediaLibraryId _library) { library = _library; return *this; }
-            FindParameters& setArtist(db::ArtistId _artist) { artist = _artist; return *this; }
+            FindParameters& setUser(const db::UserId _user)
+            {
+                user = _user;
+                return *this;
+            }
+            FindParameters& setClusters(std::span<const db::ClusterId> _clusters)
+            {
+                clusters.assign(std::cbegin(_clusters), std::cend(_clusters));
+                return *this;
+            }
+            FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
+            {
+                keywords = _keywords;
+                return *this;
+            }
+            FindParameters& setRange(std::optional<db::Range> _range)
+            {
+                range = _range;
+                return *this;
+            }
+            FindParameters& setMediaLibrary(db::MediaLibraryId _library)
+            {
+                library = _library;
+                return *this;
+            }
+            FindParameters& setArtist(db::ArtistId _artist)
+            {
+                artist = _artist;
+                return *this;
+            }
         };
 
         // Artists
         struct ArtistFindParameters : public FindParameters
         {
-            std::optional<db::TrackArtistLinkType>  linkType;	// if set, only artists that have produced at least one track with this link type
-            db::ArtistSortMethod                    sortMethod{ db::ArtistSortMethod::None };
+            std::optional<db::TrackArtistLinkType> linkType; // if set, only artists that have produced at least one track with this link type
+            db::ArtistSortMethod sortMethod{ db::ArtistSortMethod::None };
 
-            ArtistFindParameters& setLinkType(std::optional<db::TrackArtistLinkType> _linkType) { linkType = _linkType; return *this; }
-            ArtistFindParameters& setSortMethod(db::ArtistSortMethod _sortMethod) { sortMethod = _sortMethod; return *this; }
+            ArtistFindParameters& setLinkType(std::optional<db::TrackArtistLinkType> _linkType)
+            {
+                linkType = _linkType;
+                return *this;
+            }
+            ArtistFindParameters& setSortMethod(db::ArtistSortMethod _sortMethod)
+            {
+                sortMethod = _sortMethod;
+                return *this;
+            }
         };
 
         // From most recent to oldest
@@ -102,4 +135,4 @@ namespace lms::scrobbling
     };
 
     std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_service& ioService, db::Db& db);
-} // ns Scrobbling
+} // namespace lms::scrobbling

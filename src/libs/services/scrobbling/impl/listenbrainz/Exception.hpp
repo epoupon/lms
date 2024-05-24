@@ -23,9 +23,9 @@
 
 namespace lms::scrobbling::listenBrainz
 {
-	class Exception : public scrobbling::Exception
-	{
-		public:
-			using scrobbling::Exception::Exception;
-	};
-}
+    class Exception : public scrobbling::Exception
+    {
+    public:
+        using scrobbling::Exception::Exception;
+    };
+} // namespace lms::scrobbling::listenBrainz

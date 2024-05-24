@@ -17,8 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Common.hpp"
 #include "database/Listen.hpp"
+
+#include "Common.hpp"
 
 namespace lms::db::tests
 {
@@ -35,7 +36,7 @@ namespace lms::db::tests
             EXPECT_EQ(Listen::getCount(session), 0);
         }
 
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 1}} };
+        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } } };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -45,7 +46,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            ScopedListen listen2{ session, user.get(), track.get(), ScrobblingBackend::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{13, 0, 1}} };
+            ScopedListen listen2{ session, user.get(), track.get(), ScrobblingBackend::Internal, Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 13, 0, 1 } } };
 
             EXPECT_EQ(Listen::getCount(session), 2);
         }
@@ -61,7 +62,7 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
-        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 1}} };
+        ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } } };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -95,9 +96,9 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
-        ScopedListen listen3{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 3}} };
-        ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 1}} };
-        ScopedListen listen2{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime {Wt::WDate{2000, 1, 2}, Wt::WTime{12, 0, 2}} };
+        ScopedListen listen3{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 3 } } };
+        ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } } };
+        ScopedListen listen2{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, Wt::WDateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 2 } } };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -114,8 +115,8 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
-        const Wt::WDateTime dateTime1{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
-        const Wt::WDateTime dateTime2{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 2} };
+        const Wt::WDateTime dateTime1{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
+        const Wt::WDateTime dateTime2{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 2 } };
         ASSERT_GT(dateTime2, dateTime1);
 
         ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
@@ -147,7 +148,7 @@ namespace lms::db::tests
     {
         ScopedTrack track1{ session };
         ScopedUser user{ session, "MyUser" };
-        const Wt::WDateTime dateTime1{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
+        const Wt::WDateTime dateTime1{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
 
         {
@@ -230,7 +231,7 @@ namespace lms::db::tests
         ScopedArtist artist1{ session, "MyArtist1" };
         ScopedTrack track2{ session };
         ScopedArtist artist2{ session, "MyArtist2" };
-        const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
 
         {
             auto transaction{ session.createWriteTransaction() };
@@ -296,7 +297,7 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedArtist artist{ session, "MyArtist" };
-        const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
         ScopedClusterType clusterType{ session, "MyType" };
         ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
@@ -340,7 +341,7 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         ScopedArtist artist{ session, "MyArtist" };
         ScopedUser user{ session, "MyUser" };
-        const Wt::WDateTime dateTime1{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
+        const Wt::WDateTime dateTime1{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
         ScopedMediaLibrary library{ session };
         ScopedMediaLibrary otherLibrary{ session };
@@ -405,7 +406,7 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
-        const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedRelease release{ session, "MyRelease" };
         {
             auto transaction{ session.createWriteTransaction() };
@@ -456,7 +457,7 @@ namespace lms::db::tests
         ScopedTrack track1{ session };
         ScopedTrack track2{ session };
         ScopedUser user{ session, "MyUser" };
-        const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime };
         ScopedRelease release1{ session, "MyRelease1" };
         ScopedRelease release2{ session, "MyRelease2" };
@@ -515,7 +516,7 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
-        const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
         ScopedClusterType clusterType{ session, "MyType" };
         ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
@@ -560,7 +561,7 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
-        const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedRelease release{ session, "MyRelease" };
         ScopedMediaLibrary library{ session };
         ScopedMediaLibrary otherLibrary{ session };
@@ -617,7 +618,7 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
-        const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -663,7 +664,7 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedArtist artist{ session, "MyArtist" };
-        const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -717,7 +718,7 @@ namespace lms::db::tests
         ScopedTrack track1{ session };
         ScopedTrack track2{ session };
         ScopedUser user{ session, "MyUser" };
-        const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
         {
@@ -768,7 +769,7 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
-        const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
         ScopedClusterType clusterType{ session, "MyType" };
         ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
@@ -807,7 +808,7 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
-        const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedMediaLibrary library{ session };
         ScopedMediaLibrary otherLibrary{ session };
 
@@ -881,7 +882,7 @@ namespace lms::db::tests
             EXPECT_EQ(artists.moreResults, false);
         }
 
-        const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
         {
@@ -941,7 +942,7 @@ namespace lms::db::tests
         ScopedArtist artist1{ session, "MyArtist1" };
         ScopedTrack track2{ session };
         ScopedArtist artist2{ session, "MyArtist2" };
-        const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
 
         {
             auto transaction{ session.createWriteTransaction() };
@@ -1006,7 +1007,7 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedArtist artist{ session, "MyArtist" };
-        const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
         ScopedClusterType clusterType{ session, "MyType" };
         ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
@@ -1045,7 +1046,6 @@ namespace lms::db::tests
         }
     }
 
-
     TEST_F(DatabaseFixture, Listen_getRecentArtists_mediaLibrary)
     {
         ScopedTrack track{ session };
@@ -1060,7 +1060,7 @@ namespace lms::db::tests
             track.get().modify()->setMediaLibrary(library.get());
         }
 
-        const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
         {
@@ -1107,7 +1107,7 @@ namespace lms::db::tests
             ASSERT_EQ(releases.results.size(), 0);
         }
 
-        const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
         {
@@ -1153,7 +1153,7 @@ namespace lms::db::tests
             EXPECT_FALSE(listen);
         }
 
-        const Wt::WDateTime dateTime1{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+        const Wt::WDateTime dateTime1{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
 
         {
@@ -1164,7 +1164,7 @@ namespace lms::db::tests
             EXPECT_EQ(listen->getDateTime(), dateTime1);
         }
 
-        const Wt::WDateTime dateTime2{ Wt::WDate {1999, 1, 2}, Wt::WTime {12,0, 1} };
+        const Wt::WDateTime dateTime2{ Wt::WDate{ 1999, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen2{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime2 };
 
         {
@@ -1175,7 +1175,7 @@ namespace lms::db::tests
             EXPECT_EQ(listen->getDateTime(), dateTime1);
         }
 
-        const Wt::WDateTime dateTime3{ Wt::WDate {2001, 1, 2}, Wt::WTime {12,0, 1} };
+        const Wt::WDateTime dateTime3{ Wt::WDate{ 2001, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen3{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime3 };
 
         {
@@ -1201,7 +1201,7 @@ namespace lms::db::tests
             track2.get().modify()->setRelease(release2.get());
         }
 
-        const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen1{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
         {
@@ -1287,7 +1287,7 @@ namespace lms::db::tests
             EXPECT_EQ(releases.results.size(), 0);
         }
 
-        const Wt::WDateTime dateTime{ Wt::WDate{2000, 1, 2}, Wt::WTime{12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
         {
@@ -1334,7 +1334,7 @@ namespace lms::db::tests
             track.get().modify()->setMediaLibrary(library.get());
         }
 
-        const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
         {
@@ -1377,7 +1377,7 @@ namespace lms::db::tests
             ASSERT_EQ(tracks.results.size(), 0);
         }
 
-        const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
         {
@@ -1406,7 +1406,6 @@ namespace lms::db::tests
         }
     }
 
-
     TEST_F(DatabaseFixture, Listen_getRecentTracks_mediaLibrary)
     {
         ScopedTrack track{ session };
@@ -1414,7 +1413,7 @@ namespace lms::db::tests
         ScopedMediaLibrary library{ session };
         ScopedMediaLibrary otherLibrary{ session };
 
-        const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
         {
@@ -1458,7 +1457,7 @@ namespace lms::db::tests
             EXPECT_EQ(count, 0);
         }
 
-        const Wt::WDateTime dateTime1{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+        const Wt::WDateTime dateTime1{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
 
         {
@@ -1487,15 +1486,14 @@ namespace lms::db::tests
         ScopedUser user{ session, "MyUser" };
         ScopedRelease release{ session, "MyRelease" };
 
-        auto getReleaseListenCount{ [&]
-        {
+        auto getReleaseListenCount{ [&] {
             auto transaction{ session.createReadTransaction() };
             return Listen::getCount(session, user->getId(), release.getId());
         } };
 
         EXPECT_EQ(getReleaseListenCount(), 0);
 
-        const Wt::WDateTime dateTime1{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+        const Wt::WDateTime dateTime1{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen1{ session, user.lockAndGet(), track1.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
 
         EXPECT_EQ(getReleaseListenCount(), 0);
@@ -1540,7 +1538,7 @@ namespace lms::db::tests
             EXPECT_FALSE(listen);
         }
 
-        const Wt::WDateTime dateTime1{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+        const Wt::WDateTime dateTime1{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
 
         {
@@ -1551,7 +1549,7 @@ namespace lms::db::tests
             EXPECT_EQ(listen->getDateTime(), dateTime1);
         }
 
-        const Wt::WDateTime dateTime2{ Wt::WDate {1999, 1, 2}, Wt::WTime {12,0, 1} };
+        const Wt::WDateTime dateTime2{ Wt::WDate{ 1999, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen2{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime2 };
 
         {
@@ -1562,7 +1560,7 @@ namespace lms::db::tests
             EXPECT_EQ(listen->getDateTime(), dateTime1);
         }
 
-        const Wt::WDateTime dateTime3{ Wt::WDate {2001, 1, 2}, Wt::WTime {12,0, 1} };
+        const Wt::WDateTime dateTime3{ Wt::WDate{ 2001, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen3{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime3 };
 
         {
@@ -1580,7 +1578,7 @@ namespace lms::db::tests
         ScopedTrack track2{ session };
         ScopedUser user{ session, "MyUser" };
 
-        const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen1{ session, user.lockAndGet(), track2.lockAndGet(), ScrobblingBackend::Internal, dateTime };
 
         {
@@ -1646,7 +1644,7 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
-        const Wt::WDateTime dateTime{ Wt::WDate {2000, 1, 2}, Wt::WTime {12,0, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };
         ScopedClusterType clusterType{ session, "MyType" };
         ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
@@ -1680,4 +1678,4 @@ namespace lms::db::tests
             EXPECT_EQ(tracks.results[0], track.getId());
         }
     }
-}
+} // namespace lms::db::tests

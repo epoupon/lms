@@ -21,15 +21,15 @@
 
 #include <Wt/Dbo/WtSqlTraits.h>
 
+#include "core/ILogger.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/Release.hpp"
+#include "database/Session.hpp"
 #include "database/TrackArtistLink.hpp"
 #include "database/TrackFeatures.hpp"
-#include "database/Session.hpp"
 #include "database/User.hpp"
-#include "core/ILogger.hpp"
 
 #include "IdTypeTraits.hpp"
 #include "PathTraits.hpp"
@@ -41,7 +41,7 @@ namespace lms::db
 {
     namespace
     {
-        template <typename ResultType>
+        template<typename ResultType>
         Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Track::FindParameters& params)
         {
             session.checkReadTransaction();
@@ -62,22 +62,26 @@ namespace lms::db
             {
                 assert(params.feedbackBackend);
                 query.join("starred_track s_t ON s_t.track_id = t.id")
-                    .where("s_t.user_id = ?").bind(params.starringUser)
-                    .where("s_t.backend = ?").bind(*params.feedbackBackend)
-                    .where("s_t.sync_state <> ?").bind(SyncState::PendingRemove);
+                    .where("s_t.user_id = ?")
+                    .bind(params.starringUser)
+                    .where("s_t.backend = ?")
+                    .bind(*params.feedbackBackend)
+                    .where("s_t.sync_state <> ?")
+                    .bind(SyncState::PendingRemove);
             }
 
             if (params.clusters.size() == 1)
             {
                 // optim
                 query.join("track_cluster t_c ON t_c.track_id = t.id")
-                    .where("t_c.cluster_id = ?").bind(params.clusters.front());
+                    .where("t_c.cluster_id = ?")
+                    .bind(params.clusters.front());
             }
             else if (params.clusters.size() > 1)
             {
                 std::ostringstream oss;
                 oss << "t.id IN (SELECT DISTINCT t.id FROM track t"
-                    " INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
+                       " INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
 
                 WhereClause clusterClause;
                 for (const ClusterId clusterId : params.clusters)
@@ -183,7 +187,7 @@ namespace lms::db
             return query;
         }
 
-        template <typename ResultType>
+        template<typename ResultType>
         Wt::Dbo::Query<ResultType> createQuery(Session& session, const Track::FindParameters& params)
         {
             std::string_view itemToSelect;
@@ -197,7 +201,7 @@ namespace lms::db
 
             return createQuery<ResultType>(session, itemToSelect, params);
         }
-    }
+    } // namespace
 
     Track::pointer Track::create(Session& session)
     {
@@ -222,27 +226,22 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Track>()
-            .where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<Track>().where("id = ?").bind(id));
     }
 
     void Track::find(Session& session, TrackId& lastRetrievedTrack, std::size_t count, const std::function<void(const Track::pointer&)>& func, MediaLibraryId library)
     {
         session.checkReadTransaction();
 
-        auto query{ session.getDboSession()->find<Track>()
-            .orderBy("id")
-            .where("id > ?").bind(lastRetrievedTrack)
-            .limit(static_cast<int>(count)) };
+        auto query{ session.getDboSession()->find<Track>().orderBy("id").where("id > ?").bind(lastRetrievedTrack).limit(static_cast<int>(count)) };
 
         if (library.isValid())
             query.where("media_library_id = ?").bind(library);
 
-        utils::forEachQueryResult(query, [&](const Track::pointer& track)
-            {
-                func(track);
-                lastRetrievedTrack = track->getId();
-            });
+        utils::forEachQueryResult(query, [&](const Track::pointer& track) {
+            func(track);
+            lastRetrievedTrack = track->getId();
+        });
     }
 
     bool Track::exists(Session& session, TrackId id)
@@ -256,24 +255,21 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQueryResults<Track::pointer>(session.getDboSession()->find<Track>()
-            .where("mbid = ?").bind(mbid.getAsString()));
+        return utils::fetchQueryResults<Track::pointer>(session.getDboSession()->find<Track>().where("mbid = ?").bind(mbid.getAsString()));
     }
 
     std::vector<Track::pointer> Track::findByRecordingMBID(Session& session, const core::UUID& mbid)
     {
         session.checkReadTransaction();
 
-        return utils::fetchQueryResults<Track::pointer>(session.getDboSession()->find<Track>()
-            .where("recording_mbid = ?").bind(mbid.getAsString()));
+        return utils::fetchQueryResults<Track::pointer>(session.getDboSession()->find<Track>().where("recording_mbid = ?").bind(mbid.getAsString()));
     }
 
     RangeResults<TrackId> Track::findIdsTrackMBIDDuplicates(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
 
-        auto query{ session.getDboSession()->query<TrackId>("SELECT track.id FROM track WHERE mbid in (SELECT mbid FROM track WHERE mbid <> '' GROUP BY mbid HAVING COUNT (*) > 1)")
-            .orderBy("track.release_id,track.disc_number,track.track_number,track.mbid") };
+        auto query{ session.getDboSession()->query<TrackId>("SELECT track.id FROM track WHERE mbid in (SELECT mbid FROM track WHERE mbid <> '' GROUP BY mbid HAVING COUNT (*) > 1)").orderBy("track.release_id,track.disc_number,track.track_number,track.mbid") };
 
         return utils::execRangeQuery<TrackId>(query, range);
     }
@@ -282,9 +278,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        auto query{ session.getDboSession()->query<TrackId>("SELECT t.id FROM track t")
-            .where("LENGTH(t.recording_mbid) > 0")
-            .where("NOT EXISTS (SELECT * FROM track_features t_f WHERE t_f.track_id = t.id)") };
+        auto query{ session.getDboSession()->query<TrackId>("SELECT t.id FROM track t").where("LENGTH(t.recording_mbid) > 0").where("NOT EXISTS (SELECT * FROM track_features t_f WHERE t_f.track_id = t.id)") };
 
         return utils::execRangeQuery<TrackId>(query, range);
     }
@@ -298,10 +292,7 @@ namespace lms::db
     {
         assert(session());
 
-        const auto query{ session()->query<ClusterId>
-            ("SELECT t_c.cluster_id FROM track_cluster t_c")
-            .where("t_c.track_id = ?").bind(getId())
-            .groupBy("t_c.cluster_id") };
+        const auto query{ session()->query<ClusterId>("SELECT t_c.cluster_id FROM track_cluster t_c").where("t_c.track_id = ?").bind(getId()).groupBy("t_c.cluster_id") };
 
         return utils::fetchQueryResults(query);
     }
@@ -352,12 +343,14 @@ namespace lms::db
         }
 
         auto query{ session.getDboSession()->query<TrackId>(
-                "SELECT t.id FROM track t"
-                " INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
-                        " AND t_c.cluster_id IN (SELECT DISTINCT c.id FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id WHERE t_c.track_id IN (" + oss.str() + "))"
-                        " AND t.id NOT IN (" + oss.str() + ")")
-            .groupBy("t.id")
-            .orderBy("COUNT(*) DESC, RANDOM()") };
+                                               "SELECT t.id FROM track t"
+                                               " INNER JOIN track_cluster t_c ON t_c.track_id = t.id"
+                                               " AND t_c.cluster_id IN (SELECT DISTINCT c.id FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id WHERE t_c.track_id IN ("
+                                               + oss.str() + "))"
+                                                             " AND t.id NOT IN ("
+                                               + oss.str() + ")")
+                        .groupBy("t.id")
+                        .orderBy("COUNT(*) DESC, RANDOM()") };
 
         for (TrackId trackId : tracks)
             query.bind(trackId);
@@ -412,10 +405,9 @@ namespace lms::db
         assert(session());
 
         std::ostringstream oss;
-        oss <<
-            "SELECT a from artist a"
-            " INNER JOIN track_artist_link t_a_l ON a.id = t_a_l.artist_id"
-            " INNER JOIN track t ON t.id = t_a_l.track_id";
+        oss << "SELECT a from artist a"
+               " INNER JOIN track_artist_link t_a_l ON a.id = t_a_l.artist_id"
+               " INNER JOIN track t ON t.id = t_a_l.track_id";
 
         if (!linkTypes.empty())
         {
@@ -447,9 +439,8 @@ namespace lms::db
         assert(session());
 
         std::ostringstream oss;
-        oss <<
-            "SELECT t_a_l.artist_id FROM track_artist_link t_a_l"
-            " INNER JOIN track t ON t.id = t_a_l.track_id";
+        oss << "SELECT t_a_l.artist_id FROM track_artist_link t_a_l"
+               " INNER JOIN track t ON t.id = t_a_l.track_id";
 
         if (!linkTypes.empty())
         {
@@ -507,11 +498,10 @@ namespace lms::db
             query.bind(bindArg);
 
         std::map<ClusterTypeId, std::vector<Cluster::pointer>> clusters;
-        utils::forEachQueryResult(query, [&](const Cluster::pointer& cluster)
-            {
-                if (clusters[cluster->getType()->getId()].size() < size)
-                    clusters[cluster->getType()->getId()].push_back(cluster);
-            });
+        utils::forEachQueryResult(query, [&](const Cluster::pointer& cluster) {
+            if (clusters[cluster->getType()->getId()].size() < size)
+                clusters[cluster->getType()->getId()].push_back(cluster);
+        });
 
         std::vector<std::vector<Cluster::pointer>> res;
         for (const auto& [type, clusters] : clusters)
@@ -545,6 +535,6 @@ namespace lms::db
 
             return os;
         }
-    }
+    } // namespace Debug
 
 } // namespace lms::db

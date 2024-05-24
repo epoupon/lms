@@ -24,18 +24,19 @@
 #include <Wt/WApplication.h>
 
 #include "database/Object.hpp"
-#include "database/UserId.hpp"
 #include "database/Types.hpp"
+#include "database/UserId.hpp"
 #include "services/scanner/ScannerEvents.hpp"
-#include "admin/ScannerController.hpp"
+
 #include "Notification.hpp"
+#include "admin/ScannerController.hpp"
 
 namespace lms::db
 {
     class Db;
     class Session;
     class User;
-}
+} // namespace lms::db
 
 namespace lms::ui
 {
@@ -61,11 +62,11 @@ namespace lms::ui
         db::Db& getDb();
         db::Session& getDbSession(); // always thread safe
 
-        db::ObjectPtr<db::User>	getUser();
-        db::UserId				getUserId();
-        bool isUserAuthStrong() const; // user must be logged in prior this call
-        db::UserType				getUserType(); // user must be logged in prior this call
-        std::string						getUserLoginName(); // user must be logged in prior this call
+        db::ObjectPtr<db::User> getUser();
+        db::UserId getUserId();
+        bool isUserAuthStrong() const;  // user must be logged in prior this call
+        db::UserType getUserType();     // user must be logged in prior this call
+        std::string getUserLoginName(); // user must be logged in prior this call
 
         // Proxified scanner events
         scanner::Events& getScannerEvents() { return _scannerEvents; }
@@ -100,25 +101,23 @@ namespace lms::ui
         void createHome();
 
         db::Db& _db;
-        Wt::Signal<>							_preQuit;
+        Wt::Signal<> _preQuit;
         LmsApplicationManager& _appManager;
-        scanner::Events							_scannerEvents;
+        scanner::Events _scannerEvents;
         struct UserAuthInfo
         {
-            db::UserId	userId;
-            bool				strongAuth{};
+            db::UserId userId;
+            bool strongAuth{};
         };
-        std::optional<UserAuthInfo>				_authenticatedUser;
-        std::shared_ptr<CoverResource>			_coverResource;
+        std::optional<UserAuthInfo> _authenticatedUser;
+        std::shared_ptr<CoverResource> _coverResource;
         MediaPlayer* _mediaPlayer{};
         PlayQueue* _playQueue{};
         NotificationContainer* _notificationContainer{};
         ModalManager* _modalManager{};
     };
 
-
     // Helper to get session instance
-#define LmsApp	lms::ui::LmsApplication::instance()
+#define LmsApp lms::ui::LmsApplication::instance()
 
 } // namespace lms::ui
-

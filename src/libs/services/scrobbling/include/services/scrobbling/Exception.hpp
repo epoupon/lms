@@ -28,4 +28,4 @@ namespace lms::scrobbling
     public:
         using LmsException::LmsException;
     };
-}
+} // namespace lms::scrobbling

@@ -19,10 +19,9 @@
 
 #pragma once
 
-
+#include <Wt/Dbo/ptr.h>
 #include <cassert>
 #include <functional>
-#include <Wt/Dbo/ptr.h>
 
 namespace lms::db
 {
@@ -32,38 +31,43 @@ namespace lms::db
         using ValueType = Wt::Dbo::dbo_default_traits::IdType;
 
         IdType() = default;
-        IdType(ValueType id) : _id{ id } { assert(isValid()); }
+        IdType(ValueType id)
+            : _id{ id } { assert(isValid()); }
 
         bool isValid() const { return _id != Wt::Dbo::dbo_default_traits::invalidId(); }
-        std::string toString() const { assert(isValid()); return std::to_string(_id); }
+        std::string toString() const
+        {
+            assert(isValid());
+            return std::to_string(_id);
+        }
 
         ValueType getValue() const { return _id; }
-        auto operator<=>(const IdType& other) const = default; \
+        auto operator<=>(const IdType& other) const = default;
 
     private:
         Wt::Dbo::dbo_default_traits::IdType _id{ Wt::Dbo::dbo_default_traits::invalidId() };
     };
 
-#define LMS_DECLARE_IDTYPE(name) \
-    namespace lms::db { \
-        class name : public IdType \
-        { \
-        public: \
-            using IdType::IdType; \
-            auto operator<=>(const name& other) const = default; \
-        };\
-    } \
-    namespace std \
-    { \
-        template<> \
-        class hash<lms::db::name> \
-        { \
-        public: \
-            size_t operator()(lms::db::name id) const \
-            { \
+#define LMS_DECLARE_IDTYPE(name)                                             \
+    namespace lms::db                                                        \
+    {                                                                        \
+        class name : public IdType                                           \
+        {                                                                    \
+        public:                                                              \
+            using IdType::IdType;                                            \
+            auto operator<=>(const name& other) const = default;             \
+        };                                                                   \
+    }                                                                        \
+    namespace std                                                            \
+    {                                                                        \
+        template<>                                                           \
+        class hash<lms::db::name>                                            \
+        {                                                                    \
+        public:                                                              \
+            size_t operator()(lms::db::name id) const                        \
+            {                                                                \
                 return std::hash<lms::db::name::ValueType>()(id.getValue()); \
-            } \
-        }; \
+            }                                                                \
+        };                                                                   \
     } // ns std
 } // namespace lms::db
-

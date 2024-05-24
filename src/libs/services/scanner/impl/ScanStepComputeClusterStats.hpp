@@ -33,4 +33,4 @@ namespace lms::scanner
         core::LiteralString getStepName() const override { return "Compute cluster stats"; }
         void process(ScanContext& context) override;
     };
-}
+} // namespace lms::scanner

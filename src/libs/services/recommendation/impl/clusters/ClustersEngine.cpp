@@ -27,7 +27,8 @@
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
 
-namespace lms::recommendation {
+namespace lms::recommendation
+{
 
     using namespace db;
 
@@ -44,7 +45,7 @@ namespace lms::recommendation {
         Session& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createReadTransaction() };
 
-        const auto similarTrackIds{ Track::findSimilarTrackIds(dbSession, trackIds, Range {0, maxCount}) };
+        const auto similarTrackIds{ Track::findSimilarTrackIds(dbSession, trackIds, Range{ 0, maxCount }) };
         return std::move(similarTrackIds.results);
     }
 
@@ -104,7 +105,7 @@ namespace lms::recommendation {
         if (!artist)
             return {};
 
-        const auto similarArtistIds{ artist->findSimilarArtistIds(artistLinkTypes, Range {0, maxCount}) };
+        const auto similarArtistIds{ artist->findSimilarArtistIds(artistLinkTypes, Range{ 0, maxCount }) };
         return std::move(similarArtistIds.results);
     }
 

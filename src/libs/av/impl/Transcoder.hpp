@@ -45,24 +45,24 @@ namespace lms::av::transcoding
 
         // non blocking calls
         using ReadCallback = std::function<void(std::size_t nbReadBytes)>;
-        void            asyncRead(std::byte* buffer, std::size_t bufferSize, ReadCallback);
-        std::size_t     readSome(std::byte* buffer, std::size_t bufferSize);
+        void asyncRead(std::byte* buffer, std::size_t bufferSize, ReadCallback);
+        std::size_t readSome(std::byte* buffer, std::size_t bufferSize);
 
         const std::string& getOutputMimeType() const { return _outputMimeType; }
         const OutputParameters& getOutputParameters() const { return _outputParameters; }
 
-        bool            finished() const;
+        bool finished() const;
 
     private:
         static void init();
 
         void start();
 
-        const std::size_t           _debugId{};
-        const InputParameters       _inputParameters;
-        const OutputParameters      _outputParameters;
-        std::string                 _outputMimeType;
+        const std::size_t _debugId{};
+        const InputParameters _inputParameters;
+        const OutputParameters _outputParameters;
+        std::string _outputMimeType;
 
-        std::unique_ptr<core::IChildProcess>  _childProcess;
+        std::unique_ptr<core::IChildProcess> _childProcess;
     };
-}
+} // namespace lms::av::transcoding

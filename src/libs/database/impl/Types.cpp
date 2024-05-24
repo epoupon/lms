@@ -23,8 +23,7 @@
 
 namespace lms::db
 {
-    static const std::set<Bitrate> allowedAudioBitrates
-    {
+    static const std::set<Bitrate> allowedAudioBitrates{
         64000,
         96000,
         128000,
@@ -47,5 +46,4 @@ namespace lms::db
     {
         return DateRange{ from, to };
     }
-}
-
+} // namespace lms::db

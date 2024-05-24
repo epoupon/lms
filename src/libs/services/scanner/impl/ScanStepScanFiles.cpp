@@ -19,6 +19,11 @@
 
 #include "ScanStepScanFiles.hpp"
 
+#include "core/Exception.hpp"
+#include "core/IConfig.hpp"
+#include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
+#include "core/Path.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
@@ -26,15 +31,10 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "database/TrackFeatures.hpp"
 #include "database/TrackArtistLink.hpp"
+#include "database/TrackFeatures.hpp"
 #include "metadata/Exception.hpp"
 #include "metadata/IParser.hpp"
-#include "core/Exception.hpp"
-#include "core/IConfig.hpp"
-#include "core/ILogger.hpp"
-#include "core/Path.hpp"
-#include "core/ITraceLogger.hpp"
 
 namespace lms::scanner
 {
@@ -249,8 +249,7 @@ namespace lms::scanner
         {
             std::vector<Cluster::pointer> clusters;
 
-            auto getOrCreateClusters{ [&](std::string tag, std::span<const std::string> values)
-            {
+            auto getOrCreateClusters{ [&](std::string tag, std::span<const std::string> values) {
                 auto clusterType = ClusterType::find(session, tag);
                 if (!clusterType)
                     clusterType = session.create<ClusterType>(tag);
@@ -306,7 +305,8 @@ namespace lms::scanner
         : _metadataParser{ parser }
         , _scanContextRunner{ _scanContext, threadCount, "ScannerMetadata" }
         , _abort{ abort }
-    {}
+    {
+    }
 
     void ScanStepScanFiles::MetadataScanQueue::pushScanRequest(const std::filesystem::path& path)
     {
@@ -315,38 +315,37 @@ namespace lms::scanner
             _ongoingScanCount += 1;
         }
 
-        _scanContext.post([=, this]
+        _scanContext.post([=, this] {
+            LMS_SCOPED_TRACE_OVERVIEW("Scanner", "AudioFileParseJob");
+
+            std::unique_ptr<metadata::Track> track;
+
+            if (_abort)
             {
-                LMS_SCOPED_TRACE_OVERVIEW("Scanner", "AudioFileParseJob");
+                std::scoped_lock lock{ _mutex };
+                _ongoingScanCount -= 1;
+            }
+            else
+            {
+                try
+                {
+                    track = _metadataParser.parse(path);
+                }
+                catch (const metadata::Exception& e)
+                {
+                    LMS_LOG(DBUPDATER, INFO, "Failed to parse '" << path.string() << "'");
+                }
 
-                std::unique_ptr<metadata::Track> track;
-
-                if (_abort)
                 {
                     std::scoped_lock lock{ _mutex };
+
+                    _scanResults.emplace_back(MetaDataScanResult{ std::move(path), std::move(track) });
                     _ongoingScanCount -= 1;
                 }
-                else
-                {
-                    try
-                    {
-                        track = _metadataParser.parse(path);
-                    }
-                    catch (const metadata::Exception& e)
-                    {
-                        LMS_LOG(DBUPDATER, INFO, "Failed to parse '" << path.string() << "'");
-                    }
+            }
 
-                    {
-                        std::scoped_lock lock{ _mutex };
-
-                        _scanResults.emplace_back(MetaDataScanResult{ std::move(path), std::move(track) });
-                        _ongoingScanCount -= 1;
-                    }
-                }
-
-                _condVar.notify_all();
-            });
+            _condVar.notify_all();
+        });
     }
 
     std::size_t ScanStepScanFiles::MetadataScanQueue::getResultsCount() const
@@ -407,8 +406,8 @@ namespace lms::scanner
 
         for (const ScannerSettings::MediaLibraryInfo& mediaLibrary : _settings.mediaLibraries)
         {
-            core::pathUtils::exploreFilesRecursive(mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path)
-                {
+            core::pathUtils::exploreFilesRecursive(
+                mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path) {
                     LMS_SCOPED_TRACE_DETAILED("Scanner", "OnExploreFile");
 
                     if (_abortScan)
@@ -437,7 +436,8 @@ namespace lms::scanner
                     _metadataScanQueue.wait(scanQueueMaxScanRequestCount);
 
                     return true;
-                }, &excludeDirFileName);
+                },
+                &excludeDirFileName);
 
             _metadataScanQueue.wait();
 
@@ -469,8 +469,7 @@ namespace lms::scanner
 
             if (track
                 && track->getLastWriteTime().toTime_t() == lastWriteTime.toTime_t()
-                && track->getScanVersion() == _settings.scanVersion
-                )
+                && track->getScanVersion() == _settings.scanVersion)
             {
                 // this file may have been moved from one library to another, then we just need to update the media library id instead of a full rescan
                 const auto trackMediaLibrary{ track->getMediaLibrary() };
@@ -568,10 +567,9 @@ namespace lms::scanner
 
                     // Skip if duplicate files no longer in media root: as it will be removed later, we will end up with no file
                     if (std::none_of(std::cbegin(_settings.mediaLibraries), std::cend(_settings.mediaLibraries),
-                        [&](const ScannerSettings::MediaLibraryInfo& libraryInfo)
-                        {
-                            return core::pathUtils::isPathInRootPath(file, libraryInfo.rootDirectory, &excludeDirFileName);
-                        }))
+                            [&](const ScannerSettings::MediaLibraryInfo& libraryInfo) {
+                                return core::pathUtils::isPathInRootPath(file, libraryInfo.rootDirectory, &excludeDirFileName);
+                            }))
                     {
                         continue;
                     }
@@ -723,4 +721,4 @@ namespace lms::scanner
             stats.updates++;
         }
     }
-}
+} // namespace lms::scanner

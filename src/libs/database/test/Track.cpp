@@ -34,7 +34,7 @@ namespace lms::db::tests
 
             {
                 bool visited{};
-                Track::find(session, Track::FindParameters{}, [&](const Track::pointer&) {visited = true;});
+                Track::find(session, Track::FindParameters{}, [&](const Track::pointer&) { visited = true; });
                 EXPECT_FALSE(visited);
             }
         }
@@ -53,11 +53,10 @@ namespace lms::db::tests
 
             {
                 bool visited{};
-                Track::find(session, Track::FindParameters{}, [&](const Track::pointer& t)
-                    {
-                        visited = true;
-                        EXPECT_EQ(t->getId(), track.getId());
-                    });
+                Track::find(session, Track::FindParameters{}, [&](const Track::pointer& t) {
+                    visited = true;
+                    EXPECT_EQ(t->getId(), track.getId());
+                });
                 EXPECT_TRUE(visited);
             }
         }
@@ -81,10 +80,9 @@ namespace lms::db::tests
 
             TrackId lastRetrievedTrackId;
             std::vector<Track::pointer> visitedTracks;
-            Track::find(session, lastRetrievedTrackId, 10, [&](const Track::pointer& track)
-                {
-                    visitedTracks.push_back(track);
-                });
+            Track::find(session, lastRetrievedTrackId, 10, [&](const Track::pointer& track) {
+                visitedTracks.push_back(track);
+            });
             ASSERT_EQ(visitedTracks.size(), 3);
             EXPECT_EQ(visitedTracks[0]->getId(), track1.getId());
             EXPECT_EQ(visitedTracks[1]->getId(), track2.getId());
@@ -97,10 +95,9 @@ namespace lms::db::tests
 
             TrackId lastRetrievedTrackId{ track1.getId() };
             std::vector<Track::pointer> visitedTracks;
-            Track::find(session, lastRetrievedTrackId, 1, [&](const Track::pointer& track)
-                {
-                    visitedTracks.push_back(track);
-                });
+            Track::find(session, lastRetrievedTrackId, 1, [&](const Track::pointer& track) {
+                visitedTracks.push_back(track);
+            });
             ASSERT_EQ(visitedTracks.size(), 1);
             EXPECT_EQ(visitedTracks[0]->getId(), track2.getId());
             EXPECT_EQ(lastRetrievedTrackId, track2.getId());
@@ -111,10 +108,9 @@ namespace lms::db::tests
 
             TrackId lastRetrievedTrackId{ track1.getId() };
             std::vector<Track::pointer> visitedTracks;
-            Track::find(session, lastRetrievedTrackId, 0, [&](const Track::pointer& track)
-                {
-                    visitedTracks.push_back(track);
-                });
+            Track::find(session, lastRetrievedTrackId, 0, [&](const Track::pointer& track) {
+                visitedTracks.push_back(track);
+            });
             ASSERT_EQ(visitedTracks.size(), 0);
             EXPECT_EQ(lastRetrievedTrackId, track1.getId());
         }
@@ -124,10 +120,11 @@ namespace lms::db::tests
 
             TrackId lastRetrievedTrackId{};
             std::vector<Track::pointer> visitedTracks;
-            Track::find(session, lastRetrievedTrackId, 10, [&](const Track::pointer& track)
-                {
+            Track::find(
+                session, lastRetrievedTrackId, 10, [&](const Track::pointer& track) {
                     visitedTracks.push_back(track);
-                }, otherLibrary.getId());
+                },
+                otherLibrary.getId());
             ASSERT_EQ(visitedTracks.size(), 0);
             EXPECT_EQ(lastRetrievedTrackId, TrackId{});
         }
@@ -137,10 +134,11 @@ namespace lms::db::tests
 
             TrackId lastRetrievedTrackId{};
             std::vector<Track::pointer> visitedTracks;
-            Track::find(session, lastRetrievedTrackId, 10, [&](const Track::pointer& track)
-                {
+            Track::find(
+                session, lastRetrievedTrackId, 10, [&](const Track::pointer& track) {
                     visitedTracks.push_back(track);
-                }, library.getId());
+                },
+                library.getId());
             ASSERT_EQ(visitedTracks.size(), 1);
             EXPECT_EQ(visitedTracks[0]->getId(), track2.getId());
             EXPECT_EQ(lastRetrievedTrackId, track2.getId());
@@ -235,22 +233,22 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             {
-                const auto tracks{ Track::findIds(session, Track::FindParameters {}.setKeywords({"Track"})) };
+                const auto tracks{ Track::findIds(session, Track::FindParameters{}.setKeywords({ "Track" })) };
                 EXPECT_EQ(tracks.results.size(), 6);
             }
             {
-                const auto tracks{ Track::findIds(session, Track::FindParameters {}.setKeywords({"MyTrack"})) };
+                const auto tracks{ Track::findIds(session, Track::FindParameters{}.setKeywords({ "MyTrack" })) };
                 EXPECT_EQ(tracks.results.size(), 5);
                 EXPECT_TRUE(std::none_of(std::cbegin(tracks.results), std::cend(tracks.results), [&](const TrackId trackId) { return trackId == track6.getId(); }));
             }
             {
-                const auto tracks{ Track::findIds(session, Track::FindParameters {}.setKeywords({"MyTrack%"})) };
+                const auto tracks{ Track::findIds(session, Track::FindParameters{}.setKeywords({ "MyTrack%" })) };
                 ASSERT_EQ(tracks.results.size(), 2);
                 EXPECT_EQ(tracks.results[0], track2.getId());
                 EXPECT_EQ(tracks.results[1], track3.getId());
             }
             {
-                const auto tracks{ Track::findIds(session, Track::FindParameters {}.setKeywords({"%MyTrack"})) };
+                const auto tracks{ Track::findIds(session, Track::FindParameters{}.setKeywords({ "%MyTrack" })) };
                 ASSERT_EQ(tracks.results.size(), 2);
                 EXPECT_EQ(tracks.results[0], track4.getId());
                 EXPECT_EQ(tracks.results[1], track5.getId());
@@ -300,7 +298,7 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
 
-        const Wt::WDateTime dateTime{ Wt::WDate {1950, 1, 1}, Wt::WTime {12, 30, 20} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 1950, 1, 1 }, Wt::WTime{ 12, 30, 20 } };
 
         {
             auto transaction{ session.createWriteTransaction() };
@@ -309,19 +307,19 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto tracks{ Track::findIds(session, Track::FindParameters {}) };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}) };
             EXPECT_EQ(tracks.results.size(), 1);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto tracks{ Track::findIds(session, Track::FindParameters {}.setWrittenAfter(dateTime.addSecs(-1))) };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setWrittenAfter(dateTime.addSecs(-1))) };
             EXPECT_EQ(tracks.results.size(), 1);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto tracks{ Track::findIds(session, Track::FindParameters {}.setWrittenAfter(dateTime.addSecs(+1))) };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setWrittenAfter(dateTime.addSecs(+1))) };
             EXPECT_EQ(tracks.results.size(), 0);
         }
     }
@@ -342,7 +340,6 @@ namespace lms::db::tests
             EXPECT_EQ(track->getRelativeFilePath(), "foo/file.path");
         }
     }
-
 
     TEST_F(DatabaseFixture, Track_audioProperties)
     {
@@ -366,4 +363,4 @@ namespace lms::db::tests
             EXPECT_EQ(track->getSampleRate(), 44100);
         }
     }
-}
+} // namespace lms::db::tests

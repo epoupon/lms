@@ -49,7 +49,7 @@ namespace lms::core::pathUtils
 
     std::filesystem::path getLongestCommonPath(const std::filesystem::path& path1, const std::filesystem::path& path2);
 
-    template <typename Iterator>
+    template<typename Iterator>
     std::filesystem::path getLongestCommonPath(Iterator first, Iterator last)
     {
         std::filesystem::path longestCommonPath;
@@ -64,4 +64,4 @@ namespace lms::core::pathUtils
 
         return longestCommonPath;
     }
-}
+} // namespace lms::core::pathUtils

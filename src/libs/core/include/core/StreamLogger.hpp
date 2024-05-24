@@ -39,4 +39,4 @@ namespace lms::core::logging
         std::ostream& _os;
         const EnumSet<Severity> _severities;
     };
-}
+} // namespace lms::core::logging

@@ -45,41 +45,65 @@ namespace lms::db
     public:
         struct FindParameters
         {
-            std::optional<Range>    range;
-            ClusterSortMethod       sortMethod;
-            ClusterTypeId           clusterType;    // if non empty, clusters that belong to this cluster type
-            std::string             clusterTypeName; // if non empty, clusters that belong to this cluster type
-            TrackId                 track;        // if set, clusters involved in this track
-            ReleaseId               release;      // if set, clusters involved in this release
+            std::optional<Range> range;
+            ClusterSortMethod sortMethod;
+            ClusterTypeId clusterType;   // if non empty, clusters that belong to this cluster type
+            std::string clusterTypeName; // if non empty, clusters that belong to this cluster type
+            TrackId track;               // if set, clusters involved in this track
+            ReleaseId release;           // if set, clusters involved in this release
 
-            FindParameters& setRange(std::optional<Range> _range) { range = _range; return *this; }
-            FindParameters& setSortMethod(ClusterSortMethod _method) { sortMethod = _method; return *this; }
-            FindParameters& setClusterType(ClusterTypeId _clusterType) { clusterType = _clusterType; return *this; }
-            FindParameters& setClusterTypeName(std::string_view _name) { clusterTypeName = _name; return *this; }
-            FindParameters& setTrack(TrackId _track) { track = _track; return *this; }
-            FindParameters& setRelease(ReleaseId _release) { release = _release; return *this; }
+            FindParameters& setRange(std::optional<Range> _range)
+            {
+                range = _range;
+                return *this;
+            }
+            FindParameters& setSortMethod(ClusterSortMethod _method)
+            {
+                sortMethod = _method;
+                return *this;
+            }
+            FindParameters& setClusterType(ClusterTypeId _clusterType)
+            {
+                clusterType = _clusterType;
+                return *this;
+            }
+            FindParameters& setClusterTypeName(std::string_view _name)
+            {
+                clusterTypeName = _name;
+                return *this;
+            }
+            FindParameters& setTrack(TrackId _track)
+            {
+                track = _track;
+                return *this;
+            }
+            FindParameters& setRelease(ReleaseId _release)
+            {
+                release = _release;
+                return *this;
+            }
         };
 
         Cluster() = default;
 
         // Find utility
-        static std::size_t				        getCount(Session& session);
-        static RangeResults<ClusterId>	        findIds(Session& session, const FindParameters& params);
-        static RangeResults<pointer>            find(Session& session, const FindParameters& params);
-        static void                             find(Session& session, const FindParameters& params, std::function<void(const pointer& cluster)> _func);
-        static pointer                          find(Session& session, ClusterId id);
-        static RangeResults<ClusterId>          findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static std::size_t getCount(Session& session);
+        static RangeResults<ClusterId> findIds(Session& session, const FindParameters& params);
+        static RangeResults<pointer> find(Session& session, const FindParameters& params);
+        static void find(Session& session, const FindParameters& params, std::function<void(const pointer& cluster)> _func);
+        static pointer find(Session& session, ClusterId id);
+        static RangeResults<ClusterId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
 
         // May be very slow
-        static std::size_t                      computeTrackCount(Session& session, ClusterId id);
-        static std::size_t                      computeReleaseCount(Session& session, ClusterId id);
+        static std::size_t computeTrackCount(Session& session, ClusterId id);
+        static std::size_t computeReleaseCount(Session& session, ClusterId id);
 
         // Accessors
-        std::string_view                getName() const { return _name; }
-        ObjectPtr<ClusterType>          getType() const { return _clusterType; }
-        std::size_t                     getTrackCount() const { return _trackCount; }
-        RangeResults<TrackId>           getTracks(std::optional<Range> range = std::nullopt) const;
-        std::size_t                     getReleasesCount() const { return _releaseCount; };
+        std::string_view getName() const { return _name; }
+        ObjectPtr<ClusterType> getType() const { return _clusterType; }
+        std::size_t getTrackCount() const { return _trackCount; }
+        RangeResults<TrackId> getTracks(std::optional<Range> range = std::nullopt) const;
+        std::size_t getReleasesCount() const { return _releaseCount; };
 
         void setReleaseCount(std::size_t releaseCount) { _releaseCount = releaseCount; }
         void setTrackCount(std::size_t trackCount) { _trackCount = trackCount; }
@@ -104,14 +128,13 @@ namespace lms::db
 
         static const std::size_t _maxNameLength = 128;
 
-        std::string	_name;
+        std::string _name;
         int _trackCount{};
         int _releaseCount{};
 
         Wt::Dbo::ptr<ClusterType> _clusterType;
-        Wt::Dbo::collection< Wt::Dbo::ptr<Track> > _tracks;
+        Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
     };
-
 
     class ClusterType final : public Object<ClusterType, ClusterTypeId>
     {
@@ -119,20 +142,20 @@ namespace lms::db
         ClusterType() = default;
 
         // Getters
-        static std::size_t					getCount(Session& session);
-        static RangeResults<ClusterTypeId>	findIds(Session& session, std::optional<Range> range = std::nullopt);
-        static void                         find(Session& session, const std::function<void(const pointer&)>& func);
-        static pointer 						find(Session& session, std::string_view name);
-        static pointer						find(Session& session, ClusterTypeId id);
-        static RangeResults<ClusterTypeId>	findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
-        static RangeResults<ClusterTypeId>	findUsed(Session& session, std::optional<Range> range = std::nullopt);
+        static std::size_t getCount(Session& session);
+        static RangeResults<ClusterTypeId> findIds(Session& session, std::optional<Range> range = std::nullopt);
+        static void find(Session& session, const std::function<void(const pointer&)>& func);
+        static pointer find(Session& session, std::string_view name);
+        static pointer find(Session& session, ClusterTypeId id);
+        static RangeResults<ClusterTypeId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static RangeResults<ClusterTypeId> findUsed(Session& session, std::optional<Range> range = std::nullopt);
 
         static void remove(Session& session, const std::string& name);
 
         // Accessors
         std::string_view getName() const { return _name; }
-        std::vector<Cluster::pointer>	getClusters() const;
-        Cluster::pointer				getCluster(const std::string& name) const;
+        std::vector<Cluster::pointer> getClusters() const;
+        Cluster::pointer getCluster(const std::string& name) const;
 
         template<class Action>
         void persist(Action& a)
@@ -148,9 +171,8 @@ namespace lms::db
 
         static const std::size_t _maxNameLength = 128;
 
-        std::string     _name;
-        Wt::Dbo::collection< Wt::Dbo::ptr<Cluster> > _clusters;
+        std::string _name;
+        Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> _clusters;
     };
 
 } // namespace lms::db
-

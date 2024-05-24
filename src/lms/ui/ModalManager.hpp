@@ -25,17 +25,17 @@
 
 namespace lms::ui
 {
-	class ModalManager : public Wt::WContainerWidget
-	{
-		public:
-			ModalManager();
+    class ModalManager : public Wt::WContainerWidget
+    {
+    public:
+        ModalManager();
 
-			// should handle only one modal at a time
-			// Widget must contain a "modal" element
-			void show(std::unique_ptr<Wt::WWidget> modalWidget);
-			void dispose(Wt::WWidget* modalWidget);
+        // should handle only one modal at a time
+        // Widget must contain a "modal" element
+        void show(std::unique_ptr<Wt::WWidget> modalWidget);
+        void dispose(Wt::WWidget* modalWidget);
 
-		private:
-			Wt::JSignal<std::string> _closed;
-	};
-}
+    private:
+        Wt::JSignal<std::string> _closed;
+    };
+} // namespace lms::ui

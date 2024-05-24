@@ -20,6 +20,7 @@
 #pragma once
 
 #include <type_traits>
+
 #include <Wt/Dbo/StdSqlTraits.h>
 
 #include "database/Types.hpp"
@@ -55,5 +56,4 @@ namespace Wt::Dbo
             return false;
         }
     };
-}
-
+} // namespace Wt::Dbo

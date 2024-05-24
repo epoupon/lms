@@ -22,7 +22,6 @@
 #include "core/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
-
 #include "database/Artist.hpp"
 #include "database/AuthToken.hpp"
 #include "database/Cluster.hpp"
@@ -35,22 +34,23 @@
 #include "database/StarredRelease.hpp"
 #include "database/StarredTrack.hpp"
 #include "database/Track.hpp"
-#include "database/TrackBookmark.hpp"
 #include "database/TrackArtistLink.hpp"
-#include "database/TrackList.hpp"
+#include "database/TrackBookmark.hpp"
 #include "database/TrackFeatures.hpp"
+#include "database/TrackList.hpp"
 #include "database/TransactionChecker.hpp"
 #include "database/User.hpp"
+
 #include "EnumSetTraits.hpp"
-#include "PathTraits.hpp"
 #include "Migration.hpp"
+#include "PathTraits.hpp"
 #include "Utils.hpp"
 
 namespace lms::db
 {
     WriteTransaction::WriteTransaction(core::RecursiveSharedMutex& mutex, Wt::Dbo::Session& session)
-        : _lock{ mutex },
-        _transaction{ session }
+        : _lock{ mutex }
+        , _transaction{ session }
     {
 #if LMS_CHECK_TRANSACTION_ACCESSES
         TransactionChecker::pushWriteTransaction(_transaction.session());

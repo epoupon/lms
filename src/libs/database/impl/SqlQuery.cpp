@@ -27,7 +27,8 @@ namespace lms::db
 {
     WhereClause& WhereClause::And(const WhereClause& otherClause)
     {
-        if (!otherClause._clause.empty()) {
+        if (!otherClause._clause.empty())
+        {
             if (!_clause.empty())
                 _clause += " AND ";
             _clause += "(" + otherClause._clause + ")";
@@ -43,7 +44,8 @@ namespace lms::db
 
     WhereClause& WhereClause::Or(const WhereClause& otherClause)
     {
-        if (!otherClause._clause.empty()) {
+        if (!otherClause._clause.empty())
+        {
             if (!_clause.empty())
                 _clause += " OR ";
             _clause += "(" + otherClause._clause + ")";
@@ -75,7 +77,7 @@ namespace lms::db
     }
 
     InnerJoinClause::InnerJoinClause(const std::string& clause)
-        :_clause(clause)
+        : _clause(clause)
     {
     }
 
@@ -154,7 +156,8 @@ namespace lms::db
         if (!_clause.empty())
         {
             oss << "FROM ";
-            for (auto it = _clause.begin(); it != _clause.end(); ++it) {
+            for (auto it = _clause.begin(); it != _clause.end(); ++it)
+            {
                 if (it != _clause.begin())
                     oss << ",";
 
@@ -185,4 +188,4 @@ namespace lms::db
 
         return oss.str();
     }
-}
+} // namespace lms::db

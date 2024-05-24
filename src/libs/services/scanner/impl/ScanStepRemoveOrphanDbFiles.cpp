@@ -19,14 +19,14 @@
 
 #include "ScanStepRemoveOrphanDbFiles.hpp"
 
+#include "core/ILogger.hpp"
+#include "core/Path.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "core/ILogger.hpp"
-#include "core/Path.hpp"
 
 namespace lms::scanner
 {
@@ -36,7 +36,7 @@ namespace lms::scanner
     {
         constexpr std::size_t batchSize = 100;
 
-        template <typename T>
+        template<typename T>
         void removeOrphanEntries(Session& session, bool& abortScan)
         {
             using IdType = typename T::IdType;
@@ -68,7 +68,7 @@ namespace lms::scanner
                     break;
             }
         }
-    }
+    } // namespace
 
     void ScanStepRemoveOrphanDbFiles::process(ScanContext& context)
     {
@@ -110,15 +110,14 @@ namespace lms::scanner
                 auto transaction{ session.createReadTransaction() };
 
                 endReached = true;
-                Track::find(session, lastCheckedTrackID, batchSize, [&](const Track::pointer& track)
-                    {
-                        endReached = false;
+                Track::find(session, lastCheckedTrackID, batchSize, [&](const Track::pointer& track) {
+                    endReached = false;
 
-                        if (!checkFile(track->getAbsoluteFilePath()))
-                            tracksToRemove.push_back(track);
+                    if (!checkFile(track->getAbsoluteFilePath()))
+                        tracksToRemove.push_back(track);
 
-                        context.currentStepStats.processedElems++;
-                    });
+                    context.currentStepStats.processedElems++;
+                });
             }
 
             if (!tracksToRemove.empty())
@@ -175,10 +174,9 @@ namespace lms::scanner
             }
 
             if (std::none_of(std::cbegin(_settings.mediaLibraries), std::cend(_settings.mediaLibraries),
-                [&](const ScannerSettings::MediaLibraryInfo& libraryInfo)
-                {
-                    return core::pathUtils::isPathInRootPath(p, libraryInfo.rootDirectory, &excludeDirFileName);
-                }))
+                    [&](const ScannerSettings::MediaLibraryInfo& libraryInfo) {
+                        return core::pathUtils::isPathInRootPath(p, libraryInfo.rootDirectory, &excludeDirFileName);
+                    }))
             {
                 LMS_LOG(DBUPDATER, INFO, "Removing '" << p.string() << "': out of media directory");
                 return false;
@@ -198,4 +196,4 @@ namespace lms::scanner
             return false;
         }
     }
-}
+} // namespace lms::scanner

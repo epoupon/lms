@@ -20,20 +20,22 @@
 #include "AudioFileResource.hpp"
 
 #include <fstream>
+
 #include <Wt/Http/Response.h>
 
 #include "av/IAudioFile.hpp"
 #include "av/RawResourceHandlerCreator.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/String.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
+
 #include "LmsApplication.hpp"
 
 namespace lms::ui
 {
-#define LOG(severity, message)	LMS_LOG(UI, severity, "Audio file resource: " << message)
+#define LOG(severity, message) LMS_LOG(UI, severity, "Audio file resource: " << message)
 
     namespace
     {
@@ -70,9 +72,9 @@ namespace lms::ui
             return getTrackPathFromTrackId(*trackId);
         }
 
-    }
+    } // namespace
 
-    AudioFileResource:: ~AudioFileResource()
+    AudioFileResource::~AudioFileResource()
     {
         beingDeleted();
     }

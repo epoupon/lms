@@ -19,24 +19,24 @@
 
 #include "Auth.hpp"
 
+#include <Wt/WCheckBox.h>
 #include <Wt/WEnvironment.h>
 #include <Wt/WFormModel.h>
 #include <Wt/WLineEdit.h>
-#include <Wt/WCheckBox.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WRandom.h>
 
-#include "services/auth/IAuthTokenService.hpp"
-#include "services/auth/IPasswordService.hpp"
-#include "database/Session.hpp"
-#include "database/User.hpp"
 #include "core/ILogger.hpp"
 #include "core/Service.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
+#include "services/auth/IAuthTokenService.hpp"
+#include "services/auth/IPasswordService.hpp"
 
+#include "LmsApplication.hpp"
 #include "common/LoginNameValidator.hpp"
 #include "common/MandatoryValidator.hpp"
 #include "common/PasswordValidator.hpp"
-#include "LmsApplication.hpp"
 
 namespace lms::ui
 {
@@ -74,7 +74,6 @@ namespace lms::ui
                 setValidator(PasswordField, createMandatoryValidator());
             }
 
-
             void saveData()
             {
                 bool isDemo;
@@ -103,9 +102,9 @@ namespace lms::ui
                 if (field == PasswordField)
                 {
                     const auto checkResult{ core::Service<auth::IPasswordService>::get()->checkUserPassword(
-                                boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
-                                valueText(LoginNameField).toUTF8(),
-                                valueText(PasswordField).toUTF8()) };
+                        boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
+                        valueText(LoginNameField).toUTF8(),
+                        valueText(PasswordField).toUTF8()) };
                     switch (checkResult.state)
                     {
                     case auth::IPasswordService::CheckResult::State::Granted:
@@ -138,7 +137,7 @@ namespace lms::ui
         const AuthModel::Field AuthModel::LoginNameField{ "login-name" };
         const AuthModel::Field AuthModel::PasswordField{ "password" };
         const AuthModel::Field AuthModel::RememberMeField{ "remember-me" };
-    }
+    } // namespace
 
     std::optional<db::UserId> processAuthToken(const Wt::WEnvironment& env)
     {
@@ -162,24 +161,22 @@ namespace lms::ui
         return res.authTokenInfo->userId;
     }
 
-
     Auth::Auth()
         : Wt::WTemplateFormView{ Wt::WString::tr("Lms.Auth.template") }
     {
         auto model{ std::make_shared<AuthModel>() };
 
-        auto processAuth = [this, model]
-            {
-                updateModel(model.get());
+        auto processAuth = [this, model] {
+            updateModel(model.get());
 
-                if (model->validate())
-                {
-                    model->saveData();
-                    userLoggedIn.emit(*model->getUserId());
-                }
-                else
-                    updateView(model.get());
-            };
+            if (model->validate())
+            {
+                model->saveData();
+                userLoggedIn.emit(*model->getUserId());
+            }
+            else
+                updateView(model.get());
+        };
 
         // LoginName
         auto loginName{ std::make_unique<Wt::WLineEdit>() };
@@ -212,4 +209,4 @@ namespace lms::ui
 
         updateView(model.get());
     }
-}
+} // namespace lms::ui

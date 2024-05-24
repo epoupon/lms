@@ -26,89 +26,88 @@
 template<typename Individual>
 class GeneticAlgorithm
 {
-    public:
-        using Score = float;
+public:
+    using Score = float;
 
-        using BreedFunction = std::function<Individual(const Individual&, const Individual&)>;
-        using MutateFunction = std::function<void(Individual&)>;
-        using ScoreFunction = std::function<Score(const Individual&)>;
+    using BreedFunction = std::function<Individual(const Individual&, const Individual&)>;
+    using MutateFunction = std::function<void(Individual&)>;
+    using ScoreFunction = std::function<Score(const Individual&)>;
 
-        struct Params
-        {
-            std::size_t		nbWorkers {1};
-            std::size_t		nbGenerations;
-            float			crossoverRatio {0.5};
-            float			mutationProbability {0.05};
-            BreedFunction	breedFunction;
-            MutateFunction		mutateFunction;
-            ScoreFunction		scoreFunction;
-        };
+    struct Params
+    {
+        std::size_t nbWorkers{ 1 };
+        std::size_t nbGenerations;
+        float crossoverRatio{ 0.5 };
+        float mutationProbability{ 0.05 };
+        BreedFunction breedFunction;
+        MutateFunction mutateFunction;
+        ScoreFunction scoreFunction;
+    };
 
-        GeneticAlgorithm(const Params& params);
+    GeneticAlgorithm(const Params& params);
 
-        // Returns the individual that has the maximum score after processing the requested generations
-        Individual simulate(const std::vector<Individual>& initialPopulation);
+    // Returns the individual that has the maximum score after processing the requested generations
+    Individual simulate(const std::vector<Individual>& initialPopulation);
 
-    private:
-        struct ScoredIndividual
-        {
-            Individual individual;
-            std::optional<Score> score {};
-        };
+private:
+    struct ScoredIndividual
+    {
+        Individual individual;
+        std::optional<Score> score{};
+    };
 
-        void scoreAndSortPopulation(std::vector<ScoredIndividual>& population);
-        Score getTotalScore(const std::vector<ScoredIndividual>& population) const;
-        typename std::vector<ScoredIndividual>::const_iterator pickRandomRouletteWheel(const std::vector<ScoredIndividual>& population, Score totalScore);
+    void scoreAndSortPopulation(std::vector<ScoredIndividual>& population);
+    Score getTotalScore(const std::vector<ScoredIndividual>& population) const;
+    typename std::vector<ScoredIndividual>::const_iterator pickRandomRouletteWheel(const std::vector<ScoredIndividual>& population, Score totalScore);
 
-        Params _params;
+    Params _params;
 };
 
 template<typename Individual>
 GeneticAlgorithm<Individual>::GeneticAlgorithm(const Params& params)
-: _params {params}
+    : _params{ params }
 {
 }
-
 
 template<typename Individual>
 Individual
 GeneticAlgorithm<Individual>::simulate(const std::vector<Individual>& initialPopulation)
 {
-    const std::size_t childrenCountPerGeneration {static_cast<std::size_t>(initialPopulation.size() * _params.crossoverRatio)};
+    const std::size_t childrenCountPerGeneration{ static_cast<std::size_t>(initialPopulation.size() * _params.crossoverRatio) };
     if (initialPopulation.size() < 10)
         throw std::runtime_error("Initial population must has at least 10 elements");
 
     std::vector<ScoredIndividual> scoredPopulation;
     scoredPopulation.reserve(initialPopulation.size());
 
-    std::transform(std::cbegin(initialPopulation), std::cend(initialPopulation), std::back_inserter(scoredPopulation ),
-            [](const Individual& individual) { return ScoredIndividual {individual};});
+    std::transform(std::cbegin(initialPopulation), std::cend(initialPopulation), std::back_inserter(scoredPopulation),
+        [](const Individual& individual) { return ScoredIndividual{ individual }; });
 
     scoreAndSortPopulation(scoredPopulation);
 
-    for (std::size_t currentGeneration {}; currentGeneration  < _params.nbGenerations; ++currentGeneration)
+    for (std::size_t currentGeneration{}; currentGeneration < _params.nbGenerations; ++currentGeneration)
     {
         assert(scoredPopulation.size() == initialPopulation.size());
         std::cout << "Processing generation " << currentGeneration << "..." << std::endl;
         std::cout << "Need to create " << childrenCountPerGeneration << " new children" << std::endl;
 
         // breed
-        const Score populationTotalScore {getTotalScore(scoredPopulation)};
+        const Score populationTotalScore{ getTotalScore(scoredPopulation) };
         std::vector<ScoredIndividual> children;
         children.reserve(childrenCountPerGeneration);
 
         while (children.size() < childrenCountPerGeneration)
         {
             // Select two random parents using their score as weight
-            const auto itParent1 {pickRandomRouletteWheel(scoredPopulation, populationTotalScore)};
-            const auto itParent2 {pickRandomRouletteWheel(scoredPopulation, populationTotalScore)};
+            const auto itParent1{ pickRandomRouletteWheel(scoredPopulation, populationTotalScore) };
+            const auto itParent2{ pickRandomRouletteWheel(scoredPopulation, populationTotalScore) };
 
             if (itParent1 == itParent2)
                 continue;
 
-            ScoredIndividual child {_params.breedFunction(itParent1->individual, itParent2->individual)};
-            
-            if (core::random::getRealRandom(float {}, float {1}) <= _params.mutationProbability)
+            ScoredIndividual child{ _params.breedFunction(itParent1->individual, itParent2->individual) };
+
+            if (core::random::getRealRandom(float{}, float{ 1 }) <= _params.mutationProbability)
                 _params.mutateFunction(child.individual);
 
             children.emplace_back(std::move(child));
@@ -130,17 +129,14 @@ GeneticAlgorithm<Individual>::simulate(const std::vector<Individual>& initialPop
     return scoredPopulation.front().individual;
 }
 
-
 template<typename Individual>
-void
-GeneticAlgorithm<Individual>::scoreAndSortPopulation(std::vector<ScoredIndividual>& scoredPopulation)
+void GeneticAlgorithm<Individual>::scoreAndSortPopulation(std::vector<ScoredIndividual>& scoredPopulation)
 {
     parallel_foreach(_params.nbWorkers, std::begin(scoredPopulation), std::end(scoredPopulation),
-            [&](ScoredIndividual& scoredIndividual)
-            {
-                if (!scoredIndividual.score)
-                    scoredIndividual.score = _params.scoreFunction(scoredIndividual.individual);
-            });
+        [&](ScoredIndividual& scoredIndividual) {
+            if (!scoredIndividual.score)
+                scoredIndividual.score = _params.scoreFunction(scoredIndividual.individual);
+        });
 
     std::sort(std::begin(scoredPopulation), std::end(scoredPopulation), [](const ScoredIndividual& a, const ScoredIndividual& b) { return a.score > b.score; });
 }
@@ -149,17 +145,17 @@ template<typename Individual>
 typename GeneticAlgorithm<Individual>::Score
 GeneticAlgorithm<Individual>::getTotalScore(const std::vector<ScoredIndividual>& scoredPopulation) const
 {
-    return std::accumulate(std::cbegin(scoredPopulation), std::cend(scoredPopulation), Score {}, [](Score score, const ScoredIndividual& individual) { return score + *individual.score; });
+    return std::accumulate(std::cbegin(scoredPopulation), std::cend(scoredPopulation), Score{}, [](Score score, const ScoredIndividual& individual) { return score + *individual.score; });
 }
 
 template<typename Individual>
 typename std::vector<typename GeneticAlgorithm<Individual>::ScoredIndividual>::const_iterator
 GeneticAlgorithm<Individual>::pickRandomRouletteWheel(const std::vector<ScoredIndividual>& population, Score totalScore)
 {
-    const Score randomScore {core::random::getRealRandom(Score {}, totalScore)};
+    const Score randomScore{ core::random::getRealRandom(Score{}, totalScore) };
 
     Score curScore{};
-    for (auto itScoredIndividual {std::cbegin(population)}; itScoredIndividual != std::cend(population); ++itScoredIndividual )
+    for (auto itScoredIndividual{ std::cbegin(population) }; itScoredIndividual != std::cend(population); ++itScoredIndividual)
     {
         if (curScore + *itScoredIndividual->score > randomScore)
             return itScoredIndividual;

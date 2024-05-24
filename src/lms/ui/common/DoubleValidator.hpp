@@ -23,6 +23,5 @@
 
 namespace lms::ui
 {
-	std::unique_ptr<Wt::WValidator> createDoubleValidator(double min, double max);
+    std::unique_ptr<Wt::WValidator> createDoubleValidator(double min, double max);
 } // namespace lms::ui
-

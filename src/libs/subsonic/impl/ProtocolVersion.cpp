@@ -51,5 +51,4 @@ namespace lms::core::stringUtils
 
         return version;
     }
-}
-
+} // namespace lms::core::stringUtils

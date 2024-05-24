@@ -41,4 +41,3 @@ namespace lms::ui
         SearchView* _search{};
     };
 } // namespace lms::ui
-

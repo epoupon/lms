@@ -55,16 +55,16 @@ namespace lms::ui
         void setSearch(std::string_view search);
 
     protected:
-        Range       getActualRange(std::optional<Range> range) const;
+        Range getActualRange(std::optional<Range> range) const;
         std::size_t getMaxCount() const;
-        const Filters&    getFilters() { return _filters; }
+        const Filters& getFilters() { return _filters; }
         const std::vector<std::string_view>& getSearchKeywords() const { return _searchKeywords; }
 
     private:
         Filters& _filters;
         std::string _searchText;
         std::vector<std::string_view> _searchKeywords;
-        Mode        _mode;
+        Mode _mode;
         std::size_t _maxCount;
     };
-} // ns UserInterface
+} // namespace lms::ui

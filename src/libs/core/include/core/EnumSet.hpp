@@ -27,7 +27,7 @@
 
 namespace lms::core
 {
-    template <typename T, typename underlying_type = std::uint32_t>
+    template<typename T, typename underlying_type = std::uint32_t>
     class EnumSet
     {
         static_assert(std::is_enum<T>::value);
@@ -45,13 +45,13 @@ namespace lms::core
                 insert(value);
         }
 
-        template <typename It>
+        template<typename It>
         constexpr EnumSet(It begin, It end)
         {
             assign(begin, end);
         }
 
-        template <typename It>
+        template<typename It>
         constexpr void assign(It begin, It end)
         {
             clear();
@@ -158,7 +158,10 @@ namespace lms::core
 
     private:
         static_assert(std::numeric_limits<IndexType>::max() >= sizeof(underlying_type) * 8);
-        enum : IndexType { npos = sizeof(underlying_type) * 8 };
+        enum : IndexType
+        {
+            npos = sizeof(underlying_type) * 8
+        };
 
         constexpr IndexType getFirstBitSetIndex(IndexType start = {}) const
         {
@@ -190,4 +193,4 @@ namespace lms::core
 
         underlying_type _bitfield{};
     };
-}
+} // namespace lms::core

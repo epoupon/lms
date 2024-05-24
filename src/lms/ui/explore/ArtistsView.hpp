@@ -26,8 +26,9 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Types.hpp"
-#include "common/Template.hpp"
+
 #include "ArtistCollector.hpp"
+#include "common/Template.hpp"
 
 namespace lms::ui
 {
@@ -51,9 +52,8 @@ namespace lms::ui
 
         Wt::WWidget* _currentLinkTypeActiveItem{};
         InfiniteScrollingContainer* _container{};
-        ArtistCollector				_artistCollector;
+        ArtistCollector _artistCollector;
         static constexpr ArtistCollector::Mode _defaultSortMode{ ArtistCollector::Mode::Random };
         static constexpr std::optional<db::TrackArtistLinkType> _defaultLinkType{ std::nullopt };
     };
 } // namespace lms::ui
-

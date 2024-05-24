@@ -19,11 +19,10 @@
 
 #include "AuthServiceBase.hpp"
 
-#include <cstdlib>
+#include "core/ILogger.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "core/ILogger.hpp"
 
 namespace lms::auth
 {
@@ -31,7 +30,8 @@ namespace lms::auth
 
     AuthServiceBase::AuthServiceBase(Db& db)
         : _db{ db }
-    {}
+    {
+    }
 
     UserId AuthServiceBase::getOrCreateUser(std::string_view loginName)
     {
@@ -91,4 +91,4 @@ namespace lms::auth
     {
         return _db.getTLSSession();
     }
-}
+} // namespace lms::auth

@@ -18,6 +18,7 @@
  */
 
 #include <thread>
+
 #include <benchmark/benchmark.h>
 
 #include "SubsonicResponse.hpp"
@@ -47,7 +48,7 @@ namespace lms::api::subsonic::benchs
 
             return response;
         }
-    }
+    } // namespace
 
     static void BM_SubsonicResponse_generate(benchmark::State& state)
     {
@@ -59,7 +60,7 @@ namespace lms::api::subsonic::benchs
         }
     }
 
-    template <ResponseFormat responseFormat>
+    template<ResponseFormat responseFormat>
     static void BM_SubsonicResponse_serialize(benchmark::State& state)
     {
         const Response response{ generateFakeResponse() };
@@ -74,6 +75,6 @@ namespace lms::api::subsonic::benchs
     BENCHMARK(BM_SubsonicResponse_generate)->Threads(1)->Threads(std::thread::hardware_concurrency());
     BENCHMARK(BM_SubsonicResponse_serialize<ResponseFormat::json>);
     BENCHMARK(BM_SubsonicResponse_serialize<ResponseFormat::xml>);
-}
+} // namespace lms::api::subsonic::benchs
 
 BENCHMARK_MAIN();

@@ -27,4 +27,4 @@ namespace lms::api::subsonic
     Response handleStarRequest(RequestContext& context);
     Response handleUnstarRequest(RequestContext& context);
     Response handleScrobble(RequestContext& context);
-}
+} // namespace lms::api::subsonic

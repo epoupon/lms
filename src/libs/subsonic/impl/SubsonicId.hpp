@@ -19,16 +19,18 @@
 
 #pragma once
 
+#include "core/String.hpp"
 #include "database/ArtistId.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 #include "database/TrackListId.hpp"
-#include "core/String.hpp"
 
 namespace lms::api::subsonic
 {
-    struct RootId {};
+    struct RootId
+    {
+    };
 
     std::string idToString(db::ArtistId id);
     std::string idToString(db::MediaLibraryId id);
@@ -58,5 +60,4 @@ namespace lms::core::stringUtils
 
     template<>
     std::optional<db::TrackListId> readAs(std::string_view str);
-}
-
+} // namespace lms::core::stringUtils

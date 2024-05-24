@@ -28,21 +28,20 @@
 #include <Wt/WString.h>
 #include <Wt/WTemplateFormView.h>
 
+#include "core/IConfig.hpp"
+#include "core/ILogger.hpp"
+#include "core/Service.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
+#include "services/auth/IPasswordService.hpp"
+
+#include "LmsApplication.hpp"
+#include "MediaPlayer.hpp"
 #include "common/DoubleValidator.hpp"
 #include "common/MandatoryValidator.hpp"
 #include "common/PasswordValidator.hpp"
 #include "common/UUIDValidator.hpp"
 #include "common/ValueStringModel.hpp"
-
-#include "services/auth/IPasswordService.hpp"
-#include "database/Session.hpp"
-#include "database/User.hpp"
-#include "core/IConfig.hpp"
-#include "core/ILogger.hpp"
-#include "core/Service.hpp"
-
-#include "LmsApplication.hpp"
-#include "MediaPlayer.hpp"
 
 namespace lms::ui
 {
@@ -111,8 +110,7 @@ namespace lms::ui
             setValidator(TranscodeBitrateField, createMandatoryValidator());
             setValidator(TranscodeFormatField, createMandatoryValidator());
             setValidator(ReplayGainModeField, createMandatoryValidator());
-            auto createPreAmpValidator{ []
-            {
+            auto createPreAmpValidator{ [] {
                 return createDoubleValidator(MediaPlayer::Settings::ReplayGain::minPreAmpGain, MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
             } };
 
@@ -124,13 +122,13 @@ namespace lms::ui
             loadData();
         }
 
-        std::shared_ptr<TranscodingModeModel>	getTranscodingModeModel() { return _transcodingModeModeModel; }
-        std::shared_ptr<Wt::WAbstractItemModel>	getTranscodingOutputBitrateModel() { return _transcodingOutputBitrateModel; }
-        std::shared_ptr<Wt::WAbstractItemModel>	getTranscodingOutputFormatModel() { return _transcodingOutputFormatModel; }
-        std::shared_ptr<ReplayGainModeModel>	getReplayGainModeModel() { return _replayGainModeModel; }
-        std::shared_ptr<Wt::WAbstractItemModel>	getSubsonicArtistListModeModel() { return _subsonicArtistListModeModel; }
-        std::shared_ptr<FeedbackBackendModel>	getFeedbackBackendModel() { return _feedbackBackendModel; }
-        std::shared_ptr<ScrobblingBackendModel>	getScrobblingBackendModel() { return _scrobblingBackendModel; }
+        std::shared_ptr<TranscodingModeModel> getTranscodingModeModel() { return _transcodingModeModeModel; }
+        std::shared_ptr<Wt::WAbstractItemModel> getTranscodingOutputBitrateModel() { return _transcodingOutputBitrateModel; }
+        std::shared_ptr<Wt::WAbstractItemModel> getTranscodingOutputFormatModel() { return _transcodingOutputFormatModel; }
+        std::shared_ptr<ReplayGainModeModel> getReplayGainModeModel() { return _replayGainModeModel; }
+        std::shared_ptr<Wt::WAbstractItemModel> getSubsonicArtistListModeModel() { return _subsonicArtistListModeModel; }
+        std::shared_ptr<FeedbackBackendModel> getFeedbackBackendModel() { return _feedbackBackendModel; }
+        std::shared_ptr<ScrobblingBackendModel> getScrobblingBackendModel() { return _scrobblingBackendModel; }
 
         void saveData()
         {
@@ -315,7 +313,6 @@ namespace lms::ui
         }
 
     private:
-
         void initializeModels()
         {
             _transcodingModeModeModel = std::make_shared<TranscodingModeModel>();
@@ -324,10 +321,9 @@ namespace lms::ui
             _transcodingModeModeModel->add(Wt::WString::tr("Lms.Settings.transcoding-mode.if-format-not-supported"), MediaPlayer::Settings::Transcoding::Mode::IfFormatNotSupported);
 
             _transcodingOutputBitrateModel = std::make_shared<ValueStringModel<Bitrate>>();
-            visitAllowedAudioBitrates([&](const Bitrate bitrate)
-                {
-                    _transcodingOutputBitrateModel->add(Wt::WString::fromUTF8(std::to_string(bitrate / 1000)), bitrate);
-                });
+            visitAllowedAudioBitrates([&](const Bitrate bitrate) {
+                _transcodingOutputBitrateModel->add(Wt::WString::fromUTF8(std::to_string(bitrate / 1000)), bitrate);
+            });
 
             _transcodingOutputFormatModel = std::make_shared<ValueStringModel<TranscodingOutputFormat>>();
             _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.mp3"), TranscodingOutputFormat::MP3);
@@ -359,32 +355,30 @@ namespace lms::ui
         auth::IPasswordService* _authPasswordService{};
         bool _withOldPassword{};
 
-        std::shared_ptr<TranscodingModeModel>	                    _transcodingModeModeModel;
-        std::shared_ptr<ValueStringModel<Bitrate>>                  _transcodingOutputBitrateModel;
-        std::shared_ptr<ValueStringModel<TranscodingOutputFormat>>  _transcodingOutputFormatModel;
-        std::shared_ptr<ReplayGainModeModel>                        _replayGainModeModel;
-        std::shared_ptr<ValueStringModel<SubsonicArtistListMode>>   _subsonicArtistListModeModel;
-        std::shared_ptr<FeedbackBackendModel>                       _feedbackBackendModel;
-        std::shared_ptr<ScrobblingBackendModel>                     _scrobblingBackendModel;
+        std::shared_ptr<TranscodingModeModel> _transcodingModeModeModel;
+        std::shared_ptr<ValueStringModel<Bitrate>> _transcodingOutputBitrateModel;
+        std::shared_ptr<ValueStringModel<TranscodingOutputFormat>> _transcodingOutputFormatModel;
+        std::shared_ptr<ReplayGainModeModel> _replayGainModeModel;
+        std::shared_ptr<ValueStringModel<SubsonicArtistListMode>> _subsonicArtistListModeModel;
+        std::shared_ptr<FeedbackBackendModel> _feedbackBackendModel;
+        std::shared_ptr<ScrobblingBackendModel> _scrobblingBackendModel;
     };
 
     SettingsView::SettingsView()
     {
-        wApp->internalPathChanged().connect(this, [this]
-            {
-                refreshView();
-            });
+        wApp->internalPathChanged().connect(this, [this] {
+            refreshView();
+        });
 
-        LmsApp->getMediaPlayer().settingsLoaded.connect([this]
-            {
-                refreshView();
-            });
+        LmsApp->getMediaPlayer().settingsLoaded.connect([this] {
+            refreshView();
+        });
 
         refreshView();
     }
 
     void
-        SettingsView::refreshView()
+    SettingsView::refreshView()
     {
         if (!wApp->internalPathMatches("/settings"))
             return;
@@ -449,14 +443,13 @@ namespace lms::ui
             transcodingOutputBitrate->setModel(model->getTranscodingOutputBitrateModel());
             t->setFormWidget(SettingsModel::TranscodeBitrateField, std::move(transcodingOutputBitrate));
 
-            transcodingModeRaw->activated().connect([=](int row)
-                {
-                    const bool enable{ model->getTranscodingModeModel()->getValue(row) != MediaPlayer::Settings::Transcoding::Mode::Never };
-                    model->setReadOnly(SettingsModel::TranscodeFormatField, !enable);
-                    model->setReadOnly(SettingsModel::TranscodeBitrateField, !enable);
-                    t->updateModel(model.get());
-                    t->updateView(model.get());
-                });
+            transcodingModeRaw->activated().connect([=](int row) {
+                const bool enable{ model->getTranscodingModeModel()->getValue(row) != MediaPlayer::Settings::Transcoding::Mode::Never };
+                model->setReadOnly(SettingsModel::TranscodeFormatField, !enable);
+                model->setReadOnly(SettingsModel::TranscodeBitrateField, !enable);
+                t->updateModel(model.get());
+                t->updateView(model.get());
+            });
 
             // Replay gain mode
             auto replayGainMode{ std::make_unique<Wt::WComboBox>() };
@@ -474,14 +467,13 @@ namespace lms::ui
             replayGainPreampGainIfNoInfo->setRange(MediaPlayer::Settings::ReplayGain::minPreAmpGain, MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
             t->setFormWidget(SettingsModel::ReplayGainPreAmpGainIfNoInfoField, std::move(replayGainPreampGainIfNoInfo));
 
-            replayGainModeRaw->activated().connect([=](int row)
-                {
-                    const bool enable{ model->getReplayGainModeModel()->getValue(row) != MediaPlayer::Settings::ReplayGain::Mode::None };
-                    model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainField, !enable);
-                    model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainIfNoInfoField, !enable);
-                    t->updateModel(model.get());
-                    t->updateView(model.get());
-                });
+            replayGainModeRaw->activated().connect([=](int row) {
+                const bool enable{ model->getReplayGainModeModel()->getValue(row) != MediaPlayer::Settings::ReplayGain::Mode::None };
+                model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainField, !enable);
+                model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainIfNoInfoField, !enable);
+                t->updateModel(model.get());
+                t->updateView(model.get());
+            });
             if (LmsApp->getMediaPlayer().getSettings()->replayGain.mode == MediaPlayer::Settings::ReplayGain::Mode::None)
             {
                 model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainField, true);
@@ -536,10 +528,9 @@ namespace lms::ui
             t->setFormWidget(SettingsModel::ListenBrainzTokenField, std::move(listenbrainzToken));
         }
 
-        auto updateListenBrainzTokenField{ [=]
-        {
+        auto updateListenBrainzTokenField{ [=] {
             const bool enable{ model->getFeedbackBackendModel()->getValue(feedbackBackendRaw->currentIndex()) == FeedbackBackend::ListenBrainz
-                || model->getScrobblingBackendModel()->getValue(scrobblingBackendRaw->currentIndex()) == ScrobblingBackend::ListenBrainz };
+                               || model->getScrobblingBackendModel()->getValue(scrobblingBackendRaw->currentIndex()) == ScrobblingBackend::ListenBrainz };
 
             model->setReadOnly(SettingsModel::ListenBrainzTokenField, !enable);
             model->validator(SettingsModel::ListenBrainzTokenField)->setMandatory(enable);
@@ -548,42 +539,40 @@ namespace lms::ui
         } };
 
         feedbackBackendRaw->activated().connect([=] { updateListenBrainzTokenField(); });
-        scrobblingBackendRaw->activated().connect([=] { updateListenBrainzTokenField();});
+        scrobblingBackendRaw->activated().connect([=] { updateListenBrainzTokenField(); });
 
         // Buttons
         Wt::WPushButton* saveBtn{ t->bindWidget("save-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.save"))) };
         Wt::WPushButton* discardBtn{ t->bindWidget("discard-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.discard"))) };
 
-        saveBtn->clicked().connect([=]
+        saveBtn->clicked().connect([=] {
             {
+                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+
+                if (LmsApp->getUser()->isDemo())
                 {
-                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-
-                    if (LmsApp->getUser()->isDemo())
-                    {
-                        LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.Settings.settings"), Wt::WString::tr("Lms.Settings.demo-cannot-save"));
-                        return;
-                    }
+                    LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.Settings.settings"), Wt::WString::tr("Lms.Settings.demo-cannot-save"));
+                    return;
                 }
+            }
 
-                t->updateModel(model.get());
+            t->updateModel(model.get());
 
-                if (model->validate())
-                {
-                    model->saveData();
-                    LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Settings.settings"), Wt::WString::tr("Lms.Settings.settings-saved"));
-                }
-
-                // Udate the view: Delete any validation message in the view, etc.
-                t->updateView(model.get());
-            });
-
-        discardBtn->clicked().connect([=]
+            if (model->validate())
             {
-                model->loadData();
-                model->validate();
-                t->updateView(model.get());
-            });
+                model->saveData();
+                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Settings.settings"), Wt::WString::tr("Lms.Settings.settings-saved"));
+            }
+
+            // Udate the view: Delete any validation message in the view, etc.
+            t->updateView(model.get());
+        });
+
+        discardBtn->clicked().connect([=] {
+            model->loadData();
+            model->validate();
+            t->updateView(model.get());
+        });
 
         t->updateView(model.get());
     }

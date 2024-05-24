@@ -17,8 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- /* This file contains some classes in order to get info from file using the libavconv */
-
 #include "LoginThrottler.hpp"
 
 #include "core/ILogger.hpp"
@@ -44,13 +42,13 @@ namespace lms::auth
         {
             return address.is_v6() ? getAddressWithMask(address.to_v6(), 64) : address;
         }
-    }
+    } // namespace
 
     void LoginThrottler::removeOutdatedEntries()
     {
         const Wt::WDateTime now{ Wt::WDateTime::currentDateTime() };
 
-        for (auto it{ std::begin(_attemptsInfo) }; it != std::end(_attemptsInfo); )
+        for (auto it{ std::begin(_attemptsInfo) }; it != std::end(_attemptsInfo);)
         {
             if (it->second.nextAttempt <= now)
                 it = _attemptsInfo.erase(it);
@@ -110,4 +108,4 @@ namespace lms::auth
 
         return it->second.nextAttempt > Wt::WDateTime::currentDateTime();
     }
-}
+} // namespace lms::auth

@@ -20,13 +20,14 @@
 #pragma once
 
 #include "database/Object.hpp"
+
 #include "SubsonicResponse.hpp"
 
 namespace lms::db
 {
     class TrackList;
     class Session;
-}
+} // namespace lms::db
 
 namespace lms::api::subsonic
 {

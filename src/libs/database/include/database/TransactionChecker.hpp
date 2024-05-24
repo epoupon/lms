@@ -20,15 +20,14 @@
 #pragma once
 
 #if !defined(NDEBUG)
-#define LMS_CHECK_TRANSACTION_ACCESSES 1
+    #define LMS_CHECK_TRANSACTION_ACCESSES 1
 #else
-#define LMS_CHECK_TRANSACTION_ACCESSES 0
+    #define LMS_CHECK_TRANSACTION_ACCESSES 0
 #endif
 
 #if LMS_CHECK_TRANSACTION_ACCESSES
-
-#include <vector>
-#include <Wt/Dbo/Session.h>
+    #include <Wt/Dbo/Session.h>
+    #include <vector>
 
 namespace lms::db
 {
@@ -58,6 +57,6 @@ namespace lms::db
         static void pushTransaction(TransactionType type, Wt::Dbo::Session& session);
         static void popTransaction(TransactionType type, Wt::Dbo::Session& session);
     };
-}
+} // namespace lms::db
 
 #endif

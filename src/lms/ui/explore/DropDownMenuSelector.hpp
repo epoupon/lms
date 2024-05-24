@@ -20,14 +20,15 @@
 #pragma once
 
 #include <string>
+
 #include <Wt/WPushButton.h>
+#include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
 #include <Wt/WText.h>
-#include <Wt/WSignal.h>
 
 namespace lms::ui
 {
-    template <typename ItemType>
+    template<typename ItemType>
     class DropDownMenuSelector : public Wt::WTemplate
     {
     public:
@@ -43,15 +44,14 @@ namespace lms::ui
         void bindItem(const std::string& var, const Wt::WString& title, ItemType item)
         {
             auto* menuItem{ bindNew<Wt::WPushButton>(var, title) };
-            menuItem->clicked().connect([this, menuItem, title, item]
-                {
-                    _currentActiveItem->removeStyleClass("active");
-                    menuItem->addStyleClass("active");
-                    _currentActiveItem = menuItem;
-                    _selectedItem->setText(title);
+            menuItem->clicked().connect([this, menuItem, title, item] {
+                _currentActiveItem->removeStyleClass("active");
+                menuItem->addStyleClass("active");
+                _currentActiveItem = menuItem;
+                _selectedItem->setText(title);
 
-                    itemSelected.emit(item);
-                });
+                itemSelected.emit(item);
+            });
 
             if (item == _defaultItem)
             {
@@ -68,4 +68,4 @@ namespace lms::ui
         Wt::WWidget* _currentActiveItem{};
         Wt::WText* _selectedItem{};
     };
-}
+} // namespace lms::ui

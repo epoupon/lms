@@ -25,16 +25,16 @@
 
 namespace lms::feedback::listenBrainz
 {
-	class FeedbacksParser
-	{
-		public:
-			struct Result
-			{
-				std::size_t feedbackCount {}; // >= feedbacks.size()
-				std::vector<Feedback> feedbacks;
-			};
+    class FeedbacksParser
+    {
+    public:
+        struct Result
+        {
+            std::size_t feedbackCount{}; // >= feedbacks.size()
+            std::vector<Feedback> feedbacks;
+        };
 
-			static Result parse(std::string_view msgBody);
-	};
+        static Result parse(std::string_view msgBody);
+    };
 
-} // feedback::ListenBrainz
+} // namespace lms::feedback::listenBrainz

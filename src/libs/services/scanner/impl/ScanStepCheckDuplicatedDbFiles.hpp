@@ -23,14 +23,14 @@
 
 namespace lms::scanner
 {
-	class ScanStepCheckDuplicatedDbFiles : public ScanStepBase
-	{
-		public:
-			using ScanStepBase::ScanStepBase;
+    class ScanStepCheckDuplicatedDbFiles : public ScanStepBase
+    {
+    public:
+        using ScanStepBase::ScanStepBase;
 
-		private:
-			core::LiteralString getStepName() const override { return "Check for duplicated files"; }
-			ScanStep getStep() const override { return ScanStep::CheckForDuplicateFiles; }
-			void process(ScanContext& context) override;
-	};
-}
+    private:
+        core::LiteralString getStepName() const override { return "Check for duplicated files"; }
+        ScanStep getStep() const override { return ScanStep::CheckForDuplicateFiles; }
+        void process(ScanContext& context) override;
+    };
+} // namespace lms::scanner

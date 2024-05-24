@@ -25,11 +25,11 @@
 #include <taglib/apetag.h>
 #include <taglib/asffile.h>
 #if TAGLIB_MAJOR_VERSION >= 2
-#include <taglib/dsffile.h>
+    #include <taglib/dsffile.h>
 #endif
-#include <taglib/id3v2tag.h>
 #include <taglib/fileref.h>
 #include <taglib/flacfile.h>
+#include <taglib/id3v2tag.h>
 #include <taglib/mp4file.h>
 #include <taglib/mpcfile.h>
 #include <taglib/mpegfile.h>
@@ -39,20 +39,21 @@
 #include <taglib/vorbisfile.h>
 #include <taglib/wavpackfile.h>
 
-#include "metadata/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/String.hpp"
+#include "metadata/Exception.hpp"
 
 namespace lms::metadata
 {
     namespace
     {
-        class ParsingFailedException : public Exception {};
+        class ParsingFailedException : public Exception
+        {
+        };
 
         // Mapping to internal taglib names and/or common alternative custom names
-        static const std::unordered_map<TagType, std::vector<std::string>> tagMapping
-        {
+        static const std::unordered_map<TagType, std::vector<std::string>> tagMapping{
             { TagType::AcoustID, { "ACOUSTID_ID", "ACOUSTID ID" } },
             { TagType::Album, { "ALBUM" } },
             { TagType::AlbumArtist, { "ALBUMARTIST" } },
@@ -147,7 +148,7 @@ namespace lms::metadata
             { TagType::Script, { "SCRIPT" } },
             { TagType::ShowWorkAndMovement, { "SHOWWORKMOVEMENT", "SHOWMOVEMENT" } },
             { TagType::Subtitle, { "SUBTITLE" } },
-            { TagType::TotalDiscs, { "DISCTOTAL", "TOTALDISCS"} },
+            { TagType::TotalDiscs, { "DISCTOTAL", "TOTALDISCS" } },
             { TagType::TotalTracks, { "TRACKTOTAL", "TOTALTRACKS" } },
             { TagType::TrackNumber, { "TRACKNUMBER" } },
             { TagType::TrackTitle, { "TITLE" } },
@@ -160,9 +161,12 @@ namespace lms::metadata
         {
             switch (readStyle)
             {
-            case ParserReadStyle::Fast: return TagLib::AudioProperties::ReadStyle::Fast;
-            case ParserReadStyle::Average: return TagLib::AudioProperties::ReadStyle::Average;
-            case ParserReadStyle::Accurate: return TagLib::AudioProperties::ReadStyle::Accurate;
+            case ParserReadStyle::Fast:
+                return TagLib::AudioProperties::ReadStyle::Fast;
+            case ParserReadStyle::Average:
+                return TagLib::AudioProperties::ReadStyle::Average;
+            case ParserReadStyle::Accurate:
+                return TagLib::AudioProperties::ReadStyle::Accurate;
             }
 
             throw core::LmsException{ "Cannot convert read style" };
@@ -181,11 +185,11 @@ namespace lms::metadata
         {
             LMS_SCOPED_TRACE_DETAILED("MetaData", "TagLibParseFile");
 
-            return TagLib::FileRef{ p.string().c_str()
-                , true // read audio properties
-                , readStyleToTagLibReadStyle(parserReadStyle) };
+            return TagLib::FileRef{ p.string().c_str(), true // read audio properties
+                ,
+                readStyleToTagLibReadStyle(parserReadStyle) };
         }
-    }
+    } // namespace
 
     TagLibTagReader::TagLibTagReader(const std::filesystem::path& p, ParserReadStyle parserReadStyle, bool debug)
         : _file{ parseFile(p, parserReadStyle) }
@@ -207,13 +211,12 @@ namespace lms::metadata
         _propertyMap = _file.file()->properties();
 
         // Some tags may not be known by TagLib
-        auto getAPETags = [&](const TagLib::APE::Tag* apeTag)
-            {
-                if (!apeTag)
-                    return;
+        auto getAPETags = [&](const TagLib::APE::Tag* apeTag) {
+            if (!apeTag)
+                return;
 
-                mergeTagMaps(_propertyMap, apeTag->properties());
-            };
+            mergeTagMaps(_propertyMap, apeTag->properties());
+        };
 
         // Not that good embedded pictures handling
         // + get some extra tags that may not be known by taglib
@@ -263,7 +266,7 @@ namespace lms::metadata
 
             getAPETags(mp3File->APETag());
         }
-        //MP4
+        // MP4
         else if (TagLib::MP4::File * mp4File{ dynamic_cast<TagLib::MP4::File*>(_file.file()) })
         {
             TagLib::MP4::Item coverItem{ mp4File->tag()->item("covr") };
@@ -321,18 +324,18 @@ namespace lms::metadata
         _audioProperties.duration = std::chrono::milliseconds{ properties->lengthInMilliseconds() };
         _audioProperties.sampleRate = static_cast<std::size_t>(properties->sampleRate());
 
-        if (const auto * apeProperties{ dynamic_cast<const TagLib::APE::Properties*>(properties) })
+        if (const auto* apeProperties{ dynamic_cast<const TagLib::APE::Properties*>(properties) })
             _audioProperties.bitsPerSample = apeProperties->bitsPerSample();
-        if (const auto * asfProperties{ dynamic_cast<const TagLib::ASF::Properties*>(properties) })
+        if (const auto* asfProperties{ dynamic_cast<const TagLib::ASF::Properties*>(properties) })
             _audioProperties.bitsPerSample = asfProperties->bitsPerSample();
-        else if (const auto * flacProperties{ dynamic_cast<const TagLib::FLAC::Properties*>(properties) })
+        else if (const auto* flacProperties{ dynamic_cast<const TagLib::FLAC::Properties*>(properties) })
             _audioProperties.bitsPerSample = flacProperties->bitsPerSample();
-        else if (const auto * mp4Properties{ dynamic_cast<const TagLib::MP4::Properties*>(properties) })
+        else if (const auto* mp4Properties{ dynamic_cast<const TagLib::MP4::Properties*>(properties) })
             _audioProperties.bitsPerSample = mp4Properties->bitsPerSample();
-        else if (const auto * wavePackProperties{ dynamic_cast<const TagLib::WavPack::Properties*>(properties) })
+        else if (const auto* wavePackProperties{ dynamic_cast<const TagLib::WavPack::Properties*>(properties) })
             _audioProperties.bitsPerSample = wavePackProperties->bitsPerSample();
 #if TAGLIB_MAJOR_VERSION >= 2
-        else if (const auto * dsfProperties{ dynamic_cast<const TagLib::DSF::Properties*>(properties) })
+        else if (const auto* dsfProperties{ dynamic_cast<const TagLib::DSF::Properties*>(properties) })
             _audioProperties.bitsPerSample = dsfProperties->bitsPerSample();
 #endif
     }
@@ -347,11 +350,10 @@ namespace lms::metadata
         {
             bool visited{};
 
-            visitTagValues(tagName, [&](std::string_view value)
-                {
-                    visited = true;
-                    visitor(value);
-                });
+            visitTagValues(tagName, [&](std::string_view value) {
+                visited = true;
+                visitor(value);
+            });
 
             if (visited)
                 break;
@@ -372,10 +374,9 @@ namespace lms::metadata
 
     void TagLibTagReader::visitPerformerTags(PerformerVisitor visitor) const
     {
-        visitTagValues("PERFORMER", [&](std::string_view value)
-            {
-                visitor("", value);
-            });
+        visitTagValues("PERFORMER", [&](std::string_view value) {
+            visitor("", value);
+        });
 
         for (const auto& [key, values] : _propertyMap)
         {

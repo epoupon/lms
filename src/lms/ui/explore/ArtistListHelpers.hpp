@@ -29,16 +29,15 @@
 
 namespace lms::db
 {
-	class Artist;
+    class Artist;
 }
 
 namespace lms::ui
 {
-	using ArtistLinkTypesModel = ValueStringModel<std::optional<db::TrackArtistLinkType>>;
+    using ArtistLinkTypesModel = ValueStringModel<std::optional<db::TrackArtistLinkType>>;
 
-	namespace ArtistListHelpers
-	{
-		std::unique_ptr<Wt::WTemplate> createEntry(const db::ObjectPtr<db::Artist>& artist);
-	}
-}
-
+    namespace ArtistListHelpers
+    {
+        std::unique_ptr<Wt::WTemplate> createEntry(const db::ObjectPtr<db::Artist>& artist);
+    }
+} // namespace lms::ui

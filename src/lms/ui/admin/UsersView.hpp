@@ -22,19 +22,18 @@
 #include <Wt/WContainerWidget.h>
 #include <Wt/WTemplate.h>
 
-namespace lms::ui {
-
-class UsersView : public Wt::WTemplate
+namespace lms::ui
 {
-	public:
-		UsersView();
 
-	private:
-		void refreshView();
+    class UsersView : public Wt::WTemplate
+    {
+    public:
+        UsersView();
 
-		Wt::WContainerWidget* _container;
-};
+    private:
+        void refreshView();
+
+        Wt::WContainerWidget* _container;
+    };
 
 } // namespace lms::ui
-
-

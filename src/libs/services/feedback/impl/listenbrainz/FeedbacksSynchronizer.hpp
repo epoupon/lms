@@ -21,12 +21,13 @@
 
 #include <optional>
 #include <unordered_map>
+
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/io_context_strand.hpp>
 #include <boost/asio/steady_timer.hpp>
 
-#include "database/Types.hpp"
 #include "database/StarredTrackId.hpp"
+#include "database/Types.hpp"
 #include "database/UserId.hpp"
 
 #include "FeedbackTypes.hpp"
@@ -35,13 +36,13 @@ namespace lms
 {
     namespace core::http
     {
-    class IClient;
+        class IClient;
     }
     namespace db
     {
         class Db;
     }
-}
+} // namespace lms
 
 namespace lms::feedback::listenBrainz
 {
@@ -59,22 +60,23 @@ namespace lms::feedback::listenBrainz
 
         struct UserContext
         {
-            UserContext(db::UserId id) : userId{ id } {}
+            UserContext(db::UserId id)
+                : userId{ id } {}
 
             UserContext(const UserContext&) = delete;
             UserContext& operator=(const UserContext&) = delete;
-            
-            const db::UserId		userId;
-            bool						syncing{};
-            std::optional<std::size_t>	feedbackCount{};
+
+            const db::UserId userId;
+            bool syncing{};
+            std::optional<std::size_t> feedbackCount{};
 
             // resetted at each sync
-            std::string		listenBrainzUserName; // need to be resolved first
+            std::string listenBrainzUserName; // need to be resolved first
 
-            std::size_t		currentOffset{};
-            std::size_t		fetchedFeedbackCount{};
-            std::size_t		matchedFeedbackCount{};
-            std::size_t		importedFeedbackCount{};
+            std::size_t currentOffset{};
+            std::size_t fetchedFeedbackCount{};
+            std::size_t matchedFeedbackCount{};
+            std::size_t importedFeedbackCount{};
         };
 
         UserContext& getUserContext(db::UserId userId);
@@ -90,15 +92,14 @@ namespace lms::feedback::listenBrainz
         void tryImportFeedback(const Feedback& feedback, UserContext& context);
 
         boost::asio::io_context& _ioContext;
-        boost::asio::io_context::strand	_strand{ _ioContext };
+        boost::asio::io_context::strand _strand{ _ioContext };
         db::Db& _db;
-        boost::asio::steady_timer		_syncTimer{ _ioContext };
+        boost::asio::steady_timer _syncTimer{ _ioContext };
         core::http::IClient& _client;
 
         std::unordered_map<db::UserId, UserContext> _userContexts;
 
-        const std::size_t			_maxSyncFeedbackCount;
-        const std::chrono::hours	_syncFeedbacksPeriod;
+        const std::size_t _maxSyncFeedbackCount;
+        const std::chrono::hours _syncFeedbacksPeriod;
     };
-} // feedback::ListenBrainz
-
+} // namespace lms::feedback::listenBrainz

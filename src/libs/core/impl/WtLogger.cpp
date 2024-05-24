@@ -19,10 +19,11 @@
 
 #include "core/WtLogger.hpp"
 
-#include <thread>
 #include <sstream>
-#include <Wt/WServer.h>
+#include <thread>
+
 #include <Wt/WLogger.h>
+#include <Wt/WServer.h>
 
 #include "core/Exception.hpp"
 
@@ -36,7 +37,7 @@ namespace lms::core::logging
             oss << id;
             return oss.str();
         }
-    }
+    } // namespace
 
     WtLogger::WtLogger(Severity minSeverity)
         : _minSeverity{ minSeverity }
@@ -47,11 +48,16 @@ namespace lms::core::logging
     {
         switch (minSeverity)
         {
-        case Severity::DEBUG:       return "*";
-        case Severity::INFO:        return "* -debug";
-        case Severity::WARNING:     return "* -debug -info";
-        case Severity::ERROR:       return "* -debug -info -warning";
-        case Severity::FATAL:       return "* -debug -info -warning -error";
+        case Severity::DEBUG:
+            return "*";
+        case Severity::INFO:
+            return "* -debug";
+        case Severity::WARNING:
+            return "* -debug -info";
+        case Severity::ERROR:
+            return "* -debug -info -warning";
+        case Severity::FATAL:
+            return "* -debug -info -warning -error";
         }
 
         throw LmsException{ "Unhandled severity" };
@@ -66,4 +72,4 @@ namespace lms::core::logging
     {
         Wt::log(getSeverityName(log.getSeverity())) << Wt::WLogger::sep << to_string(std::this_thread::get_id()) << Wt::WLogger::sep << "[" << getModuleName(log.getModule()) << "]" << Wt::WLogger::sep << log.getMessage();
     }
-}
+} // namespace lms::core::logging

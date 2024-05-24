@@ -109,13 +109,13 @@ namespace lms::db::tests
         results.moreResults = false;
 
         {
-            auto subRange{ results.getSubRange(Range {0, 0}) };
+            auto subRange{ results.getSubRange(Range{ 0, 0 }) };
             EXPECT_FALSE(subRange.moreResults);
             ASSERT_EQ(subRange.results.size(), 0);
             EXPECT_EQ(subRange.range, Range{});
         }
         {
-            auto subRange{ results.getSubRange(Range {0, 1}) };
+            auto subRange{ results.getSubRange(Range{ 0, 1 }) };
             EXPECT_FALSE(subRange.moreResults);
             ASSERT_EQ(subRange.results.size(), 0);
         }
@@ -130,28 +130,26 @@ namespace lms::db::tests
             std::vector<Range> expectedSubRanges;
         };
 
-        TestCase testCases[]
-        {
-            {Range{0, 0},     1,   {}},
-            {Range{1, 0},     1,   {}},
-            {Range{1, 1},     1,   { Range{ 1,1 } }},
-            {Range{1, 3},     1,   { Range{ 1,1 }, Range {2,1}, Range{3,1} }},
-            {Range{0, 100},   100, { Range{0,100} }},
-            {Range{0, 50},    100, { Range{0,50} }},
-            {Range{100, 200}, 100, { Range{100,100}, Range{200,100} }},
-            {Range{100, 101}, 100, { Range{100,100}, Range{200,1}}},
-            {Range{1000, 10}, 100, { Range{1000,10} }},
-            {Range{1, 100}, 50, { Range{1,50}, Range{51, 50} }},
+        TestCase testCases[]{
+            { Range{ 0, 0 }, 1, {} },
+            { Range{ 1, 0 }, 1, {} },
+            { Range{ 1, 1 }, 1, { Range{ 1, 1 } } },
+            { Range{ 1, 3 }, 1, { Range{ 1, 1 }, Range{ 2, 1 }, Range{ 3, 1 } } },
+            { Range{ 0, 100 }, 100, { Range{ 0, 100 } } },
+            { Range{ 0, 50 }, 100, { Range{ 0, 50 } } },
+            { Range{ 100, 200 }, 100, { Range{ 100, 100 }, Range{ 200, 100 } } },
+            { Range{ 100, 101 }, 100, { Range{ 100, 100 }, Range{ 200, 1 } } },
+            { Range{ 1000, 10 }, 100, { Range{ 1000, 10 } } },
+            { Range{ 1, 100 }, 50, { Range{ 1, 50 }, Range{ 51, 50 } } },
         };
 
         for (const TestCase& test : testCases)
         {
             std::vector<Range> subRanges;
-            foreachSubRange(test.range, test.subRangeSize, [&](Range subRange)
-                {
-                    subRanges.push_back(subRange);
-                    return true;
-                });
+            foreachSubRange(test.range, test.subRangeSize, [&](Range subRange) {
+                subRanges.push_back(subRange);
+                return true;
+            });
 
             EXPECT_EQ(subRanges, test.expectedSubRanges) << ", test index = " << std::distance(std::cbegin(testCases), &test);
         }
@@ -192,26 +190,26 @@ namespace lms::db::tests
         results.moreResults = false;
 
         {
-            auto subRange{ results.getSubRange(Range {0, 1}) };
+            auto subRange{ results.getSubRange(Range{ 0, 1 }) };
             EXPECT_TRUE(subRange.moreResults);
             ASSERT_EQ(subRange.results.size(), 1);
             EXPECT_EQ(subRange.results.front(), 5);
         }
         {
-            auto subRange{ results.getSubRange(Range {1, 1}) };
+            auto subRange{ results.getSubRange(Range{ 1, 1 }) };
             EXPECT_FALSE(subRange.moreResults);
             ASSERT_EQ(subRange.results.size(), 1);
             EXPECT_EQ(subRange.results.front(), 6);
         }
         {
-            auto subRange{ results.getSubRange(Range {0, 2}) };
+            auto subRange{ results.getSubRange(Range{ 0, 2 }) };
             EXPECT_FALSE(subRange.moreResults);
             ASSERT_EQ(subRange.results.size(), 2);
             EXPECT_EQ(subRange.results.front(), 5);
             EXPECT_EQ(subRange.results.back(), 6);
         }
         {
-            auto subRange{ results.getSubRange(Range {}) };
+            auto subRange{ results.getSubRange(Range{}) };
             EXPECT_FALSE(subRange.moreResults);
             ASSERT_EQ(subRange.results.size(), 2);
             EXPECT_EQ(subRange.results.front(), 5);
@@ -220,7 +218,7 @@ namespace lms::db::tests
         }
 
         {
-            auto subRange{ results.getSubRange(Range {1, 0}) };
+            auto subRange{ results.getSubRange(Range{ 1, 0 }) };
             EXPECT_FALSE(subRange.moreResults);
             ASSERT_EQ(subRange.results.size(), 1);
             EXPECT_EQ(subRange.results.front(), 6);
@@ -228,11 +226,11 @@ namespace lms::db::tests
             EXPECT_EQ(subRange.range, expectedRange);
         }
         {
-            auto subRange{ results.getSubRange(Range {3, 2}) };
+            auto subRange{ results.getSubRange(Range{ 3, 2 }) };
             EXPECT_FALSE(subRange.moreResults);
             ASSERT_EQ(subRange.results.size(), 0);
             const Range expectedRange{ 2, 0 };
             EXPECT_EQ(subRange.range, expectedRange);
         }
     }
-}
+} // namespace lms::db::tests

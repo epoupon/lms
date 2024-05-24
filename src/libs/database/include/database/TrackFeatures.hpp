@@ -49,13 +49,13 @@ namespace lms::db
         TrackFeatures() = default;
 
         // Find utilities
-        static std::size_t						getCount(Session& session);
-        static pointer							find(Session& session, TrackFeaturesId id);
-        static pointer							find(Session& session, TrackId trackId);
-        static RangeResults<TrackFeaturesId>	find(Session& session, std::optional<Range> range = std::nullopt);
+        static std::size_t getCount(Session& session);
+        static pointer find(Session& session, TrackFeaturesId id);
+        static pointer find(Session& session, TrackId trackId);
+        static RangeResults<TrackFeaturesId> find(Session& session, std::optional<Range> range = std::nullopt);
 
-        FeatureValues		getFeatureValues(const FeatureName& feature) const;
-        FeatureValuesMap	getFeatureValuesMap(const std::unordered_set<FeatureName>& featureNames) const;
+        FeatureValues getFeatureValues(const FeatureName& feature) const;
+        FeatureValuesMap getFeatureValuesMap(const std::unordered_set<FeatureName>& featureNames) const;
 
         // Accessors
         Wt::Dbo::ptr<Track> getTrack() const { return _track; }

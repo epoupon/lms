@@ -34,4 +34,4 @@ namespace lms::metadata
     public:
         using Exception::Exception;
     };
-}
+} // namespace lms::metadata

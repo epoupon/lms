@@ -22,6 +22,9 @@
 #include <string_view>
 
 #include "av/IAudioFile.hpp"
+#include "core/ITraceLogger.hpp"
+#include "core/Service.hpp"
+#include "core/String.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
@@ -30,15 +33,13 @@
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
-#include "core/ITraceLogger.hpp"
-#include "core/Service.hpp"
-#include "core/String.hpp"
+
+#include "SubsonicId.hpp"
+#include "Utils.hpp"
 #include "responses/Artist.hpp"
 #include "responses/Contributor.hpp"
 #include "responses/ItemGenre.hpp"
 #include "responses/ReplayGain.hpp"
-#include "SubsonicId.hpp"
-#include "Utils.hpp"
 
 namespace lms::api::subsonic
 {
@@ -50,16 +51,21 @@ namespace lms::api::subsonic
         {
             switch (format)
             {
-            case TranscodingOutputFormat::MP3:              return "mp3";
-            case TranscodingOutputFormat::OGG_OPUS:         return "opus";
-            case TranscodingOutputFormat::MATROSKA_OPUS:    return "mka";
-            case TranscodingOutputFormat::OGG_VORBIS:       return "ogg";
-            case TranscodingOutputFormat::WEBM_VORBIS:      return "webm";
+            case TranscodingOutputFormat::MP3:
+                return "mp3";
+            case TranscodingOutputFormat::OGG_OPUS:
+                return "opus";
+            case TranscodingOutputFormat::MATROSKA_OPUS:
+                return "mka";
+            case TranscodingOutputFormat::OGG_VORBIS:
+                return "ogg";
+            case TranscodingOutputFormat::WEBM_VORBIS:
+                return "webm";
             }
 
             return "";
         }
-    }
+    } // namespace
 
     Response::Node createSongNode(RequestContext& context, const Track::pointer& track, const User::pointer& user)
     {
@@ -94,7 +100,7 @@ namespace lms::api::subsonic
 
         trackResponse.setAttribute("coverArt", idToString(track->getId()));
 
-        const std::vector<Artist::pointer>& artists{ track->getArtists({TrackArtistLinkType::Artist}) };
+        const std::vector<Artist::pointer>& artists{ track->getArtists({ TrackArtistLinkType::Artist }) };
         if (!artists.empty())
         {
             if (!track->getArtistDisplayName().empty())
@@ -160,18 +166,17 @@ namespace lms::api::subsonic
             trackResponse.createEmptyArrayChild("artists");
             trackResponse.createEmptyArrayChild("contributors");
 
-            TrackArtistLink::find(context.dbSession, track->getId(), [&](const TrackArtistLink::pointer& link, const Artist::pointer& artist)
-            {
+            TrackArtistLink::find(context.dbSession, track->getId(), [&](const TrackArtistLink::pointer& link, const Artist::pointer& artist) {
                 switch (link->getType())
                 {
-                    case TrackArtistLinkType::Artist:
-                        trackResponse.addArrayChild("artists", createArtistNode(artist));
-                        break;
-                    case TrackArtistLinkType::ReleaseArtist:
-                        trackResponse.addArrayChild("albumartists", createArtistNode(artist));
-                        break;
-                    default:
-                        trackResponse.addArrayChild("contributors", createContributorNode(link, artist));
+                case TrackArtistLinkType::Artist:
+                    trackResponse.addArrayChild("artists", createArtistNode(artist));
+                    break;
+                case TrackArtistLinkType::ReleaseArtist:
+                    trackResponse.addArrayChild("albumartists", createArtistNode(artist));
+                    break;
+                default:
+                    trackResponse.addArrayChild("contributors", createContributorNode(link, artist));
                 }
             });
         }
@@ -180,8 +185,7 @@ namespace lms::api::subsonic
         if (release)
             trackResponse.setAttribute("displayAlbumArtist", release->getArtistDisplayName());
 
-        auto addClusters{ [&](Response::Node::Key field, std::string_view clusterTypeName)
-        {
+        auto addClusters{ [&](Response::Node::Key field, std::string_view clusterTypeName) {
             trackResponse.createEmptyArrayValue(field);
 
             Cluster::FindParameters params;
@@ -203,4 +207,4 @@ namespace lms::api::subsonic
 
         return trackResponse;
     }
-}
+} // namespace lms::api::subsonic
