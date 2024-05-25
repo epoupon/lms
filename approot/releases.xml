@@ -14,7 +14,9 @@
 			</ul>
 		</div>
 		<div class="d-flex">
+			${<if-singlesearch-enabled>}
 			${search class="form-control form-control-sm me-1" type="search"}
+			${</if-singlesearch-enabled>}
 			${sort-mode}
 		</div>
 	</div>

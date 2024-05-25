@@ -19,6 +19,7 @@
 
 #include "ArtistsView.hpp"
 
+#include <database/User.hpp>
 #include <Wt/WPushButton.h>
 
 #include "core/ILogger.hpp"
@@ -44,12 +45,20 @@ namespace lms::ui
         addFunction("tr", &Wt::WTemplate::Functions::tr);
         addFunction("id", &Wt::WTemplate::Functions::id);
 
-        Wt::WLineEdit* searEdit{ bindNew<Wt::WLineEdit>("search") };
-        searEdit->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
-        searEdit->textInput().connect([this, searEdit]
+        {
+            auto transaction = LmsApp->getDbSession().createReadTransaction();
+            if (LmsApp->getUser()->getInterfaceEnableSinglesearch())
             {
-                refreshView(searEdit->text());
-            });
+                setCondition("if-singlesearch-enabled", true);
+
+                Wt::WLineEdit* searEdit{ bindNew<Wt::WLineEdit>("search") };
+                searEdit->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
+                searEdit->textInput().connect([this, searEdit]
+                    {
+                        refreshView(searEdit->text());
+                    });
+            }
+        }
 
         SortModeSelector* sortModeSelector{ bindNew<SortModeSelector>("sort-mode", _defaultSortMode) };
         sortModeSelector->itemSelected.connect([this](ArtistCollector::Mode sortMode)

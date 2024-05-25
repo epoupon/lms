@@ -6,7 +6,9 @@
 	<div class="d-flex justify-content-between align-items-center mb-3">
 		${link-type class="me-1"}
 		<div class="d-flex">
+			${<if-singlesearch-enabled>}
 			${search class="form-control form-control-sm me-1" type="search"}
+			${</if-singlesearch-enabled>}
 			${sort-mode}
 		</div>
 	</div>

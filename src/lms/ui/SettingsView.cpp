@@ -52,6 +52,8 @@ namespace lms::ui
     {
     public:
         // Associate each field with a unique string literal.
+        static inline const Field InterfaceEnableMultisearchField{ "interface-enable-multisearch" };
+        static inline const Field InterfaceEnableSinglesearchField{ "interface-enable-singlesearch" };
         static inline const Field TranscodingModeField{ "transcoding-mode" };
         static inline const Field TranscodeFormatField{ "transcoding-output-format" };
         static inline const Field TranscodeBitrateField{ "transcoding-output-bitrate" };
@@ -80,6 +82,8 @@ namespace lms::ui
         {
             initializeModels();
 
+            addField(InterfaceEnableMultisearchField);
+            addField(InterfaceEnableSinglesearchField);
             addField(TranscodingModeField);
             addField(TranscodeBitrateField);
             addField(TranscodeFormatField);
@@ -137,6 +141,14 @@ namespace lms::ui
             auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
             User::pointer user{ LmsApp->getUser() };
+
+            {
+                bool interfaceEnableMultisearchField{ Wt::asNumber(value(InterfaceEnableMultisearchField)) != 0 };
+                user.modify()->setInterfaceEnableMultisearch(interfaceEnableMultisearchField);
+
+                bool interfaceEnableSinglesearchField{ Wt::asNumber(value(InterfaceEnableSinglesearchField)) != 0 };
+                user.modify()->setInterfaceEnableSinglesearch(interfaceEnableSinglesearchField);
+            }
 
             {
                 MediaPlayer::Settings settings;
@@ -205,6 +217,11 @@ namespace lms::ui
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
             User::pointer user{ LmsApp->getUser() };
+
+            {
+                setValue(InterfaceEnableMultisearchField, user->getInterfaceEnableMultisearch());
+                setValue(InterfaceEnableSinglesearchField, user->getInterfaceEnableSinglesearch());
+            }
 
             {
                 const auto settings{ *LmsApp->getMediaPlayer().getSettings() };
@@ -429,6 +446,15 @@ namespace lms::ui
             passwordConfirm->setEchoMode(Wt::EchoMode::Password);
             passwordConfirm->setAttributeValue("autocomplete", "new-password");
             t->setFormWidget(SettingsModel::PasswordConfirmField, std::move(passwordConfirm));
+        }
+
+        // Interface
+        {
+            // Enable multisearch
+            t->setFormWidget(SettingsModel::InterfaceEnableMultisearchField, std::make_unique<Wt::WCheckBox>());
+
+            // Enable singlesearch
+            t->setFormWidget(SettingsModel::InterfaceEnableSinglesearchField, std::make_unique<Wt::WCheckBox>());
         }
 
         // Audio

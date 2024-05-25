@@ -456,7 +456,15 @@ namespace lms::ui
         mainStack->setOverflow(Wt::Overflow::Visible); // wt makes it hidden by default
 
         std::unique_ptr<PlayQueue> playQueue{ std::make_unique<PlayQueue>() };
+
         auto* searEdit = navbar->bindNew<Wt::WLineEdit>("multisearch");
+
+        {
+            auto transaction = LmsApp->getDbSession().createReadTransaction();
+            if (LmsApp->getUser()->getInterfaceEnableMultisearch())
+                navbar->setCondition("if-multisearch-enabled", true);
+        }
+
         Explore* explore{ mainStack->addNew<Explore>(*filters, *playQueue, *searEdit) };
         _playQueue = mainStack->addWidget(std::move(playQueue));
         mainStack->addNew<SettingsView>();

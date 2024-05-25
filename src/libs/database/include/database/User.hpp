@@ -58,6 +58,8 @@ namespace lms::db
 
         static inline constexpr std::size_t             MinNameLength{ 3 };
         static inline constexpr std::size_t             MaxNameLength{ 15 };
+        static inline constexpr bool                    defaultInterfaceEnableMultisearch{ false };
+        static inline constexpr bool                    defaultInterfaceEnableSinglesearch{ true };
         static inline constexpr bool                    defaultSubsonicEnableTranscodingByDefault{ false };
         static inline constexpr TranscodingOutputFormat defaultSubsonicTranscodingOutputFormat{ TranscodingOutputFormat::OGG_OPUS };
         static inline constexpr Bitrate                 defaultSubsonicTranscodingOutputBitrate{ 128000 };
@@ -85,6 +87,8 @@ namespace lms::db
         void setLastLogin(const Wt::WDateTime& dateTime) { _lastLogin = dateTime; }
         void setPasswordHash(const PasswordHash& passwordHash) { _passwordSalt = passwordHash.salt; _passwordHash = passwordHash.hash; }
         void setType(UserType type) { _type = type; }
+        void setInterfaceEnableMultisearch(bool value) { _interfaceEnableMultisearch = value; }
+        void setInterfaceEnableSinglesearch(bool value) { _interfaceEnableSinglesearch = value; }
         void setSubsonicEnableTranscodingByDefault(bool value) { _subsonicEnableTranscodingByDefault = value; }
         void setSubsonicDefaultTranscodintOutputFormat(TranscodingOutputFormat encoding) { _subsonicDefaultTranscodingOutputFormat = encoding; }
         void setSubsonicDefaultTranscodingOutputBitrate(Bitrate bitrate);
@@ -102,6 +106,8 @@ namespace lms::db
         bool                    isAdmin() const { return _type == UserType::ADMIN; }
         bool                    isDemo() const { return _type == UserType::DEMO; }
         UserType                getType() const { return _type; }
+        bool                    getInterfaceEnableMultisearch() const { return _interfaceEnableMultisearch; }
+        bool                    getInterfaceEnableSinglesearch() const { return _interfaceEnableSinglesearch; }
         bool                    getSubsonicEnableTranscodingByDefault() const { return _subsonicEnableTranscodingByDefault; }
         TranscodingOutputFormat getSubsonicDefaultTranscodingOutputFormat() const { return _subsonicDefaultTranscodingOutputFormat; }
         Bitrate                 getSubsonicDefaultTranscodingOutputBitrate() const { return _subsonicDefaultTranscodingOutputBitrate; }
@@ -122,6 +128,8 @@ namespace lms::db
             Wt::Dbo::field(a, _passwordSalt, "password_salt");
             Wt::Dbo::field(a, _passwordHash, "password_hash");
             Wt::Dbo::field(a, _lastLogin, "last_login");
+            Wt::Dbo::field(a, _interfaceEnableMultisearch, "interface_enable_multisearch");
+            Wt::Dbo::field(a, _interfaceEnableSinglesearch, "interface_enable_singlesearch");
             Wt::Dbo::field(a, _subsonicEnableTranscodingByDefault, "subsonic_enable_transcoding_by_default");
             Wt::Dbo::field(a, _subsonicDefaultTranscodingOutputFormat, "subsonic_default_transcode_format");
             Wt::Dbo::field(a, _subsonicDefaultTranscodingOutputBitrate, "subsonic_default_transcode_bitrate");
@@ -157,6 +165,8 @@ namespace lms::db
         UserType        _type{ UserType::REGULAR };
 
         // User defined settings
+        bool                    _interfaceEnableMultisearch{ defaultInterfaceEnableMultisearch };
+        bool                    _interfaceEnableSinglesearch{ defaultInterfaceEnableSinglesearch };
         SubsonicArtistListMode  _subsonicArtistListMode{ defaultSubsonicArtistListMode };
         bool                    _subsonicEnableTranscodingByDefault{ defaultSubsonicEnableTranscodingByDefault };
         TranscodingOutputFormat _subsonicDefaultTranscodingOutputFormat{ defaultSubsonicTranscodingOutputFormat };
