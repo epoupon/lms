@@ -4,6 +4,19 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.Multisearch.template">
+	<div class="d-flex justify-content-center align-items-center mb-3">
+		${search-all class="btn-check"}
+		<label class="btn" for="${id:search-all}">${tr:Lms.Explore.all}</label>
+
+		${search-releases class="btn-check"}
+		<label class="btn" for="${id:search-releases}">${tr:Lms.Explore.releases}</label>
+
+		${search-artists class="btn-check"}
+		<label class="btn" for="${id:search-artists}">${tr:Lms.Explore.artists}</label>
+
+		${search-tracks class="btn-check"}
+		<label class="btn" for="${id:search-tracks}">${tr:Lms.Explore.tracks}</label>
+	</div>
 	${multisearch-results}
 </message>
 

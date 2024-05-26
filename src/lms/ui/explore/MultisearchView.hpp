@@ -28,6 +28,7 @@ namespace lms::ui
         PlayQueueController& _playQueueController;
         InfiniteScrollingContainer* _container{};
         MultisearchCollector _multisearchCollector;
+        std::shared_ptr<Wt::WButtonGroup> _mediaTypeFilters;
     };
 } // namespace lms::ui
 

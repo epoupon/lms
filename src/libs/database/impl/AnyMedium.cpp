@@ -21,7 +21,7 @@ AnyMediumId any_medium::fromString(const std::string &type, const Wt::Dbo::dbo_d
     throw std::logic_error("unknown medium type");
 }
 
-RangeResults<AnyMediumId> any_medium::findIds(Session &session, const std::vector<std::string_view> &keywords,
+RangeResults<AnyMediumId> any_medium::findIds(Session &session, Type type, const std::vector<std::string_view> &keywords,
                                           std::span<const ClusterId> clusters, MediaLibraryId mediaLibrary,
                                           std::optional<Range> range)
 {
@@ -51,6 +51,21 @@ RangeResults<AnyMediumId> any_medium::findIds(Session &session, const std::vecto
 
     if (!clusters.empty())
         query.where("EXISTS(" + cluster_query.asString() + ")").bindSubqueryValues(cluster_query);
+
+    switch (type)
+    {
+        case Type::ALL:
+            break;
+        case Type::RELEASES:
+            query.where("type = 'release'");
+            break;
+        case Type::ARTISTS:
+            query.where("type = 'artist'");
+            break;
+        case Type::TRACKS:
+            query.where("type = 'track'");
+            break;
+    }
 
     query
         .groupBy("type, id")

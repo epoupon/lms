@@ -2,8 +2,10 @@
 
 #include <database/Artist.hpp>
 #include <database/Release.hpp>
+#include <Wt/WButtonGroup.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
+#include <Wt/WRadioButton.h>
 
 #include "ArtistListHelpers.hpp"
 #include "database/Session.hpp"
@@ -15,7 +17,6 @@
 #include "explore/TrackListHelpers.hpp"
 #include "LmsApplication.hpp"
 #include "MultisearchListHelpers.hpp"
-#include "ReleaseHelpers.hpp"
 
 namespace lms::ui
 {
@@ -38,6 +39,14 @@ namespace lms::ui
                 }
                 refreshView(searEdit.text());
             });
+
+        _mediaTypeFilters = std::make_shared<Wt::WButtonGroup>();
+        _mediaTypeFilters->addButton(bindNew<Wt::WRadioButton>("search-all"), static_cast<int>(any_medium::Type::ALL));
+        _mediaTypeFilters->addButton(bindNew<Wt::WRadioButton>("search-releases"), static_cast<int>(any_medium::Type::RELEASES));
+        _mediaTypeFilters->addButton(bindNew<Wt::WRadioButton>("search-artists"), static_cast<int>(any_medium::Type::ARTISTS));
+        _mediaTypeFilters->addButton(bindNew<Wt::WRadioButton>("search-tracks"), static_cast<int>(any_medium::Type::TRACKS));
+        _mediaTypeFilters->setCheckedButton(_mediaTypeFilters->button(static_cast<int>(any_medium::Type::ALL)));
+        _mediaTypeFilters->checkedChanged().connect([this](){ refreshView(); });
 
         _container = bindNew<InfiniteScrollingContainer>("multisearch-results", Wt::WString::tr("Lms.Explore.Multisearch.template.entry-container"));
         _container->onRequestElements.connect([this]
@@ -74,7 +83,7 @@ namespace lms::ui
 
     void Multisearch::addSome()
     {
-        const auto [_, results, moreResults] = _multisearchCollector.get(Range {_container->getCount(), _batchSize});
+        const auto [_, results, moreResults] = _multisearchCollector.get(static_cast<any_medium::Type>(_mediaTypeFilters->checkedId()), Range {_container->getCount(), _batchSize});
 
         auto transaction = LmsApp->getDbSession().createReadTransaction();
         for (const auto mediumId : results)

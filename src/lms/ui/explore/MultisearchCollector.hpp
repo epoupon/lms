@@ -3,9 +3,6 @@
 #include <optional>
 #include <database/AnyMedium.hpp>
 
-#include "database/TrackId.hpp"
-#include "database/ArtistId.hpp"
-#include "database/ReleaseId.hpp"
 #include "DatabaseCollectorBase.hpp"
 
 
@@ -16,7 +13,7 @@ namespace lms::ui
 		public:
 			using DatabaseCollectorBase::DatabaseCollectorBase;
 
-			[[nodiscard]] db::RangeResults<db::AnyMediumId> get(const std::optional<db::Range>& requestedRange = std::nullopt) const ;
+			[[nodiscard]] db::RangeResults<db::AnyMediumId> get(db::any_medium::Type filter, const std::optional<db::Range>& requestedRange = std::nullopt) const ;
 	};
 } // ns UserInterface
 

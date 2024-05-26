@@ -21,9 +21,13 @@ namespace lms::db
 
     namespace any_medium
     {
+        enum class Type
+        {
+            ALL, RELEASES, ARTISTS, TRACKS
+        };
 
         AnyMediumId fromString(const std::string &type, Wt::Dbo::dbo_default_traits::IdType id);
-        RangeResults<AnyMediumId> findIds(Session &session, const std::vector<std::string_view> &keywords,
+        RangeResults<AnyMediumId> findIds(Session &session, Type type, const std::vector<std::string_view> &keywords,
                                           std::span<const ClusterId> clusters, MediaLibraryId mediaLibrary,
                                           std::optional<Range> range);
     }
