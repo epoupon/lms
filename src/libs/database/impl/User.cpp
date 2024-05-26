@@ -85,7 +85,7 @@ namespace lms::db
 
     User::pointer User::find(Session& session, std::string_view name)
     {
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<User>().where("login_name = ?").bind(name));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<User>().where("login_name = ?").bind(std::string(name)));
     }
 
     void User::setSubsonicDefaultTranscodingOutputBitrate(Bitrate bitrate)

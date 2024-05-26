@@ -92,6 +92,14 @@ namespace lms::db::tests
         EXPECT_EQ(User::getCount(session), 0);
     }
 
+    void DatabaseFixture::resetViews()
+    {
+        auto transaction = session.createWriteTransaction();
+
+        session.dropViews();
+        session.createViewsIfNeeded();
+    }
+
     TEST_F(DatabaseFixture, vacuum)
     {
         session.vacuum();

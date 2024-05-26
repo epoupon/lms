@@ -42,14 +42,14 @@
 
 namespace lms::db::tests
 {
-    template<typename T>
+    template <typename T>
     class [[nodiscard]] ScopedEntity
     {
     public:
         using IdType = typename T::IdType;
 
-        template<typename... Args>
-        ScopedEntity(db::Session& session, Args&&... args)
+        template <typename... Args>
+        ScopedEntity(db::Session& session, Args&& ...args)
             : _session{ session }
         {
             auto transaction{ _session.createWriteTransaction() };
@@ -113,8 +113,7 @@ namespace lms::db::tests
     class ScopedFileDeleter final
     {
     public:
-        ScopedFileDeleter(const std::filesystem::path& path)
-            : _path{ path } {}
+        ScopedFileDeleter(const std::filesystem::path& path) : _path{ path } {}
         ~ScopedFileDeleter() { std::filesystem::remove(_path); }
 
     private:
@@ -155,5 +154,7 @@ namespace lms::db::tests
 
     public:
         db::Session session{ _tmpDb->getDb() };
+
+        void resetViews();
     };
-} // namespace lms::db::tests
+}

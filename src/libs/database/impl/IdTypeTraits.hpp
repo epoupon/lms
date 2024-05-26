@@ -23,7 +23,7 @@
 
 #include <Wt/Dbo/StdSqlTraits.h>
 
-#include "database/Types.hpp"
+#include "database/IdType.hpp"
 
 namespace Wt::Dbo
 {

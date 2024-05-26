@@ -131,6 +131,8 @@ namespace lms::db::tests
     protected:
         void collectResults()
         {
+            resetViews();
+
             auto transaction{ session.createReadTransaction() };
 
             auto r = session.getDboSession()->query<Keyword>(
@@ -343,7 +345,7 @@ namespace lms::db::tests
     {
         auto transaction{ session.createReadTransaction() };
 
-        auto result = any_medium::findIds(session, {}, {}, {}, std::nullopt);
+        auto result = any_medium::findIds(session, any_medium::Type::ALL, {}, {}, {}, std::nullopt);
         EXPECT_TRUE(result.results.empty());
         EXPECT_FALSE(result.moreResults);
     }
@@ -354,11 +356,13 @@ namespace lms::db::tests
         const ScopedRelease release{ session, "MyRelease" };
         const ScopedTrack track{ session };
 
+        resetViews();
+
         const auto expected = std::unordered_set<AnyMediumId>{ artist.getId(), release.getId(), track.getId() };
 
         auto transaction{ session.createReadTransaction() };
 
-        const auto result = any_medium::findIds(session, {}, {}, {}, std::nullopt);
+        const auto result = any_medium::findIds(session, any_medium::Type::ALL, {}, {}, {}, std::nullopt);
         const auto result_set = std::unordered_set<AnyMediumId>{ result.results.begin(), result.results.end() };
 
         EXPECT_EQ(result_set, expected);
@@ -371,11 +375,13 @@ namespace lms::db::tests
         const ScopedRelease release{ session, "MyRelease" };
         const ScopedTrack track{ session };
 
+        resetViews();
+
         const auto expected = std::unordered_set<AnyMediumId>{ artist.getId(), release.getId() };
 
         auto transaction{ session.createReadTransaction() };
 
-        const auto result = any_medium::findIds(session, { "My" }, {}, {}, std::nullopt);
+        const auto result = any_medium::findIds(session, any_medium::Type::ALL, { "My" }, {}, {}, std::nullopt);
         const auto result_set = std::unordered_set<AnyMediumId>{ result.results.begin(), result.results.end() };
 
         EXPECT_EQ(result_set, expected);
@@ -394,11 +400,13 @@ namespace lms::db::tests
             track.get().modify()->setMediaLibrary(library.get());
         }
 
+        resetViews();
+
         const auto expected = std::unordered_set<AnyMediumId>{ track.getId() };
 
         auto transaction{ session.createReadTransaction() };
 
-        const auto result = any_medium::findIds(session, {}, {}, library.getId(), std::nullopt);
+        const auto result = any_medium::findIds(session, any_medium::Type::ALL, {}, {}, library.getId(), std::nullopt);
         const auto result_set = std::unordered_set<AnyMediumId>{ result.results.begin(), result.results.end() };
 
         EXPECT_EQ(result_set, expected);
@@ -418,12 +426,14 @@ namespace lms::db::tests
             cluster.get().modify()->addTrack(track.get());
         }
 
+        resetViews();
+
         const auto expected = std::unordered_set<AnyMediumId>{ track.getId() };
 
         auto transaction{ session.createReadTransaction() };
 
         ClusterId clusters[1] = { cluster.getId() };
-        const auto result = any_medium::findIds(session, {}, clusters, {}, std::nullopt);
+        const auto result = any_medium::findIds(session, any_medium::Type::ALL, {}, clusters, {}, std::nullopt);
         const auto result_set = std::unordered_set<AnyMediumId>{ result.results.begin(), result.results.end() };
 
         EXPECT_EQ(result_set, expected);
