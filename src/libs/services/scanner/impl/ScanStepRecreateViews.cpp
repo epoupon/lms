@@ -1,9 +1,9 @@
 #include "ScanStepRecreateViews.hpp"
 
+#include "core/ILogger.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "core/ILogger.hpp"
 
 namespace lms::scanner
 {
@@ -14,12 +14,12 @@ namespace lms::scanner
         if (_abortScan)
             return;
 
-		Session& session {_db.getTLSSession()};
+        Session& session{ _db.getTLSSession() };
 
-		auto transaction {session.createWriteTransaction()};
+        auto transaction{ session.createWriteTransaction() };
         session.dropViews();
         session.createViewsIfNeeded();
 
         LMS_LOG(DBUPDATER, DEBUG, "Views recreated");
     }
-}
+} // namespace lms::scanner

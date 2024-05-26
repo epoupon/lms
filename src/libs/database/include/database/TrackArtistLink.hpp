@@ -33,7 +33,8 @@
 #include "database/TrackId.hpp"
 #include "database/Types.hpp"
 
-namespace lms::db {
+namespace lms::db
+{
     class TrackArtistLink;
 }
 

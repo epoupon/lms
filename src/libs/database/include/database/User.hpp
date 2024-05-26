@@ -68,11 +68,11 @@ namespace lms::db
             }
         };
 
-        static inline constexpr std::size_t             MinNameLength{ 3 };
-        static inline constexpr std::size_t             MaxNameLength{ 15 };
-        static inline constexpr bool                    defaultInterfaceEnableMultisearch{ false };
-        static inline constexpr bool                    defaultInterfaceEnableSinglesearch{ true };
-        static inline constexpr bool                    defaultSubsonicEnableTranscodingByDefault{ false };
+        static inline constexpr std::size_t MinNameLength{ 3 };
+        static inline constexpr std::size_t MaxNameLength{ 15 };
+        static inline constexpr bool defaultInterfaceEnableMultisearch{ false };
+        static inline constexpr bool defaultInterfaceEnableSinglesearch{ true };
+        static inline constexpr bool defaultSubsonicEnableTranscodingByDefault{ false };
         static inline constexpr TranscodingOutputFormat defaultSubsonicTranscodingOutputFormat{ TranscodingOutputFormat::OGG_OPUS };
         static inline constexpr Bitrate defaultSubsonicTranscodingOutputBitrate{ 128000 };
         static inline constexpr UITheme defaultUITheme{ UITheme::Dark };
@@ -119,12 +119,12 @@ namespace lms::db
         void setListenBrainzToken(const std::optional<core::UUID>& MBID) { _listenbrainzToken = MBID ? MBID->getAsString() : ""; }
 
         // read
-        bool                    isAdmin() const { return _type == UserType::ADMIN; }
-        bool                    isDemo() const { return _type == UserType::DEMO; }
-        UserType                getType() const { return _type; }
-        bool                    getInterfaceEnableMultisearch() const { return _interfaceEnableMultisearch; }
-        bool                    getInterfaceEnableSinglesearch() const { return _interfaceEnableSinglesearch; }
-        bool                    getSubsonicEnableTranscodingByDefault() const { return _subsonicEnableTranscodingByDefault; }
+        bool isAdmin() const { return _type == UserType::ADMIN; }
+        bool isDemo() const { return _type == UserType::DEMO; }
+        UserType getType() const { return _type; }
+        bool getInterfaceEnableMultisearch() const { return _interfaceEnableMultisearch; }
+        bool getInterfaceEnableSinglesearch() const { return _interfaceEnableSinglesearch; }
+        bool getSubsonicEnableTranscodingByDefault() const { return _subsonicEnableTranscodingByDefault; }
         TranscodingOutputFormat getSubsonicDefaultTranscodingOutputFormat() const { return _subsonicDefaultTranscodingOutputFormat; }
         Bitrate getSubsonicDefaultTranscodingOutputBitrate() const { return _subsonicDefaultTranscodingOutputBitrate; }
         std::size_t getCurPlayingTrackPos() const { return _curPlayingTrackPos; }
@@ -181,10 +181,10 @@ namespace lms::db
         UserType _type{ UserType::REGULAR };
 
         // User defined settings
-        bool                    _interfaceEnableMultisearch{ defaultInterfaceEnableMultisearch };
-        bool                    _interfaceEnableSinglesearch{ defaultInterfaceEnableSinglesearch };
-        SubsonicArtistListMode  _subsonicArtistListMode{ defaultSubsonicArtistListMode };
-        bool                    _subsonicEnableTranscodingByDefault{ defaultSubsonicEnableTranscodingByDefault };
+        bool _interfaceEnableMultisearch{ defaultInterfaceEnableMultisearch };
+        bool _interfaceEnableSinglesearch{ defaultInterfaceEnableSinglesearch };
+        SubsonicArtistListMode _subsonicArtistListMode{ defaultSubsonicArtistListMode };
+        bool _subsonicEnableTranscodingByDefault{ defaultSubsonicEnableTranscodingByDefault };
         TranscodingOutputFormat _subsonicDefaultTranscodingOutputFormat{ defaultSubsonicTranscodingOutputFormat };
         int _subsonicDefaultTranscodingOutputBitrate{ defaultSubsonicTranscodingOutputBitrate };
 

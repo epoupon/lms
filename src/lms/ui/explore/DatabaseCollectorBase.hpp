@@ -54,9 +54,9 @@ namespace lms::ui
         void setSearch(std::string_view searchText);
 
     protected:
-        [[nodiscard]] Range       getActualRange(const std::optional<Range> & requestedRange) const;
+        [[nodiscard]] Range getActualRange(const std::optional<Range>& requestedRange) const;
         [[nodiscard]] std::size_t getMaxCount() const;
-        [[nodiscard]] const Filters&    getFilters() const { return _filters; }
+        [[nodiscard]] const Filters& getFilters() const { return _filters; }
         [[nodiscard]] const std::vector<std::string_view>& getSearchKeywords() const { return _searchKeywords; }
 
     private:

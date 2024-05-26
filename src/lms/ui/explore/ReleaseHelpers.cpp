@@ -21,15 +21,15 @@
 
 #include <LmsApplication.hpp>
 #include <ModalManager.hpp>
+#include <Wt/WAnchor.h>
+#include <Wt/WImage.h>
+#include <Wt/WText.h>
 #include <av/IAudioFile.hpp>
 #include <common/Template.hpp>
 #include <database/Session.hpp>
 #include <database/Track.hpp>
 #include <database/TrackArtistLink.hpp>
 #include <services/scrobbling/IScrobblingService.hpp>
-#include <Wt/WAnchor.h>
-#include <Wt/WImage.h>
-#include <Wt/WText.h>
 
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
@@ -214,30 +214,27 @@ namespace lms::ui::releaseHelpers
 
         std::map<Wt::WString, std::set<db::ArtistId>> artistMap;
 
-        auto addArtists = [&](db::TrackArtistLinkType linkType, const char* type)
-            {
-                db::Artist::FindParameters params;
-                params.setRelease(releaseId);
-                params.setLinkType(linkType);
-                const auto artistIds{ db::Artist::findIds(LmsApp->getDbSession(), params) };
-                if (artistIds.results.empty())
-                    return;
+        auto addArtists = [&](db::TrackArtistLinkType linkType, const char* type) {
+            db::Artist::FindParameters params;
+            params.setRelease(releaseId);
+            params.setLinkType(linkType);
+            const auto artistIds{ db::Artist::findIds(LmsApp->getDbSession(), params) };
+            if (artistIds.results.empty())
+                return;
 
-                Wt::WString typeStr{ Wt::WString::trn(type, artistIds.results.size()) };
-                for (db::ArtistId artistId : artistIds.results)
-                    artistMap[typeStr].insert(artistId);
-            };
+            Wt::WString typeStr{ Wt::WString::trn(type, artistIds.results.size()) };
+            for (db::ArtistId artistId : artistIds.results)
+                artistMap[typeStr].insert(artistId);
+        };
 
-        auto addPerformerArtists = [&]
-            {
-                db::TrackArtistLink::FindParameters params;
-                params.setRelease(releaseId);
-                params.setLinkType(db::TrackArtistLinkType::Performer);
-                db::TrackArtistLink::find(LmsApp->getDbSession(), params, [&](const db::TrackArtistLink::pointer& link)
-                {
-                    artistMap[std::string{ link->getSubType() }].insert(link->getArtist()->getId());
-                });
-            };
+        auto addPerformerArtists = [&] {
+            db::TrackArtistLink::FindParameters params;
+            params.setRelease(releaseId);
+            params.setLinkType(db::TrackArtistLinkType::Performer);
+            db::TrackArtistLink::find(LmsApp->getDbSession(), params, [&](const db::TrackArtistLink::pointer& link) {
+                artistMap[std::string{ link->getSubType() }].insert(link->getArtist()->getId());
+            });
+        };
 
         addArtists(db::TrackArtistLinkType::Composer, "Lms.Explore.Artists.linktype-composer");
         addArtists(db::TrackArtistLinkType::Conductor, "Lms.Explore.Artists.linktype-conductor");
@@ -293,10 +290,9 @@ namespace lms::ui::releaseHelpers
         releaseInfo->bindInt("playcount", core::Service<scrobbling::IScrobblingService>::get()->getCount(LmsApp->getUserId(), release->getId()));
 
         Wt::WPushButton* okBtn{ releaseInfo->bindNew<Wt::WPushButton>("ok-btn", Wt::WString::tr("Lms.ok")) };
-        okBtn->clicked().connect([=]
-            {
-                LmsApp->getModalManager().dispose(releaseInfoPtr);
-            });
+        okBtn->clicked().connect([=] {
+            LmsApp->getModalManager().dispose(releaseInfoPtr);
+        });
 
         LmsApp->getModalManager().show(std::move(releaseInfo));
     }

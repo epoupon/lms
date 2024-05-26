@@ -21,8 +21,9 @@
 
 #include "database/IdType.hpp"
 
-namespace lms::db {
- class User;
+namespace lms::db
+{
+    class User;
 }
 
 LMS_DECLARE_IDTYPE(UserId, lms::db::User)

@@ -48,24 +48,25 @@ namespace lms::db
         Wt::Dbo::dbo_default_traits::IdType _id{ Wt::Dbo::dbo_default_traits::invalidId() };
     };
 
-#define LMS_DECLARE_IDTYPE(name, target) \
-    namespace lms::db { \
-        class name : public IdType \
-        { \
-        public: \
-            using IdType::IdType; \
-            using Target = target; \
-            auto operator<=>(const name& other) const = default; \
-        };\
-    } \
-    namespace std \
-    { \
-        template<> \
-        class hash<lms::db::name> \
-        { \
-        public: \
-            size_t operator()(lms::db::name id) const \
-            { \
+#define LMS_DECLARE_IDTYPE(name, target)                                     \
+    namespace lms::db                                                        \
+    {                                                                        \
+        class name : public IdType                                           \
+        {                                                                    \
+        public:                                                              \
+            using IdType::IdType;                                            \
+            using Target = target;                                           \
+            auto operator<=>(const name& other) const = default;             \
+        };                                                                   \
+    }                                                                        \
+    namespace std                                                            \
+    {                                                                        \
+        template<>                                                           \
+        class hash<lms::db::name>                                            \
+        {                                                                    \
+        public:                                                              \
+            size_t operator()(lms::db::name id) const                        \
+            {                                                                \
                 return std::hash<lms::db::name::ValueType>()(id.getValue()); \
             }                                                                \
         };                                                                   \

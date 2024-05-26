@@ -21,8 +21,9 @@
 
 #include "database/IdType.hpp"
 
-namespace lms::db {
- class Listen;
+namespace lms::db
+{
+    class Listen;
 }
 
 LMS_DECLARE_IDTYPE(ListenId, lms::db::Listen)

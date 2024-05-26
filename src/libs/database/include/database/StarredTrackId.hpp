@@ -21,8 +21,9 @@
 
 #include "database/IdType.hpp"
 
-namespace lms::db {
- class StarredTrack;
+namespace lms::db
+{
+    class StarredTrack;
 }
 
 LMS_DECLARE_IDTYPE(StarredTrackId, lms::db::StarredTrack)

@@ -30,7 +30,8 @@
 #include "database/Types.hpp"
 #include "database/UserId.hpp"
 
-namespace lms::db {
+namespace lms::db
+{
     class TrackBookmark;
 }
 

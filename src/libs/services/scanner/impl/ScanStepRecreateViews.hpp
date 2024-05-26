@@ -4,14 +4,14 @@
 
 namespace lms::scanner
 {
-	class ScanStepRecreateViews : public ScanStepBase
-	{
-		public:
-			using ScanStepBase::ScanStepBase;
+    class ScanStepRecreateViews : public ScanStepBase
+    {
+    public:
+        using ScanStepBase::ScanStepBase;
 
-		private:
-			core::LiteralString getStepName() const override { return "Recreate views"; }
-			ScanStep getStep() const override { return ScanStep::RecreateViews; }
-			void process(ScanContext& context) override;
-	};
-}
+    private:
+        core::LiteralString getStepName() const override { return "Recreate views"; }
+        ScanStep getStep() const override { return ScanStep::RecreateViews; }
+        void process(ScanContext& context) override;
+    };
+} // namespace lms::scanner

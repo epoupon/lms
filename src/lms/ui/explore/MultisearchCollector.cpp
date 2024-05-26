@@ -22,4 +22,4 @@ namespace lms::ui
 
         return results;
     }
-} // ns UserInterface
+} // namespace lms::ui

@@ -2,8 +2,8 @@
 
 #include "database/Types.hpp"
 
-#include "common/Template.hpp"
 #include "MultisearchCollector.hpp"
+#include "common/Template.hpp"
 
 namespace lms::ui
 {
@@ -31,4 +31,3 @@ namespace lms::ui
         std::shared_ptr<Wt::WButtonGroup> _mediaTypeFilters;
     };
 } // namespace lms::ui
-

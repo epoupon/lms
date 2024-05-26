@@ -1,22 +1,22 @@
 #include "MultisearchView.hpp"
 
-#include <database/Artist.hpp>
-#include <database/Release.hpp>
 #include <Wt/WButtonGroup.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WRadioButton.h>
+#include <database/Artist.hpp>
+#include <database/Release.hpp>
 
 #include "ArtistListHelpers.hpp"
+#include "core/ILogger.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "core/ILogger.hpp"
 
+#include "LmsApplication.hpp"
+#include "MultisearchListHelpers.hpp"
 #include "common/InfiniteScrollingContainer.hpp"
 #include "explore/Filters.hpp"
 #include "explore/TrackListHelpers.hpp"
-#include "LmsApplication.hpp"
-#include "MultisearchListHelpers.hpp"
 
 namespace lms::ui
 {
@@ -26,19 +26,19 @@ namespace lms::ui
         : Template{ Wt::WString::tr("Lms.Explore.Multisearch.template") }
         , _filters{ filters }
         , _playQueueController{ playQueueController }
-        , _multisearchCollector{ filters, DatabaseCollectorBase::Mode::All,  _maxCount }
+        , _multisearchCollector{ filters, DatabaseCollectorBase::Mode::All, _maxCount }
     {
         addFunction("tr", &Wt::WTemplate::Functions::tr);
         addFunction("id", &Wt::WTemplate::Functions::id);
 
         searEdit.setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
-        searEdit.textInput().connect([this, &searEdit]
+        searEdit.textInput().connect([this, &searEdit] {
+            if (wApp->internalPath() != "/multisearch")
             {
-                if (wApp->internalPath() != "/multisearch") {
-                    wApp->setInternalPath("/multisearch", true);
-                }
-                refreshView(searEdit.text());
-            });
+                wApp->setInternalPath("/multisearch", true);
+            }
+            refreshView(searEdit.text());
+        });
 
         _mediaTypeFilters = std::make_shared<Wt::WButtonGroup>();
         _mediaTypeFilters->addButton(bindNew<Wt::WRadioButton>("search-all"), static_cast<int>(any_medium::Type::ALL));
@@ -46,18 +46,16 @@ namespace lms::ui
         _mediaTypeFilters->addButton(bindNew<Wt::WRadioButton>("search-artists"), static_cast<int>(any_medium::Type::ARTISTS));
         _mediaTypeFilters->addButton(bindNew<Wt::WRadioButton>("search-tracks"), static_cast<int>(any_medium::Type::TRACKS));
         _mediaTypeFilters->setCheckedButton(_mediaTypeFilters->button(static_cast<int>(any_medium::Type::ALL)));
-        _mediaTypeFilters->checkedChanged().connect([this](){ refreshView(); });
+        _mediaTypeFilters->checkedChanged().connect([this]() { refreshView(); });
 
         _container = bindNew<InfiniteScrollingContainer>("multisearch-results", Wt::WString::tr("Lms.Explore.Multisearch.template.entry-container"));
-        _container->onRequestElements.connect([this]
-            {
-                addSome();
-            });
+        _container->onRequestElements.connect([this] {
+            addSome();
+        });
 
-        filters.updated().connect([this]
-            {
-                refreshView();
-            });
+        filters.updated().connect([this] {
+            refreshView();
+        });
 
         refreshView();
     }
@@ -73,22 +71,24 @@ namespace lms::ui
         refreshView();
     }
 
-    namespace {
+    namespace
+    {
         template<typename IdT>
-        void findAndAdd(const IdT& mediumId, Filters& filters, PlayQueueController& playQueueController, InfiniteScrollingContainer& container) {
+        void findAndAdd(const IdT& mediumId, Filters& filters, PlayQueueController& playQueueController, InfiniteScrollingContainer& container)
+        {
             if (const auto result = IdT::Target::find(LmsApp->getDbSession(), mediumId))
                 container.add(MultisearchListHelpers::createEntry(result, playQueueController, filters));
         }
-    }
+    } // namespace
 
     void Multisearch::addSome()
     {
-        const auto [_, results, moreResults] = _multisearchCollector.get(static_cast<any_medium::Type>(_mediaTypeFilters->checkedId()), Range {_container->getCount(), _batchSize});
+        const auto [_, results, moreResults] = _multisearchCollector.get(static_cast<any_medium::Type>(_mediaTypeFilters->checkedId()), Range{ _container->getCount(), _batchSize });
 
         auto transaction = LmsApp->getDbSession().createReadTransaction();
         for (const auto mediumId : results)
         {
-            std::visit([this](auto&& mediumId){ findAndAdd(mediumId, _filters, _playQueueController, *_container); }, mediumId);
+            std::visit([this](auto&& mediumId) { findAndAdd(mediumId, _filters, _playQueueController, *_container); }, mediumId);
         }
 
         _container->setHasMore(moreResults);

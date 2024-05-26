@@ -31,7 +31,7 @@
 			${cover}
 		</div>
 		<div class="p-1">
-			<i class="fa fa-music text-secondary" aria-hidden="true"></i>
+			<i class="fa fa-music" aria-hidden="true"></i>
 		</div>
 		<div class="row align-items-center flex-fill overflow-hidden">
 			<div class="col-12 col-md-6 col-lg-4">
@@ -74,7 +74,7 @@
 			${cover}
 		</div>
 		<div class="p-1">
-			<i class="fa fa-list text-primary" aria-hidden="true"></i>
+			<i class="fa fa-list" aria-hidden="true"></i>
 		</div>
 		<div class="row align-items-center flex-fill overflow-hidden">
 			<div class="col-12 col-md-6 col-lg-4">
@@ -117,7 +117,7 @@
 			${cover}
 		</div>
 		<div class="p-1">
-			<i class="fa fa-user text-info" aria-hidden="true"></i>
+			<i class="fa fa-user" aria-hidden="true"></i>
 		</div>
 		<div class="row align-items-center flex-fill overflow-hidden">
 			<div class="col-12 col-md-6 col-lg-4">
