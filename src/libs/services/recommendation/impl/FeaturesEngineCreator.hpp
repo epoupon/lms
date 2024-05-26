@@ -20,15 +20,15 @@
 #pragma once
 
 #include <memory>
+
 #include "IEngine.hpp"
 
 namespace lms::db
 {
-	class Db;
+    class Db;
 }
 
 namespace lms::recommendation
 {
-	std::unique_ptr<IEngine> createFeaturesEngine(db::Db& db);
+    std::unique_ptr<IEngine> createFeaturesEngine(db::Db& db);
 }
-

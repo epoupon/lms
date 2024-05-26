@@ -44,7 +44,7 @@ namespace lms::db
         static pointer find(Session& session, MediaLibraryId id);
         static pointer find(Session& session, std::string_view name);
         static pointer find(Session& session, const std::filesystem::path& path);
-        static void    find(Session& session, std::function<void(const pointer&)> func);
+        static void find(Session& session, std::function<void(const pointer&)> func);
         static std::vector<pointer> find(Session& session);
 
         // getters
@@ -67,7 +67,7 @@ namespace lms::db
         MediaLibrary(const std::filesystem::path& p, std::string_view name);
         static pointer create(Session& session, const std::filesystem::path& p = {}, std::string_view name = {});
 
-        std::filesystem::path       _path;
-        std::string                 _name;
+        std::filesystem::path _path;
+        std::string _name;
     };
 } // namespace lms::db

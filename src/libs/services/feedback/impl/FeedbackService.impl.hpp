@@ -27,7 +27,7 @@ namespace lms::feedback
 {
     using namespace db;
 
-    template <typename ObjType, typename ObjIdType, typename StarredObjType>
+    template<typename ObjType, typename ObjIdType, typename StarredObjType>
     void FeedbackService::star(UserId userId, ObjIdType objId)
     {
         const auto backend{ getUserFeedbackBackend(userId) };
@@ -58,7 +58,7 @@ namespace lms::feedback
         _backends[*backend]->onStarred(starredObjId);
     }
 
-    template <typename ObjType, typename ObjIdType, typename StarredObjType>
+    template<typename ObjType, typename ObjIdType, typename StarredObjType>
     void FeedbackService::unstar(UserId userId, ObjIdType objId)
     {
         const auto backend{ getUserFeedbackBackend(userId) };
@@ -79,7 +79,7 @@ namespace lms::feedback
         _backends[*backend]->onUnstarred(starredObjId);
     }
 
-    template <typename ObjType, typename ObjIdType, typename StarredObjType>
+    template<typename ObjType, typename ObjIdType, typename StarredObjType>
     bool FeedbackService::isStarred(UserId userId, ObjIdType objId)
     {
         Session& session{ _db.getTLSSession() };
@@ -89,7 +89,7 @@ namespace lms::feedback
         return starredObj && (starredObj->getSyncState() != SyncState::PendingRemove);
     }
 
-    template <typename ObjType, typename ObjIdType, typename StarredObjType>
+    template<typename ObjType, typename ObjIdType, typename StarredObjType>
     Wt::WDateTime FeedbackService::getStarredDateTime(UserId userId, ObjIdType objId)
     {
         Session& session{ _db.getTLSSession() };
@@ -102,4 +102,4 @@ namespace lms::feedback
         return {};
     }
 
-} // ns Feedback
+} // namespace lms::feedback

@@ -27,10 +27,9 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             bool visited{};
-            User::find(session, User::FindParameters{}, [&](const User::pointer&)
-                {
-                    visited = true;
-                });
+            User::find(session, User::FindParameters{}, [&](const User::pointer&) {
+                visited = true;
+            });
             EXPECT_FALSE(visited);
         }
 
@@ -41,13 +40,12 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             std::vector<UserId> visitedUsers;
-            User::find(session, User::FindParameters{}, [&](const User::pointer& user)
-                {
-                    visitedUsers.push_back(user->getId());
-                });
+            User::find(session, User::FindParameters{}, [&](const User::pointer& user) {
+                visitedUsers.push_back(user->getId());
+            });
             EXPECT_EQ(visitedUsers.size(), 2);
             EXPECT_EQ(visitedUsers[0], user1->getId());
             EXPECT_EQ(visitedUsers[1], user2->getId());
         }
     }
-}
+} // namespace lms::db::tests

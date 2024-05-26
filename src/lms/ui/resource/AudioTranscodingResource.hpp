@@ -26,26 +26,22 @@
 
 namespace lms::db
 {
-	class User;
+    class User;
 }
 
 namespace lms::ui
 {
-	class AudioTranscodingResource : public Wt::WResource
-	{
-		public:
-			~AudioTranscodingResource();
+    class AudioTranscodingResource : public Wt::WResource
+    {
+    public:
+        ~AudioTranscodingResource();
 
-			// Url depends on the user since settings are used in parameters
-			std::string getUrl(db::TrackId trackId) const;
+        // Url depends on the user since settings are used in parameters
+        std::string getUrl(db::TrackId trackId) const;
 
-			void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response);
+        void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response);
 
-		private:
-			static constexpr std::size_t	_chunkSize {262144};
-	};
+    private:
+        static constexpr std::size_t _chunkSize{ 262144 };
+    };
 } // namespace lms::ui
-
-
-
-

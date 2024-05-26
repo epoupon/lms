@@ -24,7 +24,7 @@
 
 namespace lms::core
 {
-    template <typename Class>
+    template<typename Class>
     class Service
     {
     public:
@@ -57,7 +57,7 @@ namespace lms::core
         static Class* get() { return _service.get(); }
         static bool exists() { return _service.get(); }
 
-        template <typename SubClass>
+        template<typename SubClass>
         static Class& assign(std::unique_ptr<SubClass> service)
         {
             assert(!_service);
@@ -70,4 +70,4 @@ namespace lms::core
 
         static inline std::unique_ptr<Class> _service;
     };
-}
+} // namespace lms::core

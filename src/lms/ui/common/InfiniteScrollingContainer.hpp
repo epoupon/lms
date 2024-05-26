@@ -30,41 +30,41 @@
 
 namespace lms::ui
 {
-	// Atomatically raises onRequestElements signal when the sentinel is displayed
-	// can add elements afterwards by calling setHasMoreElements()
-	class InfiniteScrollingContainer final : public Wt::WTemplate
-	{
-		public:
-			// "text" must contain loading-indicator and "elements"
-			InfiniteScrollingContainer(const Wt::WString& text = Wt::WString::tr("Lms.infinite-scrolling-container.template"));
+    // Atomatically raises onRequestElements signal when the sentinel is displayed
+    // can add elements afterwards by calling setHasMoreElements()
+    class InfiniteScrollingContainer final : public Wt::WTemplate
+    {
+    public:
+        // "text" must contain loading-indicator and "elements"
+        InfiniteScrollingContainer(const Wt::WString& text = Wt::WString::tr("Lms.infinite-scrolling-container.template"));
 
-			void reset();
-			std::size_t getCount();
-			void add(std::unique_ptr<Wt::WWidget> result);
+        void reset();
+        std::size_t getCount();
+        void add(std::unique_ptr<Wt::WWidget> result);
 
-			template<typename T, typename... Args>
-			T* addNew(Args&&... args)
-			{
-				return _elements->addNew<T>(std::forward<Args>(args)...);
-			}
+        template<typename T, typename... Args>
+        T* addNew(Args&&... args)
+        {
+            return _elements->addNew<T>(std::forward<Args>(args)...);
+        }
 
-			void remove(Wt::WWidget& widget);
-			void remove(std::size_t first, std::size_t last);
+        void remove(Wt::WWidget& widget);
+        void remove(std::size_t first, std::size_t last);
 
-			Wt::WWidget*				getWidget(std::size_t pos) const;
-			std::optional<std::size_t>	getIndexOf(Wt::WWidget& widget) const;
-			void 						setHasMore(); // can be used to add elements afterwards
+        Wt::WWidget* getWidget(std::size_t pos) const;
+        std::optional<std::size_t> getIndexOf(Wt::WWidget& widget) const;
+        void setHasMore(); // can be used to add elements afterwards
 
-			Wt::Signal<>	onRequestElements;
+        Wt::Signal<> onRequestElements;
 
-			void setHasMore(bool hasMore); // can be used to add elements afterwards
+        void setHasMore(bool hasMore); // can be used to add elements afterwards
 
-		private:
-			void clear() override;
-			void displayLoadingIndicator();
-			void hideLoadingIndicator();
+    private:
+        void clear() override;
+        void displayLoadingIndicator();
+        void hideLoadingIndicator();
 
-			Wt::WContainerWidget*	_elements;
-			Wt::WTemplate*			_loadingIndicator;
-	};
-}
+        Wt::WContainerWidget* _elements;
+        Wt::WTemplate* _loadingIndicator;
+    };
+} // namespace lms::ui

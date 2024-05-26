@@ -26,4 +26,3 @@ namespace lms::db {
 }
 
 LMS_DECLARE_IDTYPE(ArtistId, lms::db::Artist)
-

@@ -48,9 +48,9 @@ namespace lms::core
         };
 
         using ReadCallback = std::function<void(ReadResult, std::size_t)>;
-        virtual void		asyncRead(std::byte* data, std::size_t bufferSize, ReadCallback callback) = 0;
+        virtual void asyncRead(std::byte* data, std::size_t bufferSize, ReadCallback callback) = 0;
 
-        virtual std::size_t	readSome(std::byte* data, std::size_t bufferSize) = 0;
-        virtual bool		finished() const = 0;
+        virtual std::size_t readSome(std::byte* data, std::size_t bufferSize) = 0;
+        virtual bool finished() const = 0;
     };
-}
+} // namespace lms::core

@@ -20,6 +20,7 @@
 #pragma once
 
 #include <string>
+
 #include "ProtocolVersion.hpp"
 
 namespace lms::api::subsonic
@@ -32,4 +33,4 @@ namespace lms::api::subsonic
         std::string password;
         ProtocolVersion version;
     };
-}
+} // namespace lms::api::subsonic

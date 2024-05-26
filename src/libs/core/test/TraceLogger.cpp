@@ -19,6 +19,7 @@
 
 #include <sstream>
 #include <thread>
+
 #include <gtest/gtest.h>
 
 #include "core/ITraceLogger.hpp"
@@ -33,11 +34,10 @@ namespace lms::core::tracing::tests
         std::vector<std::thread> threads;
         for (std::size_t i{}; i < 16; ++i)
         {
-            threads.emplace_back([&]
-                {
-                    ScopedTrace loggedEvent{ "MyCategory", Level::Overview, "MyEventLogged", "SomeArgType", "SomeArg", traceLogger.get() };
-                    ScopedTrace notLoggedEvent{ "MyNotLoggedCategory", Level::Detailed, "MyEventNotLogged", "SomeNotLoggedArgType", "SomeNotLoggedArg", traceLogger.get() };
-                });
+            threads.emplace_back([&] {
+                ScopedTrace loggedEvent{ "MyCategory", Level::Overview, "MyEventLogged", "SomeArgType", "SomeArg", traceLogger.get() };
+                ScopedTrace notLoggedEvent{ "MyNotLoggedCategory", Level::Detailed, "MyEventNotLogged", "SomeNotLoggedArgType", "SomeNotLoggedArg", traceLogger.get() };
+            });
         }
 
         for (std::thread& t : threads)
@@ -56,4 +56,4 @@ namespace lms::core::tracing::tests
         EXPECT_EQ(oss.str().find("SomeNotLoggedArgType"), std::string::npos);
         EXPECT_EQ(oss.str().find("SomeNotLoggedArg"), std::string::npos);
     }
-}
+} // namespace lms::core::tracing::tests

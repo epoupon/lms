@@ -20,27 +20,27 @@
 #pragma once
 
 #include <memory>
+
 #include "database/TrackListId.hpp"
 #include "database/Types.hpp"
 #include "services/recommendation/Types.hpp"
 
 namespace lms::db
 {
-	class Db;
+    class Db;
 }
 
 namespace lms::recommendation
 {
-	class IRecommendationService;
-	class IPlaylistGeneratorService
-	{
-		public:
-			virtual ~IPlaylistGeneratorService() = default;
+    class IRecommendationService;
+    class IPlaylistGeneratorService
+    {
+    public:
+        virtual ~IPlaylistGeneratorService() = default;
 
-			// extend an existing playlist with similar tracks (but use playlist contraints)
-			virtual TrackContainer extendPlaylist(db::TrackListId tracklistId, std::size_t maxCount) const = 0;
-	};
+        // extend an existing playlist with similar tracks (but use playlist contraints)
+        virtual TrackContainer extendPlaylist(db::TrackListId tracklistId, std::size_t maxCount) const = 0;
+    };
 
-	std::unique_ptr<IPlaylistGeneratorService> createPlaylistGeneratorService(db::Db& db, IRecommendationService& recommandationService);
-} // ns Recommendation
-
+    std::unique_ptr<IPlaylistGeneratorService> createPlaylistGeneratorService(db::Db& db, IRecommendationService& recommandationService);
+} // namespace lms::recommendation

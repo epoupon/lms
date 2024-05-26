@@ -37,4 +37,4 @@ namespace lms::core
         EXPECT_TRUE(uuid1 >= uuid2);
         EXPECT_TRUE(uuid1 <= uuid2);
     }
-}
+} // namespace lms::core

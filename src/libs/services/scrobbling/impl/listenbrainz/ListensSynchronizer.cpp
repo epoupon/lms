@@ -19,12 +19,16 @@
 
 #include "ListensSynchronizer.hpp"
 
-#include <boost/asio/bind_executor.hpp>
 #include <Wt/Json/Array.h>
 #include <Wt/Json/Object.h>
-#include <Wt/Json/Value.h>
 #include <Wt/Json/Serializer.h>
+#include <Wt/Json/Value.h>
+#include <boost/asio/bind_executor.hpp>
 
+#include "ListensParser.hpp"
+#include "core/IConfig.hpp"
+#include "core/Service.hpp"
+#include "core/http/IClient.hpp"
 #include "database/Artist.hpp"
 #include "database/Db.hpp"
 #include "database/Listen.hpp"
@@ -33,10 +37,6 @@
 #include "database/Track.hpp"
 #include "database/User.hpp"
 #include "services/scrobbling/Exception.hpp"
-#include "core/IConfig.hpp"
-#include "core/http/IClient.hpp"
-#include "core/Service.hpp"
-#include "ListensParser.hpp"
 
 #include "Utils.hpp"
 
@@ -52,7 +52,7 @@ namespace lms::scrobbling::listenBrainz
             if (!track)
                 return std::nullopt;
 
-            auto artists{ track->getArtists({db::TrackArtistLinkType::Artist}) };
+            auto artists{ track->getArtists({ db::TrackArtistLinkType::Artist }) };
             if (artists.empty())
                 artists = track->getArtists({ db::TrackArtistLinkType::ReleaseArtist });
 
@@ -65,12 +65,12 @@ namespace lms::scrobbling::listenBrainz
             Wt::Json::Object additionalInfo;
             additionalInfo["listening_from"] = "LMS";
             additionalInfo["duration_ms"] = std::chrono::duration_cast<std::chrono::milliseconds>(track->getDuration()).count();
-            if (const auto release {track->getRelease()})
+            if (const auto release{ track->getRelease() })
             {
                 if (auto MBID{ release->getMBID() })
-                    additionalInfo["release_mbid"] = Wt::Json::Value{ std::string {MBID->getAsString()} };
+                    additionalInfo["release_mbid"] = Wt::Json::Value{ std::string{ MBID->getAsString() } };
                 if (auto groupMBID{ release->getGroupMBID() })
-                    additionalInfo["release_group_mbid"] = Wt::Json::Value{ std::string {groupMBID->getAsString()} };
+                    additionalInfo["release_group_mbid"] = Wt::Json::Value{ std::string{ groupMBID->getAsString() } };
             }
 
             {
@@ -78,7 +78,7 @@ namespace lms::scrobbling::listenBrainz
                 for (const db::Artist::pointer& artist : artists)
                 {
                     if (auto MBID{ artist->getMBID() })
-                        artistMBIDs.push_back(Wt::Json::Value{ std::string {MBID->getAsString()} });
+                        artistMBIDs.push_back(Wt::Json::Value{ std::string{ MBID->getAsString() } });
                 }
 
                 if (!artistMBIDs.empty())
@@ -86,10 +86,10 @@ namespace lms::scrobbling::listenBrainz
             }
 
             if (auto MBID{ track->getTrackMBID() })
-                additionalInfo["track_mbid"] = Wt::Json::Value{ std::string {MBID->getAsString()} };
+                additionalInfo["track_mbid"] = Wt::Json::Value{ std::string{ MBID->getAsString() } };
 
             if (auto MBID{ track->getRecordingMBID() })
-                additionalInfo["recording_mbid"] = Wt::Json::Value{ std::string {MBID->getAsString()} };
+                additionalInfo["recording_mbid"] = Wt::Json::Value{ std::string{ MBID->getAsString() } };
 
             if (const std::optional<std::size_t> trackNumber{ track->getTrackNumber() })
                 additionalInfo["tracknumber"] = Wt::Json::Value{ static_cast<long long int>(*trackNumber) };
@@ -99,7 +99,7 @@ namespace lms::scrobbling::listenBrainz
             trackMetadata["artist_name"] = Wt::Json::Value{ std::string{ track->getArtistDisplayName() } };
             trackMetadata["track_name"] = Wt::Json::Value{ track->getName() };
             if (track->getRelease())
-                trackMetadata["release_name"] = Wt::Json::Value{ std::string {track->getRelease()->getName()} };
+                trackMetadata["release_name"] = Wt::Json::Value{ std::string{ track->getRelease()->getName() } };
 
             Wt::Json::Object payload;
             payload["track_metadata"] = std::move(trackMetadata);
@@ -118,7 +118,7 @@ namespace lms::scrobbling::listenBrainz
                 return res;
 
             Wt::Json::Object root;
-            root["listen_type"] = Wt::Json::Value{ std::string {listenType} };
+            root["listen_type"] = Wt::Json::Value{ std::string{ listenType } };
             root["payload"] = Wt::Json::Array{ std::move(*payload) };
 
             res = Wt::Json::serialize(root);
@@ -207,7 +207,7 @@ namespace lms::scrobbling::listenBrainz
             LOG(DEBUG, "No match for listen '" << listen << "'");
             return {};
         }
-    }
+    } // namespace
 
     ListensSynchronizer::ListensSynchronizer(boost::asio::io_context& ioContext, db::Db& db, core::http::IClient& client)
         : _ioContext{ ioContext }
@@ -244,18 +244,16 @@ namespace lms::scrobbling::listenBrainz
             saveListen(timedListen, db::SyncState::PendingAdd);
 
             request.priority = core::http::ClientRequestParameters::Priority::Normal;
-            request.onSuccessFunc = [this, timedListen](std::string_view)
-                {
-                    _strand.dispatch([this, timedListen]
-                        {
-                            if (saveListen(timedListen, db::SyncState::Synchronized))
-                            {
-                                UserContext& context{ getUserContext(timedListen.userId) };
-                                if (context.listenCount)
-                                    (*context.listenCount)++;
-                            }
-                        });
-                };
+            request.onSuccessFunc = [this, timedListen](std::string_view) {
+                _strand.dispatch([this, timedListen] {
+                    if (saveListen(timedListen, db::SyncState::Synchronized))
+                    {
+                        UserContext& context{ getUserContext(timedListen.userId) };
+                        if (context.listenCount)
+                            (*context.listenCount)++;
+                    }
+                });
+            };
             // on failure, this listen will be sent during the next sync
         }
         else
@@ -369,10 +367,9 @@ namespace lms::scrobbling::listenBrainz
 
     bool ListensSynchronizer::isSyncing() const
     {
-        return std::any_of(std::cbegin(_userContexts), std::cend(_userContexts), [](const auto& contextEntry)
-            {
-                return contextEntry.second.syncing;
-            });
+        return std::any_of(std::cbegin(_userContexts), std::cend(_userContexts), [](const auto& contextEntry) {
+            return contextEntry.second.syncing;
+        });
     }
 
     void ListensSynchronizer::scheduleSync(std::chrono::seconds fromNow)
@@ -382,20 +379,19 @@ namespace lms::scrobbling::listenBrainz
 
         LOG(DEBUG, "Scheduled sync in " << fromNow.count() << " seconds...");
         _syncTimer.expires_after(fromNow);
-        _syncTimer.async_wait(boost::asio::bind_executor(_strand, [this](const boost::system::error_code& ec)
+        _syncTimer.async_wait(boost::asio::bind_executor(_strand, [this](const boost::system::error_code& ec) {
+            if (ec == boost::asio::error::operation_aborted)
             {
-                if (ec == boost::asio::error::operation_aborted)
-                {
-                    LOG(DEBUG, "getListens aborted");
-                    return;
-                }
-                else if (ec)
-                {
-                    throw Exception{ "GetListens timer failure: " + std::string {ec.message()} };
-                }
+                LOG(DEBUG, "getListens aborted");
+                return;
+            }
+            else if (ec)
+            {
+                throw Exception{ "GetListens timer failure: " + std::string{ ec.message() } };
+            }
 
-                startSync();
-            }));
+            startSync();
+        }));
     }
 
     void ListensSynchronizer::startSync()
@@ -434,14 +430,13 @@ namespace lms::scrobbling::listenBrainz
 
     void ListensSynchronizer::onSyncEnded(UserContext& context)
     {
-        _strand.dispatch([this, &context]
-            {
-                LOG(INFO, "Sync done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedListenCount << ", matched: " << context.matchedListenCount << ", imported: " << context.importedListenCount);
-                context.syncing = false;
+        _strand.dispatch([this, &context] {
+            LOG(INFO, "Sync done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedListenCount << ", matched: " << context.matchedListenCount << ", imported: " << context.importedListenCount);
+            context.syncing = false;
 
-                if (!isSyncing())
-                    scheduleSync(_syncListensPeriod);
-            });
+            if (!isSyncing())
+                scheduleSync(_syncListensPeriod);
+        });
     }
 
     void ListensSynchronizer::enqueValidateToken(UserContext& context)
@@ -458,21 +453,19 @@ namespace lms::scrobbling::listenBrainz
         core::http::ClientGETRequestParameters request;
         request.priority = core::http::ClientRequestParameters::Priority::Low;
         request.relativeUrl = "/1/validate-token";
-        request.headers = { {"Authorization",  "Token " + std::string {listenBrainzToken->getAsString()}} };
-        request.onSuccessFunc = [this, &context](std::string_view msgBody)
-            {
-                context.listenBrainzUserName = utils::parseValidateToken(msgBody);
-                if (context.listenBrainzUserName.empty())
-                {
-                    onSyncEnded(context);
-                    return;
-                }
-                enqueGetListenCount(context);
-            };
-        request.onFailureFunc = [this, &context]
+        request.headers = { { "Authorization", "Token " + std::string{ listenBrainzToken->getAsString() } } };
+        request.onSuccessFunc = [this, &context](std::string_view msgBody) {
+            context.listenBrainzUserName = utils::parseValidateToken(msgBody);
+            if (context.listenBrainzUserName.empty())
             {
                 onSyncEnded(context);
-            };
+                return;
+            }
+            enqueGetListenCount(context);
+        };
+        request.onFailureFunc = [this, &context] {
+            onSyncEnded(context);
+        };
 
         _client.sendGETRequest(std::move(request));
     }
@@ -484,31 +477,28 @@ namespace lms::scrobbling::listenBrainz
         core::http::ClientGETRequestParameters request;
         request.relativeUrl = "/1/user/" + std::string{ context.listenBrainzUserName } + "/listen-count";
         request.priority = core::http::ClientRequestParameters::Priority::Low;
-        request.onSuccessFunc = [this, &context](std::string_view msgBody)
-            {
-                const auto listenCount{ parseListenCount(msgBody) };
-                _strand.dispatch([this, listenCount, &context]
-                    {
-                        if (listenCount)
-                            LOG(DEBUG, "Listen count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *listenCount);
+        request.onSuccessFunc = [this, &context](std::string_view msgBody) {
+            const auto listenCount{ parseListenCount(msgBody) };
+            _strand.dispatch([this, listenCount, &context] {
+                if (listenCount)
+                    LOG(DEBUG, "Listen count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *listenCount);
 
-                        bool needSync{ listenCount && (!context.listenCount || *context.listenCount != *listenCount) };
-                        context.listenCount = listenCount;
+                bool needSync{ listenCount && (!context.listenCount || *context.listenCount != *listenCount) };
+                context.listenCount = listenCount;
 
-                        if (!needSync)
-                        {
-                            onSyncEnded(context);
-                            return;
-                        }
+                if (!needSync)
+                {
+                    onSyncEnded(context);
+                    return;
+                }
 
-                        context.maxDateTime = Wt::WDateTime::currentDateTime();
-                        enqueGetListens(context);
-                    });
-            };
-        request.onFailureFunc = [this, &context]
-            {
-                onSyncEnded(context);
-            };
+                context.maxDateTime = Wt::WDateTime::currentDateTime();
+                enqueGetListens(context);
+            });
+        };
+        request.onFailureFunc = [this, &context] {
+            onSyncEnded(context);
+        };
 
         _client.sendGETRequest(std::move(request));
     }
@@ -520,21 +510,19 @@ namespace lms::scrobbling::listenBrainz
         core::http::ClientGETRequestParameters request;
         request.relativeUrl = "/1/user/" + context.listenBrainzUserName + "/listens?max_ts=" + std::to_string(context.maxDateTime.toTime_t());
         request.priority = core::http::ClientRequestParameters::Priority::Low;
-        request.onSuccessFunc = [this, &context](std::string_view msgBody)
-            {
-                processGetListensResponse(msgBody, context);
-                if (context.fetchedListenCount >= _maxSyncListenCount || !context.maxDateTime.isValid())
-                {
-                    onSyncEnded(context);
-                    return;
-                }
-
-                enqueGetListens(context);
-            };
-        request.onFailureFunc = [this, &context]
+        request.onSuccessFunc = [this, &context](std::string_view msgBody) {
+            processGetListensResponse(msgBody, context);
+            if (context.fetchedListenCount >= _maxSyncListenCount || !context.maxDateTime.isValid())
             {
                 onSyncEnded(context);
-            };
+                return;
+            }
+
+            enqueGetListens(context);
+        };
+        request.onFailureFunc = [this, &context] {
+            onSyncEnded(context);
+        };
 
         _client.sendGETRequest(std::move(request));
     }
@@ -563,7 +551,7 @@ namespace lms::scrobbling::listenBrainz
             {
                 context.matchedListenCount++;
 
-                const scrobbling::TimedListen listen{ {context.userId, trackId}, parsedListen.listenedAt };
+                const scrobbling::TimedListen listen{ { context.userId, trackId }, parsedListen.listenedAt };
                 if (saveListen(listen, db::SyncState::Synchronized))
                     context.importedListenCount++;
             }

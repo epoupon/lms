@@ -19,30 +19,29 @@
 
 #pragma once
 
-#include <Magick++.h>
-
 #include <cstddef>
 #include <filesystem>
+
+#include <Magick++.h>
 
 #include "image/IEncodedImage.hpp"
 #include "image/IRawImage.hpp"
 
 namespace lms::image::GraphicsMagick
 {
-	class RawImage : public IRawImage
-	{
-		public:
-			RawImage(const std::byte* encodedData, std::size_t encodedDataSize);
-			RawImage(const std::filesystem::path& path);
+    class RawImage : public IRawImage
+    {
+    public:
+        RawImage(const std::byte* encodedData, std::size_t encodedDataSize);
+        RawImage(const std::filesystem::path& path);
 
-			void resize(ImageSize width) override;
-			std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const override;
+        void resize(ImageSize width) override;
+        std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const override;
 
-		private:
-			friend class JPEGImage;
-			Magick::Image getMagickImage() const;
+    private:
+        friend class JPEGImage;
+        Magick::Image getMagickImage() const;
 
-			Magick::Image _image;
-	};
-}
-
+        Magick::Image _image;
+    };
+} // namespace lms::image::GraphicsMagick

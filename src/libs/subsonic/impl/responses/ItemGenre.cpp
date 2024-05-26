@@ -31,4 +31,4 @@ namespace lms::api::subsonic
 
         return genreNode;
     }
-}
+} // namespace lms::api::subsonic

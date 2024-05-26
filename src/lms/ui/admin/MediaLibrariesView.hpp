@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <Wt/WTemplate.h>
 #include <Wt/WContainerWidget.h>
+#include <Wt/WTemplate.h>
 
 #include "database/MediaLibraryId.hpp"
 
@@ -39,4 +39,4 @@ namespace lms::ui
 
         Wt::WContainerWidget* _libraries{};
     };
-}
+} // namespace lms::ui

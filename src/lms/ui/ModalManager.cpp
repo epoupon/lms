@@ -25,20 +25,19 @@ namespace lms::ui
     ModalManager::ModalManager()
         : _closed{ this, "closed" }
     {
-        _closed.connect([this](const std::string& id)
+        _closed.connect([this](const std::string& id) {
+            LMS_LOG(UI, DEBUG, "Received closed for id '" << id << "'");
+            for (int i{}; i < count(); ++i)
             {
-                LMS_LOG(UI, DEBUG, "Received closed for id '" << id << "'");
-                for (int i{}; i < count(); ++i)
+                Wt::WWidget* widget{ this->widget(i) };
+                LMS_LOG(UI, DEBUG, "Widget " << i << ", id = '" << widget->id());
+                if (widget->id() == id)
                 {
-                    Wt::WWidget* widget{ this->widget(i) };
-                    LMS_LOG(UI, DEBUG, "Widget " << i << ", id = '" << widget->id());
-                    if (widget->id() == id)
-                    {
-                        removeWidget(widget);
-                        break;
-                    }
+                    removeWidget(widget);
+                    break;
                 }
-                        });
+            }
+        });
     }
 
     void ModalManager::show(std::unique_ptr<Wt::WWidget> modalWidget)
@@ -76,4 +75,4 @@ namespace lms::ui
 
         doJavaScript(oss.str());
     }
-}
+} // namespace lms::ui

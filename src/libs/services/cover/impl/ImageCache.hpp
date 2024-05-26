@@ -65,8 +65,8 @@ namespace lms::cover
         };
 
         std::unordered_map<EntryDesc, std::shared_ptr<image::IEncodedImage>, EntryHasher> _cache;
-        std::size_t                 _cacheSize{};
-        mutable std::atomic<std::size_t>    _cacheMisses{};
-        mutable std::atomic<std::size_t>    _cacheHits{};
+        std::size_t _cacheSize{};
+        mutable std::atomic<std::size_t> _cacheMisses{};
+        mutable std::atomic<std::size_t> _cacheHits{};
     };
-}
+} // namespace lms::cover

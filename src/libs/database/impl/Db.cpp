@@ -22,12 +22,12 @@
 #include <Wt/Dbo/FixedSqlConnectionPool.h>
 #include <Wt/Dbo/backend/Sqlite3.h>
 
-#include "database/Session.hpp"
-#include "database/User.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
 
 namespace lms::db
 {
@@ -68,7 +68,7 @@ namespace lms::db
 
             std::filesystem::path _dbPath;
         };
-    }
+    } // namespace
 
     // Session living class handling the database and the login
     Db::Db(const std::filesystem::path& dbPath, std::size_t connectionCount)
@@ -76,7 +76,7 @@ namespace lms::db
         LMS_LOG(DB, INFO, "Creating connection pool on file " << dbPath.string());
 
         auto connection{ std::make_unique<Connection>(dbPath.string()) };
-        if (core::IConfig * config{ core::Service<core::IConfig>::get() })// may not be here on testU
+        if (core::IConfig * config{ core::Service<core::IConfig>::get() }) // may not be here on testU
             connection->setProperty("show-queries", config->getBool("db-show-queries", false) ? "true" : "false");
 
         auto connectionPool{ std::make_unique<Wt::Dbo::FixedSqlConnectionPool>(std::move(connection), connectionCount) };

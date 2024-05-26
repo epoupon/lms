@@ -26,4 +26,4 @@ namespace lms::api::subsonic::utils
 {
     void checkSetPasswordImplemented();
     std::string makeNameFilesystemCompatible(std::string_view name);
-}
+} // namespace lms::api::subsonic::utils

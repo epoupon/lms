@@ -19,10 +19,11 @@
 
 #include <map>
 #include <vector>
+
 #include <gtest/gtest.h>
 
-#include "TestTagReader.hpp"
 #include "Parser.hpp"
+#include "TestTagReader.hpp"
 
 namespace lms::metadata
 {
@@ -65,23 +66,18 @@ namespace lms::metadata
                 { TagType::Language, { "Language1", "Language2" } },
                 { TagType::Lyricist, { "MyLyricist1", "MyLyricist2" } },
                 { TagType::OriginalReleaseDate, { "2019/02/03" } },
-                { TagType::ReleaseType, {"Album", "Compilation"} },
-                { TagType::ReplayGainTrackGain, {"-0.33"} },
-                { TagType::ReplayGainAlbumGain, {"-0.5"} },
-                { TagType::TrackTitle, {"MyTitle"} },
+                { TagType::ReleaseType, { "Album", "Compilation" } },
+                { TagType::ReplayGainTrackGain, { "-0.33" } },
+                { TagType::ReplayGainAlbumGain, { "-0.5" } },
+                { TagType::TrackTitle, { "MyTitle" } },
                 { TagType::TrackNumber, { "7" } },
                 { TagType::TotalTracks, { "12" } },
                 { TagType::TotalDiscs, { "3" } },
-            }
-            ,
-            {
-                { "RoleA", { "MyPerformer1ForRoleA", "MyPerformer2ForRoleA" } },
-                { "RoleB", { "MyPerformer1ForRoleB", "MyPerformer2ForRoleB" } }
             },
-            {
-                { "MY_AWESOME_TAG_A", { "MyTagValue1ForTagA", "MyTagValue2ForTagA" } },
-                { "MY_AWESOME_TAG_B", { "MyTagValue1ForTagB", "MyTagValue2ForTagB" } }
-            }
+            { { "RoleA", { "MyPerformer1ForRoleA", "MyPerformer2ForRoleA" } },
+                { "RoleB", { "MyPerformer1ForRoleB", "MyPerformer2ForRoleB" } } },
+            { { "MY_AWESOME_TAG_A", { "MyTagValue1ForTagA", "MyTagValue2ForTagA" } },
+                { "MY_AWESOME_TAG_B", { "MyTagValue1ForTagB", "MyTagValue2ForTagB" } } }
         };
 
         static_cast<IParser&>(parser).setUserExtraTags(std::vector<std::string>{ "MY_AWESOME_TAG_A", "MY_AWESOME_TAG_B", "MY_AWESOME_MISSING_TAG" });
@@ -254,4 +250,4 @@ namespace lms::metadata
         EXPECT_EQ(track->artists[1].name, "Other Artist");
         EXPECT_EQ(track->artistDisplayName, "This /  is ; One Artist \\  Other Artist");
     }
-}
+} // namespace lms::metadata

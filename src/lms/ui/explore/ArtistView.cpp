@@ -21,6 +21,8 @@
 
 #include <Wt/WPushButton.h>
 
+#include "core/ILogger.hpp"
+#include "core/String.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
@@ -30,11 +32,7 @@
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
-#include "core/ILogger.hpp"
-#include "core/String.hpp"
 
-#include "common/InfiniteScrollingContainer.hpp"
-#include "resource/DownloadResource.hpp"
 #include "ArtistListHelpers.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
@@ -43,11 +41,13 @@
 #include "ReleaseHelpers.hpp"
 #include "TrackListHelpers.hpp"
 #include "Utils.hpp"
+#include "common/InfiniteScrollingContainer.hpp"
+#include "resource/DownloadResource.hpp"
 
 namespace lms::ui
 {
     using namespace db;
-    
+
     namespace
     {
         std::optional<ArtistId> extractArtistIdFromInternalPath()
@@ -67,7 +67,7 @@ namespace lms::ui
 
             return core::stringUtils::readAs<ArtistId::ValueType>(wApp->internalPathNextPart("/artist/"));
         }
-    }
+    } // namespace
 
     Artist::Artist(Filters& filters, PlayQueueController& controller)
         : Template{ Wt::WString::tr("Lms.Explore.Artist.template") }
@@ -77,16 +77,14 @@ namespace lms::ui
         addFunction("tr", &Wt::WTemplate::Functions::tr);
         addFunction("id", &Wt::WTemplate::Functions::id);
 
-        LmsApp->internalPathChanged().connect(this, [this]
-            {
-                refreshView();
-            });
+        LmsApp->internalPathChanged().connect(this, [this] {
+            refreshView();
+        });
 
-        filters.updated().connect([this]
-            {
-                _needForceRefresh = true;
-                refreshView();
-            });
+        filters.updated().connect([this] {
+            _needForceRefresh = true;
+            refreshView();
+        });
 
         refreshView();
     }
@@ -110,7 +108,7 @@ namespace lms::ui
         if (!artistId)
             throw ArtistNotFoundException{};
 
-        const auto similarArtistIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(*artistId, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, 5) };
+        const auto similarArtistIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(*artistId, { TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist }, 5) };
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
@@ -139,10 +137,9 @@ namespace lms::ui
                 {
                     const db::ClusterId clusterId = cluster->getId();
                     Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterCluster(clusterId)) };
-                    entry->clicked().connect([this, clusterId]
-                        {
-                            _filters.add(clusterId);
-                        });
+                    entry->clicked().connect([this, clusterId] {
+                        _filters.add(clusterId);
+                    });
                 }
             }
         }
@@ -150,26 +147,26 @@ namespace lms::ui
         bindString("name", Wt::WString::fromUTF8(artist->getName()), Wt::TextFormat::Plain);
 
         bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
-            ->clicked().connect([this]
-                {
-                    _playQueueController.processCommand(PlayQueueController::Command::Play, { _artistId });
-                });
+            ->clicked()
+            .connect([this] {
+                _playQueueController.processCommand(PlayQueueController::Command::Play, { _artistId });
+            });
 
         bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
-            ->clicked().connect([this]
-                {
-                    _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, { _artistId });
-                });
+            ->clicked()
+            .connect([this] {
+                _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, { _artistId });
+            });
         bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"), Wt::TextFormat::Plain)
-            ->clicked().connect([this]
-                {
-                    _playQueueController.processCommand(PlayQueueController::Command::PlayNext, { _artistId });
-                });
+            ->clicked()
+            .connect([this] {
+                _playQueueController.processCommand(PlayQueueController::Command::PlayNext, { _artistId });
+            });
         bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
-            ->clicked().connect([this]
-                {
-                    _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, { _artistId });
-                });
+            ->clicked()
+            .connect([this] {
+                _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, { _artistId });
+            });
         bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
             ->setLink(Wt::WLink{ std::make_unique<DownloadArtistResource>(_artistId) });
 
@@ -177,19 +174,18 @@ namespace lms::ui
             auto isStarred{ [this] { return core::Service<feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), _artistId); } };
 
             Wt::WPushButton* starBtn{ bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
-            starBtn->clicked().connect([=, this]
+            starBtn->clicked().connect([=, this] {
+                if (isStarred())
                 {
-                    if (isStarred())
-                    {
-                        core::Service<feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), _artistId);
-                        starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
-                    }
-                    else
-                    {
-                        core::Service<feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), _artistId);
-                        starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
-                    }
-                });
+                    core::Service<feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), _artistId);
+                    starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
+                }
+                else
+                {
+                    core::Service<feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), _artistId);
+                    starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
+                }
+            });
         }
     }
 
@@ -211,7 +207,7 @@ namespace lms::ui
             {
                 const db::Release::pointer release{ db::Release::find(LmsApp->getDbSession(), releaseId) };
 
-                ReleaseType releaseType{ parseReleaseType(release->getReleaseTypeNames())};
+                ReleaseType releaseType{ parseReleaseType(release->getReleaseTypeNames()) };
                 _releaseContainers[releaseType].releases.push_back(releaseId);
             }
 
@@ -225,12 +221,11 @@ namespace lms::ui
                     releaseContainer->bindString("release-type", releaseHelpers::buildReleaseTypeString(releaseType));
                 else
                     releaseContainer->bindString("release-type", Wt::WString::tr("Lms.Explore.releases")); // fallback when not tagged with MB or custom type
-                
+
                 releases.container = releaseContainer->bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
-                releases.container->onRequestElements.connect(this, [this, &releases = releases]
-                    {
-                        addSomeReleases(releases);
-                    });
+                releases.container->onRequestElements.connect(this, [this, &releases = releases] {
+                    addSomeReleases(releases);
+                });
             }
         }
         else
@@ -241,8 +236,7 @@ namespace lms::ui
 
     void Artist::refreshAppearsOnReleases()
     {
-        constexpr core::EnumSet<TrackArtistLinkType> types
-        {
+        constexpr core::EnumSet<TrackArtistLinkType> types{
             TrackArtistLinkType::Artist,
             TrackArtistLinkType::Arranger,
             TrackArtistLinkType::Composer,
@@ -270,10 +264,9 @@ namespace lms::ui
             releaseContainer->bindString("release-type", Wt::WString::tr("Lms.Explore.Artist.appears-on"));
             _appearsOnReleaseContainer.releases = releases.results;
             _appearsOnReleaseContainer.container = releaseContainer->bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
-            _appearsOnReleaseContainer.container->onRequestElements.connect(this, [this]
-                {
-                    addSomeReleases(_appearsOnReleaseContainer);
-                });
+            _appearsOnReleaseContainer.container->onRequestElements.connect(this, [this] {
+                addSomeReleases(_appearsOnReleaseContainer);
+            });
         }
         else
         {
@@ -285,10 +278,9 @@ namespace lms::ui
     {
         setCondition("if-has-non-release-tracks", true);
         _trackContainer = bindNew<InfiniteScrollingContainer>("tracks");
-        _trackContainer->onRequestElements.connect(this, [this]
-            {
-                addSomeNonReleaseTracks();
-            });
+        _trackContainer->onRequestElements.connect(this, [this] {
+            addSomeNonReleaseTracks();
+        });
 
         const bool added{ addSomeNonReleaseTracks() };
         setCondition("if-has-non-release-tracks", added);
@@ -372,4 +364,3 @@ namespace lms::ui
     }
 
 } // namespace lms::ui
-

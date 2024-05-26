@@ -21,17 +21,18 @@
 
 #include <algorithm>
 #include <functional>
-#include <unordered_map>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
+#include "core/Utils.hpp"
 #include "som/DataNormalizer.hpp"
 #include "som/Network.hpp"
-#include "core/Utils.hpp"
-#include "IEngine.hpp"
-#include "FeaturesEngineCache.hpp"
+
 #include "FeaturesDefs.hpp"
+#include "FeaturesEngineCache.hpp"
+#include "IEngine.hpp"
 
 namespace lms::db
 {
@@ -45,7 +46,8 @@ namespace lms::recommendation
     class FeaturesEngine : public IEngine
     {
     public:
-        FeaturesEngine(db::Db& db) : _db{ db } {}
+        FeaturesEngine(db::Db& db)
+            : _db{ db } {}
 
         FeaturesEngine(const FeaturesEngine&) = delete;
         FeaturesEngine(FeaturesEngine&&) = delete;
@@ -74,14 +76,14 @@ namespace lms::recommendation
         };
         void loadFromTraining(const TrainSettings& trainSettings, const ProgressCallback& progressCallback);
 
-        template <typename IdType>
+        template<typename IdType>
         using ObjectPositions = std::unordered_map<IdType, std::vector<som::Position>>;
 
         using ArtistPositions = ObjectPositions<db::ArtistId>;
         using ReleasePositions = ObjectPositions<db::ReleaseId>;
         using TrackPositions = ObjectPositions<db::TrackId>;
 
-        template <typename IdType>
+        template<typename IdType>
         using ObjectMatrix = som::Matrix<std::vector<IdType>>;
         using ArtistMatrix = ObjectMatrix<db::ArtistId>;
         using ReleaseMatrix = ObjectMatrix<db::ReleaseId>;
@@ -91,34 +93,34 @@ namespace lms::recommendation
 
         FeaturesEngineCache toCache() const;
 
-        template <typename IdType>
+        template<typename IdType>
         static std::vector<som::Position> getMatchingRefVectorsPosition(const std::vector<IdType>& ids, const ObjectPositions<IdType>& objectPositions);
 
-        template <typename IdType>
+        template<typename IdType>
         static std::vector<IdType> getObjectsIds(const std::vector<som::Position>& positions, const ObjectMatrix<IdType>& objectsMatrix);
 
-        template <typename IdType>
+        template<typename IdType>
         std::vector<IdType> getSimilarObjects(const std::vector<IdType>& ids,
             const ObjectMatrix<IdType>& objectMatrix,
             const ObjectPositions<IdType>& objectPositions,
             std::size_t maxCount) const;
 
         db::Db& _db;
-        bool				_loadCancelled{};
-        std::unique_ptr<som::Network>	_network;
-        double				_networkRefVectorsDistanceMedian{};
+        bool _loadCancelled{};
+        std::unique_ptr<som::Network> _network;
+        double _networkRefVectorsDistanceMedian{};
 
-        ArtistPositions     _artistPositions;
+        ArtistPositions _artistPositions;
         std::unordered_map<db::TrackArtistLinkType, ArtistMatrix> _artistMatrix;
 
-        ReleasePositions	_releasePositions;
-        ReleaseMatrix		_releaseMatrix;
+        ReleasePositions _releasePositions;
+        ReleaseMatrix _releaseMatrix;
 
-        TrackPositions		_trackPositions;
-        TrackMatrix			_trackMatrix;
+        TrackPositions _trackPositions;
+        TrackMatrix _trackMatrix;
     };
 
-    template <typename IdType>
+    template<typename IdType>
     std::vector<som::Position> FeaturesEngine::getMatchingRefVectorsPosition(const std::vector<IdType>& ids, const ObjectPositions<IdType>& objectPositions)
     {
         std::vector<som::Position> res;
@@ -139,7 +141,7 @@ namespace lms::recommendation
         return res;
     }
 
-    template <typename IdType>
+    template<typename IdType>
     std::vector<IdType> FeaturesEngine::getObjectsIds(const std::vector<som::Position>& positions, const ObjectMatrix<IdType>& objectMatrix)
     {
         std::vector<IdType> res;
@@ -153,11 +155,11 @@ namespace lms::recommendation
         return res;
     }
 
-    template <typename IdType>
+    template<typename IdType>
     std::vector<IdType> FeaturesEngine::getSimilarObjects(const std::vector<IdType>& ids,
-            const ObjectMatrix<IdType>& objectMatrix,
-            const ObjectPositions<IdType>& objectPositions,
-            std::size_t maxCount) const
+        const ObjectMatrix<IdType>& objectMatrix,
+        const ObjectPositions<IdType>& objectPositions,
+        std::size_t maxCount) const
     {
         std::vector<IdType> res;
 
@@ -171,11 +173,10 @@ namespace lms::recommendation
 
             // Remove objects that are already in input or already reported
             closestObjectIds.erase(std::remove_if(std::begin(closestObjectIds), std::end(closestObjectIds),
-                [&](IdType id)
-                {
-                    return std::find(std::cbegin(ids), std::cend(ids), id) != std::cend(ids);
-                })
-                , std::end(closestObjectIds));
+                                       [&](IdType id) {
+                                           return std::find(std::cbegin(ids), std::cend(ids), id) != std::cend(ids);
+                                       }),
+                std::end(closestObjectIds));
 
             for (IdType id : closestObjectIds)
             {
@@ -198,4 +199,4 @@ namespace lms::recommendation
 
         return res;
     }
-}
+} // namespace lms::recommendation

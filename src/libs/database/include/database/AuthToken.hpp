@@ -29,39 +29,38 @@
 
 namespace lms::db
 {
-	class Session;
+    class Session;
 
-	class User;
-	class AuthToken final : public Object<AuthToken, AuthTokenId>
-	{
-		public:
-			AuthToken() = default;
+    class User;
+    class AuthToken final : public Object<AuthToken, AuthTokenId>
+    {
+    public:
+        AuthToken() = default;
 
-			// Utility
-			static void		removeExpiredTokens(Session& session, const Wt::WDateTime& now);
-			static pointer	find(Session& session, std::string_view value);
+        // Utility
+        static void removeExpiredTokens(Session& session, const Wt::WDateTime& now);
+        static pointer find(Session& session, std::string_view value);
 
-			// Accessors
-			const Wt::WDateTime&	getExpiry() const { return _expiry; }
-			ObjectPtr<User>			getUser() const { return _user; }
-			const std::string&		getValue() const { return _value; }
+        // Accessors
+        const Wt::WDateTime& getExpiry() const { return _expiry; }
+        ObjectPtr<User> getUser() const { return _user; }
+        const std::string& getValue() const { return _value; }
 
-			template<class Action>
-			void persist(Action& a)
-			{
-				Wt::Dbo::field(a,	_value,		"value");
-				Wt::Dbo::field(a,	_expiry,	"expiry");
-				Wt::Dbo::belongsTo(a,	_user,		"user", Wt::Dbo::OnDeleteCascade);
-			}
+        template<class Action>
+        void persist(Action& a)
+        {
+            Wt::Dbo::field(a, _value, "value");
+            Wt::Dbo::field(a, _expiry, "expiry");
+            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
+        }
 
-		private:
-			friend class Session;
-			AuthToken(std::string_view value, const Wt::WDateTime& expiry, ObjectPtr<User> user);
-			static pointer create(Session& session, std::string_view value, const Wt::WDateTime&expiry, ObjectPtr<User> user);
+    private:
+        friend class Session;
+        AuthToken(std::string_view value, const Wt::WDateTime& expiry, ObjectPtr<User> user);
+        static pointer create(Session& session, std::string_view value, const Wt::WDateTime& expiry, ObjectPtr<User> user);
 
-			std::string			_value;
-			Wt::WDateTime		_expiry;
-			Wt::Dbo::ptr<User>	_user;
-	};
-} // namespace Databas'
-
+        std::string _value;
+        Wt::WDateTime _expiry;
+        Wt::Dbo::ptr<User> _user;
+    };
+} // namespace lms::db

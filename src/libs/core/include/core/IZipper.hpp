@@ -25,7 +25,7 @@
 
 #include "Exception.hpp"
 
- // TODO, move elsewhere?
+// TODO, move elsewhere?
 namespace lms::zip
 {
     struct Entry
@@ -51,4 +51,4 @@ namespace lms::zip
     };
 
     std::unique_ptr<IZipper> createArchiveZipper(const EntryContainer& entries);
-}
+} // namespace lms::zip

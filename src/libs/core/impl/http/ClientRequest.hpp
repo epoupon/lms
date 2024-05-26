@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <variant>
+
 #include "core/http/ClientRequestParameters.hpp"
 
 namespace lms::core::http
@@ -28,8 +29,10 @@ namespace lms::core::http
     class ClientRequest
     {
     public:
-        ClientRequest(ClientGETRequestParameters&& GETParams) : _parameters{ std::move(GETParams) } {}
-        ClientRequest(ClientPOSTRequestParameters&& POSTParams) : _parameters{ std::move(POSTParams) } {}
+        ClientRequest(ClientGETRequestParameters&& GETParams)
+            : _parameters{ std::move(GETParams) } {}
+        ClientRequest(ClientPOSTRequestParameters&& POSTParams)
+            : _parameters{ std::move(POSTParams) } {}
 
         std::size_t retryCount{};
 
@@ -37,10 +40,10 @@ namespace lms::core::http
         {
             const ClientRequestParameters* res;
 
-            std::visit([&](const auto& parameters)
-                {
-                    res = &static_cast<const ClientRequestParameters&>(parameters);
-                }, _parameters);
+            std::visit([&](const auto& parameters) {
+                res = &static_cast<const ClientRequestParameters&>(parameters);
+            },
+                _parameters);
 
             return *res;
         }
@@ -71,4 +74,4 @@ namespace lms::core::http
     private:
         std::variant<ClientGETRequestParameters, ClientPOSTRequestParameters> _parameters;
     };
-}
+} // namespace lms::core::http

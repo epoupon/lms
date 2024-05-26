@@ -64,4 +64,4 @@ namespace lms::db::tests
             EXPECT_EQ(userBookmark->getComment(), "MyComment");
         }
     }
-}
+} // namespace lms::db::tests

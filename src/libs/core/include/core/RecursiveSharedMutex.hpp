@@ -48,4 +48,4 @@ namespace lms::core
         std::mutex _sharedCountMutex;
         std::unordered_map<std::thread::id, std::size_t> _sharedCounts;
     };
-}
+} // namespace lms::core

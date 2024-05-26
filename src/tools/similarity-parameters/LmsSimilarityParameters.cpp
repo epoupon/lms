@@ -17,10 +17,13 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
 #include <filesystem>
+#include <iostream>
 #include <string>
 
+#include "core/Config.hpp"
+#include "core/Service.hpp"
+#include "core/StreamLogger.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
@@ -29,9 +32,6 @@
 #include "database/Track.hpp"
 #include "database/TrackFeatures.hpp"
 #include "similarity/features/SimilarityFeaturesSearcher.hpp"
-#include "core/Config.hpp"
-#include "core/Service.hpp"
-#include "core/StreamLogger.hpp"
 
 #include "GeneticAlgorithm.hpp"
 
@@ -40,128 +40,126 @@ using SimilarityScore = GeneticAlgorithm<FeatureSettingsMap>::Score;
 
 // An individual is just a FeatureSettingsMap
 // The goal is to get the FeatureSettingsMap that maximize the score
-const FeatureSettingsMap featuresSettings
-{
-    { "lowlevel.average_loudness",			{1}},
-    { "lowlevel.barkbands.mean",			{1}},
-    { "lowlevel.barkbands.median",			{1}},
-    { "lowlevel.barkbands.var",			{1}},
-    { "lowlevel.barkbands_crest.mean",		{1}},
-    { "lowlevel.barkbands_crest.median",		{1}},
-    { "lowlevel.barkbands_crest.var",		{1}},
-    { "lowlevel.barkbands_flatness_db.mean",	{1}},
-    { "lowlevel.barkbands_flatness_db.median",	{1}},
-    { "lowlevel.barkbands_flatness_db.var",		{1}},
-    { "lowlevel.barkbands_kurtosis.mean",		{1}},
-    { "lowlevel.barkbands_kurtosis.median",		{1}},
-    { "lowlevel.barkbands_kurtosis.var",		{1}},
-    { "lowlevel.barkbands_skewness.mean",		{1}},
-    { "lowlevel.barkbands_skewness.median",		{1}},
-    { "lowlevel.barkbands_skewness.var",		{1}},
-    { "lowlevel.barkbands_spread.mean",		{1}},
-    { "lowlevel.barkbands_spread.median",		{1}},
-    { "lowlevel.barkbands_spread.var",		{1}},
-    { "lowlevel.dissonance.mean",			{1}},
-    { "lowlevel.dissonance.median",			{1}},
-    { "lowlevel.dissonance.var",			{1}},
-    { "lowlevel.dynamic_complexity",		{1}},
-    { "lowlevel.spectral_contrast_coeffs.mean",	{1}},
-    { "lowlevel.spectral_contrast_coeffs.median",	{1}},
-    { "lowlevel.spectral_contrast_coeffs.var",	{1}},
-    { "lowlevel.erbbands.mean",			{1}},
-    { "lowlevel.erbbands.median",			{1}},
-    { "lowlevel.erbbands.var",			{1}},
-    { "lowlevel.gfcc.mean",				{1}},
-    { "lowlevel.hfc.mean",				{1}},
-    { "lowlevel.hfc.median",			{1}},
-    { "lowlevel.hfc.var",				{1}},
-    { "tonal.hpcp.median",				{1}},
-    { "lowlevel.melbands.mean",			{1}},
-    { "lowlevel.melbands.median",			{1}},
-    { "lowlevel.melbands.var",			{1}},
-    { "lowlevel.melbands_crest.mean",		{1}},
-    { "lowlevel.melbands_crest.median",		{1}},
-    { "lowlevel.melbands_crest.var",		{1}},
-    { "lowlevel.melbands_flatness_db.mean",		{1}},
-    { "lowlevel.melbands_flatness_db.median",	{1}},
-    { "lowlevel.melbands_flatness_db.var",		{1}},
-    { "lowlevel.melbands_kurtosis.mean",		{1}},
-    { "lowlevel.melbands_kurtosis.median",		{1}},
-    { "lowlevel.melbands_kurtosis.var",		{1}},
-    { "lowlevel.melbands_skewness.mean",		{1}},
-    { "lowlevel.melbands_skewness.median",		{1}},
-    { "lowlevel.melbands_skewness.var",		{1}},
-    { "lowlevel.melbands_spread.mean",		{1}},
-    { "lowlevel.melbands_spread.median",		{1}},
-    { "lowlevel.melbands_spread.var",		{1}},
-    { "lowlevel.mfcc.mean",				{1}},
-    { "lowlevel.pitch_salience.mean",		{1}},
-    { "lowlevel.pitch_salience.median",		{1}},
-    { "lowlevel.pitch_salience.var",		{1}},
-    { "lowlevel.silence_rate_30dB.mean",		{1}},
-    { "lowlevel.silence_rate_30dB.median",		{1}},
-    { "lowlevel.silence_rate_30dB.var",		{1}},
-    { "lowlevel.silence_rate_60dB.mean",		{1}},
-    { "lowlevel.silence_rate_60dB.median",		{1}},
-    { "lowlevel.silence_rate_60dB.var",		{1}},
-    { "lowlevel.spectral_centroid.mean",		{1}},
-    { "lowlevel.spectral_centroid.median",		{1}},
-    { "lowlevel.spectral_centroid.var",		{1}},
-    { "lowlevel.spectral_complexity.mean",		{1}},
-    { "lowlevel.spectral_complexity.median",	{1}},
-    { "lowlevel.spectral_complexity.var",		{1}},
-    { "lowlevel.spectral_contrast_coeffs.mean",	{1}},
-    { "lowlevel.spectral_contrast_coeffs.median",	{1}},
-    { "lowlevel.spectral_contrast_coeffs.var",	{1}},
-    { "lowlevel.spectral_contrast_valleys.mean",	{1}},
-    { "lowlevel.spectral_contrast_valleys.median",	{1}},
-    { "lowlevel.spectral_contrast_valleys.var",	{1}},
-    { "lowlevel.spectral_decrease.mean",		{1}},
-    { "lowlevel.spectral_decrease.median",		{1}},
-    { "lowlevel.spectral_decrease.var",		{1}},
-    { "lowlevel.spectral_energy.mean",		{1}},
-    { "lowlevel.spectral_energy.median",		{1}},
-    { "lowlevel.spectral_energy.var",		{1}},
-    { "lowlevel.spectral_energyband_high.mean",	{1}},
-    { "lowlevel.spectral_energyband_high.median",	{1}},
-    { "lowlevel.spectral_energyband_high.var",	{1}},
-    { "lowlevel.spectral_energyband_low.mean",	{1}},
-    { "lowlevel.spectral_energyband_low.median",	{1}},
-    { "lowlevel.spectral_energyband_low.var",	{1}},
-    { "lowlevel.spectral_energyband_middle_high.mean",	{1}},
-    { "lowlevel.spectral_energyband_middle_high.median",	{1}},
-    { "lowlevel.spectral_energyband_middle_high.var",	{1}},
-    { "lowlevel.spectral_energyband_middle_low.mean",	{1}},
-    { "lowlevel.spectral_energyband_middle_low.median",	{1}},
-    { "lowlevel.spectral_energyband_middle_low.var",	{1}},
-    { "lowlevel.spectral_entropy.mean",		{1}},
-    { "lowlevel.spectral_entropy.median",		{1}},
-    { "lowlevel.spectral_entropy.var",		{1}},
-    { "lowlevel.spectral_flux.mean",		{1}},
-    { "lowlevel.spectral_flux.median",		{1}},
-    { "lowlevel.spectral_flux.var",			{1}},
-    { "lowlevel.spectral_kurtosis.mean",		{1}},
-    { "lowlevel.spectral_kurtosis.median",		{1}},
-    { "lowlevel.spectral_kurtosis.var",		{1}},
-    { "lowlevel.spectral_rms.mean",			{1}},
-    { "lowlevel.spectral_rms.median",		{1}},
-    { "lowlevel.spectral_rms.var",			{1}},
-    { "lowlevel.spectral_rolloff.mean",		{1}},
-    { "lowlevel.spectral_rolloff.median",		{1}},
-    { "lowlevel.spectral_rolloff.var",		{1}},
-    { "lowlevel.spectral_skewness.mean",		{1}},
-    { "lowlevel.spectral_skewness.median",		{1}},
-    { "lowlevel.spectral_skewness.var",		{1}},
-    { "lowlevel.spectral_spread.mean",		{1}},
-    { "lowlevel.spectral_spread.median",		{1}},
-    { "lowlevel.spectral_spread.var",		{1}},
-    { "lowlevel.zerocrossingrate.mean",		{1}},
-    { "lowlevel.zerocrossingrate.median",		{1}},
-    { "lowlevel.zerocrossingrate.var",		{1}},
+const FeatureSettingsMap featuresSettings{
+    { "lowlevel.average_loudness", { 1 } },
+    { "lowlevel.barkbands.mean", { 1 } },
+    { "lowlevel.barkbands.median", { 1 } },
+    { "lowlevel.barkbands.var", { 1 } },
+    { "lowlevel.barkbands_crest.mean", { 1 } },
+    { "lowlevel.barkbands_crest.median", { 1 } },
+    { "lowlevel.barkbands_crest.var", { 1 } },
+    { "lowlevel.barkbands_flatness_db.mean", { 1 } },
+    { "lowlevel.barkbands_flatness_db.median", { 1 } },
+    { "lowlevel.barkbands_flatness_db.var", { 1 } },
+    { "lowlevel.barkbands_kurtosis.mean", { 1 } },
+    { "lowlevel.barkbands_kurtosis.median", { 1 } },
+    { "lowlevel.barkbands_kurtosis.var", { 1 } },
+    { "lowlevel.barkbands_skewness.mean", { 1 } },
+    { "lowlevel.barkbands_skewness.median", { 1 } },
+    { "lowlevel.barkbands_skewness.var", { 1 } },
+    { "lowlevel.barkbands_spread.mean", { 1 } },
+    { "lowlevel.barkbands_spread.median", { 1 } },
+    { "lowlevel.barkbands_spread.var", { 1 } },
+    { "lowlevel.dissonance.mean", { 1 } },
+    { "lowlevel.dissonance.median", { 1 } },
+    { "lowlevel.dissonance.var", { 1 } },
+    { "lowlevel.dynamic_complexity", { 1 } },
+    { "lowlevel.spectral_contrast_coeffs.mean", { 1 } },
+    { "lowlevel.spectral_contrast_coeffs.median", { 1 } },
+    { "lowlevel.spectral_contrast_coeffs.var", { 1 } },
+    { "lowlevel.erbbands.mean", { 1 } },
+    { "lowlevel.erbbands.median", { 1 } },
+    { "lowlevel.erbbands.var", { 1 } },
+    { "lowlevel.gfcc.mean", { 1 } },
+    { "lowlevel.hfc.mean", { 1 } },
+    { "lowlevel.hfc.median", { 1 } },
+    { "lowlevel.hfc.var", { 1 } },
+    { "tonal.hpcp.median", { 1 } },
+    { "lowlevel.melbands.mean", { 1 } },
+    { "lowlevel.melbands.median", { 1 } },
+    { "lowlevel.melbands.var", { 1 } },
+    { "lowlevel.melbands_crest.mean", { 1 } },
+    { "lowlevel.melbands_crest.median", { 1 } },
+    { "lowlevel.melbands_crest.var", { 1 } },
+    { "lowlevel.melbands_flatness_db.mean", { 1 } },
+    { "lowlevel.melbands_flatness_db.median", { 1 } },
+    { "lowlevel.melbands_flatness_db.var", { 1 } },
+    { "lowlevel.melbands_kurtosis.mean", { 1 } },
+    { "lowlevel.melbands_kurtosis.median", { 1 } },
+    { "lowlevel.melbands_kurtosis.var", { 1 } },
+    { "lowlevel.melbands_skewness.mean", { 1 } },
+    { "lowlevel.melbands_skewness.median", { 1 } },
+    { "lowlevel.melbands_skewness.var", { 1 } },
+    { "lowlevel.melbands_spread.mean", { 1 } },
+    { "lowlevel.melbands_spread.median", { 1 } },
+    { "lowlevel.melbands_spread.var", { 1 } },
+    { "lowlevel.mfcc.mean", { 1 } },
+    { "lowlevel.pitch_salience.mean", { 1 } },
+    { "lowlevel.pitch_salience.median", { 1 } },
+    { "lowlevel.pitch_salience.var", { 1 } },
+    { "lowlevel.silence_rate_30dB.mean", { 1 } },
+    { "lowlevel.silence_rate_30dB.median", { 1 } },
+    { "lowlevel.silence_rate_30dB.var", { 1 } },
+    { "lowlevel.silence_rate_60dB.mean", { 1 } },
+    { "lowlevel.silence_rate_60dB.median", { 1 } },
+    { "lowlevel.silence_rate_60dB.var", { 1 } },
+    { "lowlevel.spectral_centroid.mean", { 1 } },
+    { "lowlevel.spectral_centroid.median", { 1 } },
+    { "lowlevel.spectral_centroid.var", { 1 } },
+    { "lowlevel.spectral_complexity.mean", { 1 } },
+    { "lowlevel.spectral_complexity.median", { 1 } },
+    { "lowlevel.spectral_complexity.var", { 1 } },
+    { "lowlevel.spectral_contrast_coeffs.mean", { 1 } },
+    { "lowlevel.spectral_contrast_coeffs.median", { 1 } },
+    { "lowlevel.spectral_contrast_coeffs.var", { 1 } },
+    { "lowlevel.spectral_contrast_valleys.mean", { 1 } },
+    { "lowlevel.spectral_contrast_valleys.median", { 1 } },
+    { "lowlevel.spectral_contrast_valleys.var", { 1 } },
+    { "lowlevel.spectral_decrease.mean", { 1 } },
+    { "lowlevel.spectral_decrease.median", { 1 } },
+    { "lowlevel.spectral_decrease.var", { 1 } },
+    { "lowlevel.spectral_energy.mean", { 1 } },
+    { "lowlevel.spectral_energy.median", { 1 } },
+    { "lowlevel.spectral_energy.var", { 1 } },
+    { "lowlevel.spectral_energyband_high.mean", { 1 } },
+    { "lowlevel.spectral_energyband_high.median", { 1 } },
+    { "lowlevel.spectral_energyband_high.var", { 1 } },
+    { "lowlevel.spectral_energyband_low.mean", { 1 } },
+    { "lowlevel.spectral_energyband_low.median", { 1 } },
+    { "lowlevel.spectral_energyband_low.var", { 1 } },
+    { "lowlevel.spectral_energyband_middle_high.mean", { 1 } },
+    { "lowlevel.spectral_energyband_middle_high.median", { 1 } },
+    { "lowlevel.spectral_energyband_middle_high.var", { 1 } },
+    { "lowlevel.spectral_energyband_middle_low.mean", { 1 } },
+    { "lowlevel.spectral_energyband_middle_low.median", { 1 } },
+    { "lowlevel.spectral_energyband_middle_low.var", { 1 } },
+    { "lowlevel.spectral_entropy.mean", { 1 } },
+    { "lowlevel.spectral_entropy.median", { 1 } },
+    { "lowlevel.spectral_entropy.var", { 1 } },
+    { "lowlevel.spectral_flux.mean", { 1 } },
+    { "lowlevel.spectral_flux.median", { 1 } },
+    { "lowlevel.spectral_flux.var", { 1 } },
+    { "lowlevel.spectral_kurtosis.mean", { 1 } },
+    { "lowlevel.spectral_kurtosis.median", { 1 } },
+    { "lowlevel.spectral_kurtosis.var", { 1 } },
+    { "lowlevel.spectral_rms.mean", { 1 } },
+    { "lowlevel.spectral_rms.median", { 1 } },
+    { "lowlevel.spectral_rms.var", { 1 } },
+    { "lowlevel.spectral_rolloff.mean", { 1 } },
+    { "lowlevel.spectral_rolloff.median", { 1 } },
+    { "lowlevel.spectral_rolloff.var", { 1 } },
+    { "lowlevel.spectral_skewness.mean", { 1 } },
+    { "lowlevel.spectral_skewness.median", { 1 } },
+    { "lowlevel.spectral_skewness.var", { 1 } },
+    { "lowlevel.spectral_spread.mean", { 1 } },
+    { "lowlevel.spectral_spread.median", { 1 } },
+    { "lowlevel.spectral_spread.var", { 1 } },
+    { "lowlevel.zerocrossingrate.mean", { 1 } },
+    { "lowlevel.zerocrossingrate.median", { 1 } },
+    { "lowlevel.zerocrossingrate.var", { 1 } },
 };
 
-static
-std::unordered_map<db::IdType, FeatureValuesMap>
+static std::unordered_map<db::IdType, FeatureValuesMap>
 constructFeaturesCache(db::Session& session, const FeatureSettingsMap& featureSettings)
 {
     std::unordered_map<db::IdType, FeatureValuesMap> cache;
@@ -183,8 +181,7 @@ constructFeaturesCache(db::Session& session, const FeatureSettingsMap& featureSe
     return cache;
 }
 
-static
-std::optional<FeatureValuesMap>
+static std::optional<FeatureValuesMap>
 getFeaturesFromCache(const std::unordered_map<db::IdType, FeatureValuesMap>& cache, db::IdType trackId, const FeatureNames& names)
 {
     std::optional<FeatureValuesMap> res;
@@ -211,8 +208,7 @@ getFeaturesFromCache(const std::unordered_map<db::IdType, FeatureValuesMap>& cac
     return res;
 }
 
-static
-void
+static void
 printFeatureSettingsMap(const FeatureSettingsMap& featureSettings)
 {
     std::cout << "FeatureSettingsMap: (" << featureSettings.size() << " features)" << std::endl;
@@ -220,8 +216,7 @@ printFeatureSettingsMap(const FeatureSettingsMap& featureSettings)
         std::cout << "\t" << name << std::endl;
 }
 
-static
-std::string
+static std::string
 trackToString(db::Session& session, db::IdType trackId)
 {
     std::string res;
@@ -239,8 +234,7 @@ trackToString(db::Session& session, db::IdType trackId)
     return res;
 }
 
-static
-SimilarityScore
+static SimilarityScore
 computeTrackScore(db::Session& session, db::IdType track1Id, db::IdType track2Id)
 {
     SimilarityScore score{};
@@ -282,8 +276,7 @@ computeTrackScore(db::Session& session, db::IdType track1Id, db::IdType track2Id
     return score;
 }
 
-static
-SimilarityScore
+static SimilarityScore
 computeSimilarityScore(db::Session& session, FeaturesSearcher::TrainSettings trainSettings)
 {
     std::cout << "Compute score of: ";
@@ -292,11 +285,10 @@ computeSimilarityScore(db::Session& session, FeaturesSearcher::TrainSettings tra
 
     FeaturesSearcher searcher{ session, trainSettings };
 
-    const std::vector<db::IdType> trackIds = std::invoke([&]()
-        {
-            auto transaction{ session.createReadTransaction() };
-            return db::Track::getAllIdsWithFeatures(session);
-        });
+    const std::vector<db::IdType> trackIds = std::invoke([&]() {
+        auto transaction{ session.createReadTransaction() };
+        return db::Track::getAllIdsWithFeatures(session);
+    });
 
     SimilarityScore score{};
     for (db::IdType trackId : trackIds)
@@ -320,17 +312,15 @@ computeSimilarityScore(db::Session& session, FeaturesSearcher::TrainSettings tra
     return score;
 }
 
-static
-void
+static void
 printBadlyClassifiedTracks(db::Session& session, FeaturesSearcher::TrainSettings trainSettings)
 {
     FeaturesSearcher searcher{ session, trainSettings };
 
-    const std::vector<db::IdType> trackIds = std::invoke([&]()
-        {
-            auto transaction{ session.createReadTransaction() };
-            return db::Track::getAllIdsWithFeatures(session);
-        });
+    const std::vector<db::IdType> trackIds = std::invoke([&]() {
+        auto transaction{ session.createReadTransaction() };
+        return db::Track::getAllIdsWithFeatures(session);
+    });
 
     for (db::IdType trackId : trackIds)
     {
@@ -344,9 +334,7 @@ printBadlyClassifiedTracks(db::Session& session, FeaturesSearcher::TrainSettings
     }
 }
 
-
-static
-FeatureSettingsMap
+static FeatureSettingsMap
 breedFeatureSettingsMap(const FeatureSettingsMap& a, const FeatureSettingsMap& b)
 {
     FeatureSettingsMap res;
@@ -364,8 +352,7 @@ breedFeatureSettingsMap(const FeatureSettingsMap& a, const FeatureSettingsMap& b
     return res;
 }
 
-static
-void
+static void
 mutateFeatureSettingsMap(FeatureSettingsMap& a)
 {
     const std::size_t size{ a.size() };
@@ -384,7 +371,7 @@ int main(int argc, char* argv[])
     try
     {
         // log to stdout
-//		ServiceProvider<Logger>::create<StreamLogger>(std::cout);
+        //		ServiceProvider<Logger>::create<StreamLogger>(std::cout);
 
         if (argc != 3)
         {
@@ -402,12 +389,11 @@ int main(int argc, char* argv[])
 
         std::cout << "Caching all features..." << std::endl;
         // Cache all the features of all the music in order to speed up the multiple trainings
-        const auto cachedFeatures{ constructFeaturesCache(db::SessionPool::ScopedSession {sessionPool}.get(), featuresSettings) };
+        const auto cachedFeatures{ constructFeaturesCache(db::SessionPool::ScopedSession{ sessionPool }.get(), featuresSettings) };
         std::cout << "Caching all features DONE" << std::endl;
 
         FeaturesSearcher::setFeaturesFetchFunc(
-            [&](db::IdType trackId, const FeatureNames& featureNames)
-            {
+            [&](db::IdType trackId, const FeatureNames& featureNames) {
                 return getFeaturesFromCache(cachedFeatures, trackId, featureNames);
             });
 
@@ -442,8 +428,7 @@ int main(int argc, char* argv[])
         params.breedFunction = breedFeatureSettingsMap;
         params.mutateFunction = mutateFeatureSettingsMap;
         params.scoreFunction =
-            [&](const FeatureSettingsMap& featureSettings)
-            {
+            [&](const FeatureSettingsMap& featureSettings) {
                 FeaturesSearcher::TrainSettings settings{ trainSettings };
                 settings.featureSettingsMap = featureSettings;
 
@@ -454,13 +439,13 @@ int main(int argc, char* argv[])
         GeneticAlgorithm<FeatureSettingsMap> geneticAlgorithm{ params };
 
         std::cout << "Parameters:\n"
-            << "\tnb total settings = " << featuresSettings.size() << "\n"
-            << "\tnb generations = " << params.nbGenerations << "\n"
-            << "\tpopulationSize = " << populationSize << "\n"
-            << "\tnbFeatures = " << nbFeatures << "\n"
-            << "\tcrossoverRatio = " << params.crossoverRatio << "\n"
-            << "\tmutationProbability = " << params.mutationProbability << "\n"
-            << std::endl;
+                  << "\tnb total settings = " << featuresSettings.size() << "\n"
+                  << "\tnb generations = " << params.nbGenerations << "\n"
+                  << "\tpopulationSize = " << populationSize << "\n"
+                  << "\tnbFeatures = " << nbFeatures << "\n"
+                  << "\tcrossoverRatio = " << params.crossoverRatio << "\n"
+                  << "\tmutationProbability = " << params.mutationProbability << "\n"
+                  << std::endl;
 
         std::cout << "Starting simulation..." << std::endl;
         const FeatureSettingsMap selectedSettings{ geneticAlgorithm.simulate(initialPopulation) };
@@ -483,5 +468,3 @@ int main(int argc, char* argv[])
 
     return EXIT_SUCCESS;
 }
-
-

@@ -53,7 +53,8 @@ namespace lms::av
         public:
             AudioFileException(int avError)
                 : Exception{ "AudioFileException: " + averror_to_string(avError) }
-            {}
+            {
+            }
         };
 
         void getMetaDataFromDictionnary(AVDictionary* dictionnary, AudioFile::MetadataMap& res)
@@ -72,27 +73,52 @@ namespace lms::av
         {
             switch (codec)
             {
-            case AV_CODEC_ID_MP3:          return DecodingCodec::MP3;
-            case AV_CODEC_ID_AAC:          return DecodingCodec::AAC;
-            case AV_CODEC_ID_AC3:          return DecodingCodec::AC3;
-            case AV_CODEC_ID_VORBIS:       return DecodingCodec::VORBIS;
-            case AV_CODEC_ID_WMAV1:        return DecodingCodec::WMAV1;
-            case AV_CODEC_ID_WMAV2:        return DecodingCodec::WMAV2;
-            case AV_CODEC_ID_FLAC:         return DecodingCodec::FLAC;
-            case AV_CODEC_ID_ALAC:         return DecodingCodec::ALAC;
-            case AV_CODEC_ID_WAVPACK:      return DecodingCodec::WAVPACK;
-            case AV_CODEC_ID_MUSEPACK7:    return DecodingCodec::MUSEPACK7;
-            case AV_CODEC_ID_MUSEPACK8:    return DecodingCodec::MUSEPACK8;
-            case AV_CODEC_ID_APE:          return DecodingCodec::APE;
-            case AV_CODEC_ID_EAC3:         return DecodingCodec::EAC3;
-            case AV_CODEC_ID_MP4ALS:       return DecodingCodec::MP4ALS;
-            case AV_CODEC_ID_OPUS:         return DecodingCodec::OPUS;
-            case AV_CODEC_ID_SHORTEN:      return DecodingCodec::SHORTEN;
+            case AV_CODEC_ID_MP3:
+                return DecodingCodec::MP3;
+            case AV_CODEC_ID_AAC:
+                return DecodingCodec::AAC;
+            case AV_CODEC_ID_AC3:
+                return DecodingCodec::AC3;
+            case AV_CODEC_ID_VORBIS:
+                return DecodingCodec::VORBIS;
+            case AV_CODEC_ID_WMAV1:
+                return DecodingCodec::WMAV1;
+            case AV_CODEC_ID_WMAV2:
+                return DecodingCodec::WMAV2;
+            case AV_CODEC_ID_FLAC:
+                return DecodingCodec::FLAC;
+            case AV_CODEC_ID_ALAC:
+                return DecodingCodec::ALAC;
+            case AV_CODEC_ID_WAVPACK:
+                return DecodingCodec::WAVPACK;
+            case AV_CODEC_ID_MUSEPACK7:
+                return DecodingCodec::MUSEPACK7;
+            case AV_CODEC_ID_MUSEPACK8:
+                return DecodingCodec::MUSEPACK8;
+            case AV_CODEC_ID_APE:
+                return DecodingCodec::APE;
+            case AV_CODEC_ID_EAC3:
+                return DecodingCodec::EAC3;
+            case AV_CODEC_ID_MP4ALS:
+                return DecodingCodec::MP4ALS;
+            case AV_CODEC_ID_OPUS:
+                return DecodingCodec::OPUS;
+            case AV_CODEC_ID_SHORTEN:
+                return DecodingCodec::SHORTEN;
+            case AV_CODEC_ID_DSD_LSBF:
+                return DecodingCodec::DSD_LSBF;
+            case AV_CODEC_ID_DSD_LSBF_PLANAR:
+                return DecodingCodec::DSD_LSBF_PLANAR;
+            case AV_CODEC_ID_DSD_MSBF:
+                return DecodingCodec::DSD_MSBF;
+            case AV_CODEC_ID_DSD_MSBF_PLANAR:
+                return DecodingCodec::DSD_MSBF_PLANAR;
+
             default:
                 return DecodingCodec::UNKNOWN;
             }
         }
-    }
+    } // namespace
 
     std::unique_ptr<IAudioFile> parseAudioFile(const std::filesystem::path& p)
     {
@@ -178,8 +204,8 @@ namespace lms::av
     {
         int res = ::av_find_best_stream(_context,
             AVMEDIA_TYPE_AUDIO,
-            -1,	// Auto
-            -1,	// Auto
+            -1, // Auto
+            -1, // Auto
             NULL,
             0);
 
@@ -213,8 +239,7 @@ namespace lms::av
 
     void AudioFile::visitAttachedPictures(std::function<void(const Picture&)> func) const
     {
-        static const std::unordered_map<int, std::string> codecMimeMap =
-        {
+        static const std::unordered_map<int, std::string> codecMimeMap{
             { AV_CODEC_ID_BMP, "image/x-bmp" },
             { AV_CODEC_ID_GIF, "image/gif" },
             { AV_CODEC_ID_MJPEG, "image/jpeg" },
@@ -300,31 +325,30 @@ namespace lms::av
         // List should be sync with the demuxers shipped in the lms's docker version
         // + the _audioFileExtensions in ScanSettings
         // std::filesystem::path does not seem to have std::hash specialization on freebsd
-        static const std::unordered_map<std::string_view, std::string_view> entries
-        {
-            {".mp3",    "audio/mpeg"},
-            {".ogg",    "audio/ogg"},
-            {".oga",    "audio/ogg"},
-            {".opus",   "audio/opus"},
-            {".aac",    "audio/aac"},
-            {".alac",   "audio/mp4"},
-            {".m4a",    "audio/mp4"},
-            {".m4b",    "audio/mp4"},
-            {".flac",   "audio/flac"},
-            {".webm",   "audio/webm"},
-            {".wav",    "audio/x-wav"},
-            {".wma",    "audio/x-ms-wma"},
-            {".ape",    "audio/x-monkeys-audio"},
-            {".mpc",    "audio/x-musepack"},
-            {".shn",    "audio/x-shn"},
-            {".aif",    "audio/x-aiff"},
-            {".aiff",   "audio/x-aiff"},
-            {".m3u",    "audio/x-mpegurl"},
-            {".pls",    "audio/x-scpls"},
-            {".dsf",    "audio/x-dsd"},
-            {".wv",     "audio/x-wavpack"},
-            {".wvp",    "audio/x-wavpack"},
-            {".mka",    "audio/x-matroska"},
+        static const std::unordered_map<std::string, std::string_view> entries{
+            { ".mp3", "audio/mpeg" },
+            { ".ogg", "audio/ogg" },
+            { ".oga", "audio/ogg" },
+            { ".opus", "audio/opus" },
+            { ".aac", "audio/aac" },
+            { ".alac", "audio/mp4" },
+            { ".m4a", "audio/mp4" },
+            { ".m4b", "audio/mp4" },
+            { ".flac", "audio/flac" },
+            { ".webm", "audio/webm" },
+            { ".wav", "audio/x-wav" },
+            { ".wma", "audio/x-ms-wma" },
+            { ".ape", "audio/x-monkeys-audio" },
+            { ".mpc", "audio/x-musepack" },
+            { ".shn", "audio/x-shn" },
+            { ".aif", "audio/x-aiff" },
+            { ".aiff", "audio/x-aiff" },
+            { ".m3u", "audio/x-mpegurl" },
+            { ".pls", "audio/x-scpls" },
+            { ".dsf", "audio/x-dsd" },
+            { ".wv", "audio/x-wavpack" },
+            { ".wvp", "audio/x-wavpack" },
+            { ".mka", "audio/x-matroska" },
         };
 
         auto it{ entries.find(core::stringUtils::stringToLower(fileExtension.string())) };

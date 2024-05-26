@@ -23,15 +23,14 @@
 #include <iomanip>
 #include <utility>
 
-#include <Wt/WDateTime.h>
 #include <Wt/WDate.h>
+#include <Wt/WDateTime.h>
 
 namespace lms::core::stringUtils
 {
     namespace details
     {
-        constexpr std::pair<char, std::string_view> jsEscapeChars[]
-        {
+        constexpr std::pair<char, std::string_view> jsEscapeChars[]{
             { '\\', "\\\\" },
             { '\n', "\\n" },
             { '\r', "\\r" },
@@ -40,8 +39,7 @@ namespace lms::core::stringUtils
             { '\'', "\\\'" },
         };
 
-        constexpr std::pair<char, std::string_view> jsonEscapeChars[]
-        {
+        constexpr std::pair<char, std::string_view> jsonEscapeChars[]{
             { '\\', "\\\\" },
             { '\n', "\\n" },
             { '\r', "\\r" },
@@ -49,8 +47,8 @@ namespace lms::core::stringUtils
             { '"', "\\\"" },
         };
 
-        template <std::size_t N>
-        std::string escape(std::string_view str, const std::pair<char, std::string_view>(&charsToEscape)[N])
+        template<std::size_t N>
+        std::string escape(std::string_view str, const std::pair<char, std::string_view> (&charsToEscape)[N])
         {
             std::string escaped;
             escaped.reserve(str.length());
@@ -70,12 +68,12 @@ namespace lms::core::stringUtils
             return escaped;
         }
 
-        template <std::size_t N>
-        void writeEscapedString(std::ostream& os, std::string_view str, const std::pair<char, std::string_view>(&charsToEscape)[N])
+        template<std::size_t N>
+        void writeEscapedString(std::ostream& os, std::string_view str, const std::pair<char, std::string_view> (&charsToEscape)[N])
         {
             for (const char c : str)
             {
-                auto itEntry{ std::find_if(std::cbegin(charsToEscape), std::cend(charsToEscape), [=](const auto& entry) { return entry.first == c;}) };
+                auto itEntry{ std::find_if(std::cbegin(charsToEscape), std::cend(charsToEscape), [=](const auto& entry) { return entry.first == c; }) };
                 if (itEntry != std::cend(charsToEscape))
                     os << itEntry->second;
                 else
@@ -83,7 +81,7 @@ namespace lms::core::stringUtils
             }
         }
 
-        template <typename StringType>
+        template<typename StringType>
         std::string joinStrings(std::span<const StringType> strings, std::string_view delimiter)
         {
             std::string res;
@@ -99,7 +97,7 @@ namespace lms::core::stringUtils
 
             return res;
         }
-    }
+    } // namespace details
 
     template<>
     std::optional<std::string> readAs(std::string_view str)
@@ -198,7 +196,8 @@ namespace lms::core::stringUtils
 
         for (char c : str)
         {
-            if (escaped) {
+            if (escaped)
+            {
                 current.push_back(c);
                 escaped = false;
             }
@@ -248,14 +247,14 @@ namespace lms::core::stringUtils
         std::string res;
         res.reserve(str.size());
 
-        std::transform(std::cbegin(str), std::cend(str), std::back_inserter(res), [](unsigned char c) { return std::tolower(c);});
+        std::transform(std::cbegin(str), std::cend(str), std::back_inserter(res), [](unsigned char c) { return std::tolower(c); });
 
         return res;
     }
 
     void stringToLower(std::string& str)
     {
-        std::transform(std::cbegin(str), std::cend(str), std::begin(str), [](unsigned char c) { return std::tolower(c);});
+        std::transform(std::cbegin(str), std::cend(str), std::begin(str), [](unsigned char c) { return std::tolower(c); });
     }
 
     std::string stringToUpper(const std::string& str)
@@ -263,7 +262,7 @@ namespace lms::core::stringUtils
         std::string res;
         res.reserve(str.size());
 
-        std::transform(std::cbegin(str), std::cend(str), std::back_inserter(res), [](char c) { return std::toupper(c);});
+        std::transform(std::cbegin(str), std::cend(str), std::back_inserter(res), [](char c) { return std::toupper(c); });
 
         return res;
     }
@@ -436,4 +435,4 @@ namespace lms::core::stringUtils
         // assume UTC
         return date.toString("yyyy-MM-dd").toUTF8();
     }
-}
+} // namespace lms::core::stringUtils

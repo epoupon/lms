@@ -19,13 +19,14 @@
 
 #include "ListenBrainzBackend.hpp"
 
+#include "core/IConfig.hpp"
+#include "core/ILogger.hpp"
+#include "core/Service.hpp"
+#include "core/http/IClient.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "core/IConfig.hpp"
-#include "core/http/IClient.hpp"
-#include "core/ILogger.hpp"
-#include "core/Service.hpp"
+
 #include "Utils.hpp"
 
 namespace lms::scrobbling::listenBrainz
@@ -48,7 +49,7 @@ namespace lms::scrobbling::listenBrainz
 
             return res;
         }
-    }
+    } // namespace
 
     ListenBrainzBackend::ListenBrainzBackend(boost::asio::io_context& ioContext, Db& db)
         : _ioContext{ ioContext }
@@ -84,4 +85,3 @@ namespace lms::scrobbling::listenBrainz
         _listensSynchronizer.enqueListen(timedListen);
     }
 } // namespace lms::scrobbling::listenBrainz
-

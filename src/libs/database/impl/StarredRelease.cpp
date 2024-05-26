@@ -24,6 +24,7 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
+
 #include "IdTypeTraits.hpp"
 #include "Utils.hpp"
 
@@ -38,7 +39,7 @@ namespace lms::db
 
     StarredRelease::pointer StarredRelease::create(Session& session, ObjectPtr<Release> release, ObjectPtr<User> user, FeedbackBackend backend)
     {
-        return session.getDboSession()->add(std::unique_ptr<StarredRelease>{new StarredRelease{ release, user, backend }});
+        return session.getDboSession()->add(std::unique_ptr<StarredRelease>{ new StarredRelease{ release, user, backend } });
     }
 
     std::size_t StarredRelease::getCount(Session& session)
@@ -56,24 +57,17 @@ namespace lms::db
     StarredRelease::pointer StarredRelease::find(Session& session, ReleaseId releaseId, UserId userId)
     {
         session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<StarredRelease>>("SELECT s_r from starred_release s_r")
-            .join("user u ON u.id = s_r.user_id")
-            .where("s_r.release_id = ?").bind(releaseId)
-            .where("s_r.user_id = ?").bind(userId)
-            .where("s_r.backend = u.feedback_backend"));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<StarredRelease>>("SELECT s_r from starred_release s_r").join("user u ON u.id = s_r.user_id").where("s_r.release_id = ?").bind(releaseId).where("s_r.user_id = ?").bind(userId).where("s_r.backend = u.feedback_backend"));
     }
 
     StarredRelease::pointer StarredRelease::find(Session& session, ReleaseId releaseId, UserId userId, FeedbackBackend backend)
     {
         session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<StarredRelease>()
-            .where("release_id = ?").bind(releaseId)
-            .where("user_id = ?").bind(userId)
-            .where("backend = ?").bind(backend));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<StarredRelease>().where("release_id = ?").bind(releaseId).where("user_id = ?").bind(userId).where("backend = ?").bind(backend));
     }
 
     void StarredRelease::setDateTime(const Wt::WDateTime& dateTime)
     {
         _dateTime = utils::normalizeDateTime(dateTime);
     }
-}
+} // namespace lms::db

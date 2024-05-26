@@ -21,18 +21,20 @@
 
 #include <map>
 #include <optional>
+
+#include "core/EnumSet.hpp"
 #include "database/ArtistId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
-#include "core/EnumSet.hpp"
-#include "common/Template.hpp"
+
 #include "ReleaseTypes.hpp"
+#include "common/Template.hpp"
 
 namespace lms::db
 {
     class Artist;
     class Release;
-}
+} // namespace lms::db
 
 namespace lms::ui
 {
@@ -70,10 +72,9 @@ namespace lms::ui
             std::vector<db::ReleaseId> releases;
         };
         std::map<ReleaseType, ReleaseContainer> _releaseContainers;
-        ReleaseContainer			_appearsOnReleaseContainer{};
+        ReleaseContainer _appearsOnReleaseContainer{};
         InfiniteScrollingContainer* _trackContainer{};
-        db::ArtistId			_artistId{};
-        bool						_needForceRefresh{};
+        db::ArtistId _artistId{};
+        bool _needForceRefresh{};
     };
 } // namespace lms::ui
-

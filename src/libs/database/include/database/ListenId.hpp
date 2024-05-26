@@ -26,4 +26,3 @@ namespace lms::db {
 }
 
 LMS_DECLARE_IDTYPE(ListenId, lms::db::Listen)
-

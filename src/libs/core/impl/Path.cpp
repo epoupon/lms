@@ -19,12 +19,11 @@
 
 #include "core/Path.hpp"
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
 #include <array>
 #include <fstream>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <boost/tokenizer.hpp>
 
@@ -44,7 +43,7 @@ namespace lms::core::pathUtils
         {
             do
             {
-                std::array<char, 1024>	buffer;
+                std::array<char, 1024> buffer;
 
                 ifs.read(buffer.data(), buffer.size());
                 crc32.processBytes(reinterpret_cast<const std::byte*>(buffer.data()), ifs.gcount());
@@ -69,7 +68,9 @@ namespace lms::core::pathUtils
 
     Wt::WDateTime getLastWriteTime(const std::filesystem::path& file)
     {
-        struct stat sb {};
+        struct stat sb
+        {
+        };
 
         if (stat(file.string().c_str(), &sb) == -1)
             throw LmsException("Failed to get stats on file '" + file.string() + "'");
@@ -183,4 +184,4 @@ namespace lms::core::pathUtils
 
         return longestCommonPath;
     }
-}
+} // namespace lms::core::pathUtils

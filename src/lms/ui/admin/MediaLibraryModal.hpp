@@ -21,6 +21,7 @@
 
 #include <Wt/WSignal.h>
 #include <Wt/WTemplateFormView.h>
+
 #include "database/MediaLibraryId.hpp"
 
 namespace lms::ui
@@ -37,4 +38,4 @@ namespace lms::ui
         Wt::Signal<db::MediaLibraryId> _saved;
         Wt::Signal<> _cancelled;
     };
-}
+} // namespace lms::ui

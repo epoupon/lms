@@ -63,7 +63,7 @@ namespace lms::ui
         Filters& _filters;
         std::string _searchText;
         std::vector<std::string_view> _searchKeywords;
-        Mode        _mode;
+        Mode _mode;
         std::size_t _maxCount;
     };
-} // ns UserInterface
+} // namespace lms::ui

@@ -19,12 +19,12 @@
 
 #pragma once
 
+#include <boost/asio/io_context.hpp>
 #include <memory>
 #include <string>
-#include <boost/asio/io_context.hpp>
 
-#include "IFeedbackBackend.hpp"
 #include "FeedbacksSynchronizer.hpp"
+#include "IFeedbackBackend.hpp"
 
 namespace lms::db
 {
@@ -52,8 +52,8 @@ namespace lms::feedback::listenBrainz
 
         boost::asio::io_context& _ioContext;
         db::Db& _db;
-        std::string                     _baseAPIUrl;
-        std::unique_ptr<core::http::IClient>  _client;
-        FeedbacksSynchronizer           _feedbacksSynchronizer;
+        std::string _baseAPIUrl;
+        std::unique_ptr<core::http::IClient> _client;
+        FeedbacksSynchronizer _feedbacksSynchronizer;
     };
-}
+} // namespace lms::feedback::listenBrainz

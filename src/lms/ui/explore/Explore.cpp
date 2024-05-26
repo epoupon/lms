@@ -22,8 +22,8 @@
 #include <Wt/WApplication.h>
 #include <Wt/WStackedWidget.h>
 
-#include "ArtistsView.hpp"
 #include "ArtistView.hpp"
+#include "ArtistsView.hpp"
 #include "Filters.hpp"
 #include "MultisearchView.hpp"
 #include "ReleasesView.hpp"

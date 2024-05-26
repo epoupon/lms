@@ -21,13 +21,13 @@
 
 #include <Wt/WPushButton.h>
 
+#include "core/Service.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
 #include "services/scanner/IScannerService.hpp"
-#include "core/Service.hpp"
 
-#include "MediaLibraryModal.hpp"
 #include "LmsApplication.hpp"
+#include "MediaLibraryModal.hpp"
 #include "ModalManager.hpp"
 
 namespace lms::ui
@@ -39,32 +39,28 @@ namespace lms::ui
 
         _libraries = bindNew<Wt::WContainerWidget>("libraries");
         Wt::WPushButton* addBtn{ bindNew<Wt::WPushButton>("add-btn", Wt::WString::tr("Lms.add")) };
-        addBtn->clicked().connect(this, [this]
-            {
-                auto mediaLibraryModal{ std::make_unique<MediaLibraryModal>(db::MediaLibraryId{}) };
-                MediaLibraryModal* mediaLibraryModalPtr{ mediaLibraryModal.get() };
+        addBtn->clicked().connect(this, [this] {
+            auto mediaLibraryModal{ std::make_unique<MediaLibraryModal>(db::MediaLibraryId{}) };
+            MediaLibraryModal* mediaLibraryModalPtr{ mediaLibraryModal.get() };
 
-                mediaLibraryModalPtr->saved().connect(this, [this, mediaLibraryModalPtr](db::MediaLibraryId newMediaLibraryId)
-                    {
-                        Wt::WTemplate* entry{ addEntry() };
-                        updateEntry(newMediaLibraryId, entry);
-                        // No need to stop the current scan if we add stuff
-                        LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries"), Wt::WString::tr("Lms.Admin.MediaLibrary.library-created"));
-                        LmsApp->getModalManager().dispose(mediaLibraryModalPtr);
-                    });
-
-                mediaLibraryModalPtr->cancelled().connect(this, [mediaLibraryModalPtr]
-                    {
-                        LmsApp->getModalManager().dispose(mediaLibraryModalPtr);
-                    });
-
-                LmsApp->getModalManager().show(std::move(mediaLibraryModal));
+            mediaLibraryModalPtr->saved().connect(this, [this, mediaLibraryModalPtr](db::MediaLibraryId newMediaLibraryId) {
+                Wt::WTemplate* entry{ addEntry() };
+                updateEntry(newMediaLibraryId, entry);
+                // No need to stop the current scan if we add stuff
+                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries"), Wt::WString::tr("Lms.Admin.MediaLibrary.library-created"));
+                LmsApp->getModalManager().dispose(mediaLibraryModalPtr);
             });
 
-        wApp->internalPathChanged().connect(this, [this]
-            {
-                refreshView();
+            mediaLibraryModalPtr->cancelled().connect(this, [mediaLibraryModalPtr] {
+                LmsApp->getModalManager().dispose(mediaLibraryModalPtr);
             });
+
+            LmsApp->getModalManager().show(std::move(mediaLibraryModal));
+        });
+
+        wApp->internalPathChanged().connect(this, [this] {
+            refreshView();
+        });
 
         refreshView();
     }
@@ -78,15 +74,14 @@ namespace lms::ui
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        db::MediaLibrary::find(LmsApp->getDbSession(), [&](const db::MediaLibrary::pointer& mediaLibrary)
-            {
-                const db::MediaLibraryId mediaLibraryId{ mediaLibrary->getId() };
-                Wt::WTemplate* entry{ addEntry() };
-                updateEntry(mediaLibraryId, entry);
-            });
+        db::MediaLibrary::find(LmsApp->getDbSession(), [&](const db::MediaLibrary::pointer& mediaLibrary) {
+            const db::MediaLibraryId mediaLibraryId{ mediaLibrary->getId() };
+            Wt::WTemplate* entry{ addEntry() };
+            updateEntry(mediaLibraryId, entry);
+        });
     }
 
-    void  MediaLibrariesView::showDeleteLibraryModal(db::MediaLibraryId mediaLibraryId, Wt::WTemplate* libraryEntry)
+    void MediaLibrariesView::showDeleteLibraryModal(db::MediaLibraryId mediaLibraryId, Wt::WTemplate* libraryEntry)
     {
         using namespace db;
 
@@ -95,30 +90,28 @@ namespace lms::ui
         Wt::WWidget* modalPtr{ modal.get() };
 
         auto* delBtn{ modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.delete")) };
-        delBtn->clicked().connect([=, this]
+        delBtn->clicked().connect([=, this] {
             {
-                {
-                    auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
+                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-                    db::MediaLibrary::pointer mediaLibrary{ MediaLibrary::find(LmsApp->getDbSession(), mediaLibraryId) };
-                    if (mediaLibrary)
-                        mediaLibrary.remove();
-                }
+                db::MediaLibrary::pointer mediaLibrary{ MediaLibrary::find(LmsApp->getDbSession(), mediaLibraryId) };
+                if (mediaLibrary)
+                    mediaLibrary.remove();
+            }
 
-                // Don't want the scanner to go on with wrong settings
-                core::Service<scanner::IScannerService>::get()->requestReload();
-                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries"), Wt::WString::tr("Lms.Admin.MediaLibrary.library-deleted"));
+            // Don't want the scanner to go on with wrong settings
+            core::Service<scanner::IScannerService>::get()->requestReload();
+            LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries"), Wt::WString::tr("Lms.Admin.MediaLibrary.library-deleted"));
 
-                _libraries->removeWidget(libraryEntry);
+            _libraries->removeWidget(libraryEntry);
 
-                LmsApp->getModalManager().dispose(modalPtr);
-            });
+            LmsApp->getModalManager().dispose(modalPtr);
+        });
 
         auto* cancelBtn{ modal->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel")) };
-        cancelBtn->clicked().connect([=]
-            {
-                LmsApp->getModalManager().dispose(modalPtr);
-            });
+        cancelBtn->clicked().connect([=] {
+            LmsApp->getModalManager().dispose(modalPtr);
+        });
 
         LmsApp->getModalManager().show(std::move(modal));
     }
@@ -138,35 +131,31 @@ namespace lms::ui
 
         Wt::WPushButton* editBtn{ entry->bindNew<Wt::WPushButton>("edit-btn", Wt::WString::tr("Lms.template.edit-btn"), Wt::TextFormat::XHTML) };
         editBtn->setToolTip(Wt::WString::tr("Lms.edit"));
-        editBtn->clicked().connect([this, mediaLibraryId, entry]
-            {
-                auto mediaLibraryModal{ std::make_unique<MediaLibraryModal>(mediaLibraryId) };
-                MediaLibraryModal* mediaLibraryModalPtr{ mediaLibraryModal.get() };
+        editBtn->clicked().connect([this, mediaLibraryId, entry] {
+            auto mediaLibraryModal{ std::make_unique<MediaLibraryModal>(mediaLibraryId) };
+            MediaLibraryModal* mediaLibraryModalPtr{ mediaLibraryModal.get() };
 
-                mediaLibraryModalPtr->saved().connect(this, [=, this](db::MediaLibraryId newMediaLibraryId)
-                    {
-                        updateEntry(newMediaLibraryId, entry);
+            mediaLibraryModalPtr->saved().connect(this, [=, this](db::MediaLibraryId newMediaLibraryId) {
+                updateEntry(newMediaLibraryId, entry);
 
-                        // Don't want the scanner to go on with wrong settings
-                        core::Service<scanner::IScannerService>::get()->requestReload();        
-                        LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries"), Wt::WString::tr("Lms.settings-saved"));
+                // Don't want the scanner to go on with wrong settings
+                core::Service<scanner::IScannerService>::get()->requestReload();
+                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries"), Wt::WString::tr("Lms.settings-saved"));
 
-                        LmsApp->getModalManager().dispose(mediaLibraryModalPtr);
-                    });
-
-                mediaLibraryModalPtr->cancelled().connect(this, [mediaLibraryModalPtr]
-                    {
-                        LmsApp->getModalManager().dispose(mediaLibraryModalPtr);
-                    });
-
-                LmsApp->getModalManager().show(std::move(mediaLibraryModal));
+                LmsApp->getModalManager().dispose(mediaLibraryModalPtr);
             });
+
+            mediaLibraryModalPtr->cancelled().connect(this, [mediaLibraryModalPtr] {
+                LmsApp->getModalManager().dispose(mediaLibraryModalPtr);
+            });
+
+            LmsApp->getModalManager().show(std::move(mediaLibraryModal));
+        });
 
         Wt::WPushButton* delBtn{ entry->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.template.trash-btn"), Wt::TextFormat::XHTML) };
         delBtn->setToolTip(Wt::WString::tr("Lms.delete"));
-        delBtn->clicked().connect([this, mediaLibraryId, entry]
-            {
-                showDeleteLibraryModal(mediaLibraryId, entry);
-            });
+        delBtn->clicked().connect([this, mediaLibraryId, entry] {
+            showDeleteLibraryModal(mediaLibraryId, entry);
+        });
     }
-}
+} // namespace lms::ui

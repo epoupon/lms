@@ -22,6 +22,8 @@
 #include <chrono>
 #include <functional>
 
+#include "metadata/Types.hpp"
+
 namespace lms::metadata
 {
     // using picard internal names
@@ -48,11 +50,11 @@ namespace lms::metadata
         Compilation,
         Composer,
         ComposerSortOrder,
-        Composers, // non standard
+        Composers,          // non standard
         ComposersSortOrder, // non standard
         Conductor,
-        ConductorSortOrder, // non standard
-        Conductors, // non standard
+        ConductorSortOrder,  // non standard
+        Conductors,          // non standard
         ConductorsSortOrder, // non standard
         Copyright,
         CopyrightURL, // non standard
@@ -71,15 +73,15 @@ namespace lms::metadata
         Language,
         License,
         Lyricist,
-        LyricistSortOrder, // non standard
-        Lyricists, // non standard
+        LyricistSortOrder,  // non standard
+        Lyricists,          // non standard
         LyricistsSortOrder, // non standard
         Lyrics,
         Media,
         MixDJ,
         Mixer,
-        MixerSortOrder, // non standard
-        Mixers, // non standard
+        MixerSortOrder,  // non standard
+        Mixers,          // non standard
         MixersSortOrder, // non standard
         Mood,
         Movement,
@@ -105,8 +107,8 @@ namespace lms::metadata
         Podcast,
         PodcastURL,
         Producer,
-        ProducerSortOrder, // non standard
-        Producers, // non standard
+        ProducerSortOrder,  // non standard
+        Producers,          // non standard
         ProducersSortOrder, // non standard
         Rating,
         RecordLabel,

@@ -39,4 +39,4 @@ namespace lms::core
     {
         return std::make_unique<ChildProcess>(_ioContext, path, args);
     }
-}
+} // namespace lms::core

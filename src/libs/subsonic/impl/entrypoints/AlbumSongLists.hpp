@@ -30,4 +30,4 @@ namespace lms::api::subsonic
     Response handleGetSongsByGenreRequest(RequestContext& context);
     Response handleGetStarredRequest(RequestContext& context);
     Response handleGetStarred2Request(RequestContext& context);
-}
+} // namespace lms::api::subsonic

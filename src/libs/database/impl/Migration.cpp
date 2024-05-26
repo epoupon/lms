@@ -21,13 +21,14 @@
 
 #include <Wt/Dbo/WtSqlTraits.h>
 
+#include "core/Exception.hpp"
+#include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
 #include "database/Db.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "core/Exception.hpp"
-#include "core/ILogger.hpp"
-#include "core/ITraceLogger.hpp"
+
 #include "Utils.hpp"
 
 namespace lms::db
@@ -39,7 +40,8 @@ namespace lms::db
 
     VersionInfo::VersionInfo()
         : _version{ LMS_DATABASE_VERSION }
-    {}
+    {
+    }
 
     VersionInfo::pointer VersionInfo::getOrCreate(Session& session)
     {
@@ -58,14 +60,15 @@ namespace lms::db
 
         return utils::fetchQuerySingleResult(session.getDboSession()->find<VersionInfo>());
     }
-}
+} // namespace lms::db
 
 namespace lms::db::Migration
 {
     class ScopedNoForeignKeys
     {
     public:
-        ScopedNoForeignKeys(Db& db) : _db{ db }
+        ScopedNoForeignKeys(Db& db)
+            : _db{ db }
         {
             _db.executeSql("PRAGMA foreign_keys=OFF");
         }
@@ -73,6 +76,7 @@ namespace lms::db::Migration
         {
             _db.executeSql("PRAGMA foreign_keys=ON");
         }
+
     private:
         ScopedNoForeignKeys(const ScopedNoForeignKeys&) = delete;
         ScopedNoForeignKeys(ScopedNoForeignKeys&&) = delete;
@@ -106,9 +110,9 @@ CREATE TABLE IF NOT EXISTS "track_artist_link_backup" (
     {
         // Add scrobbling state
         // By default, everything needs to be sent
-        session.getDboSession()->execute("ALTER TABLE starred_artist ADD scrobbling_state INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*ScrobblingState::PendingAdd*/0)) + ")");
-        session.getDboSession()->execute("ALTER TABLE starred_release ADD scrobbling_state INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*ScrobblingState::PendingAdd*/0)) + ")");
-        session.getDboSession()->execute("ALTER TABLE starred_track ADD scrobbling_state INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*ScrobblingState::PendingAdd*/0)) + ")");
+        session.getDboSession()->execute("ALTER TABLE starred_artist ADD scrobbling_state INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*ScrobblingState::PendingAdd*/ 0)) + ")");
+        session.getDboSession()->execute("ALTER TABLE starred_release ADD scrobbling_state INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*ScrobblingState::PendingAdd*/ 0)) + ")");
+        session.getDboSession()->execute("ALTER TABLE starred_track ADD scrobbling_state INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*ScrobblingState::PendingAdd*/ 0)) + ")");
     }
 
     static void migrateFromV35(Session& session)
@@ -251,7 +255,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
     void migrateFromV45(Session& session)
     {
         // add subsonic_enable_transcoding_by_default, default is disabled
-        session.getDboSession()->execute("ALTER TABLE user ADD subsonic_enable_transcoding_by_default INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*User::defaultSubsonicEnableTranscodingByDefault*/0)) + ")");
+        session.getDboSession()->execute("ALTER TABLE user ADD subsonic_enable_transcoding_by_default INTEGER NOT NULL DEFAULT(" + std::to_string(static_cast<int>(/*User::defaultSubsonicEnableTranscodingByDefault*/ 0)) + ")");
     }
 
     void migrateFromV46(Session& session)
@@ -330,7 +334,8 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
         session.getDboSession()->execute(R"(INSERT INTO "media_library" ("id", "version", "path", "name")
 SELECT 1, 0, s_s.media_directory, "Main"
 FROM scan_settings s_s
-WHERE id = ?)").bind(scanSettingsId);
+WHERE id = ?)")
+            .bind(scanSettingsId);
 
         // Remove the outdated column in scan_settings
         session.getDboSession()->execute("ALTER TABLE scan_settings DROP media_directory");
@@ -558,4 +563,4 @@ SELECT
 
         return migrationPerformed;
     }
-}
+} // namespace lms::db::Migration

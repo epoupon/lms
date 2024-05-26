@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
+#include <Wt/WDateTime.h>
 
 #include "database/ArtistId.hpp"
 #include "database/Object.hpp"
@@ -40,17 +40,17 @@ namespace lms::db
         StarredArtist() = default;
 
         // Search utility
-        static std::size_t	getCount(Session& session);
-        static pointer		find(Session& session, StarredArtistId id);
-        static pointer		find(Session& session, ArtistId artistId, UserId userId); // current backend
-        static pointer		find(Session& session, ArtistId artistId, UserId userId, FeedbackBackend backend);
+        static std::size_t getCount(Session& session);
+        static pointer find(Session& session, StarredArtistId id);
+        static pointer find(Session& session, ArtistId artistId, UserId userId); // current backend
+        static pointer find(Session& session, ArtistId artistId, UserId userId, FeedbackBackend backend);
 
         // Accessors
-        ObjectPtr<Artist>	getArtist() const { return _artist; }
-        ObjectPtr<User>		getUser() const { return _user; }
-        FeedbackBackend	    getFeedbackBackend() const { return _backend; }
+        ObjectPtr<Artist> getArtist() const { return _artist; }
+        ObjectPtr<User> getUser() const { return _user; }
+        FeedbackBackend getFeedbackBackend() const { return _backend; }
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
-        SyncState			getSyncState() const { return _syncState; }
+        SyncState getSyncState() const { return _syncState; }
 
         // Setters
         void setDateTime(const Wt::WDateTime& dateTime);
@@ -72,12 +72,11 @@ namespace lms::db
         StarredArtist(ObjectPtr<Artist> artist, ObjectPtr<User> user, FeedbackBackend scrobblingbackend);
         static pointer create(Session& session, ObjectPtr<Artist> artist, ObjectPtr<User> user, FeedbackBackend scrobblingbackend);
 
-        FeedbackBackend     _backend;			// for which backend
-        SyncState           _syncState{ SyncState::PendingAdd };
-        Wt::WDateTime       _dateTime;			// when it was starred
+        FeedbackBackend _backend; // for which backend
+        SyncState _syncState{ SyncState::PendingAdd };
+        Wt::WDateTime _dateTime; // when it was starred
 
-        Wt::Dbo::ptr<Artist>    _artist;
-        Wt::Dbo::ptr<User>      _user;
+        Wt::Dbo::ptr<Artist> _artist;
+        Wt::Dbo::ptr<User> _user;
     };
 } // namespace lms::db
-

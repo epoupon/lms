@@ -21,16 +21,16 @@
 
 #include <Wt/WContainerWidget.h>
 
-namespace lms::ui {
-
-class SettingsView : public Wt::WContainerWidget
+namespace lms::ui
 {
-	public:
-		SettingsView();
 
-	private:
-		void refreshView();
-};
+    class SettingsView : public Wt::WContainerWidget
+    {
+    public:
+        SettingsView();
+
+    private:
+        void refreshView();
+    };
 
 } // namespace lms::ui
-

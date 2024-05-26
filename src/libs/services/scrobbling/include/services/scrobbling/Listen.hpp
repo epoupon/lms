@@ -36,5 +36,4 @@ namespace lms::scrobbling
     {
         Wt::WDateTime listenedAt;
     };
-} // ns Scrobbling
-
+} // namespace lms::scrobbling

@@ -20,12 +20,13 @@
 #include "MediaPlayer.hpp"
 
 #include <Wt/Json/Object.h>
-#include <Wt/Json/Value.h>
 #include <Wt/Json/Serializer.h>
+#include <Wt/Json/Value.h>
 #include <Wt/WPushButton.h>
 
 #include "core/ILogger.hpp"
-
+#include "core/String.hpp"
+#include "core/Utils.hpp"
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
@@ -34,15 +35,11 @@
 #include "database/Types.hpp"
 #include "database/User.hpp"
 
-#include "resource/CoverResource.hpp"
-#include "resource/AudioTranscodingResource.hpp"
-#include "resource/AudioFileResource.hpp"
-
-#include "core/String.hpp"
-#include "core/Utils.hpp"
-
 #include "LmsApplication.hpp"
 #include "Utils.hpp"
+#include "resource/AudioFileResource.hpp"
+#include "resource/AudioTranscodingResource.hpp"
+#include "resource/CoverResource.hpp"
 
 namespace lms::ui
 {
@@ -184,7 +181,7 @@ namespace lms::ui
 
             return settings;
         }
-    }
+    } // namespace
 
     MediaPlayer::MediaPlayer()
         : Wt::WTemplate{ Wt::WString::tr("Lms.MediaPlayer.template") }
@@ -208,27 +205,26 @@ namespace lms::ui
         _playQueue->setLink(Wt::WLink{ Wt::LinkType::InternalPath, "/playqueue" });
         _playQueue->setToolTip(tr("Lms.PlayQueue.playqueue"));
 
-        _settingsLoaded.connect([this](const std::string& settings)
-            {
-                LMS_LOG(UI, DEBUG, "Settings loaded! '" << settings << "'");
+        _settingsLoaded.connect([this](const std::string& settings) {
+            LMS_LOG(UI, DEBUG, "Settings loaded! '" << settings << "'");
 
-                _settings = settingsfromJSString(settings);
+            _settings = settingsfromJSString(settings);
 
-                settingsLoaded.emit();
-                    });
+            settingsLoaded.emit();
+        });
 
-                {
-                    Settings defaultSettings;
+        {
+            Settings defaultSettings;
 
-                    std::ostringstream oss;
-                    oss << "LMS.mediaplayer.init("
-                        << jsRef()
-                        << ", defaultSettings = " << settingsToJSString(defaultSettings)
-                        << ")";
+            std::ostringstream oss;
+            oss << "LMS.mediaplayer.init("
+                << jsRef()
+                << ", defaultSettings = " << settingsToJSString(defaultSettings)
+                << ")";
 
-                    LMS_LOG(UI, DEBUG, "Running js = '" << oss.str() << "'");
-                    doJavaScript(oss.str());
-                }
+            LMS_LOG(UI, DEBUG, "Running js = '" << oss.str() << "'");
+            doJavaScript(oss.str());
+        }
     }
 
     void MediaPlayer::loadTrack(db::TrackId trackId, bool play, float replayGain)
@@ -246,7 +242,7 @@ namespace lms::ui
             const std::string transcodingResource{ _audioTranscodingResource->getUrl(trackId) };
             const std::string nativeResource{ _audioFileResource->getUrl(trackId) };
 
-            const auto artists{ track->getArtists({db::TrackArtistLinkType::Artist}) };
+            const auto artists{ track->getArtists({ db::TrackArtistLinkType::Artist }) };
 
             oss
                 << "var params = {"

@@ -19,13 +19,14 @@
 
 #include "ArtistCollector.hpp"
 
+#include "core/Service.hpp"
 #include "database/Artist.hpp"
 #include "database/Session.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
-#include "core/Service.hpp"
+
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 
@@ -50,80 +51,80 @@ namespace lms::ui
             break;
 
         case Mode::Starred:
-        {
-            feedback::IFeedbackService::ArtistFindParameters params;
-            params.setUser(LmsApp->getUserId());
-            params.setClusters(filters.getClusters());
-            params.setKeywords(getSearchKeywords());
-            params.setMediaLibrary(filters.getMediaLibrary());
-            params.setLinkType(_linkType);
-            params.setSortMethod(ArtistSortMethod::StarredDateDesc);
-            params.setRange(range);
-            artists = feedbackService.findStarredArtists(params);
-            break;
-        }
+            {
+                feedback::IFeedbackService::ArtistFindParameters params;
+                params.setUser(LmsApp->getUserId());
+                params.setClusters(filters.getClusters());
+                params.setKeywords(getSearchKeywords());
+                params.setMediaLibrary(filters.getMediaLibrary());
+                params.setLinkType(_linkType);
+                params.setSortMethod(ArtistSortMethod::StarredDateDesc);
+                params.setRange(range);
+                artists = feedbackService.findStarredArtists(params);
+                break;
+            }
 
         case Mode::RecentlyPlayed:
-        {
-            scrobbling::IScrobblingService::ArtistFindParameters params;
-            params.setUser(LmsApp->getUserId());
-            params.setClusters(filters.getClusters());
-            params.setKeywords(getSearchKeywords());
-            params.setMediaLibrary(filters.getMediaLibrary());
-            params.setLinkType(_linkType);
-            params.setRange(range);
+            {
+                scrobbling::IScrobblingService::ArtistFindParameters params;
+                params.setUser(LmsApp->getUserId());
+                params.setClusters(filters.getClusters());
+                params.setKeywords(getSearchKeywords());
+                params.setMediaLibrary(filters.getMediaLibrary());
+                params.setLinkType(_linkType);
+                params.setRange(range);
 
-            artists = scrobblingService.getRecentArtists(params);
-            break;
-        }
+                artists = scrobblingService.getRecentArtists(params);
+                break;
+            }
 
         case Mode::MostPlayed:
-        {
-            scrobbling::IScrobblingService::ArtistFindParameters params;
-            params.setUser(LmsApp->getUserId());
-            params.setClusters(filters.getClusters());
-            params.setKeywords(getSearchKeywords());
-            params.setMediaLibrary(filters.getMediaLibrary());
-            params.setLinkType(_linkType);
-            params.setRange(range);
+            {
+                scrobbling::IScrobblingService::ArtistFindParameters params;
+                params.setUser(LmsApp->getUserId());
+                params.setClusters(filters.getClusters());
+                params.setKeywords(getSearchKeywords());
+                params.setMediaLibrary(filters.getMediaLibrary());
+                params.setLinkType(_linkType);
+                params.setRange(range);
 
-            artists = scrobblingService.getTopArtists(params);
-            break;
-        }
+                artists = scrobblingService.getTopArtists(params);
+                break;
+            }
 
         case Mode::RecentlyAdded:
-        {
-            Artist::FindParameters params;
-            params.setClusters(filters.getClusters());
-            params.setKeywords(getSearchKeywords());
-            params.setMediaLibrary(filters.getMediaLibrary());
-            params.setLinkType(_linkType);
-            params.setSortMethod(ArtistSortMethod::LastWritten);
-            params.setRange(range);
-
             {
-                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                artists = Artist::findIds(LmsApp->getDbSession(), params);
+                Artist::FindParameters params;
+                params.setClusters(filters.getClusters());
+                params.setKeywords(getSearchKeywords());
+                params.setMediaLibrary(filters.getMediaLibrary());
+                params.setLinkType(_linkType);
+                params.setSortMethod(ArtistSortMethod::LastWritten);
+                params.setRange(range);
+
+                {
+                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+                    artists = Artist::findIds(LmsApp->getDbSession(), params);
+                }
+                break;
             }
-            break;
-        }
 
         case Mode::All:
-        {
-            Artist::FindParameters params;
-            params.setClusters(filters.getClusters());
-            params.setMediaLibrary(filters.getMediaLibrary());
-            params.setKeywords(getSearchKeywords());
-            params.setLinkType(_linkType);
-            params.setSortMethod(ArtistSortMethod::SortName);
-            params.setRange(range);
-
             {
-                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                artists = Artist::findIds(LmsApp->getDbSession(), params);
+                Artist::FindParameters params;
+                params.setClusters(filters.getClusters());
+                params.setMediaLibrary(filters.getMediaLibrary());
+                params.setKeywords(getSearchKeywords());
+                params.setLinkType(_linkType);
+                params.setSortMethod(ArtistSortMethod::SortName);
+                params.setRange(range);
+
+                {
+                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+                    artists = Artist::findIds(LmsApp->getDbSession(), params);
+                }
+                break;
             }
-            break;
-        }
         }
 
         if (range.offset + range.size == getMaxCount())
@@ -154,4 +155,4 @@ namespace lms::ui
 
         return _randomArtists->getSubRange(range);
     }
-} // ns UserInterface
+} // namespace lms::ui

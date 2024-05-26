@@ -19,12 +19,13 @@
 
 #include "ReleaseCollector.hpp"
 
+#include "core/Service.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
-#include "core/Service.hpp"
+
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 
@@ -48,74 +49,74 @@ namespace lms::ui
             break;
 
         case Mode::Starred:
-        {
-            feedback::IFeedbackService::FindParameters params;
-            params.setUser(LmsApp->getUserId());
-            params.setClusters(getFilters().getClusters());
-            params.setMediaLibrary(getFilters().getMediaLibrary());
-            params.setKeywords(getSearchKeywords());
-            params.setRange(range);
-            releases = feedbackService.findStarredReleases(params);
-            break;
-        }
+            {
+                feedback::IFeedbackService::FindParameters params;
+                params.setUser(LmsApp->getUserId());
+                params.setClusters(getFilters().getClusters());
+                params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setKeywords(getSearchKeywords());
+                params.setRange(range);
+                releases = feedbackService.findStarredReleases(params);
+                break;
+            }
 
         case ReleaseCollector::Mode::RecentlyPlayed:
-        {
-            scrobbling::IScrobblingService::FindParameters params;
-            params.setUser(LmsApp->getUserId());
-            params.setClusters(getFilters().getClusters());
-            params.setMediaLibrary(getFilters().getMediaLibrary());
-            params.setKeywords(getSearchKeywords());
-            params.setRange(range);
+            {
+                scrobbling::IScrobblingService::FindParameters params;
+                params.setUser(LmsApp->getUserId());
+                params.setClusters(getFilters().getClusters());
+                params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setKeywords(getSearchKeywords());
+                params.setRange(range);
 
-            releases = scrobblingService.getRecentReleases(params);
-            break;
-        }
+                releases = scrobblingService.getRecentReleases(params);
+                break;
+            }
 
         case Mode::MostPlayed:
-        {
-            scrobbling::IScrobblingService::FindParameters params;
-            params.setUser(LmsApp->getUserId());
-            params.setClusters(getFilters().getClusters());
-            params.setMediaLibrary(getFilters().getMediaLibrary());
-            params.setKeywords(getSearchKeywords());
-            params.setRange(range);
+            {
+                scrobbling::IScrobblingService::FindParameters params;
+                params.setUser(LmsApp->getUserId());
+                params.setClusters(getFilters().getClusters());
+                params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setKeywords(getSearchKeywords());
+                params.setRange(range);
 
-            releases = scrobblingService.getTopReleases(params);
-            break;
-        }
+                releases = scrobblingService.getTopReleases(params);
+                break;
+            }
 
         case Mode::RecentlyAdded:
-        {
-            Release::FindParameters params;
-            params.setClusters(getFilters().getClusters());
-            params.setMediaLibrary(getFilters().getMediaLibrary());
-            params.setKeywords(getSearchKeywords());
-            params.setSortMethod(ReleaseSortMethod::LastWritten);
-            params.setRange(range);
-
             {
-                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                releases = Release::findIds(LmsApp->getDbSession(), params);
+                Release::FindParameters params;
+                params.setClusters(getFilters().getClusters());
+                params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setKeywords(getSearchKeywords());
+                params.setSortMethod(ReleaseSortMethod::LastWritten);
+                params.setRange(range);
+
+                {
+                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+                    releases = Release::findIds(LmsApp->getDbSession(), params);
+                }
+                break;
             }
-            break;
-        }
 
         case Mode::All:
-        {
-            Release::FindParameters params;
-            params.setClusters(getFilters().getClusters());
-            params.setMediaLibrary(getFilters().getMediaLibrary());
-            params.setSortMethod(ReleaseSortMethod::Name);
-            params.setKeywords(getSearchKeywords());
-            params.setRange(range);
-
             {
-                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                releases = Release::findIds(LmsApp->getDbSession(), params);
+                Release::FindParameters params;
+                params.setClusters(getFilters().getClusters());
+                params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setSortMethod(ReleaseSortMethod::Name);
+                params.setKeywords(getSearchKeywords());
+                params.setRange(range);
+
+                {
+                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+                    releases = Release::findIds(LmsApp->getDbSession(), params);
+                }
+                break;
             }
-            break;
-        }
         }
 
         if (range.offset + range.size == getMaxCount())
@@ -146,5 +147,4 @@ namespace lms::ui
         return _randomReleases->getSubRange(range);
     }
 
-} // ns UserInterface
-
+} // namespace lms::ui

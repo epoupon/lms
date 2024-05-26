@@ -34,7 +34,7 @@ namespace lms::db::tests
                     session.execute(statement);
             }
         }
-    }
+    } // namespace
 
     TEST(Database, migration)
     {
@@ -263,7 +263,7 @@ CREATE INDEX starred_artist_user_scrobbler_idx ON starred_artist(user_id,scrobbl
 CREATE INDEX starred_release_user_scrobbler_idx ON starred_release(user_id,scrobbler);
 CREATE INDEX starred_track_user_scrobbler_idx ON starred_track(user_id,scrobbler);)" };
 
-        const std::string_view createDummyData{R"(
+        const std::string_view createDummyData{ R"(
 -- Inserting artists
 INSERT INTO artist (version, name, sort_name, mbid) VALUES
 (1, 'Artist A', 'Artist A', 'mbid_artist_a'),
@@ -302,7 +302,7 @@ VALUES
 INSERT INTO track_artist_link (version, type, name, track_id, artist_id)
 VALUES
 (1, 1, 'Artist A', 5, 1),
-(2, 1, 'Artist B', 6, 2);)"};
+(2, 1, 'Artist B', 6, 2);)" };
 
         Session session{ db };
 
@@ -319,4 +319,4 @@ VALUES
         // Now perform full migration
         db.getTLSSession().migrateSchemaIfNeeded();
     }
-}
+} // namespace lms::db::tests

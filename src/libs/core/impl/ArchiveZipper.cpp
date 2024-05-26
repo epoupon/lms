@@ -23,6 +23,7 @@
 #include <cassert>
 #include <cstring> // strerror
 #include <fstream>
+
 #include <archive.h>
 #include <archive_entry.h>
 
@@ -39,12 +40,14 @@ namespace lms::zip
     {
     public:
         FileException(const std::filesystem::path& p, std::string_view message)
-            : Exception{ "File '" + p.string() + "': " + std::string {message} }
-        {}
+            : Exception{ "File '" + p.string() + "': " + std::string{ message } }
+        {
+        }
 
         FileException(const std::filesystem::path& p, std::string_view message, int err)
-            : Exception{ "File '" + p.string() + "': " + std::string {message} + ": " + ::strerror(err) }
-        {}
+            : Exception{ "File '" + p.string() + "': " + std::string{ message } + ": " + ::strerror(err) }
+        {
+        }
     };
 
     class ArchiveException : public Exception
@@ -52,7 +55,8 @@ namespace lms::zip
     public:
         ArchiveException(struct ::archive* arch)
             : Exception{ getError(arch) }
-        {}
+        {
+        }
 
         static std::string_view getError(struct ::archive* arch)
         {
@@ -88,19 +92,16 @@ namespace lms::zip
         if (!_archive)
             throw Exception{ "Cannot create archive control struct" };
 
-        auto archiveOpen{ [](struct ::archive*, void*)
-        {
+        auto archiveOpen{ [](struct ::archive*, void*) {
             return ARCHIVE_OK;
         } };
 
-        auto archiveWrite{ [](struct ::archive*, void* clientData, const void* buff, ::size_t n) -> la_ssize_t
-        {
-            ArchiveZipper* zipper {static_cast<ArchiveZipper*>(clientData)};
+        auto archiveWrite{ [](struct ::archive*, void* clientData, const void* buff, ::size_t n) -> la_ssize_t {
+            ArchiveZipper* zipper{ static_cast<ArchiveZipper*>(clientData) };
             return zipper->onWriteCallback(static_cast<const std::byte*>(buff), n);
         } };
 
-        auto archiveClose{ [](struct ::archive*, void*)
-        {
+        auto archiveClose{ [](struct ::archive*, void*) {
             return ARCHIVE_OK;
         } };
 
@@ -183,8 +184,7 @@ namespace lms::zip
         using std::filesystem::perms;
         ::mode_t mode{};
 
-        auto testPerm{ [](perms p, perms permToTest)
-        {
+        auto testPerm{ [](perms p, perms permToTest) {
             return (p & permToTest) == permToTest;
         } };
 
@@ -295,4 +295,4 @@ namespace lms::zip
 
         return bufferSize;
     }
-}
+} // namespace lms::zip

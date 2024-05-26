@@ -25,21 +25,20 @@
 
 namespace lms::db
 {
-	class Db;
+    class Db;
 }
 
 namespace lms::recommendation::PlaylistGeneratorConstraint
 {
-	class ConsecutiveArtists : public IConstraint
-	{
-		public:
-			ConsecutiveArtists(db::Db& db);
+    class ConsecutiveArtists : public IConstraint
+    {
+    public:
+        ConsecutiveArtists(db::Db& db);
 
-		private:
-			 float computeScore(const TrackContainer& trackIds, std::size_t trackIndex) override;
-			 ArtistContainer getArtists(db::TrackId trackId);
+    private:
+        float computeScore(const TrackContainer& trackIds, std::size_t trackIndex) override;
+        ArtistContainer getArtists(db::TrackId trackId);
 
-			 db::Db& _db;
-	};
+        db::Db& _db;
+    };
 } // namespace lms::recommendation::PlaylistGeneratorConstraint
-

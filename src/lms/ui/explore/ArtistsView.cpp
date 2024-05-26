@@ -27,12 +27,12 @@
 #include "database/Session.hpp"
 #include "database/TrackArtistLink.hpp"
 
-#include "common/InfiniteScrollingContainer.hpp"
 #include "ArtistListHelpers.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "SortModeSelector.hpp"
 #include "TrackArtistLinkTypeSelector.hpp"
+#include "common/InfiniteScrollingContainer.hpp"
 
 namespace lms::ui
 {
@@ -61,27 +61,23 @@ namespace lms::ui
         }
 
         SortModeSelector* sortModeSelector{ bindNew<SortModeSelector>("sort-mode", _defaultSortMode) };
-        sortModeSelector->itemSelected.connect([this](ArtistCollector::Mode sortMode)
-            {
-                refreshView(sortMode);
-            });
+        sortModeSelector->itemSelected.connect([this](ArtistCollector::Mode sortMode) {
+            refreshView(sortMode);
+        });
 
         TrackArtistLinkTypeSelector* linkTypeSelector{ bindNew<TrackArtistLinkTypeSelector>("link-type", _defaultLinkType) };
-        linkTypeSelector->itemSelected.connect([this](std::optional<TrackArtistLinkType> linkType)
-            {
-                refreshView(linkType);
-            });
+        linkTypeSelector->itemSelected.connect([this](std::optional<TrackArtistLinkType> linkType) {
+            refreshView(linkType);
+        });
 
         _container = bindNew<InfiniteScrollingContainer>("artists", Wt::WString::tr("Lms.Explore.Artists.template.container"));
-        _container->onRequestElements.connect([this]
-            {
-                addSome();
-            });
+        _container->onRequestElements.connect([this] {
+            addSome();
+        });
 
-        filters.updated().connect([this]
-            {
-                refreshView();
-            });
+        filters.updated().connect([this] {
+            refreshView();
+        });
 
         refreshView(_artistCollector.getMode());
     }
@@ -112,7 +108,7 @@ namespace lms::ui
 
     void Artists::addSome()
     {
-        const auto artistIds{ _artistCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize}) };
+        const auto artistIds{ _artistCollector.get(Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }) };
 
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
@@ -128,4 +124,3 @@ namespace lms::ui
     }
 
 } // namespace lms::ui
-

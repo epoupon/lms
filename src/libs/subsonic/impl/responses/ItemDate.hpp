@@ -20,6 +20,7 @@
 #pragma once
 
 #include <Wt/WDate.h>
+
 #include "SubsonicResponse.hpp"
 
 namespace lms::api::subsonic

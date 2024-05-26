@@ -19,9 +19,10 @@
 
 #include <gtest/gtest.h>
 
-#include <Wt/WDateTime.h>
 #include <Wt/WDate.h>
+#include <Wt/WDateTime.h>
 #include <Wt/WTime.h>
+
 #include "core/String.hpp"
 
 namespace lms::core::stringUtils::tests
@@ -35,30 +36,29 @@ namespace lms::core::stringUtils::tests
             std::vector<std::string_view> expectedOutput;
         };
 
-        TestCase tests[]
-        {
-            {"abc", '-', {"abc"}},
-            {"a", '-', {"a"}},
-            {"", '-', {""}},
-            {"a-b-c", '-', {"a", "b", "c"}},
-            {"a|b|c", '|', {"a", "b", "c"}},
-            {"a;b;c", ';', {"a", "b", "c"}},
-            {";b;c", ';', {"", "b", "c"}},
-            {" ;b;c", ';', {" ", "b", "c"}},
-            {" ;;c", ';', {" ", "", "c"}},
-            {" ; ;c", ';', {" ", " ", "c"}},
-            {"a;b; ", ';', {"a", "b", " "}},
-            {"a;b", ';', {"a", "b"}},
-            {";b", ';', {"", "b"}},
-            {";", ';', {"", ""}},
-            {";;", ';', {"", "", ""}},
-            {";;;", ';', {"", "", "", ""}},
-            {";;a;;b;;", ';', {"", "", "a", "", "b", "", ""}},
-            {"a b", ' ', {"a", "b"}},
-            {"", ' ', {""}},
-            {"a-b|c", '-', {"a","b|c"}},
-            {"a|b-c", '-', {"a|b", "c"}},
-            {"test=foo bar", '=', {"test", "foo bar"}},
+        TestCase tests[]{
+            { "abc", '-', { "abc" } },
+            { "a", '-', { "a" } },
+            { "", '-', { "" } },
+            { "a-b-c", '-', { "a", "b", "c" } },
+            { "a|b|c", '|', { "a", "b", "c" } },
+            { "a;b;c", ';', { "a", "b", "c" } },
+            { ";b;c", ';', { "", "b", "c" } },
+            { " ;b;c", ';', { " ", "b", "c" } },
+            { " ;;c", ';', { " ", "", "c" } },
+            { " ; ;c", ';', { " ", " ", "c" } },
+            { "a;b; ", ';', { "a", "b", " " } },
+            { "a;b", ';', { "a", "b" } },
+            { ";b", ';', { "", "b" } },
+            { ";", ';', { "", "" } },
+            { ";;", ';', { "", "", "" } },
+            { ";;;", ';', { "", "", "", "" } },
+            { ";;a;;b;;", ';', { "", "", "a", "", "b", "", "" } },
+            { "a b", ' ', { "a", "b" } },
+            { "", ' ', { "" } },
+            { "a-b|c", '-', { "a", "b|c" } },
+            { "a|b-c", '-', { "a|b", "c" } },
+            { "test=foo bar", '=', { "test", "foo bar" } },
         };
 
         for (const TestCase& test : tests)
@@ -77,19 +77,18 @@ namespace lms::core::stringUtils::tests
             std::vector<std::string_view> expectedOutput;
         };
 
-        TestCase tests[]
-        {
-            {"abc", "", {"abc"}},
-            {"abc", "-", {"abc"}},
-            {"abc", "b", {"a", "c"}},
-            {"ab/cd", "/", {"ab", "cd"}},
-            {"ab/cd", "/ ", {"ab/cd"}},
-            {"ab/cd", " /", {"ab/cd"}},
-            {"ab /cd", " /", {"ab", "cd"}},
-            {"ab/ cd", "/ ", {"ab", "cd"}},
-            {"ab / cd", " / ", {"ab", "cd"}},
-            {"ab/cd", " / ", {"ab/cd"}},
-            {"ab/cd / ", " / ", {"ab/cd", ""}},
+        TestCase tests[]{
+            { "abc", "", { "abc" } },
+            { "abc", "-", { "abc" } },
+            { "abc", "b", { "a", "c" } },
+            { "ab/cd", "/", { "ab", "cd" } },
+            { "ab/cd", "/ ", { "ab/cd" } },
+            { "ab/cd", " /", { "ab/cd" } },
+            { "ab /cd", " /", { "ab", "cd" } },
+            { "ab/ cd", "/ ", { "ab", "cd" } },
+            { "ab / cd", " / ", { "ab", "cd" } },
+            { "ab/cd", " / ", { "ab/cd" } },
+            { "ab/cd / ", " / ", { "ab/cd", "" } },
         };
 
         for (const TestCase& test : tests)
@@ -108,15 +107,14 @@ namespace lms::core::stringUtils::tests
             std::string expectedOutput;
         };
 
-        TestCase tests[]
-        {
-            {{"a", "b", "c"}, "-", "a-b-c"},
-            {{"a", "b", "c"}, ",", "a,b,c"},
-            {{"a", "b", "c"}, "***", "a***b***c"},
-            {{"a", "", "c"}, "-", "a--c"},
-            {{"", "b", "c"}, "-", "-b-c"},
-            {{"a"}, "-", "a"},
-            {{"a"}, ",", "a"},
+        TestCase tests[]{
+            { { "a", "b", "c" }, "-", "a-b-c" },
+            { { "a", "b", "c" }, ",", "a,b,c" },
+            { { "a", "b", "c" }, "***", "a***b***c" },
+            { { "a", "", "c" }, "-", "a--c" },
+            { { "", "b", "c" }, "-", "-b-c" },
+            { { "a" }, "-", "a" },
+            { { "a" }, ",", "a" },
         };
 
         for (const TestCase& test : tests)
@@ -136,13 +134,12 @@ namespace lms::core::stringUtils::tests
             std::string expectedOutput;
         };
 
-        TestCase tests[]
-        {
-            {{""}, ';', '\\', ""},
-            {{";"}, ';', '\\', "\\;"},
-            {{";;"}, ';', '\\', "\\;\\;"},
-            {{"a;", "b"}, ';', '\\', "a\\;;b"},
-            {{"a;", "b;"}, ';', '\\', "a\\;;b\\;"},
+        TestCase tests[]{
+            { { "" }, ';', '\\', "" },
+            { { ";" }, ';', '\\', "\\;" },
+            { { ";;" }, ';', '\\', "\\;\\;" },
+            { { "a;", "b" }, ';', '\\', "a\\;;b" },
+            { { "a;", "b;" }, ';', '\\', "a\\;;b\\;" },
         };
 
         for (const TestCase& test : tests)
@@ -162,13 +159,12 @@ namespace lms::core::stringUtils::tests
             std::vector<std::string> expectedOutput;
         };
 
-        TestCase tests[]
-        {
-            {"", ';', '\\', {}},
-            {"\\;", ';', '\\', {";"}},
-            {"\\;\\;", ';', '\\', {";;"}},
-            {"a\\;;b", ';', '\\', {"a;", "b"}},
-            {"a\\;;b\\;", ';', '\\', {"a;", "b;"}},
+        TestCase tests[]{
+            { "", ';', '\\', {} },
+            { "\\;", ';', '\\', { ";" } },
+            { "\\;\\;", ';', '\\', { ";;" } },
+            { "a\\;;b", ';', '\\', { "a;", "b" } },
+            { "a\\;;b\\;", ';', '\\', { "a;", "b;" } },
         };
 
         for (const TestCase& test : tests)
@@ -250,17 +246,16 @@ namespace lms::core::stringUtils::tests
             std::string expectedOutput;
         };
 
-        TestCase tests[]
-        {
-            {"", ""},
-            {"C", "C"},
-            {"c", "C"},
-            {" c", " C"},
-            {" cc", " Cc"},
-            {"(c", "(c"},
-            {"1c", "1c"},
-            {"&c", "&c"},
-            {"c c", "C c"}
+        TestCase tests[]{
+            { "", "" },
+            { "C", "C" },
+            { "c", "C" },
+            { " c", " C" },
+            { " cc", " Cc" },
+            { "(c", "(c" },
+            { "1c", "1c" },
+            { "&c", "&c" },
+            { "c c", "C c" }
         };
 
         for (const TestCase& test : tests)
@@ -279,7 +274,7 @@ namespace lms::core::stringUtils::tests
 
     TEST(Stringutils, dateTime)
     {
-        const Wt::WDateTime dateTime{ Wt::WDate {2020, 01, 03 }, Wt::WTime{9, 8, 11, 75} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 2020, 01, 03 }, Wt::WTime{ 9, 8, 11, 75 } };
         EXPECT_EQ(toISO8601String(dateTime), "2020-01-03T09:08:11.075");
     }
 
@@ -294,4 +289,4 @@ namespace lms::core::stringUtils::tests
         EXPECT_FALSE(stringEndsWith("FooBar", "1FooBar"));
         EXPECT_FALSE(stringEndsWith("FooBar", "R"));
     }
-}
+} // namespace lms::core::stringUtils::tests

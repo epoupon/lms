@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include "database/UserId.hpp"
 #include "core/ILogger.hpp"
 #include "core/UUID.hpp"
+#include "database/UserId.hpp"
 
-#define LOG(sev, message)	LMS_LOG(SCROBBLING, sev, "[listenbrainz] " << message)
+#define LOG(sev, message) LMS_LOG(SCROBBLING, sev, "[listenbrainz] " << message)
 
 namespace lms::db
 {
@@ -32,6 +32,6 @@ namespace lms::db
 
 namespace lms::scrobbling::listenBrainz::utils
 {
-    std::optional<core::UUID>	getListenBrainzToken(db::Session& session, db::UserId userId);
+    std::optional<core::UUID> getListenBrainzToken(db::Session& session, db::UserId userId);
     std::string parseValidateToken(std::string_view msgBody);
-}
+} // namespace lms::scrobbling::listenBrainz::utils

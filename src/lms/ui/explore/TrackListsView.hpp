@@ -20,6 +20,7 @@
 #pragma once
 
 #include <unordered_map>
+
 #include <Wt/WTemplate.h>
 
 #include "database/Object.hpp"
@@ -66,4 +67,3 @@ namespace lms::ui
         std::unordered_map<db::TrackListId, Wt::WWidget*> _trackListWidgets;
     };
 } // namespace lms::ui
-

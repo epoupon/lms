@@ -21,14 +21,14 @@
 
 #include <ctime>
 
-#include "database/MediaLibrary.hpp"
-#include "database/TrackFeatures.hpp"
-#include "database/ScanSettings.hpp"
 #include "core/Exception.hpp"
-#include "core/Path.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
+#include "core/Path.hpp"
+#include "database/MediaLibrary.hpp"
+#include "database/ScanSettings.hpp"
+#include "database/TrackFeatures.hpp"
 
 #include "ScanStepCheckDuplicatedDbFiles.hpp"
 #include "ScanStepCompact.hpp"
@@ -92,13 +92,12 @@ namespace lms::scanner
     {
         std::scoped_lock lock{ _controlMutex };
 
-        _ioService.post([this]
-            {
-                if (_abortScan)
-                    return;
+        _ioService.post([this] {
+            if (_abortScan)
+                return;
 
-                scheduleNextScan();
-            });
+            scheduleNextScan();
+        });
 
         _ioService.start();
     }
@@ -140,25 +139,23 @@ namespace lms::scanner
     void ScannerService::requestImmediateScan(const ScanOptions& scanOptions)
     {
         abortScan();
-        _ioService.post([this, scanOptions]
-            {
-                if (_abortScan)
-                    return;
+        _ioService.post([this, scanOptions] {
+            if (_abortScan)
+                return;
 
-                scheduleScan(scanOptions);
-            });
+            scheduleScan(scanOptions);
+        });
     }
 
     void ScannerService::requestReload()
     {
         abortScan();
-        _ioService.post([this]()
-            {
-                if (_abortScan)
-                    return;
+        _ioService.post([this]() {
+            if (_abortScan)
+                return;
 
-                scheduleNextScan();
-            });
+            scheduleNextScan();
+        });
     }
 
     ScannerService::Status ScannerService::getStatus() const
@@ -230,8 +227,7 @@ namespace lms::scanner
 
     void ScannerService::scheduleScan(const ScanOptions& scanOptions, const Wt::WDateTime& dateTime)
     {
-        auto cb{ [this, scanOptions](boost::system::error_code ec)
-        {
+        auto cb{ [this, scanOptions](boost::system::error_code ec) {
             if (ec)
                 return;
 
@@ -271,7 +267,7 @@ namespace lms::scanner
 
         refreshScanSettings();
 
-        IScanStep::ScanContext scanContext{ scanOptions, ScanStats {}, ScanStepStats {} };
+        IScanStep::ScanContext scanContext{ scanOptions, ScanStats{}, ScanStepStats{} };
         ScanStats& stats{ scanContext.stats };
         stats.startTime = Wt::WDateTime::currentDateTime();
 
@@ -330,13 +326,11 @@ namespace lms::scanner
 
         _settings = std::move(newSettings);
 
-        auto cbFunc{ [this](const ScanStepStats& stats)
-            {
-                notifyInProgressIfNeeded(stats);
-            } };
+        auto cbFunc{ [this](const ScanStepStats& stats) {
+            notifyInProgressIfNeeded(stats);
+        } };
 
-        ScanStepBase::InitParams params
-        {
+        ScanStepBase::InitParams params{
             _settings,
             cbFunc,
             _abortScan,
@@ -375,14 +369,13 @@ namespace lms::scanner
                     [](const std::filesystem::path& extension) { return std::filesystem::path{ core::stringUtils::stringToLower(extension.string()) }; });
             }
 
-            MediaLibrary::find(_db.getTLSSession(), [&](const MediaLibrary::pointer& mediaLibrary)
-                {
-                    newSettings.mediaLibraries.push_back(ScannerSettings::MediaLibraryInfo{ mediaLibrary->getId(), mediaLibrary->getPath().lexically_normal() });
-                });
+            MediaLibrary::find(_db.getTLSSession(), [&](const MediaLibrary::pointer& mediaLibrary) {
+                newSettings.mediaLibraries.push_back(ScannerSettings::MediaLibraryInfo{ mediaLibrary->getId(), mediaLibrary->getPath().lexically_normal() });
+            });
 
             {
                 const auto& tags{ scanSettings->getExtraTagsToScan() };
-                std::transform(std::cbegin(tags), std::cend(tags), std::back_inserter(newSettings.extraTags), [](std::string_view tag) { return std::string{ tag };});
+                std::transform(std::cbegin(tags), std::cend(tags), std::back_inserter(newSettings.extraTags), [](std::string_view tag) { return std::string{ tag }; });
             }
 
             newSettings.artistTagDelimiters = scanSettings->getArtistTagDelimiters();

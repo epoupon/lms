@@ -29,7 +29,7 @@ namespace lms::feedback
 {
     namespace details
     {
-        template <typename StarredObjType>
+        template<typename StarredObjType>
         void onStarred(db::Session& session, typename StarredObjType::IdType id)
         {
             auto transaction{ session.createWriteTransaction() };
@@ -38,7 +38,7 @@ namespace lms::feedback
                 starredObj.modify()->setSyncState(db::SyncState::Synchronized);
         }
 
-        template <typename StarredObjType>
+        template<typename StarredObjType>
         void onUnstarred(db::Session& session, typename StarredObjType::IdType id)
         {
             auto transaction{ session.createWriteTransaction() };
@@ -46,11 +46,12 @@ namespace lms::feedback
             if (auto starredObj{ StarredObjType::find(session, id) })
                 starredObj.remove();
         }
-    }
+    } // namespace details
 
     InternalBackend::InternalBackend(db::Db& db)
         : _db{ db }
-    {}
+    {
+    }
 
     void InternalBackend::onStarred(db::StarredArtistId starredArtistId)
     {
@@ -81,4 +82,4 @@ namespace lms::feedback
     {
         details::onUnstarred<db::StarredTrack>(_db.getTLSSession(), starredTrackId);
     }
-} // Feedback
+} // namespace lms::feedback

@@ -25,6 +25,7 @@
 #include <taglib/tpropertymap.h>
 
 #include "metadata/IParser.hpp"
+
 #include "ITagReader.hpp"
 
 namespace lms::metadata

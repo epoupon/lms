@@ -23,7 +23,7 @@
 namespace lms::api::subsonic
 {
     // Stateless allocator that uses a shared MemoryResource
-    template <typename MemoryResource, typename T>
+    template<typename MemoryResource, typename T>
     class Allocator
     {
     public:
@@ -37,10 +37,12 @@ namespace lms::api::subsonic
 
         constexpr Allocator() noexcept = default;
 
-        template <typename U>
-        constexpr Allocator(const Allocator<MemoryResource, U>&) noexcept {}
+        template<typename U>
+        constexpr Allocator(const Allocator<MemoryResource, U>&) noexcept
+        {
+        }
 
-        template <typename V>
+        template<typename V>
         struct rebind
         {
             using other = Allocator<MemoryResource, V>;
@@ -59,17 +61,17 @@ namespace lms::api::subsonic
     };
 
     template<class MemoryResource, class T, class U>
-    bool operator==(const Allocator <MemoryResource, T>&, const Allocator <MemoryResource, U>&)
+    bool operator==(const Allocator<MemoryResource, T>&, const Allocator<MemoryResource, U>&)
     {
         return true;
     }
 
     template<class MemoryResource, class T, class U>
-    bool operator!=(const Allocator <MemoryResource, T>&, const Allocator <MemoryResource, U>&)
+    bool operator!=(const Allocator<MemoryResource, T>&, const Allocator<MemoryResource, U>&)
     {
         return false;
     }
- 
-    template <typename T>
+
+    template<typename T>
     using ResponseAllocator = Allocator<TLSMonotonicMemoryResource, T>;
-}
+} // namespace lms::api::subsonic

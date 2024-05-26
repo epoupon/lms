@@ -27,19 +27,19 @@
 
 #include <Wt/WFormModel.h>
 
-#include "services/auth/IPasswordService.hpp"
-#include "database/User.hpp"
-#include "database/Session.hpp"
-#include "core/IConfig.hpp"
 #include "core/Exception.hpp"
+#include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
+#include "services/auth/IPasswordService.hpp"
 
-#include "common/LoginNameValidator.hpp"
-#include "common/PasswordValidator.hpp"
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"
+#include "common/LoginNameValidator.hpp"
+#include "common/PasswordValidator.hpp"
 
 namespace lms::ui
 {
@@ -181,10 +181,9 @@ namespace lms::ui
 
     UserView::UserView()
     {
-        wApp->internalPathChanged().connect(this, [this]()
-            {
-                refreshView();
-            });
+        wApp->internalPathChanged().connect(this, [this]() {
+            refreshView();
+        });
 
         refreshView();
     }
@@ -249,23 +248,22 @@ namespace lms::ui
             t->setCondition("if-demo", true);
 
         Wt::WPushButton* saveBtn{ t->bindNew<Wt::WPushButton>("save-btn", Wt::WString::tr(userId ? "Lms.save" : "Lms.create")) };
-        saveBtn->clicked().connect([=]()
-            {
-                t->updateModel(model.get());
+        saveBtn->clicked().connect([=]() {
+            t->updateModel(model.get());
 
-                if (model->validate())
-                {
-                    model->saveData();
-                    LmsApp->notifyMsg(Notification::Type::Info,
-                        Wt::WString::tr("Lms.Admin.Users.users"),
-                        Wt::WString::tr(userId ? "Lms.Admin.User.user-updated" : "Lms.Admin.User.user-created"));
-                    LmsApp->setInternalPath("/admin/users", true);
-                }
-                else
-                {
-                    t->updateView(model.get());
-                }
-            });
+            if (model->validate())
+            {
+                model->saveData();
+                LmsApp->notifyMsg(Notification::Type::Info,
+                    Wt::WString::tr("Lms.Admin.Users.users"),
+                    Wt::WString::tr(userId ? "Lms.Admin.User.user-updated" : "Lms.Admin.User.user-created"));
+                LmsApp->setInternalPath("/admin/users", true);
+            }
+            else
+            {
+                t->updateView(model.get());
+            }
+        });
 
         t->updateView(model.get());
     }

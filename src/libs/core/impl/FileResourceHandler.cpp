@@ -80,7 +80,7 @@ namespace lms
 
                 std::ostringstream contentRange;
                 contentRange << "bytes " << startByte << "-"
-                    << _beyondLastByte - 1 << "/" << fileSize;
+                             << _beyondLastByte - 1 << "/" << fileSize;
 
                 response.addHeader("Content-Range", contentRange.str());
                 response.setContentLength(_beyondLastByte - startByte);
@@ -134,4 +134,4 @@ namespace lms
         LMS_LOG(UTILS, DEBUG, "Job complete!");
         return nullptr;
     }
-}
+} // namespace lms

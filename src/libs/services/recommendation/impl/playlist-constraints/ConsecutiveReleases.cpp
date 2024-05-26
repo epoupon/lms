@@ -19,59 +19,57 @@
 
 #include "ConsecutiveReleases.hpp"
 
+#include "core/ILogger.hpp"
 #include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "core/ILogger.hpp"
 
 namespace lms::recommendation::PlaylistGeneratorConstraint
 {
-	ConsecutiveReleases::ConsecutiveReleases(db::Db& db)
-		: _db {db}
-	{}
+    ConsecutiveReleases::ConsecutiveReleases(db::Db& db)
+        : _db{ db }
+    {
+    }
 
-	float
-	ConsecutiveReleases::computeScore(const std::vector<db::TrackId>& trackIds, std::size_t trackIndex)
-	{
-		assert(!trackIds.empty());
-		assert(trackIndex <= trackIds.size() - 1);
+    float ConsecutiveReleases::computeScore(const std::vector<db::TrackId>& trackIds, std::size_t trackIndex)
+    {
+        assert(!trackIds.empty());
+        assert(trackIndex <= trackIds.size() - 1);
 
-		const db::ReleaseId releaseId {getReleaseId(trackIds[trackIndex])};
+        const db::ReleaseId releaseId{ getReleaseId(trackIds[trackIndex]) };
 
-		constexpr std::size_t rangeSize{ 3 }; // check up to rangeSize tracks before/after the target track
-		static_assert(rangeSize > 0);
+        constexpr std::size_t rangeSize{ 3 }; // check up to rangeSize tracks before/after the target track
+        static_assert(rangeSize > 0);
 
-		float score {};
-		for (std::size_t i {1}; i < rangeSize; ++i)
-		{
-			if ((trackIndex >= i) && getReleaseId(trackIds[trackIndex - i]) == releaseId)
-				score += (1.f / static_cast<float>(i));
+        float score{};
+        for (std::size_t i{ 1 }; i < rangeSize; ++i)
+        {
+            if ((trackIndex >= i) && getReleaseId(trackIds[trackIndex - i]) == releaseId)
+                score += (1.f / static_cast<float>(i));
 
-			if ((trackIndex + i < trackIds.size()) && getReleaseId(trackIds[trackIndex + i]) == releaseId)
-				score += (1.f / static_cast<float>(i));
-		}
+            if ((trackIndex + i < trackIds.size()) && getReleaseId(trackIds[trackIndex + i]) == releaseId)
+                score += (1.f / static_cast<float>(i));
+        }
 
-		return score;
-	}
+        return score;
+    }
 
-	db::ReleaseId
-	ConsecutiveReleases::getReleaseId(db::TrackId trackId)
-	{
-		using namespace db;
+    db::ReleaseId ConsecutiveReleases::getReleaseId(db::TrackId trackId)
+    {
+        using namespace db;
 
-		Session& dbSession {_db.getTLSSession()};
-		auto transaction {dbSession.createReadTransaction()};
+        Session& dbSession{ _db.getTLSSession() };
+        auto transaction{ dbSession.createReadTransaction() };
 
-		const Track::pointer track {Track::find(dbSession, trackId)};
-		if (!track)
-			return {};
+        const Track::pointer track{ Track::find(dbSession, trackId) };
+        if (!track)
+            return {};
 
-		const Release::pointer release {track->getRelease()};
-		if (!release)
-			return {};
+        const Release::pointer release{ track->getRelease() };
+        if (!release)
+            return {};
 
-		return release->getId();
-	}
-} // namespace lms::recommendation
-
+        return release->getId();
+    }
+} // namespace lms::recommendation::PlaylistGeneratorConstraint

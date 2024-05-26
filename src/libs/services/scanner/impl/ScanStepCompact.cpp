@@ -30,4 +30,4 @@ namespace lms::scanner
         if (context.scanOptions.compact)
             _db.getTLSSession().vacuum();
     }
-}
+} // namespace lms::scanner

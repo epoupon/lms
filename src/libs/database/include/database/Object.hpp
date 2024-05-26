@@ -19,20 +19,23 @@
 
 #pragma once
 
-#include <Wt/WSignal.h>
 #include <Wt/Dbo/ptr.h>
+#include <Wt/WSignal.h>
+
 #include "database/IdType.hpp"
 #include "database/TransactionChecker.hpp"
 
 namespace lms::db
 {
-    template <typename T>
+    template<typename T>
     class ObjectPtr
     {
     public:
         ObjectPtr() = default;
-        ObjectPtr(const Wt::Dbo::ptr<T>& obj) : _obj{ obj } {}
-        ObjectPtr(Wt::Dbo::ptr<T>&& obj) : _obj{ std::move(obj) } {}
+        ObjectPtr(const Wt::Dbo::ptr<T>& obj)
+            : _obj{ obj } {}
+        ObjectPtr(Wt::Dbo::ptr<T>&& obj)
+            : _obj{ std::move(obj) } {}
 
         const T* operator->() const { return _obj.get(); }
         operator bool() const { return _obj.get(); }
@@ -60,11 +63,12 @@ namespace lms::db
         }
 
     private:
-        template <typename, typename> friend class Object;
+        template<typename, typename>
+        friend class Object;
         Wt::Dbo::ptr<T> _obj;
     };
 
-    template <typename T, typename ObjectIdType>
+    template<typename T, typename ObjectIdType>
     class Object : public Wt::Dbo::Dbo<T>
     {
         static_assert(std::is_base_of_v<db::IdType, ObjectIdType>);
@@ -80,7 +84,8 @@ namespace lms::db
         typename Wt::Dbo::dbo_traits<T>::IdType id() const = delete;
 
     protected:
-        template <typename> friend class ObjectPtr;
+        template<typename>
+        friend class ObjectPtr;
 
         virtual bool hasOnPreRemove() const { return false; }
         virtual void onPreRemove() {}
@@ -89,8 +94,10 @@ namespace lms::db
         virtual void onPostCreated() {}
 
         // Can get raw dbo ptr only from Objects
-        template <typename SomeObject>
-        static
-            Wt::Dbo::ptr<SomeObject> getDboPtr(ObjectPtr<SomeObject> ptr) { return ptr._obj; }
+        template<typename SomeObject>
+        static Wt::Dbo::ptr<SomeObject> getDboPtr(ObjectPtr<SomeObject> ptr)
+        {
+            return ptr._obj;
+        }
     };
-}
+} // namespace lms::db

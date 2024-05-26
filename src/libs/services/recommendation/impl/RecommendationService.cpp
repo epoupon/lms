@@ -22,14 +22,14 @@
 #include <unordered_map>
 #include <vector>
 
-#include "ClustersEngineCreator.hpp"
-#include "FeaturesEngineCreator.hpp"
-
-#include "database/Db.hpp"
-#include "database/Session.hpp"
-#include "database/ScanSettings.hpp"
 #include "core/Exception.hpp"
 #include "core/ILogger.hpp"
+#include "database/Db.hpp"
+#include "database/ScanSettings.hpp"
+#include "database/Session.hpp"
+
+#include "ClustersEngineCreator.hpp"
+#include "FeaturesEngineCreator.hpp"
 
 namespace lms::recommendation
 {
@@ -41,7 +41,7 @@ namespace lms::recommendation
 
             return db::ScanSettings::get(session)->getSimilarityEngineType();
         }
-    }
+    } // namespace
 
     std::unique_ptr<IRecommendationService> createRecommendationService(db::Db& db)
     {
@@ -81,7 +81,8 @@ namespace lms::recommendation
         if (!_engine)
             return res;
 
-        return _engine->getSimilarReleases(releaseId, maxCount);;
+        return _engine->getSimilarReleases(releaseId, maxCount);
+        ;
     }
 
     ArtistContainer RecommendationService::getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
@@ -120,4 +121,4 @@ namespace lms::recommendation
         if (_engine)
             _engine->load(false);
     }
-} // ns Similarity
+} // namespace lms::recommendation

@@ -47,7 +47,7 @@ namespace lms::som
         }
     };
 
-    template <typename T>
+    template<typename T>
     class Matrix
     {
     public:
@@ -61,7 +61,7 @@ namespace lms::som
         }
 
         template<typename... CtrArgs>
-        Matrix(Coordinate width, Coordinate height, CtrArgs&& ... args)
+        Matrix(Coordinate width, Coordinate height, CtrArgs&&... args)
             : _width{ width }
             , _height{ height }
         {
@@ -93,7 +93,7 @@ namespace lms::som
         T& operator[](const Position& position) { return get(position); }
         const T& operator[](const Position& position) const { return get(position); }
 
-        template <typename Func>
+        template<typename Func>
         Position getPositionMinElement(Func func) const
         {
             assert(!_values.empty());
@@ -105,12 +105,12 @@ namespace lms::som
         }
 
     private:
-        Coordinate		_width{};
-        Coordinate		_height{};
-        std::vector<T>	_values;
+        Coordinate _width{};
+        Coordinate _height{};
+        std::vector<T> _values;
     };
 
-} // ns lms::som
+} // namespace lms::som
 
 namespace std
 {
@@ -125,5 +125,4 @@ namespace std
             return h1 ^ (h2 << 1);
         }
     };
-} // ns std
-
+} // namespace std

@@ -30,20 +30,19 @@ namespace lms::scanner
     struct Events
     {
         // Called if scan was aborted
-        Wt::Signal<> 				scanAborted;
+        Wt::Signal<> scanAborted;
 
         // Called just after scan start
-        Wt::Signal<> 				scanStarted;
+        Wt::Signal<> scanStarted;
 
         // Called just after scan complete (true if changes have been made)
-        Wt::Signal<ScanStats>		scanComplete;
+        Wt::Signal<ScanStats> scanComplete;
 
         // Called during scan in progress
-        Wt::Signal<ScanStepStats>	scanInProgress;
+        Wt::Signal<ScanStepStats> scanInProgress;
 
         // Called after a schedule
-        Wt::Signal<Wt::WDateTime>	scanScheduled;
+        Wt::Signal<Wt::WDateTime> scanScheduled;
     };
 
-} // ns Scanner
-
+} // namespace lms::scanner

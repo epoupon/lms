@@ -23,121 +23,121 @@
 #include <Wt/Auth/PasswordStrengthValidator.h>
 #include <Wt/WRandom.h>
 
-#include "services/auth/Types.hpp"
+#include "core/Exception.hpp"
+#include "core/ILogger.hpp"
 #include "database/AuthToken.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "core/Exception.hpp"
-#include "core/ILogger.hpp"
+#include "services/auth/Types.hpp"
 
 namespace lms::auth
 {
 
-	std::unique_ptr<IAuthTokenService> createAuthTokenService(db::Db& db, std::size_t maxThrottlerEntries)
-	{
-		return std::make_unique<AuthTokenService>(db, maxThrottlerEntries);
-	}
+    std::unique_ptr<IAuthTokenService> createAuthTokenService(db::Db& db, std::size_t maxThrottlerEntries)
+    {
+        return std::make_unique<AuthTokenService>(db, maxThrottlerEntries);
+    }
 
-	static const Wt::Auth::SHA1HashFunction sha1Function;
+    static const Wt::Auth::SHA1HashFunction sha1Function;
 
-	AuthTokenService::AuthTokenService(db::Db& db, std::size_t maxThrottlerEntries)
-	: AuthServiceBase {db}
-	, _loginThrottler {maxThrottlerEntries}
-	{
-	}
+    AuthTokenService::AuthTokenService(db::Db& db, std::size_t maxThrottlerEntries)
+        : AuthServiceBase{ db }
+        , _loginThrottler{ maxThrottlerEntries }
+    {
+    }
 
-	std::string
-	AuthTokenService::createAuthToken(db::UserId userId, const Wt::WDateTime& expiry)
-	{
-		const std::string secret {Wt::WRandom::generateId(32)};
-		const std::string secretHash {sha1Function.compute(secret, {})};
+    std::string
+    AuthTokenService::createAuthToken(db::UserId userId, const Wt::WDateTime& expiry)
+    {
+        const std::string secret{ Wt::WRandom::generateId(32) };
+        const std::string secretHash{ sha1Function.compute(secret, {}) };
 
-		db::Session& session {getDbSession()};
+        db::Session& session{ getDbSession() };
 
-		auto transaction {session.createWriteTransaction()};
+        auto transaction{ session.createWriteTransaction() };
 
-		db::User::pointer user {db::User::find(session, userId)};
-		if (!user)
-			throw Exception {"User deleted"};
+        db::User::pointer user{ db::User::find(session, userId) };
+        if (!user)
+            throw Exception{ "User deleted" };
 
-		db::AuthToken::pointer authToken {session.create<db::AuthToken>(secretHash, expiry, user)};
+        db::AuthToken::pointer authToken{ session.create<db::AuthToken>(secretHash, expiry, user) };
 
-		LMS_LOG(UI, DEBUG, "Created auth token for user '" << user->getLoginName() << "', expiry = " << expiry.toString());
+        LMS_LOG(UI, DEBUG, "Created auth token for user '" << user->getLoginName() << "', expiry = " << expiry.toString());
 
-		if (user->getAuthTokensCount() >= 50)
-			db::AuthToken::removeExpiredTokens(session, Wt::WDateTime::currentDateTime());
+        if (user->getAuthTokensCount() >= 50)
+            db::AuthToken::removeExpiredTokens(session, Wt::WDateTime::currentDateTime());
 
-		return secret;
-	}
+        return secret;
+    }
 
-	std::optional<AuthTokenService::AuthTokenProcessResult::AuthTokenInfo>
-	AuthTokenService::processAuthToken(std::string_view secret)
-	{
-		const std::string secretHash {sha1Function.compute(std::string {secret}, {})};
+    std::optional<AuthTokenService::AuthTokenProcessResult::AuthTokenInfo>
+    AuthTokenService::processAuthToken(std::string_view secret)
+    {
+        const std::string secretHash{ sha1Function.compute(std::string{ secret }, {}) };
 
-		db::Session& session {getDbSession()};
-		auto transaction {session.createWriteTransaction()};
+        db::Session& session{ getDbSession() };
+        auto transaction{ session.createWriteTransaction() };
 
-		db::AuthToken::pointer authToken {db::AuthToken::find(session, secretHash)};
-		if (!authToken)
-			return std::nullopt;
+        db::AuthToken::pointer authToken{ db::AuthToken::find(session, secretHash) };
+        if (!authToken)
+            return std::nullopt;
 
-		if (authToken->getExpiry() < Wt::WDateTime::currentDateTime())
-		{
-			authToken.remove();
-			return std::nullopt;
-		}
+        if (authToken->getExpiry() < Wt::WDateTime::currentDateTime())
+        {
+            authToken.remove();
+            return std::nullopt;
+        }
 
-		LMS_LOG(UI, DEBUG, "Found auth token for user '" << authToken->getUser()->getLoginName() << "'!");
+        LMS_LOG(UI, DEBUG, "Found auth token for user '" << authToken->getUser()->getLoginName() << "'!");
 
-		AuthTokenService::AuthTokenProcessResult::AuthTokenInfo res {authToken->getUser()->getId(), authToken->getExpiry()};
-		authToken.remove();
+        AuthTokenService::AuthTokenProcessResult::AuthTokenInfo res{ authToken->getUser()->getId(), authToken->getExpiry() };
+        authToken.remove();
 
-		return res;
-	}
+        return res;
+    }
 
-	AuthTokenService::AuthTokenProcessResult
-	AuthTokenService::processAuthToken(const boost::asio::ip::address& clientAddress, std::string_view tokenValue)
-	{
-		// Do not waste too much resource on brute force attacks (optim)
-		{
-			std::shared_lock lock {_mutex};
+    AuthTokenService::AuthTokenProcessResult
+    AuthTokenService::processAuthToken(const boost::asio::ip::address& clientAddress, std::string_view tokenValue)
+    {
+        // Do not waste too much resource on brute force attacks (optim)
+        {
+            std::shared_lock lock{ _mutex };
 
-			if (_loginThrottler.isClientThrottled(clientAddress))
-				return AuthTokenProcessResult {AuthTokenProcessResult::State::Throttled};
-		}
+            if (_loginThrottler.isClientThrottled(clientAddress))
+                return AuthTokenProcessResult{ AuthTokenProcessResult::State::Throttled };
+        }
 
-		auto res {processAuthToken(tokenValue)};
-		{
-			std::unique_lock lock {_mutex};
+        auto res{ processAuthToken(tokenValue) };
+        {
+            std::unique_lock lock{ _mutex };
 
-			if (_loginThrottler.isClientThrottled(clientAddress))
-				return AuthTokenProcessResult {AuthTokenProcessResult::State::Throttled};
+            if (_loginThrottler.isClientThrottled(clientAddress))
+                return AuthTokenProcessResult{ AuthTokenProcessResult::State::Throttled };
 
-			if (!res)
-			{
-				_loginThrottler.onBadClientAttempt(clientAddress);
-				return AuthTokenProcessResult {AuthTokenProcessResult::State::Denied};
-			}
+            if (!res)
+            {
+                _loginThrottler.onBadClientAttempt(clientAddress);
+                return AuthTokenProcessResult{ AuthTokenProcessResult::State::Denied };
+            }
 
-			_loginThrottler.onGoodClientAttempt(clientAddress);
-			onUserAuthenticated(res->userId);
-			return AuthTokenProcessResult {AuthTokenProcessResult::State::Granted, std::move(*res)};
-		}
-	}
+            _loginThrottler.onGoodClientAttempt(clientAddress);
+            onUserAuthenticated(res->userId);
+            return AuthTokenProcessResult{ AuthTokenProcessResult::State::Granted, std::move(*res) };
+        }
+    }
 
-	void
-	AuthTokenService::clearAuthTokens(db::UserId userId)
-	{
-		db::Session& session {getDbSession()};
+    void
+    AuthTokenService::clearAuthTokens(db::UserId userId)
+    {
+        db::Session& session{ getDbSession() };
 
-		auto transaction {session.createWriteTransaction()};
+        auto transaction{ session.createWriteTransaction() };
 
-		db::User::pointer user {db::User::find(session, userId)};
-		if (!user)
-			throw Exception {"User deleted"};
+        db::User::pointer user{ db::User::find(session, userId) };
+        if (!user)
+            throw Exception{ "User deleted" };
 
-		user.modify()->clearAuthTokens();
-	}
+        user.modify()->clearAuthTokens();
+    }
 
 } // namespace lms::auth

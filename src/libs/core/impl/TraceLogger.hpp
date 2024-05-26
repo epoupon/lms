@@ -103,4 +103,4 @@ namespace lms::core::tracing
 
         static thread_local Buffer* _currentBuffer;
     };
-}
+} // namespace lms::core::tracing

@@ -20,6 +20,7 @@
 #include "SvgImage.hpp"
 
 #include <fstream>
+
 #include "core/ITraceLogger.hpp"
 #include "image/Exception.hpp"
 
@@ -50,4 +51,4 @@ namespace lms::image
 
         return std::make_unique<SvgImage>(std::move(data));
     }
-}
+} // namespace lms::image

@@ -19,14 +19,15 @@
 #pragma once
 
 #include <string>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
 
-#include <Wt/WResource.h>
 #include <Wt/Http/Response.h>
+#include <Wt/WResource.h>
 
 #include "database/Types.hpp"
 #include "database/UserId.hpp"
+
 #include "ClientInfo.hpp"
 #include "RequestContext.hpp"
 
@@ -37,26 +38,24 @@ namespace lms::db
 
 namespace lms::api::subsonic
 {
-
     class SubsonicResource final : public Wt::WResource
     {
-        public:
-            SubsonicResource(db::Db& db);
+    public:
+        SubsonicResource(db::Db& db);
 
-        private:
-            void handleRequest(const Wt::Http::Request &request, Wt::Http::Response &response) override;
-            ProtocolVersion getServerProtocolVersion(const std::string& clientName) const;
+    private:
+        void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
+        ProtocolVersion getServerProtocolVersion(const std::string& clientName) const;
 
-            static void checkProtocolVersion(ProtocolVersion client, ProtocolVersion server);
-            ClientInfo getClientInfo(const Wt::Http::Request& request);
-            RequestContext buildRequestContext(const Wt::Http::Request& request);
-            db::UserId authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo);
+        static void checkProtocolVersion(ProtocolVersion client, ProtocolVersion server);
+        ClientInfo getClientInfo(const Wt::Http::Request& request);
+        RequestContext buildRequestContext(const Wt::Http::Request& request);
+        db::UserId authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo);
 
-            const std::unordered_map<std::string, ProtocolVersion> _serverProtocolVersionsByClient;
-            const std::unordered_set<std::string> _openSubsonicDisabledClients;
-            const std::unordered_set<std::string> _defaultCoverClients;
+        const std::unordered_map<std::string, ProtocolVersion> _serverProtocolVersionsByClient;
+        const std::unordered_set<std::string> _openSubsonicDisabledClients;
+        const std::unordered_set<std::string> _defaultCoverClients;
 
-            db::Db& _db;
+        db::Db& _db;
     };
-
-} // namespace
+} // namespace lms::api::subsonic

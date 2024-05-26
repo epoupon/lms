@@ -25,6 +25,7 @@
 
 #include "av/TranscodingParameters.hpp"
 #include "core/IResourceHandler.hpp"
+
 #include "Transcoder.hpp"
 
 namespace lms::av::transcoding
@@ -36,7 +37,7 @@ namespace lms::av::transcoding
 
     private:
         Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& reponse) override;
-        void abort() override {};
+        void abort() override{};
 
         static constexpr std::size_t _chunkSize{ 262'144 };
         std::optional<std::size_t> _estimatedContentLength;
@@ -45,5 +46,4 @@ namespace lms::av::transcoding
         std::size_t _totalServedByteCount{};
         Transcoder _transcoder;
     };
-}
-
+} // namespace lms::av::transcoding

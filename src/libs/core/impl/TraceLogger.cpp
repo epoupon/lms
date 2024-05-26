@@ -22,6 +22,7 @@
 #include <iomanip>
 #include <memory>
 #include <string>
+
 #include "core/Exception.hpp"
 #include "core/ILogger.hpp"
 
@@ -32,7 +33,8 @@ namespace lms::core::tracing
         class CurrentThreadUnregisterer
         {
         public:
-            CurrentThreadUnregisterer(TraceLogger* logger) : _logger{ logger } {}
+            CurrentThreadUnregisterer(TraceLogger* logger)
+                : _logger{ logger } {}
             ~CurrentThreadUnregisterer()
             {
                 if (_logger)
@@ -45,7 +47,7 @@ namespace lms::core::tracing
 
             TraceLogger* _logger;
         };
-    }
+    } // namespace
 
     thread_local TraceLogger::Buffer* TraceLogger::_currentBuffer{};
 
@@ -71,11 +73,11 @@ namespace lms::core::tracing
         LMS_LOG(UTILS, INFO, "TraceLogger: using " << _buffers.size() << " buffers. Buffer size = " << std::to_string(BufferSize) << ", entry size = " << sizeof(CompleteEventEntry) << ", entry count per buffer = " << Buffer::CompleteEventCount);
 
         setMetadata("cpu_count", std::to_string(std::thread::hardware_concurrency()));
-        setMetadata("build_type", 
+        setMetadata("build_type",
 #ifndef NDEBUG
-        "debug"
+            "debug"
 #else
-        "release"
+            "release"
 #endif
         );
     }
@@ -182,7 +184,8 @@ namespace lms::core::tracing
                     if (first)
                         first = false;
                     else
-                        os << ", " << std::endl;;
+                        os << ", " << std::endl;
+                    ;
 
                     os << "\t\t{ ";
                     os << "\"name\" : \"" << event.name << "\", ";
@@ -297,4 +300,4 @@ namespace lms::core::tracing
 
         return static_cast<std::uint32_t>(id);
     }
-}
+} // namespace lms::core::tracing

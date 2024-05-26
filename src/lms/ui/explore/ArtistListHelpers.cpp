@@ -20,6 +20,7 @@
 
 #include "database/Artist.hpp"
 #include "database/Session.hpp"
+
 #include "LmsApplication.hpp"
 #include "Utils.hpp"
 
@@ -32,4 +33,4 @@ namespace lms::ui::ArtistListHelpers
 
         return res;
     }
-}
+} // namespace lms::ui::ArtistListHelpers

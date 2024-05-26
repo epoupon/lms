@@ -20,14 +20,14 @@
 #pragma once
 
 #include <deque>
-#include <vector>
 #include <string_view>
+#include <vector>
 
+#include <Wt/Http/Client.h>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/io_context_strand.hpp>
 #include <boost/asio/steady_timer.hpp>
 
-#include <Wt/Http/Client.h>
 #include "ClientRequest.hpp"
 
 namespace lms::core::http
@@ -53,15 +53,15 @@ namespace lms::core::http
         void onClientDoneSuccess(std::unique_ptr<ClientRequest> request, const Wt::Http::Message& msg);
         void throttle(std::chrono::seconds duration);
 
-        const std::size_t			_maxRetryCount{ 2 };
-        const std::chrono::seconds	_defaultRetryWaitDuration{ 30 };
-        const std::chrono::seconds	_minRetryWaitDuration{ 1 };
-        const std::chrono::seconds	_maxRetryWaitDuration{ 300 };
+        const std::size_t _maxRetryCount{ 2 };
+        const std::chrono::seconds _defaultRetryWaitDuration{ 30 };
+        const std::chrono::seconds _minRetryWaitDuration{ 1 };
+        const std::chrono::seconds _maxRetryWaitDuration{ 300 };
 
         boost::asio::io_context& _ioContext;
-        boost::asio::io_context::strand	_strand{ _ioContext };
-        boost::asio::steady_timer		_throttleTimer{ _ioContext };
-        std::string						_baseUrl;
+        boost::asio::io_context::strand _strand{ _ioContext };
+        boost::asio::steady_timer _throttleTimer{ _ioContext };
+        std::string _baseUrl;
 
         enum class State
         {
@@ -69,10 +69,10 @@ namespace lms::core::http
             Throttled,
             Sending,
         };
-        State								_state{ State::Idle };
-        Wt::Http::Client					_client{ _ioContext };
+        State _state{ State::Idle };
+        Wt::Http::Client _client{ _ioContext };
         std::map<ClientRequestParameters::Priority, std::deque<std::unique_ptr<ClientRequest>>> _sendQueue;
-        std::unique_ptr<ClientRequest>		_currentRequest;
+        std::unique_ptr<ClientRequest> _currentRequest;
     };
 
-}
+} // namespace lms::core::http

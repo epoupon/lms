@@ -19,8 +19,9 @@
 
 #pragma once
 
-#include <string>
 #include <optional>
+#include <string>
+
 #include <boost/asio/io_context.hpp>
 
 #include "IScrobblingBackend.hpp"
@@ -50,11 +51,10 @@ namespace lms::scrobbling::listenBrainz
         // Submit listens
         void enqueListen(const Listen& listen, const Wt::WDateTime& timePoint);
 
-        boost::asio::io_context&        _ioContext;
-        db::Db&                   _db;
-        std::string                     _baseAPIUrl;
-        std::unique_ptr<core::http::IClient>  _client;
-        ListensSynchronizer             _listensSynchronizer;
+        boost::asio::io_context& _ioContext;
+        db::Db& _db;
+        std::string _baseAPIUrl;
+        std::unique_ptr<core::http::IClient> _client;
+        ListensSynchronizer _listensSynchronizer;
     };
-} // scrobbling::ListenBrainz
-
+} // namespace lms::scrobbling::listenBrainz

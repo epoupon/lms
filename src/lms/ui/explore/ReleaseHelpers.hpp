@@ -32,13 +32,13 @@ namespace lms::db
     class ReleaseId;
     class Artist;
     class Release;
-}
+} // namespace lms::db
 
 namespace lms::ui::releaseListHelpers
 {
     std::unique_ptr<Wt::WTemplate> createEntry(const db::ObjectPtr<db::Release>& release);
     std::unique_ptr<Wt::WTemplate> createEntryForArtist(const db::ObjectPtr<db::Release>& release, const db::ObjectPtr<db::Artist>& artist);
-} // namespace lms::ui
+} // namespace lms::ui::releaseListHelpers
 
 namespace lms::ui::releaseHelpers
 {

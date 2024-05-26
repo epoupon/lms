@@ -21,8 +21,8 @@
 
 #include <Wt/Json/Array.h>
 #include <Wt/Json/Object.h>
-#include <Wt/Json/Value.h>
 #include <Wt/Json/Parser.h>
+#include <Wt/Json/Value.h>
 
 #include "Exception.hpp"
 #include "Utils.hpp"
@@ -37,14 +37,13 @@ namespace lms::feedback::listenBrainz
             if (!recordingMBID)
                 throw Exception{ "MBID not found!" };
 
-            return Feedback
-            {
+            return Feedback{
                 Wt::WDateTime::fromTime_t(static_cast<int>(feedbackObj.get("created"))),
-                    *recordingMBID,
-                    static_cast<FeedbackType>(static_cast<int>(feedbackObj.get("score")))
+                *recordingMBID,
+                static_cast<FeedbackType>(static_cast<int>(feedbackObj.get("score")))
             };
         }
-    }
+    } // namespace
 
     FeedbacksParser::Result FeedbacksParser::parse(std::string_view msgBody)
     {
@@ -87,4 +86,4 @@ namespace lms::feedback::listenBrainz
 
         return res;
     }
-} // feedback::ListenBrainz
+} // namespace lms::feedback::listenBrainz

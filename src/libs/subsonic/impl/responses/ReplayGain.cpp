@@ -35,4 +35,4 @@ namespace lms::api::subsonic
 
         return replayGainNode;
     }
-}
+} // namespace lms::api::subsonic

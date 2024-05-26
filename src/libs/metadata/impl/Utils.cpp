@@ -19,9 +19,9 @@
 
 #include "Utils.hpp"
 #include <ctime>
-#include <string_view>
 #include <iomanip>
 #include <sstream>
+#include <string_view>
 
 #include "core/Exception.hpp"
 
@@ -29,8 +29,7 @@ namespace lms::metadata::utils
 {
     Wt::WDate parseDate(std::string_view dateStr)
     {
-        static constexpr const char* formats[]
-        {
+        static constexpr const char* formats[]{
             "%Y-%m-%d",
             "%Y/%m/%d",
         };
@@ -41,7 +40,7 @@ namespace lms::metadata::utils
             tm.tm_mon = -1;
             tm.tm_mday = -1;
 
-            std::istringstream ss{ std::string {dateStr} }; // TODO, remove extra copy here
+            std::istringstream ss{ std::string{ dateStr } }; // TODO, remove extra copy here
             ss >> std::get_time(&tm, format);
             if (ss.fail())
                 continue;
@@ -49,11 +48,10 @@ namespace lms::metadata::utils
             if (tm.tm_mday <= 0 || tm.tm_mon < 0)
                 continue;
 
-            const Wt::WDate res
-            {
-                tm.tm_year + 1900,  // tm.tm_year: years since 1900
-                tm.tm_mon + 1,      // tm.tm_mon: months since January – [00, 11]
-                tm.tm_mday          // tm.tm_mday: day of the month – [1, 31]
+            const Wt::WDate res{
+                tm.tm_year + 1900, // tm.tm_year: years since 1900
+                tm.tm_mon + 1,     // tm.tm_mon: months since January – [00, 11]
+                tm.tm_mday         // tm.tm_mday: day of the month – [1, 31]
             };
             if (!res.isValid())
                 continue;
@@ -87,7 +85,8 @@ namespace lms::metadata::utils
         int result{};
         for (std::size_t i{}; i < yearStr.size() && i < 4; ++i)
         {
-            if (!std::isdigit(yearStr[i])) {
+            if (!std::isdigit(yearStr[i]))
+            {
                 break;
             }
             result = result * 10 + (yearStr[i] - '0');
@@ -100,9 +99,12 @@ namespace lms::metadata::utils
     {
         switch (readStyle)
         {
-        case ParserReadStyle::Fast: return "fast";
-        case ParserReadStyle::Average: return "average";
-        case ParserReadStyle::Accurate: return "accurate";
+        case ParserReadStyle::Fast:
+            return "fast";
+        case ParserReadStyle::Average:
+            return "average";
+        case ParserReadStyle::Accurate:
+            return "accurate";
         }
 
         throw core::LmsException{ "Unknown read style" };
@@ -150,6 +152,6 @@ namespace lms::metadata::utils
         if (!roleEnd || !roleBegin)
             artistName = core::stringUtils::stringTrim(entry);
 
-        return PerformerArtist{ Artist {artistName}, std::string {role} };
+        return PerformerArtist{ Artist{ artistName }, std::string{ role } };
     }
-}
+} // namespace lms::metadata::utils

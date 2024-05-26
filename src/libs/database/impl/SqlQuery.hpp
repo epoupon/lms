@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace lms::db
 {
@@ -40,8 +40,8 @@ namespace lms::db
         const std::vector<std::string>& getBindArgs() const { return _bindArgs; }
 
     private:
-        std::string _clause;		// WHERE clause
-        std::vector<std::string>  _bindArgs;
+        std::string _clause; // WHERE clause
+        std::vector<std::string> _bindArgs;
     };
 
     class InnerJoinClause
@@ -68,13 +68,13 @@ namespace lms::db
         std::string get() const { return _statement; }
 
     private:
-        std::string _statement;		// SELECT statement
+        std::string _statement; // SELECT statement
     };
 
     class SelectStatement
     {
     public:
-        SelectStatement() {};
+        SelectStatement(){};
         SelectStatement(const std::string& item);
 
         SelectStatement& And(const std::string& item);
@@ -82,7 +82,7 @@ namespace lms::db
         std::string get() const;
 
     private:
-        std::vector<std::string>	_statement;
+        std::vector<std::string> _statement;
     };
 
     class FromClause
@@ -96,16 +96,24 @@ namespace lms::db
         std::string get() const;
 
     private:
-        std::vector<std::string>	_clause;
+        std::vector<std::string> _clause;
     };
 
     class SqlQuery
     {
     public:
         SelectStatement& select() { return _selectStatement; }
-        SelectStatement& select(const std::string& statement) { _selectStatement = SelectStatement(statement); return _selectStatement; }
+        SelectStatement& select(const std::string& statement)
+        {
+            _selectStatement = SelectStatement(statement);
+            return _selectStatement;
+        }
         FromClause& from() { return _fromClause; }
-        FromClause& from(const std::string& clause) { _whereClause = WhereClause(clause); return _fromClause; }
+        FromClause& from(const std::string& clause)
+        {
+            _whereClause = WhereClause(clause);
+            return _fromClause;
+        }
         InnerJoinClause& innerJoin() { return _innerJoinClause; }
         WhereClause& where() { return _whereClause; }
         const WhereClause& where() const { return _whereClause; }
@@ -115,10 +123,10 @@ namespace lms::db
         std::string get() const;
 
     private:
-        SelectStatement		_selectStatement;	// SELECT statement
-        InnerJoinClause		_innerJoinClause;	// INNER JOIN
-        FromClause		_fromClause;		// FROM tables
-        WhereClause		_whereClause;		// WHERE clause
-        GroupByStatement	_groupByStatement;	// GROUP BY statement
+        SelectStatement _selectStatement;   // SELECT statement
+        InnerJoinClause _innerJoinClause;   // INNER JOIN
+        FromClause _fromClause;             // FROM tables
+        WhereClause _whereClause;           // WHERE clause
+        GroupByStatement _groupByStatement; // GROUP BY statement
     };
-}
+} // namespace lms::db

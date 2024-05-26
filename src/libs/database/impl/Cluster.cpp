@@ -25,16 +25,17 @@
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+
 #include "IdTypeTraits.hpp"
-#include "StringViewTraits.hpp"
 #include "SqlQuery.hpp"
+#include "StringViewTraits.hpp"
 #include "Utils.hpp"
 
 namespace lms::db
 {
     namespace
     {
-        template <typename ResultType>
+        template<typename ResultType>
         Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Cluster::FindParameters& params)
         {
             session.checkReadTransaction();
@@ -44,7 +45,7 @@ namespace lms::db
 
             if (params.track.isValid() || params.release.isValid())
                 query.join("track_cluster t_c ON t_c.cluster_id = c.id");
-            
+
             if (!params.clusterTypeName.empty())
                 query.join("cluster_type c_t ON c_t.id = c.cluster_type_id");
 
@@ -77,7 +78,7 @@ namespace lms::db
             return query;
         }
 
-        template <typename ResultType>
+        template<typename ResultType>
         Wt::Dbo::Query<ResultType> createQuery(Session& session, const Cluster::FindParameters& params)
         {
             std::string_view itemToSelect;
@@ -91,17 +92,17 @@ namespace lms::db
 
             return createQuery<ResultType>(session, itemToSelect, params);
         }
-    }
+    } // namespace
 
     Cluster::Cluster(ObjectPtr<ClusterType> type, std::string_view name)
-        : _name{ std::string {name, 0, _maxNameLength} },
-        _clusterType{ getDboPtr(type) }
+        : _name{ std::string{ name, 0, _maxNameLength } }
+        , _clusterType{ getDboPtr(type) }
     {
     }
 
     Cluster::pointer Cluster::create(Session& session, ObjectPtr<ClusterType> type, std::string_view name)
     {
-        return session.getDboSession()->add(std::unique_ptr<Cluster> {new Cluster{ type, name }});
+        return session.getDboSession()->add(std::unique_ptr<Cluster>{ new Cluster{ type, name } });
     }
 
     std::size_t Cluster::getCount(Session& session)
@@ -154,16 +155,14 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(t.id) FROM track t INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
-            .where("t_c.cluster_id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(t.id) FROM track t INNER JOIN track_cluster t_c ON t_c.track_id = t.id").where("t_c.cluster_id = ?").bind(id));
     }
 
     std::size_t Cluster::computeReleaseCount(Session& session, ClusterId id)
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(DISTINCT r.id) FROM release r INNER JOIN track t on t.release_id = r.id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
-            .where("t_c.cluster_id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(DISTINCT r.id) FROM release r INNER JOIN track t on t.release_id = r.id INNER JOIN track_cluster t_c ON t_c.track_id = t.id").where("t_c.cluster_id = ?").bind(id));
     }
 
     void Cluster::addTrack(ObjectPtr<Track> track)
@@ -175,8 +174,7 @@ namespace lms::db
     {
         assert(session());
 
-        auto query{ session()->query<TrackId>("SELECT t.id FROM track t INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id")
-                .where("c.id = ?").bind(getId()) };
+        auto query{ session()->query<TrackId>("SELECT t.id FROM track t INNER JOIN cluster c ON c.id = t_c.cluster_id INNER JOIN track_cluster t_c ON t_c.track_id = t.id").where("c.id = ?").bind(getId()) };
 
         return utils::execRangeQuery<TrackId>(query, range);
     }
@@ -188,7 +186,7 @@ namespace lms::db
 
     ClusterType::pointer ClusterType::create(Session& session, std::string_view name)
     {
-        return session.getDboSession()->add(std::unique_ptr<ClusterType> {new ClusterType{ name }});
+        return session.getDboSession()->add(std::unique_ptr<ClusterType>{ new ClusterType{ name } });
     }
 
     std::size_t ClusterType::getCount(Session& session)
@@ -203,9 +201,9 @@ namespace lms::db
         session.checkReadTransaction();
 
         auto query{ session.getDboSession()->query<ClusterTypeId>(
-                "SELECT c_t.id from cluster_type c_t"
-                " LEFT OUTER JOIN cluster c ON c_t.id = c.cluster_type_id")
-            .where("c.id IS NULL") };
+                                               "SELECT c_t.id from cluster_type c_t"
+                                               " LEFT OUTER JOIN cluster c ON c_t.id = c.cluster_type_id")
+                        .where("c.id IS NULL") };
 
         return utils::execRangeQuery<ClusterTypeId>(query, range);
     }
@@ -215,8 +213,8 @@ namespace lms::db
         session.checkReadTransaction();
 
         auto query{ session.getDboSession()->query<ClusterTypeId>(
-                "SELECT DISTINCT c_t.id from cluster_type c_t")
-            .join("cluster c ON c_t.id = c.cluster_type_id") };
+                                               "SELECT DISTINCT c_t.id from cluster_type c_t")
+                        .join("cluster c ON c_t.id = c.cluster_type_id") };
 
         return utils::execRangeQuery<ClusterTypeId>(query, range);
     }
@@ -255,9 +253,7 @@ namespace lms::db
         assert(self());
         assert(session());
 
-        return utils::fetchQuerySingleResult(session()->find<Cluster>()
-            .where("name = ?").bind(name)
-            .where("cluster_type_id = ?").bind(getId()));
+        return utils::fetchQuerySingleResult(session()->find<Cluster>().where("name = ?").bind(name).where("cluster_type_id = ?").bind(getId()));
     }
 
     std::vector<Cluster::pointer> ClusterType::getClusters() const
@@ -265,8 +261,6 @@ namespace lms::db
         assert(self());
         assert(session());
 
-        return utils::fetchQueryResults<Cluster::pointer>(session()->find<Cluster>()
-            .where("cluster_type_id = ?").bind(getId())
-            .orderBy("name"));
+        return utils::fetchQueryResults<Cluster::pointer>(session()->find<Cluster>().where("cluster_type_id = ?").bind(getId()).orderBy("name"));
     }
 } // namespace lms::db

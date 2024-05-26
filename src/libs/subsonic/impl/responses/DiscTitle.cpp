@@ -30,4 +30,4 @@ namespace lms::api::subsonic
 
         return discTitleNode;
     }
-}
+} // namespace lms::api::subsonic

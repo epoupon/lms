@@ -18,6 +18,7 @@
  */
 
 #include <random>
+
 #include <benchmark/benchmark.h>
 
 #include "som/Network.hpp"
@@ -50,6 +51,6 @@ namespace lms::som
 
     // Register the benchmark with custom range
     BENCHMARK(BM_Matrix)->Arg(3)->Arg(6)->Arg(12)->Arg(24);
-}
+} // namespace lms::som
 
 BENCHMARK_MAIN();

@@ -52,5 +52,4 @@ namespace lms::cover
 
     std::unique_ptr<ICoverService> createCoverService(db::Db& db, const std::filesystem::path& defaultSvgCoverPath);
 
-} // namespace lms::coverArt
-
+} // namespace lms::cover

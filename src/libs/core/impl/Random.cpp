@@ -35,4 +35,4 @@ namespace lms::core::random
         return RandGenerator{ seed };
     }
 
-}
+} // namespace lms::core::random

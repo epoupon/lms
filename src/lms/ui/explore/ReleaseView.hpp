@@ -21,34 +21,34 @@
 
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
+
 #include "common/Template.hpp"
 
 namespace lms::db
 {
-	class Release;
+    class Release;
 }
 
 namespace lms::ui
 {
-	class Filters;
-	class PlayQueueController;
+    class Filters;
+    class PlayQueueController;
 
-	class Release : public Template
-	{
-		public:
-			Release(Filters& filters, PlayQueueController& playQueueController);
+    class Release : public Template
+    {
+    public:
+        Release(Filters& filters, PlayQueueController& playQueueController);
 
-		private:
-			void refreshView();
-			void refreshReleaseArtists(const db::ObjectPtr<db::Release>& release);
-			void refreshCopyright(const db::ObjectPtr<db::Release>& release);
-			void refreshLinks(const db::ObjectPtr<db::Release>& release);
-			void refreshSimilarReleases(const std::vector<db::ReleaseId>& similarReleasesId);
+    private:
+        void refreshView();
+        void refreshReleaseArtists(const db::ObjectPtr<db::Release>& release);
+        void refreshCopyright(const db::ObjectPtr<db::Release>& release);
+        void refreshLinks(const db::ObjectPtr<db::Release>& release);
+        void refreshSimilarReleases(const std::vector<db::ReleaseId>& similarReleasesId);
 
-			Filters&				_filters;
-			PlayQueueController&	_playQueueController;
-			db::ReleaseId		_releaseId;
-			bool					_needForceRefresh {};
-	};
+        Filters& _filters;
+        PlayQueueController& _playQueueController;
+        db::ReleaseId _releaseId;
+        bool _needForceRefresh{};
+    };
 } // namespace lms::ui
-

@@ -35,4 +35,4 @@ namespace lms::image
         virtual std::size_t getDataSize() const = 0;
         virtual std::string_view getMimeType() const = 0;
     };
-}
+} // namespace lms::image

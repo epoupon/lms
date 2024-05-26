@@ -65,5 +65,4 @@ namespace lms::ui
             _searchKeywords.clear();
     }
 
-} // ns UserInterface
-
+} // namespace lms::ui

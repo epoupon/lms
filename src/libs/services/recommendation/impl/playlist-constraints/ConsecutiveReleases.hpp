@@ -25,22 +25,21 @@
 
 namespace lms::db
 {
-	class Db;
+    class Db;
 }
 
 namespace lms::recommendation::PlaylistGeneratorConstraint
 {
-	class ConsecutiveReleases : public IConstraint
-	{
-		public:
-			ConsecutiveReleases(db::Db& db);
+    class ConsecutiveReleases : public IConstraint
+    {
+    public:
+        ConsecutiveReleases(db::Db& db);
 
-		private:
-			 float computeScore(const std::vector<db::TrackId>& trackIds, std::size_t trackIndex) override;
+    private:
+        float computeScore(const std::vector<db::TrackId>& trackIds, std::size_t trackIndex) override;
 
-			 db::ReleaseId getReleaseId(db::TrackId trackId);
+        db::ReleaseId getReleaseId(db::TrackId trackId);
 
-			 db::Db& _db;
-	};
-} // namespace lms::recommendation
-
+        db::Db& _db;
+    };
+} // namespace lms::recommendation::PlaylistGeneratorConstraint

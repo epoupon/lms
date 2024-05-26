@@ -63,10 +63,10 @@ namespace lms::db
         };
 
         core::RecursiveSharedMutex _sharedMutex;
-        std::unique_ptr<Wt::Dbo::SqlConnectionPool>	_connectionPool;
+        std::unique_ptr<Wt::Dbo::SqlConnectionPool> _connectionPool;
 
         std::mutex _tlsSessionsMutex;
         std::vector<std::unique_ptr<Session>> _tlsSessions;
     };
 
-}
+} // namespace lms::db

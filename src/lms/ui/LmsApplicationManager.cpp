@@ -23,26 +23,24 @@
 
 namespace lms::ui
 {
-	void
-	LmsApplicationManager::registerApplication(LmsApplication& application)
-	{
-		{
-			std::scoped_lock lock {_mutex};
-			m_applications[application.getUserId()].insert(&application);
-		}
+    void LmsApplicationManager::registerApplication(LmsApplication& application)
+    {
+        {
+            std::scoped_lock lock{ _mutex };
+            m_applications[application.getUserId()].insert(&application);
+        }
 
-		applicationRegistered.emit(application);
-	}
+        applicationRegistered.emit(application);
+    }
 
-	void
-	LmsApplicationManager::unregisterApplication(LmsApplication& application)
-	{
-		{
-			std::scoped_lock lock {_mutex};
-			m_applications[application.getUserId()].erase(&application);
-		}
+    void LmsApplicationManager::unregisterApplication(LmsApplication& application)
+    {
+        {
+            std::scoped_lock lock{ _mutex };
+            m_applications[application.getUserId()].erase(&application);
+        }
 
-		applicationUnregistered.emit(application);
-	}
+        applicationUnregistered.emit(application);
+    }
 
-} // UserInterface
+} // namespace lms::ui

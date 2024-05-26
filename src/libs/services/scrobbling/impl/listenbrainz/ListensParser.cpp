@@ -21,10 +21,11 @@
 
 #include <Wt/Json/Array.h>
 #include <Wt/Json/Object.h>
-#include <Wt/Json/Value.h>
 #include <Wt/Json/Parser.h>
+#include <Wt/Json/Value.h>
 
 #include "core/ILogger.hpp"
+
 #include "Utils.hpp"
 
 namespace lms::scrobbling::listenBrainz
@@ -102,4 +103,4 @@ namespace lms::scrobbling::listenBrainz
 
         return result;
     }
-} // scrobbling::ListenBrainz
+} // namespace lms::scrobbling::listenBrainz

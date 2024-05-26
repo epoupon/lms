@@ -22,11 +22,12 @@
 #include <Wt/Http/Request.h>
 
 #include <optional>
-#include <vector>
 #include <string>
+#include <vector>
 
-#include "database/Types.hpp"
 #include "core/String.hpp"
+#include "database/Types.hpp"
+
 #include "SubsonicResponse.hpp"
 
 namespace lms::api::subsonic
@@ -84,5 +85,4 @@ namespace lms::api::subsonic
 
     bool hasParameter(const Wt::Http::ParameterMap& parameterMap, const std::string& param);
     std::string decodePasswordIfNeeded(const std::string& password);
-}
-
+} // namespace lms::api::subsonic

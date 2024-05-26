@@ -19,26 +19,28 @@
 
 #include "database/TrackFeatures.hpp"
 
-#include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 
+#include "core/ILogger.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "core/ILogger.hpp"
+
 #include "IdTypeTraits.hpp"
 #include "Utils.hpp"
 
-namespace lms::db {
+namespace lms::db
+{
 
     TrackFeatures::TrackFeatures(ObjectPtr<Track> track, const std::string& jsonEncodedFeatures)
-        : _data{ jsonEncodedFeatures },
-        _track{ getDboPtr(track) }
+        : _data{ jsonEncodedFeatures }
+        , _track{ getDboPtr(track) }
     {
     }
 
     TrackFeatures::pointer TrackFeatures::create(Session& session, ObjectPtr<Track> track, const std::string& jsonEncodedFeatures)
     {
-        return session.getDboSession()->add(std::unique_ptr<TrackFeatures> {new TrackFeatures{ track, jsonEncodedFeatures }});
+        return session.getDboSession()->add(std::unique_ptr<TrackFeatures>{ new TrackFeatures{ track, jsonEncodedFeatures } });
     }
 
     std::size_t TrackFeatures::getCount(Session& session)
@@ -52,16 +54,14 @@ namespace lms::db {
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackFeatures>()
-            .where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackFeatures>().where("id = ?").bind(id));
     }
 
     TrackFeatures::pointer TrackFeatures::find(Session& session, TrackId trackId)
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackFeatures>()
-            .where("track_id = ?").bind(trackId));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackFeatures>().where("track_id = ?").bind(trackId));
     }
 
     RangeResults<TrackFeaturesId> TrackFeatures::find(Session& session, std::optional<Range> range)
@@ -75,7 +75,7 @@ namespace lms::db {
 
     FeatureValues TrackFeatures::getFeatureValues(const FeatureName& featureNode) const
     {
-        FeatureValuesMap featuresValuesMap{ getFeatureValuesMap({featureNode}) };
+        FeatureValuesMap featuresValuesMap{ getFeatureValuesMap({ featureNode }) };
         return std::move(featuresValuesMap[featureNode]);
     }
 

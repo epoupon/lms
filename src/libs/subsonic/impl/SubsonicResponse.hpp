@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "core/LiteralString.hpp"
+
 #include "RequestContext.hpp"
 #include "SubsonicResponseAllocator.hpp"
 
@@ -57,7 +58,8 @@ namespace lms::api::subsonic
             RequestedDataNotFound = 70,
         };
 
-        Error(Code code) : _code{ code } {}
+        Error(Code code)
+            : _code{ code } {}
 
         virtual std::string getMessage() const = 0;
 
@@ -70,7 +72,8 @@ namespace lms::api::subsonic
     class GenericError : public Error
     {
     public:
-        GenericError() : Error{ Code::Generic } {}
+        GenericError()
+            : Error{ Code::Generic } {}
     };
 
     class RequiredParameterMissingError : public Error
@@ -79,7 +82,8 @@ namespace lms::api::subsonic
         RequiredParameterMissingError(std::string_view param)
             : Error{ Code::RequiredParameterMissing }
             , _param{ param }
-        {}
+        {
+        }
 
     private:
         std::string getMessage() const override { return "Required parameter '" + _param + "' is missing."; }
@@ -89,7 +93,9 @@ namespace lms::api::subsonic
     class ClientMustUpgradeError : public Error
     {
     public:
-        ClientMustUpgradeError() : Error{ Code::ClientMustUpgrade } {}
+        ClientMustUpgradeError()
+            : Error{ Code::ClientMustUpgrade } {}
+
     private:
         std::string getMessage() const override { return "Incompatible Subsonic REST protocol version. Client must upgrade."; }
     };
@@ -97,7 +103,9 @@ namespace lms::api::subsonic
     class ServerMustUpgradeError : public Error
     {
     public:
-        ServerMustUpgradeError() : Error{ Code::ServerMustUpgrade } {}
+        ServerMustUpgradeError()
+            : Error{ Code::ServerMustUpgrade } {}
+
     private:
         std::string getMessage() const override { return "Incompatible Subsonic REST protocol version. Server must upgrade."; }
     };
@@ -105,7 +113,9 @@ namespace lms::api::subsonic
     class WrongUsernameOrPasswordError : public Error
     {
     public:
-        WrongUsernameOrPasswordError() : Error{ Code::WrongUsernameOrPassword } {}
+        WrongUsernameOrPasswordError()
+            : Error{ Code::WrongUsernameOrPassword } {}
+
     private:
         std::string getMessage() const override { return "Wrong username or password."; }
     };
@@ -113,7 +123,9 @@ namespace lms::api::subsonic
     class TokenAuthenticationNotSupportedForLDAPUsersError : public Error
     {
     public:
-        TokenAuthenticationNotSupportedForLDAPUsersError() : Error{ Code::TokenAuthenticationNotSupportedForLDAPUsers } {}
+        TokenAuthenticationNotSupportedForLDAPUsersError()
+            : Error{ Code::TokenAuthenticationNotSupportedForLDAPUsers } {}
+
     private:
         std::string getMessage() const override { return "Token authentication not supported for LDAP users."; }
     };
@@ -121,7 +133,9 @@ namespace lms::api::subsonic
     class UserNotAuthorizedError : public Error
     {
     public:
-        UserNotAuthorizedError() : Error{ Code::UserNotAuthorized } {}
+        UserNotAuthorizedError()
+            : Error{ Code::UserNotAuthorized } {}
+
     private:
         std::string getMessage() const override { return "User is not authorized for the given operation."; }
     };
@@ -129,7 +143,9 @@ namespace lms::api::subsonic
     class RequestedDataNotFoundError : public Error
     {
     public:
-        RequestedDataNotFoundError() : Error{ Code::RequestedDataNotFound } {}
+        RequestedDataNotFoundError()
+            : Error{ Code::RequestedDataNotFound } {}
+
     private:
         std::string getMessage() const override { return "The requested data was not found."; }
     };
@@ -137,7 +153,9 @@ namespace lms::api::subsonic
     class InternalErrorGenericError : public GenericError
     {
     public:
-        InternalErrorGenericError(const std::string& message) : _message{ message } {}
+        InternalErrorGenericError(const std::string& message)
+            : _message{ message } {}
+
     private:
         std::string getMessage() const override { return "Internal error: " + _message; }
         const std::string _message;
@@ -181,7 +199,8 @@ namespace lms::api::subsonic
     class BadParameterGenericError : public GenericError
     {
     public:
-        BadParameterGenericError(const std::string& parameterName) : _parameterName{ parameterName } {}
+        BadParameterGenericError(const std::string& parameterName)
+            : _parameterName{ parameterName } {}
 
     private:
         std::string getMessage() const override { return "Parameter '" + _parameterName + "': bad value"; }
@@ -192,7 +211,9 @@ namespace lms::api::subsonic
     class ParameterValueTooHighGenericError : public GenericError
     {
     public:
-        ParameterValueTooHighGenericError(std::string_view parameterName, std::size_t max) : _parameterName{ parameterName }, _max{ max } {}
+        ParameterValueTooHighGenericError(std::string_view parameterName, std::size_t max)
+            : _parameterName{ parameterName }
+            , _max{ max } {}
 
     private:
         std::string getMessage() const override { return "Parameter '" + _parameterName + "': bad value (max is " + std::to_string(_max) + ")"; }
@@ -211,7 +232,7 @@ namespace lms::api::subsonic
 
             void setAttribute(Key key, std::string_view value);
 
-            template <typename T, std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
+            template<typename T, std::enable_if_t<std::is_arithmetic<T>::value>* = nullptr>
             void setAttribute(Key key, T value)
             {
                 if constexpr (std::is_same<bool, T>::value)
@@ -242,10 +263,10 @@ namespace lms::api::subsonic
 
             friend class Response;
 
-            template <typename Key, typename Value>
-            using map = std::map< Key, Value, std::less<Key>, ResponseAllocator<std::pair<const Key, Value>>>;
+            template<typename Key, typename Value>
+            using map = std::map<Key, Value, std::less<Key>, ResponseAllocator<std::pair<const Key, Value>>>;
 
-            template <typename T>
+            template<typename T>
             using vector = std::vector<T, ResponseAllocator<T>>;
 
             using string = std::basic_string<char, std::char_traits<char>, ResponseAllocator<char>>;
@@ -280,7 +301,7 @@ namespace lms::api::subsonic
 
         class JsonSerializer
         {
-            public:
+        public:
             void serializeNode(std::ostream& os, const Node& node);
             void serializeValue(std::ostream& os, const Node::ValueType& value);
             void serializeEscapedString(std::ostream&, std::string_view str);
@@ -293,5 +314,4 @@ namespace lms::api::subsonic
         Node _root;
     };
 
-} // namespace
-
+} // namespace lms::api::subsonic

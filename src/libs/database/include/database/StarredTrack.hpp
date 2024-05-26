@@ -19,13 +19,13 @@
 
 #pragma once
 
-#include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
+#include <Wt/WDateTime.h>
 
 #include "core/EnumSet.hpp"
-#include "database/TrackId.hpp"
 #include "database/Object.hpp"
 #include "database/StarredTrackId.hpp"
+#include "database/TrackId.hpp"
 #include "database/Types.hpp"
 #include "database/UserId.hpp"
 
@@ -42,30 +42,43 @@ namespace lms::db
 
         struct FindParameters
         {
-            std::optional<FeedbackBackend>  backend;    // for this backend
-            std::optional<SyncState>	    syncState;  //   and these states
-            UserId							user;       // and this user
-            std::optional<Range>			range;
+            std::optional<FeedbackBackend> backend; // for this backend
+            std::optional<SyncState> syncState;     //   and these states
+            UserId user;                            // and this user
+            std::optional<Range> range;
 
-            FindParameters& setFeedbackBackend(FeedbackBackend _backend, SyncState _syncState) { backend = _backend; syncState = _syncState; return *this; }
-            FindParameters& setUser(UserId _user) { user = _user; return *this; }
-            FindParameters& setRange(std::optional<Range> _range) { range = _range; return *this; }
+            FindParameters& setFeedbackBackend(FeedbackBackend _backend, SyncState _syncState)
+            {
+                backend = _backend;
+                syncState = _syncState;
+                return *this;
+            }
+            FindParameters& setUser(UserId _user)
+            {
+                user = _user;
+                return *this;
+            }
+            FindParameters& setRange(std::optional<Range> _range)
+            {
+                range = _range;
+                return *this;
+            }
         };
 
         // Search utility
-        static std::size_t  getCount(Session& session);
-        static pointer      find(Session& session, StarredTrackId id);
-        static pointer      find(Session& session, TrackId trackId, UserId userId); // current feedback backend
-        static pointer      find(Session& session, TrackId trackId, UserId userId, FeedbackBackend backend);
-        static bool         exists(Session& session, TrackId trackId, UserId userId, FeedbackBackend backend);
-        static RangeResults<StarredTrackId>	find(Session& session, const FindParameters& findParams);
+        static std::size_t getCount(Session& session);
+        static pointer find(Session& session, StarredTrackId id);
+        static pointer find(Session& session, TrackId trackId, UserId userId); // current feedback backend
+        static pointer find(Session& session, TrackId trackId, UserId userId, FeedbackBackend backend);
+        static bool exists(Session& session, TrackId trackId, UserId userId, FeedbackBackend backend);
+        static RangeResults<StarredTrackId> find(Session& session, const FindParameters& findParams);
 
         // Accessors
-        ObjectPtr<Track>        getTrack() const { return _track; }
-        ObjectPtr<User>         getUser() const { return _user; }
-        FeedbackBackend         getBackend() const { return _backend; }
+        ObjectPtr<Track> getTrack() const { return _track; }
+        ObjectPtr<User> getUser() const { return _user; }
+        FeedbackBackend getBackend() const { return _backend; }
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
-        SyncState               getSyncState() const { return _syncState; }
+        SyncState getSyncState() const { return _syncState; }
 
         // Setters
         void setDateTime(const Wt::WDateTime& dateTime);
@@ -87,12 +100,11 @@ namespace lms::db
         StarredTrack(ObjectPtr<Track> track, ObjectPtr<User> user, FeedbackBackend backend);
         static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<User> user, FeedbackBackend backend);
 
-        FeedbackBackend     _backend;   // for which backend
-        SyncState           _syncState{ SyncState::PendingAdd };
-        Wt::WDateTime       _dateTime;  // when it was starred
+        FeedbackBackend _backend; // for which backend
+        SyncState _syncState{ SyncState::PendingAdd };
+        Wt::WDateTime _dateTime; // when it was starred
 
         Wt::Dbo::ptr<Track> _track;
-        Wt::Dbo::ptr<User>  _user;
+        Wt::Dbo::ptr<User> _user;
     };
 } // namespace lms::db
-

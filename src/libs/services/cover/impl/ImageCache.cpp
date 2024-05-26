@@ -21,14 +21,15 @@
 
 #include <mutex>
 
-#include "core/Random.hpp"
 #include "core/ILogger.hpp"
+#include "core/Random.hpp"
 
 namespace lms::cover
 {
     ImageCache::ImageCache(std::size_t maxCacheSize)
         : _maxCacheSize{ maxCacheSize }
-    {}
+    {
+    }
 
     void ImageCache::addImage(const EntryDesc& entryDesc, std::shared_ptr<image::IEncodedImage> image)
     {
@@ -70,4 +71,4 @@ namespace lms::cover
         _cacheSize = 0;
         _cache.clear();
     }
-}
+} // namespace lms::cover

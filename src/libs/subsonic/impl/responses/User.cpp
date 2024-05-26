@@ -49,4 +49,4 @@ namespace lms::api::subsonic
 
         return userNode;
     }
-}
+} // namespace lms::api::subsonic

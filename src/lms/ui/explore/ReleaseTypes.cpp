@@ -28,13 +28,12 @@ namespace lms::core::stringUtils
     template<>
     std::optional<ui::PrimaryReleaseType> readAs(std::string_view str)
     {
-        static const std::unordered_map<std::string, ui::PrimaryReleaseType> entries
-        {
-            {"album", ui::PrimaryReleaseType::Album},
-            {"single", ui::PrimaryReleaseType::Single},
-            {"ep", ui::PrimaryReleaseType::EP},
-            {"broadcast", ui::PrimaryReleaseType::Broadcast},
-            {"other", ui::PrimaryReleaseType::Other},
+        static const std::unordered_map<std::string, ui::PrimaryReleaseType> entries{
+            { "album", ui::PrimaryReleaseType::Album },
+            { "single", ui::PrimaryReleaseType::Single },
+            { "ep", ui::PrimaryReleaseType::EP },
+            { "broadcast", ui::PrimaryReleaseType::Broadcast },
+            { "other", ui::PrimaryReleaseType::Other },
         };
 
         const auto it{ entries.find(stringToLower(stringTrim(str))) };
@@ -47,20 +46,19 @@ namespace lms::core::stringUtils
     template<>
     std::optional<ui::SecondaryReleaseType> readAs(std::string_view str)
     {
-        static const std::unordered_map<std::string, ui::SecondaryReleaseType> entries
-        {
-            {"compilation", ui::SecondaryReleaseType::Compilation},
-            {"soundtrack", ui::SecondaryReleaseType::Soundtrack},
-            {"spokenword", ui::SecondaryReleaseType::Spokenword},
-            {"interview", ui::SecondaryReleaseType::Interview},
-            {"audiobook", ui::SecondaryReleaseType::Audiobook},
-            {"audio drama", ui::SecondaryReleaseType::AudioDrama},
-            {"live", ui::SecondaryReleaseType::Live},
-            {"remix", ui::SecondaryReleaseType::Remix},
-            {"dj-mix", ui::SecondaryReleaseType::DJMix},
-            {"mixtape/street", ui::SecondaryReleaseType::Mixtape_Street},
-            {"demo", ui::SecondaryReleaseType::Demo},
-            {"field recording", ui::SecondaryReleaseType::FieldRecording},
+        static const std::unordered_map<std::string, ui::SecondaryReleaseType> entries{
+            { "compilation", ui::SecondaryReleaseType::Compilation },
+            { "soundtrack", ui::SecondaryReleaseType::Soundtrack },
+            { "spokenword", ui::SecondaryReleaseType::Spokenword },
+            { "interview", ui::SecondaryReleaseType::Interview },
+            { "audiobook", ui::SecondaryReleaseType::Audiobook },
+            { "audio drama", ui::SecondaryReleaseType::AudioDrama },
+            { "live", ui::SecondaryReleaseType::Live },
+            { "remix", ui::SecondaryReleaseType::Remix },
+            { "dj-mix", ui::SecondaryReleaseType::DJMix },
+            { "mixtape/street", ui::SecondaryReleaseType::Mixtape_Street },
+            { "demo", ui::SecondaryReleaseType::Demo },
+            { "field recording", ui::SecondaryReleaseType::FieldRecording },
         };
 
         const auto it{ entries.find(stringToLower(stringTrim(str))) };
@@ -69,7 +67,7 @@ namespace lms::core::stringUtils
 
         return it->second;
     }
-}
+} // namespace lms::core::stringUtils
 
 namespace lms::ui
 {
@@ -104,7 +102,7 @@ namespace lms::ui
         else if (typeA && !typeB)
             return true;
         else
-            return  static_cast<int>(*typeA) < static_cast<int>(*typeB);
+            return static_cast<int>(*typeA) < static_cast<int>(*typeB);
     }
 
     bool operator<(core::EnumSet<SecondaryReleaseType> typesA, core::EnumSet<SecondaryReleaseType> typesB)

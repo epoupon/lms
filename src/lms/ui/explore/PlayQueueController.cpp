@@ -17,14 +17,16 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "explore/PlayQueueController.hpp"
+
 #include "database/ClusterId.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "explore/Filters.hpp"
-#include "explore/PlayQueueController.hpp"
-#include "PlayQueue.hpp"
+
 #include "LmsApplication.hpp"
+#include "PlayQueue.hpp"
+#include "explore/Filters.hpp"
 
 namespace lms::ui
 {
@@ -136,7 +138,7 @@ namespace lms::ui
 
             return db::Track::findIds(session, params).results;
         }
-    }
+    } // namespace
 
     PlayQueueController::PlayQueueController(Filters& filters, PlayQueue& playQueue)
         : _filters{ filters }
@@ -200,7 +202,7 @@ namespace lms::ui
             releaseId = track->getRelease()->getId();
         }
 
-        const std::vector<db::TrackId> tracks{ getReleasesTracks(LmsApp->getDbSession(), {releaseId}, _filters, _maxTrackCountToEnqueue) };
+        const std::vector<db::TrackId> tracks{ getReleasesTracks(LmsApp->getDbSession(), { releaseId }, _filters, _maxTrackCountToEnqueue) };
         auto itTrack{ std::find(std::cbegin(tracks), std::cend(tracks), trackId) };
         if (itTrack == std::cend(tracks))
             return;

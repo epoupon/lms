@@ -19,31 +19,32 @@
 
 #include "Browsing.hpp"
 
+#include "core/ILogger.hpp"
+#include "core/Random.hpp"
+#include "core/Service.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/MediaLibrary.hpp"
-#include "database/Session.hpp"
 #include "database/Release.hpp"
+#include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
-#include "core/ILogger.hpp"
-#include "core/Random.hpp"
-#include "core/Service.hpp"
+
+#include "ParameterParsing.hpp"
+#include "SubsonicId.hpp"
+#include "Utils.hpp"
 #include "responses/Album.hpp"
 #include "responses/Artist.hpp"
 #include "responses/Genre.hpp"
 #include "responses/Song.hpp"
-#include "ParameterParsing.hpp"
-#include "SubsonicId.hpp"
-#include "Utils.hpp"
 
 namespace lms::api::subsonic
 {
     using namespace db;
 
-    static const unsigned long long	reportedDummyDateULong{ 946684800000ULL }; // 2000-01-01T00:00:00 UTC
+    static const unsigned long long reportedDummyDateULong{ 946684800000ULL }; // 2000-01-01T00:00:00 UTC
 
     namespace
     {
@@ -70,7 +71,7 @@ namespace lms::api::subsonic
                     artistInfoNode.createChild("musicBrainzId").setValue(artistMBID->getAsString());
             }
 
-            auto similarArtistsId{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(id, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, count) };
+            auto similarArtistsId{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(id, { TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist }, count) };
 
             {
                 auto transaction{ context.dbSession.createReadTransaction() };
@@ -170,7 +171,7 @@ namespace lms::api::subsonic
         {
             // API says: "Returns a random collection of songs from the given artist and similar artists"
             const std::size_t similarArtistCount{ count / 5 };
-            std::vector<ArtistId> artistIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(artistId, {TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist}, similarArtistCount) };
+            std::vector<ArtistId> artistIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(artistId, { TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist }, similarArtistCount) };
             artistIds.push_back(artistId);
 
             const std::size_t meanTrackCountPerArtist{ (count / artistIds.size()) + 1 };
@@ -265,7 +266,7 @@ namespace lms::api::subsonic
             return response;
         }
 
-    }
+    } // namespace
 
     Response handleGetMusicFoldersRequest(RequestContext& context)
     {
@@ -273,13 +274,12 @@ namespace lms::api::subsonic
         Response::Node& musicFoldersNode{ response.createNode("musicFolders") };
 
         auto transaction{ context.dbSession.createReadTransaction() };
-        MediaLibrary::find(context.dbSession, [&](const MediaLibrary::pointer& library)
-            {
-                Response::Node& musicFolderNode{ musicFoldersNode.createArrayChild("musicFolder") };
+        MediaLibrary::find(context.dbSession, [&](const MediaLibrary::pointer& library) {
+            Response::Node& musicFolderNode{ musicFoldersNode.createArrayChild("musicFolder") };
 
-                musicFolderNode.setAttribute("id", idToString(library->getId()));
-                musicFolderNode.setAttribute("name", library->getName());
-            });
+            musicFolderNode.setAttribute("id", idToString(library->getId()));
+            musicFolderNode.setAttribute("name", library->getName());
+        });
 
         return response;
     }
@@ -310,10 +310,9 @@ namespace lms::api::subsonic
             directoryNode.setAttribute("name", "Music");
 
             // TODO: this does not scale when a lot of artists are present
-            Artist::find(context.dbSession, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::SortName), [&](const Artist::pointer& artist)
-                {
-                    directoryNode.addArrayChild("child", createArtistNode(context, artist, context.user, false /* no id3 */));
-                });
+            Artist::find(context.dbSession, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::SortName), [&](const Artist::pointer& artist) {
+                directoryNode.addArrayChild("child", createArtistNode(context, artist, context.user, false /* no id3 */));
+            });
         }
         else if (artistId)
         {
@@ -325,10 +324,9 @@ namespace lms::api::subsonic
 
             directoryNode.setAttribute("name", utils::makeNameFilesystemCompatible(artist->getName()));
 
-            Release::find(context.dbSession, Release::FindParameters{}.setArtist(*artistId), [&](const Release::pointer& release)
-                {
-                    directoryNode.addArrayChild("child", createAlbumNode(context, release, context.user, false /* no id3 */));
-                });
+            Release::find(context.dbSession, Release::FindParameters{}.setArtist(*artistId), [&](const Release::pointer& release) {
+                directoryNode.addArrayChild("child", createAlbumNode(context, release, context.user, false /* no id3 */));
+            });
         }
         else if (releaseId)
         {
@@ -340,10 +338,9 @@ namespace lms::api::subsonic
 
             directoryNode.setAttribute("name", utils::makeNameFilesystemCompatible(release->getName()));
 
-            Track::find(context.dbSession, Track::FindParameters{}.setRelease(*releaseId).setSortMethod(TrackSortMethod::Release), [&](const Track::pointer& track)
-                {
-                    directoryNode.addArrayChild("child", createSongNode(context, track, context.user));
-                });
+            Track::find(context.dbSession, Track::FindParameters{}.setRelease(*releaseId).setSortMethod(TrackSortMethod::Release), [&](const Track::pointer& track) {
+                directoryNode.addArrayChild("child", createSongNode(context, track, context.user));
+            });
         }
         else
             throw BadParameterGenericError{ "id" };
@@ -390,7 +387,7 @@ namespace lms::api::subsonic
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
         Response::Node artistNode{ createArtistNode(context, artist, context.user, true /* id3 */) };
 
-        const auto releases{ Release::find(context.dbSession, Release::FindParameters {}.setArtist(artist->getId())) };
+        const auto releases{ Release::find(context.dbSession, Release::FindParameters{}.setArtist(artist->getId())) };
         for (const Release::pointer& release : releases.results)
             artistNode.addArrayChild("album", createAlbumNode(context, release, context.user, true /* id3 */));
 
@@ -490,4 +487,4 @@ namespace lms::api::subsonic
 
         return response;
     }
-}
+} // namespace lms::api::subsonic

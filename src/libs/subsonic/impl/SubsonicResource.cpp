@@ -22,23 +22,29 @@
 #include <atomic>
 #include <unordered_map>
 
-#include "services/auth/IPasswordService.hpp"
-#include "services/auth/IEnvService.hpp"
-#include "database/Db.hpp"
-#include "database/Session.hpp"
-#include "database/User.hpp"
 #include "core/EnumSet.hpp"
-#include "core/LiteralString.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
+#include "core/LiteralString.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
 #include "core/Utils.hpp"
+#include "database/Db.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
+#include "services/auth/IEnvService.hpp"
+#include "services/auth/IPasswordService.hpp"
 
+#include "ParameterParsing.hpp"
+#include "ProtocolVersion.hpp"
+#include "RequestContext.hpp"
+#include "SubsonicId.hpp"
+#include "SubsonicResponse.hpp"
+#include "Utils.hpp"
 #include "entrypoints/AlbumSongLists.hpp"
-#include "entrypoints/Browsing.hpp"
 #include "entrypoints/Bookmarks.hpp"
+#include "entrypoints/Browsing.hpp"
 #include "entrypoints/MediaAnnotation.hpp"
 #include "entrypoints/MediaLibraryScanning.hpp"
 #include "entrypoints/MediaRetrieval.hpp"
@@ -46,12 +52,6 @@
 #include "entrypoints/Searching.hpp"
 #include "entrypoints/System.hpp"
 #include "entrypoints/UserManagement.hpp"
-#include "ParameterParsing.hpp"
-#include "ProtocolVersion.hpp"
-#include "RequestContext.hpp"
-#include "SubsonicId.hpp"
-#include "SubsonicResponse.hpp"
-#include "Utils.hpp"
 
 namespace lms::api::subsonic
 {
@@ -67,10 +67,10 @@ namespace lms::api::subsonic
             std::unordered_map<std::string, ProtocolVersion> res;
 
             core::Service<core::IConfig>::get()->visitStrings("api-subsonic-old-server-protocol-clients",
-                [&](std::string_view client)
-                {
+                [&](std::string_view client) {
                     res.emplace(std::string{ client }, ProtocolVersion{ 1, 12, 0 });
-                }, { "DSub" });
+                },
+                { "DSub" });
 
             return res;
         }
@@ -80,10 +80,10 @@ namespace lms::api::subsonic
             std::unordered_set<std::string> res;
 
             core::Service<core::IConfig>::get()->visitStrings("api-open-subsonic-disabled-clients",
-                [&](std::string_view client)
-                {
+                [&](std::string_view client) {
                     res.emplace(std::string{ client });
-                }, { "DSub" });
+                },
+                { "DSub" });
 
             return res;
         }
@@ -93,23 +93,22 @@ namespace lms::api::subsonic
             std::unordered_set<std::string> res;
 
             core::Service<core::IConfig>::get()->visitStrings("api-subsonic-default-cover-clients",
-                [&](std::string_view client)
-                {
+                [&](std::string_view client) {
                     res.emplace(std::string{ client });
-                }, { "DSub", "substreamer" });
+                },
+                { "DSub", "substreamer" });
 
             return res;
         }
 
         std::string parameterMapToDebugString(const Wt::Http::ParameterMap& parameterMap)
         {
-            auto censorValue = [](const std::string& type, const std::string& value) -> std::string
-                {
-                    if (type == "p" || type == "password")
-                        return "*REDACTED*";
-                    else
-                        return value;
-                };
+            auto censorValue = [](const std::string& type, const std::string& value) -> std::string {
+                if (type == "p" || type == "password")
+                    return "*REDACTED*";
+                else
+                    return value;
+            };
 
             std::string res;
 
@@ -148,124 +147,122 @@ namespace lms::api::subsonic
         using CheckImplementedFunc = std::function<void()>;
         struct RequestEntryPointInfo
         {
-            RequestHandlerFunc      func;
-            core::EnumSet<db::UserType>       allowedUserTypes{ db::UserType::DEMO, db::UserType::REGULAR, db::UserType::ADMIN };
-            CheckImplementedFunc    checkFunc{};
+            RequestHandlerFunc func;
+            core::EnumSet<db::UserType> allowedUserTypes{ db::UserType::DEMO, db::UserType::REGULAR, db::UserType::ADMIN };
+            CheckImplementedFunc checkFunc{};
         };
 
-        const std::unordered_map<core::LiteralString, RequestEntryPointInfo, core::LiteralStringHash, core::LiteralStringEqual> requestEntryPoints
-        {
+        const std::unordered_map<core::LiteralString, RequestEntryPointInfo, core::LiteralStringHash, core::LiteralStringEqual> requestEntryPoints{
             // System
-            {"/ping",                       {handlePingRequest}},
-            {"/getLicense",                 {handleGetLicenseRequest}},
-            {"/getOpenSubsonicExtensions",  {handleGetOpenSubsonicExtensions}},
+            { "/ping", { handlePingRequest } },
+            { "/getLicense", { handleGetLicenseRequest } },
+            { "/getOpenSubsonicExtensions", { handleGetOpenSubsonicExtensions } },
 
             // Browsing
-            {"/getMusicFolders",        {handleGetMusicFoldersRequest}},
-            {"/getIndexes",             {handleGetIndexesRequest}},
-            {"/getMusicDirectory",      {handleGetMusicDirectoryRequest}},
-            {"/getGenres",              {handleGetGenresRequest}},
-            {"/getArtists",             {handleGetArtistsRequest}},
-            {"/getArtist",              {handleGetArtistRequest}},
-            {"/getAlbum",               {handleGetAlbumRequest}},
-            {"/getSong",                {handleGetSongRequest}},
-            {"/getVideos",              {handleNotImplemented}},
-            {"/getArtistInfo",          {handleGetArtistInfoRequest}},
-            {"/getArtistInfo2",         {handleGetArtistInfo2Request}},
-            {"/getAlbumInfo",	        {handleNotImplemented}},
-            {"/getAlbumInfo2",          {handleNotImplemented}},
-            {"/getSimilarSongs",        {handleGetSimilarSongsRequest}},
-            {"/getSimilarSongs2",       {handleGetSimilarSongs2Request}},
-            {"/getTopSongs",            {handleGetTopSongs}},
+            { "/getMusicFolders", { handleGetMusicFoldersRequest } },
+            { "/getIndexes", { handleGetIndexesRequest } },
+            { "/getMusicDirectory", { handleGetMusicDirectoryRequest } },
+            { "/getGenres", { handleGetGenresRequest } },
+            { "/getArtists", { handleGetArtistsRequest } },
+            { "/getArtist", { handleGetArtistRequest } },
+            { "/getAlbum", { handleGetAlbumRequest } },
+            { "/getSong", { handleGetSongRequest } },
+            { "/getVideos", { handleNotImplemented } },
+            { "/getArtistInfo", { handleGetArtistInfoRequest } },
+            { "/getArtistInfo2", { handleGetArtistInfo2Request } },
+            { "/getAlbumInfo", { handleNotImplemented } },
+            { "/getAlbumInfo2", { handleNotImplemented } },
+            { "/getSimilarSongs", { handleGetSimilarSongsRequest } },
+            { "/getSimilarSongs2", { handleGetSimilarSongs2Request } },
+            { "/getTopSongs", { handleGetTopSongs } },
 
             // Album/song lists
-            {"/getAlbumList",           {handleGetAlbumListRequest}},
-            {"/getAlbumList2",          {handleGetAlbumList2Request}},
-            {"/getRandomSongs",         {handleGetRandomSongsRequest}},
-            {"/getSongsByGenre",        {handleGetSongsByGenreRequest}},
-            {"/getNowPlaying",          {handleNotImplemented}},
-            {"/getStarred",             {handleGetStarredRequest}},
-            {"/getStarred2",            {handleGetStarred2Request}},
+            { "/getAlbumList", { handleGetAlbumListRequest } },
+            { "/getAlbumList2", { handleGetAlbumList2Request } },
+            { "/getRandomSongs", { handleGetRandomSongsRequest } },
+            { "/getSongsByGenre", { handleGetSongsByGenreRequest } },
+            { "/getNowPlaying", { handleNotImplemented } },
+            { "/getStarred", { handleGetStarredRequest } },
+            { "/getStarred2", { handleGetStarred2Request } },
 
             // Searching
-            {"/search",                 {handleNotImplemented}},
-            {"/search2",                {handleSearch2Request}},
-            {"/search3",                {handleSearch3Request}},
+            { "/search", { handleNotImplemented } },
+            { "/search2", { handleSearch2Request } },
+            { "/search3", { handleSearch3Request } },
 
             // Playlists
-            {"/getPlaylists",           {handleGetPlaylistsRequest}},
-            {"/getPlaylist",            {handleGetPlaylistRequest}},
-            {"/createPlaylist",         {handleCreatePlaylistRequest}},
-            {"/updatePlaylist",         {handleUpdatePlaylistRequest}},
-            {"/deletePlaylist",         {handleDeletePlaylistRequest}},
+            { "/getPlaylists", { handleGetPlaylistsRequest } },
+            { "/getPlaylist", { handleGetPlaylistRequest } },
+            { "/createPlaylist", { handleCreatePlaylistRequest } },
+            { "/updatePlaylist", { handleUpdatePlaylistRequest } },
+            { "/deletePlaylist", { handleDeletePlaylistRequest } },
 
             // Media retrieval
-            {"/hls",                    {handleNotImplemented}},
-            {"/getCaptions",            {handleNotImplemented}},
-            {"/getLyrics",              {handleNotImplemented}},
-            {"/getAvatar",              {handleNotImplemented}},
+            { "/hls", { handleNotImplemented } },
+            { "/getCaptions", { handleNotImplemented } },
+            { "/getLyrics", { handleNotImplemented } },
+            { "/getAvatar", { handleNotImplemented } },
 
             // Media annotation
-            {"/star",                   {handleStarRequest}},
-            {"/unstar",                 {handleUnstarRequest}},
-            {"/setRating",              {handleNotImplemented}},
-            {"/scrobble",               {handleScrobble}},
+            { "/star", { handleStarRequest } },
+            { "/unstar", { handleUnstarRequest } },
+            { "/setRating", { handleNotImplemented } },
+            { "/scrobble", { handleScrobble } },
 
             // Sharing
-            {"/getShares",              {handleNotImplemented}},
-            {"/createShares",           {handleNotImplemented}},
-            {"/updateShare",            {handleNotImplemented}},
-            {"/deleteShare",            {handleNotImplemented}},
+            { "/getShares", { handleNotImplemented } },
+            { "/createShares", { handleNotImplemented } },
+            { "/updateShare", { handleNotImplemented } },
+            { "/deleteShare", { handleNotImplemented } },
 
             // Podcast
-            {"/getPodcasts",            {handleNotImplemented}},
-            {"/getNewestPodcasts",      {handleNotImplemented}},
-            {"/refreshPodcasts",        {handleNotImplemented}},
-            {"/createPodcastChannel",   {handleNotImplemented}},
-            {"/deletePodcastChannel",   {handleNotImplemented}},
-            {"/deletePodcastEpisode",   {handleNotImplemented}},
-            {"/downloadPodcastEpisode", {handleNotImplemented}},
+            { "/getPodcasts", { handleNotImplemented } },
+            { "/getNewestPodcasts", { handleNotImplemented } },
+            { "/refreshPodcasts", { handleNotImplemented } },
+            { "/createPodcastChannel", { handleNotImplemented } },
+            { "/deletePodcastChannel", { handleNotImplemented } },
+            { "/deletePodcastEpisode", { handleNotImplemented } },
+            { "/downloadPodcastEpisode", { handleNotImplemented } },
 
             // Jukebox
-            {"/jukeboxControl",	        {handleNotImplemented}},
+            { "/jukeboxControl", { handleNotImplemented } },
 
             // Internet radio
-            {"/getInternetRadioStations",	{handleNotImplemented}},
-            {"/createInternetRadioStation",	{handleNotImplemented}},
-            {"/updateInternetRadioStation",	{handleNotImplemented}},
-            {"/deleteInternetRadioStation",	{handleNotImplemented}},
+            { "/getInternetRadioStations", { handleNotImplemented } },
+            { "/createInternetRadioStation", { handleNotImplemented } },
+            { "/updateInternetRadioStation", { handleNotImplemented } },
+            { "/deleteInternetRadioStation", { handleNotImplemented } },
 
             // Chat
-            {"/getChatMessages",    {handleNotImplemented}},
-            {"/addChatMessages",    {handleNotImplemented}},
+            { "/getChatMessages", { handleNotImplemented } },
+            { "/addChatMessages", { handleNotImplemented } },
 
             // User management
-            {"/getUser",            {handleGetUserRequest}},
-            {"/getUsers",           {handleGetUsersRequest,     {db::UserType::ADMIN}}},
-            {"/createUser",         {handleCreateUserRequest,   {db::UserType::ADMIN},                      &utils::checkSetPasswordImplemented}},
-            {"/updateUser",         {handleUpdateUserRequest,   {db::UserType::ADMIN}}},
-            {"/deleteUser",         {handleDeleteUserRequest,   {db::UserType::ADMIN}}},
-            {"/changePassword",     {handleChangePassword,      {db::UserType::REGULAR, db::UserType::ADMIN},   &utils::checkSetPasswordImplemented}},
+            { "/getUser", { handleGetUserRequest } },
+            { "/getUsers", { handleGetUsersRequest, { db::UserType::ADMIN } } },
+            { "/createUser", { handleCreateUserRequest, { db::UserType::ADMIN }, &utils::checkSetPasswordImplemented } },
+            { "/updateUser", { handleUpdateUserRequest, { db::UserType::ADMIN } } },
+            { "/deleteUser", { handleDeleteUserRequest, { db::UserType::ADMIN } } },
+            { "/changePassword", { handleChangePassword, { db::UserType::REGULAR, db::UserType::ADMIN }, &utils::checkSetPasswordImplemented } },
 
             // Bookmarks
-            {"/getBookmarks",       {handleGetBookmarks}},
-            {"/createBookmark",     {handleCreateBookmark}},
-            {"/deleteBookmark",     {handleDeleteBookmark}},
-            {"/getPlayQueue",       {handleNotImplemented}},
-            {"/savePlayQueue",      {handleNotImplemented}},
+            { "/getBookmarks", { handleGetBookmarks } },
+            { "/createBookmark", { handleCreateBookmark } },
+            { "/deleteBookmark", { handleDeleteBookmark } },
+            { "/getPlayQueue", { handleNotImplemented } },
+            { "/savePlayQueue", { handleNotImplemented } },
 
             // Media library scanning
-            {"/getScanStatus",      {Scan::handleGetScanStatus, {db::UserType::ADMIN}}},
-            {"/startScan",          {Scan::handleStartScan,     {db::UserType::ADMIN}}},
+            { "/getScanStatus", { Scan::handleGetScanStatus, { db::UserType::ADMIN } } },
+            { "/startScan", { Scan::handleStartScan, { db::UserType::ADMIN } } },
         };
 
         using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::Http::Request&, Wt::Http::Response&)>;
-        const std::unordered_map<core::LiteralString, MediaRetrievalHandlerFunc, core::LiteralStringHash, core::LiteralStringEqual> mediaRetrievalHandlers
-        {
+        const std::unordered_map<core::LiteralString, MediaRetrievalHandlerFunc, core::LiteralStringHash, core::LiteralStringEqual> mediaRetrievalHandlers{
             // Media retrieval
-            {"/download",       handleDownload},
-            {"/stream",         handleStream},
-            {"/getCoverArt",    handleGetCoverArt},
+            { "/download", handleDownload },
+            { "/stream", handleStream },
+            { "/getCoverArt", handleGetCoverArt },
         };
 
         struct TLSMonotonicMemoryResourceCleaner
@@ -280,7 +277,7 @@ namespace lms::api::subsonic
             TLSMonotonicMemoryResourceCleaner(const TLSMonotonicMemoryResourceCleaner&) = delete;
             TLSMonotonicMemoryResourceCleaner& operator=(const TLSMonotonicMemoryResourceCleaner&) = delete;
         };
-    }
+    } // namespace
 
     SubsonicResource::SubsonicResource(db::Db& db)
         : _serverProtocolVersionsByClient{ readConfigProtocolVersions() }
@@ -294,8 +291,8 @@ namespace lms::api::subsonic
     {
         static std::atomic<std::size_t> curRequestId{};
 
-		const std::size_t requestId{ curRequestId++ };
-		TLSMonotonicMemoryResourceCleaner memoryResourceCleaner;
+        const std::size_t requestId{ curRequestId++ };
+        TLSMonotonicMemoryResourceCleaner memoryResourceCleaner;
 
         LMS_LOG(API_SUBSONIC, DEBUG, "Handling request " << requestId << " '" << request.pathInfo() << "', continuation = " << (request.continuation() ? "true" : "false") << ", params = " << parameterMapToDebugString(request.getParameterMap()));
 
@@ -327,7 +324,7 @@ namespace lms::api::subsonic
                 const Response resp{ [&] {
                     LMS_SCOPED_TRACE_DETAILED("Subsonic", "HandleRequest");
                     return itEntryPoint->second.func(requestContext);
-                    }()};
+                }() };
 
                 {
                     LMS_SCOPED_TRACE_DETAILED("Subsonic", "WriteResponse");
@@ -356,8 +353,8 @@ namespace lms::api::subsonic
         catch (const Error& e)
         {
             LMS_LOG(API_SUBSONIC, ERROR, "Error while processing request '" << requestPath << "'"
-                << ", params = [" << parameterMapToDebugString(request.getParameterMap()) << "]"
-                << ", code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'");
+                                                                            << ", params = [" << parameterMapToDebugString(request.getParameterMap()) << "]"
+                                                                            << ", code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'");
             Response resp{ Response::createFailedResponse(protocolVersion, e) };
             resp.write(response.out(), format);
             response.setMimeType(std::string{ ResponseFormatToMimeType(format) });
@@ -443,7 +440,7 @@ namespace lms::api::subsonic
             return user->getId();
         }
 
-        if (auto * authEnvService{ core::Service<auth::IEnvService>::get() })
+        if (auto* authEnvService{ core::Service<auth::IEnvService>::get() })
         {
             const auto checkResult{ authEnvService->processRequest(request) };
             if (checkResult.state != auth::IEnvService::CheckResult::State::Granted)
@@ -451,7 +448,7 @@ namespace lms::api::subsonic
 
             return *checkResult.userId;
         }
-        else if (auto * authPasswordService{ core::Service<auth::IPasswordService>::get() })
+        else if (auto* authPasswordService{ core::Service<auth::IPasswordService>::get() })
         {
             const auto checkResult{ authPasswordService->checkUserPassword(boost::asio::ip::address::from_string(request.clientAddress()), clientInfo.user, clientInfo.password) };
 
@@ -471,4 +468,3 @@ namespace lms::api::subsonic
     }
 
 } // namespace lms::api::subsonic
-

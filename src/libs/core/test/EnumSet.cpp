@@ -60,4 +60,4 @@ namespace lms::core
             EXPECT_EQ(test, test2);
         }
     }
-}
+} // namespace lms::core

@@ -23,6 +23,5 @@
 
 namespace lms::ui
 {
-	std::unique_ptr<Wt::WValidator> createMandatoryValidator();
+    std::unique_ptr<Wt::WValidator> createMandatoryValidator();
 } // namespace lms::ui
-
