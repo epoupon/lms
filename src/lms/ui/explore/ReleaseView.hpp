@@ -41,9 +41,7 @@ namespace lms::ui
 
     private:
         void refreshView();
-        void refreshReleaseArtists(const db::ObjectPtr<db::Release>& release);
         void refreshCopyright(const db::ObjectPtr<db::Release>& release);
-        void refreshLinks(const db::ObjectPtr<db::Release>& release);
         void refreshSimilarReleases(const std::vector<db::ReleaseId>& similarReleasesId);
 
         Filters& _filters;

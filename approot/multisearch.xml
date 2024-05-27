@@ -79,12 +79,12 @@
 		<div class="row align-items-center flex-fill overflow-hidden">
 			<div class="col-12 col-md-6 col-lg-4">
 				<div class="p-2 overflow-hidden">
-					<div class="d-block text-truncate">${name class="text-decoration-none link-success"}</div>
-					${<if-has-artists>}${artists class="d-block d-md-none text-truncate"}${</if-has-artists>}
+					<div class="d-block text-truncate">${release-name class="text-decoration-none link-success"}</div>
+					${<if-has-release-artists>}${artists class="d-block d-md-none text-truncate"}${</if-has-release-artists>}
 				</div>
 			</div>
 			<div class="col-md-6 col-lg-8">
-				${<if-has-artists>}${artists-md class="d-none d-md-block text-truncate"}${</if-has-artists>}
+				${<if-has-release-artists>}${artists-md class="d-none d-md-block text-truncate"}${</if-has-release-artists>}
 			</div>
 		</div>
 		<div class="p-2 d-none d-sm-block text-muted text-center Lms-tracks-entry-duration">
