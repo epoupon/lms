@@ -49,7 +49,7 @@ namespace lms::db
             if (!params.clusterTypeName.empty())
                 query.join("cluster_type c_t ON c_t.id = c.cluster_type_id");
 
-            if (params.track.isValid())
+            if ( params.track.isValid() )
                 query.where("t_c.track_id = ?").bind(params.track);
 
             if (params.release.isValid())
