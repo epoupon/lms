@@ -229,22 +229,24 @@ namespace lms::metadata
     {
         const TestTagReader testTags{
             {
-                { TagType::Genre, { "Genre1; Genre2" } },
-                { TagType::Language, { " Lang1 ;  Lang2 ; " } },
+                { TagType::Genre, { "Genre1 ; Genre2" } },
+                { TagType::Language, { " Lang1/Lang2 / Lang3" } },
                 { TagType::Artist, { " This /  is ; One Artist \\  Other Artist    " } },
             }
         };
 
         Parser parser;
-        static_cast<IParser&>(parser).setDefaultTagDelimiters(std::vector<std::string>{ " ; " });
-        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ " \\ ", " / " });
+        static_cast<IParser&>(parser).setDefaultTagDelimiters(std::vector<std::string>{ " ; ", "/" });
+        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ " \\ ", " / " }); // The first delimiter found will be used
         std::unique_ptr<Track> track{ parser.parse(testTags) };
 
-        ASSERT_EQ(track->genres.size(), 1);
-        EXPECT_EQ(track->genres[0], "Genre1; Genre2");
-        ASSERT_EQ(track->languages.size(), 2);
+        ASSERT_EQ(track->genres.size(), 2);
+        EXPECT_EQ(track->genres[0], "Genre1");
+        EXPECT_EQ(track->genres[1], "Genre2");
+        ASSERT_EQ(track->languages.size(), 3);
         EXPECT_EQ(track->languages[0], "Lang1");
         EXPECT_EQ(track->languages[1], "Lang2");
+        EXPECT_EQ(track->languages[2], "Lang3");
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "This /  is ; One Artist");
         EXPECT_EQ(track->artists[1].name, "Other Artist");
