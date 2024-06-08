@@ -75,7 +75,7 @@ namespace lms::db
         // Setters
         void setUpdateStartTime(Wt::WTime t) { _startTime = t; }
         void setUpdatePeriod(UpdatePeriod p) { _updatePeriod = p; }
-        void setExtraTagsToScan(const std::vector<std::string_view>& extraTags);
+        void setExtraTagsToScan(std::span<const std::string_view> extraTags);
         void setSimilarityEngineType(SimilarityEngineType type) { _similarityEngineType = type; }
         void setArtistTagDelimiters(std::span<const std::string_view> delimiters);
         void setDefaultTagDelimiters(std::span<const std::string_view> delimiters);

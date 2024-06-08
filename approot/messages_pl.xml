@@ -66,10 +66,10 @@
 <message id="Lms.Admin.MediaLibrary.root-path">Katalog główny</message>
 
 <!--Scan settings-->
-<message id="Lms.Admin.Database.artist-tag-delimiter">Znak rozdzielający artystów</message>
+<message id="Lms.Admin.Database.artist-tag-delimiters">Znaki rozdzielające artystów</message>
 <message id="Lms.Admin.Database.daily">Codziennie</message>
-<message id="Lms.Admin.Database.default-tag-delimiter">Znak rozdzielający inne oznaczenia</message>
-<message id="Lms.Admin.Database.extra-tags-to-scan">Szukaj dodatkowych znaczników (użyj <kbd>;</kbd> do rozdzielania)</message>
+<message id="Lms.Admin.Database.default-tag-delimiters">Znaki rozdzielające inne oznaczenia</message>
+<message id="Lms.Admin.Database.extra-tags-to-scan">Szukaj dodatkowych znaczników</message>
 <message id="Lms.Admin.Database.hourly">Co godzinę</message>
 <message id="Lms.Admin.Database.immediate-scan">Skanuj teraz!</message>
 <message id="Lms.Admin.Database.monthly">Co miesiąc</message>

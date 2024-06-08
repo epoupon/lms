@@ -72,7 +72,7 @@ namespace lms::db
         return core::stringUtils::splitEscapedStrings(_defaultTagDelimiters, ';', '\\');
     }
 
-    void ScanSettings::setExtraTagsToScan(const std::vector<std::string_view>& extraTags)
+    void ScanSettings::setExtraTagsToScan(std::span<const std::string_view> extraTags)
     {
         std::string newTagsToScan{ core::stringUtils::joinStrings(extraTags, ";") };
         if (newTagsToScan != _extraTagsToScan)
