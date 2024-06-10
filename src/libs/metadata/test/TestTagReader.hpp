@@ -47,6 +47,15 @@ namespace lms::metadata
         {
         }
 
+        size_t countTagValues(TagType tag) const
+        {
+            auto itValues{ _tags.find(tag) };
+            if (itValues != std::cend(_tags))
+                return itValues->second.size();
+
+            return 0;
+        }
+
         void visitTagValues(TagType tag, TagValueVisitor visitor) const override
         {
             auto itValues{ _tags.find(tag) };

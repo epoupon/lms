@@ -40,6 +40,7 @@ namespace lms::metadata
         TagLibTagReader& operator=(const TagLibTagReader&) = delete;
 
         void computeAudioProperties();
+        size_t countTagValues(TagType tag) const override;
         void visitTagValues(TagType tag, TagValueVisitor visitor) const override;
         void visitTagValues(std::string_view tag, TagValueVisitor visitor) const override;
         void visitPerformerTags(PerformerVisitor visitor) const override;

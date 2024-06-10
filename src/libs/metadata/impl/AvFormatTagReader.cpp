@@ -172,6 +172,15 @@ namespace lms::metadata
         }
     }
 
+    size_t AvFormatTagReader::countTagValues(TagType tag) const
+    {
+        size_t count{};
+        visitTagValues(tag, [&](std::string_view) {
+            count++;
+        });
+        return count;
+    }
+
     void AvFormatTagReader::visitTagValues(TagType tag, TagValueVisitor visitor) const
     {
         auto itTagNames{ tagMapping.find(tag) };

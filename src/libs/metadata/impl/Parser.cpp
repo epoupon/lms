@@ -276,7 +276,6 @@ namespace lms::metadata
         track.copyright = getTagValueAs<std::string>(tagReader, TagType::Copyright).value_or("");
         track.copyrightURL = getTagValueAs<std::string>(tagReader, TagType::CopyrightURL).value_or("");
         track.replayGain = getTagValueAs<float>(tagReader, TagType::ReplayGainTrackGain);
-        track.artistDisplayName = getTagValueAs<std::string>(tagReader, TagType::Artist).value_or(""); // TODO join on artists if present
 
         for (const std::string& userExtraTag : _userExtraTags)
         {
@@ -297,6 +296,19 @@ namespace lms::metadata
 
         track.medium = getMedium(tagReader);
         track.artists = getArtists(tagReader, { TagType::Artists, TagType::Artist }, { TagType::ArtistSortOrder }, { TagType::MusicBrainzArtistID }, _artistTagDelimiters);
+        if (!_artistTagDelimiters.empty()
+            && track.artists.size() > 1
+            && tagReader.countTagValues(TagType::Artist) <= 1
+            && tagReader.countTagValues(TagType::Artists) <= 1)
+        {
+            std::vector<std::string_view> artistNames;
+            std::transform(std::cbegin(track.artists), std::cend(track.artists), std::back_inserter(artistNames), [](const Artist& artist) -> std::string_view { return artist.name; });
+            track.artistDisplayName = core::stringUtils::joinStrings(artistNames, ", ");
+        }
+        else
+        {
+            track.artistDisplayName = getTagValueAs<std::string>(tagReader, TagType::Artist).value_or("");
+        }
         track.conductorArtists = getArtists(tagReader, { TagType::Conductors, TagType::Conductor }, { TagType::ConductorsSortOrder, TagType::ConductorSortOrder }, {}, _artistTagDelimiters);
         track.composerArtists = getArtists(tagReader, { TagType::Composers, TagType::Composer }, { TagType::ComposersSortOrder, TagType::ComposerSortOrder }, {}, _artistTagDelimiters);
         track.lyricistArtists = getArtists(tagReader, { TagType::Lyricists, TagType::Lyricist }, { TagType::LyricistsSortOrder, TagType::LyricistSortOrder }, {}, _artistTagDelimiters);

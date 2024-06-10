@@ -250,6 +250,6 @@ namespace lms::metadata
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "This /  is ; One Artist");
         EXPECT_EQ(track->artists[1].name, "Other Artist");
-        EXPECT_EQ(track->artistDisplayName, "This /  is ; One Artist \\  Other Artist");
+        EXPECT_EQ(track->artistDisplayName, "This /  is ; One Artist, Other Artist"); // reconstruct artist display name since a custom delimiter is hit
     }
 } // namespace lms::metadata
