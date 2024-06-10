@@ -48,7 +48,7 @@ namespace lms::ui::releaseListHelpers
                 anchor->setImage(std::move(cover));
             }
 
-            auto artistAnchors{ utils::createArtistsAnchorsForRelease(release, artist ? artist->getId() : ArtistId{},  "link-secondary") };
+            auto artistAnchors{ utils::createArtistsAnchorsForRelease(release, artist ? artist->getId() : ArtistId{}, "link-secondary") };
             if (artistAnchors)
             {
                 entry->setCondition("if-has-artist", true);
@@ -67,7 +67,7 @@ namespace lms::ui::releaseListHelpers
 
             return entry;
         }
-    }
+    } // namespace
 
     std::unique_ptr<Wt::WTemplate> createEntry(const Release::pointer& release, const Artist::pointer& artist, bool showYear)
     {
@@ -83,7 +83,7 @@ namespace lms::ui::releaseListHelpers
     {
         return createEntry(release, artist, true);
     }
-} // namespace lms::ui
+} // namespace lms::ui::releaseListHelpers
 
 namespace lms::ui::releaseHelpers
 {
@@ -95,11 +95,21 @@ namespace lms::ui::releaseHelpers
         {
             switch (*releaseType.primaryType)
             {
-            case PrimaryReleaseType::Album:			res = Wt::WString::tr("Lms.Explore.Release.type-primary-album"); break;
-            case PrimaryReleaseType::Broadcast:		res = Wt::WString::tr("Lms.Explore.Release.type-primary-broadcast"); break;
-            case PrimaryReleaseType::EP:			res = Wt::WString::tr("Lms.Explore.Release.type-primary-ep"); break;
-            case PrimaryReleaseType::Single:		res = Wt::WString::tr("Lms.Explore.Release.type-primary-single"); break;
-            case PrimaryReleaseType::Other:			res = Wt::WString::tr("Lms.Explore.Release.type-primary-other"); break;
+            case PrimaryReleaseType::Album:
+                res = Wt::WString::tr("Lms.Explore.Release.type-primary-album");
+                break;
+            case PrimaryReleaseType::Broadcast:
+                res = Wt::WString::tr("Lms.Explore.Release.type-primary-broadcast");
+                break;
+            case PrimaryReleaseType::EP:
+                res = Wt::WString::tr("Lms.Explore.Release.type-primary-ep");
+                break;
+            case PrimaryReleaseType::Single:
+                res = Wt::WString::tr("Lms.Explore.Release.type-primary-single");
+                break;
+            case PrimaryReleaseType::Other:
+                res = Wt::WString::tr("Lms.Explore.Release.type-primary-other");
+                break;
             }
         }
 
@@ -110,18 +120,42 @@ namespace lms::ui::releaseHelpers
 
             switch (secondaryType)
             {
-            case SecondaryReleaseType::Compilation:		res += Wt::WString::tr("Lms.Explore.Release.type-secondary-compilation"); break;
-            case SecondaryReleaseType::Spokenword:		res += Wt::WString::tr("Lms.Explore.Release.type-secondary-spokenword"); break;
-            case SecondaryReleaseType::Soundtrack:		res += Wt::WString::tr("Lms.Explore.Release.type-secondary-soundtrack"); break;
-            case SecondaryReleaseType::Interview: 		res += Wt::WString::tr("Lms.Explore.Release.type-secondary-interview"); break;
-            case SecondaryReleaseType::Audiobook: 		res += Wt::WString::tr("Lms.Explore.Release.type-secondary-audiobook"); break;
-            case SecondaryReleaseType::AudioDrama: 		res += Wt::WString::tr("Lms.Explore.Release.type-secondary-audiodrama"); break;
-            case SecondaryReleaseType::Live: 			res += Wt::WString::tr("Lms.Explore.Release.type-secondary-live"); break;
-            case SecondaryReleaseType::Remix: 			res += Wt::WString::tr("Lms.Explore.Release.type-secondary-remix"); break;
-            case SecondaryReleaseType::DJMix: 			res += Wt::WString::tr("Lms.Explore.Release.type-secondary-djmix"); break;
-            case SecondaryReleaseType::Mixtape_Street: 	res += Wt::WString::tr("Lms.Explore.Release.type-secondary-mixtape-street"); break;
-            case SecondaryReleaseType::Demo: 			res += Wt::WString::tr("Lms.Explore.Release.type-secondary-demo"); break;
-            case SecondaryReleaseType::FieldRecording:  res += Wt::WString::tr("Lms.Explore.Release.type-secondary-field-recording"); break;
+            case SecondaryReleaseType::Compilation:
+                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-compilation");
+                break;
+            case SecondaryReleaseType::Spokenword:
+                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-spokenword");
+                break;
+            case SecondaryReleaseType::Soundtrack:
+                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-soundtrack");
+                break;
+            case SecondaryReleaseType::Interview:
+                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-interview");
+                break;
+            case SecondaryReleaseType::Audiobook:
+                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-audiobook");
+                break;
+            case SecondaryReleaseType::AudioDrama:
+                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-audiodrama");
+                break;
+            case SecondaryReleaseType::Live:
+                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-live");
+                break;
+            case SecondaryReleaseType::Remix:
+                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-remix");
+                break;
+            case SecondaryReleaseType::DJMix:
+                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-djmix");
+                break;
+            case SecondaryReleaseType::Mixtape_Street:
+                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-mixtape-street");
+                break;
+            case SecondaryReleaseType::Demo:
+                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-demo");
+                break;
+            case SecondaryReleaseType::FieldRecording:
+                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-field-recording");
+                break;
             }
         }
 

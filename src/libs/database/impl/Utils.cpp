@@ -33,5 +33,4 @@ namespace lms::db::utils
         // force second resolution
         return Wt::WDateTime::fromTime_t(dateTime.toTime_t());
     }
-} // namespace lms::db::Utils
-
+} // namespace lms::db::utils

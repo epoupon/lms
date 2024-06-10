@@ -20,8 +20,8 @@
 #pragma once
 
 #include <mutex>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <Wt/WSignal.h>
 
@@ -29,20 +29,20 @@
 
 namespace lms::ui
 {
-	class LmsApplication;
-	class LmsApplicationManager
-	{
-		public:
-			Wt::Signal<LmsApplication&> applicationRegistered;
-			Wt::Signal<LmsApplication&> applicationUnregistered;
+    class LmsApplication;
+    class LmsApplicationManager
+    {
+    public:
+        Wt::Signal<LmsApplication&> applicationRegistered;
+        Wt::Signal<LmsApplication&> applicationUnregistered;
 
-		private:
-			friend class LmsApplication;
+    private:
+        friend class LmsApplication;
 
-			void registerApplication(LmsApplication& application);
-			void unregisterApplication(LmsApplication& application);
+        void registerApplication(LmsApplication& application);
+        void unregisterApplication(LmsApplication& application);
 
-			std::mutex _mutex;
-			std::unordered_map<db::UserId, std::unordered_set<LmsApplication*>>  m_applications;
-	};
-} // UserInterface
+        std::mutex _mutex;
+        std::unordered_map<db::UserId, std::unordered_set<LmsApplication*>> m_applications;
+    };
+} // namespace lms::ui

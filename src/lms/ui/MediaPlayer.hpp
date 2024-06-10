@@ -59,9 +59,9 @@ namespace lms::ui
                 static inline constexpr Format defaultFormat{ Format::OGG_OPUS };
                 static inline constexpr Bitrate defaultBitrate{ 128000 };
 
-                Mode		mode{ defaultMode };
-                Format		format{ defaultFormat };
-                Bitrate		bitrate{ defaultBitrate };
+                Mode mode{ defaultMode };
+                Format format{ defaultFormat };
+                Bitrate bitrate{ defaultBitrate };
             };
 
             struct ReplayGain
@@ -74,14 +74,14 @@ namespace lms::ui
                     Release = 3,
                 };
 
-                static inline constexpr Mode			defaultMode{ Mode::None };
-                static inline constexpr Gain			defaultPreAmpGain{};
-                static inline constexpr Gain			minPreAmpGain{ -15 };
-                static inline constexpr Gain			maxPreAmpGain{ 15 };
+                static inline constexpr Mode defaultMode{ Mode::None };
+                static inline constexpr Gain defaultPreAmpGain{};
+                static inline constexpr Gain minPreAmpGain{ -15 };
+                static inline constexpr Gain maxPreAmpGain{ 15 };
 
-                Mode			mode{ defaultMode };
-                Gain			preAmpGain{ defaultPreAmpGain };
-                Gain			preAmpGainIfNoInfo{ defaultPreAmpGain };
+                Mode mode{ defaultMode };
+                Gain preAmpGain{ defaultPreAmpGain };
+                Gain preAmpGainIfNoInfo{ defaultPreAmpGain };
             };
 
             Transcoding transcoding;
@@ -98,30 +98,30 @@ namespace lms::ui
         void loadTrack(db::TrackId trackId, bool play, float replayGain);
         void stop();
 
-        std::optional<Settings>	getSettings() const { return _settings; }
-        void					setSettings(const Settings& settings);
+        std::optional<Settings> getSettings() const { return _settings; }
+        void setSettings(const Settings& settings);
 
-        void					onPlayQueueUpdated(std::size_t trackCount);
+        void onPlayQueueUpdated(std::size_t trackCount);
 
         // Signals
-        Wt::JSignal<> 					playPrevious;
-        Wt::JSignal<> 					playNext;
-        Wt::Signal<db::TrackId>	trackLoaded;
-        Wt::Signal<>					settingsLoaded;
+        Wt::JSignal<> playPrevious;
+        Wt::JSignal<> playNext;
+        Wt::Signal<db::TrackId> trackLoaded;
+        Wt::Signal<> settingsLoaded;
 
-        Wt::JSignal<db::TrackId::ValueType>						scrobbleListenNow;
-        Wt::JSignal<db::TrackId::ValueType, unsigned /* ms */>	scrobbleListenFinished;
+        Wt::JSignal<db::TrackId::ValueType> scrobbleListenNow;
+        Wt::JSignal<db::TrackId::ValueType, unsigned /* ms */> scrobbleListenFinished;
 
-        Wt::JSignal<>			playbackEnded;
+        Wt::JSignal<> playbackEnded;
 
     private:
-        std::unique_ptr<AudioFileResource>		_audioFileResource;
-        std::unique_ptr<AudioTranscodingResource>	_audioTranscodingResource;
+        std::unique_ptr<AudioFileResource> _audioFileResource;
+        std::unique_ptr<AudioTranscodingResource> _audioTranscodingResource;
 
         std::optional<db::TrackId> _trackIdLoaded;
-        std::optional<Settings>		_settings;
+        std::optional<Settings> _settings;
 
-        Wt::JSignal<std::string> 	_settingsLoaded;
+        Wt::JSignal<std::string> _settingsLoaded;
 
         Wt::WText* _title{};
         Wt::WAnchor* _release{};
@@ -131,4 +131,3 @@ namespace lms::ui
     };
 
 } // namespace lms::ui
-

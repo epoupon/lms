@@ -20,6 +20,7 @@
 #include "InfiniteScrollingContainer.hpp"
 
 #include <cassert>
+
 #include "LoadingIndicator.hpp"
 
 namespace lms::ui
@@ -96,17 +97,15 @@ namespace lms::ui
         return _elements->indexOf(&widget);
     }
 
-
     void InfiniteScrollingContainer::displayLoadingIndicator()
     {
         _loadingIndicator = bindWidget<Wt::WTemplate>("loading-indicator", createLoadingIndicator());
-        _loadingIndicator->scrollVisibilityChanged().connect([this](bool visible)
-            {
-                if (!visible)
-                    return;
+        _loadingIndicator->scrollVisibilityChanged().connect([this](bool visible) {
+            if (!visible)
+                return;
 
-                onRequestElements.emit();
-            });
+            onRequestElements.emit();
+        });
     }
 
     void InfiniteScrollingContainer::hideLoadingIndicator()
@@ -114,4 +113,4 @@ namespace lms::ui
         _loadingIndicator = nullptr;
         bindEmpty("loading-indicator");
     }
-}
+} // namespace lms::ui

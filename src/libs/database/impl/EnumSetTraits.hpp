@@ -20,6 +20,7 @@
 #pragma once
 
 #include <type_traits>
+
 #include <Wt/Dbo/StdSqlTraits.h>
 
 #include "core/EnumSet.hpp"
@@ -49,5 +50,4 @@ namespace Wt::Dbo
             return false;
         }
     };
-}
-
+} // namespace Wt::Dbo

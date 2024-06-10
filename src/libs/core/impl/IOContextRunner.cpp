@@ -41,24 +41,23 @@ namespace lms::core
                 threadName += std::to_string(i);
             }
 
-            _threads.emplace_back([this, threadName]
+            _threads.emplace_back([this, threadName] {
+                if (!threadName.empty())
                 {
-                    if (!threadName.empty())
-                    {
-                        if (auto * traceLogger{ Service<tracing::ITraceLogger>::get() })
-                            traceLogger->setThreadName(std::this_thread::get_id(), threadName);
-                    }
+                    if (auto* traceLogger{ Service<tracing::ITraceLogger>::get() })
+                        traceLogger->setThreadName(std::this_thread::get_id(), threadName);
+                }
 
-                    try
-                    {
-                        _ioService.run();
-                    }
-                    catch (const std::exception& e)
-                    {
-                        LMS_LOG(UTILS, FATAL, "Exception caught in IO context: " << e.what());
-                        std::abort();
-                    }
-                });
+                try
+                {
+                    _ioService.run();
+                }
+                catch (const std::exception& e)
+                {
+                    LMS_LOG(UTILS, FATAL, "Exception caught in IO context: " << e.what());
+                    std::abort();
+                }
+            });
         }
     }
 
@@ -82,4 +81,4 @@ namespace lms::core
         for (std::thread& t : _threads)
             t.join();
     }
-}
+} // namespace lms::core

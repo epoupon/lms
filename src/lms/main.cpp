@@ -19,19 +19,25 @@
 
 #include <thread>
 
+#include <Wt/WApplication.h>
+#include <Wt/WServer.h>
 #include <boost/asio/io_context.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
-#include <Wt/WServer.h>
-#include <Wt/WApplication.h>
-
-#include "image/Image.hpp"
-#include "services/auth/IAuthTokenService.hpp"
-#include "services/auth/IPasswordService.hpp"
-#include "services/auth/IEnvService.hpp"
-#include "services/cover/ICoverService.hpp"
+#include "core/IChildProcessManager.hpp"
+#include "core/IConfig.hpp"
+#include "core/IOContextRunner.hpp"
+#include "core/ITraceLogger.hpp"
+#include "core/Service.hpp"
+#include "core/String.hpp"
+#include "core/WtLogger.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
+#include "image/Image.hpp"
+#include "services/auth/IAuthTokenService.hpp"
+#include "services/auth/IEnvService.hpp"
+#include "services/auth/IPasswordService.hpp"
+#include "services/cover/ICoverService.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IPlaylistGeneratorService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
@@ -41,13 +47,6 @@
 #include "ui/LmsApplication.hpp"
 #include "ui/LmsApplicationManager.hpp"
 #include "ui/LmsInitApplication.hpp"
-#include "core/IChildProcessManager.hpp"
-#include "core/IConfig.hpp"
-#include "core/IOContextRunner.hpp"
-#include "core/ITraceLogger.hpp"
-#include "core/Service.hpp"
-#include "core/String.hpp"
-#include "core/WtLogger.hpp"
 
 namespace lms
 {
@@ -150,7 +149,6 @@ namespace lms
             pt.add_child("server.application-settings.head-matter.meta", themeColor);
         }
 
-
         {
             std::ofstream oss{ wtConfigPath.string().c_str(), std::ios::out };
             if (!oss)
@@ -167,60 +165,48 @@ namespace lms
 
     void proxyScannerEventsToApplication(scanner::IScannerService& scanner, Wt::WServer& server)
     {
-        auto postAll{ [](Wt::WServer& server, std::function<void()> cb)
-        {
-            server.postAll([cb = std::move(cb)]
-            {
-                    // may be nullptr, see https://redmine.webtoolkit.eu/issues/8202
-                    if (LmsApp)
-                        cb();
-                });
-            } };
-
-        scanner.getEvents().scanAborted.connect([&]
-            {
-                postAll(server, []
-                    {
-                        LmsApp->getScannerEvents().scanAborted.emit();
-                        LmsApp->triggerUpdate();
-                    });
+        auto postAll{ [](Wt::WServer& server, std::function<void()> cb) {
+            server.postAll([cb = std::move(cb)] {
+                // may be nullptr, see https://redmine.webtoolkit.eu/issues/8202
+                if (LmsApp)
+                    cb();
             });
+        } };
 
-        scanner.getEvents().scanStarted.connect([&]
-            {
-                postAll(server, []
-                    {
-                        LmsApp->getScannerEvents().scanStarted.emit();
-                        LmsApp->triggerUpdate();
-                    });
+        scanner.getEvents().scanAborted.connect([&] {
+            postAll(server, [] {
+                LmsApp->getScannerEvents().scanAborted.emit();
+                LmsApp->triggerUpdate();
             });
+        });
 
-        scanner.getEvents().scanComplete.connect([&](const scanner::ScanStats& stats)
-            {
-                postAll(server, [=]
-                    {
-                        LmsApp->getScannerEvents().scanComplete.emit(stats);
-                        LmsApp->triggerUpdate();
-                    });
+        scanner.getEvents().scanStarted.connect([&] {
+            postAll(server, [] {
+                LmsApp->getScannerEvents().scanStarted.emit();
+                LmsApp->triggerUpdate();
             });
+        });
 
-        scanner.getEvents().scanInProgress.connect([&](const scanner::ScanStepStats& stats)
-            {
-                postAll(server, [=]
-                    {
-                        LmsApp->getScannerEvents().scanInProgress.emit(stats);
-                        LmsApp->triggerUpdate();
-                    });
+        scanner.getEvents().scanComplete.connect([&](const scanner::ScanStats& stats) {
+            postAll(server, [=] {
+                LmsApp->getScannerEvents().scanComplete.emit(stats);
+                LmsApp->triggerUpdate();
             });
+        });
 
-        scanner.getEvents().scanScheduled.connect([&](const Wt::WDateTime dateTime)
-            {
-                postAll(server, [=]
-                    {
-                        LmsApp->getScannerEvents().scanScheduled.emit(dateTime);
-                        LmsApp->triggerUpdate();
-                    });
+        scanner.getEvents().scanInProgress.connect([&](const scanner::ScanStepStats& stats) {
+            postAll(server, [=] {
+                LmsApp->getScannerEvents().scanInProgress.emit(stats);
+                LmsApp->triggerUpdate();
             });
+        });
+
+        scanner.getEvents().scanScheduled.connect([&](const Wt::WDateTime dateTime) {
+            postAll(server, [=] {
+                LmsApp->getScannerEvents().scanScheduled.emit(dateTime);
+                LmsApp->triggerUpdate();
+            });
+        });
     }
 
     int main(int argc, char* argv[])
@@ -236,8 +222,8 @@ namespace lms
         else if (argc > 2)
         {
             std::cerr << "Usage:\t" << argv[0] << "\t[conf_file]\n\n"
-                << "Options:\n"
-                << "\tconf_file:\t path to the LMS configuration file (defaults to " << configFilePath << ")\n\n";
+                      << "Options:\n"
+                      << "\tconf_file:\t path to the LMS configuration file (defaults to " << configFilePath << ")\n\n";
             return EXIT_FAILURE;
         }
 
@@ -278,8 +264,7 @@ namespace lms
 
             // As initialization can take a while (db migration, analyze, etc.), we bind a temporary init entry point to warn the user
             server.addEntryPoint(Wt::EntryPointType::Application,
-                [&](const Wt::WEnvironment& env)
-                {
+                [&](const Wt::WEnvironment& env) {
                     return ui::LmsInitApplication::create(env);
                 });
 
@@ -307,7 +292,7 @@ namespace lms
                 session.fullAnalyze();
                 database.getTLSSession().refreshTracingLoggerStats();
             }
- 
+
             ui::LmsApplicationManager appManager;
 
             // Service initialization order is important (reverse-order for deinit)
@@ -335,13 +320,12 @@ namespace lms
             core::Service<recommendation::IPlaylistGeneratorService> playlistGeneratorService{ recommendation::createPlaylistGeneratorService(database, *recommendationService.get()) };
             core::Service<scanner::IScannerService> scannerService{ scanner::createScannerService(database) };
 
-            scannerService->getEvents().scanComplete.connect([&]
-                {
-                    // Flush cover cache even if no changes:
-                    // covers may be external files that changed and we don't keep track of them for now (but we should)
-                    coverService->flushCache();
-                    database.getTLSSession().refreshTracingLoggerStats();
-                });
+            scannerService->getEvents().scanComplete.connect([&] {
+                // Flush cover cache even if no changes:
+                // covers may be external files that changed and we don't keep track of them for now (but we should)
+                coverService->flushCache();
+                database.getTLSSession().refreshTracingLoggerStats();
+            });
 
             core::Service<feedback::IFeedbackService> feedbackService{ feedback::createFeedbackService(ioContext, database) };
             core::Service<scrobbling::IScrobblingService> scrobblingService{ scrobbling::createScrobblingService(ioContext, database) };
@@ -361,8 +345,7 @@ namespace lms
 
             // bind UI entry point
             server.addEntryPoint(Wt::EntryPointType::Application,
-                [&](const Wt::WEnvironment& env)
-                {
+                [&](const Wt::WEnvironment& env) {
                     return ui::LmsApplication::create(env, database, appManager);
                 });
 
@@ -395,7 +378,7 @@ namespace lms
 
         return res;
     }
-}
+} // namespace lms
 
 int main(int argc, char* argv[])
 {

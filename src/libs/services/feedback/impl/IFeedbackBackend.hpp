@@ -40,4 +40,4 @@ namespace lms::feedback
 
     std::unique_ptr<IFeedbackBackend> createFeedbackBackend(std::string_view backendName);
 
-} // ns Feedback
+} // namespace lms::feedback

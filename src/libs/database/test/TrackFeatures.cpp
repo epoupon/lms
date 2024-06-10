@@ -46,4 +46,4 @@ namespace lms::db::tests
             EXPECT_EQ(allTrackFeatures.results.front(), trackFeatures.getId());
         }
     }
-}
+} // namespace lms::db::tests

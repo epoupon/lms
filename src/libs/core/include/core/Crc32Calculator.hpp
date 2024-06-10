@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <boost/crc.hpp>  // for boost::crc_32_type
+#include <boost/crc.hpp> // for boost::crc_32_type
 
 namespace lms::core
 {
@@ -40,4 +40,4 @@ namespace lms::core
         using Crc32Type = boost::crc_32_type;
         Crc32Type _result;
     };
-}
+} // namespace lms::core

@@ -31,8 +31,8 @@ namespace lms::scanner
         for (const ScannerSettings::MediaLibraryInfo& mediaLibrary : _settings.mediaLibraries)
         {
             std::size_t currentDirectoryProcessElemsCount{};
-            core::pathUtils::exploreFilesRecursive(mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path)
-                {
+            core::pathUtils::exploreFilesRecursive(
+                mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path) {
                     if (_abortScan)
                         return false;
 
@@ -44,7 +44,8 @@ namespace lms::scanner
                     }
 
                     return true;
-                }, &excludeDirFileName);
+                },
+                &excludeDirFileName);
 
             LMS_LOG(DBUPDATER, DEBUG, "Discovered " << currentDirectoryProcessElemsCount << " files in '" << mediaLibrary.rootDirectory << "'");
         }
@@ -53,4 +54,4 @@ namespace lms::scanner
 
         LMS_LOG(DBUPDATER, DEBUG, "Discovered " << context.stats.filesScanned << " files in all directories");
     }
-}
+} // namespace lms::scanner

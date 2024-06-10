@@ -20,24 +20,25 @@
 #include "AudioTranscodingResource.hpp"
 
 #include <optional>
+
 #include <Wt/Http/Response.h>
 
 #include "av/TranscodingParameters.hpp"
 #include "av/TranscodingResourceHandlerCreator.hpp"
 #include "av/Types.hpp"
+#include "core/ILogger.hpp"
+#include "core/String.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
-#include "core/ILogger.hpp"
-#include "core/String.hpp"
 
 #include "LmsApplication.hpp"
 
-#define LOG(severity, message)	LMS_LOG(UI, severity, "Audio transcode resource: " << message)
+#define LOG(severity, message) LMS_LOG(UI, severity, "Audio transcode resource: " << message)
 
 namespace lms::core::stringUtils
 {
-    template <>
+    template<>
     std::optional<db::TranscodingOutputFormat> readAs(std::string_view str)
     {
         auto encodedFormat{ readAs<int>(str) };
@@ -65,7 +66,7 @@ namespace lms::core::stringUtils
 
         return std::nullopt;
     }
-}
+} // namespace lms::core::stringUtils
 
 namespace lms::ui
 {
@@ -75,11 +76,16 @@ namespace lms::ui
         {
             switch (format)
             {
-            case db::TranscodingOutputFormat::MP3:			return av::transcoding::OutputFormat::MP3;
-            case db::TranscodingOutputFormat::OGG_OPUS:		return av::transcoding::OutputFormat::OGG_OPUS;
-            case db::TranscodingOutputFormat::MATROSKA_OPUS:	return av::transcoding::OutputFormat::MATROSKA_OPUS;
-            case db::TranscodingOutputFormat::OGG_VORBIS:		return av::transcoding::OutputFormat::OGG_VORBIS;
-            case db::TranscodingOutputFormat::WEBM_VORBIS:	return av::transcoding::OutputFormat::WEBM_VORBIS;
+            case db::TranscodingOutputFormat::MP3:
+                return av::transcoding::OutputFormat::MP3;
+            case db::TranscodingOutputFormat::OGG_OPUS:
+                return av::transcoding::OutputFormat::OGG_OPUS;
+            case db::TranscodingOutputFormat::MATROSKA_OPUS:
+                return av::transcoding::OutputFormat::MATROSKA_OPUS;
+            case db::TranscodingOutputFormat::OGG_VORBIS:
+                return av::transcoding::OutputFormat::OGG_VORBIS;
+            case db::TranscodingOutputFormat::WEBM_VORBIS:
+                return av::transcoding::OutputFormat::WEBM_VORBIS;
             }
 
             LOG(ERROR, "Cannot convert from audio format to AV format");
@@ -157,9 +163,9 @@ namespace lms::ui
 
             return parameters;
         }
-    }
+    } // namespace
 
-    AudioTranscodingResource:: ~AudioTranscodingResource()
+    AudioTranscodingResource::~AudioTranscodingResource()
     {
         beingDeleted();
     }

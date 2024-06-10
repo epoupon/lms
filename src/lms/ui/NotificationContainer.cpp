@@ -20,9 +20,11 @@
 #include "NotificationContainer.hpp"
 
 #include <sstream>
+
 #include <Wt/WTemplate.h>
 
 #include "core/ILogger.hpp"
+
 #include "LmsApplication.hpp"
 
 namespace lms::ui
@@ -35,7 +37,7 @@ namespace lms::ui
             NotificationWidget(Notification::Type type, const Wt::WString& category, const Wt::WString& message, std::chrono::milliseconds duration);
             Wt::JSignal<> closed{ this, "closed" };
         };
-    }
+    } // namespace
 
     NotificationWidget::NotificationWidget(Notification::Type type, const Wt::WString& category, const Wt::WString& message, std::chrono::milliseconds duration)
         : Wt::WTemplate{ Wt::WString::tr("Lms.notifications.template.entry") }
@@ -80,9 +82,8 @@ namespace lms::ui
     {
         NotificationWidget* notification{ addNew<NotificationWidget>(type, category, message, duration) };
 
-        notification->closed.connect([this, notification]
-            {
-                removeWidget(notification);
-            });
+        notification->closed.connect([this, notification] {
+            removeWidget(notification);
+        });
     }
-}
+} // namespace lms::ui

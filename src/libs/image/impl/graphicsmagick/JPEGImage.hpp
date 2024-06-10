@@ -25,17 +25,17 @@
 
 namespace lms::image::GraphicsMagick
 {
-	class RawImage;
-	class JPEGImage : public IEncodedImage
-	{
-		public:
-			JPEGImage(const RawImage& rawImage, unsigned quality);
+    class RawImage;
+    class JPEGImage : public IEncodedImage
+    {
+    public:
+        JPEGImage(const RawImage& rawImage, unsigned quality);
 
-		private:
-			const std::byte* getData() const override;
-			std::size_t getDataSize() const override;
-			std::string_view getMimeType() const override { return "image/jpeg"; }
+    private:
+        const std::byte* getData() const override;
+        std::size_t getDataSize() const override;
+        std::string_view getMimeType() const override { return "image/jpeg"; }
 
-			Magick::Blob _blob;
-	};
-}
+        Magick::Blob _blob;
+    };
+} // namespace lms::image::GraphicsMagick

@@ -18,10 +18,10 @@
  */
 #pragma once
 
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <array>
 #include <list>
 
 namespace lms::api::subsonic
@@ -55,7 +55,7 @@ namespace lms::api::subsonic
                 throw std::bad_alloc{};
 
             assert(currentAddrAligned >= &_currentBlock->front());
-            
+
             std::byte* res{ currentAddrAligned };
             _currentAddr = currentAddrAligned + byteCount;
 
@@ -100,4 +100,4 @@ namespace lms::api::subsonic
         BlockType* _currentBlock{};
         std::byte* _currentAddr{};
     };
-}
+} // namespace lms::api::subsonic

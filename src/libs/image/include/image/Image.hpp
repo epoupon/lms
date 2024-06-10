@@ -31,4 +31,4 @@ namespace lms::image
     std::unique_ptr<IRawImage> decodeImage(const std::byte* encodedData, std::size_t encodedDataSize);
     std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path);
     std::unique_ptr<IEncodedImage> readSvgFile(const std::filesystem::path& path);
-}
+} // namespace lms::image

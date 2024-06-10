@@ -47,7 +47,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto artists{ Artist::findIds(session, Artist::FindParameters {}) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}) };
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist.getId());
 
@@ -59,7 +59,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto artists{ Artist::find(session, Artist::FindParameters {}) };
+            auto artists{ Artist::find(session, Artist::FindParameters{}) };
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front()->getId(), artist.getId());
         }
@@ -68,11 +68,10 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             bool visited{};
-            Artist::find(session, Artist::FindParameters{}, [&](const Artist::pointer& a)
-                {
-                    visited = true;
-                    EXPECT_EQ(a->getId(), artist.getId());
-                });
+            Artist::find(session, Artist::FindParameters{}, [&](const Artist::pointer& a) {
+                visited = true;
+                EXPECT_EQ(a->getId(), artist.getId());
+            });
             EXPECT_TRUE(visited);
         }
     }
@@ -104,10 +103,9 @@ namespace lms::db::tests
 
             ArtistId lastRetrievedId;
             std::vector<Artist::pointer> visitedArtists;
-            Artist::find(session, lastRetrievedId, 10, [&](const Artist::pointer& artist)
-                {
-                    visitedArtists.push_back(artist);
-                });
+            Artist::find(session, lastRetrievedId, 10, [&](const Artist::pointer& artist) {
+                visitedArtists.push_back(artist);
+            });
             ASSERT_EQ(visitedArtists.size(), 3);
             EXPECT_EQ(visitedArtists[0]->getId(), artist1.getId());
             EXPECT_EQ(visitedArtists[1]->getId(), artist2.getId());
@@ -120,10 +118,9 @@ namespace lms::db::tests
 
             ArtistId lastRetrievedId{ artist1.getId() };
             std::vector<Artist::pointer> visitedArtists;
-            Artist::find(session, lastRetrievedId, 1, [&](const Artist::pointer& artist)
-                {
-                    visitedArtists.push_back(artist);
-                });
+            Artist::find(session, lastRetrievedId, 1, [&](const Artist::pointer& artist) {
+                visitedArtists.push_back(artist);
+            });
             ASSERT_EQ(visitedArtists.size(), 1);
             EXPECT_EQ(visitedArtists[0]->getId(), artist2.getId());
             EXPECT_EQ(lastRetrievedId, artist2.getId());
@@ -134,10 +131,9 @@ namespace lms::db::tests
 
             ArtistId lastRetrievedId{ artist1.getId() };
             std::vector<Artist::pointer> visitedArtists;
-            Artist::find(session, lastRetrievedId, 0, [&](const Artist::pointer& artist)
-                {
-                    visitedArtists.push_back(artist);
-                });
+            Artist::find(session, lastRetrievedId, 0, [&](const Artist::pointer& artist) {
+                visitedArtists.push_back(artist);
+            });
             ASSERT_EQ(visitedArtists.size(), 0);
             EXPECT_EQ(lastRetrievedId, artist1.getId());
         }
@@ -147,10 +143,11 @@ namespace lms::db::tests
 
             ArtistId lastRetrievedId;
             std::vector<Artist::pointer> visitedArtists;
-            Artist::find(session, lastRetrievedId, 10, [&](const Artist::pointer& artist)
-                {
+            Artist::find(
+                session, lastRetrievedId, 10, [&](const Artist::pointer& artist) {
                     visitedArtists.push_back(artist);
-                }, otherLibrary.getId());
+                },
+                otherLibrary.getId());
             ASSERT_EQ(visitedArtists.size(), 0);
             EXPECT_EQ(lastRetrievedId, ArtistId{});
         }
@@ -160,10 +157,11 @@ namespace lms::db::tests
 
             ArtistId lastRetrievedId;
             std::vector<Artist::pointer> visitedArtists;
-            Artist::find(session, lastRetrievedId, 10, [&](const Artist::pointer& artist)
-                {
+            Artist::find(
+                session, lastRetrievedId, 10, [&](const Artist::pointer& artist) {
                     visitedArtists.push_back(artist);
-                }, library.getId());
+                },
+                library.getId());
             ASSERT_EQ(visitedArtists.size(), 1);
             EXPECT_EQ(visitedArtists[0]->getId(), artist2.getId());
             EXPECT_EQ(lastRetrievedId, artist2.getId());
@@ -175,7 +173,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto artists{ Artist::findIds(session, Artist::FindParameters {}) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}) };
             ASSERT_EQ(artists.results.size(), 0);
             ASSERT_FALSE(artists.moreResults);
             ASSERT_EQ(artists.range.offset, 0);
@@ -199,7 +197,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setRange(Range{0,1})) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setRange(Range{ 0, 1 })) };
             ASSERT_EQ(artists.results.size(), 1);
             ASSERT_TRUE(artists.moreResults);
             ASSERT_EQ(artists.range.offset, 0);
@@ -210,7 +208,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setRange(Range{1,1})) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setRange(Range{ 1, 1 })) };
             ASSERT_EQ(artists.results.size(), 1);
             ASSERT_TRUE(artists.moreResults);
             ASSERT_EQ(artists.range.offset, 1);
@@ -221,7 +219,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setRange(Range{2,1})) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setRange(Range{ 2, 1 })) };
             ASSERT_EQ(artists.results.size(), 1);
             ASSERT_FALSE(artists.moreResults);
             ASSERT_EQ(artists.range.offset, 2);
@@ -250,7 +248,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto artists{ track->getArtists({TrackArtistLinkType::Artist}) };
+            auto artists{ track->getArtists({ TrackArtistLinkType::Artist }) };
             ASSERT_EQ(artists.size(), 1);
             EXPECT_EQ(artists.front()->getId(), artist.getId());
 
@@ -267,7 +265,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto artists{ track->getArtistIds({TrackArtistLinkType::Artist}) };
+            auto artists{ track->getArtistIds({ TrackArtistLinkType::Artist }) };
             ASSERT_EQ(artists.size(), 1);
             EXPECT_EQ(artists.front(), artist.getId());
 
@@ -362,7 +360,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto artists{ track->getArtists({TrackArtistLinkType::Artist}) };
+            auto artists{ track->getArtists({ TrackArtistLinkType::Artist }) };
             ASSERT_EQ(artists.size(), 1);
             EXPECT_EQ(artists.front()->getId(), artist.getId());
 
@@ -372,7 +370,7 @@ namespace lms::db::tests
 
             EXPECT_EQ(track->getArtistLinks().size(), 3);
 
-            auto tracks{ Track::findIds(session, Track::FindParameters {}.setArtist(artist.getId())) };
+            auto tracks{ Track::findIds(session, Track::FindParameters{}.setArtist(artist.getId())) };
             EXPECT_EQ(tracks.results.size(), 1);
 
             tracks = Track::findIds(session, Track::FindParameters{}.setArtist(artist.getId(), { TrackArtistLinkType::ReleaseArtist }));
@@ -399,19 +397,17 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             std::vector<TrackArtistLink::pointer> visitedLinks;
-            TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setTrack(track.getId()), [&](const TrackArtistLink::pointer& link)
-                {
-                    visitedLinks.push_back(link);
-                });
+            TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setTrack(track.getId()), [&](const TrackArtistLink::pointer& link) {
+                visitedLinks.push_back(link);
+            });
             ASSERT_EQ(visitedLinks.size(), 3);
             EXPECT_EQ(visitedLinks[0]->getArtist()->getId(), artist.getId());
             EXPECT_EQ(visitedLinks[1]->getArtist()->getId(), artist.getId());
             EXPECT_EQ(visitedLinks[2]->getArtist()->getId(), artist.getId());
 
-            auto containsType = [&](TrackArtistLinkType type)
-                {
-                    return std::any_of(std::cbegin(visitedLinks), std::cend(visitedLinks), [type](const TrackArtistLink::pointer& link) { return link->getType() == type;});
-                };
+            auto containsType = [&](TrackArtistLinkType type) {
+                return std::any_of(std::cbegin(visitedLinks), std::cend(visitedLinks), [type](const TrackArtistLink::pointer& link) { return link->getType() == type; });
+            };
 
             EXPECT_TRUE(containsType(TrackArtistLinkType::Artist));
             EXPECT_TRUE(containsType(TrackArtistLinkType::ReleaseArtist));
@@ -441,10 +437,10 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto artists{ track->getArtists({TrackArtistLinkType::Artist}) };
+            auto artists{ track->getArtists({ TrackArtistLinkType::Artist }) };
             ASSERT_EQ(artists.size(), 2);
             EXPECT_TRUE((artists[0]->getId() == artist1.getId() && artists[1]->getId() == artist2.getId())
-                || (artists[0]->getId() == artist2.getId() && artists[1]->getId() == artist1.getId()));
+                        || (artists[0]->getId() == artist2.getId() && artists[1]->getId() == artist1.getId()));
 
             EXPECT_EQ(track->getArtists({}).size(), 2);
             EXPECT_EQ(track->getArtists({ TrackArtistLinkType::Artist }).size(), 2);
@@ -456,7 +452,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto tracks{ Track::findIds(session, Track::FindParameters {}.setArtist(artist1->getId())) };
+            auto tracks{ Track::findIds(session, Track::FindParameters{}.setArtist(artist1->getId())) };
             ASSERT_EQ(tracks.results.size(), 1);
             EXPECT_EQ(tracks.results.front(), track->getId());
 
@@ -481,10 +477,9 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             std::vector<TrackArtistLink::pointer> visitedLinks;
-            TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setTrack(track.getId()), [&](const TrackArtistLink::pointer& link)
-                {
-                    visitedLinks.push_back(link);
-                });
+            TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setTrack(track.getId()), [&](const TrackArtistLink::pointer& link) {
+                visitedLinks.push_back(link);
+            });
             ASSERT_EQ(visitedLinks.size(), 2);
             EXPECT_EQ(visitedLinks[0]->getArtist()->getId(), artist1.getId());
             EXPECT_EQ(visitedLinks[1]->getArtist()->getId(), artist2.getId());
@@ -494,10 +489,9 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             std::vector<TrackArtistLink::pointer> visitedLinks;
-            TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setArtist(artist2.getId()), [&](const TrackArtistLink::pointer& link)
-                {
-                    visitedLinks.push_back(link);
-                });
+            TrackArtistLink::find(session, TrackArtistLink::FindParameters{}.setArtist(artist2.getId()), [&](const TrackArtistLink::pointer& link) {
+                visitedLinks.push_back(link);
+            });
             ASSERT_EQ(visitedLinks.size(), 1);
             EXPECT_EQ(visitedLinks[0]->getArtist()->getId(), artist2.getId());
             EXPECT_EQ(visitedLinks[0]->getTrack()->getId(), track.getId());
@@ -507,10 +501,9 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             std::vector<std::pair<TrackArtistLink::pointer, Artist::pointer>> visitedEntries;
-            TrackArtistLink::find(session, track.getId(), [&](const TrackArtistLink::pointer& link, const Artist::pointer& artist)
-                {
-                    visitedEntries.push_back(std::make_pair(link, artist));
-                });
+            TrackArtistLink::find(session, track.getId(), [&](const TrackArtistLink::pointer& link, const Artist::pointer& artist) {
+                visitedEntries.push_back(std::make_pair(link, artist));
+            });
             ASSERT_EQ(visitedEntries.size(), 2);
             EXPECT_EQ(visitedEntries[0].first->getArtist()->getId(), artist1.getId());
             EXPECT_EQ(visitedEntries[0].second->getId(), artist1.getId());
@@ -535,11 +528,11 @@ namespace lms::db::tests
 
             EXPECT_EQ(Artist::findIds(session, Artist::FindParameters{}.setKeywords({ "N" })).results.size(), 0);
 
-            const auto artistsByAAA{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"A"})) };
+            const auto artistsByAAA{ Artist::findIds(session, Artist::FindParameters{}.setKeywords({ "A" })) };
             ASSERT_EQ(artistsByAAA.results.size(), 1);
             EXPECT_EQ(artistsByAAA.results.front(), artist.getId());
 
-            const auto artistsByZZZ{ Artist::Artist::findIds(session, Artist::FindParameters {}.setKeywords({"Z"})) };
+            const auto artistsByZZZ{ Artist::Artist::findIds(session, Artist::FindParameters{}.setKeywords({ "Z" })) };
             ASSERT_EQ(artistsByZZZ.results.size(), 1);
             EXPECT_EQ(artistsByZZZ.results.front(), artist.getId());
 
@@ -583,26 +576,26 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             {
-                const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"MyArtist"})) };
+                const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setKeywords({ "MyArtist" })) };
                 EXPECT_EQ(artists.results.size(), 6);
             }
 
             {
-                const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"MyArtist%"}).setSortMethod(ArtistSortMethod::Name)) };
+                const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setKeywords({ "MyArtist%" }).setSortMethod(ArtistSortMethod::Name)) };
                 ASSERT_EQ(artists.results.size(), 2);
                 EXPECT_EQ(artists.results[0], artist1.getId());
                 EXPECT_EQ(artists.results[1], artist4.getId());
             }
 
             {
-                const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"%MyArtist"}).setSortMethod(ArtistSortMethod::Name)) };
+                const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setKeywords({ "%MyArtist" }).setSortMethod(ArtistSortMethod::Name)) };
                 ASSERT_EQ(artists.results.size(), 2);
                 EXPECT_EQ(artists.results[0], artist2.getId());
                 EXPECT_EQ(artists.results[1], artist5.getId());
             }
 
             {
-                const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setKeywords({"_MyArtist"}).setSortMethod(ArtistSortMethod::Name)) };
+                const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setKeywords({ "_MyArtist" }).setSortMethod(ArtistSortMethod::Name)) };
                 ASSERT_EQ(artists.results.size(), 1);
                 EXPECT_EQ(artists.results[0], artist3.getId());
             }
@@ -624,8 +617,8 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto allArtistsByName{ Artist::findIds(session, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::Name)) };
-            auto allArtistsBySortName{ Artist::findIds(session, Artist::FindParameters {}.setSortMethod(ArtistSortMethod::SortName)) };
+            auto allArtistsByName{ Artist::findIds(session, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::Name)) };
+            auto allArtistsBySortName{ Artist::findIds(session, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::SortName)) };
 
             ASSERT_EQ(allArtistsByName.results.size(), 2);
             EXPECT_EQ(allArtistsByName.results.front(), artistA.getId());
@@ -647,7 +640,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto tracks{ Track::findIds(session, Track::FindParameters {}.setNonRelease(true).setArtist(artist->getId())) };
+            auto tracks{ Track::findIds(session, Track::FindParameters{}.setNonRelease(true).setArtist(artist->getId())) };
             EXPECT_EQ(tracks.results.size(), 0);
         }
 
@@ -663,7 +656,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto tracks{ Track::findIds(session, Track::FindParameters {}.setArtist(artist.getId()).setNonRelease(true)) };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setArtist(artist.getId()).setNonRelease(true)) };
             ASSERT_EQ(tracks.results.size(), 1);
             EXPECT_EQ(tracks.results.front(), track2.getId());
         }
@@ -677,7 +670,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setRelease(release.getId())) };
+            const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setRelease(release.getId())) };
             EXPECT_EQ(artists.results.size(), 0);
         }
 
@@ -688,7 +681,7 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setRelease(release.getId())) };
+            const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setRelease(release.getId())) };
             EXPECT_EQ(artists.results.size(), 0);
         }
 
@@ -699,9 +692,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto artists{ Artist::findIds(session, Artist::FindParameters {}.setRelease(release.getId())) };
+            const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setRelease(release.getId())) };
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist.getId());
         }
     }
-}
+} // namespace lms::db::tests

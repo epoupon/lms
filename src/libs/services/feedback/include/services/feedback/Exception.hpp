@@ -28,4 +28,4 @@ namespace lms::feedback
     public:
         using LmsException::LmsException;
     };
-}
+} // namespace lms::feedback

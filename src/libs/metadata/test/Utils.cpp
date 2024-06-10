@@ -28,42 +28,41 @@ namespace lms::metadata::utils::tests
     {
         struct TestCase
         {
-            std::string	str;
-            Wt::WDate	result;
-        } testCases[]
-        {
-            { "1995-05-09",	Wt::WDate {1995, 5, 9} },
-            { "1995-01-01",	Wt::WDate {1995, 1, 1} },
-            { "1900-01-01",	Wt::WDate {1900, 1, 1} },
-            { "1899-01-01",	Wt::WDate {1899, 1, 1} },
-            { "1899-12-31",	Wt::WDate {1899, 12, 31} },
-            { "1899-11-30",	Wt::WDate {1899, 11, 30} },
-            { "1500-11-30",	Wt::WDate {1500, 11, 30} },
-            { "1000-11-30",	Wt::WDate {1000, 11, 30} },
-            { "1899-11-31",	Wt::WDate {} },             // invalid day
-            { "1899-11-00",	Wt::WDate {} },             // invalid day
-            { "1899-13-01",	Wt::WDate {} },             // invalid month
-            { "1899-00-01",	Wt::WDate {} },             // invalid month
-            { "1899-11",	Wt::WDate {} },		        // missing day
-            { "1899",		Wt::WDate {} },		        // missing month and days
-            { "1600",		Wt::WDate {} },             // missing month and days
-            { "1995/05/09",	Wt::WDate {1995, 5, 9} },
-            { "1995/01/01",	Wt::WDate {1995, 1, 1} },
-            { "1900/01/01",	Wt::WDate {1900, 1, 1} },
-            { "1899/01/01",	Wt::WDate {1899, 1, 1} },
-            { "1899/12/31",	Wt::WDate {1899, 12, 31} },
-            { "1899/11/30",	Wt::WDate {1899, 11, 30} },
-            { "1500/11/30",	Wt::WDate {1500, 11, 30} },
-            { "1000/11/30",	Wt::WDate {1000, 11, 30} },
-            { "1899/11/31",	Wt::WDate {} },             // invalid day
-            { "1899/11/00",	Wt::WDate {} },             // invalid day
-            { "1899/13/01",	Wt::WDate {} },             // invalid month
-            { "1899/00/01",	Wt::WDate {} },             // invalid month
-            { "1899/11",	Wt::WDate {} },             // missing day
-            { "1899",		Wt::WDate {} },             // missing month and days
-            { "1600",		Wt::WDate {} },             // missing month and days
-            { "1995/05-09",	Wt::WDate {} },             // invalid mixup separators
-            { "1995-05/09",	Wt::WDate {} },             // invalid mixup separators
+            std::string str;
+            Wt::WDate result;
+        } testCases[]{
+            { "1995-05-09", Wt::WDate{ 1995, 5, 9 } },
+            { "1995-01-01", Wt::WDate{ 1995, 1, 1 } },
+            { "1900-01-01", Wt::WDate{ 1900, 1, 1 } },
+            { "1899-01-01", Wt::WDate{ 1899, 1, 1 } },
+            { "1899-12-31", Wt::WDate{ 1899, 12, 31 } },
+            { "1899-11-30", Wt::WDate{ 1899, 11, 30 } },
+            { "1500-11-30", Wt::WDate{ 1500, 11, 30 } },
+            { "1000-11-30", Wt::WDate{ 1000, 11, 30 } },
+            { "1899-11-31", Wt::WDate{} }, // invalid day
+            { "1899-11-00", Wt::WDate{} }, // invalid day
+            { "1899-13-01", Wt::WDate{} }, // invalid month
+            { "1899-00-01", Wt::WDate{} }, // invalid month
+            { "1899-11", Wt::WDate{} },    // missing day
+            { "1899", Wt::WDate{} },       // missing month and days
+            { "1600", Wt::WDate{} },       // missing month and days
+            { "1995/05/09", Wt::WDate{ 1995, 5, 9 } },
+            { "1995/01/01", Wt::WDate{ 1995, 1, 1 } },
+            { "1900/01/01", Wt::WDate{ 1900, 1, 1 } },
+            { "1899/01/01", Wt::WDate{ 1899, 1, 1 } },
+            { "1899/12/31", Wt::WDate{ 1899, 12, 31 } },
+            { "1899/11/30", Wt::WDate{ 1899, 11, 30 } },
+            { "1500/11/30", Wt::WDate{ 1500, 11, 30 } },
+            { "1000/11/30", Wt::WDate{ 1000, 11, 30 } },
+            { "1899/11/31", Wt::WDate{} }, // invalid day
+            { "1899/11/00", Wt::WDate{} }, // invalid day
+            { "1899/13/01", Wt::WDate{} }, // invalid month
+            { "1899/00/01", Wt::WDate{} }, // invalid month
+            { "1899/11", Wt::WDate{} },    // missing day
+            { "1899", Wt::WDate{} },       // missing month and days
+            { "1600", Wt::WDate{} },       // missing month and days
+            { "1995/05-09", Wt::WDate{} }, // invalid mixup separators
+            { "1995-05/09", Wt::WDate{} }, // invalid mixup separators
         };
 
         for (const TestCase& testCase : testCases)
@@ -80,10 +79,9 @@ namespace lms::metadata::utils::tests
     {
         struct TestCase
         {
-            std::string	str;
-            std::optional<int>	result;
-        } testCases[]
-        {
+            std::string str;
+            std::optional<int> result;
+        } testCases[]{
             { "1995-05-09", 1995 },
             { "1995", 1995 },
             { "-0", 0 },
@@ -115,11 +113,10 @@ namespace lms::metadata::utils::tests
     {
         struct TestCase
         {
-            std::string	str;
+            std::string str;
             std::string expectedArtistName;
             std::string expectedRole;
-        } testCases[]
-        {
+        } testCases[]{
             { "", "", "" },
             { "(myrole)", "", "myrole" },
             { "(my role)", "", "my role" },
@@ -152,4 +149,4 @@ namespace lms::metadata::utils::tests
             EXPECT_EQ(performer.role, testCase.expectedRole) << " str was '" << testCase.str << "'";
         }
     }
-}
+} // namespace lms::metadata::utils::tests

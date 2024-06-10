@@ -21,9 +21,9 @@
 
 #include <span>
 
-#include "metadata/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
+#include "metadata/Exception.hpp"
 
 #include "AvFormatTagReader.hpp"
 #include "TagLibTagReader.hpp"
@@ -35,29 +35,27 @@ namespace lms::metadata
     {
         void visitTagValues(const ITagReader& tagReader, std::string_view tagType, std::span<const std::string> tagDelimiters, ITagReader::TagValueVisitor visitor)
         {
-            tagReader.visitTagValues(tagType, [&](std::string_view value)
+            tagReader.visitTagValues(tagType, [&](std::string_view value) {
+                auto visitTagIfNonEmpty{ [&](std::string_view tag) {
+                    tag = core::stringUtils::stringTrim(tag);
+                    if (!tag.empty())
+                        visitor(tag);
+                } };
+
+                for (std::string_view tagDelimiter : tagDelimiters)
                 {
-                    auto visitTagIfNonEmpty{ [&](std::string_view tag)
+                    if (value.find(tagDelimiter) != std::string_view::npos)
                     {
-                        tag = core::stringUtils::stringTrim(tag);
-                        if (!tag.empty())
-                            visitor(tag);
-                    } };
+                        for (std::string_view splitTag : core::stringUtils::splitString(value, tagDelimiter))
+                            visitTagIfNonEmpty(splitTag);
 
-                    for (std::string_view tagDelimiter : tagDelimiters)
-                    {
-                        if (value.find(tagDelimiter) != std::string_view::npos)
-                        {
-                            for (std::string_view splitTag : core::stringUtils::splitString(value, tagDelimiter))
-                                visitTagIfNonEmpty(splitTag);
-
-                            return;
-                        }
+                        return;
                     }
+                }
 
-                    // no delimiter found, or no delimiter to be used
-                    visitTagIfNonEmpty(value);
-                });
+                // no delimiter found, or no delimiter to be used
+                visitTagIfNonEmpty(value);
+            });
         }
 
         template<typename T>
@@ -67,8 +65,7 @@ namespace lms::metadata
 
             for (const TagType tagType : tagTypes)
             {
-                auto addTagIfNonEmpty{ [&res](std::string_view tag)
-                {
+                auto addTagIfNonEmpty{ [&res](std::string_view tag) {
                     tag = core::stringUtils::stringTrim(tag);
                     if (!tag.empty())
                     {
@@ -78,22 +75,21 @@ namespace lms::metadata
                     }
                 } };
 
-                tagReader.visitTagValues(tagType, [&](std::string_view value)
+                tagReader.visitTagValues(tagType, [&](std::string_view value) {
+                    for (std::string_view tagDelimiter : tagDelimiters)
                     {
-                        for (std::string_view tagDelimiter : tagDelimiters)
+                        if (value.find(tagDelimiter) != std::string_view::npos)
                         {
-                            if (value.find(tagDelimiter) != std::string_view::npos)
-                            {
-                                for (std::string_view splitTag : core::stringUtils::splitString(value, tagDelimiter))
-                                    addTagIfNonEmpty(splitTag);
+                            for (std::string_view splitTag : core::stringUtils::splitString(value, tagDelimiter))
+                                addTagIfNonEmpty(splitTag);
 
-                                return;
-                            }
+                            return;
                         }
+                    }
 
-                        // no delimiter found, or no delimiter to be used
-                        addTagIfNonEmpty(value);
-                    });
+                    // no delimiter found, or no delimiter to be used
+                    addTagIfNonEmpty(value);
+                });
 
                 if (!res.empty())
                     break;
@@ -102,7 +98,7 @@ namespace lms::metadata
             return res;
         }
 
-        template <typename T>
+        template<typename T>
         std::optional<T> getTagValueFirstMatchAs(const ITagReader& tagReader, std::initializer_list<TagType> tagTypes)
         {
             std::optional<T> res;
@@ -113,13 +109,13 @@ namespace lms::metadata
             return res;
         }
 
-        template <typename T>
+        template<typename T>
         std::vector<T> getTagValuesAs(const ITagReader& tagReader, TagType tagType, std::span<const std::string> tagDelimiters)
         {
             return getTagValuesFirstMatchAs<T>(tagReader, { tagType }, tagDelimiters);
         }
 
-        template <typename T>
+        template<typename T>
         std::optional<T> getTagValueAs(const ITagReader& tagReader, TagType tagType)
         {
             return getTagValueFirstMatchAs<T>(tagReader, { tagType });
@@ -129,8 +125,7 @@ namespace lms::metadata
             std::initializer_list<TagType> artistTagNames,
             std::initializer_list<TagType> artistSortTagNames,
             std::initializer_list<TagType> artistMBIDTagNames,
-            std::span<const std::string> artistTagDelimiters
-        )
+            std::span<const std::string> artistTagDelimiters)
         {
             std::vector<std::string> artistNames{ getTagValuesFirstMatchAs<std::string>(tagReader, artistTagNames, artistTagDelimiters) };
             if (artistNames.empty())
@@ -159,29 +154,28 @@ namespace lms::metadata
         {
             PerformerContainer performers;
 
-            tagReader.visitPerformerTags([&](std::string_view role, std::string_view name)
+            tagReader.visitPerformerTags([&](std::string_view role, std::string_view name) {
+                // picard stores like this: (see https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html#performer)
+                // We consider we may hit both styles for the same track
+                if (role.empty())
                 {
-                    // picard stores like this: (see https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html#performer)
-                    // We consider we may hit both styles for the same track
-                    if (role.empty())
-                    {
-                        // "PERFORMER" "artist (role)"
-                        utils::PerformerArtist performer{ utils::extractPerformerAndRole(name) };
-                        core::stringUtils::capitalize(performer.role);
-                        performers[performer.role].push_back(std::move(performer.artist));
-                    }
-                    else
-                    {
-                        // "PERFORMER:role", "artist" (MP3)
-                        std::string roleCapitalized{ core::stringUtils::stringToLower(role) };
-                        core::stringUtils::capitalize(roleCapitalized);
-                        performers[roleCapitalized].push_back(Artist{ name });
-                    }
-                });
+                    // "PERFORMER" "artist (role)"
+                    utils::PerformerArtist performer{ utils::extractPerformerAndRole(name) };
+                    core::stringUtils::capitalize(performer.role);
+                    performers[performer.role].push_back(std::move(performer.artist));
+                }
+                else
+                {
+                    // "PERFORMER:role", "artist" (MP3)
+                    std::string roleCapitalized{ core::stringUtils::stringToLower(role) };
+                    core::stringUtils::capitalize(roleCapitalized);
+                    performers[roleCapitalized].push_back(Artist{ name });
+                }
+            });
 
             return performers;
         }
-    }
+    } // namespace
 
     std::unique_ptr<IParser> createParser(ParserBackend parserBackend, ParserReadStyle parserReadStyle)
     {
@@ -282,16 +276,14 @@ namespace lms::metadata
         track.copyright = getTagValueAs<std::string>(tagReader, TagType::Copyright).value_or("");
         track.copyrightURL = getTagValueAs<std::string>(tagReader, TagType::CopyrightURL).value_or("");
         track.replayGain = getTagValueAs<float>(tagReader, TagType::ReplayGainTrackGain);
-        track.artistDisplayName = getTagValueAs<std::string>(tagReader, TagType::Artist).value_or(""); // TODO join on artists if present
 
         for (const std::string& userExtraTag : _userExtraTags)
         {
-            visitTagValues(tagReader, userExtraTag, _defaultTagDelimiters, [&](std::string_view value)
-                {
-                    value = core::stringUtils::stringTrim(value);
-                    if (!value.empty())
-                        track.userExtraTags[userExtraTag].push_back(std::string{ value });
-                });
+            visitTagValues(tagReader, userExtraTag, _defaultTagDelimiters, [&](std::string_view value) {
+                value = core::stringUtils::stringTrim(value);
+                if (!value.empty())
+                    track.userExtraTags[userExtraTag].push_back(std::string{ value });
+            });
         }
 
         track.genres = getTagValuesAs<std::string>(tagReader, TagType::Genre, _defaultTagDelimiters);
@@ -304,6 +296,19 @@ namespace lms::metadata
 
         track.medium = getMedium(tagReader);
         track.artists = getArtists(tagReader, { TagType::Artists, TagType::Artist }, { TagType::ArtistSortOrder }, { TagType::MusicBrainzArtistID }, _artistTagDelimiters);
+        if (!_artistTagDelimiters.empty()
+            && track.artists.size() > 1
+            && tagReader.countTagValues(TagType::Artist) <= 1
+            && tagReader.countTagValues(TagType::Artists) <= 1)
+        {
+            std::vector<std::string_view> artistNames;
+            std::transform(std::cbegin(track.artists), std::cend(track.artists), std::back_inserter(artistNames), [](const Artist& artist) -> std::string_view { return artist.name; });
+            track.artistDisplayName = core::stringUtils::joinStrings(artistNames, ", ");
+        }
+        else
+        {
+            track.artistDisplayName = getTagValueAs<std::string>(tagReader, TagType::Artist).value_or("");
+        }
         track.conductorArtists = getArtists(tagReader, { TagType::Conductors, TagType::Conductor }, { TagType::ConductorsSortOrder, TagType::ConductorSortOrder }, {}, _artistTagDelimiters);
         track.composerArtists = getArtists(tagReader, { TagType::Composers, TagType::Composer }, { TagType::ComposersSortOrder, TagType::ComposerSortOrder }, {}, _artistTagDelimiters);
         track.lyricistArtists = getArtists(tagReader, { TagType::Lyricists, TagType::Lyricist }, { TagType::LyricistsSortOrder, TagType::LyricistSortOrder }, {}, _artistTagDelimiters);
@@ -320,7 +325,6 @@ namespace lms::metadata
         if (!track.originalYear && track.originalDate.isValid())
             track.originalYear = track.originalDate.year();
     }
-
 
     std::optional<Medium> Parser::getMedium(const ITagReader& tagReader)
     {

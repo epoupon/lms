@@ -26,7 +26,7 @@
 namespace lms::ui
 {
     // Helper class
-    template <typename T>
+    template<typename T>
     class ValueStringModel : public Wt::WStringListModel
     {
     public:

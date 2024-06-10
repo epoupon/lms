@@ -30,7 +30,8 @@ namespace lms::image
     class SvgImage : public IEncodedImage
     {
     public:
-        SvgImage(std::vector<std::byte>&& data) : _data{ std::move(data) } {}
+        SvgImage(std::vector<std::byte>&& data)
+            : _data{ std::move(data) } {}
 
         const std::byte* getData() const { return &_data.front(); }
         std::size_t getDataSize() const { return _data.size(); }
@@ -39,4 +40,4 @@ namespace lms::image
     private:
         const std::vector<std::byte> _data;
     };
-}
+} // namespace lms::image

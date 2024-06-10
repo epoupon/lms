@@ -29,7 +29,8 @@ namespace lms::scrobbling
 {
     InternalBackend::InternalBackend(db::Db& db)
         : _db{ db }
-    {}
+    {
+    }
 
     void InternalBackend::listenStarted(const Listen&)
     {
@@ -64,5 +65,4 @@ namespace lms::scrobbling
         auto dbListen{ session.create<db::Listen>(user, track, db::ScrobblingBackend::Internal, listen.listenedAt) };
         dbListen.modify()->setSyncState(db::SyncState::Synchronized);
     }
-} // Scrobbling
-
+} // namespace lms::scrobbling

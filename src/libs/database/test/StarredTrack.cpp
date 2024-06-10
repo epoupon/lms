@@ -17,8 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Common.hpp"
 #include "database/StarredTrack.hpp"
+
+#include "Common.hpp"
 
 namespace lms::db::tests
 {
@@ -37,7 +38,7 @@ namespace lms::db::tests
             EXPECT_FALSE(starredTrack);
             EXPECT_EQ(StarredTrack::getCount(session), 0);
 
-            auto tracks{ Track::findIds(session, Track::FindParameters {}) };
+            auto tracks{ Track::findIds(session, Track::FindParameters{}) };
             EXPECT_EQ(tracks.results.size(), 1);
         }
 
@@ -53,7 +54,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto tracks{ Track::findIds(session, Track::FindParameters {}) };
+            auto tracks{ Track::findIds(session, Track::FindParameters{}) };
             EXPECT_EQ(tracks.results.size(), 1);
 
             tracks = Track::findIds(session, Track::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal));
@@ -85,7 +86,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto tracks{ Track::findIds(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
+            auto tracks{ Track::findIds(session, Track::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
             EXPECT_EQ(tracks.results.size(), 1);
 
             starredTrack.get().modify()->setSyncState(SyncState::PendingRemove);
@@ -103,12 +104,12 @@ namespace lms::db::tests
         ScopedStarredTrack starredTrack1{ session, track1.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
         ScopedStarredTrack starredTrack2{ session, track2.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
 
-        const Wt::WDateTime dateTime{ Wt::WDate {1950, 1, 2}, Wt::WTime {12, 30, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 1950, 1, 2 }, Wt::WTime{ 12, 30, 1 } };
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto tracks{ Track::findIds(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
+            auto tracks{ Track::findIds(session, Track::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
             EXPECT_EQ(tracks.results.size(), 2);
         }
 
@@ -118,7 +119,7 @@ namespace lms::db::tests
             starredTrack1.get().modify()->setDateTime(dateTime);
             starredTrack2.get().modify()->setDateTime(dateTime.addSecs(-1));
 
-            auto tracks{ Track::findIds(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(TrackSortMethod::StarredDateDesc)) };
+            auto tracks{ Track::findIds(session, Track::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(TrackSortMethod::StarredDateDesc)) };
             ASSERT_EQ(tracks.results.size(), 2);
             EXPECT_EQ(tracks.results[0], starredTrack1->getTrack()->getId());
             EXPECT_EQ(tracks.results[1], starredTrack2->getTrack()->getId());
@@ -129,10 +130,10 @@ namespace lms::db::tests
             starredTrack1.get().modify()->setDateTime(dateTime);
             starredTrack2.get().modify()->setDateTime(dateTime.addSecs(1));
 
-            auto tracks{ Track::findIds(session, Track::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(TrackSortMethod::StarredDateDesc)) };
+            auto tracks{ Track::findIds(session, Track::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(TrackSortMethod::StarredDateDesc)) };
             ASSERT_EQ(tracks.results.size(), 2);
             EXPECT_EQ(tracks.results[0], starredTrack2->getTrack()->getId());
             EXPECT_EQ(tracks.results[1], starredTrack1->getTrack()->getId());
         }
     }
-}
+} // namespace lms::db::tests

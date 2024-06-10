@@ -19,6 +19,7 @@
 
 #include <map>
 #include <vector>
+
 #include <gtest/gtest.h>
 
 #include "Parser.hpp"
@@ -28,12 +29,11 @@ namespace lms::metadata
     class TestTagReader : public ITagReader
     {
     public:
-        static constexpr AudioProperties audioProperties
-        {
+        static constexpr AudioProperties audioProperties{
             .bitrate = 128000,
             .bitsPerSample = 16,
             .channelCount = 2,
-            .duration = std::chrono::seconds{180},
+            .duration = std::chrono::seconds{ 180 },
             .sampleRate = 44000,
         };
 
@@ -45,6 +45,15 @@ namespace lms::metadata
             , _performers{ std::move(performers) }
             , _extraUserTags{ std::move(extraUserTags) }
         {
+        }
+
+        size_t countTagValues(TagType tag) const
+        {
+            auto itValues{ _tags.find(tag) };
+            if (itValues != std::cend(_tags))
+                return itValues->second.size();
+
+            return 0;
         }
 
         void visitTagValues(TagType tag, TagValueVisitor visitor) const override
@@ -84,4 +93,4 @@ namespace lms::metadata
         const Performers _performers;
         const ExtraUserTags _extraUserTags;
     };
-}
+} // namespace lms::metadata

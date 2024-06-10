@@ -21,8 +21,8 @@
 
 #include "database/Types.hpp"
 
-#include "common/Template.hpp"
 #include "TrackCollector.hpp"
+#include "common/Template.hpp"
 
 namespace lms::ui
 {
@@ -50,7 +50,6 @@ namespace lms::ui
         Filters& _filters;
         PlayQueueController& _playQueueController;
         InfiniteScrollingContainer* _container{};
-        TrackCollector				_trackCollector;
+        TrackCollector _trackCollector;
     };
 } // namespace lms::ui
-

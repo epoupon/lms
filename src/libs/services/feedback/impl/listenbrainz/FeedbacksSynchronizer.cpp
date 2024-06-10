@@ -19,20 +19,20 @@
 
 #include "FeedbacksSynchronizer.hpp"
 
-#include <boost/asio/bind_executor.hpp>
 #include <Wt/Json/Array.h>
 #include <Wt/Json/Object.h>
-#include <Wt/Json/Value.h>
 #include <Wt/Json/Serializer.h>
+#include <Wt/Json/Value.h>
+#include <boost/asio/bind_executor.hpp>
 
+#include "core/IConfig.hpp"
+#include "core/Service.hpp"
+#include "core/http/IClient.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/StarredTrack.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
-#include "core/IConfig.hpp"
-#include "core/http/IClient.hpp"
-#include "core/Service.hpp"
 
 #include "Exception.hpp"
 #include "FeedbacksParser.hpp"
@@ -57,7 +57,7 @@ namespace lms::feedback::listenBrainz
                 return std::nullopt;
             }
         }
-    }
+    } // namespace
 
     FeedbacksSynchronizer::FeedbacksSynchronizer(boost::asio::io_context& ioContext, db::Db& db, core::http::IClient& client)
         : _ioContext{ ioContext }
@@ -125,19 +125,17 @@ namespace lms::feedback::listenBrainz
             request.message.addHeader("Authorization", "Token " + std::string{ listenBrainzToken->getAsString() });
 
             Wt::Json::Object root;
-            root["recording_mbid"] = Wt::Json::Value{ std::string {recordingMBID->getAsString()} };
+            root["recording_mbid"] = Wt::Json::Value{ std::string{ recordingMBID->getAsString() } };
             root["score"] = Wt::Json::Value{ static_cast<int>(type) };
 
             request.message.addBodyText(Wt::Json::serialize(root));
             request.message.addHeader("Content-Type", "application/json");
 
-            request.onSuccessFunc = [this, type, starredTrackId](std::string_view /*msgBody*/)
-                {
-                    _strand.dispatch([this, type, starredTrackId]
-                        {
-                            onFeedbackSent(type, starredTrackId);
-                        });
-                };
+            request.onSuccessFunc = [this, type, starredTrackId](std::string_view /*msgBody*/) {
+                _strand.dispatch([this, type, starredTrackId] {
+                    onFeedbackSent(type, starredTrackId);
+                });
+            };
             _client.sendPOSTRequest(std::move(request));
         }
         catch (Exception& e)
@@ -193,20 +191,19 @@ namespace lms::feedback::listenBrainz
 
     void FeedbacksSynchronizer::enquePendingFeedbacks()
     {
-    using namespace db;
+        using namespace db;
 
-        auto processPendingFeedbacks{ [this](SyncState scrobblingState, FeedbackType feedbackType)
-        {
+        auto processPendingFeedbacks{ [this](SyncState scrobblingState, FeedbackType feedbackType) {
             RangeResults<StarredTrackId> pendingFeedbacks;
 
             {
-                db::Session& session {_db.getTLSSession()};
+                db::Session& session{ _db.getTLSSession() };
 
-                auto transaction {session.createReadTransaction()};
+                auto transaction{ session.createReadTransaction() };
 
                 StarredTrack::FindParameters params;
                 params.setFeedbackBackend(db::FeedbackBackend::ListenBrainz, scrobblingState)
-                        .setRange(db::Range {0, 100}); // don't flood too much?
+                    .setRange(db::Range{ 0, 100 }); // don't flood too much?
 
                 pendingFeedbacks = StarredTrack::find(session, params);
             }
@@ -236,10 +233,9 @@ namespace lms::feedback::listenBrainz
 
     bool FeedbacksSynchronizer::isSyncing() const
     {
-        return std::any_of(std::cbegin(_userContexts), std::cend(_userContexts), [](const auto& contextEntry)
-            {
-                return contextEntry.second.syncing;
-            });
+        return std::any_of(std::cbegin(_userContexts), std::cend(_userContexts), [](const auto& contextEntry) {
+            return contextEntry.second.syncing;
+        });
     }
 
     void FeedbacksSynchronizer::scheduleSync(std::chrono::seconds fromNow)
@@ -249,20 +245,19 @@ namespace lms::feedback::listenBrainz
 
         LOG(DEBUG, "Scheduled sync in " << fromNow.count() << " seconds...");
         _syncTimer.expires_after(fromNow);
-        _syncTimer.async_wait(boost::asio::bind_executor(_strand, [this](const boost::system::error_code& ec)
+        _syncTimer.async_wait(boost::asio::bind_executor(_strand, [this](const boost::system::error_code& ec) {
+            if (ec == boost::asio::error::operation_aborted)
             {
-                if (ec == boost::asio::error::operation_aborted)
-                {
-                    LOG(DEBUG, "getFeedbacks aborted");
-                    return;
-                }
-                else if (ec)
-                {
-                    throw Exception{ "GetFeedbacks timer failure: " + std::string {ec.message()} };
-                }
+                LOG(DEBUG, "getFeedbacks aborted");
+                return;
+            }
+            else if (ec)
+            {
+                throw Exception{ "GetFeedbacks timer failure: " + std::string{ ec.message() } };
+            }
 
-                startSync();
-            }));
+            startSync();
+        }));
     }
 
     void FeedbacksSynchronizer::startSync()
@@ -301,14 +296,13 @@ namespace lms::feedback::listenBrainz
 
     void FeedbacksSynchronizer::onSyncEnded(UserContext& context)
     {
-        _strand.dispatch([this, &context]
-            {
-                LOG(INFO, "Feedback sync done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedFeedbackCount << ", matched: " << context.matchedFeedbackCount << ", imported: " << context.importedFeedbackCount);
-                context.syncing = false;
+        _strand.dispatch([this, &context] {
+            LOG(INFO, "Feedback sync done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedFeedbackCount << ", matched: " << context.matchedFeedbackCount << ", imported: " << context.importedFeedbackCount);
+            context.syncing = false;
 
-                if (!isSyncing())
-                    scheduleSync(_syncFeedbacksPeriod);
-            });
+            if (!isSyncing())
+                scheduleSync(_syncFeedbacksPeriod);
+        });
     }
 
     void FeedbacksSynchronizer::enqueValidateToken(UserContext& context)
@@ -325,21 +319,19 @@ namespace lms::feedback::listenBrainz
         core::http::ClientGETRequestParameters request;
         request.priority = core::http::ClientRequestParameters::Priority::Low;
         request.relativeUrl = "/1/validate-token";
-        request.headers = { {"Authorization",  "Token " + std::string {listenBrainzToken->getAsString()}} };
-        request.onSuccessFunc = [this, &context](std::string_view msgBody)
-            {
-                context.listenBrainzUserName = utils::parseValidateToken(msgBody);
-                if (context.listenBrainzUserName.empty())
-                {
-                    onSyncEnded(context);
-                    return;
-                }
-                enqueGetFeedbackCount(context);
-            };
-        request.onFailureFunc = [this, &context]
+        request.headers = { { "Authorization", "Token " + std::string{ listenBrainzToken->getAsString() } } };
+        request.onSuccessFunc = [this, &context](std::string_view msgBody) {
+            context.listenBrainzUserName = utils::parseValidateToken(msgBody);
+            if (context.listenBrainzUserName.empty())
             {
                 onSyncEnded(context);
-            };
+                return;
+            }
+            enqueGetFeedbackCount(context);
+        };
+        request.onFailureFunc = [this, &context] {
+            onSyncEnded(context);
+        };
 
         _client.sendGETRequest(std::move(request));
     }
@@ -351,30 +343,27 @@ namespace lms::feedback::listenBrainz
         core::http::ClientGETRequestParameters request;
         request.relativeUrl = "/1/feedback/user/" + std::string{ context.listenBrainzUserName } + "/get-feedback?score=1&count=0";
         request.priority = core::http::ClientRequestParameters::Priority::Low;
-        request.onSuccessFunc = [this, &context](std::string_view msgBody)
-            {
-                std::string msgBodyCopy{ msgBody };
-                _strand.dispatch([this, msgBodyCopy, &context]
-                    {
-                        LOG(DEBUG, "Current feedback count = " << (context.feedbackCount ? *context.feedbackCount : 0) << " for user '" << context.listenBrainzUserName << "'");
+        request.onSuccessFunc = [this, &context](std::string_view msgBody) {
+            std::string msgBodyCopy{ msgBody };
+            _strand.dispatch([this, msgBodyCopy, &context] {
+                LOG(DEBUG, "Current feedback count = " << (context.feedbackCount ? *context.feedbackCount : 0) << " for user '" << context.listenBrainzUserName << "'");
 
-                        const auto totalFeedbackCount = parseTotalFeedbackCount(msgBodyCopy);
-                        if (totalFeedbackCount)
-                            LOG(DEBUG, "Feedback count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *totalFeedbackCount);
+                const auto totalFeedbackCount = parseTotalFeedbackCount(msgBodyCopy);
+                if (totalFeedbackCount)
+                    LOG(DEBUG, "Feedback count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *totalFeedbackCount);
 
-                        bool needSync{ totalFeedbackCount && (!context.feedbackCount || *context.feedbackCount != *totalFeedbackCount) };
-                        context.feedbackCount = totalFeedbackCount;
+                bool needSync{ totalFeedbackCount && (!context.feedbackCount || *context.feedbackCount != *totalFeedbackCount) };
+                context.feedbackCount = totalFeedbackCount;
 
-                        if (needSync)
-                            enqueGetFeedbacks(context);
-                        else
-                            onSyncEnded(context);
-                    });
-            };
-        request.onFailureFunc = [this, &context]
-            {
-                onSyncEnded(context);
-            };
+                if (needSync)
+                    enqueGetFeedbacks(context);
+                else
+                    onSyncEnded(context);
+            });
+        };
+        request.onFailureFunc = [this, &context] {
+            onSyncEnded(context);
+        };
 
         _client.sendGETRequest(std::move(request));
     }
@@ -386,28 +375,25 @@ namespace lms::feedback::listenBrainz
         core::http::ClientGETRequestParameters request;
         request.relativeUrl = "/1/feedback/user/" + context.listenBrainzUserName + "/get-feedback?offset=" + std::to_string(context.fetchedFeedbackCount);
         request.priority = core::http::ClientRequestParameters::Priority::Low;
-        request.onSuccessFunc = [this, &context](std::string_view msgBody)
-            {
-                std::string msgBodyCopy{ msgBody };
-                _strand.dispatch([this, msgBodyCopy, &context]
-                    {
-                        const std::size_t fetchedFeedbackCount{ processGetFeedbacks(msgBodyCopy, context) };
-                        if (fetchedFeedbackCount == 0 // no more thing available on server
-                            || context.fetchedFeedbackCount >= context.feedbackCount // we may miss something, but we will get it next time
-                            || context.fetchedFeedbackCount >= _maxSyncFeedbackCount)
-                        {
-                            onSyncEnded(context);
-                        }
-                        else
-                        {
-                            enqueGetFeedbacks(context);
-                        }
-                    });
-            };
-        request.onFailureFunc = [this, &context]
-            {
-                onSyncEnded(context);
-            };
+        request.onSuccessFunc = [this, &context](std::string_view msgBody) {
+            std::string msgBodyCopy{ msgBody };
+            _strand.dispatch([this, msgBodyCopy, &context] {
+                const std::size_t fetchedFeedbackCount{ processGetFeedbacks(msgBodyCopy, context) };
+                if (fetchedFeedbackCount == 0                                // no more thing available on server
+                    || context.fetchedFeedbackCount >= context.feedbackCount // we may miss something, but we will get it next time
+                    || context.fetchedFeedbackCount >= _maxSyncFeedbackCount)
+                {
+                    onSyncEnded(context);
+                }
+                else
+                {
+                    enqueGetFeedbacks(context);
+                }
+            });
+        };
+        request.onFailureFunc = [this, &context] {
+            onSyncEnded(context);
+        };
 
         _client.sendGETRequest(std::move(request));
     }

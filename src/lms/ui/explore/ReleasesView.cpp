@@ -25,18 +25,18 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 
+#include "LmsApplication.hpp"
+#include "SortModeSelector.hpp"
 #include "common/InfiniteScrollingContainer.hpp"
 #include "common/Template.hpp"
 #include "explore/Filters.hpp"
 #include "explore/PlayQueueController.hpp"
 #include "explore/ReleaseHelpers.hpp"
-#include "LmsApplication.hpp"
-#include "SortModeSelector.hpp"
 
 namespace lms::ui
 {
     using namespace db;
-    
+
     Releases::Releases(Filters& filters, PlayQueueController& playQueueController)
         : Template{ Wt::WString::tr("Lms.Explore.Releases.template") }
         , _playQueueController{ playQueueController }
@@ -47,49 +47,44 @@ namespace lms::ui
 
         Wt::WLineEdit* searEdit{ bindNew<Wt::WLineEdit>("search") };
         searEdit->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
-        searEdit->textInput().connect([this, searEdit]
-            {
-                refreshView(searEdit->text());
-            });
+        searEdit->textInput().connect([this, searEdit] {
+            refreshView(searEdit->text());
+        });
 
         SortModeSelector* sortMode{ bindNew<SortModeSelector>("sort-mode", _defaultMode) };
-        sortMode->itemSelected.connect([this](ReleaseCollector::Mode sortMode)
-            {
-                refreshView(sortMode);
-            });
+        sortMode->itemSelected.connect([this](ReleaseCollector::Mode sortMode) {
+            refreshView(sortMode);
+        });
 
         Wt::WPushButton* playBtn{ bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML) };
-        playBtn->clicked().connect([this]
-            {
-                _playQueueController.processCommand(PlayQueueController::Command::Play, getAllReleases());
-            });
+        playBtn->clicked().connect([this] {
+            _playQueueController.processCommand(PlayQueueController::Command::Play, getAllReleases());
+        });
 
         bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
-            ->clicked().connect([this]
-                {
-                    _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, getAllReleases());
-                });
+            ->clicked()
+            .connect([this] {
+                _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, getAllReleases());
+            });
         bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"), Wt::TextFormat::Plain)
-            ->clicked().connect([this]
-                {
-                    _playQueueController.processCommand(PlayQueueController::Command::PlayNext, getAllReleases());
-                });
+            ->clicked()
+            .connect([this] {
+                _playQueueController.processCommand(PlayQueueController::Command::PlayNext, getAllReleases());
+            });
         bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
-            ->clicked().connect([this]
-                {
-                    _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, getAllReleases());
-                });
+            ->clicked()
+            .connect([this] {
+                _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, getAllReleases());
+            });
 
         _container = bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
-        _container->onRequestElements.connect([this]
-            {
-                addSome();
-            });
+        _container->onRequestElements.connect([this] {
+            addSome();
+        });
 
-        filters.updated().connect([this]
-            {
-                refreshView();
-            });
+        filters.updated().connect([this] {
+            refreshView();
+        });
 
         refreshView(_releaseCollector.getMode());
     }
@@ -114,7 +109,7 @@ namespace lms::ui
 
     void Releases::addSome()
     {
-        const auto releaseIds{ _releaseCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize}) };
+        const auto releaseIds{ _releaseCollector.get(Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }) };
 
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };

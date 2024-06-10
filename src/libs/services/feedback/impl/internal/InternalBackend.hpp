@@ -43,5 +43,4 @@ namespace lms::feedback
 
         db::Db& _db;
     };
-} // Feedback
-
+} // namespace lms::feedback

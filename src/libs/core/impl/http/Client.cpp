@@ -36,4 +36,4 @@ namespace lms::core::http
     {
         _sendQueue.sendRequest(std::make_unique<ClientRequest>(std::move(POSTParams)));
     }
-}
+} // namespace lms::core::http

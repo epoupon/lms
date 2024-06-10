@@ -20,6 +20,7 @@
 
 #include <filesystem>
 #include <memory>
+
 #include <boost/asio/io_service.hpp>
 
 #include "IChildProcess.hpp"
@@ -35,4 +36,4 @@ namespace lms::core
     };
 
     std::unique_ptr<IChildProcessManager> createChildProcessManager(boost::asio::io_service& ioService);
-}
+} // namespace lms::core

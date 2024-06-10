@@ -25,15 +25,15 @@
 
 namespace lms::ui
 {
-	class AudioFileResource : public Wt::WResource
-	{
-		public:
-			~AudioFileResource();
+    class AudioFileResource : public Wt::WResource
+    {
+    public:
+        ~AudioFileResource();
 
-			std::string getUrl(db::TrackId trackId) const;
+        std::string getUrl(db::TrackId trackId) const;
 
-		private:
-			void handleRequest(const Wt::Http::Request& request,
-					Wt::Http::Response& response) override;
-	};
+    private:
+        void handleRequest(const Wt::Http::Request& request,
+            Wt::Http::Response& response) override;
+    };
 } // namespace lms::ui

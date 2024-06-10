@@ -31,13 +31,13 @@ namespace lms::core
 {
     namespace stringUtils
     {
-        template <>
+        template<>
         std::optional<UUID>
-            readAs(std::string_view str)
+        readAs(std::string_view str)
         {
             return UUID::fromString(str);
         }
-    }
+    } // namespace stringUtils
     namespace
     {
         bool stringIsUUID(std::string_view str)
@@ -46,7 +46,7 @@ namespace lms::core
 
             return std::regex_match(std::cbegin(str), std::cend(str), re);
         }
-    }
+    } // namespace
 
     UUID::UUID(std::string_view str)
         : _value{ stringUtils::stringToLower(str) }
@@ -68,9 +68,8 @@ namespace lms::core
 
         std::ostringstream oss;
 
-        auto concatRandomBytes{ [](std::ostream& os, std::size_t byteCount)
-        {
-            for (std::size_t i {}; i < byteCount; ++i)
+        auto concatRandomBytes{ [](std::ostream& os, std::size_t byteCount) {
+            for (std::size_t i{}; i < byteCount; ++i)
                 os << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(random::getRandom<std::uint8_t>(0, 255));
         } };
 
@@ -88,4 +87,4 @@ namespace lms::core
         assert(uuid);
         return uuid.value();
     }
-}
+} // namespace lms::core

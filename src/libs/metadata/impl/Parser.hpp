@@ -20,6 +20,7 @@
 #pragma once
 
 #include "metadata/IParser.hpp"
+
 #include "ITagReader.hpp"
 
 namespace lms::metadata
@@ -50,4 +51,3 @@ namespace lms::metadata
         std::vector<std::string> _defaultTagDelimiters;
     };
 } // namespace lms::metadata
-

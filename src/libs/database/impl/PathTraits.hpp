@@ -19,8 +19,9 @@
 
 #pragma once
 
-#include <string>
 #include <filesystem>
+#include <string>
+
 #include <Wt/Dbo/SqlTraits.h>
 
 namespace Wt::Dbo
@@ -50,5 +51,4 @@ namespace Wt::Dbo
             return true;
         }
     };
-}
-
+} // namespace Wt::Dbo

@@ -19,30 +19,29 @@
 
 #include "CoverResource.hpp"
 
-#include <Wt/WApplication.h>
 #include <Wt/Http/Response.h>
+#include <Wt/WApplication.h>
 
-#include "services/cover/ICoverService.hpp"
-#include "database/Track.hpp"
 #include "core/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
+#include "database/Track.hpp"
+#include "services/cover/ICoverService.hpp"
 
 #include "LmsApplication.hpp"
 
-#define LOG(severity, message)	LMS_LOG(UI, severity, "Image resource: " << message)
+#define LOG(severity, message) LMS_LOG(UI, severity, "Image resource: " << message)
 
 namespace lms::ui
 {
     CoverResource::CoverResource()
     {
-        LmsApp->getScannerEvents().scanComplete.connect(this, [this](const scanner::ScanStats& stats)
-            {
-                if (stats.nbChanges())
-                    setChanged();
-            });
+        LmsApp->getScannerEvents().scanComplete.connect(this, [this](const scanner::ScanStats& stats) {
+            if (stats.nbChanges())
+                setChanged();
+        });
     }
 
     CoverResource::~CoverResource()

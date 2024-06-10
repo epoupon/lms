@@ -26,9 +26,10 @@
 #include <Wt/WServer.h>
 #include <Wt/WStackedWidget.h>
 
-#include "services/auth/IEnvService.hpp"
-#include "services/auth/IPasswordService.hpp"
-#include "services/cover/ICoverService.hpp"
+#include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
+#include "core/Service.hpp"
+#include "core/String.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
@@ -36,25 +37,11 @@
 #include "database/Session.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
+#include "services/auth/IEnvService.hpp"
+#include "services/auth/IPasswordService.hpp"
+#include "services/cover/ICoverService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
-#include "core/ILogger.hpp"
-#include "core/ITraceLogger.hpp"
-#include "core/Service.hpp"
-#include "core/String.hpp"
 
-#include "admin/InitWizardView.hpp"
-#include "admin/MediaLibrariesView.hpp"
-#include "admin/TracingView.hpp"
-#include "admin/ScannerController.hpp"
-#include "admin/ScanSettingsView.hpp"
-#include "admin/UserView.hpp"
-#include "admin/UsersView.hpp"
-#include "common/Template.hpp"
-#include "explore/Explore.hpp"
-#include "explore/Filters.hpp"
-#include "resource/AudioFileResource.hpp"
-#include "resource/AudioTranscodingResource.hpp"
-#include "resource/CoverResource.hpp"
 #include "Auth.hpp"
 #include "LmsApplicationException.hpp"
 #include "LmsApplicationManager.hpp"
@@ -64,6 +51,19 @@
 #include "NotificationContainer.hpp"
 #include "PlayQueue.hpp"
 #include "SettingsView.hpp"
+#include "admin/InitWizardView.hpp"
+#include "admin/MediaLibrariesView.hpp"
+#include "admin/ScanSettingsView.hpp"
+#include "admin/ScannerController.hpp"
+#include "admin/TracingView.hpp"
+#include "admin/UserView.hpp"
+#include "admin/UsersView.hpp"
+#include "common/Template.hpp"
+#include "explore/Explore.hpp"
+#include "explore/Filters.hpp"
+#include "resource/AudioFileResource.hpp"
+#include "resource/AudioTranscodingResource.hpp"
+#include "resource/CoverResource.hpp"
 
 namespace lms::ui
 {
@@ -132,23 +132,22 @@ namespace lms::ui
                 int index;
                 bool admin;
                 std::optional<Wt::WString> title;
-            } views[] =
-            {
-                { "/artists",			    IdxExplore,			    false,	Wt::WString::tr("Lms.Explore.artists") },
-                { "/artist",			    IdxExplore,			    false,	std::nullopt },
-                { "/releases",			    IdxExplore,			    false,	Wt::WString::tr("Lms.Explore.releases") },
-                { "/release",			    IdxExplore,			    false,	std::nullopt },
-                { "/tracks",			    IdxExplore,			    false,	Wt::WString::tr("Lms.Explore.tracks") },
-                { "/tracklists",		    IdxExplore,			    false,	Wt::WString::tr("Lms.Explore.tracklists") },
-                { "/tracklist",			    IdxExplore,			    false,	std::nullopt },
-                { "/playqueue",			    IdxPlayQueue,		    false,	Wt::WString::tr("Lms.PlayQueue.playqueue") },
-                { "/settings",			    IdxSettings,		    false,	Wt::WString::tr("Lms.Settings.settings") },
-                { "/admin/libraries",	    IdxAdminLibraries,	    true,	Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries") },
-                { "/admin/scan-settings",	IdxAdminScanSettings,	true,	Wt::WString::tr("Lms.Admin.Database.scan-settings") },
-                { "/admin/scanner",	        IdxAdminScanner,	    true,	Wt::WString::tr("Lms.Admin.ScannerController.scanner") },
-                { "/admin/users",		    IdxAdminUsers,		    true,	Wt::WString::tr("Lms.Admin.Users.users") },
-                { "/admin/user",		    IdxAdminUser,		    true,	std::nullopt },
-                { "/admin/tracing",		    IdxAdminTracing,		true,	Wt::WString::tr("Lms.Admin.Tracing.tracing") },
+            } views[] = {
+                { "/artists", IdxExplore, false, Wt::WString::tr("Lms.Explore.artists") },
+                { "/artist", IdxExplore, false, std::nullopt },
+                { "/releases", IdxExplore, false, Wt::WString::tr("Lms.Explore.releases") },
+                { "/release", IdxExplore, false, std::nullopt },
+                { "/tracks", IdxExplore, false, Wt::WString::tr("Lms.Explore.tracks") },
+                { "/tracklists", IdxExplore, false, Wt::WString::tr("Lms.Explore.tracklists") },
+                { "/tracklist", IdxExplore, false, std::nullopt },
+                { "/playqueue", IdxPlayQueue, false, Wt::WString::tr("Lms.PlayQueue.playqueue") },
+                { "/settings", IdxSettings, false, Wt::WString::tr("Lms.Settings.settings") },
+                { "/admin/libraries", IdxAdminLibraries, true, Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries") },
+                { "/admin/scan-settings", IdxAdminScanSettings, true, Wt::WString::tr("Lms.Admin.Database.scan-settings") },
+                { "/admin/scanner", IdxAdminScanner, true, Wt::WString::tr("Lms.Admin.ScannerController.scanner") },
+                { "/admin/users", IdxAdminUsers, true, Wt::WString::tr("Lms.Admin.Users.users") },
+                { "/admin/user", IdxAdminUser, true, std::nullopt },
+                { "/admin/tracing", IdxAdminTracing, true, Wt::WString::tr("Lms.Admin.Tracing.tracing") },
             };
 
             LMS_LOG(UI, DEBUG, "Internal path changed to '" << wApp->internalPath() << "'");
@@ -171,11 +170,11 @@ namespace lms::ui
 
             wApp->setInternalPath(defaultPath, true);
         }
-    }
+    } // namespace
 
     std::unique_ptr<Wt::WApplication> LmsApplication::create(const Wt::WEnvironment& env, db::Db& db, LmsApplicationManager& appManager)
     {
-        if (auto * authEnvService{ core::Service<auth::IEnvService>::get() })
+        if (auto* authEnvService{ core::Service<auth::IEnvService>::get() })
         {
             const auto checkResult{ authEnvService->processEnv(env) };
             if (checkResult.state != auth::IEnvService::CheckResult::State::Granted)
@@ -245,7 +244,7 @@ namespace lms::ui
         : Wt::WApplication{ env }
         , _db{ db }
         , _appManager{ appManager }
-        , _authenticatedUser{ userId ? std::make_optional<UserAuthInfo>(UserAuthInfo {*userId, false}) : std::nullopt }
+        , _authenticatedUser{ userId ? std::make_optional<UserAuthInfo>(UserAuthInfo{ *userId, false }) : std::nullopt }
     {
         try
         {
@@ -315,11 +314,10 @@ namespace lms::ui
         else
         {
             Auth* auth{ root()->addNew<Auth>() };
-            auth->userLoggedIn.connect(this, [this](db::UserId userId)
-                {
-                    _authenticatedUser = { userId, true };
-                    onUserLoggedIn();
-                });
+            auth->userLoggedIn.connect(this, [this](db::UserId userId) {
+                _authenticatedUser = { userId, true };
+                onUserLoggedIn();
+            });
         }
     }
 
@@ -339,10 +337,9 @@ namespace lms::ui
 
         t->bindString("error", e.what(), Wt::TextFormat::Plain);
         Wt::WPushButton* btn{ t->bindNew<Wt::WPushButton>("btn-go-home", Wt::WString::tr("Lms.Error.go-home")) };
-        btn->clicked().connect([this]()
-            {
-                redirect(defaultPath);
-            });
+        btn->clicked().connect([this]() {
+            redirect(defaultPath);
+        });
     }
 
     void LmsApplication::goHomeAndQuit()
@@ -369,17 +366,16 @@ namespace lms::ui
         LMS_LOG(UI, INFO, "User '" << getUserLoginName() << "' logged in from '" << environment().clientAddress() << "', user agent = " << environment().userAgent());
 
         _appManager.registerApplication(*this);
-        _appManager.applicationRegistered.connect(this, [this](LmsApplication& otherApplication)
+        _appManager.applicationRegistered.connect(this, [this](LmsApplication& otherApplication) {
+            // Only one active session by user
+            if (otherApplication.getUserId() == getUserId())
             {
-                // Only one active session by user
-                if (otherApplication.getUserId() == getUserId())
+                if (LmsApp->getUserType() != db::UserType::DEMO)
                 {
-                    if (LmsApp->getUserType() != db::UserType::DEMO)
-                    {
-                        quit(Wt::WString::tr("Lms.quit-other-session"));
-                    }
+                    quit(Wt::WString::tr("Lms.quit-other-session"));
                 }
-            });
+            }
+        });
 
         createHome();
     }
@@ -471,73 +467,63 @@ namespace lms::ui
         explore->getPlayQueueController().setMaxTrackCountToEnqueue(_playQueue->getCapacity());
 
         // Events from MediaPlayer
-        _mediaPlayer->playNext.connect([this]
-            {
-                LMS_LOG(UI, DEBUG, "Received playNext from player");
-                _playQueue->playNext();
-            });
-        _mediaPlayer->playPrevious.connect([this]
-            {
-                LMS_LOG(UI, DEBUG, "Received playPrevious from player");
-                _playQueue->playPrevious();
-            });
+        _mediaPlayer->playNext.connect([this] {
+            LMS_LOG(UI, DEBUG, "Received playNext from player");
+            _playQueue->playNext();
+        });
+        _mediaPlayer->playPrevious.connect([this] {
+            LMS_LOG(UI, DEBUG, "Received playPrevious from player");
+            _playQueue->playPrevious();
+        });
 
-        _mediaPlayer->scrobbleListenNow.connect([this](db::TrackId trackId)
-            {
-                LMS_LOG(UI, DEBUG, "Received ScrobbleListenNow from player for trackId = " << trackId.toString());
-                const scrobbling::Listen listen{ getUserId(), trackId };
-                core::Service<scrobbling::IScrobblingService>::get()->listenStarted(listen);
-            });
-        _mediaPlayer->scrobbleListenFinished.connect([this](db::TrackId trackId, unsigned durationMs)
-            {
-                LMS_LOG(UI, DEBUG, "Received ScrobbleListenFinished from player for trackId = " << trackId.toString() << ", duration = " << (durationMs / 1000) << "s");
-                const std::chrono::milliseconds duration{ durationMs };
-                const scrobbling::Listen listen{ getUserId(), trackId };
-                core::Service<scrobbling::IScrobblingService>::get()->listenFinished(listen, std::chrono::duration_cast<std::chrono::seconds>(duration));
-            });
+        _mediaPlayer->scrobbleListenNow.connect([this](db::TrackId trackId) {
+            LMS_LOG(UI, DEBUG, "Received ScrobbleListenNow from player for trackId = " << trackId.toString());
+            const scrobbling::Listen listen{ getUserId(), trackId };
+            core::Service<scrobbling::IScrobblingService>::get()->listenStarted(listen);
+        });
+        _mediaPlayer->scrobbleListenFinished.connect([this](db::TrackId trackId, unsigned durationMs) {
+            LMS_LOG(UI, DEBUG, "Received ScrobbleListenFinished from player for trackId = " << trackId.toString() << ", duration = " << (durationMs / 1000) << "s");
+            const std::chrono::milliseconds duration{ durationMs };
+            const scrobbling::Listen listen{ getUserId(), trackId };
+            core::Service<scrobbling::IScrobblingService>::get()->listenFinished(listen, std::chrono::duration_cast<std::chrono::seconds>(duration));
+        });
 
-        _mediaPlayer->playbackEnded.connect([this]
-            {
-                LMS_LOG(UI, DEBUG, "Received playbackEnded from player");
-                _playQueue->onPlaybackEnded();
-            });
+        _mediaPlayer->playbackEnded.connect([this] {
+            LMS_LOG(UI, DEBUG, "Received playbackEnded from player");
+            _playQueue->onPlaybackEnded();
+        });
 
-        _playQueue->trackSelected.connect([this](db::TrackId trackId, bool play, float replayGain)
-            {
-                _mediaPlayer->loadTrack(trackId, play, replayGain);
-            });
+        _playQueue->trackSelected.connect([this](db::TrackId trackId, bool play, float replayGain) {
+            _mediaPlayer->loadTrack(trackId, play, replayGain);
+        });
 
-        _playQueue->trackUnselected.connect([this]
-            {
-                _mediaPlayer->stop();
-            });
-        _playQueue->trackCountChanged.connect([this](std::size_t trackCount)
-            {
-                _mediaPlayer->onPlayQueueUpdated(trackCount);
-            });
+        _playQueue->trackUnselected.connect([this] {
+            _mediaPlayer->stop();
+        });
+        _playQueue->trackCountChanged.connect([this](std::size_t trackCount) {
+            _mediaPlayer->onPlayQueueUpdated(trackCount);
+        });
         _mediaPlayer->onPlayQueueUpdated(_playQueue->getCount());
 
         const bool isAdmin{ getUserType() == db::UserType::ADMIN };
         if (isAdmin)
         {
-            _scannerEvents.scanComplete.connect([this](const scanner::ScanStats& stats)
-                {
-                    notifyMsg(Notification::Type::Info,
+            _scannerEvents.scanComplete.connect([this](const scanner::ScanStats& stats) {
+                notifyMsg(Notification::Type::Info,
                     Wt::WString::tr("Lms.Admin.Database.database"),
                     Wt::WString::tr("Lms.Admin.Database.scan-complete")
-                    .arg(static_cast<unsigned>(stats.nbFiles()))
+                        .arg(static_cast<unsigned>(stats.nbFiles()))
                         .arg(static_cast<unsigned>(stats.additions))
                         .arg(static_cast<unsigned>(stats.updates))
                         .arg(static_cast<unsigned>(stats.deletions))
                         .arg(static_cast<unsigned>(stats.duplicates.size()))
                         .arg(static_cast<unsigned>(stats.errors.size())));
-                });
+            });
         }
 
-        internalPathChanged().connect(mainStack, [=]
-            {
-                handlePathChange(*mainStack, isAdmin);
-            });
+        internalPathChanged().connect(mainStack, [=] {
+            handlePathChange(*mainStack, isAdmin);
+        });
 
         handlePathChange(*mainStack, isAdmin);
     }

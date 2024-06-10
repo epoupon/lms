@@ -27,10 +27,11 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WResource.h>
 
+#include "core/Service.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "services/scanner/IScannerService.hpp"
-#include "core/Service.hpp"
+
 #include "LmsApplication.hpp"
 
 namespace lms::ui
@@ -51,7 +52,7 @@ namespace lms::ui
 
             return oss.str();
         }
-    }
+    } // namespace
 
     class ReportResource : public Wt::WResource
     {
@@ -116,10 +117,14 @@ namespace lms::ui
         {
             switch (error)
             {
-            case scanner::ScanErrorType::CannotReadFile: return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-file");
-            case scanner::ScanErrorType::CannotParseFile: return Wt::WString::tr("Lms.Admin.ScannerController.cannot-parse-file");
-            case scanner::ScanErrorType::NoAudioTrack: return Wt::WString::tr("Lms.Admin.ScannerController.no-audio-track");
-            case scanner::ScanErrorType::BadDuration: return Wt::WString::tr("Lms.Admin.ScannerController.bad-duration");
+            case scanner::ScanErrorType::CannotReadFile:
+                return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-file");
+            case scanner::ScanErrorType::CannotParseFile:
+                return Wt::WString::tr("Lms.Admin.ScannerController.cannot-parse-file");
+            case scanner::ScanErrorType::NoAudioTrack:
+                return Wt::WString::tr("Lms.Admin.ScannerController.no-audio-track");
+            case scanner::ScanErrorType::BadDuration:
+                return Wt::WString::tr("Lms.Admin.ScannerController.bad-duration");
             }
             return "?";
         }
@@ -128,8 +133,10 @@ namespace lms::ui
         {
             switch (reason)
             {
-            case scanner::DuplicateReason::SameHash: return Wt::WString::tr("Lms.Admin.ScannerController.same-hash");
-            case scanner::DuplicateReason::SameTrackMBID: return Wt::WString::tr("Lms.Admin.ScannerController.same-mbid");
+            case scanner::DuplicateReason::SameHash:
+                return Wt::WString::tr("Lms.Admin.ScannerController.same-hash");
+            case scanner::DuplicateReason::SameTrackMBID:
+                return Wt::WString::tr("Lms.Admin.ScannerController.same-mbid");
             }
             return "?";
         }
@@ -161,16 +168,14 @@ namespace lms::ui
         Wt::WCheckBox* forceOptimize{ bindNew<Wt::WCheckBox>("force-optimize") };
         Wt::WCheckBox* compact{ bindNew<Wt::WCheckBox>("compact") };
         Wt::WPushButton* scanBtn{ bindNew<Wt::WPushButton>("scan-btn", Wt::WString::tr("Lms.Admin.ScannerController.scan-now")) };
-        scanBtn->clicked().connect([=]
-            {
-                const scanner::ScanOptions scanOptions
-                {
-                    .fullScan = fullScan->isChecked(),
-                    .forceOptimize = forceOptimize->isChecked(),
-                    .compact = compact->isChecked(),
-                };
-                core::Service<scanner::IScannerService>::get()->requestImmediateScan(scanOptions);
-            });
+        scanBtn->clicked().connect([=] {
+            const scanner::ScanOptions scanOptions{
+                .fullScan = fullScan->isChecked(),
+                .forceOptimize = forceOptimize->isChecked(),
+                .compact = compact->isChecked(),
+            };
+            core::Service<scanner::IScannerService>::get()->requestImmediateScan(scanOptions);
+        });
 
         _lastScanStatus = bindNew<Wt::WLineEdit>("last-scan");
         _lastScanStatus->setReadOnly(true);
@@ -183,14 +188,12 @@ namespace lms::ui
 
         auto onDbEvent{ [&]() { refreshContents(); } };
 
-        LmsApp->getScannerEvents().scanAborted.connect(this, []
-            {
-                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.database"), Wt::WString::tr("Lms.Admin.Database.scan-aborted"));
-            });
-        LmsApp->getScannerEvents().scanStarted.connect(this, []
-            {
-                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.database"), Wt::WString::tr("Lms.Admin.Database.scan-launched"));
-            });
+        LmsApp->getScannerEvents().scanAborted.connect(this, [] {
+            LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.database"), Wt::WString::tr("Lms.Admin.Database.scan-aborted"));
+        });
+        LmsApp->getScannerEvents().scanStarted.connect(this, [] {
+            LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.database"), Wt::WString::tr("Lms.Admin.Database.scan-launched"));
+        });
         LmsApp->getScannerEvents().scanComplete.connect(this, onDbEvent);
         LmsApp->getScannerEvents().scanInProgress.connect(this, onDbEvent);
         LmsApp->getScannerEvents().scanScheduled.connect(this, onDbEvent);
@@ -213,16 +216,14 @@ namespace lms::ui
         if (status.lastCompleteScanStats)
         {
             _lastScanStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.last-scan-status")
-                .arg(status.lastCompleteScanStats->nbFiles())
-                .arg(durationToString(status.lastCompleteScanStats->startTime, status.lastCompleteScanStats->stopTime))
-                .arg(status.lastCompleteScanStats->stopTime.toString())
-                .arg(status.lastCompleteScanStats->errors.size())
-                .arg(status.lastCompleteScanStats->duplicates.size())
-            );
+                                         .arg(status.lastCompleteScanStats->nbFiles())
+                                         .arg(durationToString(status.lastCompleteScanStats->startTime, status.lastCompleteScanStats->stopTime))
+                                         .arg(status.lastCompleteScanStats->stopTime.toString())
+                                         .arg(status.lastCompleteScanStats->errors.size())
+                                         .arg(status.lastCompleteScanStats->duplicates.size()));
 
             _reportResource->setScanStats(*status.lastCompleteScanStats);
             _reportBtn->setEnabled(true);
-
         }
         else
         {
@@ -244,14 +245,16 @@ namespace lms::ui
 
         case IScannerService::State::Scheduled:
             _status->setText(Wt::WString::tr("Lms.Admin.ScannerController.status-scheduled")
-                .arg(status.nextScheduledScan.toString()));
+                                 .arg(status.nextScheduledScan.toString()));
             _stepStatus->setText("");
             break;
 
         case IScannerService::State::InProgress:
+            assert(status.currentScanStepStats);
+
             _status->setText(Wt::WString::tr("Lms.Admin.ScannerController.status-in-progress")
-                .arg(status.currentScanStepStats->stepIndex + 1)
-                .arg(scanner::ScanProgressStepCount));
+                                 .arg(status.currentScanStepStats->stepIndex + 1)
+                                 .arg(scanner::ScanProgressStepCount));
 
             refreshCurrentStep(*status.currentScanStepStats);
             break;
@@ -266,12 +269,12 @@ namespace lms::ui
         {
         case ScanStep::CheckForDuplicateFiles:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-checking-for-duplicate-files")
-                .arg(stepStats.processedElems));
+                                     .arg(stepStats.processedElems));
             break;
 
         case scanner::ScanStep::CheckForMissingFiles:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-checking-for-missing-files")
-                .arg(stepStats.progress()));
+                                     .arg(stepStats.progress()));
             break;
 
         case scanner::ScanStep::Compact:
@@ -280,38 +283,38 @@ namespace lms::ui
 
         case scanner::ScanStep::ComputeClusterStats:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-compute-cluster-stats")
-                .arg(stepStats.progress()));
+                                     .arg(stepStats.progress()));
             break;
 
         case scanner::ScanStep::DiscoverFiles:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-discovering-files")
-                .arg(stepStats.processedElems));
+                                     .arg(stepStats.processedElems));
             break;
 
         case scanner::ScanStep::FetchTrackFeatures:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-fetching-track-features")
-                .arg(stepStats.processedElems)
-                .arg(stepStats.totalElems)
-                .arg(stepStats.progress()));
+                                     .arg(stepStats.processedElems)
+                                     .arg(stepStats.totalElems)
+                                     .arg(stepStats.progress()));
             break;
 
         case scanner::ScanStep::Optimize:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-optimize")
-                .arg(stepStats.processedElems)
-                .arg(stepStats.totalElems)
-                .arg(stepStats.progress()));
+                                     .arg(stepStats.processedElems)
+                                     .arg(stepStats.totalElems)
+                                     .arg(stepStats.progress()));
             break;
 
         case scanner::ScanStep::ReloadSimilarityEngine:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-reloading-similarity-engine")
-                .arg(stepStats.progress()));
+                                     .arg(stepStats.progress()));
             break;
 
         case scanner::ScanStep::ScanFiles:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-scanning-files")
-                .arg(stepStats.processedElems)
-                .arg(stepStats.totalElems)
-                .arg(stepStats.progress()));
+                                     .arg(stepStats.processedElems)
+                                     .arg(stepStats.totalElems)
+                                     .arg(stepStats.progress()));
             break;
         }
     }

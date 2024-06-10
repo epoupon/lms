@@ -65,7 +65,7 @@ namespace lms::core
     {
         try
         {
-            const libconfig::Setting& values{ _config.lookup(std::string {setting}) };
+            const libconfig::Setting& values{ _config.lookup(std::string{ setting }) };
             for (int i{}; i < values.getLength(); ++i)
                 _func(static_cast<const char*>(values[i]));
         }
@@ -83,7 +83,7 @@ namespace lms::core
     {
         try
         {
-            const char* res{ _config.lookup(std::string {setting}) };
+            const char* res{ _config.lookup(std::string{ setting }) };
             return std::filesystem::path{ std::string(res) };
         }
         catch (libconfig::ConfigException&)
@@ -127,4 +127,4 @@ namespace lms::core
             return def;
         }
     }
-}
+} // namespace lms::core

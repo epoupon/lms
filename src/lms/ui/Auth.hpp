@@ -20,19 +20,20 @@
 #pragma once
 
 #include <optional>
+
 #include <Wt/WTemplateFormView.h>
 
 #include "database/UserId.hpp"
 
 namespace lms::ui
 {
-	std::optional<db::UserId> processAuthToken(const Wt::WEnvironment& env);
+    std::optional<db::UserId> processAuthToken(const Wt::WEnvironment& env);
 
-	class Auth : public Wt::WTemplateFormView
-	{
-		public:
-			Auth();
+    class Auth : public Wt::WTemplateFormView
+    {
+    public:
+        Auth();
 
-			Wt::Signal<db::UserId> userLoggedIn;
-	};
+        Wt::Signal<db::UserId> userLoggedIn;
+    };
 } // namespace lms::ui

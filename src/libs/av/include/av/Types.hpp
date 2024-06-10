@@ -28,4 +28,4 @@ namespace lms::av
     public:
         using LmsException::LmsException;
     };
-}
+} // namespace lms::av

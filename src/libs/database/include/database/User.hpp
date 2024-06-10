@@ -47,43 +47,59 @@ namespace lms::db
 
         struct FindParameters
         {
-            std::optional<ScrobblingBackend>	scrobblingBackend;
-            std::optional<FeedbackBackend>	    feedbackBackend;
-            std::optional<Range>			    range;
+            std::optional<ScrobblingBackend> scrobblingBackend;
+            std::optional<FeedbackBackend> feedbackBackend;
+            std::optional<Range> range;
 
-            FindParameters& setFeedbackBackend(FeedbackBackend _feedbackBackend) { feedbackBackend = _feedbackBackend; return *this; }
-            FindParameters& setScrobblingBackend(ScrobblingBackend _scrobblingBackend) { scrobblingBackend = _scrobblingBackend; return *this; }
-            FindParameters& setRange(std::optional<Range> _range) { range = _range; return *this; }
+            FindParameters& setFeedbackBackend(FeedbackBackend _feedbackBackend)
+            {
+                feedbackBackend = _feedbackBackend;
+                return *this;
+            }
+            FindParameters& setScrobblingBackend(ScrobblingBackend _scrobblingBackend)
+            {
+                scrobblingBackend = _scrobblingBackend;
+                return *this;
+            }
+            FindParameters& setRange(std::optional<Range> _range)
+            {
+                range = _range;
+                return *this;
+            }
         };
 
-        static inline constexpr std::size_t             MinNameLength{ 3 };
-        static inline constexpr std::size_t             MaxNameLength{ 15 };
-        static inline constexpr bool                    defaultSubsonicEnableTranscodingByDefault{ false };
+        static inline constexpr std::size_t MinNameLength{ 3 };
+        static inline constexpr std::size_t MaxNameLength{ 15 };
+        static inline constexpr bool defaultSubsonicEnableTranscodingByDefault{ false };
         static inline constexpr TranscodingOutputFormat defaultSubsonicTranscodingOutputFormat{ TranscodingOutputFormat::OGG_OPUS };
-        static inline constexpr Bitrate                 defaultSubsonicTranscodingOutputBitrate{ 128000 };
-        static inline constexpr UITheme                 defaultUITheme{ UITheme::Dark };
-        static inline constexpr SubsonicArtistListMode  defaultSubsonicArtistListMode{ SubsonicArtistListMode::AllArtists };
-        static inline constexpr ScrobblingBackend       defaultScrobblingBackend{ ScrobblingBackend::Internal };
-        static inline constexpr FeedbackBackend         defaultFeedbackBackend{ FeedbackBackend::Internal };
+        static inline constexpr Bitrate defaultSubsonicTranscodingOutputBitrate{ 128000 };
+        static inline constexpr UITheme defaultUITheme{ UITheme::Dark };
+        static inline constexpr SubsonicArtistListMode defaultSubsonicArtistListMode{ SubsonicArtistListMode::AllArtists };
+        static inline constexpr ScrobblingBackend defaultScrobblingBackend{ ScrobblingBackend::Internal };
+        static inline constexpr FeedbackBackend defaultFeedbackBackend{ FeedbackBackend::Internal };
 
         User() = default;
 
-        static std::size_t          getCount(Session& session);
-        static pointer              find(Session& session, UserId id);
-        static pointer              find(Session& session, std::string_view loginName);
+        static std::size_t getCount(Session& session);
+        static pointer find(Session& session, UserId id);
+        static pointer find(Session& session, std::string_view loginName);
         static RangeResults<UserId> find(Session& session, const FindParameters& params);
-        static void                 find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
-        static pointer              findDemoUser(Session& session);
+        static void find(Session& session, const FindParameters& params, const std::function<void(const pointer&)>& func);
+        static pointer findDemoUser(Session& session);
 
         // accessors
         const std::string& getLoginName() const { return _loginName; }
-        PasswordHash            getPasswordHash() const { return PasswordHash{ _passwordSalt, _passwordHash }; }
+        PasswordHash getPasswordHash() const { return PasswordHash{ _passwordSalt, _passwordHash }; }
         const Wt::WDateTime& getLastLogin() const { return _lastLogin; }
-        std::size_t             getAuthTokensCount() const { return _authTokens.size(); }
+        std::size_t getAuthTokensCount() const { return _authTokens.size(); }
 
         // write
         void setLastLogin(const Wt::WDateTime& dateTime) { _lastLogin = dateTime; }
-        void setPasswordHash(const PasswordHash& passwordHash) { _passwordSalt = passwordHash.salt; _passwordHash = passwordHash.hash; }
+        void setPasswordHash(const PasswordHash& passwordHash)
+        {
+            _passwordSalt = passwordHash.salt;
+            _passwordHash = passwordHash.hash;
+        }
         void setType(UserType type) { _type = type; }
         void setSubsonicEnableTranscodingByDefault(bool value) { _subsonicEnableTranscodingByDefault = value; }
         void setSubsonicDefaultTranscodintOutputFormat(TranscodingOutputFormat encoding) { _subsonicDefaultTranscodingOutputFormat = encoding; }
@@ -99,19 +115,19 @@ namespace lms::db
         void setListenBrainzToken(const std::optional<core::UUID>& MBID) { _listenbrainzToken = MBID ? MBID->getAsString() : ""; }
 
         // read
-        bool                    isAdmin() const { return _type == UserType::ADMIN; }
-        bool                    isDemo() const { return _type == UserType::DEMO; }
-        UserType                getType() const { return _type; }
-        bool                    getSubsonicEnableTranscodingByDefault() const { return _subsonicEnableTranscodingByDefault; }
+        bool isAdmin() const { return _type == UserType::ADMIN; }
+        bool isDemo() const { return _type == UserType::DEMO; }
+        UserType getType() const { return _type; }
+        bool getSubsonicEnableTranscodingByDefault() const { return _subsonicEnableTranscodingByDefault; }
         TranscodingOutputFormat getSubsonicDefaultTranscodingOutputFormat() const { return _subsonicDefaultTranscodingOutputFormat; }
-        Bitrate                 getSubsonicDefaultTranscodingOutputBitrate() const { return _subsonicDefaultTranscodingOutputBitrate; }
-        std::size_t             getCurPlayingTrackPos() const { return _curPlayingTrackPos; }
-        bool                    isRepeatAllSet() const { return _repeatAll; }
-        bool                    isRadioSet() const { return _radio; }
-        UITheme                 getUITheme() const { return _uiTheme; }
-        SubsonicArtistListMode  getSubsonicArtistListMode() const { return _subsonicArtistListMode; }
-        FeedbackBackend         getFeedbackBackend() const { return _feedbackBackend; }
-        ScrobblingBackend       getScrobblingBackend() const { return _scrobblingBackend; }
+        Bitrate getSubsonicDefaultTranscodingOutputBitrate() const { return _subsonicDefaultTranscodingOutputBitrate; }
+        std::size_t getCurPlayingTrackPos() const { return _curPlayingTrackPos; }
+        bool isRepeatAllSet() const { return _repeatAll; }
+        bool isRadioSet() const { return _radio; }
+        UITheme getUITheme() const { return _uiTheme; }
+        SubsonicArtistListMode getSubsonicArtistListMode() const { return _subsonicArtistListMode; }
+        FeedbackBackend getFeedbackBackend() const { return _feedbackBackend; }
+        ScrobblingBackend getScrobblingBackend() const { return _scrobblingBackend; }
         std::optional<core::UUID> getListenBrainzToken() const { return core::UUID::fromString(_listenbrainzToken); }
 
         template<class Action>
@@ -144,30 +160,30 @@ namespace lms::db
         User(std::string_view loginName);
         static pointer create(Session& session, std::string_view loginName);
 
-        std::string     _loginName;
-        std::string     _passwordSalt;
-        std::string     _passwordHash;
-        Wt::WDateTime   _lastLogin;
-        UITheme         _uiTheme{ defaultUITheme };
+        std::string _loginName;
+        std::string _passwordSalt;
+        std::string _passwordHash;
+        Wt::WDateTime _lastLogin;
+        UITheme _uiTheme{ defaultUITheme };
         FeedbackBackend _feedbackBackend{ defaultFeedbackBackend };
         ScrobblingBackend _scrobblingBackend{ defaultScrobblingBackend };
-        std::string     _listenbrainzToken; // Musicbrainz Identifier
+        std::string _listenbrainzToken; // Musicbrainz Identifier
 
         // Admin defined settings
-        UserType        _type{ UserType::REGULAR };
+        UserType _type{ UserType::REGULAR };
 
         // User defined settings
-        SubsonicArtistListMode  _subsonicArtistListMode{ defaultSubsonicArtistListMode };
-        bool                    _subsonicEnableTranscodingByDefault{ defaultSubsonicEnableTranscodingByDefault };
+        SubsonicArtistListMode _subsonicArtistListMode{ defaultSubsonicArtistListMode };
+        bool _subsonicEnableTranscodingByDefault{ defaultSubsonicEnableTranscodingByDefault };
         TranscodingOutputFormat _subsonicDefaultTranscodingOutputFormat{ defaultSubsonicTranscodingOutputFormat };
-        int                     _subsonicDefaultTranscodingOutputBitrate{ defaultSubsonicTranscodingOutputBitrate };
+        int _subsonicDefaultTranscodingOutputBitrate{ defaultSubsonicTranscodingOutputBitrate };
 
         // User's dynamic data (UI)
-        int     _curPlayingTrackPos{}; // Current track position in queue
-        bool    _repeatAll{};
-        bool    _radio{};
+        int _curPlayingTrackPos{}; // Current track position in queue
+        bool _repeatAll{};
+        bool _radio{};
 
         Wt::Dbo::collection<Wt::Dbo::ptr<AuthToken>> _authTokens;
     };
 
-} // namespace Databas'
+} // namespace lms::db

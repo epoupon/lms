@@ -21,6 +21,7 @@
 
 #include <span>
 #include <vector>
+
 #include <Wt/WContainerWidget.h>
 #include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
@@ -57,4 +58,3 @@ namespace lms::ui
         db::MediaLibraryId _mediaLibraryId;
     };
 } // namespace lms::ui
-

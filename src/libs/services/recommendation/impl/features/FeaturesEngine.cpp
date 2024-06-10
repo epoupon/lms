@@ -21,6 +21,8 @@
 
 #include <numeric>
 
+#include "core/ILogger.hpp"
+#include "core/Random.hpp"
 #include "database/Artist.hpp"
 #include "database/Db.hpp"
 #include "database/Release.hpp"
@@ -30,8 +32,6 @@
 #include "database/TrackFeatures.hpp"
 #include "database/TrackList.hpp"
 #include "som/DataNormalizer.hpp"
-#include "core/ILogger.hpp"
-#include "core/Random.hpp"
 
 namespace lms::recommendation
 {
@@ -47,7 +47,7 @@ namespace lms::recommendation
         std::optional<som::InputVector> convertFeatureValuesMapToInputVector(const FeatureValuesMap& featureValuesMap, std::size_t nbDimensions)
         {
             std::size_t i{};
-            std::optional<som::InputVector> res{ som::InputVector {nbDimensions} };
+            std::optional<som::InputVector> res{ som::InputVector{ nbDimensions } };
             for (const auto& [featureName, values] : featureValuesMap)
             {
                 if (values.size() != getFeatureDef(featureName).nbDimensions)
@@ -80,17 +80,16 @@ namespace lms::recommendation
 
             return weights;
         }
-    }
+    } // namespace
 
     const FeatureSettingsMap& FeaturesEngine::getDefaultTrainFeatureSettings()
     {
-        static const FeatureSettingsMap defaultTrainFeatureSettings
-        {
-            { "lowlevel.spectral_energyband_high.mean",	{1}},
-            { "lowlevel.spectral_rolloff.median",		{1}},
-            { "lowlevel.spectral_contrast_valleys.var",	{1}},
-            { "lowlevel.erbbands.mean",					{1}},
-            { "lowlevel.gfcc.mean",						{1}},
+        static const FeatureSettingsMap defaultTrainFeatureSettings{
+            { "lowlevel.spectral_energyband_high.mean", { 1 } },
+            { "lowlevel.spectral_rolloff.median", { 1 } },
+            { "lowlevel.spectral_contrast_valleys.var", { 1 } },
+            { "lowlevel.erbbands.mean", { 1 } },
+            { "lowlevel.gfcc.mean", { 1 } },
         };
 
         return defaultTrainFeatureSettings;
@@ -104,12 +103,12 @@ namespace lms::recommendation
         std::transform(std::cbegin(trainSettings.featureSettingsMap), std::cend(trainSettings.featureSettingsMap), std::inserter(featureNames, std::begin(featureNames)),
             [](const auto& itFeatureSetting) { return itFeatureSetting.first; });
 
-        const std::size_t nbDimensions{ std::accumulate(std::cbegin(featureNames), std::cend(featureNames), std::size_t {0},
-                [](std::size_t sum, const FeatureName& featureName) { return sum + getFeatureDef(featureName).nbDimensions; }) };
+        const std::size_t nbDimensions{ std::accumulate(std::cbegin(featureNames), std::cend(featureNames), std::size_t{ 0 },
+            [](std::size_t sum, const FeatureName& featureName) { return sum + getFeatureDef(featureName).nbDimensions; }) };
 
         LMS_LOG(RECOMMENDATION, DEBUG, "Features dimension = " << nbDimensions);
 
-        Session & session{ _db.getTLSSession() };
+        Session& session{ _db.getTLSSession() };
 
         RangeResults<TrackFeaturesId> trackFeaturesIds;
         {
@@ -178,10 +177,9 @@ namespace lms::recommendation
         som::InputVector weights{ getInputVectorWeights(trainSettings.featureSettingsMap, nbDimensions) };
         network.setDataWeights(weights);
 
-        auto somProgressCallback{ [&](const som::Network::CurrentIteration& iter)
-        {
+        auto somProgressCallback{ [&](const som::Network::CurrentIteration& iter) {
             LMS_LOG(RECOMMENDATION, DEBUG, "Current pass = " << iter.idIteration << " / " << iter.iterationCount);
-            progressCallback(Progress {iter.idIteration, iter.iterationCount});
+            progressCallback(Progress{ iter.idIteration, iter.iterationCount });
         } };
 
         LMS_LOG(RECOMMENDATION, DEBUG, "Training network...");
@@ -216,15 +214,14 @@ namespace lms::recommendation
 
     TrackContainer FeaturesEngine::findSimilarTracksFromTrackList(TrackListId trackListId, std::size_t maxCount) const
     {
-        const TrackContainer trackIds{ [&]
-        {
+        const TrackContainer trackIds{ [&] {
             TrackContainer res;
 
-            Session& session {_db.getTLSSession()};
+            Session& session{ _db.getTLSSession() };
 
-            auto transaction {session.createReadTransaction()};
+            auto transaction{ session.createReadTransaction() };
 
-            const TrackList::pointer trackList {TrackList::find(session, trackListId)};
+            const TrackList::pointer trackList{ TrackList::find(session, trackListId) };
             if (trackList)
                 res = trackList->getTrackIds();
 
@@ -245,10 +242,10 @@ namespace lms::recommendation
             auto transaction{ session.createReadTransaction() };
 
             similarTrackIds.erase(std::remove_if(std::begin(similarTrackIds), std::end(similarTrackIds),
-                [&](TrackId trackId)
-                {
-                    return !Track::exists(session, trackId);
-                }), std::end(similarTrackIds));
+                                      [&](TrackId trackId) {
+                                          return !Track::exists(session, trackId);
+                                      }),
+                std::end(similarTrackIds));
         }
 
         return similarTrackIds;
@@ -256,7 +253,7 @@ namespace lms::recommendation
 
     ReleaseContainer FeaturesEngine::getSimilarReleases(ReleaseId releaseId, std::size_t maxCount) const
     {
-        auto similarReleaseIds{ getSimilarObjects({releaseId}, _releaseMatrix, _releasePositions, maxCount) };
+        auto similarReleaseIds{ getSimilarObjects({ releaseId }, _releaseMatrix, _releasePositions, maxCount) };
 
         Session& session{ _db.getTLSSession() };
 
@@ -266,10 +263,10 @@ namespace lms::recommendation
             auto transaction{ session.createReadTransaction() };
 
             similarReleaseIds.erase(std::remove_if(std::begin(similarReleaseIds), std::end(similarReleaseIds),
-                [&](ReleaseId releaseId)
-                {
-                    return !Release::exists(session, releaseId);
-                }), std::end(similarReleaseIds));
+                                        [&](ReleaseId releaseId) {
+                                            return !Release::exists(session, releaseId);
+                                        }),
+                std::end(similarReleaseIds));
         }
 
         return similarReleaseIds;
@@ -277,17 +274,16 @@ namespace lms::recommendation
 
     ArtistContainer FeaturesEngine::getSimilarArtists(ArtistId artistId, core::EnumSet<TrackArtistLinkType> linkTypes, std::size_t maxCount) const
     {
-        auto getSimilarArtistIdsForLinkType{ [&](TrackArtistLinkType linkType)
-        {
+        auto getSimilarArtistIdsForLinkType{ [&](TrackArtistLinkType linkType) {
             ArtistContainer similarArtistIds;
 
-            const auto itArtists {_artistMatrix.find(linkType)};
+            const auto itArtists{ _artistMatrix.find(linkType) };
             if (itArtists == std::cend(_artistMatrix))
             {
                 return similarArtistIds;
             }
 
-            return getSimilarObjects({artistId}, itArtists->second, _artistPositions, maxCount);
+            return getSimilarObjects({ artistId }, itArtists->second, _artistPositions, maxCount);
         } };
 
         std::unordered_set<ArtistId> similarArtistIds;
@@ -306,10 +302,10 @@ namespace lms::recommendation
             auto transaction{ session.createReadTransaction() };
 
             res.erase(std::remove_if(std::begin(res), std::end(res),
-                [&](ArtistId artistId)
-                {
-                    return !Artist::exists(session, artistId);
-                }), std::end(res));
+                          [&](ArtistId artistId) {
+                              return !Artist::exists(session, artistId);
+                          }),
+                std::end(res));
         }
 
         while (res.size() > maxCount)
@@ -364,7 +360,7 @@ namespace lms::recommendation
 
         LMS_LOG(RECOMMENDATION, DEBUG, "Constructing maps...");
 
-        Session & session{ _db.getTLSSession() };
+        Session& session{ _db.getTLSSession() };
 
         for (const auto& [trackId, positions] : trackPositions)
         {
@@ -410,4 +406,4 @@ namespace lms::recommendation
         LMS_LOG(RECOMMENDATION, INFO, "Classifier successfully loaded!");
     }
 
-} // ns Recommendation
+} // namespace lms::recommendation

@@ -17,8 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Common.hpp"
 #include "database/StarredArtist.hpp"
+
+#include "Common.hpp"
 
 namespace lms::db::tests
 {
@@ -37,7 +38,7 @@ namespace lms::db::tests
             EXPECT_FALSE(starredArtist);
             EXPECT_EQ(StarredArtist::getCount(session), 0);
 
-            auto artists{ Artist::findIds(session, Artist::FindParameters {}) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}) };
             EXPECT_EQ(artists.results.size(), 1);
         }
 
@@ -53,7 +54,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto artists{ Artist::findIds(session, Artist::FindParameters {}) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}) };
             EXPECT_EQ(artists.results.size(), 1);
 
             artists = Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal));
@@ -96,7 +97,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto artists{ Artist::findIds(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
             EXPECT_EQ(artists.results.size(), 1);
 
             starredArtist.get().modify()->setSyncState(SyncState::PendingRemove);
@@ -114,12 +115,12 @@ namespace lms::db::tests
         ScopedStarredArtist starredArtist1{ session, artist1.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
         ScopedStarredArtist starredArtist2{ session, artist2.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
 
-        const Wt::WDateTime dateTime{ Wt::WDate {1950, 1, 2}, Wt::WTime {12, 30, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 1950, 1, 2 }, Wt::WTime{ 12, 30, 1 } };
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto artists{ Artist::find(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
+            auto artists{ Artist::find(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
             EXPECT_EQ(artists.results.size(), 2);
         }
 
@@ -129,7 +130,7 @@ namespace lms::db::tests
             starredArtist1.get().modify()->setDateTime(dateTime);
             starredArtist2.get().modify()->setDateTime(dateTime.addSecs(-1));
 
-            auto artists{ Artist::findIds(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ArtistSortMethod::StarredDateDesc)) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ArtistSortMethod::StarredDateDesc)) };
             ASSERT_EQ(artists.results.size(), 2);
             EXPECT_EQ(artists.results[0], starredArtist1->getArtist()->getId());
             EXPECT_EQ(artists.results[1], starredArtist2->getArtist()->getId());
@@ -140,10 +141,10 @@ namespace lms::db::tests
             starredArtist1.get().modify()->setDateTime(dateTime);
             starredArtist2.get().modify()->setDateTime(dateTime.addSecs(1));
 
-            auto artists{ Artist::findIds(session, Artist::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ArtistSortMethod::StarredDateDesc)) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ArtistSortMethod::StarredDateDesc)) };
             ASSERT_EQ(artists.results.size(), 2);
             EXPECT_EQ(artists.results[0], starredArtist2->getArtist()->getId());
             EXPECT_EQ(artists.results[1], starredArtist1->getArtist()->getId());
         }
     }
-}
+} // namespace lms::db::tests

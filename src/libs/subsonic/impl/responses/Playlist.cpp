@@ -22,6 +22,7 @@
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
+
 #include "SubsonicId.hpp"
 
 namespace lms::api::subsonic
@@ -42,9 +43,9 @@ namespace lms::api::subsonic
         playlistNode.setAttribute("created", reportedDummyDate);
         playlistNode.setAttribute("owner", tracklist->getUser()->getLoginName());
 
-        if (const auto entry {tracklist->getEntry(0)})
+        if (const auto entry{ tracklist->getEntry(0) })
             playlistNode.setAttribute("coverArt", idToString(entry->getTrack()->getId()));
 
         return playlistNode;
     }
-}
+} // namespace lms::api::subsonic

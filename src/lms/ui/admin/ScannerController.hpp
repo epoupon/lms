@@ -19,9 +19,9 @@
 
 #pragma once
 
+#include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
-#include <Wt/WLineEdit.h>
 
 #include "services/scanner/IScannerService.hpp"
 
@@ -44,4 +44,4 @@ namespace lms::ui
         Wt::WLineEdit* _stepStatus;
         class ReportResource* _reportResource;
     };
-} // namespace lms::dbStatus
+} // namespace lms::ui

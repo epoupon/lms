@@ -44,20 +44,20 @@ namespace lms::db
         TrackBookmark() = default;
 
         // Find utility functions
-        static std::size_t						getCount(Session& session);
-        static pointer							find(Session& session, TrackBookmarkId id);
-        static RangeResults<TrackBookmarkId>	find(Session& session, UserId userId, std::optional<Range> range = std::nullopt);
-        static pointer							find(Session& session, UserId userId, TrackId trackId);
+        static std::size_t getCount(Session& session);
+        static pointer find(Session& session, TrackBookmarkId id);
+        static RangeResults<TrackBookmarkId> find(Session& session, UserId userId, std::optional<Range> range = std::nullopt);
+        static pointer find(Session& session, UserId userId, TrackId trackId);
 
         // Setters
         void setOffset(std::chrono::milliseconds offset) { _offset = offset; }
         void setComment(std::string_view comment) { _comment = comment; }
 
         // Getters
-        std::chrono::milliseconds	getOffset() const { return _offset; }
-        std::string_view			getComment() const { return _comment; }
-        ObjectPtr<Track>			getTrack() const { return _track; }
-        ObjectPtr<User>				getUser() const { return _user; }
+        std::chrono::milliseconds getOffset() const { return _offset; }
+        std::string_view getComment() const { return _comment; }
+        ObjectPtr<Track> getTrack() const { return _track; }
+        ObjectPtr<User> getUser() const { return _user; }
 
         template<class Action>
         void persist(Action& a)
@@ -75,11 +75,11 @@ namespace lms::db
 
         static const std::size_t _maxCommentLength = 128;
 
-        std::chrono::duration<int, std::milli>	_offset;
-        std::string				_comment;
+        std::chrono::duration<int, std::milli> _offset;
+        std::string _comment;
 
-        Wt::Dbo::ptr<User>			_user;
-        Wt::Dbo::ptr<Track>			_track;
+        Wt::Dbo::ptr<User> _user;
+        Wt::Dbo::ptr<Track> _track;
     };
 
 } // namespace lms::db

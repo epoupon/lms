@@ -86,7 +86,7 @@ namespace lms::recommendation
                 return false;
             }
         }
-    }
+    } // namespace
 
     std::optional<som::Network> FeaturesEngineCache::createNetworkFromCacheFile(const std::filesystem::path& path)
     {
@@ -240,8 +240,8 @@ namespace lms::recommendation
     }
 
     FeaturesEngineCache::FeaturesEngineCache(som::Network network, TrackPositions trackPositions)
-        : _network{ std::move(network) },
-        _trackPositions{ std::move(trackPositions) }
+        : _network{ std::move(network) }
+        , _trackPositions{ std::move(trackPositions) }
     {
     }
 

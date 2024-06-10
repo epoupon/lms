@@ -27,4 +27,4 @@ namespace lms::api::subsonic
     Response handleGetBookmarks(RequestContext& context);
     Response handleCreateBookmark(RequestContext& context);
     Response handleDeleteBookmark(RequestContext& context);
-}
+} // namespace lms::api::subsonic

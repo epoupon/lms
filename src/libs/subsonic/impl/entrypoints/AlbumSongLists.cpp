@@ -19,6 +19,7 @@
 
 #include "AlbumSongLists.hpp"
 
+#include "core/Service.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
@@ -27,12 +28,12 @@
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
+
+#include "ParameterParsing.hpp"
+#include "SubsonicId.hpp"
 #include "responses/Album.hpp"
 #include "responses/Artist.hpp"
 #include "responses/Song.hpp"
-#include "core/Service.hpp"
-#include "ParameterParsing.hpp"
-#include "SubsonicId.hpp"
 
 namespace lms::api::subsonic
 {
@@ -245,10 +246,9 @@ namespace lms::api::subsonic
         params.setRange(Range{ 0, size });
         params.setMediaLibrary(mediaLibraryId);
 
-        Track::find(context.dbSession, params, [&](const Track::pointer& track)
-            {
-                randomSongsNode.addArrayChild("song", createSongNode(context, track, context.user));
-            });
+        Track::find(context.dbSession, params, [&](const Track::pointer& track) {
+            randomSongsNode.addArrayChild("song", createSongNode(context, track, context.user));
+        });
 
         return response;
     }
@@ -262,7 +262,7 @@ namespace lms::api::subsonic
         const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.parameters, "musicFolderId").value_or(MediaLibraryId{}) };
         std::size_t count{ getParameterAs<std::size_t>(context.parameters, "count").value_or(10) };
         if (count > defaultMaxCountSize)
-            throw ParameterValueTooHighGenericError{"count", defaultMaxCountSize};
+            throw ParameterValueTooHighGenericError{ "count", defaultMaxCountSize };
 
         std::size_t offset{ getParameterAs<std::size_t>(context.parameters, "offset").value_or(0) };
 
@@ -284,10 +284,9 @@ namespace lms::api::subsonic
         params.setRange(Range{ offset, count });
         params.setMediaLibrary(mediaLibrary);
 
-        Track::find(context.dbSession, params, [&](const Track::pointer& track)
-            {
-                songsByGenreNode.addArrayChild("song", createSongNode(context, track, context.user));
-            });
+        Track::find(context.dbSession, params, [&](const Track::pointer& track) {
+            songsByGenreNode.addArrayChild("song", createSongNode(context, track, context.user));
+        });
 
         return response;
     }
@@ -302,4 +301,4 @@ namespace lms::api::subsonic
         return handleGetStarredRequestCommon(context, true /* id3 */);
     }
 
-}
+} // namespace lms::api::subsonic

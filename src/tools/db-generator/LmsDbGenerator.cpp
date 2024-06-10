@@ -18,9 +18,9 @@
  */
 
 #include <chrono>
-#include <iostream>
-#include <iomanip>
 #include <filesystem>
+#include <iomanip>
+#include <iostream>
 #include <optional>
 #include <stdexcept>
 #include <stdlib.h>
@@ -28,19 +28,18 @@
 
 #include <boost/program_options.hpp>
 
-#include "database/Db.hpp"
+#include "core/IConfig.hpp"
+#include "core/Random.hpp"
+#include "core/Service.hpp"
+#include "core/StreamLogger.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
+#include "database/Db.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"
-
-#include "core/IConfig.hpp"
-#include "core/Random.hpp"
-#include "core/StreamLogger.hpp"
-#include "core/Service.hpp"
 
 namespace lms
 {
@@ -64,7 +63,8 @@ namespace lms
         std::vector<db::MediaLibrary::pointer> mediaLibraries;
         std::vector<db::Cluster::pointer> genres;
         std::vector<db::Cluster::pointer> moods;
-        GenerationContext(db::Session& _session) : session{ _session } {}
+        GenerationContext(db::Session& _session)
+            : session{ _session } {}
     };
 
     db::Cluster::pointer generateCluster(db::Session& session, db::ClusterType::pointer clusterType)
@@ -162,7 +162,7 @@ namespace lms
                 context.moods.push_back(generateCluster(context.session, mood));
         }
     }
-}
+} // namespace lms
 
 int main(int argc, char* argv[])
 {
@@ -177,25 +177,13 @@ int main(int argc, char* argv[])
         const GeneratorParameters defaultParams;
 
         program_options::options_description options{ "Options" };
-        options.add_options()
-            ("conf,c", program_options::value<std::string>()->default_value("/etc/lms.conf"), "lms config file")
-            ("media-library-count", program_options::value<unsigned>()->default_value(defaultParams.mediaLibraryCount), "Number of media libraries to use")
-            ("release-count-per-batch", program_options::value<unsigned>()->default_value(defaultParams.releaseCountPerBatch), "Number of releases to generate before committing transaction")
-            ("release-count", program_options::value<unsigned>()->default_value(defaultParams.releaseCount), "Number of releases to generate")
-            ("track-count-per-release", program_options::value<unsigned>()->default_value(defaultParams.trackCountPerRelease), "Number of tracks per release")
-            ("compilation-ratio", program_options::value<float>()->default_value(defaultParams.compilationRatio), "Compilation ratio (compilation means all tracks have a different artist)")
-            ("track-path", program_options::value<std::string>()->required(), "Path of a valid track file, that will be used for all generated tracks")
-            ("genre-count", program_options::value<unsigned>()->default_value(defaultParams.genreCount), "Number of genres to generate")
-            ("genre-count-per-track", program_options::value<unsigned>()->default_value(defaultParams.genreCountPerTrack), "Number of genres to assign to each track")
-            ("mood-count", program_options::value<unsigned>()->default_value(defaultParams.moodCount), "Number of moods to generate")
-            ("mood-count-per-track", program_options::value<unsigned>()->default_value(defaultParams.moodCountPerTrack), "Number of moods to assign to each track")
-            ("help,h", "produce help message")
-            ;
+        options.add_options()("conf,c", program_options::value<std::string>()->default_value("/etc/lms.conf"), "lms config file")("media-library-count", program_options::value<unsigned>()->default_value(defaultParams.mediaLibraryCount), "Number of media libraries to use")("release-count-per-batch", program_options::value<unsigned>()->default_value(defaultParams.releaseCountPerBatch), "Number of releases to generate before committing transaction")("release-count", program_options::value<unsigned>()->default_value(defaultParams.releaseCount), "Number of releases to generate")("track-count-per-release", program_options::value<unsigned>()->default_value(defaultParams.trackCountPerRelease), "Number of tracks per release")("compilation-ratio", program_options::value<float>()->default_value(defaultParams.compilationRatio), "Compilation ratio (compilation means all tracks have a different artist)")("track-path", program_options::value<std::string>()->required(), "Path of a valid track file, that will be used for all generated tracks")("genre-count", program_options::value<unsigned>()->default_value(defaultParams.genreCount), "Number of genres to generate")("genre-count-per-track", program_options::value<unsigned>()->default_value(defaultParams.genreCountPerTrack), "Number of genres to assign to each track")("mood-count", program_options::value<unsigned>()->default_value(defaultParams.moodCount), "Number of moods to generate")("mood-count-per-track", program_options::value<unsigned>()->default_value(defaultParams.moodCountPerTrack), "Number of moods to assign to each track")("help,h", "produce help message");
 
         program_options::variables_map vm;
         program_options::store(program_options::parse_command_line(argc, argv, options), vm);
 
-        if (vm.count("help")) {
+        if (vm.count("help"))
+        {
             std::cout << options << "\n";
             return EXIT_SUCCESS;
         }

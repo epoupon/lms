@@ -23,19 +23,21 @@
 
 #include "av/IAudioFile.hpp"
 #include "metadata/IParser.hpp"
+
 #include "ITagReader.hpp"
 
 namespace lms::metadata
 {
     class AvFormatTagReader : public ITagReader
     {
-   public:
+    public:
         AvFormatTagReader(const std::filesystem::path& path, bool debug);
 
     private:
         AvFormatTagReader(const AvFormatTagReader&) = delete;
         AvFormatTagReader& operator=(const AvFormatTagReader&) = delete;
 
+        size_t countTagValues(TagType tag) const override;
         void visitTagValues(TagType tag, TagValueVisitor visitor) const override;
         void visitTagValues(std::string_view tag, TagValueVisitor visitor) const override;
         void visitPerformerTags(PerformerVisitor visitor) const override;
@@ -48,4 +50,3 @@ namespace lms::metadata
         bool _hasEmbeddedCover{};
     };
 } // namespace lms::metadata
-

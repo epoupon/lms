@@ -17,8 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Common.hpp"
 #include "database/StarredRelease.hpp"
+
+#include "Common.hpp"
 
 namespace lms::db::tests
 {
@@ -37,7 +38,7 @@ namespace lms::db::tests
             EXPECT_FALSE(starredRelease);
             EXPECT_EQ(StarredRelease::getCount(session), 0);
 
-            auto releases{ Release::find(session, Release::FindParameters {}) };
+            auto releases{ Release::find(session, Release::FindParameters{}) };
             EXPECT_EQ(releases.results.size(), 1);
         }
 
@@ -53,7 +54,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto releases{ Release::find(session, Release::FindParameters {}) };
+            auto releases{ Release::find(session, Release::FindParameters{}) };
             EXPECT_EQ(releases.results.size(), 1);
 
             releases = Release::find(session, Release::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal));
@@ -85,7 +86,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto releases{ Release::find(session, Release::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
+            auto releases{ Release::find(session, Release::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
             EXPECT_EQ(releases.results.size(), 1);
 
             starredRelease.get().modify()->setSyncState(SyncState::PendingRemove);
@@ -103,12 +104,12 @@ namespace lms::db::tests
         ScopedStarredRelease starredRelease1{ session, release1.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
         ScopedStarredRelease starredRelease2{ session, release2.lockAndGet(), user.lockAndGet(), FeedbackBackend::Internal };
 
-        const Wt::WDateTime dateTime{ Wt::WDate {1950, 1, 2}, Wt::WTime {12, 30, 1} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 1950, 1, 2 }, Wt::WTime{ 12, 30, 1 } };
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto releases{ Release::findIds(session, Release::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal)) };
             EXPECT_EQ(releases.results.size(), 2);
         }
 
@@ -118,7 +119,7 @@ namespace lms::db::tests
             starredRelease1.get().modify()->setDateTime(dateTime);
             starredRelease2.get().modify()->setDateTime(dateTime.addSecs(-1));
 
-            auto releases{ Release::findIds(session, Release::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ReleaseSortMethod::StarredDateDesc)) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ReleaseSortMethod::StarredDateDesc)) };
             ASSERT_EQ(releases.results.size(), 2);
             EXPECT_EQ(releases.results[0], starredRelease1->getRelease()->getId());
             EXPECT_EQ(releases.results[1], starredRelease2->getRelease()->getId());
@@ -129,10 +130,10 @@ namespace lms::db::tests
             starredRelease1.get().modify()->setDateTime(dateTime);
             starredRelease2.get().modify()->setDateTime(dateTime.addSecs(1));
 
-            auto releases{ Release::findIds(session, Release::FindParameters {}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ReleaseSortMethod::StarredDateDesc)) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setStarringUser(user.getId(), FeedbackBackend::Internal).setSortMethod(ReleaseSortMethod::StarredDateDesc)) };
             ASSERT_EQ(releases.results.size(), 2);
             EXPECT_EQ(releases.results[0], starredRelease2->getRelease()->getId());
             EXPECT_EQ(releases.results[1], starredRelease1->getRelease()->getId());
         }
     }
-}
+} // namespace lms::db::tests

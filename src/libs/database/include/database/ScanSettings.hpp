@@ -63,19 +63,19 @@ namespace lms::db
         static pointer get(Session& session);
 
         // Getters
-        std::size_t                         getScanVersion() const { return _scanVersion; }
-        Wt::WTime                           getUpdateStartTime() const { return _startTime; }
-        UpdatePeriod                        getUpdatePeriod() const { return _updatePeriod; }
-        std::vector<std::string_view>       getExtraTagsToScan() const;
-        std::vector<std::filesystem::path>  getAudioFileExtensions() const;
-        SimilarityEngineType	            getSimilarityEngineType() const { return _similarityEngineType; }
-        std::vector<std::string>            getArtistTagDelimiters() const;
-        std::vector<std::string>            getDefaultTagDelimiters() const;
+        std::size_t getScanVersion() const { return _scanVersion; }
+        Wt::WTime getUpdateStartTime() const { return _startTime; }
+        UpdatePeriod getUpdatePeriod() const { return _updatePeriod; }
+        std::vector<std::string_view> getExtraTagsToScan() const;
+        std::vector<std::filesystem::path> getAudioFileExtensions() const;
+        SimilarityEngineType getSimilarityEngineType() const { return _similarityEngineType; }
+        std::vector<std::string> getArtistTagDelimiters() const;
+        std::vector<std::string> getDefaultTagDelimiters() const;
 
         // Setters
         void setUpdateStartTime(Wt::WTime t) { _startTime = t; }
         void setUpdatePeriod(UpdatePeriod p) { _updatePeriod = p; }
-        void setExtraTagsToScan(const std::vector<std::string_view>& extraTags);
+        void setExtraTagsToScan(std::span<const std::string_view> extraTags);
         void setSimilarityEngineType(SimilarityEngineType type) { _similarityEngineType = type; }
         void setArtistTagDelimiters(std::span<const std::string_view> delimiters);
         void setDefaultTagDelimiters(std::span<const std::string_view> delimiters);
@@ -95,13 +95,13 @@ namespace lms::db
         }
 
     private:
-        int         	        _scanVersion{};
-        Wt::WTime               _startTime = Wt::WTime{ 0,0,0 };
-        UpdatePeriod            _updatePeriod{ UpdatePeriod::Never };
-        SimilarityEngineType    _similarityEngineType{ SimilarityEngineType::Clusters };
-        std::string             _audioFileExtensions{ ".alac .mp3 .ogg .oga .aac .m4a .m4b .flac .wav .wma .aif .aiff .ape .mpc .shn .opus .wv .dsf" };
-        std::string             _extraTagsToScan;
-        std::string             _artistTagDelimiters;
-        std::string             _defaultTagDelimiters;
+        int _scanVersion{};
+        Wt::WTime _startTime = Wt::WTime{ 0, 0, 0 };
+        UpdatePeriod _updatePeriod{ UpdatePeriod::Never };
+        SimilarityEngineType _similarityEngineType{ SimilarityEngineType::Clusters };
+        std::string _audioFileExtensions{ ".alac .mp3 .ogg .oga .aac .m4a .m4b .flac .wav .wma .aif .aiff .ape .mpc .shn .opus .wv .dsf" };
+        std::string _extraTagsToScan;
+        std::string _artistTagDelimiters;
+        std::string _defaultTagDelimiters;
     };
 } // namespace lms::db

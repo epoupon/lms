@@ -21,6 +21,7 @@
 
 #include <optional>
 #include <thread>
+
 #include <boost/asio/io_service.hpp>
 
 namespace lms::core
@@ -39,7 +40,7 @@ namespace lms::core
         IOContextRunner& operator=(const IOContextRunner&) = delete;
 
         boost::asio::io_service& _ioService;
-        std::optional<boost::asio::io_service::work>    _work;
-        std::vector<std::thread>                        _threads;
+        std::optional<boost::asio::io_service::work> _work;
+        std::vector<std::thread> _threads;
     };
-}
+} // namespace lms::core

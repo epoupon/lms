@@ -19,15 +19,15 @@
 
 #include "SendQueue.hpp"
 
-#include <boost/asio/dispatch.hpp>
 #include <boost/asio/bind_executor.hpp>
+#include <boost/asio/dispatch.hpp>
 
 #include "core/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/String.hpp"
 
-#define LOG(sev, message)	LMS_LOG(SCROBBLING, sev, "[Http SendQueue] - " << message)
+#define LOG(sev, message) LMS_LOG(SCROBBLING, sev, "[Http SendQueue] - " << message)
 
 namespace lms::core::stringUtils
 {
@@ -41,35 +41,33 @@ namespace lms::core::stringUtils
 
         return res;
     }
-}
+} // namespace lms::core::stringUtils
 
 namespace lms::core::http
 {
     namespace
     {
-        template <typename T>
+        template<typename T>
         std::optional<T> headerReadAs(const Wt::Http::Message& msg, std::string_view headerName)
         {
             std::optional<T> res;
 
-            if (const std::string * headerValue{ msg.getHeader(std::string {headerName}) })
+            if (const std::string * headerValue{ msg.getHeader(std::string{ headerName }) })
                 res = stringUtils::readAs<T>(*headerValue);
 
             return res;
         }
-    }
+    } // namespace
 
     SendQueue::SendQueue(boost::asio::io_context& ioContext, std::string_view baseUrl)
         : _ioContext{ ioContext }
         , _baseUrl{ baseUrl }
     {
-        _client.done().connect([this](Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg)
-            {
-                _strand.dispatch([this, ec, msg = std::move(msg)]
-                    {
-                        onClientDone(ec, msg);
-                    });
+        _client.done().connect([this](Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg) {
+            _strand.dispatch([this, ec, msg = std::move(msg)] {
+                onClientDone(ec, msg);
             });
+        });
     }
 
     SendQueue::~SendQueue()
@@ -79,13 +77,12 @@ namespace lms::core::http
 
     void SendQueue::sendRequest(std::unique_ptr<ClientRequest> request)
     {
-        boost::asio::dispatch(_strand, [this, request = std::move(request)]() mutable
-            {
-                _sendQueue[request->getParameters().priority].emplace_back(std::move(request));
+        boost::asio::dispatch(_strand, [this, request = std::move(request)]() mutable {
+            _sendQueue[request->getParameters().priority].emplace_back(std::move(request));
 
-                if (_state == State::Idle)
-                    sendNextQueuedRequest();
-            });
+            if (_state == State::Idle)
+                sendNextQueuedRequest();
+        });
     }
 
     void SendQueue::sendNextQueuedRequest()
@@ -220,21 +217,20 @@ namespace lms::core::http
         LOG(DEBUG, "Throttling for " << duration.count() << " seconds");
 
         _throttleTimer.expires_after(duration);
-        _throttleTimer.async_wait([this](const boost::system::error_code& ec)
+        _throttleTimer.async_wait([this](const boost::system::error_code& ec) {
+            if (ec == boost::asio::error::operation_aborted)
             {
-                if (ec == boost::asio::error::operation_aborted)
-                {
-                    LOG(DEBUG, "Throttle aborted");
-                    return;
-                }
-                else if (ec)
-                {
-                    throw LmsException{ "Throttle timer failure: " + std::string {ec.message()} };
-                }
+                LOG(DEBUG, "Throttle aborted");
+                return;
+            }
+            else if (ec)
+            {
+                throw LmsException{ "Throttle timer failure: " + std::string{ ec.message() } };
+            }
 
-                _state = State::Idle;
-                sendNextQueuedRequest();
-            });
+            _state = State::Idle;
+            sendNextQueuedRequest();
+        });
         _state = State::Throttled;
     }
-}
+} // namespace lms::core::http

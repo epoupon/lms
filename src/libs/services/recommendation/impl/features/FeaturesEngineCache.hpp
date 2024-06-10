@@ -47,8 +47,8 @@ namespace lms::recommendation
 
         friend class FeaturesEngine;
 
-        som::Network		_network;
-        TrackPositions		_trackPositions;
+        som::Network _network;
+        TrackPositions _trackPositions;
     };
 
 } // namespace lms::recommendation

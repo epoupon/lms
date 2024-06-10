@@ -19,14 +19,15 @@
 
 #include "PlaylistGeneratorService.hpp"
 
+#include "core/ILogger.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
+
 #include "playlist-constraints/ConsecutiveArtists.hpp"
 #include "playlist-constraints/ConsecutiveReleases.hpp"
 #include "playlist-constraints/DuplicateTracks.hpp"
-#include "core/ILogger.hpp"
 
 namespace lms::recommendation
 {
@@ -111,4 +112,4 @@ namespace lms::recommendation
 
         return tracks;
     }
-}
+} // namespace lms::recommendation

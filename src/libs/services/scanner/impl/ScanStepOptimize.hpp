@@ -23,14 +23,14 @@
 
 namespace lms::scanner
 {
-	class ScanStepOptimize : public ScanStepBase
-	{
-		public:
-			using ScanStepBase::ScanStepBase;
+    class ScanStepOptimize : public ScanStepBase
+    {
+    public:
+        using ScanStepBase::ScanStepBase;
 
-		private:
-			ScanStep getStep() const override { return ScanStep::Optimize; }
-			core::LiteralString getStepName() const override { return "Optimize"; }
-			void process(ScanContext& context) override;
-	};
-}
+    private:
+        ScanStep getStep() const override { return ScanStep::Optimize; }
+        core::LiteralString getStepName() const override { return "Optimize"; }
+        void process(ScanContext& context) override;
+    };
+} // namespace lms::scanner

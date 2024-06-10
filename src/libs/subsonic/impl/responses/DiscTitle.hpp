@@ -20,6 +20,7 @@
 #pragma once
 
 #include "database/Types.hpp"
+
 #include "SubsonicResponse.hpp"
 
 namespace lms::api::subsonic

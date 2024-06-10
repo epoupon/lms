@@ -21,8 +21,9 @@
 
 #include <Wt/WEnvironment.h>
 
-#include "services/auth/IPasswordService.hpp"
 #include "core/Service.hpp"
+#include "services/auth/IPasswordService.hpp"
+
 #include "LmsApplication.hpp"
 
 namespace lms::ui
@@ -34,7 +35,8 @@ namespace lms::ui
         public:
             PasswordStrengthValidator(PasswordValidationContextGetFunc passwordValidationContextGetFunc)
                 : _passwordValidationContextGetFunc{ std::move(passwordValidationContextGetFunc) }
-            {}
+            {
+            }
 
         private:
             Wt::WValidator::Result validate(const Wt::WString& input) const override;
@@ -42,7 +44,7 @@ namespace lms::ui
 
             PasswordValidationContextGetFunc _passwordValidationContextGetFunc;
         };
-    }
+    } // namespace
 
     Wt::WValidator::Result PasswordStrengthValidator::validate(const Wt::WString& input) const
     {
@@ -82,9 +84,9 @@ namespace lms::ui
             return Wt::WValidator::validate(input);
 
         const auto checkResult{ core::Service<auth::IPasswordService>::get()->checkUserPassword(
-                    boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
-                    LmsApp->getUserLoginName(),
-                    input.toUTF8()) };
+            boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
+            LmsApp->getUserLoginName(),
+            input.toUTF8()) };
         switch (checkResult.state)
         {
         case auth::IPasswordService::CheckResult::State::Granted:

@@ -22,22 +22,23 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 
-#define STBIR_DEFAULT_FILTER_DOWNSAMPLE   STBIR_FILTER_MITCHELL
-#define STBIR_DEFAULT_FILTER_UPSAMPLE   STBIR_FILTER_CATMULLROM
+#define STBIR_DEFAULT_FILTER_DOWNSAMPLE STBIR_FILTER_MITCHELL
+#define STBIR_DEFAULT_FILTER_UPSAMPLE STBIR_FILTER_CATMULLROM
 
 #define STBI_FAILURE_USERMSG
 
 #include <stb_image.h>
 #if STB_IMAGE_RESIZE_VERSION == 1
-#include <stb_image_resize.h>
+    #include <stb_image_resize.h>
 #elif STB_IMAGE_RESIZE_VERSION == 2
-#include <stb_image_resize2.h>
+    #include <stb_image_resize2.h>
 #else
-#error "Unhandled STB image resize version"!
+    #error "Unhandled STB image resize version"!
 #endif
 
 #include "core/ITraceLogger.hpp"
 #include "image/Exception.hpp"
+
 #include "JPEGImage.hpp"
 
 namespace lms::image
@@ -57,7 +58,7 @@ namespace lms::image
     void init(const std::filesystem::path&)
     {
     }
-}
+} // namespace lms::image
 
 namespace lms::image::STB
 {
@@ -102,12 +103,14 @@ namespace lms::image::STB
 
 #if STB_IMAGE_RESIZE_VERSION == 1
         if (::stbir_resize_uint8_srgb(reinterpret_cast<const unsigned char*>(_data.get()), _width, _height, 0,
-            reinterpret_cast<unsigned char*>(resizedData.get()), width, height, 0,
-            3, STBIR_ALPHA_CHANNEL_NONE, 0) == 0)
+                reinterpret_cast<unsigned char*>(resizedData.get()), width, height, 0,
+                3, STBIR_ALPHA_CHANNEL_NONE, 0)
+            == 0)
 #elif STB_IMAGE_RESIZE_VERSION == 2
         if (::stbir_resize_uint8_srgb(reinterpret_cast<const unsigned char*>(_data.get()), _width, _height, 0,
-            reinterpret_cast<unsigned char*>(resizedData.get()), width, height, 0,
-            STBIR_RGB) == 0)
+                reinterpret_cast<unsigned char*>(resizedData.get()), width, height, 0,
+                STBIR_RGB)
+            == 0)
 #else
     #error "Unhandled STB image resize version"!
 #endif
@@ -142,4 +145,4 @@ namespace lms::image::STB
 
         return reinterpret_cast<const std::byte*>(_data.get());
     }
-}
+} // namespace lms::image::STB

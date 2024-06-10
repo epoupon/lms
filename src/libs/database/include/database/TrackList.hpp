@@ -55,48 +55,72 @@ namespace lms::db
         // Search utility
         struct FindParameters
         {
-            std::vector<ClusterId>			clusters;	// if non empty, tracklists that have tracks that belong to these clusters
-            std::optional<Range>            range;
-            std::optional<TrackListType>	type;
-            UserId							user;		// only tracklists owned by this user
-            MediaLibraryId                  mediaLibrary; // only tracklists that have songs in this media library
-            TrackListSortMethod				sortMethod{ TrackListSortMethod::None };
+            std::vector<ClusterId> clusters; // if non empty, tracklists that have tracks that belong to these clusters
+            std::optional<Range> range;
+            std::optional<TrackListType> type;
+            UserId user;                 // only tracklists owned by this user
+            MediaLibraryId mediaLibrary; // only tracklists that have songs in this media library
+            TrackListSortMethod sortMethod{ TrackListSortMethod::None };
 
-            FindParameters& setClusters(std::span<const ClusterId> _clusters) { clusters.assign(std::cbegin(_clusters), std::cend(_clusters)); return *this; }
-            FindParameters& setRange(std::optional<Range> _range) { range = _range; return *this; }
-            FindParameters& setType(TrackListType _type) { type = _type; return *this; }
-            FindParameters& setUser(UserId _user) { user = _user; return *this; }
-            FindParameters& setMediaLibrary(MediaLibraryId  _mediaLibrary) { mediaLibrary = _mediaLibrary; return *this; }
-            FindParameters& setSortMethod(TrackListSortMethod _sortMethod) { sortMethod = _sortMethod; return *this; }
+            FindParameters& setClusters(std::span<const ClusterId> _clusters)
+            {
+                clusters.assign(std::cbegin(_clusters), std::cend(_clusters));
+                return *this;
+            }
+            FindParameters& setRange(std::optional<Range> _range)
+            {
+                range = _range;
+                return *this;
+            }
+            FindParameters& setType(TrackListType _type)
+            {
+                type = _type;
+                return *this;
+            }
+            FindParameters& setUser(UserId _user)
+            {
+                user = _user;
+                return *this;
+            }
+            FindParameters& setMediaLibrary(MediaLibraryId _mediaLibrary)
+            {
+                mediaLibrary = _mediaLibrary;
+                return *this;
+            }
+            FindParameters& setSortMethod(TrackListSortMethod _sortMethod)
+            {
+                sortMethod = _sortMethod;
+                return *this;
+            }
         };
-        static std::size_t					getCount(Session& session);
-        static pointer						find(Session& session, std::string_view name, TrackListType type, UserId userId);
-        static pointer						find(Session& session, TrackListId tracklistId);
-        static RangeResults<TrackListId>	find(Session& session, const FindParameters& params);
-        static void                         find(Session& session, const FindParameters& params, const std::function<void(const TrackList::pointer&)>& func);
+        static std::size_t getCount(Session& session);
+        static pointer find(Session& session, std::string_view name, TrackListType type, UserId userId);
+        static pointer find(Session& session, TrackListId tracklistId);
+        static RangeResults<TrackListId> find(Session& session, const FindParameters& params);
+        static void find(Session& session, const FindParameters& params, const std::function<void(const TrackList::pointer&)>& func);
 
         // Accessors
-        std::string_view	getName() const { return _name; }
-        bool				isPublic() const { return _isPublic; }
-        TrackListType		getType() const { return _type; }
-        ObjectPtr<User>		getUser() const { return _user; }
+        std::string_view getName() const { return _name; }
+        bool isPublic() const { return _isPublic; }
+        TrackListType getType() const { return _type; }
+        ObjectPtr<User> getUser() const { return _user; }
 
         // Modifiers
-        void		setName(const std::string& name) { _name = name; }
-        void		setIsPublic(bool isPublic) { _isPublic = isPublic; }
-        void		clear() { _entries.clear(); }
+        void setName(const std::string& name) { _name = name; }
+        void setIsPublic(bool isPublic) { _isPublic = isPublic; }
+        void clear() { _entries.clear(); }
 
         // Get tracks, ordered by position
-        bool										isEmpty() const;
-        std::size_t									getCount() const;
-        ObjectPtr<TrackListEntry>					getEntry(std::size_t pos) const;
-        RangeResults<ObjectPtr<TrackListEntry>>		getEntries(std::optional<Range> range = {}) const;
-        ObjectPtr<TrackListEntry>					getEntryByTrackAndDateTime(ObjectPtr<Track> track, const Wt::WDateTime& dateTime) const;
+        bool isEmpty() const;
+        std::size_t getCount() const;
+        ObjectPtr<TrackListEntry> getEntry(std::size_t pos) const;
+        RangeResults<ObjectPtr<TrackListEntry>> getEntries(std::optional<Range> range = {}) const;
+        ObjectPtr<TrackListEntry> getEntryByTrackAndDateTime(ObjectPtr<Track> track, const Wt::WDateTime& dateTime) const;
 
-        std::vector<TrackId>						getTrackIds() const;
-        std::chrono::milliseconds					getDuration() const;
+        std::vector<TrackId> getTrackIds() const;
+        std::chrono::milliseconds getDuration() const;
 
-        void										setLastModifiedDateTime(const Wt::WDateTime& dateTime);
+        void setLastModifiedDateTime(const Wt::WDateTime& dateTime);
 
         // Get clusters, order by occurence
         std::vector<ObjectPtr<Cluster>> getClusters() const;
@@ -123,13 +147,13 @@ namespace lms::db
         TrackList(std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user);
         static pointer create(Session& session, std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user);
 
-        std::string		_name;
-        TrackListType	_type{ TrackListType::Playlist };
-        bool			_isPublic{ false };
-        Wt::WDateTime	_creationDateTime;
-        Wt::WDateTime	_lastModifiedDateTime;
+        std::string _name;
+        TrackListType _type{ TrackListType::Playlist };
+        bool _isPublic{ false };
+        Wt::WDateTime _creationDateTime;
+        Wt::WDateTime _lastModifiedDateTime;
 
-        Wt::Dbo::ptr<User>	_user;
+        Wt::Dbo::ptr<User> _user;
         Wt::Dbo::collection<Wt::Dbo::ptr<TrackListEntry>> _entries;
     };
 
@@ -148,7 +172,7 @@ namespace lms::db
         static pointer getById(Session& session, TrackListEntryId id);
 
         // Accessors
-        ObjectPtr<Track>	getTrack() const { return _track; }
+        ObjectPtr<Track> getTrack() const { return _track; }
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
 
         template<class Action>
@@ -166,10 +190,9 @@ namespace lms::db
         TrackListEntry(ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist);
         static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<TrackList> tracklist, const Wt::WDateTime& dateTime = {});
 
-        Wt::WDateTime			_dateTime;		// optional date time
-        Wt::Dbo::ptr<Track>		_track;
-        Wt::Dbo::ptr<TrackList>	_tracklist;
+        Wt::WDateTime _dateTime; // optional date time
+        Wt::Dbo::ptr<Track> _track;
+        Wt::Dbo::ptr<TrackList> _tracklist;
     };
 
 } // namespace lms::db
-

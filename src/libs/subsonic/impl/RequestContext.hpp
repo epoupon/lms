@@ -24,6 +24,7 @@
 #include <Wt/Http/Request.h>
 
 #include "database/Object.hpp"
+
 #include "ClientInfo.hpp"
 #include "ProtocolVersion.hpp"
 
@@ -31,7 +32,7 @@ namespace lms::db
 {
     class Session;
     class User;
-}
+} // namespace lms::db
 
 namespace lms::api::subsonic
 {
@@ -43,7 +44,6 @@ namespace lms::api::subsonic
         ClientInfo clientInfo;
         ProtocolVersion serverProtocolVersion;
         bool enableOpenSubsonic{ true };
-        bool enableDefaultCover{ };
+        bool enableDefaultCover{};
     };
-}
-
+} // namespace lms::api::subsonic

@@ -22,7 +22,9 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+
 #include <Wt/WDateTime.h>
+
 #include "database/MediaLibraryId.hpp"
 #include "database/ScanSettings.hpp"
 
@@ -30,14 +32,14 @@ namespace lms::scanner
 {
     struct ScannerSettings
     {
-        std::size_t								scanVersion{};
-        Wt::WTime								startTime;
-        db::ScanSettings::UpdatePeriod 	updatePeriod{ db::ScanSettings::UpdatePeriod::Never };
-        std::vector<std::filesystem::path>		supportedExtensions;
-        bool									skipDuplicateMBID{};
-        std::vector<std::string>				extraTags;
-        std::vector<std::string>                artistTagDelimiters;
-        std::vector<std::string>                defaultTagDelimiters;
+        std::size_t scanVersion{};
+        Wt::WTime startTime;
+        db::ScanSettings::UpdatePeriod updatePeriod{ db::ScanSettings::UpdatePeriod::Never };
+        std::vector<std::filesystem::path> supportedExtensions;
+        bool skipDuplicateMBID{};
+        std::vector<std::string> extraTags;
+        std::vector<std::string> artistTagDelimiters;
+        std::vector<std::string> defaultTagDelimiters;
 
         struct MediaLibraryInfo
         {
@@ -46,8 +48,8 @@ namespace lms::scanner
 
             auto operator<=>(const MediaLibraryInfo& other) const = default;
         };
-        std::vector<MediaLibraryInfo>			mediaLibraries;
+        std::vector<MediaLibraryInfo> mediaLibraries;
 
         bool operator==(const ScannerSettings& rhs) const = default;
     };
-}
+} // namespace lms::scanner

@@ -24,15 +24,16 @@
 #include "av/TranscodingParameters.hpp"
 #include "av/TranscodingResourceHandlerCreator.hpp"
 #include "av/Types.hpp"
-#include "services/cover/ICoverService.hpp"
+#include "core/FileResourceHandlerCreator.hpp"
+#include "core/ILogger.hpp"
+#include "core/IResourceHandler.hpp"
+#include "core/String.hpp"
+#include "core/Utils.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
-#include "core/IResourceHandler.hpp"
-#include "core/ILogger.hpp"
-#include "core/FileResourceHandlerCreator.hpp"
-#include "core/Utils.hpp"
-#include "core/String.hpp"
+#include "services/cover/ICoverService.hpp"
+
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"
 
@@ -40,15 +41,15 @@ namespace lms::api::subsonic
 {
     using namespace db;
 
-    namespace 
+    namespace
     {
         std::optional<av::transcoding::OutputFormat> subsonicStreamFormatToAvOutputFormat(std::string_view format)
         {
             for (const auto& [str, avFormat] : std::initializer_list<std::pair<std::string_view, av::transcoding::OutputFormat>>{
-                {"mp3", av::transcoding::OutputFormat::MP3},
-                {"opus", av::transcoding::OutputFormat::OGG_OPUS},
-                {"vorbis", av::transcoding::OutputFormat::OGG_VORBIS},
-                })
+                     { "mp3", av::transcoding::OutputFormat::MP3 },
+                     { "opus", av::transcoding::OutputFormat::OGG_OPUS },
+                     { "vorbis", av::transcoding::OutputFormat::OGG_VORBIS },
+                 })
             {
                 if (core::stringUtils::stringCaseInsensitiveEqual(str, format))
                     return avFormat;
@@ -60,11 +61,16 @@ namespace lms::api::subsonic
         {
             switch (format)
             {
-            case db::TranscodingOutputFormat::MP3:            return av::transcoding::OutputFormat::MP3;
-            case db::TranscodingOutputFormat::OGG_OPUS:       return av::transcoding::OutputFormat::OGG_OPUS;
-            case db::TranscodingOutputFormat::MATROSKA_OPUS:  return av::transcoding::OutputFormat::MATROSKA_OPUS;
-            case db::TranscodingOutputFormat::OGG_VORBIS:     return av::transcoding::OutputFormat::OGG_VORBIS;
-            case db::TranscodingOutputFormat::WEBM_VORBIS:    return av::transcoding::OutputFormat::WEBM_VORBIS;
+            case db::TranscodingOutputFormat::MP3:
+                return av::transcoding::OutputFormat::MP3;
+            case db::TranscodingOutputFormat::OGG_OPUS:
+                return av::transcoding::OutputFormat::OGG_OPUS;
+            case db::TranscodingOutputFormat::MATROSKA_OPUS:
+                return av::transcoding::OutputFormat::MATROSKA_OPUS;
+            case db::TranscodingOutputFormat::OGG_VORBIS:
+                return av::transcoding::OutputFormat::OGG_VORBIS;
+            case db::TranscodingOutputFormat::WEBM_VORBIS:
+                return av::transcoding::OutputFormat::WEBM_VORBIS;
             }
             return av::transcoding::OutputFormat::OGG_OPUS;
         }
@@ -147,7 +153,7 @@ namespace lms::api::subsonic
                     requestedFormat = userTranscodeFormatToAvFormat(context.user->getSubsonicDefaultTranscodingOutputFormat());
             }
 
-            if (!requestedFormat && (maxBitRate == 0 || track->getBitrate() <= maxBitRate ))
+            if (!requestedFormat && (maxBitRate == 0 || track->getBitrate() <= maxBitRate))
             {
                 LMS_LOG(API_SUBSONIC, DEBUG, "File's bitrate is compatible with parameters => no transcoding");
                 return parameters; // no transcoding needed
@@ -166,7 +172,7 @@ namespace lms::api::subsonic
                 }
                 bitrate = maxBitRate;
             }
-            
+
             if (!requestedFormat)
                 requestedFormat = userTranscodeFormatToAvFormat(context.user->getSubsonicDefaultTranscodingOutputFormat());
             if (!bitrate)
@@ -181,7 +187,7 @@ namespace lms::api::subsonic
 
             return parameters;
         }
-    }
+    } // namespace
 
     void handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response)
     {

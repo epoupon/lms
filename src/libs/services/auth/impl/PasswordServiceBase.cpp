@@ -24,73 +24,72 @@
 
 #include "internal/InternalPasswordService.hpp"
 #ifdef LMS_SUPPORT_PAM
-#include "pam/PAMPasswordService.hpp"
+    #include "pam/PAMPasswordService.hpp"
 #endif // LMS_SUPPORT_PAM
 
-#include "services/auth/Types.hpp"
-#include "database/Session.hpp"
-#include "database/User.hpp"
 #include "core/Exception.hpp"
 #include "core/ILogger.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
+#include "services/auth/Types.hpp"
 
 namespace lms::auth
 {
-	static const Wt::Auth::SHA1HashFunction sha1Function;
+    static const Wt::Auth::SHA1HashFunction sha1Function;
 
-	std::unique_ptr<IPasswordService>
-	createPasswordService(std::string_view passwordAuthenticationBackend, db::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService)
-	{
-		if (passwordAuthenticationBackend == "internal")
-			return std::make_unique<InternalPasswordService>(db, maxThrottlerEntries, authTokenService);
+    std::unique_ptr<IPasswordService>
+    createPasswordService(std::string_view passwordAuthenticationBackend, db::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService)
+    {
+        if (passwordAuthenticationBackend == "internal")
+            return std::make_unique<InternalPasswordService>(db, maxThrottlerEntries, authTokenService);
 #ifdef LMS_SUPPORT_PAM
-		else if (passwordAuthenticationBackend == "pam")
-			return std::make_unique<PAMPasswordService>(db, maxThrottlerEntries, authTokenService);
+        else if (passwordAuthenticationBackend == "pam")
+            return std::make_unique<PAMPasswordService>(db, maxThrottlerEntries, authTokenService);
 #endif // LMS_SUPPORT_PAM
 
-		throw Exception {"Authentication backend '" + std::string {passwordAuthenticationBackend} + "' is not supported!"};
-	}
+        throw Exception{ "Authentication backend '" + std::string{ passwordAuthenticationBackend } + "' is not supported!" };
+    }
 
-	PasswordServiceBase::PasswordServiceBase(db::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService)
-		: AuthServiceBase {db}
-		, _loginThrottler {maxThrottlerEntries}
-		, _authTokenService {authTokenService}
-	{
-	}
+    PasswordServiceBase::PasswordServiceBase(db::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService)
+        : AuthServiceBase{ db }
+        , _loginThrottler{ maxThrottlerEntries }
+        , _authTokenService{ authTokenService }
+    {
+    }
 
-	PasswordServiceBase::CheckResult
-	PasswordServiceBase::checkUserPassword(const boost::asio::ip::address& clientAddress, std::string_view loginName, std::string_view password)
-	{
-		LMS_LOG(AUTH, DEBUG, "Checking password for user '" << loginName << "'");
+    PasswordServiceBase::CheckResult
+    PasswordServiceBase::checkUserPassword(const boost::asio::ip::address& clientAddress, std::string_view loginName, std::string_view password)
+    {
+        LMS_LOG(AUTH, DEBUG, "Checking password for user '" << loginName << "'");
 
-		// Do not waste too much resource on brute force attacks (optim)
-		{
-			std::shared_lock lock {_mutex};
+        // Do not waste too much resource on brute force attacks (optim)
+        {
+            std::shared_lock lock{ _mutex };
 
-			if (_loginThrottler.isClientThrottled(clientAddress))
-				return {CheckResult::State::Throttled};
-		}
+            if (_loginThrottler.isClientThrottled(clientAddress))
+                return { CheckResult::State::Throttled };
+        }
 
-		const bool match {checkUserPassword(loginName, password)};
-		{
-			std::unique_lock lock {_mutex};
+        const bool match{ checkUserPassword(loginName, password) };
+        {
+            std::unique_lock lock{ _mutex };
 
-			if (_loginThrottler.isClientThrottled(clientAddress))
-				return {CheckResult::State::Throttled};
+            if (_loginThrottler.isClientThrottled(clientAddress))
+                return { CheckResult::State::Throttled };
 
-			if (match)
-			{
-				_loginThrottler.onGoodClientAttempt(clientAddress);
+            if (match)
+            {
+                _loginThrottler.onGoodClientAttempt(clientAddress);
 
-				const db::UserId userId {getOrCreateUser(loginName)};
-				onUserAuthenticated(userId);
-				return {CheckResult::State::Granted, userId};
-			}
-			else
-			{
-				_loginThrottler.onBadClientAttempt(clientAddress);
-				return {CheckResult::State::Denied};
-			}
-		}
-	}
+                const db::UserId userId{ getOrCreateUser(loginName) };
+                onUserAuthenticated(userId);
+                return { CheckResult::State::Granted, userId };
+            }
+            else
+            {
+                _loginThrottler.onBadClientAttempt(clientAddress);
+                return { CheckResult::State::Denied };
+            }
+        }
+    }
 } // namespace lms::auth
-

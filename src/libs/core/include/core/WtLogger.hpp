@@ -37,4 +37,4 @@ namespace lms::core::logging
         void processLog(const Log& log) override;
         const Severity _minSeverity;
     };
-}
+} // namespace lms::core::logging

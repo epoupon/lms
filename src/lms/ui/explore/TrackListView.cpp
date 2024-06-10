@@ -21,23 +21,23 @@
 
 #include <Wt/WPushButton.h>
 
+#include "core/ILogger.hpp"
+#include "core/String.hpp"
 #include "database/Cluster.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
-#include "core/ILogger.hpp"
-#include "core/String.hpp"
 
+#include "LmsApplication.hpp"
+#include "LmsApplicationException.hpp"
+#include "ModalManager.hpp"
+#include "Utils.hpp"
 #include "common/InfiniteScrollingContainer.hpp"
 #include "explore/Filters.hpp"
 #include "explore/PlayQueueController.hpp"
 #include "explore/TrackListHelpers.hpp"
 #include "resource/DownloadResource.hpp"
-#include "LmsApplication.hpp"
-#include "LmsApplicationException.hpp"
-#include "ModalManager.hpp"
-#include "Utils.hpp"
 
 namespace lms::ui
 {
@@ -49,7 +49,7 @@ namespace lms::ui
         {
             return core::stringUtils::readAs<TrackListId::ValueType>(wApp->internalPathNextPart("/tracklist/"));
         }
-    }
+    } // namespace
 
     TrackList::TrackList(Filters& filters, PlayQueueController& playQueueController)
         : Template{ Wt::WString::tr("Lms.Explore.TrackList.template") }
@@ -59,15 +59,13 @@ namespace lms::ui
         addFunction("tr", &Wt::WTemplate::Functions::tr);
         addFunction("id", &Wt::WTemplate::Functions::id);
 
-        wApp->internalPathChanged().connect(this, [this]
-            {
-                refreshView();
-            });
+        wApp->internalPathChanged().connect(this, [this] {
+            refreshView();
+        });
 
-        _filters.updated().connect([this]
-            {
-                refreshView();
-            });
+        _filters.updated().connect([this] {
+            refreshView();
+        });
 
         refreshView();
     }
@@ -108,74 +106,70 @@ namespace lms::ui
                 {
                     const ClusterId clusterId{ cluster->getId() };
                     Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterCluster(clusterId)) };
-                    entry->clicked().connect([this, clusterId]
-                        {
-                            _filters.add(clusterId);
-                        });
+                    entry->clicked().connect([this, clusterId] {
+                        _filters.add(clusterId);
+                    });
                 }
             }
         }
 
         bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
-            ->clicked().connect([this, trackListId]
-                {
-                    _playQueueController.processCommand(PlayQueueController::Command::Play, *trackListId);
-                });
+            ->clicked()
+            .connect([this, trackListId] {
+                _playQueueController.processCommand(PlayQueueController::Command::Play, *trackListId);
+            });
 
         bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
-            ->clicked().connect([this, trackListId]
-                {
-                    _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, *trackListId);
-                });
+            ->clicked()
+            .connect([this, trackListId] {
+                _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, *trackListId);
+            });
 
         bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
-            ->clicked().connect([this, trackListId]
-                {
-                    _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, *trackListId);
-                });
+            ->clicked()
+            .connect([this, trackListId] {
+                _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, *trackListId);
+            });
 
         bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
             ->setLink(Wt::WLink{ std::make_unique<DownloadTrackListResource>(*trackListId) });
 
         bindNew<Wt::WPushButton>("delete", Wt::WString::tr("Lms.delete"))
-            ->clicked().connect([this, trackListId]
-                {
-                    auto modal{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.TrackList.template.delete-tracklist")) };
-                    modal->addFunction("tr", &Wt::WTemplate::Functions::tr);
-                    Wt::WWidget* modalPtr{ modal.get() };
+            ->clicked()
+            .connect([this, trackListId] {
+                auto modal{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.TrackList.template.delete-tracklist")) };
+                modal->addFunction("tr", &Wt::WTemplate::Functions::tr);
+                Wt::WWidget* modalPtr{ modal.get() };
 
-                    auto* delBtn{ modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.delete")) };
-                    delBtn->clicked().connect([this, trackListId, modalPtr]
-                        {
-                            {
-                                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
+                auto* delBtn{ modal->bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.delete")) };
+                delBtn->clicked().connect([this, trackListId, modalPtr] {
+                    {
+                        auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-                                db::TrackList::pointer trackList{ db::TrackList::find(LmsApp->getDbSession(), *trackListId) };
-                                if (trackList)
-                                    trackList.remove();
-                            }
+                        db::TrackList::pointer trackList{ db::TrackList::find(LmsApp->getDbSession(), *trackListId) };
+                        if (trackList)
+                            trackList.remove();
+                    }
 
-                            clear();
-                            trackListDeleted.emit(*trackListId);
-                            LmsApp->setInternalPath("/tracklists", true);
+                    clear();
+                    trackListDeleted.emit(*trackListId);
+                    LmsApp->setInternalPath("/tracklists", true);
 
-                            LmsApp->getModalManager().dispose(modalPtr);
-                        });
-
-                    auto* cancelBtn{ modal->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel")) };
-                    cancelBtn->clicked().connect([=]
-                        {
-                            LmsApp->getModalManager().dispose(modalPtr);
-                        });
-
-                    LmsApp->getModalManager().show(std::move(modal));
+                    LmsApp->getModalManager().dispose(modalPtr);
                 });
 
-        _container = bindNew<InfiniteScrollingContainer>("tracks", Wt::WString::tr("Lms.Explore.TrackList.template.entry-container"));
-        _container->onRequestElements.connect([this]
-            {
-                addSome();
+                auto* cancelBtn{ modal->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel")) };
+                cancelBtn->clicked().connect([=] {
+                    LmsApp->getModalManager().dispose(modalPtr);
+                });
+
+                LmsApp->getModalManager().show(std::move(modal));
             });
+
+        _container = bindNew<InfiniteScrollingContainer>("tracks", Wt::WString::tr("Lms.Explore.TrackList.template.entry-container"));
+        _container->onRequestElements.connect([this] {
+            addSome();
+        });
     }
 
     void TrackList::addSome()
@@ -188,14 +182,12 @@ namespace lms::ui
         params.setTrackList(_trackListId);
         params.setSortMethod(db::TrackSortMethod::TrackList);
         params.setRange(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize });
-        
+
         bool moreResults{};
-        db::Track::find(LmsApp->getDbSession(), params, moreResults, [this](const Track::pointer& track)
-            {
-                _container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
-            });
-            
+        db::Track::find(LmsApp->getDbSession(), params, moreResults, [this](const Track::pointer& track) {
+            _container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
+        });
+
         _container->setHasMore(moreResults);
     }
 } // namespace lms::ui
-

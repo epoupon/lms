@@ -41,11 +41,11 @@ namespace lms::core
         UUID(std::string_view value);
         std::string _value;
     };
-}
+} // namespace lms::core
 
 namespace lms::core::stringUtils
 {
-    template <>
+    template<>
     std::optional<UUID>
-        readAs(std::string_view str);
+    readAs(std::string_view str);
 }

@@ -40,4 +40,3 @@ namespace lms::ui
         }
     };
 } // namespace lms::ui
-

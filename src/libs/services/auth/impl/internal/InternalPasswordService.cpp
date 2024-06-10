@@ -18,14 +18,15 @@
  */
 
 #include "InternalPasswordService.hpp"
+
 #include <Wt/WRandom.h>
 
-#include "services/auth/IAuthTokenService.hpp"
-#include "services/auth/Types.hpp"
-#include "database/Session.hpp"
-#include "database/User.hpp"
 #include "core/Exception.hpp"
 #include "core/ILogger.hpp"
+#include "database/Session.hpp"
+#include "database/User.hpp"
+#include "services/auth/IAuthTokenService.hpp"
+#include "services/auth/Types.hpp"
 
 namespace lms::auth
 {
@@ -120,14 +121,13 @@ namespace lms::auth
     {
         const std::string salt{ Wt::WRandom::generateId(32) };
 
-        return { salt, _hashFunc.compute(std::string {password}, salt) };
+        return { salt, _hashFunc.compute(std::string{ password }, salt) };
     }
 
     void
-        InternalPasswordService::hashRandomPassword() const
+    InternalPasswordService::hashRandomPassword() const
     {
         hashPassword(Wt::WRandom::generateId(32));
     }
 
 } // namespace lms::auth
-

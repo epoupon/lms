@@ -44,4 +44,4 @@ namespace lms::core
 
         boost::asio::io_context& _ioContext;
     };
-}
+} // namespace lms::core

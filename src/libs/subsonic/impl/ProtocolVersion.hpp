@@ -32,11 +32,10 @@ namespace lms::api::subsonic
 
     static inline constexpr ProtocolVersion defaultServerProtocolVersion{ 1, 16, 0 };
     static inline constexpr std::string_view serverVersion{ "6" };
-}
+} // namespace lms::api::subsonic
 
 namespace lms::core::stringUtils
 {
     template<>
     std::optional<api::subsonic::ProtocolVersion> readAs(std::string_view str);
 }
-

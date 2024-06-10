@@ -19,9 +19,10 @@
 
 #pragma once
 
-#include <cstdint>
 #include <cassert>
+#include <cstdint>
 #include <functional>
+
 #include <Wt/WDate.h>
 
 namespace lms::db
@@ -41,7 +42,7 @@ namespace lms::db
     };
 
     // Func must return true to continue iterating
-    template <typename Func>
+    template<typename Func>
     void foreachSubRange(Range range, std::size_t subRangeSize, Func&& func)
     {
         assert(subRangeSize > 0);
@@ -57,7 +58,7 @@ namespace lms::db
         }
     }
 
-    template <typename T>
+    template<typename T>
     struct RangeResults
     {
         Range range;
@@ -152,13 +153,13 @@ namespace lms::db
         StarredDateDesc,
         Name,
         DateDescAndRelease,
-        Release, // order by disc/track number
+        Release,   // order by disc/track number
         TrackList, // order by asc order in tracklist
     };
 
     enum class TrackArtistLinkType
     {
-        Artist = 0,	// regular track artist
+        Artist = 0, // regular track artist
         Arranger = 1,
         Composer = 2,
         Conductor = 3,
@@ -227,8 +228,7 @@ namespace lms::db
 
     enum class TrackListType
     {
-        Playlist,  // user controlled playlists
-        Internal,  // internal usage (current playqueue, history, ...)
+        Playlist, // user controlled playlists
+        Internal, // internal usage (current playqueue, history, ...)
     };
-}
-
+} // namespace lms::db

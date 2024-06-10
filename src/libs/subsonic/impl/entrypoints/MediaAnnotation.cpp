@@ -21,13 +21,14 @@
 
 #include <vector>
 
+#include "core/Service.hpp"
 #include "database/ArtistId.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
-#include "core/Service.hpp"
+
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"
 
@@ -55,7 +56,7 @@ namespace lms::api::subsonic
 
             return res;
         }
-    }
+    } // namespace
 
     Response handleStarRequest(RequestContext& context)
     {
@@ -119,11 +120,11 @@ namespace lms::api::subsonic
                 {
                     const TrackId trackId{ ids[i] };
                     const unsigned long time{ times[i] };
-                    core::Service<scrobbling::IScrobblingService>::get()->addTimedListen({ {context.user->getId(), trackId}, Wt::WDateTime::fromTime_t(static_cast<std::time_t>(time / 1000)) });
+                    core::Service<scrobbling::IScrobblingService>::get()->addTimedListen({ { context.user->getId(), trackId }, Wt::WDateTime::fromTime_t(static_cast<std::time_t>(time / 1000)) });
                 }
             }
         }
 
         return Response::createOkResponse(context.serverProtocolVersion);
     }
-}
+} // namespace lms::api::subsonic

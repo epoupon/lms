@@ -29,4 +29,4 @@ namespace lms::api::subsonic
     Response handleCreatePlaylistRequest(RequestContext& context);
     Response handleUpdatePlaylistRequest(RequestContext& context);
     Response handleDeletePlaylistRequest(RequestContext& context);
-}
+} // namespace lms::api::subsonic

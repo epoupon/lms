@@ -22,6 +22,7 @@
 #include <optional>
 
 #include "database/Types.hpp"
+
 #include "DropDownMenuSelector.hpp"
 
 namespace lms::ui
@@ -30,7 +31,7 @@ namespace lms::ui
     {
     public:
         TrackArtistLinkTypeSelector(std::optional<db::TrackArtistLinkType> defaultLinkType)
-        : DropDownMenuSelector{Wt::WString::tr("Lms.Explore.Artists.template.track-artist-link-type-selector") , defaultLinkType}
+            : DropDownMenuSelector{ Wt::WString::tr("Lms.Explore.Artists.template.track-artist-link-type-selector"), defaultLinkType }
         {
             bindItem("link-type-all", Wt::WString::tr("Lms.Explore.Artists.linktype-all"), std::nullopt);
             bindItem("link-type-artist", Wt::WString::trn("Lms.Explore.Artists.linktype-artist", 2), db::TrackArtistLinkType::Artist);

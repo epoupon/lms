@@ -22,6 +22,7 @@
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+
 #include "IdTypeTraits.hpp"
 #include "PathTraits.hpp"
 #include "StringViewTraits.hpp"
@@ -30,8 +31,8 @@
 namespace lms::db
 {
     MediaLibrary::MediaLibrary(const std::filesystem::path& p, std::string_view name)
-        : _path{ p },
-        _name{ std::string {name, 0, maxNameLength} }
+        : _path{ p }
+        , _name{ std::string{ name, 0, maxNameLength } }
     {
     }
 
@@ -72,9 +73,8 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        utils::forEachQueryResult(session.getDboSession()->find<MediaLibrary>(), [&](const MediaLibrary::pointer& mediaLibrary)
-            {
-                func(mediaLibrary);
-            });
+        utils::forEachQueryResult(session.getDboSession()->find<MediaLibrary>(), [&](const MediaLibrary::pointer& mediaLibrary) {
+            func(mediaLibrary);
+        });
     }
 } // namespace lms::db

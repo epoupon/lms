@@ -50,10 +50,10 @@ namespace lms::scanner
 
         struct Status
         {
-            State								currentState{ State::NotScheduled };
-            Wt::WDateTime						nextScheduledScan;
-            std::optional<ScanStats>			lastCompleteScanStats;
-            std::optional<ScanStepStats> 		currentScanStepStats;
+            State currentState{ State::NotScheduled };
+            Wt::WDateTime nextScheduledScan;
+            std::optional<ScanStats> lastCompleteScanStats;
+            std::optional<ScanStepStats> currentScanStepStats;
         };
 
         virtual Status getStatus() const = 0;
@@ -62,4 +62,4 @@ namespace lms::scanner
     };
 
     std::unique_ptr<IScannerService> createScannerService(db::Db& db);
-} // Scanner
+} // namespace lms::scanner

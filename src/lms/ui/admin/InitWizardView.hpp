@@ -21,14 +21,13 @@
 
 #include <Wt/WTemplateFormView.h>
 
-namespace lms::ui {
-
-class InitWizardView : public Wt::WTemplateFormView
+namespace lms::ui
 {
-	public:
-		InitWizardView();
-};
+
+    class InitWizardView : public Wt::WTemplateFormView
+    {
+    public:
+        InitWizardView();
+    };
 
 } // namespace lms::ui
-
-

@@ -19,10 +19,11 @@
 
 #include <map>
 #include <vector>
+
 #include <gtest/gtest.h>
 
-#include "TestTagReader.hpp"
 #include "Parser.hpp"
+#include "TestTagReader.hpp"
 
 namespace lms::metadata
 {
@@ -65,23 +66,18 @@ namespace lms::metadata
                 { TagType::Language, { "Language1", "Language2" } },
                 { TagType::Lyricist, { "MyLyricist1", "MyLyricist2" } },
                 { TagType::OriginalReleaseDate, { "2019/02/03" } },
-                { TagType::ReleaseType, {"Album", "Compilation"} },
-                { TagType::ReplayGainTrackGain, {"-0.33"} },
-                { TagType::ReplayGainAlbumGain, {"-0.5"} },
-                { TagType::TrackTitle, {"MyTitle"} },
+                { TagType::ReleaseType, { "Album", "Compilation" } },
+                { TagType::ReplayGainTrackGain, { "-0.33" } },
+                { TagType::ReplayGainAlbumGain, { "-0.5" } },
+                { TagType::TrackTitle, { "MyTitle" } },
                 { TagType::TrackNumber, { "7" } },
                 { TagType::TotalTracks, { "12" } },
                 { TagType::TotalDiscs, { "3" } },
-            }
-            ,
-            {
-                { "RoleA", { "MyPerformer1ForRoleA", "MyPerformer2ForRoleA" } },
-                { "RoleB", { "MyPerformer1ForRoleB", "MyPerformer2ForRoleB" } }
             },
-            {
-                { "MY_AWESOME_TAG_A", { "MyTagValue1ForTagA", "MyTagValue2ForTagA" } },
-                { "MY_AWESOME_TAG_B", { "MyTagValue1ForTagB", "MyTagValue2ForTagB" } }
-            }
+            { { "RoleA", { "MyPerformer1ForRoleA", "MyPerformer2ForRoleA" } },
+                { "RoleB", { "MyPerformer1ForRoleB", "MyPerformer2ForRoleB" } } },
+            { { "MY_AWESOME_TAG_A", { "MyTagValue1ForTagA", "MyTagValue2ForTagA" } },
+                { "MY_AWESOME_TAG_B", { "MyTagValue1ForTagB", "MyTagValue2ForTagB" } } }
         };
 
         static_cast<IParser&>(parser).setUserExtraTags(std::vector<std::string>{ "MY_AWESOME_TAG_A", "MY_AWESOME_TAG_B", "MY_AWESOME_MISSING_TAG" });
@@ -233,25 +229,27 @@ namespace lms::metadata
     {
         const TestTagReader testTags{
             {
-                { TagType::Genre, { "Genre1; Genre2" } },
-                { TagType::Language, { " Lang1 ;  Lang2 ; " } },
+                { TagType::Genre, { "Genre1 ; Genre2" } },
+                { TagType::Language, { " Lang1/Lang2 / Lang3" } },
                 { TagType::Artist, { " This /  is ; One Artist \\  Other Artist    " } },
             }
         };
 
         Parser parser;
-        static_cast<IParser&>(parser).setDefaultTagDelimiters(std::vector<std::string>{ " ; " });
-        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ " \\ ", " / " });
+        static_cast<IParser&>(parser).setDefaultTagDelimiters(std::vector<std::string>{ " ; ", "/" });
+        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ " \\ ", " / " }); // The first delimiter found will be used
         std::unique_ptr<Track> track{ parser.parse(testTags) };
 
-        ASSERT_EQ(track->genres.size(), 1);
-        EXPECT_EQ(track->genres[0], "Genre1; Genre2");
-        ASSERT_EQ(track->languages.size(), 2);
+        ASSERT_EQ(track->genres.size(), 2);
+        EXPECT_EQ(track->genres[0], "Genre1");
+        EXPECT_EQ(track->genres[1], "Genre2");
+        ASSERT_EQ(track->languages.size(), 3);
         EXPECT_EQ(track->languages[0], "Lang1");
         EXPECT_EQ(track->languages[1], "Lang2");
+        EXPECT_EQ(track->languages[2], "Lang3");
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "This /  is ; One Artist");
         EXPECT_EQ(track->artists[1].name, "Other Artist");
-        EXPECT_EQ(track->artistDisplayName, "This /  is ; One Artist \\  Other Artist");
+        EXPECT_EQ(track->artistDisplayName, "This /  is ; One Artist, Other Artist"); // reconstruct artist display name since a custom delimiter is hit
     }
-}
+} // namespace lms::metadata

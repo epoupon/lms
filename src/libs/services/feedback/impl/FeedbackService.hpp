@@ -23,6 +23,7 @@
 #include <unordered_map>
 
 #include "services/feedback/IFeedbackService.hpp"
+
 #include "IFeedbackBackend.hpp"
 
 namespace lms::db
@@ -46,7 +47,7 @@ namespace lms::feedback
         void unstar(db::UserId userId, db::ArtistId artistId) override;
         bool isStarred(db::UserId userId, db::ArtistId artistId) override;
         Wt::WDateTime getStarredDateTime(db::UserId userId, db::ArtistId artistId) override;
-        ArtistContainer	findStarredArtists(const ArtistFindParameters& params) override;
+        ArtistContainer findStarredArtists(const ArtistFindParameters& params) override;
 
         void star(db::UserId userId, db::ReleaseId releaseId) override;
         void unstar(db::UserId userId, db::ReleaseId releaseId) override;
@@ -62,17 +63,17 @@ namespace lms::feedback
 
         std::optional<db::FeedbackBackend> getUserFeedbackBackend(db::UserId userId);
 
-        template <typename ObjType, typename ObjIdType, typename StarredObjType>
+        template<typename ObjType, typename ObjIdType, typename StarredObjType>
         void star(db::UserId userId, ObjIdType id);
-        template <typename ObjType, typename ObjIdType, typename StarredObjType>
+        template<typename ObjType, typename ObjIdType, typename StarredObjType>
         void unstar(db::UserId userId, ObjIdType id);
-        template <typename ObjType, typename ObjIdType, typename StarredObjType>
+        template<typename ObjType, typename ObjIdType, typename StarredObjType>
         bool isStarred(db::UserId userId, ObjIdType id);
-        template <typename ObjType, typename ObjIdType, typename StarredObjType>
+        template<typename ObjType, typename ObjIdType, typename StarredObjType>
         Wt::WDateTime getStarredDateTime(db::UserId userId, ObjIdType id);
 
         db::Db& _db;
         std::unordered_map<db::FeedbackBackend, std::unique_ptr<IFeedbackBackend>> _backends;
     };
 
-} // ns Feedback
+} // namespace lms::feedback

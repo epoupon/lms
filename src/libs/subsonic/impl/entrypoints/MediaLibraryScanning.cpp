@@ -19,8 +19,8 @@
 
 #include "MediaLibraryScanning.hpp"
 
-#include "services/scanner/IScannerService.hpp"
 #include "core/Service.hpp"
+#include "services/scanner/IScannerService.hpp"
 
 namespace lms::api::subsonic::Scan
 {
@@ -47,7 +47,7 @@ namespace lms::api::subsonic::Scan
 
             return statusResponse;
         }
-    }
+    } // namespace
 
     Response handleGetScanStatus(RequestContext& context)
     {
@@ -66,5 +66,4 @@ namespace lms::api::subsonic::Scan
 
         return response;
     }
-}
-
+} // namespace lms::api::subsonic::Scan

@@ -21,6 +21,7 @@
 
 #include "database/Object.hpp"
 #include "database/TrackArtistLink.hpp"
+
 #include "SubsonicResponse.hpp"
 #include "responses/Artist.hpp"
 
@@ -37,4 +38,4 @@ namespace lms::api::subsonic
 
         return contributorNode;
     }
-}
+} // namespace lms::api::subsonic

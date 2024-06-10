@@ -53,4 +53,4 @@ namespace lms::scanner
             LMS_LOG(DBUPDATER, INFO, "Database analyze complete");
         }
     }
-}
+} // namespace lms::scanner

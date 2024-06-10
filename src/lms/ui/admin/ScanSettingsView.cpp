@@ -26,18 +26,18 @@
 #include <Wt/WString.h>
 #include <Wt/WTemplateFormView.h>
 
+#include "core/ILogger.hpp"
+#include "core/Service.hpp"
+#include "core/String.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scanner/IScannerService.hpp"
-#include "core/ILogger.hpp"
-#include "core/Service.hpp"
-#include "core/String.hpp"
 
+#include "LmsApplication.hpp"
 #include "common/MandatoryValidator.hpp"
 #include "common/UppercaseValidator.hpp"
 #include "common/ValueStringModel.hpp"
-#include "LmsApplication.hpp"
 
 namespace lms::ui
 {
@@ -51,12 +51,12 @@ namespace lms::ui
             Wt::WValidator::Result validate(const Wt::WString& input) const override
             {
                 if (input.empty())
-                    return Wt::WValidator::Result{ Wt::ValidationState::Valid };
+                    return Wt::WValidator::validate(input);
 
                 std::string inputStr{ input.toUTF8() };
                 if (std::all_of(std::cbegin(inputStr), std::cend(inputStr), [](char c) { return std::isspace(c); }))
                     return Wt::WValidator::Result{ Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.Database.tag-delimiter-must-not-contain-only-spaces") };
-                    
+
                 return Wt::WValidator::Result{ Wt::ValidationState::Valid };
             }
 
@@ -69,13 +69,8 @@ namespace lms::ui
             static inline constexpr Field UpdatePeriodField{ "update-period" };
             static inline constexpr Field UpdateStartTimeField{ "update-start-time" };
             static inline constexpr Field SimilarityEngineTypeField{ "similarity-engine-type" };
-            static inline constexpr Field ExtraTagsField{ "extra-tags-to-scan" };
-            static inline constexpr Field ArtistTagDelimiterField{ "artist-tag-delimiter" };
-            static inline constexpr Field DefaultTagDelimiterField{ "default-tag-delimiter" };
 
             using UpdatePeriodModel = ValueStringModel<ScanSettings::UpdatePeriod>;
-
-            static inline constexpr char extraTagsDelimiter{ ';' };
 
             DatabaseSettingsModel()
             {
@@ -84,26 +79,17 @@ namespace lms::ui
                 addField(UpdatePeriodField);
                 addField(UpdateStartTimeField);
                 addField(SimilarityEngineTypeField);
-                addField(ExtraTagsField);
-                addField(ArtistTagDelimiterField);
-                addField(DefaultTagDelimiterField);
 
                 setValidator(UpdatePeriodField, createMandatoryValidator());
                 setValidator(UpdateStartTimeField, createMandatoryValidator());
                 setValidator(SimilarityEngineTypeField, createMandatoryValidator());
-                setValidator(ExtraTagsField, createUppercaseValidator());
-                setValidator(ArtistTagDelimiterField, std::make_unique<TagDelimitersValidator>());
-                setValidator(DefaultTagDelimiterField, std::make_unique<TagDelimitersValidator>());
-
-                // populate the model with initial data
-                loadData();
             }
 
             std::shared_ptr<UpdatePeriodModel> updatePeriodModel() { return _updatePeriodModel; }
             std::shared_ptr<Wt::WAbstractItemModel> updateStartTimeModel() { return _updateStartTimeModel; }
             std::shared_ptr<Wt::WAbstractItemModel> similarityEngineTypeModel() { return _similarityEngineTypeModel; }
 
-            void loadData()
+            void loadData(std::vector<std::string>& extraTagsToScan, std::vector<std::string>& artistDelimiters, std::vector<std::string>& defaultDelimiters)
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
@@ -128,20 +114,13 @@ namespace lms::ui
                     setValue(SimilarityEngineTypeField, _similarityEngineTypeModel->getString(*similarityEngineTypeRow));
 
                 const auto extraTags{ scanSettings->getExtraTagsToScan() };
-                setValue(ExtraTagsField, core::stringUtils::joinStrings(extraTags, extraTagsDelimiter));
-
-                {
-                    std::vector<std::string> delimiters{ scanSettings->getArtistTagDelimiters() };
-                    setValue(ArtistTagDelimiterField, delimiters.empty() ? "" : delimiters.front());
-                }
-
-                {
-                    std::vector<std::string> delimiters{ scanSettings->getDefaultTagDelimiters() };
-                    setValue(DefaultTagDelimiterField, delimiters.empty() ? "" : delimiters.front());
-                }
+                extraTagsToScan.clear();
+                std::transform(std::cbegin(extraTags), std::cend(extraTags), std::back_inserter(extraTagsToScan), [](std::string_view extraTag) { return std::string{ extraTag }; });
+                artistDelimiters = scanSettings->getArtistTagDelimiters();
+                defaultDelimiters = scanSettings->getDefaultTagDelimiters();
             }
 
-            void saveData()
+            void saveData(std::span<const std::string_view> extraTagsToScan, std::span<const std::string_view> artistDelimiters, std::span<const std::string_view> defaultDelimiters)
             {
                 auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
@@ -159,21 +138,9 @@ namespace lms::ui
                 if (similarityEngineTypeRow)
                     scanSettings.modify()->setSimilarityEngineType(_similarityEngineTypeModel->getValue(*similarityEngineTypeRow));
 
-                scanSettings.modify()->setExtraTagsToScan(core::stringUtils::splitString(valueText(ExtraTagsField).toUTF8(), extraTagsDelimiter));
-                
-                {
-                    std::vector<std::string_view> artistDelimiters;
-                    if (std::string artistDelimiter{ valueText(ArtistTagDelimiterField).toUTF8() }; !artistDelimiter.empty())
-                        artistDelimiters.push_back(std::move(artistDelimiter));
-                    scanSettings.modify()->setArtistTagDelimiters(artistDelimiters);
-                }
-
-                 {
-                    std::vector<std::string_view> defaultDelimiters;
-                    if (std::string defaultDelimiter{ valueText(DefaultTagDelimiterField).toUTF8() }; !defaultDelimiter.empty())
-                        defaultDelimiters.push_back(std::move(defaultDelimiter));
-                    scanSettings.modify()->setDefaultTagDelimiters(defaultDelimiters);
-                }
+                scanSettings.modify()->setExtraTagsToScan(extraTagsToScan);
+                scanSettings.modify()->setArtistTagDelimiters(artistDelimiters);
+                scanSettings.modify()->setDefaultTagDelimiters(defaultDelimiters);
             }
 
         private:
@@ -198,18 +165,129 @@ namespace lms::ui
                 _similarityEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.similarity-engine-type.none"), ScanSettings::SimilarityEngineType::None);
             }
 
-            std::shared_ptr<UpdatePeriodModel>											_updatePeriodModel;
-            std::shared_ptr<ValueStringModel<Wt::WTime>>								_updateStartTimeModel;
-            std::shared_ptr<ValueStringModel<ScanSettings::SimilarityEngineType>>	_similarityEngineTypeModel;
+            std::shared_ptr<UpdatePeriodModel> _updatePeriodModel;
+            std::shared_ptr<ValueStringModel<Wt::WTime>> _updateStartTimeModel;
+            std::shared_ptr<ValueStringModel<ScanSettings::SimilarityEngineType>> _similarityEngineTypeModel;
         };
-    }
+
+        class LineEditEntryModel : public Wt::WFormModel
+        {
+        public:
+            static inline constexpr Field ValueField{ "value" };
+
+            LineEditEntryModel(const Wt::WString& initialValue, std::shared_ptr<Wt::WValidator> validator)
+                : Wt::WFormModel()
+            {
+                addField(ValueField);
+
+                setValidator(ValueField, validator);
+                setValue(ValueField, initialValue);
+            }
+        };
+
+        class LineEditEntryWidget : public Wt::WTemplateFormView
+        {
+        public:
+            LineEditEntryWidget(const Wt::WString& initialValue, std::shared_ptr<Wt::WValidator> validator)
+                : Wt::WTemplateFormView{ Wt::WString::tr("Lms.Admin.Database.template.line-edit-entry") }
+                , _model{ std::make_shared<LineEditEntryModel>(initialValue, validator) }
+            {
+                setStyleClass("col-sm-4 col-md-3"); // hack
+
+                setFormWidget(LineEditEntryModel::ValueField, std::make_unique<Wt::WLineEdit>());
+
+                auto* delBtn{ bindNew<Wt::WPushButton>("del-btn", Wt::WString::tr("Lms.template.trash-btn"), Wt::TextFormat::XHTML) };
+                delBtn->clicked().connect(this, [this] { deleted.emit(); });
+            }
+
+            bool validate() { return _model->validate(); }
+            void updateModel() { Wt::WTemplateFormView::updateModel(_model.get()); }
+            void updateView() { Wt::WTemplateFormView::updateView(_model.get()); }
+
+            Wt::WString getValue() const
+            {
+                return _model->valueText(LineEditEntryModel::ValueField);
+            }
+
+            Wt::Signal<> deleted;
+            std::shared_ptr<LineEditEntryModel> _model;
+        };
+
+        // Terrible hack to make use of the validation system for each added element
+        class LineEditContainerWidget : public Wt::WContainerWidget
+        {
+        public:
+            LineEditContainerWidget(std::shared_ptr<Wt::WValidator> validator)
+                : _validator{ validator } {}
+
+            void add(const Wt::WString& value = "")
+            {
+                auto* entry{ addNew<LineEditEntryWidget>(value, _validator) };
+
+                entry->deleted.connect(this, [=, this] {
+                    removeWidget(entry);
+                });
+            }
+
+            bool validate()
+            {
+                bool res{ true };
+
+                for (int i{}; i < count(); ++i)
+                {
+                    LineEditEntryWidget* entry{ static_cast<LineEditEntryWidget*>(widget(i)) };
+                    res &= entry->validate();
+                }
+
+                return res;
+            }
+
+            void updateModels()
+            {
+                for (int i{}; i < count(); ++i)
+                {
+                    LineEditEntryWidget* entry{ static_cast<LineEditEntryWidget*>(widget(i)) };
+                    entry->updateModel();
+                }
+            }
+
+            void updateViews()
+            {
+                for (int i{}; i < count(); ++i)
+                {
+                    LineEditEntryWidget* entry{ static_cast<LineEditEntryWidget*>(widget(i)) };
+                    entry->updateView();
+                }
+            }
+
+            void visitValues(std::function<void(Wt::WString)> visitor) const
+            {
+                for (int i{}; i < count(); ++i)
+                {
+                    LineEditEntryWidget* entry{ static_cast<LineEditEntryWidget*>(widget(i)) };
+                    visitor(entry->getValue());
+                }
+            }
+
+            std::vector<std::string> getValues() const
+            {
+                std::vector<std::string> values;
+                visitValues([&](const Wt::WString& value) {
+                    values.push_back(value.toUTF8());
+                });
+                return values;
+            }
+
+        private:
+            std::shared_ptr<Wt::WValidator> _validator;
+        };
+    } // namespace
 
     ScanSettingsView::ScanSettingsView()
     {
-        wApp->internalPathChanged().connect(this, [this]()
-            {
-                refreshView();
-            });
+        wApp->internalPathChanged().connect(this, [this]() {
+            refreshView();
+        });
 
         refreshView();
     }
@@ -227,13 +305,12 @@ namespace lms::ui
         // Update Period
         auto updatePeriod{ std::make_unique<Wt::WComboBox>() };
         updatePeriod->setModel(model->updatePeriodModel());
-        updatePeriod->activated().connect([=](int row)
-            {
-                const ScanSettings::UpdatePeriod period{ model->updatePeriodModel()->getValue(row) };
-                model->setReadOnly(DatabaseSettingsModel::UpdateStartTimeField, period == ScanSettings::UpdatePeriod::Hourly || period == ScanSettings::UpdatePeriod::Never);
-                t->updateModel(model.get());
-                t->updateView(model.get());
-            });
+        updatePeriod->activated().connect([=](int row) {
+            const ScanSettings::UpdatePeriod period{ model->updatePeriodModel()->getValue(row) };
+            model->setReadOnly(DatabaseSettingsModel::UpdateStartTimeField, period == ScanSettings::UpdatePeriod::Hourly || period == ScanSettings::UpdatePeriod::Never);
+            t->updateModel(model.get());
+            t->updateView(model.get());
+        });
         t->setFormWidget(DatabaseSettingsModel::UpdatePeriodField, std::move(updatePeriod));
 
         // Update Start Time
@@ -247,44 +324,120 @@ namespace lms::ui
         t->setFormWidget(DatabaseSettingsModel::SimilarityEngineTypeField, std::move(similarityEngineType));
 
         // Extra tags
-        t->setFormWidget(DatabaseSettingsModel::ExtraTagsField, std::make_unique<Wt::WLineEdit>());
+        std::shared_ptr<Wt::WValidator> extraTagValidator{ createUppercaseValidator() };
+        extraTagValidator->setMandatory(true);
+        auto* extraTagsToScan{ t->bindNew<LineEditContainerWidget>("extra-tags-to-scan-container", extraTagValidator) };
+        {
+            auto* addExtraScanToScanBtn{ t->bindNew<Wt::WPushButton>("extra-tags-to-scan-add-btn", Wt::WString::tr("Lms.add")) };
+            addExtraScanToScanBtn->clicked().connect(this, [=] {
+                extraTagsToScan->add();
+            });
+        }
 
         // Artist tag delimiter
-        t->setFormWidget(DatabaseSettingsModel::ArtistTagDelimiterField, std::make_unique<Wt::WLineEdit>());
+        std::shared_ptr<Wt::WValidator> tagDelimiterValidator{ std::make_shared<TagDelimitersValidator>() };
+        tagDelimiterValidator->setMandatory(true);
+
+        auto* artistTagDelimiters{ t->bindNew<LineEditContainerWidget>("artist-tag-delimiter-container", tagDelimiterValidator) };
+        {
+            auto* addArtistDelimiterBtn{ t->bindNew<Wt::WPushButton>("artist-tag-delimiter-add-btn", Wt::WString::tr("Lms.add")) };
+            addArtistDelimiterBtn->clicked().connect(this, [=] {
+                artistTagDelimiters->add();
+            });
+        }
 
         // Default tag delimiter
-        t->setFormWidget(DatabaseSettingsModel::DefaultTagDelimiterField, std::make_unique<Wt::WLineEdit>());
+        auto* defaultTagDelimiters{ t->bindNew<LineEditContainerWidget>("default-tag-delimiter-container", tagDelimiterValidator) };
+        {
+            auto* addDefaultDelimiterBtn{ t->bindNew<Wt::WPushButton>("default-tag-delimiter-add-btn", Wt::WString::tr("Lms.add")) };
+            addDefaultDelimiterBtn->clicked().connect(this, [=] {
+                defaultTagDelimiters->add();
+            });
+        }
 
         // Buttons
-        Wt::WPushButton* saveBtn = t->bindWidget("save-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.save")));
-        Wt::WPushButton* discardBtn = t->bindWidget("discard-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.discard")));
+        Wt::WPushButton* saveBtn{ t->bindWidget("save-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.save"))) };
+        Wt::WPushButton* discardBtn{ t->bindWidget("discard-btn", std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.discard"))) };
 
-        saveBtn->clicked().connect([=]
+        auto validate{ [=] {
+            bool res{ true };
+
+            res &= model->validate();
+            res &= extraTagsToScan->validate();
+            res &= artistTagDelimiters->validate();
+            res &= defaultTagDelimiters->validate();
+
+            return res;
+        } };
+
+        auto updateModels{ [=] {
+            t->updateModel(model.get());
+            extraTagsToScan->updateModels();
+            artistTagDelimiters->updateModels();
+            defaultTagDelimiters->updateModels();
+        } };
+
+        auto updateViews{ [=] {
+            t->updateView(model.get());
+            extraTagsToScan->updateViews();
+            artistTagDelimiters->updateViews();
+            defaultTagDelimiters->updateViews();
+        } };
+
+        auto loadInitialData{ [=] {
+            std::vector<std::string> extraTags;
+            std::vector<std::string> artistDelimiters;
+            std::vector<std::string> defaultDelimiters;
+            model->loadData(extraTags, artistDelimiters, defaultDelimiters);
+
+            extraTagsToScan->clear();
+            for (const std::string& extraTag : extraTags)
+                extraTagsToScan->add(Wt::WString::fromUTF8(std::string{ extraTag }));
+
+            artistTagDelimiters->clear();
+            for (const std::string& artistDelimiter : artistDelimiters)
+                artistTagDelimiters->add(Wt::WString::fromUTF8(artistDelimiter));
+
+            defaultTagDelimiters->clear();
+            for (const std::string& defaultDelimiter : defaultDelimiters)
+                defaultTagDelimiters->add(Wt::WString::fromUTF8(defaultDelimiter));
+        } };
+
+        saveBtn->clicked().connect([=] {
+            updateModels();
+            if (validate())
             {
-                t->updateModel(model.get());
+                const std::vector<std::string> extraTags{ extraTagsToScan->getValues() };
+                std::vector<std::string_view> extraTagViews;
+                std::transform(std::cbegin(extraTags), std::cend(extraTags), std::back_inserter(extraTagViews), [](const std::string& tag) -> std::string_view { return tag; });
 
-                if (model->validate())
-                {
-                    model->saveData();
+                const std::vector<std::string> artistDelimiters{ artistTagDelimiters->getValues() };
+                std::vector<std::string_view> artistDelimiterViews;
+                std::transform(std::cbegin(artistDelimiters), std::cend(artistDelimiters), std::back_inserter(artistDelimiterViews), [](const std::string& delimiter) -> std::string_view { return delimiter; });
 
-                    core::Service<recommendation::IRecommendationService>::get()->load();
-                    // Don't want the scanner to go on with wrong settings
-                    core::Service<scanner::IScannerService>::get()->requestReload();
-                    LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.database"), Wt::WString::tr("Lms.settings-saved"));
-                }
+                const std::vector<std::string> defaultDelimiters{ defaultTagDelimiters->getValues() };
+                std::vector<std::string_view> defaultDelimiterViews;
+                std::transform(std::cbegin(defaultDelimiters), std::cend(defaultDelimiters), std::back_inserter(defaultDelimiterViews), [](const std::string& delimiter) -> std::string_view { return delimiter; });
 
-                // Udate the view: Delete any validation message in the view, etc.
-                t->updateView(model.get());
-            });
+                model->saveData(extraTagViews, artistDelimiterViews, defaultDelimiterViews);
 
-        discardBtn->clicked().connect([=]
-            {
-                model->loadData();
-                model->validate();
-                t->updateView(model.get());
-            });
+                core::Service<recommendation::IRecommendationService>::get()->load();
+                // Don't want the scanner to go on with wrong settings
+                core::Service<scanner::IScannerService>::get()->requestReload();
+                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.database"), Wt::WString::tr("Lms.settings-saved"));
+            }
 
-        t->updateView(model.get());
+            // Udate the view: Delete any validation message in the view, etc.
+            updateViews();
+        });
+
+        discardBtn->clicked().connect([=] {
+            loadInitialData();
+            validate();
+            updateViews();
+        });
+
+        loadInitialData();
+        updateViews();
     }
-
 } // namespace lms::ui

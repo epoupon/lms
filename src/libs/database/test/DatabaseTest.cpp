@@ -49,11 +49,11 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto releases{ Release::findIds(session, Release::FindParameters {}.setArtist(artist.getId())) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId())) };
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release.getId());
 
-            const auto releaseTracks{ Track::find(session, Track::FindParameters {}.setRelease(release.getId())) };
+            const auto releaseTracks{ Track::find(session, Track::FindParameters{}.setRelease(release.getId())) };
             EXPECT_EQ(releaseTracks.results.size(), nbTracks);
         }
     }
@@ -74,7 +74,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            auto releases{ Release::findIds(session, Release::FindParameters {}.setArtist(artist.getId())) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId())) };
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release.getId());
 
@@ -101,7 +101,7 @@ namespace lms::db::tests
             EXPECT_EQ(User::getCount(session), 1);
         }
     }
-}
+} // namespace lms::db::tests
 
 int main(int argc, char** argv)
 {

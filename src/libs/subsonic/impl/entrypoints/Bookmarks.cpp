@@ -20,13 +20,14 @@
 #include "Bookmarks.hpp"
 
 #include "database/Session.hpp"
-#include "database/User.hpp"
 #include "database/Track.hpp"
 #include "database/TrackBookmark.hpp"
-#include "responses/Bookmark.hpp"
-#include "responses/Song.hpp"
+#include "database/User.hpp"
+
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"
+#include "responses/Bookmark.hpp"
+#include "responses/Song.hpp"
 
 namespace lms::api::subsonic
 {
@@ -92,4 +93,4 @@ namespace lms::api::subsonic
 
         return Response::createOkResponse(context.serverProtocolVersion);
     }
-}
+} // namespace lms::api::subsonic

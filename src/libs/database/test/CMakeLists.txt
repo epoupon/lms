@@ -5,6 +5,7 @@ add_executable(test-database
 	Common.cpp
 	DatabaseTest.cpp
 	Listen.cpp
+	Migration.cpp
 	Release.cpp
 	StarredArtist.cpp
 	StarredRelease.cpp

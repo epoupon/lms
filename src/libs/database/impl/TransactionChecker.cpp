@@ -22,6 +22,7 @@
 static_assert(LMS_CHECK_TRANSACTION_ACCESSES, "File should be excluded from build");
 
 #include <cassert>
+
 #include "database/Session.hpp"
 
 namespace lms::db
@@ -35,7 +36,7 @@ namespace lms::db
         };
 
         static thread_local std::vector<StackEntry> transactionStack;
-    }
+    } // namespace
 
     void TransactionChecker::pushWriteTransaction(Wt::Dbo::Session& session)
     {
@@ -93,4 +94,4 @@ namespace lms::db
     {
         checkReadTransaction(*session.getDboSession());
     }
-}
+} // namespace lms::db

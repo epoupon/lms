@@ -22,16 +22,16 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
+#include "core/ILogger.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "core/ILogger.hpp"
 
+#include "LmsApplication.hpp"
+#include "SortModeSelector.hpp"
 #include "common/InfiniteScrollingContainer.hpp"
 #include "explore/Filters.hpp"
 #include "explore/PlayQueueController.hpp"
 #include "explore/TrackListHelpers.hpp"
-#include "LmsApplication.hpp"
-#include "SortModeSelector.hpp"
 
 namespace lms::ui
 {
@@ -48,49 +48,45 @@ namespace lms::ui
 
         Wt::WLineEdit* searEdit{ bindNew<Wt::WLineEdit>("search") };
         searEdit->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
-        searEdit->textInput().connect([this, searEdit]
-            {
-                refreshView(searEdit->text());
-            });
+        searEdit->textInput().connect([this, searEdit] {
+            refreshView(searEdit->text());
+        });
 
         SortModeSelector* sortMode{ bindNew<SortModeSelector>("sort-mode", _defaultMode) };
-        sortMode->itemSelected.connect([this](TrackCollector::Mode mode)
-            {
-                refreshView(mode);
-            });
+        sortMode->itemSelected.connect([this](TrackCollector::Mode mode) {
+            refreshView(mode);
+        });
 
         bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
-            ->clicked().connect([this]
-                {
-                    _playQueueController.processCommand(PlayQueueController::Command::Play, getAllTracks());
-                });
+            ->clicked()
+            .connect([this] {
+                _playQueueController.processCommand(PlayQueueController::Command::Play, getAllTracks());
+            });
 
         bindNew<Wt::WPushButton>("play-shuffled", Wt::WString::tr("Lms.Explore.play-shuffled"), Wt::TextFormat::Plain)
-            ->clicked().connect([this]
-                {
-                    _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, getAllTracks());
-                });
+            ->clicked()
+            .connect([this] {
+                _playQueueController.processCommand(PlayQueueController::Command::PlayShuffled, getAllTracks());
+            });
         bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"), Wt::TextFormat::Plain)
-            ->clicked().connect([this]
-                {
-                    _playQueueController.processCommand(PlayQueueController::Command::PlayNext, getAllTracks());
-                });
+            ->clicked()
+            .connect([this] {
+                _playQueueController.processCommand(PlayQueueController::Command::PlayNext, getAllTracks());
+            });
         bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"), Wt::TextFormat::Plain)
-            ->clicked().connect([this]
-                {
-                    _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, getAllTracks());
-                });
+            ->clicked()
+            .connect([this] {
+                _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, getAllTracks());
+            });
 
         _container = bindNew<InfiniteScrollingContainer>("tracks", Wt::WString::tr("Lms.Explore.Tracks.template.entry-container"));
-        _container->onRequestElements.connect([this]
-            {
-                addSome();
-            });
+        _container->onRequestElements.connect([this] {
+            addSome();
+        });
 
-        filters.updated().connect([this]
-            {
-                refreshView();
-            });
+        filters.updated().connect([this] {
+            refreshView();
+        });
 
         refreshView(_trackCollector.getMode());
     }
@@ -117,7 +113,7 @@ namespace lms::ui
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const auto trackIds{ _trackCollector.get(Range {static_cast<std::size_t>(_container->getCount()), _batchSize}) };
+        const auto trackIds{ _trackCollector.get(Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }) };
 
         for (const TrackId trackId : trackIds.results)
         {

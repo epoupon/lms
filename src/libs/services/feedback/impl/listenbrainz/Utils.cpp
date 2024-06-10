@@ -59,4 +59,4 @@ namespace lms::feedback::listenBrainz::utils
         listenBrainzUserName = root.get("user_name").orIfNull("");
         return listenBrainzUserName;
     }
-}
+} // namespace lms::feedback::listenBrainz::utils

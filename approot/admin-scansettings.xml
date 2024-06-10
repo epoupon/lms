@@ -36,35 +36,39 @@
 		<div class="col-12">
 			<label class="form-label" for="${id:extra-tags-to-scan}">
 				${tr:Lms.Admin.Database.extra-tags-to-scan}
+				${extra-tags-to-scan-add-btn class="ms-1 btn btn-sm btn-secondary"}
 			</label>
-			${extra-tags-to-scan class="form-control"}
-			<div class="invalid-feedback">
-				${extra-tags-to-scan-info}
-			</div>
+			${extra-tags-to-scan-container class="row gy-3"}
 		</div>
 		<div class="col-12">
-			<label class="form-label" for="${id:artist-tag-delimiter}">
-				${tr:Lms.Admin.Database.artist-tag-delimiter}
+			<label class="form-label">
+				${tr:Lms.Admin.Database.artist-tag-delimiters}
+				${artist-tag-delimiter-add-btn class="ms-1 btn btn-sm btn-secondary"}
 			</label>
-			${artist-tag-delimiter class="form-control"}
-			<div class="invalid-feedback">
-				${artist-tag-delimiter-info}
-			</div>
+			${artist-tag-delimiter-container class="row gy-3"}
 		</div>
 		<div class="col-12">
-			<label class="form-label" for="${id:default-tag-delimiter}">
-				${tr:Lms.Admin.Database.default-tag-delimiter}
+			<label class="form-label">
+				${tr:Lms.Admin.Database.default-tag-delimiters}
+				${default-tag-delimiter-add-btn class="ms-1 btn btn-sm btn-secondary"}
 			</label>
-			${default-tag-delimiter class="form-control"}
-			<div class="invalid-feedback">
-				${default-tag-delimiter-info}
-			</div>
+			${default-tag-delimiter-container class="row gy-3"}
 		</div>
 		<div class="col-12">
 			${save-btn class="btn btn-primary me-1"}${discard-btn class="btn btn-secondary"}
 		</div>
 	</form>
-	<br/>
+</message>
+
+<message id="Lms.Admin.Database.template.line-edit-entry">
+	<div class="input-group has-validation">
+		${value class="form-control"}
+		${del-btn class="btn btn-sm btn-outline-warning"}
+		<div class="invalid-feedback">
+			${value-info}
+		</div>
+	</div>
+
 </message>
 
 </messages>

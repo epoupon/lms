@@ -30,5 +30,4 @@ namespace lms::image
         virtual void resize(ImageSize width) = 0;
         virtual std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const = 0;
     };
-}
-
+} // namespace lms::image

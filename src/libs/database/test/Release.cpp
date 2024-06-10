@@ -50,25 +50,24 @@ namespace lms::db::tests
             }
 
             {
-                const auto releases{ Release::findIds(session, Release::FindParameters {}) };
+                const auto releases{ Release::findIds(session, Release::FindParameters{}) };
                 ASSERT_EQ(releases.results.size(), 1);
                 EXPECT_EQ(releases.results.front(), release.getId());
                 EXPECT_EQ(release->getDuration(), std::chrono::seconds{ 0 });
             }
 
             {
-                const auto releases{ Release::find(session, Release::FindParameters {}) };
+                const auto releases{ Release::find(session, Release::FindParameters{}) };
                 ASSERT_EQ(releases.results.size(), 1);
                 EXPECT_EQ(releases.results.front()->getId(), release.getId());
             }
 
             {
                 bool visited{};
-                Release::find(session, Release::FindParameters{}, [&](const Release::pointer& r)
-                    {
-                        visited = true;
-                        EXPECT_EQ(r->getId(), release.getId());
-                    });
+                Release::find(session, Release::FindParameters{}, [&](const Release::pointer& r) {
+                    visited = true;
+                    EXPECT_EQ(r->getId(), release.getId());
+                });
                 EXPECT_TRUE(visited);
             }
         }
@@ -101,10 +100,9 @@ namespace lms::db::tests
 
             ReleaseId lastRetrievedId;
             std::vector<Release::pointer> visitedReleases;
-            Release::find(session, lastRetrievedId, 10, [&](const Release::pointer& release)
-                {
-                    visitedReleases.push_back(release);
-                });
+            Release::find(session, lastRetrievedId, 10, [&](const Release::pointer& release) {
+                visitedReleases.push_back(release);
+            });
             ASSERT_EQ(visitedReleases.size(), 3);
             EXPECT_EQ(visitedReleases[0]->getId(), release1.getId());
             EXPECT_EQ(visitedReleases[1]->getId(), release2.getId());
@@ -117,10 +115,9 @@ namespace lms::db::tests
 
             ReleaseId lastRetrievedId{ release1.getId() };
             std::vector<Release::pointer> visitedReleases;
-            Release::find(session, lastRetrievedId, 1, [&](const Release::pointer& release)
-                {
-                    visitedReleases.push_back(release);
-                });
+            Release::find(session, lastRetrievedId, 1, [&](const Release::pointer& release) {
+                visitedReleases.push_back(release);
+            });
             ASSERT_EQ(visitedReleases.size(), 1);
             EXPECT_EQ(visitedReleases[0]->getId(), release2.getId());
             EXPECT_EQ(lastRetrievedId, release2.getId());
@@ -131,10 +128,9 @@ namespace lms::db::tests
 
             ReleaseId lastRetrievedId{ release1.getId() };
             std::vector<Release::pointer> visitedReleases;
-            Release::find(session, lastRetrievedId, 0, [&](const Release::pointer& release)
-                {
-                    visitedReleases.push_back(release);
-                });
+            Release::find(session, lastRetrievedId, 0, [&](const Release::pointer& release) {
+                visitedReleases.push_back(release);
+            });
             ASSERT_EQ(visitedReleases.size(), 0);
             EXPECT_EQ(lastRetrievedId, release1.getId());
         }
@@ -144,10 +140,11 @@ namespace lms::db::tests
 
             ReleaseId lastRetrievedId;
             std::vector<Release::pointer> visitedReleases;
-            Release::find(session, lastRetrievedId, 10, [&](const Release::pointer& release)
-                {
+            Release::find(
+                session, lastRetrievedId, 10, [&](const Release::pointer& release) {
                     visitedReleases.push_back(release);
-                }, otherLibrary.getId());
+                },
+                otherLibrary.getId());
             ASSERT_EQ(visitedReleases.size(), 0);
             EXPECT_EQ(lastRetrievedId, ReleaseId{});
         }
@@ -157,10 +154,11 @@ namespace lms::db::tests
 
             ReleaseId lastRetrievedId;
             std::vector<Release::pointer> visitedReleases;
-            Release::find(session, lastRetrievedId, 10, [&](const Release::pointer& release)
-                {
+            Release::find(
+                session, lastRetrievedId, 10, [&](const Release::pointer& release) {
                     visitedReleases.push_back(release);
-                }, library.getId());
+                },
+                library.getId());
             ASSERT_EQ(visitedReleases.size(), 1);
             EXPECT_EQ(visitedReleases[0]->getId(), release2.getId());
             EXPECT_EQ(lastRetrievedId, release2.getId());
@@ -185,7 +183,7 @@ namespace lms::db::tests
                 auto transaction{ session.createReadTransaction() };
                 EXPECT_EQ(Release::findOrphanIds(session).results.size(), 0);
 
-                const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release.getId())) };
+                const auto tracks{ Track::findIds(session, Track::FindParameters{}.setRelease(release.getId())) };
                 ASSERT_EQ(tracks.results.size(), 1);
                 EXPECT_EQ(tracks.results.front(), track.getId());
             }
@@ -218,7 +216,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release.getId())) };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setRelease(release.getId())) };
             EXPECT_EQ(tracks.results.size(), 0);
 
             auto releases{ Release::findOrphanIds(session) };
@@ -318,34 +316,34 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             {
-                const auto releases{ Release::findIds(session, Release::FindParameters {}.setKeywords({"Release"})) };
+                const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "Release" })) };
                 EXPECT_EQ(releases.results.size(), 6);
             }
 
             {
-                const auto releases{ Release::findIds(session, Release::FindParameters {}.setKeywords({"MyRelease"})) };
+                const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "MyRelease" })) };
                 ASSERT_EQ(releases.results.size(), 5);
                 EXPECT_TRUE(std::none_of(std::cbegin(releases.results), std::cend(releases.results), [&](const ReleaseId releaseId) { return releaseId == release6.getId(); }));
             }
             {
-                const auto releases{ Release::findIds(session, Release::FindParameters {}.setKeywords({"MyRelease%"})) };
+                const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "MyRelease%" })) };
                 ASSERT_EQ(releases.results.size(), 2);
                 EXPECT_EQ(releases.results[0], release2.getId());
                 EXPECT_EQ(releases.results[1], release4.getId());
             }
             {
-                const auto releases{ Release::findIds(session, Release::FindParameters {}.setKeywords({"%MyRelease"})) };
+                const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "%MyRelease" })) };
                 ASSERT_EQ(releases.results.size(), 2);
                 EXPECT_EQ(releases.results[0], release3.getId());
                 EXPECT_EQ(releases.results[1], release5.getId());
             }
             {
-                const auto releases{ Release::findIds(session, Release::FindParameters {}.setKeywords({"Foo%MyRelease"})) };
+                const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "Foo%MyRelease" })) };
                 ASSERT_EQ(releases.results.size(), 1);
                 EXPECT_EQ(releases.results[0], release5.getId());
             }
             {
-                const auto releases{ Release::findIds(session, Release::FindParameters {}.setKeywords({"MyRelease%Foo"})) };
+                const auto releases{ Release::findIds(session, Release::FindParameters{}.setKeywords({ "MyRelease%Foo" })) };
                 ASSERT_EQ(releases.results.size(), 1);
                 EXPECT_EQ(releases.results[0], release4.getId());
             }
@@ -476,13 +474,13 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             {
-                const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release1.getId()).setSortMethod(TrackSortMethod::Release)) };
+                const auto tracks{ Track::findIds(session, Track::FindParameters{}.setRelease(release1.getId()).setSortMethod(TrackSortMethod::Release)) };
                 EXPECT_EQ(tracks.results.size(), 2);
                 EXPECT_EQ(tracks.results.front(), track1A.getId());
             }
 
             {
-                const auto tracks{ Track::findIds(session, Track::FindParameters {}.setRelease(release2.getId()).setSortMethod(TrackSortMethod::Release)) };
+                const auto tracks{ Track::findIds(session, Track::FindParameters{}.setRelease(release2.getId()).setSortMethod(TrackSortMethod::Release)) };
                 EXPECT_EQ(tracks.results.size(), 2);
                 EXPECT_EQ(tracks.results.front(), track2B.getId());
             }
@@ -493,8 +491,8 @@ namespace lms::db::tests
     {
         ScopedRelease release1{ session, "MyRelease1" };
         ScopedRelease release2{ session, "MyRelease2" };
-        const Wt::WDate release1Date{ Wt::WDate {1994, 2, 3} };
-        const Wt::WDate release1OriginalDate{ Wt::WDate {1993, 4, 5} };
+        const Wt::WDate release1Date{ Wt::WDate{ 1994, 2, 3 } };
+        const Wt::WDate release1OriginalDate{ Wt::WDate{ 1993, 4, 5 } };
 
         ScopedTrack track1A{ session };
         ScopedTrack track1B{ session };
@@ -504,7 +502,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::findIds(session, Release::FindParameters {}.setDateRange(DateRange::fromYearRange(0, 3000))) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(DateRange::fromYearRange(0, 3000))) };
             EXPECT_EQ(releases.results.size(), 0);
         }
 
@@ -528,7 +526,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto releases{ Release::findIds(session, Release::FindParameters {}.setDateRange(DateRange::fromYearRange(1950, 2000))) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(DateRange::fromYearRange(1950, 2000))) };
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release1.getId());
 
@@ -556,7 +554,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::findIds(session, Release::FindParameters {}.setDateRange(DateRange::fromYearRange(0, 3000))) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(DateRange::fromYearRange(0, 3000))) };
             EXPECT_EQ(releases.results.size(), 0);
         }
 
@@ -567,7 +565,6 @@ namespace lms::db::tests
             track1B.get().modify()->setRelease(release1.get());
             track2A.get().modify()->setRelease(release2.get());
             track2B.get().modify()->setRelease(release2.get());
-
 
             track1A.get().modify()->setYear(release1Year);
             track1B.get().modify()->setYear(release1Year);
@@ -581,7 +578,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto releases{ Release::findIds(session, Release::FindParameters {}.setDateRange(DateRange::fromYearRange(1950, 2000))) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(DateRange::fromYearRange(1950, 2000))) };
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release1.getId());
 
@@ -599,7 +596,7 @@ namespace lms::db::tests
         ScopedRelease release{ session, "MyRelease" };
         ScopedTrack track{ session };
 
-        const Wt::WDateTime dateTime{ Wt::WDate {1950, 1, 1}, Wt::WTime {12, 30, 20} };
+        const Wt::WDateTime dateTime{ Wt::WDate{ 1950, 1, 1 }, Wt::WTime{ 12, 30, 20 } };
 
         {
             auto transaction{ session.createWriteTransaction() };
@@ -609,19 +606,19 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto releases{ Release::findIds(session, Release::FindParameters {}) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}) };
             EXPECT_EQ(releases.results.size(), 1);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto releases{ Release::findIds(session, Release::FindParameters {}.setWrittenAfter(dateTime.addSecs(-1))) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setWrittenAfter(dateTime.addSecs(-1))) };
             EXPECT_EQ(releases.results.size(), 1);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto releases{ Release::findIds(session, Release::FindParameters {}.setWrittenAfter(dateTime.addSecs(+1))) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setWrittenAfter(dateTime.addSecs(+1))) };
             EXPECT_EQ(releases.results.size(), 0);
         }
     }
@@ -640,7 +637,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto releases{ Release::findIds(session, Release::FindParameters {}.setArtist(artist.getId(), {TrackArtistLinkType::Artist})) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId(), { TrackArtistLinkType::Artist })) };
             EXPECT_EQ(releases.results.size(), 0);
 
             releases = Release::findIds(session, Release::FindParameters{}.setArtist(artist2.getId(), { TrackArtistLinkType::Artist }));
@@ -651,7 +648,7 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
             TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
 
-            auto releases{ Release::findIds(session, Release::FindParameters {}.setArtist(artist.getId(), {TrackArtistLinkType::Artist})) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId(), { TrackArtistLinkType::Artist })) };
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release.getId());
 
@@ -810,11 +807,11 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Release_sortMethod)
     {
         ScopedRelease release1{ session, "MyRelease1" };
-        const Wt::WDate release1Date{ Wt::WDate {2000, 2, 3} };
-        const Wt::WDate release1OriginalDate{ Wt::WDate {1993, 4, 5} };
+        const Wt::WDate release1Date{ Wt::WDate{ 2000, 2, 3 } };
+        const Wt::WDate release1OriginalDate{ Wt::WDate{ 1993, 4, 5 } };
 
         ScopedRelease release2{ session, "MyRelease2" };
-        const Wt::WDate release2Date{ Wt::WDate {1994, 2, 3} };
+        const Wt::WDate release2Date{ Wt::WDate{ 1994, 2, 3 } };
 
         ScopedTrack track1{ session };
         ScopedTrack track2{ session };
@@ -836,7 +833,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::findIds(session, Release::FindParameters {}.setSortMethod(ReleaseSortMethod::Name)) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::Name)) };
             ASSERT_EQ(releases.results.size(), 2);
             EXPECT_EQ(releases.results.front(), release1.getId());
             EXPECT_EQ(releases.results.back(), release2.getId());
@@ -845,14 +842,14 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::findIds(session, Release::FindParameters {}.setSortMethod(ReleaseSortMethod::Random)) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::Random)) };
             ASSERT_EQ(releases.results.size(), 2);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::findIds(session, Release::FindParameters {}.setSortMethod(ReleaseSortMethod::Date)) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::Date)) };
             ASSERT_EQ(releases.results.size(), 2);
             EXPECT_EQ(releases.results.front(), release2.getId());
             EXPECT_EQ(releases.results.back(), release1.getId());
@@ -861,7 +858,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::findIds(session, Release::FindParameters {}.setSortMethod(ReleaseSortMethod::OriginalDate)) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::OriginalDate)) };
             ASSERT_EQ(releases.results.size(), 2);
             EXPECT_EQ(releases.results.front(), release1.getId());
             EXPECT_EQ(releases.results.back(), release2.getId());
@@ -869,7 +866,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::findIds(session, Release::FindParameters {}.setSortMethod(ReleaseSortMethod::OriginalDateDesc)) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::OriginalDateDesc)) };
             ASSERT_EQ(releases.results.size(), 2);
             EXPECT_EQ(releases.results.front(), release2.getId());
             EXPECT_EQ(releases.results.back(), release1.getId());
@@ -883,11 +880,10 @@ namespace lms::db::tests
         ScopedTrack track2{ session };
         ScopedTrack track3{ session };
 
-        auto checkExpectedBitrate = [&](std::size_t bitrate)
-            {
-                auto transaction{ session.createReadTransaction() };
-                EXPECT_EQ(release1->getMeanBitrate(), bitrate);
-            };
+        auto checkExpectedBitrate = [&](std::size_t bitrate) {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(release1->getMeanBitrate(), bitrate);
+        };
 
         checkExpectedBitrate(0);
 
@@ -938,4 +934,4 @@ namespace lms::db::tests
             EXPECT_EQ(release3->getTrackCount(), 0);
         }
     }
-}
+} // namespace lms::db::tests

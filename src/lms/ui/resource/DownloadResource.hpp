@@ -19,68 +19,67 @@
 
 #pragma once
 
-#include <memory>
 #include <Wt/WResource.h>
+#include <memory>
 
+#include "core/IZipper.hpp"
+#include "core/ZipperResourceHandlerCreator.hpp"
 #include "database/ArtistId.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 #include "database/TrackListId.hpp"
-#include "core/IZipper.hpp"
-#include "core/ZipperResourceHandlerCreator.hpp"
 
 namespace lms::ui
 {
-	class DownloadResource : public Wt::WResource
-	{
-		public:
-			static constexpr std::size_t bufferSize {32768};
+    class DownloadResource : public Wt::WResource
+    {
+    public:
+        static constexpr std::size_t bufferSize{ 32768 };
 
-			~DownloadResource();
+        ~DownloadResource();
 
-		private:
-			void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
-			virtual std::unique_ptr<zip::IZipper> createZipper() = 0;
-	};
+    private:
+        void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
+        virtual std::unique_ptr<zip::IZipper> createZipper() = 0;
+    };
 
-	class DownloadArtistResource : public DownloadResource
-	{
-		public:
-			DownloadArtistResource(db::ArtistId artistId);
+    class DownloadArtistResource : public DownloadResource
+    {
+    public:
+        DownloadArtistResource(db::ArtistId artistId);
 
-		private:
-			std::unique_ptr<zip::IZipper> createZipper() override;
-			db::ArtistId _artistId;
-	};
+    private:
+        std::unique_ptr<zip::IZipper> createZipper() override;
+        db::ArtistId _artistId;
+    };
 
-	class DownloadReleaseResource : public DownloadResource
-	{
-		public:
-			DownloadReleaseResource(db::ReleaseId releaseId);
+    class DownloadReleaseResource : public DownloadResource
+    {
+    public:
+        DownloadReleaseResource(db::ReleaseId releaseId);
 
-		private:
-			std::unique_ptr<zip::IZipper> createZipper() override;
-			db::ReleaseId _releaseId;
-	};
+    private:
+        std::unique_ptr<zip::IZipper> createZipper() override;
+        db::ReleaseId _releaseId;
+    };
 
-	class DownloadTrackResource : public DownloadResource
-	{
-		public:
-			DownloadTrackResource(db::TrackId trackId);
+    class DownloadTrackResource : public DownloadResource
+    {
+    public:
+        DownloadTrackResource(db::TrackId trackId);
 
-		private:
-			std::unique_ptr<zip::IZipper> createZipper() override;
-			db::TrackId _trackId;
-	};
+    private:
+        std::unique_ptr<zip::IZipper> createZipper() override;
+        db::TrackId _trackId;
+    };
 
-	class DownloadTrackListResource : public DownloadResource
-	{
-		public:
-			DownloadTrackListResource(db::TrackListId trackListId);
+    class DownloadTrackListResource : public DownloadResource
+    {
+    public:
+        DownloadTrackListResource(db::TrackListId trackListId);
 
-		private:
-			std::unique_ptr<zip::IZipper> createZipper() override;
-			db::TrackListId _trackListId;
-	};
+    private:
+        std::unique_ptr<zip::IZipper> createZipper() override;
+        db::TrackListId _trackListId;
+    };
 } // namespace lms::ui
-

@@ -22,6 +22,7 @@
 #include <optional>
 
 #include "services/recommendation/IRecommendationService.hpp"
+
 #include "IEngine.hpp"
 
 namespace lms::db
@@ -63,5 +64,4 @@ namespace lms::recommendation
         std::unique_ptr<IEngine> _engine;
     };
 
-} // ns Recommendation
-
+} // namespace lms::recommendation

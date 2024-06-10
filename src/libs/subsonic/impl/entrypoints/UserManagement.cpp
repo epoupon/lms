@@ -1,24 +1,26 @@
 #include "UserManagement.hpp"
 
+#include "core/Service.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
 #include "services/auth/IPasswordService.hpp"
-#include "core/Service.hpp"
-#include "responses/User.hpp"
+
 #include "ParameterParsing.hpp"
 #include "Utils.hpp"
+#include "responses/User.hpp"
 
 namespace lms::api::subsonic
 {
     using namespace db;
 
-    namespace {
+    namespace
+    {
         void checkUserIsMySelfOrAdmin(RequestContext& context, const std::string& username)
         {
             if (context.user->getLoginName() != username && !context.user->isAdmin())
                 throw UserNotAuthorizedError{};
         }
-    }
+    } // namespace
 
     Response handleGetUserRequest(RequestContext& context)
     {
@@ -44,10 +46,9 @@ namespace lms::api::subsonic
         Response::Node& usersNode{ response.createNode("users") };
 
         auto transaction{ context.dbSession.createReadTransaction() };
-        User::find(context.dbSession, User::FindParameters{}, [&](const User::pointer& user)
-            {
-                usersNode.addArrayChild("user", createUserNode(user));
-            });
+        User::find(context.dbSession, User::FindParameters{}, [&](const User::pointer& user) {
+            usersNode.addArrayChild("user", createUserNode(user));
+        });
 
         return response;
     }
@@ -70,13 +71,12 @@ namespace lms::api::subsonic
             userId = user->getId();
         }
 
-        auto removeCreatedUser{ [&]
-            {
-                auto transaction {context.dbSession.createWriteTransaction()};
-                User::pointer user{ User::find(context.dbSession, userId) };
-                if (user)
-                    user.remove();
-            } };
+        auto removeCreatedUser{ [&] {
+            auto transaction{ context.dbSession.createWriteTransaction() };
+            User::pointer user{ User::find(context.dbSession, userId) };
+            if (user)
+                user.remove();
+        } };
 
         try
         {
@@ -198,4 +198,4 @@ namespace lms::api::subsonic
 
         return Response::createOkResponse(context.serverProtocolVersion);
     }
-}
+} // namespace lms::api::subsonic

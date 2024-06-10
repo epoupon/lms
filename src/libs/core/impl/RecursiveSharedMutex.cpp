@@ -131,4 +131,4 @@ namespace lms::core
         return _sharedCounts[thisThreadId] > 0;
     }
 #endif
-}
+} // namespace lms::core

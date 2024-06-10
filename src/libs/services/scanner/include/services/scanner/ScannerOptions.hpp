@@ -23,8 +23,8 @@ namespace lms::scanner
 {
     struct ScanOptions
     {
-        bool fullScan{}; // scan files even if not changed
+        bool fullScan{};      // scan files even if not changed
         bool forceOptimize{}; // force optimize database
-        bool compact{}; // compact the database
+        bool compact{};       // compact the database
     };
-}
+} // namespace lms::scanner

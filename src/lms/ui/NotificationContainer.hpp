@@ -20,6 +20,7 @@
 #pragma once
 
 #include <chrono>
+
 #include <Wt/WContainerWidget.h>
 #include <Wt/WString.h>
 
@@ -27,11 +28,11 @@
 
 namespace lms::ui
 {
-	class NotificationContainer : public Wt::WContainerWidget
-	{
-		public:
-			void add(Notification::Type type, const Wt::WString& category, const Wt::WString& message, std::chrono::milliseconds duration);
+    class NotificationContainer : public Wt::WContainerWidget
+    {
+    public:
+        void add(Notification::Type type, const Wt::WString& category, const Wt::WString& message, std::chrono::milliseconds duration);
 
-		private:
-	};
+    private:
+    };
 } // namespace lms::ui

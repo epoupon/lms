@@ -23,9 +23,10 @@
 #include <iostream>
 
 #include "av/IAudioFile.hpp"
-#include "metadata/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
+#include "metadata/Exception.hpp"
+
 #include "Utils.hpp"
 
 namespace lms::metadata
@@ -33,8 +34,7 @@ namespace lms::metadata
     namespace
     {
         // Mapping to internal avformat names and/or common alternative custom names
-        static const std::unordered_map<TagType, std::vector<std::string>> tagMapping
-        {
+        static const std::unordered_map<TagType, std::vector<std::string>> tagMapping{
             { TagType::AcoustID, { "ACOUSTID_ID", "ACOUSTID ID" } },
             { TagType::Album, { "ALBUM", "TALB", "WM/ALBUMTITLE" } },
             { TagType::AlbumArtist, { "ALBUMARTIST", "ALBUM_ARTIST" } },
@@ -64,7 +64,7 @@ namespace lms::metadata
             { TagType::CopyrightURL, { "COPYRIGHTURL" } },
             { TagType::Date, { "DATE", "YEAR", "WM/YEAR" } },
             { TagType::Director, { "DIRECTOR" } },
-            { TagType::DiscNumber, { "TPOS",  "DISC", "DISK", "DISCNUMBER", "WM/PARTOFSET" } },
+            { TagType::DiscNumber, { "TPOS", "DISC", "DISK", "DISCNUMBER", "WM/PARTOFSET" } },
             { TagType::DiscSubtitle, { "TSST", "DISCSUBTITLE", "SETSUBTITLE" } },
             { TagType::EncodedBy, { "ENCODEDBY" } },
             { TagType::Engineer, { "ENGINEER" } },
@@ -129,7 +129,7 @@ namespace lms::metadata
             { TagType::Script, { "SCRIPT", "WM/SCRIPT" } },
             { TagType::ShowWorkAndMovement, { "SHOWWORKMOVEMENT", "SHOWMOVEMENT" } },
             { TagType::Subtitle, { "SUBTITLE" } },
-            { TagType::TotalDiscs, { "DISCTOTAL", "TOTALDISCS"} },
+            { TagType::TotalDiscs, { "DISCTOTAL", "TOTALDISCS" } },
             { TagType::TotalTracks, { "TRACKTOTAL", "TOTALTRACKS" } },
             { TagType::TrackNumber, { "TRCK", "TRACK", "TRACKNUMBER", "TRKN", "WM/TRACKNUMBER" } },
             { TagType::TrackTitle, { "TITLE" } },
@@ -137,14 +137,14 @@ namespace lms::metadata
             { TagType::WorkTitle, { "WORK" } },
             { TagType::Writer, { "WRITER" } },
         };
-    }
+    } // namespace
 
     AvFormatTagReader::AvFormatTagReader(const std::filesystem::path& p, bool debug)
     {
         try
         {
             const auto audioFile{ av::parseAudioFile(p) };
-            
+
             _audioProperties.duration = audioFile->getContainerInfo().duration;
 
             const auto bestAudioStream{ audioFile->getBestStreamInfo() };
@@ -172,6 +172,15 @@ namespace lms::metadata
         }
     }
 
+    size_t AvFormatTagReader::countTagValues(TagType tag) const
+    {
+        size_t count{};
+        visitTagValues(tag, [&](std::string_view) {
+            count++;
+        });
+        return count;
+    }
+
     void AvFormatTagReader::visitTagValues(TagType tag, TagValueVisitor visitor) const
     {
         auto itTagNames{ tagMapping.find(tag) };
@@ -182,11 +191,10 @@ namespace lms::metadata
         {
             bool visited{};
 
-            visitTagValues(tagName, [&](std::string_view value)
-                {
-                    visited = true;
-                    visitor(value);
-                });
+            visitTagValues(tagName, [&](std::string_view value) {
+                visited = true;
+                visitor(value);
+            });
 
             if (visited)
                 break;
@@ -204,8 +212,7 @@ namespace lms::metadata
 
     void AvFormatTagReader::visitPerformerTags(PerformerVisitor visitor) const
     {
-        visitTagValues("PERFORMER", [&](std::string_view value)
-        {
+        visitTagValues("PERFORMER", [&](std::string_view value) {
             visitor("", value);
         });
     }

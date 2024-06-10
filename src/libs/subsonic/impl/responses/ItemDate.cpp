@@ -40,4 +40,4 @@ namespace lms::api::subsonic
 
         return itemDateNode;
     }
-}
+} // namespace lms::api::subsonic

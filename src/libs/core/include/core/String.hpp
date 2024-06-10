@@ -22,9 +22,9 @@
 #include <initializer_list>
 #include <optional>
 #include <span>
+#include <sstream>
 #include <string>
 #include <string_view>
-#include <sstream>
 #include <vector>
 
 #define QUOTEME(x) QUOTEME_1(x)
@@ -34,7 +34,7 @@ namespace Wt
 {
     class WDate;
     class WDateTime;
-}
+} // namespace Wt
 
 namespace lms::core::stringUtils
 {
@@ -67,7 +67,7 @@ namespace lms::core::stringUtils
     {
         T res;
 
-        std::istringstream iss{ std::string {str} };
+        std::istringstream iss{ std::string{ str } };
         iss >> res;
         if (iss.fail())
             return std::nullopt;
@@ -100,4 +100,4 @@ namespace lms::core::stringUtils
 
     [[nodiscard]] std::string toISO8601String(const Wt::WDateTime& dateTime);
     [[nodiscard]] std::string toISO8601String(const Wt::WDate& date);
-}
+} // namespace lms::core::stringUtils

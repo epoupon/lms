@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <thread>
+
 #include <benchmark/benchmark.h>
 
 #include "core/ILogger.hpp"
@@ -58,8 +59,7 @@ namespace lms::core
 
     static void BM_TraceLogger_Detailed_withArg(benchmark::State& state)
     {
-        auto someExpensiveArgComputation{ []() -> std::string
-        {
+        auto someExpensiveArgComputation{ []() -> std::string {
             std::this_thread::sleep_for(std::chrono::microseconds{ 1 });
             return "foo";
         } };
@@ -76,6 +76,6 @@ namespace lms::core
     BENCHMARK(BM_TraceLogger_Detailed)->Threads(1)->Threads(std::thread::hardware_concurrency());
     BENCHMARK(BM_TraceLogger_Detailed_withArg)->Threads(1)->Threads(std::thread::hardware_concurrency());
 
-}
+} // namespace lms::core
 
 BENCHMARK_MAIN();

@@ -65,10 +65,10 @@
 <message id="Lms.Admin.MediaLibrary.root-path">Répertoire racine</message>
 
 <!--Scan settings-->
-<message id="Lms.Admin.Database.artist-tag-delimiter">Délimiteur à utiliser pour séparer les tags d'artistes</message>
+<message id="Lms.Admin.Database.artist-tag-delimiters">Délimiteurs à utiliser pour séparer les tags d'artistes</message>
 <message id="Lms.Admin.Database.daily">Tous les jours</message>
-<message id="Lms.Admin.Database.default-tag-delimiter">Délimiteur à utiliser pour séparer les autres tags</message>
-<message id="Lms.Admin.Database.extra-tags-to-scan">Tags supplémentaires à scanner (utiliser <kbd>;</kbd> comme séparateur)</message>
+<message id="Lms.Admin.Database.default-tag-delimiters">Délimiteurs à utiliser pour séparer les autres tags</message>
+<message id="Lms.Admin.Database.extra-tags-to-scan">Tags supplémentaires à scanner</message>
 <message id="Lms.Admin.Database.hourly">Toutes les heures</message>
 <message id="Lms.Admin.Database.immediate-scan">Scanner maintenant !</message>
 <message id="Lms.Admin.Database.monthly">Tous les mois</message>

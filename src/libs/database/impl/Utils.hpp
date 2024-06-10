@@ -26,8 +26,8 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
-#include "database/Types.hpp"
 #include "core/ITraceLogger.hpp"
+#include "database/Types.hpp"
 
 namespace lms::db::utils
 {
@@ -35,7 +35,7 @@ namespace lms::db::utils
     static inline constexpr char escapeChar{ '\\' };
     std::string escapeLikeKeyword(std::string_view keywords);
 
-    template <typename Query>
+    template<typename Query>
     void applyRange(Query& query, std::optional<Range> range)
     {
         if (range)
@@ -45,21 +45,21 @@ namespace lms::db::utils
         }
     }
 
-    template <typename T>
+    template<typename T>
     auto fetchFirstResult(const Wt::Dbo::collection<T>& collection)
     {
         LMS_SCOPED_TRACE_DETAILED("Database", "FetchFirstResult");
         return collection.begin();
     }
 
-    template <typename T>
+    template<typename T>
     void fetchNextResult(typename Wt::Dbo::collection<T>::const_iterator& it)
     {
         LMS_SCOPED_TRACE_DETAILED("Database", "FetchNextResult");
         it++;
     }
 
-    template <typename T, typename Func>
+    template<typename T, typename Func>
     void forEachResult(const Wt::Dbo::collection<T>& collection, Func&& func)
     {
         typename Wt::Dbo::collection<T>::const_iterator it{ fetchFirstResult(collection) };
@@ -70,23 +70,23 @@ namespace lms::db::utils
         }
     }
 
-    template <typename T>
+    template<typename T>
     struct QueryResultType;
 
-    template <class ResultType, typename BindStrategy>
+    template<class ResultType, typename BindStrategy>
     struct QueryResultType<Wt::Dbo::Query<ResultType, BindStrategy>>
     {
         using type = ResultType;
     };
 
-    template <typename Query, typename UnaryFunc>
+    template<typename Query, typename UnaryFunc>
     void forEachQueryResult(const Query& query, UnaryFunc&& func)
     {
         LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "ForEachQueryResult", "Query", query.asString());
         forEachResult(query.resultList(), std::forward<UnaryFunc>(func));
     }
 
-    template <typename T, typename Query>
+    template<typename T, typename Query>
     std::vector<T> fetchQueryResults(const Query& query)
     {
         LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQueryResults", "Query", query.asString());
@@ -95,7 +95,7 @@ namespace lms::db::utils
         return std::vector<T>(collection.begin(), collection.end());
     }
 
-    template <typename Query>
+    template<typename Query>
     std::vector<typename QueryResultType<Query>::type> fetchQueryResults(const Query& query)
     {
         LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQueryResults", "Query", query.asString());
@@ -103,15 +103,15 @@ namespace lms::db::utils
         auto collection{ query.resultList() };
         return std::vector<typename QueryResultType<Query>::type>(collection.begin(), collection.end());
     }
-    
-    template <typename Query>
+
+    template<typename Query>
     auto fetchQuerySingleResult(const Query& query)
     {
         LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQuerySingleResult", "Query", query.asString());
         return query.resultValue();
     }
 
-    template <typename ResultType, typename Query>
+    template<typename ResultType, typename Query>
     RangeResults<ResultType> execRangeQuery(Query& query, const std::optional<Range> range)
     {
         RangeResults<ResultType> res;
@@ -137,7 +137,7 @@ namespace lms::db::utils
         return res;
     }
 
-    template <typename Query, typename UnaryFunc>
+    template<typename Query, typename UnaryFunc>
     void forEachQueryRangeResult(Query& query, std::optional<Range> range, UnaryFunc&& func)
     {
         if (range)
@@ -146,7 +146,7 @@ namespace lms::db::utils
         forEachQueryResult(query, std::forward<UnaryFunc>(func));
     }
 
-    template <typename Query, typename UnaryFunc>
+    template<typename Query, typename UnaryFunc>
     void forEachQueryRangeResult(Query& query, std::optional<Range> range, bool& moreResults, UnaryFunc&& func)
     {
         using ResultType = typename QueryResultType<Query>::type;
@@ -173,4 +173,4 @@ namespace lms::db::utils
     }
 
     Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime);
-}
+} // namespace lms::db::utils

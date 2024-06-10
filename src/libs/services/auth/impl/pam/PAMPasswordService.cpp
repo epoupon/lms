@@ -20,15 +20,15 @@
 #include "PAMPasswordService.hpp"
 
 #ifndef LMS_SUPPORT_PAM
-#error "Should not compile this"
+    #error "Should not compile this"
 #endif
 
 #include <cstring>
 #include <security/pam_appl.h>
 
-#include "services/auth/Types.hpp"
-#include "database/Session.hpp"
 #include "core/ILogger.hpp"
+#include "database/Session.hpp"
+#include "services/auth/Types.hpp"
 
 namespace lms::auth
 {
@@ -53,7 +53,7 @@ namespace lms::auth
         public:
             PAMContext(std::string_view loginName)
             {
-                int err{ pam_start("lms", std::string {loginName}.c_str(), &_conv, &_pamh) };
+                int err{ pam_start("lms", std::string{ loginName }.c_str(), &_conv, &_pamh) };
                 if (err != PAM_SUCCESS)
                     throw PAMError{ "start failed", _pamh, err };
             }
@@ -92,7 +92,8 @@ namespace lms::auth
             class AuthenticateConvContext final : public ConvContext
             {
             public:
-                AuthenticateConvContext(std::string_view password) : _password{ password } {}
+                AuthenticateConvContext(std::string_view password)
+                    : _password{ password } {}
 
                 std::string_view getPassword() const { return _password; }
 
@@ -160,7 +161,7 @@ namespace lms::auth
             pam_conv _conv{ &PAMContext::conv, this };
             pam_handle_t* _pamh{};
         };
-    }
+    } // namespace
 
     bool PAMPasswordService::checkUserPassword(std::string_view loginName, std::string_view password)
     {
@@ -197,4 +198,3 @@ namespace lms::auth
     }
 
 } // namespace lms::auth
-

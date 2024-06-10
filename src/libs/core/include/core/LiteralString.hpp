@@ -31,7 +31,11 @@ namespace lms::core
     public:
         constexpr LiteralString() noexcept = default;
         template<std::size_t N>
-        constexpr LiteralString(const char(&str)[N]) noexcept : _str{ str, N - 1 } { static_assert(N > 0); }
+        constexpr LiteralString(const char (&str)[N]) noexcept
+            : _str{ str, N - 1 }
+        {
+            static_assert(N > 0);
+        }
 
         constexpr bool empty() const noexcept { return _str.empty(); }
         constexpr const char* c_str() const noexcept { return _str.data(); }
@@ -48,7 +52,7 @@ namespace lms::core
         os << str.str();
         return os;
     }
-}
+} // namespace lms::core
 
 namespace std
 {
@@ -60,7 +64,7 @@ namespace std
             return hash<std::string_view>{}(str.str());
         }
     };
-}
+} // namespace std
 
 namespace lms::core
 {
@@ -69,15 +73,18 @@ namespace lms::core
         using hash_type = std::hash<std::string_view>;
         using is_transparent = void;
 
-        [[nodiscard]] size_t operator()(const LiteralString& str) const {
+        [[nodiscard]] size_t operator()(const LiteralString& str) const
+        {
             return hash_type{}(str.str());
         }
 
-        [[nodiscard]] size_t operator()(std::string_view str) const {
+        [[nodiscard]] size_t operator()(std::string_view str) const
+        {
             return hash_type{}(str);
         }
 
-        [[nodiscard]] size_t operator()(const std::string& str) const {
+        [[nodiscard]] size_t operator()(const std::string& str) const
+        {
             return hash_type{}(str);
         }
     };
@@ -86,24 +93,29 @@ namespace lms::core
     {
         using is_transparent = void;
 
-        [[nodiscard]] bool operator()(const LiteralString& lhs, const LiteralString& rhs) const {
+        [[nodiscard]] bool operator()(const LiteralString& lhs, const LiteralString& rhs) const
+        {
             return lhs == rhs;
         }
 
-        [[nodiscard]] bool operator()(const LiteralString& lhs, const std::string& rhs) const {
+        [[nodiscard]] bool operator()(const LiteralString& lhs, const std::string& rhs) const
+        {
             return lhs.str() == rhs;
         }
 
-        [[nodiscard]] bool operator()(const LiteralString& lhs, std::string_view rhs) const {
+        [[nodiscard]] bool operator()(const LiteralString& lhs, std::string_view rhs) const
+        {
             return lhs.str() == rhs;
         }
 
-        [[nodiscard]] bool operator()(const std::string_view& lhs, LiteralString rhs) const {
+        [[nodiscard]] bool operator()(const std::string_view& lhs, LiteralString rhs) const
+        {
             return lhs == rhs.str();
         }
 
-        [[nodiscard]] bool operator()(const std::string& lhs, const LiteralString& rhs) const {
+        [[nodiscard]] bool operator()(const std::string& lhs, const LiteralString& rhs) const
+        {
             return lhs == rhs.str();
         }
     };
-}
+} // namespace lms::core

@@ -20,6 +20,7 @@
 #include "FeedbackService.hpp"
 #include "FeedbackService.impl.hpp"
 
+#include "core/ILogger.hpp"
 #include "database/Artist.hpp"
 #include "database/Db.hpp"
 #include "database/Release.hpp"
@@ -29,7 +30,6 @@
 #include "database/StarredTrack.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
-#include "core/ILogger.hpp"
 
 #include "internal/InternalBackend.hpp"
 #include "listenbrainz/ListenBrainzBackend.hpp"
@@ -187,5 +187,4 @@ namespace lms::feedback
 
         return Track::findIds(session, searchParams);
     }
-} // ns Feedback
-
+} // namespace lms::feedback

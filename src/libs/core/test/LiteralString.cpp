@@ -18,6 +18,7 @@
  */
 
 #include <unordered_map>
+
 #include <gtest/gtest.h>
 
 #include "core/LiteralString.hpp"
@@ -53,7 +54,7 @@ namespace lms::core
     TEST(LiteralString, unordered_map)
     {
         {
-            std::unordered_map<LiteralString, int> myMap{ {"abc", 42} };
+            std::unordered_map<LiteralString, int> myMap{ { "abc", 42 } };
 
             EXPECT_TRUE(myMap.contains("abc"));
             EXPECT_TRUE(myMap.contains(LiteralString{ "abc" }));
@@ -61,12 +62,11 @@ namespace lms::core
         }
 
         {
-            std::unordered_map<LiteralString, int, LiteralStringHash, LiteralStringEqual> myMap{ {"abc", 42} };
+            std::unordered_map<LiteralString, int, LiteralStringHash, LiteralStringEqual> myMap{ { "abc", 42 } };
             EXPECT_TRUE(myMap.contains(std::string{ "abc" }));
             EXPECT_TRUE(myMap.contains(std::string_view{ "abc" }));
             EXPECT_FALSE(myMap.contains(std::string{ "abcd" }));
             EXPECT_FALSE(myMap.contains(std::string_view{ "abcd" }));
         }
-
     }
-}
+} // namespace lms::core

@@ -17,58 +17,56 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* This file contains some classes in order to get info from file using the libavconv */
-
 #pragma once
 
+#include <Wt/WDateTime.h>
+#include <boost/asio/ip/address.hpp>
 #include <optional>
 #include <string>
 #include <string_view>
-#include <boost/asio/ip/address.hpp>
-#include <Wt/WDateTime.h>
 
 #include "database/UserId.hpp"
 
 namespace lms::db
 {
-	class Db;
-	class User;
-}
+    class Db;
+    class User;
+} // namespace lms::db
 
 namespace lms::auth
 {
-	class IAuthTokenService
-	{
-		public:
-			virtual ~IAuthTokenService() = default;
+    class IAuthTokenService
+    {
+    public:
+        virtual ~IAuthTokenService() = default;
 
-			// Auth Token services
-			struct AuthTokenProcessResult
-			{
-				enum class State
-				{
-					Granted,
-					Throttled,
-					Denied,
-				};
+        // Auth Token services
+        struct AuthTokenProcessResult
+        {
+            enum class State
+            {
+                Granted,
+                Throttled,
+                Denied,
+            };
 
-				struct AuthTokenInfo
-				{
-					db::UserId userId;
-					Wt::WDateTime expiry;
-				};
+            struct AuthTokenInfo
+            {
+                db::UserId userId;
+                Wt::WDateTime expiry;
+            };
 
-				State state {State::Denied};
-				std::optional<AuthTokenInfo>	authTokenInfo {};
-			};
+            State state{ State::Denied };
+            std::optional<AuthTokenInfo> authTokenInfo{};
+        };
 
-			// Provided token is only accepted once
-			virtual AuthTokenProcessResult	processAuthToken(const boost::asio::ip::address& clientAddress, std::string_view tokenValue) = 0;
+        // Provided token is only accepted once
+        virtual AuthTokenProcessResult processAuthToken(const boost::asio::ip::address& clientAddress, std::string_view tokenValue) = 0;
 
-			// Returns a one time token
-			virtual std::string				createAuthToken(db::UserId userid, const Wt::WDateTime& expiry) = 0;
-			virtual void					clearAuthTokens(db::UserId userid) = 0;
-	};
+        // Returns a one time token
+        virtual std::string createAuthToken(db::UserId userid, const Wt::WDateTime& expiry) = 0;
+        virtual void clearAuthTokens(db::UserId userid) = 0;
+    };
 
-	std::unique_ptr<IAuthTokenService> createAuthTokenService(db::Db& db, std::size_t maxThrottlerEntryCount);
-}
+    std::unique_ptr<IAuthTokenService> createAuthTokenService(db::Db& db, std::size_t maxThrottlerEntryCount);
+} // namespace lms::auth

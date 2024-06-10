@@ -26,44 +26,44 @@
 
 namespace lms::db
 {
-	class Db;
-	class Session;
-}
+    class Db;
+    class Session;
+} // namespace lms::db
 
 namespace Wt
 {
-	class WEnvironment;
+    class WEnvironment;
 }
 
 namespace Wt::Http
 {
-	class Request;
+    class Request;
 }
 
 namespace lms::auth
 {
-	class IEnvService
-	{
-		public:
-			virtual ~IEnvService() = default;
+    class IEnvService
+    {
+    public:
+        virtual ~IEnvService() = default;
 
-			// Auth Token services
-			struct CheckResult
-			{
-				enum class State
-				{
-					Granted,
-					Denied,
-					Throttled,
-				};
+        // Auth Token services
+        struct CheckResult
+        {
+            enum class State
+            {
+                Granted,
+                Denied,
+                Throttled,
+            };
 
-				State state {State::Denied};
-				std::optional<db::UserId>	userId {};
-			};
+            State state{ State::Denied };
+            std::optional<db::UserId> userId{};
+        };
 
-			virtual CheckResult			processEnv(const Wt::WEnvironment& env) = 0;
-			virtual CheckResult			processRequest(const Wt::Http::Request& request) = 0;
-	};
+        virtual CheckResult processEnv(const Wt::WEnvironment& env) = 0;
+        virtual CheckResult processRequest(const Wt::Http::Request& request) = 0;
+    };
 
-	std::unique_ptr<IEnvService> createEnvService(std::string_view backendName, db::Db& db);
+    std::unique_ptr<IEnvService> createEnvService(std::string_view backendName, db::Db& db);
 } // namespace lms::auth

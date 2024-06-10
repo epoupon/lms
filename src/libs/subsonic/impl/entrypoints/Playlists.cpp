@@ -23,10 +23,11 @@
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
-#include "responses/Playlist.hpp"
-#include "responses/Song.hpp"
+
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"
+#include "responses/Playlist.hpp"
+#include "responses/Song.hpp"
 
 namespace lms::api::subsonic
 {
@@ -200,4 +201,4 @@ namespace lms::api::subsonic
 
         return Response::createOkResponse(context.serverProtocolVersion);
     }
-}
+} // namespace lms::api::subsonic

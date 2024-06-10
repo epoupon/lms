@@ -30,16 +30,18 @@
 #include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
 
-#include "common/ValueStringModel.hpp"
 #include "LmsApplication.hpp"
-#include "Utils.hpp"
 #include "ModalManager.hpp"
+#include "Utils.hpp"
+#include "common/ValueStringModel.hpp"
 
 namespace lms::ui
 {
     namespace
     {
-        struct MediaLibraryTag {};
+        struct MediaLibraryTag
+        {
+        };
 
         using TypeVariant = std::variant<db::ClusterTypeId, MediaLibraryTag>;
         using TypeModel = ValueStringModel<TypeVariant>;
@@ -50,10 +52,9 @@ namespace lms::ui
 
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                db::ClusterType::find(LmsApp->getDbSession(), [&](const db::ClusterType::pointer& clusterType)
-                    {
-                        typeModel->add(Wt::WString::fromUTF8(std::string{ clusterType->getName() }), clusterType->getId());
-                    });
+                db::ClusterType::find(LmsApp->getDbSession(), [&](const db::ClusterType::pointer& clusterType) {
+                    typeModel->add(Wt::WString::fromUTF8(std::string{ clusterType->getName() }), clusterType->getId());
+                });
             }
 
             typeModel->add(Wt::WString::tr("Lms.Explore.media-library"), MediaLibraryTag{});
@@ -74,10 +75,9 @@ namespace lms::ui
 
             if (std::holds_alternative<MediaLibraryTag>(type))
             {
-                db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer& library)
-                    {
-                        valueModel->add(Wt::WString::fromUTF8(std::string{ library->getName() }), library->getId());
-                    });
+                db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer& library) {
+                    valueModel->add(Wt::WString::fromUTF8(std::string{ library->getName() }), library->getId());
+                });
             }
             else if (const db::ClusterTypeId * clusterTypeId{ std::get_if<db::ClusterTypeId>(&type) })
             {
@@ -85,15 +85,14 @@ namespace lms::ui
                 params.setClusterType(*clusterTypeId);
                 params.setSortMethod(db::ClusterSortMethod::Name);
 
-                db::Cluster::find(session, params, [&](const db::Cluster::pointer& cluster)
-                    {
-                        valueModel->add(Wt::WString::fromUTF8(std::string{ cluster->getName() }), cluster->getId());
-                    });
+                db::Cluster::find(session, params, [&](const db::Cluster::pointer& cluster) {
+                    valueModel->add(Wt::WString::fromUTF8(std::string{ cluster->getName() }), cluster->getId());
+                });
             }
 
             return valueModel;
         }
-    }
+    } // namespace
 
     void Filters::showDialog()
     {
@@ -109,38 +108,35 @@ namespace lms::ui
         Wt::WComboBox* valueCombo{ dialog->bindNew<Wt::WComboBox>("value") };
 
         Wt::WPushButton* addBtn{ dialog->bindNew<Wt::WPushButton>("add-btn", Wt::WString::tr("Lms.Explore.add-filter")) };
-        addBtn->clicked().connect([this, valueCombo, dialogPtr]
+        addBtn->clicked().connect([this, valueCombo, dialogPtr] {
+            const auto valueModel{ std::static_pointer_cast<ValueModel>(valueCombo->model()) };
+            const ValueVariant value{ valueModel->getValue(valueCombo->currentIndex()) };
+
+            if (const db::MediaLibraryId * mediaLibraryId{ std::get_if<db::MediaLibraryId>(&value) })
             {
-                const auto valueModel{ std::static_pointer_cast<ValueModel>(valueCombo->model()) };
-                const ValueVariant value{ valueModel->getValue(valueCombo->currentIndex()) };
+                set(*mediaLibraryId);
+            }
+            else if (const db::ClusterId * clusterId{ std::get_if<db::ClusterId>(&value) })
+            {
+                add(*clusterId);
+            }
 
-                if (const db::MediaLibraryId * mediaLibraryId{ std::get_if<db::MediaLibraryId>(&value) })
-                {
-                    set(*mediaLibraryId);
-                }
-                else if (const db::ClusterId * clusterId{ std::get_if<db::ClusterId>(&value) })
-                {
-                    add(*clusterId);
-                }
-
-                // TODO
-                LmsApp->getModalManager().dispose(dialogPtr);
-            });
+            // TODO
+            LmsApp->getModalManager().dispose(dialogPtr);
+        });
 
         Wt::WPushButton* cancelBtn{ dialog->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel")) };
-        cancelBtn->clicked().connect([=]
-            {
-                LmsApp->getModalManager().dispose(dialogPtr);
-            });
+        cancelBtn->clicked().connect([=] {
+            LmsApp->getModalManager().dispose(dialogPtr);
+        });
 
-        typeCombo->activated().connect([valueCombo, typeModel](int row)
-            {
-                const TypeVariant type{ typeModel->getValue(row) };
+        typeCombo->activated().connect([valueCombo, typeModel](int row) {
+            const TypeVariant type{ typeModel->getValue(row) };
 
-                const std::shared_ptr<ValueModel> valueModel{ createValueModel(type) };
-                valueCombo->clear();
-                valueCombo->setModel(valueModel);
-            });
+            const std::shared_ptr<ValueModel> valueModel{ createValueModel(type) };
+            valueCombo->clear();
+            valueCombo->setModel(valueModel);
+        });
 
         typeCombo->activated().emit(0); // force emit to refresh the type combo model
 
@@ -176,12 +172,11 @@ namespace lms::ui
 
         _clusterIds.push_back(clusterId);
 
-        filter->clicked().connect([this, filter, clusterId]
-            {
-                _filters->removeWidget(filter);
-                _clusterIds.erase(std::remove_if(std::begin(_clusterIds), std::end(_clusterIds), [clusterId](db::ClusterId id) { return id == clusterId; }), std::end(_clusterIds));
-                _sigUpdated.emit();
-            });
+        filter->clicked().connect([this, filter, clusterId] {
+            _filters->removeWidget(filter);
+            _clusterIds.erase(std::remove_if(std::begin(_clusterIds), std::end(_clusterIds), [clusterId](db::ClusterId id) { return id == clusterId; }), std::end(_clusterIds));
+            _sigUpdated.emit();
+        });
 
         emitFilterAddedNotification();
     }
@@ -208,13 +203,12 @@ namespace lms::ui
 
         _mediaLibraryId = mediaLibraryId;
         _mediaLibraryFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(libraryName), Wt::WString::tr("Lms.Explore.media-library"), "bg-primary", true));
-        _mediaLibraryFilter->clicked().connect(_mediaLibraryFilter, [this]
-            {
-                _filters->removeWidget(_mediaLibraryFilter);
-                _mediaLibraryId = db::MediaLibraryId{};
-                _mediaLibraryFilter = nullptr;
-                _sigUpdated.emit();
-            });
+        _mediaLibraryFilter->clicked().connect(_mediaLibraryFilter, [this] {
+            _filters->removeWidget(_mediaLibraryFilter);
+            _mediaLibraryId = db::MediaLibraryId{};
+            _mediaLibraryFilter = nullptr;
+            _sigUpdated.emit();
+        });
 
         emitFilterAddedNotification();
     }

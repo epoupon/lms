@@ -49,7 +49,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto tracks{ Track::findIds(session, Track::FindParameters {}.setTrackList(trackList1.getId())) };
+            auto tracks{ Track::findIds(session, Track::FindParameters{}.setTrackList(trackList1.getId())) };
             EXPECT_EQ(tracks.results.size(), 0);
 
             tracks = Track::findIds(session, Track::FindParameters{}.setTrackList(trackList2.getId()));
@@ -65,7 +65,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto tracks{ Track::findIds(session, Track::FindParameters {}.setTrackList(trackList1.getId())) };
+            auto tracks{ Track::findIds(session, Track::FindParameters{}.setTrackList(trackList1.getId())) };
             ASSERT_EQ(tracks.results.size(), 1);
             EXPECT_EQ(tracks.results.front(), track.getId());
 
@@ -84,7 +84,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setSortMethod(TrackListSortMethod::Name)) };
+            const auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setSortMethod(TrackListSortMethod::Name)) };
             ASSERT_EQ(trackLists.results.size(), 2);
             EXPECT_EQ(trackLists.results[0], trackList1.getId());
             EXPECT_EQ(trackLists.results[1], trackList2.getId());
@@ -93,14 +93,14 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            trackList1.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate {1900,1,1} });
-            trackList2.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate {1900,1,2} });
+            trackList1.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate{ 1900, 1, 1 } });
+            trackList2.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate{ 1900, 1, 2 } });
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setSortMethod(TrackListSortMethod::LastModifiedDesc)) };
+            const auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setSortMethod(TrackListSortMethod::LastModifiedDesc)) };
             ASSERT_EQ(trackLists.results.size(), 2);
             EXPECT_EQ(trackLists.results[0], trackList2.getId());
             EXPECT_EQ(trackLists.results[1], trackList1.getId());
@@ -109,14 +109,14 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            trackList1.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate {1900,1,2} });
-            trackList2.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate {1900,1,1} });
+            trackList1.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate{ 1900, 1, 2 } });
+            trackList2.get().modify()->setLastModifiedDateTime(Wt::WDateTime{ Wt::WDate{ 1900, 1, 1 } });
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setSortMethod(TrackListSortMethod::LastModifiedDesc)) };
+            const auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setSortMethod(TrackListSortMethod::LastModifiedDesc)) };
             ASSERT_EQ(trackLists.results.size(), 2);
             EXPECT_EQ(trackLists.results[0], trackList1.getId());
             EXPECT_EQ(trackLists.results[1], trackList2.getId());
@@ -170,10 +170,9 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             std::vector<TrackListId> visitedTrackLists;
-            TrackList::find(session, TrackList::FindParameters{}, [&](const TrackList::pointer& trackList)
-                {
-                    visitedTrackLists.push_back(trackList->getId());
-                });
+            TrackList::find(session, TrackList::FindParameters{}, [&](const TrackList::pointer& trackList) {
+                visitedTrackLists.push_back(trackList->getId());
+            });
             ASSERT_EQ(visitedTrackLists.size(), 2);
             EXPECT_EQ(visitedTrackLists[0], trackList1->getId());
             EXPECT_EQ(visitedTrackLists[1], trackList2->getId());
@@ -182,10 +181,9 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             std::vector<TrackListId> visitedTrackLists;
-            TrackList::find(session, TrackList::FindParameters{}.setMediaLibrary(library->getId()), [&](const TrackList::pointer& trackList)
-                {
-                    visitedTrackLists.push_back(trackList->getId());
-                });
+            TrackList::find(session, TrackList::FindParameters{}.setMediaLibrary(library->getId()), [&](const TrackList::pointer& trackList) {
+                visitedTrackLists.push_back(trackList->getId());
+            });
             ASSERT_EQ(visitedTrackLists.size(), 1);
             EXPECT_EQ(visitedTrackLists[0], trackList2->getId());
         }
@@ -203,7 +201,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setClusters(std::initializer_list<ClusterId>{cluster.getId()})) };
+            auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setClusters(std::initializer_list<ClusterId>{ cluster.getId() })) };
             EXPECT_EQ(trackLists.results.size(), 0);
         }
 
@@ -217,7 +215,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto trackLists{ TrackList::find(session, TrackList::FindParameters {}.setClusters(std::initializer_list<ClusterId>{cluster.getId()})) };
+            auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setClusters(std::initializer_list<ClusterId>{ cluster.getId() })) };
             ASSERT_EQ(trackLists.results.size(), 1);
             EXPECT_EQ(trackLists.results.front(), trackList1.getId());
         }
@@ -257,9 +255,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            auto entries{ trackList.get()->getEntries(Range {1, 1}) };
+            auto entries{ trackList.get()->getEntries(Range{ 1, 1 }) };
             ASSERT_EQ(entries.results.size(), 1);
             EXPECT_EQ(entries.results[0]->getTrack()->getId(), track2.getId());
         }
     }
-}
+} // namespace lms::db::tests

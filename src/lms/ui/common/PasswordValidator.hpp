@@ -20,16 +20,16 @@
 #pragma once
 
 #include <functional>
+
 #include <Wt/WValidator.h>
 
 #include "services/auth/Types.hpp"
 
 namespace lms::ui
 {
-	using PasswordValidationContextGetFunc = std::function<auth::PasswordValidationContext()>;
-	std::unique_ptr<Wt::WValidator> createPasswordStrengthValidator(PasswordValidationContextGetFunc passwordValidationContextGetFunc);
+    using PasswordValidationContextGetFunc = std::function<auth::PasswordValidationContext()>;
+    std::unique_ptr<Wt::WValidator> createPasswordStrengthValidator(PasswordValidationContextGetFunc passwordValidationContextGetFunc);
 
-	// Check current user password
-	std::unique_ptr<Wt::WValidator> createPasswordCheckValidator();
+    // Check current user password
+    std::unique_ptr<Wt::WValidator> createPasswordCheckValidator();
 } // namespace lms::ui
-

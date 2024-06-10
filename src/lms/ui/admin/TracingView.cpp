@@ -19,13 +19,12 @@
 
 #include "TracingView.hpp"
 
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
-
 #include <Wt/Http/Response.h>
 #include <Wt/WDateTime.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WResource.h>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
 
 #include "core/ITraceLogger.hpp"
 #include "core/String.hpp"
@@ -62,7 +61,7 @@ namespace lms::ui
         private:
             core::tracing::ITraceLogger& _traceLogger;
         };
-    }
+    } // namespace
 
     TracingView::TracingView()
         : Wt::WTemplate{ Wt::WString::tr("Lms.Admin.Tracing.template") }

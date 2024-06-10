@@ -23,12 +23,11 @@
 
 namespace lms::db
 {
-	class Db;
+    class Db;
 }
 
 namespace lms::recommendation
 {
-	class IEngine;
-	std::unique_ptr<IEngine> createClustersEngine(db::Db& db);
-}
-
+    class IEngine;
+    std::unique_ptr<IEngine> createClustersEngine(db::Db& db);
+} // namespace lms::recommendation

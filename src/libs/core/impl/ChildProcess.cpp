@@ -19,21 +19,21 @@
 
 #include "ChildProcess.hpp"
 
-#include <cstring>
 #include <cerrno>
+#include <cstring>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdexcept>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <signal.h>
 #include <unistd.h>
 
 #include <algorithm>
 #include <iostream>
 #include <mutex>
 
-#include <boost/asio/read.hpp>
 #include <boost/asio/buffer.hpp>
+#include <boost/asio/read.hpp>
 
 #include "core/Exception.hpp"
 #include "core/ILogger.hpp"
@@ -47,13 +47,15 @@ namespace lms::core
         public:
             SystemException(int err, const std::string& errMsg)
                 : ChildProcessException{ errMsg + ": " + ::strerror(err) }
-            {}
+            {
+            }
 
             SystemException(boost::system::error_code ec, const std::string& errMsg)
                 : ChildProcessException{ errMsg + ": " + ec.message() }
-            {}
+            {
+            }
         };
-    }
+    } // namespace
 
     ChildProcess::ChildProcess(boost::asio::io_context& ioContext, const std::filesystem::path& path, const Args& args)
         : _ioContext{ ioContext }
@@ -170,8 +172,7 @@ namespace lms::core
         LMS_LOG(CHILDPROCESS, DEBUG, "Async read, bufferSize = " << bufferSize);
 
         boost::asio::async_read(_childStdout, boost::asio::buffer(data, bufferSize),
-            [this, callback{ std::move(callback) }](const boost::system::error_code& error, std::size_t bytesTransferred)
-            {
+            [this, callback{ std::move(callback) }](const boost::system::error_code& error, std::size_t bytesTransferred) {
                 LMS_LOG(CHILDPROCESS, DEBUG, "Async read cb - ec = '" << error.message() << "' (" << error.value() << "), bytesTransferred = " << bytesTransferred);
 
                 ReadResult readResult{ ReadResult::Success };
@@ -206,4 +207,4 @@ namespace lms::core
     {
         return _finished;
     }
-}
+} // namespace lms::core
