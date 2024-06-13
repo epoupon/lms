@@ -429,6 +429,8 @@ namespace lms::db
             query.bind(type);
 
         query.where("t.id = ?").bind(getId());
+        query.groupBy("t_a_l.artist_id");
+        query.orderBy("t_a_l.id");
 
         return utils::fetchQueryResults<Artist::pointer>(query);
     }
@@ -463,6 +465,7 @@ namespace lms::db
 
         query.where("t.id = ?").bind(getId());
         query.groupBy("t_a_l.artist_id");
+        query.orderBy("t_a_l.id");
 
         return utils::fetchQueryResults(query);
     }
