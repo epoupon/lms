@@ -59,7 +59,11 @@ namespace lms::db
 
     std::vector<std::string_view> ScanSettings::getExtraTagsToScan() const
     {
-        return core::stringUtils::splitString(_extraTagsToScan, ';');
+        std::vector<std::string_view> tags{ core::stringUtils::splitString(_extraTagsToScan, ';') };
+        if (tags.size() == 1 && tags.front().empty())
+            tags.clear();
+
+        return tags;
     }
 
     std::vector<std::string> ScanSettings::getArtistTagDelimiters() const
