@@ -296,10 +296,12 @@ namespace lms::metadata
 
         track.medium = getMedium(tagReader);
         track.artists = getArtists(tagReader, { TagType::Artists, TagType::Artist }, { TagType::ArtistSortOrder }, { TagType::MusicBrainzArtistID }, _artistTagDelimiters);
+
+        // We consider the artist display name is put in the Artist tag (picard case)
+        // But to please most users, if we find a custom delimiter in the Artist tag, we construct the artist diplay string with a "nicer" join
         if (!_artistTagDelimiters.empty()
             && track.artists.size() > 1
-            && tagReader.countTagValues(TagType::Artist) <= 1
-            && tagReader.countTagValues(TagType::Artists) <= 1)
+            && getTagValuesAs<std::string>(tagReader, { TagType::Artist }, _artistTagDelimiters).size() > 1)
         {
             std::vector<std::string_view> artistNames;
             std::transform(std::cbegin(track.artists), std::cend(track.artists), std::back_inserter(artistNames), [](const Artist& artist) -> std::string_view { return artist.name; });
