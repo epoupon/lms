@@ -849,10 +849,19 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::Date)) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::DateAsc)) };
             ASSERT_EQ(releases.results.size(), 2);
             EXPECT_EQ(releases.results.front(), release2.getId());
             EXPECT_EQ(releases.results.back(), release1.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::DateDesc)) };
+            ASSERT_EQ(releases.results.size(), 2);
+            EXPECT_EQ(releases.results.front(), release1.getId());
+            EXPECT_EQ(releases.results.back(), release2.getId());
         }
 
         {

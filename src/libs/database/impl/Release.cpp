@@ -45,7 +45,8 @@ namespace lms::db
 
             if (params.sortMethod == ReleaseSortMethod::ArtistNameThenName
                 || params.sortMethod == ReleaseSortMethod::LastWritten
-                || params.sortMethod == ReleaseSortMethod::Date
+                || params.sortMethod == ReleaseSortMethod::DateAsc
+                || params.sortMethod == ReleaseSortMethod::DateDesc
                 || params.sortMethod == ReleaseSortMethod::OriginalDate
                 || params.sortMethod == ReleaseSortMethod::OriginalDateDesc
                 || params.writtenAfter.isValid()
@@ -189,8 +190,11 @@ namespace lms::db
             case ReleaseSortMethod::LastWritten:
                 query.orderBy("t.file_last_write DESC");
                 break;
-            case ReleaseSortMethod::Date:
-                query.orderBy("COALESCE(t.date, CAST(t.year AS TEXT)), r.name COLLATE NOCASE");
+            case ReleaseSortMethod::DateAsc:
+                query.orderBy("COALESCE(t.date, CAST(t.year AS TEXT)) ASC, r.name COLLATE NOCASE");
+                break;
+            case ReleaseSortMethod::DateDesc:
+                query.orderBy("COALESCE(t.date, CAST(t.year AS TEXT)) DESC, r.name COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::OriginalDate:
                 query.orderBy("COALESCE(original_date, CAST(original_year AS TEXT), date, CAST(year AS TEXT)), r.name COLLATE NOCASE");
