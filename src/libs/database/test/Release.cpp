@@ -655,7 +655,7 @@ namespace lms::db::tests
         }
 
         {
-           auto transaction{ session.createReadTransaction() };
+            auto transaction{ session.createReadTransaction() };
 
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}), 1);
 
