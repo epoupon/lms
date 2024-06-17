@@ -335,7 +335,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(createQuery<int>(session, "COUNT(r.id)", params));
+        return utils::fetchQuerySingleResult(createQuery<int>(session, "COUNT(DISTINCT r.id)", params));
     }
 
     std::size_t Release::getDiscCount() const

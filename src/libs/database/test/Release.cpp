@@ -639,22 +639,36 @@ namespace lms::db::tests
 
             auto releases{ Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId(), { TrackArtistLinkType::Artist })) };
             EXPECT_EQ(releases.results.size(), 0);
+            EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setArtist(artist.getId(), { TrackArtistLinkType::Artist })), 0);
+            EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setArtist(artist.getId())), 0);
 
             releases = Release::findIds(session, Release::FindParameters{}.setArtist(artist2.getId(), { TrackArtistLinkType::Artist }));
             EXPECT_EQ(releases.results.size(), 0);
+            EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setArtist(artist2.getId(), { TrackArtistLinkType::Artist })), 0);
+            EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setArtist(artist2.getId())), 0);
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
             TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Producer);
+        }
+
+        {
+           auto transaction{ session.createReadTransaction() };
+
+            EXPECT_EQ(Release::getCount(session, Release::FindParameters{}), 1);
 
             auto releases{ Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId(), { TrackArtistLinkType::Artist })) };
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release.getId());
+            EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setArtist(artist.getId(), { TrackArtistLinkType::Artist })), 1);
+            EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setArtist(artist.getId(), { TrackArtistLinkType::Remixer })), 0);
 
             releases = Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId(), { TrackArtistLinkType::Artist, TrackArtistLinkType::Mixer }));
             EXPECT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release.getId());
+            EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setArtist(artist.getId(), { TrackArtistLinkType::Artist, TrackArtistLinkType::Mixer })), 1);
 
             releases = Release::findIds(session, Release::FindParameters{}.setArtist(artist2.getId(), { TrackArtistLinkType::Artist }));
             EXPECT_EQ(releases.results.size(), 0);
@@ -669,6 +683,7 @@ namespace lms::db::tests
             releases = Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId()));
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release.getId());
+            EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setArtist(artist.getId())), 1);
 
             releases = Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId(), { TrackArtistLinkType::Composer }));
             EXPECT_EQ(releases.results.size(), 0);
