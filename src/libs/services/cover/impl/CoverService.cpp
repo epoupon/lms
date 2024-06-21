@@ -481,6 +481,7 @@ namespace lms::cover
 
     void CoverService::flushCache()
     {
+        _cache.flush();
     }
 
     void CoverService::setJpegQuality(unsigned quality)
