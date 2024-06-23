@@ -6,7 +6,9 @@
 	<div class="d-flex justify-content-between align-items-center mb-3">
 		${link-type class="me-1"}
 		<div class="d-flex">
+			${<if-singlesearch-enabled>}
 			${search class="form-control form-control-sm me-1" type="search"}
+			${</if-singlesearch-enabled>}
 			${sort-mode}
 		</div>
 	</div>
@@ -14,7 +16,18 @@
 </message>
 
 <message id="Lms.Explore.Artists.template.entry">
-	${name class="text-decoration-none link-secondary"}
+	<div class="d-flex align-items-center mb-2">
+		<div class="p-1">
+			${cover}
+		</div>
+		<div class="row align-items-center flex-fill overflow-hidden">
+			<div class="col-12 col-md-6 col-lg-4">
+				<div class="p-2 overflow-hidden">
+					<div class="d-block text-truncate">${name class="text-decoration-none link-secondary"}</div>
+				</div>
+			</div>
+		</div>
+	</div>
 </message>
 
 <message id="Lms.Explore.Artists.template.container">

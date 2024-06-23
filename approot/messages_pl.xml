@@ -298,6 +298,10 @@
 <message id="Lms.PlayHistory.playhistory">Historia odtwarzania</message>
 
 <!--Settings-->
+<message id="Lms.Settings.interface">Interfejs</message>
+<message id="Lms.Settings.interface-settings-need-refresh">Te ustawienia mogą wymagać ręcznego odświerzania przeglądarki!</message>
+<message id="Lms.Settings.enable-multisearch">Aktywuj globalną wyszukiwarkę (może być powolna w dużych kolekcjach)</message>
+<message id="Lms.Settings.enable-singlesearch">Aktywuj indywidualne wyszukiwarki dla typów</message>
 <message id="Lms.Settings.audio">Dźwięk</message>
 <message id="Lms.Settings.audio-settings-are-local">Te ustawienia dotyczą wyłącznie tej przeglądarki!</message>
 <message id="Lms.Settings.backend.internal">Wewnętrzny</message>

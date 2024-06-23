@@ -1,5 +1,6 @@
 
 add_executable(test-database
+	AnyMedium.cpp
 	Artist.cpp
 	Cluster.cpp
 	Common.cpp

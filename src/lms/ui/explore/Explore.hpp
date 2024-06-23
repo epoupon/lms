@@ -32,7 +32,7 @@ namespace lms::ui
     class Explore : public Wt::WTemplate
     {
     public:
-        Explore(Filters& filters, PlayQueue& playQueue);
+        Explore(Filters& filters, PlayQueue& playQueue, Wt::WLineEdit& multisearchEdit);
 
         PlayQueueController& getPlayQueueController() { return _playQueueController; }
 

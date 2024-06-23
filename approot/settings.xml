@@ -5,6 +5,28 @@
 
 <message id="Lms.Settings.template">
 	<form class="row g-3">
+		<legend>${tr:Lms.Settings.interface}</legend>
+		<div class="alert alert-info">
+			${tr:Lms.Settings.interface-settings-need-refresh}
+		</div>
+		<div class="form-check">
+			${interface-enable-multisearch class="form-check-input"}
+			<label class="form-check-label" for="${id:interface-enable-multisearch}">
+				${tr:Lms.Settings.enable-multisearch}
+			</label>
+			<div class="invalid-feedback">
+				${interface-enable-multisearch-info}
+			</div>
+		</div>
+		<div class="form-check">
+			${interface-enable-singlesearch class="form-check-input"}
+			<label class="form-check-label" for="${id:interface-enable-singlesearch}">
+				${tr:Lms.Settings.enable-singlesearch}
+			</label>
+			<div class="invalid-feedback">
+				${interface-enable-singlesearch-info}
+			</div>
+		</div>
 		<legend>${tr:Lms.Settings.audio}</legend>
 		<div class="alert alert-info">
 			${tr:Lms.Settings.audio-settings-are-local}

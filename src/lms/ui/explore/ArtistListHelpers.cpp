@@ -21,16 +21,33 @@
 #include "database/Artist.hpp"
 #include "database/Session.hpp"
 
-#include "LmsApplication.hpp"
 #include "Utils.hpp"
+
+#include <Wt/WAnchor.h>
+#include <common/Template.hpp>
 
 namespace lms::ui::ArtistListHelpers
 {
+    void bindName(Template& entry, const db::ObjectPtr<db::Artist>& artist)
+    {
+        entry.bindWidget("name", utils::createArtistAnchor(artist));
+    }
+
+    void bindCover(Template& entry, const db::ObjectPtr<db::Artist>& artist)
+    {
+        Wt::WAnchor* anchor = entry.bindWidget("cover", utils::createArtistAnchor(artist, false));
+        auto cover = utils::createCover(artist->getId(), CoverResource::Size::Small);
+        cover->addStyleClass("Lms-cover-track Lms-cover-anchor"); // HACK
+        anchor->setImage(std::move(cover));
+    }
+
     std::unique_ptr<Wt::WTemplate> createEntry(const db::ObjectPtr<db::Artist>& artist)
     {
-        auto res{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artists.template.entry")) };
-        res->bindWidget("name", utils::createArtistAnchor(artist));
+        auto entry = std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Artists.template.entry"));
 
-        return res;
+        bindName(*entry, artist);
+        bindCover(*entry, artist);
+
+        return entry;
     }
 } // namespace lms::ui::ArtistListHelpers

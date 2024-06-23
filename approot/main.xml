@@ -34,6 +34,11 @@
 				</ul>
 				${filters class="d-flex align-items-center me-auto mb-2 mb-md-0"}
 				<div class="navbar-nav align-items-md-center">
+
+					${<if-multisearch-enabled>}
+						${multisearch class="form-control form-control-sm me-1" style="min-width: 25em;" type="search"}
+					${</if-multisearch-enabled>}
+
 				${<if-is-admin>}
 					<li class="nav-item dropdown">
 						<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="${tr:Lms.administration}">

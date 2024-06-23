@@ -21,4 +21,9 @@
 
 #include "database/IdType.hpp"
 
-LMS_DECLARE_IDTYPE(MediaLibraryId)
+namespace lms::db
+{
+    class MediaLibrary;
+}
+
+LMS_DECLARE_IDTYPE(MediaLibraryId, lms::db::MediaLibrary)

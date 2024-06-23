@@ -23,14 +23,14 @@
 
 namespace lms::ui
 {
-    DatabaseCollectorBase::DatabaseCollectorBase(Filters& filters, Mode defaultMode, std::size_t maxCount)
+    DatabaseCollectorBase::DatabaseCollectorBase(Filters& filters, const Mode defaultMode, const std::size_t maxCount)
         : _filters{ filters }
         , _mode{ defaultMode }
         , _maxCount{ maxCount }
     {
     }
 
-    DatabaseCollectorBase::Range DatabaseCollectorBase::getActualRange(std::optional<db::Range> requestedRange) const
+    DatabaseCollectorBase::Range DatabaseCollectorBase::getActualRange(const std::optional<db::Range>& requestedRange) const
     {
         db::Range res;
 
@@ -56,7 +56,7 @@ namespace lms::ui
         return _maxCount;
     }
 
-    void DatabaseCollectorBase::setSearch(std::string_view searchText)
+    void DatabaseCollectorBase::setSearch(const std::string_view searchText)
     {
         _searchText = searchText;
         if (!searchText.empty())

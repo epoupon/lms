@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 59 };
+        static constexpr Version LMS_DATABASE_VERSION{ 60 };
     }
 
     VersionInfo::VersionInfo()
@@ -476,6 +476,13 @@ SELECT
         session.getDboSession()->execute("UPDATE scan_settings SET audio_file_extensions = audio_file_extensions || ' .dsf'");
     }
 
+    void migrateFromV59(Session& session)
+    {
+        // Searcher choice
+        session.getDboSession()->execute("ALTER TABLE user ADD interface_enable_multisearch BOOL NOT NULL DEFAULT(FALSE)");
+        session.getDboSession()->execute("ALTER TABLE user ADD interface_enable_singlesearch BOOL NOT NULL DEFAULT(TRUE)");
+    }
+
     bool doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -484,33 +491,35 @@ SELECT
 
         using MigrationFunction = std::function<void(Session&)>;
 
-        const std::map<unsigned, MigrationFunction> migrationFunctions{
-            { 33, migrateFromV33 },
-            { 34, migrateFromV34 },
-            { 35, migrateFromV35 },
-            { 36, migrateFromV36 },
-            { 37, migrateFromV37 },
-            { 38, migrateFromV38 },
-            { 39, migrateFromV39 },
-            { 40, migrateFromV40 },
-            { 41, migrateFromV41 },
-            { 42, migrateFromV42 },
-            { 43, migrateFromV43 },
-            { 44, migrateFromV44 },
-            { 45, migrateFromV45 },
-            { 46, migrateFromV46 },
-            { 47, migrateFromV47 },
-            { 48, migrateFromV48 },
-            { 49, migrateFromV49 },
-            { 50, migrateFromV50 },
-            { 51, migrateFromV51 },
-            { 52, migrateFromV52 },
-            { 53, migrateFromV53 },
-            { 54, migrateFromV54 },
-            { 55, migrateFromV55 },
-            { 56, migrateFromV56 },
-            { 57, migrateFromV57 },
-            { 58, migrateFromV58 },
+        const std::map<unsigned, MigrationFunction> migrationFunctions
+        {
+            {33, migrateFromV33},
+            {34, migrateFromV34},
+            {35, migrateFromV35},
+            {36, migrateFromV36},
+            {37, migrateFromV37},
+            {38, migrateFromV38},
+            {39, migrateFromV39},
+            {40, migrateFromV40},
+            {41, migrateFromV41},
+            {42, migrateFromV42},
+            {43, migrateFromV43},
+            {44, migrateFromV44},
+            {45, migrateFromV45},
+            {46, migrateFromV46},
+            {47, migrateFromV47},
+            {48, migrateFromV48},
+            {49, migrateFromV49},
+            {50, migrateFromV50},
+            {51, migrateFromV51},
+            {52, migrateFromV52},
+            {53, migrateFromV53},
+            {54, migrateFromV54},
+            {55, migrateFromV55},
+            {56, migrateFromV56},
+            {57, migrateFromV57},
+            {58, migrateFromV58},
+            {59, migrateFromV59},
         };
 
         bool migrationPerformed{};

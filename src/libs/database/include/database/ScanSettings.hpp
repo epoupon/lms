@@ -31,7 +31,11 @@
 #include "database/IdType.hpp"
 #include "database/Object.hpp"
 
-LMS_DECLARE_IDTYPE(ScanSettingsId)
+namespace lms::db {
+    class ScanSettings;
+}
+
+LMS_DECLARE_IDTYPE(ScanSettingsId, lms::db::ScanSettings)
 
 namespace lms::db
 {

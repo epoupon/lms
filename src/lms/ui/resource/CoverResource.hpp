@@ -20,6 +20,7 @@
 #pragma once
 
 #include <Wt/WResource.h>
+#include <database/ArtistId.hpp>
 
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
@@ -42,6 +43,7 @@ namespace lms::ui
 
         std::string getReleaseUrl(db::ReleaseId releaseId, Size size) const;
         std::string getTrackUrl(db::TrackId trackId, Size size) const;
+        std::string getArtistUrl(db::ArtistId artistId, Size size) const;
 
     private:
         void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;

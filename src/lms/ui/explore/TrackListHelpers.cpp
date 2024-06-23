@@ -40,6 +40,7 @@
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
 #include "ModalManager.hpp"
+#include "ReleaseHelpers.hpp"
 #include "Utils.hpp"
 #include "common/Template.hpp"
 #include "explore/PlayQueueController.hpp"
@@ -149,90 +150,127 @@ namespace lms::ui::TrackListHelpers
         LmsApp->getModalManager().show(std::move(trackInfo));
     }
 
-    std::unique_ptr<Wt::WWidget> createEntry(const db::ObjectPtr<db::Track>& track, PlayQueueController& playQueueController, Filters& filters)
+    void bindName(Template& entry, const db::ObjectPtr<db::Track>& track)
     {
-        auto entry{ std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Tracks.template.entry")) };
-        auto* entryPtr{ entry.get() };
+        entry.bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
+    }
 
-        entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
-
-        const Release::pointer release{ track->getRelease() };
-        const TrackId trackId{ track->getId() };
-
-        const auto artists{ track->getArtistIds({ TrackArtistLinkType::Artist }) };
+    void bindArtists(Template& entry, const db::ObjectPtr<db::Track>& track)
+    {
+        const auto artists = track->getArtistIds({ TrackArtistLinkType::Artist });
         if (!artists.empty())
         {
-            entry->setCondition("if-has-artists", true);
-            entry->bindWidget("artists", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
-            entry->bindWidget("artists-md", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
+            entry.setCondition("if-has-artists", true);
+            entry.bindWidget("artists", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
+            entry.bindWidget("artists-md", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
         }
+    }
 
-        if (track->getRelease())
+    void bindRelease(Template& entry, const db::ObjectPtr<db::Track>& track)
+    {
+        if (auto release = track->getRelease())
         {
-            entry->setCondition("if-has-release", true);
-            entry->bindWidget("release", utils::createReleaseAnchor(track->getRelease()));
-            Wt::WAnchor* anchor{ entry->bindWidget("cover", utils::createReleaseAnchor(release, false)) };
-            auto cover{ utils::createCover(release->getId(), CoverResource::Size::Small) };
-            cover->addStyleClass("Lms-cover-track Lms-cover-anchor"); // HACK
-            anchor->setImage(std::move((cover)));
+            entry.setCondition("if-has-release", true);
+            entry.bindWidget("release", utils::createReleaseAnchor(release));
+            releaseListHelpers::bindCover(entry, release, CoverResource::Size::Small);
         }
         else
         {
-            auto cover{ utils::createCover(trackId, CoverResource::Size::Small) };
+            auto cover{ utils::createCover(track->getId(), CoverResource::Size::Small) };
             cover->addStyleClass("Lms-cover-track"); // HACK
-            entry->bindWidget<Wt::WImage>("cover", std::move(cover));
+            entry.bindWidget<Wt::WImage>("cover", std::move(cover));
         }
+    }
 
-        entry->bindString("duration", utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
+    void bindDuration(Template& entry, const db::ObjectPtr<db::Track>& track)
+    {
+        entry.bindString("duration", utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
+    }
 
-        Wt::WPushButton* playBtn{ entry->bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.template.play-btn"), Wt::TextFormat::XHTML) };
-        playBtn->clicked().connect([trackId, &playQueueController] {
-            playQueueController.processCommand(PlayQueueController::Command::Play, { trackId });
-        });
+    void bindPlayQueueController(Template& entry, const db::ObjectPtr<db::Track>& track, PlayQueueController& playQueueController)
+    {
+        const TrackId trackId = track->getId();
 
-        entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML);
-        entry->bindNew<Wt::WPushButton>("play", Wt::WString::tr("Lms.Explore.play"))
+        entry.bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.template.play-btn"), Wt::TextFormat::XHTML)
             ->clicked()
             .connect([trackId, &playQueueController] {
                 playQueueController.processCommand(PlayQueueController::Command::Play, { trackId });
             });
-        entry->bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"))
+
+        entry.bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML);
+
+        entry.bindNew<Wt::WPushButton>("play", Wt::WString::tr("Lms.Explore.play"))
+            ->clicked()
+            .connect([trackId, &playQueueController] {
+                playQueueController.processCommand(PlayQueueController::Command::Play, { trackId });
+            });
+
+        entry.bindNew<Wt::WPushButton>("play-next", Wt::WString::tr("Lms.Explore.play-next"))
             ->clicked()
             .connect([=, &playQueueController] {
                 playQueueController.processCommand(PlayQueueController::Command::PlayNext, { trackId });
             });
-        entry->bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
+
+        entry.bindNew<Wt::WPushButton>("play-last", Wt::WString::tr("Lms.Explore.play-last"))
             ->clicked()
             .connect([=, &playQueueController] {
                 playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, { trackId });
             });
+    }
 
-        {
-            auto isStarred{ [=] { return core::Service<feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), trackId); } };
+    void bindStarred(Template& entry, const db::ObjectPtr<db::Track>& track)
+    {
+        const TrackId trackId = track->getId();
+        auto isStarred = [=] { return core::Service<feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), trackId); };
 
-            Wt::WPushButton* starBtn{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
-            starBtn->clicked().connect([=] {
-                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
+        auto* starBtn = entry.bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star"));
 
-                if (isStarred())
-                {
-                    core::Service<feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), trackId);
-                    starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
-                }
-                else
-                {
-                    core::Service<feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), trackId);
-                    starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
-                }
-            });
-        }
+        starBtn->clicked().connect([=] {
+            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-        entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
-            ->setLink(Wt::WLink{ std::make_unique<DownloadTrackResource>(trackId) });
+            if (isStarred())
+            {
+                core::Service<feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), trackId);
+                starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
+            }
+            else
+            {
+                core::Service<feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), trackId);
+                starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
+            }
+        });
+    }
 
-        entry->bindNew<Wt::WPushButton>("track-info", Wt::WString::tr("Lms.Explore.track-info"))
+    void bindDownload(Template& entry, const db::ObjectPtr<db::Track>& track)
+    {
+        entry.bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
+            ->setLink(Wt::WLink{ std::make_unique<DownloadTrackResource>(track->getId()) });
+    }
+
+    void bindInfo(Template& entry, const db::ObjectPtr<db::Track>& track, Filters& filters)
+    {
+        const TrackId trackId = track->getId();
+        entry.bindNew<Wt::WPushButton>("track-info", Wt::WString::tr("Lms.Explore.track-info"))
             ->clicked()
             .connect([trackId, &filters] { showTrackInfoModal(trackId, filters); });
+    }
+
+    std::unique_ptr<Wt::WWidget> createEntry(const db::ObjectPtr<db::Track>& track, PlayQueueController& playQueueController, Filters& filters)
+    {
+        auto entry{ std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Tracks.template.entry")) };
+
+        bindName(*entry, track);
+        bindArtists(*entry, track);
+        bindRelease(*entry, track);
+        bindDuration(*entry, track);
+        bindPlayQueueController(*entry, track, playQueueController);
+        bindStarred(*entry, track);
+        bindDownload(*entry, track);
+        bindInfo(*entry, track, filters);
+
+        auto* entryPtr{ entry.get() };
+        const Release::pointer release{ track->getRelease() };
+        const TrackId trackId{ track->getId() };
 
         LmsApp->getMediaPlayer().trackLoaded.connect(entryPtr, [=](db::TrackId loadedTrackId) {
             entryPtr->toggleStyleClass("Lms-entry-playing", loadedTrackId == trackId);

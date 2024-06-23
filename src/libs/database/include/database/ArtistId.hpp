@@ -21,4 +21,9 @@
 
 #include "database/IdType.hpp"
 
-LMS_DECLARE_IDTYPE(ArtistId)
+namespace lms::db
+{
+    class Artist;
+}
+
+LMS_DECLARE_IDTYPE(ArtistId, lms::db::Artist)

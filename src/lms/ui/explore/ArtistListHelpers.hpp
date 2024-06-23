@@ -34,10 +34,14 @@ namespace lms::db
 
 namespace lms::ui
 {
+    class Template;
     using ArtistLinkTypesModel = ValueStringModel<std::optional<db::TrackArtistLinkType>>;
 
     namespace ArtistListHelpers
     {
+        void bindName(Template& entry, const db::ObjectPtr<db::Artist>& artist);
+        void bindCover(Template& entry, const db::ObjectPtr<db::Artist>& artist);
+
         std::unique_ptr<Wt::WTemplate> createEntry(const db::ObjectPtr<db::Artist>& artist);
-    }
+    } // namespace ArtistListHelpers
 } // namespace lms::ui

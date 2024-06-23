@@ -33,6 +33,7 @@ namespace lms::db
 
 namespace lms::ui
 {
+    class Template;
     class PlayQueueController;
     class Filters;
 } // namespace lms::ui
@@ -40,5 +41,14 @@ namespace lms::ui
 namespace lms::ui::TrackListHelpers
 {
     void showTrackInfoModal(db::TrackId trackId, Filters& filters);
+    void bindName(Template& entry, const db::ObjectPtr<db::Track>& track);
+    void bindArtists(Template& entry, const db::ObjectPtr<db::Track>& track);
+    void bindRelease(Template& entry, const db::ObjectPtr<db::Track>& track);
+    void bindDuration(Template& entry, const db::ObjectPtr<db::Track>& track);
+    void bindPlayQueueController(Template& entry, const db::ObjectPtr<db::Track>& track, PlayQueueController& playQueueController);
+    void bindStarred(Template& entry, const db::ObjectPtr<db::Track>& track);
+    void bindDownload(Template& entry, const db::ObjectPtr<db::Track>& track);
+    void bindInfo(Template& entry, const db::ObjectPtr<db::Track>& track, Filters& filters);
+
     std::unique_ptr<Wt::WWidget> createEntry(const db::ObjectPtr<db::Track>& track, PlayQueueController& playQueueController, Filters& filters);
 } // namespace lms::ui::TrackListHelpers

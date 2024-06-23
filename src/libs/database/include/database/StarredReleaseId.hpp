@@ -21,4 +21,9 @@
 
 #include "database/IdType.hpp"
 
-LMS_DECLARE_IDTYPE(StarredReleaseId)
+namespace lms::db
+{
+    class StarredRelease;
+}
+
+LMS_DECLARE_IDTYPE(StarredReleaseId, lms::db::StarredRelease)

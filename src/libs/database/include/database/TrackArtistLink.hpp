@@ -33,7 +33,12 @@
 #include "database/TrackId.hpp"
 #include "database/Types.hpp"
 
-LMS_DECLARE_IDTYPE(TrackArtistLinkId)
+namespace lms::db
+{
+    class TrackArtistLink;
+}
+
+LMS_DECLARE_IDTYPE(TrackArtistLinkId, lms::db::TrackArtistLink)
 
 namespace lms::db
 {

@@ -272,6 +272,10 @@
 <message id="Lms.PlayHistory.playhistory">Play History</message>
 
 <!--Settings-->
+<message id="Lms.Settings.interface">Interface</message>
+<message id="Lms.Settings.interface-settings-need-refresh">These settings may require manual browser refresh!</message>
+<message id="Lms.Settings.enable-multisearch">Enable global searcher (may be slow for large music collections)</message>
+<message id="Lms.Settings.enable-singlesearch">Enable searchers for individual entity types</message>
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">These audio settings are local to your browser!</message>
 <message id="Lms.Settings.backend.internal">Internal</message>

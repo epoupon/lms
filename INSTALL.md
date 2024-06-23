@@ -33,6 +33,8 @@ Please refer to [Deployment](#deployment) for further configuration options.
 __Note__: this installation process and the default values of the configuration files have been written for _Debian Bookworm_. Therefore, you may have to adapt commands and/or paths in order to fit to your distribution.
 ### Build dependencies
 __Notes__:
+* Wt by default uses bundled Sqlite, which does not support needed features. It will probably need to be compiled with
+  `-DUSE_SYSTEM_SQLITE3=ON` for cmake.
 * a C++17 compiler is needed
 * ffmpeg version 4 minimum is required
 ```sh

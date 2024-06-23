@@ -1,4 +1,4 @@
-pkg_check_modules(LIBAV IMPORTED_TARGET libavcodec libavutil libavformat)
+pkg_check_modules(LIBAV REQUIRED IMPORTED_TARGET libavcodec libavutil libavformat)
 
 add_library(lmsav SHARED
 	impl/AudioFile.cpp

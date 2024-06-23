@@ -21,4 +21,8 @@
 
 #include "database/IdType.hpp"
 
-LMS_DECLARE_IDTYPE(AuthTokenId)
+namespace lms::db {
+ class AuthToken;
+}
+
+LMS_DECLARE_IDTYPE(AuthTokenId, lms::db::AuthToken)

@@ -62,6 +62,7 @@ namespace lms::db::tests
             db::Session s{ _tmpDb->getDb() };
             s.prepareTablesIfNeeded();
             s.createIndexesIfNeeded();
+            s.createViewsIfNeeded();
         }
     }
 
@@ -89,6 +90,14 @@ namespace lms::db::tests
         EXPECT_EQ(TrackBookmark::getCount(session), 0);
         EXPECT_EQ(TrackList::getCount(session), 0);
         EXPECT_EQ(User::getCount(session), 0);
+    }
+
+    void DatabaseFixture::resetViews()
+    {
+        auto transaction = session.createWriteTransaction();
+
+        session.dropViews();
+        session.createViewsIfNeeded();
     }
 
     TEST_F(DatabaseFixture, vacuum)

@@ -21,12 +21,9 @@
 
 #include "core/ILogger.hpp"
 #include "database/Artist.hpp"
-#include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 
-#include "IdTypeTraits.hpp"
-#include "StringViewTraits.hpp"
 #include "Utils.hpp"
 
 namespace lms::db
@@ -88,7 +85,7 @@ namespace lms::db
 
     User::pointer User::find(Session& session, std::string_view name)
     {
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<User>().where("login_name = ?").bind(name));
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<User>().where("login_name = ?").bind(std::string(name)));
     }
 
     void User::setSubsonicDefaultTranscodingOutputBitrate(Bitrate bitrate)

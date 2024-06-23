@@ -35,6 +35,7 @@
 #include "ScanStepComputeClusterStats.hpp"
 #include "ScanStepDiscoverFiles.hpp"
 #include "ScanStepOptimize.hpp"
+#include "ScanStepRecreateViews.hpp"
 #include "ScanStepRemoveOrphanDbFiles.hpp"
 #include "ScanStepScanFiles.hpp"
 
@@ -344,6 +345,7 @@ namespace lms::scanner
         _scanSteps.push_back(std::make_unique<ScanStepOptimize>(params));
         _scanSteps.push_back(std::make_unique<ScanStepComputeClusterStats>(params));
         _scanSteps.push_back(std::make_unique<ScanStepCheckDuplicatedDbFiles>(params));
+        _scanSteps.push_back(std::make_unique<ScanStepRecreateViews>(params));
     }
 
     ScannerSettings ScannerService::readSettings()

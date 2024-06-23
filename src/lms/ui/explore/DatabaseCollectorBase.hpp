@@ -22,7 +22,6 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
 
 #include "database/Types.hpp"
@@ -36,7 +35,7 @@ namespace lms::ui
     public:
         using Range = db::Range;
 
-        virtual ~DatabaseCollectorBase() {}
+        virtual ~DatabaseCollectorBase() = default;
 
         enum class Mode
         {
@@ -50,15 +49,15 @@ namespace lms::ui
 
         DatabaseCollectorBase(Filters& filters, Mode defaultMode, std::size_t maxCount);
 
-        Mode getMode() const { return _mode; }
-        void setMode(Mode mode) { _mode = mode; }
-        void setSearch(std::string_view search);
+        [[nodiscard]] Mode getMode() const { return _mode; }
+        void setMode(const Mode mode) { _mode = mode; }
+        void setSearch(std::string_view searchText);
 
     protected:
-        Range getActualRange(std::optional<Range> range) const;
-        std::size_t getMaxCount() const;
-        const Filters& getFilters() { return _filters; }
-        const std::vector<std::string_view>& getSearchKeywords() const { return _searchKeywords; }
+        [[nodiscard]] Range getActualRange(const std::optional<Range>& requestedRange) const;
+        [[nodiscard]] std::size_t getMaxCount() const;
+        [[nodiscard]] const Filters& getFilters() const { return _filters; }
+        [[nodiscard]] const std::vector<std::string_view>& getSearchKeywords() const { return _searchKeywords; }
 
     private:
         Filters& _filters;

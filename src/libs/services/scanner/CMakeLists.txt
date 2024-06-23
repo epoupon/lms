@@ -7,6 +7,7 @@ add_library(lmsscanner SHARED
 	impl/ScanStepComputeClusterStats.cpp
 	impl/ScanStepDiscoverFiles.cpp
 	impl/ScanStepOptimize.cpp
+	impl/ScanStepRecreateViews.cpp
 	impl/ScanStepRemoveOrphanDbFiles.cpp
 	impl/ScanStepScanFiles.cpp
 	)

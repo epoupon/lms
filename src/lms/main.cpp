@@ -281,6 +281,10 @@ namespace lms
                 bool migrationPerformed{ session.migrateSchemaIfNeeded() };
                 session.createIndexesIfNeeded();
 
+                if (migrationPerformed)
+                    session.dropViews();
+                session.createViewsIfNeeded();
+
                 // As this may be quite long, we only do it during startup
                 if (migrationPerformed)
                     session.vacuum();

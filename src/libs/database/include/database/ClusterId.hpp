@@ -21,5 +21,11 @@
 
 #include "database/IdType.hpp"
 
-LMS_DECLARE_IDTYPE(ClusterId)
-LMS_DECLARE_IDTYPE(ClusterTypeId)
+namespace lms::db
+{
+    class Cluster;
+    class ClusterType;
+} // namespace lms::db
+
+LMS_DECLARE_IDTYPE(ClusterId, lms::db::Cluster)
+LMS_DECLARE_IDTYPE(ClusterTypeId, lms::db::ClusterType)

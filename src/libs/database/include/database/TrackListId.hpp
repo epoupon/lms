@@ -21,5 +21,12 @@
 
 #include "database/IdType.hpp"
 
-LMS_DECLARE_IDTYPE(TrackListId)
-LMS_DECLARE_IDTYPE(TrackListEntryId)
+namespace lms::db
+{
+    class TrackListEntry;
+    class TrackList;
+} // namespace lms::db
+
+LMS_DECLARE_IDTYPE(TrackListId, lms::db::TrackList)
+
+LMS_DECLARE_IDTYPE(TrackListEntryId, lms::db::TrackListEntry)

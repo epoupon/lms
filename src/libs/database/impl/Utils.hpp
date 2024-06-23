@@ -28,6 +28,7 @@
 
 #include "core/ITraceLogger.hpp"
 #include "database/Types.hpp"
+#include "IdTypeTraits.hpp"
 
 namespace lms::db::utils
 {

@@ -59,6 +59,11 @@ namespace lms::ui
         return url() + "&trackid=" + trackId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size));
     }
 
+    std::string CoverResource::getArtistUrl(db::ArtistId artistId, Size size) const
+    {
+        return url() + "&artistid=" + artistId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size));
+    }
+
     void CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
     {
         LMS_SCOPED_TRACE_OVERVIEW("UI", "HandleCoverRequest");
@@ -66,6 +71,7 @@ namespace lms::ui
         // Retrieve parameters
         const std::string* trackIdStr = request.getParameter("trackid");
         const std::string* releaseIdStr = request.getParameter("releaseid");
+        const std::string* artistIdStr = request.getParameter("artistid");
         const std::string* sizeStr = request.getParameter("size");
 
         // Mandatory parameter size
@@ -108,6 +114,18 @@ namespace lms::ui
                 return;
 
             cover = core::Service<cover::ICoverService>::get()->getFromRelease(*releaseId, *size);
+            if (!cover)
+                cover = core::Service<cover::ICoverService>::get()->getDefaultSvgCover();
+        }
+        else if (artistIdStr)
+        {
+            LOG(DEBUG, "Requested cover for artist " << *artistIdStr << ", size = " << *size);
+
+            const std::optional<db::ArtistId> artistId{ core::stringUtils::readAs<db::ArtistId::ValueType>(*artistIdStr) };
+            if (!artistId)
+                return;
+
+            cover = core::Service<cover::ICoverService>::get()->getFromArtist(*artistId, *size);
             if (!cover)
                 cover = core::Service<cover::ICoverService>::get()->getDefaultSvgCover();
         }

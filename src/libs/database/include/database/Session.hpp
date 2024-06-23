@@ -97,6 +97,8 @@ namespace lms::db
         void prepareTablesIfNeeded(); // need to run only once at startup
         bool migrateSchemaIfNeeded(); // returns true if migration was performed
         void createIndexesIfNeeded();
+        void createViewsIfNeeded();
+        void dropViews();
         void vacuumIfNeeded();
         void vacuum();
         void refreshTracingLoggerStats();
