@@ -3,6 +3,7 @@ add_library(lmsdatabase SHARED
 	impl/AuthToken.cpp
 	impl/Cluster.cpp
 	impl/Db.cpp
+	impl/Image.cpp
 	impl/Listen.cpp
 	impl/MediaLibrary.cpp
 	impl/Migration.cpp

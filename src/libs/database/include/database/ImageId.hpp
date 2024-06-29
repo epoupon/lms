@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,19 +19,6 @@
 
 #pragma once
 
-#include "image/IEncodedImage.hpp"
+#include "database/IdType.hpp"
 
-namespace lms::image
-{
-    class IRawImage
-    {
-    public:
-        virtual ~IRawImage() = default;
-
-        virtual ImageSize getWidth() const = 0;
-        virtual ImageSize getHeight() const = 0;
-
-        virtual void resize(ImageSize width) = 0;
-        virtual std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const = 0;
-    };
-} // namespace lms::image
+LMS_DECLARE_IDTYPE(ImageId)

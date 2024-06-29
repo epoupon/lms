@@ -23,6 +23,7 @@
 #include "core/Service.hpp"
 #include "core/String.hpp"
 #include "database/Artist.hpp"
+#include "database/Image.hpp"
 #include "database/Release.hpp"
 #include "database/TrackArtistLink.hpp"
 #include "database/User.hpp"
@@ -92,7 +93,8 @@ namespace lms::api::subsonic
 
         artistNode.setAttribute("id", idToString(artist->getId()));
         artistNode.setAttribute("name", artist->getName());
-        artistNode.setAttribute("coverArt", idToString(artist->getId()));
+        if (const db::Image::pointer artistImage{ artist->getImage() })
+            artistNode.setAttribute("coverArt", idToString(artist->getId()));
 
         if (id3)
         {

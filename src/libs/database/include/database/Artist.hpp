@@ -44,6 +44,7 @@ namespace lms::db
 
     class Cluster;
     class ClusterType;
+    class Image;
     class Release;
     class Session;
     class StarredArtist;
@@ -139,6 +140,7 @@ namespace lms::db
         const std::string& getName() const { return _name; }
         const std::string& getSortName() const { return _sortName; }
         std::optional<core::UUID> getMBID() const { return core::UUID::fromString(_MBID); }
+        ObjectPtr<Image> getImage() const;
 
         // No artistLinkTypes means get them all
         RangeResults<ArtistId> findSimilarArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes = {}, std::optional<Range> range = std::nullopt) const;
@@ -159,6 +161,7 @@ namespace lms::db
             Wt::Dbo::field(a, _sortName, "sort_name");
             Wt::Dbo::field(a, _MBID, "mbid");
 
+            Wt::Dbo::hasOne(a, _image, "artist");
             Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "artist");
             Wt::Dbo::hasMany(a, _starredArtists, Wt::Dbo::ManyToMany, "user_starred_artists", "", Wt::Dbo::OnDeleteCascade);
         }
@@ -175,6 +178,7 @@ namespace lms::db
         std::string _sortName;
         std::string _MBID; // Musicbrainz Identifier
 
+        Wt::Dbo::weak_ptr<Image> _image;
         Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks; // Tracks involving this artist
         Wt::Dbo::collection<Wt::Dbo::ptr<StarredArtist>> _starredArtists;     // starred entries for this artist
     };

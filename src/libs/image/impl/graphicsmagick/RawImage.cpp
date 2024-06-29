@@ -104,6 +104,16 @@ namespace lms::image::GraphicsMagick
         }
     }
 
+    ImageSize RawImage::getWidth() const
+    {
+        return _image.size().width();
+    }
+
+    ImageSize RawImage::getHeight() const
+    {
+        return _image.size().height();
+    }
+
     void RawImage::resize(ImageSize width)
     {
         try

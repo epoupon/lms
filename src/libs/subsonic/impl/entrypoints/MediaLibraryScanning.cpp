@@ -39,7 +39,7 @@ namespace lms::api::subsonic::Scan
             {
                 std::size_t count{};
 
-                if (scanStatus.currentScanStepStats && scanStatus.currentScanStepStats->currentStep == ScanStep::ScanFiles)
+                if (scanStatus.currentScanStepStats && scanStatus.currentScanStepStats->currentStep == ScanStep::ScanAudioFiles)
                     count = scanStatus.currentScanStepStats->processedElems;
 
                 statusResponse.setAttribute("count", count);

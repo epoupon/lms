@@ -95,7 +95,7 @@ namespace lms::db
 
         // Can get raw dbo ptr only from Objects
         template<typename SomeObject>
-        static Wt::Dbo::ptr<SomeObject> getDboPtr(ObjectPtr<SomeObject> ptr)
+        static Wt::Dbo::ptr<SomeObject> getDboPtr(const ObjectPtr<SomeObject>& ptr)
         {
             return ptr._obj;
         }

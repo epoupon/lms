@@ -22,6 +22,7 @@
 
 #include "core/ILogger.hpp"
 #include "database/Cluster.hpp"
+#include "database/Image.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
@@ -271,6 +272,11 @@ namespace lms::db
 
         auto query{ createQuery<Wt::Dbo::ptr<Artist>>(session, params) };
         utils::forEachQueryRangeResult(query, params.range, func);
+    }
+
+    ObjectPtr<Image> Artist::getImage() const
+    {
+        return ObjectPtr<Image>{ _image.lock() };
     }
 
     RangeResults<ArtistId> Artist::findSimilarArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes, std::optional<Range> range) const

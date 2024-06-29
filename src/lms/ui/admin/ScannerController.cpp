@@ -310,8 +310,15 @@ namespace lms::ui
                                      .arg(stepStats.progress()));
             break;
 
-        case scanner::ScanStep::ScanFiles:
-            _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-scanning-files")
+        case scanner::ScanStep::ScanArtistImages:
+            _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-scanning-artist-images")
+                                     .arg(stepStats.processedElems)
+                                     .arg(stepStats.totalElems)
+                                     .arg(stepStats.progress()));
+            break;
+
+        case scanner::ScanStep::ScanAudioFiles:
+            _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-scanning-audio-files")
                                      .arg(stepStats.processedElems)
                                      .arg(stepStats.totalElems)
                                      .arg(stepStats.progress()));

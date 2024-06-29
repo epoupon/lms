@@ -116,7 +116,8 @@
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Récupération des métadonnées AcousticBrainz : {1}/{2} fichiers ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Optimisation de la base de données... {1}/{2} entrées ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Rechargement du moteur de recommandation : {1}%...</message>
-<message id="Lms.Admin.ScannerController.step-scanning-files">Scan des fichiers : {1}/{2} fichiers ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-scanning-artist-images">Scan des images des artistes: {1}/{2} artists ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-scanning-audio-files">Scan des fichiers audio : {1}/{2} fichiers ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-status">Statut de l'étape</message>
 
 <!--Tracing-->
