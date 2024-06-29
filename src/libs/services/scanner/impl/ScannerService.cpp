@@ -336,7 +336,7 @@ namespace lms::scanner
             _abortScan,
             _db
         };
-        
+
         // Order is important
         _scanSteps.clear();
         _scanSteps.push_back(std::make_unique<ScanStepDiscoverFiles>(params));

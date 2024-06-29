@@ -21,8 +21,8 @@
 
 #include <filesystem>
 
-#include <Wt/WDateTime.h>
 #include <Wt/Dbo/Dbo.h>
+#include <Wt/WDateTime.h>
 
 #include "database/ArtistId.hpp"
 #include "database/ImageId.hpp"
