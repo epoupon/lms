@@ -57,6 +57,7 @@ namespace lms::scanner
         DuplicateReason reason;
     };
 
+    // Alphabetical order
     enum class ScanStep
     {
         CheckForMissingFiles,
@@ -67,7 +68,8 @@ namespace lms::scanner
         FetchTrackFeatures,
         Optimize,
         ReloadSimilarityEngine,
-        ScanFiles,
+        ScanArtistImages,
+        ScanAudioFiles,
     };
     static inline constexpr unsigned ScanProgressStepCount{ 9 };
 

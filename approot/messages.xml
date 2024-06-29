@@ -116,7 +116,8 @@
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Fetching track features from AcousticBrainz: {1}/{2} tracks ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Optimizing database... {1}/{2} entries ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Reloading similarity engine: {1}%...</message>
-<message id="Lms.Admin.ScannerController.step-scanning-files">Scanning files: {1}/{2} files ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-scanning-artist-images">Scanning artist images: {1}/{2} artists ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-scanning-audio-files">Scanning audio files: {1}/{2} files ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-status">Step status</message>
 
 <!--Tracing-->

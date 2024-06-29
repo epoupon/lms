@@ -26,6 +26,7 @@
 #include "database/AuthToken.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
+#include "database/Image.hpp"
 #include "database/Listen.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/Release.hpp"
@@ -92,6 +93,7 @@ namespace lms::db
         _session.mapClass<AuthToken>("auth_token");
         _session.mapClass<Cluster>("cluster");
         _session.mapClass<ClusterType>("cluster_type");
+        _session.mapClass<Image>("image");
         _session.mapClass<Listen>("listen");
         _session.mapClass<MediaLibrary>("media_library");
         _session.mapClass<Release>("release");
@@ -176,6 +178,8 @@ namespace lms::db
 
         _session.execute("CREATE INDEX IF NOT EXISTS cluster_cluster_type_idx ON cluster(cluster_type_id)");
         _session.execute("CREATE INDEX IF NOT EXISTS cluster_type_name_idx ON cluster_type(name)");
+
+        _session.execute("CREATE INDEX IF NOT EXISTS image_artist_idx ON image(artist_id)");
 
         _session.execute("CREATE INDEX IF NOT EXISTS listen_backend_idx ON listen(backend)");
         _session.execute("CREATE INDEX IF NOT EXISTS listen_id_idx ON listen(id)");

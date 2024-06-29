@@ -35,6 +35,9 @@ namespace lms::image::GraphicsMagick
         RawImage(const std::byte* encodedData, std::size_t encodedDataSize);
         RawImage(const std::filesystem::path& path);
 
+        ImageSize getWidth() const override;
+        ImageSize getHeight() const override;
+
         void resize(ImageSize width) override;
         std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const override;
 

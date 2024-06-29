@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ScanStepScanFiles.hpp"
+#include "ScanStepScanAudioFiles.hpp"
 
 #include "core/Exception.hpp"
 #include "core/IConfig.hpp"
@@ -301,14 +301,14 @@ namespace lms::scanner
         }
     } // namespace
 
-    ScanStepScanFiles::MetadataScanQueue::MetadataScanQueue(metadata::IParser& parser, std::size_t threadCount, bool& abort)
+    ScanStepScanAudioFiles::MetadataScanQueue::MetadataScanQueue(metadata::IParser& parser, std::size_t threadCount, bool& abort)
         : _metadataParser{ parser }
         , _scanContextRunner{ _scanContext, threadCount, "ScannerMetadata" }
         , _abort{ abort }
     {
     }
 
-    void ScanStepScanFiles::MetadataScanQueue::pushScanRequest(const std::filesystem::path& path)
+    void ScanStepScanAudioFiles::MetadataScanQueue::pushScanRequest(const std::filesystem::path& path)
     {
         {
             std::scoped_lock lock{ _mutex };
@@ -348,13 +348,13 @@ namespace lms::scanner
         });
     }
 
-    std::size_t ScanStepScanFiles::MetadataScanQueue::getResultsCount() const
+    std::size_t ScanStepScanAudioFiles::MetadataScanQueue::getResultsCount() const
     {
         std::scoped_lock lock{ _mutex };
         return _scanResults.size();
     }
 
-    size_t ScanStepScanFiles::MetadataScanQueue::popResults(std::vector<MetaDataScanResult>& results, std::size_t maxCount)
+    size_t ScanStepScanAudioFiles::MetadataScanQueue::popResults(std::vector<MetaDataScanResult>& results, std::size_t maxCount)
     {
         results.clear();
         results.reserve(maxCount);
@@ -372,7 +372,7 @@ namespace lms::scanner
         return results.size();
     }
 
-    void ScanStepScanFiles::MetadataScanQueue::wait(std::size_t maxScanRequestCount)
+    void ScanStepScanAudioFiles::MetadataScanQueue::wait(std::size_t maxScanRequestCount)
     {
         LMS_SCOPED_TRACE_OVERVIEW("Scanner", "WaitParseResults");
 
@@ -380,7 +380,7 @@ namespace lms::scanner
         _condVar.wait(lock, [=, this] { return _ongoingScanCount <= maxScanRequestCount; });
     }
 
-    ScanStepScanFiles::ScanStepScanFiles(InitParams& initParams)
+    ScanStepScanAudioFiles::ScanStepScanAudioFiles(InitParams& initParams)
         : ScanStepBase{ initParams }
         , _metadataParser{ metadata::createParser(metadata::ParserBackend::TagLib, getParserReadStyle()) } // For now, always use TagLib
         , _metadataScanQueue{ *_metadataParser, getScanMetaDataThreadCount(), _abortScan }
@@ -388,7 +388,7 @@ namespace lms::scanner
         LMS_LOG(DBUPDATER, INFO, "Using " << _metadataScanQueue.getThreadCount() << " thread(s) for scanning file metadata");
     }
 
-    void ScanStepScanFiles::process(ScanContext& context)
+    void ScanStepScanAudioFiles::process(ScanContext& context)
     {
         const std::size_t scanQueueMaxScanRequestCount{ 100 * _metadataScanQueue.getThreadCount() };
         const std::size_t processMetaDataBatchSize{ 5 };
@@ -446,7 +446,7 @@ namespace lms::scanner
         }
     }
 
-    bool ScanStepScanFiles::checkFileNeedScan(ScanContext& context, const std::filesystem::path& file, const ScannerSettings::MediaLibraryInfo& libraryInfo)
+    bool ScanStepScanAudioFiles::checkFileNeedScan(ScanContext& context, const std::filesystem::path& file, const ScannerSettings::MediaLibraryInfo& libraryInfo)
     {
         ScanStats& stats{ context.stats };
 
@@ -498,7 +498,7 @@ namespace lms::scanner
         return true; // need to scan
     }
 
-    void ScanStepScanFiles::processMetaDataScanResults(ScanContext& context, std::span<const MetaDataScanResult> scanResults, const ScannerSettings::MediaLibraryInfo& libraryInfo)
+    void ScanStepScanAudioFiles::processMetaDataScanResults(ScanContext& context, std::span<const MetaDataScanResult> scanResults, const ScannerSettings::MediaLibraryInfo& libraryInfo)
     {
         LMS_SCOPED_TRACE_OVERVIEW("Scanner", "ProcessScanResults");
 
@@ -525,7 +525,7 @@ namespace lms::scanner
         }
     }
 
-    void ScanStepScanFiles::processFileMetaData(ScanContext& context, const std::filesystem::path& file, const metadata::Track& trackMetadata, const ScannerSettings::MediaLibraryInfo& libraryInfo)
+    void ScanStepScanAudioFiles::processFileMetaData(ScanContext& context, const std::filesystem::path& file, const metadata::Track& trackMetadata, const ScannerSettings::MediaLibraryInfo& libraryInfo)
     {
         ScanStats& stats{ context.stats };
 

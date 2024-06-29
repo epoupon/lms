@@ -36,7 +36,8 @@
 #include "ScanStepDiscoverFiles.hpp"
 #include "ScanStepOptimize.hpp"
 #include "ScanStepRemoveOrphanDbFiles.hpp"
-#include "ScanStepScanFiles.hpp"
+#include "ScanStepScanArtistImages.hpp"
+#include "ScanStepScanAudioFiles.hpp"
 
 namespace lms::scanner
 {
@@ -335,11 +336,13 @@ namespace lms::scanner
             _abortScan,
             _db
         };
-
+        
+        // Order is important
         _scanSteps.clear();
         _scanSteps.push_back(std::make_unique<ScanStepDiscoverFiles>(params));
-        _scanSteps.push_back(std::make_unique<ScanStepScanFiles>(params));
+        _scanSteps.push_back(std::make_unique<ScanStepScanAudioFiles>(params));
         _scanSteps.push_back(std::make_unique<ScanStepRemoveOrphanDbFiles>(params));
+        _scanSteps.push_back(std::make_unique<ScanStepScanArtistImages>(params));
         _scanSteps.push_back(std::make_unique<ScanStepCompact>(params));
         _scanSteps.push_back(std::make_unique<ScanStepOptimize>(params));
         _scanSteps.push_back(std::make_unique<ScanStepComputeClusterStats>(params));

@@ -34,14 +34,14 @@
 
 namespace lms::scanner
 {
-    class ScanStepScanFiles : public ScanStepBase
+    class ScanStepScanAudioFiles : public ScanStepBase
     {
     public:
-        ScanStepScanFiles(InitParams& initParams);
+        ScanStepScanAudioFiles(InitParams& initParams);
 
     private:
-        ScanStep getStep() const override { return ScanStep::ScanFiles; }
-        core::LiteralString getStepName() const override { return "Scan files"; }
+        ScanStep getStep() const override { return ScanStep::ScanAudioFiles; }
+        core::LiteralString getStepName() const override { return "Scan audio files"; }
         void process(ScanContext& context) override;
 
         bool checkFileNeedScan(ScanContext& context, const std::filesystem::path& file, const ScannerSettings::MediaLibraryInfo& libraryInfo);

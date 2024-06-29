@@ -8,7 +8,8 @@ add_library(lmsscanner SHARED
 	impl/ScanStepDiscoverFiles.cpp
 	impl/ScanStepOptimize.cpp
 	impl/ScanStepRemoveOrphanDbFiles.cpp
-	impl/ScanStepScanFiles.cpp
+	impl/ScanStepScanArtistImages.cpp
+	impl/ScanStepScanAudioFiles.cpp
 	)
 
 target_include_directories(lmsscanner INTERFACE
@@ -20,10 +21,11 @@ target_include_directories(lmsscanner PRIVATE
 	)
 
 target_link_libraries(lmsscanner PRIVATE
+	lmscore
 	lmsdatabase
+	lmsimage
 	lmsmetadata
 	lmsrecommendation
-	lmscore
 	)
 
 target_link_libraries(lmsscanner PUBLIC
