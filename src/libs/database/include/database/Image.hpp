@@ -20,17 +20,21 @@
 #pragma once
 
 #include <filesystem>
+#include <functional>
 
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
 #include "database/ArtistId.hpp"
+#include "database/DirectoryId.hpp"
 #include "database/ImageId.hpp"
 #include "database/Object.hpp"
+#include "database/Types.hpp"
 
 namespace lms::db
 {
     class Artist;
+    class Directory;
     class Session;
 
     class Image final : public Object<Image, ImageId>
@@ -38,29 +42,59 @@ namespace lms::db
     public:
         Image() = default;
 
+        struct FindParameters
+        {
+            std::optional<Range> range;
+            std::string fileStem;  // if set, images with this file stem
+            DirectoryId directory; // if set, images in this directory
+
+            FindParameters& setRange(std::optional<Range> _range)
+            {
+                range = _range;
+                return *this;
+            }
+            FindParameters& setFileStem(std::string_view _fileStem)
+            {
+                fileStem = _fileStem;
+                return *this;
+            }
+            FindParameters& setDirectory(DirectoryId _directory)
+            {
+                directory = _directory;
+                return *this;
+            }
+        };
+
         // find
         static std::size_t getCount(Session& session);
         static pointer find(Session& session, ImageId id);
+        static pointer find(Session& session, const std::filesystem::path& file);
+        static RangeResults<pointer> find(Session& session, const FindParameters& params);
+        static void find(Session& session, const FindParameters& parameters, const std::function<void(const Image::pointer&)>& func);
+        static void find(Session& session, ImageId& lastRetrievedImage, std::size_t count, const std::function<void(const Image::pointer&)>& func);
 
         // getters
-        const std::filesystem::path& getPath() const { return _path; }
+        const std::filesystem::path& getAbsoluteFilePath() const { return _fileAbsolutePath; }
+        std::string_view getFileStem() const { return _fileStem; }
         const Wt::WDateTime& getLastWriteTime() const { return _fileLastWrite; }
         std::size_t getFileSize() const { return _fileSize; }
         std::size_t getWidth() const { return _width; }
         std::size_t getHeight() const { return _height; }
 
         // setters
-        void setPath(const std::filesystem::path& p) { _path = p; }
+        void setAbsoluteFilePath(const std::filesystem::path& p);
         void setLastWriteTime(Wt::WDateTime time) { _fileLastWrite = time; }
         void setFileSize(std::size_t fileSize) { _fileSize = fileSize; }
         void setWidth(std::size_t width) { _width = width; }
         void setHeight(std::size_t height) { _height = height; }
         void setArtist(const ObjectPtr<Artist>& artist) { _artist = getDboPtr(artist); }
+        void setDirectory(const ObjectPtr<Directory>& directory) { _directory = getDboPtr(directory); }
 
         template<class Action>
         void persist(Action& a)
         {
-            Wt::Dbo::field(a, _path, "path");
+            Wt::Dbo::field(a, _fileAbsolutePath, "absolute_file_path");
+            Wt::Dbo::field(a, _fileStem, "stem");
             Wt::Dbo::field(a, _fileLastWrite, "file_last_write");
             Wt::Dbo::field(a, _fileSize, "file_size");
 
@@ -68,6 +102,7 @@ namespace lms::db
             Wt::Dbo::field(a, _height, "height");
 
             Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
+            Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
         }
 
     private:
@@ -75,12 +110,14 @@ namespace lms::db
         Image(const std::filesystem::path& p);
         static pointer create(Session& session, const std::filesystem::path& p);
 
-        std::filesystem::path _path;
+        std::filesystem::path _fileAbsolutePath;
+        std::string _fileStem;
         Wt::WDateTime _fileLastWrite;
         int _fileSize{};
         int _width{};
         int _height{};
 
         Wt::Dbo::ptr<Artist> _artist;
+        Wt::Dbo::ptr<Directory> _directory;
     };
 } // namespace lms::db

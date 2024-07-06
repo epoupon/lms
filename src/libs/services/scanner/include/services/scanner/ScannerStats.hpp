@@ -30,10 +30,11 @@ namespace lms::scanner
 {
     enum class ScanErrorType
     {
-        CannotReadFile,  // cannot read file
-        CannotParseFile, // cannot parse file
-        NoAudioTrack,    // no audio track found
-        BadDuration,     // bad duration
+        CannotReadFile,      // cannot read file
+        CannotReadAudioFile, // cannot parse audio file
+        CannotReadImageFile, // cannot parse image file
+        NoAudioTrack,        // no audio track found
+        BadDuration,         // bad duration
     };
 
     enum class DuplicateReason
@@ -60,18 +61,19 @@ namespace lms::scanner
     // Alphabetical order
     enum class ScanStep
     {
-        CheckForMissingFiles,
-        CheckForDuplicateFiles,
+        AssociateArtistImages,
+        CheckForDuplicatedFiles,
+        CheckForRemovedFiles,
         ComputeClusterStats,
         Compact,
         DiscoverFiles,
         FetchTrackFeatures,
         Optimize,
         ReloadSimilarityEngine,
-        ScanArtistImages,
-        ScanAudioFiles,
+        RemoveOrphanedDbEntries,
+        ScanFiles,
     };
-    static inline constexpr unsigned ScanProgressStepCount{ 9 };
+    static inline constexpr unsigned ScanProgressStepCount{ 11 };
 
     // reduced scan stats
     struct ScanStepStats
@@ -92,7 +94,7 @@ namespace lms::scanner
         Wt::WDateTime startTime;
         Wt::WDateTime stopTime;
 
-        std::size_t filesScanned{}; // Total number of files scanned (estimated)
+        std::size_t totalFileCount{}; // Total number of files (estimated)
 
         std::size_t skips{}; // no change since last scan
         std::size_t scans{}; // actually scanned filed

@@ -19,10 +19,12 @@
 
 #include "Common.hpp"
 
+#include "database/Directory.hpp"
 #include "database/Image.hpp"
 
 namespace lms::db::tests
 {
+    using ScopedDirectory = ScopedEntity<db::Directory>;
     using ScopedImage = ScopedEntity<db::Image>;
 
     TEST_F(DatabaseFixture, Image)
@@ -35,7 +37,8 @@ namespace lms::db::tests
 
             Image::pointer img{ Image::find(session, image.getId()) };
             ASSERT_NE(img, Image::pointer{});
-            EXPECT_EQ(img->getPath(), "/path/to/image");
+            EXPECT_EQ(img->getAbsoluteFilePath(), "/path/to/image");
+            EXPECT_EQ(img->getFileStem(), "image");
             EXPECT_EQ(img->getWidth(), 0);
             EXPECT_EQ(img->getHeight(), 0);
             EXPECT_EQ(img->getFileSize(), 0);
@@ -46,7 +49,7 @@ namespace lms::db::tests
 
             Image::pointer img{ Image::find(session, image.getId()) };
             ASSERT_NE(img, Image::pointer{});
-            img.modify()->setPath("/path/to/another/image");
+            img.modify()->setAbsoluteFilePath("/path/to/another/image2");
             img.modify()->setWidth(640);
             img.modify()->setHeight(480);
             img.modify()->setFileSize(1024 * 1024);
@@ -57,10 +60,42 @@ namespace lms::db::tests
 
             Image::pointer img{ Image::find(session, image.getId()) };
             ASSERT_NE(img, Image::pointer{});
-            EXPECT_EQ(img->getPath(), "/path/to/another/image");
+            EXPECT_EQ(img->getAbsoluteFilePath(), "/path/to/another/image2");
+            EXPECT_EQ(img->getFileStem(), "image2");
             EXPECT_EQ(img->getWidth(), 640);
             EXPECT_EQ(img->getHeight(), 480);
             EXPECT_EQ(img->getFileSize(), 1024 * 1024);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            Image::pointer img{ Image::find(session, "/path/to/another/image2") };
+            ASSERT_NE(img, Image::pointer{});
+            EXPECT_EQ(img->getId(), image->getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Image_inDirectory)
+    {
+        ScopedImage image{ session, "/path/to/image" };
+        ScopedDirectory directory{ session, "/path/to" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(Image::find(session, Image::FindParameters{}.setDirectory(directory.getId())).results.size(), 0);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            image.get().modify()->setDirectory(directory.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto results{ Image::find(session, Image::FindParameters{}.setDirectory(directory.getId())).results };
+            ASSERT_EQ(results.size(), 1);
+            EXPECT_EQ(results.front()->getId(), image.getId());
         }
     }
 } // namespace lms::db::tests

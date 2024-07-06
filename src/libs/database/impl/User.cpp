@@ -78,17 +78,17 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<User>().where("type = ?").bind(UserType::DEMO));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<User>>("SELECT u from user u").where("u.type = ?").bind(UserType::DEMO));
     }
 
     User::pointer User::find(Session& session, UserId id)
     {
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<User>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<User>>("SELECT u from user u").where("u.id = ?").bind(id));
     }
 
     User::pointer User::find(Session& session, std::string_view name)
     {
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<User>().where("login_name = ?").bind(name));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<User>>("SELECT u from user u").where("u.login_name = ?").bind(name));
     }
 
     void User::setSubsonicDefaultTranscodingOutputBitrate(Bitrate bitrate)

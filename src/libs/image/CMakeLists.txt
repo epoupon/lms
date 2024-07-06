@@ -25,6 +25,7 @@ if (${LMS_IMAGE_BACKEND} STREQUAL "stb")
 	message(STATUS "Using stb (resize version ${STB_IMAGE_RESIZE_VERSION})")
 
 	target_sources(lmsimage PRIVATE
+		impl/stb/Image.cpp
 		impl/stb/JPEGImage.cpp
 		impl/stb/RawImage.cpp
 	)
@@ -36,6 +37,7 @@ elseif (${LMS_IMAGE_BACKEND} STREQUAL "graphicsmagick")
 	message(STATUS "Using graphicsmagick")
 
 	target_sources(lmsimage PRIVATE
+		impl/graphicsmagick/Image.cpp
 		impl/graphicsmagick/JPEGImage.cpp
 		impl/graphicsmagick/RawImage.cpp
 	)

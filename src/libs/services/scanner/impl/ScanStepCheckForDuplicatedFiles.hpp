@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Emeric Poupon
+ * Copyright (C) 2023 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,18 +19,18 @@
 
 #pragma once
 
-#include <filesystem>
-#include <memory>
-#include <span>
+#include "ScanStepBase.hpp"
 
-#include "image/IEncodedImage.hpp"
-#include "image/IRawImage.hpp"
-
-namespace lms::image
+namespace lms::scanner
 {
-    void init(const std::filesystem::path& path);
-    std::span<const std::filesystem::path> getSupportedFileExtensions();
-    std::unique_ptr<IRawImage> decodeImage(const std::byte* encodedData, std::size_t encodedDataSize);
-    std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path);
-    std::unique_ptr<IEncodedImage> readSvgFile(const std::filesystem::path& path);
-} // namespace lms::image
+    class ScanStepCheckForDuplicatedFiles : public ScanStepBase
+    {
+    public:
+        using ScanStepBase::ScanStepBase;
+
+    private:
+        core::LiteralString getStepName() const override { return "Check for duplicated files"; }
+        ScanStep getStep() const override { return ScanStep::CheckForDuplicatedFiles; }
+        void process(ScanContext& context) override;
+    };
+} // namespace lms::scanner

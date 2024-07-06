@@ -119,8 +119,10 @@ namespace lms::ui
             {
             case scanner::ScanErrorType::CannotReadFile:
                 return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-file");
-            case scanner::ScanErrorType::CannotParseFile:
-                return Wt::WString::tr("Lms.Admin.ScannerController.cannot-parse-file");
+            case scanner::ScanErrorType::CannotReadAudioFile:
+                return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-audio-file");
+            case scanner::ScanErrorType::CannotReadImageFile:
+                return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-image-file");
             case scanner::ScanErrorType::NoAudioTrack:
                 return Wt::WString::tr("Lms.Admin.ScannerController.no-audio-track");
             case scanner::ScanErrorType::BadDuration:
@@ -267,58 +269,59 @@ namespace lms::ui
 
         switch (stepStats.currentStep)
         {
-        case ScanStep::CheckForDuplicateFiles:
+        case ScanStep::AssociateArtistImages:
+            _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-associating-artist-images")
+                                     .arg(stepStats.progress()));
+            break;
+
+        case ScanStep::CheckForDuplicatedFiles:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-checking-for-duplicate-files")
                                      .arg(stepStats.processedElems));
             break;
 
-        case scanner::ScanStep::CheckForMissingFiles:
-            _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-checking-for-missing-files")
+        case ScanStep::CheckForRemovedFiles:
+            _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-checking-for-removed-files")
                                      .arg(stepStats.progress()));
             break;
 
-        case scanner::ScanStep::Compact:
+        case ScanStep::Compact:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-compact"));
             break;
 
-        case scanner::ScanStep::ComputeClusterStats:
+        case ScanStep::ComputeClusterStats:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-compute-cluster-stats")
                                      .arg(stepStats.progress()));
             break;
 
-        case scanner::ScanStep::DiscoverFiles:
+        case ScanStep::DiscoverFiles:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-discovering-files")
                                      .arg(stepStats.processedElems));
             break;
 
-        case scanner::ScanStep::FetchTrackFeatures:
+        case ScanStep::FetchTrackFeatures:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-fetching-track-features")
                                      .arg(stepStats.processedElems)
                                      .arg(stepStats.totalElems)
                                      .arg(stepStats.progress()));
             break;
 
-        case scanner::ScanStep::Optimize:
+        case ScanStep::Optimize:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-optimize")
-                                     .arg(stepStats.processedElems)
-                                     .arg(stepStats.totalElems)
                                      .arg(stepStats.progress()));
             break;
 
-        case scanner::ScanStep::ReloadSimilarityEngine:
+        case ScanStep::RemoveOrphanedDbEntries:
+            _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-removing-orphaned-entries")
+                                     .arg(stepStats.progress()));
+            break;
+
+        case ScanStep::ReloadSimilarityEngine:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-reloading-similarity-engine")
                                      .arg(stepStats.progress()));
             break;
 
-        case scanner::ScanStep::ScanArtistImages:
-            _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-scanning-artist-images")
-                                     .arg(stepStats.processedElems)
-                                     .arg(stepStats.totalElems)
-                                     .arg(stepStats.progress()));
-            break;
-
-        case scanner::ScanStep::ScanAudioFiles:
-            _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-scanning-audio-files")
+        case ScanStep::ScanFiles:
+            _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-scanning-files")
                                      .arg(stepStats.processedElems)
                                      .arg(stepStats.totalElems)
                                      .arg(stepStats.progress()));

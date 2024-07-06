@@ -1,15 +1,17 @@
 
 add_library(lmsscanner SHARED
+	impl/FileScanQueue.cpp
 	impl/ScannerService.cpp
 	impl/ScannerStats.cpp
-	impl/ScanStepCheckDuplicatedDbFiles.cpp
+	impl/ScanStepAssociateArtistImages.cpp
+	impl/ScanStepCheckForDuplicatedFiles.cpp
+	impl/ScanStepCheckForRemovedFiles.cpp
 	impl/ScanStepCompact.cpp
 	impl/ScanStepComputeClusterStats.cpp
 	impl/ScanStepDiscoverFiles.cpp
 	impl/ScanStepOptimize.cpp
-	impl/ScanStepRemoveOrphanDbFiles.cpp
-	impl/ScanStepScanArtistImages.cpp
-	impl/ScanStepScanAudioFiles.cpp
+	impl/ScanStepRemoveOrphanedDbEntries.cpp
+	impl/ScanStepScanFiles.cpp
 	)
 
 target_include_directories(lmsscanner INTERFACE

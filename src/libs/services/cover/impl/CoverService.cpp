@@ -381,10 +381,10 @@ namespace lms::cover
 
             auto transaction{ session.createReadTransaction() };
 
-            if (const Artist::pointer artist{ db::Artist::find(session, artistId) })
+            if (const Artist::pointer artist{ Artist::find(session, artistId) })
             {
                 if (const db::Image::pointer image{ artist->getImage() })
-                    artistImage = getFromCoverFile(image->getPath(), width);
+                    artistImage = getFromCoverFile(image->getAbsoluteFilePath(), width);
             }
         }
 

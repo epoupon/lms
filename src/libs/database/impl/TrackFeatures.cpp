@@ -23,6 +23,7 @@
 #include <boost/property_tree/ptree.hpp>
 
 #include "core/ILogger.hpp"
+#include "database/Directory.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 

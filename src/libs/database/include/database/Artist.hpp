@@ -153,6 +153,7 @@ namespace lms::db
         void setName(std::string_view name) { _name = name; }
         void setMBID(const std::optional<core::UUID>& mbid) { _MBID = mbid ? mbid->getAsString() : ""; }
         void setSortName(const std::string& sortName);
+        void setImage(ObjectPtr<Image> image);
 
         template<class Action>
         void persist(Action& a)

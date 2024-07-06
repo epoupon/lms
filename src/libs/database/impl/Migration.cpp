@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 60 };
+        static constexpr Version LMS_DATABASE_VERSION{ 61 };
     }
 
     VersionInfo::VersionInfo()
@@ -485,6 +485,7 @@ SELECT
   "id" integer primary key autoincrement,
   "version" integer not null,
   "path" text not null,
+  "stem" text not null,
   "file_last_write" text,
   "file_size" integer not null,
   "width" integer not null,
@@ -496,6 +497,138 @@ SELECT
             // Just increment the scan version of the settings to make the next scheduled scan rescan everything
             session.getDboSession()->execute("UPDATE scan_settings SET scan_version = scan_version + 1");
         }
+
+        void migrateFromV60(Session& session)
+        {
+            // Dedicated directory table
+            session.getDboSession()->execute(R"(CREATE TABLE IF NOT EXISTS "directory" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "absolute_path" text not null,
+  "name" text not null,
+  "parent_directory_id" bigint,
+  constraint "fk_directory_directory" foreign key ("parent_directory_id") references "directory" ("id") on delete cascade deferrable initially deferred
+))");
+
+            // Add a ref in track, need to recreate a new table
+            session.getDboSession()->execute(R"(
+CREATE TABLE IF NOT EXISTS "track_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "scan_version" integer not null,
+  "track_number" integer,
+  "disc_number" integer,
+  "total_track" integer,
+  "disc_subtitle" text not null,
+  "name" text not null,
+  "duration" integer,
+  "bitrate" integer not null,
+  "bits_per_sample" integer not null,
+  "channel_count" integer not null,
+  "sample_rate" integer not null,
+  "date" text,
+  "year" integer,
+  "original_date" text,
+  "original_year" integer,
+  "absolute_file_path" text not null,
+  "relative_file_path" text not null,
+  "file_size" bigint not null,
+  "file_last_write" text,
+  "file_added" text,
+  "has_cover" boolean not null,
+  "mbid" text not null,
+  "recording_mbid" text not null,
+  "copyright" text not null,
+  "copyright_url" text not null,
+  "track_replay_gain" real,
+  "release_replay_gain" real,
+  "artist_display_name" text not null,
+  "release_id" bigint,
+  "media_library_id" bigint,
+  "directory_id" bigint,
+  constraint "fk_track_release" foreign key ("release_id") references "release" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_track_media_library" foreign key ("media_library_id") references "media_library" ("id") on delete set null deferrable initially deferred,
+  constraint "fk_track_directory" foreign key ("directory_id") references "directory" ("id") on delete cascade deferrable initially deferred
+))");
+            // Migrate data, with the new directory_id field set to null
+            session.getDboSession()->execute(R"(INSERT INTO track_backup 
+SELECT
+ id,
+ version,
+ scan_version,
+ track_number,
+ disc_number,
+ total_track,
+ disc_subtitle,
+ name,
+ duration,
+ bitrate,
+ bits_per_sample,
+ channel_count,
+ sample_rate,
+ date,
+ year,
+ original_date,
+ original_year,
+ absolute_file_path,
+ relative_file_path,
+ file_size,
+ file_last_write,
+ file_added,
+ has_cover,
+ mbid,
+ recording_mbid,
+ copyright,
+ copyright_url,
+ track_replay_gain,
+ release_replay_gain,
+ artist_display_name,
+ release_id,
+ media_library_id,
+ NULL
+ FROM track)");
+            session.getDboSession()->execute("DROP TABLE track");
+            session.getDboSession()->execute("ALTER TABLE track_backup RENAME TO track");
+
+            // Add a ref in image + rename path to absolute_file_path, need to recreate a new table
+            session.getDboSession()->execute(R"(
+            CREATE TABLE IF NOT EXISTS "image_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "absolute_file_path" text not null,
+  "stem" text not null,
+  "file_last_write" text,
+  "file_size" integer not null,
+  "width" integer not null,
+  "height" integer not null,
+  "artist_id" bigint,
+  "directory_id" bigint,
+  constraint "fk_image_artist" foreign key ("artist_id") references "artist" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_image_directory" foreign key ("directory_id") references "directory" ("id") on delete cascade deferrable initially deferred
+))");
+
+            // Migrate data, with the new directory_id field set to null
+            session.getDboSession()->execute(R"(INSERT INTO image_backup 
+SELECT
+ id,
+ version,
+ path,
+ stem,
+ file_last_write,
+ file_size,
+ width,
+ height,
+ artist_id,
+ NULL
+ FROM image
+ )");
+            session.getDboSession()->execute("DROP TABLE image");
+            session.getDboSession()->execute("ALTER TABLE image_backup RENAME TO image");
+
+            // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+            session.getDboSession()->execute("UPDATE scan_settings SET scan_version = scan_version + 1");
+        }
+
     } // namespace
 
     bool doDbMigration(Session& session)
@@ -534,6 +667,7 @@ SELECT
             { 57, migrateFromV57 },
             { 58, migrateFromV58 },
             { 59, migrateFromV59 },
+            { 60, migrateFromV60 },
         };
 
         bool migrationPerformed{};

@@ -50,6 +50,7 @@ namespace lms::db
     class Artist;
     class Cluster;
     class ClusterType;
+    class Directory;
     class MediaLibrary;
     class Release;
     class Session;
@@ -225,6 +226,7 @@ namespace lms::db
         void setRelease(ObjectPtr<Release> release) { _release = getDboPtr(release); }
         void setClusters(const std::vector<ObjectPtr<Cluster>>& clusters);
         void setMediaLibrary(ObjectPtr<MediaLibrary> mediaLibrary) { _mediaLibrary = getDboPtr(mediaLibrary); }
+        void setDirectory(ObjectPtr<Directory> directory) { _directory = getDboPtr(directory); }
 
         std::size_t getScanVersion() const { return _scanVersion; }
         std::optional<std::size_t> getTrackNumber() const { return _trackNumber; }
@@ -263,6 +265,7 @@ namespace lms::db
         std::vector<ObjectPtr<Cluster>> getClusters() const;
         std::vector<ClusterId> getClusterIds() const;
         ObjectPtr<MediaLibrary> getMediaLibrary() const { return _mediaLibrary; }
+        ObjectPtr<Directory> getDirectory() const { return _directory; }
 
         std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ClusterTypeId>& clusterTypes, std::size_t size) const;
 
@@ -299,6 +302,7 @@ namespace lms::db
             Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
             Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::belongsTo(a, _mediaLibrary, "media_library", Wt::Dbo::OnDeleteSetNull); // don't delete track on media library removal, we want to wait for the next scan to have a chance to migrate files
+            Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "track");
             Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
         }
@@ -342,6 +346,7 @@ namespace lms::db
 
         Wt::Dbo::ptr<Release> _release;
         Wt::Dbo::ptr<MediaLibrary> _mediaLibrary;
+        Wt::Dbo::ptr<Directory> _directory;
         Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks;
         Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> _clusters;
     };

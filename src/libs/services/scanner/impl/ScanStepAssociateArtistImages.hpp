@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,27 +19,23 @@
 
 #pragma once
 
-#include <filesystem>
+#include <string>
+#include <vector>
 
 #include "ScanStepBase.hpp"
 
 namespace lms::scanner
 {
-    class ScanStepRemoveOrphanDbFiles : public ScanStepBase
+    class ScanStepAssociateArtistImages : public ScanStepBase
     {
     public:
-        using ScanStepBase::ScanStepBase;
+        ScanStepAssociateArtistImages(InitParams& initParams);
 
     private:
-        core::LiteralString getStepName() const override { return "Check orphaned entries"; }
-        ScanStep getStep() const override { return ScanStep::CheckForMissingFiles; }
+        ScanStep getStep() const override { return ScanStep::AssociateArtistImages; }
+        core::LiteralString getStepName() const override { return "Associate artist images"; }
         void process(ScanContext& context) override;
 
-        void removeOrphanTracks(ScanContext& context);
-        void removeOrphanClusters();
-        void removeOrphanClusterTypes();
-        void removeOrphanArtists();
-        void removeOrphanReleases();
-        bool checkFile(const std::filesystem::path& p);
+        const std::vector<std::string> _artistFileNames;
     };
 } // namespace lms::scanner
