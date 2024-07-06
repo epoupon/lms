@@ -51,6 +51,9 @@ namespace lms::scanner
                     entries = T::findOrphanIds(session, Range{ 0, batchSize });
                 };
 
+                if (entries.results.empty())
+                    break;
+
                 {
                     auto transaction{ session.createWriteTransaction() };
 
@@ -64,9 +67,6 @@ namespace lms::scanner
                         entry.remove();
                     }
                 }
-
-                if (!entries.moreResults)
-                    break;
             }
         }
     } // namespace
@@ -119,7 +119,7 @@ namespace lms::scanner
 
     void ScanStepRemoveOrphanedDbEntries::removeOrphanedDirectories()
     {
-        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned releases...");
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned directories...");
         removeOrphanedEntries<db::Directory>(_db.getTLSSession(), _abortScan);
     }
 } // namespace lms::scanner
