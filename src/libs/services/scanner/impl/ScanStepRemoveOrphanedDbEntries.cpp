@@ -31,95 +31,81 @@
 
 namespace lms::scanner
 {
-    using namespace db;
+    void ScanStepRemoveOrphanedDbEntries::process(ScanContext& context)
+    {
+        removeOrphanedClusters(context);
+        removeOrphanedClusterTypes(context);
+        removeOrphanedArtists(context);
+        removeOrphanedReleases(context);
+        removeOrphanedDirectories(context);
+    }
 
-    namespace
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedClusters(ScanContext& context)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned clusters...");
+        removeOrphanedEntries<db::Cluster>(context);
+    }
+
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedClusterTypes(ScanContext& context)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned cluster types...");
+        removeOrphanedEntries<db::ClusterType>(context);
+    }
+
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedArtists(ScanContext& context)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned artists...");
+        removeOrphanedEntries<db::Artist>(context);
+    }
+
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedReleases(ScanContext& context)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned releases...");
+        removeOrphanedEntries<db::Release>(context);
+    }
+
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedDirectories(ScanContext& context)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned directories...");
+        removeOrphanedEntries<db::Directory>(context);
+    }
+
+    template<typename T>
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedEntries(ScanStepRemoveOrphanedDbEntries::ScanContext& context)
     {
         constexpr std::size_t batchSize = 100;
 
-        template<typename T>
-        void removeOrphanedEntries(Session& session, bool& abortScan)
+        using IdType = typename T::IdType;
+
+        db::Session& session{ _db.getTLSSession() };
+
+        db::RangeResults<IdType> entries;
+        while (!_abortScan)
         {
-            using IdType = typename T::IdType;
-
-            RangeResults<IdType> entries;
-            while (!abortScan)
             {
+                auto transaction{ session.createReadTransaction() };
+
+                entries = T::findOrphanIds(session, db::Range{ 0, batchSize });
+            };
+
+            if (entries.results.empty())
+                break;
+
+            {
+                auto transaction{ session.createWriteTransaction() };
+
+                for (const IdType objectId : entries.results)
                 {
-                    auto transaction{ session.createReadTransaction() };
+                    if (_abortScan)
+                        break;
 
-                    entries = T::findOrphanIds(session, Range{ 0, batchSize });
-                };
-
-                if (entries.results.empty())
-                    break;
-
-                {
-                    auto transaction{ session.createWriteTransaction() };
-
-                    for (const IdType objectId : entries.results)
-                    {
-                        if (abortScan)
-                            break;
-
-                        typename T::pointer entry{ T::find(session, objectId) };
-
-                        entry.remove();
-                    }
+                    typename T::pointer entry{ T::find(session, objectId) };
+                    entry.remove();
                 }
             }
+
+            context.currentStepStats.processedElems += entries.results.size();
+            _progressCallback(context.currentStepStats);
         }
-    } // namespace
-
-    void ScanStepRemoveOrphanedDbEntries::process(ScanContext& context)
-    {
-        auto& session{ _db.getTLSSession() };
-
-        {
-            auto transaction{ session.createReadTransaction() };
-            context.currentStepStats.totalElems = 0;
-            context.currentStepStats.totalElems += Cluster::getCount(session);
-            context.currentStepStats.totalElems += ClusterType::getCount(session);
-            context.currentStepStats.totalElems += Artist::getCount(session);
-            context.currentStepStats.totalElems += Release::getCount(session);
-            context.currentStepStats.totalElems += Directory::getCount(session);
-        }
-        LMS_LOG(DBUPDATER, DEBUG, context.currentStepStats.totalElems << " database entries to be checked...");
-
-        removeOrphanedClusters();
-        removeOrphanedClusterTypes();
-        removeOrphanedArtists();
-        removeOrphanedReleases();
-        removeOrphanedDirectories();
-    }
-
-    void ScanStepRemoveOrphanedDbEntries::removeOrphanedClusters()
-    {
-        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned clusters...");
-        removeOrphanedEntries<db::Cluster>(_db.getTLSSession(), _abortScan);
-    }
-
-    void ScanStepRemoveOrphanedDbEntries::removeOrphanedClusterTypes()
-    {
-        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned cluster types...");
-        removeOrphanedEntries<db::ClusterType>(_db.getTLSSession(), _abortScan);
-    }
-
-    void ScanStepRemoveOrphanedDbEntries::removeOrphanedArtists()
-    {
-        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned artists...");
-        removeOrphanedEntries<db::Artist>(_db.getTLSSession(), _abortScan);
-    }
-
-    void ScanStepRemoveOrphanedDbEntries::removeOrphanedReleases()
-    {
-        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned releases...");
-        removeOrphanedEntries<db::Release>(_db.getTLSSession(), _abortScan);
-    }
-
-    void ScanStepRemoveOrphanedDbEntries::removeOrphanedDirectories()
-    {
-        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned directories...");
-        removeOrphanedEntries<db::Directory>(_db.getTLSSession(), _abortScan);
     }
 } // namespace lms::scanner

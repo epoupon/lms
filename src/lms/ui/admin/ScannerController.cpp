@@ -312,7 +312,7 @@ namespace lms::ui
 
         case ScanStep::RemoveOrphanedDbEntries:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-removing-orphaned-entries")
-                                     .arg(stepStats.progress()));
+                                     .arg(stepStats.processedElems));
             break;
 
         case ScanStep::ReloadSimilarityEngine:

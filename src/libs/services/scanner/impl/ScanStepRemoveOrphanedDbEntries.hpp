@@ -35,10 +35,13 @@ namespace lms::scanner
         ScanStep getStep() const override { return ScanStep::RemoveOrphanedDbEntries; }
         void process(ScanContext& context) override;
 
-        void removeOrphanedClusters();
-        void removeOrphanedClusterTypes();
-        void removeOrphanedArtists();
-        void removeOrphanedReleases();
-        void removeOrphanedDirectories();
+        void removeOrphanedClusters(ScanContext& context);
+        void removeOrphanedClusterTypes(ScanContext& context);
+        void removeOrphanedArtists(ScanContext& context);
+        void removeOrphanedReleases(ScanContext& context);
+        void removeOrphanedDirectories(ScanContext& context);
+
+        template<typename T>
+        void removeOrphanedEntries(ScanStepRemoveOrphanedDbEntries::ScanContext& context);
     };
 } // namespace lms::scanner
