@@ -78,6 +78,7 @@ namespace lms::core::stringUtils::tests
         };
 
         TestCase tests[]{
+            { "", "", { "" } },
             { "abc", "", { "abc" } },
             { "abc", "-", { "abc" } },
             { "abc", "b", { "a", "c" } },

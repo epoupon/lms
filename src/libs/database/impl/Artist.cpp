@@ -22,6 +22,8 @@
 
 #include "core/ILogger.hpp"
 #include "database/Cluster.hpp"
+#include "database/Directory.hpp"
+#include "database/Image.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
@@ -221,19 +223,19 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQueryResults<Artist::pointer>(session.getDboSession()->find<Artist>().where("name = ?").bind(std::string{ name, 0, _maxNameLength }).orderBy("LENGTH(mbid) DESC")); // put mbid entries first
+        return utils::fetchQueryResults<Artist::pointer>(session.getDboSession()->query<Wt::Dbo::ptr<Artist>>("SELECT a FROM artist a").where("a.name = ?").bind(std::string{ name, 0, _maxNameLength }).orderBy("LENGTH(a.mbid) DESC")); // put mbid entries first
     }
 
     Artist::pointer Artist::find(Session& session, const core::UUID& mbid)
     {
         session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Artist>().where("mbid = ?").bind(std::string{ mbid.getAsString() }));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Artist>>("SELECT a FROM artist a").where("a.mbid = ?").bind(std::string{ mbid.getAsString() }));
     }
 
     Artist::pointer Artist::find(Session& session, ArtistId id)
     {
         session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Artist>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Artist>>("SELECT a FROM artist a").where("a.id = ?").bind(id));
     }
 
     bool Artist::exists(Session& session, ArtistId id)
@@ -271,6 +273,11 @@ namespace lms::db
 
         auto query{ createQuery<Wt::Dbo::ptr<Artist>>(session, params) };
         utils::forEachQueryRangeResult(query, params.range, func);
+    }
+
+    ObjectPtr<Image> Artist::getImage() const
+    {
+        return ObjectPtr<Image>{ _image.lock() };
     }
 
     RangeResults<ArtistId> Artist::findSimilarArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes, std::optional<Range> range) const
@@ -356,6 +363,11 @@ namespace lms::db
     void Artist::setSortName(const std::string& sortName)
     {
         _sortName = std::string(sortName, 0, _maxNameLength);
+    }
+
+    void Artist::setImage(ObjectPtr<Image> image)
+    {
+        _image = getDboPtr(image);
     }
 
 } // namespace lms::db

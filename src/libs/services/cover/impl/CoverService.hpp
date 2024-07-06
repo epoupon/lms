@@ -76,7 +76,6 @@ namespace lms::cover
         static inline const std::vector<std::filesystem::path> _fileExtensions{ ".jpg", ".jpeg", ".png", ".bmp" }; // TODO parametrize
         const std::size_t _maxFileSize;
         const std::vector<std::string> _preferredFileNames;
-        const std::vector<std::string> _artistFileNames;
         unsigned _jpegQuality;
     };
 

@@ -45,7 +45,8 @@ namespace lms::db
 
             if (params.sortMethod == ReleaseSortMethod::ArtistNameThenName
                 || params.sortMethod == ReleaseSortMethod::LastWritten
-                || params.sortMethod == ReleaseSortMethod::Date
+                || params.sortMethod == ReleaseSortMethod::DateAsc
+                || params.sortMethod == ReleaseSortMethod::DateDesc
                 || params.sortMethod == ReleaseSortMethod::OriginalDate
                 || params.sortMethod == ReleaseSortMethod::OriginalDateDesc
                 || params.writtenAfter.isValid()
@@ -189,8 +190,11 @@ namespace lms::db
             case ReleaseSortMethod::LastWritten:
                 query.orderBy("t.file_last_write DESC");
                 break;
-            case ReleaseSortMethod::Date:
-                query.orderBy("COALESCE(t.date, CAST(t.year AS TEXT)), r.name COLLATE NOCASE");
+            case ReleaseSortMethod::DateAsc:
+                query.orderBy("COALESCE(t.date, CAST(t.year AS TEXT)) ASC, r.name COLLATE NOCASE");
+                break;
+            case ReleaseSortMethod::DateDesc:
+                query.orderBy("COALESCE(t.date, CAST(t.year AS TEXT)) DESC, r.name COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::OriginalDate:
                 query.orderBy("COALESCE(original_date, CAST(original_year AS TEXT), date, CAST(year AS TEXT)), r.name COLLATE NOCASE");
@@ -222,14 +226,14 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ReleaseType>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ReleaseType>>("SELECT r_t from release_type r_t").where("r_t.id = ?").bind(id));
     }
 
     ReleaseType::pointer ReleaseType::find(Session& session, std::string_view name)
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ReleaseType>().where("name = ?").bind(name));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ReleaseType>>("SELECT r_t from release_type r_t").where("r_t.name = ?").bind(name));
     }
 
     Release::Release(const std::string& name, const std::optional<core::UUID>& MBID)
@@ -254,14 +258,14 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Release>().where("mbid = ?").bind(mbid.getAsString()));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Release>>("SELECT r from release r").where("r.mbid = ?").bind(mbid.getAsString()));
     }
 
     Release::pointer Release::find(Session& session, ReleaseId id)
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Release>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Release>>("SELECT r from release r").where("r.id = ?").bind(id));
     }
 
     bool Release::exists(Session& session, ReleaseId id)
@@ -331,7 +335,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(createQuery<int>(session, "COUNT(r.id)", params));
+        return utils::fetchQuerySingleResult(createQuery<int>(session, "COUNT(DISTINCT r.id)", params));
     }
 
     std::size_t Release::getDiscCount() const

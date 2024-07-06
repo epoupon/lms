@@ -88,7 +88,8 @@
 
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Nie udało się ustalić długości ścieżki</message>
-<message id="Lms.Admin.ScannerController.cannot-parse-file">Nie udało się przeparsować pliku</message>
+<message id="Lms.Admin.ScannerController.cannot-read-audio-file">Nie można przeanalizować pliku audio</message>
+<message id="Lms.Admin.ScannerController.cannot-read-image-file">Nie można przeanalizować pliku obrazu</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">Nie udało się odczytać pliku</message>
 <message id="Lms.Admin.ScannerController.compact">Sprasuj bazę danych. <strong>Uwaga:</strong> może to trochę zająć, a cała aplikacja będzie w tym czasie zablokowana!</message>
 <message id="Lms.Admin.ScannerController.duplicates-header">
@@ -117,12 +118,13 @@
 <message id="Lms.Admin.ScannerController.status-not-scheduled">Nie zaplanowano</message>
 <message id="Lms.Admin.ScannerController.status-scheduled">Zaplanowano na {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">Skanowanie: krok {1}/{2}</message>
+<message id="Lms.Admin.ScannerController.step-associating-artist-images">Kojarzenie obrazów artystów: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">
 	<plural case="0">Sprawdzanie duplikatów... {1} plik</plural>
 	<plural case="1">Sprawdzanie duplikatów... {1} pliki</plural>
 	<plural case="2">Sprawdzanie duplikatów... {1} plików</plural>
 </message>
-<message id="Lms.Admin.ScannerController.step-checking-for-missing-files">Sprawdzanie plików... {1}%</message>
+<message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Sprawdzanie plików... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">Prasowanie bazy danych...</message>
 <message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Obliczanie statystyk... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-discovering-files">
@@ -131,9 +133,10 @@
 	<plural case="2">Odkrywanie plików: {1} plików</plural>
 </message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Pobieranie danych o ścieżce z AcousticBrainz: {1}/{2} ścieżek ({3}%)...</message>
-<message id="Lms.Admin.ScannerController.step-optimize">Optymalizowanie bazy danych... {1}/{2} wpisów ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-optimize">Optymalizowanie bazy danych... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Przeładowywanie silnika podobieństw: {1}%...</message>
-<message id="Lms.Admin.ScannerController.step-scanning-files">Skanowanie plików: {1}/{2} plików ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">Usuwanie osieroconych wpisów: {1} wpisów...</message>
+<message id="Lms.Admin.ScannerController.step-scanning-files">Skanowanie plików: {1}/{2} ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-status">Obecny krok</message>
 
 <!--Tracing-->

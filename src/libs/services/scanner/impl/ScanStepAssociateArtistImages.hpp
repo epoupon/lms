@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,19 +19,23 @@
 
 #pragma once
 
-#include "image/IEncodedImage.hpp"
+#include <string>
+#include <vector>
 
-namespace lms::image
+#include "ScanStepBase.hpp"
+
+namespace lms::scanner
 {
-    class IRawImage
+    class ScanStepAssociateArtistImages : public ScanStepBase
     {
     public:
-        virtual ~IRawImage() = default;
+        ScanStepAssociateArtistImages(InitParams& initParams);
 
-        virtual ImageSize getWidth() const = 0;
-        virtual ImageSize getHeight() const = 0;
+    private:
+        ScanStep getStep() const override { return ScanStep::AssociateArtistImages; }
+        core::LiteralString getStepName() const override { return "Associate artist images"; }
+        void process(ScanContext& context) override;
 
-        virtual void resize(ImageSize width) = 0;
-        virtual std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const = 0;
+        const std::vector<std::string> _artistFileNames;
     };
-} // namespace lms::image
+} // namespace lms::scanner

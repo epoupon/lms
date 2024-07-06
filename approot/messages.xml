@@ -87,7 +87,8 @@
 
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Cannot get track duration</message>
-<message id="Lms.Admin.ScannerController.cannot-parse-file">Cannot parse file</message>
+<message id="Lms.Admin.ScannerController.cannot-read-audio-file">Cannot parse audio file</message>
+<message id="Lms.Admin.ScannerController.cannot-read-image-file">Cannot parse image file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">Cannot read file</message>
 <message id="Lms.Admin.ScannerController.compact">Compact the database. <strong>Caution:</strong> this may take a while and will block the whole application during the compact step!</message>
 <message id="Lms.Admin.ScannerController.duplicates-header">{1} duplicate files:</message>
@@ -108,15 +109,17 @@
 <message id="Lms.Admin.ScannerController.status-not-scheduled">Not scheduled</message>
 <message id="Lms.Admin.ScannerController.status-scheduled">Scheduled on {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">Scanning: step {1}/{2}</message>
+<message id="Lms.Admin.ScannerController.step-associating-artist-images">Associating artist images: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">Checking for duplicate files... {1} files</message>
-<message id="Lms.Admin.ScannerController.step-checking-for-missing-files">Checking files... {1}%</message>
+<message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Checking for removed files... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">Compacting database...</message>
 <message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Computing stats... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-discovering-files">Discovering files: {1} files</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Fetching track features from AcousticBrainz: {1}/{2} tracks ({3}%)...</message>
-<message id="Lms.Admin.ScannerController.step-optimize">Optimizing database... {1}/{2} entries ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-optimize">Optimizing database... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Reloading similarity engine: {1}%...</message>
-<message id="Lms.Admin.ScannerController.step-scanning-files">Scanning files: {1}/{2} files ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">Removing orphaned entries: {1} entries...</message>
+<message id="Lms.Admin.ScannerController.step-scanning-files">Scanning files: {1}/{2} ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-status">Step status</message>
 
 <!--Tracing-->

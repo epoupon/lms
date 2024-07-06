@@ -87,7 +87,8 @@
 
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">无法获得音轨时间</message>
-<message id="Lms.Admin.ScannerController.cannot-parse-file">无法解析文件</message>
+<message id="Lms.Admin.ScannerController.cannot-read-audio-file">无法解析文件</message>
+
 <message id="Lms.Admin.ScannerController.cannot-read-file">无法读取文件</message>
 
 <message id="Lms.Admin.ScannerController.duplicates-header">{1} 个重复文件：</message>
@@ -109,13 +110,15 @@
 <message id="Lms.Admin.ScannerController.status-scheduled">计划于 {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">扫描中: 阶段 {1}/{2}</message>
 
-<message id="Lms.Admin.ScannerController.step-checking-for-missing-files">检查文件中... {1}%</message>
+<message id="Lms.Admin.ScannerController.step-checking-for-removed-files">检查文件中... {1}%</message>
+
 
 
 <message id="Lms.Admin.ScannerController.step-discovering-files">检索文件中: {1} 文件</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">从 AcousticBrainz 获取音轨特征: {1}/{2} 音轨 ({3}%)...</message>
 
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">重载相似引擎中 {1}%...</message>
+
 <message id="Lms.Admin.ScannerController.step-scanning-files">扫描文件中: {1}/{2} 个文件 ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-status">当前步骤状态</message>
 

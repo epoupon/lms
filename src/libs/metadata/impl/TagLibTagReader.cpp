@@ -340,15 +340,6 @@ namespace lms::metadata
 #endif
     }
 
-    size_t TagLibTagReader::countTagValues(TagType tag) const
-    {
-        size_t count{};
-        visitTagValues(tag, [&](std::string_view) {
-            count++;
-        });
-        return count;
-    }
-
     void TagLibTagReader::visitTagValues(TagType tag, TagValueVisitor visitor) const
     {
         auto itTagNames{ tagMapping.find(tag) };

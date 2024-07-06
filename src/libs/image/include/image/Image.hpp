@@ -21,6 +21,7 @@
 
 #include <filesystem>
 #include <memory>
+#include <span>
 
 #include "image/IEncodedImage.hpp"
 #include "image/IRawImage.hpp"
@@ -28,6 +29,7 @@
 namespace lms::image
 {
     void init(const std::filesystem::path& path);
+    std::span<const std::filesystem::path> getSupportedFileExtensions();
     std::unique_ptr<IRawImage> decodeImage(const std::byte* encodedData, std::size_t encodedDataSize);
     std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path);
     std::unique_ptr<IEncodedImage> readSvgFile(const std::filesystem::path& path);
