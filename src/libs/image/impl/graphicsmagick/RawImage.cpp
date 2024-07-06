@@ -25,6 +25,7 @@
 #include <magick/resource.h>
 
 #include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
 #include "image/Exception.hpp"
 
 #include "JPEGImage.hpp"
@@ -90,6 +91,8 @@ namespace lms::image::GraphicsMagick
     {
         try
         {
+            LMS_SCOPED_TRACE_DETAILED("Image", "Resize");
+
             _image.resize(Magick::Geometry{ static_cast<unsigned int>(width), static_cast<unsigned int>(width) });
         }
         catch (Magick::Exception& e)

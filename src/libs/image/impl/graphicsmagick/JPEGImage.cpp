@@ -20,6 +20,7 @@
 #include "JPEGImage.hpp"
 
 #include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
 #include "image/Exception.hpp"
 
 #include "RawImage.hpp"
@@ -28,6 +29,8 @@ namespace lms::image::GraphicsMagick
 {
     JPEGImage::JPEGImage(const RawImage& rawImage, unsigned quality)
     {
+        LMS_SCOPED_TRACE_DETAILED("Image", "WriteJPEG");
+
         try
         {
             Magick::Image image{ rawImage.getMagickImage() };

@@ -21,6 +21,7 @@
 
 #include <array>
 
+#include "RawImage.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 
@@ -28,11 +29,13 @@ namespace lms::image
 {
     std::unique_ptr<IRawImage> decodeImage(const std::byte* encodedData, std::size_t encodedDataSize)
     {
+        LMS_SCOPED_TRACE_DETAILED("Image", "DecodeBuffer");
         return std::make_unique<GraphicsMagick::RawImage>(encodedData, encodedDataSize);
     }
 
     std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path)
     {
+        LMS_SCOPED_TRACE_DETAILED("Image", "DecodeFile");
         return std::make_unique<GraphicsMagick::RawImage>(path);
     }
 
