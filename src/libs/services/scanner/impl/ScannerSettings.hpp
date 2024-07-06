@@ -35,7 +35,8 @@ namespace lms::scanner
         std::size_t scanVersion{};
         Wt::WTime startTime;
         db::ScanSettings::UpdatePeriod updatePeriod{ db::ScanSettings::UpdatePeriod::Never };
-        std::vector<std::filesystem::path> supportedExtensions;
+        std::vector<std::filesystem::path> supportedAudioFileExtensions;
+        std::vector<std::filesystem::path> supportedImageFileExtensions;
         bool skipDuplicateMBID{};
         std::vector<std::string> extraTags;
         std::vector<std::string> artistTagDelimiters;

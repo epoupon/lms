@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,18 +19,6 @@
 
 #pragma once
 
-#include "ScanStepBase.hpp"
+#include "database/IdType.hpp"
 
-namespace lms::scanner
-{
-    class ScanStepCheckDuplicatedDbFiles : public ScanStepBase
-    {
-    public:
-        using ScanStepBase::ScanStepBase;
-
-    private:
-        core::LiteralString getStepName() const override { return "Check for duplicated files"; }
-        ScanStep getStep() const override { return ScanStep::CheckForDuplicateFiles; }
-        void process(ScanContext& context) override;
-    };
-} // namespace lms::scanner
+LMS_DECLARE_IDTYPE(DirectoryId)

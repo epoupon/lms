@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2023 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,19 +19,18 @@
 
 #pragma once
 
-#include "image/IEncodedImage.hpp"
+#include "ScanStepBase.hpp"
 
-namespace lms::image
+namespace lms::scanner
 {
-    class IRawImage
+    class ScanStepCheckForDuplicatedFiles : public ScanStepBase
     {
     public:
-        virtual ~IRawImage() = default;
+        using ScanStepBase::ScanStepBase;
 
-        virtual ImageSize getWidth() const = 0;
-        virtual ImageSize getHeight() const = 0;
-
-        virtual void resize(ImageSize width) = 0;
-        virtual std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const = 0;
+    private:
+        core::LiteralString getStepName() const override { return "Check for duplicated files"; }
+        ScanStep getStep() const override { return ScanStep::CheckForDuplicatedFiles; }
+        void process(ScanContext& context) override;
     };
-} // namespace lms::image
+} // namespace lms::scanner

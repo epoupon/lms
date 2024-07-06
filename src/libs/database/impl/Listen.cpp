@@ -210,7 +210,7 @@ namespace lms::db
     Listen::pointer Listen::find(Session& session, ListenId id)
     {
         session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<Listen>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Listen>>("SELECT l from listen l").where("l.id = ?").bind(id));
     }
 
     RangeResults<ListenId> Listen::find(Session& session, const FindParameters& parameters)

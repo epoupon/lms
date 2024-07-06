@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ScanStepCheckDuplicatedDbFiles.hpp"
+#include "ScanStepCheckForDuplicatedFiles.hpp"
 
 #include "core/ILogger.hpp"
 #include "database/Db.hpp"
@@ -26,7 +26,7 @@
 
 namespace lms::scanner
 {
-    void ScanStepCheckDuplicatedDbFiles::process(ScanContext& context)
+    void ScanStepCheckForDuplicatedFiles::process(ScanContext& context)
     {
         using namespace db;
 

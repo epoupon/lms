@@ -30,6 +30,7 @@
 #include "core/Utils.hpp"
 #include "database/Artist.hpp"
 #include "database/Db.hpp"
+#include "database/Image.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
@@ -86,19 +87,6 @@ namespace lms::cover
             return res;
         }
 
-        std::vector<std::string> constructArtistFileNames()
-        {
-            std::vector<std::string> res;
-
-            core::Service<core::IConfig>::get()->visitStrings("artist-image-file-names",
-                [&res](std::string_view fileName) {
-                    res.emplace_back(fileName);
-                },
-                { "artist" });
-
-            return res;
-        }
-
         bool isFileSupported(const std::filesystem::path& file, const std::vector<std::filesystem::path>& extensions)
         {
             return (std::find(std::cbegin(extensions), std::cend(extensions), file.extension()) != std::cend(extensions));
@@ -118,7 +106,6 @@ namespace lms::cover
         , _cache{ core::Service<core::IConfig>::get()->getULong("cover-max-cache-size", 30) * 1000 * 1000 }
         , _maxFileSize{ core::Service<core::IConfig>::get()->getULong("cover-max-file-size", 10) * 1000 * 1000 }
         , _preferredFileNames{ constructPreferredFileNames() }
-        , _artistFileNames{ constructArtistFileNames() }
     {
         setJpegQuality(core::Service<core::IConfig>::get()->getULong("cover-jpeg-quality", 75));
 
@@ -389,87 +376,15 @@ namespace lms::cover
         if (artistImage)
             return artistImage;
 
-        std::string artistName;
-        std::string artistMBID;
-
-        std::set<std::filesystem::path> releasePaths;
-        std::set<std::filesystem::path> multiArtistReleasePaths;
-
         {
             Session& session{ _db.getTLSSession() };
 
             auto transaction{ session.createReadTransaction() };
 
-            const Artist::pointer artist{ Artist::find(session, artistId) };
-            if (!artist)
-                return artistImage;
-
-            artistName = artist->getName();
-            if (auto mbid{ artist->getMBID() })
-                artistMBID = mbid->getAsString();
-
-            Track::FindParameters params;
-            params.setArtist(artistId, { TrackArtistLinkType::ReleaseArtist });
-
-            Track::find(session, params, [&](const Track::pointer& track) {
-                Artist::FindParameters artistFindParams;
-                artistFindParams.setTrack(track->getId());
-                artistFindParams.setLinkType(TrackArtistLinkType::ReleaseArtist);
-
-                const auto releaseArtists{ Artist::findIds(session, artistFindParams) };
-                if (releaseArtists.results.size() == 1)
-                    releasePaths.insert(track->getAbsoluteFilePath().parent_path());
-                else
-                    multiArtistReleasePaths.insert(track->getAbsoluteFilePath().parent_path());
-            });
-        }
-
-        std::vector<std::string> artistFileNames;
-        if (!artistMBID.empty())
-            artistFileNames.push_back(artistMBID);
-        artistFileNames.push_back(artistName);
-
-        std::vector<std::string> artistFileNamesWithGenericNames{ artistFileNames };
-        artistFileNamesWithGenericNames.insert(artistFileNamesWithGenericNames.end(), std::cbegin(_artistFileNames), std::cend(_artistFileNames));
-
-        // Expect layout like this:
-        // ReleaseArtist/Release/Tracks'
-        //              /artist-mbid.jpg
-        //              /artist-name.jpg
-        //              /artist.jpg
-        if (!releasePaths.empty())
-        {
-            const std::filesystem::path artistPath{ releasePaths.size() == 1 ? releasePaths.begin()->parent_path() : core::pathUtils::getLongestCommonPath(std::cbegin(releasePaths), std::cend(releasePaths)) };
-            artistImage = getFromDirectory(artistPath, width, artistFileNamesWithGenericNames, false);
-        }
-
-        // Expect layout like this:
-        // ReleaseArtist/Release/Tracks'
-        //                      /artist-mbid.jpg
-        //                      /artist-name.jpg
-        //                      /artist.jpg
-        if (!artistImage)
-        {
-            for (const std::filesystem::path& releasePath : releasePaths)
+            if (const Artist::pointer artist{ Artist::find(session, artistId) })
             {
-                artistImage = getFromDirectory(releasePath, width, artistFileNamesWithGenericNames, false);
-                if (artistImage)
-                    break;
-            }
-        }
-
-        // Expect layout like this:
-        // Only search for the artist's name in the release path, as we can't map a generic name to several artists
-        // ReleaseArtist/Release/Tracks'
-        //                      /artist-name.jpg
-        //                      /artist-mbid.jpg
-        if (!artistImage)
-        {
-            for (const std::filesystem::path& releasePath : multiArtistReleasePaths)
-            {
-                artistImage = getFromDirectory(releasePath, width, artistFileNames, false);
-                if (artistImage)
-                    break;
+                if (const db::Image::pointer image{ artist->getImage() })
+                    artistImage = getFromCoverFile(image->getAbsoluteFilePath(), width);
             }
         }
 

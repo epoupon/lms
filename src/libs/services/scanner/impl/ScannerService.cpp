@@ -29,13 +29,16 @@
 #include "database/MediaLibrary.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/TrackFeatures.hpp"
+#include "image/Image.hpp"
 
-#include "ScanStepCheckDuplicatedDbFiles.hpp"
+#include "ScanStepAssociateArtistImages.hpp"
+#include "ScanStepCheckForDuplicatedFiles.hpp"
+#include "ScanStepCheckForRemovedFiles.hpp"
 #include "ScanStepCompact.hpp"
 #include "ScanStepComputeClusterStats.hpp"
 #include "ScanStepDiscoverFiles.hpp"
 #include "ScanStepOptimize.hpp"
-#include "ScanStepRemoveOrphanDbFiles.hpp"
+#include "ScanStepRemoveOrphanedDbEntries.hpp"
 #include "ScanStepScanFiles.hpp"
 
 namespace lms::scanner
@@ -336,14 +339,17 @@ namespace lms::scanner
             _db
         };
 
+        // Order is important
         _scanSteps.clear();
         _scanSteps.push_back(std::make_unique<ScanStepDiscoverFiles>(params));
         _scanSteps.push_back(std::make_unique<ScanStepScanFiles>(params));
-        _scanSteps.push_back(std::make_unique<ScanStepRemoveOrphanDbFiles>(params));
+        _scanSteps.push_back(std::make_unique<ScanStepCheckForRemovedFiles>(params));
+        _scanSteps.push_back(std::make_unique<ScanStepAssociateArtistImages>(params));
+        _scanSteps.push_back(std::make_unique<ScanStepRemoveOrphanedDbEntries>(params));
         _scanSteps.push_back(std::make_unique<ScanStepCompact>(params));
         _scanSteps.push_back(std::make_unique<ScanStepOptimize>(params));
         _scanSteps.push_back(std::make_unique<ScanStepComputeClusterStats>(params));
-        _scanSteps.push_back(std::make_unique<ScanStepCheckDuplicatedDbFiles>(params));
+        _scanSteps.push_back(std::make_unique<ScanStepCheckForDuplicatedFiles>(params));
     }
 
     ScannerSettings ScannerService::readSettings()
@@ -361,9 +367,16 @@ namespace lms::scanner
             newSettings.updatePeriod = scanSettings->getUpdatePeriod();
 
             {
-                const auto fileExtensions{ scanSettings->getAudioFileExtensions() };
-                newSettings.supportedExtensions.reserve(fileExtensions.size());
-                std::transform(std::cbegin(fileExtensions), std::end(fileExtensions), std::back_inserter(newSettings.supportedExtensions),
+                const auto audioFileExtensions{ scanSettings->getAudioFileExtensions() };
+                newSettings.supportedAudioFileExtensions.reserve(audioFileExtensions.size());
+                std::transform(std::cbegin(audioFileExtensions), std::end(audioFileExtensions), std::back_inserter(newSettings.supportedAudioFileExtensions),
+                    [](const std::filesystem::path& extension) { return std::filesystem::path{ core::stringUtils::stringToLower(extension.string()) }; });
+            }
+
+            {
+                const auto imageFileExtensions{ image::getSupportedFileExtensions() };
+                newSettings.supportedImageFileExtensions.reserve(imageFileExtensions.size());
+                std::transform(std::cbegin(imageFileExtensions), std::end(imageFileExtensions), std::back_inserter(newSettings.supportedImageFileExtensions),
                     [](const std::filesystem::path& extension) { return std::filesystem::path{ core::stringUtils::stringToLower(extension.string()) }; });
             }
 

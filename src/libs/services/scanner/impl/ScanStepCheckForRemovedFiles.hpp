@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2023 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,32 +19,25 @@
 
 #pragma once
 
-#include <cstddef>
 #include <filesystem>
 
-#include <Magick++.h>
+#include "ScanStepBase.hpp"
 
-#include "image/IEncodedImage.hpp"
-#include "image/IRawImage.hpp"
-
-namespace lms::image::GraphicsMagick
+namespace lms::scanner
 {
-    class RawImage : public IRawImage
+    class ScanStepCheckForRemovedFiles : public ScanStepBase
     {
     public:
-        RawImage(const std::byte* encodedData, std::size_t encodedDataSize);
-        RawImage(const std::filesystem::path& path);
-
-        ImageSize getWidth() const override;
-        ImageSize getHeight() const override;
-
-        void resize(ImageSize width) override;
-        std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const override;
+        using ScanStepBase::ScanStepBase;
 
     private:
-        friend class JPEGImage;
-        Magick::Image getMagickImage() const;
+        core::LiteralString getStepName() const override { return "Check for removed files"; }
+        ScanStep getStep() const override { return ScanStep::CheckForRemovedFiles; }
+        void process(ScanContext& context) override;
 
-        Magick::Image _image;
+        template<typename Object>
+        void checkForRemovedFiles(ScanContext& context, const std::vector<std::filesystem::path>& supportedFileExtensions);
+
+        bool checkFile(const std::filesystem::path& p, const std::vector<std::filesystem::path>& allowedExtensions);
     };
-} // namespace lms::image::GraphicsMagick
+} // namespace lms::scanner

@@ -26,7 +26,7 @@ namespace lms::scanner
 {
     void ScanStepDiscoverFiles::process(ScanContext& context)
     {
-        context.stats.filesScanned = 0;
+        context.stats.totalFileCount = 0;
 
         for (const ScannerSettings::MediaLibraryInfo& mediaLibrary : _settings.mediaLibraries)
         {
@@ -36,7 +36,7 @@ namespace lms::scanner
                     if (_abortScan)
                         return false;
 
-                    if (!ec && core::pathUtils::hasFileAnyExtension(path, _settings.supportedExtensions))
+                    if (!ec && (core::pathUtils::hasFileAnyExtension(path, _settings.supportedAudioFileExtensions) || core::pathUtils::hasFileAnyExtension(path, _settings.supportedImageFileExtensions)))
                     {
                         context.currentStepStats.processedElems++;
                         currentDirectoryProcessElemsCount++;
@@ -50,8 +50,8 @@ namespace lms::scanner
             LMS_LOG(DBUPDATER, DEBUG, "Discovered " << currentDirectoryProcessElemsCount << " files in '" << mediaLibrary.rootDirectory << "'");
         }
 
-        context.stats.filesScanned = context.currentStepStats.processedElems;
+        context.stats.totalFileCount = context.currentStepStats.processedElems;
 
-        LMS_LOG(DBUPDATER, DEBUG, "Discovered " << context.stats.filesScanned << " files in all directories");
+        LMS_LOG(DBUPDATER, DEBUG, "Discovered " << context.stats.totalFileCount << " files in all directories");
     }
 } // namespace lms::scanner

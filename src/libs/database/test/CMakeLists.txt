@@ -4,6 +4,8 @@ add_executable(test-database
 	Cluster.cpp
 	Common.cpp
 	DatabaseTest.cpp
+	Directory.cpp
+	Image.cpp
 	Listen.cpp
 	Migration.cpp
 	Release.cpp

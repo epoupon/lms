@@ -136,7 +136,7 @@ namespace lms::db
         session.checkReadTransaction();
         assert(userId.isValid());
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackList>().where("name = ?").bind(name).where("type = ?").bind(type).where("user_id = ?").bind(userId));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<TrackList>>("select t_l from tracklist t_l").where("t_l.name = ?").bind(name).where("t_l.type = ?").bind(type).where("t_l.user_id = ?").bind(userId));
     }
 
     RangeResults<TrackListId> TrackList::find(Session& session, const FindParameters& params)
@@ -157,7 +157,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackList>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<TrackList>>("select t_l from tracklist t_l").where("t_l.id = ?").bind(id));
     }
 
     bool TrackList::isEmpty() const

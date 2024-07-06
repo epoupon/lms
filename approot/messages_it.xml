@@ -87,7 +87,8 @@
 
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Non sono stato in grado di determinare la durata della traccia</message>
-<message id="Lms.Admin.ScannerController.cannot-parse-file">Non in grado di analizzare il file</message>
+<message id="Lms.Admin.ScannerController.cannot-read-audio-file">Impossibile analizzare il file audio</message>
+<message id="Lms.Admin.ScannerController.cannot-read-image-file">Impossibile analizzare il file immagine</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">Non in grado di leggere il file</message>
 <message id="Lms.Admin.ScannerController.compact">Compatta il database. <strong>Attenzione:</strong> ciò potrebbe richiedere del tempo e bloccherà l'intera applicazione durante il passaggio di compattazione!</message>
 <message id="Lms.Admin.ScannerController.duplicates-header">{1} file duplicati:</message>
@@ -108,15 +109,17 @@
 <message id="Lms.Admin.ScannerController.status-not-scheduled">Non pianificato</message>
 <message id="Lms.Admin.ScannerController.status-scheduled">Pianificato il {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">Scansione: passo {1}/{2}</message>
+<message id="Lms.Admin.ScannerController.step-associating-artist-images">Associando immagini degli artisti: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">Controllo duplicati... {1} files</message>
-<message id="Lms.Admin.ScannerController.step-checking-for-missing-files">Controllo file... {1}%</message>
+<message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Controllo file... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">Compattazione del database...</message>
 <message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Calcolo statistiche... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-discovering-files">File trovati: {1} files</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Recupero metadati da AcousticBrainz: {1}/{2} tracce ({3}%)...</message>
-<message id="Lms.Admin.ScannerController.step-optimize">Ottimizzazione del database... {1}/{2} voci ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-optimize">Ottimizzazione del database... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Ricarica motore di tracce simili: {1}%...</message>
-<message id="Lms.Admin.ScannerController.step-scanning-files">Scansione files: {1}/{2} files ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">Rimozione voci orfane: {1} voci...</message>
+<message id="Lms.Admin.ScannerController.step-scanning-files">Scansione dei file: {1}/{2} ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-status">Stato passo</message>
 
 <!--Tracing-->
