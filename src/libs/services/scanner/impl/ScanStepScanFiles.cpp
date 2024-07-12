@@ -497,32 +497,18 @@ namespace lms::scanner
 
             if (const AudioFileScanData * scanData{ std::get_if<AudioFileScanData>(&scanResult.scanData) })
             {
-                if (metadata::Track * track{ scanData->get() })
-                {
-                    context.stats.scans++;
-                    processAudioFileScanData(context, scanResult.path, *track, libraryInfo);
-                }
-                else
-                {
-                    context.stats.errors.emplace_back(scanResult.path, ScanErrorType::CannotReadAudioFile);
-                }
+                context.stats.scans++;
+                processAudioFileScanData(context, scanResult.path, scanData->get(), libraryInfo);
             }
             else if (const ImageFileScanData * scanData{ std::get_if<ImageFileScanData>(&scanResult.scanData) })
             {
-                if (scanData->has_value())
-                {
-                    context.stats.scans++;
-                    processImageFileScanData(context, scanResult.path, scanData->value(), libraryInfo);
-                }
-                else
-                {
-                    context.stats.errors.emplace_back(scanResult.path, ScanErrorType::CannotReadImageFile);
-                }
+                context.stats.scans++;
+                processImageFileScanData(context, scanResult.path, scanData->has_value() ? &scanData->value() : nullptr, libraryInfo);
             }
         }
     }
 
-    void ScanStepScanFiles::processAudioFileScanData(ScanContext& context, const std::filesystem::path& file, const metadata::Track& trackMetadata, const ScannerSettings::MediaLibraryInfo& libraryInfo)
+    void ScanStepScanFiles::processAudioFileScanData(ScanContext& context, const std::filesystem::path& file, const metadata::Track* trackMetadata, const ScannerSettings::MediaLibraryInfo& libraryInfo)
     {
         LMS_SCOPED_TRACE_DETAILED("Scanner", "ProcessAudioScanData");
 
@@ -538,9 +524,20 @@ namespace lms::scanner
         db::Session& dbSession{ _db.getTLSSession() };
         Track::pointer track{ Track::findByPath(dbSession, file) };
 
-        if (trackMetadata.mbid && (!track || _settings.skipDuplicateMBID))
+        if (!trackMetadata)
         {
-            std::vector<Track::pointer> duplicateTracks{ Track::findByMBID(dbSession, *trackMetadata.mbid) };
+            if (track)
+            {
+                track.remove();
+                stats.deletions++;
+            }
+            context.stats.errors.emplace_back(file, ScanErrorType::CannotReadAudioFile);
+            return;
+        }
+
+        if (trackMetadata->mbid && (!track || _settings.skipDuplicateMBID))
+        {
+            std::vector<Track::pointer> duplicateTracks{ Track::findByMBID(dbSession, *trackMetadata->mbid) };
 
             // find for an existing track MBID as the file may have just been moved
             if (!track && duplicateTracks.size() == 1)
@@ -586,7 +583,7 @@ namespace lms::scanner
         }
 
         // We estimate this is an audio file if the duration is not null
-        if (trackMetadata.audioProperties.duration == std::chrono::milliseconds::zero())
+        if (trackMetadata->audioProperties.duration == std::chrono::milliseconds::zero())
         {
             LMS_LOG(DBUPDATER, DEBUG, "Skipped '" << file.string() << "' (duration is 0)");
 
@@ -596,14 +593,14 @@ namespace lms::scanner
                 track.remove();
                 stats.deletions++;
             }
-            stats.errors.emplace_back(ScanError{ file, ScanErrorType::BadDuration });
+            stats.errors.emplace_back(file, ScanErrorType::BadDuration);
             return;
         }
 
         // ***** Title
         std::string title;
-        if (!trackMetadata.title.empty())
-            title = trackMetadata.title;
+        if (!trackMetadata->title.empty())
+            title = trackMetadata->title;
         else
         {
             // TODO parse file name guess track etc.
@@ -625,11 +622,11 @@ namespace lms::scanner
         assert(track);
 
         // Audio properties
-        track.modify()->setBitrate(trackMetadata.audioProperties.bitrate);
-        track.modify()->setBitsPerSample(trackMetadata.audioProperties.bitsPerSample);
-        track.modify()->setChannelCount(trackMetadata.audioProperties.channelCount);
-        track.modify()->setDuration(trackMetadata.audioProperties.duration);
-        track.modify()->setSampleRate(trackMetadata.audioProperties.sampleRate);
+        track.modify()->setBitrate(trackMetadata->audioProperties.bitrate);
+        track.modify()->setBitsPerSample(trackMetadata->audioProperties.bitsPerSample);
+        track.modify()->setChannelCount(trackMetadata->audioProperties.channelCount);
+        track.modify()->setDuration(trackMetadata->audioProperties.duration);
+        track.modify()->setSampleRate(trackMetadata->audioProperties.sampleRate);
 
         track.modify()->setRelativeFilePath(fileInfo->relativePath);
         track.modify()->setFileSize(fileInfo->fileSize);
@@ -640,76 +637,76 @@ namespace lms::scanner
 
         track.modify()->clearArtistLinks();
         // Do not fallback on artists with the same name but having a MBID for artist and releaseArtists, as it may be corrected by properly tagging files
-        for (const Artist::pointer& artist : getOrCreateArtists(dbSession, trackMetadata.artists, false))
+        for (const Artist::pointer& artist : getOrCreateArtists(dbSession, trackMetadata->artists, false))
             track.modify()->addArtistLink(TrackArtistLink::create(dbSession, track, artist, TrackArtistLinkType::Artist));
 
-        if (trackMetadata.medium && trackMetadata.medium->release)
+        if (trackMetadata->medium && trackMetadata->medium->release)
         {
-            for (const Artist::pointer& releaseArtist : getOrCreateArtists(dbSession, trackMetadata.medium->release->artists, false))
+            for (const Artist::pointer& releaseArtist : getOrCreateArtists(dbSession, trackMetadata->medium->release->artists, false))
                 track.modify()->addArtistLink(TrackArtistLink::create(dbSession, track, releaseArtist, TrackArtistLinkType::ReleaseArtist));
         }
 
         // Allow fallbacks on artists with the same name even if they have MBID, since there is no tag to indicate the MBID of these artists
         // We could ask MusicBrainz to get all the information, but that would heavily slow down the import process
-        for (const Artist::pointer& conductor : getOrCreateArtists(dbSession, trackMetadata.conductorArtists, true))
+        for (const Artist::pointer& conductor : getOrCreateArtists(dbSession, trackMetadata->conductorArtists, true))
             track.modify()->addArtistLink(TrackArtistLink::create(dbSession, track, conductor, TrackArtistLinkType::Conductor));
 
-        for (const Artist::pointer& composer : getOrCreateArtists(dbSession, trackMetadata.composerArtists, true))
+        for (const Artist::pointer& composer : getOrCreateArtists(dbSession, trackMetadata->composerArtists, true))
             track.modify()->addArtistLink(TrackArtistLink::create(dbSession, track, composer, TrackArtistLinkType::Composer));
 
-        for (const Artist::pointer& lyricist : getOrCreateArtists(dbSession, trackMetadata.lyricistArtists, true))
+        for (const Artist::pointer& lyricist : getOrCreateArtists(dbSession, trackMetadata->lyricistArtists, true))
             track.modify()->addArtistLink(TrackArtistLink::create(dbSession, track, lyricist, TrackArtistLinkType::Lyricist));
 
-        for (const Artist::pointer& mixer : getOrCreateArtists(dbSession, trackMetadata.mixerArtists, true))
+        for (const Artist::pointer& mixer : getOrCreateArtists(dbSession, trackMetadata->mixerArtists, true))
             track.modify()->addArtistLink(TrackArtistLink::create(dbSession, track, mixer, TrackArtistLinkType::Mixer));
 
-        for (const auto& [role, performers] : trackMetadata.performerArtists)
+        for (const auto& [role, performers] : trackMetadata->performerArtists)
         {
             for (const Artist::pointer& performer : getOrCreateArtists(dbSession, performers, true))
                 track.modify()->addArtistLink(TrackArtistLink::create(dbSession, track, performer, TrackArtistLinkType::Performer, role));
         }
 
-        for (const Artist::pointer& producer : getOrCreateArtists(dbSession, trackMetadata.producerArtists, true))
+        for (const Artist::pointer& producer : getOrCreateArtists(dbSession, trackMetadata->producerArtists, true))
             track.modify()->addArtistLink(TrackArtistLink::create(dbSession, track, producer, TrackArtistLinkType::Producer));
 
-        for (const Artist::pointer& remixer : getOrCreateArtists(dbSession, trackMetadata.remixerArtists, true))
+        for (const Artist::pointer& remixer : getOrCreateArtists(dbSession, trackMetadata->remixerArtists, true))
             track.modify()->addArtistLink(TrackArtistLink::create(dbSession, track, remixer, TrackArtistLinkType::Remixer));
 
         track.modify()->setScanVersion(_settings.scanVersion);
-        if (trackMetadata.medium && trackMetadata.medium->release)
-            track.modify()->setRelease(getOrCreateRelease(dbSession, *trackMetadata.medium->release, file.parent_path()));
+        if (trackMetadata->medium && trackMetadata->medium->release)
+            track.modify()->setRelease(getOrCreateRelease(dbSession, *trackMetadata->medium->release, file.parent_path()));
         else
             track.modify()->setRelease({});
-        track.modify()->setTotalTrack(trackMetadata.medium ? trackMetadata.medium->trackCount : std::nullopt);
-        track.modify()->setReleaseReplayGain(trackMetadata.medium ? trackMetadata.medium->replayGain : std::nullopt);
-        track.modify()->setDiscSubtitle(trackMetadata.medium ? trackMetadata.medium->name : "");
-        track.modify()->setClusters(getOrCreateClusters(dbSession, trackMetadata));
+        track.modify()->setTotalTrack(trackMetadata->medium ? trackMetadata->medium->trackCount : std::nullopt);
+        track.modify()->setReleaseReplayGain(trackMetadata->medium ? trackMetadata->medium->replayGain : std::nullopt);
+        track.modify()->setDiscSubtitle(trackMetadata->medium ? trackMetadata->medium->name : "");
+        track.modify()->setClusters(getOrCreateClusters(dbSession, *trackMetadata));
         track.modify()->setName(title);
         track.modify()->setAddedTime(Wt::WDateTime::currentDateTime());
-        track.modify()->setTrackNumber(trackMetadata.position);
-        track.modify()->setDiscNumber(trackMetadata.medium ? trackMetadata.medium->position : std::nullopt);
-        track.modify()->setDate(trackMetadata.date);
-        track.modify()->setYear(trackMetadata.year);
-        track.modify()->setOriginalDate(trackMetadata.originalDate);
-        track.modify()->setOriginalYear(trackMetadata.originalYear);
+        track.modify()->setTrackNumber(trackMetadata->position);
+        track.modify()->setDiscNumber(trackMetadata->medium ? trackMetadata->medium->position : std::nullopt);
+        track.modify()->setDate(trackMetadata->date);
+        track.modify()->setYear(trackMetadata->year);
+        track.modify()->setOriginalDate(trackMetadata->originalDate);
+        track.modify()->setOriginalYear(trackMetadata->originalYear);
 
         // If a file has an OriginalDate but no date, set it to ease filtering
-        if (!trackMetadata.date.isValid() && trackMetadata.originalDate.isValid())
-            track.modify()->setDate(trackMetadata.originalDate);
+        if (!trackMetadata->date.isValid() && trackMetadata->originalDate.isValid())
+            track.modify()->setDate(trackMetadata->originalDate);
 
         // If a file has an OriginalYear but no Year, set it to ease filtering
-        if (!trackMetadata.year && trackMetadata.originalYear)
-            track.modify()->setYear(trackMetadata.originalYear);
+        if (!trackMetadata->year && trackMetadata->originalYear)
+            track.modify()->setYear(trackMetadata->originalYear);
 
-        track.modify()->setRecordingMBID(trackMetadata.recordingMBID);
-        track.modify()->setTrackMBID(trackMetadata.mbid);
+        track.modify()->setRecordingMBID(trackMetadata->recordingMBID);
+        track.modify()->setTrackMBID(trackMetadata->mbid);
         if (auto trackFeatures{ TrackFeatures::find(dbSession, track->getId()) })
             trackFeatures.remove(); // TODO: only if MBID changed?
-        track.modify()->setHasCover(trackMetadata.hasCover);
-        track.modify()->setCopyright(trackMetadata.copyright);
-        track.modify()->setCopyrightURL(trackMetadata.copyrightURL);
-        track.modify()->setTrackReplayGain(trackMetadata.replayGain);
-        track.modify()->setArtistDisplayName(trackMetadata.artistDisplayName);
+        track.modify()->setHasCover(trackMetadata->hasCover);
+        track.modify()->setCopyright(trackMetadata->copyright);
+        track.modify()->setCopyrightURL(trackMetadata->copyrightURL);
+        track.modify()->setTrackReplayGain(trackMetadata->replayGain);
+        track.modify()->setArtistDisplayName(trackMetadata->artistDisplayName);
 
         if (added)
         {
@@ -723,7 +720,7 @@ namespace lms::scanner
         }
     }
 
-    void ScanStepScanFiles::processImageFileScanData(ScanContext& context, const std::filesystem::path& file, const ImageInfo& imageInfo, const ScannerSettings::MediaLibraryInfo& libraryInfo)
+    void ScanStepScanFiles::processImageFileScanData(ScanContext& context, const std::filesystem::path& file, const ImageInfo* imageInfo, const ScannerSettings::MediaLibraryInfo& libraryInfo)
     {
         LMS_SCOPED_TRACE_DETAILED("Scanner", "ProcessImageScanData");
 
@@ -739,6 +736,17 @@ namespace lms::scanner
         db::Session& dbSession{ _db.getTLSSession() };
         db::Image::pointer image{ db::Image::find(dbSession, file) };
 
+        if (!imageInfo)
+        {
+            if (image)
+            {
+                image.remove();
+                stats.deletions++;
+            }
+            context.stats.errors.emplace_back(file, ScanErrorType::CannotReadImageFile);
+            return;
+        }
+
         bool added;
         if (!image)
         {
@@ -752,8 +760,8 @@ namespace lms::scanner
 
         image.modify()->setLastWriteTime(fileInfo->lastWriteTime);
         image.modify()->setFileSize(fileInfo->fileSize);
-        image.modify()->setHeight(imageInfo.height);
-        image.modify()->setWidth(imageInfo.width);
+        image.modify()->setHeight(imageInfo->height);
+        image.modify()->setWidth(imageInfo->width);
         image.modify()->setDirectory(getOrCreateDirectory(dbSession, file.parent_path(), libraryInfo.rootDirectory));
 
         if (added)
