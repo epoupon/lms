@@ -116,7 +116,7 @@ namespace lms::api::subsonic
 
         void findRequestedArtistDirectories(RequestContext& context, const std::vector<std::string_view>& keywords, MediaLibraryId mediaLibrary, Response::Node& searchResultNode)
         {
-            // For now, no need to "accelerate" all this
+            // For now, no need to optimize all this
             // Find all the directories that match the name and that do not contain any track (considered by the legacy API as artists)
             const std::size_t artistCount{ getParameterAs<std::size_t>(context.parameters, "artistCount").value_or(20) };
             if (artistCount == 0)
@@ -126,12 +126,12 @@ namespace lms::api::subsonic
                 throw ParameterValueTooHighGenericError{ "artistCount", defaultMaxCountSize };
 
             const std::size_t artistOffset{ getParameterAs<std::size_t>(context.parameters, "artistOffset").value_or(0) };
-            
+
             Directory::FindParameters params;
             params.setKeywords(keywords);
-            params.setRange(Range{artistOffset, artistCount});
+            params.setRange(Range{ artistOffset, artistCount });
             params.setWithNoTrack(true);
-            // TODO media
+            params.setMediaLibrary(mediaLibrary);            
 
             Directory::find(context.dbSession, params, [&](const Directory::pointer& directory) {
                 Response::Node childNode;
@@ -333,10 +333,7 @@ namespace lms::api::subsonic
                 }
             }
         }
-    } // namespace
 
-    namespace
-    {
         Response handleSearchRequestCommon(RequestContext& context, bool id3)
         {
             // Mandatory params

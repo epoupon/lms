@@ -21,22 +21,24 @@
 
 #include <filesystem>
 #include <functional>
-#include <vector>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include <Wt/Dbo/Dbo.h>
 
 #include "core/EnumSet.hpp"
 #include "database/ArtistId.hpp"
 #include "database/DirectoryId.hpp"
-#include "database/ReleaseId.hpp"
+#include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
+#include "database/ReleaseId.hpp"
 #include "database/Types.hpp"
 
 namespace lms::db
 {
     class Session;
+    class MediaLibrary;
 
     class Directory final : public Object<Directory, DirectoryId>
     {
@@ -52,6 +54,7 @@ namespace lms::db
             core::EnumSet<TrackArtistLinkType> trackArtistLinkTypes; // and for these link types
             DirectoryId parentDirectory;                             // If set, directories that have this parent
             bool withNoTrack{};                                      // If set, directories that do not contain any track
+            MediaLibraryId mediaLibrary;                             // If set, directories in this library
 
             FindParameters& setRange(std::optional<Range> _range)
             {
@@ -84,6 +87,11 @@ namespace lms::db
                 withNoTrack = _withNoTrack;
                 return *this;
             }
+            FindParameters& setMediaLibrary(MediaLibraryId _mediaLibrary)
+            {
+                mediaLibrary = _mediaLibrary;
+                return *this;
+            }
         };
 
         // find
@@ -100,10 +108,12 @@ namespace lms::db
         const std::filesystem::path& getAbsolutePath() const { return _absolutePath; }
         std::string_view getName() const { return _name; }
         ObjectPtr<Directory> getParentDirectory() const { return _parent; }
+        ObjectPtr<MediaLibrary> getMediaLibrary() const { return _mediaLibrary; }
 
         // setters
         void setAbsolutePath(const std::filesystem::path& p);
         void setParent(ObjectPtr<Directory> parent);
+        void setMediaLibrary(ObjectPtr<MediaLibrary> mediaLibrary) { _mediaLibrary = getDboPtr(mediaLibrary); }
 
         template<class Action>
         void persist(Action& a)
@@ -112,6 +122,7 @@ namespace lms::db
             Wt::Dbo::field(a, _name, "name");
 
             Wt::Dbo::belongsTo(a, _parent, "parent_directory", Wt::Dbo::OnDeleteCascade);
+            Wt::Dbo::belongsTo(a, _mediaLibrary, "media_library", Wt::Dbo::OnDeleteSetNull); // don't delete directories on media library removal, we want to wait for the next scan to have a chance to migrate files
         }
 
     private:
@@ -123,5 +134,6 @@ namespace lms::db
         std::string _name;
 
         Wt::Dbo::ptr<Directory> _parent;
+        Wt::Dbo::ptr<MediaLibrary> _mediaLibrary;
     };
 } // namespace lms::db

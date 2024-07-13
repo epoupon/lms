@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 61 };
+        static constexpr Version LMS_DATABASE_VERSION{ 62 };
     }
 
     VersionInfo::VersionInfo()
@@ -631,6 +631,39 @@ SELECT
 
     } // namespace
 
+    void migrateFromV61(Session& session)
+    {
+        // Added a media_library_id in Directory
+        session.getDboSession()->execute(R"(
+CREATE TABLE IF NOT EXISTS "directory_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "absolute_path" text not null,
+  "name" text not null,
+  "parent_directory_id" bigint,
+  "media_library_id" bigint,
+  constraint "fk_directory_parent_directory" foreign key ("parent_directory_id") references "directory" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_directory_media_library" foreign key ("media_library_id") references "media_library" ("id") on delete set null deferrable initially deferred
+  ))");
+
+        // Migrate data, with the new directory_id field set to null
+        session.getDboSession()->execute(R"(INSERT INTO directory_backup 
+SELECT
+ id,
+ version,
+ absolute_path,
+ name,
+ parent_directory_id,
+ NULL
+ FROM directory)");
+
+        session.getDboSession()->execute("DROP TABLE directory");
+        session.getDboSession()->execute("ALTER TABLE directory_backup RENAME TO directory");
+
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        session.getDboSession()->execute("UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
+
     bool doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -668,6 +701,7 @@ SELECT
             { 58, migrateFromV58 },
             { 59, migrateFromV59 },
             { 60, migrateFromV60 },
+            { 61, migrateFromV61 },
         };
 
         bool migrationPerformed{};

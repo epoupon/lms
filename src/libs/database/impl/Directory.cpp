@@ -19,6 +19,7 @@
 
 #include "database/Directory.hpp"
 
+#include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
 
 #include "IdTypeTraits.hpp"
@@ -43,12 +44,15 @@ namespace lms::db
                 query.groupBy("d.id");
             }
 
+            if (params.mediaLibrary.isValid())
+                query.where("d.media_library_id = ?").bind(params.mediaLibrary);
+
             if (params.parentDirectory.isValid())
                 query.where("d.parent_directory_id = ?").bind(params.parentDirectory);
 
             if (params.release.isValid())
                 query.where("t.release_id = ?").bind(params.release);
-
+ 
             if (params.artist.isValid())
             {
                 query.join("artist a ON a.id = t_a_l.artist_id")
