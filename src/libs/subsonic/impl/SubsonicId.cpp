@@ -31,6 +31,11 @@ namespace lms::api::subsonic
         return "ar-" + id.toString();
     }
 
+    std::string idToString(db::DirectoryId id)
+    {
+        return "dir-" + id.toString();
+    }
+
     std::string idToString(db::MediaLibraryId id)
     {
         // No need to prefix as this is only used at well known places
@@ -72,6 +77,22 @@ namespace lms::core::stringUtils
 
         if (const auto value{ core::stringUtils::readAs<db::ArtistId::ValueType>(values[1]) })
             return db::ArtistId{ *value };
+
+        return std::nullopt;
+    }
+
+    template<>
+    std::optional<db::DirectoryId> readAs(std::string_view str)
+    {
+        std::vector<std::string_view> values{ core::stringUtils::splitString(str, '-') };
+        if (values.size() != 2)
+            return std::nullopt;
+
+        if (values[0] != "dir")
+            return std::nullopt;
+
+        if (const auto value{ core::stringUtils::readAs<db::DirectoryId::ValueType>(values[1]) })
+            return db::DirectoryId{ *value };
 
         return std::nullopt;
     }

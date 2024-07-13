@@ -21,12 +21,16 @@
 
 #include <filesystem>
 #include <functional>
+#include <vector>
+#include <string>
+#include <string_view>
 
 #include <Wt/Dbo/Dbo.h>
 
 #include "core/EnumSet.hpp"
 #include "database/ArtistId.hpp"
 #include "database/DirectoryId.hpp"
+#include "database/ReleaseId.hpp"
 #include "database/Object.hpp"
 #include "database/Types.hpp"
 
@@ -42,18 +46,42 @@ namespace lms::db
         struct FindParameters
         {
             std::optional<Range> range;
-            ArtistId artist;                                         // only tracks that involve this artist
+            std::vector<std::string_view> keywords;                  // if non empty, name must match all of these keywords
+            ArtistId artist;                                         // only directory that involve this artist
+            ReleaseId release;                                       // only releases that involve this artist
             core::EnumSet<TrackArtistLinkType> trackArtistLinkTypes; // and for these link types
+            DirectoryId parentDirectory;                             // If set, directories that have this parent
+            bool withNoTrack{};                                      // If set, directories that do not contain any track
 
             FindParameters& setRange(std::optional<Range> _range)
             {
                 range = _range;
                 return *this;
             }
+            FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
+            {
+                keywords = _keywords;
+                return *this;
+            }
             FindParameters& setArtist(ArtistId _artist, core::EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {})
             {
                 artist = _artist;
                 trackArtistLinkTypes = _trackArtistLinkTypes;
+                return *this;
+            }
+            FindParameters& setRelease(ReleaseId _release)
+            {
+                release = _release;
+                return *this;
+            }
+            FindParameters& setParentDirectory(DirectoryId _parentDirectory)
+            {
+                parentDirectory = _parentDirectory;
+                return *this;
+            }
+            FindParameters& setWithNoTrack(bool _withNoTrack)
+            {
+                withNoTrack = _withNoTrack;
                 return *this;
             }
         };
@@ -63,13 +91,15 @@ namespace lms::db
         static pointer find(Session& session, DirectoryId id);
         static pointer find(Session& session, const std::filesystem::path& path);
         static void find(Session& session, DirectoryId& lastRetrievedDirectory, std::size_t count, const std::function<void(const Directory::pointer&)>& func);
+        static RangeResults<Directory::pointer> find(Session& session, const FindParameters& params);
         static void find(Session& session, const FindParameters& parameters, const std::function<void(const Directory::pointer&)>& func);
         static RangeResults<DirectoryId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static RangeResults<pointer> findRootDirectories(Session& session, std::optional<Range> range = std::nullopt);
 
         // getters
         const std::filesystem::path& getAbsolutePath() const { return _absolutePath; }
         std::string_view getName() const { return _name; }
-        ObjectPtr<Directory> getParent() const { return _parent; }
+        ObjectPtr<Directory> getParentDirectory() const { return _parent; }
 
         // setters
         void setAbsolutePath(const std::filesystem::path& p);

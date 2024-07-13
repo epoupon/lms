@@ -32,5 +32,5 @@ namespace lms::db
 
 namespace lms::api::subsonic
 {
-    Response::Node createSongNode(RequestContext& context, const db::ObjectPtr<db::Track>& track, const db::ObjectPtr<db::User>& user);
+    Response::Node createSongNode(RequestContext& context, const db::ObjectPtr<db::Track>& track, bool id3);
 }

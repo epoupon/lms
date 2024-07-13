@@ -53,13 +53,17 @@ namespace lms::db
                 || params.dateRange
                 || params.artist.isValid()
                 || params.clusters.size() == 1
-                || params.mediaLibrary.isValid())
+                || params.mediaLibrary.isValid()
+                || params.directory.isValid())
             {
                 query.join("track t ON t.release_id = r.id");
             }
 
             if (params.mediaLibrary.isValid())
                 query.where("t.media_library_id = ?").bind(params.mediaLibrary);
+
+            if (params.directory.isValid())
+                query.where("t.directory_id = ?").bind(params.directory);
 
             if (!params.releaseType.empty())
             {

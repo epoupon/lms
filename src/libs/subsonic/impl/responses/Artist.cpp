@@ -85,7 +85,7 @@ namespace lms::api::subsonic
         }
     } // namespace utils
 
-    Response::Node createArtistNode(RequestContext& context, const Artist::pointer& artist, const User::pointer& user, bool id3)
+    Response::Node createArtistNode(RequestContext& context, const Artist::pointer& artist)
     {
         LMS_SCOPED_TRACE_DETAILED("Subsonic", "CreateArtist");
 
@@ -96,20 +96,16 @@ namespace lms::api::subsonic
         if (const db::Image::pointer artistImage{ artist->getImage() })
             artistNode.setAttribute("coverArt", idToString(artist->getId()));
 
-        if (id3)
-        {
-            const std::size_t count{ Release::getCount(context.dbSession, Release::FindParameters{}.setArtist(artist->getId())) };
-            artistNode.setAttribute("albumCount", count);
-        }
+        const std::size_t count{ Release::getCount(context.dbSession, Release::FindParameters{}.setArtist(artist->getId())) };
+        artistNode.setAttribute("albumCount", count);
 
-        if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(user->getId(), artist->getId()) }; dateTime.isValid())
+        if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.user->getId(), artist->getId()) }; dateTime.isValid())
             artistNode.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
 
         // OpenSubsonic specific fields (must always be set)
         if (context.enableOpenSubsonic)
         {
-            if (!id3)
-                artistNode.setAttribute("mediaType", "artist");
+            artistNode.setAttribute("mediaType", "artist");
 
             {
                 std::optional<core::UUID> mbid{ artist->getMBID() };

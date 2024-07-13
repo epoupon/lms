@@ -33,10 +33,25 @@ namespace lms::db
         {
             auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Directory>>("SELECT d FROM directory d") };
 
+            for (std::string_view keyword : params.keywords)
+                query.where("d.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
+
+            if (params.artist.isValid()
+                || params.release.isValid())
+            {
+                query.join("track t ON t.directory_id = d.id");
+                query.groupBy("d.id");
+            }
+
+            if (params.parentDirectory.isValid())
+                query.where("d.parent_directory_id = ?").bind(params.parentDirectory);
+
+            if (params.release.isValid())
+                query.where("t.release_id = ?").bind(params.release);
+
             if (params.artist.isValid())
             {
-                query.join("track t ON t.directory_id = d.id")
-                    .join("artist a ON a.id = t_a_l.artist_id")
+                query.join("artist a ON a.id = t_a_l.artist_id")
                     .join("track_artist_link t_a_l ON t_a_l.track_id = t.id")
                     .where("a.id = ?")
                     .bind(params.artist);
@@ -57,9 +72,10 @@ namespace lms::db
                     }
                     query.where(oss.str());
                 }
-
-                query.groupBy("d.id");
             }
+
+            if (params.withNoTrack)
+                query.where("NOT EXISTS (SELECT 1 FROM track t WHERE t.directory_id = d.id)");
 
             return query;
         }
@@ -108,10 +124,16 @@ namespace lms::db
         });
     }
 
+    RangeResults<Directory::pointer> Directory::find(Session& session, const FindParameters& params)
+    {
+        auto query{ createQuery(session, params) };
+        return utils::execRangeQuery<Directory::pointer>(query, params.range);
+    }
+
     void Directory::find(Session& session, const FindParameters& params, const std::function<void(const Directory::pointer&)>& func)
     {
         auto query{ createQuery(session, params) };
-        utils::forEachQueryResult(query, [&func](const Directory::pointer& dir) {
+        utils::forEachQueryRangeResult(query, params.range, [&func](const Directory::pointer& dir) {
             func(dir);
         });
     }
@@ -129,6 +151,12 @@ namespace lms::db
         query.where("i.directory_id IS NULL");
 
         return utils::execRangeQuery<DirectoryId>(query, range);
+    }
+
+    RangeResults<Directory::pointer> Directory::findRootDirectories(Session& session, std::optional<Range> range)
+    {
+        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Directory>>("SELECT d from directory d").where("d.parent_directory_id IS NULL") };
+        return utils::execRangeQuery<Directory::pointer>(query, range);
     }
 
     void Directory::setAbsolutePath(const std::filesystem::path& p)

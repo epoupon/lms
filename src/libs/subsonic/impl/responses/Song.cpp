@@ -27,6 +27,7 @@
 #include "core/String.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
+#include "database/Directory.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"
@@ -67,14 +68,20 @@ namespace lms::api::subsonic
         }
     } // namespace
 
-    Response::Node createSongNode(RequestContext& context, const Track::pointer& track, const User::pointer& user)
+    Response::Node createSongNode(RequestContext& context, const Track::pointer& track, bool id3)
     {
         LMS_SCOPED_TRACE_DETAILED("Subsonic", "CreateSong");
 
         Response::Node trackResponse;
 
+        if (!id3)
+        {
+            if (const auto directory{ track->getDirectory() })
+                trackResponse.setAttribute("parent", idToString(directory->getId()));
+            trackResponse.setAttribute("isDir", false);
+        }
+
         trackResponse.setAttribute("id", idToString(track->getId()));
-        trackResponse.setAttribute("isDir", false);
         trackResponse.setAttribute("title", track->getName());
         if (track->getTrackNumber())
             trackResponse.setAttribute("track", *track->getTrackNumber());
@@ -82,7 +89,7 @@ namespace lms::api::subsonic
             trackResponse.setAttribute("discNumber", *track->getDiscNumber());
         if (track->getYear())
             trackResponse.setAttribute("year", *track->getYear());
-        trackResponse.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(user->getId(), track->getId()));
+        trackResponse.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(context.user->getId(), track->getId()));
         trackResponse.setAttribute("path", track->getRelativeFilePath().string());
         trackResponse.setAttribute("size", track->getFileSize());
 
@@ -93,12 +100,13 @@ namespace lms::api::subsonic
         }
 
         {
-            const std::string fileSuffix{ formatToSuffix(user->getSubsonicDefaultTranscodingOutputFormat()) };
+            const std::string fileSuffix{ formatToSuffix(context.user->getSubsonicDefaultTranscodingOutputFormat()) };
             trackResponse.setAttribute("transcodedSuffix", fileSuffix);
             trackResponse.setAttribute("transcodedContentType", av::getMimeType(std::filesystem::path{ "." + fileSuffix }));
         }
 
-        trackResponse.setAttribute("coverArt", idToString(track->getId()));
+        if (track->hasCover())
+            trackResponse.setAttribute("coverArt", idToString(track->getId()));
 
         const std::vector<Artist::pointer>& artists{ track->getArtists({ TrackArtistLinkType::Artist }) };
         if (!artists.empty())
@@ -117,7 +125,6 @@ namespace lms::api::subsonic
         {
             trackResponse.setAttribute("album", release->getName());
             trackResponse.setAttribute("albumId", idToString(release->getId()));
-            trackResponse.setAttribute("parent", idToString(release->getId()));
         }
 
         trackResponse.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count());
@@ -126,7 +133,7 @@ namespace lms::api::subsonic
         trackResponse.setAttribute("created", core::stringUtils::toISO8601String(track->getLastWritten()));
         trackResponse.setAttribute("contentType", av::getMimeType(track->getAbsoluteFilePath().extension()));
 
-        if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(user->getId(), track->getId()) }; dateTime.isValid())
+        if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.user->getId(), track->getId()) }; dateTime.isValid())
             trackResponse.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
 
         // Report the first GENRE for this track
@@ -152,7 +159,7 @@ namespace lms::api::subsonic
         trackResponse.setAttribute("mediaType", "song");
 
         {
-            const Wt::WDateTime dateTime{ core::Service<scrobbling::IScrobblingService>::get()->getLastListenDateTime(user->getId(), track->getId()) };
+            const Wt::WDateTime dateTime{ core::Service<scrobbling::IScrobblingService>::get()->getLastListenDateTime(context.user->getId(), track->getId()) };
             trackResponse.setAttribute("played", dateTime.isValid() ? core::stringUtils::toISO8601String(dateTime) : "");
         }
 
