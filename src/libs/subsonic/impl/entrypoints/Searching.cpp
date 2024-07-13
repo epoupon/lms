@@ -131,7 +131,7 @@ namespace lms::api::subsonic
             params.setKeywords(keywords);
             params.setRange(Range{ artistOffset, artistCount });
             params.setWithNoTrack(true);
-            params.setMediaLibrary(mediaLibrary);            
+            params.setMediaLibrary(mediaLibrary);
 
             Directory::find(context.dbSession, params, [&](const Directory::pointer& directory) {
                 Response::Node childNode;

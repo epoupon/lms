@@ -52,7 +52,7 @@ namespace lms::db
 
             if (params.release.isValid())
                 query.where("t.release_id = ?").bind(params.release);
- 
+
             if (params.artist.isValid())
             {
                 query.join("artist a ON a.id = t_a_l.artist_id")
