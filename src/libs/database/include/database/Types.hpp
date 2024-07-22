@@ -25,8 +25,16 @@
 
 #include <Wt/WDate.h>
 
+#include "core/Exception.hpp"
+
 namespace lms::db
 {
+    class Exception : public core::LmsException
+    {
+    public:
+        using LmsException::LmsException;
+    };
+
     // Caution: do not change enum values if they are set!
 
     // Request:

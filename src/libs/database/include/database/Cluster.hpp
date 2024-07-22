@@ -126,7 +126,7 @@ namespace lms::db
         Cluster(ObjectPtr<ClusterType> type, std::string_view name);
         static pointer create(Session& session, ObjectPtr<ClusterType> type, std::string_view name);
 
-        static const std::size_t _maxNameLength = 128;
+        static constexpr std::size_t _maxNameLength{ 256 };
 
         std::string _name;
         int _trackCount{};
@@ -169,7 +169,7 @@ namespace lms::db
         ClusterType(std::string_view name);
         static pointer create(Session& session, std::string_view name);
 
-        static const std::size_t _maxNameLength = 128;
+        static constexpr std::size_t _maxNameLength{ 256 };
 
         std::string _name;
         Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> _clusters;

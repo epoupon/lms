@@ -183,10 +183,12 @@ namespace lms::db
     } // namespace
 
     Artist::Artist(const std::string& name, const std::optional<core::UUID>& MBID)
-        : _name{ std::string(name, 0, _maxNameLength) }
+        : _name{ name }
         , _sortName{ _name }
         , _MBID{ MBID ? MBID->getAsString() : "" }
     {
+        if (name.size() > _maxNameLength)
+            throw Exception{ "Requested ClusterType name is too long: " + std::string{ name } + "'" };
     }
 
     Artist::pointer Artist::create(Session& session, const std::string& name, const std::optional<core::UUID>& MBID)
@@ -362,7 +364,10 @@ namespace lms::db
 
     void Artist::setSortName(const std::string& sortName)
     {
-        _sortName = std::string(sortName, 0, _maxNameLength);
+        if (sortName.size() > _maxNameLength)
+            throw Exception{ "Artist's SortName name is too long: " + std::string{ sortName } + "'" };
+
+        _sortName = sortName;
     }
 
     void Artist::setImage(ObjectPtr<Image> image)

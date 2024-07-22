@@ -35,7 +35,7 @@ namespace lms::db::tests
         ScopedClusterType clusterType{ session, "MyType" };
 
         {
-            auto transaction{ session.createWriteTransaction() };
+            auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(ClusterType::getCount(session), 1);
         }
 
@@ -43,7 +43,7 @@ namespace lms::db::tests
             ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
 
             {
-                auto transaction{ session.createWriteTransaction() };
+                auto transaction{ session.createReadTransaction() };
 
                 EXPECT_EQ(Cluster::getCount(session), 1);
                 EXPECT_EQ(cluster->getType()->getId(), clusterType.getId());
@@ -74,13 +74,77 @@ namespace lms::db::tests
         }
 
         {
-            auto transaction{ session.createWriteTransaction() };
+            auto transaction{ session.createReadTransaction() };
 
             auto clusterTypes{ ClusterType::findOrphanIds(session) };
             ASSERT_EQ(clusterTypes.results.size(), 1);
             EXPECT_EQ(clusterTypes.results.front(), clusterType.getId());
 
             ASSERT_EQ(ClusterType::findUsed(session).results.size(), 0);
+        }
+    }
+
+    TEST_F(DatabaseFixture, Cluster_find)
+    {
+        ScopedClusterType clusterType{ session, "MyType" };
+        ScopedCluster cluster1{ session, clusterType.lockAndGet(), "MyCluster" };
+        ScopedCluster cluster2{ session, clusterType.lockAndGet(), "Mycluster" };
+        ScopedCluster cluster3{ session, clusterType.lockAndGet(), "MyOtherCluster" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            EXPECT_EQ(clusterType->getCluster("MyCluster"), cluster1.get());
+            EXPECT_EQ(clusterType->getCluster("Mycluster"), cluster2.get());
+
+            EXPECT_EQ(clusterType->getCluster(" Mycluster"), Cluster::pointer{});
+            EXPECT_EQ(clusterType->getCluster("Mycluster "), Cluster::pointer{});
+            EXPECT_EQ(clusterType->getCluster("mycluster"), Cluster::pointer{});
+            EXPECT_EQ(clusterType->getCluster("My"), Cluster::pointer{});
+            EXPECT_EQ(clusterType->getCluster("Cluster"), Cluster::pointer{});
+            EXPECT_EQ(clusterType->getCluster("MyCluster1"), Cluster::pointer{});
+            EXPECT_EQ(clusterType->getCluster("MyCluster2"), Cluster::pointer{});
+            EXPECT_EQ(clusterType->getCluster(""), Cluster::pointer{});
+            EXPECT_EQ(clusterType->getCluster(" "), Cluster::pointer{});
+            EXPECT_EQ(clusterType->getCluster("*"), Cluster::pointer{});
+            EXPECT_EQ(clusterType->getCluster(R"(%)"), Cluster::pointer{});
+            EXPECT_EQ(clusterType->getCluster(R"(%%)"), Cluster::pointer{});
+            EXPECT_EQ(clusterType->getCluster(R"(")"), Cluster::pointer{});
+            EXPECT_EQ(clusterType->getCluster(R"("")"), Cluster::pointer{});
+        }
+    }
+
+    TEST_F(DatabaseFixture, Cluster_create)
+    {
+        ScopedClusterType clusterType{ session, "MyType" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            auto createdCluster{ session.create<Cluster>(clusterType.get(), "Foo") };
+            auto foundCluster{ clusterType->getCluster("Foo") };
+            EXPECT_EQ(createdCluster, foundCluster);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            auto createdCluster{ session.create<Cluster>(clusterType.get(), "") };
+            auto foundCluster{ clusterType->getCluster("") };
+            EXPECT_EQ(createdCluster, foundCluster);
+        }
+    }
+
+    TEST_F(DatabaseFixture, Cluster_create_long)
+    {
+        ScopedClusterType clusterType{ session, "MyType" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            auto createdCluster{ session.create<Cluster>(clusterType.get(), "Alternative Rock; Art Pop; Art Rock; Britpop; Chamber Pop; Electronic Rock; Electronica; Experimental Rock; Neo-Progressive Rock; Foo") };
+            auto foundCluster{ clusterType->getCluster("Alternative Rock; Art Pop; Art Rock; Britpop; Chamber Pop; Electronic Rock; Electronica; Experimental Rock; Neo-Progressive Rock; Foo") };
+            EXPECT_EQ(createdCluster, foundCluster);
         }
     }
 
