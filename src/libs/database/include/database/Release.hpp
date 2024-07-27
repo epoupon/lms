@@ -218,6 +218,7 @@ namespace lms::db
         std::vector<ObjectPtr<Artist>> getReleaseArtists() const { return getArtists(TrackArtistLinkType::ReleaseArtist); }
         bool hasVariousArtists() const;
         std::vector<pointer> getSimilarReleases(std::optional<std::size_t> offset = {}, std::optional<std::size_t> count = {}) const;
+        bool hasDiscSubtitle() const;
 
         template<class Action>
         void persist(Action& a)

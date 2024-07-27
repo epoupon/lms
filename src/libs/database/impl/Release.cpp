@@ -514,6 +514,11 @@ namespace lms::db
         return getArtists().size() > 1;
     }
 
+    bool Release::hasDiscSubtitle() const
+    {
+        return utils::fetchQuerySingleResult(session()->query<int>("SELECT EXISTS (SELECT 1 FROM track WHERE disc_subtitle IS NOT NULL AND disc_subtitle <> '' AND release_id = ?)").bind(getId()));
+    }
+
     std::size_t Release::getTrackCount() const
     {
         assert(session());

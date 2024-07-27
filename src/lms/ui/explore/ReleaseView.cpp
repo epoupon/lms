@@ -321,7 +321,8 @@ namespace lms::ui
         const bool variousArtists{ release->hasVariousArtists() };
         const auto totalDisc{ release->getTotalDisc() };
         const std::size_t discCount{ release->getDiscCount() };
-        const bool isReleaseMultiDisc{ (discCount > 1) || (totalDisc && *totalDisc > 1) };
+        const bool hasDiscSubtitle{ release->hasDiscSubtitle() };
+        const bool useSubtitleContainers{ (discCount > 1) || (totalDisc && *totalDisc > 1) || hasDiscSubtitle };
 
         // Expect to be called in asc order
         std::map<std::size_t, Wt::WContainerWidget*> trackContainers;
@@ -392,8 +393,10 @@ namespace lms::ui
             const auto discNumber{ track->getDiscNumber() };
 
             Wt::WContainerWidget* container;
-            if (isReleaseMultiDisc && discNumber)
+            if (useSubtitleContainers && discNumber)
                 container = getOrAddDiscContainer(*discNumber, track->getDiscSubtitle());
+            else if (hasDiscSubtitle && !discNumber)
+                container = getOrAddDiscContainer(0, track->getDiscSubtitle());
             else
                 container = getOrAddNoDiscContainer();
 
