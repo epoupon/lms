@@ -383,17 +383,6 @@ namespace lms::scanner
 
                     if (fileMatched)
                     {
-                        // Not very efficient way to update media_library for directories
-                        if (path.has_parent_path())
-                        {
-                            const std::filesystem::path directory{ path.parent_path() };
-                            if (directory != currentDirectory)
-                            {
-                                updateDirectoryIfNeeded(currentDirectory, mediaLibrary);
-                                currentDirectory = directory;
-                            }
-                        }
-
                         context.currentStepStats.processedElems++;
                         _progressCallback(context.currentStepStats);
                     }
@@ -790,36 +779,6 @@ namespace lms::scanner
         {
             LMS_LOG(DBUPDATER, DEBUG, "Updated image '" << file.string() << "'");
             stats.updates++;
-        }
-    }
-
-    void ScanStepScanFiles::updateDirectoryIfNeeded(const std::filesystem::path& dirPath, const ScannerSettings::MediaLibraryInfo& libraryInfo)
-    {
-        db::Session& dbSession{ _db.getTLSSession() };
-
-        const bool needUpdateLibrary{ [&] {
-            auto transaction{ dbSession.createReadTransaction() };
-
-            Directory::pointer directory{ Directory::find(dbSession, dirPath) };
-            if (!directory)
-                return false; // we create directories only of we find images or tracks inside
-
-            MediaLibrary::pointer currentLibrary{ directory->getMediaLibrary() };
-            return !currentLibrary || currentLibrary->getId() != libraryInfo.id;
-        }() };
-
-        if (needUpdateLibrary)
-        {
-            auto transaction{ dbSession.createWriteTransaction() };
-
-            Directory::pointer directory{ Directory::find(dbSession, dirPath) };
-            assert(directory);
-            directory.modify()->setMediaLibrary(MediaLibrary::find(dbSession, libraryInfo.id)); // may be null if settings are updated in // => next scan will correct this
-        }
-
-        if (dirPath != libraryInfo.rootDirectory && dirPath.has_parent_path())
-        {
-            updateDirectoryIfNeeded(dirPath.parent_path(), libraryInfo);
         }
     }
 } // namespace lms::scanner

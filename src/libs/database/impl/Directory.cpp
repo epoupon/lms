@@ -83,6 +83,25 @@ namespace lms::db
 
             return query;
         }
+
+        std::filesystem::path getPathWithTrailingSeparator(const std::filesystem::path& path)
+        {
+            if (path.empty())
+                return path;
+
+            // Convert the path to string
+            std::string pathStr{ path.string() };
+
+            // Check if the last character is a directory separator
+            if (pathStr.back() != std::filesystem::path::preferred_separator)
+            {
+                // If not, add the preferred separator
+                pathStr += std::filesystem::path::preferred_separator;
+            }
+
+            // Return the new path
+            return std::filesystem::path{ pathStr };
+        }
     } // namespace
 
     Directory::Directory(const std::filesystem::path& p)
@@ -153,6 +172,17 @@ namespace lms::db
         query.where("d_child.id IS NULL");
         query.where("t.directory_id IS NULL");
         query.where("i.directory_id IS NULL");
+
+        return utils::execRangeQuery<DirectoryId>(query, range);
+    }
+
+    RangeResults<DirectoryId> Directory::findMismatchedLibrary(Session& session, std::optional<Range> range, const std::filesystem::path& rootPath, MediaLibraryId expectedLibraryId)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession()->query<DirectoryId>("SELECT d.id FROM directory d") };
+        query.where("d.absolute_path = ? OR d.absolute_path LIKE ?").bind(rootPath).bind(getPathWithTrailingSeparator(rootPath).string() + "%");
+        query.where("d.media_library_id <> ? OR d.media_library_id IS NULL").bind(expectedLibraryId);
 
         return utils::execRangeQuery<DirectoryId>(query, range);
     }

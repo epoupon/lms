@@ -256,7 +256,7 @@ namespace lms::ui
 
             _status->setText(Wt::WString::tr("Lms.Admin.ScannerController.status-in-progress")
                                  .arg(status.currentScanStepStats->stepIndex + 1)
-                                 .arg(scanner::ScanProgressStepCount));
+                                 .arg(status.currentScanStepStats->stepCount));
 
             refreshCurrentStep(*status.currentScanStepStats);
             break;
@@ -325,6 +325,11 @@ namespace lms::ui
                                      .arg(stepStats.processedElems)
                                      .arg(stepStats.totalElems)
                                      .arg(stepStats.progress()));
+            break;
+
+        case ScanStep::UpdateLibraryFields:
+            _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-updating-library-fields")
+                                     .arg(stepStats.processedElems));
             break;
         }
     }

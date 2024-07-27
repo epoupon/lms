@@ -49,8 +49,6 @@ namespace lms::scanner
         void processAudioFileScanData(ScanContext& context, const std::filesystem::path& path, const metadata::Track* trackMetadata, const ScannerSettings::MediaLibraryInfo& libraryInfo);
         void processImageFileScanData(ScanContext& context, const std::filesystem::path& path, const ImageInfo* imageInfo, const ScannerSettings::MediaLibraryInfo& libraryInfo);
 
-        void updateDirectoryIfNeeded(const std::filesystem::path& directory, const ScannerSettings::MediaLibraryInfo& libraryInfo);
-
         std::unique_ptr<metadata::IParser> _metadataParser;
         const std::vector<std::string> _extraTagsToParse;
 

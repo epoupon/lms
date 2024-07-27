@@ -252,4 +252,37 @@ namespace lms::db::tests
             EXPECT_EQ(res[1]->getId(), child2.getId());
         }
     }
+
+    TEST_F(DatabaseFixture, Directory_findMismatchedLibrary)
+    {
+        ScopedDirectory parent1{ session, "/root" };
+        ScopedDirectory child1{ session, "/root/foo" };
+        ScopedDirectory parent2{ session, "/root_1" };
+        ScopedDirectory child2{ session, "/root_1/foo" };
+
+        ScopedMediaLibrary library{ session, "/root" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto res{ Directory::findMismatchedLibrary(session, std::nullopt, library->getPath(), library->getId()).results };
+            ASSERT_EQ(res.size(), 2);
+            EXPECT_EQ(res[0], parent1.getId());
+            EXPECT_EQ(res[1], child1.getId());
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            parent1.get().modify()->setMediaLibrary(library.get());
+            child1.get().modify()->setMediaLibrary(library.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto res{ Directory::findMismatchedLibrary(session, std::nullopt, library->getPath(), library->getId()).results };
+            EXPECT_EQ(res.size(), 0);
+        }
+    }
 } // namespace lms::db::tests

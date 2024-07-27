@@ -102,6 +102,7 @@ namespace lms::db
         static RangeResults<Directory::pointer> find(Session& session, const FindParameters& params);
         static void find(Session& session, const FindParameters& parameters, const std::function<void(const Directory::pointer&)>& func);
         static RangeResults<DirectoryId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static RangeResults<DirectoryId> findMismatchedLibrary(Session& session, std::optional<Range> range, const std::filesystem::path& rootPath, MediaLibraryId expectedLibraryId);
         static RangeResults<pointer> findRootDirectories(Session& session, std::optional<Range> range = std::nullopt);
 
         // getters
