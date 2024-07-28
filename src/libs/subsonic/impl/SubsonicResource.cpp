@@ -168,7 +168,7 @@ namespace lms::api::subsonic
             { "/getAlbum", { handleGetAlbumRequest } },
             { "/getSong", { handleGetSongRequest } },
             { "/getVideos", { handleNotImplemented } },
-            { "/getArtistInfo", { handleGetArtistInfoRequest } },
+            { "/getArtistInfo", { handleNotImplemented } },
             { "/getArtistInfo2", { handleGetArtistInfo2Request } },
             { "/getAlbumInfo", { handleNotImplemented } },
             { "/getAlbumInfo2", { handleNotImplemented } },

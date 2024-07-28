@@ -154,6 +154,9 @@ namespace lms::db
             if (params.mediaLibrary.isValid())
                 query.where("t.media_library_id = ?").bind(params.mediaLibrary);
 
+            if (params.directory.isValid())
+                query.where("t.directory_id = ?").bind(params.directory);
+
             switch (params.sortMethod)
             {
             case TrackSortMethod::None:

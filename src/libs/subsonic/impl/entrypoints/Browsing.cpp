@@ -24,11 +24,13 @@
 #include "core/Service.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
+#include "database/Directory.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
+#include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 
@@ -48,123 +50,58 @@ namespace lms::api::subsonic
 
     namespace
     {
-        Response handleGetArtistInfoRequestCommon(RequestContext& context, bool id3)
+        std::vector<Directory::pointer> getRootDirectories(Session& session, MediaLibraryId libraryId)
         {
-            // Mandatory params
-            ArtistId id{ getMandatoryParameterAs<ArtistId>(context.parameters, "id") };
+            std::vector<Directory::pointer> res;
 
-            // Optional params
-            std::size_t count{ getParameterAs<std::size_t>(context.parameters, "count").value_or(20) };
-
-            Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-            Response::Node& artistInfoNode{ response.createNode(id3 ? Response::Node::Key{ "artistInfo2" } : Response::Node::Key{ "artistInfo" }) };
-
+            if (libraryId.isValid())
             {
-                auto transaction{ context.dbSession.createReadTransaction() };
+                const MediaLibrary::pointer library{ MediaLibrary::find(session, libraryId) };
+                if (!library)
+                    throw BadParameterGenericError{ "id" };
 
-                const Artist::pointer artist{ Artist::find(context.dbSession, id) };
-                if (!artist)
-                    throw RequestedDataNotFoundError{};
-
-                std::optional<core::UUID> artistMBID{ artist->getMBID() };
-                if (artistMBID)
-                    artistInfoNode.createChild("musicBrainzId").setValue(artistMBID->getAsString());
+                if (Directory::pointer rootDirectory{ Directory::find(session, library->getPath()) })
+                    res.push_back(rootDirectory);
+            }
+            else
+            {
+                res = Directory::findRootDirectories(session).results;
             }
 
-            auto similarArtistsId{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(id, { TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist }, count) };
-
-            {
-                auto transaction{ context.dbSession.createReadTransaction() };
-
-                for (const ArtistId similarArtistId : similarArtistsId)
-                {
-                    const Artist::pointer similarArtist{ Artist::find(context.dbSession, similarArtistId) };
-                    if (similarArtist)
-                        artistInfoNode.addArrayChild("similarArtist", createArtistNode(context, similarArtist, context.user, id3));
-                }
-            }
-
-            return response;
+            return res;
         }
 
-        Response handleGetArtistsRequestCommon(RequestContext& context, bool id3)
+        struct IndexComparator
         {
-            // Optional params
-            const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.parameters, "musicFolderId").value_or(MediaLibraryId{}) };
-
-            Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-
-            Response::Node& artistsNode{ response.createNode(id3 ? "artists" : "indexes") };
-            artistsNode.setAttribute("ignoredArticles", "");
-            artistsNode.setAttribute("lastModified", reportedDummyDateULong); // TODO report last file write?
-
-            Artist::FindParameters parameters;
+            constexpr bool operator()(char lhs, char rhs) const
             {
-                auto transaction{ context.dbSession.createReadTransaction() };
+                if (lhs == '#' && std::isalpha(rhs))
+                    return false;
+                if (rhs == '#' && std::isalpha(lhs))
+                    return true;
 
-                parameters.setSortMethod(ArtistSortMethod::SortName);
-                switch (context.user->getSubsonicArtistListMode())
-                {
-                case SubsonicArtistListMode::AllArtists:
-                    break;
-                case SubsonicArtistListMode::ReleaseArtists:
-                    parameters.setLinkType(TrackArtistLinkType::ReleaseArtist);
-                    break;
-                case SubsonicArtistListMode::TrackArtists:
-                    parameters.setLinkType(TrackArtistLinkType::Artist);
-                    break;
-                }
+                return lhs < rhs;
             }
-            parameters.setMediaLibrary(mediaLibrary);
+        };
 
-            // This endpoint does not scale: make sort lived transactions in order not to block the whole application
+        using IndexMap = std::map<char, std::vector<Directory::pointer>, IndexComparator>;
+        void getIndexedChildDirectories(RequestContext& context, const Directory::pointer& parentDirectory, IndexMap& res)
+        {
+            Directory::FindParameters params;
+            params.setParentDirectory(parentDirectory->getId());
 
-            // first pass: dispatch the artists by first letter
-            LMS_LOG(API_SUBSONIC, DEBUG, "GetArtists: fetching all artists...");
-            std::map<char, std::vector<ArtistId>> artistsSortedByFirstChar;
-            std::size_t currentArtistOffset{ 0 };
-            constexpr std::size_t batchSize{ 100 };
-            bool hasMoreArtists{ true };
-            while (hasMoreArtists)
-            {
-                auto transaction{ context.dbSession.createReadTransaction() };
+            Directory::find(context.dbSession, params, [&](const Directory::pointer& directory) {
+                const std::string_view name{ directory->getName() };
+                assert(!name.empty());
 
-                parameters.setRange(Range{ currentArtistOffset, batchSize });
-                const auto artists{ Artist::find(context.dbSession, parameters) };
-                for (const Artist::pointer& artist : artists.results)
-                {
-                    std::string_view sortName{ artist->getSortName() };
+                char sortChar;
+                if (name.empty() || !std::isalpha(name[0]))
+                    sortChar = '#';
+                else
+                    sortChar = std::toupper(name[0]);
 
-                    char sortChar;
-                    if (sortName.empty() || !std::isalpha(sortName[0]))
-                        sortChar = '?';
-                    else
-                        sortChar = std::toupper(sortName[0]);
-
-                    artistsSortedByFirstChar[sortChar].push_back(artist->getId());
-                }
-
-                hasMoreArtists = artists.moreResults;
-                currentArtistOffset += artists.results.size();
-            }
-
-            // second pass: add each artist
-            LMS_LOG(API_SUBSONIC, DEBUG, "GetArtists: constructing response...");
-            for (const auto& [sortChar, artistIds] : artistsSortedByFirstChar)
-            {
-                Response::Node& indexNode{ artistsNode.createArrayChild("index") };
-                indexNode.setAttribute("name", std::string{ sortChar });
-
-                for (const ArtistId artistId : artistIds)
-                {
-                    auto transaction{ context.dbSession.createReadTransaction() };
-
-                    if (const Artist::pointer artist{ Artist::find(context.dbSession, artistId) })
-                        indexNode.addArrayChild("artist", createArtistNode(context, artist, context.user, id3));
-                }
-            }
-
-            return response;
+                res[sortChar].push_back(directory);
+            });
         }
 
         std::vector<TrackId> findSimilarSongs(RequestContext& context, ArtistId artistId, std::size_t count)
@@ -266,6 +203,21 @@ namespace lms::api::subsonic
             return response;
         }
 
+        Release::pointer getReleaseFromDirectory(Session& session, DirectoryId directoryId)
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            Release::FindParameters params;
+            params.setDirectory(directoryId);
+            params.setRange(Range{ 0, 1 }); // only support 1 directory <-> 1 release
+
+            Release::pointer res;
+            Release::find(session, params, [&](const Release::pointer& release) {
+                res = release;
+            });
+
+            return res;
+        }
     } // namespace
 
     Response handleGetMusicFoldersRequest(RequestContext& context)
@@ -286,64 +238,112 @@ namespace lms::api::subsonic
 
     Response handleGetIndexesRequest(RequestContext& context)
     {
-        return handleGetArtistsRequestCommon(context, false /* no id3 */);
+        // Optional params
+        const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.parameters, "musicFolderId").value_or(MediaLibraryId{}) };
+
+        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response::Node& indexesNode{ response.createNode("indexes") };
+        indexesNode.setAttribute("ignoredArticles", "");
+        indexesNode.setAttribute("lastModified", reportedDummyDateULong); // TODO report last file write?
+
+        auto transaction{ context.dbSession.createReadTransaction() };
+
+        const std::vector<Directory::pointer> rootDirectories{ getRootDirectories(context.dbSession, mediaLibrary) };
+
+        IndexMap indexedDirectories;
+        for (const Directory::pointer& rootdirectory : rootDirectories)
+        {
+            Track::FindParameters params;
+            params.setDirectory(rootdirectory->getId());
+
+            Track::find(context.dbSession, params, [&](const Track::pointer& track) {
+                indexesNode.addArrayChild("child", createSongNode(context, track, context.user));
+            });
+
+            getIndexedChildDirectories(context, rootdirectory, indexedDirectories);
+        }
+
+        for (const auto& [index, directories] : indexedDirectories)
+        {
+            Response::Node& indexNode{ indexesNode.createArrayChild("index") };
+            indexNode.setAttribute("name", std::string{ index });
+
+            for (const Directory::pointer& directory : directories)
+            {
+                // Legacy behavior: all sub directories are considered as artists (even if this is just containing an album, or just an intermediary directory)
+
+                Response::Node childNode;
+                childNode.setAttribute("id", idToString(directory->getId()));
+                childNode.setAttribute("name", directory->getName());
+
+                indexNode.addArrayChild("artist", std::move(childNode));
+            }
+        }
+
+        return response;
     }
 
     Response handleGetMusicDirectoryRequest(RequestContext& context)
     {
         // Mandatory params
-        const auto artistId{ getParameterAs<ArtistId>(context.parameters, "id") };
-        const auto releaseId{ getParameterAs<ReleaseId>(context.parameters, "id") };
-        const auto root{ getParameterAs<RootId>(context.parameters, "id") };
-
-        if (!root && !artistId && !releaseId)
-            throw BadParameterGenericError{ "id" };
+        const auto directoryId{ getMandatoryParameterAs<DirectoryId>(context.parameters, "id") };
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
         Response::Node& directoryNode{ response.createNode("directory") };
 
         auto transaction{ context.dbSession.createReadTransaction() };
 
-        if (root)
-        {
-            directoryNode.setAttribute("id", idToString(RootId{}));
-            directoryNode.setAttribute("name", "Music");
+        const Directory::pointer directory{ Directory::find(context.dbSession, directoryId) };
+        if (!directory)
+            throw RequestedDataNotFoundError{};
 
-            // TODO: this does not scale when a lot of artists are present
-            Artist::find(context.dbSession, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::SortName), [&](const Artist::pointer& artist) {
-                directoryNode.addArrayChild("child", createArtistNode(context, artist, context.user, false /* no id3 */));
+        if (const Release::pointer release{ getReleaseFromDirectory(context.dbSession, directoryId) })
+        {
+            directoryNode.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(context.user->getId(), release->getId()));
+            if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.user->getId(), release->getId()) }; dateTime.isValid())
+                directoryNode.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
+        }
+
+        directoryNode.setAttribute("id", idToString(directory->getId()));
+        directoryNode.setAttribute("name", directory->getName());
+        // Original Subsonic does not report parent if this the parent directory is the root directory
+        if (const Directory::pointer parentDirectory{ directory->getParentDirectory() })
+            directoryNode.setAttribute("parent", idToString(parentDirectory->getId()));
+
+        // list all sub directories
+        {
+            Directory::FindParameters params;
+            params.setParentDirectory(directory->getId());
+
+            Directory::find(context.dbSession, params, [&](const Directory::pointer& subDirectory) {
+                const Release::pointer release{ getReleaseFromDirectory(context.dbSession, subDirectory->getId()) };
+
+                if (release)
+                {
+                    directoryNode.addArrayChild("child", createAlbumNode(context, release, false, subDirectory));
+                }
+                else
+                {
+                    Response::Node childNode;
+                    childNode.setAttribute("id", idToString(subDirectory->getId()));
+                    childNode.setAttribute("title", subDirectory->getName());
+                    childNode.setAttribute("isDir", true);
+                    childNode.setAttribute("parent", idToString(directory->getId()));
+
+                    directoryNode.addArrayChild("child", std::move(childNode));
+                }
             });
         }
-        else if (artistId)
+
+        // list all tracks
         {
-            directoryNode.setAttribute("id", idToString(*artistId));
+            Track::FindParameters params;
+            params.setDirectory(directory->getId());
 
-            auto artist{ Artist::find(context.dbSession, *artistId) };
-            if (!artist)
-                throw RequestedDataNotFoundError{};
-
-            directoryNode.setAttribute("name", utils::makeNameFilesystemCompatible(artist->getName()));
-
-            Release::find(context.dbSession, Release::FindParameters{}.setArtist(*artistId), [&](const Release::pointer& release) {
-                directoryNode.addArrayChild("child", createAlbumNode(context, release, context.user, false /* no id3 */));
-            });
-        }
-        else if (releaseId)
-        {
-            directoryNode.setAttribute("id", idToString(*releaseId));
-
-            auto release{ Release::find(context.dbSession, *releaseId) };
-            if (!release)
-                throw RequestedDataNotFoundError{};
-
-            directoryNode.setAttribute("name", utils::makeNameFilesystemCompatible(release->getName()));
-
-            Track::find(context.dbSession, Track::FindParameters{}.setRelease(*releaseId).setSortMethod(TrackSortMethod::Release), [&](const Track::pointer& track) {
+            Track::find(context.dbSession, params, [&](const Track::pointer& track) {
                 directoryNode.addArrayChild("child", createSongNode(context, track, context.user));
             });
         }
-        else
-            throw BadParameterGenericError{ "id" };
 
         return response;
     }
@@ -370,7 +370,82 @@ namespace lms::api::subsonic
 
     Response handleGetArtistsRequest(RequestContext& context)
     {
-        return handleGetArtistsRequestCommon(context, true /* id3 */);
+        // Optional params
+        const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.parameters, "musicFolderId").value_or(MediaLibraryId{}) };
+
+        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+
+        Response::Node& artistsNode{ response.createNode("artists") };
+        artistsNode.setAttribute("ignoredArticles", "");
+        artistsNode.setAttribute("lastModified", reportedDummyDateULong); // TODO report last file write?
+
+        Artist::FindParameters parameters;
+        {
+            auto transaction{ context.dbSession.createReadTransaction() };
+
+            parameters.setSortMethod(ArtistSortMethod::SortName);
+            switch (context.user->getSubsonicArtistListMode())
+            {
+            case SubsonicArtistListMode::AllArtists:
+                break;
+            case SubsonicArtistListMode::ReleaseArtists:
+                parameters.setLinkType(TrackArtistLinkType::ReleaseArtist);
+                break;
+            case SubsonicArtistListMode::TrackArtists:
+                parameters.setLinkType(TrackArtistLinkType::Artist);
+                break;
+            }
+        }
+        parameters.setMediaLibrary(mediaLibrary);
+
+        // This endpoint does not scale: make sort lived transactions in order not to block the whole application
+
+        // first pass: dispatch the artists by first letter
+        LMS_LOG(API_SUBSONIC, DEBUG, "GetArtists: fetching all artists...");
+        std::map<char, std::vector<ArtistId>> artistsSortedByFirstChar;
+        std::size_t currentArtistOffset{ 0 };
+        constexpr std::size_t batchSize{ 100 };
+        bool hasMoreArtists{ true };
+        while (hasMoreArtists)
+        {
+            auto transaction{ context.dbSession.createReadTransaction() };
+
+            parameters.setRange(Range{ currentArtistOffset, batchSize });
+            const auto artists{ Artist::find(context.dbSession, parameters) };
+            for (const Artist::pointer& artist : artists.results)
+            {
+                std::string_view sortName{ artist->getSortName() };
+
+                char sortChar;
+                if (sortName.empty() || !std::isalpha(sortName[0]))
+                    sortChar = '#';
+                else
+                    sortChar = std::toupper(sortName[0]);
+
+                artistsSortedByFirstChar[sortChar].push_back(artist->getId());
+            }
+
+            hasMoreArtists = artists.moreResults;
+            currentArtistOffset += artists.results.size();
+        }
+
+        // second pass: add each artist
+        LMS_LOG(API_SUBSONIC, DEBUG, "GetArtists: constructing response...");
+        for (const auto& [sortChar, artistIds] : artistsSortedByFirstChar)
+        {
+            Response::Node& indexNode{ artistsNode.createArrayChild("index") };
+            indexNode.setAttribute("name", std::string{ sortChar });
+
+            for (const ArtistId artistId : artistIds)
+            {
+                auto transaction{ context.dbSession.createReadTransaction() };
+
+                if (const Artist::pointer artist{ Artist::find(context.dbSession, artistId) })
+                    indexNode.addArrayChild("artist", createArtistNode(context, artist));
+            }
+        }
+
+        return response;
     }
 
     Response handleGetArtistRequest(RequestContext& context)
@@ -385,11 +460,11 @@ namespace lms::api::subsonic
             throw RequestedDataNotFoundError{};
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-        Response::Node artistNode{ createArtistNode(context, artist, context.user, true /* id3 */) };
+        Response::Node artistNode{ createArtistNode(context, artist) };
 
         const auto releases{ Release::find(context.dbSession, Release::FindParameters{}.setArtist(artist->getId())) };
         for (const Release::pointer& release : releases.results)
-            artistNode.addArrayChild("album", createAlbumNode(context, release, context.user, true /* id3 */));
+            artistNode.addArrayChild("album", createAlbumNode(context, release, true /* id3 */));
 
         response.addNode("artist", std::move(artistNode));
 
@@ -408,11 +483,11 @@ namespace lms::api::subsonic
             throw RequestedDataNotFoundError{};
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-        Response::Node albumNode{ createAlbumNode(context, release, context.user, true /* id3 */) };
+        Response::Node albumNode{ createAlbumNode(context, release, true /* id3 */) };
 
         const auto tracks{ Track::find(context.dbSession, Track::FindParameters{}.setRelease(id).setSortMethod(TrackSortMethod::Release)) };
         for (const Track::pointer& track : tracks.results)
-            albumNode.addArrayChild("song", createSongNode(context, track, context.user));
+            albumNode.addArrayChild("song", createSongNode(context, track, true /* id3 */));
 
         response.addNode("album", std::move(albumNode));
 
@@ -436,14 +511,43 @@ namespace lms::api::subsonic
         return response;
     }
 
-    Response handleGetArtistInfoRequest(RequestContext& context)
-    {
-        return handleGetArtistInfoRequestCommon(context, false /* no id3 */);
-    }
-
     Response handleGetArtistInfo2Request(RequestContext& context)
     {
-        return handleGetArtistInfoRequestCommon(context, true /* id3 */);
+        // Mandatory params
+        ArtistId id{ getMandatoryParameterAs<ArtistId>(context.parameters, "id") };
+
+        // Optional params
+        std::size_t count{ getParameterAs<std::size_t>(context.parameters, "count").value_or(20) };
+
+        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response::Node& artistInfoNode{ response.createNode(Response::Node::Key{ "artistInfo2" }) };
+
+        {
+            auto transaction{ context.dbSession.createReadTransaction() };
+
+            const Artist::pointer artist{ Artist::find(context.dbSession, id) };
+            if (!artist)
+                throw RequestedDataNotFoundError{};
+
+            std::optional<core::UUID> artistMBID{ artist->getMBID() };
+            if (artistMBID)
+                artistInfoNode.createChild("musicBrainzId").setValue(artistMBID->getAsString());
+        }
+
+        auto similarArtistsId{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(id, { TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist }, count) };
+
+        {
+            auto transaction{ context.dbSession.createReadTransaction() };
+
+            for (const ArtistId similarArtistId : similarArtistsId)
+            {
+                const Artist::pointer similarArtist{ Artist::find(context.dbSession, similarArtistId) };
+                if (similarArtist)
+                    artistInfoNode.addArrayChild("similarArtist", createArtistNode(context, similarArtist));
+            }
+        }
+
+        return response;
     }
 
     Response handleGetSimilarSongsRequest(RequestContext& context)

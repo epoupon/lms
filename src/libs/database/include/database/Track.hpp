@@ -37,6 +37,7 @@
 #include "core/UUID.hpp"
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
+#include "database/DirectoryId.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
@@ -81,6 +82,7 @@ namespace lms::db
             std::optional<int> trackNumber;                          // matching this track number
             std::optional<int> discNumber;                           // matching this disc number
             MediaLibraryId mediaLibrary;                             // If set, tracks in this library
+            DirectoryId directory;                                   // if set, tracks in this directory
 
             FindParameters& setClusters(std::span<const ClusterId> _clusters)
             {
@@ -163,6 +165,11 @@ namespace lms::db
             FindParameters& setMediaLibrary(MediaLibraryId _mediaLibrary)
             {
                 mediaLibrary = _mediaLibrary;
+                return *this;
+            }
+            FindParameters& setDirectory(DirectoryId _directory)
+            {
+                directory = _directory;
                 return *this;
             }
         };

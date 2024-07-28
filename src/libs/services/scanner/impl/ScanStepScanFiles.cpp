@@ -104,18 +104,20 @@ namespace lms::scanner
             return res;
         }
 
-        Directory::pointer getOrCreateDirectory(Session& session, const std::filesystem::path& path, const std::filesystem::path& rootPath)
+        Directory::pointer getOrCreateDirectory(Session& session, const std::filesystem::path& path, const MediaLibrary::pointer& mediaLibrary)
         {
             Directory::pointer directory{ Directory::find(session, path) };
             if (!directory)
             {
                 Directory::pointer parentDirectory;
-                if (path != rootPath)
-                    parentDirectory = getOrCreateDirectory(session, path.parent_path(), rootPath);
+                if (path != mediaLibrary->getPath())
+                    parentDirectory = getOrCreateDirectory(session, path.parent_path(), mediaLibrary);
 
                 directory = session.create<Directory>(path);
                 directory.modify()->setParent(parentDirectory);
+                directory.modify()->setMediaLibrary(mediaLibrary);
             }
+            // Don't update library if it does not match, will be updated elsewhere
 
             return directory;
         }
@@ -350,12 +352,13 @@ namespace lms::scanner
 
         std::vector<FileScanResult> scanResults;
 
+        std::filesystem::path currentDirectory;
         core::pathUtils::exploreFilesRecursive(
             mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path) {
                 LMS_SCOPED_TRACE_DETAILED("Scanner", "OnExploreFile");
 
                 if (_abortScan)
-                    return false;
+                    return false; // stop iterating
 
                 if (ec)
                 {
@@ -364,21 +367,21 @@ namespace lms::scanner
                 }
                 else
                 {
-                    bool fileToProcess{};
+                    bool fileMatched{};
                     if (core::pathUtils::hasFileAnyExtension(path, _settings.supportedAudioFileExtensions))
                     {
-                        fileToProcess = true;
+                        fileMatched = true;
                         if (checkAudioFileNeedScan(context, path, mediaLibrary))
                             _fileScanQueue.pushScanRequest(path, FileScanQueue::ScanRequestType::AudioFile);
                     }
                     else if (core::pathUtils::hasFileAnyExtension(path, _settings.supportedImageFileExtensions))
                     {
-                        fileToProcess = true;
+                        fileMatched = true;
                         if (checkImageFileNeedScan(context, path))
                             _fileScanQueue.pushScanRequest(path, FileScanQueue::ScanRequestType::ImageFile);
                     }
 
-                    if (fileToProcess)
+                    if (fileMatched)
                     {
                         context.currentStepStats.processedElems++;
                         _progressCallback(context.currentStepStats);
@@ -415,17 +418,19 @@ namespace lms::scanner
             return false;
         }
 
+        if (context.scanOptions.fullScan)
+            return true;
+
         bool needUpdateLibrary{};
-        if (!context.scanOptions.fullScan)
+        db::Session& dbSession{ _db.getTLSSession() };
+
         {
+            auto transaction{ dbSession.createReadTransaction() };
+
             // Skip file if last write is the same
-            db::Session& dbSession{ _db.getTLSSession() };
-            auto transaction{ _db.getTLSSession().createReadTransaction() };
-
             const Track::pointer track{ Track::findByPath(dbSession, file) };
-
             if (track
-                && track->getLastWriteTime().toTime_t() == lastWriteTime.toTime_t()
+                && track->getLastWriteTime() == lastWriteTime
                 && track->getScanVersion() == _settings.scanVersion)
             {
                 // this file may have been moved from one library to another, then we just need to update the media library id instead of a full rescan
@@ -442,8 +447,7 @@ namespace lms::scanner
 
         if (needUpdateLibrary)
         {
-            db::Session& dbSession{ _db.getTLSSession() };
-            auto transaction{ _db.getTLSSession().createWriteTransaction() };
+            auto transaction{ dbSession.createWriteTransaction() };
 
             Track::pointer track{ Track::findByPath(dbSession, file) };
             assert(track);
@@ -632,8 +636,9 @@ namespace lms::scanner
         track.modify()->setFileSize(fileInfo->fileSize);
         track.modify()->setLastWriteTime(fileInfo->lastWriteTime);
 
-        track.modify()->setMediaLibrary(MediaLibrary::find(dbSession, libraryInfo.id)); // may be null if settings are updated in // => next scan will correct this
-        track.modify()->setDirectory(getOrCreateDirectory(dbSession, file.parent_path(), libraryInfo.rootDirectory));
+        MediaLibrary::pointer mediaLibrary{ MediaLibrary::find(dbSession, libraryInfo.id) }; // may be null if settings are updated in // => next scan will correct this
+        track.modify()->setMediaLibrary(mediaLibrary);
+        track.modify()->setDirectory(getOrCreateDirectory(dbSession, file.parent_path(), mediaLibrary));
 
         track.modify()->clearArtistLinks();
         // Do not fallback on artists with the same name but having a MBID for artist and releaseArtists, as it may be corrected by properly tagging files
@@ -762,7 +767,8 @@ namespace lms::scanner
         image.modify()->setFileSize(fileInfo->fileSize);
         image.modify()->setHeight(imageInfo->height);
         image.modify()->setWidth(imageInfo->width);
-        image.modify()->setDirectory(getOrCreateDirectory(dbSession, file.parent_path(), libraryInfo.rootDirectory));
+        MediaLibrary::pointer mediaLibrary{ MediaLibrary::find(dbSession, libraryInfo.id) }; // may be null if settings are updated in // => next scan will correct this
+        image.modify()->setDirectory(getOrCreateDirectory(dbSession, file.parent_path(), mediaLibrary));
 
         if (added)
         {

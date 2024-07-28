@@ -40,6 +40,7 @@
 #include "ScanStepOptimize.hpp"
 #include "ScanStepRemoveOrphanedDbEntries.hpp"
 #include "ScanStepScanFiles.hpp"
+#include "ScanStepUpdateLibraryFields.hpp"
 
 namespace lms::scanner
 {
@@ -279,7 +280,7 @@ namespace lms::scanner
             LMS_SCOPED_TRACE_OVERVIEW("Scanner", scanStep->getStepName());
 
             LMS_LOG(DBUPDATER, DEBUG, "Starting scan step '" << scanStep->getStepName() << "'");
-            scanContext.currentStepStats = ScanStepStats{ .startTime = Wt::WDateTime::currentDateTime(), .stepIndex = stepIndex++, .currentStep = scanStep->getStep() };
+            scanContext.currentStepStats = ScanStepStats{ .startTime = Wt::WDateTime::currentDateTime(), .stepCount = _scanSteps.size(), .stepIndex = stepIndex++, .currentStep = scanStep->getStep() };
 
             notifyInProgress(scanContext.currentStepStats);
             scanStep->process(scanContext);
@@ -339,11 +340,12 @@ namespace lms::scanner
             _db
         };
 
-        // Order is important
+        // Order is important, steps are sequential
         _scanSteps.clear();
         _scanSteps.push_back(std::make_unique<ScanStepDiscoverFiles>(params));
         _scanSteps.push_back(std::make_unique<ScanStepScanFiles>(params));
         _scanSteps.push_back(std::make_unique<ScanStepCheckForRemovedFiles>(params));
+        _scanSteps.push_back(std::make_unique<ScanStepUpdateLibraryFields>(params));
         _scanSteps.push_back(std::make_unique<ScanStepAssociateArtistImages>(params));
         _scanSteps.push_back(std::make_unique<ScanStepRemoveOrphanedDbEntries>(params));
         _scanSteps.push_back(std::make_unique<ScanStepCompact>(params));

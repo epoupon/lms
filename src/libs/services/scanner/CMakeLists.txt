@@ -12,6 +12,7 @@ add_library(lmsscanner SHARED
 	impl/ScanStepOptimize.cpp
 	impl/ScanStepRemoveOrphanedDbEntries.cpp
 	impl/ScanStepScanFiles.cpp
+	impl/ScanStepUpdateLibraryFields.cpp
 	)
 
 target_include_directories(lmsscanner INTERFACE

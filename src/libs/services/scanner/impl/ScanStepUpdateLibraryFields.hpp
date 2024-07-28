@@ -19,29 +19,23 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
+#include "database/DirectoryId.hpp"
 
-#include "database/Object.hpp"
-#include "database/Types.hpp"
+#include "ScanStepBase.hpp"
 
-#include "SubsonicResponse.hpp"
-
-namespace lms::db
+namespace lms::scanner
 {
-    class Artist;
-    class User;
-    class Session;
-} // namespace lms::db
-
-namespace lms::api::subsonic
-{
-    namespace utils
+    class ScanStepUpdateLibraryFields : public ScanStepBase
     {
-        std::string joinArtistNames(const std::vector<db::ObjectPtr<db::Artist>>& artists);
-        std::string_view toString(db::TrackArtistLinkType type);
-    } // namespace utils
+    public:
+        using ScanStepBase::ScanStepBase;
 
-    Response::Node createArtistNode(RequestContext& context, const db::ObjectPtr<db::Artist>& artist);
-    Response::Node createArtistNode(const db::ObjectPtr<db::Artist>& artist); // only minimal info
-} // namespace lms::api::subsonic
+    private:
+        core::LiteralString getStepName() const override { return "Update Library fields"; }
+        ScanStep getStep() const override { return ScanStep::UpdateLibraryFields; }
+        void process(ScanContext& context) override;
+
+        void processDirectories(ScanContext& context);
+        void processDirectory(ScanContext& context, const ScannerSettings::MediaLibraryInfo& mediaLibrary);
+    };
+} // namespace lms::scanner

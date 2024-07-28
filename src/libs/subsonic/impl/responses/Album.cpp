@@ -24,6 +24,7 @@
 #include "core/String.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
+#include "database/Directory.hpp"
 #include "database/Release.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
@@ -39,7 +40,7 @@ namespace lms::api::subsonic
 {
     using namespace db;
 
-    Response::Node createAlbumNode(RequestContext& context, const Release::pointer& release, const User::pointer& user, bool id3)
+    Response::Node createAlbumNode(RequestContext& context, const Release::pointer& release, bool id3, const Directory::pointer& directory)
     {
         LMS_SCOPED_TRACE_DETAILED("Subsonic", "CreateAlbum");
 
@@ -47,21 +48,38 @@ namespace lms::api::subsonic
 
         if (id3)
         {
+            albumNode.setAttribute("id", idToString(release->getId()));
             albumNode.setAttribute("name", release->getName());
             albumNode.setAttribute("songCount", release->getTrackCount());
-            albumNode.setAttribute(
-                "duration", std::chrono::duration_cast<std::chrono::seconds>(
-                                release->getDuration())
-                                .count());
+            albumNode.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(release->getDuration()).count());
         }
         else
         {
-            albumNode.setAttribute("title", release->getName());
+            Directory::pointer directoryToReport{ directory };
+
+            if (!directoryToReport)
+            {
+                Directory::FindParameters params;
+                params.setRelease(release->getId());
+                params.setRange(Range{ 0, 1 }); // only support 1 directory <-> 1 release
+                Directory::find(context.dbSession, params, [&](const Directory::pointer& foundDirectory) {
+                    directoryToReport = foundDirectory;
+                });
+            }
+
+            if (directoryToReport)
+            {
+                albumNode.setAttribute("title", directoryToReport->getName());
+                albumNode.setAttribute("id", idToString(directoryToReport->getId()));
+                if (const Directory::pointer & parentDirectory{ directoryToReport->getParentDirectory() })
+                    albumNode.setAttribute("parent", idToString(parentDirectory->getId()));
+            }
+
+            albumNode.setAttribute("album", release->getName());
             albumNode.setAttribute("isDir", true);
         }
 
         albumNode.setAttribute("created", core::stringUtils::toISO8601String(release->getLastWritten()));
-        albumNode.setAttribute("id", idToString(release->getId()));
         albumNode.setAttribute("coverArt", idToString(release->getId()));
         if (const auto year{ release->getYear() })
             albumNode.setAttribute("year", *year);
@@ -70,11 +88,7 @@ namespace lms::api::subsonic
         if (artists.empty())
             artists = release->getArtists();
 
-        if (artists.empty() && !id3)
-        {
-            albumNode.setAttribute("parent", idToString(RootId{}));
-        }
-        else if (!artists.empty())
+        if (!artists.empty())
         {
             if (!release->getArtistDisplayName().empty())
                 albumNode.setAttribute("artist", release->getArtistDisplayName());
@@ -83,16 +97,11 @@ namespace lms::api::subsonic
 
             if (artists.size() == 1)
             {
-                albumNode.setAttribute(id3 ? Response::Node::Key{ "artistId" } : Response::Node::Key{ "parent" }, idToString(artists.front()->getId()));
-            }
-            else
-            {
-                if (!id3)
-                    albumNode.setAttribute("parent", idToString(RootId{}));
+                albumNode.setAttribute("artistId", idToString(artists.front()->getId()));
             }
         }
 
-        albumNode.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(user->getId(), release->getId()));
+        albumNode.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(context.user->getId(), release->getId()));
 
         // Report the first GENRE for this track
         const ClusterType::pointer genreClusterType{ ClusterType::find(context.dbSession, "GENRE") };
@@ -103,7 +112,7 @@ namespace lms::api::subsonic
                 albumNode.setAttribute("genre", clusters.front().front()->getName());
         }
 
-        if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(user->getId(), release->getId()) }; dateTime.isValid())
+        if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.user->getId(), release->getId()) }; dateTime.isValid())
             albumNode.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
 
         if (!context.enableOpenSubsonic)
@@ -111,12 +120,10 @@ namespace lms::api::subsonic
 
         // OpenSubsonic specific fields (must always be set)
         albumNode.setAttribute("sortName", release->getSortName());
-
-        if (!id3)
-            albumNode.setAttribute("mediaType", "album");
+        albumNode.setAttribute("mediaType", "album");
 
         {
-            const Wt::WDateTime dateTime{ core::Service<scrobbling::IScrobblingService>::get()->getLastListenDateTime(user->getId(), release->getId()) };
+            const Wt::WDateTime dateTime{ core::Service<scrobbling::IScrobblingService>::get()->getLastListenDateTime(context.user->getId(), release->getId()) };
             albumNode.setAttribute("played", dateTime.isValid() ? core::stringUtils::toISO8601String(dateTime) : std::string{ "" });
         }
 

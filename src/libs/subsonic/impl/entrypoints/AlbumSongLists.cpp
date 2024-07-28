@@ -169,7 +169,7 @@ namespace lms::api::subsonic
             for (const ReleaseId releaseId : releases.results)
             {
                 const Release::pointer release{ Release::find(context.dbSession, releaseId) };
-                albumListNode.addArrayChild("album", createAlbumNode(context, release, context.user, id3));
+                albumListNode.addArrayChild("album", createAlbumNode(context, release, id3));
             }
 
             return response;
@@ -187,6 +187,8 @@ namespace lms::api::subsonic
 
             feedback::IFeedbackService& feedbackService{ *core::Service<feedback::IFeedbackService>::get() };
 
+            // We don't support starring directories
+            if (id3)
             {
                 feedback::IFeedbackService::ArtistFindParameters artistFindParams;
                 artistFindParams.setUser(context.user->getId());
@@ -194,7 +196,7 @@ namespace lms::api::subsonic
                 for (const ArtistId artistId : feedbackService.findStarredArtists(artistFindParams).results)
                 {
                     if (auto artist{ Artist::find(context.dbSession, artistId) })
-                        starredNode.addArrayChild("artist", createArtistNode(context, artist, context.user, id3));
+                        starredNode.addArrayChild("artist", createArtistNode(context, artist));
                 }
             }
 
@@ -205,7 +207,7 @@ namespace lms::api::subsonic
             for (const ReleaseId releaseId : feedbackService.findStarredReleases(findParameters).results)
             {
                 if (auto release{ Release::find(context.dbSession, releaseId) })
-                    starredNode.addArrayChild("album", createAlbumNode(context, release, context.user, id3));
+                    starredNode.addArrayChild("album", createAlbumNode(context, release, id3));
             }
 
             for (const TrackId trackId : feedbackService.findStarredTracks(findParameters).results)
