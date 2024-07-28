@@ -193,18 +193,6 @@ namespace lms::api::subsonic
         std::function<boost::property_tree::ptree(const Node&)> nodeToPropertyTree = [&](const Node& node) {
             boost::property_tree::ptree res;
 
-            for (const auto& [key, value] : node._attributes)
-            {
-                if (std::holds_alternative<Node::string>(value))
-                    res.put("<xmlattr>." + std::string{ key.str() }, std::get<Node::string>(value));
-                else if (std::holds_alternative<bool>(value))
-                    res.put("<xmlattr>." + std::string{ key.str() }, std::get<bool>(value));
-                else if (std::holds_alternative<float>(value))
-                    res.put("<xmlattr>." + std::string{ key.str() }, std::get<float>(value));
-                else if (std::holds_alternative<long long>(value))
-                    res.put("<xmlattr>." + std::string{ key.str() }, std::get<long long>(value));
-            }
-
             auto valueToPropertyTree = [](const Node::ValueType& value) {
                 boost::property_tree::ptree res;
                 std::visit([&](const auto& rawValue) {
@@ -237,6 +225,20 @@ namespace lms::api::subsonic
                     for (const Response::Node::ValueType& value : childArrayValues)
                         res.add_child(std::string{ key.str() }, valueToPropertyTree(value));
                 }
+            }
+
+            for (const auto& [key, value] : node._attributes)
+            {
+                if (std::holds_alternative<Node::string>(value))
+                    res.put("<xmlattr>." + std::string{ key.str() }, std::get<Node::string>(value));
+                else if (std::holds_alternative<bool>(value))
+                    res.put("<xmlattr>." + std::string{ key.str() }, std::get<bool>(value));
+                else if (std::holds_alternative<float>(value))
+                    res.put("<xmlattr>." + std::string{ key.str() }, std::get<float>(value));
+                else if (std::holds_alternative<long long>(value))
+                    res.put("<xmlattr>." + std::string{ key.str() }, std::get<long long>(value));
+                else
+                    assert(false);
             }
 
             return res;
