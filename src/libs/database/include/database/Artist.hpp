@@ -150,9 +150,9 @@ namespace lms::db
         // size is the max number of cluster per cluster type
         std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(std::vector<ClusterTypeId> clusterTypeIds, std::size_t size) const;
 
-        void setName(std::string_view name) { _name = name; }
+        void setName(std::string_view name);
         void setMBID(const std::optional<core::UUID>& mbid) { _MBID = mbid ? mbid->getAsString() : ""; }
-        void setSortName(const std::string& sortName);
+        void setSortName(std::string_view sortName);
         void setImage(ObjectPtr<Image> image);
 
         template<class Action>
@@ -168,7 +168,7 @@ namespace lms::db
         }
 
     private:
-        static constexpr std::size_t _maxNameLength{ 256 };
+        static constexpr std::size_t _maxNameLength{ 512 };
 
         friend class Session;
         // Create

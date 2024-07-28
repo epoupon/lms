@@ -219,6 +219,7 @@ namespace lms::db
     ReleaseType::ReleaseType(std::string_view name)
         : _name{ name }
     {
+        // As we use the name to uniquely identoify release type, we must throw (and not truncate)
         if (name.size() > _maxNameLength)
             throw Exception{ "ReleaseType name is too long: " + std::string{ name } + "'" };
     }

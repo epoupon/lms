@@ -99,7 +99,8 @@ namespace lms::db
         : _name{ name }
         , _clusterType{ getDboPtr(type) }
     {
-        if (name.size() > _maxNameLength)
+        // As we use the name to uniquely identify clusters and cluster types, we must throw (and not truncate)
+        if (name.size() > maxNameLength)
             throw Exception{ "Cluster name is too long: " + std::string{ name } + "'" };
     }
 
@@ -185,8 +186,9 @@ namespace lms::db
     ClusterType::ClusterType(std::string_view name)
         : _name{ name }
     {
-        if (name.size() > _maxNameLength)
-            throw Exception{ "Requested ClusterType name is too long: " + std::string{ name } + "'" };
+        // As we use the name to uniquely identify clusters and cluster types, we must throw
+        if (name.size() > maxNameLength)
+            throw Exception{ "ClusterType name is too long: " + std::string{ name } + "'" };
     }
 
     ClusterType::pointer ClusterType::create(Session& session, std::string_view name)
@@ -234,7 +236,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        if (name.size() > _maxNameLength)
+        if (name.size() > maxNameLength)
             throw Exception{ "Requested ClusterType name is too long: " + std::string{ name } + "'" };
 
         return utils::fetchQuerySingleResult(session.getDboSession()->find<ClusterType>().where("name = ?").bind(name));
@@ -261,7 +263,7 @@ namespace lms::db
         assert(self());
         assert(session());
 
-        if (name.size() > _maxNameLength)
+        if (name.size() > Cluster::maxNameLength)
             throw Exception{ "Requested Cluster name is too long: " + std::string{ name } + "'" };
 
         return utils::fetchQuerySingleResult(session()->find<Cluster>().where("name = ?").bind(name).where("cluster_type_id = ?").bind(getId()));

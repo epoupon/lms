@@ -183,12 +183,10 @@ namespace lms::db
     } // namespace
 
     Artist::Artist(const std::string& name, const std::optional<core::UUID>& MBID)
-        : _name{ name }
-        , _sortName{ _name }
-        , _MBID{ MBID ? MBID->getAsString() : "" }
+        : _MBID{ MBID ? MBID->getAsString() : "" }
     {
-        if (name.size() > _maxNameLength)
-            throw Exception{ "Requested ClusterType name is too long: " + std::string{ name } + "'" };
+        setName(name);
+        _sortName = _name;
     }
 
     Artist::pointer Artist::create(Session& session, const std::string& name, const std::optional<core::UUID>& MBID)
@@ -362,12 +360,19 @@ namespace lms::db
         return res;
     }
 
-    void Artist::setSortName(const std::string& sortName)
+    void Artist::setName(std::string_view name)
     {
-        if (sortName.size() > _maxNameLength)
-            throw Exception{ "Artist's SortName name is too long: " + std::string{ sortName } + "'" };
+        _name.assign(name, 0, _maxNameLength);
+        if (name.size() > _maxNameLength)
+            LMS_LOG(DB, WARNING, "Artist name too long, truncated to '" << _name << "'");
+    }
 
-        _sortName = sortName;
+    void Artist::setSortName(std::string_view sortName)
+    {
+        _sortName.assign(sortName, 0, _maxNameLength);
+
+        if (sortName.size() > _maxNameLength)
+            LMS_LOG(DB, WARNING, "Artist sort name too long, truncated to '" << _sortName << "'");
     }
 
     void Artist::setImage(ObjectPtr<Image> image)

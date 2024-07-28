@@ -377,6 +377,27 @@ namespace lms::db
         _relativeFilePath = filePath;
     }
 
+    void Track::setName(std::string_view name)
+    {
+        _name = std::string{ name, 0, _maxNameLength };
+        if (name.size() > _maxNameLength)
+            LMS_LOG(DB, WARNING, "Track name too long, truncated to '" << _name << "'");
+    }
+
+    void Track::setCopyright(std::string_view copyright)
+    {
+        _copyright = std::string{ copyright, 0, _maxCopyrightLength };
+        if (copyright.size() > _maxCopyrightLength)
+            LMS_LOG(DB, WARNING, "Track copyright too long, truncated to '" << _copyright << "'");
+    }
+
+    void Track::setCopyrightURL(std::string_view copyrightURL)
+    {
+        _copyrightURL = std::string{ copyrightURL, 0, _maxCopyrightURLLength };
+        if (copyrightURL.size() > _maxCopyrightURLLength)
+            LMS_LOG(DB, WARNING, "Track copyright URL too long, truncated to '" << _copyrightURL << "'");
+    }
+
     void Track::clearArtistLinks()
     {
         _trackArtistLinks.clear();
