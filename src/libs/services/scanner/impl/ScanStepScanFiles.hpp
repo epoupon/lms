@@ -46,8 +46,8 @@ namespace lms::scanner
         bool checkImageFileNeedScan(ScanContext& context, const std::filesystem::path& file);
 
         void processFileScanResults(ScanContext& context, std::span<const FileScanResult> scanResults, const ScannerSettings::MediaLibraryInfo& libraryInfo);
-        void processAudioFileScanData(ScanContext& context, const std::filesystem::path& path, const metadata::Track& trackMetadata, const ScannerSettings::MediaLibraryInfo& libraryInfo);
-        void processImageFileScanData(ScanContext& context, const std::filesystem::path& path, const ImageInfo& imageInfo, const ScannerSettings::MediaLibraryInfo& libraryInfo);
+        void processAudioFileScanData(ScanContext& context, const std::filesystem::path& path, const metadata::Track* trackMetadata, const ScannerSettings::MediaLibraryInfo& libraryInfo);
+        void processImageFileScanData(ScanContext& context, const std::filesystem::path& path, const ImageInfo* imageInfo, const ScannerSettings::MediaLibraryInfo& libraryInfo);
 
         std::unique_ptr<metadata::IParser> _metadataParser;
         const std::vector<std::string> _extraTagsToParse;

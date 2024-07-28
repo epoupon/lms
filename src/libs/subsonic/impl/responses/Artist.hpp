@@ -36,11 +36,14 @@ namespace lms::db
 
 namespace lms::api::subsonic
 {
+    class RequestContext;
+
     namespace utils
     {
         std::string joinArtistNames(const std::vector<db::ObjectPtr<db::Artist>>& artists);
         std::string_view toString(db::TrackArtistLinkType type);
     } // namespace utils
-    Response::Node createArtistNode(RequestContext& context, const db::ObjectPtr<db::Artist>& artist, const db::ObjectPtr<db::User>& user, bool id3);
+
+    Response::Node createArtistNode(RequestContext& context, const db::ObjectPtr<db::Artist>& artist);
     Response::Node createArtistNode(const db::ObjectPtr<db::Artist>& artist); // only minimal info
 } // namespace lms::api::subsonic

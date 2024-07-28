@@ -21,13 +21,23 @@
 
 #include "database/Cluster.hpp"
 
+#include "RequestContext.hpp"
+
 namespace lms::api::subsonic
 {
-    Response::Node createGenreNode(const db::Cluster::pointer& cluster)
+    Response::Node createGenreNode(RequestContext& context, const db::Cluster::pointer& cluster)
     {
         Response::Node clusterNode;
 
-        clusterNode.setValue(cluster->getName());
+        switch (context.responseFormat)
+        {
+        case ResponseFormat::json:
+            clusterNode.setAttribute("value", cluster->getName());
+            break;
+        case ResponseFormat::xml:
+            clusterNode.setValue(cluster->getName());
+            break;
+        }
         clusterNode.setAttribute("songCount", cluster->getTrackCount());
         clusterNode.setAttribute("albumCount", cluster->getReleasesCount());
 

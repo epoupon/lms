@@ -205,6 +205,9 @@ namespace lms::scanner
 
     void ScanStepAssociateArtistImages::process(ScanContext& context)
     {
+        if (_abortScan)
+            return;
+
         if (context.stats.nbChanges() == 0)
             return;
 
@@ -224,6 +227,9 @@ namespace lms::scanner
         ArtistImageAssociationContainer artistImageAssociations;
         while (fetchNextArtistImagesToUpdate(searchContext, artistImageAssociations))
         {
+            if (_abortScan)
+                return;
+
             updateArtistImages(session, artistImageAssociations);
             context.currentStepStats.processedElems += readBatchSize;
             _progressCallback(context.currentStepStats);

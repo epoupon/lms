@@ -43,6 +43,8 @@ namespace lms::db
     class Cluster final : public Object<Cluster, ClusterId>
     {
     public:
+        static constexpr std::size_t maxNameLength{ 512 };
+
         struct FindParameters
         {
             std::optional<Range> range;
@@ -126,8 +128,6 @@ namespace lms::db
         Cluster(ObjectPtr<ClusterType> type, std::string_view name);
         static pointer create(Session& session, ObjectPtr<ClusterType> type, std::string_view name);
 
-        static const std::size_t _maxNameLength = 128;
-
         std::string _name;
         int _trackCount{};
         int _releaseCount{};
@@ -140,6 +140,8 @@ namespace lms::db
     {
     public:
         ClusterType() = default;
+
+        static constexpr std::size_t maxNameLength{ 512 };
 
         // Getters
         static std::size_t getCount(Session& session);
@@ -168,8 +170,6 @@ namespace lms::db
         friend class Session;
         ClusterType(std::string_view name);
         static pointer create(Session& session, std::string_view name);
-
-        static const std::size_t _maxNameLength = 128;
 
         std::string _name;
         Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> _clusters;

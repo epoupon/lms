@@ -35,7 +35,7 @@ namespace lms::api::subsonic
             throw RequestedDataNotFoundError{};
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-        response.addNode("user", createUserNode(user));
+        response.addNode("user", createUserNode(context, user));
 
         return response;
     }
@@ -47,7 +47,7 @@ namespace lms::api::subsonic
 
         auto transaction{ context.dbSession.createReadTransaction() };
         User::find(context.dbSession, User::FindParameters{}, [&](const User::pointer& user) {
-            usersNode.addArrayChild("user", createUserNode(user));
+            usersNode.addArrayChild("user", createUserNode(context, user));
         });
 
         return response;

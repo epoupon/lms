@@ -19,18 +19,23 @@
 
 #pragma once
 
-#include "database/Object.hpp"
+#include "database/DirectoryId.hpp"
 
-#include "SubsonicResponse.hpp"
+#include "ScanStepBase.hpp"
 
-namespace lms::db
+namespace lms::scanner
 {
-    class User;
-}
+    class ScanStepUpdateLibraryFields : public ScanStepBase
+    {
+    public:
+        using ScanStepBase::ScanStepBase;
 
-namespace lms::api::subsonic
-{
-    class RequestContext;
+    private:
+        core::LiteralString getStepName() const override { return "Update Library fields"; }
+        ScanStep getStep() const override { return ScanStep::UpdateLibraryFields; }
+        void process(ScanContext& context) override;
 
-    Response::Node createUserNode(RequestContext& context, const db::ObjectPtr<db::User>& user);
-} // namespace lms::api::subsonic
+        void processDirectories(ScanContext& context);
+        void processDirectory(ScanContext& context, const ScannerSettings::MediaLibraryInfo& mediaLibrary);
+    };
+} // namespace lms::scanner

@@ -72,14 +72,15 @@ namespace lms::scanner
         ReloadSimilarityEngine,
         RemoveOrphanedDbEntries,
         ScanFiles,
+        UpdateLibraryFields,
     };
-    static inline constexpr unsigned ScanProgressStepCount{ 11 };
 
     // reduced scan stats
     struct ScanStepStats
     {
         Wt::WDateTime startTime;
 
+        std::size_t stepCount{};
         std::size_t stepIndex{};
         ScanStep currentStep;
 

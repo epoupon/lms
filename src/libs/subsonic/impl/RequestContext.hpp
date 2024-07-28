@@ -27,6 +27,7 @@
 
 #include "ClientInfo.hpp"
 #include "ProtocolVersion.hpp"
+#include "SubsonicResponse.hpp"
 
 namespace lms::db
 {
@@ -43,6 +44,7 @@ namespace lms::api::subsonic
         const db::ObjectPtr<db::User> user;
         ClientInfo clientInfo;
         ProtocolVersion serverProtocolVersion;
+        ResponseFormat responseFormat;
         bool enableOpenSubsonic{ true };
         bool enableDefaultCover{};
     };

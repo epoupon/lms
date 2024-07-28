@@ -21,18 +21,24 @@
 
 #include <filesystem>
 #include <functional>
+#include <string>
+#include <string_view>
+#include <vector>
 
 #include <Wt/Dbo/Dbo.h>
 
 #include "core/EnumSet.hpp"
 #include "database/ArtistId.hpp"
 #include "database/DirectoryId.hpp"
+#include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
+#include "database/ReleaseId.hpp"
 #include "database/Types.hpp"
 
 namespace lms::db
 {
     class Session;
+    class MediaLibrary;
 
     class Directory final : public Object<Directory, DirectoryId>
     {
@@ -42,18 +48,48 @@ namespace lms::db
         struct FindParameters
         {
             std::optional<Range> range;
-            ArtistId artist;                                         // only tracks that involve this artist
+            std::vector<std::string_view> keywords;                  // if non empty, name must match all of these keywords
+            ArtistId artist;                                         // only directory that involve this artist
+            ReleaseId release;                                       // only releases that involve this artist
             core::EnumSet<TrackArtistLinkType> trackArtistLinkTypes; // and for these link types
+            DirectoryId parentDirectory;                             // If set, directories that have this parent
+            bool withNoTrack{};                                      // If set, directories that do not contain any track
+            MediaLibraryId mediaLibrary;                             // If set, directories in this library
 
             FindParameters& setRange(std::optional<Range> _range)
             {
                 range = _range;
                 return *this;
             }
+            FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
+            {
+                keywords = _keywords;
+                return *this;
+            }
             FindParameters& setArtist(ArtistId _artist, core::EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {})
             {
                 artist = _artist;
                 trackArtistLinkTypes = _trackArtistLinkTypes;
+                return *this;
+            }
+            FindParameters& setRelease(ReleaseId _release)
+            {
+                release = _release;
+                return *this;
+            }
+            FindParameters& setParentDirectory(DirectoryId _parentDirectory)
+            {
+                parentDirectory = _parentDirectory;
+                return *this;
+            }
+            FindParameters& setWithNoTrack(bool _withNoTrack)
+            {
+                withNoTrack = _withNoTrack;
+                return *this;
+            }
+            FindParameters& setMediaLibrary(MediaLibraryId _mediaLibrary)
+            {
+                mediaLibrary = _mediaLibrary;
                 return *this;
             }
         };
@@ -63,17 +99,22 @@ namespace lms::db
         static pointer find(Session& session, DirectoryId id);
         static pointer find(Session& session, const std::filesystem::path& path);
         static void find(Session& session, DirectoryId& lastRetrievedDirectory, std::size_t count, const std::function<void(const Directory::pointer&)>& func);
+        static RangeResults<Directory::pointer> find(Session& session, const FindParameters& params);
         static void find(Session& session, const FindParameters& parameters, const std::function<void(const Directory::pointer&)>& func);
         static RangeResults<DirectoryId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+        static RangeResults<DirectoryId> findMismatchedLibrary(Session& session, std::optional<Range> range, const std::filesystem::path& rootPath, MediaLibraryId expectedLibraryId);
+        static RangeResults<pointer> findRootDirectories(Session& session, std::optional<Range> range = std::nullopt);
 
         // getters
         const std::filesystem::path& getAbsolutePath() const { return _absolutePath; }
         std::string_view getName() const { return _name; }
-        ObjectPtr<Directory> getParent() const { return _parent; }
+        ObjectPtr<Directory> getParentDirectory() const { return _parent; }
+        ObjectPtr<MediaLibrary> getMediaLibrary() const { return _mediaLibrary; }
 
         // setters
         void setAbsolutePath(const std::filesystem::path& p);
         void setParent(ObjectPtr<Directory> parent);
+        void setMediaLibrary(ObjectPtr<MediaLibrary> mediaLibrary) { _mediaLibrary = getDboPtr(mediaLibrary); }
 
         template<class Action>
         void persist(Action& a)
@@ -82,6 +123,7 @@ namespace lms::db
             Wt::Dbo::field(a, _name, "name");
 
             Wt::Dbo::belongsTo(a, _parent, "parent_directory", Wt::Dbo::OnDeleteCascade);
+            Wt::Dbo::belongsTo(a, _mediaLibrary, "media_library", Wt::Dbo::OnDeleteSetNull); // don't delete directories on media library removal, we want to wait for the next scan to have a chance to migrate files
         }
 
     private:
@@ -93,5 +135,6 @@ namespace lms::db
         std::string _name;
 
         Wt::Dbo::ptr<Directory> _parent;
+        Wt::Dbo::ptr<MediaLibrary> _mediaLibrary;
     };
 } // namespace lms::db

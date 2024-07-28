@@ -33,6 +33,7 @@
 #include "core/UUID.hpp"
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
+#include "database/DirectoryId.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
@@ -68,7 +69,7 @@ namespace lms::db
         }
 
     private:
-        static constexpr std::size_t _maxNameLength{ 128 };
+        static constexpr std::size_t _maxNameLength{ 512 };
 
         friend class Session;
         ReleaseType(std::string_view name);
@@ -96,6 +97,7 @@ namespace lms::db
             core::EnumSet<TrackArtistLinkType> excludedTrackArtistLinkTypes; //    but not for these link types
             std::string releaseType;                                         // If set, albums that has this release type
             MediaLibraryId mediaLibrary;                                     // If set, releases that has at least a track in this library
+            DirectoryId directory;                                           // if set, tracks in this directory
 
             FindParameters& setClusters(std::span<const ClusterId> _clusters)
             {
@@ -148,6 +150,11 @@ namespace lms::db
             FindParameters& setMediaLibrary(MediaLibraryId _mediaLibrary)
             {
                 mediaLibrary = _mediaLibrary;
+                return *this;
+            }
+            FindParameters& setDirectory(DirectoryId _directory)
+            {
+                directory = _directory;
                 return *this;
             }
         };
@@ -211,6 +218,7 @@ namespace lms::db
         std::vector<ObjectPtr<Artist>> getReleaseArtists() const { return getArtists(TrackArtistLinkType::ReleaseArtist); }
         bool hasVariousArtists() const;
         std::vector<pointer> getSimilarReleases(std::optional<std::size_t> offset = {}, std::optional<std::size_t> count = {}) const;
+        bool hasDiscSubtitle() const;
 
         template<class Action>
         void persist(Action& a)
@@ -233,7 +241,7 @@ namespace lms::db
         Wt::WDate getDate(bool original) const;
         std::optional<int> getYear(bool original) const;
 
-        static constexpr std::size_t _maxNameLength{ 256 };
+        static constexpr std::size_t _maxNameLength{ 512 };
 
         std::string _name;
         std::string _sortName;

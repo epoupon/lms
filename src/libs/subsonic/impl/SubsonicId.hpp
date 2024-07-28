@@ -21,6 +21,7 @@
 
 #include "core/String.hpp"
 #include "database/ArtistId.hpp"
+#include "database/DirectoryId.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
@@ -33,6 +34,7 @@ namespace lms::api::subsonic
     };
 
     std::string idToString(db::ArtistId id);
+    std::string idToString(db::DirectoryId id);
     std::string idToString(db::MediaLibraryId id);
     std::string idToString(db::ReleaseId id);
     std::string idToString(db::TrackId id);
@@ -48,6 +50,9 @@ namespace lms::core::stringUtils
 
     template<>
     std::optional<db::ArtistId> readAs(std::string_view str);
+
+    template<>
+    std::optional<db::DirectoryId> readAs(std::string_view str);
 
     template<>
     std::optional<db::MediaLibraryId> readAs(std::string_view str);

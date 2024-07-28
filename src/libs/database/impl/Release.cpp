@@ -53,13 +53,17 @@ namespace lms::db
                 || params.dateRange
                 || params.artist.isValid()
                 || params.clusters.size() == 1
-                || params.mediaLibrary.isValid())
+                || params.mediaLibrary.isValid()
+                || params.directory.isValid())
             {
                 query.join("track t ON t.release_id = r.id");
             }
 
             if (params.mediaLibrary.isValid())
                 query.where("t.media_library_id = ?").bind(params.mediaLibrary);
+
+            if (params.directory.isValid())
+                query.where("t.directory_id = ?").bind(params.directory);
 
             if (!params.releaseType.empty())
             {
@@ -213,8 +217,11 @@ namespace lms::db
     } // namespace
 
     ReleaseType::ReleaseType(std::string_view name)
-        : _name{ std::string(name, 0, _maxNameLength) }
+        : _name{ name }
     {
+        // As we use the name to uniquely identoify release type, we must throw (and not truncate)
+        if (name.size() > _maxNameLength)
+            throw Exception{ "ReleaseType name is too long: " + std::string{ name } + "'" };
     }
 
     ReleaseType::pointer ReleaseType::create(Session& session, std::string_view name)
@@ -232,6 +239,9 @@ namespace lms::db
     ReleaseType::pointer ReleaseType::find(Session& session, std::string_view name)
     {
         session.checkReadTransaction();
+
+        if (name.size() > _maxNameLength)
+            throw Exception{ "Requeted ReleaseType name is too long: " + std::string{ name } + "'" };
 
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ReleaseType>>("SELECT r_t from release_type r_t").where("r_t.name = ?").bind(name));
     }
@@ -508,6 +518,11 @@ namespace lms::db
     {
         // TODO optimize
         return getArtists().size() > 1;
+    }
+
+    bool Release::hasDiscSubtitle() const
+    {
+        return utils::fetchQuerySingleResult(session()->query<int>("SELECT EXISTS (SELECT 1 FROM track WHERE disc_subtitle IS NOT NULL AND disc_subtitle <> '' AND release_id = ?)").bind(getId()));
     }
 
     std::size_t Release::getTrackCount() const

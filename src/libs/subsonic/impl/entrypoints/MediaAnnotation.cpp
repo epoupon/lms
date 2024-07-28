@@ -23,7 +23,9 @@
 
 #include "core/Service.hpp"
 #include "database/ArtistId.hpp"
+#include "database/Release.hpp"
 #include "database/ReleaseId.hpp"
+#include "database/Session.hpp"
 #include "database/TrackId.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
@@ -43,24 +45,49 @@ namespace lms::api::subsonic
             std::vector<ArtistId> artistIds;
             std::vector<ReleaseId> releaseIds;
             std::vector<TrackId> trackIds;
+            std::vector<DirectoryId> directoryIds;
         };
 
         StarParameters getStarParameters(const Wt::Http::ParameterMap& parameters)
         {
             StarParameters res;
 
-            // TODO handle parameters for legacy file browsing
+            // id could be either a trackId or a directory id
+            res.directoryIds = getMultiParametersAs<DirectoryId>(parameters, "id");
             res.trackIds = getMultiParametersAs<TrackId>(parameters, "id");
             res.artistIds = getMultiParametersAs<ArtistId>(parameters, "artistId");
             res.releaseIds = getMultiParametersAs<ReleaseId>(parameters, "albumId");
 
             return res;
         }
+
+        ReleaseId getReleaseFromDirectory(Session& session, DirectoryId directory)
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            Release::FindParameters params;
+            params.setDirectory(directory);
+            params.setRange(Range{ 0, 1 }); // consider one directory <-> one release
+
+            Release::pointer res;
+            Release::find(session, params, [&](const Release::pointer& release) {
+                res = release;
+            });
+
+            return res ? res->getId() : ReleaseId{};
+        }
+
     } // namespace
 
     Response handleStarRequest(RequestContext& context)
     {
         StarParameters params{ getStarParameters(context.parameters) };
+
+        for (const DirectoryId id : params.directoryIds)
+        {
+            if (const ReleaseId releaseId{ getReleaseFromDirectory(context.dbSession, id) }; releaseId.isValid())
+                core::Service<feedback::IFeedbackService>::get()->star(context.user->getId(), releaseId);
+        }
 
         for (const ArtistId id : params.artistIds)
             core::Service<feedback::IFeedbackService>::get()->star(context.user->getId(), id);
@@ -77,6 +104,12 @@ namespace lms::api::subsonic
     Response handleUnstarRequest(RequestContext& context)
     {
         StarParameters params{ getStarParameters(context.parameters) };
+
+        for (const DirectoryId id : params.directoryIds)
+        {
+            if (const ReleaseId releaseId{ getReleaseFromDirectory(context.dbSession, id) }; releaseId.isValid())
+                core::Service<feedback::IFeedbackService>::get()->unstar(context.user->getId(), releaseId);
+        }
 
         for (const ArtistId id : params.artistIds)
             core::Service<feedback::IFeedbackService>::get()->unstar(context.user->getId(), id);

@@ -121,6 +121,7 @@
 <message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">Removing orphaned entries: {1} entries...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Scanning files: {1}/{2} ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-status">Step status</message>
+<message id="Lms.Admin.ScannerController.step-updating-library-fields">Updating library fields: {1} entries</message>
 
 <!--Tracing-->
 <message id="Lms.Admin.Tracing.export-current-buffer">Export traces</message>

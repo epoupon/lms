@@ -68,8 +68,8 @@ namespace lms::db
             }
         };
 
-        static inline constexpr std::size_t MinNameLength{ 3 };
-        static inline constexpr std::size_t MaxNameLength{ 15 };
+        static inline constexpr std::size_t minNameLength{ 3 };
+        static inline constexpr std::size_t maxNameLength{ 32 };
         static inline constexpr bool defaultSubsonicEnableTranscodingByDefault{ false };
         static inline constexpr TranscodingOutputFormat defaultSubsonicTranscodingOutputFormat{ TranscodingOutputFormat::OGG_OPUS };
         static inline constexpr Bitrate defaultSubsonicTranscodingOutputBitrate{ 128000 };

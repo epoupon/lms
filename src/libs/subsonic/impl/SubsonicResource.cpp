@@ -168,7 +168,7 @@ namespace lms::api::subsonic
             { "/getAlbum", { handleGetAlbumRequest } },
             { "/getSong", { handleGetSongRequest } },
             { "/getVideos", { handleNotImplemented } },
-            { "/getArtistInfo", { handleGetArtistInfoRequest } },
+            { "/getArtistInfo", { handleNotImplemented } },
             { "/getArtistInfo2", { handleGetArtistInfo2Request } },
             { "/getAlbumInfo", { handleNotImplemented } },
             { "/getAlbumInfo2", { handleNotImplemented } },
@@ -411,6 +411,7 @@ namespace lms::api::subsonic
         const db::UserId userId{ authenticateUser(request, clientInfo) };
         bool enableOpenSubsonic{ _openSubsonicDisabledClients.find(clientInfo.name) == std::cend(_openSubsonicDisabledClients) };
         bool enableDefaultCover{ _defaultCoverClients.find(clientInfo.name) != std::cend(_openSubsonicDisabledClients) };
+        const ResponseFormat format{ getParameterAs<std::string>(request.getParameterMap(), "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml };
 
         db::User::pointer user;
         {
@@ -422,7 +423,16 @@ namespace lms::api::subsonic
                 throw UserNotAuthorizedError{};
         }
 
-        return { parameters, _db.getTLSSession(), user, clientInfo, getServerProtocolVersion(clientInfo.name), enableOpenSubsonic, enableDefaultCover };
+        return RequestContext{
+            .parameters = parameters,
+            .dbSession = _db.getTLSSession(),
+            .user = user,
+            .clientInfo = clientInfo,
+            .serverProtocolVersion = getServerProtocolVersion(clientInfo.name),
+            .responseFormat = format,
+            .enableOpenSubsonic = enableOpenSubsonic,
+            .enableDefaultCover = enableDefaultCover
+        };
     }
 
     db::UserId SubsonicResource::authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo)

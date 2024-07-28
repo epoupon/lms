@@ -25,6 +25,7 @@
 
 #include "core/Random.hpp"
 #include "database/Artist.hpp"
+#include "database/Directory.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
@@ -113,7 +114,36 @@ namespace lms::api::subsonic
             _ongoingScans[scanInfo] = { now, lastRetrievedId };
         }
 
-        void findRequestedArtists(RequestContext& context, bool id3, const std::vector<std::string_view>& keywords, MediaLibraryId mediaLibrary, const User::pointer& user, Response::Node& searchResultNode)
+        void findRequestedArtistDirectories(RequestContext& context, const std::vector<std::string_view>& keywords, MediaLibraryId mediaLibrary, Response::Node& searchResultNode)
+        {
+            // For now, no need to optimize all this
+            // Find all the directories that match the name and that do not contain any track (considered by the legacy API as artists)
+            const std::size_t artistCount{ getParameterAs<std::size_t>(context.parameters, "artistCount").value_or(20) };
+            if (artistCount == 0)
+                return;
+
+            if (artistCount > defaultMaxCountSize)
+                throw ParameterValueTooHighGenericError{ "artistCount", defaultMaxCountSize };
+
+            const std::size_t artistOffset{ getParameterAs<std::size_t>(context.parameters, "artistOffset").value_or(0) };
+
+            Directory::FindParameters params;
+            params.setKeywords(keywords);
+            params.setRange(Range{ artistOffset, artistCount });
+            params.setWithNoTrack(true);
+            params.setMediaLibrary(mediaLibrary);
+
+            Directory::find(context.dbSession, params, [&](const Directory::pointer& directory) {
+                Response::Node childNode;
+                childNode.setAttribute("id", idToString(directory->getId()));
+                childNode.setAttribute("name", directory->getName());
+                childNode.setAttribute("isDir", true);
+
+                searchResultNode.addArrayChild("artist", std::move(childNode));
+            });
+        }
+
+        void findRequestedArtists(RequestContext& context, const std::vector<std::string_view>& keywords, MediaLibraryId mediaLibrary, Response::Node& searchResultNode)
         {
             static ScanTracker<ArtistId> currentScansInProgress;
 
@@ -135,7 +165,7 @@ namespace lms::api::subsonic
                 params.setSortMethod(ArtistSortMethod::Id); // must be consistent with both methods
 
                 Artist::find(context.dbSession, params, [&](const Artist::pointer& artist) {
-                    searchResultNode.addArrayChild("artist", createArtistNode(context, artist, user, id3));
+                    searchResultNode.addArrayChild("artist", createArtistNode(context, artist));
                     lastRetrievedId = artist->getId();
                 });
             } };
@@ -158,7 +188,7 @@ namespace lms::api::subsonic
                 {
                     Artist::find(
                         context.dbSession, cachedLastRetrievedId, artistCount, [&](const Artist::pointer& artist) {
-                            searchResultNode.addArrayChild("artist", createArtistNode(context, artist, user, id3));
+                            searchResultNode.addArrayChild("artist", createArtistNode(context, artist));
                         },
                         mediaLibrary);
                     lastRetrievedId = cachedLastRetrievedId;
@@ -176,7 +206,7 @@ namespace lms::api::subsonic
             }
         }
 
-        void findRequestedAlbums(RequestContext& context, bool id3, const std::vector<std::string_view>& keywords, MediaLibraryId mediaLibrary, const User::pointer& user, Response::Node& searchResultNode)
+        void findRequestedAlbums(RequestContext& context, bool id3, const std::vector<std::string_view>& keywords, MediaLibraryId mediaLibrary, Response::Node& searchResultNode)
         {
             static ScanTracker<ReleaseId> currentScansInProgress;
 
@@ -199,7 +229,7 @@ namespace lms::api::subsonic
                 params.setSortMethod(ReleaseSortMethod::Id); // must be consistent with both methods
 
                 Release::find(context.dbSession, params, [&](const Release::pointer& release) {
-                    searchResultNode.addArrayChild("album", createAlbumNode(context, release, user, id3));
+                    searchResultNode.addArrayChild("album", createAlbumNode(context, release, id3));
                     lastRetrievedId = release->getId();
                 });
             } };
@@ -222,7 +252,7 @@ namespace lms::api::subsonic
                 {
                     Release::find(
                         context.dbSession, cachedLastRetrievedId, albumCount, [&](const Release::pointer& release) {
-                            searchResultNode.addArrayChild("album", createAlbumNode(context, release, user, id3));
+                            searchResultNode.addArrayChild("album", createAlbumNode(context, release, id3));
                         },
                         mediaLibrary);
                     lastRetrievedId = cachedLastRetrievedId;
@@ -240,7 +270,7 @@ namespace lms::api::subsonic
             }
         }
 
-        void findRequestedTracks(RequestContext& context, const std::vector<std::string_view>& keywords, MediaLibraryId mediaLibrary, const User::pointer& user, Response::Node& searchResultNode)
+        void findRequestedTracks(RequestContext& context, bool id3, const std::vector<std::string_view>& keywords, MediaLibraryId mediaLibrary, Response::Node& searchResultNode)
         {
             static ScanTracker<TrackId> currentScansInProgress;
 
@@ -263,7 +293,7 @@ namespace lms::api::subsonic
                 params.setSortMethod(TrackSortMethod::Id); // must be consistent with both methods
 
                 Track::find(context.dbSession, params, [&](const Track::pointer& track) {
-                    searchResultNode.addArrayChild("song", createSongNode(context, track, user));
+                    searchResultNode.addArrayChild("song", createSongNode(context, track, id3));
                     lastRetrievedId = track->getId();
                 });
             } };
@@ -286,7 +316,7 @@ namespace lms::api::subsonic
                 {
                     Track::find(
                         context.dbSession, cachedLastRetrievedId, songCount, [&](const Track::pointer& track) {
-                            searchResultNode.addArrayChild("song", createSongNode(context, track, user));
+                            searchResultNode.addArrayChild("song", createSongNode(context, track, id3));
                         },
                         mediaLibrary);
                     lastRetrievedId = cachedLastRetrievedId;
@@ -303,10 +333,7 @@ namespace lms::api::subsonic
                 }
             }
         }
-    } // namespace
 
-    namespace
-    {
         Response handleSearchRequestCommon(RequestContext& context, bool id3)
         {
             // Mandatory params
@@ -329,9 +356,12 @@ namespace lms::api::subsonic
 
             auto transaction{ context.dbSession.createReadTransaction() };
 
-            findRequestedArtists(context, id3, keywords, mediaLibrary, context.user, searchResultNode);
-            findRequestedAlbums(context, id3, keywords, mediaLibrary, context.user, searchResultNode);
-            findRequestedTracks(context, keywords, mediaLibrary, context.user, searchResultNode);
+            if (id3)
+                findRequestedArtists(context, keywords, mediaLibrary, searchResultNode);
+            else
+                findRequestedArtistDirectories(context, keywords, mediaLibrary, searchResultNode);
+            findRequestedAlbums(context, id3, keywords, mediaLibrary, searchResultNode);
+            findRequestedTracks(context, id3, keywords, mediaLibrary, searchResultNode);
 
             return response;
         }

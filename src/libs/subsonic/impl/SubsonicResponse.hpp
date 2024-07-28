@@ -27,7 +27,7 @@
 
 #include "core/LiteralString.hpp"
 
-#include "RequestContext.hpp"
+#include "ProtocolVersion.hpp"
 #include "SubsonicResponseAllocator.hpp"
 
 namespace lms::api::subsonic
