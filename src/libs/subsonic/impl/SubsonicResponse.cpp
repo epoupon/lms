@@ -266,74 +266,64 @@ namespace lms::api::subsonic
             first = false;
         }
 
-        if (node._value)
+        // Values are handled manually (using attributes) in json format
+        assert(!node._value);
+
+        for (const auto& [key, childNode] : node._children)
         {
             if (!first)
                 os << ',';
 
-            os << "\"value\":";
-            serializeValue(os, *node._value);
+            serializeEscapedString(os, key.str());
+            os << ':';
+            serializeNode(os, childNode);
 
             first = false;
         }
-        else
+
+        for (const auto& [key, childArrayNodes] : node._childrenArrays)
         {
-            for (const auto& [key, childNode] : node._children)
-            {
-                if (!first)
-                    os << ',';
+            if (!first)
+                os << ',';
 
-                serializeEscapedString(os, key.str());
-                os << ':';
+            serializeEscapedString(os, key.str());
+            os << ":[";
+
+            bool firstChild{ true };
+            for (const Response::Node& childNode : childArrayNodes)
+            {
+                if (!firstChild)
+                    os << ",";
+
                 serializeNode(os, childNode);
-
-                first = false;
+                firstChild = false;
             }
+            os << ']';
 
-            for (const auto& [key, childArrayNodes] : node._childrenArrays)
+            first = false;
+        }
+
+        for (const auto& [key, childValues] : node._childrenValues)
+        {
+            if (!first)
+                os << ',';
+
+            serializeEscapedString(os, key.str());
+            os << ":[";
+
+            bool firstChild{ true };
+            for (const Node::ValueType& childValue : childValues)
             {
-                if (!first)
-                    os << ',';
+                if (!firstChild)
+                    os << ",";
 
-                serializeEscapedString(os, key.str());
-                os << ":[";
+                serializeValue(os, childValue);
 
-                bool firstChild{ true };
-                for (const Response::Node& childNode : childArrayNodes)
-                {
-                    if (!firstChild)
-                        os << ",";
-
-                    serializeNode(os, childNode);
-                    firstChild = false;
-                }
-                os << ']';
-
-                first = false;
+                firstChild = false;
             }
+            os << ']';
 
-            for (const auto& [key, childValues] : node._childrenValues)
-            {
-                if (!first)
-                    os << ',';
-
-                serializeEscapedString(os, key.str());
-                os << ":[";
-
-                bool firstChild{ true };
-                for (const Node::ValueType& childValue : childValues)
-                {
-                    if (!firstChild)
-                        os << ",";
-
-                    serializeValue(os, childValue);
-
-                    firstChild = false;
-                }
-                os << ']';
-
-                first = false;
-            }
+            first = false;
         }
 
         os << '}';

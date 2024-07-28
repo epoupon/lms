@@ -35,6 +35,7 @@
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 
+#include "RequestContext.hpp"
 #include "SubsonicId.hpp"
 #include "Utils.hpp"
 #include "responses/Artist.hpp"

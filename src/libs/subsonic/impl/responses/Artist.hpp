@@ -36,6 +36,8 @@ namespace lms::db
 
 namespace lms::api::subsonic
 {
+    class RequestContext;
+
     namespace utils
     {
         std::string joinArtistNames(const std::vector<db::ObjectPtr<db::Artist>>& artists);

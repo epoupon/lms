@@ -19,13 +19,15 @@
 
 #include "responses/User.hpp"
 
+#include "database/MediaLibrary.hpp"
 #include "database/User.hpp"
+
+#include "RequestContext.hpp"
+#include "SubsonicId.hpp"
 
 namespace lms::api::subsonic
 {
-    using namespace db;
-
-    Response::Node createUserNode(const User::pointer& user)
+    Response::Node createUserNode(RequestContext& context, const db::User::pointer& user)
     {
         Response::Node userNode;
 
@@ -38,14 +40,15 @@ namespace lms::api::subsonic
         userNode.setAttribute("playlistRole", true);
         userNode.setAttribute("coverArtRole", false);
         userNode.setAttribute("commentRole", false);
-        userNode.setAttribute("podcastRole", false);
+        userNode.setAttribute("podcastRole", false); // not supported
         userNode.setAttribute("streamRole", true);
-        userNode.setAttribute("jukeboxRole", false);
-        userNode.setAttribute("shareRole", false);
+        userNode.setAttribute("jukeboxRole", false); // not supported
+        userNode.setAttribute("shareRole", false);   // not supported
 
-        Response::Node folder;
-        folder.setValue("0");
-        userNode.addArrayChild("folder", std::move(folder));
+        // users can access all libraries
+        db::MediaLibrary::find(context.dbSession, [&](const db::MediaLibrary::pointer& library) {
+            userNode.addArrayValue("folder", idToString(library->getId()));
+        });
 
         return userNode;
     }

@@ -362,7 +362,7 @@ namespace lms::api::subsonic
             const auto clusters{ clusterType->getClusters() };
 
             for (const Cluster::pointer& cluster : clusters)
-                genresNode.addArrayChild("genre", createGenreNode(cluster));
+                genresNode.addArrayChild("genre", createGenreNode(context, cluster));
         }
 
         return response;
@@ -531,7 +531,17 @@ namespace lms::api::subsonic
 
             std::optional<core::UUID> artistMBID{ artist->getMBID() };
             if (artistMBID)
-                artistInfoNode.createChild("musicBrainzId").setValue(artistMBID->getAsString());
+            {
+                switch (context.responseFormat)
+                {
+                case ResponseFormat::json:
+                    artistInfoNode.setAttribute("musicBrainzId", artistMBID->getAsString());
+                    break;
+                case ResponseFormat::xml:
+                    artistInfoNode.createChild("musicBrainzId").setValue(artistMBID->getAsString());
+                    break;
+                }
+            }
         }
 
         auto similarArtistsId{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(id, { TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist }, count) };

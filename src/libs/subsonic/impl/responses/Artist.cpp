@@ -29,6 +29,7 @@
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 
+#include "RequestContext.hpp"
 #include "SubsonicId.hpp"
 
 namespace lms::api::subsonic

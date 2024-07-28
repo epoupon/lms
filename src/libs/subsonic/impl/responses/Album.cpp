@@ -30,6 +30,7 @@
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 
+#include "RequestContext.hpp"
 #include "SubsonicId.hpp"
 #include "responses/Artist.hpp"
 #include "responses/DiscTitle.hpp"
