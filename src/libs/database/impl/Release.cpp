@@ -217,8 +217,11 @@ namespace lms::db
     } // namespace
 
     ReleaseType::ReleaseType(std::string_view name)
-        : _name{ std::string(name, 0, _maxNameLength) }
+        : _name{ name }
     {
+        // As we use the name to uniquely identoify release type, we must throw (and not truncate)
+        if (name.size() > _maxNameLength)
+            throw Exception{ "ReleaseType name is too long: " + std::string{ name } + "'" };
     }
 
     ReleaseType::pointer ReleaseType::create(Session& session, std::string_view name)
@@ -236,6 +239,9 @@ namespace lms::db
     ReleaseType::pointer ReleaseType::find(Session& session, std::string_view name)
     {
         session.checkReadTransaction();
+
+        if (name.size() > _maxNameLength)
+            throw Exception{ "Requeted ReleaseType name is too long: " + std::string{ name } + "'" };
 
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ReleaseType>>("SELECT r_t from release_type r_t").where("r_t.name = ?").bind(name));
     }

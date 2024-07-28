@@ -38,8 +38,8 @@ namespace lms::ui
     {
         auto v = std::make_unique<LengthValidator>();
         v->setMandatory(true);
-        v->setMinimumLength(db::User::MinNameLength);
-        v->setMaximumLength(db::User::MaxNameLength);
+        v->setMinimumLength(db::User::minNameLength);
+        v->setMaximumLength(db::User::maxNameLength);
         return v;
     }
 } // namespace lms::ui
