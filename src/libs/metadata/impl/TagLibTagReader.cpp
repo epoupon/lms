@@ -21,6 +21,7 @@
 
 #include <unordered_map>
 
+#include <taglib/aifffile.h>
 #include <taglib/apeproperties.h>
 #include <taglib/apetag.h>
 #include <taglib/asffile.h>
@@ -300,6 +301,16 @@ namespace lms::metadata
             if (!opusFile->tag()->pictureList().isEmpty())
                 _hasEmbeddedCover = true;
         }
+        else if (TagLib::RIFF::AIFF::File * aiffFile{ dynamic_cast<TagLib::RIFF::AIFF::File*>(_file.file()) })
+        {
+            if (aiffFile->hasID3v2Tag())
+            {
+                const auto& frameListMap{ aiffFile->tag()->frameListMap() };
+
+                if (!frameListMap["APIC"].isEmpty())
+                    _hasEmbeddedCover = true;
+            }
+        }
 
         if (debug && core::Service<core::logging::ILogger>::get()->isSeverityActive(core::logging::Severity::DEBUG))
         {
@@ -334,6 +345,8 @@ namespace lms::metadata
             _audioProperties.bitsPerSample = mp4Properties->bitsPerSample();
         else if (const auto* wavePackProperties{ dynamic_cast<const TagLib::WavPack::Properties*>(properties) })
             _audioProperties.bitsPerSample = wavePackProperties->bitsPerSample();
+        else if (const auto* aiffProperties{ dynamic_cast<const TagLib::RIFF::AIFF::Properties*>(properties) })
+            _audioProperties.bitsPerSample = aiffProperties->bitsPerSample();
 #if TAGLIB_MAJOR_VERSION >= 2
         else if (const auto* dsfProperties{ dynamic_cast<const TagLib::DSF::Properties*>(properties) })
             _audioProperties.bitsPerSample = dsfProperties->bitsPerSample();
