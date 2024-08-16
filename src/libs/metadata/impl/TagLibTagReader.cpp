@@ -274,6 +274,27 @@ namespace lms::metadata
             TagLib::MP4::CoverArtList coverArtList{ coverItem.toCoverArtList() };
             if (!coverArtList.isEmpty())
                 _hasEmbeddedCover = true;
+
+            if (!_propertyMap.contains("ORIGINALDATE"))
+            {
+                // For now:
+                // * TagLib 2.0 only parses ----:com.apple.iTunes:ORIGINALDATE
+                // / TagLib <2.0 only parses ----:com.apple.iTunes:originaldate
+                const auto& tags{ mp4File->tag()->itemMap() };
+                for (const auto& origDateString : { "----:com.apple.iTunes:originaldate", "----:com.apple.iTunes:ORIGINALDATE" })
+                {
+                    auto itOrigDateTag{ tags.find(origDateString) };
+                    if (itOrigDateTag != std::cend(tags))
+                    {
+                        const TagLib::StringList dates{ itOrigDateTag->second.toStringList() };
+                        if (!dates.isEmpty())
+                        {
+                            _propertyMap["ORIGINALDATE"] = dates.front();
+                            break;
+                        }
+                    }
+                }
+            }
         }
         // MPC
         else if (TagLib::MPC::File * mpcFile{ dynamic_cast<TagLib::MPC::File*>(_file.file()) })
