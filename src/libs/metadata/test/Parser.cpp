@@ -252,4 +252,68 @@ namespace lms::metadata
         EXPECT_EQ(track->artists[1].name, "Other Artist");
         EXPECT_EQ(track->artistDisplayName, "This /  is ; One Artist, Other Artist"); // reconstruct artist display name since a custom delimiter is hit
     }
+
+    TEST(Parser, noArtistInArtist)
+    {
+        const TestTagReader testTags{
+            {
+                // nothing in Artist!
+            }
+        };
+
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 0);
+        EXPECT_EQ(track->artistDisplayName, "");
+    }
+
+    TEST(Parser, singleArtistInArtist)
+    {
+        const TestTagReader testTags{
+            {
+                // nothing in Artist!
+                { TagType::Artists, { "Artist1" } },
+            }
+        };
+
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 1);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artistDisplayName, "Artist1");
+    }
+
+    TEST(Parser, multipleArtistsInArtist)
+    {
+        const TestTagReader testTags{
+            {
+                // nothing in Artists!
+                { TagType::Artist, { "Artist1", "Artist2" } },
+            }
+        };
+
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct artist display name since multiple entries are found
+    }
+
+    TEST(Parser, multipleArtistsInArtists)
+    {
+        const TestTagReader testTags{
+            {
+                // nothing in Artist!
+                { TagType::Artists, { "Artist1", "Artist2" } },
+            }
+        };
+
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct artist display name since multiple entries are found and nothing is set in artist
+    }
 } // namespace lms::metadata
