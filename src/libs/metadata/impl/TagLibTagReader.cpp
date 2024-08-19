@@ -39,6 +39,7 @@
 #include <taglib/tpropertymap.h>
 #include <taglib/vorbisfile.h>
 #include <taglib/wavpackfile.h>
+#include <taglib/wavfile.h>
 
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
@@ -332,6 +333,16 @@ namespace lms::metadata
                     _hasEmbeddedCover = true;
             }
         }
+        else if (TagLib::RIFF::WAV::File * wavFile{ dynamic_cast<TagLib::RIFF::WAV::File*>(_file.file()) })
+        {
+            if (wavFile->hasID3v2Tag())
+            {
+                const auto& frameListMap{ wavFile->tag()->frameListMap() };
+
+                if (!frameListMap["APIC"].isEmpty())
+                    _hasEmbeddedCover = true;
+            }
+        }
 
         if (debug && core::Service<core::logging::ILogger>::get()->isSeverityActive(core::logging::Severity::DEBUG))
         {
@@ -368,6 +379,8 @@ namespace lms::metadata
             _audioProperties.bitsPerSample = wavePackProperties->bitsPerSample();
         else if (const auto* aiffProperties{ dynamic_cast<const TagLib::RIFF::AIFF::Properties*>(properties) })
             _audioProperties.bitsPerSample = aiffProperties->bitsPerSample();
+        else if (const auto* wavProperties{ dynamic_cast<const TagLib::RIFF::WAV::Properties*>(properties) })
+            _audioProperties.bitsPerSample = wavProperties->bitsPerSample();
 #if TAGLIB_MAJOR_VERSION >= 2
         else if (const auto* dsfProperties{ dynamic_cast<const TagLib::DSF::Properties*>(properties) })
             _audioProperties.bitsPerSample = dsfProperties->bitsPerSample();
