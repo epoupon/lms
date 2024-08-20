@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 62 };
+        static constexpr Version LMS_DATABASE_VERSION{ 63 };
     }
 
     VersionInfo::VersionInfo()
@@ -664,6 +664,15 @@ SELECT
         session.getDboSession()->execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV62(Session& session)
+    {
+        // Add a new column comment
+        session.getDboSession()->execute("ALTER TABLE track ADD comment TEXT NOT NULL DEFAULT ''");
+
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        session.getDboSession()->execute("UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
+
     bool doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -702,6 +711,7 @@ SELECT
             { 59, migrateFromV59 },
             { 60, migrateFromV60 },
             { 61, migrateFromV61 },
+            { 62, migrateFromV62 },
         };
 
         bool migrationPerformed{};

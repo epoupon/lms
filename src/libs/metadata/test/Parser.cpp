@@ -41,6 +41,7 @@ namespace lms::metadata
                 { TagType::AlbumArtist, { "MyAlbumArtist1 & MyAlbumArtist2" } },
                 { TagType::AlbumArtists, { "MyAlbumArtist1", "MyAlbumArtist2" } },
                 { TagType::AlbumArtistsSortOrder, { "MyAlbumArtist1SortName", "MyAlbumArtist2SortName" } },
+                { TagType::Comment, { "Comment1", "Comment2" } },
                 { TagType::Composer, { "MyComposer1", "MyComposer2" } },
                 { TagType::ComposerSortOrder, { "MyComposerSortOrder1", "MyComposerSortOrder2" } },
                 { TagType::Conductor, { "MyConductor1", "MyConductor2" } },
@@ -103,6 +104,9 @@ namespace lms::metadata
         EXPECT_EQ(track->artists[1].name, "MyArtist2");
         EXPECT_EQ(track->artists[1].sortName, "MyArtist2SortName");
         EXPECT_EQ(track->artists[1].mbid, core::UUID::fromString("5e2cf87f-c8d7-4504-8a86-954dc0840229"));
+        ASSERT_EQ(track->comments.size(), 2);
+        EXPECT_EQ(track->comments[0], "Comment1");
+        EXPECT_EQ(track->comments[1], "Comment2");
         ASSERT_EQ(track->composerArtists.size(), 2);
         EXPECT_EQ(track->composerArtists[0].name, "MyComposer1");
         EXPECT_EQ(track->composerArtists[0].sortName, "MyComposerSortOrder1");

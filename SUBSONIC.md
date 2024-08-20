@@ -6,7 +6,7 @@ Given the API limitations of folder navigation commands, it is recommended to pl
 
 The Subsonic API is enabled by default.
 
-__Note__: since _LMS_ may store hashed and salted passwords or may forward authentication requests to external services, it cannot handle the __token authentication__ method. You may need to check your client to make sure to use the __password__ authentication method. Since logins/passwords are passed in plain text through URLs, it is highly recommended to use a unique password when using the Subsonic API. Note that this may affect the use of authentication via PAM. In any case, ensure that read access to the web server logs (and to the proxy, if applicable) is well protected.
+__Note__: since _LMS_ may store hashed and salted passwords or may forward authentication requests to external services, it cannot handle the __token authentication__ method. You may need to check your client to make sure to use the __password__ authentication method. Since logins/passwords are passed in plain text through URLs, it is highly recommended to use a unique password when using the Subsonic API. Note that this may affect the use of authentication via PAM. In any case, ensure the web server logs (and proxy logs, if applicable) are properly secured.
 
 # OpenSubsonic API
 OpenSubsonic is an initiative to patch and extend the legacy Subsonic API. You'll find more details in the [official documentation](https://opensubsonic.netlify.app/)
@@ -14,32 +14,33 @@ OpenSubsonic is an initiative to patch and extend the legacy Subsonic API. You'l
 ## Extra fields
 The following extra fields are implemented:
 * `Album` response:
-  * `mediaType`
-  * `played`
-  * `musicBrainzId`
-  * `genres`
   * `artists`
-  * `displayArtist`
-  * `releaseTypes`
-  * `moods`
-  * `originalReleaseDate`
-  * `isCompilation`
   * `discTitles`: discs with no subtitle are omitted
-* `Child` response:
-  * `bitDepth`
-  * `samplingRate`
-  * `channelCount`
-  * `mediaType`
-  * `played`
-  * `musicBrainzId`: note this is actually the recording MBID when this response refers to a song
-  * `genres`
-  * `artists`
   * `displayArtist`
-  * `albumArtists`
-  * `displayAlbumArtist`
-  * `contributors`
+  * `genres`
+  * `isCompilation`
+  * `played`
+  * `mediaType`
   * `moods`
+  * `musicBrainzId`
+  * `originalReleaseDate`
+  * `releaseTypes`
+* `Child` response:
+  * `albumArtists`
+  * `artists`
+  * `bitDepth`
+  * `channelCount`
+  * `comment`
+  * `contributors`
+  * `displayAlbumArtist`
+  * `displayArtist`
+  * `genres`
+  * `mediaType`
+  * `moods`
+  * `musicBrainzId`: note this is actually the recording MBID when this response refers to a song
+  * `played`
   * `replayGain`
+  * `samplingRate`
 * `Artist` response:
   * `mediaType`
   * `musicBrainzId`

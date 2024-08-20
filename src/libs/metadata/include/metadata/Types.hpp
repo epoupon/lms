@@ -117,6 +117,7 @@ namespace lms::metadata
         std::optional<core::UUID> acoustID;
         std::string copyright;
         std::string copyrightURL;
+        std::vector<std::string> comments;
         std::optional<float> replayGain;
         std::string artistDisplayName;
         std::vector<Artist> artists;

@@ -273,6 +273,7 @@ namespace lms::metadata
             track.originalYear = utils::parseYear(*dateStr);
         }
 
+        track.comments = getTagValuesAs<std::string>(tagReader, TagType::Comment, {} /* no custom delimiter on comments */);
         track.copyright = getTagValueAs<std::string>(tagReader, TagType::Copyright).value_or("");
         track.copyrightURL = getTagValueAs<std::string>(tagReader, TagType::CopyrightURL).value_or("");
         track.replayGain = getTagValueAs<float>(tagReader, TagType::ReplayGainTrackGain);
