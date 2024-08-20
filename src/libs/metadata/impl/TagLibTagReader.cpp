@@ -38,8 +38,8 @@
 #include <taglib/tag.h>
 #include <taglib/tpropertymap.h>
 #include <taglib/vorbisfile.h>
-#include <taglib/wavpackfile.h>
 #include <taglib/wavfile.h>
+#include <taglib/wavpackfile.h>
 
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
