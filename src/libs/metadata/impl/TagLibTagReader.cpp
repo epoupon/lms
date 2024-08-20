@@ -337,7 +337,7 @@ namespace lms::metadata
         {
             if (wavFile->hasID3v2Tag())
             {
-                const auto& frameListMap{ wavFile->tag()->frameListMap() };
+                const auto& frameListMap{ wavFile->ID3v2Tag()->frameListMap() };
 
                 if (!frameListMap["APIC"].isEmpty())
                     _hasEmbeddedCover = true;
