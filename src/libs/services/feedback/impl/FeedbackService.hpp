@@ -49,8 +49,8 @@ namespace lms::feedback
         Wt::WDateTime getStarredDateTime(db::UserId userId, db::ArtistId artistId) override;
         ArtistContainer findStarredArtists(const ArtistFindParameters& params) override;
 
-        virtual void setRating(db::UserId userId, db::ArtistId artistId, std::optional<db::Rating> rating) override;
-        virtual std::optional<db::Rating> getRating(db::UserId userId, db::ArtistId artistId) override;
+        void setRating(db::UserId userId, db::ArtistId artistId, std::optional<db::Rating> rating) override;
+        std::optional<db::Rating> getRating(db::UserId userId, db::ArtistId artistId) override;
 
         void star(db::UserId userId, db::ReleaseId releaseId) override;
         void unstar(db::UserId userId, db::ReleaseId releaseId) override;
@@ -58,8 +58,8 @@ namespace lms::feedback
         Wt::WDateTime getStarredDateTime(db::UserId userId, db::ReleaseId releasedId) override;
         ReleaseContainer findStarredReleases(const FindParameters& params) override;
 
-        virtual void setRating(db::UserId userId, db::ReleaseId releaseId, std::optional<db::Rating> rating) override;
-        virtual std::optional<db::Rating> getRating(db::UserId userId, db::ReleaseId releaseId) override;
+        void setRating(db::UserId userId, db::ReleaseId releaseId, std::optional<db::Rating> rating) override;
+        std::optional<db::Rating> getRating(db::UserId userId, db::ReleaseId releaseId) override;
 
         void star(db::UserId userId, db::TrackId trackId) override;
         void unstar(db::UserId userId, db::TrackId trackId) override;
