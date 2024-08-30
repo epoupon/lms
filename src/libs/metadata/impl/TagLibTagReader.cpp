@@ -21,6 +21,7 @@
 
 #include <unordered_map>
 
+#include <taglib/aifffile.h>
 #include <taglib/apeproperties.h>
 #include <taglib/apetag.h>
 #include <taglib/asffile.h>
@@ -37,6 +38,7 @@
 #include <taglib/tag.h>
 #include <taglib/tpropertymap.h>
 #include <taglib/vorbisfile.h>
+#include <taglib/wavfile.h>
 #include <taglib/wavpackfile.h>
 
 #include "core/ILogger.hpp"
@@ -273,6 +275,27 @@ namespace lms::metadata
             TagLib::MP4::CoverArtList coverArtList{ coverItem.toCoverArtList() };
             if (!coverArtList.isEmpty())
                 _hasEmbeddedCover = true;
+
+            if (!_propertyMap.contains("ORIGINALDATE"))
+            {
+                // For now:
+                // * TagLib 2.0 only parses ----:com.apple.iTunes:ORIGINALDATE
+                // / TagLib <2.0 only parses ----:com.apple.iTunes:originaldate
+                const auto& tags{ mp4File->tag()->itemMap() };
+                for (const auto& origDateString : { "----:com.apple.iTunes:originaldate", "----:com.apple.iTunes:ORIGINALDATE" })
+                {
+                    auto itOrigDateTag{ tags.find(origDateString) };
+                    if (itOrigDateTag != std::cend(tags))
+                    {
+                        const TagLib::StringList dates{ itOrigDateTag->second.toStringList() };
+                        if (!dates.isEmpty())
+                        {
+                            _propertyMap["ORIGINALDATE"] = dates.front();
+                            break;
+                        }
+                    }
+                }
+            }
         }
         // MPC
         else if (TagLib::MPC::File * mpcFile{ dynamic_cast<TagLib::MPC::File*>(_file.file()) })
@@ -299,6 +322,26 @@ namespace lms::metadata
         {
             if (!opusFile->tag()->pictureList().isEmpty())
                 _hasEmbeddedCover = true;
+        }
+        else if (TagLib::RIFF::AIFF::File * aiffFile{ dynamic_cast<TagLib::RIFF::AIFF::File*>(_file.file()) })
+        {
+            if (aiffFile->hasID3v2Tag())
+            {
+                const auto& frameListMap{ aiffFile->tag()->frameListMap() };
+
+                if (!frameListMap["APIC"].isEmpty())
+                    _hasEmbeddedCover = true;
+            }
+        }
+        else if (TagLib::RIFF::WAV::File * wavFile{ dynamic_cast<TagLib::RIFF::WAV::File*>(_file.file()) })
+        {
+            if (wavFile->hasID3v2Tag())
+            {
+                const auto& frameListMap{ wavFile->ID3v2Tag()->frameListMap() };
+
+                if (!frameListMap["APIC"].isEmpty())
+                    _hasEmbeddedCover = true;
+            }
         }
 
         if (debug && core::Service<core::logging::ILogger>::get()->isSeverityActive(core::logging::Severity::DEBUG))
@@ -334,6 +377,10 @@ namespace lms::metadata
             _audioProperties.bitsPerSample = mp4Properties->bitsPerSample();
         else if (const auto* wavePackProperties{ dynamic_cast<const TagLib::WavPack::Properties*>(properties) })
             _audioProperties.bitsPerSample = wavePackProperties->bitsPerSample();
+        else if (const auto* aiffProperties{ dynamic_cast<const TagLib::RIFF::AIFF::Properties*>(properties) })
+            _audioProperties.bitsPerSample = aiffProperties->bitsPerSample();
+        else if (const auto* wavProperties{ dynamic_cast<const TagLib::RIFF::WAV::Properties*>(properties) })
+            _audioProperties.bitsPerSample = wavProperties->bitsPerSample();
 #if TAGLIB_MAJOR_VERSION >= 2
         else if (const auto* dsfProperties{ dynamic_cast<const TagLib::DSF::Properties*>(properties) })
             _audioProperties.bitsPerSample = dsfProperties->bitsPerSample();

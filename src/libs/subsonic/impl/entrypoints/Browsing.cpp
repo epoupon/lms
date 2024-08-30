@@ -580,23 +580,23 @@ namespace lms::api::subsonic
 
         auto transaction{ context.dbSession.createReadTransaction() };
 
-        const auto artists{ Artist::find(context.dbSession, artistName) };
-        if (artists.size() != 1)
-            throw RequestedDataNotFoundError{};
-
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
         Response::Node& topSongs{ response.createNode("topSongs") };
 
-        scrobbling::IScrobblingService::FindParameters params;
-        params.setUser(context.user->getId());
-        params.setRange(db::Range{ 0, count });
-        params.setArtist(artists.front()->getId());
-
-        const auto trackIds{ core::Service<scrobbling::IScrobblingService>::get()->getTopTracks(params) };
-        for (const TrackId trackId : trackIds.results)
+        const auto artists{ Artist::find(context.dbSession, artistName) };
+        if (artists.size() == 1)
         {
-            if (Track::pointer track{ Track::find(context.dbSession, trackId) })
-                topSongs.addArrayChild("song", createSongNode(context, track, context.user));
+            scrobbling::IScrobblingService::FindParameters params;
+            params.setUser(context.user->getId());
+            params.setRange(db::Range{ 0, count });
+            params.setArtist(artists.front()->getId());
+
+            const auto trackIds{ core::Service<scrobbling::IScrobblingService>::get()->getTopTracks(params) };
+            for (const TrackId trackId : trackIds.results)
+            {
+                if (Track::pointer track{ Track::find(context.dbSession, trackId) })
+                    topSongs.addArrayChild("song", createSongNode(context, track, context.user));
+            }
         }
 
         return response;

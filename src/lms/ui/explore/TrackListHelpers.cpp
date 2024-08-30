@@ -112,7 +112,7 @@ namespace lms::ui::TrackListHelpers
             {
                 std::unique_ptr<Wt::WContainerWidget> artistContainer{ utils::createArtistAnchorList(std::vector(std::cbegin(artistIds), std::cend(artistIds))) };
                 auto artistsEntry{ std::make_unique<Template>(Wt::WString::tr("Lms.Explore.template.info.artists")) };
-                artistsEntry->bindString("type", role);
+                artistsEntry->bindString("type", role, Wt::TextFormat::Plain);
                 artistsEntry->bindWidget("artist-container", std::move(artistContainer));
                 artistTable->addWidget(std::move(artistsEntry));
             }
@@ -124,7 +124,7 @@ namespace lms::ui::TrackListHelpers
             if (audioStream)
             {
                 trackInfo->setCondition("if-has-codec", true);
-                trackInfo->bindString("codec", audioStream->codecName);
+                trackInfo->bindString("codec", audioStream->codecName, Wt::TextFormat::Plain);
             }
         }
 
@@ -136,6 +136,12 @@ namespace lms::ui::TrackListHelpers
         }
 
         trackInfo->bindInt("playcount", core::Service<scrobbling::IScrobblingService>::get()->getCount(LmsApp->getUserId(), track->getId()));
+
+        if (std::string_view comment{ track->getComment() }; !comment.empty())
+        {
+            trackInfo->setCondition("if-has-comment", true);
+            trackInfo->bindString("comment", Wt::WString::fromUTF8(std::string{ comment }), Wt::TextFormat::Plain);
+        }
 
         Wt::WContainerWidget* clusterContainer{ trackInfo->bindWidget("clusters", utils::createFilterClustersForTrack(track, filters)) };
         if (clusterContainer->count() > 0)

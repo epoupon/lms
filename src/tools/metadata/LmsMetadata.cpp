@@ -216,6 +216,9 @@ namespace lms::metadata
         if (!track->copyright.empty())
             std::cout << "Copyright: " << track->copyright << std::endl;
 
+        for (const auto& comment : track->comments)
+            std::cout << "Comment: '" << comment << "'" << std::endl;
+
         if (!track->copyrightURL.empty())
             std::cout << "CopyrightURL: " << track->copyrightURL << std::endl;
 

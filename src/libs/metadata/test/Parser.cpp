@@ -41,6 +41,7 @@ namespace lms::metadata
                 { TagType::AlbumArtist, { "MyAlbumArtist1 & MyAlbumArtist2" } },
                 { TagType::AlbumArtists, { "MyAlbumArtist1", "MyAlbumArtist2" } },
                 { TagType::AlbumArtistsSortOrder, { "MyAlbumArtist1SortName", "MyAlbumArtist2SortName" } },
+                { TagType::Comment, { "Comment1", "Comment2" } },
                 { TagType::Composer, { "MyComposer1", "MyComposer2" } },
                 { TagType::ComposerSortOrder, { "MyComposerSortOrder1", "MyComposerSortOrder2" } },
                 { TagType::Conductor, { "MyConductor1", "MyConductor2" } },
@@ -103,6 +104,9 @@ namespace lms::metadata
         EXPECT_EQ(track->artists[1].name, "MyArtist2");
         EXPECT_EQ(track->artists[1].sortName, "MyArtist2SortName");
         EXPECT_EQ(track->artists[1].mbid, core::UUID::fromString("5e2cf87f-c8d7-4504-8a86-954dc0840229"));
+        ASSERT_EQ(track->comments.size(), 2);
+        EXPECT_EQ(track->comments[0], "Comment1");
+        EXPECT_EQ(track->comments[1], "Comment2");
         ASSERT_EQ(track->composerArtists.size(), 2);
         EXPECT_EQ(track->composerArtists[0].name, "MyComposer1");
         EXPECT_EQ(track->composerArtists[0].sortName, "MyComposerSortOrder1");
@@ -251,5 +255,69 @@ namespace lms::metadata
         EXPECT_EQ(track->artists[0].name, "This /  is ; One Artist");
         EXPECT_EQ(track->artists[1].name, "Other Artist");
         EXPECT_EQ(track->artistDisplayName, "This /  is ; One Artist, Other Artist"); // reconstruct artist display name since a custom delimiter is hit
+    }
+
+    TEST(Parser, noArtistInArtist)
+    {
+        const TestTagReader testTags{
+            {
+                // nothing in Artist!
+            }
+        };
+
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 0);
+        EXPECT_EQ(track->artistDisplayName, "");
+    }
+
+    TEST(Parser, singleArtistInArtist)
+    {
+        const TestTagReader testTags{
+            {
+                // nothing in Artist!
+                { TagType::Artists, { "Artist1" } },
+            }
+        };
+
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 1);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artistDisplayName, "Artist1");
+    }
+
+    TEST(Parser, multipleArtistsInArtist)
+    {
+        const TestTagReader testTags{
+            {
+                // nothing in Artists!
+                { TagType::Artist, { "Artist1", "Artist2" } },
+            }
+        };
+
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct artist display name since multiple entries are found
+    }
+
+    TEST(Parser, multipleArtistsInArtists)
+    {
+        const TestTagReader testTags{
+            {
+                // nothing in Artist!
+                { TagType::Artists, { "Artist1", "Artist2" } },
+            }
+        };
+
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct artist display name since multiple entries are found and nothing is set in artist
     }
 } // namespace lms::metadata

@@ -49,11 +49,17 @@ namespace lms::feedback
         Wt::WDateTime getStarredDateTime(db::UserId userId, db::ArtistId artistId) override;
         ArtistContainer findStarredArtists(const ArtistFindParameters& params) override;
 
+        void setRating(db::UserId userId, db::ArtistId artistId, std::optional<db::Rating> rating) override;
+        std::optional<db::Rating> getRating(db::UserId userId, db::ArtistId artistId) override;
+
         void star(db::UserId userId, db::ReleaseId releaseId) override;
         void unstar(db::UserId userId, db::ReleaseId releaseId) override;
         bool isStarred(db::UserId userId, db::ReleaseId releasedId) override;
         Wt::WDateTime getStarredDateTime(db::UserId userId, db::ReleaseId releasedId) override;
         ReleaseContainer findStarredReleases(const FindParameters& params) override;
+
+        void setRating(db::UserId userId, db::ReleaseId releaseId, std::optional<db::Rating> rating) override;
+        std::optional<db::Rating> getRating(db::UserId userId, db::ReleaseId releaseId) override;
 
         void star(db::UserId userId, db::TrackId trackId) override;
         void unstar(db::UserId userId, db::TrackId trackId) override;
@@ -61,6 +67,10 @@ namespace lms::feedback
         Wt::WDateTime getStarredDateTime(db::UserId userId, db::TrackId trackId) override;
         TrackContainer findStarredTracks(const FindParameters& params) override;
 
+        void setRating(db::UserId userId, db::TrackId trackId, std::optional<db::Rating> rating) override;
+        std::optional<db::Rating> getRating(db::UserId userId, db::TrackId trackId) override;
+
+    private:
         std::optional<db::FeedbackBackend> getUserFeedbackBackend(db::UserId userId);
 
         template<typename ObjType, typename ObjIdType, typename StarredObjType>
@@ -71,6 +81,12 @@ namespace lms::feedback
         bool isStarred(db::UserId userId, ObjIdType id);
         template<typename ObjType, typename ObjIdType, typename StarredObjType>
         Wt::WDateTime getStarredDateTime(db::UserId userId, ObjIdType id);
+
+        template<typename ObjType, typename ObjIdType, typename RatedObjType>
+        void setRating(db::UserId userId, ObjIdType objectId, std::optional<db::Rating> rating);
+
+        template<typename ObjType, typename ObjIdType, typename RatedObjType>
+        std::optional<db::Rating> getRating(db::UserId userId, ObjIdType objectId);
 
         db::Db& _db;
         std::unordered_map<db::FeedbackBackend, std::unique_ptr<IFeedbackBackend>> _backends;

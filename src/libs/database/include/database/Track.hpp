@@ -228,6 +228,7 @@ namespace lms::db
         void setTrackReplayGain(std::optional<float> replayGain) { _trackReplayGain = replayGain; }
         void setReleaseReplayGain(std::optional<float> replayGain) { _releaseReplayGain = replayGain; } // may be by disc!
         void setArtistDisplayName(std::string_view name) { _artistDisplayName = name; }
+        void setComment(std::string_view comment) { _comment = comment; }
         void clearArtistLinks();
         void addArtistLink(const ObjectPtr<TrackArtistLink>& artistLink);
         void setRelease(ObjectPtr<Release> release) { _release = getDboPtr(release); }
@@ -264,6 +265,8 @@ namespace lms::db
         std::optional<float> getTrackReplayGain() const { return _trackReplayGain; }
         std::optional<float> getReleaseReplayGain() const { return _releaseReplayGain; }
         std::string_view getArtistDisplayName() const { return _artistDisplayName; }
+        std::string_view getComment() const { return _comment; }
+
         // no artistLinkTypes means get all
         std::vector<ObjectPtr<Artist>> getArtists(core::EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
         std::vector<ArtistId> getArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes) const;        // no type means all
@@ -307,6 +310,8 @@ namespace lms::db
             Wt::Dbo::field(a, _trackReplayGain, "track_replay_gain");
             Wt::Dbo::field(a, _releaseReplayGain, "release_replay_gain"); // here in Track since Release does not have concept of "disc" (yet?)
             Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
+            Wt::Dbo::field(a, _comment, "comment");
+
             Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::belongsTo(a, _mediaLibrary, "media_library", Wt::Dbo::OnDeleteSetNull); // don't delete track on media library removal, we want to wait for the next scan to have a chance to migrate files
             Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
@@ -350,6 +355,7 @@ namespace lms::db
         std::optional<float> _trackReplayGain;
         std::optional<float> _releaseReplayGain;
         std::string _artistDisplayName;
+        std::string _comment;
 
         Wt::Dbo::ptr<Release> _release;
         Wt::Dbo::ptr<MediaLibrary> _mediaLibrary;

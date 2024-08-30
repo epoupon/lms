@@ -363,4 +363,24 @@ namespace lms::db::tests
             EXPECT_EQ(track->getSampleRate(), 44100);
         }
     }
+
+    TEST_F(DatabaseFixture, Track_comment)
+    {
+        ScopedTrack track{ session };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(track->getComment(), "");
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track.get().modify()->setComment("MyComment");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(track->getComment(), "MyComment");
+        }
+    }
 } // namespace lms::db::tests

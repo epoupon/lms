@@ -102,4 +102,46 @@ namespace lms::feedback
         return {};
     }
 
+    template<typename ObjType, typename ObjIdType, typename RatedObjType>
+    void FeedbackService::setRating(db::UserId userId, ObjIdType objectId, std::optional<db::Rating> rating)
+    {
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createWriteTransaction() };
+
+        typename RatedObjType::pointer ratedObject{ RatedObjType::find(session, objectId, userId) };
+        if (rating)
+        {
+            if (!ratedObject)
+            {
+                typename ObjType::pointer obj{ ObjType::find(session, objectId) };
+                const User::pointer user{ User::find(session, userId) };
+
+                if (!obj || !user)
+                    return;
+
+                ratedObject = session.create<RatedObjType>(obj, user);
+            }
+
+            ratedObject.modify()->setRating(*rating);
+        }
+        else
+        {
+            if (ratedObject)
+                ratedObject.remove();
+        }
+    }
+
+    template<typename ObjType, typename ObjIdType, typename RatedObjType>
+    std::optional<db::Rating> FeedbackService::getRating(db::UserId userId, ObjIdType objectId)
+    {
+        Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createReadTransaction() };
+
+        const typename RatedObjType::pointer ratedObj{ RatedObjType::find(session, objectId, userId) };
+        if (!ratedObj)
+            return std::nullopt;
+
+        return ratedObj->getRating();
+    }
+
 } // namespace lms::feedback

@@ -103,6 +103,9 @@ namespace lms::api::subsonic
         if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.user->getId(), artist->getId()) }; dateTime.isValid())
             artistNode.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
 
+        if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.user->getId(), artist->getId()) })
+            artistNode.setAttribute("userRating", *rating);
+
         // OpenSubsonic specific fields (must always be set)
         if (context.enableOpenSubsonic)
         {

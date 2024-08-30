@@ -196,6 +196,8 @@ namespace lms::db
     void visitAllowedAudioBitrates(std::function<void(Bitrate)>);
     bool isAudioBitrateAllowed(Bitrate bitrate);
 
+    using Rating = int;
+
     enum class ScrobblingBackend
     {
         Internal = 0,

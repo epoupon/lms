@@ -273,6 +273,7 @@ namespace lms::metadata
             track.originalYear = utils::parseYear(*dateStr);
         }
 
+        track.comments = getTagValuesAs<std::string>(tagReader, TagType::Comment, {} /* no custom delimiter on comments */);
         track.copyright = getTagValueAs<std::string>(tagReader, TagType::Copyright).value_or("");
         track.copyrightURL = getTagValueAs<std::string>(tagReader, TagType::CopyrightURL).value_or("");
         track.replayGain = getTagValueAs<float>(tagReader, TagType::ReplayGainTrackGain);
@@ -297,11 +298,26 @@ namespace lms::metadata
         track.medium = getMedium(tagReader);
         track.artists = getArtists(tagReader, { TagType::Artists, TagType::Artist }, { TagType::ArtistSortOrder }, { TagType::MusicBrainzArtistID }, _artistTagDelimiters);
 
-        // We consider the artist display name is put in the Artist tag (picard case)
-        // But to please most users, if we find a custom delimiter in the Artist tag, we construct the artist diplay string with a "nicer" join
-        if (!_artistTagDelimiters.empty()
-            && track.artists.size() > 1
-            && getTagValuesAs<std::string>(tagReader, TagType::Artist, _artistTagDelimiters).size() > 1)
+        auto needReconstructArtistDisplayName{ [&] {
+            // We consider the artist display name is put in the Artist tag (picard case)
+
+            // To please most users, if we find a custom delimiter in the Artist tag, we construct the artist display string with a "nicer" join
+            if (!_artistTagDelimiters.empty()
+                && track.artists.size() > 1
+                && getTagValuesAs<std::string>(tagReader, TagType::Artist, _artistTagDelimiters).size() > 1)
+            {
+                return true;
+            }
+            // We have (true) multiple entries in the Artist tag or nothing
+            else if (getTagValuesAs<std::string>(tagReader, TagType::Artist, {}).size() != 1)
+            {
+                return true;
+            }
+
+            return false;
+        } };
+
+        if (needReconstructArtistDisplayName())
         {
             std::vector<std::string_view> artistNames;
             std::transform(std::cbegin(track.artists), std::cend(track.artists), std::back_inserter(artistNames), [](const Artist& artist) -> std::string_view { return artist.name; });

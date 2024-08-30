@@ -710,6 +710,7 @@ namespace lms::scanner
         track.modify()->setHasCover(trackMetadata->hasCover);
         track.modify()->setCopyright(trackMetadata->copyright);
         track.modify()->setCopyrightURL(trackMetadata->copyrightURL);
+        track.modify()->setComment(!trackMetadata->comments.empty() ? trackMetadata->comments.front() : ""); // only take the first one for now
         track.modify()->setTrackReplayGain(trackMetadata->replayGain);
         track.modify()->setArtistDisplayName(trackMetadata->artistDisplayName);
 

@@ -11,6 +11,9 @@ add_library(lmsdatabase SHARED
 	impl/TrackArtistLink.cpp
 	impl/TrackFeatures.cpp
 	impl/TrackList.cpp
+	impl/RatedArtist.cpp
+	impl/RatedRelease.cpp
+	impl/RatedTrack.cpp
 	impl/Release.cpp
 	impl/ScanSettings.cpp
 	impl/Session.cpp
