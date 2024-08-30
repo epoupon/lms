@@ -23,6 +23,9 @@
 #include "database/Db.hpp"
 #include "database/Directory.hpp"
 #include "database/Image.hpp"
+#include "database/RatedArtist.hpp"
+#include "database/RatedRelease.hpp"
+#include "database/RatedTrack.hpp"
 #include "database/StarredArtist.hpp"
 #include "database/StarredRelease.hpp"
 #include "database/StarredTrack.hpp"
@@ -335,6 +338,9 @@ VALUES
             EXPECT_FALSE(Directory::find(session, DirectoryId{}));
             EXPECT_FALSE(Image::find(session, ImageId{}));
             EXPECT_FALSE(Listen::find(session, ListenId{}));
+            EXPECT_FALSE(RatedArtist::find(session, RatedArtistId{}));
+            EXPECT_FALSE(RatedRelease::find(session, RatedReleaseId{}));
+            EXPECT_FALSE(RatedTrack::find(session, RatedTrackId{}));
             EXPECT_FALSE(Release::find(session, ReleaseId{}));
             EXPECT_FALSE(StarredArtist::find(session, StarredArtistId{}));
             EXPECT_FALSE(StarredRelease::find(session, StarredReleaseId{}));

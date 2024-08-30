@@ -116,6 +116,10 @@ namespace lms::api::subsonic
         if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.user->getId(), release->getId()) }; dateTime.isValid())
             albumNode.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
 
+        // Always report user rating, even if legacy API only specified it for directories
+        if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.user->getId(), release->getId()) })
+            albumNode.setAttribute("userRating", *rating);
+
         if (!context.enableOpenSubsonic)
             return albumNode;
 

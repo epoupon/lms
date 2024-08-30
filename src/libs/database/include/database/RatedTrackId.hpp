@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,13 +19,6 @@
 
 #pragma once
 
-#include "RequestContext.hpp"
-#include "SubsonicResponse.hpp"
+#include "database/IdType.hpp"
 
-namespace lms::api::subsonic
-{
-    Response handleStarRequest(RequestContext& context);
-    Response handleUnstarRequest(RequestContext& context);
-    Response handleSetRating(RequestContext& context);
-    Response handleScrobble(RequestContext& context);
-} // namespace lms::api::subsonic
+LMS_DECLARE_IDTYPE(RatedTrackId)

@@ -8,6 +8,9 @@ add_executable(test-database
 	Image.cpp
 	Listen.cpp
 	Migration.cpp
+	RatedArtist.cpp
+	RatedRelease.cpp
+	RatedTrack.cpp
 	Release.cpp
 	StarredArtist.cpp
 	StarredRelease.cpp

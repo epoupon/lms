@@ -25,6 +25,7 @@ The following extra fields are implemented:
   * `musicBrainzId`
   * `originalReleaseDate`
   * `releaseTypes`
+  * `userRating`
 * `Child` response:
   * `albumArtists`
   * `artists`

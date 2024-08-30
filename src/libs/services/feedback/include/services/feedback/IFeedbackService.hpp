@@ -109,6 +109,9 @@ namespace lms::feedback
         virtual Wt::WDateTime getStarredDateTime(db::UserId userId, db::ArtistId artistId) = 0;
         virtual ArtistContainer findStarredArtists(const ArtistFindParameters& params) = 0;
 
+        virtual void setRating(db::UserId userId, db::ArtistId artistId, std::optional<db::Rating> rating) = 0;
+        virtual std::optional<db::Rating> getRating(db::UserId userId, db::ArtistId artistId) = 0;
+
         // Releases
         virtual void star(db::UserId userId, db::ReleaseId releaseId) = 0;
         virtual void unstar(db::UserId userId, db::ReleaseId releaseId) = 0;
@@ -116,12 +119,18 @@ namespace lms::feedback
         virtual Wt::WDateTime getStarredDateTime(db::UserId userId, db::ReleaseId artistId) = 0;
         virtual ReleaseContainer findStarredReleases(const FindParameters& params) = 0;
 
+        virtual void setRating(db::UserId userId, db::ReleaseId releaseId, std::optional<db::Rating> rating) = 0;
+        virtual std::optional<db::Rating> getRating(db::UserId userId, db::ReleaseId releaseId) = 0;
+
         // Tracks
         virtual void star(db::UserId userId, db::TrackId trackId) = 0;
         virtual void unstar(db::UserId userId, db::TrackId trackId) = 0;
         virtual bool isStarred(db::UserId userId, db::TrackId artistId) = 0;
         virtual Wt::WDateTime getStarredDateTime(db::UserId userId, db::TrackId artistId) = 0;
         virtual TrackContainer findStarredTracks(const FindParameters& params) = 0;
+
+        virtual void setRating(db::UserId userId, db::TrackId trackId, std::optional<db::Rating> rating) = 0;
+        virtual std::optional<db::Rating> getRating(db::UserId userId, db::TrackId trackId) = 0;
     };
 
     std::unique_ptr<IFeedbackService> createFeedbackService(boost::asio::io_service& ioService, db::Db& db);

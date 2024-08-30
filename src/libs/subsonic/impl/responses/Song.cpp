@@ -133,6 +133,8 @@ namespace lms::api::subsonic
         trackResponse.setAttribute("type", "music");
         trackResponse.setAttribute("created", core::stringUtils::toISO8601String(track->getLastWritten()));
         trackResponse.setAttribute("contentType", av::getMimeType(track->getAbsoluteFilePath().extension()));
+        if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.user->getId(), track->getId()) })
+            trackResponse.setAttribute("userRating", *rating);
 
         if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.user->getId(), track->getId()) }; dateTime.isValid())
             trackResponse.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));

@@ -23,6 +23,9 @@
 #include "core/ILogger.hpp"
 #include "database/Artist.hpp"
 #include "database/Db.hpp"
+#include "database/RatedArtist.hpp"
+#include "database/RatedRelease.hpp"
+#include "database/RatedTrack.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/StarredArtist.hpp"
@@ -108,6 +111,16 @@ namespace lms::feedback
         return Artist::findIds(session, searchParams);
     }
 
+    void FeedbackService::setRating(db::UserId userId, db::ArtistId artistId, std::optional<db::Rating> rating)
+    {
+        setRating<Artist, ArtistId, RatedArtist>(userId, artistId, rating);
+    }
+
+    std::optional<db::Rating> FeedbackService::getRating(db::UserId userId, db::ArtistId artistId)
+    {
+        return getRating<Artist, ArtistId, RatedArtist>(userId, artistId);
+    }
+
     void FeedbackService::star(UserId userId, ReleaseId releaseId)
     {
         star<Release, ReleaseId, StarredRelease>(userId, releaseId);
@@ -148,6 +161,16 @@ namespace lms::feedback
         return Release::findIds(session, searchParams);
     }
 
+    void FeedbackService::setRating(db::UserId userId, db::ReleaseId releaseId, std::optional<db::Rating> rating)
+    {
+        setRating<Release, ReleaseId, RatedRelease>(userId, releaseId, rating);
+    }
+
+    std::optional<db::Rating> FeedbackService::getRating(db::UserId userId, db::ReleaseId releaseId)
+    {
+        return getRating<Release, ReleaseId, RatedRelease>(userId, releaseId);
+    }
+
     void FeedbackService::star(UserId userId, TrackId trackId)
     {
         star<Track, TrackId, StarredTrack>(userId, trackId);
@@ -186,5 +209,15 @@ namespace lms::feedback
         auto transaction{ session.createReadTransaction() };
 
         return Track::findIds(session, searchParams);
+    }
+
+    void FeedbackService::setRating(db::UserId userId, db::TrackId trackId, std::optional<db::Rating> rating)
+    {
+        setRating<db::Track, db::TrackId, db::RatedTrack>(userId, trackId, rating);
+    }
+
+    std::optional<db::Rating> FeedbackService::getRating(db::UserId userId, db::TrackId trackId)
+    {
+        return getRating<db::Track, db::TrackId, db::RatedTrack>(userId, trackId);
     }
 } // namespace lms::feedback
