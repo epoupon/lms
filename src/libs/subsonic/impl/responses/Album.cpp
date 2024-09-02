@@ -195,8 +195,7 @@ namespace lms::api::subsonic
         }
 
         albumNode.createEmptyArrayChild("recordLabels");
-        release->visitLabels([&](const Label::pointer& label)
-        {
+        release->visitLabels([&](const Label::pointer& label) {
             albumNode.addArrayChild("recordLabels", createRecordLabel(label));
         });
 

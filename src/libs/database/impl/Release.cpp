@@ -224,7 +224,7 @@ namespace lms::db
             throw Exception{ "Label name is too long: " + std::string{ name } + "'" };
     }
 
-        Label::pointer Label::create(Session& session, std::string_view name)
+    Label::pointer Label::create(Session& session, std::string_view name)
     {
         return session.getDboSession()->add(std::unique_ptr<Label>{ new Label{ name } });
     }
