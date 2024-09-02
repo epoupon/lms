@@ -63,6 +63,9 @@ namespace lms::metadata
             os << " '" << release.sortName << "'";
         os << std::endl;
 
+        for (std::string_view label : release.labels)
+            std::cout << "Label: " << label << std::endl;
+
         if (release.mbid)
             os << "\tRelease MBID = " << release.mbid->getAsString() << std::endl;
 
@@ -179,9 +182,6 @@ namespace lms::metadata
 
         for (std::string_view language : track->languages)
             std::cout << "Language: " << language << std::endl;
-
-        for (std::string_view label : track->labels)
-            std::cout << "Label: " << label << std::endl;
 
         for (const auto& [tag, values] : track->userExtraTags)
         {

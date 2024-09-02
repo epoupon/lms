@@ -99,6 +99,7 @@ namespace lms::db
         _session.mapClass<ClusterType>("cluster_type");
         _session.mapClass<Directory>("directory");
         _session.mapClass<Image>("image");
+        _session.mapClass<Label>("label");
         _session.mapClass<Listen>("listen");
         _session.mapClass<MediaLibrary>("media_library");
         _session.mapClass<RatedArtist>("rated_artist");
@@ -196,6 +197,8 @@ namespace lms::db
         _session.execute("CREATE INDEX IF NOT EXISTS image_id_idx ON image(id)");
         _session.execute("CREATE INDEX IF NOT EXISTS image_path_idx ON image(absolute_file_path)");
         _session.execute("CREATE INDEX IF NOT EXISTS image_stem_idx ON image(stem)");
+
+        _session.execute("CREATE INDEX IF NOT EXISTS label_name_idx ON label(name)");
 
         _session.execute("CREATE INDEX IF NOT EXISTS listen_backend_idx ON listen(backend)");
         _session.execute("CREATE INDEX IF NOT EXISTS listen_id_idx ON listen(id)");

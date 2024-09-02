@@ -36,6 +36,7 @@
 #include "responses/DiscTitle.hpp"
 #include "responses/ItemDate.hpp"
 #include "responses/ItemGenre.hpp"
+#include "responses/RecordLabel.hpp"
 
 namespace lms::api::subsonic
 {
@@ -186,13 +187,18 @@ namespace lms::api::subsonic
             albumNode.setAttribute("isCompilation", isCompilation);
         }
 
-        // disc titles
         albumNode.createEmptyArrayChild("discTitles");
         for (const DiscInfo& discInfo : release->getDiscs())
         {
             if (!discInfo.name.empty())
                 albumNode.addArrayChild("discTitles", createDiscTitle(discInfo));
         }
+
+        albumNode.createEmptyArrayChild("recordLabels");
+        release->visitLabels([&](const Label::pointer& label)
+        {
+            albumNode.addArrayChild("recordLabels", createRecordLabel(label));
+        });
 
         return albumNode;
     }

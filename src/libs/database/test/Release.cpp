@@ -21,6 +21,7 @@
 
 namespace lms::db::tests
 {
+    using ScopedLabel = ScopedEntity<db::Label>;
     using ScopedReleaseType = ScopedEntity<db::ReleaseType>;
 
     TEST_F(DatabaseFixture, Release)
@@ -741,6 +742,23 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(release.get()->getDiscCount(), 2);
+        }
+    }
+
+    TEST_F(DatabaseFixture, Label)
+    {
+        {
+            auto transaction{ session.createReadTransaction() };
+            Label::pointer res{ Label::find(session, "label") };
+            EXPECT_EQ(res, Label::pointer{});
+        }
+
+        ScopedLabel label{ session, "MyLabel" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            Label::pointer res{ Label::find(session, "MyLabel") };
+            EXPECT_EQ(res, label.get());
         }
     }
 

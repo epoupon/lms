@@ -206,6 +206,15 @@ namespace lms::scanner
             return releaseType;
         }
 
+        Label::pointer getOrCreateLabel(Session& session, std::string_view name)
+        {
+            Label::pointer label{ Label::find(session, name) };
+            if (!label)
+                label = session.create<Label>(name);
+
+            return label;
+        }
+
         void updateReleaseIfNeeded(Session& session, Release::pointer release, const metadata::Release& releaseInfo)
         {
             if (release->getName() != releaseInfo.name)
@@ -223,6 +232,13 @@ namespace lms::scanner
                 release.modify()->clearReleaseTypes();
                 for (std::string_view releaseType : releaseInfo.releaseTypes)
                     release.modify()->addReleaseType(getOrCreateReleaseType(session, releaseType));
+            }
+
+            if (release->getLabelNames() != releaseInfo.labels)
+            {
+                release.modify()->clearLabels();
+                for (std::string_view label : releaseInfo.labels)
+                    release.modify()->addLabel(getOrCreateLabel(session, label));
             }
         }
 

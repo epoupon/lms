@@ -128,9 +128,6 @@ namespace lms::metadata
         ASSERT_EQ(track->groupings.size(), 2);
         EXPECT_EQ(track->groupings[0], "Grouping1");
         EXPECT_EQ(track->groupings[1], "Grouping2");
-        ASSERT_EQ(track->labels.size(), 2);
-        EXPECT_EQ(track->labels[0], "Label1");
-        EXPECT_EQ(track->labels[1], "Label2");
         ASSERT_EQ(track->languages.size(), 2);
         EXPECT_EQ(track->languages[0], "Language1");
         EXPECT_EQ(track->languages[1], "Language2");
@@ -201,6 +198,9 @@ namespace lms::metadata
         EXPECT_EQ(track->medium->release->artists[1].name, "MyAlbumArtist2");
         EXPECT_EQ(track->medium->release->artists[1].sortName, "MyAlbumArtist2SortName");
         EXPECT_EQ(track->medium->release->artists[1].mbid, core::UUID::fromString("5ed3d6b3-2aed-4a03-828c-3c4d4f7406e1"));
+        ASSERT_EQ(track->medium->release->labels.size(), 2);
+        EXPECT_EQ(track->medium->release->labels[0], "Label1");
+        EXPECT_EQ(track->medium->release->labels[1], "Label2");
         ASSERT_TRUE(track->medium->release->mbid.has_value());
         EXPECT_EQ(track->medium->release->mbid.value(), core::UUID::fromString("3fa39992-b786-4585-a70e-85d5cc15ef69"));
         EXPECT_EQ(track->medium->release->groupMBID.value(), core::UUID::fromString("5b1a5a44-8420-4426-9b86-d25dc8d04838"));

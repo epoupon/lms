@@ -216,6 +216,36 @@ namespace lms::db
         }
     } // namespace
 
+    Label::Label(std::string_view name)
+        : _name{ name }
+    {
+        // As we use the name to uniquely identoify release type, we must throw (and not truncate)
+        if (name.size() > _maxNameLength)
+            throw Exception{ "Label name is too long: " + std::string{ name } + "'" };
+    }
+
+        Label::pointer Label::create(Session& session, std::string_view name)
+    {
+        return session.getDboSession()->add(std::unique_ptr<Label>{ new Label{ name } });
+    }
+
+    Label::pointer Label::find(Session& session, LabelId id)
+    {
+        session.checkReadTransaction();
+
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Label>>("SELECT l from label l").where("l.id = ?").bind(id));
+    }
+
+    Label::pointer Label::find(Session& session, std::string_view name)
+    {
+        session.checkReadTransaction();
+
+        if (name.size() > _maxNameLength)
+            throw Exception{ "Requeted Label name is too long: " + std::string{ name } + "'" };
+
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Label>>("SELECT l from label l").where("l.name = ?").bind(name));
+    }
+
     ReleaseType::ReleaseType(std::string_view name)
         : _name{ name }
     {
@@ -504,9 +534,19 @@ namespace lms::db
         return utils::fetchQueryResults<Release::pointer>(query);
     }
 
+    void Release::clearLabels()
+    {
+        _labels.clear();
+    }
+
     void Release::clearReleaseTypes()
     {
         _releaseTypes.clear();
+    }
+
+    void Release::addLabel(ObjectPtr<Label> label)
+    {
+        _labels.insert(getDboPtr(label));
     }
 
     void Release::addReleaseType(ObjectPtr<ReleaseType> releaseType)
@@ -537,6 +577,16 @@ namespace lms::db
         return utils::fetchQueryResults<ReleaseType::pointer>(_releaseTypes.find());
     }
 
+    std::vector<std::string> Release::getLabelNames() const
+    {
+        std::vector<std::string> res;
+
+        for (const auto& label : _labels)
+            res.push_back(std::string{ label->getName() });
+
+        return res;
+    }
+
     std::vector<std::string> Release::getReleaseTypeNames() const
     {
         std::vector<std::string> res;
@@ -545,6 +595,13 @@ namespace lms::db
             res.push_back(std::string{ releaseType->getName() });
 
         return res;
+    }
+
+    void Release::visitLabels(const std::function<void(const Label::pointer& label)>& _func) const
+    {
+        assert(session());
+        auto query{ _labels.find() };
+        utils::forEachQueryResult(query, _func);
     }
 
     std::chrono::milliseconds Release::getDuration() const

@@ -290,7 +290,6 @@ namespace lms::metadata
         track.genres = getTagValuesAs<std::string>(tagReader, TagType::Genre, _defaultTagDelimiters);
         track.moods = getTagValuesAs<std::string>(tagReader, TagType::Mood, _defaultTagDelimiters);
         track.groupings = getTagValuesAs<std::string>(tagReader, TagType::Grouping, _defaultTagDelimiters);
-        track.labels = getTagValuesAs<std::string>(tagReader, TagType::RecordLabel, _defaultTagDelimiters);
         track.languages = getTagValuesAs<std::string>(tagReader, TagType::Language, _defaultTagDelimiters);
 
         std::vector<std::string_view> artistDelimiters{};
@@ -390,6 +389,7 @@ namespace lms::metadata
         release->groupMBID = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzReleaseGroupID);
         release->artists = getArtists(tagReader, { TagType::AlbumArtists, TagType::AlbumArtist }, { TagType::AlbumArtistsSortOrder, TagType::AlbumArtistSortOrder }, { TagType::MusicBrainzReleaseArtistID }, _artistTagDelimiters);
         release->mediumCount = getTagValueAs<std::size_t>(tagReader, TagType::TotalDiscs);
+        release->labels = getTagValuesAs<std::string>(tagReader, TagType::RecordLabel, _defaultTagDelimiters);
         if (!release->mediumCount)
         {
             // mediumCount may be encoded as "position/count"

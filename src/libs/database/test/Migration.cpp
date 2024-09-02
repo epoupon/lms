@@ -337,11 +337,13 @@ VALUES
             EXPECT_FALSE(ClusterType::find(session, ClusterTypeId{}));
             EXPECT_FALSE(Directory::find(session, DirectoryId{}));
             EXPECT_FALSE(Image::find(session, ImageId{}));
+            EXPECT_FALSE(Label::find(session, LabelId{}));
             EXPECT_FALSE(Listen::find(session, ListenId{}));
             EXPECT_FALSE(RatedArtist::find(session, RatedArtistId{}));
             EXPECT_FALSE(RatedRelease::find(session, RatedReleaseId{}));
             EXPECT_FALSE(RatedTrack::find(session, RatedTrackId{}));
             EXPECT_FALSE(Release::find(session, ReleaseId{}));
+            EXPECT_FALSE(ReleaseType::find(session, ReleaseTypeId{}));
             EXPECT_FALSE(StarredArtist::find(session, StarredArtistId{}));
             EXPECT_FALSE(StarredRelease::find(session, StarredReleaseId{}));
             EXPECT_FALSE(StarredTrack::find(session, StarredTrackId{}));

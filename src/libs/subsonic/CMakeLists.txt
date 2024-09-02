@@ -19,6 +19,7 @@ add_library(lmssubsonic SHARED
 	impl/responses/ItemGenre.cpp
 	impl/responses/Genre.cpp
 	impl/responses/Playlist.cpp
+	impl/responses/RecordLabel.cpp
 	impl/responses/ReplayGain.cpp
 	impl/responses/Song.cpp
 	impl/responses/User.cpp
