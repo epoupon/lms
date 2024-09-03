@@ -32,7 +32,7 @@ namespace lms::db
 
 namespace lms::api::subsonic
 {
-    class RequestContext;
+    struct RequestContext;
 
     Response::Node createSongNode(RequestContext& context, const db::ObjectPtr<db::Track>& track, bool id3);
 } // namespace lms::api::subsonic

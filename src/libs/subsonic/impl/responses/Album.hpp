@@ -33,7 +33,7 @@ namespace lms::db
 
 namespace lms::api::subsonic
 {
-    class RequestContext;
+    struct RequestContext;
 
     Response::Node createAlbumNode(RequestContext& context, const db::ObjectPtr<db::Release>& release, bool id3, const db::ObjectPtr<db::Directory>& directory = {});
 } // namespace lms::api::subsonic

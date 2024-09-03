@@ -36,7 +36,7 @@ namespace lms::db
 
 namespace lms::api::subsonic
 {
-    class RequestContext;
+    struct RequestContext;
 
     namespace utils
     {
