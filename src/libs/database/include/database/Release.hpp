@@ -228,6 +228,7 @@ namespace lms::db
         std::chrono::milliseconds getDuration() const;
         Wt::WDateTime getLastWritten() const;
         std::string_view getArtistDisplayName() const { return _artistDisplayName; }
+        bool isCompilation() const { return _isCompilation; }
         std::size_t getTrackCount() const;
         std::vector<ObjectPtr<ReleaseType>> getReleaseTypes() const;
         std::vector<std::string> getLabelNames() const;
@@ -241,6 +242,7 @@ namespace lms::db
         void setGroupMBID(const std::optional<core::UUID>& mbid) { _groupMBID = mbid ? mbid->getAsString() : ""; }
         void setTotalDisc(std::optional<int> totalDisc) { _totalDisc = totalDisc; }
         void setArtistDisplayName(std::string_view name) { _artistDisplayName = name; }
+        void setCompilation(bool value) { _isCompilation = value; }
         void clearLabels();
         void clearReleaseTypes();
         void addLabel(ObjectPtr<Label> releaseType);
@@ -262,6 +264,7 @@ namespace lms::db
             Wt::Dbo::field(a, _groupMBID, "group_mbid");
             Wt::Dbo::field(a, _totalDisc, "total_disc");
             Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
+            Wt::Dbo::field(a, _isCompilation, "is_compilation");
             Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "release");
 
             Wt::Dbo::hasMany(a, _labels, Wt::Dbo::ManyToMany, "release_label", "", Wt::Dbo::OnDeleteCascade);
@@ -284,6 +287,7 @@ namespace lms::db
         std::string _groupMBID;
         std::optional<int> _totalDisc{};
         std::string _artistDisplayName;
+        bool _isCompilation{}; // See https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html#compilation-itunes-5
 
         Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
         Wt::Dbo::collection<Wt::Dbo::ptr<Label>> _labels;

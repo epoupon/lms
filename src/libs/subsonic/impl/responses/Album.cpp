@@ -172,20 +172,11 @@ namespace lms::api::subsonic
         albumNode.setAttribute("displayArtist", release->getArtistDisplayName());
         albumNode.addChild("originalReleaseDate", createItemDateNode(release->getOriginalDate(), release->getOriginalYear()));
 
-        {
-            bool isCompilation{};
-            albumNode.createEmptyArrayValue("releaseTypes");
-            for (std::string_view releaseType : release->getReleaseTypeNames())
-            {
-                if (core::stringUtils::stringCaseInsensitiveEqual(releaseType, "compilation"))
-                    isCompilation = true;
+        albumNode.setAttribute("isCompilation", release->isCompilation());
 
-                albumNode.addArrayValue("releaseTypes", releaseType);
-            }
-
-            // TODO: the Compilation tag does not have the same meaning
-            albumNode.setAttribute("isCompilation", isCompilation);
-        }
+        albumNode.createEmptyArrayValue("releaseTypes");
+        for (std::string_view releaseType : release->getReleaseTypeNames())
+            albumNode.addArrayValue("releaseTypes", releaseType);
 
         albumNode.createEmptyArrayChild("discTitles");
         for (const DiscInfo& discInfo : release->getDiscs())

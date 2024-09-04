@@ -745,6 +745,26 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Release_isCompilation)
+    {
+        ScopedRelease release{ session, "MyRelease" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_FALSE(release.get()->isCompilation());
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            release.get().modify()->setCompilation(true);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_TRUE(release.get()->isCompilation());
+        }
+    }
+
     TEST_F(DatabaseFixture, Label)
     {
         {

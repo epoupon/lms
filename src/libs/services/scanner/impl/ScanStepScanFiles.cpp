@@ -227,6 +227,8 @@ namespace lms::scanner
                 release.modify()->setTotalDisc(releaseInfo.mediumCount);
             if (release->getArtistDisplayName() != releaseInfo.artistDisplayName)
                 release.modify()->setArtistDisplayName(releaseInfo.artistDisplayName);
+            if (release->isCompilation() != releaseInfo.isCompilation)
+                release.modify()->setCompilation(releaseInfo.isCompilation);
             if (release->getReleaseTypeNames() != releaseInfo.releaseTypes)
             {
                 release.modify()->clearReleaseTypes();

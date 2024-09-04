@@ -64,7 +64,7 @@ namespace lms::metadata
         os << std::endl;
 
         for (std::string_view label : release.labels)
-            std::cout << "Label: " << label << std::endl;
+            std::cout << "\tLabel: " << label << std::endl;
 
         if (release.mbid)
             os << "\tRelease MBID = " << release.mbid->getAsString() << std::endl;
@@ -77,6 +77,8 @@ namespace lms::metadata
 
         if (!release.artistDisplayName.empty())
             std::cout << "\tDisplay artist: " << release.artistDisplayName << std::endl;
+
+        std::cout << "\tIsCompilation: " << std::boolalpha << release.isCompilation << std::endl;
 
         for (const Artist& artist : release.artists)
             std::cout << "\tRelease artist: " << artist << std::endl;
