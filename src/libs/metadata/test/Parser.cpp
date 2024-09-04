@@ -233,9 +233,12 @@ namespace lms::metadata
     {
         const TestTagReader testTags{
             {
+                { TagType::Album, { "MyAlbum" } },
+                { TagType::AlbumArtist, { "AlbumArtist1 \\ AlbumArtist2" } },
+                { TagType::Artist, { " This /  is ; One Artist \\  Other Artist    " } },
                 { TagType::Genre, { "Genre1 ; Genre2" } },
                 { TagType::Language, { " Lang1/Lang2 / Lang3" } },
-                { TagType::Artist, { " This /  is ; One Artist \\  Other Artist    " } },
+
             }
         };
 
@@ -244,6 +247,10 @@ namespace lms::metadata
         static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ " \\ ", " / " }); // The first delimiter found will be used
         std::unique_ptr<Track> track{ parser.parse(testTags) };
 
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "This /  is ; One Artist");
+        EXPECT_EQ(track->artists[1].name, "Other Artist");
+        EXPECT_EQ(track->artistDisplayName, "This /  is ; One Artist, Other Artist"); // reconstruct artist display name since a custom delimiter is hit
         ASSERT_EQ(track->genres.size(), 2);
         EXPECT_EQ(track->genres[0], "Genre1");
         EXPECT_EQ(track->genres[1], "Genre2");
@@ -251,10 +258,17 @@ namespace lms::metadata
         EXPECT_EQ(track->languages[0], "Lang1");
         EXPECT_EQ(track->languages[1], "Lang2");
         EXPECT_EQ(track->languages[2], "Lang3");
-        ASSERT_EQ(track->artists.size(), 2);
-        EXPECT_EQ(track->artists[0].name, "This /  is ; One Artist");
-        EXPECT_EQ(track->artists[1].name, "Other Artist");
-        EXPECT_EQ(track->artistDisplayName, "This /  is ; One Artist, Other Artist"); // reconstruct artist display name since a custom delimiter is hit
+
+        // Medium
+        ASSERT_TRUE(track->medium.has_value());
+
+        // Release
+        ASSERT_TRUE(track->medium->release.has_value());
+        EXPECT_EQ(track->medium->release->name, "MyAlbum");
+        EXPECT_EQ(track->medium->release->artists[0].name, "AlbumArtist1");
+        EXPECT_EQ(track->medium->release->artists[1].name, "AlbumArtist2");
+        EXPECT_EQ(track->medium->release->artistDisplayName, "AlbumArtist1 \\ AlbumArtist2"); // reconstruct artist display name since a custom delimiter is hit
+
     }
 
     TEST(Parser, noArtistInArtist)

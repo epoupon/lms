@@ -82,7 +82,7 @@ namespace lms::metadata
 
         bool isDefault() const
         {
-            static Medium defaultMedium;
+            static const Medium defaultMedium;
             return *this == defaultMedium;
         }
     };
