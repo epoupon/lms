@@ -353,7 +353,7 @@ namespace lms::metadata
         EXPECT_EQ(track->artists[0].name, "Artist1");
         EXPECT_EQ(track->artists[0].mbid, std::nullopt);
         EXPECT_EQ(track->artists[1].name, "Artist2");
-        EXPECT_EQ(track->artists[2].mbid, std::nullopt);
+        EXPECT_EQ(track->artists[1].mbid, std::nullopt);
         EXPECT_EQ(track->artistDisplayName, "Artist1 & Artist2");
     }
 
@@ -374,7 +374,7 @@ namespace lms::metadata
         EXPECT_EQ(track->artists[0].name, "Artist1");
         EXPECT_EQ(track->artists[0].mbid, std::nullopt);
         EXPECT_EQ(track->artists[1].name, "Artist2");
-        EXPECT_EQ(track->artists[2].mbid, std::nullopt);
+        EXPECT_EQ(track->artists[1].mbid, std::nullopt);
         EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct the artist display name
     }
 } // namespace lms::metadata
