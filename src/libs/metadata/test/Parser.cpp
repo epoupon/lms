@@ -336,4 +336,45 @@ namespace lms::metadata
         EXPECT_EQ(track->artists[1].name, "Artist2");
         EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct artist display name since multiple entries are found and nothing is set in artist
     }
+
+    TEST(Parser, multipleArtistsInArtistsButNotAllMBIDs)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "Artist1 & Artist2" } },
+                { TagType::Artists, { "Artist1", "Artist2" } },
+                { TagType::MusicBrainzArtistID, { "dd2180a2-a350-4012-b332-5d66102fa2c6" } }, // only one => no mbid will be added
+            }
+        };
+
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[0].mbid, std::nullopt);
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artists[2].mbid, std::nullopt);
+        EXPECT_EQ(track->artistDisplayName, "Artist1 & Artist2");
+    }
+
+    TEST(Parser, multipleArtistsInArtistsButNotAllMBIDs_customDelimiters)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "Artist1 / Artist2" } },
+                { TagType::MusicBrainzArtistID, { "dd2180a2-a350-4012-b332-5d66102fa2c6" } }, // only one => no mbid will be added
+            }
+        };
+
+        Parser parser;
+        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ " / " });
+        std::unique_ptr<Track> track{ parser.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[0].mbid, std::nullopt);
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artists[2].mbid, std::nullopt);
+        EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct the artist display name
+    }
 } // namespace lms::metadata
