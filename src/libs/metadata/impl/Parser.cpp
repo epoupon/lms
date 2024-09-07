@@ -46,7 +46,7 @@ namespace lms::metadata
                 {
                     if (value.find(tagDelimiter) != std::string_view::npos)
                     {
-                        for (std::string_view splitTag : core::stringUtils::splitString(value, tagDelimiter))
+                        for (std::string_view splitTag : core::stringUtils::splitString(value, tagDelimiters))
                             visitTagIfNonEmpty(splitTag);
 
                         return;
@@ -80,7 +80,7 @@ namespace lms::metadata
                     {
                         if (value.find(tagDelimiter) != std::string_view::npos)
                         {
-                            for (std::string_view splitTag : core::stringUtils::splitString(value, tagDelimiter))
+                            for (std::string_view splitTag : core::stringUtils::splitString(value, tagDelimiters))
                                 addTagIfNonEmpty(splitTag);
 
                             return;

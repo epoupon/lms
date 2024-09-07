@@ -740,7 +740,7 @@ SELECT
     {
         session.getDboSession()->execute("ALTER TABLE release ADD is_compilation BOOLEAN NOT NULL DEFAULT(false)");
 
-                // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
         session.getDboSession()->execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 

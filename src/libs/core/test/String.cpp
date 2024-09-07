@@ -79,6 +79,9 @@ namespace lms::core::stringUtils::tests
 
         TestCase tests[]{
             { "", "", { "" } },
+            { "//", "//", { "", "" } },
+            { "//abc//", "//", { "", "abc", "" } },
+            { "//abc////abc//", "//", { "", "abc", "", "abc", "" } },
             { "abc", "", { "abc" } },
             { "abc", "-", { "abc" } },
             { "abc", "b", { "a", "c" } },
@@ -96,6 +99,35 @@ namespace lms::core::stringUtils::tests
         {
             const std::vector<std::string_view> res{ splitString(test.input, test.delimiter) };
             EXPECT_EQ(res, test.expectedOutput) << "Input = '" << test.input << "', delims = '" << test.delimiter << "'";
+        }
+    }
+
+    TEST(StringUtils, splitString_multiStringDelim)
+    {
+        struct TestCase
+        {
+            std::string_view input;
+            std::vector<std::string_view> delimiters;
+            std::vector<std::string_view> expectedOutput;
+        };
+
+        TestCase tests[]{
+            { "", { "" }, { "" } },
+            { "abc", { "" }, { "abc" } },
+            { "abc", { "b" }, { "a", "c" } },
+            { "ab/cd", { "/" }, { "ab", "cd" } },
+            { "ab/cd", { "/", ";" }, { "ab", "cd" } },
+            { "ab;/cd", { "/", ";" }, { "ab", "", "cd" } },
+            { "ab;/;cd", { "/", ";" }, { "ab", "", "", "cd" } },
+            { "ab/;cd", { "/", ";" }, { "ab", "", "cd" } },
+            { "ab/;/cd", { "/", ";" }, { "ab", "", "", "cd" } },
+            { "ab/cd/ef", { "/", "cd" }, { "ab", "", "", "ef" } },
+        };
+
+        for (const TestCase& test : tests)
+        {
+            const std::vector<std::string_view> res{ splitString(test.input, test.delimiters) };
+            EXPECT_EQ(res, test.expectedOutput) << "Input = '" << test.input << "'";
         }
     }
 

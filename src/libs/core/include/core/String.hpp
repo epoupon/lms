@@ -40,6 +40,8 @@ namespace lms::core::stringUtils
 {
     [[nodiscard]] std::vector<std::string_view> splitString(std::string_view string, char separator);
     [[nodiscard]] std::vector<std::string_view> splitString(std::string_view string, std::string_view separator);
+    [[nodiscard]] std::vector<std::string_view> splitString(std::string_view string, std::span<const std::string_view> separators);
+    [[nodiscard]] std::vector<std::string_view> splitString(std::string_view string, std::span<const std::string> separators);
 
     [[nodiscard]] std::string joinStrings(std::span<const std::string> strings, std::string_view delimiter);
     [[nodiscard]] std::string joinStrings(std::span<const std::string_view> strings, std::string_view delimiter);
