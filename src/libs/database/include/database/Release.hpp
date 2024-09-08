@@ -115,7 +115,7 @@ namespace lms::db
         {
             std::vector<ClusterId> clusters;        // if non empty, releases that belong to these clusters
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords (cannot be set with keywords)
-            std::string name; // must match this name (cannot be set with keywords)
+            std::string name;                       // must match this name (cannot be set with keywords)
             ReleaseSortMethod sortMethod{ ReleaseSortMethod::None };
             std::optional<Range> range;
             Wt::WDateTime writtenAfter;

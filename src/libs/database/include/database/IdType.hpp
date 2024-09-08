@@ -33,7 +33,7 @@ namespace lms::db
 
         IdType() = default;
         IdType(ValueType id)
-            : _id{ id } { }
+            : _id{ id } {}
 
         bool isValid() const { return _id != Wt::Dbo::dbo_default_traits::invalidId(); }
         std::string toString() const
