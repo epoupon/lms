@@ -109,6 +109,7 @@ namespace lms::db
         const std::filesystem::path& getAbsolutePath() const { return _absolutePath; }
         std::string_view getName() const { return _name; }
         ObjectPtr<Directory> getParentDirectory() const { return _parent; }
+        DirectoryId getParentDirectoryId() const { return _parent.id(); }
         ObjectPtr<MediaLibrary> getMediaLibrary() const { return _mediaLibrary; }
 
         // setters
