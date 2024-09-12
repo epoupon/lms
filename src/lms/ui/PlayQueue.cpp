@@ -45,6 +45,7 @@
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
 #include "ModalManager.hpp"
+#include "State.hpp"
 #include "Utils.hpp"
 #include "common/InfiniteScrollingContainer.hpp"
 #include "common/MandatoryValidator.hpp"
@@ -156,35 +157,21 @@ namespace lms::ui
 
         _repeatBtn = bindNew<Wt::WCheckBox>("repeat-btn");
         _repeatBtn->clicked().connect([this] {
-            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-
-            if (!LmsApp->getUser()->isDemo())
-                LmsApp->getUser().modify()->setRepeatAll(isRepeatAllSet());
+            state::writeValue<bool>("player_repeat_all", isRepeatAllSet());
         });
-        {
-            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-            if (LmsApp->getUser()->isRepeatAllSet())
-                _repeatBtn->setCheckState(Wt::CheckState::Checked);
-        }
+        if (state::readValue<bool>("player_repeat_all").value_or(false))
+            _repeatBtn->setCheckState(Wt::CheckState::Checked);
 
         _radioBtn = bindNew<Wt::WCheckBox>("radio-btn");
         _radioBtn->clicked().connect([this] {
             {
-                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-
-                if (!LmsApp->getUser()->isDemo())
-                    LmsApp->getUser().modify()->setRadio(isRadioModeSet());
+                state::writeValue<bool>("player_radio_mode", isRadioModeSet());
             }
             if (isRadioModeSet())
                 enqueueRadioTracksIfNeeded();
         });
 
-        bool isRadioModeSet{};
-        {
-            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-            isRadioModeSet = LmsApp->getUser()->isRadioSet();
-        }
-        if (isRadioModeSet)
+        if (state::readValue<bool>("player_radio_mode").value_or(false))
         {
             _radioBtn->setCheckState(Wt::CheckState::Checked);
             enqueueRadioTracksIfNeeded();

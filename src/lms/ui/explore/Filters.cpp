@@ -32,6 +32,7 @@
 
 #include "LmsApplication.hpp"
 #include "ModalManager.hpp"
+#include "State.hpp"
 #include "Utils.hpp"
 #include "common/ValueStringModel.hpp"
 
@@ -54,7 +55,7 @@ namespace lms::ui
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
                 db::ClusterType::find(LmsApp->getDbSession(), [&](const db::ClusterType::pointer& clusterType) {
                     typeModel->add(Wt::WString::fromUTF8(std::string{ clusterType->getName() }), clusterType->getId());
-                });
+                    });
             }
 
             typeModel->add(Wt::WString::tr("Lms.Explore.media-library"), MediaLibraryTag{});
@@ -77,7 +78,7 @@ namespace lms::ui
             {
                 db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer& library) {
                     valueModel->add(Wt::WString::fromUTF8(std::string{ library->getName() }), library->getId());
-                });
+                    });
             }
             else if (const db::ClusterTypeId * clusterTypeId{ std::get_if<db::ClusterTypeId>(&type) })
             {
@@ -87,7 +88,7 @@ namespace lms::ui
 
                 db::Cluster::find(session, params, [&](const db::Cluster::pointer& cluster) {
                     valueModel->add(Wt::WString::fromUTF8(std::string{ cluster->getName() }), cluster->getId());
-                });
+                    });
             }
 
             return valueModel;
@@ -115,6 +116,7 @@ namespace lms::ui
             if (const db::MediaLibraryId * mediaLibraryId{ std::get_if<db::MediaLibraryId>(&value) })
             {
                 set(*mediaLibraryId);
+                state::writeValue<db::MediaLibraryId::ValueType>("filters_media_library_id", mediaLibraryId->getValue());
             }
             else if (const db::ClusterId * clusterId{ std::get_if<db::ClusterId>(&value) })
             {
@@ -123,12 +125,12 @@ namespace lms::ui
 
             // TODO
             LmsApp->getModalManager().dispose(dialogPtr);
-        });
+            });
 
         Wt::WPushButton* cancelBtn{ dialog->bindNew<Wt::WPushButton>("cancel-btn", Wt::WString::tr("Lms.cancel")) };
         cancelBtn->clicked().connect([=] {
             LmsApp->getModalManager().dispose(dialogPtr);
-        });
+            });
 
         typeCombo->activated().connect([valueCombo, typeModel](int row) {
             const TypeVariant type{ typeModel->getValue(row) };
@@ -136,7 +138,7 @@ namespace lms::ui
             const std::shared_ptr<ValueModel> valueModel{ createValueModel(type) };
             valueCombo->clear();
             valueCombo->setModel(valueModel);
-        });
+            });
 
         typeCombo->activated().emit(0); // force emit to refresh the type combo model
 
@@ -153,6 +155,9 @@ namespace lms::ui
         addFilterBtn->clicked().connect(this, &Filters::showDialog);
 
         _filters = bindNew<Wt::WContainerWidget>("clusters");
+
+        if (const std::optional<db::MediaLibraryId::ValueType> mediaLibraryId{ state::readValue<db::MediaLibraryId::ValueType>("filters_media_library_id") })
+            set(*mediaLibraryId);
     }
 
     void Filters::add(db::ClusterId clusterId)
@@ -176,7 +181,7 @@ namespace lms::ui
             _filters->removeWidget(filter);
             _clusterIds.erase(std::remove_if(std::begin(_clusterIds), std::end(_clusterIds), [clusterId](db::ClusterId id) { return id == clusterId; }), std::end(_clusterIds));
             _sigUpdated.emit();
-        });
+            });
 
         emitFilterAddedNotification();
     }
@@ -208,7 +213,8 @@ namespace lms::ui
             _mediaLibraryId = db::MediaLibraryId{};
             _mediaLibraryFilter = nullptr;
             _sigUpdated.emit();
-        });
+            state::writeValue<db::MediaLibraryId::ValueType>("filters_media_library_id", std::nullopt);
+            });
 
         emitFilterAddedNotification();
     }

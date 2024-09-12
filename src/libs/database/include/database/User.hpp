@@ -35,6 +35,7 @@ namespace lms::db
 {
     class AuthToken;
     class Session;
+    class UIState;
 
     class User final : public Object<User, UserId>
     {
@@ -105,8 +106,6 @@ namespace lms::db
         void setSubsonicDefaultTranscodintOutputFormat(TranscodingOutputFormat encoding) { _subsonicDefaultTranscodingOutputFormat = encoding; }
         void setSubsonicDefaultTranscodingOutputBitrate(Bitrate bitrate);
         void setCurPlayingTrackPos(std::size_t pos) { _curPlayingTrackPos = pos; }
-        void setRadio(bool val) { _radio = val; }
-        void setRepeatAll(bool val) { _repeatAll = val; }
         void setUITheme(UITheme uiTheme) { _uiTheme = uiTheme; }
         void clearAuthTokens();
         void setSubsonicArtistListMode(SubsonicArtistListMode mode) { _subsonicArtistListMode = mode; }
@@ -122,8 +121,6 @@ namespace lms::db
         TranscodingOutputFormat getSubsonicDefaultTranscodingOutputFormat() const { return _subsonicDefaultTranscodingOutputFormat; }
         Bitrate getSubsonicDefaultTranscodingOutputBitrate() const { return _subsonicDefaultTranscodingOutputBitrate; }
         std::size_t getCurPlayingTrackPos() const { return _curPlayingTrackPos; }
-        bool isRepeatAllSet() const { return _repeatAll; }
-        bool isRadioSet() const { return _radio; }
         UITheme getUITheme() const { return _uiTheme; }
         SubsonicArtistListMode getSubsonicArtistListMode() const { return _subsonicArtistListMode; }
         FeedbackBackend getFeedbackBackend() const { return _feedbackBackend; }
@@ -149,10 +146,9 @@ namespace lms::db
 
             // UI player settings
             Wt::Dbo::field(a, _curPlayingTrackPos, "cur_playing_track_pos");
-            Wt::Dbo::field(a, _repeatAll, "repeat_all");
-            Wt::Dbo::field(a, _radio, "radio");
 
             Wt::Dbo::hasMany(a, _authTokens, Wt::Dbo::ManyToOne, "user");
+            Wt::Dbo::hasMany(a, _uiSettings, Wt::Dbo::ManyToOne, "user");
         }
 
     private:
@@ -180,10 +176,9 @@ namespace lms::db
 
         // User's dynamic data (UI)
         int _curPlayingTrackPos{}; // Current track position in queue
-        bool _repeatAll{};
-        bool _radio{};
 
         Wt::Dbo::collection<Wt::Dbo::ptr<AuthToken>> _authTokens;
+        Wt::Dbo::collection<Wt::Dbo::ptr<UIState>> _uiSettings;
     };
 
 } // namespace lms::db

@@ -30,6 +30,7 @@
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
 #include "SortModeSelector.hpp"
+#include "State.hpp"
 #include "TrackArtistLinkTypeSelector.hpp"
 #include "common/InfiniteScrollingContainer.hpp"
 
@@ -50,15 +51,27 @@ namespace lms::ui
             refreshView(searEdit->text());
         });
 
-        SortModeSelector* sortModeSelector{ bindNew<SortModeSelector>("sort-mode", _defaultSortMode) };
-        sortModeSelector->itemSelected.connect([this](ArtistCollector::Mode sortMode) {
-            refreshView(sortMode);
-        });
+        {
+            const ArtistCollector::Mode sortMode{ state::readValue<ArtistCollector::Mode>("artists_sort_mode").value_or(_defaultSortMode) };
+            _artistCollector.setMode(sortMode);
 
-        TrackArtistLinkTypeSelector* linkTypeSelector{ bindNew<TrackArtistLinkTypeSelector>("link-type", _defaultLinkType) };
-        linkTypeSelector->itemSelected.connect([this](std::optional<TrackArtistLinkType> linkType) {
-            refreshView(linkType);
-        });
+            SortModeSelector* sortModeSelector{ bindNew<SortModeSelector>("sort-mode", sortMode) };
+            sortModeSelector->itemSelected.connect([this](ArtistCollector::Mode newSortMode) {
+                state::writeValue<ArtistCollector::Mode>("artists_sort_mode", newSortMode);
+                refreshView(newSortMode);
+            });
+        }
+
+        {
+            const std::optional<TrackArtistLinkType> linkType{ state::readValue<TrackArtistLinkType>("artists_link_type") };
+            _artistCollector.setArtistLinkType(linkType);
+
+            TrackArtistLinkTypeSelector* linkTypeSelector{ bindNew<TrackArtistLinkTypeSelector>("link-type", linkType) };
+            linkTypeSelector->itemSelected.connect([this](std::optional<TrackArtistLinkType> newLinkType) {
+                state::writeValue<TrackArtistLinkType>("artists_link_type", newLinkType);
+                refreshView(newLinkType);
+            });
+        }
 
         _container = bindNew<InfiniteScrollingContainer>("artists", Wt::WString::tr("Lms.Explore.Artists.template.container"));
         _container->onRequestElements.connect([this] {

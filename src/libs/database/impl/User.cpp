@@ -24,6 +24,7 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "database/UIState.hpp"
 
 #include "IdTypeTraits.hpp"
 #include "StringViewTraits.hpp"

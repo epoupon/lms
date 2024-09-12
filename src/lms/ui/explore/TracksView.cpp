@@ -28,6 +28,7 @@
 
 #include "LmsApplication.hpp"
 #include "SortModeSelector.hpp"
+#include "State.hpp"
 #include "common/InfiniteScrollingContainer.hpp"
 #include "explore/Filters.hpp"
 #include "explore/PlayQueueController.hpp"
@@ -52,10 +53,16 @@ namespace lms::ui
             refreshView(searEdit->text());
         });
 
-        SortModeSelector* sortMode{ bindNew<SortModeSelector>("sort-mode", _defaultMode) };
-        sortMode->itemSelected.connect([this](TrackCollector::Mode mode) {
-            refreshView(mode);
-        });
+        {
+            const TrackCollector::Mode sortMode{ state::readValue<TrackCollector::Mode>("tracks_sort_mode").value_or(_defaultMode) };
+            _trackCollector.setMode(sortMode);
+
+            SortModeSelector* sortModeSelector{ bindNew<SortModeSelector>("sort-mode", sortMode) };
+            sortModeSelector->itemSelected.connect([this](TrackCollector::Mode newSortMode) {
+                state::writeValue<TrackCollector::Mode>("tracks_sort_mode", newSortMode);
+                refreshView(newSortMode);
+            });
+        }
 
         bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML)
             ->clicked()

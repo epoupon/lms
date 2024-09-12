@@ -27,6 +27,7 @@
 #include "DropDownMenuSelector.hpp"
 #include "Filters.hpp"
 #include "LmsApplication.hpp"
+#include "State.hpp"
 #include "Utils.hpp"
 #include "common/InfiniteScrollingContainer.hpp"
 #include "common/Template.hpp"
@@ -42,15 +43,20 @@ namespace lms::ui
         addFunction("tr", &Wt::WTemplate::Functions::tr);
         addFunction("id", &Wt::WTemplate::Functions::id);
 
-        using SortModeSelector = DropDownMenuSelector<TrackLists::Mode>;
-        SortModeSelector* sortModeSelector{ bindNew<SortModeSelector>("sort-mode", Wt::WString::tr("Lms.Explore.TrackLists.template.sort-mode"), _mode) };
-        sortModeSelector->bindItem("recently-modified", Wt::WString::tr("Lms.Explore.recently-modified"), Mode::RecentlyModified);
-        sortModeSelector->bindItem("all", Wt::WString::tr("Lms.Explore.all"), Mode::All);
+        {
+            _mode = state::readValue<Mode>("tracklists_sort_mode").value_or(_defaultMode);
 
-        sortModeSelector->itemSelected.connect(this, [this](TrackLists::Mode mode) {
-            _mode = mode;
-            refreshView();
-        });
+            using SortModeSelector = DropDownMenuSelector<TrackLists::Mode>;
+            SortModeSelector* sortModeSelector{ bindNew<SortModeSelector>("sort-mode", Wt::WString::tr("Lms.Explore.TrackLists.template.sort-mode"), _mode) };
+            sortModeSelector->bindItem("recently-modified", Wt::WString::tr("Lms.Explore.recently-modified"), Mode::RecentlyModified);
+            sortModeSelector->bindItem("all", Wt::WString::tr("Lms.Explore.all"), Mode::All);
+
+            sortModeSelector->itemSelected.connect(this, [this](TrackLists::Mode mode) {
+                state::writeValue<Mode>("tracklists_sort_mode", mode);
+                _mode = mode;
+                refreshView();
+            });
+        }
 
         _container = bindNew<InfiniteScrollingContainer>("tracklists", Wt::WString::tr("Lms.Explore.TrackLists.template.container"));
         _container->onRequestElements.connect([this] {

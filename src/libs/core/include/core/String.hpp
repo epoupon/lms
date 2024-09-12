@@ -67,14 +67,25 @@ namespace lms::core::stringUtils
     template<typename T>
     [[nodiscard]] std::optional<T> readAs(std::string_view str)
     {
-        T res;
+        if constexpr (std::is_enum_v<T>)
+        {
+            using UnderlyingType = std::underlying_type_t<T>;
+            std::optional<UnderlyingType> underlyingValue{ readAs<UnderlyingType>(str) };
+            if (!underlyingValue)
+                return std::nullopt;
 
-        std::istringstream iss{ std::string{ str } };
-        iss >> res;
-        if (iss.fail())
-            return std::nullopt;
+            return static_cast<T>(*underlyingValue);
+        }
+        else
+        {
+            T res;
+            std::istringstream iss{ std::string{ str } };
+            iss >> res;
+            if (iss.fail())
+                return std::nullopt;
 
-        return res;
+            return res;
+        }
     }
 
     template<>
