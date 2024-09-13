@@ -32,6 +32,7 @@
 
 #include "LmsApplication.hpp"
 #include "ModalManager.hpp"
+#include "State.hpp"
 #include "Utils.hpp"
 #include "common/ValueStringModel.hpp"
 
@@ -115,6 +116,7 @@ namespace lms::ui
             if (const db::MediaLibraryId * mediaLibraryId{ std::get_if<db::MediaLibraryId>(&value) })
             {
                 set(*mediaLibraryId);
+                state::writeValue<db::MediaLibraryId::ValueType>("filters_media_library_id", mediaLibraryId->getValue());
             }
             else if (const db::ClusterId * clusterId{ std::get_if<db::ClusterId>(&value) })
             {
@@ -153,6 +155,9 @@ namespace lms::ui
         addFilterBtn->clicked().connect(this, &Filters::showDialog);
 
         _filters = bindNew<Wt::WContainerWidget>("clusters");
+
+        if (const std::optional<db::MediaLibraryId::ValueType> mediaLibraryId{ state::readValue<db::MediaLibraryId::ValueType>("filters_media_library_id") })
+            set(*mediaLibraryId);
     }
 
     void Filters::add(db::ClusterId clusterId)
@@ -208,6 +213,7 @@ namespace lms::ui
             _mediaLibraryId = db::MediaLibraryId{};
             _mediaLibraryFilter = nullptr;
             _sigUpdated.emit();
+            state::writeValue<db::MediaLibraryId::ValueType>("filters_media_library_id", std::nullopt);
         });
 
         emitFilterAddedNotification();

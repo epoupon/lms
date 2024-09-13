@@ -57,10 +57,11 @@ namespace lms::ui
         void addSome();
         void addTracklist(const db::ObjectPtr<db::TrackList>& trackList);
 
+        static constexpr Mode _defaultMode{ Mode::RecentlyModified };
         static constexpr std::size_t _batchSize{ 30 };
         static constexpr std::size_t _maxCount{ 500 };
 
-        Mode _mode{ Mode::RecentlyModified };
+        Mode _mode;
         Filters& _filters;
         Wt::WWidget* _currentActiveItem{};
         InfiniteScrollingContainer* _container{};

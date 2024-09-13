@@ -20,6 +20,8 @@
 #pragma once
 
 #include <optional>
+#include <string>
+#include <string_view>
 
 #include <Wt/WApplication.h>
 
@@ -63,10 +65,10 @@ namespace lms::ui
         db::Session& getDbSession(); // always thread safe
 
         db::ObjectPtr<db::User> getUser();
-        db::UserId getUserId();
-        bool isUserAuthStrong() const;  // user must be logged in prior this call
-        db::UserType getUserType();     // user must be logged in prior this call
-        std::string getUserLoginName(); // user must be logged in prior this call
+        db::UserId getUserId() const;
+        bool isUserAuthStrong() const;             // user must be logged in prior this call
+        db::UserType getUserType() const;          // user must be logged in prior this call
+        std::string_view getUserLoginName() const; // user must be logged in prior this call
 
         // Proxified scanner events
         scanner::Events& getScannerEvents() { return _scannerEvents; }
@@ -86,18 +88,19 @@ namespace lms::ui
         Wt::Signal<>& preQuit() { return _preQuit; }
 
     private:
-        void init();
+        void init(std::optional<db::UserId> userId);
         void processPasswordAuth();
         void handleException(LmsApplicationException& e);
         void goHomeAndQuit();
 
         // Signal slots
         void logoutUser();
-        void onUserLoggedIn();
+        void onUserLoggedIn(db::UserId userId, bool strongAuth);
 
         void notify(const Wt::WEvent& event) override;
         void finalize() override;
 
+        void setUserInfo(db::UserId userId, bool strongAuth);
         void createHome();
 
         db::Db& _db;
@@ -107,9 +110,11 @@ namespace lms::ui
         struct UserAuthInfo
         {
             db::UserId userId;
+            db::UserType userType{ db::UserType::REGULAR };
+            std::string userLoginName;
             bool strongAuth{};
         };
-        std::optional<UserAuthInfo> _authenticatedUser;
+        std::optional<UserAuthInfo> _user;
         std::shared_ptr<CoverResource> _coverResource;
         MediaPlayer* _mediaPlayer{};
         PlayQueue* _playQueue{};

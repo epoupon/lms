@@ -45,6 +45,7 @@
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
 #include "ModalManager.hpp"
+#include "State.hpp"
 #include "Utils.hpp"
 #include "common/InfiniteScrollingContainer.hpp"
 #include "common/MandatoryValidator.hpp"
@@ -156,35 +157,21 @@ namespace lms::ui
 
         _repeatBtn = bindNew<Wt::WCheckBox>("repeat-btn");
         _repeatBtn->clicked().connect([this] {
-            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-
-            if (!LmsApp->getUser()->isDemo())
-                LmsApp->getUser().modify()->setRepeatAll(isRepeatAllSet());
+            state::writeValue<bool>("player_repeat_all", isRepeatAllSet());
         });
-        {
-            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-            if (LmsApp->getUser()->isRepeatAllSet())
-                _repeatBtn->setCheckState(Wt::CheckState::Checked);
-        }
+        if (state::readValue<bool>("player_repeat_all").value_or(false))
+            _repeatBtn->setCheckState(Wt::CheckState::Checked);
 
         _radioBtn = bindNew<Wt::WCheckBox>("radio-btn");
         _radioBtn->clicked().connect([this] {
             {
-                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-
-                if (!LmsApp->getUser()->isDemo())
-                    LmsApp->getUser().modify()->setRadio(isRadioModeSet());
+                state::writeValue<bool>("player_radio_mode", isRadioModeSet());
             }
             if (isRadioModeSet())
                 enqueueRadioTracksIfNeeded();
         });
 
-        bool isRadioModeSet{};
-        {
-            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-            isRadioModeSet = LmsApp->getUser()->isRadioSet();
-        }
-        if (isRadioModeSet)
+        if (state::readValue<bool>("player_radio_mode").value_or(false))
         {
             _radioBtn->setCheckState(Wt::CheckState::Checked);
             enqueueRadioTracksIfNeeded();
@@ -199,21 +186,15 @@ namespace lms::ui
 
             _mediaPlayerSettingsLoaded = true;
 
-            std::size_t trackPos{};
-
-            {
-                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                trackPos = LmsApp->getUser()->getCurPlayingTrackPos();
-            }
-
+            const std::size_t trackPos{ state::readValue<size_t>("player_cur_playing_track_pos").value_or(0) };
             loadTrack(trackPos, false);
         });
 
         LmsApp->preQuit().connect([this] {
-            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-
-            if (LmsApp->getUser()->isDemo())
+            if (LmsApp->getUserType() == db::UserType::DEMO)
             {
+                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
+
                 LMS_LOG(UI, DEBUG, "Removing queue (tracklist id " << _queueId.toString() << ")");
                 if (db::TrackList::pointer queue{ getQueue() })
                     queue.remove();
@@ -271,7 +252,7 @@ namespace lms::ui
         db::TrackId trackId{};
         std::optional<float> replayGain{};
         {
-            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
             const db::TrackList::pointer queue{ getQueue() };
 
@@ -288,15 +269,13 @@ namespace lms::ui
             }
 
             _trackPos = pos;
+
             const db::Track::pointer track{ queue->getEntry(*_trackPos)->getTrack() };
-
             trackId = track->getId();
-
             replayGain = getReplayGain(pos, track);
-
-            if (!LmsApp->getUser()->isDemo())
-                LmsApp->getUser().modify()->setCurPlayingTrackPos(pos);
         }
+
+        state::writeValue<size_t>("player_cur_playing_track_pos", pos);
 
         enqueueRadioTracksIfNeeded();
         updateCurrentTrack(true);
@@ -344,7 +323,7 @@ namespace lms::ui
         db::TrackList::pointer queue;
         db::TrackList::pointer radioStartingTracks;
 
-        if (!LmsApp->getUser()->isDemo())
+        if (LmsApp->getUserType() != db::UserType::DEMO)
         {
             static const std::string queueName{ "__queued_tracks__" };
             queue = db::TrackList::find(LmsApp->getDbSession(), queueName, db::TrackListType::Internal, LmsApp->getUserId());

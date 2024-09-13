@@ -45,7 +45,9 @@ namespace lms::ui
         {
             auto* menuItem{ bindNew<Wt::WPushButton>(var, title) };
             menuItem->clicked().connect([this, menuItem, title, item] {
-                _currentActiveItem->removeStyleClass("active");
+                if (_currentActiveItem)
+                    _currentActiveItem->removeStyleClass("active");
+
                 menuItem->addStyleClass("active");
                 _currentActiveItem = menuItem;
                 _selectedItem->setText(title);

@@ -44,6 +44,7 @@
 #include "database/TrackFeatures.hpp"
 #include "database/TrackList.hpp"
 #include "database/TransactionChecker.hpp"
+#include "database/UIState.hpp"
 #include "database/User.hpp"
 
 #include "EnumSetTraits.hpp"
@@ -117,6 +118,7 @@ namespace lms::db
         _session.mapClass<TrackFeatures>("track_features");
         _session.mapClass<TrackList>("tracklist");
         _session.mapClass<TrackListEntry>("tracklist_entry");
+        _session.mapClass<UIState>("ui_state");
         _session.mapClass<User>("user");
     }
 

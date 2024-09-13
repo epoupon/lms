@@ -27,6 +27,7 @@
 
 #include "LmsApplication.hpp"
 #include "SortModeSelector.hpp"
+#include "State.hpp"
 #include "common/InfiniteScrollingContainer.hpp"
 #include "common/Template.hpp"
 #include "explore/Filters.hpp"
@@ -51,10 +52,16 @@ namespace lms::ui
             refreshView(searEdit->text());
         });
 
-        SortModeSelector* sortMode{ bindNew<SortModeSelector>("sort-mode", _defaultMode) };
-        sortMode->itemSelected.connect([this](ReleaseCollector::Mode sortMode) {
-            refreshView(sortMode);
-        });
+        {
+            const ReleaseCollector::Mode sortMode{ state::readValue<ReleaseCollector::Mode>("releases_sort_mode").value_or(_defaultMode) };
+            _releaseCollector.setMode(sortMode);
+
+            SortModeSelector* sortModeSelector{ bindNew<SortModeSelector>("sort-mode", sortMode) };
+            sortModeSelector->itemSelected.connect([this](ReleaseCollector::Mode newSortMode) {
+                state::writeValue<ReleaseCollector::Mode>("releases_sort_mode", newSortMode);
+                refreshView(newSortMode);
+            });
+        }
 
         Wt::WPushButton* playBtn{ bindNew<Wt::WPushButton>("play-btn", Wt::WString::tr("Lms.Explore.play"), Wt::TextFormat::XHTML) };
         playBtn->clicked().connect([this] {
