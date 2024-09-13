@@ -19,7 +19,6 @@
 
 #include "State.hpp"
 
-#include "core/ILogger.hpp"
 #include "database/Session.hpp"
 #include "database/UIState.hpp"
 #include "database/User.hpp"
@@ -33,8 +32,6 @@ namespace lms::ui::state::details
         // No UI state stored for demo user
         if (LmsApp->getUserType() == db::UserType::DEMO)
             return;
-
-        LMS_LOG(UI, DEBUG, "Write state '" << item << "': '" << value << "'");
 
         {
             auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
@@ -67,8 +64,6 @@ namespace lms::ui::state::details
                 res = state->getValue();
         }
 
-        LMS_LOG(UI, DEBUG, "Read state '" << item << "': '" << (res ? *res : "<no value>") << "'";);
-
         return res;
     }
 
@@ -77,8 +72,6 @@ namespace lms::ui::state::details
         // No UI state stored for demo user
         if (LmsApp->getUserType() == db::UserType::DEMO)
             return;
-
-        LMS_LOG(UI, DEBUG, "Removing state '" << item << "'");
 
         {
             auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
