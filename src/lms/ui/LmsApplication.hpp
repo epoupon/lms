@@ -66,8 +66,8 @@ namespace lms::ui
 
         db::ObjectPtr<db::User> getUser();
         db::UserId getUserId() const;
-        bool isUserAuthStrong() const;  // user must be logged in prior this call
-        db::UserType getUserType() const;     // user must be logged in prior this call
+        bool isUserAuthStrong() const;             // user must be logged in prior this call
+        db::UserType getUserType() const;          // user must be logged in prior this call
         std::string_view getUserLoginName() const; // user must be logged in prior this call
 
         // Proxified scanner events
