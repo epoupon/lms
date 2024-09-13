@@ -25,6 +25,7 @@
 #include <stdlib.h>
 
 #include <Wt/WDate.h>
+#include <boost/program_options.hpp>
 
 #include "core/StreamLogger.hpp"
 #include "metadata/Exception.hpp"
@@ -230,29 +231,87 @@ namespace lms::metadata
 
 int main(int argc, char* argv[])
 {
-    if (argc == 1)
-    {
-        std::cerr << "Usage: <file> [<file> ...]" << std::endl;
-        return EXIT_FAILURE;
-    }
-
     try
     {
         using namespace lms;
+        namespace program_options = boost::program_options;
+
+        program_options::options_description options{ "Options" };
+        // clang-format off
+        options.add_options()
+            ("help,h", "Display this help message")
+            ("tag-delimiter", program_options::value<std::vector<std::string>>()->default_value(std::vector<std::string>{}, "[]"), "Tag delimiters (multiple allowed)")
+            ("artist-tag-delimiter", program_options::value<std::vector<std::string>>()->default_value(std::vector<std::string>{}, "[]"), "Artist tag delimiters (multiple allowed)");
+        // clang-format on
+
+        program_options::options_description hiddenOptions{ "Hidden options" };
+        hiddenOptions.add_options()("file", program_options::value<std::vector<std::string>>()->composing(), "file");
+
+        program_options::options_description allOptions;
+        allOptions.add(options).add(hiddenOptions);
+
+        program_options::positional_options_description positional;
+        positional.add("file", -1); // Handle remaining arguments as input files
+
+        program_options::variables_map vm;
+        // Parse command line arguments with positional option handling
+        program_options::store(program_options::command_line_parser(argc, argv)
+                                   .options(allOptions)
+                                   .positional(positional)
+                                   .run(),
+            vm);
+
+        program_options::notify(vm);
+
+        auto displayHelp = [&](std::ostream& os) {
+            os << "Usage: " << argv[0] << " [options] file..." << std::endl;
+            os << options << std::endl;
+        };
+
+        if (vm.count("help"))
+        {
+            displayHelp(std::cout);
+            return EXIT_SUCCESS;
+        }
+
+        if (!vm.count("file"))
+        {
+            std::cout << "NO INPUT FILE!" << std::endl;
+            displayHelp(std::cerr);
+            return EXIT_FAILURE;
+        }
+
+        const auto& inputFiles{ vm["file"].as<std::vector<std::string>>() };
+        const auto& tagDelimiters{ vm["tag-delimiter"].as<std::vector<std::string>>() };
+        const auto& artistTagDelimiters{ vm["artist-tag-delimiter"].as<std::vector<std::string>>() };
+
+        for (std::string_view tagDelimiter : tagDelimiters)
+        {
+            std::cout << "Tag delimiter: '" << tagDelimiter << "'" << std::endl;
+        }
+
+        for (std::string_view artistTagDelimiter : artistTagDelimiters)
+        {
+            std::cout << "Artist tag delimiter: '" << artistTagDelimiter << "'" << std::endl;
+        }
 
         // log to stdout
         core::Service<core::logging::ILogger> logger{ std::make_unique<core::logging::StreamLogger>(std::cout, core::logging::StreamLogger::allSeverities) };
 
-        for (std::size_t i{}; i < static_cast<std::size_t>(argc - 1); ++i)
+        for (const std::string& inputFile : inputFiles)
         {
-            std::filesystem::path file{ argv[i + 1] };
+            std::filesystem::path file{ inputFile };
 
             std::cout << "Parsing file '" << file << "'" << std::endl;
 
             try
             {
                 std::cout << "Using av:" << std::endl;
+
                 auto parser{ metadata::createParser(metadata::ParserBackend::AvFormat, metadata::ParserReadStyle::Accurate) };
+                parser->setArtistTagDelimiters(artistTagDelimiters);
+                parser->setDefaultTagDelimiters(tagDelimiters);
+
                 parse(*parser, file);
             }
             catch (metadata::Exception& e)
@@ -263,7 +322,11 @@ int main(int argc, char* argv[])
             try
             {
                 std::cout << "Using TagLib:" << std::endl;
+
                 auto parser{ metadata::createParser(metadata::ParserBackend::TagLib, metadata::ParserReadStyle::Accurate) };
+                parser->setArtistTagDelimiters(artistTagDelimiters);
+                parser->setDefaultTagDelimiters(tagDelimiters);
+
                 parse(*parser, file);
             }
             catch (metadata::Exception& e)
