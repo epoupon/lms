@@ -106,8 +106,12 @@ namespace lms::api::subsonic
             trackResponse.setAttribute("transcodedContentType", av::getMimeType(std::filesystem::path{ "." + fileSuffix }));
         }
 
+        const Release::pointer release{ track->getRelease() };
+
         if (track->hasCover())
             trackResponse.setAttribute("coverArt", idToString(track->getId()));
+        else if (release)
+            trackResponse.setAttribute("coverArt", idToString(release->getId()));
 
         const std::vector<Artist::pointer>& artists{ track->getArtists({ TrackArtistLinkType::Artist }) };
         if (!artists.empty())
@@ -121,7 +125,6 @@ namespace lms::api::subsonic
                 trackResponse.setAttribute("artistId", idToString(artists.front()->getId()));
         }
 
-        Release::pointer release{ track->getRelease() };
         if (release)
         {
             trackResponse.setAttribute("album", release->getName());
