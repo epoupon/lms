@@ -186,21 +186,15 @@ namespace lms::ui
 
             _mediaPlayerSettingsLoaded = true;
 
-            std::size_t trackPos{};
-
-            {
-                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                trackPos = LmsApp->getUser()->getCurPlayingTrackPos();
-            }
-
+            const std::size_t trackPos{ state::readValue<size_t>("player_cur_playing_track_pos").value_or(0) };
             loadTrack(trackPos, false);
         });
 
         LmsApp->preQuit().connect([this] {
-            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
-
-            if (LmsApp->getUser()->isDemo())
+            if (LmsApp->getUserType() == db::UserType::DEMO)
             {
+                auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
+
                 LMS_LOG(UI, DEBUG, "Removing queue (tracklist id " << _queueId.toString() << ")");
                 if (db::TrackList::pointer queue{ getQueue() })
                     queue.remove();
@@ -258,7 +252,7 @@ namespace lms::ui
         db::TrackId trackId{};
         std::optional<float> replayGain{};
         {
-            auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
             const db::TrackList::pointer queue{ getQueue() };
 
@@ -275,15 +269,13 @@ namespace lms::ui
             }
 
             _trackPos = pos;
+
             const db::Track::pointer track{ queue->getEntry(*_trackPos)->getTrack() };
-
             trackId = track->getId();
-
             replayGain = getReplayGain(pos, track);
-
-            if (!LmsApp->getUser()->isDemo())
-                LmsApp->getUser().modify()->setCurPlayingTrackPos(pos);
         }
+
+        state::writeValue<size_t>("player_cur_playing_track_pos", pos);
 
         enqueueRadioTracksIfNeeded();
         updateCurrentTrack(true);
@@ -331,7 +323,7 @@ namespace lms::ui
         db::TrackList::pointer queue;
         db::TrackList::pointer radioStartingTracks;
 
-        if (!LmsApp->getUser()->isDemo())
+        if (LmsApp->getUserType() != db::UserType::DEMO)
         {
             static const std::string queueName{ "__queued_tracks__" };
             queue = db::TrackList::find(LmsApp->getDbSession(), queueName, db::TrackListType::Internal, LmsApp->getUserId());

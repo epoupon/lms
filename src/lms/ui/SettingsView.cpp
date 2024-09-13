@@ -547,9 +547,7 @@ namespace lms::ui
 
         saveBtn->clicked().connect([=] {
             {
-                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-
-                if (LmsApp->getUser()->isDemo())
+                if (LmsApp->getUserType() == db::UserType::DEMO)
                 {
                     LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.Settings.settings"), Wt::WString::tr("Lms.Settings.demo-cannot-save"));
                     return;

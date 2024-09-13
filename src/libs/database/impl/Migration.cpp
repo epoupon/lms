@@ -758,6 +758,7 @@ SELECT
 
         session.getDboSession()->execute("ALTER TABLE user DROP COLUMN repeat_all");
         session.getDboSession()->execute("ALTER TABLE user DROP COLUMN radio");
+        session.getDboSession()->execute("ALTER TABLE user DROP COLUMN cur_playing_track_pos");
     }
 
     bool doDbMigration(Session& session)
