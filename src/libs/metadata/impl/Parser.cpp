@@ -125,14 +125,15 @@ namespace lms::metadata
             std::initializer_list<TagType> artistTagNames,
             std::initializer_list<TagType> artistSortTagNames,
             std::initializer_list<TagType> artistMBIDTagNames,
-            std::span<const std::string> artistTagDelimiters)
+            std::span<const std::string> artistTagDelimiters,
+            std::span<const std::string> defaultTagDelimiters)
         {
             std::vector<std::string> artistNames{ getTagValuesFirstMatchAs<std::string>(tagReader, artistTagNames, artistTagDelimiters) };
             if (artistNames.empty())
                 return {};
 
             std::vector<std::string> artistSortNames{ getTagValuesFirstMatchAs<std::string>(tagReader, artistSortTagNames, artistTagDelimiters) };
-            std::vector<core::UUID> artistMBIDs{ getTagValuesFirstMatchAs<core::UUID>(tagReader, artistMBIDTagNames, artistTagDelimiters) };
+            std::vector<core::UUID> artistMBIDs{ getTagValuesFirstMatchAs<core::UUID>(tagReader, artistMBIDTagNames, defaultTagDelimiters) };
 
             std::vector<Artist> artists;
             artists.reserve(artistNames.size());
@@ -174,6 +175,27 @@ namespace lms::metadata
             });
 
             return performers;
+        }
+
+        bool strIsMatchingArtistNames(std::string_view str, std::span<const std::string_view> artistNames)
+        {
+            std::string_view::size_type currentOffset{};
+
+            for (const std::string_view artistName : artistNames)
+            {
+                std::string_view::size_type newPos{ str.find(artistName, currentOffset) };
+                if (newPos == std::string_view::npos)
+                    return false;
+
+                currentOffset = newPos + artistName.size();
+            }
+
+            return true;
+        }
+
+        bool strIsContainingAny(std::string_view str, std::span<const std::string> subStrs)
+        {
+            return std::any_of(std::cbegin(subStrs), std::cend(subStrs), [&str](const std::string& subStr) { return str.find(subStr) != std::string_view::npos; });
         }
     } // namespace
 
@@ -295,43 +317,30 @@ namespace lms::metadata
         std::vector<std::string_view> artistDelimiters{};
 
         track.medium = getMedium(tagReader);
-        track.artists = getArtists(tagReader, { TagType::Artists, TagType::Artist }, { TagType::ArtistSortOrder }, { TagType::MusicBrainzArtistID }, _artistTagDelimiters);
+        track.artists = getArtists(tagReader, { TagType::Artists, TagType::Artist }, { TagType::ArtistSortOrder }, { TagType::MusicBrainzArtistID }, _artistTagDelimiters, _defaultTagDelimiters);
 
-        auto needReconstructArtistDisplayName{ [&] {
-            // We consider the artist display name is put in the Artist tag (picard case)
-
-            // To please most users, if we find a custom delimiter in the Artist tag, we construct the artist display string with a "nicer" join
-            if (!_artistTagDelimiters.empty()
-                && track.artists.size() > 1
-                && getTagValuesAs<std::string>(tagReader, TagType::Artist, _artistTagDelimiters).size() > 1)
-            {
-                return true;
-            }
-            // We have (true) multiple entries in the Artist tag or nothing
-            else if (getTagValuesAs<std::string>(tagReader, TagType::Artist, {}).size() != 1)
-            {
-                return true;
-            }
-
-            return false;
-        } };
-
-        if (needReconstructArtistDisplayName())
+        if (track.artists.size() == 1)
+            track.artistDisplayName = track.artists.front().name;
+        else if (track.artists.size() > 1)
         {
             std::vector<std::string_view> artistNames;
             std::transform(std::cbegin(track.artists), std::cend(track.artists), std::back_inserter(artistNames), [](const Artist& artist) -> std::string_view { return artist.name; });
-            track.artistDisplayName = core::stringUtils::joinStrings(artistNames, ", ");
+
+            // Picard use case: if we manage to match all artists in the "artist" tag (considered single-valued), and if it does not contain any custom artist delimiter, we use it as the display name
+            // Otherwise, we reconstruct the string using a standard, hardcoded, join
+            const std::optional<std::string> artistTag{ getTagValueAs<std::string>(tagReader, TagType::Artist) };
+            if (artistTag && !strIsContainingAny(*artistTag, _artistTagDelimiters) && strIsMatchingArtistNames(*artistTag, artistNames))
+                track.artistDisplayName = *artistTag;
+            else
+                track.artistDisplayName = core::stringUtils::joinStrings(artistNames, ", ");
         }
-        else
-        {
-            track.artistDisplayName = getTagValueAs<std::string>(tagReader, TagType::Artist).value_or("");
-        }
-        track.conductorArtists = getArtists(tagReader, { TagType::Conductors, TagType::Conductor }, { TagType::ConductorsSortOrder, TagType::ConductorSortOrder }, {}, _artistTagDelimiters);
-        track.composerArtists = getArtists(tagReader, { TagType::Composers, TagType::Composer }, { TagType::ComposersSortOrder, TagType::ComposerSortOrder }, {}, _artistTagDelimiters);
-        track.lyricistArtists = getArtists(tagReader, { TagType::Lyricists, TagType::Lyricist }, { TagType::LyricistsSortOrder, TagType::LyricistSortOrder }, {}, _artistTagDelimiters);
-        track.mixerArtists = getArtists(tagReader, { TagType::Mixers, TagType::Mixer }, { TagType::MixersSortOrder, TagType::MixerSortOrder }, {}, _artistTagDelimiters);
-        track.producerArtists = getArtists(tagReader, { TagType::Producers, TagType::Producer }, { TagType::ProducersSortOrder, TagType::ProducerSortOrder }, {}, _artistTagDelimiters);
-        track.remixerArtists = getArtists(tagReader, { TagType::Remixers, TagType::Remixer }, { TagType::RemixersSortOrder, TagType::RemixerSortOrder }, {}, _artistTagDelimiters);
+
+        track.conductorArtists = getArtists(tagReader, { TagType::Conductors, TagType::Conductor }, { TagType::ConductorsSortOrder, TagType::ConductorSortOrder }, {}, _artistTagDelimiters, _defaultTagDelimiters);
+        track.composerArtists = getArtists(tagReader, { TagType::Composers, TagType::Composer }, { TagType::ComposersSortOrder, TagType::ComposerSortOrder }, {}, _artistTagDelimiters, _defaultTagDelimiters);
+        track.lyricistArtists = getArtists(tagReader, { TagType::Lyricists, TagType::Lyricist }, { TagType::LyricistsSortOrder, TagType::LyricistSortOrder }, {}, _artistTagDelimiters, _defaultTagDelimiters);
+        track.mixerArtists = getArtists(tagReader, { TagType::Mixers, TagType::Mixer }, { TagType::MixersSortOrder, TagType::MixerSortOrder }, {}, _artistTagDelimiters, _defaultTagDelimiters);
+        track.producerArtists = getArtists(tagReader, { TagType::Producers, TagType::Producer }, { TagType::ProducersSortOrder, TagType::ProducerSortOrder }, {}, _artistTagDelimiters, _defaultTagDelimiters);
+        track.remixerArtists = getArtists(tagReader, { TagType::Remixers, TagType::Remixer }, { TagType::RemixersSortOrder, TagType::RemixerSortOrder }, {}, _artistTagDelimiters, _defaultTagDelimiters);
         track.performerArtists = getPerformerArtists(tagReader); // artistDelimiters not supported
 
         // If a file has date but no year, set it
@@ -387,7 +396,7 @@ namespace lms::metadata
         release->artistDisplayName = getTagValueAs<std::string>(tagReader, TagType::AlbumArtist).value_or(""); // TODO try to join albumartists if present
         release->mbid = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzReleaseID);
         release->groupMBID = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzReleaseGroupID);
-        release->artists = getArtists(tagReader, { TagType::AlbumArtists, TagType::AlbumArtist }, { TagType::AlbumArtistsSortOrder, TagType::AlbumArtistSortOrder }, { TagType::MusicBrainzReleaseArtistID }, _artistTagDelimiters);
+        release->artists = getArtists(tagReader, { TagType::AlbumArtists, TagType::AlbumArtist }, { TagType::AlbumArtistsSortOrder, TagType::AlbumArtistSortOrder }, { TagType::MusicBrainzReleaseArtistID }, _artistTagDelimiters, _defaultTagDelimiters);
         release->mediumCount = getTagValueAs<std::size_t>(tagReader, TagType::TotalDiscs);
         release->isCompilation = getTagValueAs<bool>(tagReader, TagType::Compilation).value_or(false);
         release->labels = getTagValuesAs<std::string>(tagReader, TagType::RecordLabel, _defaultTagDelimiters);
