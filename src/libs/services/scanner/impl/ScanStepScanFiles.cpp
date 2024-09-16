@@ -134,17 +134,25 @@ namespace lms::scanner
             return artist;
         }
 
+        std::string optionalMBIDAsString(const std::optional<core::UUID>& uuid)
+        {
+            return uuid ? std::string{ uuid->getAsString() } : "<no MBID>";
+        }
+
         void updateArtistIfNeeded(Artist::pointer artist, const metadata::Artist& artistInfo)
         {
             // Name may have been updated
             if (artist->getName() != artistInfo.name)
             {
+                LMS_LOG(DBUPDATER, DEBUG, "Artist [" << optionalMBIDAsString(artist->getMBID()) << "], updated name from '" << artist->getName() << "' to '" << artistInfo.name << "'");
                 artist.modify()->setName(artistInfo.name);
             }
 
             // Sortname may have been updated
+            // As the sort name is quite often not filled in, we update it only if already set (for now?)
             if (artistInfo.sortName && *artistInfo.sortName != artist->getSortName())
             {
+                LMS_LOG(DBUPDATER, DEBUG, "Artist [" << optionalMBIDAsString(artist->getMBID()) << "], updated sort name from '" << artist->getSortName() << "' to '" << *artistInfo.sortName << "'");
                 artist.modify()->setSortName(*artistInfo.sortName);
             }
         }
