@@ -180,38 +180,38 @@ namespace lms
                 postAll(server, [] {
                     LmsApp->getScannerEvents().scanAborted.emit();
                     LmsApp->triggerUpdate();
-                    });
                 });
+            });
 
             scanner.getEvents().scanStarted.connect([&] {
                 postAll(server, [] {
                     LmsApp->getScannerEvents().scanStarted.emit();
                     LmsApp->triggerUpdate();
-                    });
                 });
+            });
 
             scanner.getEvents().scanComplete.connect([&](const scanner::ScanStats& stats) {
                 postAll(server, [=] {
                     LmsApp->getScannerEvents().scanComplete.emit(stats);
                     LmsApp->triggerUpdate();
-                    });
                 });
+            });
 
             scanner.getEvents().scanInProgress.connect([&](const scanner::ScanStepStats& stats) {
                 postAll(server, [=] {
                     LmsApp->getScannerEvents().scanInProgress.emit(stats);
                     LmsApp->triggerUpdate();
-                    });
                 });
+            });
 
             scanner.getEvents().scanScheduled.connect([&](const Wt::WDateTime dateTime) {
                 postAll(server, [=] {
                     LmsApp->getScannerEvents().scanScheduled.emit(dateTime);
                     LmsApp->triggerUpdate();
-                    });
                 });
+            });
         }
-    }
+    } // namespace
 
     int main(int argc, char* argv[])
     {
@@ -221,11 +221,10 @@ namespace lms
         assert(argc > 0);
         assert(argv[0] != NULL);
 
-        auto displayUsage{ [&](std::ostream& os)
-        {
+        auto displayUsage{ [&](std::ostream& os) {
             os << "Usage:\t" << argv[0] << "\t[conf_file]\n\n"
-                      << "Options:\n"
-                      << "\tconf_file:\t path to the LMS configuration file (defaults to " << configFilePath << ")\n\n";
+               << "Options:\n"
+               << "\tconf_file:\t path to the LMS configuration file (defaults to " << configFilePath << ")\n\n";
         } };
 
         if (argc == 2)
@@ -342,7 +341,7 @@ namespace lms
                 // covers may be external files that changed and we don't keep track of them for now (but we should)
                 coverService->flushCache();
                 database.getTLSSession().refreshTracingLoggerStats();
-                });
+            });
 
             core::Service<feedback::IFeedbackService> feedbackService{ feedback::createFeedbackService(ioContext, database) };
             core::Service<scrobbling::IScrobblingService> scrobblingService{ scrobbling::createScrobblingService(ioContext, database) };
