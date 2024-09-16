@@ -4,3 +4,4 @@ CMakeCache.txt
 CMakeFiles/
 build/
 .vscode/
+src/libs/core/include/core/SystemPaths.hpp

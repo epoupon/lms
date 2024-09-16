@@ -1,6 +1,14 @@
 pkg_check_modules(Config++ REQUIRED IMPORTED_TARGET libconfig++)
 pkg_check_modules(Archive REQUIRED IMPORTED_TARGET libarchive)
 
+include(GNUInstallDirs)
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/core/SystemPaths.hpp.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/core/SystemPaths.hpp
+    @ONLY
+)
+
 add_library(lmscore SHARED
 	impl/http/Client.cpp
 	impl/http/SendQueue.cpp
