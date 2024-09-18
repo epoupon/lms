@@ -38,15 +38,18 @@ _LMS_ provides several ways to help you find the music you like:
 __Note__: depending on your database size and/or your hardware, the tag-based recommendation engine may significantly slow down the user interface. You can disable it in the administration settings.
 
 ## About tags
-_LMS_ relies exclusively on tags to organize your music collection.
+_LMS_ primarily relies on tags to organize your music collection but also supports browsing by directory using the [Subsonic/OpenSubsonic API](SUBSONIC.md).
 
 ### Filtering
-It is possible to apply global filters on your collection using `genre`, `mood`, `grouping` and `language` tags. More tags can be added in the database administration settings, even custom tags.
+It is possible to apply global filters on your collection using `genre`, `mood`, `grouping`, `language`, and by music library. More tags, including custom ones, can be added in the database administration settings.
 
-__Note__: you can use the `lms-metadata` tool to have an idea of the tags parsed by _LMS_ using [TagLib](https://github.com/taglib/taglib).
+__Note__: You can use the `lms-metadata` tool to get an idea of the tags parsed by _LMS_ using [TagLib](https://github.com/taglib/taglib).
+
+### Multiple artists
+_LMS_ works best when using the default Picard settings, where the `artist` tag contains a single display-friendly value, and the `artists` tag holds the actual artist names. This ensures a cleaner, more organized representation of artist names, when multiple artists are involved.
 
 ### Multiple album artists
-_LMS_ requires the `albumartists` and `albumartistssort` tags to properly handle multiple album artists on the same album. As they are custom tags, you may need to set up your favorite tagger to add them.
+While LMS can manage multiple album artists using the `albumartist` tag, it works better when using the custom `albumartists` and `albumartistssort` tags, similar to how it handles regular artist tags.
 
 __Note__: if you use [Picard](https://picard.musicbrainz.org/), add the following script to include these tags:
 ```
