@@ -66,36 +66,49 @@ namespace lms::core
         static std::mutex mutex;
         std::unique_lock<std::mutex> lock{ mutex };
 
-        int pipe[2];
+        int pipefd[2];
 
-        int res{ pipe2(pipe, O_NONBLOCK | O_CLOEXEC) };
-        if (res < 0)
-            throw SystemException{ errno, "pipe2 failed!" };
+        // Use 'pipe' instead of 'pipe2', more portable
+        if (pipe(pipefd) < 0)
+            throw SystemException{ errno, "pipe failed!" };
 
-        {
+        // Manually set the O_NONBLOCK and O_CLOEXEC flags for both ends of the pipe
+        if (fcntl(pipefd[0], F_SETFL, O_NONBLOCK) == -1)
+            throw SystemException{ errno, "fcntl failed to set O_NONBLOCK!" };
+
+        if (fcntl(pipefd[1], F_SETFL, O_NONBLOCK) == -1)
+            throw SystemException{ errno, "fcntl failed to set O_NONBLOCK!" };
+
+        if (fcntl(pipefd[0], F_SETFD, FD_CLOEXEC) == -1)
+            throw SystemException{ errno, "fcntl failed to set FD_CLOEXEC!" };
+
+        if (fcntl(pipefd[1], F_SETFD, FD_CLOEXEC) == -1)
+            throw SystemException{ errno, "fcntl failed to set FD_CLOEXEC!" };
+
 #if defined(__linux__) && defined(F_SETPIPE_SZ)
+        {
             // Just a hint here to prevent the writer from writing too many bytes ahead of the reader
             constexpr std::size_t pipeSize{ 65536 * 4 };
 
-            if (fcntl(pipe[0], F_SETPIPE_SZ, pipeSize) == -1)
+            if (fcntl(pipefd[0], F_SETPIPE_SZ, pipeSize) == -1)
                 throw SystemException{ errno, "fcntl failed!" };
-            if (fcntl(pipe[1], F_SETPIPE_SZ, pipeSize) == -1)
+            if (fcntl(pipefd[1], F_SETPIPE_SZ, pipeSize) == -1)
                 throw SystemException{ errno, "fcntl failed!" };
-#endif
         }
+#endif
 
-        res = fork();
+        int res{ fork() };
         if (res == -1)
             throw SystemException{ errno, "fork failed!" };
 
         if (res == 0) // CHILD
         {
-            close(pipe[0]);
+            close(pipefd[0]);
             close(STDIN_FILENO);
             close(STDERR_FILENO);
 
             // Replace stdout with pipe write
-            if (dup2(pipe[1], STDOUT_FILENO) == -1)
+            if (dup2(pipefd[1], STDOUT_FILENO) == -1)
                 exit(-1);
 
             std::vector<const char*> execArgs;
@@ -108,10 +121,10 @@ namespace lms::core
         }
         else // PARENT
         {
-            close(pipe[1]);
+            close(pipefd[1]);
             {
                 boost::system::error_code assignError;
-                _childStdout.assign(pipe[0], assignError);
+                _childStdout.assign(pipefd[0], assignError);
                 if (assignError)
                     throw SystemException{ assignError, "fork failed!" };
             }

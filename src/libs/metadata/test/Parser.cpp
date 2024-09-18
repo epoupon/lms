@@ -42,6 +42,7 @@ namespace lms::metadata
                 { TagType::AlbumArtists, { "MyAlbumArtist1", "MyAlbumArtist2" } },
                 { TagType::AlbumArtistsSortOrder, { "MyAlbumArtist1SortName", "MyAlbumArtist2SortName" } },
                 { TagType::Comment, { "Comment1", "Comment2" } },
+                { TagType::Compilation, { "1" } },
                 { TagType::Composer, { "MyComposer1", "MyComposer2" } },
                 { TagType::ComposerSortOrder, { "MyComposerSortOrder1", "MyComposerSortOrder2" } },
                 { TagType::Conductor, { "MyConductor1", "MyConductor2" } },
@@ -128,9 +129,6 @@ namespace lms::metadata
         ASSERT_EQ(track->groupings.size(), 2);
         EXPECT_EQ(track->groupings[0], "Grouping1");
         EXPECT_EQ(track->groupings[1], "Grouping2");
-        ASSERT_EQ(track->labels.size(), 2);
-        EXPECT_EQ(track->labels[0], "Label1");
-        EXPECT_EQ(track->labels[1], "Label2");
         ASSERT_EQ(track->languages.size(), 2);
         EXPECT_EQ(track->languages[0], "Language1");
         EXPECT_EQ(track->languages[1], "Language2");
@@ -201,6 +199,10 @@ namespace lms::metadata
         EXPECT_EQ(track->medium->release->artists[1].name, "MyAlbumArtist2");
         EXPECT_EQ(track->medium->release->artists[1].sortName, "MyAlbumArtist2SortName");
         EXPECT_EQ(track->medium->release->artists[1].mbid, core::UUID::fromString("5ed3d6b3-2aed-4a03-828c-3c4d4f7406e1"));
+        EXPECT_TRUE(track->medium->release->isCompilation);
+        ASSERT_EQ(track->medium->release->labels.size(), 2);
+        EXPECT_EQ(track->medium->release->labels[0], "Label1");
+        EXPECT_EQ(track->medium->release->labels[1], "Label2");
         ASSERT_TRUE(track->medium->release->mbid.has_value());
         EXPECT_EQ(track->medium->release->mbid.value(), core::UUID::fromString("3fa39992-b786-4585-a70e-85d5cc15ef69"));
         EXPECT_EQ(track->medium->release->groupMBID.value(), core::UUID::fromString("5b1a5a44-8420-4426-9b86-d25dc8d04838"));
@@ -233,17 +235,25 @@ namespace lms::metadata
     {
         const TestTagReader testTags{
             {
+                { TagType::Album, { "MyAlbum" } },
+                { TagType::AlbumArtist, { "AlbumArtist1 / AlbumArtist2" } },
+                { TagType::Artist, { " Artist1 / Artist2 feat. Artist3  " } },
                 { TagType::Genre, { "Genre1 ; Genre2" } },
                 { TagType::Language, { " Lang1/Lang2 / Lang3" } },
-                { TagType::Artist, { " This /  is ; One Artist \\  Other Artist    " } },
+
             }
         };
 
         Parser parser;
         static_cast<IParser&>(parser).setDefaultTagDelimiters(std::vector<std::string>{ " ; ", "/" });
-        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ " \\ ", " / " }); // The first delimiter found will be used
+        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ " / ", " feat. " });
         std::unique_ptr<Track> track{ parser.parse(testTags) };
 
+        ASSERT_EQ(track->artists.size(), 3);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artists[2].name, "Artist3");
+        EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2, Artist3"); // reconstruct artist display name since a custom delimiter is hit
         ASSERT_EQ(track->genres.size(), 2);
         EXPECT_EQ(track->genres[0], "Genre1");
         EXPECT_EQ(track->genres[1], "Genre2");
@@ -251,10 +261,16 @@ namespace lms::metadata
         EXPECT_EQ(track->languages[0], "Lang1");
         EXPECT_EQ(track->languages[1], "Lang2");
         EXPECT_EQ(track->languages[2], "Lang3");
-        ASSERT_EQ(track->artists.size(), 2);
-        EXPECT_EQ(track->artists[0].name, "This /  is ; One Artist");
-        EXPECT_EQ(track->artists[1].name, "Other Artist");
-        EXPECT_EQ(track->artistDisplayName, "This /  is ; One Artist, Other Artist"); // reconstruct artist display name since a custom delimiter is hit
+
+        // Medium
+        ASSERT_TRUE(track->medium.has_value());
+
+        // Release
+        ASSERT_TRUE(track->medium->release.has_value());
+        EXPECT_EQ(track->medium->release->name, "MyAlbum");
+        EXPECT_EQ(track->medium->release->artists[0].name, "AlbumArtist1");
+        EXPECT_EQ(track->medium->release->artists[1].name, "AlbumArtist2");
+        EXPECT_EQ(track->medium->release->artistDisplayName, "AlbumArtist1, AlbumArtist2");
     }
 
     TEST(Parser, noArtistInArtist)
@@ -271,7 +287,7 @@ namespace lms::metadata
         EXPECT_EQ(track->artistDisplayName, "");
     }
 
-    TEST(Parser, singleArtistInArtist)
+    TEST(Parser, singleArtistInArtists)
     {
         const TestTagReader testTags{
             {
@@ -319,5 +335,105 @@ namespace lms::metadata
         EXPECT_EQ(track->artists[0].name, "Artist1");
         EXPECT_EQ(track->artists[1].name, "Artist2");
         EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct artist display name since multiple entries are found and nothing is set in artist
+    }
+
+    TEST(Parser, singleArtistInAlbumArtists)
+    {
+        const TestTagReader testTags{
+            {
+                // nothing in AlbumArtist!
+                { TagType::Album, { "MyAlbum" } },
+                { TagType::AlbumArtists, { "Artist1" } },
+            }
+        };
+
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_TRUE(track->medium);
+        ASSERT_TRUE(track->medium->release);
+        ASSERT_EQ(track->medium->release->artists.size(), 1);
+        EXPECT_EQ(track->medium->release->artists[0].name, "Artist1");
+        EXPECT_EQ(track->medium->release->artistDisplayName, "Artist1");
+    }
+
+    TEST(Parser, multipleArtistsInAlbumArtist)
+    {
+        const TestTagReader testTags{
+            {
+                // nothing in AlbumArtists!
+                { TagType::Album, { "MyAlbum" } },
+                { TagType::AlbumArtist, { "Artist1", "Artist2" } },
+            }
+        };
+
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_TRUE(track->medium);
+        ASSERT_TRUE(track->medium->release);
+        ASSERT_EQ(track->medium->release->artists.size(), 2);
+        EXPECT_EQ(track->medium->release->artists[0].name, "Artist1");
+        EXPECT_EQ(track->medium->release->artists[1].name, "Artist2");
+        EXPECT_EQ(track->medium->release->artistDisplayName, "Artist1, Artist2"); // reconstruct artist display name since multiple entries are found
+    }
+
+    TEST(Parser, multipleArtistsInAlbumArtists)
+    {
+        const TestTagReader testTags{
+            {
+                // nothing in AlbumArtist!
+                { TagType::Album, { "MyAlbum" } },
+                { TagType::AlbumArtists, { "Artist1", "Artist2" } },
+            }
+        };
+
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_TRUE(track->medium);
+        ASSERT_TRUE(track->medium->release);
+        ASSERT_EQ(track->medium->release->artists.size(), 2);
+        EXPECT_EQ(track->medium->release->artists[0].name, "Artist1");
+        EXPECT_EQ(track->medium->release->artists[1].name, "Artist2");
+        EXPECT_EQ(track->medium->release->artistDisplayName, "Artist1, Artist2"); // reconstruct artist display name since multiple entries are found and nothing is set in artist
+    }
+
+    TEST(Parser, multipleArtistsInArtistsButNotAllMBIDs)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "Artist1 & Artist2" } },
+                { TagType::Artists, { "Artist1", "Artist2" } },
+                { TagType::MusicBrainzArtistID, { "dd2180a2-a350-4012-b332-5d66102fa2c6" } }, // only one => no mbid will be added
+            }
+        };
+
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[0].mbid, std::nullopt);
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artists[1].mbid, std::nullopt);
+        EXPECT_EQ(track->artistDisplayName, "Artist1 & Artist2");
+    }
+
+    TEST(Parser, multipleArtistsInArtistsButNotAllMBIDs_customDelimiters)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "Artist1 / Artist2" } },
+                { TagType::MusicBrainzArtistID, { "dd2180a2-a350-4012-b332-5d66102fa2c6" } }, // only one => no mbid will be added
+            }
+        };
+
+        Parser parser;
+        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ " / " });
+        std::unique_ptr<Track> track{ parser.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[0].mbid, std::nullopt);
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artists[1].mbid, std::nullopt);
+        EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct the artist display name
     }
 } // namespace lms::metadata

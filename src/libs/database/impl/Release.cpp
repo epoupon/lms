@@ -41,6 +41,9 @@ namespace lms::db
         template<typename ResultType>
         Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const Release::FindParameters& params)
         {
+            assert(params.keywords.empty() || params.name.empty());
+            assert(!params.directory.isValid() || !params.parentDirectory.isValid());
+
             auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " from release r") };
 
             if (params.sortMethod == ReleaseSortMethod::ArtistNameThenName
@@ -54,9 +57,16 @@ namespace lms::db
                 || params.artist.isValid()
                 || params.clusters.size() == 1
                 || params.mediaLibrary.isValid()
-                || params.directory.isValid())
+                || params.directory.isValid()
+                || params.parentDirectory.isValid())
             {
                 query.join("track t ON t.release_id = r.id");
+            }
+
+            if (params.parentDirectory.isValid())
+            {
+                query.join("directory d ON t.directory_id = d.id");
+                query.where("d.parent_directory_id = ?").bind(params.parentDirectory);
             }
 
             if (params.mediaLibrary.isValid())
@@ -81,6 +91,9 @@ namespace lms::db
                 query.where("COALESCE(CAST(SUBSTR(t.date, 1, 4) AS INTEGER), t.year) >= ?").bind(params.dateRange->begin);
                 query.where("COALESCE(CAST(SUBSTR(t.date, 1, 4) AS INTEGER), t.year) <= ?").bind(params.dateRange->end);
             }
+
+            if (!params.name.empty())
+                query.where("r.name = ?").bind(params.name);
 
             for (std::string_view keyword : params.keywords)
                 query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
@@ -216,6 +229,36 @@ namespace lms::db
         }
     } // namespace
 
+    Label::Label(std::string_view name)
+        : _name{ name }
+    {
+        // As we use the name to uniquely identoify release type, we must throw (and not truncate)
+        if (name.size() > _maxNameLength)
+            throw Exception{ "Label name is too long: " + std::string{ name } + "'" };
+    }
+
+    Label::pointer Label::create(Session& session, std::string_view name)
+    {
+        return session.getDboSession()->add(std::unique_ptr<Label>{ new Label{ name } });
+    }
+
+    Label::pointer Label::find(Session& session, LabelId id)
+    {
+        session.checkReadTransaction();
+
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Label>>("SELECT l from label l").where("l.id = ?").bind(id));
+    }
+
+    Label::pointer Label::find(Session& session, std::string_view name)
+    {
+        session.checkReadTransaction();
+
+        if (name.size() > _maxNameLength)
+            throw Exception{ "Requeted Label name is too long: " + std::string{ name } + "'" };
+
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Label>>("SELECT l from label l").where("l.name = ?").bind(name));
+    }
+
     ReleaseType::ReleaseType(std::string_view name)
         : _name{ name }
     {
@@ -255,13 +298,6 @@ namespace lms::db
     Release::pointer Release::create(Session& session, const std::string& name, const std::optional<core::UUID>& MBID)
     {
         return session.getDboSession()->add(std::unique_ptr<Release>{ new Release{ name, MBID } });
-    }
-
-    std::vector<Release::pointer> Release::find(Session& session, const std::string& name, const std::filesystem::path& releaseDirectory)
-    {
-        session.checkReadTransaction();
-
-        return utils::fetchQueryResults<Release::pointer>(session.getDboSession()->query<Wt::Dbo::ptr<Release>>("SELECT DISTINCT r from release r").join("track t ON t.release_id = r.id").where("r.name = ?").bind(std::string(name, 0, _maxNameLength)).where("t.absolute_file_path LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind(utils::escapeLikeKeyword(releaseDirectory.string()) + "%"));
     }
 
     Release::pointer Release::find(Session& session, const core::UUID& mbid)
@@ -504,9 +540,19 @@ namespace lms::db
         return utils::fetchQueryResults<Release::pointer>(query);
     }
 
+    void Release::clearLabels()
+    {
+        _labels.clear();
+    }
+
     void Release::clearReleaseTypes()
     {
         _releaseTypes.clear();
+    }
+
+    void Release::addLabel(ObjectPtr<Label> label)
+    {
+        _labels.insert(getDboPtr(label));
     }
 
     void Release::addReleaseType(ObjectPtr<ReleaseType> releaseType)
@@ -537,6 +583,16 @@ namespace lms::db
         return utils::fetchQueryResults<ReleaseType::pointer>(_releaseTypes.find());
     }
 
+    std::vector<std::string> Release::getLabelNames() const
+    {
+        std::vector<std::string> res;
+
+        for (const auto& label : _labels)
+            res.push_back(std::string{ label->getName() });
+
+        return res;
+    }
+
     std::vector<std::string> Release::getReleaseTypeNames() const
     {
         std::vector<std::string> res;
@@ -545,6 +601,13 @@ namespace lms::db
             res.push_back(std::string{ releaseType->getName() });
 
         return res;
+    }
+
+    void Release::visitLabels(const std::function<void(const Label::pointer& label)>& _func) const
+    {
+        assert(session());
+        auto query{ _labels.find() };
+        utils::forEachQueryResult(query, _func);
     }
 
     std::chrono::milliseconds Release::getDuration() const

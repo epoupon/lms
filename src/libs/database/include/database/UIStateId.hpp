@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,18 +19,6 @@
 
 #pragma once
 
-#include "database/Object.hpp"
+#include "database/IdType.hpp"
 
-#include "SubsonicResponse.hpp"
-
-namespace lms::db
-{
-    class User;
-}
-
-namespace lms::api::subsonic
-{
-    struct RequestContext;
-
-    Response::Node createUserNode(RequestContext& context, const db::ObjectPtr<db::User>& user);
-} // namespace lms::api::subsonic
+LMS_DECLARE_IDTYPE(UIStateId)

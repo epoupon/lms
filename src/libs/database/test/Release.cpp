@@ -21,6 +21,7 @@
 
 namespace lms::db::tests
 {
+    using ScopedLabel = ScopedEntity<db::Label>;
     using ScopedReleaseType = ScopedEntity<db::ReleaseType>;
 
     TEST_F(DatabaseFixture, Release)
@@ -248,39 +249,6 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             auto releases{ Release::findIds(session, Release::FindParameters{}.setMediaLibrary(otherLibrary->getId())) };
             EXPECT_EQ(releases.results.size(), 0);
-        }
-    }
-
-    TEST_F(DatabaseFixture, Release_findByNameAndPath)
-    {
-        ScopedRelease release1{ session, "MyRelease" };
-        ScopedRelease release2{ session, "MyRelease" };
-        ScopedTrack track1{ session };
-        ScopedTrack track2{ session };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-
-            track1.get().modify()->setRelease(release1.get());
-            track1.get().modify()->setAbsoluteFilePath("/tmp/foo/foo.mp3");
-
-            track2.get().modify()->setRelease(release2.get());
-            track2.get().modify()->setAbsoluteFilePath("/tmp/bar/bar.mp3");
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-            {
-                const auto releases{ Release::find(session, "MyRelease", "/tmp/foo") };
-                ASSERT_EQ(releases.size(), 1);
-                EXPECT_EQ(releases.front()->getId(), release1.getId());
-            }
-
-            {
-                const auto releases{ Release::find(session, "MyRelease", "/tmp/bar") };
-                ASSERT_EQ(releases.size(), 1);
-                EXPECT_EQ(releases.front()->getId(), release2.getId());
-            }
         }
     }
 
@@ -741,6 +709,43 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(release.get()->getDiscCount(), 2);
+        }
+    }
+
+    TEST_F(DatabaseFixture, Release_isCompilation)
+    {
+        ScopedRelease release{ session, "MyRelease" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_FALSE(release.get()->isCompilation());
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            release.get().modify()->setCompilation(true);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_TRUE(release.get()->isCompilation());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Label)
+    {
+        {
+            auto transaction{ session.createReadTransaction() };
+            Label::pointer res{ Label::find(session, "label") };
+            EXPECT_EQ(res, Label::pointer{});
+        }
+
+        ScopedLabel label{ session, "MyLabel" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            Label::pointer res{ Label::find(session, "MyLabel") };
+            EXPECT_EQ(res, label.get());
         }
     }
 

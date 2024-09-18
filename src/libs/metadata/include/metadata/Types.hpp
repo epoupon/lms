@@ -63,7 +63,9 @@ namespace lms::metadata
         std::string artistDisplayName;
         std::vector<Artist> artists;
         std::optional<std::size_t> mediumCount;
+        std::vector<std::string> labels;
         std::vector<std::string> releaseTypes;
+        bool isCompilation{};
 
         auto operator<=>(const Release&) const = default;
     };
@@ -81,7 +83,7 @@ namespace lms::metadata
 
         bool isDefault() const
         {
-            static Medium defaultMedium;
+            static const Medium defaultMedium;
             return *this == defaultMedium;
         }
     };
@@ -106,7 +108,6 @@ namespace lms::metadata
         std::vector<std::string> groupings;
         std::vector<std::string> genres;
         std::vector<std::string> moods;
-        std::vector<std::string> labels;
         std::vector<std::string> languages;
         Tags userExtraTags;
         std::optional<int> year{};

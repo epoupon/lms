@@ -134,17 +134,25 @@ namespace lms::scanner
             return artist;
         }
 
+        std::string optionalMBIDAsString(const std::optional<core::UUID>& uuid)
+        {
+            return uuid ? std::string{ uuid->getAsString() } : "<no MBID>";
+        }
+
         void updateArtistIfNeeded(Artist::pointer artist, const metadata::Artist& artistInfo)
         {
             // Name may have been updated
             if (artist->getName() != artistInfo.name)
             {
+                LMS_LOG(DBUPDATER, DEBUG, "Artist [" << optionalMBIDAsString(artist->getMBID()) << "], updated name from '" << artist->getName() << "' to '" << artistInfo.name << "'");
                 artist.modify()->setName(artistInfo.name);
             }
 
             // Sortname may have been updated
+            // As the sort name is quite often not filled in, we update it only if already set (for now?)
             if (artistInfo.sortName && *artistInfo.sortName != artist->getSortName())
             {
+                LMS_LOG(DBUPDATER, DEBUG, "Artist [" << optionalMBIDAsString(artist->getMBID()) << "], updated sort name from '" << artist->getSortName() << "' to '" << *artistInfo.sortName << "'");
                 artist.modify()->setSortName(*artistInfo.sortName);
             }
         }
@@ -206,6 +214,15 @@ namespace lms::scanner
             return releaseType;
         }
 
+        Label::pointer getOrCreateLabel(Session& session, std::string_view name)
+        {
+            Label::pointer label{ Label::find(session, name) };
+            if (!label)
+                label = session.create<Label>(name);
+
+            return label;
+        }
+
         void updateReleaseIfNeeded(Session& session, Release::pointer release, const metadata::Release& releaseInfo)
         {
             if (release->getName() != releaseInfo.name)
@@ -218,51 +235,91 @@ namespace lms::scanner
                 release.modify()->setTotalDisc(releaseInfo.mediumCount);
             if (release->getArtistDisplayName() != releaseInfo.artistDisplayName)
                 release.modify()->setArtistDisplayName(releaseInfo.artistDisplayName);
+            if (release->isCompilation() != releaseInfo.isCompilation)
+                release.modify()->setCompilation(releaseInfo.isCompilation);
             if (release->getReleaseTypeNames() != releaseInfo.releaseTypes)
             {
                 release.modify()->clearReleaseTypes();
                 for (std::string_view releaseType : releaseInfo.releaseTypes)
                     release.modify()->addReleaseType(getOrCreateReleaseType(session, releaseType));
             }
+
+            if (release->getLabelNames() != releaseInfo.labels)
+            {
+                release.modify()->clearLabels();
+                for (std::string_view label : releaseInfo.labels)
+                    release.modify()->addLabel(getOrCreateLabel(session, label));
+            }
         }
 
-        Release::pointer getOrCreateRelease(Session& session, const metadata::Release& releaseInfo, const std::filesystem::path& expectedReleaseDirectory)
+        Release::pointer getOrCreateRelease(Session& session, std::optional<std::size_t> mediumPosition, const metadata::Release& releaseInfo, const Directory::pointer& currentDirectory)
         {
             Release::pointer release;
 
-            // First try to get by MBID
+            // First try to get by MBID: fastest, safest
             if (releaseInfo.mbid)
             {
                 release = Release::find(session, *releaseInfo.mbid);
                 if (!release)
                     release = session.create<Release>(releaseInfo.name, releaseInfo.mbid);
-
-                updateReleaseIfNeeded(session, release, releaseInfo);
-                return release;
             }
-
-            // Fall back on release name (collisions may occur), if and only if it is in the current directory
-            if (!releaseInfo.name.empty())
+            else if (releaseInfo.name.empty())
             {
-                for (const Release::pointer& sameNamedRelease : Release::find(session, releaseInfo.name, expectedReleaseDirectory))
-                {
-                    // do not fallback on properly tagged releases
-                    if (sameNamedRelease->getMBID())
-                        continue;
-
-                    release = sameNamedRelease;
-                    break;
-                }
-
-                // No release found with the same name and without MBID -> creating
-                if (!release)
-                    release = session.create<Release>(releaseInfo.name);
-
-                updateReleaseIfNeeded(session, release, releaseInfo);
+                // No release name (only mbid) -> nothing to de
                 return release;
             }
 
-            return Release::pointer{};
+            // Fall back on release name (collisions may occur)
+            // First try in the current directory
+            if (!release)
+            {
+                Release::FindParameters params;
+                params.setDirectory(currentDirectory->getId());
+                params.setName(releaseInfo.name);
+                Release::find(session, params, [&](const Release::pointer& candidateRelease) {
+                    // Already found a candidate
+                    if (release)
+                        return;
+
+                    // Do not fallback on properly tagged releases
+                    if (candidateRelease->getMBID().has_value())
+                        return;
+
+                    // TODO: add more criterias?
+                    release = candidateRelease;
+                });
+            }
+
+            // second try in another sibling directory (case for Album/DiscX)
+            const DirectoryId parentDirectoryId{ currentDirectory->getParentDirectoryId() };
+            if (!release && mediumPosition && parentDirectoryId.isValid())
+            {
+                Release::FindParameters params;
+                params.setParentDirectory(parentDirectoryId);
+                params.setName(releaseInfo.name);
+                Release::find(session, params, [&](const Release::pointer& candidateRelease) {
+                    // Already found a candidate
+                    if (release)
+                        return;
+
+                    // Do not fallback on properly tagged releases
+                    if (candidateRelease->getMBID().has_value())
+                        return;
+
+                    // Fallback only if the disc number of the current track is not the same
+                    const std::vector<DiscInfo> discs{ candidateRelease->getDiscs() };
+                    if (discs.empty() || std::any_of(discs.begin(), discs.end(), [&](const DiscInfo& discInfo) { return discInfo.position == *mediumPosition; }))
+                        return;
+
+                    release = candidateRelease;
+                });
+            }
+
+            if (!release)
+                release = session.create<Release>(releaseInfo.name);
+
+            updateReleaseIfNeeded(session, release, releaseInfo);
+            return release;
         }
 
         std::vector<Cluster::pointer> getOrCreateClusters(Session& session, const metadata::Track& track)
@@ -638,7 +695,8 @@ namespace lms::scanner
 
         MediaLibrary::pointer mediaLibrary{ MediaLibrary::find(dbSession, libraryInfo.id) }; // may be null if settings are updated in // => next scan will correct this
         track.modify()->setMediaLibrary(mediaLibrary);
-        track.modify()->setDirectory(getOrCreateDirectory(dbSession, file.parent_path(), mediaLibrary));
+        Directory::pointer directory{ getOrCreateDirectory(dbSession, file.parent_path(), mediaLibrary) };
+        track.modify()->setDirectory(directory);
 
         track.modify()->clearArtistLinks();
         // Do not fallback on artists with the same name but having a MBID for artist and releaseArtists, as it may be corrected by properly tagging files
@@ -679,7 +737,7 @@ namespace lms::scanner
 
         track.modify()->setScanVersion(_settings.scanVersion);
         if (trackMetadata->medium && trackMetadata->medium->release)
-            track.modify()->setRelease(getOrCreateRelease(dbSession, *trackMetadata->medium->release, file.parent_path()));
+            track.modify()->setRelease(getOrCreateRelease(dbSession, trackMetadata->medium->position, *trackMetadata->medium->release, directory));
         else
             track.modify()->setRelease({});
         track.modify()->setTotalTrack(trackMetadata->medium ? trackMetadata->medium->trackCount : std::nullopt);

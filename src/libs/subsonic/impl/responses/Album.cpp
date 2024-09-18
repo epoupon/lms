@@ -36,6 +36,7 @@
 #include "responses/DiscTitle.hpp"
 #include "responses/ItemDate.hpp"
 #include "responses/ItemGenre.hpp"
+#include "responses/RecordLabel.hpp"
 
 namespace lms::api::subsonic
 {
@@ -171,28 +172,23 @@ namespace lms::api::subsonic
         albumNode.setAttribute("displayArtist", release->getArtistDisplayName());
         albumNode.addChild("originalReleaseDate", createItemDateNode(release->getOriginalDate(), release->getOriginalYear()));
 
-        {
-            bool isCompilation{};
-            albumNode.createEmptyArrayValue("releaseTypes");
-            for (std::string_view releaseType : release->getReleaseTypeNames())
-            {
-                if (core::stringUtils::stringCaseInsensitiveEqual(releaseType, "compilation"))
-                    isCompilation = true;
+        albumNode.setAttribute("isCompilation", release->isCompilation());
 
-                albumNode.addArrayValue("releaseTypes", releaseType);
-            }
+        albumNode.createEmptyArrayValue("releaseTypes");
+        for (std::string_view releaseType : release->getReleaseTypeNames())
+            albumNode.addArrayValue("releaseTypes", releaseType);
 
-            // TODO: the Compilation tag does not have the same meaning
-            albumNode.setAttribute("isCompilation", isCompilation);
-        }
-
-        // disc titles
         albumNode.createEmptyArrayChild("discTitles");
         for (const DiscInfo& discInfo : release->getDiscs())
         {
             if (!discInfo.name.empty())
                 albumNode.addArrayChild("discTitles", createDiscTitle(discInfo));
         }
+
+        albumNode.createEmptyArrayChild("recordLabels");
+        release->visitLabels([&](const Label::pointer& label) {
+            albumNode.addArrayChild("recordLabels", createRecordLabel(label));
+        });
 
         return albumNode;
     }

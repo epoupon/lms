@@ -409,8 +409,8 @@ namespace lms::api::subsonic
         const Wt::Http::ParameterMap& parameters{ request.getParameterMap() };
         const ClientInfo clientInfo{ getClientInfo(request) };
         const db::UserId userId{ authenticateUser(request, clientInfo) };
-        bool enableOpenSubsonic{ _openSubsonicDisabledClients.find(clientInfo.name) == std::cend(_openSubsonicDisabledClients) };
-        bool enableDefaultCover{ _defaultCoverClients.find(clientInfo.name) != std::cend(_openSubsonicDisabledClients) };
+        bool enableOpenSubsonic{ !_openSubsonicDisabledClients.contains(clientInfo.name) };
+        bool enableDefaultCover{ _defaultCoverClients.contains(clientInfo.name) };
         const ResponseFormat format{ getParameterAs<std::string>(request.getParameterMap(), "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml };
 
         db::User::pointer user;

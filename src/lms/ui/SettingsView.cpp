@@ -102,7 +102,7 @@ namespace lms::ui
                 }
 
                 addField(PasswordField);
-                setValidator(PasswordField, createPasswordStrengthValidator([] { return auth::PasswordValidationContext{ LmsApp->getUserLoginName(), LmsApp->getUserType() }; }));
+                setValidator(PasswordField, createPasswordStrengthValidator([] { return auth::PasswordValidationContext{ .loginName = std::string{ LmsApp->getUserLoginName() }, .userType = LmsApp->getUserType() }; }));
                 addField(PasswordConfirmField);
             }
 
@@ -547,9 +547,7 @@ namespace lms::ui
 
         saveBtn->clicked().connect([=] {
             {
-                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-
-                if (LmsApp->getUser()->isDemo())
+                if (LmsApp->getUserType() == db::UserType::DEMO)
                 {
                     LmsApp->notifyMsg(Notification::Type::Warning, Wt::WString::tr("Lms.Settings.settings"), Wt::WString::tr("Lms.Settings.demo-cannot-save"));
                     return;

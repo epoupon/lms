@@ -22,6 +22,7 @@
 #include <Wt/Dbo/ptr.h>
 #include <cassert>
 #include <functional>
+#include <string>
 
 namespace lms::db
 {
@@ -32,7 +33,7 @@ namespace lms::db
 
         IdType() = default;
         IdType(ValueType id)
-            : _id{ id } { assert(isValid()); }
+            : _id{ id } {}
 
         bool isValid() const { return _id != Wt::Dbo::dbo_default_traits::invalidId(); }
         std::string toString() const

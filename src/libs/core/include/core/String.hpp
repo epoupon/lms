@@ -40,6 +40,8 @@ namespace lms::core::stringUtils
 {
     [[nodiscard]] std::vector<std::string_view> splitString(std::string_view string, char separator);
     [[nodiscard]] std::vector<std::string_view> splitString(std::string_view string, std::string_view separator);
+    [[nodiscard]] std::vector<std::string_view> splitString(std::string_view string, std::span<const std::string_view> separators);
+    [[nodiscard]] std::vector<std::string_view> splitString(std::string_view string, std::span<const std::string> separators);
 
     [[nodiscard]] std::string joinStrings(std::span<const std::string> strings, std::string_view delimiter);
     [[nodiscard]] std::string joinStrings(std::span<const std::string_view> strings, std::string_view delimiter);
@@ -65,14 +67,25 @@ namespace lms::core::stringUtils
     template<typename T>
     [[nodiscard]] std::optional<T> readAs(std::string_view str)
     {
-        T res;
+        if constexpr (std::is_enum_v<T>)
+        {
+            using UnderlyingType = std::underlying_type_t<T>;
+            std::optional<UnderlyingType> underlyingValue{ readAs<UnderlyingType>(str) };
+            if (!underlyingValue)
+                return std::nullopt;
 
-        std::istringstream iss{ std::string{ str } };
-        iss >> res;
-        if (iss.fail())
-            return std::nullopt;
+            return static_cast<T>(*underlyingValue);
+        }
+        else
+        {
+            T res;
+            std::istringstream iss{ std::string{ str } };
+            iss >> res;
+            if (iss.fail())
+                return std::nullopt;
 
-        return res;
+            return res;
+        }
     }
 
     template<>

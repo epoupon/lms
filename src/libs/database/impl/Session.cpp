@@ -44,6 +44,7 @@
 #include "database/TrackFeatures.hpp"
 #include "database/TrackList.hpp"
 #include "database/TransactionChecker.hpp"
+#include "database/UIState.hpp"
 #include "database/User.hpp"
 
 #include "EnumSetTraits.hpp"
@@ -99,6 +100,7 @@ namespace lms::db
         _session.mapClass<ClusterType>("cluster_type");
         _session.mapClass<Directory>("directory");
         _session.mapClass<Image>("image");
+        _session.mapClass<Label>("label");
         _session.mapClass<Listen>("listen");
         _session.mapClass<MediaLibrary>("media_library");
         _session.mapClass<RatedArtist>("rated_artist");
@@ -116,6 +118,7 @@ namespace lms::db
         _session.mapClass<TrackFeatures>("track_features");
         _session.mapClass<TrackList>("tracklist");
         _session.mapClass<TrackListEntry>("tracklist_entry");
+        _session.mapClass<UIState>("ui_state");
         _session.mapClass<User>("user");
     }
 
@@ -188,6 +191,7 @@ namespace lms::db
         _session.execute("CREATE INDEX IF NOT EXISTS cluster_type_name_idx ON cluster_type(name)");
 
         _session.execute("CREATE INDEX IF NOT EXISTS directory_id_idx ON directory(id)");
+        _session.execute("CREATE INDEX IF NOT EXISTS directory_parent_directory_idx ON directory(parent_directory_id)");
         _session.execute("CREATE INDEX IF NOT EXISTS directory_path_idx ON directory(absolute_path)");
         _session.execute("CREATE INDEX IF NOT EXISTS directory_media_library_idx ON directory(media_library_id)");
 
@@ -197,6 +201,8 @@ namespace lms::db
         _session.execute("CREATE INDEX IF NOT EXISTS image_path_idx ON image(absolute_file_path)");
         _session.execute("CREATE INDEX IF NOT EXISTS image_stem_idx ON image(stem)");
 
+        _session.execute("CREATE INDEX IF NOT EXISTS label_name_idx ON label(name)");
+
         _session.execute("CREATE INDEX IF NOT EXISTS listen_backend_idx ON listen(backend)");
         _session.execute("CREATE INDEX IF NOT EXISTS listen_id_idx ON listen(id)");
         _session.execute("CREATE INDEX IF NOT EXISTS listen_user_backend_idx ON listen(user_id,backend)");
@@ -204,34 +210,35 @@ namespace lms::db
         _session.execute("CREATE INDEX IF NOT EXISTS listen_track_user_backend_idx ON listen(track_id,user_id,backend)");
         _session.execute("CREATE INDEX IF NOT EXISTS listen_user_track_backend_date_time_idx ON listen(user_id,track_id,backend,date_time)");
 
+        _session.execute("CREATE INDEX IF NOT EXISTS media_library_id_idx ON media_library(id)");
+
         _session.execute("CREATE INDEX IF NOT EXISTS rated_artist_user_artist_idx ON rated_artist(user_id,artist_id)");
         _session.execute("CREATE INDEX IF NOT EXISTS rated_release_user_release_idx ON rated_release(user_id,release_id)");
         _session.execute("CREATE INDEX IF NOT EXISTS rated_track_user_track_idx ON rated_track(user_id,track_id)");
 
         _session.execute("CREATE INDEX IF NOT EXISTS release_id_idx ON release(id)");
+        _session.execute("CREATE INDEX IF NOT EXISTS release_mbid_idx ON release(mbid)");
         _session.execute("CREATE INDEX IF NOT EXISTS release_name_idx ON release(name)");
         _session.execute("CREATE INDEX IF NOT EXISTS release_name_nocase_idx ON release(name COLLATE NOCASE)");
-        _session.execute("CREATE INDEX IF NOT EXISTS release_mbid_idx ON release(mbid)");
         _session.execute("CREATE INDEX IF NOT EXISTS release_type_name_idx ON release_type(name)");
 
         _session.execute("CREATE INDEX IF NOT EXISTS track_id_idx ON track(id)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_absolute_path_idx ON track(absolute_file_path)");
+        _session.execute("CREATE INDEX IF NOT EXISTS track_date_idx ON track(date)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_directory_release_idx ON track(directory_id, release_id);");
+        _session.execute("CREATE INDEX IF NOT EXISTS track_file_last_write_idx ON track(file_last_write)");
+        _session.execute("CREATE INDEX IF NOT EXISTS track_media_library_idx ON track(media_library_id)");
+        _session.execute("CREATE INDEX IF NOT EXISTS track_media_library_release_idx ON track(media_library_id, release_id)");
+        _session.execute("CREATE INDEX IF NOT EXISTS track_mbid_idx ON track(mbid)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_name_idx ON track(name)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_name_nocase_idx ON track(name COLLATE NOCASE)");
-        _session.execute("CREATE INDEX IF NOT EXISTS track_mbid_idx ON track(mbid)");
+        _session.execute("CREATE INDEX IF NOT EXISTS track_original_date_idx ON track(original_date)");
+        _session.execute("CREATE INDEX IF NOT EXISTS track_original_year_idx ON track(original_year)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_recording_mbid_idx ON track(recording_mbid)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_release_idx ON track(release_id)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_release_file_last_write_idx ON track(release_id, file_last_write)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_release_year_idx ON track(release_id, year)");
-        _session.execute("CREATE INDEX IF NOT EXISTS track_file_last_write_idx ON track(file_last_write)");
-        _session.execute("CREATE INDEX IF NOT EXISTS track_date_idx ON track(date)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_year_idx ON track(year)");
-        _session.execute("CREATE INDEX IF NOT EXISTS track_original_date_idx ON track(original_date)");
-        _session.execute("CREATE INDEX IF NOT EXISTS track_original_year_idx ON track(original_year)");
-
-        _session.execute("CREATE INDEX IF NOT EXISTS track_media_library_idx ON track(media_library_id)");
-        _session.execute("CREATE INDEX IF NOT EXISTS track_media_library_release_idx ON track(media_library_id, release_id)");
 
         _session.execute("CREATE INDEX IF NOT EXISTS tracklist_name_idx ON tracklist(name)");
         _session.execute("CREATE INDEX IF NOT EXISTS tracklist_user_idx ON tracklist(user_id)");

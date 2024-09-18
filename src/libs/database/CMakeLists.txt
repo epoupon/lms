@@ -24,6 +24,7 @@ add_library(lmsdatabase SHARED
 	impl/Track.cpp
 	impl/TrackBookmark.cpp
 	impl/Types.cpp
+	impl/UIState.cpp
 	impl/User.cpp
 	impl/Utils.cpp
 	)
