@@ -212,8 +212,14 @@ namespace lms::ui::utils
             matchCount += 1;
         }
 
-        if (matchCount != artistIds.size())
-            return createArtistAnchorList(artistIds, cssAnchorClass);
+        if (matchCount == artistIds.size())
+        {
+            const std::string_view remainingStr{ displayName.substr(currentOffset) };
+            if (!remainingStr.empty())
+                result->addNew<Wt::WText>(std::string{ remainingStr }, Wt::TextFormat::Plain);
+        }
+        else
+            result = createArtistAnchorList(artistIds, cssAnchorClass);
 
         return result;
     }

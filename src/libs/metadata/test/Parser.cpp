@@ -337,6 +337,23 @@ namespace lms::metadata
         EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct artist display name since multiple entries are found and nothing is set in artist
     }
 
+    TEST(Parser, multipleArtistsInArtistsWithEndDelimiter)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "Artist1 & (CV. Artist2)" } },
+                { TagType::Artists, { "Artist1", "Artist2" } },
+            }
+        };
+
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artistDisplayName, "Artist1 & (CV. Artist2)");
+    }
+
     TEST(Parser, singleArtistInAlbumArtists)
     {
         const TestTagReader testTags{
