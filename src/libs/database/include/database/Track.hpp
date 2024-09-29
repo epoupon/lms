@@ -83,6 +83,7 @@ namespace lms::db
             std::optional<int> discNumber;                           // matching this disc number
             MediaLibraryId mediaLibrary;                             // If set, tracks in this library
             DirectoryId directory;                                   // if set, tracks in this directory
+            std::optional<bool> hasEmbeddedImage;                    // if set, tracks that have or not embedded images
 
             FindParameters& setClusters(std::span<const ClusterId> _clusters)
             {
@@ -170,6 +171,11 @@ namespace lms::db
             FindParameters& setDirectory(DirectoryId _directory)
             {
                 directory = _directory;
+                return *this;
+            }
+            FindParameters& setHasEmbeddedImage(std::optional<bool> _hasEmbeddedImage)
+            {
+                hasEmbeddedImage = _hasEmbeddedImage;
                 return *this;
             }
         };

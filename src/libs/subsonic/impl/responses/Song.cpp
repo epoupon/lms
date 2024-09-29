@@ -28,6 +28,7 @@
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Directory.hpp"
+#include "database/Image.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"
@@ -110,7 +111,7 @@ namespace lms::api::subsonic
 
         if (track->hasCover())
             trackResponse.setAttribute("coverArt", idToString(track->getId()));
-        else if (release)
+        else if (release && release->getImage())
             trackResponse.setAttribute("coverArt", idToString(release->getId()));
 
         const std::vector<Artist::pointer>& artists{ track->getArtists({ TrackArtistLinkType::Artist }) };

@@ -25,7 +25,6 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
-#include "database/ArtistId.hpp"
 #include "database/DirectoryId.hpp"
 #include "database/ImageId.hpp"
 #include "database/Object.hpp"
@@ -35,6 +34,7 @@ namespace lms::db
 {
     class Artist;
     class Directory;
+    class Release;
     class Session;
 
     class Image final : public Object<Image, ImageId>
@@ -87,7 +87,16 @@ namespace lms::db
         void setFileSize(std::size_t fileSize) { _fileSize = fileSize; }
         void setWidth(std::size_t width) { _width = width; }
         void setHeight(std::size_t height) { _height = height; }
-        void setArtist(const ObjectPtr<Artist>& artist) { _artist = getDboPtr(artist); }
+        void setArtist(const ObjectPtr<Artist>& artist)
+        {
+            _artist = getDboPtr(artist);
+            _release = nullptr;
+        }
+        void setRelease(const ObjectPtr<Release>& release)
+        {
+            _release = getDboPtr(release);
+            _artist = nullptr;
+        }
         void setDirectory(const ObjectPtr<Directory>& directory) { _directory = getDboPtr(directory); }
 
         template<class Action>
@@ -102,6 +111,7 @@ namespace lms::db
             Wt::Dbo::field(a, _height, "height");
 
             Wt::Dbo::belongsTo(a, _artist, "artist", Wt::Dbo::OnDeleteCascade);
+            Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
         }
 
@@ -118,6 +128,7 @@ namespace lms::db
         int _height{};
 
         Wt::Dbo::ptr<Artist> _artist;
+        Wt::Dbo::ptr<Release> _release;
         Wt::Dbo::ptr<Directory> _directory;
     };
 } // namespace lms::db

@@ -119,6 +119,7 @@
 <message id="Lms.Admin.ScannerController.status-scheduled">Zaplanowano na {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">Skanowanie: krok {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-associating-artist-images">Kojarzenie obrazów artystów: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-associating-release-images">Kojarzenie obrazów albumów: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">
 	<plural case="0">Sprawdzanie duplikatów... {1} plik</plural>
 	<plural case="1">Sprawdzanie duplikatów... {1} pliki</plural>

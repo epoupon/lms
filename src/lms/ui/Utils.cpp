@@ -27,6 +27,7 @@
 
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
+#include "database/Image.hpp"
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
@@ -65,7 +66,36 @@ namespace lms::ui::utils
     std::unique_ptr<Wt::WImage> createCover(db::ReleaseId releaseId, CoverResource::Size size)
     {
         auto cover{ std::make_unique<Wt::WImage>() };
-        cover->setImageLink(LmsApp->getCoverResource()->getReleaseUrl(releaseId, size));
+        std::string internalUrl;
+
+        {
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+
+            const db::Release::pointer release{ db::Release::find(LmsApp->getDbSession(), releaseId) };
+            if (release)
+            {
+                if (release->getImage())
+                {
+                    internalUrl = LmsApp->getCoverResource()->getReleaseUrl(release->getId(), size);
+                }
+                else
+                {
+                    db::Track::FindParameters params;
+                    params.setRelease(releaseId);
+                    params.setHasEmbeddedImage(true);
+                    params.setRange(db::Range{ 0, 1 });
+
+                    db::Track::find(LmsApp->getDbSession(), params, [&](const db::Track::pointer& track) {
+                        internalUrl = LmsApp->getCoverResource()->getTrackUrl(track->getId(), size);
+                    });
+                }
+            }
+        }
+
+        if (internalUrl.empty())
+            internalUrl = LmsApp->getCoverResource()->getDefaultUrl(size);
+
+        cover->setImageLink(internalUrl);
         cover->setStyleClass("Lms-cover img-fluid");                                          // HACK
         cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)"); // HACK
         return cover;
@@ -74,9 +104,28 @@ namespace lms::ui::utils
     std::unique_ptr<Wt::WImage> createCover(db::TrackId trackId, CoverResource::Size size)
     {
         auto cover{ std::make_unique<Wt::WImage>() };
-        cover->setImageLink(LmsApp->getCoverResource()->getTrackUrl(trackId, size));
+        std::string internalUrl;
+
+        {
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+
+            const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), trackId) };
+            if (track)
+            {
+                if (track->hasCover())
+                    internalUrl = LmsApp->getCoverResource()->getTrackUrl(trackId, size);
+                else if (const db::Release::pointer release{ track->getRelease() }; release && release->getImage())
+                    internalUrl = LmsApp->getCoverResource()->getReleaseUrl(release->getId(), size);
+            }
+        }
+
+        if (internalUrl.empty())
+            internalUrl = LmsApp->getCoverResource()->getDefaultUrl(size);
+
+        cover->setImageLink(internalUrl);
         cover->setStyleClass("Lms-cover img-fluid");                                          // HACK
         cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)"); // HACK
+
         return cover;
     }
 

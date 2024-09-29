@@ -25,7 +25,9 @@
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Directory.hpp"
+#include "database/Image.hpp"
 #include "database/Release.hpp"
+#include "database/Track.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
@@ -82,7 +84,21 @@ namespace lms::api::subsonic
         }
 
         albumNode.setAttribute("created", core::stringUtils::toISO8601String(release->getLastWritten()));
-        albumNode.setAttribute("coverArt", idToString(release->getId()));
+        if (release->getImage())
+        {
+            albumNode.setAttribute("coverArt", idToString(release->getId()));
+        }
+        else
+        {
+            db::Track::FindParameters params;
+            params.setRelease(release->getId());
+            params.setHasEmbeddedImage(true);
+            params.setRange(db::Range{ 0, 1 });
+
+            db::Track::find(context.dbSession, params, [&](const db::Track::pointer& track) {
+                albumNode.setAttribute("coverArt", idToString(track->getId()));
+            });
+        }
         if (const auto year{ release->getYear() })
             albumNode.setAttribute("year", *year);
 

@@ -39,9 +39,13 @@ namespace lms::cover
     public:
         virtual ~ICoverService() = default;
 
-        virtual std::shared_ptr<image::IEncodedImage> getFromTrack(db::TrackId trackId, image::ImageSize width) = 0;
-        virtual std::shared_ptr<image::IEncodedImage> getFromRelease(db::ReleaseId releaseId, image::ImageSize width) = 0;
         virtual std::shared_ptr<image::IEncodedImage> getFromArtist(db::ArtistId artistId, image::ImageSize width) = 0;
+
+        // no logic to fallback to release here
+        virtual std::shared_ptr<image::IEncodedImage> getFromTrack(db::TrackId trackId, image::ImageSize width) = 0;
+
+        // no logic to fallback to track here
+        virtual std::shared_ptr<image::IEncodedImage> getFromRelease(db::ReleaseId releaseId, image::ImageSize width) = 0;
 
         virtual std::shared_ptr<image::IEncodedImage> getDefaultSvgCover() = 0;
 

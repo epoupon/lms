@@ -32,6 +32,7 @@
 #include "image/Image.hpp"
 
 #include "ScanStepAssociateArtistImages.hpp"
+#include "ScanStepAssociateReleaseImages.hpp"
 #include "ScanStepCheckForDuplicatedFiles.hpp"
 #include "ScanStepCheckForRemovedFiles.hpp"
 #include "ScanStepCompact.hpp"
@@ -347,6 +348,7 @@ namespace lms::scanner
         _scanSteps.push_back(std::make_unique<ScanStepCheckForRemovedFiles>(params));
         _scanSteps.push_back(std::make_unique<ScanStepUpdateLibraryFields>(params));
         _scanSteps.push_back(std::make_unique<ScanStepAssociateArtistImages>(params));
+        _scanSteps.push_back(std::make_unique<ScanStepAssociateReleaseImages>(params));
         _scanSteps.push_back(std::make_unique<ScanStepRemoveOrphanedDbEntries>(params));
         _scanSteps.push_back(std::make_unique<ScanStepCompact>(params));
         _scanSteps.push_back(std::make_unique<ScanStepOptimize>(params));

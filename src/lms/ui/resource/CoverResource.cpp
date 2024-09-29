@@ -59,6 +59,11 @@ namespace lms::ui
         return url() + "&trackid=" + trackId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size));
     }
 
+    std::string CoverResource::getDefaultUrl(Size size) const
+    {
+        return url() + "&size=" + std::to_string(static_cast<std::size_t>(size));
+    }
+
     void CoverResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
     {
         LMS_SCOPED_TRACE_OVERVIEW("UI", "HandleCoverRequest");
@@ -96,8 +101,6 @@ namespace lms::ui
             }
 
             cover = core::Service<cover::ICoverService>::get()->getFromTrack(*trackId, *size);
-            if (!cover)
-                cover = core::Service<cover::ICoverService>::get()->getDefaultSvgCover();
         }
         else if (releaseIdStr)
         {
@@ -108,14 +111,12 @@ namespace lms::ui
                 return;
 
             cover = core::Service<cover::ICoverService>::get()->getFromRelease(*releaseId, *size);
-            if (!cover)
-                cover = core::Service<cover::ICoverService>::get()->getDefaultSvgCover();
         }
         else
-        {
-            LOG(DEBUG, "No track or release provided");
-            return;
-        }
+            LOG(DEBUG, "Requested default cover");
+
+        if (!cover)
+            cover = core::Service<cover::ICoverService>::get()->getDefaultSvgCover();
 
         response.setMimeType(std::string{ cover->getMimeType() });
 

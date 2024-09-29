@@ -379,5 +379,4 @@ namespace lms::db
     {
         _image = getDboPtr(image);
     }
-
 } // namespace lms::db

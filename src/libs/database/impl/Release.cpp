@@ -24,6 +24,8 @@
 #include "core/ILogger.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
+#include "database/Directory.hpp"
+#include "database/Image.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
@@ -540,6 +542,11 @@ namespace lms::db
         return utils::fetchQueryResults<Release::pointer>(query);
     }
 
+    ObjectPtr<Image> Release::getImage() const
+    {
+        return ObjectPtr<Image>{ _image.lock() };
+    }
+
     void Release::clearLabels()
     {
         _labels.clear();
@@ -558,6 +565,11 @@ namespace lms::db
     void Release::addReleaseType(ObjectPtr<ReleaseType> releaseType)
     {
         _releaseTypes.insert(getDboPtr(releaseType));
+    }
+
+    void Release::setImage(ObjectPtr<Image> image)
+    {
+        _image = getDboPtr(image);
     }
 
     bool Release::hasVariousArtists() const
@@ -665,5 +677,4 @@ namespace lms::db
 
         return res;
     }
-
 } // namespace lms::db

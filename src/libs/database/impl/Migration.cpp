@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 67 };
+        static constexpr Version LMS_DATABASE_VERSION{ 68 };
     }
 
     VersionInfo::VersionInfo()
@@ -761,6 +761,54 @@ SELECT
         session.getDboSession()->execute("ALTER TABLE user DROP COLUMN cur_playing_track_pos");
     }
 
+    void migrateFromV67(Session& session)
+    {
+        // Add a ref to release in image
+        session.getDboSession()->execute(R"(CREATE TABLE "image_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "absolute_file_path" text not null,
+  "stem" text not null,
+  "file_last_write" text,
+  "file_size" integer not null,
+  "width" integer not null,
+  "height" integer not null,
+  "artist_id" bigint,
+  "release_id" bigint,
+  "directory_id" bigint,
+  constraint "fk_image_artist" foreign key ("artist_id") references "artist" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_image_release" foreign key ("release_id") references "release" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_image_directory" foreign key ("directory_id") references "directory" ("id") on delete cascade deferrable initially deferred
+))");
+
+        // Migrate data, with the new release_id field set to null
+        session.getDboSession()->execute(R"(INSERT INTO image_backup 
+SELECT
+ id,
+ version,
+ absolute_file_path,
+ stem,
+ file_last_write,
+ file_size,
+ width,
+ height,
+ artist_id,
+ NULL,
+ directory_id
+ FROM image
+ )");
+        session.getDboSession()->execute("DROP TABLE image");
+        session.getDboSession()->execute("ALTER TABLE image_backup RENAME TO image");
+
+        // Changed some indexes for the image table -> remove all the previoulsy created index, the createIndexesIfNeeded will recreate them all
+        std::vector<std::string> indexeNames{ utils::fetchQueryResults(session.getDboSession()->query<std::string>(R"(SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE '%_idx')")) };
+        for (const auto& indexName : indexeNames)
+            session.getDboSession()->execute("DROP INDEX " + indexName);
+
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        session.getDboSession()->execute("UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
+
     bool doDbMigration(Session& session)
     {
         static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -804,6 +852,7 @@ SELECT
             { 64, migrateFromV64 },
             { 65, migrateFromV65 },
             { 66, migrateFromV66 },
+            { 67, migrateFromV67 },
         };
 
         bool migrationPerformed{};

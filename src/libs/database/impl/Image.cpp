@@ -23,6 +23,7 @@
 
 #include "database/Artist.hpp"
 #include "database/Directory.hpp"
+#include "database/Release.hpp"
 #include "database/Session.hpp"
 
 #include "IdTypeTraits.hpp"
@@ -40,7 +41,7 @@ namespace lms::db
             if (params.directory.isValid())
                 query.where("i.directory_id = ?").bind(params.directory);
             if (!params.fileStem.empty())
-                query.where("i.stem = ?").bind(params.fileStem);
+                query.where("i.stem = ? COLLATE NOCASE").bind(params.fileStem);
 
             return query;
         }

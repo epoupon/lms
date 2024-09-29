@@ -110,6 +110,7 @@
 <message id="Lms.Admin.ScannerController.status-scheduled">Scheduled on {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">Scanning: step {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-associating-artist-images">Associating artist images: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-associating-release-images">Associating release images: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">Checking for duplicate files... {1} files</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Checking for removed files... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">Compacting database...</message>

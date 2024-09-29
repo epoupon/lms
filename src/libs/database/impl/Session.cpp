@@ -196,10 +196,11 @@ namespace lms::db
         _session.execute("CREATE INDEX IF NOT EXISTS directory_media_library_idx ON directory(media_library_id)");
 
         _session.execute("CREATE INDEX IF NOT EXISTS image_artist_idx ON image(artist_id)");
-        _session.execute("CREATE INDEX IF NOT EXISTS image_directory_idx ON image(directory_id)");
+        _session.execute("CREATE INDEX IF NOT EXISTS image_directory_stem_idx ON image(directory_id, stem COLLATE NOCASE)");
         _session.execute("CREATE INDEX IF NOT EXISTS image_id_idx ON image(id)");
         _session.execute("CREATE INDEX IF NOT EXISTS image_path_idx ON image(absolute_file_path)");
-        _session.execute("CREATE INDEX IF NOT EXISTS image_stem_idx ON image(stem)");
+        _session.execute("CREATE INDEX IF NOT EXISTS image_release_idx ON image(release_id)");
+        _session.execute("CREATE INDEX IF NOT EXISTS image_stem_idx ON image(stem COLLATE NOCASE)");
 
         _session.execute("CREATE INDEX IF NOT EXISTS label_name_idx ON label(name)");
 

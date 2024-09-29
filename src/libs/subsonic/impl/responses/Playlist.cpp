@@ -31,7 +31,7 @@ namespace lms::api::subsonic
 
     static const std::string_view reportedDummyDate{ "2000-01-01T00:00:00" };
 
-    Response::Node createPlaylistNode(const TrackList::pointer& tracklist, Session&)
+    Response::Node createPlaylistNode(const TrackList::pointer& tracklist, Session& session)
     {
         Response::Node playlistNode;
 
@@ -43,8 +43,15 @@ namespace lms::api::subsonic
         playlistNode.setAttribute("created", reportedDummyDate);
         playlistNode.setAttribute("owner", tracklist->getUser()->getLoginName());
 
-        if (const auto entry{ tracklist->getEntry(0) })
-            playlistNode.setAttribute("coverArt", idToString(entry->getTrack()->getId()));
+        db::Track::FindParameters params;
+        params.setTrackList(tracklist->getId());
+        params.setHasEmbeddedImage(true);
+        params.setRange(db::Range{ 0, 1 });
+        params.setSortMethod(TrackSortMethod::TrackList);
+
+        db::Track::find(session, params, [&](const db::Track::pointer& track) {
+            playlistNode.setAttribute("coverArt", idToString(track->getId()));
+        });
 
         return playlistNode;
     }
