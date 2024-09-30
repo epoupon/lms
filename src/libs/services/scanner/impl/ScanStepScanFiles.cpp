@@ -252,7 +252,17 @@ namespace lms::scanner
             }
         }
 
-        Release::pointer getOrCreateRelease(Session& session, std::optional<std::size_t> mediumPosition, const metadata::Release& releaseInfo, const Directory::pointer& currentDirectory)
+        // Compare release level info
+        bool isReleaseMatching(const Release::pointer& candidateRelease, const metadata::Release& releaseInfo)
+        {
+            // TODO: add more criterias?
+            return candidateRelease->getName() == releaseInfo.name
+                && candidateRelease->getSortName() == releaseInfo.sortName
+                && candidateRelease->getTotalDisc() == releaseInfo.mediumCount
+                && candidateRelease->isCompilation() == releaseInfo.isCompilation;
+        }
+
+        Release::pointer getOrCreateRelease(Session& session, const metadata::Release& releaseInfo, const Directory::pointer& currentDirectory)
         {
             Release::pointer release;
 
@@ -265,12 +275,36 @@ namespace lms::scanner
             }
             else if (releaseInfo.name.empty())
             {
-                // No release name (only mbid) -> nothing to de
+                // No release name (only mbid) -> nothing to do
                 return release;
             }
 
             // Fall back on release name (collisions may occur)
-            // First try in the current directory
+            // First try using all sibling directories (case for Album/DiscX), only if the disc number is set
+            const DirectoryId parentDirectoryId{ currentDirectory->getParentDirectoryId() };
+            if (!release && releaseInfo.mediumCount && *releaseInfo.mediumCount > 1 && parentDirectoryId.isValid())
+            {
+                Release::FindParameters params;
+                params.setParentDirectory(parentDirectoryId);
+                params.setName(releaseInfo.name);
+                Release::find(session, params, [&](const Release::pointer& candidateRelease) {
+                    // Already found a candidate
+                    if (release)
+                        return;
+
+                    // Do not fallback on properly tagged releases
+                    if (candidateRelease->getMBID().has_value())
+                        return;
+
+                    if (!isReleaseMatching(candidateRelease, releaseInfo))
+                        return;
+
+                    release = candidateRelease;
+                });
+            }
+
+            // Lastly try in the current directory: we do this at last to have
+            // opportunities to merge releases in case of migration / rescan
             if (!release)
             {
                 Release::FindParameters params;
@@ -285,30 +319,7 @@ namespace lms::scanner
                     if (candidateRelease->getMBID().has_value())
                         return;
 
-                    // TODO: add more criterias?
-                    release = candidateRelease;
-                });
-            }
-
-            // second try in another sibling directory (case for Album/DiscX)
-            const DirectoryId parentDirectoryId{ currentDirectory->getParentDirectoryId() };
-            if (!release && mediumPosition && parentDirectoryId.isValid())
-            {
-                Release::FindParameters params;
-                params.setParentDirectory(parentDirectoryId);
-                params.setName(releaseInfo.name);
-                Release::find(session, params, [&](const Release::pointer& candidateRelease) {
-                    // Already found a candidate
-                    if (release)
-                        return;
-
-                    // Do not fallback on properly tagged releases
-                    if (candidateRelease->getMBID().has_value())
-                        return;
-
-                    // Fallback only if the disc number of the current track is not the same
-                    const std::vector<DiscInfo> discs{ candidateRelease->getDiscs() };
-                    if (discs.empty() || std::any_of(discs.begin(), discs.end(), [&](const DiscInfo& discInfo) { return discInfo.position == *mediumPosition; }))
+                    if (!isReleaseMatching(candidateRelease, releaseInfo))
                         return;
 
                     release = candidateRelease;
@@ -737,7 +748,7 @@ namespace lms::scanner
 
         track.modify()->setScanVersion(_settings.scanVersion);
         if (trackMetadata->medium && trackMetadata->medium->release)
-            track.modify()->setRelease(getOrCreateRelease(dbSession, trackMetadata->medium->position, *trackMetadata->medium->release, directory));
+            track.modify()->setRelease(getOrCreateRelease(dbSession, *trackMetadata->medium->release, directory));
         else
             track.modify()->setRelease({});
         track.modify()->setTotalTrack(trackMetadata->medium ? trackMetadata->medium->trackCount : std::nullopt);
