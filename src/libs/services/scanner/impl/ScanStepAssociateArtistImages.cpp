@@ -41,7 +41,7 @@ namespace lms::scanner
     namespace
     {
         constexpr std::size_t readBatchSize{ 100 };
-        constexpr std::size_t writeBatchSize{ 10 };
+        constexpr std::size_t writeBatchSize{ 20 };
 
         struct ArtistImageAssociation
         {
@@ -170,15 +170,15 @@ namespace lms::scanner
 
         void updateArtistImages(db::Session& session, ArtistImageAssociationContainer& imageAssociations)
         {
-            if (imageAssociations.empty())
-                return;
-
-            auto transaction{ session.createWriteTransaction() };
-
-            for (std::size_t i{}; !imageAssociations.empty() && i < writeBatchSize; ++i)
+            while (!imageAssociations.empty())
             {
-                updateArtistImage(session, imageAssociations.front());
-                imageAssociations.pop_front();
+                auto transaction{ session.createWriteTransaction() };
+
+                for (std::size_t i{}; !imageAssociations.empty() && i < writeBatchSize; ++i)
+                {
+                    updateArtistImage(session, imageAssociations.front());
+                    imageAssociations.pop_front();
+                }
             }
         }
 
