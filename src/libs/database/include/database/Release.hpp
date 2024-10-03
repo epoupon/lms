@@ -57,8 +57,11 @@ namespace lms::db
     {
     public:
         Label() = default;
+
+        static std::size_t getCount(Session& session);
         static pointer find(Session& session, LabelId id);
         static pointer find(Session& session, std::string_view name);
+        static RangeResults<LabelId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
 
         // Accessors
         std::string_view getName() const { return _name; }
@@ -85,8 +88,11 @@ namespace lms::db
     {
     public:
         ReleaseType() = default;
+
+        static std::size_t getCount(Session& session);
         static pointer find(Session& session, ReleaseTypeId id);
         static pointer find(Session& session, std::string_view name);
+        static RangeResults<ReleaseTypeId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
 
         // Accessors
         std::string_view getName() const { return _name; }

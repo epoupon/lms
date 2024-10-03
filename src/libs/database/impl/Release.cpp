@@ -244,6 +244,11 @@ namespace lms::db
         return session.getDboSession()->add(std::unique_ptr<Label>{ new Label{ name } });
     }
 
+    std::size_t Label::getCount(Session& session)
+    {
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM label"));
+    }
+
     Label::pointer Label::find(Session& session, LabelId id)
     {
         session.checkReadTransaction();
@@ -261,6 +266,15 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Label>>("SELECT l from label l").where("l.name = ?").bind(name));
     }
 
+    RangeResults<LabelId> Label::findOrphanIds(Session& session, std::optional<Range> range)
+    {
+        session.checkReadTransaction();
+
+        // select the labels that have no releases
+        auto query{ session.getDboSession()->query<LabelId>("select l.id from label l LEFT OUTER JOIN release_label r_l ON l.id = r_l.label_id WHERE r_l.release_id IS NULL") };
+        return utils::execRangeQuery<LabelId>(query, range);
+    }
+
     ReleaseType::ReleaseType(std::string_view name)
         : _name{ name }
     {
@@ -272,6 +286,11 @@ namespace lms::db
     ReleaseType::pointer ReleaseType::create(Session& session, std::string_view name)
     {
         return session.getDboSession()->add(std::unique_ptr<ReleaseType>{ new ReleaseType{ name } });
+    }
+
+    std::size_t ReleaseType::getCount(Session& session)
+    {
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM release_type"));
     }
 
     ReleaseType::pointer ReleaseType::find(Session& session, ReleaseTypeId id)
@@ -289,6 +308,15 @@ namespace lms::db
             throw Exception{ "Requeted ReleaseType name is too long: " + std::string{ name } + "'" };
 
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ReleaseType>>("SELECT r_t from release_type r_t").where("r_t.name = ?").bind(name));
+    }
+
+    RangeResults<ReleaseTypeId> ReleaseType::findOrphanIds(Session& session, std::optional<Range> range)
+    {
+        session.checkReadTransaction();
+
+        // select the release types that have no releases
+        auto query{ session.getDboSession()->query<ReleaseTypeId>("select r_t.id from release_type r_t LEFT OUTER JOIN release_release_type r_r_t ON r_t.id = r_r_t.release_type_id WHERE r_r_t.release_id IS NULL") };
+        return utils::execRangeQuery<ReleaseTypeId>(query, range);
     }
 
     Release::Release(const std::string& name, const std::optional<core::UUID>& MBID)
