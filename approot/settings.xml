@@ -5,10 +5,21 @@
 
 <message id="Lms.Settings.template">
 	<form class="row g-3">
-		<legend>${tr:Lms.Settings.audio}</legend>
-		<div class="alert alert-info">
-			${tr:Lms.Settings.audio-settings-are-local}
+		<legend>${tr:Lms.Settings.user-interface}</legend>
+		<div class="col-12">
+			<label class="form-label" for="${id:artist-release-sort-method}">
+				${tr:Lms.Settings.artist-release-sort-method}
+			</label>
+			${artist-release-sort-method class="form-control"}
+			<div class="invalid-feedback">
+				${artist-release-sort-method-info}
+			</div>
 		</div>
+		<legend>${tr:Lms.Settings.audio}
+			<button type="button" class="btn btn-sm p-0" data-bs-toggle="tooltip" data-bs-placement="right" title="${tr:Lms.Settings.audio-settings-are-local}">
+        		<i class="fa fa-fw fa-info-circle" aria-hidden="true"></i>
+    		</button>
+		</legend>
 		<div class="col-lg-4">
 			<label class="form-label" for="${id:transcoding-mode}">
 				${tr:Lms.Settings.transcoding-mode}

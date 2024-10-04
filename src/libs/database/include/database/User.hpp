@@ -75,6 +75,7 @@ namespace lms::db
         static inline constexpr TranscodingOutputFormat defaultSubsonicTranscodingOutputFormat{ TranscodingOutputFormat::OGG_OPUS };
         static inline constexpr Bitrate defaultSubsonicTranscodingOutputBitrate{ 128000 };
         static inline constexpr UITheme defaultUITheme{ UITheme::Dark };
+        static inline constexpr ReleaseSortMethod _defaultUIArtistReleaseSortMethod{ ReleaseSortMethod::OriginalDateDesc };
         static inline constexpr SubsonicArtistListMode defaultSubsonicArtistListMode{ SubsonicArtistListMode::AllArtists };
         static inline constexpr ScrobblingBackend defaultScrobblingBackend{ ScrobblingBackend::Internal };
         static inline constexpr FeedbackBackend defaultFeedbackBackend{ FeedbackBackend::Internal };
@@ -106,6 +107,7 @@ namespace lms::db
         void setSubsonicDefaultTranscodintOutputFormat(TranscodingOutputFormat encoding) { _subsonicDefaultTranscodingOutputFormat = encoding; }
         void setSubsonicDefaultTranscodingOutputBitrate(Bitrate bitrate);
         void setUITheme(UITheme uiTheme) { _uiTheme = uiTheme; }
+        void setUIArtistReleaseSortMethod(ReleaseSortMethod method) { _uiArtistReleaseSortMethod = method; }
         void clearAuthTokens();
         void setSubsonicArtistListMode(SubsonicArtistListMode mode) { _subsonicArtistListMode = mode; }
         void setFeedbackBackend(FeedbackBackend feedbackBackend) { _feedbackBackend = feedbackBackend; }
@@ -120,6 +122,7 @@ namespace lms::db
         TranscodingOutputFormat getSubsonicDefaultTranscodingOutputFormat() const { return _subsonicDefaultTranscodingOutputFormat; }
         Bitrate getSubsonicDefaultTranscodingOutputBitrate() const { return _subsonicDefaultTranscodingOutputBitrate; }
         UITheme getUITheme() const { return _uiTheme; }
+        ReleaseSortMethod getUIArtistReleaseSortMethod() const { return _uiArtistReleaseSortMethod; }
         SubsonicArtistListMode getSubsonicArtistListMode() const { return _subsonicArtistListMode; }
         FeedbackBackend getFeedbackBackend() const { return _feedbackBackend; }
         ScrobblingBackend getScrobblingBackend() const { return _scrobblingBackend; }
@@ -138,6 +141,7 @@ namespace lms::db
             Wt::Dbo::field(a, _subsonicDefaultTranscodingOutputBitrate, "subsonic_default_transcode_bitrate");
             Wt::Dbo::field(a, _subsonicArtistListMode, "subsonic_artist_list_mode");
             Wt::Dbo::field(a, _uiTheme, "ui_theme");
+            Wt::Dbo::field(a, _uiArtistReleaseSortMethod, "ui_artist_release_sort_method");
             Wt::Dbo::field(a, _feedbackBackend, "feedback_backend");
             Wt::Dbo::field(a, _scrobblingBackend, "scrobbling_backend");
             Wt::Dbo::field(a, _listenbrainzToken, "listenbrainz_token");
@@ -156,6 +160,7 @@ namespace lms::db
         std::string _passwordHash;
         Wt::WDateTime _lastLogin;
         UITheme _uiTheme{ defaultUITheme };
+        ReleaseSortMethod _uiArtistReleaseSortMethod{ _defaultUIArtistReleaseSortMethod };
         FeedbackBackend _feedbackBackend{ defaultFeedbackBackend };
         ScrobblingBackend _scrobblingBackend{ defaultScrobblingBackend };
         std::string _listenbrainzToken; // Musicbrainz Identifier
@@ -172,5 +177,4 @@ namespace lms::db
         Wt::Dbo::collection<Wt::Dbo::ptr<AuthToken>> _authTokens;
         Wt::Dbo::collection<Wt::Dbo::ptr<UIState>> _uiStates;
     };
-
 } // namespace lms::db

@@ -197,7 +197,7 @@ namespace lms::ui
         params.setClusters(_filters.getClusters());
         params.setMediaLibrary(_filters.getMediaLibrary());
         params.setArtist(_artistId, { TrackArtistLinkType::ReleaseArtist }, {});
-        params.setSortMethod(ReleaseSortMethod::OriginalDateDesc);
+        params.setSortMethod(LmsApp->getUser()->getUIArtistReleaseSortMethod());
 
         const auto releases{ Release::findIds(LmsApp->getDbSession(), params) };
         if (!releases.results.empty())

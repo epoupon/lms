@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 69 };
+        static constexpr Version LMS_DATABASE_VERSION{ 70 };
     }
 
     VersionInfo::VersionInfo()
@@ -872,6 +872,12 @@ SELECT
         session.getDboSession()->execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV69(Session& session)
+    {
+        // Add a field in UI settings
+        session.getDboSession()->execute("ALTER TABLE user ADD COLUMN ui_artist_release_sort_method NOT NULL DEFAULT 7"); // 7 = ReleaseSortMethod::OriginalDateDesc
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -917,6 +923,7 @@ SELECT
             { 66, migrateFromV66 },
             { 67, migrateFromV67 },
             { 68, migrateFromV68 },
+            { 69, migrateFromV69 },
         };
 
         bool migrationPerformed{};

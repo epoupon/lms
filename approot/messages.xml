@@ -277,18 +277,24 @@
 <message id="Lms.PlayHistory.playhistory">Play History</message>
 
 <!--Settings-->
+<message id="Lms.Settings.artist-release-sort-method">Method to sort artist's albums</message>
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">These audio settings are local to your browser!</message>
 <message id="Lms.Settings.backend.internal">Internal</message>
 <message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.backend.listenbrainz-token">ListenBrainz API token</message>
 <message id="Lms.Settings.change-password">Change password</message>
+<message id="Lms.Settings.date-asc">Release Date (Ascending)</message>
+<message id="Lms.Settings.date-desc">Release Date (Descending)</message>
 <message id="Lms.Settings.default-transcoding-output-bitrate">Default transcoding output bitrate</message>
 <message id="Lms.Settings.default-transcoding-output-format">Default transcoding output format</message>
 <message id="Lms.Settings.demo-cannot-save">Cannot save using a demo account!</message>
 <message id="Lms.Settings.enable-transcoding-by-default">Enable transcoding by default</message>
 <message id="Lms.Settings.feedback">Feedback</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Settings</message>
+<message id="Lms.Settings.name">Album Name</message>
+<message id="Lms.Settings.original-date-asc">Original Release Date (Ascending)</message>
+<message id="Lms.Settings.original-date-desc">Original Release Date (Descending)</message>
 <message id="Lms.Settings.password-bad">Bad password</message>
 <message id="Lms.Settings.password-must-fill-old-password">Old password must be filled in</message>
 <message id="Lms.Settings.replaygain-mode">ReplayGain mode</message>
@@ -306,6 +312,7 @@
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Album artists</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.track-artists">Track artists</message>
 <message id="Lms.Settings.subsonic-api">Subsonic API</message>
+<message id="Lms.Settings.user-interface">User Interface</message>
 <message id="Lms.Settings.transcoding">Transcoding</message>
 <message id="Lms.Settings.transcoding-output-bitrate">Transcoding output bitrate</message>
 <message id="Lms.Settings.transcoding-output-format">Transcoding output format</message>
