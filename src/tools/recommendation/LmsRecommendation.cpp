@@ -27,6 +27,7 @@
 #include "core/IConfig.hpp"
 #include "core/Service.hpp"
 #include "core/StreamLogger.hpp"
+#include "core/SystemPaths.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
@@ -132,7 +133,7 @@ int main(int argc, char* argv[])
         core::Service<core::logging::ILogger> logger{ std::make_unique<core::logging::StreamLogger>(std::cout) };
 
         po::options_description desc{ "Allowed options" };
-        desc.add_options()("help,h", "print usage message")("conf,c", po::value<std::string>()->default_value("/etc/lms.conf"), "LMS config file")("artists,a", "Display recommendation for artists")("releases,r", "Display recommendation for releases")("tracks,t", "Display recommendation for tracks")("max,m", po::value<unsigned>()->default_value(3), "Max similarity result count");
+        desc.add_options()("help,h", "print usage message")("conf,c", po::value<std::string>()->default_value(core::sysconfDirectory / "lms.conf"), "LMS config file")("artists,a", "Display recommendation for artists")("releases,r", "Display recommendation for releases")("tracks,t", "Display recommendation for tracks")("max,m", po::value<unsigned>()->default_value(3), "Max similarity result count");
 
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
