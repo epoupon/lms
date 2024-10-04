@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 68 };
+        static constexpr Version LMS_DATABASE_VERSION{ 69 };
     }
 
     VersionInfo::VersionInfo()
@@ -809,9 +809,72 @@ SELECT
         session.getDboSession()->execute("UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV68(Session& session)
+    {
+        // Changed the way we ref images from release and artists (several releases and artist can now share the same image)
+        session.getDboSession()->execute(R"(CREATE TABLE "release_backup" (
+"id" integer primary key autoincrement,
+"version" integer not null,
+"name" text not null,
+"sort_name" text not null,
+"mbid" text not null,
+"group_mbid" text not null,
+"total_disc" integer,
+"artist_display_name" text not null,
+"is_compilation" boolean not null,
+"image_id" bigint,
+constraint "fk_release_image" foreign key ("image_id") references "image" ("id") on delete set null deferrable initially deferred))");
+
+        // Migrate data, with the new image_id field set to null
+        session.getDboSession()->execute(R"(INSERT INTO release_backup 
+SELECT
+ id,
+ version,
+ name,
+ sort_name,
+ mbid,
+ group_mbid,
+ total_disc,
+ artist_display_name,
+ is_compilation,
+ NULL
+ FROM release
+ )");
+        session.getDboSession()->execute("DROP TABLE release");
+        session.getDboSession()->execute("ALTER TABLE release_backup RENAME TO release");
+
+        session.getDboSession()->execute(R"(CREATE TABLE IF NOT EXISTS "artist_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null,
+  "sort_name" text not null,
+  "mbid" text not null,
+  "image_id" bigint,
+  constraint "fk_artist_image" foreign key ("image_id") references "image" ("id") on delete set null deferrable initially deferred
+))");
+
+        // Migrate data, with the new image_id field set to null
+        session.getDboSession()->execute(R"(INSERT INTO artist_backup 
+SELECT
+ id,
+ version,
+ name,
+ sort_name,
+ mbid,
+ NULL
+ FROM artist
+ )");
+
+        session.getDboSession()->execute("DROP TABLE artist");
+        session.getDboSession()->execute("ALTER TABLE artist_backup RENAME TO artist");
+
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        session.getDboSession()->execute("UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
+
     bool doDbMigration(Session& session)
     {
-        static const std::string outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
+        constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
 
         ScopedNoForeignKeys noPragmaKeys{ session.getDb() };
 
@@ -853,6 +916,7 @@ SELECT
             { 65, migrateFromV65 },
             { 66, migrateFromV66 },
             { 67, migrateFromV67 },
+            { 68, migrateFromV68 },
         };
 
         bool migrationPerformed{};

@@ -572,7 +572,7 @@ namespace lms::db
 
     ObjectPtr<Image> Release::getImage() const
     {
-        return ObjectPtr<Image>{ _image.lock() };
+        return ObjectPtr<Image>{ _image };
     }
 
     void Release::clearLabels()

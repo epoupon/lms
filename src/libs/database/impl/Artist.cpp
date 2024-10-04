@@ -277,7 +277,7 @@ namespace lms::db
 
     ObjectPtr<Image> Artist::getImage() const
     {
-        return ObjectPtr<Image>{ _image.lock() };
+        return ObjectPtr<Image>{ _image };
     }
 
     RangeResults<ArtistId> Artist::findSimilarArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes, std::optional<Range> range) const

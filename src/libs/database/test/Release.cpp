@@ -19,8 +19,11 @@
 
 #include "Common.hpp"
 
+#include "database/Image.hpp"
+
 namespace lms::db::tests
 {
+    using ScopedImage = ScopedEntity<db::Image>;
     using ScopedLabel = ScopedEntity<db::Label>;
     using ScopedReleaseType = ScopedEntity<db::ReleaseType>;
 
@@ -1036,6 +1039,30 @@ namespace lms::db::tests
             EXPECT_EQ(release1->getTrackCount(), 2);
             EXPECT_EQ(release2->getTrackCount(), 1);
             EXPECT_EQ(release3->getTrackCount(), 0);
+        }
+    }
+
+    TEST_F(DatabaseFixture, Release_image)
+    {
+        ScopedRelease release{ session, "MyRelease" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_FALSE(release.get()->getImage());
+        }
+
+        ScopedImage image{ session, "/myImage" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            release.get().modify()->setImage(image.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto releaseImage(release.get()->getImage());
+            ASSERT_TRUE(releaseImage);
+            EXPECT_EQ(releaseImage->getId(), image.getId());
         }
     }
 } // namespace lms::db::tests
