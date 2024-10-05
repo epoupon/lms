@@ -129,7 +129,10 @@ deploy-path = "/newroot/"; # ending slash is important
 ```
 If you use nginx as a reverse proxy, you can simply replace `location /` with `location /newroot/` to achieve the same result.
 ## Reverse proxy settings
-_LMS_ is shipped with an embedded web server, but it is recommended to deploy behind a reverse proxy. You have to set the _behind-reverse-proxy_ option to _true_ in the `lms.conf` configuration file.
+_LMS_ is shipped with an embedded web server, but it is recommended to deploy behind a reverse proxy. You have to set the `behind-reverse-proxy` option to _true_ in the `lms.conf` configuration file and to adjust the trusted proxy list in `trusted-proxies` option.
+
+__Note__: when running in a docker environment, you have to trust the docker gateway IP (which is `172.17.0.1` by default)
+
 Here is an example to make _LMS_ properly work on _myserver.org_ using _nginx_:
 ```
 server {
@@ -147,10 +150,9 @@ server {
 	keepalive_timeout 10m;
 
     location / {
-
-      proxy_set_header        Client-IP $remote_addr;
       proxy_set_header        Host $host;
-      proxy_set_header        X-Forwarded-For $remote_addr;
+      proxy_set_header        X-Real-IP $remote_addr;
+      proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
       proxy_set_header        X-Forwarded-Proto $scheme;
 
       proxy_pass          http://localhost:5082/;

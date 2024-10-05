@@ -137,7 +137,16 @@ namespace lms
 
             // log-config
             pt.put("server.application-settings.log-config", core::logging::WtLogger::computeLogConfig(minSeverity));
-            pt.put("server.application-settings.behind-reverse-proxy", core::Service<core::IConfig>::get()->getBool("behind-reverse-proxy", false));
+
+            // Reverse proxy
+            if (core::Service<core::IConfig>::get()->getBool("behind-reverse-proxy", false))
+            {
+                pt.put("server.application-settings.trusted-proxy-config.original-ip-header", core::Service<core::IConfig>::get()->getString("original-ip-header", "X-Forwarded-For"));
+                core::Service<core::IConfig>::get()->visitStrings("trusted-proxies", [&](std::string_view trustedProxy) {
+                    pt.add("server.application-settings.trusted-proxy-config.trusted-proxies.proxy", std::string{ trustedProxy });
+                },
+                    { "127.0.0.1", "::1" });
+            }
 
             {
                 boost::property_tree::ptree viewport;
