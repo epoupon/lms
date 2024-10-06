@@ -27,7 +27,9 @@
 #include <Wt/WDate.h>
 #include <boost/program_options.hpp>
 
+#include "core/EnumSet.hpp"
 #include "core/StreamLogger.hpp"
+#include "core/String.hpp"
 #include "metadata/Exception.hpp"
 #include "metadata/IParser.hpp"
 
@@ -241,7 +243,8 @@ int main(int argc, char* argv[])
         options.add_options()
             ("help,h", "Display this help message")
             ("tag-delimiter", program_options::value<std::vector<std::string>>()->default_value(std::vector<std::string>{}, "[]"), "Tag delimiters (multiple allowed)")
-            ("artist-tag-delimiter", program_options::value<std::vector<std::string>>()->default_value(std::vector<std::string>{}, "[]"), "Artist tag delimiters (multiple allowed)");
+            ("artist-tag-delimiter", program_options::value<std::vector<std::string>>()->default_value(std::vector<std::string>{}, "[]"), "Artist tag delimiters (multiple allowed)")
+            ("parser", program_options::value<std::vector<std::string>>()->default_value(std::vector<std::string>{ "taglib" }, "[taglib]"), "Parser to be used (value can be \"taglib\" or \"ffmpeg\")");
         // clang-format on
 
         program_options::options_description hiddenOptions{ "Hidden options" };
@@ -274,11 +277,37 @@ int main(int argc, char* argv[])
             return EXIT_SUCCESS;
         }
 
-        if (!vm.count("file"))
+        if (vm.count("file") == 0)
         {
-            std::cout << "NO INPUT FILE!" << std::endl;
+            std::cerr << "No input file provided" << std::endl;
             displayHelp(std::cerr);
             return EXIT_FAILURE;
+        }
+
+        enum class Parser
+        {
+            Taglib,
+            Ffmpeg,
+        };
+
+        if (vm.count("parser") == 0)
+        {
+            std::cerr << "You must specify at least one parser" << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        core::EnumSet<Parser> parsers;
+        for (const std::string& strParser : vm["parser"].as<std::vector<std::string>>())
+        {
+            if (core::stringUtils::stringCaseInsensitiveEqual(strParser, "taglib"))
+                parsers.insert(Parser::Taglib);
+            else if (core::stringUtils::stringCaseInsensitiveEqual(strParser, "ffmpeg"))
+                parsers.insert(Parser::Ffmpeg);
+            else
+            {
+                std::cerr << "Invalid parser name '" << strParser << "'" << std::endl;
+                return EXIT_FAILURE;
+            }
         }
 
         const auto& inputFiles{ vm["file"].as<std::vector<std::string>>() };
@@ -304,34 +333,40 @@ int main(int argc, char* argv[])
 
             std::cout << "Parsing file '" << file << "'" << std::endl;
 
-            try
+            if (parsers.contains(Parser::Ffmpeg))
             {
-                std::cout << "Using av:" << std::endl;
+                try
+                {
+                    std::cout << "Using Ffmpeg:" << std::endl;
 
-                auto parser{ metadata::createParser(metadata::ParserBackend::AvFormat, metadata::ParserReadStyle::Accurate) };
-                parser->setArtistTagDelimiters(artistTagDelimiters);
-                parser->setDefaultTagDelimiters(tagDelimiters);
+                    auto parser{ metadata::createParser(metadata::ParserBackend::AvFormat, metadata::ParserReadStyle::Accurate) };
+                    parser->setArtistTagDelimiters(artistTagDelimiters);
+                    parser->setDefaultTagDelimiters(tagDelimiters);
 
-                parse(*parser, file);
+                    parse(*parser, file);
+                }
+                catch (metadata::Exception& e)
+                {
+                    std::cerr << "Parsing failed: " << e.what() << std::endl;
+                }
             }
-            catch (metadata::Exception& e)
-            {
-                std::cerr << "Parsing failed: " << e.what() << std::endl;
-            }
 
-            try
+            if (parsers.contains(Parser::Taglib))
             {
-                std::cout << "Using TagLib:" << std::endl;
+                try
+                {
+                    std::cout << "Using TagLib:" << std::endl;
 
-                auto parser{ metadata::createParser(metadata::ParserBackend::TagLib, metadata::ParserReadStyle::Accurate) };
-                parser->setArtistTagDelimiters(artistTagDelimiters);
-                parser->setDefaultTagDelimiters(tagDelimiters);
+                    auto parser{ metadata::createParser(metadata::ParserBackend::TagLib, metadata::ParserReadStyle::Accurate) };
+                    parser->setArtistTagDelimiters(artistTagDelimiters);
+                    parser->setDefaultTagDelimiters(tagDelimiters);
 
-                parse(*parser, file);
-            }
-            catch (metadata::Exception& e)
-            {
-                std::cerr << "Parsing failed: " << e.what() << std::endl;
+                    parse(*parser, file);
+                }
+                catch (metadata::Exception& e)
+                {
+                    std::cerr << "Parsing failed: " << e.what() << std::endl;
+                }
             }
         }
     }
