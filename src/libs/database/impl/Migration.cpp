@@ -835,7 +835,7 @@ SELECT
  mbid,
  group_mbid,
  total_disc,
- artist_display_name,
+ COALESCE(artist_display_name, ""),
  is_compilation,
  NULL
  FROM release
