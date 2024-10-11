@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "CoverService.hpp"
+#include "ArtworkService.hpp"
 
 #include "av/IAudioFile.hpp"
 #include "core/IConfig.hpp"
@@ -45,27 +45,29 @@ namespace lms::cover
         }
     } // namespace
 
-    std::unique_ptr<ICoverService> createCoverService(db::Db& db, const std::filesystem::path& defaultSvgCoverPath)
+    std::unique_ptr<IArtworkService> createArtworkService(db::Db& db, const std::filesystem::path& defaultReleaseCoverSvgPath, const std::filesystem::path& defaultArtistImageSvgPath)
     {
-        return std::make_unique<CoverService>(db, defaultSvgCoverPath);
+        return std::make_unique<ArtworkService>(db, defaultReleaseCoverSvgPath, defaultArtistImageSvgPath);
     }
 
     using namespace image;
 
-    CoverService::CoverService(db::Db& db,
-        const std::filesystem::path& defaultSvgCoverPath)
+    ArtworkService::ArtworkService(db::Db& db,
+        const std::filesystem::path& defaultReleaseCoverSvgPath,
+        const std::filesystem::path& defaultArtistImageSvgPath)
         : _db{ db }
         , _cache{ core::Service<core::IConfig>::get()->getULong("cover-max-cache-size", 30) * 1000 * 1000 }
     {
         setJpegQuality(core::Service<core::IConfig>::get()->getULong("cover-jpeg-quality", 75));
 
-        LMS_LOG(COVER, INFO, "Default cover path = '" << defaultSvgCoverPath.string() << "'");
+        LMS_LOG(COVER, INFO, "Default release cover path = '" << defaultReleaseCoverSvgPath.string() << "'");
         LMS_LOG(COVER, INFO, "Max cache size = " << _cache.getMaxCacheSize());
 
-        _defaultCover = image::readSvgFile(defaultSvgCoverPath); // may throw
+        _defaultReleaseCover = image::readSvgFile(defaultReleaseCoverSvgPath); // may throw
+        _defaultArtistImage = image::readSvgFile(defaultArtistImageSvgPath);   // may throw
     }
 
-    std::unique_ptr<IEncodedImage> CoverService::getFromAvMediaFile(const av::IAudioFile& input, ImageSize width) const
+    std::unique_ptr<IEncodedImage> ArtworkService::getFromAvMediaFile(const av::IAudioFile& input, ImageSize width) const
     {
         std::unique_ptr<IEncodedImage> image;
 
@@ -88,7 +90,7 @@ namespace lms::cover
         return image;
     }
 
-    std::unique_ptr<IEncodedImage> CoverService::getFromImageFile(const std::filesystem::path& p, ImageSize width) const
+    std::unique_ptr<IEncodedImage> ArtworkService::getFromImageFile(const std::filesystem::path& p, ImageSize width) const
     {
         std::unique_ptr<IEncodedImage> image;
 
@@ -106,12 +108,17 @@ namespace lms::cover
         return image;
     }
 
-    std::shared_ptr<IEncodedImage> CoverService::getDefaultSvgCover()
+    std::shared_ptr<IEncodedImage> ArtworkService::getDefaultReleaseCover()
     {
-        return _defaultCover;
+        return _defaultReleaseCover;
     }
 
-    bool CoverService::checkImageFile(const std::filesystem::path& filePath) const
+    std::shared_ptr<IEncodedImage> ArtworkService::getDefaultArtistImage()
+    {
+        return _defaultArtistImage;
+    }
+
+    bool ArtworkService::checkImageFile(const std::filesystem::path& filePath) const
     {
         std::error_code ec;
 
@@ -127,7 +134,7 @@ namespace lms::cover
         return true;
     }
 
-    std::unique_ptr<IEncodedImage> CoverService::getFromTrack(const std::filesystem::path& p, ImageSize width) const
+    std::unique_ptr<IEncodedImage> ArtworkService::getTrackImage(const std::filesystem::path& p, ImageSize width) const
     {
         std::unique_ptr<IEncodedImage> image;
 
@@ -143,7 +150,7 @@ namespace lms::cover
         return image;
     }
 
-    std::shared_ptr<IEncodedImage> CoverService::getFromTrack(db::TrackId trackId, ImageSize width)
+    std::shared_ptr<IEncodedImage> ArtworkService::getTrackImage(db::TrackId trackId, ImageSize width)
     {
         const ImageCache::EntryDesc cacheEntryDesc{ trackId, width };
 
@@ -157,7 +164,7 @@ namespace lms::cover
 
             const db::Track::pointer track{ db::Track::find(session, trackId) };
             if (track && track->hasCover())
-                cover = getFromTrack(track->getAbsoluteFilePath(), width);
+                cover = getTrackImage(track->getAbsoluteFilePath(), width);
         }
 
         if (cover)
@@ -166,7 +173,7 @@ namespace lms::cover
         return cover;
     }
 
-    std::shared_ptr<IEncodedImage> CoverService::getFromRelease(db::ReleaseId releaseId, ImageSize width)
+    std::shared_ptr<IEncodedImage> ArtworkService::getReleaseCover(db::ReleaseId releaseId, ImageSize width)
     {
         using namespace db;
         const ImageCache::EntryDesc cacheEntryDesc{ releaseId, width };
@@ -193,7 +200,7 @@ namespace lms::cover
         return image;
     }
 
-    std::shared_ptr<IEncodedImage> CoverService::getFromArtist(db::ArtistId artistId, ImageSize width)
+    std::shared_ptr<IEncodedImage> ArtworkService::getArtistImage(db::ArtistId artistId, ImageSize width)
     {
         using namespace db;
         const ImageCache::EntryDesc cacheEntryDesc{ artistId, width };
@@ -220,12 +227,12 @@ namespace lms::cover
         return artistImage;
     }
 
-    void CoverService::flushCache()
+    void ArtworkService::flushCache()
     {
         _cache.flush();
     }
 
-    void CoverService::setJpegQuality(unsigned quality)
+    void ArtworkService::setJpegQuality(unsigned quality)
     {
         _jpegQuality = core::utils::clamp<unsigned>(quality, 1, 100);
 

@@ -24,7 +24,7 @@
 
 #include "database/Types.hpp"
 #include "image/IEncodedImage.hpp"
-#include "services/cover/ICoverService.hpp"
+#include "services/artwork/IArtworkService.hpp"
 
 #include "ImageCache.hpp"
 
@@ -40,34 +40,37 @@ namespace lms::av
 
 namespace lms::cover
 {
-    class CoverService : public ICoverService
+    class ArtworkService : public IArtworkService
     {
     public:
-        CoverService(db::Db& db, const std::filesystem::path& defaultSvgCoverPath);
+        ArtworkService(db::Db& db, const std::filesystem::path& defaultSvgCoverPath, const std::filesystem::path& defaultArtistImageSvgPath);
 
     private:
-        CoverService(const CoverService&) = delete;
-        CoverService& operator=(const CoverService&) = delete;
+        ArtworkService(const ArtworkService&) = delete;
+        ArtworkService& operator=(const ArtworkService&) = delete;
 
-        std::shared_ptr<image::IEncodedImage> getFromTrack(db::TrackId trackId, image::ImageSize width) override;
-        std::shared_ptr<image::IEncodedImage> getFromRelease(db::ReleaseId releaseId, image::ImageSize width) override;
-        std::shared_ptr<image::IEncodedImage> getFromArtist(db::ArtistId artistId, image::ImageSize width) override;
-        std::shared_ptr<image::IEncodedImage> getDefaultSvgCover() override;
+        std::shared_ptr<image::IEncodedImage> getTrackImage(db::TrackId trackId, image::ImageSize width) override;
+        std::shared_ptr<image::IEncodedImage> getReleaseCover(db::ReleaseId releaseId, image::ImageSize width) override;
+        std::shared_ptr<image::IEncodedImage> getArtistImage(db::ArtistId artistId, image::ImageSize width) override;
+        std::shared_ptr<image::IEncodedImage> getDefaultReleaseCover() override;
+        std::shared_ptr<image::IEncodedImage> getDefaultArtistImage() override;
+
         void flushCache() override;
         void setJpegQuality(unsigned quality) override;
 
-        std::shared_ptr<image::IEncodedImage> getFromTrack(db::Session& dbSession, db::TrackId trackId, image::ImageSize width, bool allowReleaseFallback);
+        std::shared_ptr<image::IEncodedImage> getTrackImage(db::Session& dbSession, db::TrackId trackId, image::ImageSize width, bool allowReleaseFallback);
         std::unique_ptr<image::IEncodedImage> getFromAvMediaFile(const av::IAudioFile& input, image::ImageSize width) const;
         std::unique_ptr<image::IEncodedImage> getFromImageFile(const std::filesystem::path& p, image::ImageSize width) const;
 
-        std::unique_ptr<image::IEncodedImage> getFromTrack(const std::filesystem::path& path, image::ImageSize width) const;
+        std::unique_ptr<image::IEncodedImage> getTrackImage(const std::filesystem::path& path, image::ImageSize width) const;
 
         bool checkImageFile(const std::filesystem::path& filePath) const;
 
         db::Db& _db;
 
         ImageCache _cache;
-        std::shared_ptr<image::IEncodedImage> _defaultCover;
+        std::shared_ptr<image::IEncodedImage> _defaultReleaseCover;
+        std::shared_ptr<image::IEncodedImage> _defaultArtistImage;
 
         static inline const std::vector<std::filesystem::path> _fileExtensions{ ".jpg", ".jpeg", ".png", ".bmp" }; // TODO parametrize
         unsigned _jpegQuality;

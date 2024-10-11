@@ -42,7 +42,7 @@ namespace lms::db
 
 namespace lms::ui
 {
-    class CoverResource;
+    class ArtworkResource;
     class LmsApplicationException;
     class MediaPlayer;
     class PlayQueue;
@@ -60,7 +60,7 @@ namespace lms::ui
         static LmsApplication* instance();
 
         // Session application data
-        std::shared_ptr<CoverResource> getCoverResource() { return _coverResource; }
+        std::shared_ptr<ArtworkResource> getArtworkResource() { return _artworkResource; }
         db::Db& getDb();
         db::Session& getDbSession(); // always thread safe
 
@@ -115,7 +115,7 @@ namespace lms::ui
             bool strongAuth{};
         };
         std::optional<UserAuthInfo> _user;
-        std::shared_ptr<CoverResource> _coverResource;
+        std::shared_ptr<ArtworkResource> _artworkResource;
         MediaPlayer* _mediaPlayer{};
         PlayQueue* _playQueue{};
         NotificationContainer* _notificationContainer{};

@@ -34,7 +34,7 @@
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 
-#include "resource/CoverResource.hpp"
+#include "resource/ArtworkResource.hpp"
 
 namespace lms::db
 {
@@ -54,8 +54,9 @@ namespace lms::ui::utils
 {
     std::string durationToString(std::chrono::milliseconds msDuration);
 
-    std::unique_ptr<Wt::WImage> createCover(db::ReleaseId releaseId, CoverResource::Size size);
-    std::unique_ptr<Wt::WImage> createCover(db::TrackId trackId, CoverResource::Size size);
+    std::unique_ptr<Wt::WImage> createReleaseCover(db::ReleaseId releaseId, ArtworkResource::Size size);
+    std::unique_ptr<Wt::WImage> createTrackImage(db::TrackId trackId, ArtworkResource::Size size);
+    std::unique_ptr<Wt::WImage> createArtistImage(db::ArtistId artistId, ArtworkResource::Size size);
 
     std::unique_ptr<Wt::WInteractWidget> createFilter(const Wt::WString& name, const Wt::WString& tooltip, std::string_view colorStyleClass, bool canDelete = false);
     std::unique_ptr<Wt::WInteractWidget> createFilterCluster(db::ClusterId clusterId, bool canDelete = false);

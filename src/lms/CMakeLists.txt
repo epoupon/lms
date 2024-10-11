@@ -51,7 +51,7 @@ add_executable(lms
 	ui/explore/TracksView.cpp
 	ui/resource/AudioFileResource.cpp
 	ui/resource/AudioTranscodingResource.cpp
-	ui/resource/CoverResource.cpp
+	ui/resource/ArtworkResource.cpp
 	ui/resource/DownloadResource.cpp
 	)
 
@@ -70,7 +70,7 @@ target_link_libraries(lms PRIVATE
 	lmsrecommendation
 	lmsscanner
 	lmsscrobbling
-	lmsservice-cover
+	lmsartwork
 	lmssubsonic
 	lmscore
 	)

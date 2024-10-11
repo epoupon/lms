@@ -4,7 +4,7 @@ add_executable(lms-cover
 	)
 
 target_link_libraries(lms-cover PRIVATE
-	lmsservice-cover
+	lmsartwork
 	Boost::program_options
 	)
 

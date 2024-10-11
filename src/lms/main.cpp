@@ -35,10 +35,10 @@
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "image/Image.hpp"
+#include "services/artwork/IArtworkService.hpp"
 #include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/IEnvService.hpp"
 #include "services/auth/IPasswordService.hpp"
-#include "services/cover/ICoverService.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IPlaylistGeneratorService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
@@ -340,7 +340,7 @@ namespace lms
                 throw core::LmsException{ "Bad value '" + authenticationBackend + "' for 'authentication-backend'" };
 
             image::init(argv[0]);
-            core::Service<cover::ICoverService> coverService{ cover::createCoverService(database, server.appRoot() + "/images/unknown-cover.svg") };
+            core::Service<cover::IArtworkService> artworkService{ cover::createArtworkService(database, server.appRoot() + "/images/unknown-cover.svg", server.appRoot() + "/images/unknown-artist.svg") };
             core::Service<recommendation::IRecommendationService> recommendationService{ recommendation::createRecommendationService(database) };
             core::Service<recommendation::IPlaylistGeneratorService> playlistGeneratorService{ recommendation::createPlaylistGeneratorService(database, *recommendationService.get()) };
             core::Service<scanner::IScannerService> scannerService{ scanner::createScannerService(database) };
@@ -348,7 +348,7 @@ namespace lms
             scannerService->getEvents().scanComplete.connect([&] {
                 // Flush cover cache even if no changes:
                 // covers may be external files that changed and we don't keep track of them for now (but we should)
-                coverService->flushCache();
+                artworkService->flushCache();
                 database.getTLSSession().refreshTracingLoggerStats();
             });
 

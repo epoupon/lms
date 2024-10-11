@@ -48,7 +48,7 @@ target_link_libraries(lmssubsonic PRIVATE
 	lmsrecommendation
 	lmsscanner
 	lmsscrobbling
-	lmsservice-cover
+	lmsartwork
 	lmscore
 	std::filesystem
 	)

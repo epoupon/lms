@@ -21,18 +21,19 @@
 
 #include <Wt/WResource.h>
 
+#include "database/ArtistId.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 
 namespace lms::ui
 {
-    class CoverResource : public Wt::WResource
+    class ArtworkResource : public Wt::WResource
     {
     public:
         static const std::size_t maxSize{ 512 };
 
-        CoverResource();
-        ~CoverResource();
+        ArtworkResource();
+        ~ArtworkResource();
 
         enum class Size : std::size_t
         {
@@ -40,11 +41,18 @@ namespace lms::ui
             Large = 512,
         };
 
-        std::string getReleaseUrl(db::ReleaseId releaseId, Size size) const;
-        std::string getTrackUrl(db::TrackId trackId, Size size) const;
-        std::string getDefaultUrl(Size size) const;
+        std::string getArtistImageUrl(db::ArtistId artistId, Size size) const;
+        std::string getReleaseCoverUrl(db::ReleaseId releaseId, Size size) const;
+        std::string getTrackImageUrl(db::TrackId trackId, Size size) const;
 
     private:
+        std::string getArtistIdImageUrl(db::ArtistId artistId, Size size) const;
+        std::string getReleaseIdCoverUrl(db::ReleaseId releaseId, Size size) const;
+        std::string getTrackIdImageUrl(db::TrackId trackId, Size size) const;
+
+        std::string getDefaultArtistImageUrl() const;
+        std::string getDefaultReleaseCoverUrl() const;
+
         void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
     };
 } // namespace lms::ui
