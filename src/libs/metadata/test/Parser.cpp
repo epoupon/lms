@@ -273,6 +273,45 @@ namespace lms::metadata
         EXPECT_EQ(track->medium->release->artistDisplayName, "AlbumArtist1, AlbumArtist2");
     }
 
+    TEST(Parser, customDelimitersNotForDisplayString)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "Artist1 & Artist2" } },
+                { TagType::Artists, { "Artist1", "Artist2" } },
+            }
+        };
+
+        Parser parser;
+        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ " & " });
+
+        std::unique_ptr<Track> track{ parser.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artistDisplayName, "Artist1 & Artist2");
+    }
+
+    TEST(Parser, customDelimitersUsedForArtist)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "Artist1 & Artist2" } },
+            }
+        };
+
+        Parser parser;
+        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ " & " });
+
+        std::unique_ptr<Track> track{ parser.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstructed since a custom delimiter was hit for parsing
+    }
+
     TEST(Parser, noArtistInArtist)
     {
         const TestTagReader testTags{
@@ -335,6 +374,23 @@ namespace lms::metadata
         EXPECT_EQ(track->artists[0].name, "Artist1");
         EXPECT_EQ(track->artists[1].name, "Artist2");
         EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct artist display name since multiple entries are found and nothing is set in artist
+    }
+
+    TEST(Parser, multipleArtistsInArtistsWithEndDelimiter)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "Artist1 & (CV. Artist2)" } },
+                { TagType::Artists, { "Artist1", "Artist2" } },
+            }
+        };
+
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artistDisplayName, "Artist1 & (CV. Artist2)");
     }
 
     TEST(Parser, singleArtistInAlbumArtists)

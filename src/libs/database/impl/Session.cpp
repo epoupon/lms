@@ -179,6 +179,7 @@ namespace lms::db
 
         auto transaction{ createWriteTransaction() };
         _session.execute("CREATE INDEX IF NOT EXISTS artist_id_idx ON artist(id)");
+        _session.execute("CREATE INDEX IF NOT EXISTS artist_image_idx ON artist(image_id)");
         _session.execute("CREATE INDEX IF NOT EXISTS artist_name_idx ON artist(name)");
         _session.execute("CREATE INDEX IF NOT EXISTS artist_sort_name_nocase_idx ON artist(sort_name COLLATE NOCASE)");
         _session.execute("CREATE INDEX IF NOT EXISTS artist_mbid_idx ON artist(mbid)");
@@ -195,11 +196,10 @@ namespace lms::db
         _session.execute("CREATE INDEX IF NOT EXISTS directory_path_idx ON directory(absolute_path)");
         _session.execute("CREATE INDEX IF NOT EXISTS directory_media_library_idx ON directory(media_library_id)");
 
-        _session.execute("CREATE INDEX IF NOT EXISTS image_artist_idx ON image(artist_id)");
-        _session.execute("CREATE INDEX IF NOT EXISTS image_directory_idx ON image(directory_id)");
+        _session.execute("CREATE INDEX IF NOT EXISTS image_directory_stem_idx ON image(directory_id, stem COLLATE NOCASE)");
         _session.execute("CREATE INDEX IF NOT EXISTS image_id_idx ON image(id)");
         _session.execute("CREATE INDEX IF NOT EXISTS image_path_idx ON image(absolute_file_path)");
-        _session.execute("CREATE INDEX IF NOT EXISTS image_stem_idx ON image(stem)");
+        _session.execute("CREATE INDEX IF NOT EXISTS image_stem_idx ON image(stem COLLATE NOCASE)");
 
         _session.execute("CREATE INDEX IF NOT EXISTS label_name_idx ON label(name)");
 
@@ -217,6 +217,7 @@ namespace lms::db
         _session.execute("CREATE INDEX IF NOT EXISTS rated_track_user_track_idx ON rated_track(user_id,track_id)");
 
         _session.execute("CREATE INDEX IF NOT EXISTS release_id_idx ON release(id)");
+        _session.execute("CREATE INDEX IF NOT EXISTS release_image_idx ON release(image_id)");
         _session.execute("CREATE INDEX IF NOT EXISTS release_mbid_idx ON release(mbid)");
         _session.execute("CREATE INDEX IF NOT EXISTS release_name_idx ON release(name)");
         _session.execute("CREATE INDEX IF NOT EXISTS release_name_nocase_idx ON release(name COLLATE NOCASE)");
@@ -248,10 +249,9 @@ namespace lms::db
         _session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_artist_idx ON track_artist_link(artist_id)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_artist_track_idx ON track_artist_link(artist_id, track_id)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_artist_type_idx ON track_artist_link(artist_id,type)");
-        _session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_track_idx ON track_artist_link(track_id)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_track_artist_idx ON track_artist_link(track_id, artist_id)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_track_type_idx ON track_artist_link(track_id,type)");
-        _session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_type_idx ON track_artist_link(type)");
+        _session.execute("CREATE INDEX IF NOT EXISTS track_artist_link_type_track_artist_idx ON track_artist_link(type, track_id, artist_id)");
 
         _session.execute("CREATE INDEX IF NOT EXISTS track_bookmark_user_idx ON track_bookmark(user_id)");
         _session.execute("CREATE INDEX IF NOT EXISTS track_bookmark_user_track_idx ON track_bookmark(user_id,track_id)");

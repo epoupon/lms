@@ -485,22 +485,20 @@ namespace lms::ui
             entry->bindWidget("artists-md", utils::createArtistAnchorList(artists));
         }
 
-        const auto release{ track->getRelease() };
-        if (release)
+        auto image{ utils::createTrackImage(track->getId(), ArtworkResource::Size::Small) };
+        image->addStyleClass("Lms-cover-track");
+        if (const auto release{ track->getRelease() })
         {
             entry->setCondition("if-has-release", true);
             entry->bindWidget("release", utils::createReleaseAnchor(release));
-            {
-                Wt::WAnchor* anchor{ entry->bindWidget("cover", utils::createReleaseAnchor(release, false)) };
-                auto cover{ utils::createCover(release->getId(), CoverResource::Size::Small) };
-                cover->addStyleClass("Lms-cover-track Lms-cover-anchor"); // HACK
-                anchor->setImage(std::move(cover));
-            }
+
+            Wt::WAnchor* anchor{ entry->bindWidget("cover", utils::createReleaseAnchor(release, false)) };
+            image->addStyleClass("Lms-cover-anchor"); // HACK
+            anchor->setImage(std::move(image));
         }
         else
         {
-            auto cover{ entry->bindWidget<Wt::WImage>("cover", utils::createCover(track->getId(), CoverResource::Size::Small)) };
-            cover->addStyleClass("Lms-cover-track");
+            entry->bindWidget("cover", std::move(image));
         }
 
         entry->bindString("duration", utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);

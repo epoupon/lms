@@ -14,11 +14,18 @@
 </message>
 
 <message id="Lms.Explore.Artists.template.entry">
-	${name class="text-decoration-none link-secondary"}
+	<div class="col h-100 Lms-bg-dark-hover rounded">
+		<div class="p-2">
+			<div class="Lms-responsive-square Lms-cover-container mb-1">
+				${image class="shadow-sm"}
+			</div>
+			${name class="d-block text-center text-truncate text-decoration-none link-secondary"}
+		</div>
+	</div>
 </message>
 
 <message id="Lms.Explore.Artists.template.container">
-	${elements class="d-grid gap-3"}
+	${elements class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-6 gx-2 gy-4"}
 	${loading-indicator}
 </message>
 

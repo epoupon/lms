@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,31 +19,23 @@
 
 #pragma once
 
-#include <Wt/WResource.h>
+#include <string>
+#include <vector>
 
-#include "database/ReleaseId.hpp"
-#include "database/TrackId.hpp"
+#include "ScanStepBase.hpp"
 
-namespace lms::ui
+namespace lms::scanner
 {
-    class CoverResource : public Wt::WResource
+    class ScanStepAssociateReleaseImages : public ScanStepBase
     {
     public:
-        static const std::size_t maxSize{ 512 };
-
-        CoverResource();
-        ~CoverResource();
-
-        enum class Size : std::size_t
-        {
-            Small = 128,
-            Large = 512,
-        };
-
-        std::string getReleaseUrl(db::ReleaseId releaseId, Size size) const;
-        std::string getTrackUrl(db::TrackId trackId, Size size) const;
+        ScanStepAssociateReleaseImages(InitParams& initParams);
 
     private:
-        void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
+        ScanStep getStep() const override { return ScanStep::AssociateArtistImages; }
+        core::LiteralString getStepName() const override { return "Associate release images"; }
+        void process(ScanContext& context) override;
+
+        const std::vector<std::string> _releaseFileNames;
     };
-} // namespace lms::ui
+} // namespace lms::scanner

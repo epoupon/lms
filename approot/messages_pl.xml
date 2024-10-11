@@ -119,6 +119,7 @@
 <message id="Lms.Admin.ScannerController.status-scheduled">Zaplanowano na {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">Skanowanie: krok {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-associating-artist-images">Kojarzenie obrazów artystów: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-associating-release-images">Kojarzenie obrazów albumów: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">
 	<plural case="0">Sprawdzanie duplikatów... {1} plik</plural>
 	<plural case="1">Sprawdzanie duplikatów... {1} pliki</plural>
@@ -302,18 +303,24 @@
 <message id="Lms.PlayHistory.playhistory">Historia odtwarzania</message>
 
 <!--Settings-->
+<message id="Lms.Settings.artist-release-sort-method">Metoda sortowania albumów artysty</message>
 <message id="Lms.Settings.audio">Dźwięk</message>
 <message id="Lms.Settings.audio-settings-are-local">Te ustawienia dotyczą wyłącznie tej przeglądarki!</message>
 <message id="Lms.Settings.backend.internal">Wewnętrzny</message>
 <message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.backend.listenbrainz-token">ListenBrainz API token</message>
 <message id="Lms.Settings.change-password">Zmień hasło</message>
+<message id="Lms.Settings.date-asc">Data wydania (Rosnąco)</message>
+<message id="Lms.Settings.date-desc">Data wydania (Malejąco)</message>
 <message id="Lms.Settings.default-transcoding-output-bitrate">Domyślna przepływność transkodowania</message>
 <message id="Lms.Settings.default-transcoding-output-format">Domyślny format wyjściowy transkodowania</message>
 <message id="Lms.Settings.demo-cannot-save">Nie można zapisywać na koncie demonstracyjnym!</message>
 <message id="Lms.Settings.enable-transcoding-by-default">Aktywuj domyślnie transkodowanie</message>
 <message id="Lms.Settings.feedback">Feedback</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Ustawienia</message>
+<message id="Lms.Settings.name">Nazwa albumu</message>
+<message id="Lms.Settings.original-date-asc">Oryginalna data wydania (Rosnąco)</message>
+<message id="Lms.Settings.original-date-desc">Oryginalna data wydania (Malejąco)</message>
 <message id="Lms.Settings.password-bad">Błędne hasło</message>
 <message id="Lms.Settings.password-must-fill-old-password">Należy podać stare hasło</message>
 <message id="Lms.Settings.replaygain-mode">Tryb ReplayGain</message>
@@ -331,6 +338,7 @@
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Artyści z albumów</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.track-artists">Artyści ze ścieżek</message>
 <message id="Lms.Settings.subsonic-api">Subsonic API</message>
+<message id="Lms.Settings.user-interface">Interfejs użytkownika</message>
 <message id="Lms.Settings.transcoding">Transkodowanie</message>
 <message id="Lms.Settings.transcoding-output-bitrate">Przepływność transkodowania</message>
 <message id="Lms.Settings.transcoding-output-format">Format wyjściowy transkodowania</message>

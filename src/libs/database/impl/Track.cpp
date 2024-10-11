@@ -157,6 +157,9 @@ namespace lms::db
             if (params.directory.isValid())
                 query.where("t.directory_id = ?").bind(params.directory);
 
+            if (params.hasEmbeddedImage.has_value())
+                query.where("t.has_cover = ?").bind(params.hasEmbeddedImage.value());
+
             switch (params.sortMethod)
             {
             case TrackSortMethod::None:

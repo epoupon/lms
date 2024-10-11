@@ -198,26 +198,41 @@ namespace lms::metadata
             return std::any_of(std::cbegin(subStrs), std::cend(subStrs), [&str](const std::string& subStr) { return str.find(subStr) != std::string_view::npos; });
         }
 
-        std::string computeArtistDisplayName(std::span<const Artist> artists, const std::optional<std::string> artistTag, std::span<const std::string> artistTagDelimiters)
+        std::string computeArtistDisplayName(std::span<const Artist> artists, const std::optional<std::string> artistTag, std::span<const std::string> artistsTag, std::span<const std::string> artistTagDelimiters)
         {
+            std::string artistDisplayName;
+
             if (artists.size() == 1)
-                return artists.front().name;
+                artistDisplayName = artists.front().name;
             else if (artists.size() > 1)
             {
                 std::vector<std::string_view> artistNames;
                 std::transform(std::cbegin(artists), std::cend(artists), std::back_inserter(artistNames), [](const Artist& artist) -> std::string_view { return artist.name; });
 
-                // Picard use case: if we manage to match all artists in the "artist" tag (considered single-valued), and if it does not contain any custom artist delimiter, we use it as the display name
+                // Picard use case: if we manage to match all artists in the "artist" tag (considered single-valued), and if no custom delimiter was used, we use it as the display name
                 // Otherwise, we reconstruct the string using a standard, hardcoded, join
-                if (artistTag && !strIsContainingAny(*artistTag, artistTagDelimiters) && strIsMatchingArtistNames(*artistTag, artistNames))
-                    return *artistTag;
-                else
-                    return core::stringUtils::joinStrings(artistNames, ", ");
+                if (artistTag && strIsMatchingArtistNames(*artistTag, artistNames))
+                {
+                    if (artistsTag.size() == artists.size())
+                    {
+                        // artists was used
+                        if (std::none_of(std::begin(artistsTag), std::cend(artistsTag), [&](std::string_view tag) { return strIsContainingAny(tag, artistTagDelimiters); }))
+                            artistDisplayName = *artistTag;
+                    }
+                    else
+                    {
+                        // artist was used
+                        if (!strIsContainingAny(*artistTag, artistTagDelimiters))
+                            artistDisplayName = *artistTag;
+                    }
+                }
+
+                if (artistDisplayName.empty())
+                    artistDisplayName = core::stringUtils::joinStrings(artistNames, ", ");
             }
 
-            return "";
+            return artistDisplayName;
         }
-
     } // namespace
 
     std::unique_ptr<IParser> createParser(ParserBackend parserBackend, ParserReadStyle parserReadStyle)
@@ -339,7 +354,7 @@ namespace lms::metadata
 
         track.medium = getMedium(tagReader);
         track.artists = getArtists(tagReader, { TagType::Artists, TagType::Artist }, { TagType::ArtistSortOrder }, { TagType::MusicBrainzArtistID }, _artistTagDelimiters, _defaultTagDelimiters);
-        track.artistDisplayName = computeArtistDisplayName(track.artists, getTagValueAs<std::string>(tagReader, TagType::Artist), _artistTagDelimiters);
+        track.artistDisplayName = computeArtistDisplayName(track.artists, getTagValueAs<std::string>(tagReader, TagType::Artist), getTagValuesAs<std::string>(tagReader, TagType::Artists, {}), _artistTagDelimiters);
 
         track.conductorArtists = getArtists(tagReader, { TagType::Conductors, TagType::Conductor }, { TagType::ConductorsSortOrder, TagType::ConductorSortOrder }, {}, _artistTagDelimiters, _defaultTagDelimiters);
         track.composerArtists = getArtists(tagReader, { TagType::Composers, TagType::Composer }, { TagType::ComposersSortOrder, TagType::ComposerSortOrder }, {}, _artistTagDelimiters, _defaultTagDelimiters);
@@ -400,7 +415,7 @@ namespace lms::metadata
         release->name = std::move(*releaseName);
         release->sortName = getTagValueAs<std::string>(tagReader, TagType::AlbumSortOrder).value_or("");
         release->artists = getArtists(tagReader, { TagType::AlbumArtists, TagType::AlbumArtist }, { TagType::AlbumArtistsSortOrder, TagType::AlbumArtistSortOrder }, { TagType::MusicBrainzReleaseArtistID }, _artistTagDelimiters, _defaultTagDelimiters);
-        release->artistDisplayName = computeArtistDisplayName(release->artists, getTagValueAs<std::string>(tagReader, TagType::AlbumArtist), _artistTagDelimiters);
+        release->artistDisplayName = computeArtistDisplayName(release->artists, getTagValueAs<std::string>(tagReader, TagType::AlbumArtist), getTagValuesAs<std::string>(tagReader, TagType::AlbumArtists, {}), _artistTagDelimiters);
         release->mbid = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzReleaseID);
         release->groupMBID = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzReleaseGroupID);
         release->mediumCount = getTagValueAs<std::size_t>(tagReader, TagType::TotalDiscs);

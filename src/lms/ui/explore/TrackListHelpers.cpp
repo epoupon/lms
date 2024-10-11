@@ -43,7 +43,7 @@
 #include "Utils.hpp"
 #include "common/Template.hpp"
 #include "explore/PlayQueueController.hpp"
-#include "resource/CoverResource.hpp"
+#include "resource/ArtworkResource.hpp"
 #include "resource/DownloadResource.hpp"
 
 namespace lms::ui::TrackListHelpers
@@ -173,20 +173,20 @@ namespace lms::ui::TrackListHelpers
             entry->bindWidget("artists-md", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
         }
 
+        auto image{ utils::createTrackImage(trackId, ArtworkResource::Size::Small) };
+        image->addStyleClass("Lms-cover-track");
         if (track->getRelease())
         {
             entry->setCondition("if-has-release", true);
             entry->bindWidget("release", utils::createReleaseAnchor(track->getRelease()));
+
             Wt::WAnchor* anchor{ entry->bindWidget("cover", utils::createReleaseAnchor(release, false)) };
-            auto cover{ utils::createCover(release->getId(), CoverResource::Size::Small) };
-            cover->addStyleClass("Lms-cover-track Lms-cover-anchor"); // HACK
-            anchor->setImage(std::move((cover)));
+            image->addStyleClass("Lms-cover-anchor"); // HACK
+            anchor->setImage(std::move((image)));
         }
         else
         {
-            auto cover{ utils::createCover(trackId, CoverResource::Size::Small) };
-            cover->addStyleClass("Lms-cover-track"); // HACK
-            entry->bindWidget<Wt::WImage>("cover", std::move(cover));
+            entry->bindWidget<Wt::WImage>("cover", std::move(image));
         }
 
         entry->bindString("duration", utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);

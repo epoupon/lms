@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ScanStepAssociateArtistImages.hpp"
+#include "ScanStepAssociateReleaseImages.hpp"
 
 #include <array>
 #include <cassert>
@@ -27,10 +27,10 @@
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/Path.hpp"
-#include "database/Artist.hpp"
 #include "database/Db.hpp"
 #include "database/Directory.hpp"
 #include "database/Image.hpp"
+#include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "image/Exception.hpp"
@@ -43,18 +43,18 @@ namespace lms::scanner
         constexpr std::size_t readBatchSize{ 100 };
         constexpr std::size_t writeBatchSize{ 20 };
 
-        struct ArtistImageAssociation
+        struct ReleaseImageAssociation
         {
-            db::ArtistId artistId;
+            db::ReleaseId releaseId;
             db::ImageId imageId;
         };
-        using ArtistImageAssociationContainer = std::deque<ArtistImageAssociation>;
+        using ReleaseImageAssociationContainer = std::deque<ReleaseImageAssociation>;
 
         struct SearchImageContext
         {
             db::Session& session;
-            db::ArtistId lastRetrievedArtistId;
-            const std::vector<std::string>& artistFileNames;
+            db::ReleaseId lastRetrievedReleaseId;
+            const std::vector<std::string>& releaseFileNames;
         };
 
         db::Image::pointer findImageInDirectory(SearchImageContext& searchContext, const std::filesystem::path& directoryPath)
@@ -62,9 +62,9 @@ namespace lms::scanner
             db::Image::pointer image;
 
             const db::Directory::pointer directory{ db::Directory::find(searchContext.session, directoryPath) };
-            if (directory) // may not exist for artists that are split on different media libraries
+            if (directory) // may not exist for releases that are split on different media libraries
             {
-                for (std::string_view fileStem : searchContext.artistFileNames)
+                for (std::string_view fileStem : searchContext.releaseFileNames)
                 {
                     db::Image::FindParameters params;
                     params.setDirectory(directory->getId());
@@ -83,11 +83,11 @@ namespace lms::scanner
             return image;
         }
 
-        db::Image::pointer computeBestArtistImage(SearchImageContext& searchContext, const db::Artist::pointer& artist)
+        db::Image::pointer computeBestReleaseImage(SearchImageContext& searchContext, const db::Release::pointer& release)
         {
             db::Image::pointer image;
 
-            const auto mbid{ artist->getMBID() };
+            const auto mbid{ release->getMBID() };
             if (mbid)
             {
                 // Find anywhere, since it is suppoed to be unique!
@@ -101,28 +101,24 @@ namespace lms::scanner
             {
                 std::set<std::filesystem::path> releasePaths;
                 db::Directory::FindParameters params;
-                params.setArtist(artist->getId(), { db::TrackArtistLinkType::ReleaseArtist });
+                params.setRelease(release->getId());
 
                 db::Directory::find(searchContext.session, params, [&](const db::Directory::pointer& directory) {
                     releasePaths.insert(directory->getAbsolutePath());
                 });
 
                 // Expect layout like this:
-                // ReleaseArtist/Release/Tracks'
-                //              /artist.jpg
-                //              /someOtherUserConfiguredArtistFile.jpg
-                if (!releasePaths.empty())
+                // Artist/Release/CD1/...
+                //               /CD2/...
+                //               /cover.jpg
+                if (releasePaths.size() > 1)
                 {
-                    const std::filesystem::path artistPath{ releasePaths.size() == 1 ? releasePaths.begin()->parent_path() : core::pathUtils::getLongestCommonPath(std::cbegin(releasePaths), std::cend(releasePaths)) };
-                    image = findImageInDirectory(searchContext, artistPath);
+                    const std::filesystem::path releasePath{ core::pathUtils::getLongestCommonPath(std::cbegin(releasePaths), std::cend(releasePaths)) };
+                    image = findImageInDirectory(searchContext, releasePath);
                 }
 
                 if (!image)
                 {
-                    // Expect layout like this:
-                    // ReleaseArtist/Release/Tracks'
-                    //                      /artist.jpg
-                    //                      /someOtherUserConfiguredArtistFile.jpg
                     for (const std::filesystem::path& releasePath : releasePaths)
                     {
                         image = findImageInDirectory(searchContext, releasePath);
@@ -135,40 +131,40 @@ namespace lms::scanner
             return image;
         }
 
-        bool fetchNextArtistImagesToUpdate(SearchImageContext& searchContext, ArtistImageAssociationContainer& artistImageAssociations)
+        bool fetchNextReleaseImagesToUpdate(SearchImageContext& searchContext, ReleaseImageAssociationContainer& releaseImageAssociations)
         {
-            const db::ArtistId artistId{ searchContext.lastRetrievedArtistId };
+            const db::ReleaseId releaseId{ searchContext.lastRetrievedReleaseId };
 
             {
                 auto transaction{ searchContext.session.createReadTransaction() };
 
-                db::Artist::find(searchContext.session, searchContext.lastRetrievedArtistId, readBatchSize, [&](const db::Artist::pointer& artist) {
-                    db::Image::pointer image{ computeBestArtistImage(searchContext, artist) };
+                db::Release::find(searchContext.session, searchContext.lastRetrievedReleaseId, readBatchSize, [&](const db::Release::pointer& release) {
+                    db::Image::pointer image{ computeBestReleaseImage(searchContext, release) };
 
-                    if (image != artist->getImage())
+                    if (image != release->getImage())
                     {
-                        LMS_LOG(DBUPDATER, DEBUG, "Updating artist image for artist '" << artist->getName() << "', using '" << (image ? image->getAbsoluteFilePath().c_str() : "<none>") << "'");
-                        artistImageAssociations.push_back(ArtistImageAssociation{ artist->getId(), image ? image->getId() : db::ImageId{} });
+                        LMS_LOG(DBUPDATER, DEBUG, "Updating release image for release '" << release->getName() << "', using '" << (image ? image->getAbsoluteFilePath().c_str() : "<none>") << "'");
+                        releaseImageAssociations.push_back(ReleaseImageAssociation{ release->getId(), image ? image->getId() : db::ImageId{} });
                     }
                 });
             }
 
-            return artistId != searchContext.lastRetrievedArtistId;
+            return releaseId != searchContext.lastRetrievedReleaseId;
         }
 
-        void updateArtistImage(db::Session& session, const ArtistImageAssociation& artistImageAssociation)
+        void updateReleaseImage(db::Session& session, const ReleaseImageAssociation& releaseImageAssociation)
         {
-            db::Artist::pointer artist{ db::Artist::find(session, artistImageAssociation.artistId) };
-            assert(artist);
+            db::Release::pointer release{ db::Release::find(session, releaseImageAssociation.releaseId) };
+            assert(release);
 
             db::Image::pointer image;
-            if (artistImageAssociation.imageId.isValid())
-                image = db::Image::find(session, artistImageAssociation.imageId);
+            if (releaseImageAssociation.imageId.isValid())
+                image = db::Image::find(session, releaseImageAssociation.imageId);
 
-            artist.modify()->setImage(image);
+            release.modify()->setImage(image);
         }
 
-        void updateArtistImages(db::Session& session, ArtistImageAssociationContainer& imageAssociations)
+        void updateReleaseImages(db::Session& session, ReleaseImageAssociationContainer& imageAssociations)
         {
             while (!imageAssociations.empty())
             {
@@ -176,34 +172,34 @@ namespace lms::scanner
 
                 for (std::size_t i{}; !imageAssociations.empty() && i < writeBatchSize; ++i)
                 {
-                    updateArtistImage(session, imageAssociations.front());
+                    updateReleaseImage(session, imageAssociations.front());
                     imageAssociations.pop_front();
                 }
             }
         }
 
-        std::vector<std::string> constructArtistFileNames()
+        std::vector<std::string> constructReleaseFileNames()
         {
             std::vector<std::string> res;
 
-            core::Service<core::IConfig>::get()->visitStrings("artist-image-file-names",
+            core::Service<core::IConfig>::get()->visitStrings("cover-preferred-file-names",
                 [&res](std::string_view fileName) {
                     res.emplace_back(fileName);
                 },
-                { "artist" });
+                { "cover", "front", "folder", "default" });
 
             return res;
         }
 
     } // namespace
 
-    ScanStepAssociateArtistImages::ScanStepAssociateArtistImages(InitParams& initParams)
+    ScanStepAssociateReleaseImages::ScanStepAssociateReleaseImages(InitParams& initParams)
         : ScanStepBase{ initParams }
-        , _artistFileNames{ constructArtistFileNames() }
+        , _releaseFileNames{ constructReleaseFileNames() }
     {
     }
 
-    void ScanStepAssociateArtistImages::process(ScanContext& context)
+    void ScanStepAssociateReleaseImages::process(ScanContext& context)
     {
         if (_abortScan)
             return;
@@ -215,22 +211,22 @@ namespace lms::scanner
 
         {
             auto transaction{ session.createReadTransaction() };
-            context.currentStepStats.totalElems = db::Artist::getCount(session);
+            context.currentStepStats.totalElems = db::Release::getCount(session);
         }
 
         SearchImageContext searchContext{
             .session = session,
-            .lastRetrievedArtistId = {},
-            .artistFileNames = _artistFileNames,
+            .lastRetrievedReleaseId = {},
+            .releaseFileNames = _releaseFileNames,
         };
 
-        ArtistImageAssociationContainer artistImageAssociations;
-        while (fetchNextArtistImagesToUpdate(searchContext, artistImageAssociations))
+        ReleaseImageAssociationContainer releaseImageAssociations;
+        while (fetchNextReleaseImagesToUpdate(searchContext, releaseImageAssociations))
         {
             if (_abortScan)
                 return;
 
-            updateArtistImages(session, artistImageAssociations);
+            updateReleaseImages(session, releaseImageAssociations);
             context.currentStepStats.processedElems += readBatchSize;
             _progressCallback(context.currentStepStats);
         }

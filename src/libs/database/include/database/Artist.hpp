@@ -162,7 +162,7 @@ namespace lms::db
             Wt::Dbo::field(a, _sortName, "sort_name");
             Wt::Dbo::field(a, _MBID, "mbid");
 
-            Wt::Dbo::hasOne(a, _image, "artist");
+            Wt::Dbo::belongsTo(a, _image, "image", Wt::Dbo::OnDeleteSetNull);
             Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "artist");
             Wt::Dbo::hasMany(a, _starredArtists, Wt::Dbo::ManyToMany, "user_starred_artists", "", Wt::Dbo::OnDeleteCascade);
         }
@@ -179,7 +179,7 @@ namespace lms::db
         std::string _sortName;
         std::string _MBID; // Musicbrainz Identifier
 
-        Wt::Dbo::weak_ptr<Image> _image;
+        Wt::Dbo::ptr<Image> _image;
         Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks; // Tracks involving this artist
         Wt::Dbo::collection<Wt::Dbo::ptr<StarredArtist>> _starredArtists;     // starred entries for this artist
     };

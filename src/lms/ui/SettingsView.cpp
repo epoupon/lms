@@ -37,6 +37,7 @@
 
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
+#include "Tooltip.hpp"
 #include "common/DoubleValidator.hpp"
 #include "common/MandatoryValidator.hpp"
 #include "common/PasswordValidator.hpp"
@@ -51,6 +52,7 @@ namespace lms::ui
     {
     public:
         // Associate each field with a unique string literal.
+        static inline const Field ArtistReleaseSortMethodField{ "artist-release-sort-method" };
         static inline const Field TranscodingModeField{ "transcoding-mode" };
         static inline const Field TranscodeFormatField{ "transcoding-output-format" };
         static inline const Field TranscodeBitrateField{ "transcoding-output-bitrate" };
@@ -68,10 +70,11 @@ namespace lms::ui
         static inline const Field PasswordField{ "password" };
         static inline const Field PasswordConfirmField{ "password-confirm" };
 
+        using ArtistReleaseSortMethodModel = ValueStringModel<db::ReleaseSortMethod>;
         using TranscodingModeModel = ValueStringModel<MediaPlayer::Settings::Transcoding::Mode>;
         using ReplayGainModeModel = ValueStringModel<MediaPlayer::Settings::ReplayGain::Mode>;
-        using FeedbackBackendModel = ValueStringModel<FeedbackBackend>;
-        using ScrobblingBackendModel = ValueStringModel<ScrobblingBackend>;
+        using FeedbackBackendModel = ValueStringModel<db::FeedbackBackend>;
+        using ScrobblingBackendModel = ValueStringModel<db::ScrobblingBackend>;
 
         SettingsModel(auth::IPasswordService* authPasswordService, bool withOldPassword)
             : _authPasswordService{ authPasswordService }
@@ -79,6 +82,7 @@ namespace lms::ui
         {
             initializeModels();
 
+            addField(ArtistReleaseSortMethodField);
             addField(TranscodingModeField);
             addField(TranscodeBitrateField);
             addField(TranscodeFormatField);
@@ -106,6 +110,7 @@ namespace lms::ui
                 addField(PasswordConfirmField);
             }
 
+            setValidator(ArtistReleaseSortMethodField, createMandatoryValidator());
             setValidator(TranscodingModeField, createMandatoryValidator());
             setValidator(TranscodeBitrateField, createMandatoryValidator());
             setValidator(TranscodeFormatField, createMandatoryValidator());
@@ -122,6 +127,7 @@ namespace lms::ui
             loadData();
         }
 
+        std::shared_ptr<ArtistReleaseSortMethodModel> getArtistReleaseSortMethodModel() { return _artistReleaseSortMethodModel; }
         std::shared_ptr<TranscodingModeModel> getTranscodingModeModel() { return _transcodingModeModeModel; }
         std::shared_ptr<Wt::WAbstractItemModel> getTranscodingOutputBitrateModel() { return _transcodingOutputBitrateModel; }
         std::shared_ptr<Wt::WAbstractItemModel> getTranscodingOutputFormatModel() { return _transcodingOutputFormatModel; }
@@ -135,6 +141,12 @@ namespace lms::ui
             auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
             User::pointer user{ LmsApp->getUser() };
+
+            {
+                auto artistReleaseSortMethodRow{ _artistReleaseSortMethodModel->getRowFromString(valueText(ArtistReleaseSortMethodField)) };
+                if (artistReleaseSortMethodRow)
+                    user.modify()->setUIArtistReleaseSortMethod(_artistReleaseSortMethodModel->getValue(*artistReleaseSortMethodRow));
+            }
 
             {
                 MediaPlayer::Settings settings;
@@ -203,6 +215,12 @@ namespace lms::ui
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
             User::pointer user{ LmsApp->getUser() };
+
+            {
+                auto artistReleaseSortMethodRow{ _artistReleaseSortMethodModel->getRowFromValue(user->getUIArtistReleaseSortMethod()) };
+                if (artistReleaseSortMethodRow)
+                    setValue(ArtistReleaseSortMethodField, _artistReleaseSortMethodModel->getString(*artistReleaseSortMethodRow));
+            }
 
             {
                 const auto settings{ *LmsApp->getMediaPlayer().getSettings() };
@@ -315,6 +333,13 @@ namespace lms::ui
     private:
         void initializeModels()
         {
+            _artistReleaseSortMethodModel = std::make_shared<ArtistReleaseSortMethodModel>();
+            _artistReleaseSortMethodModel->add(Wt::WString::tr("Lms.Settings.date-asc"), db::ReleaseSortMethod::DateAsc);
+            _artistReleaseSortMethodModel->add(Wt::WString::tr("Lms.Settings.date-desc"), db::ReleaseSortMethod::DateDesc);
+            _artistReleaseSortMethodModel->add(Wt::WString::tr("Lms.Settings.original-date-asc"), db::ReleaseSortMethod::OriginalDate);
+            _artistReleaseSortMethodModel->add(Wt::WString::tr("Lms.Settings.original-date-desc"), db::ReleaseSortMethod::OriginalDateDesc);
+            _artistReleaseSortMethodModel->add(Wt::WString::tr("Lms.Settings.name"), db::ReleaseSortMethod::Name);
+
             _transcodingModeModeModel = std::make_shared<TranscodingModeModel>();
             _transcodingModeModeModel->add(Wt::WString::tr("Lms.Settings.transcoding-mode.always"), MediaPlayer::Settings::Transcoding::Mode::Always);
             _transcodingModeModeModel->add(Wt::WString::tr("Lms.Settings.transcoding-mode.never"), MediaPlayer::Settings::Transcoding::Mode::Never);
@@ -355,6 +380,7 @@ namespace lms::ui
         auth::IPasswordService* _authPasswordService{};
         bool _withOldPassword{};
 
+        std::shared_ptr<ArtistReleaseSortMethodModel> _artistReleaseSortMethodModel;
         std::shared_ptr<TranscodingModeModel> _transcodingModeModeModel;
         std::shared_ptr<ValueStringModel<Bitrate>> _transcodingOutputBitrateModel;
         std::shared_ptr<ValueStringModel<TranscodingOutputFormat>> _transcodingOutputFormatModel;
@@ -425,12 +451,25 @@ namespace lms::ui
             t->setFormWidget(SettingsModel::PasswordConfirmField, std::move(passwordConfirm));
         }
 
+        // User interface
+        {
+            auto artistReleaseSortMethod{ std::make_unique<Wt::WComboBox>() };
+            artistReleaseSortMethod->setModel(model->getArtistReleaseSortMethodModel());
+            t->setFormWidget(SettingsModel::ArtistReleaseSortMethodField, std::move(artistReleaseSortMethod));
+        }
+
         // Audio
         {
             // Transcode
             auto transcodingMode{ std::make_unique<Wt::WComboBox>() };
-            auto* transcodingModeRaw{ transcodingMode.get() };
             transcodingMode->setModel(model->getTranscodingModeModel());
+            transcodingMode->activated().connect([=](int row) {
+                const bool enable{ model->getTranscodingModeModel()->getValue(row) != MediaPlayer::Settings::Transcoding::Mode::Never };
+                model->setReadOnly(SettingsModel::TranscodeFormatField, !enable);
+                model->setReadOnly(SettingsModel::TranscodeBitrateField, !enable);
+                t->updateModel(model.get());
+                t->updateView(model.get());
+            });
             t->setFormWidget(SettingsModel::TranscodingModeField, std::move(transcodingMode));
 
             // Format
@@ -443,17 +482,15 @@ namespace lms::ui
             transcodingOutputBitrate->setModel(model->getTranscodingOutputBitrateModel());
             t->setFormWidget(SettingsModel::TranscodeBitrateField, std::move(transcodingOutputBitrate));
 
-            transcodingModeRaw->activated().connect([=](int row) {
-                const bool enable{ model->getTranscodingModeModel()->getValue(row) != MediaPlayer::Settings::Transcoding::Mode::Never };
-                model->setReadOnly(SettingsModel::TranscodeFormatField, !enable);
-                model->setReadOnly(SettingsModel::TranscodeBitrateField, !enable);
+            // Replay gain mode
+            auto replayGainMode{ std::make_unique<Wt::WComboBox>() };
+            replayGainMode->activated().connect([=](int row) {
+                const bool enable{ model->getReplayGainModeModel()->getValue(row) != MediaPlayer::Settings::ReplayGain::Mode::None };
+                model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainField, !enable);
+                model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainIfNoInfoField, !enable);
                 t->updateModel(model.get());
                 t->updateView(model.get());
             });
-
-            // Replay gain mode
-            auto replayGainMode{ std::make_unique<Wt::WComboBox>() };
-            auto* replayGainModeRaw{ replayGainMode.get() };
             replayGainMode->setModel(model->getReplayGainModeModel());
             t->setFormWidget(SettingsModel::ReplayGainModeField, std::move(replayGainMode));
 
@@ -467,13 +504,6 @@ namespace lms::ui
             replayGainPreampGainIfNoInfo->setRange(MediaPlayer::Settings::ReplayGain::minPreAmpGain, MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
             t->setFormWidget(SettingsModel::ReplayGainPreAmpGainIfNoInfoField, std::move(replayGainPreampGainIfNoInfo));
 
-            replayGainModeRaw->activated().connect([=](int row) {
-                const bool enable{ model->getReplayGainModeModel()->getValue(row) != MediaPlayer::Settings::ReplayGain::Mode::None };
-                model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainField, !enable);
-                model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainIfNoInfoField, !enable);
-                t->updateModel(model.get());
-                t->updateView(model.get());
-            });
             if (LmsApp->getMediaPlayer().getSettings()->replayGain.mode == MediaPlayer::Settings::ReplayGain::Mode::None)
             {
                 model->setReadOnly(SettingsModel::SettingsModel::ReplayGainPreAmpGainField, true);
@@ -573,6 +603,8 @@ namespace lms::ui
         });
 
         t->updateView(model.get());
+
+        initTooltipsForWidgetTree(*t);
     }
 
 } // namespace lms::ui

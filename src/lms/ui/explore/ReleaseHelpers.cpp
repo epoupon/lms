@@ -43,9 +43,9 @@ namespace lms::ui::releaseListHelpers
 
             {
                 Wt::WAnchor* anchor{ entry->bindWidget("cover", utils::createReleaseAnchor(release, false)) };
-                auto cover{ utils::createCover(release->getId(), CoverResource::Size::Large) };
-                cover->addStyleClass("Lms-cover-release Lms-cover-anchor");
-                anchor->setImage(std::move(cover));
+                auto image{ utils::createReleaseCover(release->getId(), ArtworkResource::Size::Large) };
+                image->addStyleClass("Lms-cover-release Lms-cover-anchor"); // hack
+                anchor->setImage(std::move(image));
             }
 
             auto artistAnchors{ utils::createArtistsAnchorsForRelease(release, artist ? artist->getId() : ArtistId{}, "link-secondary") };

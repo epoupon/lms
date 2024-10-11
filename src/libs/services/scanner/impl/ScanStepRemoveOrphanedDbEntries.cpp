@@ -37,6 +37,8 @@ namespace lms::scanner
         removeOrphanedClusterTypes(context);
         removeOrphanedArtists(context);
         removeOrphanedReleases(context);
+        removeOrphanedReleaseTypes(context);
+        removeOrphanedLabels(context);
         removeOrphanedDirectories(context);
     }
 
@@ -62,6 +64,18 @@ namespace lms::scanner
     {
         LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned releases...");
         removeOrphanedEntries<db::Release>(context);
+    }
+
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedReleaseTypes(ScanContext& context)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned release types...");
+        removeOrphanedEntries<db::ReleaseType>(context);
+    }
+
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedLabels(ScanContext& context)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned labels...");
+        removeOrphanedEntries<db::Label>(context);
     }
 
     void ScanStepRemoveOrphanedDbEntries::removeOrphanedDirectories(ScanContext& context)

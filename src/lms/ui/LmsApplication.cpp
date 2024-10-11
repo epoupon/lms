@@ -37,9 +37,9 @@
 #include "database/Session.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
+#include "services/artwork/IArtworkService.hpp"
 #include "services/auth/IEnvService.hpp"
 #include "services/auth/IPasswordService.hpp"
-#include "services/cover/ICoverService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 
 #include "Auth.hpp"
@@ -61,9 +61,9 @@
 #include "common/Template.hpp"
 #include "explore/Explore.hpp"
 #include "explore/Filters.hpp"
+#include "resource/ArtworkResource.hpp"
 #include "resource/AudioFileResource.hpp"
 #include "resource/AudioTranscodingResource.hpp"
-#include "resource/CoverResource.hpp"
 
 namespace lms::ui
 {
@@ -400,7 +400,7 @@ namespace lms::ui
     {
         LMS_SCOPED_TRACE_OVERVIEW("UI", "ApplicationCreateHome");
 
-        _coverResource = std::make_shared<CoverResource>();
+        _artworkResource = std::make_shared<ArtworkResource>();
 
         declareJavaScriptFunction("onLoadCover", "function(id) { id.className += \" Lms-cover-loaded\"}");
         declareJavaScriptFunction("updateActiveNav",

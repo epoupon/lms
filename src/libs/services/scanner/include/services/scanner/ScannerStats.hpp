@@ -62,6 +62,7 @@ namespace lms::scanner
     enum class ScanStep
     {
         AssociateArtistImages,
+        AssociateReleaseImages,
         CheckForDuplicatedFiles,
         CheckForRemovedFiles,
         ComputeClusterStats,

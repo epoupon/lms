@@ -32,7 +32,7 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
-#include "services/cover/ICoverService.hpp"
+#include "services/artwork/IArtworkService.hpp"
 
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"
@@ -267,14 +267,14 @@ namespace lms::api::subsonic
 
         std::shared_ptr<image::IEncodedImage> cover;
         if (trackId)
-            cover = core::Service<cover::ICoverService>::get()->getFromTrack(*trackId, size);
+            cover = core::Service<cover::IArtworkService>::get()->getTrackImage(*trackId, size);
         else if (releaseId)
-            cover = core::Service<cover::ICoverService>::get()->getFromRelease(*releaseId, size);
+            cover = core::Service<cover::IArtworkService>::get()->getReleaseCover(*releaseId, size);
         else if (artistId)
-            cover = core::Service<cover::ICoverService>::get()->getFromArtist(*artistId, size);
+            cover = core::Service<cover::IArtworkService>::get()->getArtistImage(*artistId, size);
 
         if (!cover && context.enableDefaultCover && !artistId)
-            cover = core::Service<cover::ICoverService>::get()->getDefaultSvgCover();
+            cover = core::Service<cover::IArtworkService>::get()->getDefaultReleaseCover();
 
         if (!cover)
         {

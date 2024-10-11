@@ -282,7 +282,7 @@ namespace lms::api::subsonic
     SubsonicResource::SubsonicResource(db::Db& db)
         : _serverProtocolVersionsByClient{ readConfigProtocolVersions() }
         , _openSubsonicDisabledClients{ readOpenSubsonicDisabledClients() }
-        , _defaultCoverClients{ readDefaultCoverClients() }
+        , _defaultReleaseCoverClients{ readDefaultCoverClients() }
         , _db{ db }
     {
     }
@@ -410,7 +410,7 @@ namespace lms::api::subsonic
         const ClientInfo clientInfo{ getClientInfo(request) };
         const db::UserId userId{ authenticateUser(request, clientInfo) };
         bool enableOpenSubsonic{ !_openSubsonicDisabledClients.contains(clientInfo.name) };
-        bool enableDefaultCover{ _defaultCoverClients.contains(clientInfo.name) };
+        bool enableDefaultCover{ _defaultReleaseCoverClients.contains(clientInfo.name) };
         const ResponseFormat format{ getParameterAs<std::string>(request.getParameterMap(), "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml };
 
         db::User::pointer user;

@@ -40,7 +40,7 @@ namespace lms::ui
             return Wt::cpp17::any_cast<Wt::WString>(data(index(static_cast<int>(row), 0), Wt::ItemDataRole::Display));
         }
 
-        std::optional<std::size_t> getRowFromString(const Wt::WString& value)
+        std::optional<std::size_t> getRowFromString(const Wt::WString& value) const
         {
             for (std::size_t i{}; i < static_cast<std::size_t>(rowCount()); ++i)
             {
@@ -51,7 +51,7 @@ namespace lms::ui
             return std::nullopt;
         }
 
-        std::optional<std::size_t> getRowFromValue(const T& value)
+        std::optional<std::size_t> getRowFromValue(const T& value) const
         {
             for (std::size_t i{}; i < static_cast<std::size_t>(rowCount()); ++i)
             {

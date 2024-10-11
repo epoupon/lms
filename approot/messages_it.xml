@@ -110,6 +110,7 @@
 <message id="Lms.Admin.ScannerController.status-scheduled">Pianificato il {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">Scansione: passo {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-associating-artist-images">Associando immagini degli artisti: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-associating-release-images">Associando immagini degli album: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">Controllo duplicati... {1} files</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Controllo file... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">Compattazione del database...</message>
@@ -276,18 +277,24 @@
 <message id="Lms.PlayHistory.playhistory">Storico riproduzione</message>
 
 <!--Settings-->
+<message id="Lms.Settings.artist-release-sort-method">Metodo per ordinare gli album dell'artista</message>
 <message id="Lms.Settings.audio">Audio</message>
 <message id="Lms.Settings.audio-settings-are-local">Queste impostazioni sono salvate localmente su questo dispositivo!</message>
 <message id="Lms.Settings.backend.internal">Interno</message>
 <message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.backend.listenbrainz-token">Token API ListenBrainz</message>
 <message id="Lms.Settings.change-password">Cambia password</message>
+<message id="Lms.Settings.date-asc">Data di uscita (Crescente)</message>
+<message id="Lms.Settings.date-desc">Data di uscita (Decrescente)</message>
 <message id="Lms.Settings.default-transcoding-output-bitrate">Bitrate di default per la transcodifica</message>
 <message id="Lms.Settings.default-transcoding-output-format">Formato di default per la transcodifica</message>
 <message id="Lms.Settings.demo-cannot-save">Non posso salvare le impostazioni utilizzando l'account demo!</message>
 <message id="Lms.Settings.enable-transcoding-by-default">Abilita transcodifica di default</message>
 <message id="Lms.Settings.feedback">Feedback</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Impostazioni</message>
+<message id="Lms.Settings.name">Nome dell'album</message>
+<message id="Lms.Settings.original-date-asc">Data di uscita originale (Crescente)</message>
+<message id="Lms.Settings.original-date-desc">Data di uscita originale (Decrescente)</message>
 <message id="Lms.Settings.password-bad">Password errata</message>
 <message id="Lms.Settings.password-must-fill-old-password">Devi inserire la password attuale</message>
 <message id="Lms.Settings.replaygain-mode">Modalità ReplayGain</message>
@@ -305,6 +312,7 @@
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Artisti album</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.track-artists">Artisti tracce</message>
 <message id="Lms.Settings.subsonic-api">Subsonic API</message>
+<message id="Lms.Settings.user-interface">Interfaccia utente</message>
 <message id="Lms.Settings.transcoding">Transcodifica</message>
 <message id="Lms.Settings.transcoding-output-bitrate">Bitrate transcodifica</message>
 <message id="Lms.Settings.transcoding-output-format">Formato di transcodifica</message>

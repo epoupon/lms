@@ -94,7 +94,7 @@ namespace lms::api::subsonic
 
         artistNode.setAttribute("id", idToString(artist->getId()));
         artistNode.setAttribute("name", artist->getName());
-        if (const db::Image::pointer artistImage{ artist->getImage() })
+        if (artist->getImage())
             artistNode.setAttribute("coverArt", idToString(artist->getId()));
 
         const std::size_t count{ Release::getCount(context.dbSession, Release::FindParameters{}.setArtist(artist->getId())) };

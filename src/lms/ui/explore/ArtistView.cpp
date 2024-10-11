@@ -108,7 +108,7 @@ namespace lms::ui
         if (!artistId)
             throw ArtistNotFoundException{};
 
-        const auto similarArtistIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(*artistId, { TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist }, 5) };
+        const auto similarArtistIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(*artistId, { TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist }, 6) };
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
@@ -197,7 +197,7 @@ namespace lms::ui
         params.setClusters(_filters.getClusters());
         params.setMediaLibrary(_filters.getMediaLibrary());
         params.setArtist(_artistId, { TrackArtistLinkType::ReleaseArtist }, {});
-        params.setSortMethod(ReleaseSortMethod::OriginalDateDesc);
+        params.setSortMethod(LmsApp->getUser()->getUIArtistReleaseSortMethod());
 
         const auto releases{ Release::findIds(LmsApp->getDbSession(), params) };
         if (!releases.results.empty())

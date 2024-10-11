@@ -19,8 +19,12 @@
 
 #include "Common.hpp"
 
+#include "database/Image.hpp"
+
 namespace lms::db::tests
 {
+    using ScopedImage = ScopedEntity<db::Image>;
+
     TEST_F(DatabaseFixture, Artist)
     {
         {
@@ -695,6 +699,30 @@ namespace lms::db::tests
             const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setRelease(release.getId())) };
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_image)
+    {
+        ScopedArtist release{ session, "MyArtist" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_FALSE(release.get()->getImage());
+        }
+
+        ScopedImage image{ session, "/myImage" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            release.get().modify()->setImage(image.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto artistImage(release.get()->getImage());
+            ASSERT_TRUE(artistImage);
+            EXPECT_EQ(artistImage->getId(), image.getId());
         }
     }
 } // namespace lms::db::tests

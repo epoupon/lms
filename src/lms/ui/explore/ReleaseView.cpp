@@ -245,7 +245,7 @@ namespace lms::ui
 
         refreshReleaseArtists(release);
 
-        bindWidget<Wt::WImage>("cover", utils::createCover(release->getId(), CoverResource::Size::Large));
+        bindWidget<Wt::WImage>("cover", utils::createReleaseCover(release->getId(), ArtworkResource::Size::Large));
 
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
         {

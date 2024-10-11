@@ -19,8 +19,11 @@
 
 #include "Common.hpp"
 
+#include "database/Image.hpp"
+
 namespace lms::db::tests
 {
+    using ScopedImage = ScopedEntity<db::Image>;
     using ScopedLabel = ScopedEntity<db::Label>;
     using ScopedReleaseType = ScopedEntity<db::ReleaseType>;
 
@@ -749,6 +752,43 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Label_orphan)
+    {
+        ScopedLabel label{ session, "MyLabel" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto labels{ Label::findOrphanIds(session) };
+            ASSERT_EQ(labels.results.size(), 1);
+            EXPECT_EQ(labels.results.front(), label.getId());
+        }
+
+        ScopedRelease release{ session, "MyRelease" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            release.get().modify()->addLabel(label.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto labels{ Label::findOrphanIds(session) };
+            EXPECT_EQ(labels.results.size(), 0);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            release.get().modify()->clearLabels();
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto labels{ Label::findOrphanIds(session) };
+            ASSERT_EQ(labels.results.size(), 1);
+            EXPECT_EQ(labels.results.front(), label.getId());
+        }
+    }
+
     TEST_F(DatabaseFixture, ReleaseType)
     {
         {
@@ -763,6 +803,44 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             ReleaseType::pointer res{ ReleaseType::find(session, "album") };
             EXPECT_EQ(res, releaseType.get());
+        }
+    }
+
+    TEST_F(DatabaseFixture, ReleaseType_orphan)
+    {
+        // Orphan tests
+        ScopedReleaseType releaseType{ session, "album" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto releaseTypes{ ReleaseType::findOrphanIds(session) };
+            ASSERT_EQ(releaseTypes.results.size(), 1);
+            EXPECT_EQ(releaseTypes.results.front(), releaseType.getId());
+        }
+
+        ScopedRelease release{ session, "MyRelease" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            release.get().modify()->addReleaseType(releaseType.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto releaseTypes{ ReleaseType::findOrphanIds(session) };
+            EXPECT_EQ(releaseTypes.results.size(), 0);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            release.get().modify()->clearReleaseTypes();
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto releaseTypes{ ReleaseType::findOrphanIds(session) };
+            ASSERT_EQ(releaseTypes.results.size(), 1);
+            EXPECT_EQ(releaseTypes.results.front(), releaseType.getId());
         }
     }
 
@@ -961,6 +1039,30 @@ namespace lms::db::tests
             EXPECT_EQ(release1->getTrackCount(), 2);
             EXPECT_EQ(release2->getTrackCount(), 1);
             EXPECT_EQ(release3->getTrackCount(), 0);
+        }
+    }
+
+    TEST_F(DatabaseFixture, Release_image)
+    {
+        ScopedRelease release{ session, "MyRelease" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_FALSE(release.get()->getImage());
+        }
+
+        ScopedImage image{ session, "/myImage" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            release.get().modify()->setImage(image.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto releaseImage(release.get()->getImage());
+            ASSERT_TRUE(releaseImage);
+            EXPECT_EQ(releaseImage->getId(), image.getId());
         }
     }
 } // namespace lms::db::tests
