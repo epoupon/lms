@@ -273,7 +273,47 @@ namespace lms::metadata
         EXPECT_EQ(track->medium->release->artistDisplayName, "AlbumArtist1, AlbumArtist2");
     }
 
-    TEST(Parser, customDelimitersNotForDisplayString)
+    TEST(Parser, customDelimiters_foundInArtist)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "Artist1; Artist2" } },
+                { TagType::Artists, { "Artist1", "Artist2" } },
+            }
+        };
+
+        Parser parser;
+        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ "; " });
+
+        std::unique_ptr<Track> track{ parser.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct the display name since we hit a custom delimiter in Artist
+    }
+
+    TEST(Parser, customDelimiters_foundInArtists)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "Artist1 feat. Artist2" } },
+                { TagType::Artists, { "Artist1; Artist2" } },
+            }
+        };
+
+        Parser parser;
+        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ "; " });
+
+        std::unique_ptr<Track> track{ parser.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artistDisplayName, "Artist1 feat. Artist2");
+    }
+
+    TEST(Parser, customDelimiters_notUsed)
     {
         const TestTagReader testTags{
             {
@@ -283,7 +323,7 @@ namespace lms::metadata
         };
 
         Parser parser;
-        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ " & " });
+        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ "; " });
 
         std::unique_ptr<Track> track{ parser.parse(testTags) };
 
@@ -293,7 +333,7 @@ namespace lms::metadata
         EXPECT_EQ(track->artistDisplayName, "Artist1 & Artist2");
     }
 
-    TEST(Parser, customDelimitersUsedForArtist)
+    TEST(Parser, customDelimiters_onlyInArtist)
     {
         const TestTagReader testTags{
             {

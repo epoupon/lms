@@ -270,6 +270,7 @@ namespace lms::db
 
         // Get the artists of this release
         std::vector<ObjectPtr<Artist>> getArtists(TrackArtistLinkType type = TrackArtistLinkType::Artist) const;
+        std::vector<ArtistId> getArtistIds(TrackArtistLinkType type = TrackArtistLinkType::Artist) const;
         std::vector<ObjectPtr<Artist>> getReleaseArtists() const { return getArtists(TrackArtistLinkType::ReleaseArtist); }
         bool hasVariousArtists() const;
         std::vector<pointer> getSimilarReleases(std::optional<std::size_t> offset = {}, std::optional<std::size_t> count = {}) const;

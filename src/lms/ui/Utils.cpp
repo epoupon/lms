@@ -239,29 +239,24 @@ namespace lms::ui::utils
     {
         using namespace db;
 
-        Artist::FindParameters params;
-        params.setRelease(release->getId());
-        params.setLinkType(TrackArtistLinkType::ReleaseArtist);
-
-        if (const auto releaseArtists{ Artist::findIds(LmsApp->getDbSession(), params) }; !releaseArtists.results.empty())
+        if (const std::vector<ArtistId> releaseArtists{ release->getArtistIds(TrackArtistLinkType::ReleaseArtist) }; !releaseArtists.empty())
         {
-            if (releaseArtists.results.size() == 1 && releaseArtists.results.front() == omitIfMatchThisArtist)
+            if (releaseArtists.size() == 1 && releaseArtists.front() == omitIfMatchThisArtist)
                 return {};
 
-            return createArtistDisplayNameWithAnchors(release->getArtistDisplayName(), releaseArtists.results, cssAnchorClass);
+            return createArtistDisplayNameWithAnchors(release->getArtistDisplayName(), releaseArtists, cssAnchorClass);
         }
 
-        params.setLinkType(TrackArtistLinkType::Artist);
-        const auto artists{ Artist::findIds(LmsApp->getDbSession(), params) };
-        if (artists.results.size() == 1)
+        const auto artists{ release->getArtistIds(TrackArtistLinkType::Artist) };
+        if (artists.size() == 1)
         {
-            if (artists.results.front() == omitIfMatchThisArtist)
+            if (artists.front() == omitIfMatchThisArtist)
                 return {};
 
-            return createArtistAnchorList({ artists.results.front() }, cssAnchorClass);
+            return createArtistAnchorList({ artists.front() }, cssAnchorClass);
         }
 
-        if (artists.results.size() > 1)
+        if (artists.size() > 1)
         {
             auto res{ std::make_unique<Wt::WContainerWidget>() };
             res->addNew<Wt::WText>(Wt::WString::tr("Lms.Explore.various-artists"));
