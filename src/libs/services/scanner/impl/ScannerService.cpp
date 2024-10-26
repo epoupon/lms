@@ -290,7 +290,7 @@ namespace lms::scanner
                 .currentStep = scanStep->getStep(),
                 .totalElems = 0,
                 .processedElems = 0
-                };
+            };
 
             notifyInProgress(scanContext.currentStepStats);
             scanStep->process(scanContext);

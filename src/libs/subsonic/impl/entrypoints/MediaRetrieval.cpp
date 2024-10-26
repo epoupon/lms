@@ -31,11 +31,13 @@
 #include "core/Utils.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "database/TrackLyrics.hpp"
 #include "database/User.hpp"
 #include "services/artwork/IArtworkService.hpp"
 
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"
+#include "responses/Lyrics.hpp"
 
 namespace lms::api::subsonic
 {
@@ -188,6 +190,59 @@ namespace lms::api::subsonic
             return parameters;
         }
     } // namespace
+
+    Response handleGetLyrics(RequestContext& context)
+    {
+        std::string artistName{ getParameterAs<std::string>(context.parameters, "artist").value_or("") };
+        std::string titleName{ getParameterAs<std::string>(context.parameters, "title").value_or("") };
+
+        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+
+        // best effort search, as this API is really limited
+        auto transaction{ context.dbSession.createReadTransaction() };
+
+        db::Track::FindParameters params;
+        params.name = titleName;
+        params.artistName = artistName;
+        params.range = Range{ 0, 2 };
+
+        // Choice: we return nothing if there are too many results
+        const auto tracks{ db::Track::findIds(context.dbSession, params) };
+        if (tracks.results.size() == 1)
+        {
+            // Choice: we return only the first lyrics if the track has many lyrics
+            bool lyricsSet{};
+            db::TrackLyrics::find(context.dbSession, tracks.results[0], [&](const db::TrackLyrics::pointer& lyrics) {
+                if (lyricsSet)
+                    return;
+                response.addNode("lyrics", createLyricsNode(context, lyrics));
+                lyricsSet = true;
+            });
+        }
+
+        return response;
+    }
+
+    Response handleGetLyricsBySongId(RequestContext& context)
+    {
+        // mandatory params
+        db::TrackId id{ getMandatoryParameterAs<db::TrackId>(context.parameters, "id") };
+
+        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response::Node& lyricsList{ response.createNode("lyricsList") };
+        lyricsList.createEmptyArrayChild("structuredLyrics");
+
+        auto transaction{ context.dbSession.createReadTransaction() };
+        const db::Track::pointer track{ db::Track::find(context.dbSession, id) };
+        if (track)
+        {
+            db::TrackLyrics::find(context.dbSession, track->getId(), [&](const db::TrackLyrics::pointer& lyrics) {
+                lyricsList.addArrayChild("structuredLyrics", createStructuredLyricsNode(context, lyrics));
+            });
+        }
+
+        return response;
+    }
 
     void handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response)
     {

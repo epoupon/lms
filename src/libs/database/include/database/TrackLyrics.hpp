@@ -61,6 +61,10 @@ namespace lms::db
         std::string_view getFileStem() const { return _fileStem; }
         const Wt::WDateTime& getLastWriteTime() const { return _fileLastWrite; }
         std::size_t getFileSize() const { return _fileSize; }
+        std::string_view getLanguage() const { return _language; }
+        std::string_view getDisplayArtist() const { return _displayArtist; }
+        std::string_view getDisplayTitle() const { return _displayTitle; }
+        std::chrono::milliseconds getOffset() const { return _offset; }
         bool isSynchronized() const { return _synchronized; }
         SynchronizedLines getSynchronizedLines() const;
         std::vector<std::string> getUnsynchronizedLines() const;

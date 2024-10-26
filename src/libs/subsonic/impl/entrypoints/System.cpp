@@ -35,6 +35,12 @@ namespace lms::api::subsonic
             formPostNode.addArrayValue("versions", 1);
         }
 
+        {
+            Response::Node& songLyricsNode{ response.createArrayNode("openSubsonicExtensions") };
+            songLyricsNode.setAttribute("name", "songLyrics");
+            songLyricsNode.addArrayValue("versions", 1);
+        }
+
         return response;
     };
 } // namespace lms::api::subsonic

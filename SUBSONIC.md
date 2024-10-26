@@ -51,3 +51,4 @@ The following extra fields are implemented:
 
 ## Supported extensions
 * [Transcode offset](https://opensubsonic.netlify.app/docs/extensions/transcodeoffset/)
+* [Song Lyrics](https://opensubsonic.netlify.app/docs/extensions/songlyrics/)

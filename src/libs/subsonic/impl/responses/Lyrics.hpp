@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,17 +19,19 @@
 
 #pragma once
 
-#include <Wt/Http/Request.h>
-#include <Wt/Http/Response.h>
+#include "database/Object.hpp"
 
-#include "RequestContext.hpp"
+#include "SubsonicResponse.hpp"
+
+namespace lms::db
+{
+    class TrackLyrics;
+}
 
 namespace lms::api::subsonic
 {
-    Response handleGetLyrics(RequestContext& context);
-    Response handleGetLyricsBySongId(RequestContext& context);
+    struct RequestContext;
 
-    void handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
-    void handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
-    void handleGetCoverArt(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
+    Response::Node createLyricsNode(RequestContext& context, const db::ObjectPtr<db::TrackLyrics>& lyrics);
+    Response::Node createStructuredLyricsNode(RequestContext& context, const db::ObjectPtr<db::TrackLyrics>& lyrics);
 } // namespace lms::api::subsonic

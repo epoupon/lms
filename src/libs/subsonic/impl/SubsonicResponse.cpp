@@ -196,7 +196,11 @@ namespace lms::api::subsonic
             auto valueToPropertyTree = [](const Node::ValueType& value) {
                 boost::property_tree::ptree res;
                 std::visit([&](const auto& rawValue) {
-                    res.put_value(rawValue);
+                    using RawValueType = std::decay_t<decltype(rawValue)>;
+                    if constexpr (std::is_same_v<RawValueType, Node::string>)
+                        res.put_value(core::stringUtils::replaceInString(rawValue, "\n", "\\n"));
+                    else
+                        res.put_value(rawValue);
                 },
                     value);
 

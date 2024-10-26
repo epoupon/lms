@@ -136,8 +136,7 @@ namespace lms::metadata
         std::vector<std::chrono::milliseconds> timestamps;
         std::string accumulatedLyrics;
 
-        auto applyAccumulatedLyrics = [&](bool skipTrailingEmptyLines = false)
-        {
+        auto applyAccumulatedLyrics = [&](bool skipTrailingEmptyLines = false) {
             if (lastTimestamps.empty())
                 return;
 

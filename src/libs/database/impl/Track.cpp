@@ -384,7 +384,7 @@ namespace lms::db
         assert(filePath.is_relative());
 
         assert(_absoluteFilePath.filename() == filePath.filename()); // must be compatible with previous setAbsoluteFilePath call
-        _fileStem = filePath.stem(); // lazy migration (_fileStem added later, could be set only with setAbsoluteFilePath)
+        _fileStem = filePath.stem();                                 // lazy migration (_fileStem added later, could be set only with setAbsoluteFilePath)
         _relativeFilePath = filePath;
     }
 
