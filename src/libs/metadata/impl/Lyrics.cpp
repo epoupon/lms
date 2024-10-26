@@ -159,6 +159,11 @@ namespace lms::metadata
         {
             std::string_view trimmedLine{ core::stringUtils::stringTrimEnd(line) };
 
+            // Remove potential UTF8 BOM
+            constexpr std::string_view utf8BOM{ "\xEF\xBB\xBF" };
+            if (trimmedLine.starts_with(utf8BOM))
+                trimmedLine = trimmedLine.substr(utf8BOM.size());
+
             // Skip comments
             if (!trimmedLine.empty() && trimmedLine.front() == '#')
                 continue;

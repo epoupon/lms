@@ -72,6 +72,22 @@ namespace lms::metadata::tests
         EXPECT_EQ(lyrics.synchronizedLines.find(9s + 160ms)->second, "I, I just woke up from a dream");
     }
 
+    TEST(Lyrics, tagAtTheEndOfLyrics)
+    {
+        std::istringstream is{ R"([00:03.30]Ooh, ooh
+[00:09.16]I, I just woke up from a dream
+[id: dqsxdkbu])" };
+
+        const Lyrics lyrics{ parseLyrics(is) };
+
+        EXPECT_EQ(lyrics.unsynchronizedLines.size(), 0);
+        ASSERT_EQ(lyrics.synchronizedLines.size(), 2);
+        ASSERT_TRUE(lyrics.synchronizedLines.contains(3s + 300ms));
+        EXPECT_EQ(lyrics.synchronizedLines.find(3s + 300ms)->second, "Ooh, ooh");
+        ASSERT_TRUE(lyrics.synchronizedLines.contains(9s + 160ms));
+        EXPECT_EQ(lyrics.synchronizedLines.find(9s + 160ms)->second, "I, I just woke up from a dream");
+    }
+
     TEST(Lyrics, skipEmptyBeginLines)
     {
         std::istringstream is{ R"(
