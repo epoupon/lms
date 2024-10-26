@@ -20,6 +20,7 @@
 #pragma once
 
 #include <filesystem>
+#include <span>
 
 #include "ScanStepBase.hpp"
 
@@ -36,8 +37,8 @@ namespace lms::scanner
         void process(ScanContext& context) override;
 
         template<typename Object>
-        void checkForRemovedFiles(ScanContext& context, const std::vector<std::filesystem::path>& supportedFileExtensions);
+        void checkForRemovedFiles(ScanContext& context, std::span<const std::filesystem::path> supportedFileExtensions);
 
-        bool checkFile(const std::filesystem::path& p, const std::vector<std::filesystem::path>& allowedExtensions);
+        bool checkFile(const std::filesystem::path& p, std::span<const std::filesystem::path> allowedExtensions);
     };
 } // namespace lms::scanner

@@ -133,7 +133,7 @@ namespace lms::core::pathUtils
         return true;
     }
 
-    bool hasFileAnyExtension(const std::filesystem::path& file, const std::vector<std::filesystem::path>& supportedExtensions)
+    bool hasFileAnyExtension(const std::filesystem::path& file, std::span<const std::filesystem::path> supportedExtensions)
     {
         const std::filesystem::path extension{ stringUtils::stringToLower(file.extension().string()) };
 

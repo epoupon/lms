@@ -23,6 +23,7 @@ add_library(lmsdatabase SHARED
 	impl/SqlQuery.cpp
 	impl/Track.cpp
 	impl/TrackBookmark.cpp
+	impl/TrackLyrics.cpp
 	impl/Types.cpp
 	impl/UIState.cpp
 	impl/User.cpp

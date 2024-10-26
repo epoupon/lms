@@ -25,6 +25,7 @@
 #include "database/Image.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "database/TrackLyrics.hpp"
 
 namespace lms::scanner
 {
@@ -45,15 +46,17 @@ namespace lms::scanner
             context.currentStepStats.totalElems = 0;
             context.currentStepStats.totalElems += db::Track::getCount(session);
             context.currentStepStats.totalElems += db::Image::getCount(session);
+            context.currentStepStats.totalElems += db::TrackLyrics::getExternalLyricsCount(session);
         }
         LMS_LOG(DBUPDATER, DEBUG, context.currentStepStats.totalElems << " files to be checked...");
 
         checkForRemovedFiles<db::Track>(context, _settings.supportedAudioFileExtensions);
         checkForRemovedFiles<db::Image>(context, _settings.supportedImageFileExtensions);
+        checkForRemovedFiles<db::TrackLyrics>(context, _settings.supportedLyricsFileExtensions);
     }
 
     template<typename Object>
-    void ScanStepCheckForRemovedFiles::checkForRemovedFiles(ScanContext& context, const std::vector<std::filesystem::path>& supportedFileExtensions)
+    void ScanStepCheckForRemovedFiles::checkForRemovedFiles(ScanContext& context, std::span<const std::filesystem::path> supportedFileExtensions)
     {
         using namespace db;
 
@@ -79,6 +82,13 @@ namespace lms::scanner
                 Object::find(session, lastCheckedId, batchSize, [&](const typename Object::pointer& object) {
                     endReached = false;
 
+                    // special case for track lyrics, only check external lyrics
+                    if constexpr (std::is_same_v<Object, TrackLyrics>)
+                    {
+                        if (object->getAbsoluteFilePath().empty())
+                            return;
+                    }
+
                     if (!checkFile(object->getAbsoluteFilePath(), supportedFileExtensions))
                         objectsToRemove.push_back(object);
 
@@ -101,7 +111,7 @@ namespace lms::scanner
         }
     }
 
-    bool ScanStepCheckForRemovedFiles::checkFile(const std::filesystem::path& p, const std::vector<std::filesystem::path>& allowedExtensions)
+    bool ScanStepCheckForRemovedFiles::checkFile(const std::filesystem::path& p, std::span<const std::filesystem::path> allowedExtensions)
     {
         try
         {

@@ -54,6 +54,7 @@ namespace lms::scanner
         {
             db::Session& session;
             db::ReleaseId lastRetrievedReleaseId;
+            std::size_t processedReleaseCount{};
             const std::vector<std::string>& releaseFileNames;
         };
 
@@ -146,6 +147,7 @@ namespace lms::scanner
                         LMS_LOG(DBUPDATER, DEBUG, "Updating release image for release '" << release->getName() << "', using '" << (image ? image->getAbsoluteFilePath().c_str() : "<none>") << "'");
                         releaseImageAssociations.push_back(ReleaseImageAssociation{ release->getId(), image ? image->getId() : db::ImageId{} });
                     }
+                    searchContext.processedReleaseCount++;
                 });
             }
 
@@ -227,7 +229,7 @@ namespace lms::scanner
                 return;
 
             updateReleaseImages(session, releaseImageAssociations);
-            context.currentStepStats.processedElems += readBatchSize;
+            context.currentStepStats.processedElems = searchContext.processedReleaseCount;
             _progressCallback(context.currentStepStats);
         }
     }

@@ -29,6 +29,7 @@
 #include "database/StarredArtist.hpp"
 #include "database/StarredRelease.hpp"
 #include "database/StarredTrack.hpp"
+#include "database/TrackLyrics.hpp"
 #include "database/UIState.hpp"
 #include "database/User.hpp"
 
@@ -351,6 +352,7 @@ VALUES
             EXPECT_FALSE(StarredTrack::find(session, StarredTrackId{}));
             EXPECT_FALSE(Track::find(session, TrackId{}));
             EXPECT_FALSE(TrackList::find(session, TrackListId{}));
+            EXPECT_FALSE(TrackLyrics::find(session, TrackLyricsId{}));
             EXPECT_FALSE(UIState::find(session, UIStateId{}));
             EXPECT_FALSE(User::find(session, UserId{}));
         }

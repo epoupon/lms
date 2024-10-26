@@ -54,6 +54,7 @@ namespace lms::scanner
         {
             db::Session& session;
             db::ArtistId lastRetrievedArtistId;
+            std::size_t processedArtistCount{};
             const std::vector<std::string>& artistFileNames;
         };
 
@@ -150,6 +151,7 @@ namespace lms::scanner
                         LMS_LOG(DBUPDATER, DEBUG, "Updating artist image for artist '" << artist->getName() << "', using '" << (image ? image->getAbsoluteFilePath().c_str() : "<none>") << "'");
                         artistImageAssociations.push_back(ArtistImageAssociation{ artist->getId(), image ? image->getId() : db::ImageId{} });
                     }
+                    searchContext.processedArtistCount++;
                 });
             }
 
@@ -231,7 +233,7 @@ namespace lms::scanner
                 return;
 
             updateArtistImages(session, artistImageAssociations);
-            context.currentStepStats.processedElems += readBatchSize;
+            context.currentStepStats.processedElems = searchContext.processedArtistCount;
             _progressCallback(context.currentStepStats);
         }
     }

@@ -321,6 +321,20 @@ namespace lms::metadata
             track.originalYear = utils::parseYear(*dateStr);
         }
 
+        std::vector<std::string> lyricsEntries{ getTagValuesAs<std::string>(tagReader, TagType::Lyrics, {} /* no custom delimiter on lyrics */) };
+        for (const std::string& lyrics : lyricsEntries)
+        {
+            std::istringstream iss{ lyrics };
+            try
+            {
+                track.lyrics.emplace_back(parseLyrics(iss));
+            }
+            catch (const LyricsException& e)
+            {
+                LMS_LOG(METADATA, ERROR, "Failed to parse lyrics: " + std::string{ e.what() });
+            }
+        }
+
         track.comments = getTagValuesAs<std::string>(tagReader, TagType::Comment, {} /* no custom delimiter on comments */);
         track.copyright = getTagValueAs<std::string>(tagReader, TagType::Copyright).value_or("");
         track.copyrightURL = getTagValueAs<std::string>(tagReader, TagType::CopyrightURL).value_or("");

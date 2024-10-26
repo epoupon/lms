@@ -85,12 +85,12 @@
 <message id="Lms.Admin.Database.update-start-time">更新开始时间</message>
 <message id="Lms.Admin.Database.weekly">每周</message>
 
-
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">无法获得音轨时间</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">无法解析文件</message>
 
 <message id="Lms.Admin.ScannerController.cannot-read-file">无法读取文件</message>
+
 
 <message id="Lms.Admin.ScannerController.duplicates-header">{1} 个重复文件：</message>
 <message id="Lms.Admin.ScannerController.errors-header">{1} 个错误：</message>
@@ -110,6 +110,7 @@
 <message id="Lms.Admin.ScannerController.status-not-scheduled">无计划</message>
 <message id="Lms.Admin.ScannerController.status-scheduled">计划于 {1}</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">扫描中: 阶段 {1}/{2}</message>
+
 
 
 

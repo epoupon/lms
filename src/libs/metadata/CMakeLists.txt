@@ -4,8 +4,13 @@ if(BUILD_TESTING)
 	add_subdirectory(test)
 endif()
 
+if (BUILD_BENCHMARKS)
+	add_subdirectory(bench)
+endif()
+
 add_library(lmsmetadata SHARED
 	impl/AvFormatTagReader.cpp
+	impl/Lyrics.cpp
 	impl/Parser.cpp
 	impl/TagLibTagReader.cpp
 	impl/Utils.cpp

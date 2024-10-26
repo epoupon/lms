@@ -19,6 +19,8 @@
 
 #include "FileScanQueue.hpp"
 
+#include <fstream>
+
 #include "core/Exception.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
@@ -62,6 +64,10 @@ namespace lms::scanner
                     break;
                 case ScanRequestType::ImageFile:
                     result.scanData = scanImageFile(path);
+                    break;
+                case ScanRequestType::LyricsFile:
+                    result.scanData = scanLyricsFile(path);
+                    break;
                 }
 
                 {
@@ -112,6 +118,28 @@ namespace lms::scanner
         }
 
         return optInfo;
+    }
+
+    LyricsFileScanData FileScanQueue::scanLyricsFile(const std::filesystem::path& path)
+    {
+        LMS_SCOPED_TRACE_OVERVIEW("Scanner", "ScanLyricsFile");
+
+        LyricsFileScanData lyrics;
+
+        try
+        {
+            std::ifstream ifs{ path.string() };
+            if (!ifs)
+                LMS_LOG(DBUPDATER, ERROR, "Cannot open file '" << path.string() << "'");
+            else
+                lyrics = metadata::parseLyrics(ifs);
+        }
+        catch (const std::exception& e)
+        {
+            LMS_LOG(DBUPDATER, ERROR, "Cannot read lyrics in file '" << path.string() << "': " << e.what());
+        }
+
+        return lyrics;
     }
 
     std::size_t FileScanQueue::getResultsCount() const

@@ -46,7 +46,7 @@ namespace lms::db
     {
         session.checkWriteTransaction();
 
-        session.getDboSession()->execute("DELETE FROM auth_token WHERE expiry < ?").bind(now);
+        utils::executeCommand(*session.getDboSession(), "DELETE FROM auth_token WHERE expiry < ?", now);
     }
 
     AuthToken::pointer AuthToken::find(Session& session, std::string_view value)

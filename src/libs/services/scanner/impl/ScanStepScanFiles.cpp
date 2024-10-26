@@ -35,6 +35,7 @@
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"
 #include "database/TrackFeatures.hpp"
+#include "database/TrackLyrics.hpp"
 #include "metadata/Exception.hpp"
 #include "metadata/IParser.hpp"
 
@@ -120,6 +121,22 @@ namespace lms::scanner
             // Don't update library if it does not match, will be updated elsewhere
 
             return directory;
+        }
+
+        db::TrackLyrics::pointer createLyrics(Session& session, const metadata::Lyrics& lyricsInfo)
+        {
+            db::TrackLyrics::pointer lyrics{ session.create<db::TrackLyrics>() };
+
+            lyrics.modify()->setLanguage(lyricsInfo.language);
+            lyrics.modify()->setOffset(lyricsInfo.offset);
+            lyrics.modify()->setDisplayArtist(lyricsInfo.displayArtist);
+            lyrics.modify()->setDisplayTitle(lyricsInfo.displayTitle);
+            if (!lyricsInfo.synchronizedLines.empty())
+                lyrics.modify()->setSynchronizedLines(lyricsInfo.synchronizedLines);
+            else
+                lyrics.modify()->setUnsynchronizedLines(lyricsInfo.unsynchronizedLines);
+
+            return lyrics;
         }
 
         Artist::pointer createArtist(Session& session, const metadata::Artist& artistInfo)
@@ -448,6 +465,12 @@ namespace lms::scanner
                         if (checkImageFileNeedScan(context, path))
                             _fileScanQueue.pushScanRequest(path, FileScanQueue::ScanRequestType::ImageFile);
                     }
+                    else if (core::pathUtils::hasFileAnyExtension(path, _settings.supportedLyricsFileExtensions))
+                    {
+                        fileMatched = true;
+                        if (checkLyricsFileNeedScan(context, path))
+                            _fileScanQueue.pushScanRequest(path, FileScanQueue::ScanRequestType::LyricsFile);
+                    }
 
                     if (fileMatched)
                     {
@@ -555,6 +578,34 @@ namespace lms::scanner
         return true; // need to scan
     }
 
+    bool ScanStepScanFiles::checkLyricsFileNeedScan(ScanContext& context, const std::filesystem::path& file)
+    {
+        ScanStats& stats{ context.stats };
+
+        const Wt::WDateTime lastWriteTime{ retrieveFileGetLastWrite(file) };
+        // Should rarely fail as we are currently iterating it
+        if (!lastWriteTime.isValid())
+        {
+            stats.skips++;
+            return false;
+        }
+
+        if (!context.scanOptions.fullScan)
+        {
+            db::Session& dbSession{ _db.getTLSSession() };
+            auto transaction{ _db.getTLSSession().createReadTransaction() };
+
+            const db::TrackLyrics::pointer lyrics{ db::TrackLyrics::find(dbSession, file) };
+            if (lyrics && lyrics->getLastWriteTime() == lastWriteTime)
+            {
+                stats.skips++;
+                return false;
+            }
+        }
+
+        return true; // need to scan
+    }
+
     void ScanStepScanFiles::processFileScanResults(ScanContext& context, std::span<const FileScanResult> scanResults, const ScannerSettings::MediaLibraryInfo& libraryInfo)
     {
         LMS_SCOPED_TRACE_OVERVIEW("Scanner", "ProcessScanResults");
@@ -576,6 +627,11 @@ namespace lms::scanner
             {
                 context.stats.scans++;
                 processImageFileScanData(context, scanResult.path, scanData->has_value() ? &scanData->value() : nullptr, libraryInfo);
+            }
+            else if (const LyricsFileScanData * scanData{ std::get_if<LyricsFileScanData>(&scanResult.scanData) })
+            {
+                context.stats.scans++;
+                processLyricsFileScanData(context, scanResult.path, scanData->has_value() ? &scanData->value() : nullptr, libraryInfo);
             }
         }
     }
@@ -783,6 +839,13 @@ namespace lms::scanner
         track.modify()->setTrackReplayGain(trackMetadata->replayGain);
         track.modify()->setArtistDisplayName(trackMetadata->artistDisplayName);
 
+        track.modify()->clearEmbeddedLyrics();
+        for (const metadata::Lyrics& lyricsInfo : trackMetadata->lyrics)
+        {
+            db::TrackLyrics::pointer lyrics{ createLyrics(dbSession, lyricsInfo) };
+            track.modify()->addLyrics(lyrics);
+        }
+
         if (added)
         {
             LMS_LOG(DBUPDATER, DEBUG, "Added audio file '" << file.string() << "'");
@@ -851,4 +914,70 @@ namespace lms::scanner
             stats.updates++;
         }
     }
+
+    void ScanStepScanFiles::processLyricsFileScanData(ScanContext& context, const std::filesystem::path& file, const metadata::Lyrics* lyricsInfo, const ScannerSettings::MediaLibraryInfo& libraryInfo)
+    {
+        LMS_SCOPED_TRACE_DETAILED("Scanner", "ProcessImageScanData");
+
+        ScanStats& stats{ context.stats };
+
+        const std::optional<FileInfo> fileInfo{ retrieveFileInfo(file, libraryInfo.rootDirectory) };
+        if (!fileInfo)
+        {
+            stats.skips++;
+            return;
+        }
+
+        db::Session& dbSession{ _db.getTLSSession() };
+        db::TrackLyrics::pointer trackLyrics{ db::TrackLyrics::find(dbSession, file) };
+
+        if (!lyricsInfo)
+        {
+            if (trackLyrics)
+            {
+                trackLyrics.remove();
+                stats.deletions++;
+            }
+            context.stats.errors.emplace_back(file, ScanErrorType::CannotReadLyricsFile);
+            return;
+        }
+
+        bool added;
+        if (!trackLyrics)
+        {
+            trackLyrics = dbSession.create<db::TrackLyrics>();
+            trackLyrics.modify()->setAbsoluteFilePath(file);
+            added = true;
+        }
+        else
+        {
+            added = false;
+        }
+
+        trackLyrics.modify()->setLastWriteTime(fileInfo->lastWriteTime);
+        trackLyrics.modify()->setFileSize(fileInfo->fileSize);
+        trackLyrics.modify()->setLanguage(lyricsInfo->language);
+        trackLyrics.modify()->setOffset(lyricsInfo->offset);
+        trackLyrics.modify()->setDisplayTitle(lyricsInfo->displayTitle);
+        trackLyrics.modify()->setDisplayArtist(lyricsInfo->displayArtist);
+        if (!lyricsInfo->synchronizedLines.empty())
+            trackLyrics.modify()->setSynchronizedLines(lyricsInfo->synchronizedLines);
+        else
+            trackLyrics.modify()->setUnsynchronizedLines(lyricsInfo->unsynchronizedLines);
+
+        MediaLibrary::pointer mediaLibrary{ MediaLibrary::find(dbSession, libraryInfo.id) }; // may be null if settings are updated in // => next scan will correct this
+        trackLyrics.modify()->setDirectory(getOrCreateDirectory(dbSession, file.parent_path(), mediaLibrary));
+
+        if (added)
+        {
+            LMS_LOG(DBUPDATER, DEBUG, "Added external lyrics '" << file.string() << "'");
+            stats.additions++;
+        }
+        else
+        {
+            LMS_LOG(DBUPDATER, DEBUG, "Updated external lyrics '" << file.string() << "'");
+            stats.updates++;
+        }
+    }
+
 } // namespace lms::scanner
