@@ -441,6 +441,11 @@ namespace lms::db
         _trackLyrics.insert(getDboPtr(lyrics));
     }
 
+    bool Track::hasLyrics() const
+    {
+        return !_trackLyrics.empty();
+    }
+
     std::optional<std::string> Track::getCopyright() const
     {
         return _copyright != "" ? std::make_optional<std::string>(_copyright) : std::nullopt;

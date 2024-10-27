@@ -211,12 +211,13 @@ namespace lms::api::subsonic
         if (tracks.results.size() == 1)
         {
             // Choice: we return only the first lyrics if the track has many lyrics
-            bool lyricsSet{};
-            db::TrackLyrics::find(context.dbSession, tracks.results[0], [&](const db::TrackLyrics::pointer& lyrics) {
-                if (lyricsSet)
-                    return;
+            db::TrackLyrics::FindParameters params;
+            params.setTrack(tracks.results[0]);
+            params.setSortMethod(TrackLyricsSortMethod::ExternalFirst);
+            params.setRange(db::Range{ 0, 1 });
+
+            db::TrackLyrics::find(context.dbSession, params, [&](const db::TrackLyrics::pointer& lyrics) {
                 response.addNode("lyrics", createLyricsNode(context, lyrics));
-                lyricsSet = true;
             });
         }
 
@@ -236,9 +237,23 @@ namespace lms::api::subsonic
         const db::Track::pointer track{ db::Track::find(context.dbSession, id) };
         if (track)
         {
-            db::TrackLyrics::find(context.dbSession, track->getId(), [&](const db::TrackLyrics::pointer& lyrics) {
+            db::TrackLyrics::FindParameters params;
+            params.setTrack(track->getId());
+            params.setExternal(true); // First try to only report external lyrics as they are often duplicate of embedded lyrics and support more features
+
+            bool hasExternalLyrics{};
+            db::TrackLyrics::find(context.dbSession, params, [&](const db::TrackLyrics::pointer& lyrics) {
                 lyricsList.addArrayChild("structuredLyrics", createStructuredLyricsNode(context, lyrics));
+                hasExternalLyrics = true;
             });
+
+            if (!hasExternalLyrics)
+            {
+                params.setExternal(false);
+                db::TrackLyrics::find(context.dbSession, params, [&](const db::TrackLyrics::pointer& lyrics) {
+                    lyricsList.addArrayChild("structuredLyrics", createStructuredLyricsNode(context, lyrics));
+                });
+            }
         }
 
         return response;

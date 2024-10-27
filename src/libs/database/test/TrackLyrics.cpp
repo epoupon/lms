@@ -157,12 +157,47 @@ namespace lms::db::tests
             EXPECT_EQ(TrackLyrics::getCount(session), 1);
             EXPECT_EQ(TrackLyrics::getExternalLyricsCount(session), 1);
 
-            bool visited{};
-            TrackLyrics::find(session, track.getId(), [&](const TrackLyrics::pointer& lyrics) {
-                EXPECT_EQ(lyrics->getAbsoluteFilePath(), "/tmp/test.lrc");
-                visited = true;
-            });
-            EXPECT_TRUE(visited);
+            {
+                bool visited{};
+                TrackLyrics::find(session, TrackLyrics::FindParameters{}.setTrack(track.getId()), [&](const TrackLyrics::pointer& lyrics) {
+                    EXPECT_EQ(lyrics->getAbsoluteFilePath(), "/tmp/test.lrc");
+                    visited = true;
+                });
+                EXPECT_TRUE(visited);
+            }
+
+            {
+                bool visited{};
+                TrackLyrics::find(session, TrackLyrics::FindParameters{}.setExternal(true), [&](const TrackLyrics::pointer& lyrics) {
+                    EXPECT_EQ(lyrics->getAbsoluteFilePath(), "/tmp/test.lrc");
+                    visited = true;
+                });
+                EXPECT_TRUE(visited);
+            }
+
+            {
+                bool visited{};
+                TrackLyrics::find(session, TrackLyrics::FindParameters{}.setExternal(false), [&](const TrackLyrics::pointer&) {
+                    visited = true;
+                });
+                EXPECT_FALSE(visited);
+            }
+
+            {
+                bool visited{};
+                TrackLyrics::find(session, TrackLyrics::FindParameters{}.setSortMethod(TrackLyricsSortMethod::EmbeddedFirst), [&](const TrackLyrics::pointer&) {
+                    visited = true;
+                });
+                EXPECT_TRUE(visited);
+            }
+
+            {
+                bool visited{};
+                TrackLyrics::find(session, TrackLyrics::FindParameters{}.setSortMethod(TrackLyricsSortMethod::ExternalFirst), [&](const TrackLyrics::pointer&) {
+                    visited = true;
+                });
+                EXPECT_TRUE(visited);
+            }
         }
     }
 } // namespace lms::db::tests

@@ -274,6 +274,7 @@ namespace lms::db
         const Wt::WDateTime& getLastWriteTime() const { return _fileLastWrite; }
         const Wt::WDateTime& getAddedTime() const { return _fileAdded; }
         bool hasCover() const { return _hasCover; }
+        bool hasLyrics() const;
         std::optional<core::UUID> getTrackMBID() const { return core::UUID::fromString(_trackMBID); }
         std::optional<core::UUID> getRecordingMBID() const { return core::UUID::fromString(_recordingMBID); }
         std::optional<std::string> getCopyright() const;

@@ -45,12 +45,41 @@ namespace lms::db
     public:
         TrackLyrics() = default;
 
+        struct FindParameters
+        {
+            std::optional<Range> range;
+            TrackId track;
+            std::optional<bool> external; // if set, true means external, false means embedded
+            TrackLyricsSortMethod sortMethod{ TrackLyricsSortMethod::None };
+
+            FindParameters& setRange(std::optional<Range> _range)
+            {
+                range = _range;
+                return *this;
+            }
+            FindParameters& setTrack(TrackId _track)
+            {
+                track = _track;
+                return *this;
+            }
+            FindParameters& setExternal(std::optional<bool> _external)
+            {
+                external = _external;
+                return *this;
+            }
+            FindParameters& setSortMethod(TrackLyricsSortMethod _sortMethod)
+            {
+                sortMethod = _sortMethod;
+                return *this;
+            }
+        };
+
         // Find utilities
         static std::size_t getCount(Session& session);
         static std::size_t getExternalLyricsCount(Session& session);
         static pointer find(Session& session, TrackLyricsId id);
         static pointer find(Session& session, const std::filesystem::path& file);
-        static void find(Session& session, TrackId trackId, const std::function<void(const TrackLyrics::pointer&)>& func);
+        static void find(Session& session, const FindParameters& params, const std::function<void(const TrackLyrics::pointer&)>& func);
         static void find(Session& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(const TrackLyrics::pointer&)>& func);
         static RangeResults<TrackLyricsId> findOrphanIds(Session& session, std::optional<Range> range);
 

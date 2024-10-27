@@ -34,6 +34,34 @@
 
 namespace lms::db
 {
+    namespace
+    {
+        Wt::Dbo::Query<Wt::Dbo::ptr<TrackLyrics>> createQuery(Session& session, const TrackLyrics::FindParameters& params)
+        {
+            auto query{ session.getDboSession()->query<Wt::Dbo::ptr<TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc") };
+
+            if (params.track.isValid())
+                query.where("t_lrc.track_id = ?").bind(params.track);
+
+            if (params.external.has_value())
+                query.where("t_lrc.absolute_file_path " + std::string{ *params.external ? "<>" : "=" } + " ''");
+
+            switch (params.sortMethod)
+            {
+            case TrackLyricsSortMethod::None:
+                break;
+            case TrackLyricsSortMethod::ExternalFirst:
+                query.orderBy("CASE WHEN absolute_file_path <> '' THEN 0 ELSE 1 END");
+                break;
+            case TrackLyricsSortMethod::EmbeddedFirst:
+                query.orderBy("CASE WHEN absolute_file_path = '' THEN 0 ELSE 1 END");
+                break;
+            }
+
+            return query;
+        }
+    } // namespace
+
     TrackLyrics::pointer TrackLyrics::create(Session& session)
     {
         return session.getDboSession()->add(std::unique_ptr<TrackLyrics>{ new TrackLyrics{} });
@@ -67,15 +95,12 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").where("t_lrc.absolute_file_path = ?").bind(path));
     }
 
-    void TrackLyrics::find(Session& session, TrackId trackId, const std::function<void(const TrackLyrics::pointer&)>& func)
+    void TrackLyrics::find(Session& session, const FindParameters& params, const std::function<void(const TrackLyrics::pointer&)>& func)
     {
         session.checkReadTransaction();
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<TrackLyrics>>("SELECT t_lrc from track_lyrics t_lrc").where("t_lrc.track_id = ?").bind(trackId) };
-
-        utils::forEachQueryResult(query, [&](const TrackLyrics::pointer& lyrics) {
-            func(lyrics);
-        });
+        auto query{ createQuery(session, params) };
+        utils::forEachQueryRangeResult(query, params.range, func);
     }
 
     void TrackLyrics::find(Session& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(const TrackLyrics::pointer&)>& func)

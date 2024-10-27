@@ -40,5 +40,6 @@ namespace lms::ui
 namespace lms::ui::TrackListHelpers
 {
     void showTrackInfoModal(db::TrackId trackId, Filters& filters);
+    void showTrackLyricsModal(db::TrackId trackId);
     std::unique_ptr<Wt::WWidget> createEntry(const db::ObjectPtr<db::Track>& track, PlayQueueController& playQueueController, Filters& filters);
 } // namespace lms::ui::TrackListHelpers

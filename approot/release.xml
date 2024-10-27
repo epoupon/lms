@@ -102,6 +102,7 @@
 					<li>${star class="dropdown-item"}</li>
 					<li>${download class="dropdown-item"}</li>
 					<li>${track-info class="dropdown-item"}</li>
+					${<if-has-lyrics>}<li>${track-lyrics class="dropdown-item"}</li>${</if-has-lyrics>}
 				</ul>
 			</div>
 		</div>
