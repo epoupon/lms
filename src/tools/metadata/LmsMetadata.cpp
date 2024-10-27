@@ -45,7 +45,7 @@ namespace lms::metadata
         os << "\tLanguage: " << lyrics.language << std::endl;
         os << "\tSynchronized: " << !lyrics.synchronizedLines.empty() << std::endl;
         for (const auto& [timestamp, line] : lyrics.synchronizedLines)
-            os << "\t[" << timestamp.count() << "] '" << line << "'" << std::endl;
+            os << "\t" << core::stringUtils::formatTimestamp(timestamp) << " '" << line << "'" << std::endl;
         for (const auto& line : lyrics.unsynchronizedLines)
             os << "\t'" << line << "'" << std::endl;
 

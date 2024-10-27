@@ -121,6 +121,29 @@ namespace lms::metadata
             return getTagValueFirstMatchAs<T>(tagReader, { tagType });
         }
 
+        std::vector<Lyrics> getLyrics(const ITagReader& tagReader)
+        {
+            std::vector<Lyrics> res;
+
+            tagReader.visitLyricsTags([&](std::string_view language, std::string_view lyricsText) {
+                std::istringstream iss{ std::string{ lyricsText } }; // TODO avoid copies (ispanstream?)
+                try
+                {
+                    Lyrics lyrics{ parseLyrics(iss) };
+                    if (lyrics.language.empty())
+                        lyrics.language = language;
+
+                    res.emplace_back(std::move(lyrics));
+                }
+                catch (const LyricsException& e)
+                {
+                    LMS_LOG(METADATA, ERROR, "Failed to parse lyrics: " + std::string{ e.what() });
+                }
+            });
+
+            return res;
+        }
+
         std::vector<Artist> getArtists(const ITagReader& tagReader,
             std::initializer_list<TagType> artistTagNames,
             std::initializer_list<TagType> artistSortTagNames,
@@ -321,20 +344,7 @@ namespace lms::metadata
             track.originalYear = utils::parseYear(*dateStr);
         }
 
-        std::vector<std::string> lyricsEntries{ getTagValuesAs<std::string>(tagReader, TagType::Lyrics, {} /* no custom delimiter on lyrics */) };
-        for (const std::string& lyrics : lyricsEntries)
-        {
-            std::istringstream iss{ lyrics };
-            try
-            {
-                track.lyrics.emplace_back(parseLyrics(iss));
-            }
-            catch (const LyricsException& e)
-            {
-                LMS_LOG(METADATA, ERROR, "Failed to parse lyrics: " + std::string{ e.what() });
-            }
-        }
-
+        track.lyrics = getLyrics(tagReader); // no custom delimiter on lyrics
         track.comments = getTagValuesAs<std::string>(tagReader, TagType::Comment, {} /* no custom delimiter on comments */);
         track.copyright = getTagValueAs<std::string>(tagReader, TagType::Copyright).value_or("");
         track.copyrightURL = getTagValueAs<std::string>(tagReader, TagType::CopyrightURL).value_or("");

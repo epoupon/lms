@@ -38,13 +38,27 @@ namespace lms::metadata
         };
 
         using Tags = std::unordered_map<TagType, std::vector<std::string_view>>;
-        using Performers = std::unordered_map<std::string_view, std::vector<std::string_view>>;
+        using Performers = std::unordered_map<std::string_view /*role*/, std::vector<std::string_view> /*names*/>;
         using ExtraUserTags = std::unordered_map<std::string_view, std::vector<std::string_view>>;
-        TestTagReader(Tags&& tags, Performers&& performers = {}, ExtraUserTags&& extraUserTags = {})
+        using LyricsTags = std::unordered_map<std::string_view /*language*/, std::string_view /*contents*/>;
+        TestTagReader(Tags&& tags)
             : _tags{ std::move(tags) }
-            , _performers{ std::move(performers) }
-            , _extraUserTags{ std::move(extraUserTags) }
         {
+        }
+
+        void setPerformersTags(Performers&& performers)
+        {
+            _performers = std::move(performers);
+        }
+
+        void setExtraUserTags(ExtraUserTags&& extraUserTags)
+        {
+            _extraUserTags = std::move(extraUserTags);
+        }
+
+        void setLyricsTags(LyricsTags&& lyricsTags)
+        {
+            _lyricsTags = std::move(lyricsTags);
         }
 
         void visitTagValues(TagType tag, TagValueVisitor visitor) const override
@@ -75,13 +89,20 @@ namespace lms::metadata
             }
         }
 
+        void visitLyricsTags(LyricsVisitor visitor) const override
+        {
+            for (const auto& [language, lyrics] : _lyricsTags)
+                visitor(language, lyrics);
+        }
+
         bool hasEmbeddedCover() const override { return false; };
 
         const AudioProperties& getAudioProperties() const override { return audioProperties; }
 
     private:
         const Tags _tags;
-        const Performers _performers;
-        const ExtraUserTags _extraUserTags;
+        Performers _performers;
+        ExtraUserTags _extraUserTags;
+        LyricsTags _lyricsTags;
     };
 } // namespace lms::metadata

@@ -463,4 +463,17 @@ namespace lms::core::stringUtils
         // assume UTC
         return date.toString("yyyy-MM-dd").toUTF8();
     }
+
+    std::string formatTimestamp(std::chrono::milliseconds timestamp)
+    {
+        using namespace std::chrono;
+
+        const auto mins{ duration_cast<minutes>(timestamp).count() };
+        timestamp -= duration_cast<milliseconds>(minutes{ mins });
+        const auto secs{ duration_cast<seconds>(timestamp).count() };
+        timestamp -= duration_cast<milliseconds>(seconds{ secs });
+        const auto millis{ timestamp.count() };
+
+        return "[" + std::to_string(mins) + ":" + (secs < 10 ? "0" : "") + std::to_string(secs) + "." + (millis < 100 ? (millis < 10 ? "00" : "0") : "") + std::to_string(millis) + "]";
+    }
 } // namespace lms::core::stringUtils

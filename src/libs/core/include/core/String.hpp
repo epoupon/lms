@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <initializer_list>
 #include <optional>
 #include <span>
@@ -113,4 +114,7 @@ namespace lms::core::stringUtils
 
     [[nodiscard]] std::string toISO8601String(const Wt::WDateTime& dateTime);
     [[nodiscard]] std::string toISO8601String(const Wt::WDate& date);
+
+    // to "[minutes:seconds.milliseconds]"
+    std::string formatTimestamp(std::chrono::milliseconds timestamp);
 } // namespace lms::core::stringUtils

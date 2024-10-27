@@ -96,9 +96,14 @@ namespace lms::scanner
                     db::Track::pointer track{ getMatchingTrack(searchContext.session, trackLyrics) };
                     if (track != trackLyrics->getTrack())
                     {
-                        LMS_LOG(DBUPDATER, DEBUG, "Updating track for external lyrics '" << trackLyrics->getAbsoluteFilePath() << "', using '" << (track ? track->getAbsoluteFilePath().c_str() : "<none>") << "'");
+                        LMS_LOG(DBUPDATER, DEBUG, "Updating track for external lyrics " << trackLyrics->getAbsoluteFilePath() << ", using " << (track ? track->getAbsoluteFilePath() : "<none>"));
                         trackLyricsAssociations.push_back(TrackLyricsAssociation{ .trackLyricsId = trackLyrics->getId(), .trackId = (track ? track->getId() : db::TrackId{}) });
                     }
+                    else if (!track)
+                    {
+                        LMS_LOG(DBUPDATER, DEBUG, "No track found for external lyrics " << trackLyrics->getAbsoluteFilePath() << "'");
+                    }
+
                     searchContext.processedLyricsCount++;
                 });
             }

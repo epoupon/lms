@@ -66,7 +66,6 @@ namespace lms::metadata
                 { TagType::Remixer, { "MyRemixer1", "MyRemixer2" } },
                 { TagType::RecordLabel, { "Label1", "Label2" } },
                 { TagType::Language, { "Language1", "Language2" } },
-                { TagType::Lyrics, { "[00:00.00]First line\n[00:01.00]Second line" } },
                 { TagType::Lyricist, { "MyLyricist1", "MyLyricist2" } },
                 { TagType::OriginalReleaseDate, { "2019/02/03" } },
                 { TagType::ReleaseType, { "Album", "Compilation" } },
@@ -76,12 +75,13 @@ namespace lms::metadata
                 { TagType::TrackNumber, { "7" } },
                 { TagType::TotalTracks, { "12" } },
                 { TagType::TotalDiscs, { "3" } },
-            },
-            { { "RoleA", { "MyPerformer1ForRoleA", "MyPerformer2ForRoleA" } },
-                { "RoleB", { "MyPerformer1ForRoleB", "MyPerformer2ForRoleB" } } },
-            { { "MY_AWESOME_TAG_A", { "MyTagValue1ForTagA", "MyTagValue2ForTagA" } },
-                { "MY_AWESOME_TAG_B", { "MyTagValue1ForTagB", "MyTagValue2ForTagB" } } }
+            }
         };
+        testTags.setExtraUserTags({ { "MY_AWESOME_TAG_A", { "MyTagValue1ForTagA", "MyTagValue2ForTagA" } },
+            { "MY_AWESOME_TAG_B", { "MyTagValue1ForTagB", "MyTagValue2ForTagB" } } });
+        testTags.setPerformersTags({ { "RoleA", { "MyPerformer1ForRoleA", "MyPerformer2ForRoleA" } },
+            { "RoleB", { "MyPerformer1ForRoleB", "MyPerformer2ForRoleB" } } });
+        testTags.setLyricsTags({ { "eng", "[00:00.00]First line\n[00:01.00]Second line" } });
 
         static_cast<IParser&>(parser).setUserExtraTags(std::vector<std::string>{ "MY_AWESOME_TAG_A", "MY_AWESOME_TAG_B", "MY_AWESOME_MISSING_TAG" });
 
@@ -137,6 +137,7 @@ namespace lms::metadata
         EXPECT_EQ(track->lyricistArtists[0].name, "MyLyricist1");
         EXPECT_EQ(track->lyricistArtists[1].name, "MyLyricist2");
         ASSERT_EQ(track->lyrics.size(), 1);
+        EXPECT_EQ(track->lyrics.front().language, "eng");
         ASSERT_EQ(track->lyrics.front().synchronizedLines.size(), 2);
         ASSERT_TRUE(track->lyrics.front().synchronizedLines.contains(std::chrono::milliseconds{ 0 }));
         EXPECT_EQ(track->lyrics.front().synchronizedLines.find(std::chrono::milliseconds{ 0 })->second, "First line");

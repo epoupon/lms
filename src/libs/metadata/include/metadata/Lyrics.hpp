@@ -34,7 +34,7 @@ namespace lms::metadata
 {
     struct Lyrics
     {
-        std::string language{ "und" };
+        std::string language;
         std::chrono::milliseconds offset{};
         std::string displayArtist;
         std::string displayAlbum;

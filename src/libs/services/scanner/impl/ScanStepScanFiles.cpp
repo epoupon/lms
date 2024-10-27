@@ -127,7 +127,7 @@ namespace lms::scanner
         {
             db::TrackLyrics::pointer lyrics{ session.create<db::TrackLyrics>() };
 
-            lyrics.modify()->setLanguage(lyricsInfo.language);
+            lyrics.modify()->setLanguage(!lyricsInfo.language.empty() ? lyricsInfo.language : "xxx");
             lyrics.modify()->setOffset(lyricsInfo.offset);
             lyrics.modify()->setDisplayArtist(lyricsInfo.displayArtist);
             lyrics.modify()->setDisplayTitle(lyricsInfo.displayTitle);
@@ -956,7 +956,7 @@ namespace lms::scanner
 
         trackLyrics.modify()->setLastWriteTime(fileInfo->lastWriteTime);
         trackLyrics.modify()->setFileSize(fileInfo->fileSize);
-        trackLyrics.modify()->setLanguage(lyricsInfo->language);
+        trackLyrics.modify()->setLanguage(!lyricsInfo->language.empty() ? lyricsInfo->language : "xxx");
         trackLyrics.modify()->setOffset(lyricsInfo->offset);
         trackLyrics.modify()->setDisplayTitle(lyricsInfo->displayTitle);
         trackLyrics.modify()->setDisplayArtist(lyricsInfo->displayArtist);
