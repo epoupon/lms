@@ -149,9 +149,9 @@ namespace lms::core::stringUtils
     template<>
     std::optional<bool> readAs(std::string_view str)
     {
-        if (str == "1" || str == "true")
+        if (str == "1" || stringCaseInsensitiveEqual(str, "true"))
             return true;
-        else if (str == "0" || str == "false")
+        else if (str == "0" || stringCaseInsensitiveEqual(str, "false"))
             return false;
 
         return std::nullopt;
