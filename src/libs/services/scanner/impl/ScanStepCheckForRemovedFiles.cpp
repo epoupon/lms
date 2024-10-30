@@ -119,7 +119,7 @@ namespace lms::scanner
             // and still belongs to a media directory
             if (!std::filesystem::exists(p) || !std::filesystem::is_regular_file(p))
             {
-                LMS_LOG(DBUPDATER, INFO, "Removing '" << p.string() << "': missing");
+                LMS_LOG(DBUPDATER, DEBUG, "Removing '" << p.string() << "': missing");
                 return false;
             }
 
@@ -128,13 +128,13 @@ namespace lms::scanner
                         return core::pathUtils::isPathInRootPath(p, libraryInfo.rootDirectory, &excludeDirFileName);
                     }))
             {
-                LMS_LOG(DBUPDATER, INFO, "Removing '" << p.string() << "': out of media directory");
+                LMS_LOG(DBUPDATER, DEBUG, "Removing '" << p.string() << "': out of media directory");
                 return false;
             }
 
             if (!core::pathUtils::hasFileAnyExtension(p, allowedExtensions))
             {
-                LMS_LOG(DBUPDATER, INFO, "Removing '" << p.string() << "': file format no longer handled");
+                LMS_LOG(DBUPDATER, DEBUG, "Removing '" << p.string() << "': file format no longer handled");
                 return false;
             }
 
