@@ -173,8 +173,8 @@ journalctl -u lms.service
 To connect to _LMS_, just open your favorite browser and go to `http://localhost:5082`
 # First launch
 At the first launch, a setup assistant will guide you through creating the administrator account (username and password). Once this information is saved, you can refresh the page to access the LMS login screen.
-__Note__: If you are using PAM authentication via HTTP header, this setup assistant will not appear (see [Authentication backend](#authentication-backends)).
+__Note__: If you are using `PAM` or `http-header` authentication, this setup assistant will not appear (see [Authentication backends](#authentication-backends)).
 
-Once logged in as an administrator, you will need to define your libraries—that is, select the music folders you want to scan. Then, check that the scan settings meet your needs (scan frequency, delimiter application, etc.).
+Once logged in as an administrator, you will need to define your libraries—that is, select the music folders you want to scan. Then, check that the scan settings meet your needs (scan frequency, tag delimiters, etc.).
 
 You can now initiate the initial scan to import your music into LMS.
