@@ -111,6 +111,18 @@ namespace lms::ui
             return res;
         }
 
+        Wt::WLocale createLocale(const std::string& name)
+        {
+            Wt::WLocale locale{ name };
+            locale.setDecimalPoint(Wt::WString::tr("Lms.locale.decimal-point").toUTF8());
+            locale.setGroupSeparator(Wt::WString::tr("Lms.locale.group-separator").toUTF8());
+            locale.setDateFormat(Wt::WString::tr("Lms.locale.date-format").toUTF8());
+            locale.setTimeFormat(Wt::WString::tr("Lms.locale.time-format").toUTF8());
+            locale.setDateTimeFormat(Wt::WString::tr("Lms.locale.date-time-format").toUTF8());
+
+            return locale;
+        }
+
         enum IdxRoot
         {
             IdxExplore = 0,
@@ -274,6 +286,7 @@ namespace lms::ui
 
         setTitle();
         setLocalizedStrings(getOrCreateMessageBundle());
+        setLocale(createLocale(Wt::WLocale::currentLocale().name()));
 
         // Handle Media Scanner events and other session events
         enableUpdates(true);
@@ -362,7 +375,7 @@ namespace lms::ui
 
         setUserInfo(userId, strongAuth);
 
-        LMS_LOG(UI, INFO, "User '" << getUserLoginName() << "' logged in from '" << environment().clientAddress() << "', user agent = " << environment().userAgent());
+        LMS_LOG(UI, INFO, "User '" << getUserLoginName() << "' logged in from '" << environment().clientAddress() << "', user agent = " << environment().userAgent() << ", locale = '" << locale().name() << "'");
 
         _appManager.registerApplication(*this);
         _appManager.applicationRegistered.connect(this, [this](LmsApplication& otherApplication) {

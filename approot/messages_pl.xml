@@ -35,6 +35,13 @@
 </message>
 <message id="Lms.user">Użytkownik</message>
 
+<!--Locale-->
+<message id="Lms.locale.decimal-point">,</message>
+<message id="Lms.locale.group-separator"> </message>
+<message id="Lms.locale.date-format">dd.MM.yyyy</message>
+<message id="Lms.locale.time-format">HH:mm:ss</message>
+<message id="Lms.locale.date-time-format">dd.MM.yyyy HH:mm:ss</message>
+
 <!--Errors-->
 <message id="Lms.Error.artist-not-found">Artysta nie odnaleziony</message>
 <message id="Lms.Error.error-occurred">Wystąpił błąd!</message>
@@ -108,7 +115,7 @@
 <message id="Lms.Admin.ScannerController.get-report">Pokaż raport</message>
 <message id="Lms.Admin.ScannerController.last-scan">Ostatnie skanowanie</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Niedostępne</message>
-<message id="Lms.Admin.ScannerController.last-scan-status">Przeskanowano {1} plików w {2} o {3} ({4} błędów, {5} duplikatów)</message>
+<message id="Lms.Admin.ScannerController.last-scan-status">Przeskanowano {1} plików w {2} o {4} dnia {3} (UTC) - {5} błędów, {6} duplikatów</message>
 <message id="Lms.Admin.ScannerController.no-audio-track">Brak ścieżki dźwiękowej</message>
 <message id="Lms.Admin.ScannerController.same-hash">Zduplikowny hash pliku</message>
 <message id="Lms.Admin.ScannerController.same-mbid">Zduplikowany MBID pliku</message>
@@ -117,7 +124,7 @@
 <message id="Lms.Admin.ScannerController.scanner">Skaner</message>
 <message id="Lms.Admin.ScannerController.status">Status</message>
 <message id="Lms.Admin.ScannerController.status-not-scheduled">Nie zaplanowano</message>
-<message id="Lms.Admin.ScannerController.status-scheduled">Zaplanowano na {1}</message>
+<message id="Lms.Admin.ScannerController.status-scheduled">Zaplanowano o {2} dnia {1} (UTC)</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">Skanowanie: krok {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-associating-artist-images">Kojarzenie obrazów artystów: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-external-lyrics">Kojarzenie zewnętrznych tekstów: {1}%...</message>
@@ -356,4 +363,42 @@
 <message id="Lms.Settings.transcoding-mode.never">Nigdy</message>
 <message id="Lms.Settings.settings-saved">Ustawienia zapisane!</message>
 
+<!--Wt-->
+<message id="Wt.WDateTime.LessThanASecond">mniej niż sekunda</message>
+<message id="Wt.WDateTime.seconds">
+    <plural case="0">jedna sekunda</plural>
+    <plural case="1">{1} sekundy</plural>
+    <plural case="2">{1} sekund</plural>
+</message>
+<message id="Wt.WDateTime.minutes">
+    <plural case="0">jedna minuta</plural>
+    <plural case="1">{1} minuty</plural>
+    <plural case="2">{1} minut</plural>
+</message>
+<message id="Wt.WDateTime.hours">
+    <plural case="0">jedna godzina</plural>
+    <plural case="1">{1} godziny</plural>
+    <plural case="2">{1} godzin</plural>
+</message>
+<message id="Wt.WDateTime.days">
+    <plural case="0">jeden dzień</plural>
+    <plural case="1">{1} dni</plural>
+    <plural case="2">{1} dni</plural>
+</message>
+<message id="Wt.WDateTime.weeks">
+    <plural case="0">jeden tydzień</plural>
+    <plural case="1">{1} tygodnie</plural>
+    <plural case="2">{1} tygodni</plural>
+</message>
+<message id="Wt.WDateTime.months">
+    <plural case="0">jeden miesiąc</plural>
+    <plural case="1">{1} miesiące</plural>
+    <plural case="2">{1} miesięcy</plural>
+</message>
+<message id="Wt.WDateTime.years">
+    <plural case="0">jeden rok</plural>
+    <plural case="1">{1} lata</plural>
+    <plural case="2">{1} lat</plural>
+</message>
+<message id="Wt.WDateTime.null"></message>
 </messages>

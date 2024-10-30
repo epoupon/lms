@@ -34,6 +34,13 @@
 </message>
 <message id="Lms.user">Utente</message>
 
+<!--Locale-->
+<message id="Lms.locale.decimal-point">,</message>
+<message id="Lms.locale.group-separator">.</message>
+<message id="Lms.locale.date-format">dd/MM/yyyy</message>
+<message id="Lms.locale.time-format">HH:mm:ss</message>
+<message id="Lms.locale.date-time-format">dd/MM/yyyy HH:mm:ss</message>
+
 <!--Errors-->
 <message id="Lms.Error.artist-not-found">Artista non trovato</message>
 <message id="Lms.Error.error-occurred">C'è stato un errore!</message>
@@ -99,7 +106,7 @@
 <message id="Lms.Admin.ScannerController.get-report">Scarica un resoconto</message>
 <message id="Lms.Admin.ScannerController.last-scan">Ultima scansione</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Non disponibile</message>
-<message id="Lms.Admin.ScannerController.last-scan-status">Scansionati {1} files in {2} su {3} ({4} errori, {5} duplicati)</message>
+<message id="Lms.Admin.ScannerController.last-scan-status">{1} file scansionati in {2} alle {3} il {4} (UTC) - {5} errori, {6} duplicati</message>
 <message id="Lms.Admin.ScannerController.no-audio-track">Nessuna traccia audio</message>
 <message id="Lms.Admin.ScannerController.same-hash">Hash doppio</message>
 <message id="Lms.Admin.ScannerController.same-mbid">Track MBID doppio</message>
@@ -108,7 +115,7 @@
 <message id="Lms.Admin.ScannerController.scanner">Scanner</message>
 <message id="Lms.Admin.ScannerController.status">Stato</message>
 <message id="Lms.Admin.ScannerController.status-not-scheduled">Non pianificato</message>
-<message id="Lms.Admin.ScannerController.status-scheduled">Pianificato il {1}</message>
+<message id="Lms.Admin.ScannerController.status-scheduled">Programmato alle {2} del {1} (UTC)</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">Scansione: passo {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-associating-artist-images">Associando immagini degli artisti: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-external-lyrics">Associazione dei testi esterni: {1}%...</message>
@@ -331,6 +338,36 @@
 <message id="Lms.Settings.settings-saved">Nuove impostazioni salvate!</message>
 
 <!--Wt-->
+<message id="Wt.WDateTime.LessThanASecond">meno di un secondo</message>
+<message id="Wt.WDateTime.seconds">
+    <plural case="0">un secondo</plural>
+    <plural case="1">{1} secondi</plural>
+</message>
+<message id="Wt.WDateTime.minutes">
+    <plural case="0">un minuto</plural>
+    <plural case="1">{1} minuti</plural>
+</message>
+<message id="Wt.WDateTime.hours">
+    <plural case="0">un'ora</plural>
+    <plural case="1">{1} ore</plural>
+</message>
+<message id="Wt.WDateTime.days">
+    <plural case="0">un giorno</plural>
+    <plural case="1">{1} giorni</plural>
+</message>
+<message id="Wt.WDateTime.weeks">
+    <plural case="0">una settimana</plural>
+    <plural case="1">{1} settimane</plural>
+</message>
+<message id="Wt.WDateTime.months">
+    <plural case="0">un mese</plural>
+    <plural case="1">{1} mesi</plural>
+</message>
+<message id="Wt.WDateTime.years">
+    <plural case="0">un anno</plural>
+    <plural case="1">{1} anni</plural>
+</message>
+<message id="Wt.WDateTime.null"></message>
 <message id="Wt.WMessageBox.Yes">Si</message>
 <message id="Wt.WMessageBox.No">No</message>
 <message id="Wt.WValidator.Invalid">Questo campo non può essere vuoto</message>

@@ -34,6 +34,13 @@
 </message>
 <message id="Lms.user">User</message>
 
+<!--Locale-->
+<message id="Lms.locale.decimal-point">.</message>
+<message id="Lms.locale.group-separator">,</message>
+<message id="Lms.locale.date-format">MM/dd/yyyy</message>
+<message id="Lms.locale.time-format">HH:mm:ss</message>
+<message id="Lms.locale.date-time-format">MM/dd/yyyy HH:mm:ss</message>
+
 <!--Errors-->
 <message id="Lms.Error.artist-not-found">Artist not found</message>
 <message id="Lms.Error.error-occurred">Error occured!</message>
@@ -99,7 +106,7 @@
 <message id="Lms.Admin.ScannerController.get-report">Get report</message>
 <message id="Lms.Admin.ScannerController.last-scan">Last scan</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Not available</message>
-<message id="Lms.Admin.ScannerController.last-scan-status">Scanned {1} files in {2} on {3} ({4} errors, {5} duplicates)</message>
+<message id="Lms.Admin.ScannerController.last-scan-status">{1} files were scanned in {2} at {4} on {3} (UTC) - {5} errors, {6} duplicates</message>
 <message id="Lms.Admin.ScannerController.no-audio-track">No audio track</message>
 <message id="Lms.Admin.ScannerController.same-hash">Duplicated file hash</message>
 <message id="Lms.Admin.ScannerController.same-mbid">Duplicated track MBID</message>
@@ -108,7 +115,7 @@
 <message id="Lms.Admin.ScannerController.scanner">Scanner</message>
 <message id="Lms.Admin.ScannerController.status">Status</message>
 <message id="Lms.Admin.ScannerController.status-not-scheduled">Not scheduled</message>
-<message id="Lms.Admin.ScannerController.status-scheduled">Scheduled on {1}</message>
+<message id="Lms.Admin.ScannerController.status-scheduled">Scheduled at {2} on {1} (UTC)</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">Scanning: step {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-associating-artist-images">Associating artist images: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-external-lyrics">Associating external lyrics: {1}%...</message>
