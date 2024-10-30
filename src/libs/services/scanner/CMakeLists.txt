@@ -4,6 +4,7 @@ add_library(lmsscanner SHARED
 	impl/ScannerService.cpp
 	impl/ScannerStats.cpp
 	impl/ScanStepAssociateArtistImages.cpp
+	impl/ScanStepAssociateExternalLyrics.cpp
 	impl/ScanStepAssociateReleaseImages.cpp
 	impl/ScanStepCheckForDuplicatedFiles.cpp
 	impl/ScanStepCheckForRemovedFiles.cpp

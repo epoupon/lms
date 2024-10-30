@@ -19,23 +19,19 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
+#include "database/Object.hpp"
 
-#include "ScanStepBase.hpp"
+#include "SubsonicResponse.hpp"
 
-namespace lms::scanner
+namespace lms::db
 {
-    class ScanStepAssociateReleaseImages : public ScanStepBase
-    {
-    public:
-        ScanStepAssociateReleaseImages(InitParams& initParams);
+    class TrackLyrics;
+}
 
-    private:
-        ScanStep getStep() const override { return ScanStep::AssociateReleaseImages; }
-        core::LiteralString getStepName() const override { return "Associate release images"; }
-        void process(ScanContext& context) override;
+namespace lms::api::subsonic
+{
+    struct RequestContext;
 
-        const std::vector<std::string> _releaseFileNames;
-    };
-} // namespace lms::scanner
+    Response::Node createLyricsNode(RequestContext& context, const db::ObjectPtr<db::TrackLyrics>& lyrics);
+    Response::Node createStructuredLyricsNode(RequestContext& context, const db::ObjectPtr<db::TrackLyrics>& lyrics);
+} // namespace lms::api::subsonic

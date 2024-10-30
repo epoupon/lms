@@ -75,16 +75,17 @@ namespace lms::metadata
                 { TagType::TrackNumber, { "7" } },
                 { TagType::TotalTracks, { "12" } },
                 { TagType::TotalDiscs, { "3" } },
-            },
-            { { "RoleA", { "MyPerformer1ForRoleA", "MyPerformer2ForRoleA" } },
-                { "RoleB", { "MyPerformer1ForRoleB", "MyPerformer2ForRoleB" } } },
-            { { "MY_AWESOME_TAG_A", { "MyTagValue1ForTagA", "MyTagValue2ForTagA" } },
-                { "MY_AWESOME_TAG_B", { "MyTagValue1ForTagB", "MyTagValue2ForTagB" } } }
+            }
         };
+        testTags.setExtraUserTags({ { "MY_AWESOME_TAG_A", { "MyTagValue1ForTagA", "MyTagValue2ForTagA" } },
+            { "MY_AWESOME_TAG_B", { "MyTagValue1ForTagB", "MyTagValue2ForTagB" } } });
+        testTags.setPerformersTags({ { "RoleA", { "MyPerformer1ForRoleA", "MyPerformer2ForRoleA" } },
+            { "RoleB", { "MyPerformer1ForRoleB", "MyPerformer2ForRoleB" } } });
+        testTags.setLyricsTags({ { "eng", "[00:00.00]First line\n[00:01.00]Second line" } });
 
         static_cast<IParser&>(parser).setUserExtraTags(std::vector<std::string>{ "MY_AWESOME_TAG_A", "MY_AWESOME_TAG_B", "MY_AWESOME_MISSING_TAG" });
 
-        std::unique_ptr<Track> track{ parser.parse(testTags) };
+        const std::unique_ptr<Track> track{ parser.parse(testTags) };
 
         // Audio properties
         {
@@ -135,6 +136,13 @@ namespace lms::metadata
         ASSERT_EQ(track->lyricistArtists.size(), 2);
         EXPECT_EQ(track->lyricistArtists[0].name, "MyLyricist1");
         EXPECT_EQ(track->lyricistArtists[1].name, "MyLyricist2");
+        ASSERT_EQ(track->lyrics.size(), 1);
+        EXPECT_EQ(track->lyrics.front().language, "eng");
+        ASSERT_EQ(track->lyrics.front().synchronizedLines.size(), 2);
+        ASSERT_TRUE(track->lyrics.front().synchronizedLines.contains(std::chrono::milliseconds{ 0 }));
+        EXPECT_EQ(track->lyrics.front().synchronizedLines.find(std::chrono::milliseconds{ 0 })->second, "First line");
+        ASSERT_TRUE(track->lyrics.front().synchronizedLines.contains(std::chrono::milliseconds{ 1000 }));
+        EXPECT_EQ(track->lyrics.front().synchronizedLines.find(std::chrono::milliseconds{ 1000 })->second, "Second line");
         ASSERT_TRUE(track->mbid.has_value());
         EXPECT_EQ(track->mbid.value(), core::UUID::fromString("0afb190a-6735-46df-a16d-199f48206e4a"));
         ASSERT_EQ(track->mixerArtists.size(), 2);
@@ -273,12 +281,71 @@ namespace lms::metadata
         EXPECT_EQ(track->medium->release->artistDisplayName, "AlbumArtist1, AlbumArtist2");
     }
 
-    TEST(Parser, customDelimitersNotForDisplayString)
+    TEST(Parser, customDelimiters_foundInArtist)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "Artist1; Artist2" } },
+                { TagType::Artists, { "Artist1", "Artist2" } },
+            }
+        };
+
+        Parser parser;
+        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ "; " });
+
+        std::unique_ptr<Track> track{ parser.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct the display name since we hit a custom delimiter in Artist
+    }
+
+    TEST(Parser, customDelimiters_foundInArtists)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "Artist1 feat. Artist2" } },
+                { TagType::Artists, { "Artist1; Artist2" } },
+            }
+        };
+
+        Parser parser;
+        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ "; " });
+
+        std::unique_ptr<Track> track{ parser.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artistDisplayName, "Artist1 feat. Artist2");
+    }
+
+    TEST(Parser, customDelimiters_notUsed)
     {
         const TestTagReader testTags{
             {
                 { TagType::Artist, { "Artist1 & Artist2" } },
                 { TagType::Artists, { "Artist1", "Artist2" } },
+            }
+        };
+
+        Parser parser;
+        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ "; " });
+
+        std::unique_ptr<Track> track{ parser.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        EXPECT_EQ(track->artistDisplayName, "Artist1 & Artist2");
+    }
+
+    TEST(Parser, customDelimiters_onlyInArtist)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "Artist1 & Artist2" } },
             }
         };
 
@@ -290,14 +357,14 @@ namespace lms::metadata
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "Artist1");
         EXPECT_EQ(track->artists[1].name, "Artist2");
-        EXPECT_EQ(track->artistDisplayName, "Artist1 & Artist2");
+        EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstructed since a custom delimiter was hit for parsing
     }
 
-    TEST(Parser, customDelimitersUsedForArtist)
+    TEST(Parser, customDelimitersUsedForArtists)
     {
         const TestTagReader testTags{
             {
-                { TagType::Artist, { "Artist1 & Artist2" } },
+                { TagType::Artists, { "Artist1 & Artist2" } },
             }
         };
 
@@ -430,6 +497,26 @@ namespace lms::metadata
         EXPECT_EQ(track->medium->release->artists[0].name, "Artist1");
         EXPECT_EQ(track->medium->release->artists[1].name, "Artist2");
         EXPECT_EQ(track->medium->release->artistDisplayName, "Artist1, Artist2"); // reconstruct artist display name since multiple entries are found
+    }
+
+    TEST(Parser, multipleArtistsInAlbumArtists_displayName)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Album, { "MyAlbum" } },
+                { TagType::AlbumArtist, { "Artist1 & Artist2" } },
+                { TagType::AlbumArtists, { "Artist1", "Artist2" } },
+            }
+        };
+
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_TRUE(track->medium);
+        ASSERT_TRUE(track->medium->release);
+        ASSERT_EQ(track->medium->release->artists.size(), 2);
+        EXPECT_EQ(track->medium->release->artists[0].name, "Artist1");
+        EXPECT_EQ(track->medium->release->artists[1].name, "Artist2");
+        EXPECT_EQ(track->medium->release->artistDisplayName, "Artist1 & Artist2");
     }
 
     TEST(Parser, multipleArtistsInAlbumArtists)

@@ -40,6 +40,8 @@ namespace lms::scanner
 
     unsigned ScanStepStats::progress() const
     {
-        return (processedElems / static_cast<float>(totalElems ? totalElems : 1)) * 100;
+        const unsigned res{ static_cast<unsigned>((processedElems / static_cast<float>(totalElems ? totalElems : 1)) * 100) };
+        // can technically be above 100% since we may add files while iterating the filesystem
+        return res;
     }
 } // namespace lms::scanner

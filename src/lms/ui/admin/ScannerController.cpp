@@ -24,6 +24,7 @@
 #include <Wt/Http/Response.h>
 #include <Wt/WCheckBox.h>
 #include <Wt/WDateTime.h>
+#include <Wt/WLocale.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WResource.h>
 
@@ -40,17 +41,7 @@ namespace lms::ui
     {
         std::string durationToString(const Wt::WDateTime& begin, const Wt::WDateTime& end)
         {
-            const auto secs{ std::chrono::duration_cast<std::chrono::seconds>(end.toTimePoint() - begin.toTimePoint()).count() };
-
-            std::ostringstream oss;
-
-            if (secs >= 3600)
-                oss << secs / 3600 << "h";
-            if (secs >= 60)
-                oss << std::setw(2) << std::setfill('0') << (secs % 3600) / 60 << "m";
-            oss << std::setw(2) << std::setfill('0') << (secs % 60) << "s";
-
-            return oss.str();
+            return begin.timeTo(end).toUTF8();
         }
     } // namespace
 
@@ -123,6 +114,8 @@ namespace lms::ui
                 return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-audio-file");
             case scanner::ScanErrorType::CannotReadImageFile:
                 return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-image-file");
+            case scanner::ScanErrorType::CannotReadLyricsFile:
+                return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-lyrics-file");
             case scanner::ScanErrorType::NoAudioTrack:
                 return Wt::WString::tr("Lms.Admin.ScannerController.no-audio-track");
             case scanner::ScanErrorType::BadDuration:
@@ -220,7 +213,8 @@ namespace lms::ui
             _lastScanStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.last-scan-status")
                                          .arg(status.lastCompleteScanStats->nbFiles())
                                          .arg(durationToString(status.lastCompleteScanStats->startTime, status.lastCompleteScanStats->stopTime))
-                                         .arg(status.lastCompleteScanStats->stopTime.toString())
+                                         .arg(status.lastCompleteScanStats->stopTime.date().toString(Wt::WLocale::currentLocale().dateFormat()))
+                                         .arg(status.lastCompleteScanStats->stopTime.time().toString(Wt::WLocale::currentLocale().timeFormat()))
                                          .arg(status.lastCompleteScanStats->errors.size())
                                          .arg(status.lastCompleteScanStats->duplicates.size()));
 
@@ -247,7 +241,8 @@ namespace lms::ui
 
         case IScannerService::State::Scheduled:
             _status->setText(Wt::WString::tr("Lms.Admin.ScannerController.status-scheduled")
-                                 .arg(status.nextScheduledScan.toString()));
+                                 .arg(status.nextScheduledScan.date().toString(Wt::WLocale::currentLocale().dateFormat()))
+                                 .arg(status.nextScheduledScan.time().toString(Wt::WLocale::currentLocale().timeFormat())));
             _stepStatus->setText("");
             break;
 
@@ -271,6 +266,11 @@ namespace lms::ui
         {
         case ScanStep::AssociateArtistImages:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-associating-artist-images")
+                                     .arg(stepStats.progress()));
+            break;
+
+        case ScanStep::AssociateExternalLyrics:
+            _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-associating-external-lyrics")
                                      .arg(stepStats.progress()));
             break;
 

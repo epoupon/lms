@@ -54,6 +54,7 @@ namespace lms::scanner
         {
             db::Session& session;
             db::ArtistId lastRetrievedArtistId;
+            std::size_t processedArtistCount{};
             const std::vector<std::string>& artistFileNames;
         };
 
@@ -107,27 +108,44 @@ namespace lms::scanner
                     releasePaths.insert(directory->getAbsolutePath());
                 });
 
-                // Expect layout like this:
-                // ReleaseArtist/Release/Tracks'
-                //              /artist.jpg
-                //              /someOtherUserConfiguredArtistFile.jpg
                 if (!releasePaths.empty())
-                {
-                    const std::filesystem::path artistPath{ releasePaths.size() == 1 ? releasePaths.begin()->parent_path() : core::pathUtils::getLongestCommonPath(std::cbegin(releasePaths), std::cend(releasePaths)) };
-                    image = findImageInDirectory(searchContext, artistPath);
-                }
-
-                if (!image)
                 {
                     // Expect layout like this:
                     // ReleaseArtist/Release/Tracks'
-                    //                      /artist.jpg
-                    //                      /someOtherUserConfiguredArtistFile.jpg
-                    for (const std::filesystem::path& releasePath : releasePaths)
+                    //              /artist.jpg
+                    //              /someOtherUserConfiguredArtistFile.jpg
+                    //
+                    // Or:
+                    // ReleaseArtist/SomeGrouping/Release/Tracks'
+                    //              /artist.jpg
+                    //              /someOtherUserConfiguredArtistFile.jpg
+                    //
+                    std::filesystem::path directoryToInspect{ core::pathUtils::getLongestCommonPath(std::cbegin(releasePaths), std::cend(releasePaths)) };
+                    while (true)
                     {
-                        image = findImageInDirectory(searchContext, releasePath);
+                        image = findImageInDirectory(searchContext, directoryToInspect);
                         if (image)
                             break;
+
+                        std::filesystem::path parentPath{ directoryToInspect.parent_path() };
+                        if (parentPath == directoryToInspect)
+                            break;
+
+                        directoryToInspect = parentPath;
+                    }
+
+                    if (!image)
+                    {
+                        // Expect layout like this:
+                        // ReleaseArtist/Release/Tracks'
+                        //                      /artist.jpg
+                        //                      /someOtherUserConfiguredArtistFile.jpg
+                        for (const std::filesystem::path& releasePath : releasePaths)
+                        {
+                            image = findImageInDirectory(searchContext, releasePath);
+                            if (image)
+                                break;
+                        }
                     }
                 }
             }
@@ -150,6 +168,7 @@ namespace lms::scanner
                         LMS_LOG(DBUPDATER, DEBUG, "Updating artist image for artist '" << artist->getName() << "', using '" << (image ? image->getAbsoluteFilePath().c_str() : "<none>") << "'");
                         artistImageAssociations.push_back(ArtistImageAssociation{ artist->getId(), image ? image->getId() : db::ImageId{} });
                     }
+                    searchContext.processedArtistCount++;
                 });
             }
 
@@ -231,7 +250,7 @@ namespace lms::scanner
                 return;
 
             updateArtistImages(session, artistImageAssociations);
-            context.currentStepStats.processedElems += readBatchSize;
+            context.currentStepStats.processedElems = searchContext.processedArtistCount;
             _progressCallback(context.currentStepStats);
         }
     }

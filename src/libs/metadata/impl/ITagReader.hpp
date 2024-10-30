@@ -76,7 +76,7 @@ namespace lms::metadata
         LyricistSortOrder,  // non standard
         Lyricists,          // non standard
         LyricistsSortOrder, // non standard
-        Lyrics,
+        // Lyrics, Handled separately
         Media,
         MixDJ,
         Mixer,
@@ -104,6 +104,7 @@ namespace lms::metadata
         OriginalFilename,
         OriginalReleaseDate,
         OriginalReleaseYear,
+        // Performers, Handled separately
         Podcast,
         PodcastURL,
         Producer,
@@ -153,6 +154,9 @@ namespace lms::metadata
 
         using PerformerVisitor = std::function<void(std::string_view role, std::string_view artist)>;
         virtual void visitPerformerTags(PerformerVisitor visitor) const = 0;
+
+        using LyricsVisitor = std::function<void(std::string_view language, std::string_view lyrics)>;
+        virtual void visitLyricsTags(LyricsVisitor visitor) const = 0;
 
         virtual bool hasEmbeddedCover() const = 0;
         virtual const AudioProperties& getAudioProperties() const = 0;

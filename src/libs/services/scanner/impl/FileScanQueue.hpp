@@ -29,6 +29,7 @@
 
 #include "core/IOContextRunner.hpp"
 #include "metadata/IParser.hpp"
+#include "metadata/Lyrics.hpp"
 
 namespace lms::scanner
 {
@@ -40,10 +41,11 @@ namespace lms::scanner
 
     using AudioFileScanData = std::unique_ptr<metadata::Track>;
     using ImageFileScanData = std::optional<ImageInfo>;
+    using LyricsFileScanData = std::optional<metadata::Lyrics>;
     struct FileScanResult
     {
         std::filesystem::path path;
-        std::variant<std::monostate, AudioFileScanData, ImageFileScanData> scanData;
+        std::variant<std::monostate, AudioFileScanData, ImageFileScanData, LyricsFileScanData> scanData;
     };
 
     class FileScanQueue
@@ -57,6 +59,7 @@ namespace lms::scanner
         {
             AudioFile,
             ImageFile,
+            LyricsFile,
         };
         void pushScanRequest(const std::filesystem::path& path, ScanRequestType type);
 
@@ -68,6 +71,7 @@ namespace lms::scanner
     private:
         AudioFileScanData scanAudioFile(const std::filesystem::path& path);
         ImageFileScanData scanImageFile(const std::filesystem::path& path);
+        LyricsFileScanData scanLyricsFile(const std::filesystem::path& path);
 
         metadata::IParser& _metadataParser;
         boost::asio::io_context _scanContext;

@@ -19,6 +19,7 @@ add_executable(test-database
 	TrackBookmark.cpp
 	TrackFeatures.cpp
 	TrackList.cpp
+	TrackLyrics.cpp
 	User.cpp
 	)
 

@@ -229,6 +229,23 @@ namespace lms::db
 
             return query;
         }
+
+        template<typename ResultType>
+        Wt::Dbo::Query<ResultType> createArtistQuery(Wt::Dbo::Session& session, std::string_view itemToSelect, ReleaseId releaseId, TrackArtistLinkType linkType)
+        {
+            auto query{ session.query<ResultType>("SELECT " + std::string{ itemToSelect } + " from artist a")
+                            .join("track_artist_link t_a_l ON t_a_l.artist_id = a.id")
+                            .join("track t ON t.id = t_a_l.track_id")
+                            .where("t.release_id = ?")
+                            .bind(releaseId)
+                            .where("+t_a_l.type = ?")
+                            .bind(linkType) // adding + since the query planner does not a good job when analyze is not performed
+                            .groupBy("a.id")
+                            .orderBy("t_a_l.id") };
+
+            return query;
+        };
+
     } // namespace
 
     Label::Label(std::string_view name)
@@ -530,17 +547,16 @@ namespace lms::db
     {
         assert(session());
 
-        const auto query{ session()->query<Wt::Dbo::ptr<Artist>>(
-                                       "SELECT a FROM artist a"
-                                       " INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id"
-                                       " INNER JOIN track t ON t.id = t_a_l.track_id")
-                              .where("t.release_id = ?")
-                              .bind(getId())
-                              .where("+t_a_l.type = ?")
-                              .bind(linkType) // adding + since the query planner does not a good job when analyze is not performed
-                              .groupBy("a.id") };
-
+        const auto query{ createArtistQuery<Wt::Dbo::ptr<Artist>>(*session(), "a", getId(), linkType) };
         return utils::fetchQueryResults<Artist::pointer>(query);
+    }
+
+    std::vector<ArtistId> Release::getArtistIds(TrackArtistLinkType linkType) const
+    {
+        assert(session());
+
+        const auto query{ createArtistQuery<ArtistId>(*session(), "a.id", getId(), linkType) };
+        return utils::fetchQueryResults(query);
     }
 
     std::vector<Release::pointer> Release::getSimilarReleases(std::optional<std::size_t> offset, std::optional<std::size_t> count) const

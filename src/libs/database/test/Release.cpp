@@ -670,6 +670,58 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Release_releaseArtist)
+    {
+        ScopedRelease release{ session, "MyRelease" };
+        ScopedTrack track{ session };
+        ScopedArtist artist{ session, "MyArtist" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId(), { TrackArtistLinkType::ReleaseArtist })) };
+            EXPECT_EQ(releases.results.size(), 0);
+            EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setArtist(artist.getId(), { TrackArtistLinkType::ReleaseArtist })), 0);
+            EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setArtist(artist.getId())), 0);
+            EXPECT_EQ(release->getArtists(TrackArtistLinkType::ReleaseArtist).size(), 0);
+            EXPECT_EQ(release->getArtistIds(TrackArtistLinkType::ReleaseArtist).size(), 0);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track.get().modify()->setRelease(release.get());
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::ReleaseArtist);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto artists{ release->getArtists(TrackArtistLinkType::ReleaseArtist) };
+            ASSERT_EQ(artists.size(), 1);
+            EXPECT_EQ(artists.front()->getId(), artist.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto artists{ release->getArtistIds(TrackArtistLinkType::ReleaseArtist) };
+            ASSERT_EQ(artists.size(), 1);
+            EXPECT_EQ(artists.front(), artist.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            EXPECT_EQ(Release::getCount(session, Release::FindParameters{}), 1);
+
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setArtist(artist.getId(), { TrackArtistLinkType::ReleaseArtist })) };
+            ASSERT_EQ(releases.results.size(), 1);
+            EXPECT_EQ(releases.results.front(), release.getId());
+            EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setArtist(artist.getId(), { TrackArtistLinkType::ReleaseArtist })), 1);
+            EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setArtist(artist.getId())), 1);
+        }
+    }
+
     TEST_F(DatabaseFixture, Release_getDiscCount)
     {
         ScopedRelease release{ session, "MyRelease" };

@@ -18,6 +18,7 @@
  */
 
 #include <chrono>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <optional>
@@ -35,6 +36,22 @@
 
 namespace lms::metadata
 {
+    std::ostream& operator<<(std::ostream& os, const Lyrics& lyrics)
+    {
+        os << "\tTitle display name: " << lyrics.displayTitle << std::endl;
+        os << "\tArtist display name: " << lyrics.displayArtist << std::endl;
+        os << "\tAlbum display name: " << lyrics.displayAlbum << std::endl;
+        os << "\tOffset: " << lyrics.offset.count() << "ms" << std::endl;
+        os << "\tLanguage: " << lyrics.language << std::endl;
+        os << "\tSynchronized: " << !lyrics.synchronizedLines.empty() << std::endl;
+        for (const auto& [timestamp, line] : lyrics.synchronizedLines)
+            os << "\t" << core::stringUtils::formatTimestamp(timestamp) << " '" << line << "'" << std::endl;
+        for (const auto& line : lyrics.unsynchronizedLines)
+            os << "\t'" << line << "'" << std::endl;
+
+        return os;
+    }
+
     std::ostream& operator<<(std::ostream& os, const AudioProperties& audioProperties)
     {
         os << "\tBitrate: " << audioProperties.bitrate << " bps" << std::endl;
@@ -221,6 +238,10 @@ namespace lms::metadata
         if (!track->copyright.empty())
             std::cout << "Copyright: " << track->copyright << std::endl;
 
+        for (const Lyrics& lyrics : track->lyrics)
+            std::cout << "Lyrics:\n"
+                      << lyrics << std::endl;
+
         for (const auto& comment : track->comments)
             std::cout << "Comment: '" << comment << "'" << std::endl;
 
@@ -244,7 +265,7 @@ int main(int argc, char* argv[])
             ("help,h", "Display this help message")
             ("tag-delimiter", program_options::value<std::vector<std::string>>()->default_value(std::vector<std::string>{}, "[]"), "Tag delimiters (multiple allowed)")
             ("artist-tag-delimiter", program_options::value<std::vector<std::string>>()->default_value(std::vector<std::string>{}, "[]"), "Artist tag delimiters (multiple allowed)")
-            ("parser", program_options::value<std::vector<std::string>>()->default_value(std::vector<std::string>{ "taglib" }, "[taglib]"), "Parser to be used (value can be \"taglib\" or \"ffmpeg\")");
+            ("parser", program_options::value<std::vector<std::string>>()->default_value(std::vector<std::string>{ "taglib" }, "[taglib]"), "Parser to be used (value can be \"taglib\", \"ffmpeg\" or \"lyrics\")");
         // clang-format on
 
         program_options::options_description hiddenOptions{ "Hidden options" };
@@ -286,6 +307,7 @@ int main(int argc, char* argv[])
 
         enum class Parser
         {
+            Lyrics,
             Taglib,
             Ffmpeg,
         };
@@ -299,7 +321,9 @@ int main(int argc, char* argv[])
         core::EnumSet<Parser> parsers;
         for (const std::string& strParser : vm["parser"].as<std::vector<std::string>>())
         {
-            if (core::stringUtils::stringCaseInsensitiveEqual(strParser, "taglib"))
+            if (core::stringUtils::stringCaseInsensitiveEqual(strParser, "lyrics"))
+                parsers.insert(Parser::Lyrics);
+            else if (core::stringUtils::stringCaseInsensitiveEqual(strParser, "taglib"))
                 parsers.insert(Parser::Taglib);
             else if (core::stringUtils::stringCaseInsensitiveEqual(strParser, "ffmpeg"))
                 parsers.insert(Parser::Ffmpeg);
@@ -332,6 +356,27 @@ int main(int argc, char* argv[])
             std::filesystem::path file{ inputFile };
 
             std::cout << "Parsing file '" << file << "'" << std::endl;
+
+            if (parsers.contains(Parser::Lyrics))
+            {
+                try
+                {
+                    std::cout << "Using Lyrics:" << std::endl;
+
+                    std::ifstream ifs{ file.string() };
+                    if (ifs)
+                    {
+                        const metadata::Lyrics lyrics{ metadata::parseLyrics(ifs) };
+                        std::cout << lyrics << std::endl;
+                    }
+                    else
+                        std::cerr << "Cannot open file '" << file.string() << "'";
+                }
+                catch (metadata::Exception& e)
+                {
+                    std::cerr << "Parsing failed: " << e.what() << std::endl;
+                }
+            }
 
             if (parsers.contains(Parser::Ffmpeg))
             {

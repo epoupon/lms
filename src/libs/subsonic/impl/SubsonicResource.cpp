@@ -200,7 +200,8 @@ namespace lms::api::subsonic
             // Media retrieval
             { "/hls", { handleNotImplemented } },
             { "/getCaptions", { handleNotImplemented } },
-            { "/getLyrics", { handleNotImplemented } },
+            { "/getLyrics", { handleGetLyrics } },
+            { "/getLyricsBySongId", { handleGetLyricsBySongId } },
             { "/getAvatar", { handleNotImplemented } },
 
             // Media annotation

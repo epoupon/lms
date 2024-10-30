@@ -21,8 +21,8 @@
 
 #include <filesystem>
 #include <functional>
+#include <span>
 #include <string>
-#include <vector>
 
 #include <Wt/WDateTime.h>
 
@@ -41,7 +41,7 @@ namespace lms::core::pathUtils
     bool exploreFilesRecursive(const std::filesystem::path& directory, std::function<bool(std::error_code, const std::filesystem::path&)> cb, const std::filesystem::path* excludeDirFileName = {});
 
     // Check if file's extension is one of provided extensions
-    bool hasFileAnyExtension(const std::filesystem::path& file, const std::vector<std::filesystem::path>& extensions);
+    bool hasFileAnyExtension(const std::filesystem::path& file, std::span<const std::filesystem::path> extensions);
 
     // Check if a path is within a directory (excludeDirFileName is a relative can be used to exclude a whole directory and its subdirectory, must not have parent_path)
     // Caller responsibility to call with normalized paths

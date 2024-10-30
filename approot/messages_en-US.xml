@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions"
+	nplurals="2" plural="n > 1 ? 1 : 0">
+
+<!--Locale-->
+<message id="Lms.locale.decimal-point">.</message>
+<message id="Lms.locale.group-separator">,</message>
+<message id="Lms.locale.date-format">MM/dd/yyyy</message>
+<message id="Lms.locale.time-format">hh:mm:ss a</message>
+<message id="Lms.locale.date-time-format">MM/dd/yyyy hh:mm:ss a</message>
+
+</messages>

@@ -149,9 +149,9 @@ namespace lms::core::stringUtils
     template<>
     std::optional<bool> readAs(std::string_view str)
     {
-        if (str == "1" || str == "true")
+        if (str == "1" || stringCaseInsensitiveEqual(str, "true"))
             return true;
-        else if (str == "0" || str == "false")
+        else if (str == "0" || stringCaseInsensitiveEqual(str, "false"))
             return false;
 
         return std::nullopt;
@@ -462,5 +462,18 @@ namespace lms::core::stringUtils
     {
         // assume UTC
         return date.toString("yyyy-MM-dd").toUTF8();
+    }
+
+    std::string formatTimestamp(std::chrono::milliseconds timestamp)
+    {
+        using namespace std::chrono;
+
+        const auto mins{ duration_cast<minutes>(timestamp).count() };
+        timestamp -= duration_cast<milliseconds>(minutes{ mins });
+        const auto secs{ duration_cast<seconds>(timestamp).count() };
+        timestamp -= duration_cast<milliseconds>(seconds{ secs });
+        const auto millis{ timestamp.count() };
+
+        return "[" + std::to_string(mins) + ":" + (secs < 10 ? "0" : "") + std::to_string(secs) + "." + (millis < 100 ? (millis < 10 ? "00" : "0") : "") + std::to_string(millis) + "]";
     }
 } // namespace lms::core::stringUtils

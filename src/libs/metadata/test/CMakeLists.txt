@@ -1,6 +1,7 @@
 include(GoogleTest)
 
 add_executable(test-metadata
+	Lyrics.cpp
 	Metadata.cpp
 	Parser.cpp
 	Utils.cpp

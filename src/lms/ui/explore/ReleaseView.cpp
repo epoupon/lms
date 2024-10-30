@@ -466,6 +466,14 @@ namespace lms::ui
                 entry->bindNew<Wt::WPushButton>("track-info", Wt::WString::tr("Lms.Explore.track-info"))
                     ->clicked()
                     .connect([this, trackId] { TrackListHelpers::showTrackInfoModal(trackId, _filters); });
+
+                if (track->hasLyrics())
+                {
+                    entry->setCondition("if-has-lyrics", true);
+                    entry->bindNew<Wt::WPushButton>("track-lyrics", Wt::WString::tr("Lms.Explore.track-lyrics"))
+                        ->clicked()
+                        .connect([trackId] { TrackListHelpers::showTrackLyricsModal(trackId); });
+                }
             }
 
             entry->bindString("duration", utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);

@@ -19,23 +19,37 @@
 
 #pragma once
 
+#include <chrono>
+#include <filesystem>
+#include <iosfwd>
+#include <map>
+#include <memory>
+#include <span>
 #include <string>
 #include <vector>
 
-#include "ScanStepBase.hpp"
+#include "metadata/Exception.hpp"
 
-namespace lms::scanner
+namespace lms::metadata
 {
-    class ScanStepAssociateReleaseImages : public ScanStepBase
+    struct Lyrics
+    {
+        std::string language;
+        std::chrono::milliseconds offset{};
+        std::string displayArtist;
+        std::string displayAlbum;
+        std::string displayTitle;
+
+        std::map<std::chrono::milliseconds, std::string> synchronizedLines;
+        std::vector<std::string> unsynchronizedLines;
+    };
+
+    class LyricsException : public metadata::Exception
     {
     public:
-        ScanStepAssociateReleaseImages(InitParams& initParams);
-
-    private:
-        ScanStep getStep() const override { return ScanStep::AssociateReleaseImages; }
-        core::LiteralString getStepName() const override { return "Associate release images"; }
-        void process(ScanContext& context) override;
-
-        const std::vector<std::string> _releaseFileNames;
+        using metadata::Exception::Exception;
     };
-} // namespace lms::scanner
+
+    std::span<const std::filesystem::path> getSupportedLyricsFileExtensions();
+    Lyrics parseLyrics(std::istream& is);
+} // namespace lms::metadata

@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include <vector>
-
 #include "core/LiteralString.hpp"
 #include "services/scanner/ScannerOptions.hpp"
 #include "services/scanner/ScannerStats.hpp"

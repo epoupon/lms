@@ -172,5 +172,14 @@ namespace lms::db::utils
         }
     }
 
+    template<typename... Args>
+    void executeCommand(Wt::Dbo::Session& session, std::string_view command, const Args&... args)
+    {
+        LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "ExecuteCommand", "Command", command);
+
+        Wt::Dbo::Call call{ session.execute(std::string{ command }) };
+        (call.bind(args), ...);
+    }
+
     Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime);
 } // namespace lms::db::utils

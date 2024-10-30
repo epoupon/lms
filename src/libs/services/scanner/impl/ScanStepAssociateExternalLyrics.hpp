@@ -19,23 +19,18 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-
 #include "ScanStepBase.hpp"
 
 namespace lms::scanner
 {
-    class ScanStepAssociateReleaseImages : public ScanStepBase
+    class ScanStepAssociateExternalLyrics : public ScanStepBase
     {
     public:
-        ScanStepAssociateReleaseImages(InitParams& initParams);
+        using ScanStepBase::ScanStepBase;
 
     private:
-        ScanStep getStep() const override { return ScanStep::AssociateReleaseImages; }
-        core::LiteralString getStepName() const override { return "Associate release images"; }
+        ScanStep getStep() const override { return ScanStep::AssociateExternalLyrics; }
+        core::LiteralString getStepName() const override { return "Associate external lyrics"; }
         void process(ScanContext& context) override;
-
-        const std::vector<std::string> _releaseFileNames;
     };
 } // namespace lms::scanner

@@ -60,6 +60,7 @@
 					<li>${star class="dropdown-item"}</li>
 					<li>${download class="dropdown-item"}</li>
 					<li>${track-info class="dropdown-item"}</li>
+					${<if-has-lyrics>}<li>${track-lyrics class="dropdown-item"}</li>${</if-has-lyrics>}
 				</ul>
 			</div>
 		</div>
@@ -130,6 +131,26 @@
 						<pre>${comment}</pre>
 						${</if-has-comment>}
 					</div>
+				</div>
+				<div class="modal-footer">
+					${ok-btn class="btn btn-primary"}
+				</div>
+			</div>
+		</div>
+	</div>
+</message>
+
+
+<message id="Lms.Explore.Tracks.template.track-lyrics">
+	<div class="modal fade" tabindex="-1">
+		<div class="modal-dialog modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">${tr:Lms.Explore.track-lyrics}</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					${lyrics}
 				</div>
 				<div class="modal-footer">
 					${ok-btn class="btn btn-primary"}

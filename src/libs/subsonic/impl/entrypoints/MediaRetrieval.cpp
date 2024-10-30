@@ -31,11 +31,13 @@
 #include "core/Utils.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "database/TrackLyrics.hpp"
 #include "database/User.hpp"
 #include "services/artwork/IArtworkService.hpp"
 
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"
+#include "responses/Lyrics.hpp"
 
 namespace lms::api::subsonic
 {
@@ -188,6 +190,74 @@ namespace lms::api::subsonic
             return parameters;
         }
     } // namespace
+
+    Response handleGetLyrics(RequestContext& context)
+    {
+        std::string artistName{ getParameterAs<std::string>(context.parameters, "artist").value_or("") };
+        std::string titleName{ getParameterAs<std::string>(context.parameters, "title").value_or("") };
+
+        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+
+        // best effort search, as this API is really limited
+        auto transaction{ context.dbSession.createReadTransaction() };
+
+        db::Track::FindParameters params;
+        params.name = titleName;
+        params.artistName = artistName;
+        params.range = Range{ 0, 2 };
+
+        // Choice: we return nothing if there are too many results
+        const auto tracks{ db::Track::findIds(context.dbSession, params) };
+        if (tracks.results.size() == 1)
+        {
+            // Choice: we return only the first lyrics if the track has many lyrics
+            db::TrackLyrics::FindParameters lyricsParams;
+            lyricsParams.setTrack(tracks.results[0]);
+            lyricsParams.setSortMethod(TrackLyricsSortMethod::ExternalFirst);
+            lyricsParams.setRange(db::Range{ 0, 1 });
+
+            db::TrackLyrics::find(context.dbSession, lyricsParams, [&](const db::TrackLyrics::pointer& lyrics) {
+                response.addNode("lyrics", createLyricsNode(context, lyrics));
+            });
+        }
+
+        return response;
+    }
+
+    Response handleGetLyricsBySongId(RequestContext& context)
+    {
+        // mandatory params
+        db::TrackId id{ getMandatoryParameterAs<db::TrackId>(context.parameters, "id") };
+
+        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response::Node& lyricsList{ response.createNode("lyricsList") };
+        lyricsList.createEmptyArrayChild("structuredLyrics");
+
+        auto transaction{ context.dbSession.createReadTransaction() };
+        const db::Track::pointer track{ db::Track::find(context.dbSession, id) };
+        if (track)
+        {
+            db::TrackLyrics::FindParameters params;
+            params.setTrack(track->getId());
+            params.setExternal(true); // First try to only report external lyrics as they are often duplicate of embedded lyrics and support more features
+
+            bool hasExternalLyrics{};
+            db::TrackLyrics::find(context.dbSession, params, [&](const db::TrackLyrics::pointer& lyrics) {
+                lyricsList.addArrayChild("structuredLyrics", createStructuredLyricsNode(context, lyrics));
+                hasExternalLyrics = true;
+            });
+
+            if (!hasExternalLyrics)
+            {
+                params.setExternal(false);
+                db::TrackLyrics::find(context.dbSession, params, [&](const db::TrackLyrics::pointer& lyrics) {
+                    lyricsList.addArrayChild("structuredLyrics", createStructuredLyricsNode(context, lyrics));
+                });
+            }
+        }
+
+        return response;
+    }
 
     void handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response)
     {
