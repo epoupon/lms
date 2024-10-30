@@ -211,12 +211,12 @@ namespace lms::api::subsonic
         if (tracks.results.size() == 1)
         {
             // Choice: we return only the first lyrics if the track has many lyrics
-            db::TrackLyrics::FindParameters params;
-            params.setTrack(tracks.results[0]);
-            params.setSortMethod(TrackLyricsSortMethod::ExternalFirst);
-            params.setRange(db::Range{ 0, 1 });
+            db::TrackLyrics::FindParameters lyricsParams;
+            lyricsParams.setTrack(tracks.results[0]);
+            lyricsParams.setSortMethod(TrackLyricsSortMethod::ExternalFirst);
+            lyricsParams.setRange(db::Range{ 0, 1 });
 
-            db::TrackLyrics::find(context.dbSession, params, [&](const db::TrackLyrics::pointer& lyrics) {
+            db::TrackLyrics::find(context.dbSession, lyricsParams, [&](const db::TrackLyrics::pointer& lyrics) {
                 response.addNode("lyrics", createLyricsNode(context, lyrics));
             });
         }
