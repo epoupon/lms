@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 71 };
+        static constexpr Version LMS_DATABASE_VERSION{ 72 };
     }
 
     VersionInfo::VersionInfo()
@@ -907,6 +907,31 @@ SELECT
         utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV71(Session& session)
+    {
+        // Add a file name/stem in tracks
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "playqueue" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null,
+  "current_index" integer not null,
+  "current_position_in_track" integer,
+  "last_modified_date_time" text,
+  "user_id" bigint,
+  constraint "fk_playqueue_user" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred
+))");
+
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "playqueue_track" (
+  "playqueue_id" bigint,
+  "track_id" bigint not null,
+  primary key ("playqueue_id", "track_id"),
+  constraint "fk_playqueue_track_key1" foreign key ("playqueue_id") references "playqueue" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_playqueue_track_key2" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred
+))");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "playqueue_track_playqueue" on "playqueue_track" ("playqueue_id"))");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "playqueue_track_track" on "playqueue_track" ("track_id"))");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -954,6 +979,7 @@ SELECT
             { 68, migrateFromV68 },
             { 69, migrateFromV69 },
             { 70, migrateFromV70 },
+            { 71, migrateFromV71 },
         };
 
         bool migrationPerformed{};

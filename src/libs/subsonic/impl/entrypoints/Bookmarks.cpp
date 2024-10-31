@@ -19,6 +19,7 @@
 
 #include "Bookmarks.hpp"
 
+#include "database/PlayQueue.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackBookmark.hpp"
@@ -28,6 +29,8 @@
 #include "SubsonicId.hpp"
 #include "responses/Bookmark.hpp"
 #include "responses/Song.hpp"
+
+#include "core/String.hpp"
 
 namespace lms::api::subsonic
 {
@@ -90,6 +93,83 @@ namespace lms::api::subsonic
             throw RequestedDataNotFoundError{};
 
         bookmark.remove();
+
+        return Response::createOkResponse(context.serverProtocolVersion);
+    }
+
+    // Use a dedicated internal playlist
+    Response handleGetPlayQueue(RequestContext& context)
+    {
+        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+
+        auto transaction{ context.dbSession.createReadTransaction() };
+        const db::PlayQueue::pointer playQueue{ db::PlayQueue::find(context.dbSession, context.user->getId(), "subsonic") };
+        if (playQueue)
+        {
+            Response::Node& playQueueNode{ response.createNode("playQueue") };
+            if (auto currentTrack{ playQueue->getTrackAtCurrentIndex() })
+            {
+                // optional fields
+                playQueueNode.setAttribute("current", idToString(currentTrack->getId()));
+                playQueueNode.setAttribute("position", playQueue->getCurrentPositionInTrack().count());
+            }
+
+            // mandatory fields
+            playQueueNode.setAttribute("username", context.user->getLoginName());
+            playQueueNode.setAttribute("changed", core::stringUtils::toISO8601String(playQueue->getLastModifiedDateTime()));
+            playQueueNode.setAttribute("changedBy", "unknown"); // we don't store the client name (could be several same clients on several devices...)
+
+            playQueue->visitTracks([&](const db::Track::pointer& track) {
+                playQueueNode.addArrayChild("entry", createSongNode(context, track, true /* id3 */));
+            });
+        }
+
+        return response;
+    }
+
+    Response handleSavePlayQueue(RequestContext& context)
+    {
+        // optional params
+        std::vector<db::TrackId> trackIds{ getMultiParametersAs<TrackId>(context.parameters, "id") };
+        const std::optional<db::TrackId> currentTrackId{ getParameterAs<db::TrackId>(context.parameters, "current") };
+        const std::chrono::milliseconds currentPositionInTrack{ getParameterAs<std::size_t>(context.parameters, "current").value_or(0) };
+
+        std::vector<db::Track::pointer> tracks;
+        tracks.reserve(trackIds.size());
+
+        // no id means we clear the play queue (see https://github.com/opensubsonic/open-subsonic-api/pull/106)
+        if (!trackIds.empty())
+        {
+            auto transaction{ context.dbSession.createReadTransaction() };
+            for (db::TrackId trackId : trackIds)
+            {
+                if (db::Track::pointer track{ db::Track::find(context.dbSession, trackId) })
+                    tracks.push_back(track);
+            }
+        }
+
+        {
+            auto transaction{ context.dbSession.createWriteTransaction() };
+
+            db::PlayQueue::pointer playQueue{ db::PlayQueue::find(context.dbSession, context.user->getId(), "subsonic") };
+            if (!playQueue)
+                playQueue = context.dbSession.create<db::PlayQueue>(context.user, "subsonic");
+
+            playQueue.modify()->clear();
+            std::size_t index{};
+            for (std::size_t i{}; i < tracks.size(); ++i)
+            {
+                db::Track::pointer& track{ tracks[i] };
+                playQueue.modify()->addTrack(track);
+
+                if (track->getId() == currentTrackId)
+                    index = i;
+            }
+
+            playQueue.modify()->setCurrentIndex(index);
+            playQueue.modify()->setCurrentPositionInTrack(currentPositionInTrack);
+            playQueue.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
+        }
 
         return Response::createOkResponse(context.serverProtocolVersion);
     }

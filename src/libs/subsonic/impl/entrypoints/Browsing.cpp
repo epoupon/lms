@@ -57,12 +57,11 @@ namespace lms::api::subsonic
 
             if (libraryId.isValid())
             {
-                const MediaLibrary::pointer library{ MediaLibrary::find(session, libraryId) };
-                if (!library)
-                    throw BadParameterGenericError{ "id" };
-
-                if (Directory::pointer rootDirectory{ Directory::find(session, library->getPath()) })
-                    res.push_back(rootDirectory);
+                if (const MediaLibrary::pointer library{ MediaLibrary::find(session, libraryId) })
+                {
+                    if (Directory::pointer rootDirectory{ Directory::find(session, library->getPath()) })
+                        res.push_back(rootDirectory);
+                }
             }
             else
             {

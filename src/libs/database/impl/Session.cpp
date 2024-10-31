@@ -30,6 +30,7 @@
 #include "database/Image.hpp"
 #include "database/Listen.hpp"
 #include "database/MediaLibrary.hpp"
+#include "database/PlayQueue.hpp"
 #include "database/RatedArtist.hpp"
 #include "database/RatedRelease.hpp"
 #include "database/RatedTrack.hpp"
@@ -104,6 +105,7 @@ namespace lms::db
         _session.mapClass<Label>("label");
         _session.mapClass<Listen>("listen");
         _session.mapClass<MediaLibrary>("media_library");
+        _session.mapClass<PlayQueue>("playqueue");
         _session.mapClass<RatedArtist>("rated_artist");
         _session.mapClass<RatedRelease>("rated_release");
         _session.mapClass<RatedTrack>("rated_track");

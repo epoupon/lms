@@ -250,8 +250,8 @@ namespace lms::api::subsonic
             { "/getBookmarks", { handleGetBookmarks } },
             { "/createBookmark", { handleCreateBookmark } },
             { "/deleteBookmark", { handleDeleteBookmark } },
-            { "/getPlayQueue", { handleNotImplemented } },
-            { "/savePlayQueue", { handleNotImplemented } },
+            { "/getPlayQueue", { handleGetPlayQueue } },
+            { "/savePlayQueue", { handleSavePlayQueue } },
 
             // Media library scanning
             { "/getScanStatus", { Scan::handleGetScanStatus, { db::UserType::ADMIN } } },
