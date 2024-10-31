@@ -34,6 +34,8 @@ namespace lms::api::subsonic
     Response handleGetSongRequest(RequestContext& context);
     Response handleGetArtistInfoRequest(RequestContext& context);
     Response handleGetArtistInfo2Request(RequestContext& context);
+    Response handleGetAlbumInfo(RequestContext& context);
+    Response handleGetAlbumInfo2(RequestContext& context);
     Response handleGetSimilarSongsRequest(RequestContext& context);
     Response handleGetSimilarSongs2Request(RequestContext& context);
     Response handleGetTopSongs(RequestContext& context);

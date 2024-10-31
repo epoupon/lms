@@ -38,6 +38,7 @@
 #include "SubsonicId.hpp"
 #include "Utils.hpp"
 #include "responses/Album.hpp"
+#include "responses/AlbumInfo.hpp"
 #include "responses/Artist.hpp"
 #include "responses/Genre.hpp"
 #include "responses/Song.hpp"
@@ -555,6 +556,37 @@ namespace lms::api::subsonic
                 if (similarArtist)
                     artistInfoNode.addArrayChild("similarArtist", createArtistNode(context, similarArtist));
             }
+        }
+
+        return response;
+    }
+
+    Response handleGetAlbumInfo(RequestContext& context)
+    {
+        const db::DirectoryId directoryId{ getMandatoryParameterAs<db::DirectoryId>(context.parameters, "id") };
+
+        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+
+        {
+            auto transaction{ context.dbSession.createReadTransaction() };
+
+            if (db::Release::pointer release{ getReleaseFromDirectory(context.dbSession, directoryId) })
+                response.addNode("albumInfo", createAlbumInfoNode(context, release));
+        }
+        return response;
+    }
+
+    Response handleGetAlbumInfo2(RequestContext& context)
+    {
+        const db::ReleaseId releaseId{ getMandatoryParameterAs<db::ReleaseId>(context.parameters, "id") };
+
+        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+
+        {
+            auto transaction{ context.dbSession.createReadTransaction() };
+
+            if (db::Release::pointer release{ db::Release::find(context.dbSession, releaseId) })
+                response.addNode("albumInfo", createAlbumInfoNode(context, release));
         }
 
         return response;

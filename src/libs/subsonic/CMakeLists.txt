@@ -11,6 +11,7 @@ add_library(lmssubsonic SHARED
 	impl/entrypoints/System.cpp
 	impl/entrypoints/UserManagement.cpp
 	impl/responses/Album.cpp
+	impl/responses/AlbumInfo.cpp
 	impl/responses/Artist.cpp
 	impl/responses/Bookmark.cpp
 	impl/responses/Contributor.cpp
