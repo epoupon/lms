@@ -28,6 +28,14 @@ namespace lms::scanner
     {
         context.stats.totalFileCount = 0;
 
+        std::vector<std::filesystem::path> supportedExtensions;
+        for (const auto& extension : _settings.supportedAudioFileExtensions)
+            supportedExtensions.emplace_back(extension);
+        for (const auto& extension : _settings.supportedImageFileExtensions)
+            supportedExtensions.emplace_back(extension);
+        for (const auto& extension : _settings.supportedLyricsFileExtensions)
+            supportedExtensions.emplace_back(extension);
+
         for (const ScannerSettings::MediaLibraryInfo& mediaLibrary : _settings.mediaLibraries)
         {
             std::size_t currentDirectoryProcessElemsCount{};
@@ -36,7 +44,7 @@ namespace lms::scanner
                     if (_abortScan)
                         return false;
 
-                    if (!ec && (core::pathUtils::hasFileAnyExtension(path, _settings.supportedAudioFileExtensions) || core::pathUtils::hasFileAnyExtension(path, _settings.supportedImageFileExtensions)))
+                    if (!ec && core::pathUtils::hasFileAnyExtension(path, supportedExtensions))
                     {
                         context.currentStepStats.processedElems++;
                         currentDirectoryProcessElemsCount++;
