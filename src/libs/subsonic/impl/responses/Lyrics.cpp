@@ -83,7 +83,7 @@ namespace lms::api::subsonic
         if (lyrics->getOffset() != std::chrono::milliseconds{})
             lyricsNode.setAttribute("offset", lyrics->getOffset().count());
 
-        lyricsNode.createEmptyArrayChild("lines");
+        lyricsNode.createEmptyArrayChild("line");
         auto addLine{ [&](std::string&& line, std::optional<std::chrono::milliseconds> timestamp = std::nullopt) {
             Response::Node lineNode;
             if (timestamp)
@@ -98,7 +98,7 @@ namespace lms::api::subsonic
                 lineNode.setValue(std::move(line));
                 break;
             }
-            lyricsNode.addArrayChild("lines", std::move(lineNode));
+            lyricsNode.addArrayChild("line", std::move(lineNode));
         } };
 
         if (!lyrics->isSynchronized())
