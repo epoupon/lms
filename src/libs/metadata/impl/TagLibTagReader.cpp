@@ -57,7 +57,7 @@ namespace lms::metadata
         };
 
         // Mapping to internal taglib names and/or common alternative custom names
-        static const std::unordered_map<TagType, std::vector<std::string>> tagMapping{
+        const std::unordered_map<TagType, std::vector<std::string>> tagMapping{
             { TagType::AcoustID, { "ACOUSTID_ID", "ACOUSTID ID" } },
             { TagType::Album, { "ALBUM" } },
             { TagType::AlbumArtist, { "ALBUMARTIST" } },

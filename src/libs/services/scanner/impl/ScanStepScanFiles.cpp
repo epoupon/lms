@@ -144,7 +144,7 @@ namespace lms::scanner
             Artist::pointer artist{ session.create<Artist>(artistInfo.name) };
 
             if (artistInfo.mbid)
-                artist.modify()->setMBID(*artistInfo.mbid);
+                artist.modify()->setMBID(artistInfo.mbid);
             if (artistInfo.sortName)
                 artist.modify()->setSortName(*artistInfo.sortName);
 
@@ -354,7 +354,7 @@ namespace lms::scanner
         {
             std::vector<Cluster::pointer> clusters;
 
-            auto getOrCreateClusters{ [&](std::string tag, std::span<const std::string> values) {
+            auto getOrCreateClusters{ [&](std::string_view tag, std::span<const std::string> values) {
                 auto clusterType = ClusterType::find(session, tag);
                 if (!clusterType)
                     clusterType = session.create<ClusterType>(tag);
@@ -437,7 +437,6 @@ namespace lms::scanner
 
         std::vector<FileScanResult> scanResults;
 
-        std::filesystem::path currentDirectory;
         core::pathUtils::exploreFilesRecursive(
             mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path) {
                 LMS_SCOPED_TRACE_DETAILED("Scanner", "OnExploreFile");
