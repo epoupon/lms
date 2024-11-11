@@ -72,6 +72,34 @@ namespace lms::metadata::tests
         EXPECT_EQ(lyrics.synchronizedLines.find(9s + 160ms)->second, "I, I just woke up from a dream");
     }
 
+    TEST(Lyrics, tagsWithSpaces)
+    {
+        std::istringstream is{ R"([al:    dqsxdkbu ]  
+[00:09.16]I, I just woke up from a dream)" };
+
+        const Lyrics lyrics{ parseLyrics(is) };
+
+        EXPECT_EQ(lyrics.unsynchronizedLines.size(), 0);
+        ASSERT_EQ(lyrics.synchronizedLines.size(), 1);
+        EXPECT_EQ(lyrics.displayAlbum, "dqsxdkbu");
+        ASSERT_TRUE(lyrics.synchronizedLines.contains(9s + 160ms));
+        EXPECT_EQ(lyrics.synchronizedLines.find(9s + 160ms)->second, "I, I just woke up from a dream");
+    }
+
+    TEST(Lyrics, tagIDsWithSpaces)
+    {
+        std::istringstream is{ R"([  al   :    dqsxdkbu ]
+[00:09.16]I, I just woke up from a dream)" };
+
+        const Lyrics lyrics{ parseLyrics(is) };
+
+        EXPECT_EQ(lyrics.unsynchronizedLines.size(), 0);
+        ASSERT_EQ(lyrics.synchronizedLines.size(), 1);
+        EXPECT_EQ(lyrics.displayAlbum, "dqsxdkbu");
+        ASSERT_TRUE(lyrics.synchronizedLines.contains(9s + 160ms));
+        EXPECT_EQ(lyrics.synchronizedLines.find(9s + 160ms)->second, "I, I just woke up from a dream");
+    }
+
     TEST(Lyrics, tagAtTheEndOfLyrics)
     {
         std::istringstream is{ R"([00:03.30]Ooh, ooh
