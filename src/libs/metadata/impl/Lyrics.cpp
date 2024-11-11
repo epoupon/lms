@@ -83,13 +83,14 @@ namespace lms::metadata
             return true;
         }
 
-        // Parse timestamps from a line and return the associated times in milliseconds
-        void extractTimestamps(std::string_view line, std::vector<std::chrono::milliseconds>& timestamps)
+        // Parse timestamps from a line, update the associated times in milliseconds and return the remaining line
+        std::string_view extractTimestamps(std::string_view line, std::vector<std::chrono::milliseconds>& timestamps)
         {
             timestamps.clear();
             static const std::regex timeTagRegex{ R"(\[(?:(\d{1,2}):)?(\d{1,2}):(\d{1,2})(?:\.(\d{1,3}))?\])" };
             std::cregex_iterator regexIt(line.begin(), line.end(), timeTagRegex);
             std::cregex_iterator regexEnd;
+            std::string_view::size_type offset{};
 
             while (regexIt != regexEnd)
             {
@@ -110,15 +111,12 @@ namespace lms::metadata
                     currentTimestamp += std::chrono::milliseconds{ fractional };
                 }
 
+                offset = match[0].second - line.data();
                 timestamps.push_back(currentTimestamp);
                 ++regexIt;
             }
-        }
 
-        // Extract the lyric text from a line, removing any timestamps
-        std::string_view extractLyricText(std::string_view line)
-        {
-            return line.substr(line.find_last_of(']') + 1);
+            return line.substr(offset);
         }
     } // namespace
 
@@ -178,7 +176,7 @@ namespace lms::metadata
             if (parseTag(trimmedLine, lyrics))
                 continue;
 
-            extractTimestamps(trimmedLine, timestamps);
+            const std::string_view lyricText{ extractTimestamps(trimmedLine, timestamps) };
 
             // If there are timestamps, add as synchronized lyrics
             if (!timestamps.empty())
@@ -189,7 +187,6 @@ namespace lms::metadata
                 currentState = State::SynchronizedLyrics;
 
                 applyAccumulatedLyrics();
-                std::string_view lyricText{ extractLyricText(trimmedLine) };
                 for (std::chrono::milliseconds timestamp : timestamps)
                     lyrics.synchronizedLines.emplace(timestamp, lyricText);
 

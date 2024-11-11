@@ -191,6 +191,22 @@ Some unsynchronized lyrics
         EXPECT_EQ(lyrics.synchronizedLines.find(3s + 300ms)->second, "Ooh, ooh");
     }
 
+    TEST(Lyrics, synchronized_withTimestampsDelimiters)
+    {
+        std::istringstream is{ R"([00:03.30]Ooh, ooh ] [])" };
+
+        const Lyrics lyrics{ parseLyrics(is) };
+
+        EXPECT_TRUE(lyrics.displayArtist.empty());
+        EXPECT_TRUE(lyrics.displayAlbum.empty());
+        EXPECT_TRUE(lyrics.displayTitle.empty());
+        EXPECT_EQ(lyrics.offset, std::chrono::milliseconds{ 0 });
+        EXPECT_EQ(lyrics.unsynchronizedLines.size(), 0);
+        ASSERT_EQ(lyrics.synchronizedLines.size(), 1);
+        ASSERT_TRUE(lyrics.synchronizedLines.contains(3s + 300ms));
+        EXPECT_EQ(lyrics.synchronizedLines.find(3s + 300ms)->second, "Ooh, ooh ] []");
+    }
+
     TEST(Lyrics, synchronized_timestampFormats)
     {
         std::istringstream is{ R"([00:03.30]First line
