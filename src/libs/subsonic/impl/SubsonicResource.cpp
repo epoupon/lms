@@ -254,7 +254,7 @@ namespace lms::api::subsonic
             { "/savePlayQueue", { handleNotImplemented } },
 
             // Media library scanning
-            { "/getScanStatus", { Scan::handleGetScanStatus, { db::UserType::ADMIN } } },
+            { "/getScanStatus", { Scan::handleGetScanStatus } },
             { "/startScan", { Scan::handleStartScan, { db::UserType::ADMIN } } },
         };
 

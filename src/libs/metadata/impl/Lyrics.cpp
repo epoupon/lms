@@ -34,59 +34,63 @@ namespace lms::metadata
 
     namespace
     {
-        std::string_view getSubmatchString(const std::csub_match& submatch)
+        // Parse a single line with a tag like [ar: Artist] and set the appropriate fields in the Lyrics object
+        bool parseTag(std::string_view line, Lyrics& lyrics)
         {
-            assert(submatch.matched);
-            return std::string_view{ submatch.first, static_cast<std::string_view::size_type>(submatch.length()) };
-        }
+            if (line.empty())
+                return false;
 
-        // Parse a single line with ID tags like [ar: Artist] and set the appropriate fields in the Lyrics object
-        bool parseIDTag(std::string_view line, Lyrics& lyrics)
-        {
-            static const std::regex idTagRegex{ R"(^\[([a-zA-Z_]+):(.+?)\])" };
-            std::cmatch match;
+            if (line.front() != '[' || line.back() != ']') // consider lines are trimmed
+                return false;
 
-            if (std::regex_search(line.data(), line.data() + line.size(), match, idTagRegex))
+            const auto separator{ line.find(':') };
+            if (separator == std::string_view::npos)
+                return false;
+
+            const std::string_view tagType{ core::stringUtils::stringTrim(line.substr(1, separator - 1)) };
+            const std::string_view tagValue{ core::stringUtils::stringTrim(line.substr(separator + 1, line.size() - separator - 2)) };
+
+            if (tagType.empty())
+                return false;
+
+            // check for timestamps
+            if (std::any_of(tagType.begin(), tagType.end(), [](char c) { return std::isdigit(c); }))
+                return false;
+
+            if (tagType == "ar")
             {
-                std::string_view tagType{ getSubmatchString(match[1]) };
-                std::string_view tagValue{ core::stringUtils::stringTrim(getSubmatchString(match[2])) };
-
-                if (tagType == "ar")
-                {
-                    lyrics.displayArtist = tagValue;
-                }
-                else if (tagType == "al")
-                {
-                    lyrics.displayAlbum = tagValue;
-                }
-                else if (tagType == "ti")
-                {
-                    lyrics.displayTitle = tagValue;
-                }
-                else if (tagType == "la")
-                {
-                    lyrics.language = tagValue;
-                }
-                else if (tagType == "offset")
-                {
-                    if (const auto value{ core::stringUtils::readAs<int>(tagValue) })
-                        lyrics.offset = std::chrono::milliseconds{ *value };
-                }
-                // not interrested by other tags like 'duration', 'id', etc.
-
-                return true;
+                lyrics.displayArtist = tagValue;
             }
+            else if (tagType == "al")
+            {
+                lyrics.displayAlbum = tagValue;
+            }
+            else if (tagType == "ti")
+            {
+                lyrics.displayTitle = tagValue;
+            }
+            else if (tagType == "la")
+            {
+                lyrics.language = tagValue;
+            }
+            else if (tagType == "offset")
+            {
+                if (const auto value{ core::stringUtils::readAs<int>(tagValue) })
+                    lyrics.offset = std::chrono::milliseconds{ *value };
+            }
+            // not interrested by other tags like 'duration', 'id', etc.
 
-            return false;
+            return true;
         }
 
-        // Parse timestamps from a line and return the associated times in milliseconds
-        void extractTimestamps(std::string_view line, std::vector<std::chrono::milliseconds>& timestamps)
+        // Parse timestamps from a line, update the associated times in milliseconds and return the remaining line
+        std::string_view extractTimestamps(std::string_view line, std::vector<std::chrono::milliseconds>& timestamps)
         {
             timestamps.clear();
             static const std::regex timeTagRegex{ R"(\[(?:(\d{1,2}):)?(\d{1,2}):(\d{1,2})(?:\.(\d{1,3}))?\])" };
             std::cregex_iterator regexIt(line.begin(), line.end(), timeTagRegex);
             std::cregex_iterator regexEnd;
+            std::string_view::size_type offset{};
 
             while (regexIt != regexEnd)
             {
@@ -107,15 +111,12 @@ namespace lms::metadata
                     currentTimestamp += std::chrono::milliseconds{ fractional };
                 }
 
+                offset = match[0].second - line.data();
                 timestamps.push_back(currentTimestamp);
                 ++regexIt;
             }
-        }
 
-        // Extract the lyric text from a line, removing any timestamps
-        std::string_view extractLyricText(std::string_view line)
-        {
-            return line.substr(line.find_last_of(']') + 1);
+            return line.substr(offset);
         }
     } // namespace
 
@@ -172,10 +173,10 @@ namespace lms::metadata
             if (currentState == State::None && trimmedLine.empty())
                 continue;
 
-            if (parseIDTag(trimmedLine, lyrics))
+            if (parseTag(trimmedLine, lyrics))
                 continue;
 
-            extractTimestamps(trimmedLine, timestamps);
+            const std::string_view lyricText{ extractTimestamps(trimmedLine, timestamps) };
 
             // If there are timestamps, add as synchronized lyrics
             if (!timestamps.empty())
@@ -186,7 +187,6 @@ namespace lms::metadata
                 currentState = State::SynchronizedLyrics;
 
                 applyAccumulatedLyrics();
-                std::string_view lyricText{ extractLyricText(trimmedLine) };
                 for (std::chrono::milliseconds timestamp : timestamps)
                     lyrics.synchronizedLines.emplace(timestamp, lyricText);
 
