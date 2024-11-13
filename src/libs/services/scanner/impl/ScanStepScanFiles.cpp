@@ -276,7 +276,8 @@ namespace lms::scanner
             return candidateRelease->getName() == releaseInfo.name
                 && candidateRelease->getSortName() == releaseInfo.sortName
                 && candidateRelease->getTotalDisc() == releaseInfo.mediumCount
-                && candidateRelease->isCompilation() == releaseInfo.isCompilation;
+                && candidateRelease->isCompilation() == releaseInfo.isCompilation
+                && candidateRelease->getLabelNames() == releaseInfo.labels;
         }
 
         Release::pointer getOrCreateRelease(Session& session, const metadata::Release& releaseInfo, const Directory::pointer& currentDirectory)
