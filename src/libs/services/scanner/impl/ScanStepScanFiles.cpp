@@ -254,6 +254,8 @@ namespace lms::scanner
                 release.modify()->setArtistDisplayName(releaseInfo.artistDisplayName);
             if (release->isCompilation() != releaseInfo.isCompilation)
                 release.modify()->setCompilation(releaseInfo.isCompilation);
+            if (release->getBarcode() != releaseInfo.barcode)
+                release.modify()->setBarcode(releaseInfo.barcode);
             if (release->getReleaseTypeNames() != releaseInfo.releaseTypes)
             {
                 release.modify()->clearReleaseTypes();
@@ -277,7 +279,8 @@ namespace lms::scanner
                 && candidateRelease->getSortName() == releaseInfo.sortName
                 && candidateRelease->getTotalDisc() == releaseInfo.mediumCount
                 && candidateRelease->isCompilation() == releaseInfo.isCompilation
-                && candidateRelease->getLabelNames() == releaseInfo.labels;
+                && candidateRelease->getLabelNames() == releaseInfo.labels
+                && candidateRelease->getBarcode() == releaseInfo.barcode;
         }
 
         Release::pointer getOrCreateRelease(Session& session, const metadata::Release& releaseInfo, const Directory::pointer& currentDirectory)

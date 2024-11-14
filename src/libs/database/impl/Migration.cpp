@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 72 };
+        static constexpr Version LMS_DATABASE_VERSION{ 73 };
     }
 
     VersionInfo::VersionInfo()
@@ -932,6 +932,15 @@ SELECT
         utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "playqueue_track_track" on "playqueue_track" ("track_id"))");
     }
 
+    void migrateFromV72(Session& session)
+    {
+        // Add catalog number
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE release ADD barcode TEXT NOT NULL DEFAULT ''");
+
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -980,6 +989,7 @@ SELECT
             { 69, migrateFromV69 },
             { 70, migrateFromV70 },
             { 71, migrateFromV71 },
+            { 72, migrateFromV72 },
         };
 
         bool migrationPerformed{};

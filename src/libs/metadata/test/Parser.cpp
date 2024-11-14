@@ -41,6 +41,7 @@ namespace lms::metadata
                 { TagType::AlbumArtist, { "MyAlbumArtist1 & MyAlbumArtist2" } },
                 { TagType::AlbumArtists, { "MyAlbumArtist1", "MyAlbumArtist2" } },
                 { TagType::AlbumArtistsSortOrder, { "MyAlbumArtist1SortName", "MyAlbumArtist2SortName" } },
+                { TagType::Barcode, { "MyBarcode" } },
                 { TagType::Comment, { "Comment1", "Comment2" } },
                 { TagType::Compilation, { "1" } },
                 { TagType::Composer, { "MyComposer1", "MyComposer2" } },
@@ -208,6 +209,7 @@ namespace lms::metadata
         EXPECT_EQ(track->medium->release->artists[1].sortName, "MyAlbumArtist2SortName");
         EXPECT_EQ(track->medium->release->artists[1].mbid, core::UUID::fromString("5ed3d6b3-2aed-4a03-828c-3c4d4f7406e1"));
         EXPECT_TRUE(track->medium->release->isCompilation);
+        EXPECT_EQ(track->medium->release->barcode, "MyBarcode");
         ASSERT_EQ(track->medium->release->labels.size(), 2);
         EXPECT_EQ(track->medium->release->labels[0], "Label1");
         EXPECT_EQ(track->medium->release->labels[1], "Label2");

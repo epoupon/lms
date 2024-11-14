@@ -434,6 +434,7 @@ namespace lms::metadata
         release->groupMBID = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzReleaseGroupID);
         release->mediumCount = getTagValueAs<std::size_t>(tagReader, TagType::TotalDiscs);
         release->isCompilation = getTagValueAs<bool>(tagReader, TagType::Compilation).value_or(false);
+        release->barcode = getTagValueAs<std::string>(tagReader, TagType::Barcode).value_or("");
         release->labels = getTagValuesAs<std::string>(tagReader, TagType::RecordLabel, _defaultTagDelimiters);
         if (!release->mediumCount)
         {
