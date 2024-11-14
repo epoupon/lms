@@ -271,6 +271,28 @@ SecondLine
         EXPECT_EQ(lyrics.synchronizedLines.find(6s + 750ms)->second, "Foo");
     }
 
+    TEST(Lyrics, synchronized_emptyLines)
+    {
+        std::istringstream is{ R"([00:03.30]Ooh, ooh
+[00:03.30]
+[00:06.75]
+[00:06.75]Foo
+ )" };
+
+        const Lyrics lyrics{ parseLyrics(is) };
+
+        EXPECT_TRUE(lyrics.displayArtist.empty());
+        EXPECT_TRUE(lyrics.displayAlbum.empty());
+        EXPECT_TRUE(lyrics.displayTitle.empty());
+        EXPECT_EQ(lyrics.offset, std::chrono::milliseconds{ 0 });
+        EXPECT_EQ(lyrics.unsynchronizedLines.size(), 0);
+        ASSERT_EQ(lyrics.synchronizedLines.size(), 2);
+        ASSERT_TRUE(lyrics.synchronizedLines.contains(3s + 300ms));
+        EXPECT_EQ(lyrics.synchronizedLines.find(3s + 300ms)->second, "Ooh, ooh\n");
+        ASSERT_TRUE(lyrics.synchronizedLines.contains(6s + 750ms));
+        EXPECT_EQ(lyrics.synchronizedLines.find(6s + 750ms)->second, "\nFoo");
+    }
+
     TEST(Lyrics, synchronized_multitimestamps)
     {
         std::istringstream is{ R"([00:03.30][00:09.16] [00:15.16]Ooh, ooh

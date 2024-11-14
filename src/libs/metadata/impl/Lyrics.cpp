@@ -176,7 +176,7 @@ namespace lms::metadata
             if (parseTag(trimmedLine, lyrics))
                 continue;
 
-            const std::string_view lyricText{ extractTimestamps(trimmedLine, timestamps) };
+            const std::string_view lyricsText{ extractTimestamps(trimmedLine, timestamps) };
 
             // If there are timestamps, add as synchronized lyrics
             if (!timestamps.empty())
@@ -188,7 +188,16 @@ namespace lms::metadata
 
                 applyAccumulatedLyrics();
                 for (std::chrono::milliseconds timestamp : timestamps)
-                    lyrics.synchronizedLines.emplace(timestamp, lyricText);
+                {
+                    auto itLine{ lyrics.synchronizedLines.find(timestamp) };
+                    if (itLine != std::cend(lyrics.synchronizedLines))
+                    {
+                        itLine->second.push_back('\n');
+                        itLine->second.append(lyricsText);
+                    }
+                    else
+                        lyrics.synchronizedLines.emplace(timestamp, lyricsText);
+                }
 
                 lastTimestamps = timestamps;
             }
