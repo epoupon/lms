@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 73 };
+        static constexpr Version LMS_DATABASE_VERSION{ 74 };
     }
 
     VersionInfo::VersionInfo()
@@ -941,6 +941,12 @@ SELECT
         utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV73(Session& session)
+    {
+        // Remove any trailing '/' in library paths
+        utils::executeCommand(*session.getDboSession(), "UPDATE media_library SET path = rtrim(path, '/') WHERE path LIKE '%/'");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -990,6 +996,7 @@ SELECT
             { 70, migrateFromV70 },
             { 71, migrateFromV71 },
             { 72, migrateFromV72 },
+            { 73, migrateFromV73 },
         };
 
         bool migrationPerformed{};

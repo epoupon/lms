@@ -87,7 +87,7 @@ namespace lms::ui
                 if (p.is_relative())
                     return Wt::WValidator::Result(Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.MediaLibrary.path-must-be-absolute"));
 
-                // TODO check and translate rights issues
+                // TODO check and translate access rights issues
                 bool res{ std::filesystem::is_directory(p, ec) };
                 if (ec)
                     return Wt::WValidator::Result(Wt::ValidationState::Invalid, ec.message()); // TODO translate common errors
