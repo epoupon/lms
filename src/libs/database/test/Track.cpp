@@ -67,8 +67,8 @@ namespace lms::db::tests
         ScopedTrack track1{ session };
         ScopedTrack track2{ session };
         ScopedTrack track3{ session };
-        ScopedMediaLibrary library{ session };
-        ScopedMediaLibrary otherLibrary{ session };
+        ScopedMediaLibrary library{ session, "MyLibrary", "/root" };
+        ScopedMediaLibrary otherLibrary{ session, "OtherLibrary", "/otherRoot" };
 
         {
             auto transaction{ session.createWriteTransaction() };
@@ -148,8 +148,8 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Track_MediaLibrary)
     {
         ScopedTrack track{ session };
-        ScopedMediaLibrary library{ session };
-        ScopedMediaLibrary otherLibrary{ session };
+        ScopedMediaLibrary library{ session, "MyLibrary", "/root" };
+        ScopedMediaLibrary otherLibrary{ session, "OtherLibrary", "/otherRoot" };
 
         {
             auto transaction{ session.createWriteTransaction() };

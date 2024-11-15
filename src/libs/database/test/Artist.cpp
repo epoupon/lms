@@ -89,8 +89,8 @@ namespace lms::db::tests
         ScopedArtist artist1{ session, "MyArtist1" };
         ScopedArtist artist2{ session, "MyArtist2" };
         ScopedArtist artist3{ session, "MyArtist3" };
-        ScopedMediaLibrary library{ session };
-        ScopedMediaLibrary otherLibrary{ session };
+        ScopedMediaLibrary library{ session, "MyLibrary", "/root" };
+        ScopedMediaLibrary otherLibrary{ session, "OtherLibrary", "/otherRoot" };
 
         {
             auto transaction{ session.createWriteTransaction() };
@@ -306,8 +306,8 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedArtist artist{ session, "MyArtist" };
-        ScopedMediaLibrary library{ session };
-        ScopedMediaLibrary otherLibrary{ session };
+        ScopedMediaLibrary library{ session, "MyLibrary", "/root" };
+        ScopedMediaLibrary otherLibrary{ session, "OtherLibrary", "/otherRoot" };
 
         {
             auto transaction{ session.createWriteTransaction() };
