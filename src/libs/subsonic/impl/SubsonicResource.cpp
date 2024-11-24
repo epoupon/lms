@@ -298,6 +298,7 @@ namespace lms::api::subsonic
         : _serverProtocolVersionsByClient{ readConfigProtocolVersions() }
         , _openSubsonicDisabledClients{ readOpenSubsonicDisabledClients() }
         , _defaultReleaseCoverClients{ readDefaultCoverClients() }
+        , _supportUserPasswordAuthentication{ core::Service<core::IConfig>::get()->getBool("api-subsonic-support-user-password-auth", true) }
         , _db{ db }
     {
     }
@@ -451,6 +452,9 @@ namespace lms::api::subsonic
 
         const auto user{ getParameterAs<std::string>(parameters, "u") };
         const auto password{ getParameterAs<std::string>(parameters, "p") };
+        if (!_supportUserPasswordAuthentication && (password || user))
+            throw ProvidedAuthenticationMechanismNotSupportedError{};
+
         const auto apiKey{ getParameterAs<std::string>(parameters, "apiKey") };
 
         if (user && !password)

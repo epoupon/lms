@@ -88,9 +88,11 @@
 			<div class="col-lg-12">
 				<label class="form-label" for="${id:subsonic-token}">
 					${tr:Lms.Settings.subsonic-token}
-					<button type="button" class="btn btn-sm p-0" data-bs-toggle="tooltip" data-bs-placement="right" title="${block:Lms.Settings.subsonic-token-usage}">
+					${<if-has-subsonic-token-usage>}
+					<button type="button" class="btn btn-sm p-0" data-bs-toggle="tooltip" data-bs-placement="right" title="${tr:Lms.Settings.subsonic-token-usage}">
         				<i class="fa fa-fw fa-info-circle" aria-hidden="true"></i>
 					</button>
+					${</if-has-subsonic-token-usage>}
 				</label>
 				<div class="input-group mb-3">
 					${subsonic-token-regen-btn class="btn btn-outline-secondary"}

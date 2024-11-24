@@ -557,6 +557,7 @@ namespace lms::ui
         // Subsonic
         {
             t->setCondition("if-has-subsonic-api", core::Service<core::IConfig>::get()->getBool("api-subsonic", true));
+            t->setCondition("if-has-subsonic-token-usage", core::Service<core::IConfig>::get()->getBool("api-subsonic-support-user-password-auth", true));
 
             auto subsonicToken{ std::make_unique<Wt::WLineEdit>() };
             Wt::WLineEdit* subsonicTokenPtr{ subsonicToken.get() };
