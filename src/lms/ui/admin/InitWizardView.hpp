@@ -21,13 +21,17 @@
 
 #include <Wt/WTemplateFormView.h>
 
+namespace lms::auth
+{
+    class IPasswordService;
+}
+
 namespace lms::ui
 {
-
     class InitWizardView : public Wt::WTemplateFormView
     {
     public:
-        InitWizardView();
+        InitWizardView(auth::IPasswordService& passwordService);
     };
 
 } // namespace lms::ui

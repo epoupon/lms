@@ -33,6 +33,7 @@
 #include "core/Service.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
+#include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/IPasswordService.hpp"
 
 #include "LmsApplication.hpp"
@@ -59,6 +60,7 @@ namespace lms::ui
         static inline const Field ReplayGainModeField{ "replaygain-mode" };
         static inline const Field ReplayGainPreAmpGainField{ "replaygain-preamp" };
         static inline const Field ReplayGainPreAmpGainIfNoInfoField{ "replaygain-preamp-no-rg-info" };
+        static inline const Field SubsonicTokenField{ "subsonic-token" };
         static inline const Field SubsonicEnableTranscodingByDefault{ "subsonic-enable-transcoding-by-default" };
         static inline const Field SubsonicArtistListModeField{ "subsonic-artist-list-mode" };
         static inline const Field SubsonicTranscodingOutputFormatField{ "subsonic-transcoding-output-format" };
@@ -76,9 +78,10 @@ namespace lms::ui
         using FeedbackBackendModel = ValueStringModel<db::FeedbackBackend>;
         using ScrobblingBackendModel = ValueStringModel<db::ScrobblingBackend>;
 
-        SettingsModel(auth::IPasswordService* authPasswordService, bool withOldPassword)
+        SettingsModel(auth::IPasswordService* authPasswordService, bool withOldPassword, auth::IAuthTokenService& authTokenService)
             : _authPasswordService{ authPasswordService }
             , _withOldPassword{ withOldPassword }
+            , _authTokenService{ authTokenService }
         {
             initializeModels();
 
@@ -89,12 +92,15 @@ namespace lms::ui
             addField(ReplayGainModeField);
             addField(ReplayGainPreAmpGainField);
             addField(ReplayGainPreAmpGainIfNoInfoField);
+            addField(SubsonicTokenField);
             addField(SubsonicEnableTranscodingByDefault);
             addField(SubsonicTranscodingOutputBitrateField);
             addField(SubsonicTranscodingOutputFormatField);
             addField(FeedbackBackendField);
             addField(ScrobblingBackendField);
             addField(ListenBrainzTokenField);
+
+            setValidator(SubsonicTokenField, createUUIDValidator());
             setValidator(ListenBrainzTokenField, createUUIDValidator());
 
             if (_authPasswordService)
@@ -102,11 +108,11 @@ namespace lms::ui
                 if (_withOldPassword)
                 {
                     addField(PasswordOldField);
-                    setValidator(PasswordOldField, createPasswordCheckValidator());
+                    setValidator(PasswordOldField, createPasswordCheckValidator(*_authPasswordService));
                 }
 
                 addField(PasswordField);
-                setValidator(PasswordField, createPasswordStrengthValidator([] { return auth::PasswordValidationContext{ .loginName = std::string{ LmsApp->getUserLoginName() }, .userType = LmsApp->getUserType() }; }));
+                setValidator(PasswordField, createPasswordStrengthValidator(*authPasswordService, [] { return auth::PasswordValidationContext{ .loginName = std::string{ LmsApp->getUserLoginName() }, .userType = LmsApp->getUserType() }; }));
                 addField(PasswordConfirmField);
             }
 
@@ -173,7 +179,33 @@ namespace lms::ui
                 LmsApp->getMediaPlayer().setSettings(settings);
             }
 
+            // Subsonic API
             {
+                const std::string token{ Wt::asString(value(SubsonicTokenField)).toUTF8() };
+
+                if (token.empty())
+                {
+                    _authTokenService.clearAuthTokens("subsonic", user->getId());
+                }
+                else
+                {
+                    // Consider there must be only one token
+                    bool hasNonMatchingToken{ false };
+                    bool hasMatchingToken{ false };
+                    _authTokenService.visitAuthTokens("subsonic", user->getId(), [&](const auth::IAuthTokenService::AuthTokenInfo&, std::string_view storedToken) {
+                        if (storedToken == token)
+                            hasMatchingToken = true;
+                        else
+                            hasNonMatchingToken = true;
+                    });
+
+                    if (!hasMatchingToken || hasNonMatchingToken)
+                    {
+                        _authTokenService.clearAuthTokens("subsonic", user->getId());
+                        _authTokenService.createAuthToken("subsonic", user->getId(), token);
+                    }
+                }
+
                 bool subsonicEnableTranscodingByDefault{ Wt::asNumber(value(SubsonicEnableTranscodingByDefault)) != 0 };
                 user.modify()->setSubsonicEnableTranscodingByDefault(subsonicEnableTranscodingByDefault);
 
@@ -207,6 +239,7 @@ namespace lms::ui
             if (_authPasswordService && !valueText(PasswordField).empty())
             {
                 _authPasswordService->setPassword(user->getId(), valueText(PasswordField).toUTF8());
+                _authTokenService.clearAuthTokens("ui", user->getId());
             }
         }
 
@@ -214,7 +247,7 @@ namespace lms::ui
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-            User::pointer user{ LmsApp->getUser() };
+            const User::pointer user{ LmsApp->getUser() };
 
             {
                 auto artistReleaseSortMethodRow{ _artistReleaseSortMethodModel->getRowFromValue(user->getUIArtistReleaseSortMethod()) };
@@ -251,7 +284,14 @@ namespace lms::ui
                 setValue(ReplayGainPreAmpGainIfNoInfoField, settings.replayGain.preAmpGainIfNoInfo);
             }
 
+            // Subsonic
             {
+                // Consider there is only one auth token
+                _authTokenService.visitAuthTokens("subsonic", user->getId(), [&](const auth::IAuthTokenService::AuthTokenInfo&, std::string_view storedToken) {
+                    if (Wt::asString(value(SubsonicTokenField)).empty())
+                        setValue(SubsonicTokenField, Wt::WString::fromUTF8(std::string{ storedToken }));
+                });
+
                 setValue(SubsonicEnableTranscodingByDefault, user->getSubsonicEnableTranscodingByDefault());
 
                 auto subsonicTranscodingOutputBitrateRow{ _transcodingOutputBitrateModel->getRowFromValue(user->getSubsonicDefaultTranscodingOutputBitrate()) };
@@ -380,6 +420,8 @@ namespace lms::ui
         auth::IPasswordService* _authPasswordService{};
         bool _withOldPassword{};
 
+        auth::IAuthTokenService& _authTokenService;
+
         std::shared_ptr<ArtistReleaseSortMethodModel> _artistReleaseSortMethodModel;
         std::shared_ptr<TranscodingModeModel> _transcodingModeModeModel;
         std::shared_ptr<ValueStringModel<Bitrate>> _transcodingOutputBitrateModel;
@@ -403,8 +445,7 @@ namespace lms::ui
         refreshView();
     }
 
-    void
-    SettingsView::refreshView()
+    void SettingsView::refreshView()
     {
         if (!wApp->internalPathMatches("/settings"))
             return;
@@ -417,12 +458,14 @@ namespace lms::ui
 
         auto t{ addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.Settings.template")) };
 
-        auto* authPasswordService{ core::Service<auth::IPasswordService>::get() };
-        if (authPasswordService && !authPasswordService->canSetPasswords())
-            authPasswordService = nullptr;
+        auth::IPasswordService* authPasswordService{};
+        if (LmsApp->getAuthBackend() == AuthenticationBackend::Internal)
+        {
+            authPasswordService = core::Service<auth::IPasswordService>::get();
+            assert(authPasswordService->canSetPasswords());
+        }
 
-        auto model{ std::make_shared<SettingsModel>(authPasswordService, !LmsApp->isUserAuthStrong()) };
-
+        auto model{ std::make_shared<SettingsModel>(authPasswordService, !LmsApp->isUserAuthStrong(), *core::Service<auth::IAuthTokenService>::get()) };
         if (authPasswordService)
         {
             t->setCondition("if-has-change-password", true);
@@ -515,6 +558,30 @@ namespace lms::ui
         {
             t->setCondition("if-has-subsonic-api", core::Service<core::IConfig>::get()->getBool("api-subsonic", true));
 
+            auto subsonicToken{ std::make_unique<Wt::WLineEdit>() };
+            Wt::WLineEdit* subsonicTokenPtr{ subsonicToken.get() };
+            subsonicTokenPtr->setEchoMode(Wt::EchoMode::Password);
+            subsonicTokenPtr->setReadOnly(true);
+            t->setFormWidget(SettingsModel::SubsonicTokenField, std::move(subsonicToken));
+
+            auto subsonicTokenRegenBtn{ std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.Settings.regen-token")) };
+            subsonicTokenRegenBtn->clicked().connect(this, [subsonicTokenPtr] {
+                subsonicTokenPtr->setValueText(Wt::WString::fromUTF8(std::string{ core::UUID::generate().getAsString() }));
+            });
+            t->bindWidget("subsonic-token-regen-btn", std::move(subsonicTokenRegenBtn));
+
+            auto subsonicTokenVisibilityBtn{ std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.template.toggle-visibility-btn"), Wt::TextFormat::XHTML) };
+            subsonicTokenVisibilityBtn->clicked().connect(this, [subsonicTokenPtr] {
+                subsonicTokenPtr->setEchoMode(subsonicTokenPtr->echoMode() == Wt::EchoMode::Password ? Wt::EchoMode::Normal : Wt::EchoMode::Password);
+            });
+            t->bindWidget("subsonic-token-visibility-btn", std::move(subsonicTokenVisibilityBtn));
+
+            auto subsonicTokenDelBtn{ std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.template.trash-btn"), Wt::TextFormat::XHTML) };
+            subsonicTokenDelBtn->clicked().connect(this, [subsonicTokenPtr] {
+                subsonicTokenPtr->setValueText("");
+            });
+            t->bindWidget("subsonic-token-del-btn", std::move(subsonicTokenDelBtn));
+
             // Enable transcoding by default
             t->setFormWidget(SettingsModel::SubsonicEnableTranscodingByDefault, std::make_unique<Wt::WCheckBox>());
 
@@ -555,7 +622,15 @@ namespace lms::ui
         // Backend settings
         {
             auto listenbrainzToken{ std::make_unique<Wt::WLineEdit>() };
+            Wt::WLineEdit* listenbrainzTokenPtr{ listenbrainzToken.get() };
+            listenbrainzTokenPtr->setEchoMode(Wt::EchoMode::Password);
             t->setFormWidget(SettingsModel::ListenBrainzTokenField, std::move(listenbrainzToken));
+
+            auto listenbrainzTokenVisibilityBtn{ std::make_unique<Wt::WPushButton>(Wt::WString::tr("Lms.template.toggle-visibility-btn"), Wt::TextFormat::XHTML) };
+            listenbrainzTokenVisibilityBtn->clicked().connect(this, [listenbrainzTokenPtr] {
+                listenbrainzTokenPtr->setEchoMode(listenbrainzTokenPtr->echoMode() == Wt::EchoMode::Password ? Wt::EchoMode::Normal : Wt::EchoMode::Password);
+            });
+            t->bindWidget("listenbrainz-token-visibility-btn", std::move(listenbrainzTokenVisibilityBtn));
         }
 
         auto updateListenBrainzTokenField{ [=] {

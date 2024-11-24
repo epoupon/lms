@@ -24,7 +24,8 @@
 
 namespace lms::core
 {
-    template<typename Class>
+    // Tag can be used if you have multiple services sharing the same interface
+    template<typename Class, typename Tag = Class>
     class Service
     {
     public:
@@ -46,12 +47,12 @@ namespace lms::core
 
         Class* operator->() const
         {
-            return Service<Class>::get();
+            return Service<Class, Tag>::get();
         }
 
         Class& operator*() const
         {
-            return *Service<Class>::get();
+            return *Service<Class, Tag>::get();
         }
 
         static Class* get() { return _service.get(); }

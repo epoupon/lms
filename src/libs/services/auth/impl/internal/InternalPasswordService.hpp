@@ -24,17 +24,15 @@
 
 #include "database/User.hpp"
 
-#include "LoginThrottler.hpp"
 #include "PasswordServiceBase.hpp"
+#include "services/auth/IPasswordService.hpp"
 
 namespace lms::auth
 {
-    class IAuthTokenService;
-
     class InternalPasswordService : public PasswordServiceBase
     {
     public:
-        InternalPasswordService(db::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService);
+        InternalPasswordService(db::Db& db, std::size_t maxThrottlerEntries);
 
     private:
         bool checkUserPassword(std::string_view loginName, std::string_view password) override;

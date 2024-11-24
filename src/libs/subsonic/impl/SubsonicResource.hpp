@@ -50,7 +50,7 @@ namespace lms::api::subsonic
         static void checkProtocolVersion(ProtocolVersion client, ProtocolVersion server);
         ClientInfo getClientInfo(const Wt::Http::Request& request);
         RequestContext buildRequestContext(const Wt::Http::Request& request);
-        db::UserId authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo);
+        db::UserId authenticateUser(const Wt::Http::Request& request);
 
         const std::unordered_map<std::string, ProtocolVersion> _serverProtocolVersionsByClient;
         const std::unordered_set<std::string> _openSubsonicDisabledClients;

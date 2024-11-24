@@ -25,13 +25,12 @@
 #include "core/ILogger.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/Types.hpp"
 
 namespace lms::auth
 {
-    InternalPasswordService::InternalPasswordService(db::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService)
-        : PasswordServiceBase{ db, maxThrottlerEntries, authTokenService }
+    InternalPasswordService::InternalPasswordService(db::Db& db, std::size_t maxThrottlerEntries)
+        : PasswordServiceBase{ db, maxThrottlerEntries }
     {
         _validator.setMinimumLength(Wt::Auth::PasswordStrengthType::OneCharClass, 4);
         _validator.setMinimumLength(Wt::Auth::PasswordStrengthType::TwoCharClass, 4);
@@ -114,14 +113,13 @@ namespace lms::auth
         }
 
         user.modify()->setPasswordHash(passwordHash);
-        getAuthTokenService().clearAuthTokens(userId);
     }
 
     db::User::PasswordHash InternalPasswordService::hashPassword(std::string_view password) const
     {
         const std::string salt{ Wt::WRandom::generateId(32) };
 
-        return { salt, _hashFunc.compute(std::string{ password }, salt) };
+        return db::User::PasswordHash{ .salt = salt, .hash = _hashFunc.compute(std::string{ password }, salt) };
     }
 
     void

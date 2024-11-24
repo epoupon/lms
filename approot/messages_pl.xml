@@ -315,7 +315,7 @@
 <!--Settings-->
 <message id="Lms.Settings.artist-release-sort-method">Metoda sortowania albumów artysty</message>
 <message id="Lms.Settings.audio">Dźwięk</message>
-<message id="Lms.Settings.audio-settings-are-local">Te ustawienia dotyczą wyłącznie tej przeglądarki!</message>
+<message id="Lms.Settings.audio-settings-are-local">Te ustawienia dotyczą wyłącznie tej przeglądarki</message>
 <message id="Lms.Settings.backend.internal">Wewnętrzny</message>
 <message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.backend.listenbrainz-token">ListenBrainz API token</message>
@@ -333,6 +333,7 @@
 <message id="Lms.Settings.original-date-desc">Oryginalna data wydania (Malejąco)</message>
 <message id="Lms.Settings.password-bad">Błędne hasło</message>
 <message id="Lms.Settings.password-must-fill-old-password">Należy podać stare hasło</message>
+<message id="Lms.Settings.regen-token">Generuj</message>
 <message id="Lms.Settings.replaygain-mode">Tryb ReplayGain</message>
 <message id="Lms.Settings.replaygain-mode.none">Bez ReplayGain</message>
 <message id="Lms.Settings.replaygain-mode.auto">Auto</message>
@@ -343,13 +344,19 @@
 <message id="Lms.Settings.scrobbling">Scrobbling</message>
 <message id="Lms.Settings.services">Usługi</message>
 <message id="Lms.Settings.settings">Ustawienia</message>
+<message id="Lms.Settings.settings-saved">Ustawienia zapisane!</message>
 <message id="Lms.Settings.subsonic-artist-list-mode">Tryb listy artystów</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.all-artists">Wszyscy artyści</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Artyści z albumów</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.track-artists">Artyści ze ścieżek</message>
-<message id="Lms.Settings.subsonic-api">Subsonic API</message>
-<message id="Lms.Settings.user-interface">Interfejs użytkownika</message>
+<message id="Lms.Settings.subsonic-api">API Subsonic</message>
+<message id="Lms.Settings.subsonic-token">Klucz API OpenSubsonic</message>
+<message id="Lms.Settings.subsonic-token-usage">Użyj tego klucza API jako hasła dla klientów, którzy nie obsługują rozszerzenia 'Uwierzytelnianie za pomocą klucza API'</message>
 <message id="Lms.Settings.transcoding">Transkodowanie</message>
+<message id="Lms.Settings.transcoding-mode">Aktywuj transkodowanie</message>
+<message id="Lms.Settings.transcoding-mode.always">Zawsze</message>
+<message id="Lms.Settings.transcoding-mode.if-format-not-supported">Tylko gdy przeglądarka nie wspiera formatu</message>
+<message id="Lms.Settings.transcoding-mode.never">Nigdy</message>
 <message id="Lms.Settings.transcoding-output-bitrate">Przepływność transkodowania</message>
 <message id="Lms.Settings.transcoding-output-format">Format wyjściowy transkodowania</message>
 <message id="Lms.Settings.transcoding-output-format.matroska_opus">Matroska/Opus</message>
@@ -357,11 +364,7 @@
 <message id="Lms.Settings.transcoding-output-format.ogg_opus">Ogg/Opus</message>
 <message id="Lms.Settings.transcoding-output-format.ogg_vorbis">Ogg/Vorbis</message>
 <message id="Lms.Settings.transcoding-output-format.webm_vorbis">WebM/Vorbis</message>
-<message id="Lms.Settings.transcoding-mode">Aktywuj transkodowanie</message>
-<message id="Lms.Settings.transcoding-mode.always">Zawsze</message>
-<message id="Lms.Settings.transcoding-mode.if-format-not-supported">Tylko gdy przeglądarka nie wspiera formatu</message>
-<message id="Lms.Settings.transcoding-mode.never">Nigdy</message>
-<message id="Lms.Settings.settings-saved">Ustawienia zapisane!</message>
+<message id="Lms.Settings.user-interface">Interfejs użytkownika</message>
 
 <!--Wt-->
 <message id="Wt.WDateTime.LessThanASecond">mniej niż sekunda</message>

@@ -5,6 +5,7 @@ add_executable(test-core
 	LiteralString.cpp
 	Path.cpp
 	RecursiveSharedMutex.cpp
+	Service.cpp
 	String.cpp
 	TraceLogger.cpp
 	Utils.cpp

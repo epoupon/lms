@@ -33,7 +33,7 @@
 namespace lms::api::subsonic
 {
     // Max count expected from all API methods that expose a count
-    static inline constexpr std::size_t defaultMaxCountSize{ 1000 };
+    static inline constexpr std::size_t defaultMaxCountSize{ 1'000 };
 
     enum class ResponseFormat
     {
@@ -54,6 +54,9 @@ namespace lms::api::subsonic
             ServerMustUpgrade = 30,
             WrongUsernameOrPassword = 40,
             TokenAuthenticationNotSupportedForLDAPUsers = 41,
+            ProvidedAuthenticationMechanismNotSupported = 42,
+            MultipleConflictingAuthenticationMechanismsProvided = 43,
+            InvalidAPIkey = 44,
             UserNotAuthorized = 50,
             RequestedDataNotFound = 70,
         };
@@ -130,6 +133,45 @@ namespace lms::api::subsonic
         std::string getMessage() const override { return "Token authentication not supported for LDAP users."; }
     };
 
+    class ProvidedAuthenticationMechanismNotSupportedError : public Error
+    {
+    public:
+        ProvidedAuthenticationMechanismNotSupportedError()
+            : Error{ Code::ProvidedAuthenticationMechanismNotSupported } {}
+
+    private:
+        std::string getMessage() const override
+        {
+            return "Provided authentication mechanism not supported.";
+        }
+    };
+
+    class MultipleConflictingAuthenticationMechanismsProvidedError : public Error
+    {
+    public:
+        MultipleConflictingAuthenticationMechanismsProvidedError()
+            : Error{ Code::MultipleConflictingAuthenticationMechanismsProvided } {}
+
+    private:
+        std::string getMessage() const override
+        {
+            return "Multiple conflicting authentication mechanisms provided.";
+        }
+    };
+
+    class InvalidAPIkeyError : public Error
+    {
+    public:
+        InvalidAPIkeyError()
+            : Error{ Code::InvalidAPIkey } {}
+
+    private:
+        std::string getMessage() const override
+        {
+            return "Invalid API key.";
+        }
+    };
+
     class UserNotAuthorizedError : public Error
     {
     public:
@@ -153,7 +195,7 @@ namespace lms::api::subsonic
     class InternalErrorGenericError : public GenericError
     {
     public:
-        InternalErrorGenericError(const std::string& message)
+        InternalErrorGenericError(std::string_view message)
             : _message{ message } {}
 
     private:
@@ -174,26 +216,6 @@ namespace lms::api::subsonic
     class UnknownEntryPointGenericError : public GenericError
     {
         std::string getMessage() const override { return "Unknown API method"; }
-    };
-
-    class PasswordTooWeakGenericError : public GenericError
-    {
-        std::string getMessage() const override { return "Password too weak"; }
-    };
-
-    class PasswordMustMatchLoginNameGenericError : public GenericError
-    {
-        std::string getMessage() const override { return "Password must match login name"; }
-    };
-
-    class DemoUserCannotChangePasswordGenericError : public GenericError
-    {
-        std::string getMessage() const override { return "Demo user cannot change its password"; }
-    };
-
-    class UserAlreadyExistsGenericError : public GenericError
-    {
-        std::string getMessage() const override { return "User already exists"; }
     };
 
     class BadParameterGenericError : public GenericError

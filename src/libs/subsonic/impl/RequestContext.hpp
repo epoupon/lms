@@ -41,7 +41,8 @@ namespace lms::api::subsonic
     {
         const Wt::Http::ParameterMap& parameters;
         db::Session& dbSession;
-        const db::ObjectPtr<db::User> user;
+        db::ObjectPtr<db::User> user;
+        std::string clientIpAddr;
         ClientInfo clientInfo;
         ProtocolVersion serverProtocolVersion;
         ResponseFormat responseFormat;

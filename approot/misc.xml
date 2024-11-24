@@ -19,5 +19,6 @@
 <message id="Lms.template.edit-btn"><i class="fa fa-fw fa-edit"></i></message>
 <message id="Lms.template.more-btn"><i class="fa fa-fw fa-ellipsis-v"></i></message>
 <message id="Lms.template.play-btn"><i class="fa fa-fw fa-play"></i></message>
+<message id="Lms.template.toggle-visibility-btn"><i class="fa fa-fw fa-eye"></i></message>
 
 </messages>

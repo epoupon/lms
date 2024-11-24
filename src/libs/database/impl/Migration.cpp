@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 74 };
+        static constexpr Version LMS_DATABASE_VERSION{ 75 };
     }
 
     VersionInfo::VersionInfo()
@@ -947,6 +947,21 @@ SELECT
         utils::executeCommand(*session.getDboSession(), "UPDATE media_library SET path = rtrim(path, '/') WHERE path LIKE '%/'");
     }
 
+    void migrateFromV74(Session& session)
+    {
+        // New auth token authentication for Subsonic API
+        // Previous tokens are not usable any more, no problem since they are just used for the ui's "remember me" feature
+        utils::executeCommand(*session.getDboSession(), "DELETE FROM auth_token");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE auth_token ADD domain TEXT NOT NULL");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE auth_token ADD use_count INTEGER NOT NULL");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE auth_token ADD last_used TEXT");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE auth_token ADD max_use_count INTEGER");
+
+        utils::executeCommand(*session.getDboSession(), "DROP INDEX IF EXISTS auth_token_user_idx");
+        utils::executeCommand(*session.getDboSession(), "DROP INDEX IF EXISTS auth_token_expiry_idx");
+        utils::executeCommand(*session.getDboSession(), "DROP INDEX IF EXISTS auth_token_value_idx");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -997,6 +1012,7 @@ SELECT
             { 71, migrateFromV71 },
             { 72, migrateFromV72 },
             { 73, migrateFromV73 },
+            { 74, migrateFromV74 },
         };
 
         bool migrationPerformed{};

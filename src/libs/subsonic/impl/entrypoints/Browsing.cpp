@@ -36,7 +36,6 @@
 
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"
-#include "Utils.hpp"
 #include "responses/Album.hpp"
 #include "responses/AlbumInfo.hpp"
 #include "responses/Artist.hpp"

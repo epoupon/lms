@@ -108,7 +108,6 @@ namespace lms::db
         void setSubsonicDefaultTranscodingOutputBitrate(Bitrate bitrate);
         void setUITheme(UITheme uiTheme) { _uiTheme = uiTheme; }
         void setUIArtistReleaseSortMethod(ReleaseSortMethod method) { _uiArtistReleaseSortMethod = method; }
-        void clearAuthTokens();
         void setSubsonicArtistListMode(SubsonicArtistListMode mode) { _subsonicArtistListMode = mode; }
         void setFeedbackBackend(FeedbackBackend feedbackBackend) { _feedbackBackend = feedbackBackend; }
         void setScrobblingBackend(ScrobblingBackend scrobblingBackend) { _scrobblingBackend = scrobblingBackend; }
