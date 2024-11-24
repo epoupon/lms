@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <map>
 #include <shared_mutex>
 
 #include "services/auth/IAuthTokenService.hpp"
