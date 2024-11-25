@@ -54,8 +54,7 @@ namespace lms::auth
     {
     }
 
-    PasswordServiceBase::CheckResult
-    PasswordServiceBase::checkUserPassword(const boost::asio::ip::address& clientAddress, std::string_view loginName, std::string_view password)
+    PasswordServiceBase::CheckResult PasswordServiceBase::checkUserPassword(const boost::asio::ip::address& clientAddress, std::string_view loginName, std::string_view password)
     {
         LMS_LOG(AUTH, DEBUG, "Checking password for user '" << loginName << "'");
 

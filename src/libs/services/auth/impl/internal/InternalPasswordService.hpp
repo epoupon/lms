@@ -44,8 +44,8 @@ namespace lms::auth
         db::User::PasswordHash hashPassword(std::string_view password) const;
         void hashRandomPassword() const;
 
-        const Wt::Auth::BCryptHashFunction _hashFunc{ 7 }; // TODO parametrize this
+        const unsigned _bcryptRoundCount;
+        const Wt::Auth::BCryptHashFunction _hashFunc{ static_cast<int>(_bcryptRoundCount) };
         Wt::Auth::PasswordStrengthValidator _validator;
     };
-
 } // namespace lms::auth

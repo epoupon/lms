@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 75 };
+        static constexpr Version LMS_DATABASE_VERSION{ 76 };
     }
 
     VersionInfo::VersionInfo()
@@ -962,6 +962,12 @@ SELECT
         utils::executeCommand(*session.getDboSession(), "DROP INDEX IF EXISTS auth_token_value_idx");
     }
 
+    void migrateFromV75(Session& session)
+    {
+        // Added a new option to set the bcrypt count to be use to hash user's passwords
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE user ADD bcrypt_round_count INTEGER NOT NULL DEFAULT(7)");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1013,6 +1019,7 @@ SELECT
             { 72, migrateFromV72 },
             { 73, migrateFromV73 },
             { 74, migrateFromV74 },
+            { 75, migrateFromV75 },
         };
 
         bool migrationPerformed{};
@@ -1044,7 +1051,9 @@ SELECT
                 LMS_LOG(DB, INFO, "Migrating database from version " << version << " to " << version + 1 << "...");
 
                 auto itMigrationFunc{ migrationFunctions.find(version) };
-                assert(itMigrationFunc != std::cend(migrationFunctions));
+                if (itMigrationFunc == std::cend(migrationFunctions))
+                    throw core::LmsException{ "No code found to upgrade database!" };
+
                 itMigrationFunc->second(session);
 
                 VersionInfo::get(session).modify()->setVersion(++version);
