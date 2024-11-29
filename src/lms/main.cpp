@@ -45,6 +45,7 @@
 #include "services/scanner/IScannerService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 #include "subsonic/SubsonicResource.hpp"
+#include "ui/Auth.hpp"
 #include "ui/LmsApplication.hpp"
 #include "ui/LmsApplicationManager.hpp"
 #include "ui/LmsInitApplication.hpp"
@@ -77,6 +78,19 @@ namespace lms
                 return core::logging::Severity::FATAL;
 
             throw core::LmsException{ "Invalid config value for 'log-min-severity'" };
+        }
+
+        ui::AuthenticationBackend getUIAuthenticationBackend()
+        {
+            const std::string backend{ core::stringUtils::stringToLower(core::Service<core::IConfig>::get()->getString("authentication-backend", "internal")) };
+            if (backend == "internal")
+                return ui::AuthenticationBackend::Internal;
+            if (backend == "pam")
+                return ui::AuthenticationBackend::PAM;
+            if (backend == "http-headers")
+                return ui::AuthenticationBackend::Env;
+
+            throw core::LmsException{ "Invalid config value for 'authentication-backend'" };
         }
 
         std::optional<core::tracing::Level> getTracingLevel()
@@ -320,24 +334,37 @@ namespace lms
 
             ui::LmsApplicationManager appManager;
 
+            const std::size_t loginThrottlerMaxEntries{ config->getULong("login-throttler-max-entries", 10'000) };
             // Service initialization order is important (reverse-order for deinit)
             core::Service<core::IChildProcessManager> childProcessManagerService{ core::createChildProcessManager(ioContext) };
-            core::Service<auth::IAuthTokenService> authTokenService;
+
+            const ui::AuthenticationBackend uiAuthenticationBackend{ getUIAuthenticationBackend() };
+            core::Service<auth::IAuthTokenService> authTokenService{ auth::createAuthTokenService(database, config->getULong("login-throttler-max-entriees", 10'000)) };
             core::Service<auth::IPasswordService> authPasswordService;
             core::Service<auth::IEnvService> authEnvService;
 
-            const std::string authenticationBackend{ core::stringUtils::stringToLower(config->getString("authentication-backend", "internal")) };
-            if (authenticationBackend == "internal" || authenticationBackend == "pam")
+            authTokenService->registerDomain("ui", auth::IAuthTokenService::DomainParameters{
+                                                       .tokenMaxUseCount = 1,
+                                                       .tokenDuration = std::chrono::weeks{ 8 },
+                                                   });
+
+            authTokenService->registerDomain("subsonic", auth::IAuthTokenService::DomainParameters{
+                                                             .tokenMaxUseCount = std::nullopt, // no usage limit
+                                                             .tokenDuration = std::nullopt,    // no time limit
+                                                         });
+
+            switch (uiAuthenticationBackend)
             {
-                authTokenService.assign(auth::createAuthTokenService(database, config->getULong("login-throttler-max-entriees", 10000)));
-                authPasswordService.assign(auth::createPasswordService(authenticationBackend, database, config->getULong("login-throttler-max-entriees", 10000), *authTokenService.get()));
+            case ui::AuthenticationBackend::Internal:
+                authPasswordService.assign(auth::createPasswordService("internal", database, loginThrottlerMaxEntries));
+                break;
+            case ui::AuthenticationBackend::PAM:
+                authPasswordService.assign(auth::createPasswordService("PAM", database, loginThrottlerMaxEntries));
+                break;
+            case ui::AuthenticationBackend::Env:
+                authEnvService.assign(auth::createEnvService("http-headers", database));
+                break;
             }
-            else if (authenticationBackend == "http-headers")
-            {
-                authEnvService.assign(auth::createEnvService(authenticationBackend, database));
-            }
-            else
-                throw core::LmsException{ "Bad value '" + authenticationBackend + "' for 'authentication-backend'" };
 
             image::init(argv[0]);
             core::Service<cover::IArtworkService> artworkService{ cover::createArtworkService(database, server.appRoot() + "/images/unknown-cover.svg", server.appRoot() + "/images/unknown-artist.svg") };
@@ -370,8 +397,8 @@ namespace lms
 
             // bind UI entry point
             server.addEntryPoint(Wt::EntryPointType::Application,
-                [&](const Wt::WEnvironment& env) {
-                    return ui::LmsApplication::create(env, database, appManager);
+                [&database, &appManager, uiAuthenticationBackend](const Wt::WEnvironment& env) {
+                    return ui::LmsApplication::create(env, database, appManager, uiAuthenticationBackend);
                 });
 
             proxyScannerEventsToApplication(*scannerService, server);

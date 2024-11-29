@@ -41,6 +41,12 @@ namespace lms::api::subsonic
             songLyricsNode.addArrayValue("versions", 1);
         }
 
+        {
+            Response::Node& apiKeyAuthentication{ response.createArrayNode("openSubsonicExtensions") };
+            apiKeyAuthentication.setAttribute("name", "apiKeyAuthentication");
+            apiKeyAuthentication.addArrayValue("versions", 1);
+        }
+
         return response;
     };
 } // namespace lms::api::subsonic

@@ -19,6 +19,8 @@
 
 #include "Auth.hpp"
 
+#include <Wt/Auth/HashFunction.h>
+
 #include <Wt/WCheckBox.h>
 #include <Wt/WEnvironment.h>
 #include <Wt/WFormModel.h>
@@ -42,14 +44,18 @@ namespace lms::ui
 {
     namespace
     {
+        static constexpr core::LiteralString authTokenDomain{ "ui" };
         static const std::string authCookieName{ "LmsAuth" };
+        static const std::string authCookieSalt{ Wt::Auth::SHA1HashFunction{}.compute(authCookieName, authTokenDomain.c_str()) }; // changing this will invalidate existing tokens
 
         void createAuthToken(db::UserId userId, const Wt::WDateTime& expiry)
         {
-            const std::string secret{ core::Service<auth::IAuthTokenService>::get()->createAuthToken(userId, expiry) };
+            const std::string authCookie{ Wt::WRandom::generateId(64) };
+            const std::string hashedAuthCookie{ Wt::Auth::SHA1HashFunction{}.compute(authCookie, authCookieSalt) };
+            core::Service<auth::IAuthTokenService>::get()->createAuthToken(authTokenDomain, userId, hashedAuthCookie);
 
             LmsApp->setCookie(authCookieName,
-                secret,
+                authCookie,
                 expiry.toTime_t() - Wt::WDateTime::currentDateTime().toTime_t(),
                 "",
                 "",
@@ -64,7 +70,8 @@ namespace lms::ui
             static const Field PasswordField;
             static const Field RememberMeField;
 
-            AuthModel()
+            AuthModel(auth::IPasswordService& passwordService)
+                : _passwordService{ passwordService }
             {
                 addField(LoginNameField);
                 addField(PasswordField);
@@ -90,8 +97,7 @@ namespace lms::ui
                 if (Wt::asNumber(value(RememberMeField)))
                 {
                     const Wt::WDateTime now{ Wt::WDateTime::currentDateTime() };
-
-                    createAuthToken(*_userId, isDemo ? now.addDays(3) : now.addYears(1));
+                    createAuthToken(_userId, isDemo ? now.addDays(3) : now.addYears(1));
                 }
             }
 
@@ -101,14 +107,14 @@ namespace lms::ui
 
                 if (field == PasswordField)
                 {
-                    const auto checkResult{ core::Service<auth::IPasswordService>::get()->checkUserPassword(
+                    const auto checkResult{ _passwordService.checkUserPassword(
                         boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
                         valueText(LoginNameField).toUTF8(),
                         valueText(PasswordField).toUTF8()) };
                     switch (checkResult.state)
                     {
                     case auth::IPasswordService::CheckResult::State::Granted:
-                        _userId = *checkResult.userId;
+                        _userId = checkResult.userId;
                         break;
                     case auth::IPasswordService::CheckResult::State::Denied:
                         error = Wt::WString::tr("Lms.password-bad-login-combination");
@@ -128,10 +134,11 @@ namespace lms::ui
                 return (validation(field).state() == Wt::ValidationState::Valid);
             }
 
-            std::optional<db::UserId> getUserId() const { return _userId; }
+            db::UserId getUserId() const { return _userId; }
 
         private:
-            std::optional<db::UserId> _userId;
+            db::UserId _userId;
+            auth::IPasswordService& _passwordService;
         };
 
         const AuthModel::Field AuthModel::LoginNameField{ "login-name" };
@@ -139,21 +146,24 @@ namespace lms::ui
         const AuthModel::Field AuthModel::RememberMeField{ "remember-me" };
     } // namespace
 
-    std::optional<db::UserId> processAuthToken(const Wt::WEnvironment& env)
+    db::UserId processAuthToken(const Wt::WEnvironment& env)
     {
         const std::string* authCookie{ env.getCookie(authCookieName) };
         if (!authCookie)
-            return std::nullopt;
+            return db::UserId{};
 
-        const auto res{ core::Service<auth::IAuthTokenService>::get()->processAuthToken(boost::asio::ip::address::from_string(env.clientAddress()), *authCookie) };
+        const std::string hashedCookie{ Wt::Auth::SHA1HashFunction{}.compute(*authCookie, authCookieSalt) };
+
+        const auto res{ core::Service<auth::IAuthTokenService>::get()->processAuthToken(authTokenDomain, boost::asio::ip::address::from_string(env.clientAddress()), hashedCookie) };
         switch (res.state)
         {
         case auth::IAuthTokenService::AuthTokenProcessResult::State::Denied:
         case auth::IAuthTokenService::AuthTokenProcessResult::State::Throttled:
             LmsApp->setCookie(authCookieName, std::string{}, 0, "", "", env.urlScheme() == "https");
-            return std::nullopt;
+            return db::UserId{};
 
         case auth::IAuthTokenService::AuthTokenProcessResult::State::Granted:
+            assert(res.authTokenInfo->maxUseCount && res.authTokenInfo->maxUseCount.value() == 1); // single-use token
             createAuthToken(res.authTokenInfo->userId, res.authTokenInfo->expiry);
             break;
         }
@@ -161,10 +171,15 @@ namespace lms::ui
         return res.authTokenInfo->userId;
     }
 
-    Auth::Auth()
+    void clearAuthTokens(db::UserId userId)
+    {
+        core::Service<auth::IAuthTokenService>::get()->clearAuthTokens(authTokenDomain, userId);
+    }
+
+    PasswordAuth::PasswordAuth(auth::IPasswordService& passwordService)
         : Wt::WTemplateFormView{ Wt::WString::tr("Lms.Auth.template") }
     {
-        auto model{ std::make_shared<AuthModel>() };
+        auto model{ std::make_shared<AuthModel>(passwordService) };
 
         auto processAuth = [this, model] {
             updateModel(model.get());
@@ -172,7 +187,8 @@ namespace lms::ui
             if (model->validate())
             {
                 model->saveData();
-                userLoggedIn.emit(*model->getUserId());
+                assert(model->getUserId().isValid());
+                userLoggedIn.emit(model->getUserId());
             }
             else
                 updateView(model.get());

@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 74 };
+        static constexpr Version LMS_DATABASE_VERSION{ 76 };
     }
 
     VersionInfo::VersionInfo()
@@ -947,6 +947,27 @@ SELECT
         utils::executeCommand(*session.getDboSession(), "UPDATE media_library SET path = rtrim(path, '/') WHERE path LIKE '%/'");
     }
 
+    void migrateFromV74(Session& session)
+    {
+        // New auth token authentication for Subsonic API
+        // Previous tokens are not usable any more, no problem since they are just used for the ui's "remember me" feature
+        utils::executeCommand(*session.getDboSession(), "DELETE FROM auth_token");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE auth_token ADD domain TEXT NOT NULL");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE auth_token ADD use_count INTEGER NOT NULL");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE auth_token ADD last_used TEXT");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE auth_token ADD max_use_count INTEGER");
+
+        utils::executeCommand(*session.getDboSession(), "DROP INDEX IF EXISTS auth_token_user_idx");
+        utils::executeCommand(*session.getDboSession(), "DROP INDEX IF EXISTS auth_token_expiry_idx");
+        utils::executeCommand(*session.getDboSession(), "DROP INDEX IF EXISTS auth_token_value_idx");
+    }
+
+    void migrateFromV75(Session& session)
+    {
+        // Added a new option to set the bcrypt count to be use to hash user's passwords
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE user ADD bcrypt_round_count INTEGER NOT NULL DEFAULT(7)");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -997,6 +1018,8 @@ SELECT
             { 71, migrateFromV71 },
             { 72, migrateFromV72 },
             { 73, migrateFromV73 },
+            { 74, migrateFromV74 },
+            { 75, migrateFromV75 },
         };
 
         bool migrationPerformed{};
@@ -1028,7 +1051,9 @@ SELECT
                 LMS_LOG(DB, INFO, "Migrating database from version " << version << " to " << version + 1 << "...");
 
                 auto itMigrationFunc{ migrationFunctions.find(version) };
-                assert(itMigrationFunc != std::cend(migrationFunctions));
+                if (itMigrationFunc == std::cend(migrationFunctions))
+                    throw core::LmsException{ "No code found to upgrade database!" };
+
                 itMigrationFunc->second(session);
 
                 VersionInfo::get(session).modify()->setVersion(++version);

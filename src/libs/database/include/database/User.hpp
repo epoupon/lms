@@ -42,6 +42,7 @@ namespace lms::db
     public:
         struct PasswordHash
         {
+            std::size_t bcryptRoundCount;
             std::string salt;
             std::string hash;
         };
@@ -91,7 +92,7 @@ namespace lms::db
 
         // accessors
         const std::string& getLoginName() const { return _loginName; }
-        PasswordHash getPasswordHash() const { return PasswordHash{ _passwordSalt, _passwordHash }; }
+        PasswordHash getPasswordHash() const { return PasswordHash{ .bcryptRoundCount = static_cast<std::size_t>(_bcryptRoundCount), .salt = _passwordSalt, .hash = _passwordHash }; }
         const Wt::WDateTime& getLastLogin() const { return _lastLogin; }
         std::size_t getAuthTokensCount() const { return _authTokens.size(); }
 
@@ -99,6 +100,7 @@ namespace lms::db
         void setLastLogin(const Wt::WDateTime& dateTime) { _lastLogin = dateTime; }
         void setPasswordHash(const PasswordHash& passwordHash)
         {
+            _bcryptRoundCount = passwordHash.bcryptRoundCount;
             _passwordSalt = passwordHash.salt;
             _passwordHash = passwordHash.hash;
         }
@@ -108,7 +110,6 @@ namespace lms::db
         void setSubsonicDefaultTranscodingOutputBitrate(Bitrate bitrate);
         void setUITheme(UITheme uiTheme) { _uiTheme = uiTheme; }
         void setUIArtistReleaseSortMethod(ReleaseSortMethod method) { _uiArtistReleaseSortMethod = method; }
-        void clearAuthTokens();
         void setSubsonicArtistListMode(SubsonicArtistListMode mode) { _subsonicArtistListMode = mode; }
         void setFeedbackBackend(FeedbackBackend feedbackBackend) { _feedbackBackend = feedbackBackend; }
         void setScrobblingBackend(ScrobblingBackend scrobblingBackend) { _scrobblingBackend = scrobblingBackend; }
@@ -133,6 +134,7 @@ namespace lms::db
         {
             Wt::Dbo::field(a, _type, "type");
             Wt::Dbo::field(a, _loginName, "login_name");
+            Wt::Dbo::field(a, _bcryptRoundCount, "bcrypt_round_count");
             Wt::Dbo::field(a, _passwordSalt, "password_salt");
             Wt::Dbo::field(a, _passwordHash, "password_hash");
             Wt::Dbo::field(a, _lastLogin, "last_login");
@@ -156,6 +158,7 @@ namespace lms::db
         static pointer create(Session& session, std::string_view loginName);
 
         std::string _loginName;
+        int _bcryptRoundCount{};
         std::string _passwordSalt;
         std::string _passwordHash;
         Wt::WDateTime _lastLogin;

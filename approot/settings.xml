@@ -85,6 +85,25 @@
 		</div>
 		${<if-has-subsonic-api>}
 			<legend>${tr:Lms.Settings.subsonic-api}</legend>
+			<div class="col-lg-12">
+				<label class="form-label" for="${id:subsonic-token}">
+					${tr:Lms.Settings.subsonic-token}
+					${<if-has-subsonic-token-usage>}
+					<button type="button" class="btn btn-sm p-0" data-bs-toggle="tooltip" data-bs-placement="right" title="${tr:Lms.Settings.subsonic-token-usage}">
+        				<i class="fa fa-fw fa-info-circle" aria-hidden="true"></i>
+					</button>
+					${</if-has-subsonic-token-usage>}
+				</label>
+				<div class="input-group mb-3">
+					${subsonic-token-regen-btn class="btn btn-outline-secondary"}
+					${subsonic-token-del-btn class="btn btn-outline-warning"}
+					${subsonic-token class="form-control"}
+					${subsonic-token-visibility-btn class="btn btn-outline-secondary"}
+					<div class="invalid-feedback">
+						${subsonic-token-info class="help-block"}
+					</div>
+				</div>
+			</div>
 			<div class="col-12">
 				<div class="form-check">
 					${subsonic-enable-transcoding-by-default class="form-check-input"}
@@ -150,9 +169,12 @@
 			<label class="form-label" for="${id:listenbrainz-token}">
 				${tr:Lms.Settings.backend.listenbrainz-token}
 			</label>
-			${listenbrainz-token class="form-control"}
-			<div class="invalid-feedback">
-				${listenbrainz-token-info class="help-block"}
+			<div class="input-group mb-3">
+				${listenbrainz-token class="form-control"}
+				${listenbrainz-token-visibility-btn class="btn btn-outline-secondary"}
+				<div class="invalid-feedback">
+					${listenbrainz-token-info class="help-block"}
+				</div>
 			</div>
 		</div>
 		${<if-has-change-password>}

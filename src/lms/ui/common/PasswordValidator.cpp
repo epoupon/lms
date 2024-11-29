@@ -33,8 +33,9 @@ namespace lms::ui
         class PasswordStrengthValidator : public Wt::WValidator
         {
         public:
-            PasswordStrengthValidator(PasswordValidationContextGetFunc passwordValidationContextGetFunc)
+            PasswordStrengthValidator(const auth::IPasswordService& passwordService, PasswordValidationContextGetFunc passwordValidationContextGetFunc)
                 : _passwordValidationContextGetFunc{ std::move(passwordValidationContextGetFunc) }
+                , _passwordService{ passwordService }
             {
             }
 
@@ -43,6 +44,7 @@ namespace lms::ui
             std::string javaScriptValidate() const override { return {}; }
 
             PasswordValidationContextGetFunc _passwordValidationContextGetFunc;
+            const auth::IPasswordService& _passwordService;
         };
     } // namespace
 
@@ -53,7 +55,7 @@ namespace lms::ui
 
         const auth::PasswordValidationContext context{ _passwordValidationContextGetFunc() };
 
-        switch (core::Service<auth::IPasswordService>::get()->checkPasswordAcceptability(input.toUTF8(), context))
+        switch (_passwordService.checkPasswordAcceptability(input.toUTF8(), context))
         {
         case auth::IPasswordService::PasswordAcceptabilityResult::OK:
             return Wt::WValidator::Result{ Wt::ValidationState::Valid };
@@ -66,16 +68,24 @@ namespace lms::ui
         throw core::LmsException{ "internal error" };
     }
 
-    std::unique_ptr<Wt::WValidator> createPasswordStrengthValidator(PasswordValidationContextGetFunc passwordValidationContextGetFunc)
+    std::unique_ptr<Wt::WValidator> createPasswordStrengthValidator(const auth::IPasswordService& passwordService, PasswordValidationContextGetFunc passwordValidationContextGetFunc)
     {
-        return std::make_unique<PasswordStrengthValidator>(std::move(passwordValidationContextGetFunc));
+        return std::make_unique<PasswordStrengthValidator>(passwordService, std::move(passwordValidationContextGetFunc));
     }
 
     class PasswordCheckValidator : public Wt::WValidator
     {
+    public:
+        PasswordCheckValidator(auth::IPasswordService& passwordService)
+            : _passwordService{ passwordService }
+        {
+        }
+
     private:
         Wt::WValidator::Result validate(const Wt::WString& input) const override;
         std::string javaScriptValidate() const override { return {}; }
+
+        auth::IPasswordService& _passwordService;
     };
 
     Wt::WValidator::Result PasswordCheckValidator::validate(const Wt::WString& input) const
@@ -83,7 +93,7 @@ namespace lms::ui
         if (input.empty())
             return Wt::WValidator::validate(input);
 
-        const auto checkResult{ core::Service<auth::IPasswordService>::get()->checkUserPassword(
+        const auto checkResult{ _passwordService.checkUserPassword(
             boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
             LmsApp->getUserLoginName(),
             input.toUTF8()) };
@@ -100,9 +110,9 @@ namespace lms::ui
         throw core::LmsException{ "InternalError" };
     }
 
-    std::unique_ptr<Wt::WValidator> createPasswordCheckValidator()
+    std::unique_ptr<Wt::WValidator> createPasswordCheckValidator(auth::IPasswordService& passwordService)
     {
-        return std::make_unique<PasswordCheckValidator>();
+        return std::make_unique<PasswordCheckValidator>(passwordService);
     }
 
 } // namespace lms::ui

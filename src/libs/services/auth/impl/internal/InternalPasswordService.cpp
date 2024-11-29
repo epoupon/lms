@@ -21,18 +21,21 @@
 
 #include <Wt/WRandom.h>
 
-#include "core/Exception.hpp"
+#include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/Types.hpp"
 
 namespace lms::auth
 {
-    InternalPasswordService::InternalPasswordService(db::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService)
-        : PasswordServiceBase{ db, maxThrottlerEntries, authTokenService }
+    InternalPasswordService::InternalPasswordService(db::Db& db, std::size_t maxThrottlerEntries)
+        : PasswordServiceBase{ db, maxThrottlerEntries }
+        , _bcryptRoundCount{ static_cast<unsigned>(core::Service<core::IConfig>::get()->getULong("internal-password-bcrypt-round", 12)) }
     {
+        if (_bcryptRoundCount < 7 || _bcryptRoundCount > 31)
+            throw Exception{ "\"internal-password-bcrypt-round\" must be in range 7-31" };
+
         _validator.setMinimumLength(Wt::Auth::PasswordStrengthType::OneCharClass, 4);
         _validator.setMinimumLength(Wt::Auth::PasswordStrengthType::TwoCharClass, 4);
         _validator.setMinimumLength(Wt::Auth::PasswordStrengthType::PassPhrase, 4);
@@ -55,7 +58,7 @@ namespace lms::auth
             if (!user)
             {
                 LMS_LOG(AUTH, DEBUG, "hashing random stuff");
-                // hash random stuff here to waste some time
+                // hash random stuff here to waste some time, don't give clue the user does not exist
                 hashRandomPassword();
                 return false;
             }
@@ -64,13 +67,29 @@ namespace lms::auth
             passwordHash = user->getPasswordHash();
             if (passwordHash.salt.empty() || passwordHash.hash.empty())
             {
-                // hash random stuff here to waste some time
+                // hash random stuff here to waste some time, don't give clue the user has no password set
                 hashRandomPassword();
                 return false;
             }
         }
 
-        return _hashFunc.verify(std::string{ password }, std::string{ passwordHash.salt }, std::string{ passwordHash.hash });
+        // Note: the round count set in the actual hash is used to verify, not the one used to construct _hashFunc
+        bool passwordMatched{ _hashFunc.verify(std::string{ password }, std::string{ passwordHash.salt }, std::string{ passwordHash.hash }) };
+        if (passwordMatched && passwordHash.bcryptRoundCount != _bcryptRoundCount)
+        {
+            LMS_LOG(AUTH, INFO, "Updating password hash for user '" << loginName << "' to match new bcrypt round count: previously " << passwordHash.bcryptRoundCount << " rounds, now " << _bcryptRoundCount << " rounds");
+            const db::User::PasswordHash updatedPasswordHash{ hashPassword(password) };
+
+            {
+                db::Session& session{ getDbSession() };
+                auto transaction{ session.createWriteTransaction() };
+
+                if (db::User::pointer user{ db::User::find(session, loginName) })
+                    user.modify()->setPasswordHash(updatedPasswordHash);
+            }
+        }
+
+        return passwordMatched;
     }
 
     bool InternalPasswordService::canSetPasswords() const
@@ -96,38 +115,37 @@ namespace lms::auth
     {
         const db::User::PasswordHash passwordHash{ hashPassword(newPassword) };
 
-        db::Session& session{ getDbSession() };
-        auto transaction{ session.createWriteTransaction() };
-
-        db::User::pointer user{ db::User::find(session, userId) };
-        if (!user)
-            throw Exception{ "User not found!" };
-
-        switch (checkPasswordAcceptability(newPassword, PasswordValidationContext{ user->getLoginName(), user->getType() }))
         {
-        case PasswordAcceptabilityResult::OK:
-            break;
-        case PasswordAcceptabilityResult::TooWeak:
-            throw PasswordTooWeakException{};
-        case PasswordAcceptabilityResult::MustMatchLoginName:
-            throw PasswordMustMatchLoginNameException{};
-        }
+            db::Session& session{ getDbSession() };
+            auto transaction{ session.createWriteTransaction() };
 
-        user.modify()->setPasswordHash(passwordHash);
-        getAuthTokenService().clearAuthTokens(userId);
+            db::User::pointer user{ db::User::find(session, userId) };
+            if (!user)
+                throw Exception{ "User not found!" };
+
+            switch (checkPasswordAcceptability(newPassword, PasswordValidationContext{ user->getLoginName(), user->getType() }))
+            {
+            case PasswordAcceptabilityResult::OK:
+                break;
+            case PasswordAcceptabilityResult::TooWeak:
+                throw PasswordTooWeakException{};
+            case PasswordAcceptabilityResult::MustMatchLoginName:
+                throw PasswordMustMatchLoginNameException{};
+            }
+
+            user.modify()->setPasswordHash(passwordHash);
+        }
     }
 
     db::User::PasswordHash InternalPasswordService::hashPassword(std::string_view password) const
     {
         const std::string salt{ Wt::WRandom::generateId(32) };
 
-        return { salt, _hashFunc.compute(std::string{ password }, salt) };
+        return db::User::PasswordHash{ .bcryptRoundCount = _bcryptRoundCount, .salt = salt, .hash = _hashFunc.compute(std::string{ password }, salt) };
     }
 
-    void
-    InternalPasswordService::hashRandomPassword() const
+    void InternalPasswordService::hashRandomPassword() const
     {
         hashPassword(Wt::WRandom::generateId(32));
     }
-
 } // namespace lms::auth

@@ -97,10 +97,4 @@ namespace lms::db
         assert(isAudioBitrateAllowed(bitrate));
         _subsonicDefaultTranscodingOutputBitrate = bitrate;
     }
-
-    void User::clearAuthTokens()
-    {
-        _authTokens.clear();
-    }
-
 } // namespace lms::db

@@ -54,7 +54,7 @@ namespace lms::api::subsonic
             {
                 std::string clientAddress;
                 std::string clientName;
-                std::string userName;
+                UserId user;
                 MediaLibraryId library;
                 std::size_t offset{};
                 auto operator<=>(const ScanInfo&) const = default;
@@ -177,9 +177,9 @@ namespace lms::api::subsonic
             else
             {
                 ScanTracker<ArtistId>::ScanInfo scanInfo{
-                    .clientAddress = context.clientInfo.ipAddress,
+                    .clientAddress = context.clientIpAddr,
                     .clientName = context.clientInfo.name,
-                    .userName = context.clientInfo.user,
+                    .user = context.user->getId(),
                     .library = mediaLibrary,
                     .offset = artistOffset
                 };
@@ -241,9 +241,9 @@ namespace lms::api::subsonic
             else
             {
                 ScanTracker<ReleaseId>::ScanInfo scanInfo{
-                    .clientAddress = context.clientInfo.ipAddress,
+                    .clientAddress = context.clientIpAddr,
                     .clientName = context.clientInfo.name,
-                    .userName = context.clientInfo.user,
+                    .user = context.user->getId(),
                     .library = mediaLibrary,
                     .offset = albumOffset
                 };
@@ -305,9 +305,9 @@ namespace lms::api::subsonic
             else
             {
                 ScanTracker<TrackId>::ScanInfo scanInfo{
-                    .clientAddress = context.clientInfo.ipAddress,
+                    .clientAddress = context.clientIpAddr,
                     .clientName = context.clientInfo.name,
-                    .userName = context.clientInfo.user,
+                    .user = context.user->getId(),
                     .library = mediaLibrary,
                     .offset = songOffset
                 };

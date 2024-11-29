@@ -33,7 +33,7 @@
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
-#include "services/auth/IEnvService.hpp"
+#include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/IPasswordService.hpp"
 
 #include "ParameterParsing.hpp"
@@ -41,7 +41,6 @@
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"
 #include "SubsonicResponse.hpp"
-#include "Utils.hpp"
 #include "entrypoints/AlbumSongLists.hpp"
 #include "entrypoints/Bookmarks.hpp"
 #include "entrypoints/Browsing.hpp"
@@ -132,9 +131,10 @@ namespace lms::api::subsonic
             return res;
         }
 
-        void checkUserTypeIsAllowed(RequestContext& context, core::EnumSet<db::UserType> allowedUserTypes)
+        void checkUserTypeIsAllowed(const db::User::pointer& user, core::EnumSet<db::UserType> allowedUserTypes)
         {
-            if (!allowedUserTypes.contains(context.user->getType()))
+            assert(user);
+            if (!allowedUserTypes.contains(user->getType()))
                 throw UserNotAuthorizedError{};
         }
 
@@ -143,20 +143,24 @@ namespace lms::api::subsonic
             throw NotImplementedGenericError{};
         }
 
+        enum class AuthenticationMode
+        {
+            Authenticated,
+            Unauthenticated,
+        };
         using RequestHandlerFunc = std::function<Response(RequestContext& context)>;
-        using CheckImplementedFunc = std::function<void()>;
         struct RequestEntryPointInfo
         {
             RequestHandlerFunc func;
+            AuthenticationMode authMode{ AuthenticationMode::Authenticated };
             core::EnumSet<db::UserType> allowedUserTypes{ db::UserType::DEMO, db::UserType::REGULAR, db::UserType::ADMIN };
-            CheckImplementedFunc checkFunc{};
         };
 
         const std::unordered_map<core::LiteralString, RequestEntryPointInfo, core::LiteralStringHash, core::LiteralStringEqual> requestEntryPoints{
             // System
             { "/ping", { handlePingRequest } },
             { "/getLicense", { handleGetLicenseRequest } },
-            { "/getOpenSubsonicExtensions", { handleGetOpenSubsonicExtensions } },
+            { "/getOpenSubsonicExtensions", { handleGetOpenSubsonicExtensions, AuthenticationMode::Unauthenticated } },
 
             // Browsing
             { "/getMusicFolders", { handleGetMusicFoldersRequest } },
@@ -240,11 +244,11 @@ namespace lms::api::subsonic
 
             // User management
             { "/getUser", { handleGetUserRequest } },
-            { "/getUsers", { handleGetUsersRequest, { db::UserType::ADMIN } } },
-            { "/createUser", { handleCreateUserRequest, { db::UserType::ADMIN }, &utils::checkSetPasswordImplemented } },
-            { "/updateUser", { handleUpdateUserRequest, { db::UserType::ADMIN } } },
-            { "/deleteUser", { handleDeleteUserRequest, { db::UserType::ADMIN } } },
-            { "/changePassword", { handleChangePassword, { db::UserType::REGULAR, db::UserType::ADMIN }, &utils::checkSetPasswordImplemented } },
+            { "/getUsers", { handleGetUsersRequest, AuthenticationMode::Authenticated, { db::UserType::ADMIN } } },
+            { "/createUser", { handleNotImplemented } },
+            { "/updateUser", { handleNotImplemented } },
+            { "/deleteUser", { handleNotImplemented } },
+            { "/changePassword", { handleNotImplemented } },
 
             // Bookmarks
             { "/getBookmarks", { handleGetBookmarks } },
@@ -255,7 +259,7 @@ namespace lms::api::subsonic
 
             // Media library scanning
             { "/getScanStatus", { Scan::handleGetScanStatus } },
-            { "/startScan", { Scan::handleStartScan, { db::UserType::ADMIN } } },
+            { "/startScan", { Scan::handleStartScan, AuthenticationMode::Authenticated, { db::UserType::ADMIN } } },
         };
 
         using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::Http::Request&, Wt::Http::Response&)>;
@@ -278,12 +282,23 @@ namespace lms::api::subsonic
             TLSMonotonicMemoryResourceCleaner(const TLSMonotonicMemoryResourceCleaner&) = delete;
             TLSMonotonicMemoryResourceCleaner& operator=(const TLSMonotonicMemoryResourceCleaner&) = delete;
         };
+
+        db::User::pointer getUserFromUserId(db::Session& session, db::UserId userId)
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            if (db::User::pointer user{ db::User::find(session, userId) })
+                return user;
+
+            throw UserNotAuthorizedError{};
+        }
     } // namespace
 
     SubsonicResource::SubsonicResource(db::Db& db)
         : _serverProtocolVersionsByClient{ readConfigProtocolVersions() }
         , _openSubsonicDisabledClients{ readOpenSubsonicDisabledClients() }
         , _defaultReleaseCoverClients{ readDefaultCoverClients() }
+        , _supportUserPasswordAuthentication{ core::Service<core::IConfig>::get()->getBool("api-subsonic-support-user-password-auth", true) }
         , _db{ db }
     {
     }
@@ -317,10 +332,11 @@ namespace lms::api::subsonic
             {
                 LMS_SCOPED_TRACE_OVERVIEW("Subsonic", itEntryPoint->first);
 
-                if (itEntryPoint->second.checkFunc)
-                    itEntryPoint->second.checkFunc();
-
-                checkUserTypeIsAllowed(requestContext, itEntryPoint->second.allowedUserTypes);
+                if (itEntryPoint->second.authMode == AuthenticationMode::Authenticated)
+                {
+                    requestContext.user = getUserFromUserId(_db.getTLSSession(), authenticateUser(request));
+                    checkUserTypeIsAllowed(requestContext.user, itEntryPoint->second.allowedUserTypes);
+                }
 
                 const Response resp{ [&] {
                     LMS_SCOPED_TRACE_DETAILED("Subsonic", "HandleRequest");
@@ -343,10 +359,18 @@ namespace lms::api::subsonic
             {
                 LMS_SCOPED_TRACE_OVERVIEW("Subsonic", itStreamHandler->first);
 
+                // Media retrieval endpoints are always authenticated
+                // Optim: no need to reauth user for each continuation
+                if (!request.continuation())
+                    requestContext.user = getUserFromUserId(_db.getTLSSession(), authenticateUser(request));
+
                 itStreamHandler->second(requestContext, request, response);
                 LMS_LOG(API_SUBSONIC, DEBUG, "Request " << requestId << " '" << requestPath << "' handled!");
                 return;
             }
+
+            // do not disclose unhandled commands for unauthenticated users
+            authenticateUser(request);
 
             LMS_LOG(API_SUBSONIC, ERROR, "Unhandled command '" << requestPath << "'");
             throw UnknownEntryPointGenericError{};
@@ -391,16 +415,9 @@ namespace lms::api::subsonic
         const auto& parameters{ request.getParameterMap() };
         ClientInfo res;
 
-        if (hasParameter(parameters, "t"))
-            throw TokenAuthenticationNotSupportedForLDAPUsersError{};
-
-        res.ipAddress = request.clientAddress();
-
         // Mandatory parameters
         res.name = getMandatoryParameterAs<std::string>(parameters, "c");
         res.version = getMandatoryParameterAs<ProtocolVersion>(parameters, "v");
-        res.user = getMandatoryParameterAs<std::string>(parameters, "u");
-        res.password = decodePasswordIfNeeded(getMandatoryParameterAs<std::string>(parameters, "p"));
 
         return res;
     }
@@ -409,25 +426,15 @@ namespace lms::api::subsonic
     {
         const Wt::Http::ParameterMap& parameters{ request.getParameterMap() };
         const ClientInfo clientInfo{ getClientInfo(request) };
-        const db::UserId userId{ authenticateUser(request, clientInfo) };
         bool enableOpenSubsonic{ !_openSubsonicDisabledClients.contains(clientInfo.name) };
         bool enableDefaultCover{ _defaultReleaseCoverClients.contains(clientInfo.name) };
         const ResponseFormat format{ getParameterAs<std::string>(request.getParameterMap(), "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml };
 
-        db::User::pointer user;
-        {
-            db::Session& session{ _db.getTLSSession() };
-            auto transaction{ session.createReadTransaction() };
-
-            user = db::User::find(session, userId);
-            if (!user)
-                throw UserNotAuthorizedError{};
-        }
-
         return RequestContext{
             .parameters = parameters,
             .dbSession = _db.getTLSSession(),
-            .user = user,
+            .user = db::User::pointer{},
+            .clientIpAddr = request.clientAddress(),
             .clientInfo = clientInfo,
             .serverProtocolVersion = getServerProtocolVersion(clientInfo.name),
             .responseFormat = format,
@@ -436,46 +443,52 @@ namespace lms::api::subsonic
         };
     }
 
-    db::UserId SubsonicResource::authenticateUser(const Wt::Http::Request& request, const ClientInfo& clientInfo)
+    db::UserId SubsonicResource::authenticateUser(const Wt::Http::Request& request)
     {
-        // if the request if a continuation, the user is already authenticated
-        if (request.continuation())
+        const auto& parameters{ request.getParameterMap() };
+
+        if (hasParameter(parameters, "t"))
+            throw TokenAuthenticationNotSupportedForLDAPUsersError{};
+
+        const auto user{ getParameterAs<std::string>(parameters, "u") };
+        const auto password{ getParameterAs<std::string>(parameters, "p") };
+        if (!_supportUserPasswordAuthentication && (password || user))
+            throw ProvidedAuthenticationMechanismNotSupportedError{};
+
+        const auto apiKey{ getParameterAs<std::string>(parameters, "apiKey") };
+
+        if (user && !password)
+            throw RequiredParameterMissingError{ "p" };
+        if (!user && password)
+            throw RequiredParameterMissingError{ "u" };
+        if (apiKey && password)
+            throw MultipleConflictingAuthenticationMechanismsProvidedError{};
+        if (!apiKey && !password)
+            throw RequiredParameterMissingError{ "apiKey" };
+
+        const auto clientAddress{ boost::asio::ip::address::from_string(request.clientAddress()) };
+        const std::string authToken{ apiKey ? *apiKey : decodePasswordIfNeeded(*password) };
+
+        const auto authResult{ core::Service<auth::IAuthTokenService>::get()->processAuthToken("subsonic", clientAddress, authToken) };
+        switch (authResult.state)
         {
-            db::Session& session{ _db.getTLSSession() };
-            auto transaction{ session.createReadTransaction() };
-
-            const auto user{ db::User::find(session, clientInfo.user) };
-            if (!user)
-                throw UserNotAuthorizedError{};
-
-            return user->getId();
-        }
-
-        if (auto* authEnvService{ core::Service<auth::IEnvService>::get() })
-        {
-            const auto checkResult{ authEnvService->processRequest(request) };
-            if (checkResult.state != auth::IEnvService::CheckResult::State::Granted)
-                throw UserNotAuthorizedError{};
-
-            return *checkResult.userId;
-        }
-        else if (auto* authPasswordService{ core::Service<auth::IPasswordService>::get() })
-        {
-            const auto checkResult{ authPasswordService->checkUserPassword(boost::asio::ip::address::from_string(request.clientAddress()), clientInfo.user, clientInfo.password) };
-
-            switch (checkResult.state)
+        case auth::IAuthTokenService::AuthTokenProcessResult::State::Granted:
+            if (user)
             {
-            case auth::IPasswordService::CheckResult::State::Granted:
-                return *checkResult.userId;
-                break;
-            case auth::IPasswordService::CheckResult::State::Denied:
-                throw WrongUsernameOrPasswordError{};
-            case auth::IPasswordService::CheckResult::State::Throttled:
-                throw LoginThrottledGenericError{};
+                const auto authenticatedUser{ getUserFromUserId(_db.getTLSSession(), authResult.authTokenInfo->userId) };
+                if (!authenticatedUser || authenticatedUser->getLoginName() != *user)
+                    throw WrongUsernameOrPasswordError{};
             }
+            return authResult.authTokenInfo->userId;
+        case auth::IAuthTokenService::AuthTokenProcessResult::State::Denied:
+            if (apiKey)
+                throw InvalidAPIkeyError{};
+            else
+                throw WrongUsernameOrPasswordError{};
+        case auth::IAuthTokenService::AuthTokenProcessResult::State::Throttled:
+            throw LoginThrottledGenericError{};
         }
 
-        throw InternalErrorGenericError{ "No service available to authenticate user" };
+        throw InternalErrorGenericError{ "Cannot authenticate user" };
     }
-
 } // namespace lms::api::subsonic

@@ -20,7 +20,6 @@
 #include "AuthTokenService.hpp"
 
 #include <Wt/Auth/HashFunction.h>
-#include <Wt/Auth/PasswordStrengthValidator.h>
 #include <Wt/WRandom.h>
 
 #include "core/Exception.hpp"
@@ -32,72 +31,95 @@
 
 namespace lms::auth
 {
-
-    std::unique_ptr<IAuthTokenService> createAuthTokenService(db::Db& db, std::size_t maxThrottlerEntries)
+    namespace
     {
-        return std::make_unique<AuthTokenService>(db, maxThrottlerEntries);
+        AuthTokenService::AuthTokenInfo createAuthTokenInfo(const db::AuthToken::pointer& authToken)
+        {
+            return AuthTokenService::AuthTokenInfo{
+                .userId = authToken->getUser()->getId(),
+                .expiry = authToken->getExpiry(),
+                .lastUsed = authToken->getLastUsed(),
+                .useCount = authToken->getUseCount(),
+                .maxUseCount = authToken->getMaxUseCount(),
+            };
+        }
+    } // namespace
+
+    std::unique_ptr<IAuthTokenService> createAuthTokenService(db::Db& db, std::size_t maxThrottlerEntryCount)
+    {
+        return std::make_unique<AuthTokenService>(db, maxThrottlerEntryCount);
     }
 
-    static const Wt::Auth::SHA1HashFunction sha1Function;
-
-    AuthTokenService::AuthTokenService(db::Db& db, std::size_t maxThrottlerEntries)
+    AuthTokenService::AuthTokenService(db::Db& db, std::size_t maxThrottlerEntryCount)
         : AuthServiceBase{ db }
-        , _loginThrottler{ maxThrottlerEntries }
+        , _loginThrottler{ maxThrottlerEntryCount }
     {
     }
 
-    std::string
-    AuthTokenService::createAuthToken(db::UserId userId, const Wt::WDateTime& expiry)
+    void AuthTokenService::registerDomain(core::LiteralString domain, const DomainParameters& params)
     {
-        const std::string secret{ Wt::WRandom::generateId(32) };
-        const std::string secretHash{ sha1Function.compute(secret, {}) };
-
-        db::Session& session{ getDbSession() };
-
-        auto transaction{ session.createWriteTransaction() };
-
-        db::User::pointer user{ db::User::find(session, userId) };
-        if (!user)
-            throw Exception{ "User deleted" };
-
-        db::AuthToken::pointer authToken{ session.create<db::AuthToken>(secretHash, expiry, user) };
-
-        LMS_LOG(UI, DEBUG, "Created auth token for user '" << user->getLoginName() << "', expiry = " << expiry.toString());
-
-        if (user->getAuthTokensCount() >= 50)
-            db::AuthToken::removeExpiredTokens(session, Wt::WDateTime::currentDateTime());
-
-        return secret;
+        auto [it, inserted]{ _domainParameters.emplace(domain, params) };
+        if (!inserted)
+            throw Exception{ "Auth token domain already registered!" };
     }
 
-    std::optional<AuthTokenService::AuthTokenProcessResult::AuthTokenInfo>
-    AuthTokenService::processAuthToken(std::string_view secret)
+    void AuthTokenService::createAuthToken(core::LiteralString domain, db::UserId userId, std::string_view token)
     {
-        const std::string secretHash{ sha1Function.compute(std::string{ secret }, {}) };
+        const DomainParameters& params{ getDomainParameters(domain) };
 
+        db::Session& session{ getDbSession() };
+        const auto now{ Wt::WDateTime::currentDateTime() };
+        const auto expiry{ params.tokenDuration ? now.addSecs(std::chrono::duration_cast<std::chrono::seconds>(params.tokenDuration.value()).count()) : Wt::WDateTime{} };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            const db::User::pointer user{ db::User::find(session, userId) };
+            if (!user)
+                throw Exception{ "User deleted" };
+
+            const db::AuthToken::pointer authToken{ session.create<db::AuthToken>(domain.str(), token, expiry, params.tokenMaxUseCount, user) };
+
+            LMS_LOG(UI, DEBUG, "Created auth token for user '" << user->getLoginName() << "', expiry = " << authToken->getExpiry().toString() << ", maxUseCount = " << (authToken->getMaxUseCount() ? std::to_string(*authToken->getMaxUseCount()) : "<unset>"));
+
+            // TODO per domain
+            if (user->getAuthTokensCount() >= 50)
+                db::AuthToken::removeExpiredTokens(session, domain.str(), Wt::WDateTime::currentDateTime());
+        }
+    }
+
+    std::optional<AuthTokenService::AuthTokenInfo> AuthTokenService::processAuthToken(core::LiteralString domain, std::string_view token)
+    {
         db::Session& session{ getDbSession() };
         auto transaction{ session.createWriteTransaction() };
 
-        db::AuthToken::pointer authToken{ db::AuthToken::find(session, secretHash) };
+        db::AuthToken::pointer authToken{ db::AuthToken::find(session, domain.str(), token) };
         if (!authToken)
             return std::nullopt;
 
-        if (authToken->getExpiry() < Wt::WDateTime::currentDateTime())
+        if (authToken->getExpiry().isValid() && authToken->getExpiry() < Wt::WDateTime::currentDateTime())
         {
             authToken.remove();
             return std::nullopt;
         }
 
-        LMS_LOG(UI, DEBUG, "Found auth token for user '" << authToken->getUser()->getLoginName() << "'!");
+        LMS_LOG(UI, DEBUG, "Found auth token for user '" << authToken->getUser()->getLoginName() << "' on domain '" << domain.str() << "'");
 
-        AuthTokenService::AuthTokenProcessResult::AuthTokenInfo res{ authToken->getUser()->getId(), authToken->getExpiry() };
-        authToken.remove();
+        AuthTokenInfo res{ createAuthTokenInfo(authToken) };
+
+        const std::size_t tokenUseCount{ authToken.modify()->incUseCount() };
+        authToken.modify()->setLastUsed(Wt::WDateTime::currentDateTime());
+
+        if (auto maxUseCount{ authToken->getMaxUseCount() })
+        {
+            if (*maxUseCount >= tokenUseCount)
+                authToken.remove();
+        }
 
         return res;
     }
 
-    AuthTokenService::AuthTokenProcessResult
-    AuthTokenService::processAuthToken(const boost::asio::ip::address& clientAddress, std::string_view tokenValue)
+    AuthTokenService::AuthTokenProcessResult AuthTokenService::processAuthToken(core::LiteralString domain, const boost::asio::ip::address& clientAddress, std::string_view tokenValue)
     {
         // Do not waste too much resource on brute force attacks (optim)
         {
@@ -107,7 +129,7 @@ namespace lms::auth
                 return AuthTokenProcessResult{ AuthTokenProcessResult::State::Throttled };
         }
 
-        auto res{ processAuthToken(tokenValue) };
+        auto res{ processAuthToken(domain, tokenValue) };
         {
             std::unique_lock lock{ _mutex };
 
@@ -122,22 +144,40 @@ namespace lms::auth
 
             _loginThrottler.onGoodClientAttempt(clientAddress);
             onUserAuthenticated(res->userId);
-            return AuthTokenProcessResult{ AuthTokenProcessResult::State::Granted, std::move(*res) };
+            return AuthTokenProcessResult{ AuthTokenProcessResult::State::Granted, res };
         }
     }
 
-    void
-    AuthTokenService::clearAuthTokens(db::UserId userId)
+    void AuthTokenService::visitAuthTokens(core::LiteralString domain, db::UserId userId, std::function<void(const AuthTokenInfo& info, std::string_view token)> visitor)
     {
         db::Session& session{ getDbSession() };
 
-        auto transaction{ session.createWriteTransaction() };
+        {
+            auto transaction{ session.createReadTransaction() };
 
-        db::User::pointer user{ db::User::find(session, userId) };
-        if (!user)
-            throw Exception{ "User deleted" };
-
-        user.modify()->clearAuthTokens();
+            db::AuthToken::find(session, domain.str(), userId, [&](const db::AuthToken::pointer& authToken) {
+                const AuthTokenInfo info{ createAuthTokenInfo(authToken) };
+                visitor(info, authToken->getValue());
+            });
+        }
     }
 
+    void AuthTokenService::clearAuthTokens(core::LiteralString domain, db::UserId userId)
+    {
+        db::Session& session{ getDbSession() };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            db::AuthToken::clearUserTokens(session, domain.str(), userId);
+        }
+    }
+
+    const AuthTokenService::DomainParameters& AuthTokenService::getDomainParameters(core::LiteralString domain) const
+    {
+        auto it{ _domainParameters.find(domain) };
+        if (it == std::cend(_domainParameters))
+            throw Exception{ "Invalid auth token domain" };
+
+        return it->second;
+    }
 } // namespace lms::auth
