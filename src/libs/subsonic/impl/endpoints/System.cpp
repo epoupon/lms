@@ -1,4 +1,4 @@
-#include "entrypoints/System.hpp"
+#include "endpoints/System.hpp"
 
 namespace lms::api::subsonic
 {
