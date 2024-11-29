@@ -202,7 +202,10 @@ namespace lms::api::subsonic
             {
                 for (const auto& [key, childNode] : node._children)
                 {
-                    res.add_child(std::string{ key.str() }, nodeToPropertyTree(childNode));
+                    boost::property_tree::ptree& tree{ res.add_child(std::string{ key.str() }, nodeToPropertyTree(childNode)) };
+                    // Hardcoded attribute to simplify createOkResponse calls
+                    if (key == "subsonic-response")
+                        tree.put("<xmlattr>.xmlns", "http://subsonic.org/restapi");
                 }
 
                 for (const auto& [key, childArrayNodes] : node._childrenArrays)
