@@ -58,7 +58,7 @@ namespace lms::auth
 
     void AuthTokenService::registerDomain(core::LiteralString domain, const DomainParameters& params)
     {
-        auto [it, inserted]{ _domainParameters.emplace(domain, params) };
+        [[maybe_unused]] auto [it, inserted]{ _domainParameters.emplace(domain, params) };
         if (!inserted)
             throw Exception{ "Auth token domain already registered!" };
     }
