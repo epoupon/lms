@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,19 +19,15 @@
 
 #pragma once
 
-#include <Wt/Http/Request.h>
-#include <Wt/Http/Response.h>
-
-#include "SubsonicResponse.hpp"
+#include <string_view>
 
 namespace lms::api::subsonic
 {
-    class RequestContext;
+    enum class ResponseFormat
+    {
+        xml,
+        json,
+    };
 
-    Response handleGetLyrics(RequestContext& context);
-    Response handleGetLyricsBySongId(RequestContext& context);
-
-    void handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
-    void handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
-    void handleGetCoverArt(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
+    std::string_view ResponseFormatToMimeType(ResponseFormat format);
 } // namespace lms::api::subsonic

@@ -28,20 +28,13 @@
 #include "core/LiteralString.hpp"
 
 #include "ProtocolVersion.hpp"
+#include "ResponseFormat.hpp"
 #include "SubsonicResponseAllocator.hpp"
 
 namespace lms::api::subsonic
 {
     // Max count expected from all API methods that expose a count
     static inline constexpr std::size_t defaultMaxCountSize{ 1'000 };
-
-    enum class ResponseFormat
-    {
-        xml,
-        json,
-    };
-
-    std::string_view ResponseFormatToMimeType(ResponseFormat format);
 
     class Error
     {
@@ -244,7 +237,7 @@ namespace lms::api::subsonic
         std::size_t _max;
     };
 
-    class Response
+    class Response final
     {
     public:
         class Node
@@ -306,7 +299,7 @@ namespace lms::api::subsonic
         static Response createOkResponse(ProtocolVersion protocolVersion);
         static Response createFailedResponse(ProtocolVersion protocolVersion, const Error& error);
 
-        virtual ~Response() {}
+        ~Response() = default;
         Response(const Response&) = delete;
         Response& operator=(const Response&) = delete;
         Response(Response&&) = default;

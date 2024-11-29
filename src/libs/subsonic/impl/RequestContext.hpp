@@ -27,7 +27,7 @@
 
 #include "ClientInfo.hpp"
 #include "ProtocolVersion.hpp"
-#include "SubsonicResponse.hpp"
+#include "ResponseFormat.hpp"
 
 namespace lms::db
 {
