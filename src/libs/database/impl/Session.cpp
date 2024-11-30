@@ -30,6 +30,7 @@
 #include "database/Image.hpp"
 #include "database/Listen.hpp"
 #include "database/MediaLibrary.hpp"
+#include "database/PlayQueue.hpp"
 #include "database/RatedArtist.hpp"
 #include "database/RatedRelease.hpp"
 #include "database/RatedTrack.hpp"
@@ -104,6 +105,7 @@ namespace lms::db
         _session.mapClass<Label>("label");
         _session.mapClass<Listen>("listen");
         _session.mapClass<MediaLibrary>("media_library");
+        _session.mapClass<PlayQueue>("playqueue");
         _session.mapClass<RatedArtist>("rated_artist");
         _session.mapClass<RatedRelease>("rated_release");
         _session.mapClass<RatedTrack>("rated_track");
@@ -186,9 +188,9 @@ namespace lms::db
         utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_sort_name_nocase_idx ON artist(sort_name COLLATE NOCASE)");
         utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_mbid_idx ON artist(mbid)");
 
-        utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS auth_token_user_idx ON auth_token(user_id)");
-        utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS auth_token_expiry_idx ON auth_token(expiry)");
-        utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS auth_token_value_idx ON auth_token(value)");
+        utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS auth_token_user_domain_idx ON auth_token(user_id, domain)");
+        utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS auth_token_domain_expiry_idx ON auth_token(domain, expiry)");
+        utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS auth_token_domain_value_idx ON auth_token(domain, value)");
 
         utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS cluster_cluster_type_idx ON cluster(cluster_type_id)");
         utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS cluster_type_name_idx ON cluster_type(name)");

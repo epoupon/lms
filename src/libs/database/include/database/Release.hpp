@@ -252,6 +252,7 @@ namespace lms::db
         std::vector<std::string> getLabelNames() const;
         std::vector<std::string> getReleaseTypeNames() const;
         void visitLabels(const std::function<void(const Label::pointer& label)>& _func) const;
+        std::string_view getBarcode() const { return _barcode; }
         ObjectPtr<Image> getImage() const;
 
         // Setters
@@ -266,6 +267,7 @@ namespace lms::db
         void clearReleaseTypes();
         void addLabel(ObjectPtr<Label> releaseType);
         void addReleaseType(ObjectPtr<ReleaseType> releaseType);
+        void setBarcode(std::string_view barcode) { _barcode = barcode; }
         void setImage(ObjectPtr<Image> image);
 
         // Get the artists of this release
@@ -286,6 +288,7 @@ namespace lms::db
             Wt::Dbo::field(a, _totalDisc, "total_disc");
             Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
             Wt::Dbo::field(a, _isCompilation, "is_compilation");
+            Wt::Dbo::field(a, _barcode, "barcode");
             Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "release");
 
             Wt::Dbo::belongsTo(a, _image, "image", Wt::Dbo::OnDeleteSetNull);
@@ -310,6 +313,7 @@ namespace lms::db
         std::optional<int> _totalDisc{};
         std::string _artistDisplayName;
         bool _isCompilation{}; // See https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html#compilation-itunes-5
+        std::string _barcode;
 
         Wt::Dbo::ptr<Image> _image;
         Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;

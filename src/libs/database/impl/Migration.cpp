@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 71 };
+        static constexpr Version LMS_DATABASE_VERSION{ 76 };
     }
 
     VersionInfo::VersionInfo()
@@ -907,6 +907,67 @@ SELECT
         utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV71(Session& session)
+    {
+        // Add a file name/stem in tracks
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "playqueue" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null,
+  "current_index" integer not null,
+  "current_position_in_track" integer,
+  "last_modified_date_time" text,
+  "user_id" bigint,
+  constraint "fk_playqueue_user" foreign key ("user_id") references "user" ("id") on delete cascade deferrable initially deferred
+))");
+
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "playqueue_track" (
+  "playqueue_id" bigint,
+  "track_id" bigint not null,
+  primary key ("playqueue_id", "track_id"),
+  constraint "fk_playqueue_track_key1" foreign key ("playqueue_id") references "playqueue" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_playqueue_track_key2" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred
+))");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "playqueue_track_playqueue" on "playqueue_track" ("playqueue_id"))");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "playqueue_track_track" on "playqueue_track" ("track_id"))");
+    }
+
+    void migrateFromV72(Session& session)
+    {
+        // Add catalog number
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE release ADD barcode TEXT NOT NULL DEFAULT ''");
+
+        // Just increment the scan version of the settings to make the next scheduled scan rescan everything
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
+
+    void migrateFromV73(Session& session)
+    {
+        // Remove any trailing '/' in library paths
+        utils::executeCommand(*session.getDboSession(), "UPDATE media_library SET path = rtrim(path, '/') WHERE path LIKE '%/'");
+    }
+
+    void migrateFromV74(Session& session)
+    {
+        // New auth token authentication for Subsonic API
+        // Previous tokens are not usable any more, no problem since they are just used for the ui's "remember me" feature
+        utils::executeCommand(*session.getDboSession(), "DELETE FROM auth_token");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE auth_token ADD domain TEXT NOT NULL");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE auth_token ADD use_count INTEGER NOT NULL");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE auth_token ADD last_used TEXT");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE auth_token ADD max_use_count INTEGER");
+
+        utils::executeCommand(*session.getDboSession(), "DROP INDEX IF EXISTS auth_token_user_idx");
+        utils::executeCommand(*session.getDboSession(), "DROP INDEX IF EXISTS auth_token_expiry_idx");
+        utils::executeCommand(*session.getDboSession(), "DROP INDEX IF EXISTS auth_token_value_idx");
+    }
+
+    void migrateFromV75(Session& session)
+    {
+        // Added a new option to set the bcrypt count to be use to hash user's passwords
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE user ADD bcrypt_round_count INTEGER NOT NULL DEFAULT(7)");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -954,6 +1015,11 @@ SELECT
             { 68, migrateFromV68 },
             { 69, migrateFromV69 },
             { 70, migrateFromV70 },
+            { 71, migrateFromV71 },
+            { 72, migrateFromV72 },
+            { 73, migrateFromV73 },
+            { 74, migrateFromV74 },
+            { 75, migrateFromV75 },
         };
 
         bool migrationPerformed{};
@@ -985,7 +1051,9 @@ SELECT
                 LMS_LOG(DB, INFO, "Migrating database from version " << version << " to " << version + 1 << "...");
 
                 auto itMigrationFunc{ migrationFunctions.find(version) };
-                assert(itMigrationFunc != std::cend(migrationFunctions));
+                if (itMigrationFunc == std::cend(migrationFunctions))
+                    throw core::LmsException{ "No code found to upgrade database!" };
+
                 itMigrationFunc->second(session);
 
                 VersionInfo::get(session).modify()->setVersion(++version);

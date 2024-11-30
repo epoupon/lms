@@ -158,7 +158,7 @@ namespace lms::db::tests
         ScopedTrackList trackList2{ session, "MytrackList2", TrackListType::Playlist, false, user.lockAndGet() };
         ScopedTrack track1{ session };
         ScopedTrack track2{ session };
-        ScopedMediaLibrary library{ session };
+        ScopedMediaLibrary library{ session, "MyLibrary", "/root" };
 
         {
             auto transaction{ session.createWriteTransaction() };

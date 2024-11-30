@@ -46,7 +46,7 @@
 <message id="Lms.Error.error-occurred">C'è stato un errore!</message>
 <message id="Lms.Error.go-home">Ritorna alla home</message>
 <message id="Lms.Error.release-not-found">Album non trovato</message>
-
+<message id="Lms.Error.tracklist-not-found">Playlist non trovata</message>
 <message id="Lms.Error.user-not-allowed">Non sei autorizzato ad eseguire questa operazione</message>
 <message id="Lms.Error.user-not-found">Utente non trovato</message>
 
@@ -289,7 +289,7 @@
 <!--Settings-->
 <message id="Lms.Settings.artist-release-sort-method">Metodo per ordinare gli album dell'artista</message>
 <message id="Lms.Settings.audio">Audio</message>
-<message id="Lms.Settings.audio-settings-are-local">Queste impostazioni sono salvate localmente su questo dispositivo!</message>
+<message id="Lms.Settings.audio-settings-are-local">Queste impostazioni sono salvate localmente su questo dispositivo</message>
 <message id="Lms.Settings.backend.internal">Interno</message>
 <message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
 <message id="Lms.Settings.backend.listenbrainz-token">Token API ListenBrainz</message>
@@ -307,6 +307,7 @@
 <message id="Lms.Settings.original-date-desc">Data di uscita originale (Decrescente)</message>
 <message id="Lms.Settings.password-bad">Password errata</message>
 <message id="Lms.Settings.password-must-fill-old-password">Devi inserire la password attuale</message>
+<message id="Lms.Settings.regen-token">Genera</message>
 <message id="Lms.Settings.replaygain-mode">Modalità ReplayGain</message>
 <message id="Lms.Settings.replaygain-mode.none">No ReplayGain</message>
 <message id="Lms.Settings.replaygain-mode.auto">Automatica</message>
@@ -317,13 +318,19 @@
 <message id="Lms.Settings.scrobbling">Scrobbling</message>
 <message id="Lms.Settings.services">Servizi</message>
 <message id="Lms.Settings.settings">Impostazioni</message>
+<message id="Lms.Settings.settings-saved">Nuove impostazioni salvate!</message>
 <message id="Lms.Settings.subsonic-artist-list-mode">Modalità di elencazione artisti</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.all-artists">Tutti gli artisti</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Artisti album</message>
 <message id="Lms.Settings.subsonic-artist-list-mode.track-artists">Artisti tracce</message>
-<message id="Lms.Settings.subsonic-api">Subsonic API</message>
-<message id="Lms.Settings.user-interface">Interfaccia utente</message>
+<message id="Lms.Settings.subsonic-api">API Subsonic</message>
+<message id="Lms.Settings.subsonic-token">Chiave API OpenSubsonic</message>
+<message id="Lms.Settings.subsonic-token-usage">Utilizza questa chiave API come password per i client che non supportano l'estensione 'Autenticazione con chiave API'</message>
 <message id="Lms.Settings.transcoding">Transcodifica</message>
+<message id="Lms.Settings.transcoding-mode">Abilita transcodifica</message>
+<message id="Lms.Settings.transcoding-mode.always">Sempre</message>
+<message id="Lms.Settings.transcoding-mode.if-format-not-supported">Quando il formato non è supportato</message>
+<message id="Lms.Settings.transcoding-mode.never">Mai</message>
 <message id="Lms.Settings.transcoding-output-bitrate">Bitrate transcodifica</message>
 <message id="Lms.Settings.transcoding-output-format">Formato di transcodifica</message>
 <message id="Lms.Settings.transcoding-output-format.matroska_opus">Matroska/Opus</message>
@@ -331,11 +338,7 @@
 <message id="Lms.Settings.transcoding-output-format.ogg_opus">Ogg/Opus</message>
 <message id="Lms.Settings.transcoding-output-format.ogg_vorbis">Ogg/Vorbis</message>
 <message id="Lms.Settings.transcoding-output-format.webm_vorbis">WebM/Vorbis</message>
-<message id="Lms.Settings.transcoding-mode">Abilita transcodifica</message>
-<message id="Lms.Settings.transcoding-mode.always">Sempre</message>
-<message id="Lms.Settings.transcoding-mode.if-format-not-supported">Quando il formato non è supportato</message>
-<message id="Lms.Settings.transcoding-mode.never">Mai</message>
-<message id="Lms.Settings.settings-saved">Nuove impostazioni salvate!</message>
+<message id="Lms.Settings.user-interface">Interfaccia utente</message>
 
 <!--Wt-->
 <message id="Wt.WDateTime.LessThanASecond">meno di un secondo</message>

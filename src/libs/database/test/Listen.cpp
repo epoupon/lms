@@ -343,8 +343,8 @@ namespace lms::db::tests
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime1{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime1 };
-        ScopedMediaLibrary library{ session };
-        ScopedMediaLibrary otherLibrary{ session };
+        ScopedMediaLibrary library{ session, "MyLibrary", "/root" };
+        ScopedMediaLibrary otherLibrary{ session, "OtherLibrary", "/otherRoot" };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -563,8 +563,8 @@ namespace lms::db::tests
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedRelease release{ session, "MyRelease" };
-        ScopedMediaLibrary library{ session };
-        ScopedMediaLibrary otherLibrary{ session };
+        ScopedMediaLibrary library{ session, "MyLibrary", "/root" };
+        ScopedMediaLibrary otherLibrary{ session, "OtherLibrary", "/otherRoot" };
 
         {
             auto transaction{ session.createWriteTransaction() };
@@ -809,8 +809,8 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
-        ScopedMediaLibrary library{ session };
-        ScopedMediaLibrary otherLibrary{ session };
+        ScopedMediaLibrary library{ session, "MyLibrary", "/root" };
+        ScopedMediaLibrary otherLibrary{ session, "OtherLibrary", "/otherRoot" };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -1051,8 +1051,8 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedArtist artist{ session, "MyArtist" };
-        ScopedMediaLibrary library{ session };
-        ScopedMediaLibrary otherLibrary{ session };
+        ScopedMediaLibrary library{ session, "MyLibrary", "/root" };
+        ScopedMediaLibrary otherLibrary{ session, "OtherLibrary", "/otherRoot" };
 
         {
             auto transaction{ session.createWriteTransaction() };
@@ -1325,8 +1325,8 @@ namespace lms::db::tests
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
         ScopedRelease release{ session, "MyRelease" };
-        ScopedMediaLibrary library{ session };
-        ScopedMediaLibrary otherLibrary{ session };
+        ScopedMediaLibrary library{ session, "MyLibrary", "/root" };
+        ScopedMediaLibrary otherLibrary{ session, "OtherLibrary", "/otherRoot" };
 
         {
             auto transaction{ session.createWriteTransaction() };
@@ -1410,8 +1410,8 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedUser user{ session, "MyUser" };
-        ScopedMediaLibrary library{ session };
-        ScopedMediaLibrary otherLibrary{ session };
+        ScopedMediaLibrary library{ session, "MyLibrary", "/root" };
+        ScopedMediaLibrary otherLibrary{ session, "OtherLibrary", "/otherRoot" };
 
         const Wt::WDateTime dateTime{ Wt::WDate{ 2000, 1, 2 }, Wt::WTime{ 12, 0, 1 } };
         ScopedListen listen1{ session, user.lockAndGet(), track.lockAndGet(), ScrobblingBackend::Internal, dateTime };

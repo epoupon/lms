@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <map>
 #include <shared_mutex>
 
 #include "services/auth/IAuthTokenService.hpp"
@@ -36,7 +37,7 @@ namespace lms::auth
     class AuthTokenService : public IAuthTokenService, public AuthServiceBase
     {
     public:
-        AuthTokenService(db::Db& db, std::size_t maxThrottlerEntries);
+        AuthTokenService(db::Db& db, std::size_t maxThrottlerEntryCount);
 
         AuthTokenService(const AuthTokenService&) = delete;
         AuthTokenService& operator=(const AuthTokenService&) = delete;
@@ -44,13 +45,17 @@ namespace lms::auth
         AuthTokenService& operator=(AuthTokenService&&) = delete;
 
     private:
-        AuthTokenProcessResult processAuthToken(const boost::asio::ip::address& clientAddress, std::string_view tokenValue) override;
-        std::string createAuthToken(db::UserId userId, const Wt::WDateTime& expiry) override;
-        void clearAuthTokens(db::UserId userId) override;
+        void registerDomain(core::LiteralString domain, const DomainParameters& params) override;
+        AuthTokenProcessResult processAuthToken(core::LiteralString domain, const boost::asio::ip::address& clientAddress, std::string_view tokenValue) override;
+        void visitAuthTokens(core::LiteralString domain, db::UserId userId, std::function<void(const AuthTokenInfo& info, std::string_view token)> visitor) override;
+        void createAuthToken(core::LiteralString domain, db::UserId userId, std::string_view token) override;
+        void clearAuthTokens(core::LiteralString domain, db::UserId userId) override;
 
-        std::optional<AuthTokenService::AuthTokenProcessResult::AuthTokenInfo> processAuthToken(std::string_view secret);
+        std::optional<AuthTokenInfo> processAuthToken(core::LiteralString domain, std::string_view tokenValue);
+        const DomainParameters& getDomainParameters(core::LiteralString domain) const;
 
         std::shared_mutex _mutex;
+        std::map<core::LiteralString, DomainParameters> _domainParameters;
         LoginThrottler _loginThrottler;
     };
 } // namespace lms::auth

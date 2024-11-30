@@ -38,7 +38,6 @@
 
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"
-#include "Utils.hpp"
 #include "responses/Artist.hpp"
 #include "responses/Contributor.hpp"
 #include "responses/ItemGenre.hpp"

@@ -47,15 +47,15 @@ namespace lms::ui
         static inline const Field PasswordField{ "password" };
         static inline const Field PasswordConfirmField{ "password-confirm" };
 
-        InitWizardModel()
-            : Wt::WFormModel()
+        InitWizardModel(auth::IPasswordService& passwordService)
+            : _passwordService{ passwordService }
         {
             addField(AdminLoginField);
             addField(PasswordField);
             addField(PasswordConfirmField);
 
             setValidator(AdminLoginField, createLoginNameValidator());
-            setValidator(PasswordField, createPasswordStrengthValidator([this] { return auth::PasswordValidationContext{ valueText(AdminLoginField).toUTF8(), db::UserType::ADMIN }; }));
+            setValidator(PasswordField, createPasswordStrengthValidator(passwordService, [this] { return auth::PasswordValidationContext{ valueText(AdminLoginField).toUTF8(), db::UserType::ADMIN }; }));
             validator(PasswordField)->setMandatory(true);
             setValidator(PasswordConfirmField, createMandatoryValidator());
         }
@@ -71,7 +71,7 @@ namespace lms::ui
 
             db::User::pointer user{ LmsApp->getDbSession().create<db::User>(valueText(AdminLoginField).toUTF8()) };
             user.modify()->setType(db::UserType::ADMIN);
-            core::Service<auth::IPasswordService>::get()->setPassword(user->getId(), valueText(PasswordField).toUTF8());
+            _passwordService.setPassword(user->getId(), valueText(PasswordField).toUTF8());
         }
 
         bool validateField(Field field)
@@ -97,12 +97,15 @@ namespace lms::ui
 
             return false;
         }
+
+    private:
+        auth::IPasswordService& _passwordService;
     };
 
-    InitWizardView::InitWizardView()
+    InitWizardView::InitWizardView(auth::IPasswordService& passwordService)
         : Wt::WTemplateFormView{ Wt::WString::tr("Lms.Admin.InitWizard.template") }
     {
-        auto model = std::make_shared<InitWizardModel>();
+        auto model = std::make_shared<InitWizardModel>(passwordService);
 
         // AdminLogin
         {

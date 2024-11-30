@@ -37,28 +37,24 @@ namespace lms::auth
 {
     static const Wt::Auth::SHA1HashFunction sha1Function;
 
-    std::unique_ptr<IPasswordService>
-    createPasswordService(std::string_view passwordAuthenticationBackend, db::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService)
+    std::unique_ptr<IPasswordService> createPasswordService(std::string_view backend, db::Db& db, std::size_t maxThrottlerEntryCount)
     {
-        if (passwordAuthenticationBackend == "internal")
-            return std::make_unique<InternalPasswordService>(db, maxThrottlerEntries, authTokenService);
+        if (backend == "internal")
+            return std::make_unique<InternalPasswordService>(db, maxThrottlerEntryCount);
 #ifdef LMS_SUPPORT_PAM
-        else if (passwordAuthenticationBackend == "pam")
-            return std::make_unique<PAMPasswordService>(db, maxThrottlerEntries, authTokenService);
+        if (backend == "PAM")
+            return std::make_unique<PAMPasswordService>(db, maxThrottlerEntryCount);
 #endif // LMS_SUPPORT_PAM
-
-        throw Exception{ "Authentication backend '" + std::string{ passwordAuthenticationBackend } + "' is not supported!" };
+        throw Exception{ "Authentication backend '" + std::string{ backend } + "' not supported!" };
     }
 
-    PasswordServiceBase::PasswordServiceBase(db::Db& db, std::size_t maxThrottlerEntries, IAuthTokenService& authTokenService)
+    PasswordServiceBase::PasswordServiceBase(db::Db& db, std::size_t maxThrottlerEntries)
         : AuthServiceBase{ db }
         , _loginThrottler{ maxThrottlerEntries }
-        , _authTokenService{ authTokenService }
     {
     }
 
-    PasswordServiceBase::CheckResult
-    PasswordServiceBase::checkUserPassword(const boost::asio::ip::address& clientAddress, std::string_view loginName, std::string_view password)
+    PasswordServiceBase::CheckResult PasswordServiceBase::checkUserPassword(const boost::asio::ip::address& clientAddress, std::string_view loginName, std::string_view password)
     {
         LMS_LOG(AUTH, DEBUG, "Checking password for user '" << loginName << "'");
 

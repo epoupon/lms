@@ -93,6 +93,8 @@ namespace lms::core::pathUtils::tests
             { "/root/", "/root/", true },
             { "/folder/file.txt", "/root", false },
             { "/folder/file.txt", "/root/", false },
+            { "/file.txt", "/root", false },
+            { "/file.txt", "/root/", false },
             { "", "/root", false },
         };
 

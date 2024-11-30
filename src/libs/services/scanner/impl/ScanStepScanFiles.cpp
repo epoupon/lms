@@ -144,7 +144,7 @@ namespace lms::scanner
             Artist::pointer artist{ session.create<Artist>(artistInfo.name) };
 
             if (artistInfo.mbid)
-                artist.modify()->setMBID(*artistInfo.mbid);
+                artist.modify()->setMBID(artistInfo.mbid);
             if (artistInfo.sortName)
                 artist.modify()->setSortName(*artistInfo.sortName);
 
@@ -254,6 +254,8 @@ namespace lms::scanner
                 release.modify()->setArtistDisplayName(releaseInfo.artistDisplayName);
             if (release->isCompilation() != releaseInfo.isCompilation)
                 release.modify()->setCompilation(releaseInfo.isCompilation);
+            if (release->getBarcode() != releaseInfo.barcode)
+                release.modify()->setBarcode(releaseInfo.barcode);
             if (release->getReleaseTypeNames() != releaseInfo.releaseTypes)
             {
                 release.modify()->clearReleaseTypes();
@@ -276,7 +278,9 @@ namespace lms::scanner
             return candidateRelease->getName() == releaseInfo.name
                 && candidateRelease->getSortName() == releaseInfo.sortName
                 && candidateRelease->getTotalDisc() == releaseInfo.mediumCount
-                && candidateRelease->isCompilation() == releaseInfo.isCompilation;
+                && candidateRelease->isCompilation() == releaseInfo.isCompilation
+                && candidateRelease->getLabelNames() == releaseInfo.labels
+                && candidateRelease->getBarcode() == releaseInfo.barcode;
         }
 
         Release::pointer getOrCreateRelease(Session& session, const metadata::Release& releaseInfo, const Directory::pointer& currentDirectory)
@@ -354,7 +358,7 @@ namespace lms::scanner
         {
             std::vector<Cluster::pointer> clusters;
 
-            auto getOrCreateClusters{ [&](std::string tag, std::span<const std::string> values) {
+            auto getOrCreateClusters{ [&](std::string_view tag, std::span<const std::string> values) {
                 auto clusterType = ClusterType::find(session, tag);
                 if (!clusterType)
                     clusterType = session.create<ClusterType>(tag);
@@ -437,7 +441,6 @@ namespace lms::scanner
 
         std::vector<FileScanResult> scanResults;
 
-        std::filesystem::path currentDirectory;
         core::pathUtils::exploreFilesRecursive(
             mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path) {
                 LMS_SCOPED_TRACE_DETAILED("Scanner", "OnExploreFile");

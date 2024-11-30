@@ -1,16 +1,17 @@
 
 add_library(lmssubsonic SHARED
-	impl/entrypoints/AlbumSongLists.cpp
-	impl/entrypoints/Bookmarks.cpp
-	impl/entrypoints/Browsing.cpp
-	impl/entrypoints/MediaAnnotation.cpp
-	impl/entrypoints/MediaLibraryScanning.cpp
-	impl/entrypoints/MediaRetrieval.cpp
-	impl/entrypoints/Playlists.cpp
-	impl/entrypoints/Searching.cpp
-	impl/entrypoints/System.cpp
-	impl/entrypoints/UserManagement.cpp
+	impl/endpoints/AlbumSongLists.cpp
+	impl/endpoints/Bookmarks.cpp
+	impl/endpoints/Browsing.cpp
+	impl/endpoints/MediaAnnotation.cpp
+	impl/endpoints/MediaLibraryScanning.cpp
+	impl/endpoints/MediaRetrieval.cpp
+	impl/endpoints/Playlists.cpp
+	impl/endpoints/Searching.cpp
+	impl/endpoints/System.cpp
+	impl/endpoints/UserManagement.cpp
 	impl/responses/Album.cpp
+	impl/responses/AlbumInfo.cpp
 	impl/responses/Artist.cpp
 	impl/responses/Bookmark.cpp
 	impl/responses/Contributor.cpp
@@ -24,12 +25,12 @@ add_library(lmssubsonic SHARED
 	impl/responses/ReplayGain.cpp
 	impl/responses/Song.cpp
 	impl/responses/User.cpp
+	impl/ResponseFormat.cpp
 	impl/ProtocolVersion.cpp
 	impl/ParameterParsing.cpp
 	impl/SubsonicId.cpp
 	impl/SubsonicResource.cpp
 	impl/SubsonicResponse.cpp
-	impl/Utils.cpp
 	)
 
 target_include_directories(lmssubsonic INTERFACE

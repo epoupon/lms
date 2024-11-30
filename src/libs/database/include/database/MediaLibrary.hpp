@@ -53,7 +53,7 @@ namespace lms::db
 
         // setters
         void setName(std::string_view name) { _name = name; }
-        void setPath(const std::filesystem::path& p) { _path = p; }
+        void setPath(const std::filesystem::path& p);
 
         template<class Action>
         void persist(Action& a)
@@ -64,8 +64,8 @@ namespace lms::db
 
     private:
         friend class Session;
-        MediaLibrary(const std::filesystem::path& p, std::string_view name);
-        static pointer create(Session& session, const std::filesystem::path& p = {}, std::string_view name = {});
+        MediaLibrary(std::string_view name, const std::filesystem::path& p);
+        static pointer create(Session& session, std::string_view name, const std::filesystem::path& p);
 
         std::filesystem::path _path;
         std::string _name;

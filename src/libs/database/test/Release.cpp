@@ -86,8 +86,8 @@ namespace lms::db::tests
         ScopedRelease release1{ session, "MyRelease1" };
         ScopedRelease release2{ session, "MyRelease2" };
         ScopedRelease release3{ session, "MyRelease3" };
-        ScopedMediaLibrary library{ session };
-        ScopedMediaLibrary otherLibrary{ session };
+        ScopedMediaLibrary library{ session, "MyLibrary", "/root" };
+        ScopedMediaLibrary otherLibrary{ session, "OtherLibrary", "/otherRoot" };
 
         {
             auto transaction{ session.createWriteTransaction() };
@@ -233,8 +233,8 @@ namespace lms::db::tests
     {
         ScopedTrack track{ session };
         ScopedRelease release{ session, "MyRelease" };
-        ScopedMediaLibrary library{ session };
-        ScopedMediaLibrary otherLibrary{ session };
+        ScopedMediaLibrary library{ session, "MyLibrary", "/root" };
+        ScopedMediaLibrary otherLibrary{ session, "OtherLibrary", "/otherRoot" };
 
         {
             auto transaction{ session.createWriteTransaction() };

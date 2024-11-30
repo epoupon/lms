@@ -100,6 +100,9 @@ namespace lms::metadata
 
         std::cout << "\tIsCompilation: " << std::boolalpha << release.isCompilation << std::endl;
 
+        if (!release.barcode.empty())
+            std::cout << "\tBarcode: " << release.barcode << std::endl;
+
         for (const Artist& artist : release.artists)
             std::cout << "\tRelease artist: " << artist << std::endl;
 

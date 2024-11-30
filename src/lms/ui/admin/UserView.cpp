@@ -34,6 +34,7 @@
 #include "core/String.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
+#include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/IPasswordService.hpp"
 
 #include "LmsApplication.hpp"
@@ -52,9 +53,10 @@ namespace lms::ui
         static inline const Field PasswordField{ "password" };
         static inline const Field DemoField{ "demo" };
 
-        UserModel(std::optional<UserId> userId, auth::IPasswordService* authPasswordService)
+        UserModel(std::optional<UserId> userId, auth::IPasswordService* authPasswordService, auth::IAuthTokenService& authTokenService)
             : _userId{ userId }
             , _authPasswordService{ authPasswordService }
+            , _authTokenService{ authTokenService }
         {
             if (!_userId)
             {
@@ -65,7 +67,7 @@ namespace lms::ui
             if (authPasswordService)
             {
                 addField(PasswordField);
-                setValidator(PasswordField, createPasswordStrengthValidator([this] { return auth::PasswordValidationContext{ getLoginName(), getUserType() }; }));
+                setValidator(PasswordField, createPasswordStrengthValidator(*authPasswordService, [this] { return auth::PasswordValidationContext{ getLoginName(), getUserType() }; }));
                 if (!userId)
                     validator(PasswordField)->setMandatory(true);
             }
@@ -86,7 +88,10 @@ namespace lms::ui
                     throw UserNotFoundException{};
 
                 if (_authPasswordService && !valueText(PasswordField).empty())
+                {
                     _authPasswordService->setPassword(user->getId(), valueText(PasswordField).toUTF8());
+                    _authTokenService.clearAuthTokens("ui", user->getId());
+                }
             }
             else
             {
@@ -103,6 +108,9 @@ namespace lms::ui
 
                 if (_authPasswordService)
                     _authPasswordService->setPassword(user->getId(), valueText(PasswordField).toUTF8());
+
+                // For demo user, we create the subsonic API auth token now as we have no other mean to create it later
+                core::Service<auth::IAuthTokenService>::get()->createAuthToken("subsonic", user->getId(), core::UUID::generate().getAsString());
             }
         }
 
@@ -177,6 +185,7 @@ namespace lms::ui
 
         std::optional<UserId> _userId;
         auth::IPasswordService* _authPasswordService{};
+        auth::IAuthTokenService& _authTokenService;
     };
 
     UserView::UserView()
@@ -199,12 +208,14 @@ namespace lms::ui
 
         Wt::WTemplateFormView* t{ addNew<Wt::WTemplateFormView>(Wt::WString::tr("Lms.Admin.User.template")) };
 
-        auto* authPasswordService{ core::Service<auth::IPasswordService>::get() };
-        if (authPasswordService && !authPasswordService->canSetPasswords())
-            authPasswordService = nullptr;
+        auth::IPasswordService* authPasswordService{};
+        if (LmsApp->getAuthBackend() == AuthenticationBackend::Internal)
+        {
+            authPasswordService = core::Service<auth::IPasswordService>::get();
+            assert(authPasswordService->canSetPasswords());
+        }
 
-        auto model{ std::make_shared<UserModel>(userId, authPasswordService) };
-
+        auto model{ std::make_shared<UserModel>(userId, authPasswordService, *core::Service<auth::IAuthTokenService>::get()) };
         if (userId)
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };

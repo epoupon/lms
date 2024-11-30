@@ -48,7 +48,7 @@ namespace lms::db
         struct FindParameters
         {
             std::optional<Range> range;
-            ClusterSortMethod sortMethod;
+            ClusterSortMethod sortMethod{ ClusterSortMethod::None };
             ClusterTypeId clusterType;   // if non empty, clusters that belong to this cluster type
             std::string clusterTypeName; // if non empty, clusters that belong to this cluster type
             TrackId track;               // if set, clusters involved in this track

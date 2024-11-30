@@ -37,8 +37,6 @@ namespace lms::db
 
 namespace lms::auth
 {
-    class IAuthTokenService;
-
     class IPasswordService
     {
     public:
@@ -53,7 +51,7 @@ namespace lms::auth
                 Throttled,
             };
             State state{ State::Denied };
-            std::optional<db::UserId> userId{};
+            db::UserId userId{};
             std::optional<Wt::WDateTime> expiry{};
         };
         virtual CheckResult checkUserPassword(const boost::asio::ip::address& clientAddress,
@@ -73,5 +71,5 @@ namespace lms::auth
         virtual void setPassword(db::UserId userId, std::string_view newPassword) = 0;
     };
 
-    std::unique_ptr<IPasswordService> createPasswordService(std::string_view authPasswordBackend, db::Db& db, std::size_t maxThrottlerEntryCount, IAuthTokenService& authTokenService);
+    std::unique_ptr<IPasswordService> createPasswordService(std::string_view backend, db::Db& db, std::size_t maxThrottlerEntryCount);
 } // namespace lms::auth

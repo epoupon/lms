@@ -1,4 +1,4 @@
-#include "entrypoints/System.hpp"
+#include "endpoints/System.hpp"
 
 namespace lms::api::subsonic
 {
@@ -39,6 +39,12 @@ namespace lms::api::subsonic
             Response::Node& songLyricsNode{ response.createArrayNode("openSubsonicExtensions") };
             songLyricsNode.setAttribute("name", "songLyrics");
             songLyricsNode.addArrayValue("versions", 1);
+        }
+
+        {
+            Response::Node& apiKeyAuthentication{ response.createArrayNode("openSubsonicExtensions") };
+            apiKeyAuthentication.setAttribute("name", "apiKeyAuthentication");
+            apiKeyAuthentication.addArrayValue("versions", 1);
         }
 
         return response;

@@ -142,7 +142,7 @@ namespace lms
 
         // create some random media libraries
         for (std::size_t i{}; i < params.mediaLibraryCount; ++i)
-            context.mediaLibraries.push_back(context.session.create<db::MediaLibrary>());
+            context.mediaLibraries.push_back(context.session.create<db::MediaLibrary>("Library" + std::to_string(i), "/root" + std::to_string(i)));
 
         // create some random genres/moods
         {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,26 +17,20 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Utils.hpp"
+#pragma once
 
-#include "core/Service.hpp"
-#include "core/String.hpp"
-#include "services/auth/IPasswordService.hpp"
+#include "database/Object.hpp"
 
 #include "SubsonicResponse.hpp"
 
-namespace lms::api::subsonic::utils
+namespace lms::db
 {
-    void checkSetPasswordImplemented()
-    {
-        auth::IPasswordService* passwordService{ core::Service<auth::IPasswordService>::get() };
-        if (!passwordService || !passwordService->canSetPasswords())
-            throw NotImplementedGenericError{};
-    }
+    class Release;
+} // namespace lms::db
 
-    std::string makeNameFilesystemCompatible(std::string_view name)
-    {
-        return core::stringUtils::replaceInString(name, "/", "_");
-    }
+namespace lms::api::subsonic
+{
+    struct RequestContext;
 
-} // namespace lms::api::subsonic::utils
+    Response::Node createAlbumInfoNode(RequestContext& context, const db::ObjectPtr<db::Release>& release);
+} // namespace lms::api::subsonic

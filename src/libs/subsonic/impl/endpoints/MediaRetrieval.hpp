@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,12 +19,19 @@
 
 #pragma once
 
-#include "RequestContext.hpp"
+#include <Wt/Http/Request.h>
+#include <Wt/Http/Response.h>
+
 #include "SubsonicResponse.hpp"
 
 namespace lms::api::subsonic
 {
-    Response handleGetBookmarks(RequestContext& context);
-    Response handleCreateBookmark(RequestContext& context);
-    Response handleDeleteBookmark(RequestContext& context);
+    class RequestContext;
+
+    Response handleGetLyrics(RequestContext& context);
+    Response handleGetLyricsBySongId(RequestContext& context);
+
+    void handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
+    void handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
+    void handleGetCoverArt(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
 } // namespace lms::api::subsonic

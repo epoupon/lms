@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,13 +17,22 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "ResponseFormat.hpp"
 
-#include <string>
 #include <string_view>
 
-namespace lms::api::subsonic::utils
+namespace lms::api::subsonic
 {
-    void checkSetPasswordImplemented();
-    std::string makeNameFilesystemCompatible(std::string_view name);
-} // namespace lms::api::subsonic::utils
+    std::string_view ResponseFormatToMimeType(ResponseFormat format)
+    {
+        switch (format)
+        {
+        case ResponseFormat::xml:
+            return "text/xml";
+        case ResponseFormat::json:
+            return "application/json";
+        }
+
+        return "";
+    }
+} // namespace lms::api::subsonic

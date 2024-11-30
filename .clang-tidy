@@ -2,7 +2,6 @@
 Checks:          '-*,bugprone-*,concurrency-*,cppcoreguidelines-*,misc-*,-misc-include-cleaner,-misc-no-recursion,performance*,portability-*,readability-*,-readability-braces-around-statements,-readability-identifier-length,-readability-implicit-bool-conversion'
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
-AnalyzeTemporaryDtors: false
 FormatStyle:     none
 User:            ''
 CheckOptions:

@@ -87,7 +87,7 @@ namespace lms::ui
                 if (p.is_relative())
                     return Wt::WValidator::Result(Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.MediaLibrary.path-must-be-absolute"));
 
-                // TODO check and translate rights issues
+                // TODO check and translate access rights issues
                 bool res{ std::filesystem::is_directory(p, ec) };
                 if (ec)
                     return Wt::WValidator::Result(Wt::ValidationState::Invalid, ec.message()); // TODO translate common errors
@@ -151,14 +151,23 @@ namespace lms::ui
                 auto& session{ LmsApp->getDbSession() };
                 auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
+                std::string name{ valueText(NameField).toUTF8() };
+                std::string path{ valueText(DirectoryField).toUTF8() };
+
                 MediaLibrary::pointer library;
                 if (_libraryId.isValid())
+                {
                     library = MediaLibrary::find(session, _libraryId);
+                    if (library)
+                    {
+                        library.modify()->setName(name);
+                        library.modify()->setPath(path);
+                    }
+                }
                 else
-                    library = session.create<MediaLibrary>();
-
-                library.modify()->setName(valueText(NameField).toUTF8());
-                library.modify()->setPath(valueText(DirectoryField).toUTF8());
+                {
+                    library = session.create<MediaLibrary>(name, path);
+                }
 
                 return library->getId();
             }

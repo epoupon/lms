@@ -2,7 +2,7 @@ FROM	alpine:3.19 AS build
 
 WORKDIR	/tmp/workdir
 
-ARG	PREFIX="/tmp/install"
+ENV	PREFIX="/tmp/install"
 
 ARG	BUILD_PACKAGES=" \
 	ca-certificates \
@@ -118,7 +118,7 @@ COPY . /tmp/lms/
 RUN \
 	DIR=/tmp/lms/build && mkdir -p ${DIR} && cd ${DIR} && \
 	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake /tmp/lms/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_PREFIX_PATH=${PREFIX} && \
-	LD_LIBRARY_PATH=${PREFIX}/lib VERBOSE=1 make -j$(nproc) && \
+	LD_LIBRARY_PATH=${PREFIX}/lib make -j$(nproc) && \
 	LD_LIBRARY_PATH=${PREFIX}/lib make test && \
 	make install && \
 	mkdir -p ${PREFIX}/etc/ && \

@@ -32,19 +32,6 @@
 
 namespace lms::api::subsonic
 {
-    std::string_view ResponseFormatToMimeType(ResponseFormat format)
-    {
-        switch (format)
-        {
-        case ResponseFormat::xml:
-            return "text/xml";
-        case ResponseFormat::json:
-            return "application/json";
-        }
-
-        return "";
-    }
-
     void Response::Node::setValue(std::string_view value)
     {
         assert(_children.empty() && _childrenArrays.empty() && _childrenValues.empty());
@@ -215,7 +202,10 @@ namespace lms::api::subsonic
             {
                 for (const auto& [key, childNode] : node._children)
                 {
-                    res.add_child(std::string{ key.str() }, nodeToPropertyTree(childNode));
+                    boost::property_tree::ptree& tree{ res.add_child(std::string{ key.str() }, nodeToPropertyTree(childNode)) };
+                    // Hardcoded attribute to simplify createOkResponse calls
+                    if (key == "subsonic-response")
+                        tree.put("<xmlattr>.xmlns", "http://subsonic.org/restapi");
                 }
 
                 for (const auto& [key, childArrayNodes] : node._childrenArrays)

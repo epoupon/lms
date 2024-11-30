@@ -30,15 +30,15 @@
 
 namespace lms::db
 {
-    MediaLibrary::MediaLibrary(const std::filesystem::path& p, std::string_view name)
-        : _path{ p }
-        , _name{ std::string{ name, 0, maxNameLength } }
+    MediaLibrary::MediaLibrary(std::string_view name, const std::filesystem::path& p)
+        : _name{ std::string{ name, 0, maxNameLength } }
     {
+        setPath(p);
     }
 
-    MediaLibrary::pointer MediaLibrary::create(Session& session, const std::filesystem::path& p, std::string_view name)
+    MediaLibrary::pointer MediaLibrary::create(Session& session, std::string_view name, const std::filesystem::path& p)
     {
-        return session.getDboSession()->add(std::unique_ptr<MediaLibrary>{ new MediaLibrary{ p, name } });
+        return session.getDboSession()->add(std::unique_ptr<MediaLibrary>{ new MediaLibrary{ name, p } });
     }
 
     std::size_t MediaLibrary::getCount(Session& session)
@@ -76,5 +76,14 @@ namespace lms::db
         utils::forEachQueryResult(session.getDboSession()->find<MediaLibrary>(), [&](const MediaLibrary::pointer& mediaLibrary) {
             func(mediaLibrary);
         });
+    }
+
+    void MediaLibrary::setPath(const std::filesystem::path& p)
+    {
+        assert(p.is_absolute());
+        if (!p.has_filename() && p.has_parent_path())
+            _path = p.parent_path();
+        else
+            _path = p;
     }
 } // namespace lms::db

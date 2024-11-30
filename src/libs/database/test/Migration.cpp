@@ -20,9 +20,11 @@
 #include "Common.hpp"
 
 #include "core/String.hpp"
+#include "database/AuthToken.hpp"
 #include "database/Db.hpp"
 #include "database/Directory.hpp"
 #include "database/Image.hpp"
+#include "database/PlayQueue.hpp"
 #include "database/RatedArtist.hpp"
 #include "database/RatedRelease.hpp"
 #include "database/RatedTrack.hpp"
@@ -336,12 +338,14 @@ VALUES
             auto transaction{ session.createReadTransaction() };
 
             EXPECT_FALSE(Artist::find(session, ArtistId{}));
+            EXPECT_FALSE(AuthToken::find(session, AuthTokenId{}));
             EXPECT_FALSE(Cluster::find(session, ClusterId{}));
             EXPECT_FALSE(ClusterType::find(session, ClusterTypeId{}));
             EXPECT_FALSE(Directory::find(session, DirectoryId{}));
             EXPECT_FALSE(Image::find(session, ImageId{}));
             EXPECT_FALSE(Label::find(session, LabelId{}));
             EXPECT_FALSE(Listen::find(session, ListenId{}));
+            EXPECT_FALSE(PlayQueue::find(session, PlayQueueId{}));
             EXPECT_FALSE(RatedArtist::find(session, RatedArtistId{}));
             EXPECT_FALSE(RatedRelease::find(session, RatedReleaseId{}));
             EXPECT_FALSE(RatedTrack::find(session, RatedTrackId{}));

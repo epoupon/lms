@@ -36,6 +36,7 @@
 #include "services/artwork/IArtworkService.hpp"
 
 #include "ParameterParsing.hpp"
+#include "RequestContext.hpp"
 #include "SubsonicId.hpp"
 #include "responses/Lyrics.hpp"
 

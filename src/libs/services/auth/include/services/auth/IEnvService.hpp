@@ -58,12 +58,12 @@ namespace lms::auth
             };
 
             State state{ State::Denied };
-            std::optional<db::UserId> userId{};
+            db::UserId userId{};
         };
 
         virtual CheckResult processEnv(const Wt::WEnvironment& env) = 0;
         virtual CheckResult processRequest(const Wt::Http::Request& request) = 0;
     };
 
-    std::unique_ptr<IEnvService> createEnvService(std::string_view backendName, db::Db& db);
+    std::unique_ptr<IEnvService> createEnvService(std::string_view backend, db::Db& db);
 } // namespace lms::auth
