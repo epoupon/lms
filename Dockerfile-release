@@ -36,8 +36,6 @@ ARG	BUILD_PACKAGES=" \
 
 RUN	apk add --no-cache --update ${BUILD_PACKAGES}
 
-ARG MAKEFLAGS="-j$(nproc)"
-
 # ffmpeg
 ARG	FFMPEG_VERSION=6.1.1
 RUN  \
@@ -76,7 +74,7 @@ RUN \
 	--enable-protocol=file,pipe \
 	--enable-filter=aresample \
 	--extra-libs=-ldl && \
-	make ${MAKEFLAGS} && \
+	make -j$(nproc) && \
 	make install && \
 	make distclean
 
@@ -90,7 +88,7 @@ RUN \
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
 	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF -DUSE_SYSTEM_SQLITE3=ON && \
-	make ${MAKEFLAGS} && \
+	make -j$(nproc) && \
 	make install
 
 # STB
@@ -112,7 +110,7 @@ RUN \
 RUN \
 	DIR=/tmp/taglib && mkdir -p ${DIR} && cd ${DIR} && \
 	CXXFLAGS="-I/usr/include/utf8cpp" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=ON -DBUILD_EXAMPLES=OFF -DBUILD_BINDINGS=OFF -DBUILD_TESTING=OFF -DTRACE_IN_RELEASE=OFF -DWITH_ZLIB=ON  && \
-	make ${MAKEFLAGS} && \
+	make -j$(nproc) && \
 	make install
 
 # LMS
@@ -120,7 +118,7 @@ COPY . /tmp/lms/
 RUN \
 	DIR=/tmp/lms/build && mkdir -p ${DIR} && cd ${DIR} && \
 	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake /tmp/lms/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_PREFIX_PATH=${PREFIX} && \
-	LD_LIBRARY_PATH=${PREFIX}/lib VERBOSE=1 make ${MAKEFLAGS} && \
+	LD_LIBRARY_PATH=${PREFIX}/lib make -j$(nproc) && \
 	LD_LIBRARY_PATH=${PREFIX}/lib make test && \
 	make install && \
 	mkdir -p ${PREFIX}/etc/ && \
