@@ -3,4 +3,5 @@
 CMakeCache.txt
 CMakeFiles/
 build/
+.cache/
 .vscode/
