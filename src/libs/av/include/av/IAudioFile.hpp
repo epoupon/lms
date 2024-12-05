@@ -28,8 +28,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Types.hpp"
-
 namespace lms::av
 {
     // List should be sync with the codecs shipped in the lms's docker version
@@ -62,14 +60,14 @@ namespace lms::av
     struct Picture
     {
         std::string mimeType;
-        const std::byte* data{};
+        const std::byte* data{}; // valid as long as IAudioFile exists
         std::size_t dataSize{};
     };
 
     struct ContainerInfo
     {
         std::size_t bitrate{};
-        std::string name{};
+        std::string name;
         std::chrono::milliseconds duration{};
     };
 
@@ -99,7 +97,7 @@ namespace lms::av
         virtual std::optional<StreamInfo> getBestStreamInfo() const = 0;   // none if failure/unknown
         virtual std::optional<std::size_t> getBestStreamIndex() const = 0; // none if failure/unknown
         virtual bool hasAttachedPictures() const = 0;
-        virtual void visitAttachedPictures(std::function<void(const Picture&)> func) const = 0;
+        virtual void visitAttachedPictures(std::function<void(const Picture&, const MetadataMap& metadata)> func) const = 0;
     };
 
     std::unique_ptr<IAudioFile> parseAudioFile(const std::filesystem::path& p);

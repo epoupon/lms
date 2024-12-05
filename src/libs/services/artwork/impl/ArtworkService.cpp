@@ -20,11 +20,9 @@
 #include "ArtworkService.hpp"
 
 #include "av/IAudioFile.hpp"
+#include "av/Types.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
-#include "core/Path.hpp"
-#include "core/Random.hpp"
-#include "core/String.hpp"
 #include "core/Utils.hpp"
 #include "database/Artist.hpp"
 #include "database/Db.hpp"
@@ -71,7 +69,7 @@ namespace lms::cover
     {
         std::unique_ptr<IEncodedImage> image;
 
-        input.visitAttachedPictures([&](const av::Picture& picture) {
+        input.visitAttachedPictures([&](const av::Picture& picture, const av::IAudioFile::MetadataMap& /* metadata */) {
             if (image)
                 return;
 
