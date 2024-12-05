@@ -44,6 +44,8 @@ namespace lms::core::tracing
         private:
             CurrentThreadUnregisterer(const CurrentThreadUnregisterer&) = delete;
             CurrentThreadUnregisterer& operator=(const CurrentThreadUnregisterer&) = delete;
+            CurrentThreadUnregisterer(CurrentThreadUnregisterer&&) = delete;
+            CurrentThreadUnregisterer& operator=(CurrentThreadUnregisterer&&) = delete;
 
             TraceLogger* _logger;
         };
@@ -295,7 +297,7 @@ namespace lms::core::tracing
         oss << threadId;
 
         std::istringstream iss{ oss.str() };
-        std::uint64_t id;
+        std::uint64_t id{};
         iss >> id;
 
         return static_cast<std::uint32_t>(id);

@@ -33,6 +33,10 @@ namespace lms::image::STB
         RawImage(const std::byte* encodedData, std::size_t encodedDataSize);
         RawImage(const std::filesystem::path& path);
 
+        ~RawImage() override = default;
+        RawImage(const RawImage&) = delete;
+        RawImage& operator=(const RawImage&) = delete;
+
         ImageSize getWidth() const override;
         ImageSize getHeight() const override;
 
@@ -42,8 +46,8 @@ namespace lms::image::STB
         const std::byte* getData() const;
 
     private:
-        int _width;
-        int _height;
+        int _width{};
+        int _height{};
         using UniquePtrFree = std::unique_ptr<unsigned char, decltype(&std::free)>;
         UniquePtrFree _data{ nullptr, std::free };
     };

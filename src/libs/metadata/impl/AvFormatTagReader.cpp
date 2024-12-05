@@ -19,15 +19,11 @@
 
 #include "AvFormatTagReader.hpp"
 
-#include <algorithm>
-#include <iostream>
-
 #include "av/IAudioFile.hpp"
+#include "av/Types.hpp"
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 #include "metadata/Exception.hpp"
-
-#include "Utils.hpp"
 
 namespace lms::metadata
 {

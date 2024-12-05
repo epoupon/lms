@@ -43,7 +43,7 @@ namespace lms::scanner
     {
     public:
         ScannerService(db::Db& db);
-        ~ScannerService();
+        ~ScannerService() override;
 
     private:
         ScannerService(const ScannerService&) = delete;
@@ -55,7 +55,6 @@ namespace lms::scanner
         Status getStatus() const override;
         Events& getEvents() override { return _events; }
 
-    private:
         void start();
         void stop();
 

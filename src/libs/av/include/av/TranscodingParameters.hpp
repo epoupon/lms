@@ -23,8 +23,6 @@
 #include <filesystem>
 #include <optional>
 
-#include "Types.hpp"
-
 namespace lms::av::transcoding
 {
     struct InputParameters
@@ -47,7 +45,7 @@ namespace lms::av::transcoding
     struct OutputParameters
     {
         OutputFormat format;
-        std::size_t bitrate{ 128000 };
+        std::size_t bitrate{ 128'000 };
         std::optional<std::size_t> stream; // Id of the stream to be transcoded (auto detect by default)
         std::chrono::milliseconds offset{ 0 };
         bool stripMetadata{ true };

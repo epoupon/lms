@@ -47,8 +47,7 @@ namespace lms::image::STB
         }
     }
 
-    const std::byte*
-    JPEGImage::getData() const
+    const std::byte* JPEGImage::getData() const
     {
         if (_data.empty())
             return nullptr;
@@ -56,8 +55,7 @@ namespace lms::image::STB
         return &_data.front();
     }
 
-    std::size_t
-    JPEGImage::getDataSize() const
+    std::size_t JPEGImage::getDataSize() const
     {
         return _data.size();
     }

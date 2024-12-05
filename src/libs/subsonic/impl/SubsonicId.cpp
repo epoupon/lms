@@ -19,9 +19,6 @@
 
 #include "SubsonicId.hpp"
 
-#include "SubsonicResponse.hpp"
-
-#include "core/ILogger.hpp"
 #include "core/String.hpp"
 
 namespace lms::api::subsonic
@@ -45,11 +42,6 @@ namespace lms::api::subsonic
     std::string idToString(db::ReleaseId id)
     {
         return "al-" + id.toString();
-    }
-
-    std::string idToString(RootId)
-    {
-        return "root";
     }
 
     std::string idToString(db::TrackId id)
@@ -118,15 +110,6 @@ namespace lms::core::stringUtils
 
         if (const auto value{ core::stringUtils::readAs<db::ReleaseId::ValueType>(values[1]) })
             return db::ReleaseId{ *value };
-
-        return std::nullopt;
-    }
-
-    template<>
-    std::optional<api::subsonic::RootId> readAs(std::string_view str)
-    {
-        if (str == "root")
-            return api::subsonic::RootId{};
 
         return std::nullopt;
     }

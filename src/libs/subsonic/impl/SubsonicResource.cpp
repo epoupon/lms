@@ -29,7 +29,6 @@
 #include "core/LiteralString.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
-#include "core/Utils.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
@@ -39,7 +38,6 @@
 #include "ParameterParsing.hpp"
 #include "ProtocolVersion.hpp"
 #include "RequestContext.hpp"
-#include "SubsonicId.hpp"
 #include "SubsonicResponse.hpp"
 #include "endpoints/AlbumSongLists.hpp"
 #include "endpoints/Bookmarks.hpp"
@@ -105,8 +103,8 @@ namespace lms::api::subsonic
             auto censorValue = [](const std::string& type, const std::string& value) -> std::string {
                 if (type == "p" || type == "password")
                     return "*REDACTED*";
-                else
-                    return value;
+
+                return value;
             };
 
             std::string res;
@@ -138,7 +136,7 @@ namespace lms::api::subsonic
                 throw UserNotAuthorizedError{};
         }
 
-        Response handleNotImplemented(RequestContext&)
+        Response handleNotImplemented(RequestContext& /*context*/)
         {
             throw NotImplementedGenericError{};
         }
@@ -292,6 +290,18 @@ namespace lms::api::subsonic
 
             throw UserNotAuthorizedError{};
         }
+
+        ClientInfo getClientInfo(const Wt::Http::Request& request)
+        {
+            const auto& parameters{ request.getParameterMap() };
+            ClientInfo res;
+
+            // Mandatory parameters
+            res.name = getMandatoryParameterAs<std::string>(parameters, "c");
+            res.version = getMandatoryParameterAs<ProtocolVersion>(parameters, "v");
+
+            return res;
+        }
     } // namespace
 
     SubsonicResource::SubsonicResource(db::Db& db)
@@ -403,23 +413,11 @@ namespace lms::api::subsonic
             throw ClientMustUpgradeError{};
         if (client.minor > server.minor)
             throw ServerMustUpgradeError{};
-        else if (client.minor == server.minor)
+        if (client.minor == server.minor)
         {
             if (client.patch > server.patch)
                 throw ServerMustUpgradeError{};
         }
-    }
-
-    ClientInfo SubsonicResource::getClientInfo(const Wt::Http::Request& request)
-    {
-        const auto& parameters{ request.getParameterMap() };
-        ClientInfo res;
-
-        // Mandatory parameters
-        res.name = getMandatoryParameterAs<std::string>(parameters, "c");
-        res.version = getMandatoryParameterAs<ProtocolVersion>(parameters, "v");
-
-        return res;
     }
 
     RequestContext SubsonicResource::buildRequestContext(const Wt::Http::Request& request)

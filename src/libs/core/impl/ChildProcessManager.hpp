@@ -20,7 +20,6 @@
 #pragma once
 
 #include <memory>
-#include <thread>
 
 #include <boost/asio/io_context.hpp>
 
@@ -32,7 +31,7 @@ namespace lms::core
     {
     public:
         ChildProcessManager(boost::asio::io_context& ioContext);
-        ~ChildProcessManager() = default;
+        ~ChildProcessManager() override = default;
 
         ChildProcessManager(const ChildProcessManager&) = delete;
         ChildProcessManager(ChildProcessManager&&) = delete;

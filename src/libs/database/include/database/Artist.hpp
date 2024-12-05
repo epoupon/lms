@@ -130,16 +130,16 @@ namespace lms::db
         static pointer find(Session& session, ArtistId id);
         static std::vector<pointer> find(Session& session, std::string_view name); // exact match on name field
         static void find(Session& session, ArtistId& lastRetrievedArtist, std::size_t count, const std::function<void(const Artist::pointer&)>& func, MediaLibraryId library = {});
-        static RangeResults<pointer> find(Session& session, const FindParameters& parameters);
-        static void find(Session& session, const FindParameters& parameters, std::function<void(const pointer&)> func);
-        static RangeResults<ArtistId> findIds(Session& session, const FindParameters& parameters);
+        static RangeResults<pointer> find(Session& session, const FindParameters& params);
+        static void find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func);
+        static RangeResults<ArtistId> findIds(Session& session, const FindParameters& params);
         static RangeResults<ArtistId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt); // No track related
         static bool exists(Session& session, ArtistId id);
 
         // Accessors
         const std::string& getName() const { return _name; }
         const std::string& getSortName() const { return _sortName; }
-        std::optional<core::UUID> getMBID() const { return core::UUID::fromString(_MBID); }
+        std::optional<core::UUID> getMBID() const { return core::UUID::fromString(_mbid); }
         ObjectPtr<Image> getImage() const;
 
         // No artistLinkTypes means get them all
@@ -148,10 +148,10 @@ namespace lms::db
         // Get the cluster of the tracks made by this artist
         // Each clusters are grouped by cluster type, sorted by the number of occurence
         // size is the max number of cluster per cluster type
-        std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(std::vector<ClusterTypeId> clusterTypeIds, std::size_t size) const;
+        std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(std::span<const ClusterTypeId> clusterTypeIds, std::size_t size) const;
 
         void setName(std::string_view name);
-        void setMBID(const std::optional<core::UUID>& mbid) { _MBID = mbid ? mbid->getAsString() : ""; }
+        void setMBID(const std::optional<core::UUID>& mbid) { _mbid = mbid ? mbid->getAsString() : ""; }
         void setSortName(std::string_view sortName);
         void setImage(ObjectPtr<Image> image);
 
@@ -160,7 +160,7 @@ namespace lms::db
         {
             Wt::Dbo::field(a, _name, "name");
             Wt::Dbo::field(a, _sortName, "sort_name");
-            Wt::Dbo::field(a, _MBID, "mbid");
+            Wt::Dbo::field(a, _mbid, "mbid");
 
             Wt::Dbo::belongsTo(a, _image, "image", Wt::Dbo::OnDeleteSetNull);
             Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "artist");
@@ -173,11 +173,11 @@ namespace lms::db
         friend class Session;
         // Create
         Artist(const std::string& name, const std::optional<core::UUID>& MBID = {});
-        static pointer create(Session& session, const std::string& name, const std::optional<core::UUID>& UUID = {});
+        static pointer create(Session& session, const std::string& name, const std::optional<core::UUID>& mbid = std::nullopt);
 
         std::string _name;
         std::string _sortName;
-        std::string _MBID; // Musicbrainz Identifier
+        std::string _mbid; // Musicbrainz Identifier
 
         Wt::Dbo::ptr<Image> _image;
         Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks; // Tracks involving this artist

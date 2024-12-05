@@ -19,6 +19,9 @@
 
 #pragma once
 
+#include <optional>
+#include <string_view>
+
 #include "core/String.hpp"
 
 namespace lms::api::subsonic

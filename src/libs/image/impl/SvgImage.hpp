@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include <filesystem>
-#include <memory>
 #include <vector>
 
 #include "image/IEncodedImage.hpp"
@@ -33,9 +31,9 @@ namespace lms::image
         SvgImage(std::vector<std::byte>&& data)
             : _data{ std::move(data) } {}
 
-        const std::byte* getData() const { return &_data.front(); }
-        std::size_t getDataSize() const { return _data.size(); }
-        std::string_view getMimeType() const { return "image/svg+xml"; }
+        const std::byte* getData() const override { return &_data.front(); }
+        std::size_t getDataSize() const override { return _data.size(); }
+        std::string_view getMimeType() const override { return "image/svg+xml"; }
 
     private:
         const std::vector<std::byte> _data;

@@ -59,7 +59,7 @@ namespace lms::av::transcoding
         {
             LMS_LOG(TRANSCODING, DEBUG, "Writing " << _bytesReadyCount << " bytes back to client");
 
-            response.out().write(reinterpret_cast<const char*>(&_buffer[0]), _bytesReadyCount);
+            response.out().write(reinterpret_cast<const char*>(_buffer.data()), _bytesReadyCount);
             _totalServedByteCount += _bytesReadyCount;
             _bytesReadyCount = 0;
         }
@@ -78,23 +78,21 @@ namespace lms::av::transcoding
 
             return continuation;
         }
-        else
+
+        // pad with 0 if necessary as duration may not be accurate
+        if (_estimatedContentLength && *_estimatedContentLength > _totalServedByteCount)
         {
-            // pad with 0 if necessary as duration may not be accurate
-            if (_estimatedContentLength && *_estimatedContentLength > _totalServedByteCount)
-            {
-                const std::size_t padSize{ *_estimatedContentLength - _totalServedByteCount };
+            const std::size_t padSize{ *_estimatedContentLength - _totalServedByteCount };
 
-                LMS_LOG(TRANSCODING, DEBUG, "Adding " << padSize << " padding bytes");
+            LMS_LOG(TRANSCODING, DEBUG, "Adding " << padSize << " padding bytes");
 
-                for (std::size_t i{}; i < padSize; ++i)
-                    response.out().put(0);
+            for (std::size_t i{}; i < padSize; ++i)
+                response.out().put(0);
 
-                _totalServedByteCount += padSize;
-            }
-
-            LMS_LOG(TRANSCODING, DEBUG, "Transcoding finished. Total served byte count = " << _totalServedByteCount);
+            _totalServedByteCount += padSize;
         }
+
+        LMS_LOG(TRANSCODING, DEBUG, "Transcoding finished. Total served byte count = " << _totalServedByteCount);
 
         return {};
     }

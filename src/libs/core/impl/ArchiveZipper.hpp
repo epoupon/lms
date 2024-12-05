@@ -35,7 +35,8 @@ namespace lms::zip
     class ArchiveZipper : public IZipper
     {
     public:
-        ArchiveZipper(const EntryContainer& files);
+        ArchiveZipper(const EntryContainer& entries);
+        ~ArchiveZipper() = default;
         ArchiveZipper(const ArchiveZipper&) = delete;
         ArchiveZipper& operator=(const ArchiveZipper&) = delete;
 

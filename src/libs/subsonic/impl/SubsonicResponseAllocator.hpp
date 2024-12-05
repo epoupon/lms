@@ -38,7 +38,7 @@ namespace lms::api::subsonic
         constexpr Allocator() noexcept = default;
 
         template<typename U>
-        constexpr Allocator(const Allocator<MemoryResource, U>&) noexcept
+        constexpr Allocator(const Allocator<MemoryResource, U>& /*allocator*/) noexcept
         {
         }
 
@@ -54,7 +54,7 @@ namespace lms::api::subsonic
         }
 
         // Deallocate memory pointed to by p
-        void deallocate(pointer p, std::size_t) noexcept
+        void deallocate(pointer p, std::size_t /*n*/) noexcept
         {
             MemoryResource::getInstance().deallocate(reinterpret_cast<std::byte*>(p));
         }

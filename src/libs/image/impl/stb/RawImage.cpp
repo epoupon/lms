@@ -45,7 +45,7 @@ namespace lms::image::STB
 {
     RawImage::RawImage(const std::byte* encodedData, std::size_t encodedDataSize)
     {
-        int n;
+        int n{};
         _data = UniquePtrFree{ ::stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(encodedData), encodedDataSize, &_width, &_height, &n, 3), std::free };
         if (!_data)
             throw Exception{ "Cannot load image from memory: " + std::string{ ::stbi_failure_reason() } };
@@ -78,7 +78,7 @@ namespace lms::image::STB
             width = (size_t)((float)height / _height * _width);
         }
 
-        UniquePtrFree resizedData{ reinterpret_cast<unsigned char*>(malloc(width * height * 3)), std::free };
+        UniquePtrFree resizedData{ static_cast<unsigned char*>(malloc(width * height * 3)), std::free };
         if (!resizedData)
             throw Exception{ "Cannot allocate memory for resized image!" };
 

@@ -71,11 +71,11 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Image>>("SELECT i from image i").where("i.id = ?").bind(id));
     }
 
-    Image::pointer Image::find(Session& session, const std::filesystem::path& path)
+    Image::pointer Image::find(Session& session, const std::filesystem::path& file)
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Image>>("SELECT i from image i").where("i.absolute_file_path = ?").bind(path));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Image>>("SELECT i from image i").where("i.absolute_file_path = ?").bind(file));
     }
 
     void Image::find(Session& session, ImageId& lastRetrievedImage, std::size_t count, const std::function<void(const Image::pointer&)>& func)

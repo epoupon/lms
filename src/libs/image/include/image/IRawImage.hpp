@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "image/IEncodedImage.hpp"
 
 namespace lms::image

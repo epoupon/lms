@@ -167,7 +167,7 @@ namespace lms::core::stringUtils::tests
             std::string expectedOutput;
         };
 
-        TestCase tests[]{
+        const TestCase tests[]{
             { { "" }, ';', '\\', "" },
             { { ";" }, ';', '\\', "\\;" },
             { { ";;" }, ';', '\\', "\\;\\;" },

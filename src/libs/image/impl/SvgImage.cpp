@@ -19,6 +19,7 @@
 
 #include "SvgImage.hpp"
 
+#include <filesystem>
 #include <fstream>
 
 #include "core/ITraceLogger.hpp"
