@@ -18,6 +18,7 @@
  */
 
 #include "ModalManager.hpp"
+
 #include "core/ILogger.hpp"
 
 namespace lms::ui

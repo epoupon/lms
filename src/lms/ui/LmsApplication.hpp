@@ -32,7 +32,6 @@
 
 #include "Auth.hpp"
 #include "Notification.hpp"
-#include "admin/ScannerController.hpp"
 
 namespace lms::db
 {

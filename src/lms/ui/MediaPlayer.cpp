@@ -227,6 +227,8 @@ namespace lms::ui
         }
     }
 
+    MediaPlayer::~MediaPlayer() = default;
+
     void MediaPlayer::loadTrack(db::TrackId trackId, bool play, float replayGain)
     {
         LMS_LOG(UI, DEBUG, "Playing track ID = " << trackId.toString());

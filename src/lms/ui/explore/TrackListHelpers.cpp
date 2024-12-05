@@ -26,7 +26,6 @@
 #include <Wt/WPushButton.h>
 
 #include "av/IAudioFile.hpp"
-#include "core/ILogger.hpp"
 #include "core/Service.hpp"
 #include "database/Artist.hpp"
 #include "database/Release.hpp"

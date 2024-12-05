@@ -29,7 +29,6 @@
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"
-#include "core/String.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
@@ -63,7 +62,6 @@
 #include "explore/Explore.hpp"
 #include "explore/Filters.hpp"
 #include "resource/ArtworkResource.hpp"
-#include "resource/AudioFileResource.hpp"
 #include "resource/AudioTranscodingResource.hpp"
 
 namespace lms::ui

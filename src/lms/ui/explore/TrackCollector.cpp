@@ -19,8 +19,6 @@
 
 #include "TrackCollector.hpp"
 
-#include <algorithm>
-
 #include "core/Service.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"

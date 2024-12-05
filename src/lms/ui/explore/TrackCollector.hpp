@@ -21,7 +21,6 @@
 
 #include <optional>
 
-#include "database/Object.hpp"
 #include "database/TrackId.hpp"
 
 #include "DatabaseCollectorBase.hpp"

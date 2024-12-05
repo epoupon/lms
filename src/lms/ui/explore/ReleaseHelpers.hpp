@@ -26,9 +26,7 @@
 #include <Wt/WString.h>
 #include <Wt/WTemplate.h>
 
-#include "core/EnumSet.hpp"
 #include "database/Object.hpp"
-#include "database/Types.hpp"
 
 #include "ReleaseTypes.hpp"
 

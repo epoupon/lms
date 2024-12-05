@@ -19,11 +19,8 @@
 
 #include "AudioFileResource.hpp"
 
-#include <fstream>
-
 #include <Wt/Http/Response.h>
 
-#include "av/IAudioFile.hpp"
 #include "av/RawResourceHandlerCreator.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"

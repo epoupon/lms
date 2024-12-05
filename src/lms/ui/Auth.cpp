@@ -28,7 +28,6 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WRandom.h>
 
-#include "core/ILogger.hpp"
 #include "core/Service.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"

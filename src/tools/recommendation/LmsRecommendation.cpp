@@ -19,7 +19,6 @@
 
 #include <filesystem>
 #include <iostream>
-#include <stdexcept>
 #include <stdlib.h>
 
 #include <boost/program_options.hpp>

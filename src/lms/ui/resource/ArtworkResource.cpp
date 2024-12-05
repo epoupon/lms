@@ -22,7 +22,6 @@
 #include <Wt/Http/Response.h>
 #include <Wt/WApplication.h>
 
-#include "core/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"

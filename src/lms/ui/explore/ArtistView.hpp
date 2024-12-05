@@ -20,9 +20,7 @@
 #pragma once
 
 #include <map>
-#include <optional>
 
-#include "core/EnumSet.hpp"
 #include "database/ArtistId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"

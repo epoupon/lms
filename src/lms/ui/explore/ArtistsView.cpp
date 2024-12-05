@@ -19,9 +19,9 @@
 
 #include "ArtistsView.hpp"
 
+#include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
-#include "core/ILogger.hpp"
 #include "database/Artist.hpp"
 #include "database/Session.hpp"
 #include "database/TrackArtistLink.hpp"

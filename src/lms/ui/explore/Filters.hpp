@@ -29,8 +29,6 @@
 #include "database/ClusterId.hpp"
 #include "database/MediaLibraryId.hpp"
 
-#include "Filters.hpp"
-
 namespace lms::ui
 {
     class Filters : public Wt::WTemplate
