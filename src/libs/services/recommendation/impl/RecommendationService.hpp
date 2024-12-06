@@ -42,7 +42,7 @@ namespace lms::recommendation
     {
     public:
         RecommendationService(db::Db& db);
-        ~RecommendationService() override= default;
+        ~RecommendationService() override = default;
         RecommendationService(const RecommendationService&) = delete;
         RecommendationService& operator=(const RecommendationService&) = delete;
 

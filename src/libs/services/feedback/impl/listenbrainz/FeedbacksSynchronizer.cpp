@@ -429,7 +429,7 @@ namespace lms::feedback::listenBrainz
                 LOG(DEBUG, "Too many matches for feedback '" << feedback << "': duplicate recording MBIDs found");
                 return;
             }
-            
+
             if (tracks.empty())
             {
                 LOG(DEBUG, "Cannot match feedback '" << feedback << "': no track found for this recording MBID");
