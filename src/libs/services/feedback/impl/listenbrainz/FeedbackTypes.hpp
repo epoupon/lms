@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <ostream>
+#include <iosfwd>
 
 #include <Wt/WDateTime.h>
 

@@ -55,6 +55,8 @@ namespace lms::scanner
         }
 
     protected:
+        ~ScanStepBase() override = default;
+
         const ScannerSettings& _settings;
         ProgressCallback _progressCallback;
         bool& _abortScan;

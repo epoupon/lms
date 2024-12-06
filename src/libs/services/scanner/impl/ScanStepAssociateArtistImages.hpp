@@ -30,6 +30,9 @@ namespace lms::scanner
     {
     public:
         ScanStepAssociateArtistImages(InitParams& initParams);
+        ~ScanStepAssociateArtistImages() override = default;
+        ScanStepAssociateArtistImages(const ScanStepAssociateArtistImages&) = delete;
+        ScanStepAssociateArtistImages& operator=(const ScanStepAssociateArtistImages&) = delete;
 
     private:
         ScanStep getStep() const override { return ScanStep::AssociateArtistImages; }

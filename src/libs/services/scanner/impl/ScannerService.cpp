@@ -21,11 +21,9 @@
 
 #include <ctime>
 
-#include "core/Exception.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
-#include "core/Path.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/TrackFeatures.hpp"

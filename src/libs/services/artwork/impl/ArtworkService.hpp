@@ -22,7 +22,6 @@
 #include <filesystem>
 #include <vector>
 
-#include "database/Types.hpp"
 #include "image/IEncodedImage.hpp"
 #include "services/artwork/IArtworkService.hpp"
 
@@ -43,12 +42,12 @@ namespace lms::cover
     class ArtworkService : public IArtworkService
     {
     public:
-        ArtworkService(db::Db& db, const std::filesystem::path& defaultSvgCoverPath, const std::filesystem::path& defaultArtistImageSvgPath);
-
-    private:
+        ArtworkService(db::Db& db, const std::filesystem::path& defaultReleaseCoverSvgPath, const std::filesystem::path& defaultArtistImageSvgPath);
+        ~ArtworkService() override = default;
         ArtworkService(const ArtworkService&) = delete;
         ArtworkService& operator=(const ArtworkService&) = delete;
 
+    private:
         std::shared_ptr<image::IEncodedImage> getTrackImage(db::TrackId trackId, image::ImageSize width) override;
         std::shared_ptr<image::IEncodedImage> getReleaseCover(db::ReleaseId releaseId, image::ImageSize width) override;
         std::shared_ptr<image::IEncodedImage> getArtistImage(db::ArtistId artistId, image::ImageSize width) override;

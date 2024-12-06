@@ -21,11 +21,8 @@
 
 #include <fstream>
 
-#include "core/Exception.hpp"
-#include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
-#include "core/Path.hpp"
 #include "image/Exception.hpp"
 #include "image/Image.hpp"
 #include "metadata/Exception.hpp"

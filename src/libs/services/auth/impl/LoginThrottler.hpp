@@ -24,7 +24,6 @@
 
 #include <Wt/WDateTime.h>
 
-#include "core/Exception.hpp"
 #include "core/NetAddress.hpp"
 
 namespace lms::auth
@@ -34,6 +33,10 @@ namespace lms::auth
     public:
         LoginThrottler(std::size_t maxEntries)
             : _maxEntries{ maxEntries } {}
+
+        ~LoginThrottler() = default;
+        LoginThrottler(const LoginThrottler&) = delete;
+        LoginThrottler& operator=(const LoginThrottler&) = delete;
 
         // user must lock these calls to avoid races
         bool isClientThrottled(const boost::asio::ip::address& address) const;

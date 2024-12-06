@@ -19,7 +19,6 @@
 
 #include "ScanStepComputeClusterStats.hpp"
 #include "core/ILogger.hpp"
-#include "core/Path.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"

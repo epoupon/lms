@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include "database/DirectoryId.hpp"
-
 #include "ScanStepBase.hpp"
 
 namespace lms::scanner

@@ -36,7 +36,6 @@
 #include "database/TrackArtistLink.hpp"
 #include "database/TrackFeatures.hpp"
 #include "database/TrackLyrics.hpp"
-#include "metadata/Exception.hpp"
 #include "metadata/IParser.hpp"
 
 namespace lms::scanner
@@ -391,9 +390,9 @@ namespace lms::scanner
 
             if (readStyle == "fast")
                 return metadata::ParserReadStyle::Fast;
-            else if (readStyle == "average")
+            if (readStyle == "average")
                 return metadata::ParserReadStyle::Average;
-            else if (readStyle == "accurate")
+            if (readStyle == "accurate")
                 return metadata::ParserReadStyle::Accurate;
 
             throw core::LmsException{ "Invalid value for 'scanner-parser-read-style'" };
@@ -888,16 +887,9 @@ namespace lms::scanner
             return;
         }
 
-        bool added;
+        const bool added{ !image };
         if (!image)
-        {
             image = dbSession.create<db::Image>(file);
-            added = true;
-        }
-        else
-        {
-            added = false;
-        }
 
         image.modify()->setLastWriteTime(fileInfo->lastWriteTime);
         image.modify()->setFileSize(fileInfo->fileSize);
@@ -945,16 +937,11 @@ namespace lms::scanner
             return;
         }
 
-        bool added;
+        const bool added{ !trackLyrics };
         if (!trackLyrics)
         {
             trackLyrics = dbSession.create<db::TrackLyrics>();
             trackLyrics.modify()->setAbsoluteFilePath(file);
-            added = true;
-        }
-        else
-        {
-            added = false;
         }
 
         trackLyrics.modify()->setLastWriteTime(fileInfo->lastWriteTime);

@@ -58,9 +58,9 @@ namespace lms
                 res += track->getName();
                 if (track->getRelease())
                     res += " [" + std::string{ track->getRelease()->getName() } + "]";
-                for (auto artist : track->getArtists({ TrackArtistLinkType::Artist }))
+                for (const auto& artist : track->getArtists({ TrackArtistLinkType::Artist }))
                     res += " - " + artist->getName();
-                for (auto cluster : track->getClusters())
+                for (const auto& cluster : track->getClusters())
                     res += " {" + std::string{ cluster->getType()->getName() } + "-" + std::string{ cluster->getName() } + "}";
 
                 return res;

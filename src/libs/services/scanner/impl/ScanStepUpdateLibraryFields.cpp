@@ -19,8 +19,6 @@
 
 #include "ScanStepUpdateLibraryFields.hpp"
 
-#include "core/ILogger.hpp"
-#include "core/Path.hpp"
 #include "database/Db.hpp"
 #include "database/Directory.hpp"
 #include "database/MediaLibrary.hpp"

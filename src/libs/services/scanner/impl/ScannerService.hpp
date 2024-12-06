@@ -31,10 +31,8 @@
 
 #include "IScanStep.hpp"
 #include "ScannerSettings.hpp"
-#include "core/Path.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
-#include "database/Types.hpp"
 #include "services/scanner/IScannerService.hpp"
 
 namespace lms::scanner
@@ -44,11 +42,10 @@ namespace lms::scanner
     public:
         ScannerService(db::Db& db);
         ~ScannerService() override;
-
-    private:
         ScannerService(const ScannerService&) = delete;
         ScannerService& operator=(const ScannerService&) = delete;
 
+    private:
         void requestReload() override;
         void requestImmediateScan(const ScanOptions& scanOptions) override;
 
@@ -83,7 +80,7 @@ namespace lms::scanner
         Wt::WIOService _ioService;
         boost::asio::system_timer _scheduleTimer{ _ioService };
         Events _events;
-        std::chrono::system_clock::time_point _lastScanInProgressEmit{};
+        std::chrono::system_clock::time_point _lastScanInProgressEmit;
         db::Db& _db;
 
         mutable std::shared_mutex _statusMutex;

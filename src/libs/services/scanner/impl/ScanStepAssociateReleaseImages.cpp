@@ -33,8 +33,6 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "image/Exception.hpp"
-#include "image/Image.hpp"
 
 namespace lms::scanner
 {

@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <optional>
 #include <string_view>
 
 #include <Wt/Dbo/ptr.h>
@@ -52,7 +51,6 @@ namespace lms::auth
             };
             State state{ State::Denied };
             db::UserId userId{};
-            std::optional<Wt::WDateTime> expiry{};
         };
         virtual CheckResult checkUserPassword(const boost::asio::ip::address& clientAddress,
             std::string_view loginName,

@@ -21,7 +21,6 @@
 
 #include <algorithm>
 
-#include "core/ILogger.hpp"
 #include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"

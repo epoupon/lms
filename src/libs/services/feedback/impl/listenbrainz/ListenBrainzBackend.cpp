@@ -20,7 +20,6 @@
 #include "ListenBrainzBackend.hpp"
 
 #include "core/IConfig.hpp"
-#include "core/ILogger.hpp"
 #include "core/Service.hpp"
 #include "core/http/IClient.hpp"
 #include "database/Db.hpp"

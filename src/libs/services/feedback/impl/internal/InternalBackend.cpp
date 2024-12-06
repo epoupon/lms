@@ -53,33 +53,33 @@ namespace lms::feedback
     {
     }
 
-    void InternalBackend::onStarred(db::StarredArtistId starredArtistId)
+    void InternalBackend::onStarred(db::StarredArtistId artistId)
     {
-        details::onStarred<db::StarredArtist>(_db.getTLSSession(), starredArtistId);
+        details::onStarred<db::StarredArtist>(_db.getTLSSession(), artistId);
     }
 
-    void InternalBackend::onUnstarred(db::StarredArtistId starredArtistId)
+    void InternalBackend::onUnstarred(db::StarredArtistId artistId)
     {
-        details::onUnstarred<db::StarredArtist>(_db.getTLSSession(), starredArtistId);
+        details::onUnstarred<db::StarredArtist>(_db.getTLSSession(), artistId);
     }
 
-    void InternalBackend::onStarred(db::StarredReleaseId starredReleaseId)
+    void InternalBackend::onStarred(db::StarredReleaseId releaseId)
     {
-        details::onStarred<db::StarredRelease>(_db.getTLSSession(), starredReleaseId);
+        details::onStarred<db::StarredRelease>(_db.getTLSSession(), releaseId);
     }
 
-    void InternalBackend::onUnstarred(db::StarredReleaseId starredReleaseId)
+    void InternalBackend::onUnstarred(db::StarredReleaseId releaseId)
     {
-        details::onUnstarred<db::StarredRelease>(_db.getTLSSession(), starredReleaseId);
+        details::onUnstarred<db::StarredRelease>(_db.getTLSSession(), releaseId);
     }
 
-    void InternalBackend::onStarred(db::StarredTrackId starredTrackId)
+    void InternalBackend::onStarred(db::StarredTrackId trackId)
     {
-        details::onStarred<db::StarredTrack>(_db.getTLSSession(), starredTrackId);
+        details::onStarred<db::StarredTrack>(_db.getTLSSession(), trackId);
     }
 
-    void InternalBackend::onUnstarred(db::StarredTrackId starredTrackId)
+    void InternalBackend::onUnstarred(db::StarredTrackId trackId)
     {
-        details::onUnstarred<db::StarredTrack>(_db.getTLSSession(), starredTrackId);
+        details::onUnstarred<db::StarredTrack>(_db.getTLSSession(), trackId);
     }
 } // namespace lms::feedback

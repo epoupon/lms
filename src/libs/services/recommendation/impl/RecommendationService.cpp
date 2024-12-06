@@ -19,11 +19,8 @@
 
 #include "RecommendationService.hpp"
 
-#include <unordered_map>
 #include <vector>
 
-#include "core/Exception.hpp"
-#include "core/ILogger.hpp"
 #include "database/Db.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"

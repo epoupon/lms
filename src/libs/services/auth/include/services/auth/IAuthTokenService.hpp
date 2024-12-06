@@ -22,7 +22,6 @@
 #include <chrono>
 #include <memory>
 #include <optional>
-#include <string>
 #include <string_view>
 
 #include <Wt/WDateTime.h>
@@ -62,7 +61,7 @@ namespace lms::auth
             };
 
             State state{ State::Denied };
-            std::optional<AuthTokenInfo> authTokenInfo{};
+            std::optional<AuthTokenInfo> authTokenInfo;
         };
 
         struct DomainParameters

@@ -23,6 +23,7 @@
 #include <cassert>
 #include <deque>
 #include <set>
+#include <span>
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
@@ -33,8 +34,6 @@
 #include "database/Image.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
-#include "image/Exception.hpp"
-#include "image/Image.hpp"
 
 namespace lms::scanner
 {
@@ -55,7 +54,7 @@ namespace lms::scanner
             db::Session& session;
             db::ArtistId lastRetrievedArtistId;
             std::size_t processedArtistCount{};
-            const std::vector<std::string>& artistFileNames;
+            std::span<const std::string> artistFileNames;
         };
 
         db::Image::pointer findImageInDirectory(SearchImageContext& searchContext, const std::filesystem::path& directoryPath)

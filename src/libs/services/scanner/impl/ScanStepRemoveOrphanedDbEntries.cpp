@@ -20,7 +20,6 @@
 #include "ScanStepRemoveOrphanedDbEntries.hpp"
 
 #include "core/ILogger.hpp"
-#include "core/Path.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"

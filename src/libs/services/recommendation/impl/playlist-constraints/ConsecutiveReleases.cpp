@@ -19,7 +19,6 @@
 
 #include "ConsecutiveReleases.hpp"
 
-#include "core/ILogger.hpp"
 #include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
@@ -46,10 +45,10 @@ namespace lms::recommendation::PlaylistGeneratorConstraint
         for (std::size_t i{ 1 }; i < rangeSize; ++i)
         {
             if ((trackIndex >= i) && getReleaseId(trackIds[trackIndex - i]) == releaseId)
-                score += (1.f / static_cast<float>(i));
+                score += (1.F / static_cast<float>(i));
 
             if ((trackIndex + i < trackIds.size()) && getReleaseId(trackIds[trackIndex + i]) == releaseId)
-                score += (1.f / static_cast<float>(i));
+                score += (1.F / static_cast<float>(i));
         }
 
         return score;

@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include <filesystem>
-
 #include "ScanStepBase.hpp"
 
 namespace lms::scanner
