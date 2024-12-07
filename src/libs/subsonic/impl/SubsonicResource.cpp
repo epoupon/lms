@@ -65,7 +65,7 @@ namespace lms::api::subsonic
 
             core::Service<core::IConfig>::get()->visitStrings("api-subsonic-old-server-protocol-clients",
                 [&](std::string_view client) {
-                    res.emplace(std::string{ client }, ProtocolVersion{ 1, 12, 0 });
+                    res.emplace(std::string{ client }, ProtocolVersion{ .major = 1, .minor = 12, .patch = 0 });
                 },
                 { "DSub" });
 

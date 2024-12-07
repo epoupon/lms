@@ -164,7 +164,7 @@ namespace lms::api::subsonic
             return tracks;
         }
 
-        std::vector<TrackId> findSimilarSongs(RequestContext&, TrackId trackId, std::size_t count)
+        std::vector<TrackId> findSimilarSongs(RequestContext& /*context*/, TrackId trackId, std::size_t count)
         {
             return core::Service<recommendation::IRecommendationService>::get()->findSimilarTracks({ trackId }, count);
         }

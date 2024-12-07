@@ -20,7 +20,6 @@
 #pragma once
 
 #include <chrono>
-#include <memory>
 #include <optional>
 
 #include "services/scrobbling/Listen.hpp"

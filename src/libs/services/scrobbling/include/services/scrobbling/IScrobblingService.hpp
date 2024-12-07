@@ -134,5 +134,5 @@ namespace lms::scrobbling
         virtual TrackContainer getTopTracks(const FindParameters& params) = 0;
     };
 
-    std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_service& ioService, db::Db& db);
+    std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_context& ioContext, db::Db& db);
 } // namespace lms::scrobbling
