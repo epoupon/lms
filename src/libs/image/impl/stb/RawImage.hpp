@@ -21,8 +21,8 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <span>
 
-#include "image/IEncodedImage.hpp"
 #include "image/IRawImage.hpp"
 
 namespace lms::image::STB
@@ -30,7 +30,7 @@ namespace lms::image::STB
     class RawImage : public IRawImage
     {
     public:
-        RawImage(const std::byte* encodedData, std::size_t encodedDataSize);
+        RawImage(std::span<const std::byte> encodedData);
         RawImage(const std::filesystem::path& path);
 
         ~RawImage() override = default;
@@ -41,7 +41,6 @@ namespace lms::image::STB
         ImageSize getHeight() const override;
 
         void resize(ImageSize width) override;
-        std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const override;
 
         const std::byte* getData() const;
 

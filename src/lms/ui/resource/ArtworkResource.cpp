@@ -232,7 +232,7 @@ namespace lms::ui
         if (image)
         {
             response.setMimeType(std::string{ image->getMimeType() });
-            response.out().write(reinterpret_cast<const char*>(image->getData()), image->getDataSize());
+            response.out().write(reinterpret_cast<const char*>(image->getData().data()), image->getData().size());
         }
         else
             response.setStatus(404);

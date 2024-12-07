@@ -19,6 +19,8 @@
 
 #include "ArtworkService.hpp"
 
+#include <span>
+
 #include "av/IAudioFile.hpp"
 #include "av/Types.hpp"
 #include "core/IConfig.hpp"
@@ -31,6 +33,7 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "image/Exception.hpp"
+#include "image/IEncodedImage.hpp"
 #include "image/Image.hpp"
 
 namespace lms::cover
@@ -48,8 +51,6 @@ namespace lms::cover
         return std::make_unique<ArtworkService>(db, defaultReleaseCoverSvgPath, defaultArtistImageSvgPath);
     }
 
-    using namespace image;
-
     ArtworkService::ArtworkService(db::Db& db,
         const std::filesystem::path& defaultReleaseCoverSvgPath,
         const std::filesystem::path& defaultArtistImageSvgPath)
@@ -61,13 +62,13 @@ namespace lms::cover
         LMS_LOG(COVER, INFO, "Default release cover path = '" << defaultReleaseCoverSvgPath.string() << "'");
         LMS_LOG(COVER, INFO, "Max cache size = " << _cache.getMaxCacheSize());
 
-        _defaultReleaseCover = image::readSvgFile(defaultReleaseCoverSvgPath); // may throw
-        _defaultArtistImage = image::readSvgFile(defaultArtistImageSvgPath);   // may throw
+        _defaultReleaseCover = image::readImage(defaultReleaseCoverSvgPath); // may throw
+        _defaultArtistImage = image::readImage(defaultArtistImageSvgPath);   // may throw
     }
 
-    std::unique_ptr<IEncodedImage> ArtworkService::getFromAvMediaFile(const av::IAudioFile& input, ImageSize width) const
+    std::unique_ptr<image::IEncodedImage> ArtworkService::getFromAvMediaFile(const av::IAudioFile& input, std::optional<image::ImageSize> width) const
     {
-        std::unique_ptr<IEncodedImage> image;
+        std::unique_ptr<image::IEncodedImage> image;
 
         input.visitAttachedPictures([&](const av::Picture& picture, const av::IAudioFile::MetadataMap& /* metadata */) {
             if (image)
@@ -75,9 +76,16 @@ namespace lms::cover
 
             try
             {
-                std::unique_ptr<IRawImage> rawImage{ decodeImage(picture.data, picture.dataSize) };
-                rawImage->resize(width);
-                image = rawImage->encodeToJPEG(_jpegQuality);
+                if (!width)
+                {
+                    image = image::readImage(std::span{ picture.data, picture.dataSize }, picture.mimeType);
+                }
+                else
+                {
+                    auto rawImage{ image::decodeImage(std::span{ picture.data, picture.dataSize }) };
+                    rawImage->resize(*width);
+                    image = image::encodeToJPEG(*rawImage, _jpegQuality);
+                }
             }
             catch (const image::Exception& e)
             {
@@ -88,15 +96,22 @@ namespace lms::cover
         return image;
     }
 
-    std::unique_ptr<IEncodedImage> ArtworkService::getFromImageFile(const std::filesystem::path& p, ImageSize width) const
+    std::unique_ptr<image::IEncodedImage> ArtworkService::getFromImageFile(const std::filesystem::path& p, std::optional<image::ImageSize> width) const
     {
-        std::unique_ptr<IEncodedImage> image;
+        std::unique_ptr<image::IEncodedImage> image;
 
         try
         {
-            std::unique_ptr<IRawImage> rawImage{ decodeImage(p) };
-            rawImage->resize(width);
-            image = rawImage->encodeToJPEG(_jpegQuality);
+            if (!width)
+            {
+                image = image::readImage(p);
+            }
+            else
+            {
+                auto rawImage{ image::decodeImage(p) };
+                rawImage->resize(*width);
+                image = image::encodeToJPEG(*rawImage, _jpegQuality);
+            }
         }
         catch (const image::Exception& e)
         {
@@ -106,17 +121,17 @@ namespace lms::cover
         return image;
     }
 
-    std::shared_ptr<IEncodedImage> ArtworkService::getDefaultReleaseCover()
+    std::shared_ptr<image::IEncodedImage> ArtworkService::getDefaultReleaseCover()
     {
         return _defaultReleaseCover;
     }
 
-    std::shared_ptr<IEncodedImage> ArtworkService::getDefaultArtistImage()
+    std::shared_ptr<image::IEncodedImage> ArtworkService::getDefaultArtistImage()
     {
         return _defaultArtistImage;
     }
 
-    bool ArtworkService::checkImageFile(const std::filesystem::path& filePath) const
+    bool ArtworkService::checkImageFile(const std::filesystem::path& filePath)
     {
         std::error_code ec;
 
@@ -132,9 +147,9 @@ namespace lms::cover
         return true;
     }
 
-    std::unique_ptr<IEncodedImage> ArtworkService::getTrackImage(const std::filesystem::path& p, ImageSize width) const
+    std::unique_ptr<image::IEncodedImage> ArtworkService::getTrackImage(const std::filesystem::path& p, std::optional<image::ImageSize> width) const
     {
-        std::unique_ptr<IEncodedImage> image;
+        std::unique_ptr<image::IEncodedImage> image;
 
         try
         {
@@ -148,77 +163,81 @@ namespace lms::cover
         return image;
     }
 
-    std::shared_ptr<IEncodedImage> ArtworkService::getTrackImage(db::TrackId trackId, ImageSize width)
+    std::shared_ptr<image::IEncodedImage> ArtworkService::getTrackImage(db::TrackId trackId, std::optional<image::ImageSize> width)
     {
         const ImageCache::EntryDesc cacheEntryDesc{ trackId, width };
 
-        std::shared_ptr<IEncodedImage> cover{ _cache.getImage(cacheEntryDesc) };
+        std::shared_ptr<image::IEncodedImage> cover{ _cache.getImage(cacheEntryDesc) };
         if (cover)
             return cover;
 
+        std::filesystem::path trackFile;
         {
             db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
             const db::Track::pointer track{ db::Track::find(session, trackId) };
             if (track && track->hasCover())
-                cover = getTrackImage(track->getAbsoluteFilePath(), width);
+                trackFile = track->getAbsoluteFilePath();
         }
 
+        cover = getTrackImage(trackFile, width);
         if (cover)
             _cache.addImage(cacheEntryDesc, cover);
 
         return cover;
     }
 
-    std::shared_ptr<IEncodedImage> ArtworkService::getReleaseCover(db::ReleaseId releaseId, ImageSize width)
+    std::shared_ptr<image::IEncodedImage> ArtworkService::getReleaseCover(db::ReleaseId releaseId, std::optional<image::ImageSize> width)
     {
-        using namespace db;
         const ImageCache::EntryDesc cacheEntryDesc{ releaseId, width };
 
-        std::shared_ptr<IEncodedImage> image{ _cache.getImage(cacheEntryDesc) };
+        std::shared_ptr<image::IEncodedImage> image{ _cache.getImage(cacheEntryDesc) };
         if (image)
             return image;
 
+        std::filesystem::path imagePath;
         {
-            Session& session{ _db.getTLSSession() };
+            db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
             const db::Release::pointer release{ db::Release::find(session, releaseId) };
             if (release)
             {
                 if (const db::Image::pointer dbImage{ release->getImage() })
-                    image = getFromImageFile(dbImage->getAbsoluteFilePath(), width);
+                    imagePath = dbImage->getAbsoluteFilePath();
             }
         }
 
+        image = getFromImageFile(imagePath, width);
         if (image)
             _cache.addImage(cacheEntryDesc, image);
 
         return image;
     }
 
-    std::shared_ptr<IEncodedImage> ArtworkService::getArtistImage(db::ArtistId artistId, ImageSize width)
+    std::shared_ptr<image::IEncodedImage> ArtworkService::getArtistImage(db::ArtistId artistId, std::optional<image::ImageSize> width)
     {
-        using namespace db;
         const ImageCache::EntryDesc cacheEntryDesc{ artistId, width };
 
-        std::shared_ptr<IEncodedImage> artistImage{ _cache.getImage(cacheEntryDesc) };
+        std::shared_ptr<image::IEncodedImage> artistImage{ _cache.getImage(cacheEntryDesc) };
         if (artistImage)
             return artistImage;
 
+        std::filesystem::path imagePath;
         {
-            Session& session{ _db.getTLSSession() };
+            db::Session& session{ _db.getTLSSession() };
 
             auto transaction{ session.createReadTransaction() };
 
-            if (const Artist::pointer artist{ Artist::find(session, artistId) })
+            if (const db::Artist::pointer artist{ db::Artist::find(session, artistId) })
             {
                 if (const db::Image::pointer image{ artist->getImage() })
-                    artistImage = getFromImageFile(image->getAbsoluteFilePath(), width);
+                    imagePath = image->getAbsoluteFilePath();
             }
         }
 
+        artistImage = getFromImageFile(imagePath, width);
         if (artistImage)
             _cache.addImage(cacheEntryDesc, artistImage);
 

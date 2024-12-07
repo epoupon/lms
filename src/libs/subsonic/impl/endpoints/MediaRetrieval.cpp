@@ -333,8 +333,9 @@ namespace lms::api::subsonic
         if (!trackId && !releaseId && !artistId)
             throw BadParameterGenericError{ "id" };
 
-        std::size_t size{ getParameterAs<std::size_t>(context.parameters, "size").value_or(1024) };
-        size = core::utils::clamp(size, std::size_t{ 32 }, std::size_t{ 2048 });
+        std::optional<std::size_t> size{ getParameterAs<std::size_t>(context.parameters, "size") };
+        if (size)
+            *size = core::utils::clamp(*size, std::size_t{ 32 }, std::size_t{ 2048 });
 
         std::shared_ptr<image::IEncodedImage> cover;
         if (trackId)
@@ -353,7 +354,7 @@ namespace lms::api::subsonic
             return;
         }
 
-        response.out().write(reinterpret_cast<const char*>(cover->getData()), cover->getDataSize());
+        response.out().write(reinterpret_cast<const char*>(cover->getData().data()), cover->getData().size());
         response.setMimeType(std::string{ cover->getMimeType() });
     }
 

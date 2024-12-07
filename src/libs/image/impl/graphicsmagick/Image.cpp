@@ -19,26 +19,17 @@
 
 #include "image/Image.hpp"
 
-#include <array>
+#include <memory>
 
-#include "RawImage.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
+#include "image/Exception.hpp"
+
+#include "EncodedImage.hpp"
+#include "RawImage.hpp"
 
 namespace lms::image
 {
-    std::unique_ptr<IRawImage> decodeImage(const std::byte* encodedData, std::size_t encodedDataSize)
-    {
-        LMS_SCOPED_TRACE_DETAILED("Image", "DecodeBuffer");
-        return std::make_unique<GraphicsMagick::RawImage>(encodedData, encodedDataSize);
-    }
-
-    std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path)
-    {
-        LMS_SCOPED_TRACE_DETAILED("Image", "DecodeFile");
-        return std::make_unique<GraphicsMagick::RawImage>(path);
-    }
-
     void init(const std::filesystem::path& path)
     {
         Magick::InitializeMagick(path.string().c_str());
@@ -61,4 +52,39 @@ namespace lms::image
         static const std::array<std::filesystem::path, 4> fileExtensions{ ".jpg", ".jpeg", ".png", ".bmp" };
         return fileExtensions;
     }
+
+    std::unique_ptr<IRawImage> decodeImage(std::span<const std::byte> encodedData)
+    {
+        LMS_SCOPED_TRACE_DETAILED("Image", "DecodeBuffer");
+        return std::make_unique<GraphicsMagick::RawImage>(encodedData);
+    }
+
+    std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path)
+    {
+        LMS_SCOPED_TRACE_DETAILED("Image", "DecodeFile");
+        return std::make_unique<GraphicsMagick::RawImage>(path);
+    }
+
+    std::unique_ptr<IEncodedImage> encodeToJPEG(const IRawImage& rawImage, unsigned quality)
+    {
+        LMS_SCOPED_TRACE_DETAILED("Image", "WriteJPEG");
+
+        try
+        {
+            Magick::Image image{ static_cast<const GraphicsMagick::RawImage&>(rawImage).getMagickImage() };
+            image.magick("JPEG");
+            image.quality(quality);
+
+            Magick::Blob blob;
+            image.write(&blob);
+
+            return std::make_unique<EncodedImage>(std::span{ static_cast<const std::byte*>(blob.data()), blob.length() }, "image/jpeg");
+        }
+        catch (Magick::Exception& e)
+        {
+            LMS_LOG(COVER, ERROR, "Caught Magick exception: " << e.what());
+            throw Exception{ std::string{ "Magick read error: " } + e.what() };
+        }
+    }
+
 } // namespace lms::image

@@ -1,6 +1,6 @@
 
 add_library(lmsimage SHARED
-	impl/SvgImage.cpp
+	impl/EncodedImage.cpp
 	)
 
 target_include_directories(lmsimage INTERFACE
@@ -26,7 +26,6 @@ if (${LMS_IMAGE_BACKEND} STREQUAL "stb")
 
 	target_sources(lmsimage PRIVATE
 		impl/stb/Image.cpp
-		impl/stb/JPEGImage.cpp
 		impl/stb/RawImage.cpp
 	)
 	target_compile_options(lmsimage PRIVATE "-DSTB_IMAGE_RESIZE_VERSION=${STB_IMAGE_RESIZE_VERSION}")
@@ -38,7 +37,6 @@ elseif (${LMS_IMAGE_BACKEND} STREQUAL "graphicsmagick")
 
 	target_sources(lmsimage PRIVATE
 		impl/graphicsmagick/Image.cpp
-		impl/graphicsmagick/JPEGImage.cpp
 		impl/graphicsmagick/RawImage.cpp
 	)
 	target_link_libraries(lmsimage PRIVATE PkgConfig::GraphicsMagick++)

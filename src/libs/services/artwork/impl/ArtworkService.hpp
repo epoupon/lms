@@ -48,22 +48,20 @@ namespace lms::cover
         ArtworkService& operator=(const ArtworkService&) = delete;
 
     private:
-        std::shared_ptr<image::IEncodedImage> getTrackImage(db::TrackId trackId, image::ImageSize width) override;
-        std::shared_ptr<image::IEncodedImage> getReleaseCover(db::ReleaseId releaseId, image::ImageSize width) override;
-        std::shared_ptr<image::IEncodedImage> getArtistImage(db::ArtistId artistId, image::ImageSize width) override;
+        std::shared_ptr<image::IEncodedImage> getTrackImage(db::TrackId trackId, std::optional<image::ImageSize> width) override;
+        std::shared_ptr<image::IEncodedImage> getReleaseCover(db::ReleaseId releaseId, std::optional<image::ImageSize> width) override;
+        std::shared_ptr<image::IEncodedImage> getArtistImage(db::ArtistId artistId, std::optional<image::ImageSize> width) override;
         std::shared_ptr<image::IEncodedImage> getDefaultReleaseCover() override;
         std::shared_ptr<image::IEncodedImage> getDefaultArtistImage() override;
 
         void flushCache() override;
         void setJpegQuality(unsigned quality) override;
 
-        std::shared_ptr<image::IEncodedImage> getTrackImage(db::Session& dbSession, db::TrackId trackId, image::ImageSize width, bool allowReleaseFallback);
-        std::unique_ptr<image::IEncodedImage> getFromAvMediaFile(const av::IAudioFile& input, image::ImageSize width) const;
-        std::unique_ptr<image::IEncodedImage> getFromImageFile(const std::filesystem::path& p, image::ImageSize width) const;
+        std::unique_ptr<image::IEncodedImage> getFromAvMediaFile(const av::IAudioFile& input, std::optional<image::ImageSize> width) const;
+        std::unique_ptr<image::IEncodedImage> getFromImageFile(const std::filesystem::path& p, std::optional<image::ImageSize> width) const;
+        std::unique_ptr<image::IEncodedImage> getTrackImage(const std::filesystem::path& path, std::optional<image::ImageSize> width) const;
 
-        std::unique_ptr<image::IEncodedImage> getTrackImage(const std::filesystem::path& path, image::ImageSize width) const;
-
-        bool checkImageFile(const std::filesystem::path& filePath) const;
+        static bool checkImageFile(const std::filesystem::path& filePath);
 
         db::Db& _db;
 

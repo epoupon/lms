@@ -242,11 +242,10 @@ namespace lms::av
     void AudioFile::visitAttachedPictures(std::function<void(const Picture&, const MetadataMap&)> func) const
     {
         static const std::unordered_map<int, std::string> codecMimeMap{
-            { AV_CODEC_ID_BMP, "image/x-bmp" },
+            { AV_CODEC_ID_BMP, "image/bmp" },
             { AV_CODEC_ID_GIF, "image/gif" },
             { AV_CODEC_ID_MJPEG, "image/jpeg" },
             { AV_CODEC_ID_PNG, "image/png" },
-            { AV_CODEC_ID_PNG, "image/x-png" },
             { AV_CODEC_ID_PPM, "image/x-portable-pixmap" },
         };
 

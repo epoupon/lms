@@ -19,24 +19,19 @@
 
 #include "RawImage.hpp"
 
-#include <algorithm>
-#include <array>
-
 #include <magick/resource.h>
 
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "image/Exception.hpp"
 
-#include "JPEGImage.hpp"
-
 namespace lms::image::GraphicsMagick
 {
-    RawImage::RawImage(const std::byte* encodedData, std::size_t encodedDataSize)
+    RawImage::RawImage(std::span<const std::byte> encodedData)
     {
         try
         {
-            Magick::Blob blob{ encodedData, encodedDataSize };
+            Magick::Blob blob{ encodedData.data(), encodedData.size() };
             _image.read(blob);
         }
         catch (Magick::WarningCoder& e)
@@ -102,14 +97,8 @@ namespace lms::image::GraphicsMagick
         }
     }
 
-    std::unique_ptr<IEncodedImage> RawImage::encodeToJPEG(unsigned quality) const
-    {
-        return std::make_unique<JPEGImage>(*this, quality);
-    }
-
     Magick::Image RawImage::getMagickImage() const
     {
         return _image;
     }
-
 } // namespace lms::image::GraphicsMagick

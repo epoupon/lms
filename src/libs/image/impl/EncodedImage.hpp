@@ -19,23 +19,28 @@
 
 #pragma once
 
+#include <filesystem>
 #include <vector>
 
 #include "image/IEncodedImage.hpp"
 
 namespace lms::image
 {
-    class SvgImage : public IEncodedImage
+    class EncodedImage : public IEncodedImage
     {
     public:
-        SvgImage(std::vector<std::byte>&& data)
-            : _data{ std::move(data) } {}
+        EncodedImage(const std::filesystem::path& path);
+        EncodedImage(std::vector<std::byte>&& data, std::string_view mimeType);
+        EncodedImage(std::span<const std::byte> data, std::string_view mimeType);
+        ~EncodedImage() override = default;
+        EncodedImage(const EncodedImage&) = delete;
+        EncodedImage& operator=(const EncodedImage&) = delete;
 
-        const std::byte* getData() const override { return &_data.front(); }
-        std::size_t getDataSize() const override { return _data.size(); }
-        std::string_view getMimeType() const override { return "image/svg+xml"; }
+        std::span<const std::byte> getData() const override { return _data; }
+        std::string_view getMimeType() const override { return _mimeType; }
 
     private:
         const std::vector<std::byte> _data;
+        const std::string _mimeType;
     };
 } // namespace lms::image

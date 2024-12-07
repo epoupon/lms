@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,25 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <cstddef>
 
-#include <vector>
-
-#include "image/IEncodedImage.hpp"
-
-namespace lms::image::STB
+namespace lms::image
 {
-    class RawImage;
-    class JPEGImage : public IEncodedImage
-    {
-    public:
-        JPEGImage(const RawImage& rawImage, unsigned quality);
-
-    private:
-        const std::byte* getData() const override;
-        std::size_t getDataSize() const override;
-        std::string_view getMimeType() const override { return "image/jpeg"; }
-
-        std::vector<std::byte> _data;
-    };
-} // namespace lms::image::STB
+    using ImageSize = std::size_t;
+}
