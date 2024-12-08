@@ -21,7 +21,6 @@
 
 #include <algorithm>
 #include <functional>
-#include <span>
 
 #include "av/IAudioFile.hpp"
 #include "av/Types.hpp"
@@ -29,10 +28,8 @@
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 #include "core/Utils.hpp"
-#include "database/Artist.hpp"
 #include "database/Db.hpp"
 #include "database/Image.hpp"
-#include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "image/Exception.hpp"
