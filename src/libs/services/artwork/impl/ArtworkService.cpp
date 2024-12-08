@@ -19,12 +19,15 @@
 
 #include "ArtworkService.hpp"
 
+#include <algorithm>
+#include <functional>
 #include <span>
 
 #include "av/IAudioFile.hpp"
 #include "av/Types.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
+#include "core/String.hpp"
 #include "core/Utils.hpp"
 #include "database/Artist.hpp"
 #include "database/Db.hpp"
@@ -68,21 +71,47 @@ namespace lms::cover
 
     std::unique_ptr<image::IEncodedImage> ArtworkService::getFromAvMediaFile(const av::IAudioFile& input, std::optional<image::ImageSize> width) const
     {
+        struct CandidatePicture
+        {
+            av::Picture picture;
+            bool isFront{};
+            std::size_t index;
+
+            // > means is better candidate
+            bool operator>(const CandidatePicture& other) const
+            {
+                if (!isFront && other.isFront)
+                    return false;
+                if (isFront && !other.isFront)
+                    return true;
+
+                return index < other.index;
+            }
+        };
+
+        auto metadataHasFrontKeyword{ [](const av::IAudioFile::MetadataMap& metadata) {
+            return std::any_of(std::cbegin(metadata), std::cend(metadata), [](const auto& keyValue) { return core::stringUtils::stringCaseInsensitiveContains(keyValue.second, "front"); });
+        } };
+
+        std::vector<CandidatePicture> candidatePictures;
+        std::size_t pictureIndex{};
+        input.visitAttachedPictures([&](const av::Picture& picture, const av::IAudioFile::MetadataMap& metadata) {
+            candidatePictures.emplace_back(picture, metadataHasFrontKeyword(metadata), pictureIndex++);
+        });
+        std::stable_sort(std::begin(candidatePictures), std::end(candidatePictures), std::greater<>());
+
         std::unique_ptr<image::IEncodedImage> image;
-
-        input.visitAttachedPictures([&](const av::Picture& picture, const av::IAudioFile::MetadataMap& /* metadata */) {
-            if (image)
-                return;
-
+        for (const CandidatePicture& candidatePicture : candidatePictures)
+        {
             try
             {
                 if (!width)
                 {
-                    image = image::readImage(std::span{ picture.data, picture.dataSize }, picture.mimeType);
+                    image = image::readImage(candidatePicture.picture.data, candidatePicture.picture.mimeType);
                 }
                 else
                 {
-                    auto rawImage{ image::decodeImage(std::span{ picture.data, picture.dataSize }) };
+                    auto rawImage{ image::decodeImage(candidatePicture.picture.data) };
                     rawImage->resize(*width);
                     image = image::encodeToJPEG(*rawImage, _jpegQuality);
                 }
@@ -91,7 +120,7 @@ namespace lms::cover
             {
                 LMS_LOG(COVER, ERROR, "Cannot read embedded cover: " << e.what());
             }
-        });
+        }
 
         return image;
     }

@@ -281,9 +281,7 @@ namespace lms::av
 
             const AVPacket& pkt{ avstream->attached_pic };
 
-            picture.data = reinterpret_cast<const std::byte*>(pkt.data);
-            picture.dataSize = pkt.size;
-
+            picture.data = std::span{ reinterpret_cast<const std::byte*>(pkt.data), static_cast<std::size_t>(pkt.size) };
             func(picture, metadata);
         }
     }

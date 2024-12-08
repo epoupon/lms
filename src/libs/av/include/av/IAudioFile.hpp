@@ -23,6 +23,7 @@
 #include <filesystem>
 #include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -60,8 +61,7 @@ namespace lms::av
     struct Picture
     {
         std::string mimeType;
-        const std::byte* data{}; // valid as long as IAudioFile exists
-        std::size_t dataSize{};
+        std::span<const std::byte> data; // valid as long as IAudioFile exists
     };
 
     struct ContainerInfo

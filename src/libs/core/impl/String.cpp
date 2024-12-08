@@ -321,6 +321,18 @@ namespace lms::core::stringUtils
         return true;
     }
 
+    std::string_view::size_type stringCaseInsensitiveContains(std::string_view str, std::string_view strtoFind)
+    {
+        if (str.empty() && strtoFind.empty())
+            return true; // same as std
+
+        const auto it{ std::search(
+            std::cbegin(str), std::cend(str),
+            std::cbegin(strtoFind), std::cend(strtoFind),
+            [](char chA, char chB) { return std::tolower(chA) == std::tolower(chB); }) };
+        return (it != std::cend(str));
+    }
+
     void capitalize(std::string& str)
     {
         for (auto it{ std::begin(str) }; it != std::end(str); ++it)
