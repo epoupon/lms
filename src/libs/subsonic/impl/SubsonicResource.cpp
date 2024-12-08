@@ -85,19 +85,6 @@ namespace lms::api::subsonic
             return res;
         }
 
-        std::unordered_set<std::string> readDefaultCoverClients()
-        {
-            std::unordered_set<std::string> res;
-
-            core::Service<core::IConfig>::get()->visitStrings("api-subsonic-default-cover-clients",
-                [&](std::string_view client) {
-                    res.emplace(std::string{ client });
-                },
-                { "DSub", "substreamer" });
-
-            return res;
-        }
-
         std::string parameterMapToDebugString(const Wt::Http::ParameterMap& parameterMap)
         {
             auto censorValue = [](const std::string& type, const std::string& value) -> std::string {
@@ -307,7 +294,6 @@ namespace lms::api::subsonic
     SubsonicResource::SubsonicResource(db::Db& db)
         : _serverProtocolVersionsByClient{ readConfigProtocolVersions() }
         , _openSubsonicDisabledClients{ readOpenSubsonicDisabledClients() }
-        , _defaultReleaseCoverClients{ readDefaultCoverClients() }
         , _supportUserPasswordAuthentication{ core::Service<core::IConfig>::get()->getBool("api-subsonic-support-user-password-auth", true) }
         , _db{ db }
     {
@@ -425,7 +411,6 @@ namespace lms::api::subsonic
         const Wt::Http::ParameterMap& parameters{ request.getParameterMap() };
         const ClientInfo clientInfo{ getClientInfo(request) };
         bool enableOpenSubsonic{ !_openSubsonicDisabledClients.contains(clientInfo.name) };
-        bool enableDefaultCover{ _defaultReleaseCoverClients.contains(clientInfo.name) };
         const ResponseFormat format{ getParameterAs<std::string>(request.getParameterMap(), "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml };
 
         return RequestContext{
@@ -437,7 +422,6 @@ namespace lms::api::subsonic
             .serverProtocolVersion = getServerProtocolVersion(clientInfo.name),
             .responseFormat = format,
             .enableOpenSubsonic = enableOpenSubsonic,
-            .enableDefaultCover = enableDefaultCover
         };
     }
 

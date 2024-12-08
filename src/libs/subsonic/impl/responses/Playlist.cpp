@@ -23,6 +23,7 @@
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
 
+#include "CoverArtId.hpp"
 #include "SubsonicId.hpp"
 
 namespace lms::api::subsonic
@@ -50,7 +51,8 @@ namespace lms::api::subsonic
         params.setSortMethod(TrackSortMethod::TrackList);
 
         db::Track::find(session, params, [&](const db::Track::pointer& track) {
-            playlistNode.setAttribute("coverArt", idToString(track->getId()));
+            const CoverArtId coverArtId{ track->getId(), track->getLastWriteTime().toTime_t() };
+            playlistNode.setAttribute("coverArt", idToString(coverArtId));
         });
 
         return playlistNode;

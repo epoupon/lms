@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,33 +19,31 @@
 
 #pragma once
 
-#include <string>
+#include <ctime>
+#include <variant>
 
-#include <Wt/Http/Request.h>
-
-#include "database/Object.hpp"
-
-#include "ClientInfo.hpp"
-#include "ProtocolVersion.hpp"
-#include "ResponseFormat.hpp"
-
-namespace lms::db
-{
-    class Session;
-    class User;
-} // namespace lms::db
+#include "core/String.hpp"
+#include "database/ImageId.hpp"
+#include "database/TrackId.hpp"
 
 namespace lms::api::subsonic
 {
-    struct RequestContext
+    struct CoverArtId
     {
-        const Wt::Http::ParameterMap& parameters;
-        db::Session& dbSession;
-        db::ObjectPtr<db::User> user;
-        std::string clientIpAddr;
-        ClientInfo clientInfo;
-        ProtocolVersion serverProtocolVersion;
-        ResponseFormat responseFormat;
-        bool enableOpenSubsonic{ true };
+        std::variant<db::ImageId, db::TrackId> id;
+        std::time_t timestamp;
     };
+
+    std::string idToString(CoverArtId coverId);
+    std::string idToString(db::ImageId imageId);
 } // namespace lms::api::subsonic
+
+// Used to parse parameters
+namespace lms::core::stringUtils
+{
+    template<>
+    std::optional<db::ImageId> readAs(std::string_view str);
+
+    template<>
+    std::optional<api::subsonic::CoverArtId> readAs(std::string_view str);
+} // namespace lms::core::stringUtils

@@ -60,8 +60,11 @@ namespace lms::ui
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
             const db::Artist::pointer artist{ db::Artist::find(LmsApp->getDbSession(), artistId) };
-            if (artist && artist->getImage())
-                url = getArtistIdImageUrl(artistId, size);
+            if (artist)
+            {
+                if (const db::Image::pointer image{ artist->getImage() })
+                    url = getImageUrl(image->getId(), size, "artist");
+            }
         }
 
         if (url.empty())
@@ -80,9 +83,9 @@ namespace lms::ui
             const db::Release::pointer release{ db::Release::find(LmsApp->getDbSession(), releaseId) };
             if (release)
             {
-                if (release->getImage())
+                if (const db::Image::pointer image{ release->getImage() })
                 {
-                    url = getReleaseIdCoverUrl(release->getId(), size);
+                    url = getImageUrl(image->getId(), size, "release");
                 }
                 else
                 {
@@ -92,7 +95,7 @@ namespace lms::ui
                     params.setRange(db::Range{ 0, 1 });
 
                     db::Track::find(LmsApp->getDbSession(), params, [&](const db::Track::pointer& track) {
-                        url = getTrackIdImageUrl(track->getId(), size);
+                        url = getImageUrl(track->getId(), size, "release");
                     });
                 }
             }
@@ -115,9 +118,14 @@ namespace lms::ui
             if (track)
             {
                 if (track->hasCover())
-                    url = getTrackIdImageUrl(trackId, size);
-                else if (const db::Release::pointer release{ track->getRelease() }; release && release->getImage())
-                    url = getReleaseIdCoverUrl(release->getId(), size);
+                {
+                    url = getImageUrl(trackId, size, "release");
+                }
+                else if (const db::Release::pointer release{ track->getRelease() })
+                {
+                    if (const db::Image::pointer image{ release->getImage() })
+                        url = getImageUrl(image->getId(), size, "release");
+                }
             }
         }
 
@@ -127,29 +135,24 @@ namespace lms::ui
         return url;
     }
 
-    std::string ArtworkResource::getArtistIdImageUrl(db::ArtistId artistId, Size size) const
+    std::string ArtworkResource::getImageUrl(db::ImageId imageId, Size size, std::string_view type) const
     {
-        return url() + "&artistid=" + artistId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size));
+        return url() + "&imageid=" + imageId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size)) + "&type=" + std::string{ type };
     }
 
-    std::string ArtworkResource::getReleaseIdCoverUrl(db::ReleaseId releaseId, Size size) const
+    std::string ArtworkResource::getImageUrl(db::TrackId trackId, Size size, std::string_view type) const
     {
-        return url() + "&releaseid=" + releaseId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size));
-    }
-
-    std::string ArtworkResource::getTrackIdImageUrl(db::TrackId trackId, Size size) const
-    {
-        return url() + "&trackid=" + trackId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size));
+        return url() + "&trackid=" + trackId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size)) + "&type=" + std::string{ type };
     }
 
     std::string ArtworkResource::getDefaultArtistImageUrl() const
     {
-        return url() + "&type=defaultartistimage";
+        return url() + "&type=artist";
     }
 
     std::string ArtworkResource::getDefaultReleaseCoverUrl() const
     {
-        return url() + "&type=defaultreleasecover";
+        return url() + "&type=release";
     }
 
     void ArtworkResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
@@ -157,58 +160,32 @@ namespace lms::ui
         LMS_SCOPED_TRACE_OVERVIEW("UI", "HandleCoverRequest");
 
         // Retrieve parameters
-        const std::string* artistIdStr = request.getParameter("artistid");
+        const std::string* imageIdStr = request.getParameter("imageid");
         const std::string* trackIdStr = request.getParameter("trackid");
-        const std::string* releaseIdStr = request.getParameter("releaseid");
         const std::string* sizeStr = request.getParameter("size");
         const std::string* typeStr = request.getParameter("type");
 
         std::shared_ptr<image::IEncodedImage> image;
 
-        // Mandatory parameter size
-        if ((artistIdStr || trackIdStr || releaseIdStr))
+        if ((imageIdStr || trackIdStr))
         {
-            if (!sizeStr)
-            {
-                LOG(DEBUG, "no size provided!");
-                return;
-            }
-
-            const auto size{ core::stringUtils::readAs<std::size_t>(*sizeStr) };
-            if (!size || *size > maxSize)
+            const auto size{ sizeStr ? core::stringUtils::readAs<std::size_t>(*sizeStr) : std::nullopt };
+            if (size && *size > maxSize)
             {
                 LOG(DEBUG, "invalid size provided!");
                 return;
             }
 
-            if (artistIdStr)
+            if (imageIdStr)
             {
-                LOG(DEBUG, "Requested cover for track " << *artistIdStr << ", size = " << *size);
-
-                const std::optional<db::ArtistId> artistId{ core::stringUtils::readAs<db::ArtistId::ValueType>(*artistIdStr) };
-                if (!artistId)
+                const std::optional<db::ImageId> imageId{ core::stringUtils::readAs<db::ImageId::ValueType>(*imageIdStr) };
+                if (!imageId)
                     return;
 
-                image = core::Service<cover::IArtworkService>::get()->getArtistImage(*artistId, *size);
-                if (!image)
-                    image = core::Service<cover::IArtworkService>::get()->getDefaultArtistImage();
-            }
-            else if (releaseIdStr)
-            {
-                LOG(DEBUG, "Requested cover for release " << *releaseIdStr << ", size = " << *size);
-
-                const std::optional<db::ReleaseId> releaseId{ core::stringUtils::readAs<db::ReleaseId::ValueType>(*releaseIdStr) };
-                if (!releaseId)
-                    return;
-
-                image = core::Service<cover::IArtworkService>::get()->getReleaseCover(*releaseId, *size);
-                if (!image)
-                    image = core::Service<cover::IArtworkService>::get()->getDefaultReleaseCover();
+                image = core::Service<cover::IArtworkService>::get()->getImage(*imageId, size);
             }
             else if (trackIdStr)
             {
-                LOG(DEBUG, "Requested cover for track " << *trackIdStr << ", size = " << *size);
-
                 const std::optional<db::TrackId> trackId{ core::stringUtils::readAs<db::TrackId::ValueType>(*trackIdStr) };
                 if (!trackId)
                 {
@@ -216,16 +193,15 @@ namespace lms::ui
                     return;
                 }
 
-                image = core::Service<cover::IArtworkService>::get()->getTrackImage(*trackId, *size);
-                if (!image)
-                    image = core::Service<cover::IArtworkService>::get()->getDefaultReleaseCover();
+                image = core::Service<cover::IArtworkService>::get()->getTrackImage(*trackId, size);
             }
         }
-        else if (typeStr)
+
+        if (!image)
         {
-            if (*typeStr == "defaultreleasecover")
+            if (*typeStr == "release")
                 image = core::Service<cover::IArtworkService>::get()->getDefaultReleaseCover();
-            else if (*typeStr == "defaultartistimage")
+            else if (*typeStr == "artist")
                 image = core::Service<cover::IArtworkService>::get()->getDefaultArtistImage();
         }
 

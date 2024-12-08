@@ -192,6 +192,31 @@ namespace lms::cover
         return image;
     }
 
+    std::shared_ptr<image::IEncodedImage> ArtworkService::getImage(db::ImageId imageId, std::optional<image::ImageSize> width)
+    {
+        const ImageCache::EntryDesc cacheEntryDesc{ imageId, width };
+
+        std::shared_ptr<image::IEncodedImage> cover{ _cache.getImage(cacheEntryDesc) };
+        if (cover)
+            return cover;
+
+        std::filesystem::path imageFile;
+        {
+            db::Session& session{ _db.getTLSSession() };
+            auto transaction{ session.createReadTransaction() };
+
+            const db::Image::pointer image{ db::Image::find(session, imageId) };
+            if (image)
+                imageFile = image->getAbsoluteFilePath();
+        }
+
+        cover = getFromImageFile(imageFile, width);
+        if (cover)
+            _cache.addImage(cacheEntryDesc, cover);
+
+        return cover;
+    }
+
     std::shared_ptr<image::IEncodedImage> ArtworkService::getTrackImage(db::TrackId trackId, std::optional<image::ImageSize> width)
     {
         const ImageCache::EntryDesc cacheEntryDesc{ trackId, width };
@@ -215,62 +240,6 @@ namespace lms::cover
             _cache.addImage(cacheEntryDesc, cover);
 
         return cover;
-    }
-
-    std::shared_ptr<image::IEncodedImage> ArtworkService::getReleaseCover(db::ReleaseId releaseId, std::optional<image::ImageSize> width)
-    {
-        const ImageCache::EntryDesc cacheEntryDesc{ releaseId, width };
-
-        std::shared_ptr<image::IEncodedImage> image{ _cache.getImage(cacheEntryDesc) };
-        if (image)
-            return image;
-
-        std::filesystem::path imagePath;
-        {
-            db::Session& session{ _db.getTLSSession() };
-            auto transaction{ session.createReadTransaction() };
-
-            const db::Release::pointer release{ db::Release::find(session, releaseId) };
-            if (release)
-            {
-                if (const db::Image::pointer dbImage{ release->getImage() })
-                    imagePath = dbImage->getAbsoluteFilePath();
-            }
-        }
-
-        image = getFromImageFile(imagePath, width);
-        if (image)
-            _cache.addImage(cacheEntryDesc, image);
-
-        return image;
-    }
-
-    std::shared_ptr<image::IEncodedImage> ArtworkService::getArtistImage(db::ArtistId artistId, std::optional<image::ImageSize> width)
-    {
-        const ImageCache::EntryDesc cacheEntryDesc{ artistId, width };
-
-        std::shared_ptr<image::IEncodedImage> artistImage{ _cache.getImage(cacheEntryDesc) };
-        if (artistImage)
-            return artistImage;
-
-        std::filesystem::path imagePath;
-        {
-            db::Session& session{ _db.getTLSSession() };
-
-            auto transaction{ session.createReadTransaction() };
-
-            if (const db::Artist::pointer artist{ db::Artist::find(session, artistId) })
-            {
-                if (const db::Image::pointer image{ artist->getImage() })
-                    imagePath = image->getAbsoluteFilePath();
-            }
-        }
-
-        artistImage = getFromImageFile(imagePath, width);
-        if (artistImage)
-            _cache.addImage(cacheEntryDesc, artistImage);
-
-        return artistImage;
     }
 
     void ArtworkService::flushCache()

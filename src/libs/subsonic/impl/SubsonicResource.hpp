@@ -51,7 +51,6 @@ namespace lms::api::subsonic
 
         const std::unordered_map<std::string, ProtocolVersion> _serverProtocolVersionsByClient;
         const std::unordered_set<std::string> _openSubsonicDisabledClients;
-        const std::unordered_set<std::string> _defaultReleaseCoverClients;
         const bool _supportUserPasswordAuthentication;
 
         db::Db& _db;
