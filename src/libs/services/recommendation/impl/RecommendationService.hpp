@@ -42,8 +42,7 @@ namespace lms::recommendation
     {
     public:
         RecommendationService(db::Db& db);
-        ~RecommendationService() = default;
-
+        ~RecommendationService() override = default;
         RecommendationService(const RecommendationService&) = delete;
         RecommendationService& operator=(const RecommendationService&) = delete;
 
@@ -51,7 +50,7 @@ namespace lms::recommendation
         void load() override;
 
         TrackContainer findSimilarTracks(db::TrackListId tracklistId, std::size_t maxCount) const override;
-        TrackContainer findSimilarTracks(const std::vector<db::TrackId>& tracksId, std::size_t maxCount) const override;
+        TrackContainer findSimilarTracks(const std::vector<db::TrackId>& trackIds, std::size_t maxCount) const override;
         ReleaseContainer getSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const override;
         ArtistContainer getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
 

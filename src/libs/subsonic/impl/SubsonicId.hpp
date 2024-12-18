@@ -29,25 +29,16 @@
 
 namespace lms::api::subsonic
 {
-    struct RootId
-    {
-    };
-
     std::string idToString(db::ArtistId id);
     std::string idToString(db::DirectoryId id);
-    std::string idToString(db::MediaLibraryId id);
     std::string idToString(db::ReleaseId id);
     std::string idToString(db::TrackId id);
     std::string idToString(db::TrackListId id);
-    std::string idToString(RootId);
 } // namespace lms::api::subsonic
 
 // Used to parse parameters
 namespace lms::core::stringUtils
 {
-    template<>
-    std::optional<api::subsonic::RootId> readAs(std::string_view str);
-
     template<>
     std::optional<db::ArtistId> readAs(std::string_view str);
 

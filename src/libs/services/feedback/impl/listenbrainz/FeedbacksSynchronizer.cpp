@@ -251,10 +251,9 @@ namespace lms::feedback::listenBrainz
                 LOG(DEBUG, "getFeedbacks aborted");
                 return;
             }
-            else if (ec)
-            {
+
+            if (ec)
                 throw Exception{ "GetFeedbacks timer failure: " + std::string{ ec.message() } };
-            }
 
             startSync();
         }));
@@ -430,7 +429,8 @@ namespace lms::feedback::listenBrainz
                 LOG(DEBUG, "Too many matches for feedback '" << feedback << "': duplicate recording MBIDs found");
                 return;
             }
-            else if (tracks.empty())
+
+            if (tracks.empty())
             {
                 LOG(DEBUG, "Cannot match feedback '" << feedback << "': no track found for this recording MBID");
                 return;

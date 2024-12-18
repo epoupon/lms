@@ -19,6 +19,9 @@
 
 #pragma once
 
+#include <optional>
+#include <string_view>
+
 #include "core/String.hpp"
 
 namespace lms::api::subsonic
@@ -31,7 +34,7 @@ namespace lms::api::subsonic
     };
 
     static inline constexpr ProtocolVersion defaultServerProtocolVersion{ 1, 16, 0 };
-    static inline constexpr std::string_view serverVersion{ "6" };
+    static inline constexpr std::string_view serverVersion{ "7" };
 } // namespace lms::api::subsonic
 
 namespace lms::core::stringUtils

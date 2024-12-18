@@ -27,9 +27,7 @@
 
 #include <Wt/WFormModel.h>
 
-#include "core/Exception.hpp"
 #include "core/IConfig.hpp"
-#include "core/ILogger.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
 #include "database/Session.hpp"
@@ -104,13 +102,15 @@ namespace lms::ui
                 user = LmsApp->getDbSession().create<User>(valueText(LoginField).toUTF8());
 
                 if (Wt::asNumber(value(DemoField)))
+                {
                     user.modify()->setType(UserType::DEMO);
+
+                    // For demo user, we create the subsonic API auth token now as we have no other mean to create it later
+                    core::Service<auth::IAuthTokenService>::get()->createAuthToken("subsonic", user->getId(), core::UUID::generate().getAsString());
+                }
 
                 if (_authPasswordService)
                     _authPasswordService->setPassword(user->getId(), valueText(PasswordField).toUTF8());
-
-                // For demo user, we create the subsonic API auth token now as we have no other mean to create it later
-                core::Service<auth::IAuthTokenService>::get()->createAuthToken("subsonic", user->getId(), core::UUID::generate().getAsString());
             }
         }
 
@@ -125,7 +125,7 @@ namespace lms::ui
             const User::pointer user{ User::find(LmsApp->getDbSession(), *_userId) };
             if (!user)
                 throw UserNotFoundException{};
-            else if (user == LmsApp->getUser())
+            if (user == LmsApp->getUser())
                 throw UserNotAllowedException{};
         }
 
@@ -155,7 +155,7 @@ namespace lms::ui
             return valueText(LoginField).toUTF8();
         }
 
-        bool validateField(Field field)
+        bool validateField(Field field) override
         {
             Wt::WString error;
 

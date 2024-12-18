@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include "database/Types.hpp"
-
 #include "TrackCollector.hpp"
 #include "common/Template.hpp"
 

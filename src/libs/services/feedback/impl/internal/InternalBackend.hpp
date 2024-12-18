@@ -32,14 +32,17 @@ namespace lms::feedback
     {
     public:
         InternalBackend(db::Db& db);
+        ~InternalBackend() override = default;
+        InternalBackend(const InternalBackend&) = delete;
+        InternalBackend& operator=(const InternalBackend&) = delete;
 
     private:
-        void onStarred(db::StarredArtistId) override;
-        void onUnstarred(db::StarredArtistId) override;
-        void onStarred(db::StarredReleaseId) override;
-        void onUnstarred(db::StarredReleaseId) override;
-        void onStarred(db::StarredTrackId) override;
-        void onUnstarred(db::StarredTrackId) override;
+        void onStarred(db::StarredArtistId artistId) override;
+        void onUnstarred(db::StarredArtistId artistId) override;
+        void onStarred(db::StarredReleaseId releaseId) override;
+        void onUnstarred(db::StarredReleaseId releaseId) override;
+        void onStarred(db::StarredTrackId trackId) override;
+        void onUnstarred(db::StarredTrackId trackId) override;
 
         db::Db& _db;
     };

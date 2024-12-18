@@ -27,7 +27,6 @@
 #include <boost/asio/steady_timer.hpp>
 
 #include "database/StarredTrackId.hpp"
-#include "database/Types.hpp"
 #include "database/UserId.hpp"
 
 #include "FeedbackTypes.hpp"
@@ -50,12 +49,14 @@ namespace lms::feedback::listenBrainz
     {
     public:
         FeedbacksSynchronizer(boost::asio::io_context& ioContext, db::Db& db, core::http::IClient& client);
+        ~FeedbacksSynchronizer() = default;
+        FeedbacksSynchronizer(const FeedbacksSynchronizer&) = delete;
+        FeedbacksSynchronizer& operator=(const FeedbacksSynchronizer&) = delete;
 
         void enqueFeedback(FeedbackType type, db::StarredTrackId starredTrackId);
 
     private:
         void onFeedbackSent(FeedbackType type, db::StarredTrackId starredTrackId);
-
         void enquePendingFeedbacks();
 
         struct UserContext
@@ -63,12 +64,13 @@ namespace lms::feedback::listenBrainz
             UserContext(db::UserId id)
                 : userId{ id } {}
 
+            ~UserContext() = default;
             UserContext(const UserContext&) = delete;
             UserContext& operator=(const UserContext&) = delete;
 
             const db::UserId userId;
             bool syncing{};
-            std::optional<std::size_t> feedbackCount{};
+            std::optional<std::size_t> feedbackCount;
 
             // resetted at each sync
             std::string listenBrainzUserName; // need to be resolved first

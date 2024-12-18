@@ -20,12 +20,12 @@
 #pragma once
 
 #include <atomic>
+#include <optional>
 #include <shared_mutex>
 #include <unordered_map>
 #include <variant>
 
-#include "database/ArtistId.hpp"
-#include "database/ReleaseId.hpp"
+#include "database/ImageId.hpp"
 #include "database/TrackId.hpp"
 #include "image/IEncodedImage.hpp"
 
@@ -38,9 +38,9 @@ namespace lms::cover
 
         struct EntryDesc
         {
-            using VariantType = std::variant<db::ArtistId, db::ReleaseId, db::TrackId>;
+            using VariantType = std::variant<db::TrackId, db::ImageId>;
             VariantType id;
-            std::size_t size;
+            std::optional<std::size_t> size;
 
             bool operator==(const EntryDesc& other) const = default;
         };
@@ -60,7 +60,8 @@ namespace lms::cover
         {
             std::size_t operator()(const EntryDesc& entry) const
             {
-                return std::hash<EntryDesc::VariantType>{}(entry.id) ^ std::hash<std::size_t>{}(entry.size);
+                assert(entry.size); // should not cache unresized images
+                return std::hash<EntryDesc::VariantType>{}(entry.id) ^ std::hash<std::size_t>{}(*entry.size);
             }
         };
 

@@ -95,9 +95,10 @@
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Cannot get track duration</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">Cannot parse audio file</message>
+<message id="Lms.Admin.ScannerController.cannot-read-file">Cannot read file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-image-file">Cannot parse image file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-lyrics-file">Cannot parse lyrics file</message>
-<message id="Lms.Admin.ScannerController.cannot-read-file">Cannot read file</message>
+<message id="Lms.Admin.ScannerController.cannot-read-playlist-file">Cannot parse playlist file</message>
 <message id="Lms.Admin.ScannerController.compact">Compact the database. <strong>Caution:</strong> this may take a while and will block the whole application during the compact step!</message>
 <message id="Lms.Admin.ScannerController.duplicates-header">{1} duplicate files:</message>
 <message id="Lms.Admin.ScannerController.errors-header">{1} errors:</message>
@@ -119,6 +120,7 @@
 <message id="Lms.Admin.ScannerController.status-in-progress">Scanning: step {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-associating-artist-images">Associating artist images: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-external-lyrics">Associating external lyrics: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-associating-playlist-tracks">Associating playlist tracks: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-release-images">Associating release images: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">Checking for duplicate files... {1} files</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Checking for removed files... {1}%</message>
@@ -267,6 +269,8 @@
 
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">Delete playlist?</message>
+<message id="Lms.Explore.TrackLists.type-owned">My Playlists</message>
+<message id="Lms.Explore.TrackLists.type-shared">Shared playlists</message>
 
 <!--Explore:Search-->
 <message id="Lms.Explore.Search.search-placeholder">Search...</message>

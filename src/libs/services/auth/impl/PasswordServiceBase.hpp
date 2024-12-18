@@ -38,6 +38,7 @@ namespace lms::auth
     public:
         PasswordServiceBase(db::Db& db, std::size_t maxThrottlerEntries);
 
+        ~PasswordServiceBase() override = default;
         PasswordServiceBase(const PasswordServiceBase&) = delete;
         PasswordServiceBase& operator=(const PasswordServiceBase&) = delete;
         PasswordServiceBase(PasswordServiceBase&&) = delete;

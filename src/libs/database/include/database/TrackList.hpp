@@ -41,6 +41,7 @@ namespace lms::db
     class Artist;
     class Cluster;
     class ClusterType;
+    class PlayListFile;
     class Release;
     class Session;
     class Track;
@@ -52,19 +53,33 @@ namespace lms::db
     public:
         TrackList() = default;
 
+        enum class Visibility
+        {
+            Private = 0,
+            Public = 1,
+        };
+
         // Search utility
         struct FindParameters
         {
-            std::vector<ClusterId> clusters; // if non empty, tracklists that have tracks that belong to these clusters
+            std::vector<ClusterId> clusters;        // if non empty, tracklists that have tracks that belong to these clusters
+            std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords (on either name field OR sort name field)
             std::optional<Range> range;
             std::optional<TrackListType> type;
             UserId user;                 // only tracklists owned by this user
+            UserId excludedUser;         // only tracklists *not* owned by this user
             MediaLibraryId mediaLibrary; // only tracklists that have songs in this media library
             TrackListSortMethod sortMethod{ TrackListSortMethod::None };
+            std::optional<Visibility> visibility;
 
             FindParameters& setClusters(std::span<const ClusterId> _clusters)
             {
                 clusters.assign(std::cbegin(_clusters), std::cend(_clusters));
+                return *this;
+            }
+            FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
+            {
+                keywords = _keywords;
                 return *this;
             }
             FindParameters& setRange(std::optional<Range> _range)
@@ -82,6 +97,12 @@ namespace lms::db
                 user = _user;
                 return *this;
             }
+            FindParameters& setExcludedUser(UserId _user)
+            {
+                excludedUser = _user;
+                return *this;
+            }
+
             FindParameters& setMediaLibrary(MediaLibraryId _mediaLibrary)
             {
                 mediaLibrary = _mediaLibrary;
@@ -90,6 +111,11 @@ namespace lms::db
             FindParameters& setSortMethod(TrackListSortMethod _sortMethod)
             {
                 sortMethod = _sortMethod;
+                return *this;
+            }
+            FindParameters& setVisibility(std::optional<Visibility> _visibility)
+            {
+                visibility = _visibility;
                 return *this;
             }
         };
@@ -101,13 +127,17 @@ namespace lms::db
 
         // Accessors
         std::string_view getName() const { return _name; }
-        bool isPublic() const { return _isPublic; }
+        Visibility getVisibility() const { return _visibility; }
         TrackListType getType() const { return _type; }
         ObjectPtr<User> getUser() const { return _user; }
+        UserId getUserId() const { return _user.id(); }
+        Wt::WDateTime getLastModifiedDateTime() const { return _lastModifiedDateTime; }
+        Wt::WDateTime getCreationDateTime() const { return _creationDateTime; }
 
         // Modifiers
-        void setName(const std::string& name) { _name = name; }
-        void setIsPublic(bool isPublic) { _isPublic = isPublic; }
+        void setUser(ObjectPtr<User> user) { _user = getDboPtr(user); }
+        void setName(std::string_view name) { _name = name; }
+        void setVisibility(Visibility visibility) { _visibility = visibility; }
         void clear() { _entries.clear(); }
 
         // Get tracks, ordered by position
@@ -134,26 +164,29 @@ namespace lms::db
         {
             Wt::Dbo::field(a, _name, "name");
             Wt::Dbo::field(a, _type, "type");
-            Wt::Dbo::field(a, _isPublic, "public");
+            Wt::Dbo::field(a, _visibility, "visibility");
             Wt::Dbo::field(a, _creationDateTime, "creation_date_time");
             Wt::Dbo::field(a, _lastModifiedDateTime, "last_modified_date_time");
 
-            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);
+            Wt::Dbo::belongsTo(a, _user, "user", Wt::Dbo::OnDeleteCascade);                  // optional
+            Wt::Dbo::belongsTo(a, _playListFile, "playlist_file", Wt::Dbo::OnDeleteCascade); // optional
+
             Wt::Dbo::hasMany(a, _entries, Wt::Dbo::ManyToOne, "tracklist");
         }
 
     private:
         friend class Session;
-        TrackList(std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user);
-        static pointer create(Session& session, std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user);
+        TrackList(std::string_view name, TrackListType type);
+        static pointer create(Session& session, std::string_view name, TrackListType type);
 
         std::string _name;
-        TrackListType _type{ TrackListType::Playlist };
-        bool _isPublic{ false };
+        TrackListType _type{ TrackListType::PlayList };
+        Visibility _visibility{ Visibility::Private };
         Wt::WDateTime _creationDateTime;
         Wt::WDateTime _lastModifiedDateTime;
 
         Wt::Dbo::ptr<User> _user;
+        Wt::Dbo::ptr<PlayListFile> _playListFile;
         Wt::Dbo::collection<Wt::Dbo::ptr<TrackListEntry>> _entries;
     };
 
@@ -162,16 +195,29 @@ namespace lms::db
     public:
         TrackListEntry() = default;
 
-        bool hasOnPostCreated() const override { return true; }
-        void onPostCreated() override;
-
-        bool hasOnPreRemove() const override { return true; }
-        void onPreRemove() override;
-
         // find utility
+        // Search utility
+        struct FindParameters
+        {
+            TrackListId trackList;
+            std::optional<Range> range;
+
+            FindParameters& setTrackList(TrackListId _trackList)
+            {
+                trackList = _trackList;
+                return *this;
+            }
+            FindParameters& setRange(std::optional<Range> _range)
+            {
+                range = _range;
+                return *this;
+            }
+        };
         static pointer getById(Session& session, TrackListEntryId id);
+        static void find(Session& session, const FindParameters& params, const std::function<void(const TrackListEntry::pointer&)>& func);
 
         // Accessors
+        TrackId getTrackId() const { return _track.id(); }
         ObjectPtr<Track> getTrack() const { return _track; }
         const Wt::WDateTime& getDateTime() const { return _dateTime; }
 

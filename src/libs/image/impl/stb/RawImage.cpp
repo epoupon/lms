@@ -39,21 +39,19 @@
 #include "core/ITraceLogger.hpp"
 #include "image/Exception.hpp"
 
-#include "JPEGImage.hpp"
-
 namespace lms::image::STB
 {
-    RawImage::RawImage(const std::byte* encodedData, std::size_t encodedDataSize)
+    RawImage::RawImage(std::span<const std::byte> encodedData)
     {
-        int n;
-        _data = UniquePtrFree{ ::stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(encodedData), encodedDataSize, &_width, &_height, &n, 3), std::free };
+        int n{};
+        _data = UniquePtrFree{ ::stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(encodedData.data()), encodedData.size(), &_width, &_height, &n, 3), std::free };
         if (!_data)
             throw Exception{ "Cannot load image from memory: " + std::string{ ::stbi_failure_reason() } };
     }
 
     RawImage::RawImage(const std::filesystem::path& p)
     {
-        int n;
+        int n{};
         _data = UniquePtrFree{ stbi_load(p.string().c_str(), &_width, &_height, &n, 3), std::free };
         if (!_data)
             throw Exception{ "Cannot load image from file: " + std::string{ ::stbi_failure_reason() } };
@@ -63,7 +61,7 @@ namespace lms::image::STB
     {
         LMS_SCOPED_TRACE_DETAILED("Image", "Resize");
 
-        size_t height;
+        size_t height{};
         if (_width == _height)
         {
             height = width;
@@ -78,7 +76,7 @@ namespace lms::image::STB
             width = (size_t)((float)height / _height * _width);
         }
 
-        UniquePtrFree resizedData{ reinterpret_cast<unsigned char*>(malloc(width * height * 3)), std::free };
+        UniquePtrFree resizedData{ static_cast<unsigned char*>(malloc(width * height * 3)), std::free };
         if (!resizedData)
             throw Exception{ "Cannot allocate memory for resized image!" };
 
@@ -104,11 +102,6 @@ namespace lms::image::STB
         _width = width;
     }
 
-    std::unique_ptr<IEncodedImage> RawImage::encodeToJPEG(unsigned quality) const
-    {
-        return std::make_unique<JPEGImage>(*this, quality);
-    }
-
     ImageSize RawImage::getWidth() const
     {
         return _width;
@@ -121,9 +114,7 @@ namespace lms::image::STB
 
     const std::byte* RawImage::getData() const
     {
-        if (!_data)
-            return nullptr;
-
+        assert(_data);
         return reinterpret_cast<const std::byte*>(_data.get());
     }
 } // namespace lms::image::STB

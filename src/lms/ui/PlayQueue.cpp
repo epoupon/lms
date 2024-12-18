@@ -32,7 +32,6 @@
 #include "core/ILogger.hpp"
 #include "core/Random.hpp"
 #include "core/Service.hpp"
-#include "core/String.hpp"
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
@@ -97,7 +96,7 @@ namespace lms::ui
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
                 TrackList::FindParameters params;
-                params.setType(TrackListType::Playlist);
+                params.setType(TrackListType::PlayList);
                 params.setUser(LmsApp->getUserId());
                 params.setSortMethod(TrackListSortMethod::Name);
 
@@ -328,12 +327,18 @@ namespace lms::ui
             static const std::string queueName{ "__queued_tracks__" };
             queue = db::TrackList::find(LmsApp->getDbSession(), queueName, db::TrackListType::Internal, LmsApp->getUserId());
             if (!queue)
-                queue = LmsApp->getDbSession().create<db::TrackList>(queueName, db::TrackListType::Internal, false, LmsApp->getUser());
+            {
+                queue = LmsApp->getDbSession().create<db::TrackList>(queueName, db::TrackListType::Internal);
+                queue.modify()->setVisibility(db::TrackList::Visibility::Private);
+                queue.modify()->setUser(LmsApp->getUser());
+            }
         }
         else
         {
             static const std::string queueName{ "__temp_queue__" };
-            queue = LmsApp->getDbSession().create<db::TrackList>(queueName, db::TrackListType::Internal, false, LmsApp->getUser());
+            queue = LmsApp->getDbSession().create<db::TrackList>(queueName, db::TrackListType::Internal);
+            queue.modify()->setVisibility(db::TrackList::Visibility::Private);
+            queue.modify()->setUser(LmsApp->getUser());
         }
 
         _queueId = queue->getId();
@@ -736,7 +741,9 @@ namespace lms::ui
         {
             Session& session{ LmsApp->getDbSession() };
             auto transaction{ session.createWriteTransaction() };
-            TrackList::pointer trackList{ session.create<TrackList>(name.toUTF8(), TrackListType::Playlist, false, LmsApp->getUser()) };
+            TrackList::pointer trackList{ session.create<TrackList>(name.toUTF8(), TrackListType::PlayList) };
+            trackList.modify()->setVisibility(TrackList::Visibility::Private);
+            trackList.modify()->setUser(LmsApp->getUser());
             trackListId = trackList->getId();
         }
 
@@ -752,6 +759,7 @@ namespace lms::ui
 
         TrackList::pointer trackList{ TrackList::find(LmsApp->getDbSession(), trackListId) };
         trackList.modify()->clear();
+        trackList.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
 
         Track::FindParameters params;
         params.setTrackList(_queueId);

@@ -35,6 +35,9 @@ namespace lms::auth
     {
     protected:
         AuthServiceBase(db::Db& db);
+        ~AuthServiceBase() = default;
+        AuthServiceBase(const AuthServiceBase&) = delete;
+        AuthServiceBase& operator=(const AuthServiceBase&) = delete;
 
         db::UserId getOrCreateUser(std::string_view loginName);
         void onUserAuthenticated(db::UserId userId);

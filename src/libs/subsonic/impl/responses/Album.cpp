@@ -32,6 +32,7 @@
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 
+#include "CoverArtId.hpp"
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"
 #include "responses/Artist.hpp"
@@ -84,9 +85,10 @@ namespace lms::api::subsonic
         }
 
         albumNode.setAttribute("created", core::stringUtils::toISO8601String(release->getLastWritten()));
-        if (release->getImage())
+        if (const auto image{ release->getImage() })
         {
-            albumNode.setAttribute("coverArt", idToString(release->getId()));
+            const CoverArtId coverArtId{ image->getId(), image->getLastWriteTime().toTime_t() };
+            albumNode.setAttribute("coverArt", idToString(coverArtId));
         }
         else
         {
@@ -96,7 +98,8 @@ namespace lms::api::subsonic
             params.setRange(db::Range{ 0, 1 });
 
             db::Track::find(context.dbSession, params, [&](const db::Track::pointer& track) {
-                albumNode.setAttribute("coverArt", idToString(track->getId()));
+                const CoverArtId coverArtId{ track->getId(), track->getLastWriteTime().toTime_t() };
+                albumNode.setAttribute("coverArt", idToString(coverArtId));
             });
         }
         if (const auto year{ release->getYear() })
@@ -181,11 +184,25 @@ namespace lms::api::subsonic
             });
         }
 
-        albumNode.createEmptyArrayChild("artists");
-        for (const Artist::pointer& artist : release->getReleaseArtists())
-            albumNode.addArrayChild("artists", createArtistNode(artist));
+        if (id3)
+        {
+            albumNode.createEmptyArrayChild("artists");
+            for (const Artist::pointer& artist : release->getReleaseArtists())
+                albumNode.addArrayChild("artists", createArtistNode(artist));
 
-        albumNode.setAttribute("displayArtist", release->getArtistDisplayName());
+            albumNode.setAttribute("displayArtist", release->getArtistDisplayName());
+        }
+        else
+        {
+            albumNode.createEmptyArrayChild("albumArtists");
+            for (const Artist::pointer& artist : release->getReleaseArtists())
+                albumNode.addArrayChild("albumArtists", createArtistNode(artist));
+
+            albumNode.setAttribute("displayAlbumArtist", release->getArtistDisplayName());
+
+            albumNode.createEmptyArrayChild("artists");
+            albumNode.setAttribute("displayArtist", "");
+        }
         albumNode.addChild("originalReleaseDate", createItemDateNode(release->getOriginalDate(), release->getOriginalYear()));
 
         albumNode.setAttribute("isCompilation", release->isCompilation());

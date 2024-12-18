@@ -26,9 +26,9 @@
 
 namespace lms::core
 {
-    IOContextRunner::IOContextRunner(boost::asio::io_service& ioService, std::size_t threadCount, std::string_view name)
-        : _ioService{ ioService }
-        , _work{ ioService }
+    IOContextRunner::IOContextRunner(boost::asio::io_context& ioContext, std::size_t threadCount, std::string_view name)
+        : _ioContext{ ioContext }
+        , _work{ ioContext }
     {
         LMS_LOG(UTILS, INFO, "Starting IO context with " << threadCount << " threads...");
 
@@ -50,7 +50,7 @@ namespace lms::core
 
                 try
                 {
-                    _ioService.run();
+                    _ioContext.run();
                 }
                 catch (const std::exception& e)
                 {
@@ -65,7 +65,7 @@ namespace lms::core
     {
         LMS_LOG(UTILS, DEBUG, "Stopping IO context...");
         _work.reset();
-        _ioService.stop();
+        _ioContext.stop();
         LMS_LOG(UTILS, DEBUG, "IO context stopped!");
     }
 

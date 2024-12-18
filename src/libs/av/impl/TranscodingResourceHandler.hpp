@@ -20,7 +20,6 @@
 #pragma once
 
 #include <array>
-#include <filesystem>
 #include <optional>
 
 #include "av/TranscodingParameters.hpp"
@@ -34,9 +33,13 @@ namespace lms::av::transcoding
     {
     public:
         TranscodingResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength);
+        ~TranscodingResourceHandler() override = default;
+
+        TranscodingResourceHandler(const TranscodingResourceHandler&) = delete;
+        TranscodingResourceHandler& operator=(const TranscodingResourceHandler&) = delete;
 
     private:
-        Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& reponse) override;
+        Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
         void abort() override{};
 
         static constexpr std::size_t _chunkSize{ 262'144 };

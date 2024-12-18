@@ -20,10 +20,8 @@
 
 #include <cassert>
 
-#include "core/ILogger.hpp"
-#include "database/Artist.hpp"
 #include "database/Cluster.hpp"
-#include "database/Release.hpp"
+#include "database/PlayListFile.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/User.hpp"
@@ -40,10 +38,18 @@ namespace lms::db
         template<typename ResultType>
         Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const TrackList::FindParameters& params)
         {
-            auto query{ session.getDboSession()->query<ResultType>("SELECT DISTINCT " + std::string{ itemToSelect } + " FROM tracklist t_l") };
+            assert(!params.user.isValid() || !params.excludedUser.isValid());
+
+            auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM tracklist t_l") };
 
             if (!params.clusters.empty() || params.mediaLibrary.isValid())
+            {
                 query.join("tracklist_entry t_l_e ON t_l_e.tracklist_id = t_l.id");
+                query.groupBy("t_l.id");
+            }
+
+            for (std::string_view keyword : params.keywords)
+                query.where("t_l.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
 
             if (params.mediaLibrary.isValid())
                 query.join("track t ON t.id = t_l_e.track_id");
@@ -53,9 +59,14 @@ namespace lms::db
 
             if (params.user.isValid())
                 query.where("t_l.user_id = ?").bind(params.user);
+            else if (params.excludedUser.isValid())
+                query.where("t_l.user_id <> ? OR t_l.user_id IS NULL").bind(params.excludedUser);
 
             if (params.type)
                 query.where("t_l.type = ?").bind(*params.type);
+
+            if (params.visibility)
+                query.where("t_l.visibility = ?").bind(*params.visibility);
 
             if (!params.clusters.empty())
             {
@@ -108,20 +119,17 @@ namespace lms::db
         }
     } // namespace
 
-    TrackList::TrackList(std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user)
+    TrackList::TrackList(std::string_view name, TrackListType type)
         : _name{ name }
         , _type{ type }
-        , _isPublic{ isPublic }
         , _creationDateTime{ utils::normalizeDateTime(Wt::WDateTime::currentDateTime()) }
         , _lastModifiedDateTime{ utils::normalizeDateTime(Wt::WDateTime::currentDateTime()) }
-        , _user{ getDboPtr(user) }
     {
-        assert(user);
     }
 
-    TrackList::pointer TrackList::create(Session& session, std::string_view name, TrackListType type, bool isPublic, ObjectPtr<User> user)
+    TrackList::pointer TrackList::create(Session& session, std::string_view name, TrackListType type)
     {
-        return session.getDboSession()->add(std::unique_ptr<TrackList>{ new TrackList{ name, type, isPublic, user } });
+        return session.getDboSession()->add(std::unique_ptr<TrackList>{ new TrackList{ name, type } });
     }
 
     std::size_t TrackList::getCount(Session& session)
@@ -311,20 +319,24 @@ namespace lms::db
         return session.getDboSession()->add(std::unique_ptr<TrackListEntry>{ new TrackListEntry{ track, tracklist, dateTime } });
     }
 
-    void TrackListEntry::onPostCreated()
-    {
-        _tracklist.modify()->setLastModifiedDateTime(utils::normalizeDateTime(Wt::WDateTime::currentDateTime()));
-    }
-
-    void TrackListEntry::onPreRemove()
-    {
-        _tracklist.modify()->setLastModifiedDateTime(utils::normalizeDateTime(Wt::WDateTime::currentDateTime()));
-    }
-
     TrackListEntry::pointer TrackListEntry::getById(Session& session, TrackListEntryId id)
     {
         session.checkReadTransaction();
 
         return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackListEntry>().where("id = ?").bind(id));
     }
+
+    void TrackListEntry::find(Session& session, const FindParameters& params, const std::function<void(const TrackListEntry::pointer&)>& func)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<TrackListEntry>>("SELECT t_l_e FROM tracklist_entry t_l_e") };
+
+        if (params.trackList.isValid())
+            query.where("t_l_e.tracklist_id = ?").bind(params.trackList);
+        query.orderBy("t_l_e.id");
+
+        utils::forEachQueryRangeResult(query, params.range, func);
+    }
+
 } // namespace lms::db

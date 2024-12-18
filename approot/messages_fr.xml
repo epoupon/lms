@@ -95,9 +95,10 @@
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Impossible de récupérer la durée de la piste</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">Impossible d'analyser le fichier audio</message>
+<message id="Lms.Admin.ScannerController.cannot-read-file">Impossible de lire le fichier</message>
 <message id="Lms.Admin.ScannerController.cannot-read-image-file">Impossible d'analyser le fichier image</message>
 <message id="Lms.Admin.ScannerController.cannot-read-lyrics-file">Impossible d'analyser le fichier de paroles</message>
-<message id="Lms.Admin.ScannerController.cannot-read-file">Impossible de lire le fichier</message>
+<message id="Lms.Admin.ScannerController.cannot-read-playlist-file">Impossible d'analyser le fichier de liste de lecture</message>
 <message id="Lms.Admin.ScannerController.compact">Compacter la base de données. <strong>Attention :</strong> cette opération peut prendre du temps et va vérouiller l'application pendant toute l'étape de compactage!</message>
 <message id="Lms.Admin.ScannerController.duplicates-header">{1} fichiers dupliqués :</message>
 <message id="Lms.Admin.ScannerController.errors-header">{1} erreurs :</message>
@@ -119,6 +120,7 @@
 <message id="Lms.Admin.ScannerController.status-in-progress">En cours de scan : étape {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-associating-artist-images">Association des images des artistes: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-external-lyrics">Association des paroles externes: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-associating-playlist-tracks">Association des pistes des listes de lectures: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-release-images">Association des images des albums: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">Vérification des fichiers dupliqués... {1} fichiers</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Vérification des fichiers supprimés... {1}%</message>
@@ -267,6 +269,8 @@
 
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">Supprimer la liste de lecture ?</message>
+<message id="Lms.Explore.TrackLists.type-owned">Mes listes</message>
+<message id="Lms.Explore.TrackLists.type-shared">Listes partagées</message>
 
 <!--Explore:Search-->
 <message id="Lms.Explore.Search.search-placeholder">Rechercher...</message>

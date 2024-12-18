@@ -19,8 +19,9 @@
 
 #pragma once
 
+#include <Wt/WString.h>
+
 #include "core/Exception.hpp"
-#include "database/Types.hpp"
 
 namespace lms::ui
 {

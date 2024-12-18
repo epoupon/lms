@@ -29,6 +29,7 @@
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 
+#include "CoverArtId.hpp"
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"
 
@@ -94,8 +95,11 @@ namespace lms::api::subsonic
 
         artistNode.setAttribute("id", idToString(artist->getId()));
         artistNode.setAttribute("name", artist->getName());
-        if (artist->getImage())
-            artistNode.setAttribute("coverArt", idToString(artist->getId()));
+        if (const auto image{ artist->getImage() })
+        {
+            const CoverArtId coverArtId{ image->getId(), image->getLastWriteTime().toTime_t() };
+            artistNode.setAttribute("coverArt", idToString(coverArtId));
+        }
 
         const std::size_t count{ Release::getCount(context.dbSession, Release::FindParameters{}.setArtist(artist->getId())) };
         artistNode.setAttribute("albumCount", count);

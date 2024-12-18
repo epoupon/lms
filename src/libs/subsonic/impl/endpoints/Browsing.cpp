@@ -164,7 +164,7 @@ namespace lms::api::subsonic
             return tracks;
         }
 
-        std::vector<TrackId> findSimilarSongs(RequestContext&, TrackId trackId, std::size_t count)
+        std::vector<TrackId> findSimilarSongs(RequestContext& /*context*/, TrackId trackId, std::size_t count)
         {
             return core::Service<recommendation::IRecommendationService>::get()->findSimilarTracks({ trackId }, count);
         }
@@ -228,7 +228,7 @@ namespace lms::api::subsonic
         MediaLibrary::find(context.dbSession, [&](const MediaLibrary::pointer& library) {
             Response::Node& musicFolderNode{ musicFoldersNode.createArrayChild("musicFolder") };
 
-            musicFolderNode.setAttribute("id", idToString(library->getId()));
+            musicFolderNode.setAttribute("id", library->getId().getValue());
             musicFolderNode.setAttribute("name", library->getName());
         });
 

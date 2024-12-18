@@ -21,7 +21,6 @@
 
 #include <Wt/WPushButton.h>
 
-#include "core/ILogger.hpp"
 #include "core/String.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"

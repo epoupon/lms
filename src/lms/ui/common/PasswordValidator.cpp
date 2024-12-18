@@ -21,7 +21,6 @@
 
 #include <Wt/WEnvironment.h>
 
-#include "core/Service.hpp"
 #include "services/auth/IPasswordService.hpp"
 
 #include "LmsApplication.hpp"
@@ -38,6 +37,10 @@ namespace lms::ui
                 , _passwordService{ passwordService }
             {
             }
+
+            ~PasswordStrengthValidator() override = default;
+            PasswordStrengthValidator(const PasswordStrengthValidator&) = delete;
+            PasswordStrengthValidator& operator=(const PasswordStrengthValidator&) = delete;
 
         private:
             Wt::WValidator::Result validate(const Wt::WString& input) const override;
@@ -80,6 +83,9 @@ namespace lms::ui
             : _passwordService{ passwordService }
         {
         }
+        ~PasswordCheckValidator() = default;
+        PasswordCheckValidator(const PasswordCheckValidator&) = delete;
+        PasswordCheckValidator& operator=(const PasswordCheckValidator&) = delete;
 
     private:
         Wt::WValidator::Result validate(const Wt::WString& input) const override;

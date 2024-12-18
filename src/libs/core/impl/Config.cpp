@@ -20,7 +20,6 @@
 #include "Config.hpp"
 
 #include "core/Exception.hpp"
-#include "core/ILogger.hpp"
 
 namespace lms::core
 {

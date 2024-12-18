@@ -19,11 +19,9 @@
 
 #pragma once
 
-#include <filesystem>
 #include <functional>
 
 #include "av/TranscodingParameters.hpp"
-#include "av/Types.hpp"
 
 namespace lms::core
 {
@@ -37,7 +35,6 @@ namespace lms::av::transcoding
     public:
         Transcoder(const InputParameters& inputParameters, const OutputParameters& outputParameters);
         ~Transcoder();
-
         Transcoder(const Transcoder&) = delete;
         Transcoder& operator=(const Transcoder&) = delete;
         Transcoder(Transcoder&&) = delete;

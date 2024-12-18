@@ -20,8 +20,9 @@
 #include <tuple>
 #include <unordered_map>
 
-#include "ReleaseTypes.hpp"
 #include "core/String.hpp"
+
+#include "ReleaseTypes.hpp"
 
 namespace lms::core::stringUtils
 {

@@ -170,10 +170,12 @@ namespace lms::db
         query.leftJoin("track t ON d.id = t.directory_id");
         query.leftJoin("image i ON d.id = i.directory_id");
         query.leftJoin("track_lyrics l_lrc ON d.id = l_lrc.directory_id");
+        query.leftJoin("playlist_file pl_f ON d.id = pl_f.directory_id");
         query.where("d_child.id IS NULL");
         query.where("t.directory_id IS NULL");
         query.where("i.directory_id IS NULL");
         query.where("l_lrc.directory_id IS NULL");
+        query.where("pl_f.directory_id IS NULL");
 
         return utils::execRangeQuery<DirectoryId>(query, range);
     }

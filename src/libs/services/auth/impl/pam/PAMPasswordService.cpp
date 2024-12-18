@@ -27,7 +27,6 @@
 #include <security/pam_appl.h>
 
 #include "core/ILogger.hpp"
-#include "database/Session.hpp"
 #include "services/auth/Types.hpp"
 
 namespace lms::auth
@@ -192,7 +191,7 @@ namespace lms::auth
         throw NotImplementedException{};
     }
 
-    void PAMPasswordService::setPassword(db::UserId, std::string_view)
+    void PAMPasswordService::setPassword(db::UserId /*userId*/, std::string_view /*newPassword*/)
     {
         throw NotImplementedException{};
     }

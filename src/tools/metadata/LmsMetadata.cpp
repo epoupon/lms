@@ -22,7 +22,6 @@
 #include <iomanip>
 #include <iostream>
 #include <optional>
-#include <stdexcept>
 #include <stdlib.h>
 
 #include <Wt/WDate.h>

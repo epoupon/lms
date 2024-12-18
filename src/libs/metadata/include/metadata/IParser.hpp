@@ -34,6 +34,7 @@ namespace lms::metadata
 
         virtual std::unique_ptr<Track> parse(const std::filesystem::path& p, bool debug = false) = 0;
 
+        virtual std::span<const std::filesystem::path> getSupportedExtensions() const = 0;
         virtual void setUserExtraTags(std::span<const std::string> extraTags) = 0;
         virtual void setArtistTagDelimiters(std::span<const std::string> delimiters) = 0;
         virtual void setDefaultTagDelimiters(std::span<const std::string> delimiters) = 0;

@@ -25,12 +25,13 @@ struct AVFormatContext;
 
 namespace lms::av
 {
-
     class AudioFile final : public IAudioFile
     {
     public:
         AudioFile(const std::filesystem::path& p);
-        ~AudioFile();
+        ~AudioFile() override;
+        AudioFile(const AudioFile&) = delete;
+        AudioFile& operator=(const AudioFile&) = delete;
 
         const std::filesystem::path& getPath() const override;
         ContainerInfo getContainerInfo() const override;
@@ -39,16 +40,12 @@ namespace lms::av
         std::optional<StreamInfo> getBestStreamInfo() const override;
         std::optional<std::size_t> getBestStreamIndex() const override;
         bool hasAttachedPictures() const override;
-        void visitAttachedPictures(std::function<void(const Picture&)> func) const override;
+        void visitAttachedPictures(std::function<void(const Picture&, const MetadataMap&)> func) const override;
 
     private:
-        AudioFile(const AudioFile&) = delete;
-        AudioFile& operator=(const AudioFile&) = delete;
-
         std::optional<StreamInfo> getStreamInfo(std::size_t streamIndex) const;
 
         const std::filesystem::path _p;
         AVFormatContext* _context{};
     };
-
 } // namespace lms::av

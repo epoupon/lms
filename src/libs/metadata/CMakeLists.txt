@@ -12,6 +12,7 @@ add_library(lmsmetadata SHARED
 	impl/AvFormatTagReader.cpp
 	impl/Lyrics.cpp
 	impl/Parser.cpp
+	impl/PlayList.cpp
 	impl/TagLibTagReader.cpp
 	impl/Utils.cpp
 	)

@@ -38,9 +38,9 @@ namespace lms::feedback::listenBrainz
                 throw Exception{ "MBID not found!" };
 
             return Feedback{
-                Wt::WDateTime::fromTime_t(static_cast<int>(feedbackObj.get("created"))),
-                *recordingMBID,
-                static_cast<FeedbackType>(static_cast<int>(feedbackObj.get("score")))
+                .created = Wt::WDateTime::fromTime_t(static_cast<int>(feedbackObj.get("created"))),
+                .recordingMBID = *recordingMBID,
+                .score = static_cast<FeedbackType>(static_cast<int>(feedbackObj.get("score")))
             };
         }
     } // namespace

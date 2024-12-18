@@ -29,7 +29,6 @@
 #include "core/LiteralString.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
-#include "core/Utils.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
@@ -39,7 +38,6 @@
 #include "ParameterParsing.hpp"
 #include "ProtocolVersion.hpp"
 #include "RequestContext.hpp"
-#include "SubsonicId.hpp"
 #include "SubsonicResponse.hpp"
 #include "endpoints/AlbumSongLists.hpp"
 #include "endpoints/Bookmarks.hpp"
@@ -67,7 +65,7 @@ namespace lms::api::subsonic
 
             core::Service<core::IConfig>::get()->visitStrings("api-subsonic-old-server-protocol-clients",
                 [&](std::string_view client) {
-                    res.emplace(std::string{ client }, ProtocolVersion{ 1, 12, 0 });
+                    res.emplace(std::string{ client }, ProtocolVersion{ .major = 1, .minor = 12, .patch = 0 });
                 },
                 { "DSub" });
 
@@ -87,26 +85,13 @@ namespace lms::api::subsonic
             return res;
         }
 
-        std::unordered_set<std::string> readDefaultCoverClients()
-        {
-            std::unordered_set<std::string> res;
-
-            core::Service<core::IConfig>::get()->visitStrings("api-subsonic-default-cover-clients",
-                [&](std::string_view client) {
-                    res.emplace(std::string{ client });
-                },
-                { "DSub", "substreamer" });
-
-            return res;
-        }
-
         std::string parameterMapToDebugString(const Wt::Http::ParameterMap& parameterMap)
         {
             auto censorValue = [](const std::string& type, const std::string& value) -> std::string {
                 if (type == "p" || type == "password")
                     return "*REDACTED*";
-                else
-                    return value;
+
+                return value;
             };
 
             std::string res;
@@ -138,7 +123,7 @@ namespace lms::api::subsonic
                 throw UserNotAuthorizedError{};
         }
 
-        Response handleNotImplemented(RequestContext&)
+        Response handleNotImplemented(RequestContext& /*context*/)
         {
             throw NotImplementedGenericError{};
         }
@@ -292,12 +277,23 @@ namespace lms::api::subsonic
 
             throw UserNotAuthorizedError{};
         }
+
+        ClientInfo getClientInfo(const Wt::Http::Request& request)
+        {
+            const auto& parameters{ request.getParameterMap() };
+            ClientInfo res;
+
+            // Mandatory parameters
+            res.name = getMandatoryParameterAs<std::string>(parameters, "c");
+            res.version = getMandatoryParameterAs<ProtocolVersion>(parameters, "v");
+
+            return res;
+        }
     } // namespace
 
     SubsonicResource::SubsonicResource(db::Db& db)
         : _serverProtocolVersionsByClient{ readConfigProtocolVersions() }
         , _openSubsonicDisabledClients{ readOpenSubsonicDisabledClients() }
-        , _defaultReleaseCoverClients{ readDefaultCoverClients() }
         , _supportUserPasswordAuthentication{ core::Service<core::IConfig>::get()->getBool("api-subsonic-support-user-password-auth", true) }
         , _db{ db }
     {
@@ -403,23 +399,11 @@ namespace lms::api::subsonic
             throw ClientMustUpgradeError{};
         if (client.minor > server.minor)
             throw ServerMustUpgradeError{};
-        else if (client.minor == server.minor)
+        if (client.minor == server.minor)
         {
             if (client.patch > server.patch)
                 throw ServerMustUpgradeError{};
         }
-    }
-
-    ClientInfo SubsonicResource::getClientInfo(const Wt::Http::Request& request)
-    {
-        const auto& parameters{ request.getParameterMap() };
-        ClientInfo res;
-
-        // Mandatory parameters
-        res.name = getMandatoryParameterAs<std::string>(parameters, "c");
-        res.version = getMandatoryParameterAs<ProtocolVersion>(parameters, "v");
-
-        return res;
     }
 
     RequestContext SubsonicResource::buildRequestContext(const Wt::Http::Request& request)
@@ -427,7 +411,6 @@ namespace lms::api::subsonic
         const Wt::Http::ParameterMap& parameters{ request.getParameterMap() };
         const ClientInfo clientInfo{ getClientInfo(request) };
         bool enableOpenSubsonic{ !_openSubsonicDisabledClients.contains(clientInfo.name) };
-        bool enableDefaultCover{ _defaultReleaseCoverClients.contains(clientInfo.name) };
         const ResponseFormat format{ getParameterAs<std::string>(request.getParameterMap(), "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml };
 
         return RequestContext{
@@ -439,7 +422,6 @@ namespace lms::api::subsonic
             .serverProtocolVersion = getServerProtocolVersion(clientInfo.name),
             .responseFormat = format,
             .enableOpenSubsonic = enableOpenSubsonic,
-            .enableDefaultCover = enableDefaultCover
         };
     }
 

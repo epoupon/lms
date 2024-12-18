@@ -19,7 +19,6 @@
 
 #include "explore/PlayQueueController.hpp"
 
-#include "database/ClusterId.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"

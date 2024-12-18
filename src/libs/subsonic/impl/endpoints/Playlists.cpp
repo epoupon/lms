@@ -40,15 +40,31 @@ namespace lms::api::subsonic
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
         Response::Node& playlistsNode{ response.createNode("playlists") };
 
-        TrackList::FindParameters params;
-        params.setUser(context.user->getId());
-        params.setType(TrackListType::Playlist);
-
-        auto tracklistIds{ TrackList::find(context.dbSession, params) };
-        for (const TrackListId trackListId : tracklistIds.results)
-        {
-            const TrackList::pointer trackList{ TrackList::find(context.dbSession, trackListId) };
+        auto addTrackList{ [&](const db::TrackList::pointer& trackList) {
             playlistsNode.addArrayChild("playlist", createPlaylistNode(trackList, context.dbSession));
+        } };
+
+        // First add user's playlists
+        {
+            TrackList::FindParameters params;
+            params.setUser(context.user->getId());
+            params.setType(TrackListType::PlayList);
+
+            db::TrackList::find(context.dbSession, params, [&](const db::TrackList::pointer& trackList) {
+                addTrackList(trackList);
+            });
+        }
+
+        // Then add others public playlists
+        {
+            TrackList::FindParameters params;
+            params.setVisibility(TrackList::Visibility::Public);
+            params.setType(TrackListType::PlayList);
+
+            db::TrackList::find(context.dbSession, params, [&](const db::TrackList::pointer& trackList) {
+                if (trackList->getUserId() != context.user->getId()) // skip already reported
+                    addTrackList(trackList);
+            });
         }
 
         return response;
@@ -96,17 +112,22 @@ namespace lms::api::subsonic
             tracklist = TrackList::find(context.dbSession, *id);
             if (!tracklist
                 || tracklist->getUser() != context.user
-                || tracklist->getType() != TrackListType::Playlist)
+                || tracklist->getType() != TrackListType::PlayList)
             {
                 throw RequestedDataNotFoundError{};
             }
 
             if (name)
                 tracklist.modify()->setName(*name);
+
+            tracklist.modify()->clear();
+            tracklist.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
         }
         else
         {
-            tracklist = context.dbSession.create<TrackList>(*name, TrackListType::Playlist, false, context.user);
+            tracklist = context.dbSession.create<TrackList>(*name, TrackListType::PlayList);
+            tracklist.modify()->setUser(context.user);
+            tracklist.modify()->setVisibility(TrackList::Visibility::Private);
         }
 
         for (const TrackId trackId : trackIds)
@@ -147,7 +168,7 @@ namespace lms::api::subsonic
         TrackList::pointer tracklist{ TrackList::find(context.dbSession, id) };
         if (!tracklist
             || tracklist->getUser() != context.user
-            || tracklist->getType() != TrackListType::Playlist)
+            || tracklist->getType() != TrackListType::PlayList)
         {
             throw RequestedDataNotFoundError{};
         }
@@ -155,8 +176,8 @@ namespace lms::api::subsonic
         if (name)
             tracklist.modify()->setName(*name);
 
-        if (isPublic)
-            tracklist.modify()->setIsPublic(*isPublic);
+        tracklist.modify()->setVisibility(isPublic ? db::TrackList::Visibility::Public : db::TrackList::Visibility::Private);
+        tracklist.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
 
         {
             // Remove from end to make indexes stable
@@ -192,7 +213,7 @@ namespace lms::api::subsonic
         TrackList::pointer tracklist{ TrackList::find(context.dbSession, id) };
         if (!tracklist
             || tracklist->getUser() != context.user
-            || tracklist->getType() != TrackListType::Playlist)
+            || tracklist->getType() != TrackListType::PlayList)
         {
             throw RequestedDataNotFoundError{};
         }

@@ -21,8 +21,6 @@
 
 #include "IConstraint.hpp"
 
-#include "database/ReleaseId.hpp"
-
 namespace lms::db
 {
     class Db;
@@ -34,6 +32,9 @@ namespace lms::recommendation::PlaylistGeneratorConstraint
     {
     public:
         ConsecutiveArtists(db::Db& db);
+        ~ConsecutiveArtists() override = default;
+        ConsecutiveArtists(const ConsecutiveArtists&) = delete;
+        ConsecutiveArtists& operator=(const ConsecutiveArtists&) = delete;
 
     private:
         float computeScore(const TrackContainer& trackIds, std::size_t trackIndex) override;

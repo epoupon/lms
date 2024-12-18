@@ -36,6 +36,7 @@
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 
+#include "CoverArtId.hpp"
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"
 #include "responses/Artist.hpp"
@@ -109,9 +110,18 @@ namespace lms::api::subsonic
         const Release::pointer release{ track->getRelease() };
 
         if (track->hasCover())
-            trackResponse.setAttribute("coverArt", idToString(track->getId()));
-        else if (release && release->getImage())
-            trackResponse.setAttribute("coverArt", idToString(release->getId()));
+        {
+            const CoverArtId coverArtId{ track->getId(), track->getLastWriteTime().toTime_t() };
+            trackResponse.setAttribute("coverArt", idToString(coverArtId));
+        }
+        else if (release)
+        {
+            if (const db::Image::pointer image{ release->getImage() })
+            {
+                const CoverArtId coverArtId{ image->getId(), image->getLastWriteTime().toTime_t() };
+                trackResponse.setAttribute("coverArt", idToString(coverArtId));
+            }
+        }
 
         const std::vector<Artist::pointer>& artists{ track->getArtists({ TrackArtistLinkType::Artist }) };
         if (!artists.empty())

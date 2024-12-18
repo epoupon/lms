@@ -24,7 +24,6 @@
 #include "av/TranscodingParameters.hpp"
 #include "av/TranscodingResourceHandlerCreator.hpp"
 #include "av/Types.hpp"
-#include "core/FileResourceHandlerCreator.hpp"
 #include "core/ILogger.hpp"
 #include "core/IResourceHandler.hpp"
 #include "core/String.hpp"
@@ -35,6 +34,7 @@
 #include "database/User.hpp"
 #include "services/artwork/IArtworkService.hpp"
 
+#include "CoverArtId.hpp"
 #include "ParameterParsing.hpp"
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"
@@ -326,35 +326,26 @@ namespace lms::api::subsonic
     void handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/, Wt::Http::Response& response)
     {
         // Mandatory params
-        const auto trackId{ getParameterAs<TrackId>(context.parameters, "id") };
-        const auto releaseId{ getParameterAs<ReleaseId>(context.parameters, "id") };
-        const auto artistId{ getParameterAs<ArtistId>(context.parameters, "id") };
+        const CoverArtId coverArtId{ getMandatoryParameterAs<CoverArtId>(context.parameters, "id") };
 
-        if (!trackId && !releaseId && !artistId)
-            throw BadParameterGenericError{ "id" };
+        std::optional<std::size_t> size{ getParameterAs<std::size_t>(context.parameters, "size") };
+        if (size)
+            *size = core::utils::clamp(*size, std::size_t{ 32 }, std::size_t{ 2048 });
 
-        std::size_t size{ getParameterAs<std::size_t>(context.parameters, "size").value_or(1024) };
-        size = core::utils::clamp(size, std::size_t{ 32 }, std::size_t{ 2048 });
+        std::shared_ptr<image::IEncodedImage> image;
+        if (const db::TrackId * trackId{ std::get_if<db::TrackId>(&coverArtId.id) })
+            image = core::Service<cover::IArtworkService>::get()->getTrackImage(*trackId, size);
+        else if (const db::ImageId * imageId{ std::get_if<db::ImageId>(&coverArtId.id) })
+            image = core::Service<cover::IArtworkService>::get()->getImage(*imageId, size);
 
-        std::shared_ptr<image::IEncodedImage> cover;
-        if (trackId)
-            cover = core::Service<cover::IArtworkService>::get()->getTrackImage(*trackId, size);
-        else if (releaseId)
-            cover = core::Service<cover::IArtworkService>::get()->getReleaseCover(*releaseId, size);
-        else if (artistId)
-            cover = core::Service<cover::IArtworkService>::get()->getArtistImage(*artistId, size);
-
-        if (!cover && context.enableDefaultCover && !artistId)
-            cover = core::Service<cover::IArtworkService>::get()->getDefaultReleaseCover();
-
-        if (!cover)
+        if (!image)
         {
             response.setStatus(404);
             return;
         }
 
-        response.out().write(reinterpret_cast<const char*>(cover->getData()), cover->getDataSize());
-        response.setMimeType(std::string{ cover->getMimeType() });
+        response.out().write(reinterpret_cast<const char*>(image->getData().data()), image->getData().size());
+        response.setMimeType(std::string{ image->getMimeType() });
     }
 
 } // namespace lms::api::subsonic

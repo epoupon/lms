@@ -62,6 +62,7 @@ namespace lms::core::stringUtils
     [[nodiscard]] std::string bufferToString(std::span<const unsigned char> data);
 
     [[nodiscard]] bool stringCaseInsensitiveEqual(std::string_view strA, std::string_view strB);
+    [[nodiscard]] std::string_view::size_type stringCaseInsensitiveContains(std::string_view str, std::string_view strtoFind);
 
     void capitalize(std::string& str);
 

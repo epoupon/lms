@@ -25,31 +25,23 @@
 
 #include <Wt/WDateTime.h>
 
-#include "database/MediaLibraryId.hpp"
 #include "database/ScanSettings.hpp"
+
+#include "MediaLibraryInfo.hpp"
 
 namespace lms::scanner
 {
+    static inline const std::filesystem::path excludeDirFileName{ ".lmsignore" };
+
     struct ScannerSettings
     {
         std::size_t scanVersion{};
         Wt::WTime startTime;
         db::ScanSettings::UpdatePeriod updatePeriod{ db::ScanSettings::UpdatePeriod::Never };
-        std::vector<std::filesystem::path> supportedAudioFileExtensions;
-        std::vector<std::filesystem::path> supportedImageFileExtensions;
-        std::vector<std::filesystem::path> supportedLyricsFileExtensions;
         bool skipDuplicateMBID{};
         std::vector<std::string> extraTags;
         std::vector<std::string> artistTagDelimiters;
         std::vector<std::string> defaultTagDelimiters;
-
-        struct MediaLibraryInfo
-        {
-            db::MediaLibraryId id;
-            std::filesystem::path rootDirectory;
-
-            auto operator<=>(const MediaLibraryInfo& other) const = default;
-        };
         std::vector<MediaLibraryInfo> mediaLibraries;
 
         bool operator==(const ScannerSettings& rhs) const = default;

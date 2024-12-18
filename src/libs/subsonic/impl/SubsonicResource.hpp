@@ -25,10 +25,8 @@
 #include <Wt/Http/Response.h>
 #include <Wt/WResource.h>
 
-#include "database/Types.hpp"
 #include "database/UserId.hpp"
 
-#include "ClientInfo.hpp"
 #include "RequestContext.hpp"
 
 namespace lms::db
@@ -48,13 +46,11 @@ namespace lms::api::subsonic
         ProtocolVersion getServerProtocolVersion(const std::string& clientName) const;
 
         static void checkProtocolVersion(ProtocolVersion client, ProtocolVersion server);
-        ClientInfo getClientInfo(const Wt::Http::Request& request);
         RequestContext buildRequestContext(const Wt::Http::Request& request);
         db::UserId authenticateUser(const Wt::Http::Request& request);
 
         const std::unordered_map<std::string, ProtocolVersion> _serverProtocolVersionsByClient;
         const std::unordered_set<std::string> _openSubsonicDisabledClients;
-        const std::unordered_set<std::string> _defaultReleaseCoverClients;
         const bool _supportUserPasswordAuthentication;
 
         db::Db& _db;

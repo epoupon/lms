@@ -28,7 +28,7 @@ namespace lms::ui
     class AudioFileResource : public Wt::WResource
     {
     public:
-        ~AudioFileResource();
+        ~AudioFileResource() override;
 
         std::string getUrl(db::TrackId trackId) const;
 

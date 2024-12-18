@@ -18,11 +18,11 @@
  */
 #pragma once
 
-#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <list>
+#include <memory>
+#include <vector>
 
 namespace lms::api::subsonic
 {
@@ -37,24 +37,22 @@ namespace lms::api::subsonic
 
         TLSMonotonicMemoryResource()
         {
-            allocateNewBlock();
+            allocateNewBlock(defaultBlockSize);
         }
 
         [[nodiscard]] std::byte* allocate(std::size_t byteCount, std::size_t alignment)
         {
+            if (byteCount == 0)
+                byteCount = 1;
+
             std::byte* currentAddrAligned{ computeAlignedAddr(_currentAddr, alignment) };
 
-            if (currentAddrAligned + byteCount > &_currentBlock->back() + 1)
+            if (!_currentBlock->fitsInBlock(currentAddrAligned, byteCount))
             {
-                allocateNewBlock();
+                allocateNewBlock(std::max(defaultBlockSize, byteCount + alignment /* worst case */));
                 currentAddrAligned = computeAlignedAddr(_currentAddr, alignment);
             }
-
-            // Requested too many bytes for blockSize!
-            if (currentAddrAligned + byteCount > &_currentBlock->back() + 1)
-                throw std::bad_alloc{};
-
-            assert(currentAddrAligned >= &_currentBlock->front());
+            assert(_currentBlock->fitsInBlock(currentAddrAligned, byteCount));
 
             std::byte* res{ currentAddrAligned };
             _currentAddr = currentAddrAligned + byteCount;
@@ -62,26 +60,34 @@ namespace lms::api::subsonic
             return res;
         }
 
-        void deallocate(std::byte*)
+        void deallocate(std::byte* /* ptr */)
         {
             // nothing to do!
         }
 
         void reset()
         {
-            // always keep at least one block
+            // First: remove blocks that are not default-sized
+            std::erase_if(_blocks, [](const Block& _block) { return _block.size != defaultBlockSize; });
+
+            // Then always keep at least one block
             if (_blocks.size() > 1)
                 _blocks.erase(std::next(std::cbegin(_blocks), 1), std::cend(_blocks));
 
             _currentBlock = &_blocks.front();
-            _currentAddr = _currentBlock->data();
+            _currentAddr = _currentBlock->data.get();
         }
 
     private:
-        void allocateNewBlock()
+        void allocateNewBlock(std::size_t size)
         {
-            _currentBlock = &_blocks.emplace_back();
-            _currentAddr = _currentBlock->data();
+            Block block{
+                .data = std::make_unique_for_overwrite<std::byte[]>(size),
+                .size = size,
+            };
+
+            _currentAddr = block.data.get();
+            _currentBlock = &_blocks.emplace_back(std::move(block));
         }
 
         static std::byte* computeAlignedAddr(std::byte* addr, std::size_t alignment) noexcept
@@ -93,11 +99,20 @@ namespace lms::api::subsonic
             return reinterpret_cast<std::byte*>(addr + adjustment);
         }
 
-        static constexpr std::size_t blockSize{ static_cast<std::size_t>(1 * 1024 * 1024) };
-        using BlockType = std::array<std::byte, blockSize>;
+        static constexpr std::size_t defaultBlockSize{ static_cast<std::size_t>(1 * 1024 * 1024) };
+        struct Block
+        {
+            std::unique_ptr<std::byte[]> data;
+            std::size_t size;
 
-        std::list<BlockType> _blocks;
-        BlockType* _currentBlock{};
+            bool fitsInBlock(std::byte* addr, std::size_t rangeSize) const
+            {
+                return data && rangeSize && addr >= data.get() && addr + rangeSize <= data.get() + size;
+            }
+        };
+
+        std::vector<Block> _blocks;
+        Block* _currentBlock{};
         std::byte* _currentAddr{};
     };
 } // namespace lms::api::subsonic

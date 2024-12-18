@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include <shared_mutex>
-
 #include "PasswordServiceBase.hpp"
 
 namespace lms::auth

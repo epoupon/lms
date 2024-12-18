@@ -718,8 +718,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, SingleTrackListMultipleTrackSingleCluster)
     {
-        ScopedUser user{ session, "MyUser" };
-        ScopedTrackList trackList{ session, "MyTrackList", TrackListType::Playlist, false, user.lockAndGet() };
+        ScopedTrackList trackList{ session, "MyTrackList", TrackListType::PlayList };
         ScopedClusterType clusterType{ session, "MyClusterType" };
         ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
         std::list<ScopedTrack> tracks;
@@ -743,15 +742,14 @@ namespace lms::db::tests
             const auto similarTracks{ trackList->getSimilarTracks() };
             EXPECT_EQ(similarTracks.size(), 5);
 
-            for (auto similarTrack : similarTracks)
+            for (const auto& similarTrack : similarTracks)
                 EXPECT_TRUE(std::any_of(std::next(std::cbegin(tracks), 5), std::cend(tracks), [similarTrack](const ScopedTrack& track) { return track.getId() == similarTrack->getId(); }));
         }
     }
 
     TEST_F(DatabaseFixture, SingleTrackListMultipleTrackMultiClusters)
     {
-        ScopedUser user{ session, "MyUser" };
-        ScopedTrackList trackList{ session, "MyTrackList", TrackListType::Playlist, false, user.lockAndGet() };
+        ScopedTrackList trackList{ session, "MyTrackList", TrackListType::PlayList };
         ScopedClusterType clusterType{ session, "MyClusterType" };
         ScopedCluster cluster1{ session, clusterType.lockAndGet(), "MyCluster1" };
         ScopedCluster cluster2{ session, clusterType.lockAndGet(), "MyCluster2" };

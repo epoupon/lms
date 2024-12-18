@@ -22,7 +22,6 @@
 #include <Wt/Auth/HashFunction.h>
 #include <Wt/WRandom.h>
 
-#include "core/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "database/AuthToken.hpp"
 #include "database/Session.hpp"
@@ -126,7 +125,7 @@ namespace lms::auth
             std::shared_lock lock{ _mutex };
 
             if (_loginThrottler.isClientThrottled(clientAddress))
-                return AuthTokenProcessResult{ AuthTokenProcessResult::State::Throttled };
+                return AuthTokenProcessResult{ .state = AuthTokenProcessResult::State::Throttled, .authTokenInfo = std::nullopt };
         }
 
         auto res{ processAuthToken(domain, tokenValue) };
@@ -134,17 +133,17 @@ namespace lms::auth
             std::unique_lock lock{ _mutex };
 
             if (_loginThrottler.isClientThrottled(clientAddress))
-                return AuthTokenProcessResult{ AuthTokenProcessResult::State::Throttled };
+                return AuthTokenProcessResult{ .state = AuthTokenProcessResult::State::Throttled, .authTokenInfo = std::nullopt };
 
             if (!res)
             {
                 _loginThrottler.onBadClientAttempt(clientAddress);
-                return AuthTokenProcessResult{ AuthTokenProcessResult::State::Denied };
+                return AuthTokenProcessResult{ .state = AuthTokenProcessResult::State::Denied, .authTokenInfo = std::nullopt };
             }
 
             _loginThrottler.onGoodClientAttempt(clientAddress);
             onUserAuthenticated(res->userId);
-            return AuthTokenProcessResult{ AuthTokenProcessResult::State::Granted, res };
+            return AuthTokenProcessResult{ .state = AuthTokenProcessResult::State::Granted, .authTokenInfo = res };
         }
     }
 

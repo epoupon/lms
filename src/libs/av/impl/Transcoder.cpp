@@ -25,8 +25,9 @@
 #include "core/IChildProcessManager.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
-#include "core/Path.hpp"
 #include "core/Service.hpp"
+
+#include "av/Types.hpp"
 
 namespace lms::av::transcoding
 {
@@ -81,7 +82,7 @@ namespace lms::av::transcoding
         {
             if (!std::filesystem::exists(_inputParameters.trackPath))
                 throw Exception{ "File '" + _inputParameters.trackPath.string() + "' does not exist!" };
-            else if (!std::filesystem::is_regular_file(_inputParameters.trackPath))
+            if (!std::filesystem::is_regular_file(_inputParameters.trackPath))
                 throw Exception{ "File '" + _inputParameters.trackPath.string() + "' is not regular!" };
         }
         catch (const std::filesystem::filesystem_error& e)
@@ -108,7 +109,7 @@ namespace lms::av::transcoding
             args.emplace_back("-ss");
 
             std::ostringstream oss;
-            oss << std::fixed << std::showpoint << std::setprecision(3) << (_outputParameters.offset.count() / float{ 1000 });
+            oss << std::fixed << std::showpoint << std::setprecision(3) << (_outputParameters.offset.count() / float{ 1'000 });
             args.emplace_back(oss.str());
         }
 

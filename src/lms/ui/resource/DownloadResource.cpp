@@ -22,7 +22,6 @@
 #include <Wt/Http/Response.h>
 #include <Wt/WDateTime.h>
 
-#include "core/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "database/Artist.hpp"
 #include "database/Release.hpp"

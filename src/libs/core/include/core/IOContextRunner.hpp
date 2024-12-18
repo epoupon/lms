@@ -22,25 +22,24 @@
 #include <optional>
 #include <thread>
 
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
 
 namespace lms::core
 {
     class IOContextRunner
     {
     public:
-        IOContextRunner(boost::asio::io_service& ioService, std::size_t threadCount, std::string_view name);
+        IOContextRunner(boost::asio::io_context& ioContext, std::size_t threadCount, std::string_view name);
         ~IOContextRunner();
+        IOContextRunner(const IOContextRunner&) = delete;
+        IOContextRunner& operator=(const IOContextRunner&) = delete;
 
         void stop();
         std::size_t getThreadCount() const;
 
     private:
-        IOContextRunner(const IOContextRunner&) = delete;
-        IOContextRunner& operator=(const IOContextRunner&) = delete;
-
-        boost::asio::io_service& _ioService;
-        std::optional<boost::asio::io_service::work> _work;
+        boost::asio::io_context& _ioContext;
+        std::optional<boost::asio::io_context::work> _work;
         std::vector<std::thread> _threads;
     };
 } // namespace lms::core

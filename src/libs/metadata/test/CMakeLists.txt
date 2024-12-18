@@ -4,6 +4,7 @@ add_executable(test-metadata
 	Lyrics.cpp
 	Metadata.cpp
 	Parser.cpp
+	PlayList.cpp
 	Utils.cpp
 	)
 

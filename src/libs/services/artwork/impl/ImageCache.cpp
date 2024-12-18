@@ -33,21 +33,29 @@ namespace lms::cover
 
     void ImageCache::addImage(const EntryDesc& entryDesc, std::shared_ptr<image::IEncodedImage> image)
     {
+        // cache only resized files
+        if (!entryDesc.size)
+            return;
+
         const std::unique_lock lock{ _mutex };
 
-        while (_cacheSize + image->getDataSize() > _maxCacheSize && !_cache.empty())
+        while (_cacheSize + image->getData().size() > _maxCacheSize && !_cache.empty())
         {
             auto itRandom{ core::random::pickRandom(_cache) };
-            _cacheSize -= itRandom->second->getDataSize();
+            _cacheSize -= itRandom->second->getData().size();
             _cache.erase(itRandom);
         }
 
-        _cacheSize += image->getDataSize();
+        _cacheSize += image->getData().size();
         _cache[entryDesc] = image;
     }
 
     std::shared_ptr<image::IEncodedImage> ImageCache::getImage(const EntryDesc& entryDesc) const
     {
+        // cache only resized files
+        if (!entryDesc.size)
+            return {};
+
         const std::shared_lock lock{ _mutex };
 
         const auto it{ _cache.find(entryDesc) };

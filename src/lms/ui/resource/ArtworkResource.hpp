@@ -22,6 +22,7 @@
 #include <Wt/WResource.h>
 
 #include "database/ArtistId.hpp"
+#include "database/ImageId.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 
@@ -46,9 +47,8 @@ namespace lms::ui
         std::string getTrackImageUrl(db::TrackId trackId, Size size) const;
 
     private:
-        std::string getArtistIdImageUrl(db::ArtistId artistId, Size size) const;
-        std::string getReleaseIdCoverUrl(db::ReleaseId releaseId, Size size) const;
-        std::string getTrackIdImageUrl(db::TrackId trackId, Size size) const;
+        std::string getImageUrl(db::ImageId imageId, Size size, std::string_view type) const;
+        std::string getImageUrl(db::TrackId trackId, Size size, std::string_view type) const;
 
         std::string getDefaultArtistImageUrl() const;
         std::string getDefaultReleaseCoverUrl() const;

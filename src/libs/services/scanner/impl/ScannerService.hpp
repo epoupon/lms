@@ -29,33 +29,31 @@
 #include <Wt/WSignal.h>
 #include <boost/asio/system_timer.hpp>
 
-#include "IScanStep.hpp"
 #include "ScannerSettings.hpp"
-#include "core/Path.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
-#include "database/Types.hpp"
 #include "services/scanner/IScannerService.hpp"
+#include "steps/IScanStep.hpp"
 
 namespace lms::scanner
 {
+    class IFileScanner;
+
     class ScannerService : public IScannerService
     {
     public:
         ScannerService(db::Db& db);
-        ~ScannerService();
-
-    private:
+        ~ScannerService() override;
         ScannerService(const ScannerService&) = delete;
         ScannerService& operator=(const ScannerService&) = delete;
 
+    private:
         void requestReload() override;
         void requestImmediateScan(const ScanOptions& scanOptions) override;
 
         Status getStatus() const override;
         Events& getEvents() override { return _events; }
 
-    private:
         void start();
         void stop();
 
@@ -77,6 +75,7 @@ namespace lms::scanner
         void notifyInProgressIfNeeded(const ScanStepStats& stats);
         void notifyInProgress(const ScanStepStats& stats);
 
+        std::vector<std::unique_ptr<IFileScanner>> _fileScanners;
         std::vector<std::unique_ptr<IScanStep>> _scanSteps;
 
         std::mutex _controlMutex;
@@ -84,7 +83,7 @@ namespace lms::scanner
         Wt::WIOService _ioService;
         boost::asio::system_timer _scheduleTimer{ _ioService };
         Events _events;
-        std::chrono::system_clock::time_point _lastScanInProgressEmit{};
+        std::chrono::system_clock::time_point _lastScanInProgressEmit;
         db::Db& _db;
 
         mutable std::shared_mutex _statusMutex;

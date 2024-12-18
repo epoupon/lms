@@ -21,10 +21,10 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <span>
 
 #include <Magick++.h>
 
-#include "image/IEncodedImage.hpp"
 #include "image/IRawImage.hpp"
 
 namespace lms::image::GraphicsMagick
@@ -32,19 +32,17 @@ namespace lms::image::GraphicsMagick
     class RawImage : public IRawImage
     {
     public:
-        RawImage(const std::byte* encodedData, std::size_t encodedDataSize);
+        RawImage(std::span<const std::byte> encodedData);
         RawImage(const std::filesystem::path& path);
 
         ImageSize getWidth() const override;
         ImageSize getHeight() const override;
 
         void resize(ImageSize width) override;
-        std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const override;
 
-    private:
-        friend class JPEGImage;
         Magick::Image getMagickImage() const;
 
+    private:
         Magick::Image _image;
     };
 } // namespace lms::image::GraphicsMagick

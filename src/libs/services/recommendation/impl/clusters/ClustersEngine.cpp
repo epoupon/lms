@@ -45,7 +45,7 @@ namespace lms::recommendation
         Session& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createReadTransaction() };
 
-        const auto similarTrackIds{ Track::findSimilarTrackIds(dbSession, trackIds, Range{ 0, maxCount }) };
+        auto similarTrackIds{ Track::findSimilarTrackIds(dbSession, trackIds, Range{ 0, maxCount }) };
         return std::move(similarTrackIds.results);
     }
 
@@ -105,7 +105,7 @@ namespace lms::recommendation
         if (!artist)
             return {};
 
-        const auto similarArtistIds{ artist->findSimilarArtistIds(artistLinkTypes, Range{ 0, maxCount }) };
+        auto similarArtistIds{ artist->findSimilarArtistIds(artistLinkTypes, Range{ 0, maxCount }) };
         return std::move(similarArtistIds.results);
     }
 

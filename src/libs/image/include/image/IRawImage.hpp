@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "image/IEncodedImage.hpp"
+#include "image/Types.hpp"
 
 namespace lms::image
 {
@@ -32,6 +32,5 @@ namespace lms::image
         virtual ImageSize getHeight() const = 0;
 
         virtual void resize(ImageSize width) = 0;
-        virtual std::unique_ptr<IEncodedImage> encodeToJPEG(unsigned quality) const = 0;
     };
 } // namespace lms::image

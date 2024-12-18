@@ -19,9 +19,9 @@
 
 #include "ArtistsView.hpp"
 
+#include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
-#include "core/ILogger.hpp"
 #include "database/Artist.hpp"
 #include "database/Session.hpp"
 #include "database/TrackArtistLink.hpp"
@@ -45,10 +45,10 @@ namespace lms::ui
         addFunction("tr", &Wt::WTemplate::Functions::tr);
         addFunction("id", &Wt::WTemplate::Functions::id);
 
-        Wt::WLineEdit* searEdit{ bindNew<Wt::WLineEdit>("search") };
-        searEdit->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
-        searEdit->textInput().connect([this, searEdit] {
-            refreshView(searEdit->text());
+        Wt::WLineEdit* searchEdit{ bindNew<Wt::WLineEdit>("search") };
+        searchEdit->setPlaceholderText(Wt::WString::tr("Lms.Explore.Search.search-placeholder"));
+        searchEdit->textInput().connect([this, searchEdit] {
+            refreshView(searchEdit->text());
         });
 
         {

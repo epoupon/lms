@@ -29,8 +29,8 @@
 namespace lms::core
 {
     // The trace logger is meant to built/destroyed once
-    Service<logging::ILogger> logger{ std::make_unique<logging::StreamLogger>(std::cout, logging::StreamLogger::allSeverities) };
-    Service<tracing::ITraceLogger> traceLogger{ tracing::createTraceLogger(tracing::Level::Overview) };
+    const Service<logging::ILogger> logger{ std::make_unique<logging::StreamLogger>(std::cout, logging::StreamLogger::allSeverities) };
+    const Service<tracing::ITraceLogger> traceLogger{ tracing::createTraceLogger(tracing::Level::Overview) };
 
     static void BM_TraceLogger_Overview(benchmark::State& state)
     {

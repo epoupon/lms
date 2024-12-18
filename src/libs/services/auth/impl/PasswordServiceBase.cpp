@@ -27,10 +27,8 @@
     #include "pam/PAMPasswordService.hpp"
 #endif // LMS_SUPPORT_PAM
 
-#include "core/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "database/Session.hpp"
-#include "database/User.hpp"
 #include "services/auth/Types.hpp"
 
 namespace lms::auth
@@ -63,7 +61,7 @@ namespace lms::auth
             std::shared_lock lock{ _mutex };
 
             if (_loginThrottler.isClientThrottled(clientAddress))
-                return { CheckResult::State::Throttled };
+                return CheckResult{ .state = CheckResult::State::Throttled, .userId = {} };
         }
 
         const bool match{ checkUserPassword(loginName, password) };
@@ -71,7 +69,7 @@ namespace lms::auth
             std::unique_lock lock{ _mutex };
 
             if (_loginThrottler.isClientThrottled(clientAddress))
-                return { CheckResult::State::Throttled };
+                return CheckResult{ .state = CheckResult::State::Throttled, .userId = {} };
 
             if (match)
             {
@@ -79,13 +77,11 @@ namespace lms::auth
 
                 const db::UserId userId{ getOrCreateUser(loginName) };
                 onUserAuthenticated(userId);
-                return { CheckResult::State::Granted, userId };
+                return CheckResult{ .state = CheckResult::State::Granted, .userId = userId };
             }
-            else
-            {
-                _loginThrottler.onBadClientAttempt(clientAddress);
-                return { CheckResult::State::Denied };
-            }
+
+            _loginThrottler.onBadClientAttempt(clientAddress);
+            return CheckResult{ .state = CheckResult::State::Denied, .userId = {} };
         }
     }
 } // namespace lms::auth

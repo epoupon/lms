@@ -19,6 +19,8 @@
 
 #include "FeedbackTypes.hpp"
 
+#include <ostream>
+
 namespace lms::feedback::listenBrainz
 {
     std::ostream& operator<<(std::ostream& os, const Feedback& feedback)

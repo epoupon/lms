@@ -89,7 +89,7 @@ namespace lms::ui
         };
 
         MediaPlayer();
-        ~MediaPlayer() = default;
+        ~MediaPlayer() override;
         MediaPlayer(const MediaPlayer&) = delete;
         MediaPlayer& operator=(const MediaPlayer&) = delete;
 

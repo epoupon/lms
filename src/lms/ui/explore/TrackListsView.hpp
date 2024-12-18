@@ -25,7 +25,6 @@
 
 #include "database/Object.hpp"
 #include "database/TrackListId.hpp"
-#include "database/Types.hpp"
 
 #include "common/Template.hpp"
 
@@ -47,21 +46,30 @@ namespace lms::ui
         void onTrackListDeleted(db::TrackListId trackListId);
 
     private:
-        enum class Mode
+        enum class SortMode
         {
             RecentlyModified,
             All,
+        };
+
+        enum class Type
+        {
+            Owned,
+            Shared,
         };
 
         void refreshView();
         void addSome();
         void addTracklist(const db::ObjectPtr<db::TrackList>& trackList);
 
-        static constexpr Mode _defaultMode{ Mode::RecentlyModified };
+        static constexpr SortMode _defaultSortMode{ SortMode::RecentlyModified };
+        static constexpr Type _defaultType{ Type::Owned };
         static constexpr std::size_t _batchSize{ 30 };
         static constexpr std::size_t _maxCount{ 500 };
 
-        Mode _mode;
+        SortMode _sortMode{ _defaultSortMode };
+        Type _type{ _defaultType };
+        std::string _searchText;
         Filters& _filters;
         Wt::WWidget* _currentActiveItem{};
         InfiniteScrollingContainer* _container{};

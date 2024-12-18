@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include "database/Types.hpp"
-
 #include "ReleaseCollector.hpp"
 #include "common/Template.hpp"
 

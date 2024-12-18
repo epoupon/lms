@@ -29,7 +29,6 @@
 #include "database/Track.hpp"
 #include "database/User.hpp"
 
-#include "EnumSetTraits.hpp"
 #include "IdTypeTraits.hpp"
 #include "SqlQuery.hpp"
 #include "Utils.hpp"
@@ -182,16 +181,16 @@ namespace lms::db
         }
     } // namespace
 
-    Artist::Artist(const std::string& name, const std::optional<core::UUID>& MBID)
-        : _MBID{ MBID ? MBID->getAsString() : "" }
+    Artist::Artist(const std::string& name, const std::optional<core::UUID>& mbid)
+        : _mbid{ mbid ? mbid->getAsString() : "" }
     {
         setName(name);
         _sortName = _name;
     }
 
-    Artist::pointer Artist::create(Session& session, const std::string& name, const std::optional<core::UUID>& MBID)
+    Artist::pointer Artist::create(Session& session, const std::string& name, const std::optional<core::UUID>& mbid)
     {
-        return session.getDboSession()->add(std::unique_ptr<Artist>{ new Artist{ name, MBID } });
+        return session.getDboSession()->add(std::unique_ptr<Artist>{ new Artist{ name, mbid } });
     }
 
     std::size_t Artist::getCount(Session& session)
@@ -322,7 +321,7 @@ namespace lms::db
         return utils::execRangeQuery<ArtistId>(query, range);
     }
 
-    std::vector<std::vector<Cluster::pointer>> Artist::getClusterGroups(std::vector<ClusterTypeId> clusterTypeIds, std::size_t size) const
+    std::vector<std::vector<Cluster::pointer>> Artist::getClusterGroups(std::span<const ClusterTypeId> clusterTypeIds, std::size_t size) const
     {
         assert(session());
 
@@ -354,6 +353,7 @@ namespace lms::db
         });
 
         std::vector<std::vector<Cluster::pointer>> res;
+        res.reserve(clustersByType.size());
         for (const auto& [clusterTypeId, clusters] : clustersByType)
             res.push_back(clusters);
 

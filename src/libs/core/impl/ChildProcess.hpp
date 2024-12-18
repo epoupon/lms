@@ -36,8 +36,11 @@ namespace lms::core
     class ChildProcess : public IChildProcess
     {
     public:
-        ~ChildProcess();
         ChildProcess(boost::asio::io_context& ioContext, const std::filesystem::path& path, const Args& args);
+        ~ChildProcess() override;
+
+        ChildProcess(const ChildProcess&) = delete;
+        ChildProcess& operator=(const ChildProcess&) = delete;
 
     private:
         void asyncRead(std::byte* data, std::size_t bufferSize, ReadCallback callback) override;

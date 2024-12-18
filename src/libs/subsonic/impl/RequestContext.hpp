@@ -47,6 +47,5 @@ namespace lms::api::subsonic
         ProtocolVersion serverProtocolVersion;
         ResponseFormat responseFormat;
         bool enableOpenSubsonic{ true };
-        bool enableDefaultCover{};
     };
 } // namespace lms::api::subsonic

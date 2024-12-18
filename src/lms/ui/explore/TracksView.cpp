@@ -22,7 +22,6 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
-#include "core/ILogger.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 

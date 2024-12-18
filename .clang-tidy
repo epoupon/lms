@@ -12,5 +12,9 @@ CheckOptions:
   - key:             cppcoreguidelines-avoid-do-while.IgnoreMacros
     value:           '1'
   - key:             performance-unnecessary-value-param.AllowedTypes
-    value:           "shared_ptr"
+    value:           "shared_ptr;ObjectPtr;.*::pointer"
+  - key:             cppcoreguidelines-special-member-functions.AllowMissingMoveFunctionsWhenCopyIsDeleted
+    value:           '1'
+  - key:             cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor 
+    value:           '1'
 ...

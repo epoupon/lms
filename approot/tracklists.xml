@@ -3,10 +3,26 @@
 <messages xmlns:if="Wt.WTemplate.conditions">
 
 <message id="Lms.Explore.TrackLists.template">
-	<div class="d-flex flex-row-reverse">
-		${sort-mode}
+	<div class="d-flex justify-content-between align-items-center mb-3">
+		${tracklist-type class="me-1"}
+		<div class="d-flex">
+			${search class="form-control form-control-sm me-1" type="search"}
+			${sort-mode}
+		</div>
 	</div>
 	${tracklists}
+</message>
+
+<message id="Lms.Explore.TrackLists.template.type-selector">
+	<div class="dropdown">
+		<button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+			${selected-item}
+		</button>
+		<ul class="dropdown-menu">
+			<li>${owned class="dropdown-item"}</li>
+			<li>${shared class="dropdown-item"}</li>
+		</ul>
+	</div>
 </message>
 
 <message id="Lms.Explore.TrackLists.template.sort-mode">

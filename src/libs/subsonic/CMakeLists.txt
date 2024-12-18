@@ -25,6 +25,7 @@ add_library(lmssubsonic SHARED
 	impl/responses/ReplayGain.cpp
 	impl/responses/Song.cpp
 	impl/responses/User.cpp
+	impl/CoverArtId.cpp
 	impl/ResponseFormat.cpp
 	impl/ProtocolVersion.cpp
 	impl/ParameterParsing.cpp

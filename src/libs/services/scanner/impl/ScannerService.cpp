@@ -21,28 +21,32 @@
 
 #include <ctime>
 
-#include "core/Exception.hpp"
+#include <Wt/WDate.h>
+
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
-#include "core/Path.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/ScanSettings.hpp"
-#include "database/TrackFeatures.hpp"
-#include "image/Image.hpp"
 
-#include "ScanStepAssociateArtistImages.hpp"
-#include "ScanStepAssociateExternalLyrics.hpp"
-#include "ScanStepAssociateReleaseImages.hpp"
-#include "ScanStepCheckForDuplicatedFiles.hpp"
-#include "ScanStepCheckForRemovedFiles.hpp"
-#include "ScanStepCompact.hpp"
-#include "ScanStepComputeClusterStats.hpp"
-#include "ScanStepDiscoverFiles.hpp"
-#include "ScanStepOptimize.hpp"
-#include "ScanStepRemoveOrphanedDbEntries.hpp"
-#include "ScanStepScanFiles.hpp"
-#include "ScanStepUpdateLibraryFields.hpp"
+#include "scanners/AudioFileScanner.hpp"
+#include "scanners/ImageFileScanner.hpp"
+#include "scanners/LyricsFileScanner.hpp"
+#include "scanners/PlayListFileScanner.hpp"
+
+#include "steps/ScanStepAssociateArtistImages.hpp"
+#include "steps/ScanStepAssociateExternalLyrics.hpp"
+#include "steps/ScanStepAssociatePlayListTracks.hpp"
+#include "steps/ScanStepAssociateReleaseImages.hpp"
+#include "steps/ScanStepCheckForDuplicatedFiles.hpp"
+#include "steps/ScanStepCheckForRemovedFiles.hpp"
+#include "steps/ScanStepCompact.hpp"
+#include "steps/ScanStepComputeClusterStats.hpp"
+#include "steps/ScanStepDiscoverFiles.hpp"
+#include "steps/ScanStepOptimize.hpp"
+#include "steps/ScanStepRemoveOrphanedDbEntries.hpp"
+#include "steps/ScanStepScanFiles.hpp"
+#include "steps/ScanStepUpdateLibraryFields.hpp"
 
 namespace lms::scanner
 {
@@ -272,7 +276,7 @@ namespace lms::scanner
 
         refreshScanSettings();
 
-        IScanStep::ScanContext scanContext;
+        ScanContext scanContext;
         scanContext.scanOptions = scanOptions;
         ScanStats& stats{ scanContext.stats };
         stats.startTime = Wt::WDateTime::currentDateTime();
@@ -343,27 +347,38 @@ namespace lms::scanner
             notifyInProgressIfNeeded(stats);
         } };
 
+        _fileScanners.clear();
+        _fileScanners.emplace_back(std::make_unique<AudioFileScanner>(_db, _settings));
+        _fileScanners.emplace_back(std::make_unique<ImageFileScanner>(_db));
+        _fileScanners.emplace_back(std::make_unique<LyricsFileScanner>(_db));
+        _fileScanners.emplace_back(std::make_unique<PlayListFileScanner>(_db));
+
+        std::vector<IFileScanner*> fileScanners;
+        std::transform(std::cbegin(_fileScanners), std::cend(_fileScanners), std::back_inserter(fileScanners), [](const std::unique_ptr<IFileScanner>& scanner) { return scanner.get(); });
+
         ScanStepBase::InitParams params{
-            _settings,
-            cbFunc,
-            _abortScan,
-            _db
+            .settings = _settings,
+            .progressCallback = cbFunc,
+            .abortScan = _abortScan,
+            .db = _db,
+            .fileScanners = fileScanners,
         };
 
         // Order is important: steps are sequential
         _scanSteps.clear();
-        _scanSteps.push_back(std::make_unique<ScanStepDiscoverFiles>(params));
-        _scanSteps.push_back(std::make_unique<ScanStepScanFiles>(params));
-        _scanSteps.push_back(std::make_unique<ScanStepCheckForRemovedFiles>(params));
-        _scanSteps.push_back(std::make_unique<ScanStepUpdateLibraryFields>(params));
-        _scanSteps.push_back(std::make_unique<ScanStepAssociateArtistImages>(params));
-        _scanSteps.push_back(std::make_unique<ScanStepAssociateReleaseImages>(params));
-        _scanSteps.push_back(std::make_unique<ScanStepAssociateExternalLyrics>(params));
-        _scanSteps.push_back(std::make_unique<ScanStepRemoveOrphanedDbEntries>(params));
-        _scanSteps.push_back(std::make_unique<ScanStepCompact>(params));
-        _scanSteps.push_back(std::make_unique<ScanStepOptimize>(params));
-        _scanSteps.push_back(std::make_unique<ScanStepComputeClusterStats>(params));
-        _scanSteps.push_back(std::make_unique<ScanStepCheckForDuplicatedFiles>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepDiscoverFiles>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepScanFiles>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepCheckForRemovedFiles>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepAssociatePlayListTracks>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepUpdateLibraryFields>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateArtistImages>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateReleaseImages>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateExternalLyrics>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepRemoveOrphanedDbEntries>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepCompact>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepOptimize>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepComputeClusterStats>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepCheckForDuplicatedFiles>(params));
     }
 
     ScannerSettings ScannerService::readSettings()
@@ -380,29 +395,8 @@ namespace lms::scanner
             newSettings.startTime = scanSettings->getUpdateStartTime();
             newSettings.updatePeriod = scanSettings->getUpdatePeriod();
 
-            {
-                const auto audioFileExtensions{ scanSettings->getAudioFileExtensions() };
-                newSettings.supportedAudioFileExtensions.reserve(audioFileExtensions.size());
-                std::transform(std::cbegin(audioFileExtensions), std::cend(audioFileExtensions), std::back_inserter(newSettings.supportedAudioFileExtensions),
-                    [](const std::filesystem::path& extension) { return std::filesystem::path{ core::stringUtils::stringToLower(extension.string()) }; });
-            }
-
-            {
-                const auto imageFileExtensions{ image::getSupportedFileExtensions() };
-                newSettings.supportedImageFileExtensions.reserve(imageFileExtensions.size());
-                std::transform(std::cbegin(imageFileExtensions), std::cend(imageFileExtensions), std::back_inserter(newSettings.supportedImageFileExtensions),
-                    [](const std::filesystem::path& extension) { return std::filesystem::path{ core::stringUtils::stringToLower(extension.string()) }; });
-            }
-
-            {
-                const auto lyricsFileExtensions{ metadata::getSupportedLyricsFileExtensions() };
-                newSettings.supportedLyricsFileExtensions.reserve(lyricsFileExtensions.size());
-                std::transform(std::cbegin(lyricsFileExtensions), std::cend(lyricsFileExtensions), std::back_inserter(newSettings.supportedLyricsFileExtensions),
-                    [](const std::filesystem::path& extension) { return std::filesystem::path{ core::stringUtils::stringToLower(extension.string()) }; });
-            }
-
             MediaLibrary::find(_db.getTLSSession(), [&](const MediaLibrary::pointer& mediaLibrary) {
-                newSettings.mediaLibraries.push_back(ScannerSettings::MediaLibraryInfo{ mediaLibrary->getId(), mediaLibrary->getPath().lexically_normal() });
+                newSettings.mediaLibraries.push_back(MediaLibraryInfo{ .id = mediaLibrary->getId(), .rootDirectory = mediaLibrary->getPath().lexically_normal() });
             });
 
             {

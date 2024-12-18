@@ -24,7 +24,6 @@
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
-#include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"

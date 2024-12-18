@@ -34,6 +34,8 @@ extern "C"
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
+#include "av/Types.hpp"
+
 namespace lms::av
 {
     namespace
@@ -43,9 +45,9 @@ namespace lms::av
             std::array<char, 128> buf = { 0 };
 
             if (::av_strerror(error, buf.data(), buf.size()) == 0)
-                return &buf[0];
-            else
-                return "Unknown error";
+                return buf.data();
+
+            return "Unknown error";
         }
 
         class AudioFileException : public Exception
@@ -158,7 +160,7 @@ namespace lms::av
     {
         ContainerInfo info;
         info.bitrate = _context->bit_rate;
-        info.duration = std::chrono::milliseconds{ _context->duration == AV_NOPTS_VALUE ? 0 : _context->duration / AV_TIME_BASE * 1000 };
+        info.duration = std::chrono::milliseconds{ _context->duration == AV_NOPTS_VALUE ? 0 : _context->duration / AV_TIME_BASE * 1'000 };
         info.name = _context->iformat->name;
 
         return info;
@@ -237,14 +239,13 @@ namespace lms::av
         return false;
     }
 
-    void AudioFile::visitAttachedPictures(std::function<void(const Picture&)> func) const
+    void AudioFile::visitAttachedPictures(std::function<void(const Picture&, const MetadataMap&)> func) const
     {
         static const std::unordered_map<int, std::string> codecMimeMap{
-            { AV_CODEC_ID_BMP, "image/x-bmp" },
+            { AV_CODEC_ID_BMP, "image/bmp" },
             { AV_CODEC_ID_GIF, "image/gif" },
             { AV_CODEC_ID_MJPEG, "image/jpeg" },
             { AV_CODEC_ID_PNG, "image/png" },
-            { AV_CODEC_ID_PNG, "image/x-png" },
             { AV_CODEC_ID_PPM, "image/x-portable-pixmap" },
         };
 
@@ -262,6 +263,9 @@ namespace lms::av
                 continue;
             }
 
+            MetadataMap metadata;
+            getMetaDataFromDictionnary(avstream->metadata, metadata);
+
             Picture picture;
 
             auto itMime = codecMimeMap.find(avstream->codecpar->codec_id);
@@ -277,10 +281,8 @@ namespace lms::av
 
             const AVPacket& pkt{ avstream->attached_pic };
 
-            picture.data = reinterpret_cast<const std::byte*>(pkt.data);
-            picture.dataSize = pkt.size;
-
-            func(picture);
+            picture.data = std::span{ reinterpret_cast<const std::byte*>(pkt.data), static_cast<std::size_t>(pkt.size) };
+            func(picture, metadata);
         }
     }
 

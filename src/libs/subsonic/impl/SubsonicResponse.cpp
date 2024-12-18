@@ -25,7 +25,6 @@
 
 #include <boost/property_tree/xml_parser.hpp>
 
-#include "core/Exception.hpp"
 #include "core/String.hpp"
 
 #include "ProtocolVersion.hpp"

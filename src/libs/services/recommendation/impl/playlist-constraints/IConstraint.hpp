@@ -19,8 +19,6 @@
 
 #pragma once
 
-#include <vector>
-
 #include "services/recommendation/Types.hpp"
 
 namespace lms::recommendation::PlaylistGeneratorConstraint

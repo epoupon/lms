@@ -167,7 +167,7 @@ namespace lms::core::stringUtils::tests
             std::string expectedOutput;
         };
 
-        TestCase tests[]{
+        const TestCase tests[]{
             { { "" }, ';', '\\', "" },
             { { ";" }, ';', '\\', "\\;" },
             { { ";;" }, ';', '\\', "\\;\\;" },
@@ -321,5 +321,17 @@ namespace lms::core::stringUtils::tests
         EXPECT_FALSE(stringEndsWith("FooBar", "1FooBar"));
         EXPECT_FALSE(stringEndsWith("FooBar", "1FooBar"));
         EXPECT_FALSE(stringEndsWith("FooBar", "R"));
+    }
+
+    TEST(StringUtils, stringCaseInsensitiveContains)
+    {
+        EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", "Bar"));
+        EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", "bar"));
+        EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", "Foo"));
+        EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", "foo"));
+        EXPECT_FALSE(stringCaseInsensitiveContains("something", "foo"));
+        EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", ""));
+        EXPECT_TRUE(stringCaseInsensitiveContains("", ""));
+        EXPECT_FALSE(stringCaseInsensitiveContains("", "Foo"));
     }
 } // namespace lms::core::stringUtils::tests
