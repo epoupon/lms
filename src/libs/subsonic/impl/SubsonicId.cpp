@@ -33,12 +33,6 @@ namespace lms::api::subsonic
         return "dir-" + id.toString();
     }
 
-    std::string idToString(db::MediaLibraryId id)
-    {
-        // No need to prefix as this is only used at well known places
-        return id.toString();
-    }
-
     std::string idToString(db::ReleaseId id)
     {
         return "al-" + id.toString();

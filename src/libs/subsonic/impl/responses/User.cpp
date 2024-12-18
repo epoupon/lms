@@ -47,7 +47,7 @@ namespace lms::api::subsonic
 
         // users can access all libraries
         db::MediaLibrary::find(context.dbSession, [&](const db::MediaLibrary::pointer& library) {
-            userNode.addArrayValue("folder", idToString(library->getId()));
+            userNode.addArrayValue("folder", library->getId().getValue());
         });
 
         return userNode;

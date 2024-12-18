@@ -31,7 +31,6 @@ namespace lms::api::subsonic
 {
     std::string idToString(db::ArtistId id);
     std::string idToString(db::DirectoryId id);
-    std::string idToString(db::MediaLibraryId id);
     std::string idToString(db::ReleaseId id);
     std::string idToString(db::TrackId id);
     std::string idToString(db::TrackListId id);

@@ -228,7 +228,7 @@ namespace lms::api::subsonic
         MediaLibrary::find(context.dbSession, [&](const MediaLibrary::pointer& library) {
             Response::Node& musicFolderNode{ musicFoldersNode.createArrayChild("musicFolder") };
 
-            musicFolderNode.setAttribute("id", idToString(library->getId()));
+            musicFolderNode.setAttribute("id", library->getId().getValue());
             musicFolderNode.setAttribute("name", library->getName());
         });
 
