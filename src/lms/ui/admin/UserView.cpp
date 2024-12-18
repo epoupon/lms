@@ -102,13 +102,15 @@ namespace lms::ui
                 user = LmsApp->getDbSession().create<User>(valueText(LoginField).toUTF8());
 
                 if (Wt::asNumber(value(DemoField)))
+                {
                     user.modify()->setType(UserType::DEMO);
+
+                    // For demo user, we create the subsonic API auth token now as we have no other mean to create it later
+                    core::Service<auth::IAuthTokenService>::get()->createAuthToken("subsonic", user->getId(), core::UUID::generate().getAsString());
+                }
 
                 if (_authPasswordService)
                     _authPasswordService->setPassword(user->getId(), valueText(PasswordField).toUTF8());
-
-                // For demo user, we create the subsonic API auth token now as we have no other mean to create it later
-                core::Service<auth::IAuthTokenService>::get()->createAuthToken("subsonic", user->getId(), core::UUID::generate().getAsString());
             }
         }
 
