@@ -81,7 +81,7 @@ namespace lms::ui
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
         const db::TrackList::pointer trackList{ db::TrackList::find(LmsApp->getDbSession(), *trackListId) };
-        if (!trackList)
+        if (!trackList || trackList->getType() != db::TrackListType::PlayList)
             throw TrackListNotFoundException{};
 
         if (trackList->getUserId().isValid()
