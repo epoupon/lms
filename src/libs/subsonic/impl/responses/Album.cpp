@@ -184,11 +184,25 @@ namespace lms::api::subsonic
             });
         }
 
-        albumNode.createEmptyArrayChild("artists");
-        for (const Artist::pointer& artist : release->getReleaseArtists())
-            albumNode.addArrayChild("artists", createArtistNode(artist));
+        if (id3)
+        {
+            albumNode.createEmptyArrayChild("artists");
+            for (const Artist::pointer& artist : release->getReleaseArtists())
+                albumNode.addArrayChild("artists", createArtistNode(artist));
 
-        albumNode.setAttribute("displayArtist", release->getArtistDisplayName());
+            albumNode.setAttribute("displayArtist", release->getArtistDisplayName());
+        }
+        else
+        {
+            albumNode.createEmptyArrayChild("albumArtists");
+            for (const Artist::pointer& artist : release->getReleaseArtists())
+                albumNode.addArrayChild("albumArtists", createArtistNode(artist));
+
+            albumNode.setAttribute("displayAlbumArtist", release->getArtistDisplayName());
+
+            albumNode.createEmptyArrayChild("artists");
+            albumNode.setAttribute("displayArtist", "");
+        }
         albumNode.addChild("originalReleaseDate", createItemDateNode(release->getOriginalDate(), release->getOriginalYear()));
 
         albumNode.setAttribute("isCompilation", release->isCompilation());
