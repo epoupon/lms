@@ -67,9 +67,12 @@ namespace lms::scanner
             try
             {
                 std::unique_ptr<image::IRawImage> rawImage{ image::decodeImage(_file) };
-                ImageInfo& imageInfo{ _parsedImageInfo.emplace() };
+
+                ImageInfo imageInfo;
                 imageInfo.width = rawImage->getWidth();
                 imageInfo.height = rawImage->getHeight();
+
+                _parsedImageInfo = imageInfo;
             }
             catch (const image::Exception& e)
             {
