@@ -97,7 +97,7 @@ namespace lms::ui
         params.setClusters(_filters.getClusters());
         params.setMediaLibrary(_filters.getMediaLibrary());
         params.setUser(LmsApp->getUserId());
-        params.setType(TrackListType::Playlist);
+        params.setType(TrackListType::PlayList);
         params.setRange(range);
         switch (_mode)
         {

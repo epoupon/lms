@@ -22,21 +22,24 @@
 #include "core/ILogger.hpp"
 #include "core/Path.hpp"
 
+#include "MediaLibraryInfo.hpp"
+#include "ScannerSettings.hpp"
+#include "scanners/IFileScanner.hpp"
+
 namespace lms::scanner
 {
     void ScanStepDiscoverFiles::process(ScanContext& context)
     {
         context.stats.totalFileCount = 0;
 
-        std::vector<std::filesystem::path> supportedExtensions;
-        for (const auto& extension : _settings.supportedAudioFileExtensions)
-            supportedExtensions.emplace_back(extension);
-        for (const auto& extension : _settings.supportedImageFileExtensions)
-            supportedExtensions.emplace_back(extension);
-        for (const auto& extension : _settings.supportedLyricsFileExtensions)
-            supportedExtensions.emplace_back(extension);
+        std::vector<std::filesystem::path> supportedFileExtensions;
+        for (IFileScanner* scanner : _fileScanners)
+        {
+            for (const std::filesystem::path& extension : scanner->getSupportedExtensions())
+                supportedFileExtensions.emplace_back(extension);
+        }
 
-        for (const ScannerSettings::MediaLibraryInfo& mediaLibrary : _settings.mediaLibraries)
+        for (const MediaLibraryInfo& mediaLibrary : _settings.mediaLibraries)
         {
             std::size_t currentDirectoryProcessElemsCount{};
             core::pathUtils::exploreFilesRecursive(
@@ -44,7 +47,7 @@ namespace lms::scanner
                     if (_abortScan)
                         return false;
 
-                    if (!ec && core::pathUtils::hasFileAnyExtension(path, supportedExtensions))
+                    if (!ec && core::pathUtils::hasFileAnyExtension(path, supportedFileExtensions))
                     {
                         context.currentStepStats.processedElems++;
                         currentDirectoryProcessElemsCount++;

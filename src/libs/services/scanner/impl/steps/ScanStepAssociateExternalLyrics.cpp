@@ -59,9 +59,9 @@ namespace lms::scanner
                 assert(!lyrics->getFileStem().empty());
 
                 params.setDirectory(lyrics->getDirectory()->getId());
-                params.setStem(stem);
+                params.setFileStem(stem);
 
-                db::Track::find(session, params, [&](const db::Track::pointer track) {
+                db::Track::find(session, params, [&](const db::Track::pointer& track) {
                     if (matchingTrack)
                         LMS_LOG(DBUPDATER, DEBUG, "External lyrics '" << lyrics->getAbsoluteFilePath() << "' already matched with '" << matchingTrack->getAbsoluteFilePath() << "', replaced by '" << track->getAbsoluteFilePath() << "'");
 

@@ -24,6 +24,7 @@
 #include "database/Db.hpp"
 #include "database/Directory.hpp"
 #include "database/Image.hpp"
+#include "database/PlayListFile.hpp"
 #include "database/PlayQueue.hpp"
 #include "database/RatedArtist.hpp"
 #include "database/RatedRelease.hpp"
@@ -345,6 +346,7 @@ VALUES
             EXPECT_FALSE(Image::find(session, ImageId{}));
             EXPECT_FALSE(Label::find(session, LabelId{}));
             EXPECT_FALSE(Listen::find(session, ListenId{}));
+            EXPECT_FALSE(PlayListFile::find(session, PlayListFileId{}));
             EXPECT_FALSE(PlayQueue::find(session, PlayQueueId{}));
             EXPECT_FALSE(RatedArtist::find(session, RatedArtistId{}));
             EXPECT_FALSE(RatedRelease::find(session, RatedReleaseId{}));

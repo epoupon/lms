@@ -54,8 +54,11 @@ namespace lms::db
             for (std::string_view keyword : params.keywords)
                 query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
 
-            if (!params.stem.empty())
-                query.where("t.file_stem = ?").bind(params.stem);
+            if (!params.fileStem.empty())
+                query.where("t.file_stem = ?").bind(params.fileStem);
+
+            if (!params.fileName.empty())
+                query.where("t.file_name = ?").bind(params.fileName);
 
             if (!params.name.empty())
                 query.where("t.name = ?").bind(params.name);
@@ -375,8 +378,10 @@ namespace lms::db
     void Track::setAbsoluteFilePath(const std::filesystem::path& filePath)
     {
         assert(filePath.is_absolute());
+
         _absoluteFilePath = filePath;
         _fileStem = filePath.stem();
+        _fileName = filePath.filename();
     }
 
     void Track::setRelativeFilePath(const std::filesystem::path& filePath)
@@ -385,6 +390,7 @@ namespace lms::db
 
         assert(_absoluteFilePath.filename() == filePath.filename()); // must be compatible with previous setAbsoluteFilePath call
         _fileStem = filePath.stem();                                 // lazy migration (_fileStem added later, could be set only with setAbsoluteFilePath)
+        _fileName = filePath.filename();                             // lazy migration (_fileName added later, could be set only with setAbsoluteFilePath)
         _relativeFilePath = filePath;
     }
 

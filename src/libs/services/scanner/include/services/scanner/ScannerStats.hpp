@@ -30,12 +30,13 @@ namespace lms::scanner
 {
     enum class ScanErrorType
     {
-        CannotReadFile,       // cannot read file
-        CannotReadAudioFile,  // cannot parse audio file
-        CannotReadImageFile,  // cannot parse image file
-        CannotReadLyricsFile, // cannot parse lyrics file
-        NoAudioTrack,         // no audio track found
-        BadDuration,          // bad duration
+        CannotReadFile,
+        CannotReadAudioFile,
+        CannotReadImageFile,
+        CannotReadLyricsFile,
+        CannotReadPlayListFile,
+        NoAudioTrack,
+        BadDuration,
     };
 
     enum class DuplicateReason
@@ -64,6 +65,7 @@ namespace lms::scanner
     {
         AssociateArtistImages,
         AssociateExternalLyrics,
+        AssociatePlayListTracks,
         AssociateReleaseImages,
         CheckForDuplicatedFiles,
         CheckForRemovedFiles,

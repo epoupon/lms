@@ -25,13 +25,12 @@ namespace lms::db::tests
 {
     TEST_F(DatabaseFixture, SingleTrackList)
     {
-        ScopedUser user{ session, "MyUser" };
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(TrackList::getCount(session), 0);
         }
 
-        ScopedTrackList trackList{ session, "MytrackList", TrackListType::Playlist, false, user.lockAndGet() };
+        ScopedTrackList trackList{ session, "MytrackList", TrackListType::PlayList };
 
         {
             auto transaction{ session.createReadTransaction() };
@@ -41,9 +40,8 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, SingleTrackListSingleTrack)
     {
-        ScopedUser user{ session, "MyUser" };
-        ScopedTrackList trackList1{ session, "MyTrackList1", TrackListType::Playlist, false, user.lockAndGet() };
-        ScopedTrackList trackList2{ session, "MyTrackList2", TrackListType::Playlist, false, user.lockAndGet() };
+        ScopedTrackList trackList1{ session, "MyTrackList1", TrackListType::PlayList };
+        ScopedTrackList trackList2{ session, "MyTrackList2", TrackListType::PlayList };
         ScopedTrack track{ session };
 
         {
@@ -76,9 +74,8 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, TrackList_SortMethod)
     {
-        ScopedUser user{ session, "MyUser" };
-        ScopedTrackList trackList2{ session, "MyTrackList2", TrackListType::Playlist, false, user.lockAndGet() };
-        ScopedTrackList trackList1{ session, "MyTrackList1", TrackListType::Playlist, false, user.lockAndGet() };
+        ScopedTrackList trackList2{ session, "MyTrackList2", TrackListType::PlayList };
+        ScopedTrackList trackList1{ session, "MyTrackList1", TrackListType::PlayList };
         ScopedTrack track{ session };
 
         {
@@ -125,8 +122,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, SingleTrackListMultipleTrack)
     {
-        ScopedUser user{ session, "MyUser" };
-        ScopedTrackList trackList{ session, "MytrackList", TrackListType::Playlist, false, user.lockAndGet() };
+        ScopedTrackList trackList{ session, "MytrackList", TrackListType::PlayList };
         std::list<ScopedTrack> tracks;
 
         for (std::size_t i{}; i < 10; ++i)
@@ -153,9 +149,8 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, TrackList_MediaLibrary)
     {
-        ScopedUser user{ session, "MyUser" };
-        ScopedTrackList trackList1{ session, "MytrackList1", TrackListType::Playlist, false, user.lockAndGet() };
-        ScopedTrackList trackList2{ session, "MytrackList2", TrackListType::Playlist, false, user.lockAndGet() };
+        ScopedTrackList trackList1{ session, "MytrackList1", TrackListType::PlayList };
+        ScopedTrackList trackList2{ session, "MytrackList2", TrackListType::PlayList };
         ScopedTrack track1{ session };
         ScopedTrack track2{ session };
         ScopedMediaLibrary library{ session, "MyLibrary", "/root" };
@@ -191,9 +186,8 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, SingleTrackListSingleTrackWithCluster)
     {
-        ScopedUser user{ session, "MyUser" };
-        ScopedTrackList trackList1{ session, "MyTrackList1", TrackListType::Playlist, false, user.lockAndGet() };
-        ScopedTrackList trackList2{ session, "MyTrackList2", TrackListType::Playlist, false, user.lockAndGet() };
+        ScopedTrackList trackList1{ session, "MyTrackList1", TrackListType::PlayList };
+        ScopedTrackList trackList2{ session, "MyTrackList2", TrackListType::PlayList };
         ScopedClusterType clusterType{ session, "MyClusterType" };
         ScopedCluster cluster{ session, clusterType.lockAndGet(), "MyCluster" };
         ScopedTrack track{ session };
@@ -223,8 +217,7 @@ namespace lms::db::tests
 
     TEST_F(DatabaseFixture, SingleTrackList_getEntries)
     {
-        ScopedUser user{ session, "MyUser" };
-        ScopedTrackList trackList{ session, "MyTrackList", TrackListType::Playlist, false, user.lockAndGet() };
+        ScopedTrackList trackList{ session, "MyTrackList", TrackListType::PlayList };
         ScopedTrack track1{ session };
         ScopedTrack track2{ session };
 
@@ -260,4 +253,30 @@ namespace lms::db::tests
             EXPECT_EQ(entries.results[0]->getTrack()->getId(), track2.getId());
         }
     }
+
+    TEST_F(DatabaseFixture, SingleTrackList_visitEntries)
+    {
+        ScopedTrackList trackList{ session, "MyTrackList", TrackListType::PlayList };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            session.create<TrackListEntry>(track1.get(), trackList.get());
+            session.create<TrackListEntry>(track2.get(), trackList.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::vector<TrackId> visitedTrackIds;
+            TrackListEntry::find(session, TrackListEntry::FindParameters{}.setTrackList(trackList.getId()), [&](const TrackListEntry::pointer& entry) {
+                visitedTrackIds.push_back(entry->getTrackId());
+            });
+            ASSERT_EQ(visitedTrackIds.size(), 2);
+            EXPECT_EQ(visitedTrackIds[0], track1.getId());
+            EXPECT_EQ(visitedTrackIds[1], track2.getId());
+        }
+    }
+
 } // namespace lms::db::tests

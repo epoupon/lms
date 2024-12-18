@@ -29,7 +29,7 @@ namespace lms::scanner
     {
         ScanStats& stats{ context.stats };
 
-        if (context.scanOptions.forceOptimize || (stats.nbChanges() > (stats.nbFiles() / 5)))
+        if (context.scanOptions.forceOptimize || (stats.nbChanges() > (stats.nbFiles() / 10)))
         {
             LMS_LOG(DBUPDATER, INFO, "Database analyze started");
 

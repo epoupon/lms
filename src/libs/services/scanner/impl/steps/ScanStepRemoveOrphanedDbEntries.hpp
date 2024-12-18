@@ -23,17 +23,25 @@
 
 namespace lms::scanner
 {
-    class ScanStepUpdateLibraryFields : public ScanStepBase
+    class ScanStepRemoveOrphanedDbEntries : public ScanStepBase
     {
     public:
         using ScanStepBase::ScanStepBase;
 
     private:
-        core::LiteralString getStepName() const override { return "Update Library fields"; }
-        ScanStep getStep() const override { return ScanStep::UpdateLibraryFields; }
+        core::LiteralString getStepName() const override { return "Remove orphaned DB entries"; }
+        ScanStep getStep() const override { return ScanStep::RemoveOrphanedDbEntries; }
         void process(ScanContext& context) override;
 
-        void processDirectories(ScanContext& context);
-        void processDirectory(ScanContext& context, const ScannerSettings::MediaLibraryInfo& mediaLibrary);
+        void removeOrphanedClusters(ScanContext& context);
+        void removeOrphanedClusterTypes(ScanContext& context);
+        void removeOrphanedArtists(ScanContext& context);
+        void removeOrphanedReleases(ScanContext& context);
+        void removeOrphanedReleaseTypes(ScanContext& context);
+        void removeOrphanedLabels(ScanContext& context);
+        void removeOrphanedDirectories(ScanContext& context);
+
+        template<typename T>
+        void removeOrphanedEntries(ScanContext& context);
     };
 } // namespace lms::scanner

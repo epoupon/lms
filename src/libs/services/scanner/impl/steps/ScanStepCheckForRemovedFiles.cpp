@@ -19,13 +19,18 @@
 
 #include "ScanStepCheckForRemovedFiles.hpp"
 
+#include <vector>
+
+#include "ScannerSettings.hpp"
 #include "core/ILogger.hpp"
 #include "core/Path.hpp"
 #include "database/Db.hpp"
 #include "database/Image.hpp"
+#include "database/PlayListFile.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackLyrics.hpp"
+#include "scanners/IFileScanner.hpp"
 
 namespace lms::scanner
 {
@@ -47,12 +52,21 @@ namespace lms::scanner
             context.currentStepStats.totalElems += db::Track::getCount(session);
             context.currentStepStats.totalElems += db::Image::getCount(session);
             context.currentStepStats.totalElems += db::TrackLyrics::getExternalLyricsCount(session);
+            context.currentStepStats.totalElems += db::PlayListFile::getCount(session);
         }
         LMS_LOG(DBUPDATER, DEBUG, context.currentStepStats.totalElems << " files to be checked...");
 
-        checkForRemovedFiles<db::Track>(context, _settings.supportedAudioFileExtensions);
-        checkForRemovedFiles<db::Image>(context, _settings.supportedImageFileExtensions);
-        checkForRemovedFiles<db::TrackLyrics>(context, _settings.supportedLyricsFileExtensions);
+        std::vector<std::filesystem::path> supportedFileExtensions;
+        for (IFileScanner* scanner : _fileScanners)
+        {
+            for (const std::filesystem::path& extension : scanner->getSupportedExtensions())
+                supportedFileExtensions.emplace_back(extension);
+        }
+
+        checkForRemovedFiles<db::Track>(context, supportedFileExtensions);
+        checkForRemovedFiles<db::Image>(context, supportedFileExtensions);
+        checkForRemovedFiles<db::TrackLyrics>(context, supportedFileExtensions);
+        checkForRemovedFiles<db::PlayListFile>(context, supportedFileExtensions);
     }
 
     template<typename Object>
@@ -124,7 +138,7 @@ namespace lms::scanner
             }
 
             if (std::none_of(std::cbegin(_settings.mediaLibraries), std::cend(_settings.mediaLibraries),
-                    [&](const ScannerSettings::MediaLibraryInfo& libraryInfo) {
+                    [&](const MediaLibraryInfo& libraryInfo) {
                         return core::pathUtils::isPathInRootPath(p, libraryInfo.rootDirectory, &excludeDirFileName);
                     }))
             {

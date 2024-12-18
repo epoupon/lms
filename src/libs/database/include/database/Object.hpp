@@ -57,8 +57,6 @@ namespace lms::db
             TransactionChecker::checkWriteTransaction(*_obj.session());
 #endif
 
-            if (_obj->hasOnPreRemove())
-                _obj.modify()->onPreRemove();
             _obj.remove();
         }
 
@@ -86,12 +84,6 @@ namespace lms::db
     protected:
         template<typename>
         friend class ObjectPtr;
-
-        virtual bool hasOnPreRemove() const { return false; }
-        virtual void onPreRemove() {}
-
-        virtual bool hasOnPostCreated() const { return false; }
-        virtual void onPostCreated() {}
 
         // Can get raw dbo ptr only from Objects
         template<typename SomeObject>

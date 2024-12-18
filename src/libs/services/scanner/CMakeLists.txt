@@ -1,20 +1,25 @@
-
 add_library(lmsscanner SHARED
-	impl/FileScanQueue.cpp
+	impl/scanners/AudioFileScanner.cpp
+	impl/scanners/ImageFileScanner.cpp
+	impl/scanners/LyricsFileScanner.cpp
+	impl/scanners/PlayListFileScanner.cpp
+	impl/scanners/Utils.cpp
+	impl/steps/FileScanQueue.cpp
+	impl/steps/ScanStepAssociateArtistImages.cpp
+	impl/steps/ScanStepAssociateExternalLyrics.cpp
+	impl/steps/ScanStepAssociatePlayListTracks.cpp
+	impl/steps/ScanStepAssociateReleaseImages.cpp
+	impl/steps/ScanStepCheckForDuplicatedFiles.cpp
+	impl/steps/ScanStepCheckForRemovedFiles.cpp
+	impl/steps/ScanStepCompact.cpp
+	impl/steps/ScanStepComputeClusterStats.cpp
+	impl/steps/ScanStepDiscoverFiles.cpp
+	impl/steps/ScanStepOptimize.cpp
+	impl/steps/ScanStepRemoveOrphanedDbEntries.cpp
+	impl/steps/ScanStepScanFiles.cpp
+	impl/steps/ScanStepUpdateLibraryFields.cpp
 	impl/ScannerService.cpp
 	impl/ScannerStats.cpp
-	impl/ScanStepAssociateArtistImages.cpp
-	impl/ScanStepAssociateExternalLyrics.cpp
-	impl/ScanStepAssociateReleaseImages.cpp
-	impl/ScanStepCheckForDuplicatedFiles.cpp
-	impl/ScanStepCheckForRemovedFiles.cpp
-	impl/ScanStepCompact.cpp
-	impl/ScanStepComputeClusterStats.cpp
-	impl/ScanStepDiscoverFiles.cpp
-	impl/ScanStepOptimize.cpp
-	impl/ScanStepRemoveOrphanedDbEntries.cpp
-	impl/ScanStepScanFiles.cpp
-	impl/ScanStepUpdateLibraryFields.cpp
 	)
 
 target_include_directories(lmsscanner INTERFACE
@@ -23,6 +28,7 @@ target_include_directories(lmsscanner INTERFACE
 
 target_include_directories(lmsscanner PRIVATE
 	include
+	impl
 	)
 
 target_link_libraries(lmsscanner PRIVATE

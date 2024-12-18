@@ -19,26 +19,23 @@
 
 #pragma once
 
-#include "core/LiteralString.hpp"
-#include "services/scanner/ScannerOptions.hpp"
-#include "services/scanner/ScannerStats.hpp"
+#include "ScanStepBase.hpp"
 
 namespace lms::scanner
 {
-    class IScanStep
+    class MediaLibraryInfo;
+
+    class ScanStepUpdateLibraryFields : public ScanStepBase
     {
     public:
-        virtual ~IScanStep() = default;
+        using ScanStepBase::ScanStepBase;
 
-        virtual ScanStep getStep() const = 0;
-        virtual core::LiteralString getStepName() const = 0;
+    private:
+        core::LiteralString getStepName() const override { return "Update Library fields"; }
+        ScanStep getStep() const override { return ScanStep::UpdateLibraryFields; }
+        void process(ScanContext& context) override;
 
-        struct ScanContext
-        {
-            ScanOptions scanOptions;
-            ScanStats stats;
-            ScanStepStats currentStepStats;
-        };
-        virtual void process(ScanContext& context) = 0;
+        void processDirectories(ScanContext& context);
+        void processDirectory(ScanContext& context, const MediaLibraryInfo& mediaLibrary);
     };
 } // namespace lms::scanner

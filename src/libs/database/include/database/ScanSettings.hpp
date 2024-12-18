@@ -67,7 +67,6 @@ namespace lms::db
         Wt::WTime getUpdateStartTime() const { return _startTime; }
         UpdatePeriod getUpdatePeriod() const { return _updatePeriod; }
         std::vector<std::string_view> getExtraTagsToScan() const;
-        std::vector<std::filesystem::path> getAudioFileExtensions() const;
         SimilarityEngineType getSimilarityEngineType() const { return _similarityEngineType; }
         std::vector<std::string> getArtistTagDelimiters() const;
         std::vector<std::string> getDefaultTagDelimiters() const;
@@ -87,7 +86,6 @@ namespace lms::db
             Wt::Dbo::field(a, _scanVersion, "scan_version");
             Wt::Dbo::field(a, _startTime, "start_time");
             Wt::Dbo::field(a, _updatePeriod, "update_period");
-            Wt::Dbo::field(a, _audioFileExtensions, "audio_file_extensions");
             Wt::Dbo::field(a, _similarityEngineType, "similarity_engine_type");
             Wt::Dbo::field(a, _extraTagsToScan, "extra_tags_to_scan");
             Wt::Dbo::field(a, _artistTagDelimiters, "artist_tag_delimiters");
@@ -99,7 +97,6 @@ namespace lms::db
         Wt::WTime _startTime = Wt::WTime{ 0, 0, 0 };
         UpdatePeriod _updatePeriod{ UpdatePeriod::Never };
         SimilarityEngineType _similarityEngineType{ SimilarityEngineType::Clusters };
-        std::string _audioFileExtensions{ ".alac .mp3 .ogg .oga .aac .m4a .m4b .flac .wav .wma .aif .aiff .ape .mpc .shn .opus .wv .dsf" };
         std::string _extraTagsToScan;
         std::string _artistTagDelimiters;
         std::string _defaultTagDelimiters;

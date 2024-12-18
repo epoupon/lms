@@ -8,6 +8,7 @@ add_library(lmsdatabase SHARED
 	impl/Listen.cpp
 	impl/MediaLibrary.cpp
 	impl/Migration.cpp
+	impl/PlayListFile.cpp
 	impl/PlayQueue.cpp
 	impl/TrackArtistLink.cpp
 	impl/TrackFeatures.cpp

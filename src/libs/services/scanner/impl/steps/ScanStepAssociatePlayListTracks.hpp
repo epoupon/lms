@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -23,25 +23,14 @@
 
 namespace lms::scanner
 {
-    class ScanStepRemoveOrphanedDbEntries : public ScanStepBase
+    class ScanStepAssociatePlayListTracks : public ScanStepBase
     {
     public:
         using ScanStepBase::ScanStepBase;
 
     private:
-        core::LiteralString getStepName() const override { return "Remove orphaned DB entries"; }
-        ScanStep getStep() const override { return ScanStep::RemoveOrphanedDbEntries; }
+        ScanStep getStep() const override { return ScanStep::AssociatePlayListTracks; }
+        core::LiteralString getStepName() const override { return "Associate playlist tracks"; }
         void process(ScanContext& context) override;
-
-        void removeOrphanedClusters(ScanContext& context);
-        void removeOrphanedClusterTypes(ScanContext& context);
-        void removeOrphanedArtists(ScanContext& context);
-        void removeOrphanedReleases(ScanContext& context);
-        void removeOrphanedReleaseTypes(ScanContext& context);
-        void removeOrphanedLabels(ScanContext& context);
-        void removeOrphanedDirectories(ScanContext& context);
-
-        template<typename T>
-        void removeOrphanedEntries(ScanStepRemoveOrphanedDbEntries::ScanContext& context);
     };
 } // namespace lms::scanner

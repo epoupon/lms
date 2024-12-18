@@ -84,7 +84,7 @@ namespace lms::scanner
     }
 
     template<typename T>
-    void ScanStepRemoveOrphanedDbEntries::removeOrphanedEntries(ScanStepRemoveOrphanedDbEntries::ScanContext& context)
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedEntries(ScanContext& context)
     {
         constexpr std::size_t batchSize = 100;
 

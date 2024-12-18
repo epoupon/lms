@@ -29,14 +29,16 @@
 #include <Wt/WSignal.h>
 #include <boost/asio/system_timer.hpp>
 
-#include "IScanStep.hpp"
 #include "ScannerSettings.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 #include "services/scanner/IScannerService.hpp"
+#include "steps/IScanStep.hpp"
 
 namespace lms::scanner
 {
+    class IFileScanner;
+
     class ScannerService : public IScannerService
     {
     public:
@@ -73,6 +75,7 @@ namespace lms::scanner
         void notifyInProgressIfNeeded(const ScanStepStats& stats);
         void notifyInProgress(const ScanStepStats& stats);
 
+        std::vector<std::unique_ptr<IFileScanner>> _fileScanners;
         std::vector<std::unique_ptr<IScanStep>> _scanSteps;
 
         std::mutex _controlMutex;

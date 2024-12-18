@@ -96,9 +96,10 @@
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Nie udało się ustalić długości ścieżki</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">Nie można przeanalizować pliku audio</message>
+<message id="Lms.Admin.ScannerController.cannot-read-file">Nie udało się odczytać pliku</message>
 <message id="Lms.Admin.ScannerController.cannot-read-image-file">Nie można przeanalizować pliku obrazu</message>
 <message id="Lms.Admin.ScannerController.cannot-read-lyrics-file">Nie można przetworzyć pliku z tekstem</message>
-<message id="Lms.Admin.ScannerController.cannot-read-file">Nie udało się odczytać pliku</message>
+<message id="Lms.Admin.ScannerController.cannot-read-playlist-file">Nie można przeanalizować pliku playlisty</message>
 <message id="Lms.Admin.ScannerController.compact">Sprasuj bazę danych. <strong>Uwaga:</strong> może to trochę zająć, a cała aplikacja będzie w tym czasie zablokowana!</message>
 <message id="Lms.Admin.ScannerController.duplicates-header">
 	<plural case="0">{1} zduplikowany plik:</plural>
@@ -128,6 +129,7 @@
 <message id="Lms.Admin.ScannerController.status-in-progress">Skanowanie: krok {1}/{2}</message>
 <message id="Lms.Admin.ScannerController.step-associating-artist-images">Kojarzenie obrazów artystów: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-external-lyrics">Kojarzenie zewnętrznych tekstów: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-associating-playlist-tracks">Kojarzenie utworów z playlisty: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-release-images">Kojarzenie obrazów albumów: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">
 	<plural case="0">Sprawdzanie duplikatów... {1} plik</plural>

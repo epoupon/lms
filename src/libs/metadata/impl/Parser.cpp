@@ -269,6 +269,32 @@ namespace lms::metadata
         }
     }
 
+    std::span<const std::filesystem::path> Parser::getSupportedExtensions() const
+    {
+        // TODO: use backend capability to retrieve supported formats
+        static const std::array<std::filesystem::path, 18> fileExtensions{
+            ".aac",
+            ".alac",
+            ".aif",
+            ".aiff",
+            ".ape",
+            ".dsf",
+            ".flac",
+            ".m4a",
+            ".m4b",
+            ".mp3",
+            ".mpc",
+            ".oga",
+            ".ogg",
+            ".opus",
+            ".shn",
+            ".wav",
+            ".wma",
+            ".wv",
+        };
+        return fileExtensions;
+    }
+
     std::unique_ptr<Track> Parser::parse(const std::filesystem::path& p, bool debug)
     {
         try

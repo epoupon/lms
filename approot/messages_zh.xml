@@ -99,6 +99,7 @@
 <message id="Lms.Admin.ScannerController.cannot-read-file">无法读取文件</message>
 
 
+
 <message id="Lms.Admin.ScannerController.duplicates-header">{1} 个重复文件：</message>
 <message id="Lms.Admin.ScannerController.errors-header">{1} 个错误：</message>
 
@@ -117,6 +118,7 @@
 <message id="Lms.Admin.ScannerController.status-not-scheduled">无计划</message>
 <message id="Lms.Admin.ScannerController.status-scheduled">计划于 {2} 在 {1} (UTC)</message>
 <message id="Lms.Admin.ScannerController.status-in-progress">扫描中: 阶段 {1}/{2}</message>
+
 
 
 

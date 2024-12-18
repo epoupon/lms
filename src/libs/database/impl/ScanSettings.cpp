@@ -46,17 +46,6 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->find<ScanSettings>());
     }
 
-    std::vector<std::filesystem::path> ScanSettings::getAudioFileExtensions() const
-    {
-        const auto extensions{ core::stringUtils::splitString(_audioFileExtensions, ' ') };
-
-        std::vector<std::filesystem::path> res(std::cbegin(extensions), std::cend(extensions));
-        std::sort(std::begin(res), std::end(res));
-        res.erase(std::unique(std::begin(res), std::end(res)), std::end(res));
-
-        return res;
-    }
-
     std::vector<std::string_view> ScanSettings::getExtraTagsToScan() const
     {
         std::vector<std::string_view> tags{ core::stringUtils::splitString(_extraTagsToScan, ';') };

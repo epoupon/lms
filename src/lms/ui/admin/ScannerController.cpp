@@ -116,6 +116,8 @@ namespace lms::ui
                 return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-image-file");
             case scanner::ScanErrorType::CannotReadLyricsFile:
                 return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-lyrics-file");
+            case scanner::ScanErrorType::CannotReadPlayListFile:
+                return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-playlist-file");
             case scanner::ScanErrorType::NoAudioTrack:
                 return Wt::WString::tr("Lms.Admin.ScannerController.no-audio-track");
             case scanner::ScanErrorType::BadDuration:
@@ -271,6 +273,11 @@ namespace lms::ui
 
         case ScanStep::AssociateExternalLyrics:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-associating-external-lyrics")
+                                     .arg(stepStats.progress()));
+            break;
+
+        case ScanStep::AssociatePlayListTracks:
+            _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-associating-playlist-tracks")
                                      .arg(stepStats.progress()));
             break;
 

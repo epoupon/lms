@@ -24,6 +24,9 @@
 #include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
 
+#include "MediaLibraryInfo.hpp"
+#include "ScannerSettings.hpp"
+
 namespace lms::scanner
 {
 
@@ -34,7 +37,7 @@ namespace lms::scanner
 
     void ScanStepUpdateLibraryFields::processDirectories(ScanContext& context)
     {
-        for (const ScannerSettings::MediaLibraryInfo& mediaLibrary : _settings.mediaLibraries)
+        for (const MediaLibraryInfo& mediaLibrary : _settings.mediaLibraries)
         {
             if (_abortScan)
                 break;
@@ -43,7 +46,7 @@ namespace lms::scanner
         }
     }
 
-    void ScanStepUpdateLibraryFields::processDirectory(ScanContext& context, const ScannerSettings::MediaLibraryInfo& mediaLibrary)
+    void ScanStepUpdateLibraryFields::processDirectory(ScanContext& context, const MediaLibraryInfo& mediaLibrary)
     {
         db::Session& session{ _db.getTLSSession() };
 

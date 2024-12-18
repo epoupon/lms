@@ -246,7 +246,7 @@ namespace lms::db
 
     enum class TrackListType
     {
-        Playlist, // user controlled playlists
-        Internal, // internal usage (current playqueue, history, ...)
+        PlayList = 0, // user controlled playlists
+        Internal = 1, // internal usage (current playqueue, history, ...)
     };
 } // namespace lms::db

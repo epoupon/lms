@@ -34,6 +34,7 @@ namespace lms::metadata
         std::unique_ptr<Track> parse(const ITagReader& reader);
 
     private:
+        std::span<const std::filesystem::path> getSupportedExtensions() const override;
         void setUserExtraTags(std::span<const std::string> extraTags) override { _userExtraTags.assign(std::cbegin(extraTags), std::cend(extraTags)); }
         void setArtistTagDelimiters(std::span<const std::string> delimiters) override { _artistTagDelimiters.assign(std::cbegin(delimiters), std::cend(delimiters)); }
         void setDefaultTagDelimiters(std::span<const std::string> delimiters) override { _defaultTagDelimiters.assign(std::cbegin(delimiters), std::cend(delimiters)); }

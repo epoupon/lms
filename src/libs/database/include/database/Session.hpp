@@ -27,7 +27,6 @@
 
 #include "core/ITraceLogger.hpp"
 #include "core/RecursiveSharedMutex.hpp"
-#include "database/Object.hpp"
 #include "database/TransactionChecker.hpp"
 
 namespace lms::db
@@ -69,7 +68,10 @@ namespace lms::db
     class Session
     {
     public:
-        Session(Db& database);
+        Session(Db& db);
+        ~Session() = default;
+        Session(const Session&) = delete;
+        Session& operator=(const Session&) = delete;
 
         [[nodiscard]] WriteTransaction createWriteTransaction();
         [[nodiscard]] ReadTransaction createReadTransaction();
@@ -119,16 +121,10 @@ namespace lms::db
             typename Object::pointer res{ Object::create(*this, std::forward<Args>(args)...) };
             getDboSession()->flush();
 
-            if (res->hasOnPostCreated())
-                res.modify()->onPostCreated();
-
             return res;
         }
 
     private:
-        Session(const Session&) = delete;
-        Session& operator=(const Session&) = delete;
-
         Db& _db;
         Wt::Dbo::Session _session;
     };

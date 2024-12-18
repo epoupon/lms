@@ -20,11 +20,10 @@
 #pragma once
 
 #include <functional>
-
-#include "services/scanner/ScannerStats.hpp"
+#include <span>
+#include <vector>
 
 #include "IScanStep.hpp"
-#include "ScannerSettings.hpp"
 
 namespace lms::db
 {
@@ -33,10 +32,13 @@ namespace lms::db
 
 namespace lms::scanner
 {
+    class IFileScanner;
+    struct ScannerSettings;
+    struct ScanStepStats;
+
     class ScanStepBase : public IScanStep
     {
     public:
-        static inline const std::filesystem::path excludeDirFileName{ ".lmsignore" };
         using ProgressCallback = std::function<void(const ScanStepStats& stats)>;
 
         struct InitParams
@@ -45,21 +47,26 @@ namespace lms::scanner
             ProgressCallback progressCallback;
             bool& abortScan;
             db::Db& db;
+            std::span<IFileScanner*> fileScanners;
         };
         ScanStepBase(InitParams& initParams)
             : _settings{ initParams.settings }
             , _progressCallback{ initParams.progressCallback }
             , _abortScan{ initParams.abortScan }
             , _db{ initParams.db }
+            , _fileScanners(std::cbegin(initParams.fileScanners), std::cend(initParams.fileScanners))
         {
         }
 
     protected:
         ~ScanStepBase() override = default;
+        ScanStepBase(const ScanStepBase&) = delete;
+        ScanStepBase& operator=(const ScanStepBase&) = delete;
 
         const ScannerSettings& _settings;
         ProgressCallback _progressCallback;
         bool& _abortScan;
         db::Db& _db;
+        std::vector<IFileScanner*> _fileScanners;
     };
 } // namespace lms::scanner
