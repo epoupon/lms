@@ -295,6 +295,8 @@
 
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">Usunąć listę odtwarzania?</message>
+<message id="Lms.Explore.TrackLists.type-owned">Moje listy</message>
+<message id="Lms.Explore.TrackLists.type-shared">Udostępnione listy</message>
 
 <!--Explore:Search-->
 <message id="Lms.Explore.Search.search-placeholder">Szukaj...</message>

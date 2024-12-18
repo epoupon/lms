@@ -38,6 +38,8 @@ namespace lms::db
         template<typename ResultType>
         Wt::Dbo::Query<ResultType> createQuery(Session& session, std::string_view itemToSelect, const TrackList::FindParameters& params)
         {
+            assert(!params.user.isValid() || !params.excludedUser.isValid());
+
             auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM tracklist t_l") };
 
             if (!params.clusters.empty() || params.mediaLibrary.isValid())
@@ -45,6 +47,9 @@ namespace lms::db
                 query.join("tracklist_entry t_l_e ON t_l_e.tracklist_id = t_l.id");
                 query.groupBy("t_l.id");
             }
+
+            for (std::string_view keyword : params.keywords)
+                query.where("t_l.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
 
             if (params.mediaLibrary.isValid())
                 query.join("track t ON t.id = t_l_e.track_id");
@@ -54,6 +59,8 @@ namespace lms::db
 
             if (params.user.isValid())
                 query.where("t_l.user_id = ?").bind(params.user);
+            else if (params.excludedUser.isValid())
+                query.where("t_l.user_id <> ? OR t_l.user_id IS NULL").bind(params.excludedUser);
 
             if (params.type)
                 query.where("t_l.type = ?").bind(*params.type);

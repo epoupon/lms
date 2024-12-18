@@ -14,7 +14,9 @@
 				<li>${play-shuffled class="dropdown-item"}</li>
 				<li>${play-last class="dropdown-item"}</li>
 				<li>${download class="dropdown-item"}</li>
+				${<if-has-delete>}
 				<li>${delete class="dropdown-item"}</li>
+				${</if-has-delete>}
 			</ul>
 		</div>
 	</div>

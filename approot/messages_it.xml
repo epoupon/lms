@@ -269,6 +269,8 @@
 
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">Eliminare la playlist?</message>
+<message id="Lms.Explore.TrackLists.type-owned">Le mie liste</message>
+<message id="Lms.Explore.TrackLists.type-shared">Liste condivise</message>
 
 <!--Explore:Search-->
 <message id="Lms.Explore.Search.search-placeholder">Ricerca...</message>

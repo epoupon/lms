@@ -269,6 +269,8 @@
 
 <!--Explore:TrackLists-->
 <message id="Lms.Explore.TrackLists.del-tracklist-confirm">Supprimer la liste de lecture ?</message>
+<message id="Lms.Explore.TrackLists.type-owned">Mes listes</message>
+<message id="Lms.Explore.TrackLists.type-shared">Listes partagées</message>
 
 <!--Explore:Search-->
 <message id="Lms.Explore.Search.search-placeholder">Rechercher...</message>

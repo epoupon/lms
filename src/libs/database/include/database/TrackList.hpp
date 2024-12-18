@@ -62,10 +62,12 @@ namespace lms::db
         // Search utility
         struct FindParameters
         {
-            std::vector<ClusterId> clusters; // if non empty, tracklists that have tracks that belong to these clusters
+            std::vector<ClusterId> clusters;        // if non empty, tracklists that have tracks that belong to these clusters
+            std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords (on either name field OR sort name field)
             std::optional<Range> range;
             std::optional<TrackListType> type;
             UserId user;                 // only tracklists owned by this user
+            UserId excludedUser;         // only tracklists *not* owned by this user
             MediaLibraryId mediaLibrary; // only tracklists that have songs in this media library
             TrackListSortMethod sortMethod{ TrackListSortMethod::None };
             std::optional<Visibility> visibility;
@@ -73,6 +75,11 @@ namespace lms::db
             FindParameters& setClusters(std::span<const ClusterId> _clusters)
             {
                 clusters.assign(std::cbegin(_clusters), std::cend(_clusters));
+                return *this;
+            }
+            FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
+            {
+                keywords = _keywords;
                 return *this;
             }
             FindParameters& setRange(std::optional<Range> _range)
@@ -90,6 +97,12 @@ namespace lms::db
                 user = _user;
                 return *this;
             }
+            FindParameters& setExcludedUser(UserId _user)
+            {
+                excludedUser = _user;
+                return *this;
+            }
+
             FindParameters& setMediaLibrary(MediaLibraryId _mediaLibrary)
             {
                 mediaLibrary = _mediaLibrary;
