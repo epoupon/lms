@@ -23,7 +23,7 @@
 
 namespace lms::scanner
 {
-    class ScanContext;
+    struct ScanContext;
 
     class IFileScanOperation
     {

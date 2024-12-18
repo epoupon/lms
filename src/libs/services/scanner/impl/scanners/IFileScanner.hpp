@@ -26,8 +26,8 @@
 
 namespace lms::scanner
 {
-    class ScanContext;
     class IFileScanOperation;
+    struct ScanContext;
     struct ScannerSettings;
 
     struct FileToScan
