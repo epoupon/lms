@@ -28,7 +28,7 @@ namespace lms::metadata
 {
     std::span<const std::filesystem::path> getSupportedPlayListFileExtensions()
     {
-        static const std::array<std::filesystem::path, 2> fileExtensions{ ".m3u", "m3u8" };
+        static const std::array<std::filesystem::path, 2> fileExtensions{ ".m3u", ".m3u8" };
         return fileExtensions;
     }
 
