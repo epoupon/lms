@@ -33,6 +33,24 @@ namespace lms::api::subsonic
 {
     using namespace db;
 
+    namespace
+    {
+        void checkTrackListModificationAccess(const db::TrackList::pointer& trackList, const db::UserId currentUserId)
+        {
+            if (!trackList || trackList->getType() != TrackListType::PlayList)
+                throw RequestedDataNotFoundError{};
+
+            // Can only modify own playlists
+            if (trackList->getUserId() != currentUserId)
+            {
+                if (trackList->getVisibility() == TrackList::Visibility::Public)
+                    throw UserNotAuthorizedError{};
+
+                throw RequestedDataNotFoundError{};
+            }
+        }
+    } // namespace
+
     Response handleGetPlaylistsRequest(RequestContext& context)
     {
         auto transaction{ context.dbSession.createReadTransaction() };
@@ -60,10 +78,11 @@ namespace lms::api::subsonic
             TrackList::FindParameters params;
             params.setVisibility(TrackList::Visibility::Public);
             params.setType(TrackListType::PlayList);
+            params.setExcludedUser(context.user->getId());
 
             db::TrackList::find(context.dbSession, params, [&](const db::TrackList::pointer& trackList) {
-                if (trackList->getUserId() != context.user->getId()) // skip already reported
-                    addTrackList(trackList);
+                assert(trackList->getUserId() != context.user->getId());
+                addTrackList(trackList);
             });
         }
 
@@ -77,14 +96,17 @@ namespace lms::api::subsonic
 
         auto transaction{ context.dbSession.createReadTransaction() };
 
-        TrackList::pointer tracklist{ TrackList::find(context.dbSession, trackListId) };
-        if (!tracklist)
+        TrackList::pointer trackList{ TrackList::find(context.dbSession, trackListId) };
+        if (!trackList || trackList->getType() != TrackListType::PlayList)
+            throw RequestedDataNotFoundError{};
+
+        if (trackList->getUserId() != context.user->getId() && trackList->getVisibility() != TrackList::Visibility::Public)
             throw RequestedDataNotFoundError{};
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-        Response::Node playlistNode{ createPlaylistNode(tracklist, context.dbSession) };
+        Response::Node playlistNode{ createPlaylistNode(trackList, context.dbSession) };
 
-        auto entries{ tracklist->getEntries() };
+        auto entries{ trackList->getEntries() };
         for (const TrackListEntry::pointer& entry : entries.results)
             playlistNode.addArrayChild("entry", createSongNode(context, entry->getTrack(), context.user));
 
@@ -106,28 +128,23 @@ namespace lms::api::subsonic
 
         auto transaction{ context.dbSession.createWriteTransaction() };
 
-        TrackList::pointer tracklist;
+        TrackList::pointer trackList;
         if (id)
         {
-            tracklist = TrackList::find(context.dbSession, *id);
-            if (!tracklist
-                || tracklist->getUser() != context.user
-                || tracklist->getType() != TrackListType::PlayList)
-            {
-                throw RequestedDataNotFoundError{};
-            }
+            trackList = TrackList::find(context.dbSession, *id);
+            checkTrackListModificationAccess(trackList, context.user->getId());
 
             if (name)
-                tracklist.modify()->setName(*name);
+                trackList.modify()->setName(*name);
 
-            tracklist.modify()->clear();
-            tracklist.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
+            trackList.modify()->clear();
+            trackList.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
         }
         else
         {
-            tracklist = context.dbSession.create<TrackList>(*name, TrackListType::PlayList);
-            tracklist.modify()->setUser(context.user);
-            tracklist.modify()->setVisibility(TrackList::Visibility::Private);
+            trackList = context.dbSession.create<TrackList>(*name, TrackListType::PlayList);
+            trackList.modify()->setUser(context.user);
+            trackList.modify()->setVisibility(TrackList::Visibility::Private);
         }
 
         for (const TrackId trackId : trackIds)
@@ -136,13 +153,13 @@ namespace lms::api::subsonic
             if (!track)
                 continue;
 
-            context.dbSession.create<TrackListEntry>(track, tracklist);
+            context.dbSession.create<TrackListEntry>(track, trackList);
         }
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-        Response::Node playlistNode{ createPlaylistNode(tracklist, context.dbSession) };
+        Response::Node playlistNode{ createPlaylistNode(trackList, context.dbSession) };
 
-        auto entries{ tracklist->getEntries() };
+        auto entries{ trackList->getEntries() };
         for (const TrackListEntry::pointer& entry : entries.results)
             playlistNode.addArrayChild("entry", createSongNode(context, entry->getTrack(), context.user));
 
@@ -165,19 +182,14 @@ namespace lms::api::subsonic
 
         auto transaction{ context.dbSession.createWriteTransaction() };
 
-        TrackList::pointer tracklist{ TrackList::find(context.dbSession, id) };
-        if (!tracklist
-            || tracklist->getUser() != context.user
-            || tracklist->getType() != TrackListType::PlayList)
-        {
-            throw RequestedDataNotFoundError{};
-        }
+        TrackList::pointer trackList{ TrackList::find(context.dbSession, id) };
+        checkTrackListModificationAccess(trackList, context.user->getId());
 
         if (name)
-            tracklist.modify()->setName(*name);
+            trackList.modify()->setName(*name);
 
-        tracklist.modify()->setVisibility(isPublic ? db::TrackList::Visibility::Public : db::TrackList::Visibility::Private);
-        tracklist.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
+        trackList.modify()->setVisibility(isPublic ? db::TrackList::Visibility::Public : db::TrackList::Visibility::Private);
+        trackList.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
 
         {
             // Remove from end to make indexes stable
@@ -185,7 +197,7 @@ namespace lms::api::subsonic
 
             for (std::size_t trackPositionToRemove : trackPositionsToRemove)
             {
-                auto entry{ tracklist->getEntry(trackPositionToRemove) };
+                auto entry{ trackList->getEntry(trackPositionToRemove) };
                 if (entry)
                     entry.remove();
             }
@@ -198,7 +210,7 @@ namespace lms::api::subsonic
             if (!track)
                 continue;
 
-            context.dbSession.create<TrackListEntry>(track, tracklist);
+            context.dbSession.create<TrackListEntry>(track, trackList);
         }
 
         return Response::createOkResponse(context.serverProtocolVersion);
@@ -210,15 +222,10 @@ namespace lms::api::subsonic
 
         auto transaction{ context.dbSession.createWriteTransaction() };
 
-        TrackList::pointer tracklist{ TrackList::find(context.dbSession, id) };
-        if (!tracklist
-            || tracklist->getUser() != context.user
-            || tracklist->getType() != TrackListType::PlayList)
-        {
-            throw RequestedDataNotFoundError{};
-        }
+        TrackList::pointer trackList{ TrackList::find(context.dbSession, id) };
+        checkTrackListModificationAccess(trackList, context.user->getId());
 
-        tracklist.remove();
+        trackList.remove();
 
         return Response::createOkResponse(context.serverProtocolVersion);
     }
