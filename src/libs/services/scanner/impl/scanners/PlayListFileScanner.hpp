@@ -42,6 +42,7 @@ namespace lms::scanner
         PlayListFileScanner& operator=(const PlayListFileScanner&) = delete;
 
     private:
+        core::LiteralString getName() const override;
         std::span<const std::filesystem::path> getSupportedExtensions() const override;
         bool needsScan(ScanContext& context, const FileToScan& file) const override;
         std::unique_ptr<IFileScanOperation> createScanOperation(const FileToScan& fileToScan) const override;

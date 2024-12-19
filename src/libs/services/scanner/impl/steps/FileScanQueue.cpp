@@ -21,6 +21,7 @@
 
 #include <boost/asio/post.hpp>
 
+#include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 
 #include "scanners/IFileScanOperation.hpp"
@@ -52,6 +53,7 @@ namespace lms::scanner
             {
                 {
                     LMS_SCOPED_TRACE_OVERVIEW("Scanner", operation->getName());
+                    LMS_LOG(DBUPDATER, DEBUG, operation->getName() << ": scanning file '" << operation->getFile().string() << "'");
                     operation->scan();
                 }
 

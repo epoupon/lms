@@ -50,6 +50,7 @@ namespace lms::scanner
             PlayListFileScanOperation& operator=(const PlayListFileScanOperation&) = delete;
 
         private:
+            const std::filesystem::path& getFile() const override { return _file; };
             core::LiteralString getName() const override { return "ScanPlayListFile"; }
             void scan() override;
             void processResult(ScanContext& context) override;
@@ -134,6 +135,11 @@ namespace lms::scanner
     PlayListFileScanner::PlayListFileScanner(db::Db& db)
         : _db{ db }
     {
+    }
+
+    core::LiteralString PlayListFileScanner::getName() const
+    {
+        return "PlayList scanner";
     }
 
     std::span<const std::filesystem::path> PlayListFileScanner::getSupportedExtensions() const

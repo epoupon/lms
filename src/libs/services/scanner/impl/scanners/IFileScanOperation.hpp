@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <filesystem>
+
 #include "core/LiteralString.hpp"
 
 namespace lms::scanner
@@ -31,6 +33,8 @@ namespace lms::scanner
         virtual ~IFileScanOperation() = default;
 
         virtual core::LiteralString getName() const = 0;
+
+        virtual const std::filesystem::path& getFile() const = 0;
         virtual void scan() = 0;
         virtual void processResult(ScanContext& context) = 0;
     };
