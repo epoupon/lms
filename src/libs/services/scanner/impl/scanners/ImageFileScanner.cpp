@@ -46,6 +46,7 @@ namespace lms::scanner
                 , _db{ db } {}
 
         private:
+            const std::filesystem::path& getFile() const override { return _file; };
             core::LiteralString getName() const override { return "ScanImageFile"; }
             void scan() override;
             void processResult(ScanContext& context) override;
@@ -132,6 +133,11 @@ namespace lms::scanner
     ImageFileScanner::ImageFileScanner(db::Db& db)
         : _db{ db }
     {
+    }
+
+    core::LiteralString ImageFileScanner::getName() const
+    {
+        return "Image scanner";
     }
 
     std::span<const std::filesystem::path> ImageFileScanner::getSupportedExtensions() const

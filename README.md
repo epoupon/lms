@@ -7,7 +7,7 @@ _LMS_ is a self-hosted music streaming software: access your music collection fr
 A [demo instance](http://lms-demo.poupon.dev) is available. Note the administration settings are not available.
 
 ## Main features
-* Recommendation engine
+* [Subsonic/OpenSubsonic API](SUBSONIC.md) support
 * Multi-valued tags: `genre`, `mood`, `artists`, ...
 * Artist relationships: `composer`, `conductor`, `lyricist`, `mixer`, `performer`, `producer`, `remixer`
 * [Release types](https://musicbrainz.org/doc/Release_Group/Type): `album`, `single`, `EP`, `compilation`, `live`, ...
@@ -15,11 +15,13 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
 * [ListenBrainz](https://listenbrainz.org) support for:
   * Scrobbling and synchronizing listens
   * Synchronizing 'love' feedbacks
-* Audio transcoding for maximum interoperability and reduced bandwith requirements
+* Recommendation engine
 * Multi-library support
 * ReplayGain support
+* Audio transcoding for compatibility and reduced bandwidth
 * User management, with several [authentication backends](INSTALL.md#authentication-backend)
-* [Subsonic/OpenSubsonic API](SUBSONIC.md) support
+* Playlists support
+* Lyrics support
 
 ## Music discovery
 _LMS_ provides several ways to help you find the music you like:
@@ -56,6 +58,12 @@ __Note__: if you use Picard, add the following script to include these tags:
 $setmulti(albumartists,%_albumartists%)
 $setmulti(albumartistssort,%_albumartists_sort%)
 ```
+
+## Playlist support
+_LMS_ supports playlist files in `m3u` and `m3u8` formats. These playlists are synced during the scan process and are available as public shared playlists.
+
+## Lyrics support
+_LMS_ supports lyrics in `lrc` files and embedded track metadata. Both synchronized and unsynchronized lyrics are supported.
 
 ## Keyboard shortcuts
 * Play/pause: <kbd>Space</kbd>

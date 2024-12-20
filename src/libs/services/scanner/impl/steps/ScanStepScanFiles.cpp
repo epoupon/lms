@@ -57,6 +57,7 @@ namespace lms::scanner
             {
                 [[maybe_unused]] auto [it, inserted]{ _scannerByExtension.emplace(extension, scanner) };
                 assert(inserted);
+                LMS_LOG(DBUPDATER, INFO, "Registered extension '" << extension.string() << "' for '" << scanner->getName() << "'");
             }
         }
 
@@ -139,6 +140,7 @@ namespace lms::scanner
             if (_abortScan)
                 return;
 
+            LMS_LOG(DBUPDATER, DEBUG, scanOperation->getName() << ": processing result for '" << scanOperation->getFile().string() << "'");
             scanOperation->processResult(context);
             context.stats.scans++;
         }

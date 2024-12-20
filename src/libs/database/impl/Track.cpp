@@ -195,7 +195,7 @@ namespace lms::db
                 break;
             case TrackSortMethod::TrackList:
                 assert(params.trackList.isValid());
-                query.orderBy("t_l.id");
+                query.orderBy("t_l_e.id");
             }
 
             return query;

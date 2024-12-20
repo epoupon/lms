@@ -325,6 +325,7 @@ namespace lms::scanner
             AudioFileScanOperation& operator=(const AudioFileScanOperation&) = delete;
 
         private:
+            const std::filesystem::path& getFile() const override { return _file; };
             core::LiteralString getName() const override { return "ScanAudioFile"; }
             void scan() override;
             void processResult(ScanContext& context) override;
@@ -602,6 +603,11 @@ namespace lms::scanner
     }
 
     AudioFileScanner::~AudioFileScanner() = default;
+
+    core::LiteralString AudioFileScanner::getName() const
+    {
+        return "Audio scanner";
+    }
 
     std::span<const std::filesystem::path> AudioFileScanner::getSupportedExtensions() const
     {

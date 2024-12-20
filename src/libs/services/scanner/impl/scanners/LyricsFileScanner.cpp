@@ -46,6 +46,7 @@ namespace lms::scanner
                 , _db{ db } {}
 
         private:
+            const std::filesystem::path& getFile() const override { return _file; };
             core::LiteralString getName() const override { return "ScanLyricsFile"; }
             void scan() override;
             void processResult(ScanContext& context) override;
@@ -135,6 +136,11 @@ namespace lms::scanner
     LyricsFileScanner::LyricsFileScanner(db::Db& db)
         : _db{ db }
     {
+    }
+
+    core::LiteralString LyricsFileScanner::getName() const
+    {
+        return "Lyrics scanner";
     }
 
     std::span<const std::filesystem::path> LyricsFileScanner::getSupportedExtensions() const
