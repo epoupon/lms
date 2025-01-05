@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 
         core::Service<core::IConfig> config{ core::createConfig(vm["conf"].as<std::string>()) };
 
-        Db db{ config->getPath("working-dir") / "lms.db" };
+        Db db{ config->getPath("working-dir", "/var/lms") / "lms.db" };
         Session session{ db };
 
         std::cout << "Creating recommendation service..." << std::endl;

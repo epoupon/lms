@@ -32,7 +32,7 @@ namespace lms::recommendation
     {
         std::filesystem::path getCacheDirectory()
         {
-            return core::Service<core::IConfig>::get()->getPath("working-dir") / "cache" / "features";
+            return core::Service<core::IConfig>::get()->getPath("working-dir", "/var/lms") / "cache" / "features";
         }
 
         std::filesystem::path getCacheNetworkFilePath()
@@ -230,7 +230,7 @@ namespace lms::recommendation
 
     void FeaturesEngineCache::write() const
     {
-        std::filesystem::create_directories(core::Service<core::IConfig>::get()->getPath("working-dir") / "cache" / "features");
+        std::filesystem::create_directories(core::Service<core::IConfig>::get()->getPath("working-dir", "/var/lms") / "cache" / "features");
 
         if (!networkToCacheFile(_network, getCacheNetworkFilePath())
             || !objectPositionToCacheFile(_trackPositions, getCacheTrackPositionsFilePath()))

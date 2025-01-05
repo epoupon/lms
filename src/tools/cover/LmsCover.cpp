@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
 
         image::init(argv[0]);
         core::Service<core::IConfig> config{ core::createConfig(vm["conf"].as<std::string>()) };
-        db::Db db{ config->getPath("working-dir") / "lms.db" };
+        db::Db db{ config->getPath("working-dir", "/var/lms") / "lms.db" };
         core::Service<cover::IArtworkService> coverArtService{ cover::createArtworkService(db, vm["default-release-cover,"].as<std::string>(), vm["default-artist-image"].as<std::string>()) };
 
         coverArtService->setJpegQuality(config->getULong("cover-jpeg-quality", vm["quality"].as<unsigned>()));

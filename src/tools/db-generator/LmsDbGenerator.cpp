@@ -203,7 +203,7 @@ int main(int argc, char* argv[])
             throw std::runtime_error{ "File '" + genParams.trackPath.string() + "' does not exist!" };
 
         core::Service<core::IConfig> config{ core::createConfig(vm["conf"].as<std::string>()) };
-        db::Db db{ config->getPath("working-dir") / "lms.db" };
+        db::Db db{ config->getPath("working-dir", "/var/lms") / "lms.db" };
         db::Session session{ db };
         std::cout << "Starting generation..." << std::endl;
 
