@@ -63,7 +63,7 @@ $setmulti(albumartistssort,%_albumartists_sort%)
 _LMS_ supports playlist files in `m3u` and `m3u8` formats. These playlists are synced during the scan process and are available as public shared playlists.
 
 ## Lyrics support
-_LMS_ supports lyrics in `lrc` files and embedded track metadata. Both synchronized and unsynchronized lyrics are supported.
+_LMS_ supports lyrics in `lrc` files, `txt` files, and embedded track metadata. Both synchronized and unsynchronized lyrics are supported.
 
 ## Keyboard shortcuts
 * Play/pause: <kbd>Space</kbd>
