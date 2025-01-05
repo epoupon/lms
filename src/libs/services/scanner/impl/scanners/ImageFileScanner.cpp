@@ -77,7 +77,7 @@ namespace lms::scanner
             }
             catch (const image::Exception& e)
             {
-                LMS_LOG(DBUPDATER, ERROR, "Cannot read image in file '" << _file.string() << "': " << e.what());
+                LMS_LOG(DBUPDATER, ERROR, "Cannot read image in file '" << _file.c_str() << "': " << e.what());
             }
         }
 

@@ -41,20 +41,41 @@
 
 namespace lms::image::STB
 {
+    namespace
+    {
+        class StbiException : public Exception
+        {
+        public:
+            StbiException(std::string_view desc)
+                : Exception{ std::string{ desc } + ": " + getLastFailureReason() }
+            {
+            }
+
+        private:
+            static std::string getLastFailureReason()
+            {
+                const char* failureReason{ ::stbi_failure_reason() };
+                return failureReason ? failureReason : "unknown reason";
+            }
+        };
+    } // namespace
+
     RawImage::RawImage(std::span<const std::byte> encodedData)
     {
         int n{};
         _data = UniquePtrFree{ ::stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(encodedData.data()), encodedData.size(), &_width, &_height, &n, 3), std::free };
         if (!_data)
-            throw Exception{ "Cannot load image from memory: " + std::string{ ::stbi_failure_reason() } };
+            throw StbiException{ "Cannot load image from memory" };
     }
 
     RawImage::RawImage(const std::filesystem::path& p)
     {
         int n{};
-        _data = UniquePtrFree{ stbi_load(p.string().c_str(), &_width, &_height, &n, 3), std::free };
+        _data = UniquePtrFree{ stbi_load(p.c_str(), &_width, &_height, &n, 3), std::free };
         if (!_data)
-            throw Exception{ "Cannot load image from file: " + std::string{ ::stbi_failure_reason() } };
+        {
+            throw StbiException{ "Cannot load image from file" };
+        }
     }
 
     void RawImage::resize(ImageSize width)
@@ -94,7 +115,7 @@ namespace lms::image::STB
     #error "Unhandled STB image resize version"!
 #endif
         {
-            throw Exception{ "Failed to resize image:" + std::string{ ::stbi_failure_reason() } };
+            throw StbiException{ "Failed to resize image" };
         }
 
         _data = std::move(resizedData);
