@@ -73,9 +73,7 @@ namespace lms::image::STB
         int n{};
         _data = UniquePtrFree{ stbi_load(p.c_str(), &_width, &_height, &n, 3), std::free };
         if (!_data)
-        {
             throw StbiException{ "Cannot load image from file" };
-        }
     }
 
     void RawImage::resize(ImageSize width)

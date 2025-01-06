@@ -188,7 +188,7 @@ namespace lms::metadata
         {
             LMS_SCOPED_TRACE_DETAILED("MetaData", "TagLibParseFile");
 
-            return TagLib::FileRef{ p.string().c_str(), true // read audio properties
+            return TagLib::FileRef{ p.c_str(), true // read audio properties
                 ,
                 readStyleToTagLibReadStyle(parserReadStyle) };
         }
@@ -199,13 +199,13 @@ namespace lms::metadata
     {
         if (_file.isNull())
         {
-            LMS_LOG(METADATA, ERROR, "File '" << p.string() << "': parsing failed");
+            LMS_LOG(METADATA, ERROR, "File " << p << ": parsing failed");
             throw ParsingFailedException{};
         }
 
         if (!_file.audioProperties())
         {
-            LMS_LOG(METADATA, ERROR, "File '" << p.string() << "': no audio properties");
+            LMS_LOG(METADATA, ERROR, "File " << p << ": no audio properties");
             throw ParsingFailedException{};
         }
 

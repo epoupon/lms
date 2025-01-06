@@ -89,17 +89,12 @@ namespace lms::db
             if (path.empty())
                 return path;
 
-            // Convert the path to string
             std::string pathStr{ path.string() };
 
             // Check if the last character is a directory separator
             if (pathStr.back() != std::filesystem::path::preferred_separator)
-            {
-                // If not, add the preferred separator
                 pathStr += std::filesystem::path::preferred_separator;
-            }
 
-            // Return the new path
             return std::filesystem::path{ pathStr };
         }
     } // namespace

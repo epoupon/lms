@@ -66,15 +66,15 @@ namespace lms::scanner
         {
             try
             {
-                std::ifstream ifs{ _file.string() };
+                std::ifstream ifs{ _file };
                 if (!ifs)
-                    LMS_LOG(DBUPDATER, ERROR, "Cannot open file '" << _file.string() << "'");
+                    LMS_LOG(DBUPDATER, ERROR, "Cannot open file " << _file);
                 else
                     _parsedPlayList = metadata::parsePlayList(ifs);
             }
             catch (const metadata::Exception& e)
             {
-                LMS_LOG(DBUPDATER, ERROR, "Cannot read playlist in file '" << _file.string() << "': " << e.what());
+                LMS_LOG(DBUPDATER, ERROR, "Cannot read playlist in file " << _file << ": " << e.what());
             }
         }
 
@@ -120,13 +120,12 @@ namespace lms::scanner
 
             if (added)
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Added playlist file '" << _file.string() << "'");
-                LMS_LOG(DBUPDATER, DEBUG, "db playlist file = '" << playList->getAbsoluteFilePath().string() << "'");
+                LMS_LOG(DBUPDATER, DEBUG, "Added playlist file " << _file);
                 stats.additions++;
             }
             else
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Updated playlist file '" << _file.string() << "'");
+                LMS_LOG(DBUPDATER, DEBUG, "Updated playlist file '" << _file);
                 stats.updates++;
             }
         }

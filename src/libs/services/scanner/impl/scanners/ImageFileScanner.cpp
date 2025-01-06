@@ -77,7 +77,8 @@ namespace lms::scanner
             }
             catch (const image::Exception& e)
             {
-                LMS_LOG(DBUPDATER, ERROR, "Cannot read image in file '" << _file.c_str() << "': " << e.what());
+                _parsedImageInfo.reset();
+                LMS_LOG(DBUPDATER, ERROR, "Cannot read image in file " << _file << ": " << e.what());
             }
         }
 
@@ -101,6 +102,7 @@ namespace lms::scanner
                 {
                     image.remove();
                     stats.deletions++;
+                    LMS_LOG(DBUPDATER, DEBUG, "Removed image " << _file);
                 }
                 context.stats.errors.emplace_back(_file, ScanErrorType::CannotReadImageFile);
                 return;
@@ -119,12 +121,12 @@ namespace lms::scanner
 
             if (added)
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Added image '" << _file.string() << "'");
+                LMS_LOG(DBUPDATER, DEBUG, "Added image " << _file);
                 stats.additions++;
             }
             else
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Updated image '" << _file.string() << "'");
+                LMS_LOG(DBUPDATER, DEBUG, "Updated image " << _file);
                 stats.updates++;
             }
         }

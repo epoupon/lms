@@ -349,7 +349,7 @@ namespace lms::scanner
             }
             catch (const metadata::Exception& e)
             {
-                LMS_LOG(DBUPDATER, INFO, "Failed to parse audio file '" << _file.string() << "'");
+                LMS_LOG(DBUPDATER, ERROR, "Failed to parse audio file " << _file);
             }
         }
 
@@ -391,7 +391,7 @@ namespace lms::scanner
                     std::error_code ec;
                     if (!std::filesystem::exists(otherTrack->getAbsoluteFilePath(), ec))
                     {
-                        LMS_LOG(DBUPDATER, DEBUG, "Considering track '" << _file.string() << "' moved from '" << otherTrack->getAbsoluteFilePath() << "'");
+                        LMS_LOG(DBUPDATER, DEBUG, "Considering track " << _file << " moved from " << otherTrack->getAbsoluteFilePath());
                         track = otherTrack;
                         track.modify()->setAbsoluteFilePath(_file);
                     }
@@ -415,7 +415,7 @@ namespace lms::scanner
                             continue;
                         }
 
-                        LMS_LOG(DBUPDATER, DEBUG, "Skipped '" << _file.string() << "' (similar MBID in '" << otherTrack->getAbsoluteFilePath().string() << "')");
+                        LMS_LOG(DBUPDATER, DEBUG, "Skipped " << _file << " (similar MBID in " << otherTrack->getAbsoluteFilePath() << ")");
                         // As this MBID already exists, just remove what we just scanned
                         if (track)
                         {
@@ -430,7 +430,7 @@ namespace lms::scanner
             // We estimate this is an audio file if the duration is not null
             if (_parsedTrack->audioProperties.duration == std::chrono::milliseconds::zero())
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Skipped '" << _file.string() << "' (duration is 0)");
+                LMS_LOG(DBUPDATER, DEBUG, "Skipped " << _file << " (duration is 0)");
 
                 // If Track exists here, delete it!
                 if (track)
@@ -565,12 +565,12 @@ namespace lms::scanner
 
             if (added)
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Added audio file '" << _file.string() << "'");
+                LMS_LOG(DBUPDATER, DEBUG, "Added audio file " << _file);
                 stats.additions++;
             }
             else
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Updated audio file '" << _file.string() << "'");
+                LMS_LOG(DBUPDATER, DEBUG, "Updated audio file " << _file);
                 stats.updates++;
             }
         }

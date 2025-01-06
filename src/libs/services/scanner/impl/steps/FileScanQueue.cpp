@@ -53,7 +53,7 @@ namespace lms::scanner
             {
                 {
                     LMS_SCOPED_TRACE_OVERVIEW("Scanner", operation->getName());
-                    LMS_LOG(DBUPDATER, DEBUG, operation->getName() << ": scanning file '" << operation->getFile().string() << "'");
+                    LMS_LOG(DBUPDATER, DEBUG, operation->getName() << ": scanning file " << operation->getFile());
                     operation->scan();
                 }
 

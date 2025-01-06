@@ -233,7 +233,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Track>>("SELECT t from track t").where("t.absolute_file_path = ?").bind(p.string()));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Track>>("SELECT t from track t").where("t.absolute_file_path = ?").bind(p));
     }
 
     Track::pointer Track::find(Session& session, TrackId id)

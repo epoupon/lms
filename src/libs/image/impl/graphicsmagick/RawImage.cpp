@@ -54,7 +54,7 @@ namespace lms::image::GraphicsMagick
     {
         try
         {
-            _image.read(p.string().c_str());
+            _image.read(p.c_str());
         }
         catch (Magick::WarningCoder& e)
         {

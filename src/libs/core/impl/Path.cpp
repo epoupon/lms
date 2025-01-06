@@ -38,7 +38,7 @@ namespace lms::core::pathUtils
     {
         core::Crc32Calculator crc32;
 
-        std::ifstream ifs{ p.string().c_str(), std::ios_base::binary };
+        std::ifstream ifs{ p, std::ios_base::binary };
         if (ifs)
         {
             do
@@ -51,7 +51,7 @@ namespace lms::core::pathUtils
         }
         else
         {
-            LMS_LOG(DBUPDATER, ERROR, "Failed to open file '" << p.string() << "'");
+            LMS_LOG(DBUPDATER, ERROR, "Failed to open file " << p);
             throw LmsException("Failed to open file '" + p.string() + "'");
         }
 
@@ -72,7 +72,7 @@ namespace lms::core::pathUtils
         {
         };
 
-        if (stat(file.string().c_str(), &sb) == -1)
+        if (stat(file.c_str(), &sb) == -1)
             throw LmsException("Failed to get stats on file '" + file.string() + "'");
 
         return Wt::WDateTime::fromTime_t(sb.st_mtime);
@@ -95,7 +95,7 @@ namespace lms::core::pathUtils
 
             if (std::filesystem::exists(excludePath, ec))
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Found '" << excludePath.string() << "': skipping directory");
+                LMS_LOG(DBUPDATER, DEBUG, "Found " << excludePath << ": skipping directory");
                 return true;
             }
         }
@@ -135,7 +135,7 @@ namespace lms::core::pathUtils
 
     bool hasFileAnyExtension(const std::filesystem::path& file, std::span<const std::filesystem::path> supportedExtensions)
     {
-        const std::filesystem::path extension{ stringUtils::stringToLower(file.extension().string()) };
+        const std::filesystem::path extension{ stringUtils::stringToLower(file.extension().c_str()) };
 
         return (std::find(std::cbegin(supportedExtensions), std::cend(supportedExtensions), extension) != std::cend(supportedExtensions));
     }

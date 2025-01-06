@@ -317,7 +317,7 @@ namespace lms::metadata
         }
         catch (const Exception& e)
         {
-            LMS_LOG(METADATA, ERROR, "File '" << p.string() << "': parsing failed");
+            LMS_LOG(METADATA, ERROR, "File " << p << ": parsing failed");
             throw ParseException{};
         }
     }

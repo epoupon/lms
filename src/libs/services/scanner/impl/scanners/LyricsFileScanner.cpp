@@ -62,15 +62,15 @@ namespace lms::scanner
         {
             try
             {
-                std::ifstream ifs{ _file.string() };
+                std::ifstream ifs{ _file };
                 if (!ifs)
-                    LMS_LOG(DBUPDATER, ERROR, "Cannot open file '" << _file.string() << "'");
+                    LMS_LOG(DBUPDATER, ERROR, "Cannot open file " << _file);
                 else
                     _parsedLyrics = metadata::parseLyrics(ifs);
             }
             catch (const metadata::Exception& e)
             {
-                LMS_LOG(DBUPDATER, ERROR, "Cannot read lyrics in file '" << _file.string() << "': " << e.what());
+                LMS_LOG(DBUPDATER, ERROR, "Cannot read lyrics in file " << _file << ": " << e.what());
             }
         }
 
@@ -122,12 +122,12 @@ namespace lms::scanner
 
             if (added)
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Added external lyrics '" << _file.string() << "'");
+                LMS_LOG(DBUPDATER, DEBUG, "Added external lyrics " << _file);
                 stats.additions++;
             }
             else
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Updated external lyrics '" << _file.string() << "'");
+                LMS_LOG(DBUPDATER, DEBUG, "Updated external lyrics " << _file);
                 stats.updates++;
             }
         }

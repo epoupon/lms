@@ -130,17 +130,17 @@ namespace lms::av
     AudioFile::AudioFile(const std::filesystem::path& p)
         : _p{ p }
     {
-        int error{ avformat_open_input(&_context, _p.string().c_str(), nullptr, nullptr) };
+        int error{ avformat_open_input(&_context, _p.c_str(), nullptr, nullptr) };
         if (error < 0)
         {
-            LMS_LOG(AV, ERROR, "Cannot open " << _p.string() << ": " << averror_to_string(error));
+            LMS_LOG(AV, ERROR, "Cannot open " << _p << ": " << averror_to_string(error));
             throw AudioFileException{ error };
         }
 
         error = avformat_find_stream_info(_context, nullptr);
         if (error < 0)
         {
-            LMS_LOG(AV, ERROR, "Cannot find stream information on " << _p.string() << ": " << averror_to_string(error));
+            LMS_LOG(AV, ERROR, "Cannot find stream information on " << _p << ": " << averror_to_string(error));
             avformat_close_input(&_context);
             throw AudioFileException{ error };
         }
@@ -353,7 +353,7 @@ namespace lms::av
             { ".mka", "audio/x-matroska" },
         };
 
-        auto it{ entries.find(core::stringUtils::stringToLower(fileExtension.string())) };
+        auto it{ entries.find(core::stringUtils::stringToLower(fileExtension.c_str())) };
         if (it == std::cend(entries))
             return "";
 

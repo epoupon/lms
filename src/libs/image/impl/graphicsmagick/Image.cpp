@@ -32,7 +32,7 @@ namespace lms::image
 {
     void init(const std::filesystem::path& path)
     {
-        Magick::InitializeMagick(path.string().c_str());
+        Magick::InitializeMagick(path.c_str());
 
         if (auto nbThreads{ MagickLib::GetMagickResourceLimit(MagickLib::ThreadsResource) }; nbThreads != 1)
             LMS_LOG(COVER, WARNING, "Consider setting env var OMP_NUM_THREADS=1 to save resources");

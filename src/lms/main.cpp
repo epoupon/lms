@@ -178,7 +178,7 @@ namespace lms
             }
 
             {
-                std::ofstream oss{ wtConfigPath.string().c_str(), std::ios::out };
+                std::ofstream oss{ wtConfigPath, std::ios::out };
                 if (!oss)
                     throw core::LmsException{ "Can't open '" + wtConfigPath.string() + "' for writing!" };
 

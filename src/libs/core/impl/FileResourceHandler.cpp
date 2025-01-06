@@ -39,13 +39,13 @@ namespace lms
     Wt::Http::ResponseContinuation* FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
     {
         ::uint64_t startByte{ _offset };
-        std::ifstream ifs{ _path.string().c_str(), std::ios::in | std::ios::binary };
+        std::ifstream ifs{ _path, std::ios::in | std::ios::binary };
 
         if (startByte == 0)
         {
             if (!ifs)
             {
-                LMS_LOG(UTILS, ERROR, "Cannot open file stream for '" << _path.string() << "'");
+                LMS_LOG(UTILS, ERROR, "Cannot open file stream for " << _path);
                 response.setStatus(404);
                 return {};
             }
@@ -54,7 +54,7 @@ namespace lms
             const ::uint64_t fileSize{ static_cast<::uint64_t>(ifs.tellg()) };
             ifs.seekg(0, std::ios::beg);
 
-            LMS_LOG(UTILS, DEBUG, "File '" << _path.string() << "', fileSize = " << fileSize);
+            LMS_LOG(UTILS, DEBUG, "File " << _path << ", fileSize = " << fileSize);
 
             response.addHeader("Accept-Ranges", "bytes");
 
@@ -99,7 +99,7 @@ namespace lms
         }
         else if (!ifs)
         {
-            LMS_LOG(UTILS, ERROR, "Cannot reopen file stream for '" << _path.string() << "'");
+            LMS_LOG(UTILS, ERROR, "Cannot reopen file stream for " << _path);
             return {};
         }
 

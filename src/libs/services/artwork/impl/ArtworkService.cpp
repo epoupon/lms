@@ -59,7 +59,7 @@ namespace lms::cover
     {
         setJpegQuality(core::Service<core::IConfig>::get()->getULong("cover-jpeg-quality", 75));
 
-        LMS_LOG(COVER, INFO, "Default release cover path = '" << defaultReleaseCoverSvgPath.string() << "'");
+        LMS_LOG(COVER, INFO, "Default release cover path = " << defaultReleaseCoverSvgPath);
         LMS_LOG(COVER, INFO, "Max cache size = " << _cache.getMaxCacheSize());
 
         _defaultReleaseCover = image::readImage(defaultReleaseCoverSvgPath); // may throw
@@ -141,7 +141,7 @@ namespace lms::cover
         }
         catch (const image::Exception& e)
         {
-            LMS_LOG(COVER, ERROR, "Cannot read cover in file '" << p.string() << "': " << e.what());
+            LMS_LOG(COVER, ERROR, "Cannot read cover in file " << p << ": " << e.what());
         }
 
         return image;
@@ -183,7 +183,7 @@ namespace lms::cover
         }
         catch (av::Exception& e)
         {
-            LMS_LOG(COVER, ERROR, "Cannot get covers from track " << p.string() << ": " << e.what());
+            LMS_LOG(COVER, ERROR, "Cannot get covers from track " << p << ": " << e.what());
         }
 
         return image;

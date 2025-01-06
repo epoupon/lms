@@ -57,7 +57,7 @@ namespace lms::scanner
             {
                 [[maybe_unused]] auto [it, inserted]{ _scannerByExtension.emplace(extension, scanner) };
                 assert(inserted);
-                LMS_LOG(DBUPDATER, INFO, "Registered extension '" << extension.string() << "' for '" << scanner->getName() << "'");
+                LMS_LOG(DBUPDATER, INFO, "Registered extension " << extension << " for " << scanner->getName());
             }
         }
 
@@ -88,12 +88,12 @@ namespace lms::scanner
 
                 if (ec)
                 {
-                    LMS_LOG(DBUPDATER, ERROR, "Cannot scan file '" << path.string() << "': " << ec.message());
+                    LMS_LOG(DBUPDATER, ERROR, "Cannot scan file " << path << ": " << ec.message());
                     context.stats.errors.emplace_back(ScanError{ path, ScanErrorType::CannotReadFile, ec.message() });
                 }
                 else
                 {
-                    auto itScanner{ _scannerByExtension.find(core::stringUtils::stringToLower(path.extension().string())) };
+                    auto itScanner{ _scannerByExtension.find(core::stringUtils::stringToLower(path.extension().c_str())) };
                     if (itScanner != std::cend(_scannerByExtension))
                     {
                         IFileScanner& scanner{ *itScanner->second };
@@ -140,7 +140,7 @@ namespace lms::scanner
             if (_abortScan)
                 return;
 
-            LMS_LOG(DBUPDATER, DEBUG, scanOperation->getName() << ": processing result for '" << scanOperation->getFile().string() << "'");
+            LMS_LOG(DBUPDATER, DEBUG, scanOperation->getName() << ": processing result for " << scanOperation->getFile());
             scanOperation->processResult(context);
             context.stats.scans++;
         }

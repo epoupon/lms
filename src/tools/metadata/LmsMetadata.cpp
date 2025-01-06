@@ -365,14 +365,14 @@ int main(int argc, char* argv[])
                 {
                     std::cout << "Using Lyrics:" << std::endl;
 
-                    std::ifstream ifs{ file.string() };
+                    std::ifstream ifs{ file };
                     if (ifs)
                     {
                         const metadata::Lyrics lyrics{ metadata::parseLyrics(ifs) };
                         std::cout << lyrics << std::endl;
                     }
                     else
-                        std::cerr << "Cannot open file '" << file.string() << "'";
+                        std::cerr << "Cannot open file " << file;
                 }
                 catch (metadata::Exception& e)
                 {
