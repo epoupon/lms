@@ -1,4 +1,4 @@
-FROM	alpine:3.19 AS build
+FROM	alpine:3.20 AS build
 
 WORKDIR	/tmp/workdir
 
@@ -79,7 +79,7 @@ RUN \
 	make distclean
 
 # WT
-ARG	WT_VERSION=4.10.4
+ARG	WT_VERSION=4.11.1
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/emweb/wt/archive/${WT_VERSION}.tar.gz && \
@@ -92,7 +92,7 @@ RUN \
 	make install
 
 # STB
-ARG	STB_VERSION=ae721c50eaf761660b4f90cc590453cdb0c2acd0
+ARG	STB_VERSION=5c205738c191bcb0abc65c4febfa9bd25ff35234
 RUN \
 	DIR=/tmp/stb && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/nothings/stb/archive/${STB_VERSION}.tar.gz && \
@@ -101,7 +101,7 @@ RUN \
 	cp ./*.h ${PREFIX}/include/stb
 
 # TAGLIB
-ARG TAGLIB_VERSION=v2.0.1
+ARG TAGLIB_VERSION=v2.0.2
 RUN \
 	DIR=/tmp/taglib && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/taglib/taglib/archive/${TAGLIB_VERSION}.tar.gz && \
@@ -147,7 +147,7 @@ RUN \
 	rm -rf /tmp/fakeroot/share/Wt/resources/themes
 
 ## Release Stage
-FROM		alpine:3.19 AS release
+FROM		alpine:3.20 AS release
 LABEL		maintainer="Emeric Poupon <itmfr@yahoo.fr>"
 
 ARG	RUNTIME_PACKAGES=" \
