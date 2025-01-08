@@ -187,6 +187,9 @@ namespace lms::db
             case TrackSortMethod::Name:
                 query.orderBy("t.name COLLATE NOCASE");
                 break;
+            case TrackSortMethod::FileName:
+                query.orderBy("t.file_name COLLATE NOCASE");
+                break;
             case TrackSortMethod::DateDescAndRelease:
                 query.orderBy("COALESCE(t.date, CAST(t.year AS TEXT)) DESC,t.release_id,t.disc_number,t.track_number");
                 break;

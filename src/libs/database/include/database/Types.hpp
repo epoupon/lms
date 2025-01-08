@@ -131,6 +131,12 @@ namespace lms::db
         Name,
     };
 
+    enum class DirectorySortMethod
+    {
+        None,
+        Name,
+    };
+
     enum class ReleaseSortMethod
     {
         None,
@@ -160,6 +166,7 @@ namespace lms::db
         Random,
         LastWritten,
         StarredDateDesc,
+        FileName,
         Name,
         DateDescAndRelease,
         Release,   // order by disc/track number

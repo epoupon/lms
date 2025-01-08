@@ -202,6 +202,7 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS directory_parent_directory_idx ON directory(parent_directory_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS directory_path_idx ON directory(absolute_path)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS directory_media_library_idx ON directory(media_library_id)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS directory_name_idx ON directory(name COLLATE NOCASE)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS image_directory_stem_idx ON image(directory_id, stem COLLATE NOCASE)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS image_id_idx ON image(id)");
@@ -239,6 +240,7 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_directory_release_idx ON track(directory_id, release_id);");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_directory_file_stem_idx ON track(directory_id, file_stem);");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_file_last_write_idx ON track(file_last_write)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_file_name_idx ON track(file_name COLLATE NOCASE)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_media_library_idx ON track(media_library_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_media_library_release_idx ON track(media_library_id, release_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_mbid_idx ON track(mbid)");
