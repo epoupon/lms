@@ -108,16 +108,12 @@ namespace lms::ui
             return std::nullopt;
         }
 
-        std::optional<MediaPlayer::Bitrate> bitrateFromString(const std::string& str)
+        std::optional<MediaPlayer::Bitrate> bitrateFromInt(int bitRate)
         {
-            const auto value{ core::stringUtils::readAs<int>(str) };
-            if (!value)
+            if (!db::isAudioBitrateAllowed(bitRate))
                 return std::nullopt;
 
-            if (!db::isAudioBitrateAllowed(*value))
-                return std::nullopt;
-
-            return *value;
+            return bitRate;
         }
 
         std::optional<MediaPlayer::Settings::ReplayGain::Mode> replayGainModeFromString(const std::string& str)
@@ -165,7 +161,7 @@ namespace lms::ui
                     const Json::Object transcoding{ transcodingValue };
                     settings.transcoding.mode = transcodingModeFromString(transcoding.get("mode").toString().orIfNull("")).value_or(Settings::Transcoding::defaultMode);
                     settings.transcoding.format = formatFromString(transcoding.get("format").toString().orIfNull("")).value_or(Settings::Transcoding::defaultFormat);
-                    settings.transcoding.bitrate = bitrateFromString(transcoding.get("bitrate").toString().orIfNull("")).value_or(Settings::Transcoding::defaultBitrate);
+                    settings.transcoding.bitrate = bitrateFromInt(transcoding.get("bitrate").toNumber().orIfNull(0)).value_or(Settings::Transcoding::defaultBitrate);
                 }
             }
             {
