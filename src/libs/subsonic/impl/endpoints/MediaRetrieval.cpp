@@ -176,10 +176,13 @@ namespace lms::api::subsonic
                 bitrate = maxBitRate;
             }
 
+            // Need to transcode here
             if (!requestedFormat)
                 requestedFormat = userTranscodeFormatToAvFormat(context.user->getSubsonicDefaultTranscodingOutputFormat());
             if (!bitrate)
-                bitrate = std::min<std::size_t>(context.user->getSubsonicDefaultTranscodingOutputBitrate(), maxBitRate);
+                bitrate = context.user->getSubsonicDefaultTranscodingOutputBitrate();
+            if (maxBitRate)
+                bitrate = std::min<std::size_t>(bitrate, maxBitRate);
 
             av::transcoding::OutputParameters& outputParameters{ parameters.outputParameters.emplace() };
 
