@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,15 +17,5 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cstddef>
-
-namespace lms::image
-{
-    using ImageSize = std::size_t;
-
-    struct ImageProperties
-    {
-        ImageSize width{};
-        ImageSize height{};
-    };
-} // namespace lms::image
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "StbImageResize.hpp"

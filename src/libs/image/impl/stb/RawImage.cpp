@@ -19,22 +19,8 @@
 
 #include "RawImage.hpp"
 
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_RESIZE_IMPLEMENTATION
-
-#define STBIR_DEFAULT_FILTER_DOWNSAMPLE STBIR_FILTER_MITCHELL
-#define STBIR_DEFAULT_FILTER_UPSAMPLE STBIR_FILTER_CATMULLROM
-
-#define STBI_FAILURE_USERMSG
-
-#include <stb_image.h>
-#if STB_IMAGE_RESIZE_VERSION == 1
-    #include <stb_image_resize.h>
-#elif STB_IMAGE_RESIZE_VERSION == 2
-    #include <stb_image_resize2.h>
-#else
-    #error "Unhandled STB image resize version"!
-#endif
+#include "StbImage.hpp"
+#include "StbImageResize.hpp"
 
 #include "core/ITraceLogger.hpp"
 #include "image/Exception.hpp"
@@ -43,21 +29,7 @@ namespace lms::image::STB
 {
     namespace
     {
-        class StbiException : public Exception
-        {
-        public:
-            StbiException(std::string_view desc)
-                : Exception{ std::string{ desc } + ": " + getLastFailureReason() }
-            {
-            }
 
-        private:
-            static std::string getLastFailureReason()
-            {
-                const char* failureReason{ ::stbi_failure_reason() };
-                return failureReason ? failureReason : "unknown reason";
-            }
-        };
     } // namespace
 
     RawImage::RawImage(std::span<const std::byte> encodedData)

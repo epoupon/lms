@@ -27,6 +27,9 @@ if (${LMS_IMAGE_BACKEND} STREQUAL "stb")
 	target_sources(lmsimage PRIVATE
 		impl/stb/Image.cpp
 		impl/stb/RawImage.cpp
+		impl/stb/StbImage.cpp
+		impl/stb/StbImageResize.cpp
+		impl/stb/StbImageWrite.cpp
 	)
 	target_compile_options(lmsimage PRIVATE "-DSTB_IMAGE_RESIZE_VERSION=${STB_IMAGE_RESIZE_VERSION}")
 	target_include_directories(lmsimage PRIVATE ${STB_IMAGE_INCLUDE_DIR})

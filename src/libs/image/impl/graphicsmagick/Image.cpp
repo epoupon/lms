@@ -21,6 +21,8 @@
 
 #include <memory>
 
+#include <Magick++/Image.h>
+
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "image/Exception.hpp"
@@ -51,6 +53,28 @@ namespace lms::image
     {
         static const std::array<std::filesystem::path, 4> fileExtensions{ ".jpg", ".jpeg", ".png", ".bmp" };
         return fileExtensions;
+    }
+
+    ImageProperties probeImage(const std::filesystem::path& path)
+    {
+        LMS_SCOPED_TRACE_DETAILED("Image", "ProbeFile");
+
+        try
+        {
+            Magick::Image image;
+            image.ping(path.c_str());
+
+            ImageProperties properties;
+            properties.width = image.size().width();
+            properties.height = image.size().height();
+
+            return properties;
+        }
+        catch (Magick::Exception& e)
+        {
+            LMS_LOG(COVER, ERROR, "Caught Magick exception: " << e.what());
+            throw Exception{ std::string{ "Magick probe error: " } + e.what() };
+        }
     }
 
     std::unique_ptr<IRawImage> decodeImage(std::span<const std::byte> encodedData)

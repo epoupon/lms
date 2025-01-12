@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -16,16 +16,6 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
+#pragma once
 
-#include <cstddef>
-
-namespace lms::image
-{
-    using ImageSize = std::size_t;
-
-    struct ImageProperties
-    {
-        ImageSize width{};
-        ImageSize height{};
-    };
-} // namespace lms::image
+#include <stb_image_write.h>

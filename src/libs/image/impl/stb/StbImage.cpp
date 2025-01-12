@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,15 +17,19 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cstddef>
+#define STB_IMAGE_IMPLEMENTATION
+#include "StbImage.hpp"
 
 namespace lms::image
 {
-    using ImageSize = std::size_t;
-
-    struct ImageProperties
+    StbiException::StbiException(std::string_view desc)
+        : Exception{ std::string{ desc } + ": " + getLastFailureReason() }
     {
-        ImageSize width{};
-        ImageSize height{};
-    };
+    }
+
+    std::string StbiException::getLastFailureReason()
+    {
+        const char* failureReason{ ::stbi_failure_reason() };
+        return failureReason ? failureReason : "unknown reason";
+    }
 } // namespace lms::image

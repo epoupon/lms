@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Emeric Poupon
+ * Copyright (C) 2020 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -16,16 +16,27 @@
  * You should have received a copy of the GNU General Public License
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
+#pragma once
 
-#include <cstddef>
+#define STBI_ONLY_JPEG
+#define STBI_ONLY_PNG
+#define STBI_ONLY_BMP
+#define STBI_FAILURE_USERMSG
+
+#include <stb_image.h>
+
+#include <string_view>
+
+#include "image/Exception.hpp"
 
 namespace lms::image
 {
-    using ImageSize = std::size_t;
-
-    struct ImageProperties
+    class StbiException : public Exception
     {
-        ImageSize width{};
-        ImageSize height{};
+    public:
+        StbiException(std::string_view desc);
+
+    private:
+        static std::string getLastFailureReason();
     };
 } // namespace lms::image
