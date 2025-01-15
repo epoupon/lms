@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 77 };
+        static constexpr Version LMS_DATABASE_VERSION{ 78 };
     }
 
     VersionInfo::VersionInfo()
@@ -1029,6 +1029,12 @@ FROM tracklist)");
         utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV77(Session& session)
+    {
+        // added new scan settings: skip single release playlists (default value is conservative, no need to rescan)
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN skip_single_release_playlists BOOLEAN NOT NULL DEFAULT(FALSE)");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1082,6 +1088,7 @@ FROM tracklist)");
             { 74, migrateFromV74 },
             { 75, migrateFromV75 },
             { 76, migrateFromV76 },
+            { 77, migrateFromV77 },
         };
 
         bool migrationPerformed{};

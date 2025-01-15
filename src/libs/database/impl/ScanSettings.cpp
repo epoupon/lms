@@ -94,6 +94,15 @@ namespace lms::db
         }
     }
 
+    void ScanSettings::setSkipSingleReleasePlayLists(bool value)
+    {
+        if (_skipSingleReleasePlayLists != value)
+        {
+            _skipSingleReleasePlayLists = value;
+            incScanVersion();
+        }
+    }
+
     void ScanSettings::incScanVersion()
     {
         _scanVersion += 1;

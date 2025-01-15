@@ -42,6 +42,8 @@ namespace lms::scanner
         std::vector<std::string> extraTags;
         std::vector<std::string> artistTagDelimiters;
         std::vector<std::string> defaultTagDelimiters;
+        bool skipSingleReleasePlayLists{};
+
         std::vector<MediaLibraryInfo> mediaLibraries;
 
         bool operator==(const ScannerSettings& rhs) const = default;

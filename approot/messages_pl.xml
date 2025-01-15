@@ -79,6 +79,7 @@
 <message id="Lms.Admin.Database.extra-tags-to-scan">Szukaj dodatkowych znaczników</message>
 <message id="Lms.Admin.Database.hourly">Co godzinę</message>
 <message id="Lms.Admin.Database.immediate-scan">Skanuj teraz!</message>
+<message id="Lms.Admin.Database.misc">Różne</message>
 <message id="Lms.Admin.Database.monthly">Co miesiąc</message>
 <message id="Lms.Admin.Database.never">Nigdy</message>
 <message id="Lms.Admin.Database.scan-aborted">Skanowanie przerwane!</message>
@@ -88,7 +89,9 @@
 <message id="Lms.Admin.Database.similarity-engine-type">Metoda sprawdzania podobieństwa</message>
 <message id="Lms.Admin.Database.similarity-engine-type.clusters">Oparta o znaczniki</message>
 <message id="Lms.Admin.Database.similarity-engine-type.none">Żadna</message>
+<message id="Lms.Admin.Database.skip-single-release-playlists">Pomiń playlisty zawierające utwory z tego samego albumu</message>
 <message id="Lms.Admin.Database.tag-delimiter-must-not-contain-only-spaces">Rozdzielacz nie może się składać z samych białych znaków</message>
+<message id="Lms.Admin.Database.tag-parsing">Analiza tagów</message>
 <message id="Lms.Admin.Database.update-period">Okres aktualizacji</message>
 <message id="Lms.Admin.Database.update-start-time">Czas startu aktualizacji</message>
 <message id="Lms.Admin.Database.weekly">Co tydzień</message>

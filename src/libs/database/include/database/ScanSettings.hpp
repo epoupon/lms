@@ -70,6 +70,7 @@ namespace lms::db
         SimilarityEngineType getSimilarityEngineType() const { return _similarityEngineType; }
         std::vector<std::string> getArtistTagDelimiters() const;
         std::vector<std::string> getDefaultTagDelimiters() const;
+        bool getSkipSingleReleasePlayLists() const { return _skipSingleReleasePlayLists; }
 
         // Setters
         void setUpdateStartTime(Wt::WTime t) { _startTime = t; }
@@ -78,6 +79,7 @@ namespace lms::db
         void setSimilarityEngineType(SimilarityEngineType type) { _similarityEngineType = type; }
         void setArtistTagDelimiters(std::span<const std::string_view> delimiters);
         void setDefaultTagDelimiters(std::span<const std::string_view> delimiters);
+        void setSkipSingleReleasePlayLists(bool value);
         void incScanVersion();
 
         template<class Action>
@@ -90,6 +92,7 @@ namespace lms::db
             Wt::Dbo::field(a, _extraTagsToScan, "extra_tags_to_scan");
             Wt::Dbo::field(a, _artistTagDelimiters, "artist_tag_delimiters");
             Wt::Dbo::field(a, _defaultTagDelimiters, "default_tag_delimiters");
+            Wt::Dbo::field(a, _skipSingleReleasePlayLists, "skip_single_release_playlists");
         }
 
     private:
@@ -100,5 +103,6 @@ namespace lms::db
         std::string _extraTagsToScan;
         std::string _artistTagDelimiters;
         std::string _defaultTagDelimiters;
+        bool _skipSingleReleasePlayLists{ false };
     };
 } // namespace lms::db

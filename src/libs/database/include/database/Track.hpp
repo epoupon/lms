@@ -294,6 +294,7 @@ namespace lms::db
         std::vector<ObjectPtr<Artist>> getArtists(core::EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
         std::vector<ArtistId> getArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes) const;        // no type means all
         std::vector<ObjectPtr<TrackArtistLink>> getArtistLinks() const;
+        ReleaseId getReleaseId() const { return _release.id(); }
         ObjectPtr<Release> getRelease() const { return _release; }
         std::vector<ObjectPtr<Cluster>> getClusters() const;
         std::vector<ClusterId> getClusterIds() const;

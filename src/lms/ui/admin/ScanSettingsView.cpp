@@ -19,6 +19,7 @@
 
 #include "ScanSettingsView.hpp"
 
+#include <Wt/WCheckBox.h>
 #include <Wt/WComboBox.h>
 #include <Wt/WFormModel.h>
 #include <Wt/WLineEdit.h>
@@ -69,6 +70,7 @@ namespace lms::ui
             static inline constexpr Field UpdatePeriodField{ "update-period" };
             static inline constexpr Field UpdateStartTimeField{ "update-start-time" };
             static inline constexpr Field SimilarityEngineTypeField{ "similarity-engine-type" };
+            static inline constexpr Field SkipSingleReleasePlayLists{ "skip-single-release-playlists" };
 
             using UpdatePeriodModel = ValueStringModel<ScanSettings::UpdatePeriod>;
 
@@ -79,10 +81,12 @@ namespace lms::ui
                 addField(UpdatePeriodField);
                 addField(UpdateStartTimeField);
                 addField(SimilarityEngineTypeField);
+                addField(SkipSingleReleasePlayLists);
 
                 setValidator(UpdatePeriodField, createMandatoryValidator());
                 setValidator(UpdateStartTimeField, createMandatoryValidator());
                 setValidator(SimilarityEngineTypeField, createMandatoryValidator());
+                setValidator(SkipSingleReleasePlayLists, createMandatoryValidator());
             }
 
             std::shared_ptr<UpdatePeriodModel> updatePeriodModel() { return _updatePeriodModel; }
@@ -109,6 +113,8 @@ namespace lms::ui
                     setReadOnly(DatabaseSettingsModel::UpdateStartTimeField, true);
                 }
 
+                setValue(SkipSingleReleasePlayLists, scanSettings->getSkipSingleReleasePlayLists());
+
                 auto similarityEngineTypeRow{ _similarityEngineTypeModel->getRowFromValue(scanSettings->getSimilarityEngineType()) };
                 if (similarityEngineTypeRow)
                     setValue(SimilarityEngineTypeField, _similarityEngineTypeModel->getString(*similarityEngineTypeRow));
@@ -126,17 +132,28 @@ namespace lms::ui
 
                 ScanSettings::pointer scanSettings{ ScanSettings::get(LmsApp->getDbSession()) };
 
-                auto updatePeriodRow{ _updatePeriodModel->getRowFromString(valueText(UpdatePeriodField)) };
-                if (updatePeriodRow)
-                    scanSettings.modify()->setUpdatePeriod(_updatePeriodModel->getValue(*updatePeriodRow));
+                {
+                    const auto updatePeriodRow{ _updatePeriodModel->getRowFromString(valueText(UpdatePeriodField)) };
+                    if (updatePeriodRow)
+                        scanSettings.modify()->setUpdatePeriod(_updatePeriodModel->getValue(*updatePeriodRow));
+                }
 
-                auto startTimeRow{ _updateStartTimeModel->getRowFromString(valueText(UpdateStartTimeField)) };
-                if (startTimeRow)
-                    scanSettings.modify()->setUpdateStartTime(_updateStartTimeModel->getValue(*startTimeRow));
+                {
+                    const auto startTimeRow{ _updateStartTimeModel->getRowFromString(valueText(UpdateStartTimeField)) };
+                    if (startTimeRow)
+                        scanSettings.modify()->setUpdateStartTime(_updateStartTimeModel->getValue(*startTimeRow));
+                }
 
-                auto similarityEngineTypeRow{ _similarityEngineTypeModel->getRowFromString(valueText(SimilarityEngineTypeField)) };
-                if (similarityEngineTypeRow)
-                    scanSettings.modify()->setSimilarityEngineType(_similarityEngineTypeModel->getValue(*similarityEngineTypeRow));
+                {
+                    const bool skipSingleReleasePlayLists{ Wt::asNumber(value(SkipSingleReleasePlayLists)) != 0 };
+                    scanSettings.modify()->setSkipSingleReleasePlayLists(skipSingleReleasePlayLists);
+                }
+
+                {
+                    const auto similarityEngineTypeRow{ _similarityEngineTypeModel->getRowFromString(valueText(SimilarityEngineTypeField)) };
+                    if (similarityEngineTypeRow)
+                        scanSettings.modify()->setSimilarityEngineType(_similarityEngineTypeModel->getValue(*similarityEngineTypeRow));
+                }
 
                 scanSettings.modify()->setExtraTagsToScan(extraTagsToScan);
                 scanSettings.modify()->setArtistTagDelimiters(artistDelimiters);
@@ -317,6 +334,9 @@ namespace lms::ui
         auto updateStartTime{ std::make_unique<Wt::WComboBox>() };
         updateStartTime->setModel(model->updateStartTimeModel());
         t->setFormWidget(DatabaseSettingsModel::UpdateStartTimeField, std::move(updateStartTime));
+
+        // Skip playlists
+        t->setFormWidget(DatabaseSettingsModel::SkipSingleReleasePlayLists, std::make_unique<Wt::WCheckBox>());
 
         // Similarity engine type
         auto similarityEngineType{ std::make_unique<Wt::WComboBox>() };
