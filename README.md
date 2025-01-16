@@ -69,6 +69,9 @@ _LMS_ supports lyrics in `lrc` files, `txt` files, and embedded track metadata. 
 * Play/pause: <kbd>Space</kbd>
 * Previous track: <kbd>Ctrl</kbd> + <kbd>Left</kbd>
 * Next track: <kbd>Ctrl</kbd> + <kbd>Right</kbd>
+* Decrease volume: <kbd>Ctrl</kbd> + <kbd>Down</kbd>
+* Increase volume: <kbd>Ctrl</kbd> + <kbd>Up</kbd>
+
 
 ## Installation
 See [INSTALL.md](INSTALL.md) file.

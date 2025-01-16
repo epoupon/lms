@@ -15,6 +15,9 @@ const Mode = {
 }
 Object.freeze(Mode);
 
+// How much to increase / decrease volume when adjusting it with keyboard shortcuts
+const volumeStepAmount = 0.05;
+
 LMS.mediaplayer = function () {
 	let _root = {};
 	let _elems = {};
@@ -199,6 +202,20 @@ LMS.mediaplayer = function () {
 		}
 	}
 
+	let _stepVolumeDown = function() {
+		let currentVolume = _elems.audio.volume;
+		let remainder = (currentVolume * 10) % (volumeStepAmount * 10);
+		let newVolume = remainder === 0 ? currentVolume - volumeStepAmount : currentVolume - (remainder / 10);
+		_setVolume(Math.max(newVolume, 0));
+	}
+
+	let _stepVolumeUp = function() {
+		let currentVolume = _elems.audio.volume;
+		let remainder = (currentVolume * 10) % (volumeStepAmount * 10);
+		let newVolume = remainder === 0 ? currentVolume + volumeStepAmount : currentVolume + (volumeStepAmount - (remainder / 10));
+		_setVolume(Math.min(newVolume, 1));
+	}
+
 	let _setReplayGain = function (replayGain) {
 		_gainNode.gain.value = Math.pow(10, (_settings.replayGain.preAmpGain + replayGain) / 20);
 	}
@@ -335,6 +352,14 @@ LMS.mediaplayer = function () {
 			}
 			else if (event.ctrlKey && event.keyCode == 39) {
 				_playNext();
+				handled = true;
+			}
+			else if (event.ctrlKey && event.keyCode == 40) {
+				_stepVolumeDown();
+				handled = true;
+			}
+			else if (event.ctrlKey && event.keyCode == 38) {
+				_stepVolumeUp();
 				handled = true;
 			}
 
