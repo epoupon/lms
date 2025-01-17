@@ -256,4 +256,12 @@ namespace lms::db
         PlayList = 0, // user controlled playlists
         Internal = 1, // internal usage (current playqueue, history, ...)
     };
+
+    enum class Advisory
+    {
+        UnSet = 0,
+        Unknown = 1,
+        Clean = 2,
+        Explicit = 3,
+    };
 } // namespace lms::db

@@ -32,6 +32,7 @@ namespace lms::metadata
         // Mapping to internal avformat names and/or common alternative custom names
         static const std::unordered_map<TagType, std::vector<std::string>> tagMapping{
             { TagType::AcoustID, { "ACOUSTID_ID", "ACOUSTID ID" } },
+            { TagType::Advisory, { "ITUNESADVISORY" } },
             { TagType::Album, { "ALBUM", "TALB", "WM/ALBUMTITLE" } },
             { TagType::AlbumArtist, { "ALBUMARTIST", "ALBUM_ARTIST" } },
             { TagType::AlbumArtistSortOrder, { "ALBUMARTISTSORT", "TSO2" } },

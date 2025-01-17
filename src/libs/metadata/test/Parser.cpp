@@ -33,6 +33,7 @@ namespace lms::metadata
         TestTagReader testTags{
             {
                 { TagType::AcoustID, { "e987a441-e134-4960-8019-274eddacc418" } },
+                { TagType::Advisory, { "2" } },
                 { TagType::Album, { "MyAlbum" } },
                 { TagType::AlbumSortOrder, { "MyAlbumSortName" } },
                 { TagType::Artist, { "MyArtist1 & MyArtist2" } },
@@ -99,6 +100,8 @@ namespace lms::metadata
         }
 
         EXPECT_EQ(track->acoustID, core::UUID::fromString("e987a441-e134-4960-8019-274eddacc418"));
+        ASSERT_TRUE(track->advisory.has_value());
+        EXPECT_EQ(track->advisory.value(), Track::Advisory::Clean);
         EXPECT_EQ(track->artistDisplayName, "MyArtist1 & MyArtist2");
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "MyArtist1");
@@ -580,5 +583,32 @@ namespace lms::metadata
         EXPECT_EQ(track->artists[1].name, "Artist2");
         EXPECT_EQ(track->artists[1].mbid, std::nullopt);
         EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct the artist display name
+    }
+
+    TEST(Parser, advisory)
+    {
+        auto doTest = [](std::string_view value, std::optional<Track::Advisory> expectedValue) {
+            const TestTagReader testTags{
+                {
+                    { TagType::Advisory, { value } },
+                }
+            };
+
+            Parser parser;
+            std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+            ASSERT_EQ(track->advisory.has_value(), expectedValue.has_value()) << "Value = '" << value << "'";
+            if (track->advisory.has_value())
+            {
+                EXPECT_EQ(track->advisory.value(), expectedValue);
+            }
+        };
+
+        doTest("0", Track::Advisory::Unknown);
+        doTest("1", Track::Advisory::Explicit);
+        doTest("4", Track::Advisory::Explicit);
+        doTest("2", Track::Advisory::Clean);
+        doTest("", std::nullopt);
+        doTest("3", std::nullopt);
     }
 } // namespace lms::metadata

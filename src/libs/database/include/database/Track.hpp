@@ -193,12 +193,6 @@ namespace lms::db
             }
         };
 
-        struct PathResult
-        {
-            TrackId trackId;
-            std::filesystem::path path;
-        };
-
         Track() = default;
 
         // Find utility functions
@@ -244,6 +238,7 @@ namespace lms::db
         void setRecordingMBID(const std::optional<core::UUID>& MBID) { _recordingMBID = MBID ? MBID->getAsString() : ""; }
         void setCopyright(std::string_view copyright);
         void setCopyrightURL(std::string_view copyrightURL);
+        void setAdvisory(Advisory advisory) { _advisory = advisory; }
         void setTrackReplayGain(std::optional<float> replayGain) { _trackReplayGain = replayGain; }
         void setReleaseReplayGain(std::optional<float> replayGain) { _releaseReplayGain = replayGain; } // may be by disc!
         void setArtistDisplayName(std::string_view name) { _artistDisplayName = name; }
@@ -285,6 +280,7 @@ namespace lms::db
         std::optional<core::UUID> getRecordingMBID() const { return core::UUID::fromString(_recordingMBID); }
         std::optional<std::string> getCopyright() const;
         std::optional<std::string> getCopyrightURL() const;
+        Advisory getAdvisory() const { return _advisory; }
         std::optional<float> getTrackReplayGain() const { return _trackReplayGain; }
         std::optional<float> getReleaseReplayGain() const { return _releaseReplayGain; }
         std::string_view getArtistDisplayName() const { return _artistDisplayName; }
@@ -333,6 +329,7 @@ namespace lms::db
             Wt::Dbo::field(a, _recordingMBID, "recording_mbid");
             Wt::Dbo::field(a, _copyright, "copyright");
             Wt::Dbo::field(a, _copyrightURL, "copyright_url");
+            Wt::Dbo::field(a, _advisory, "advisory");
             Wt::Dbo::field(a, _trackReplayGain, "track_replay_gain");
             Wt::Dbo::field(a, _releaseReplayGain, "release_replay_gain"); // here in Track since Release does not have concept of "disc" (yet?)
             Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
@@ -381,11 +378,11 @@ namespace lms::db
         std::string _recordingMBID;
         std::string _copyright;
         std::string _copyrightURL;
+        Advisory _advisory{ Advisory::UnSet };
         std::optional<float> _trackReplayGain;
         std::optional<float> _releaseReplayGain;
         std::string _artistDisplayName;
         std::string _comment;
-
         Wt::Dbo::ptr<Release> _release;
         Wt::Dbo::ptr<MediaLibrary> _mediaLibrary;
         Wt::Dbo::ptr<Directory> _directory;

@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 78 };
+        static constexpr Version LMS_DATABASE_VERSION{ 79 };
     }
 
     VersionInfo::VersionInfo()
@@ -1035,6 +1035,15 @@ FROM tracklist)");
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN skip_single_release_playlists BOOLEAN NOT NULL DEFAULT(FALSE)");
     }
 
+    void migrateFromV78(Session& session)
+    {
+        // added advisory tag support
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE track ADD COLUMN advisory INTEGER NOT NULL DEFAULT(0)"); // 0 means unset
+
+        // Just increment the scan version of the settings to make the next scan rescan everything
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1089,6 +1098,7 @@ FROM tracklist)");
             { 75, migrateFromV75 },
             { 76, migrateFromV76 },
             { 77, migrateFromV77 },
+            { 78, migrateFromV78 },
         };
 
         bool migrationPerformed{};

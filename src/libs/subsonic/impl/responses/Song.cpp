@@ -32,6 +32,7 @@
 #include "database/Release.hpp"
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"
+#include "database/Types.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
@@ -226,6 +227,22 @@ namespace lms::api::subsonic
         trackResponse.createEmptyArrayChild("genres");
         for (const auto& genre : genres)
             trackResponse.addArrayChild("genres", createItemGenreNode(genre->getName()));
+
+        auto advisoryToExplicitStatus = [](db::Advisory advisory) -> std::string_view {
+            switch (advisory)
+            {
+            case db::Advisory::Clean:
+                return "clean";
+            case db::Advisory::Explicit:
+                return "expicit";
+            case db::Advisory::Unknown:
+            case db::Advisory::UnSet:
+                break;
+            }
+
+            return "";
+        };
+        trackResponse.setAttribute("explicitStatus", advisoryToExplicitStatus(track->getAdvisory()));
 
         trackResponse.addChild("replayGain", createReplayGainNode(track));
 

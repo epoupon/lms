@@ -252,6 +252,7 @@ namespace lms::db
         std::vector<std::string> getLabelNames() const;
         std::vector<std::string> getReleaseTypeNames() const;
         void visitLabels(const std::function<void(const Label::pointer& label)>& _func) const;
+        core::EnumSet<Advisory> getAdvisories() const;
         std::string_view getBarcode() const { return _barcode; }
         ObjectPtr<Image> getImage() const;
 

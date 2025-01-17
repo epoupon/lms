@@ -246,6 +246,25 @@ namespace lms::metadata
 
             return artistDisplayName;
         }
+
+        std::optional<Track::Advisory> getAdvisory(const ITagReader& tagReader)
+        {
+            if (const auto value{ getTagValueAs<int>(tagReader, TagType::Advisory) })
+            {
+                switch (*value)
+                {
+                case 1:
+                case 4:
+                    return Track::Advisory::Explicit;
+                case 2:
+                    return Track::Advisory::Clean;
+                case 0:
+                    return Track::Advisory::Unknown;
+                }
+            }
+
+            return std::nullopt;
+        }
     } // namespace
 
     std::unique_ptr<IParser> createParser(ParserBackend parserBackend, ParserReadStyle parserReadStyle)
@@ -370,6 +389,7 @@ namespace lms::metadata
             track.originalYear = utils::parseYear(*dateStr);
         }
 
+        track.advisory = getAdvisory(tagReader);
         track.lyrics = getLyrics(tagReader); // no custom delimiter on lyrics
         track.comments = getTagValuesAs<std::string>(tagReader, TagType::Comment, {} /* no custom delimiter on comments */);
         track.copyright = getTagValueAs<std::string>(tagReader, TagType::Copyright).value_or("");

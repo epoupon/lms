@@ -666,6 +666,19 @@ namespace lms::db
         utils::forEachQueryResult(query, _func);
     }
 
+    core::EnumSet<Advisory> Release::getAdvisories() const
+    {
+        core::EnumSet<Advisory> res;
+
+        auto query{ session()->query<Advisory>("SELECT DISTINCT advisory FROM track t").where("t.release_id = ?").bind(getId()) };
+
+        utils::forEachQueryResult(query, [&](Advisory advisory) {
+            res.insert(advisory);
+        });
+
+        return res;
+    }
+
     std::chrono::milliseconds Release::getDuration() const
     {
         assert(session());

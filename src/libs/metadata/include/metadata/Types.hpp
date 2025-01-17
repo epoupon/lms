@@ -102,6 +102,12 @@ namespace lms::metadata
 
     struct Track
     {
+        enum class Advisory
+        {
+            Unknown,
+            Explicit,
+            Clean,
+        };
         AudioProperties audioProperties;
         std::optional<core::UUID> mbid;
         std::optional<core::UUID> recordingMBID;
@@ -117,6 +123,7 @@ namespace lms::metadata
         Wt::WDate date;
         std::optional<int> originalYear{};
         Wt::WDate originalDate;
+        std::optional<Advisory> advisory;
         bool hasCover{};
         std::optional<core::UUID> acoustID;
         std::string copyright;

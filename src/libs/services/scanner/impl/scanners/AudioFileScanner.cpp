@@ -35,6 +35,7 @@
 #include "database/TrackArtistLink.hpp"
 #include "database/TrackFeatures.hpp"
 #include "database/TrackLyrics.hpp"
+#include "database/Types.hpp"
 #include "metadata/Exception.hpp"
 #include "metadata/IParser.hpp"
 
@@ -309,6 +310,24 @@ namespace lms::scanner
             return lyrics;
         }
 
+        db::Advisory getAdvisory(std::optional<metadata::Track::Advisory> advisory)
+        {
+            if (!advisory)
+                return db::Advisory::UnSet;
+
+            switch (advisory.value())
+            {
+            case metadata::Track::Advisory::Clean:
+                return db::Advisory::Clean;
+            case metadata::Track::Advisory::Explicit:
+                return db::Advisory::Explicit;
+            case metadata::Track::Advisory::Unknown:
+                return db::Advisory::Unknown;
+            }
+
+            return db::Advisory::UnSet;
+        }
+
         class AudioFileScanOperation : public IFileScanOperation
         {
         public:
@@ -552,6 +571,7 @@ namespace lms::scanner
             track.modify()->setHasCover(_parsedTrack->hasCover);
             track.modify()->setCopyright(_parsedTrack->copyright);
             track.modify()->setCopyrightURL(_parsedTrack->copyrightURL);
+            track.modify()->setAdvisory(getAdvisory(_parsedTrack->advisory));
             track.modify()->setComment(!_parsedTrack->comments.empty() ? _parsedTrack->comments.front() : ""); // only take the first one for now
             track.modify()->setTrackReplayGain(_parsedTrack->replayGain);
             track.modify()->setArtistDisplayName(_parsedTrack->artistDisplayName);

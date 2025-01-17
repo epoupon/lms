@@ -135,6 +135,24 @@ namespace lms::metadata
         return os;
     }
 
+    std::ostream& operator<<(std::ostream& os, Track::Advisory advisory)
+    {
+        switch (advisory)
+        {
+        case Track::Advisory::Clean:
+            os << "clean";
+            break;
+        case Track::Advisory::Explicit:
+            os << "Explicit";
+            break;
+        case Track::Advisory::Unknown:
+            os << "Unknown";
+            break;
+        }
+
+        return os;
+    }
+
     void parse(IParser& parser, const std::filesystem::path& file)
     {
         using namespace metadata;
@@ -249,6 +267,9 @@ namespace lms::metadata
 
         if (!track->copyrightURL.empty())
             std::cout << "CopyrightURL: " << track->copyrightURL << std::endl;
+
+        if (track->advisory)
+            std::cout << "Advisory: " << *track->advisory << std::endl;
 
         std::cout << std::endl;
     }

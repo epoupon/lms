@@ -59,6 +59,7 @@ namespace lms::metadata
         // Mapping to internal taglib names and/or common alternative custom names
         const std::unordered_map<TagType, std::vector<std::string>> tagMapping{
             { TagType::AcoustID, { "ACOUSTID_ID", "ACOUSTID ID" } },
+            { TagType::Advisory, { "ITUNESADVISORY" } },
             { TagType::Album, { "ALBUM" } },
             { TagType::AlbumArtist, { "ALBUMARTIST" } },
             { TagType::AlbumArtistSortOrder, { "ALBUMARTISTSORT" } },
@@ -319,10 +320,18 @@ namespace lms::metadata
         // MP4
         else if (TagLib::MP4::File * mp4File{ dynamic_cast<TagLib::MP4::File*>(_file.file()) })
         {
-            TagLib::MP4::Item coverItem{ mp4File->tag()->item("covr") };
-            TagLib::MP4::CoverArtList coverArtList{ coverItem.toCoverArtList() };
-            if (!coverArtList.isEmpty())
-                _hasEmbeddedCover = true;
+            if (const TagLib::MP4::Item coverItem{ mp4File->tag()->item("covr") }; coverItem.isValid())
+            {
+                if (coverItem.type() == TagLib::MP4::Item::Type::CoverArtList)
+                    _hasEmbeddedCover = true;
+            }
+
+            // Taglib does not expose rtng in properties
+            if (const TagLib::MP4::Item rtngItem{ mp4File->tag()->item("rtng") }; rtngItem.isValid())
+            {
+                if (rtngItem.type() == TagLib::MP4::Item::Type::Byte)
+                    _propertyMap["ITUNESADVISORY"] = TagLib::String{ std::to_string(rtngItem.toByte()) };
+            }
 
             if (!_propertyMap.contains("ORIGINALDATE"))
             {
