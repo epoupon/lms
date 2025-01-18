@@ -27,6 +27,7 @@
 #include <vector>
 
 #include <Wt/WDate.h>
+#include <Wt/WDateTime.h>
 
 #include "core/UUID.hpp"
 
@@ -124,6 +125,7 @@ namespace lms::metadata
         std::optional<int> originalYear{};
         Wt::WDate originalDate;
         std::optional<Advisory> advisory;
+        Wt::WDateTime encodingTime;
         bool hasCover{};
         std::optional<core::UUID> acoustID;
         std::string copyright;

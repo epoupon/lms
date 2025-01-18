@@ -390,6 +390,14 @@ namespace lms::metadata
         }
 
         track.advisory = getAdvisory(tagReader);
+
+        if (const auto encodingTime{ getTagValueAs<std::string>(tagReader, TagType::EncodingTime) })
+        {
+            if (auto dateTime{ core::stringUtils::fromISO8601String(*encodingTime) }; dateTime.isValid())
+                track.encodingTime = dateTime;
+            else if (const Wt::WDate date{ utils::parseDate(*encodingTime) }; date.isValid())
+                track.encodingTime = Wt::WDateTime{ date };
+        }
         track.lyrics = getLyrics(tagReader); // no custom delimiter on lyrics
         track.comments = getTagValuesAs<std::string>(tagReader, TagType::Comment, {} /* no custom delimiter on comments */);
         track.copyright = getTagValueAs<std::string>(tagReader, TagType::Copyright).value_or("");

@@ -64,6 +64,7 @@ namespace lms::metadata
             { TagType::DiscNumber, { "TPOS", "DISC", "DISK", "DISCNUMBER", "WM/PARTOFSET" } },
             { TagType::DiscSubtitle, { "TSST", "DISCSUBTITLE", "SETSUBTITLE" } },
             { TagType::EncodedBy, { "ENCODEDBY" } },
+            { TagType::EncodingTime, { "ENCODINGTIME", "TDEN" } },
             { TagType::Engineer, { "ENGINEER" } },
             { TagType::GaplessPlayback, { "GAPLESSPLAYBACK" } },
             { TagType::Genre, { "GENRE" } },

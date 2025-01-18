@@ -479,6 +479,7 @@ namespace lms::scanner
             {
                 track = dbSession.create<db::Track>();
                 track.modify()->setAbsoluteFilePath(_file);
+                track.modify()->setAddedTime(fileInfo->lastWriteTime); // may be erased by encodingTime
                 added = true;
             }
 
@@ -495,6 +496,9 @@ namespace lms::scanner
             track.modify()->setRelativeFilePath(fileInfo->relativePath);
             track.modify()->setFileSize(fileInfo->fileSize);
             track.modify()->setLastWriteTime(fileInfo->lastWriteTime);
+
+            if (_parsedTrack->encodingTime.isValid())
+                track.modify()->setAddedTime(_parsedTrack->encodingTime);
 
             db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, _mediaLibrary.id) }; // may be null if settings are updated in // => next scan will correct this
             track.modify()->setMediaLibrary(mediaLibrary);
@@ -548,7 +552,6 @@ namespace lms::scanner
             track.modify()->setDiscSubtitle(_parsedTrack->medium ? _parsedTrack->medium->name : "");
             track.modify()->setClusters(getOrCreateClusters(dbSession, *_parsedTrack));
             track.modify()->setName(title);
-            track.modify()->setAddedTime(Wt::WDateTime::currentDateTime());
             track.modify()->setTrackNumber(_parsedTrack->position);
             track.modify()->setDiscNumber(_parsedTrack->medium ? _parsedTrack->medium->position : std::nullopt);
             track.modify()->setDate(_parsedTrack->date);

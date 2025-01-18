@@ -17,10 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <map>
 #include <vector>
 
 #include <gtest/gtest.h>
+
+#include <Wt/WTime.h>
 
 #include "Parser.hpp"
 #include "TestTagReader.hpp"
@@ -610,5 +611,27 @@ namespace lms::metadata
         doTest("2", Track::Advisory::Clean);
         doTest("", std::nullopt);
         doTest("3", std::nullopt);
+    }
+
+    TEST(Parser, encodingTime)
+    {
+        auto doTest = [](std::string_view value, Wt::WDateTime expectedValue) {
+            const TestTagReader testTags{
+                {
+                    { TagType::EncodingTime, { value } },
+                }
+            };
+
+            Parser parser;
+            std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+            ASSERT_EQ(track->encodingTime, expectedValue) << "Value = '" << value << "'";
+        };
+
+        doTest("", Wt::WDateTime{});
+        doTest("foo", Wt::WDateTime{});
+        doTest("2020-01-03T09:08:11.075", Wt::WDateTime{ Wt::WDate{ 2020, 01, 03 }, Wt::WTime{ 9, 8, 11, 75 } });
+        doTest("2020-01-03", Wt::WDateTime{ Wt::WDate{ 2020, 01, 03 } });
+        doTest("2020/01/03", Wt::WDateTime{ Wt::WDate{ 2020, 01, 03 } });
     }
 } // namespace lms::metadata

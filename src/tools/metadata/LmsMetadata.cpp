@@ -202,9 +202,6 @@ namespace lms::metadata
         for (const Artist& artist : track->remixerArtists)
             std::cout << "Remixer: " << artist << std::endl;
 
-        if (track->medium)
-            std::cout << "Medium: " << *track->medium;
-
         std::cout << "Title: " << track->title << std::endl;
 
         if (track->mbid)
@@ -270,6 +267,12 @@ namespace lms::metadata
 
         if (track->advisory)
             std::cout << "Advisory: " << *track->advisory << std::endl;
+
+        if (track->encodingTime.isValid())
+            std::cout << "Encoding time: " << core::stringUtils::toISO8601String(track->encodingTime) << std::endl;
+
+        if (track->medium)
+            std::cout << "Medium: " << *track->medium;
 
         std::cout << std::endl;
     }

@@ -96,6 +96,7 @@ namespace lms::metadata
             { TagType::DiscSubtitle, { "DISCSUBTITLE", "SETSUBTITLE" } },
             { TagType::EncodedBy, { "ENCODEDBY" } },
             { TagType::Engineer, { "ENGINEER" } },
+            { TagType::EncodingTime, { "ENCODINGTIME" } },
             { TagType::GaplessPlayback, { "GAPLESSPLAYBACK" } },
             { TagType::Genre, { "GENRE" } },
             { TagType::Grouping, { "GROUPING", "ALBUMGROUPING" } },

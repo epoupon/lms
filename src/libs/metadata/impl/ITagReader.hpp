@@ -65,6 +65,7 @@ namespace lms::metadata
         DiscSubtitle,
         EncodedBy,
         EncoderSettings,
+        EncodingTime,
         Engineer,
         GaplessPlayback,
         Genre,
