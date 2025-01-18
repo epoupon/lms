@@ -48,6 +48,10 @@
 #include "core/String.hpp"
 #include "metadata/Exception.hpp"
 
+#if (TAGLIB_MAJOR_VERSION > 2) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_MINOR_VERSION > 0)
+    #define TAGLIB_HAS_MP4_ITEM_TYPE
+#endif
+
 namespace lms::metadata
 {
     namespace
@@ -322,14 +326,18 @@ namespace lms::metadata
         {
             if (const TagLib::MP4::Item coverItem{ mp4File->tag()->item("covr") }; coverItem.isValid())
             {
+#if TAGLIB_HAS_MP4_ITEM_TYPE
                 if (coverItem.type() == TagLib::MP4::Item::Type::CoverArtList)
+#endif
                     _hasEmbeddedCover = true;
             }
 
             // Taglib does not expose rtng in properties
             if (const TagLib::MP4::Item rtngItem{ mp4File->tag()->item("rtng") }; rtngItem.isValid())
             {
+#if TAGLIB_HAS_MP4_ITEM_TYPE
                 if (rtngItem.type() == TagLib::MP4::Item::Type::Byte)
+#endif
                     _propertyMap["ITUNESADVISORY"] = TagLib::String{ std::to_string(rtngItem.toByte()) };
             }
 
