@@ -174,7 +174,9 @@ namespace lms::ui::releaseHelpers
     {
         Wt::WString res;
 
-        // Year can be here, but originalYear can't be here without year (enforced by scanner)
+        // Year could be here, but originalYear can't be here without year (enforced by scanner)
+        assert(year || !originalYear);
+
         if (!year)
             return res;
 

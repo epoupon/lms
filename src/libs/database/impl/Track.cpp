@@ -34,6 +34,7 @@
 #include "database/User.hpp"
 
 #include "IdTypeTraits.hpp"
+#include "PartialDateTimeTraits.hpp"
 #include "PathTraits.hpp"
 #include "SqlQuery.hpp"
 #include "StringViewTraits.hpp"
@@ -448,6 +449,16 @@ namespace lms::db
     void Track::addLyrics(const ObjectPtr<TrackLyrics>& lyrics)
     {
         _trackLyrics.insert(getDboPtr(lyrics));
+    }
+
+    std::optional<int> Track::getYear() const
+    {
+        return _date.getYear();
+    }
+
+    std::optional<int> Track::getOriginalYear() const
+    {
+        return _originalDate.getYear();
     }
 
     bool Track::hasLyrics() const

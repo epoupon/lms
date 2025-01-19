@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 79 };
+        static constexpr Version LMS_DATABASE_VERSION{ 80 };
     }
 
     VersionInfo::VersionInfo()
@@ -88,6 +88,14 @@ namespace lms::db::Migration
 
     namespace
     {
+        void dropIndexes(Session& session)
+        {
+            // Make sure we remove all the previoulsy created index, the createIndexesIfNeeded will recreate them all
+            std::vector<std::string> indexeNames{ utils::fetchQueryResults(session.getDboSession()->query<std::string>(R"(SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE '%_idx')")) };
+            for (const auto& indexName : indexeNames)
+                utils::executeCommand(*session.getDboSession(), "DROP INDEX " + indexName);
+        }
+
         void migrateFromV33(Session& session)
         {
             // remove name from track_artist_link
@@ -461,9 +469,7 @@ SELECT
         void migrateFromV56(Session& session)
         {
             // Make sure we remove all the previoulsy created index, the createIndexesIfNeeded will recreate them all
-            std::vector<std::string> indexeNames{ utils::fetchQueryResults(session.getDboSession()->query<std::string>(R"(SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE '%_idx')")) };
-            for (const auto& indexName : indexeNames)
-                utils::executeCommand(*session.getDboSession(), "DROP INDEX " + indexName);
+            dropIndexes(session);
         }
 
         void migrateFromV57(Session& session)
@@ -1044,6 +1050,19 @@ FROM tracklist)");
         utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV79(Session& session)
+    {
+        // Make sure we remove all the previoulsy created index, the createIndexesIfNeeded will recreate them all
+        dropIndexes(session);
+
+        // New partial date/time support
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE track DROP COLUMN year");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE track DROP COLUMN original_year");
+
+        // Just increment the scan version of the settings to make the next scan rescan everything
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1099,6 +1118,7 @@ FROM tracklist)");
             { 76, migrateFromV76 },
             { 77, migrateFromV77 },
             { 78, migrateFromV78 },
+            { 79, migrateFromV79 },
         };
 
         bool migrationPerformed{};

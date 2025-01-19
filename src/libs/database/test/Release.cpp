@@ -19,6 +19,7 @@
 
 #include "Common.hpp"
 
+#include "core/PartialDateTime.hpp"
 #include "database/Image.hpp"
 
 namespace lms::db::tests
@@ -462,8 +463,8 @@ namespace lms::db::tests
     {
         ScopedRelease release1{ session, "MyRelease1" };
         ScopedRelease release2{ session, "MyRelease2" };
-        const Wt::WDate release1Date{ Wt::WDate{ 1994, 2, 3 } };
-        const Wt::WDate release1OriginalDate{ Wt::WDate{ 1993, 4, 5 } };
+        const core::PartialDateTime release1Date{ 1994, 2, 3 };
+        const core::PartialDateTime release1OriginalDate{ 1993, 4, 5 };
 
         ScopedTrack track1A{ session };
         ScopedTrack track1B{ session };
@@ -473,7 +474,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(DateRange::fromYearRange(0, 3000))) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ -3000, 3000 })) };
             EXPECT_EQ(releases.results.size(), 0);
         }
 
@@ -492,20 +493,23 @@ namespace lms::db::tests
 
             EXPECT_EQ(release1.get()->getDate(), release1Date);
             EXPECT_EQ(release1.get()->getOriginalDate(), release1OriginalDate);
+
+            EXPECT_EQ(release1.get()->getYear(), release1Date.getYear());
+            EXPECT_EQ(release1.get()->getOriginalYear(), release1OriginalDate.getYear());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(DateRange::fromYearRange(1950, 2000))) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1950, 2000 })) };
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release1.getId());
 
-            releases = Release::findIds(session, Release::FindParameters{}.setDateRange(DateRange::fromYearRange(1994, 1994)));
+            releases = Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1994, 1994 }));
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release1.getId());
 
-            releases = Release::findIds(session, Release::FindParameters{}.setDateRange(DateRange::fromYearRange(1993, 1993)));
+            releases = Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1993, 1993 }));
             ASSERT_EQ(releases.results.size(), 0);
         }
     }
@@ -525,7 +529,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(DateRange::fromYearRange(0, 3000))) };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 0, 3000 })) };
             EXPECT_EQ(releases.results.size(), 0);
         }
 
@@ -537,10 +541,10 @@ namespace lms::db::tests
             track2A.get().modify()->setRelease(release2.get());
             track2B.get().modify()->setRelease(release2.get());
 
-            track1A.get().modify()->setYear(release1Year);
-            track1B.get().modify()->setYear(release1Year);
-            track1A.get().modify()->setOriginalYear(release1OriginalYear);
-            track1B.get().modify()->setOriginalYear(release1OriginalYear);
+            track1A.get().modify()->setDate(core::PartialDateTime{ release1Year });
+            track1B.get().modify()->setDate(core::PartialDateTime{ release1Year });
+            track1A.get().modify()->setOriginalDate(core::PartialDateTime{ release1OriginalYear });
+            track1B.get().modify()->setOriginalDate(core::PartialDateTime{ release1OriginalYear });
 
             EXPECT_EQ(release1.get()->getYear(), release1Year);
             EXPECT_EQ(release1.get()->getOriginalYear(), release1OriginalYear);
@@ -549,15 +553,15 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(DateRange::fromYearRange(1950, 2000))) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1950, 2000 })) };
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release1.getId());
 
-            releases = Release::findIds(session, Release::FindParameters{}.setDateRange(DateRange::fromYearRange(1994, 1994)));
+            releases = Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1994, 1994 }));
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release1.getId());
 
-            releases = Release::findIds(session, Release::FindParameters{}.setDateRange(DateRange::fromYearRange(1993, 1993)));
+            releases = Release::findIds(session, Release::FindParameters{}.setDateRange(YearRange{ 1993, 1993 }));
             ASSERT_EQ(releases.results.size(), 0);
         }
     }
@@ -957,11 +961,11 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Release_sortMethod)
     {
         ScopedRelease release1{ session, "MyRelease1" };
-        const Wt::WDate release1Date{ Wt::WDate{ 2000, 2, 3 } };
-        const Wt::WDate release1OriginalDate{ Wt::WDate{ 1993, 4, 5 } };
+        const core::PartialDateTime release1Date{ 2000, 2, 3 };
+        const core::PartialDateTime release1OriginalDate{ 1993, 4, 5 };
 
         ScopedRelease release2{ session, "MyRelease2" };
-        const Wt::WDate release2Date{ Wt::WDate{ 1994, 2, 3 } };
+        const core::PartialDateTime release2Date{ 1994, 2, 3 };
 
         ScopedTrack track1{ session };
         ScopedTrack track2{ session };

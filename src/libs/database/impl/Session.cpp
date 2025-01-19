@@ -52,6 +52,7 @@
 
 #include "EnumSetTraits.hpp"
 #include "Migration.hpp"
+#include "PartialDateTimeTraits.hpp"
 #include "PathTraits.hpp"
 #include "Utils.hpp"
 
@@ -247,12 +248,10 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_name_idx ON track(name)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_name_nocase_idx ON track(name COLLATE NOCASE)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_original_date_idx ON track(original_date)");
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_original_year_idx ON track(original_year)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_recording_mbid_idx ON track(recording_mbid)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_idx ON track(release_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_file_last_write_idx ON track(release_id, file_last_write)");
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_year_idx ON track(release_id, year)");
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_year_idx ON track(year)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_date_idx ON track(release_id, date)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS tracklist_name_idx ON tracklist(name)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS tracklist_user_type_idx ON tracklist(user_id, type)");

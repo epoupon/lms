@@ -26,9 +26,7 @@
 #include <string_view>
 #include <vector>
 
-#include <Wt/WDate.h>
-#include <Wt/WDateTime.h>
-
+#include "core/PartialDateTime.hpp"
 #include "core/UUID.hpp"
 
 #include "Lyrics.hpp"
@@ -120,12 +118,11 @@ namespace lms::metadata
         std::vector<std::string> moods;
         std::vector<std::string> languages;
         Tags userExtraTags;
-        std::optional<int> year{};
-        Wt::WDate date;
-        std::optional<int> originalYear{};
-        Wt::WDate originalDate;
+        core::PartialDateTime date;
+        std::optional<int> originalYear;
+        core::PartialDateTime originalDate;
         std::optional<Advisory> advisory;
-        Wt::WDateTime encodingTime;
+        core::PartialDateTime encodingTime;
         bool hasCover{};
         std::optional<core::UUID> acoustID;
         std::string copyright;

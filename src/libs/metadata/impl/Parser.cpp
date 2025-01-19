@@ -22,6 +22,7 @@
 #include <span>
 
 #include "core/ILogger.hpp"
+#include "core/PartialDateTime.hpp"
 #include "core/String.hpp"
 #include "metadata/Exception.hpp"
 
@@ -360,44 +361,27 @@ namespace lms::metadata
         track.recordingMBID = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzRecordingID);
         track.acoustID = getTagValueAs<core::UUID>(tagReader, TagType::AcoustID);
         track.position = getTagValueAs<std::size_t>(tagReader, TagType::TrackNumber); // May parse 'Number/Total', that's fine
-        if (auto dateStr = getTagValueAs<std::string>(tagReader, TagType::Date))
+        if (const auto dateStr{ getTagValueAs<std::string>(tagReader, TagType::Date) })
         {
-            if (const Wt::WDate date{ utils::parseDate(*dateStr) }; date.isValid())
-            {
+            if (const core::PartialDateTime date{ core::PartialDateTime::fromString(*dateStr) }; date.isValid())
                 track.date = date;
-                track.year = date.year();
-            }
-            else
-            {
-                track.year = utils::parseYear(*dateStr);
-            }
         }
-        if (auto dateStr = getTagValueAs<std::string>(tagReader, TagType::OriginalReleaseDate))
+        if (const auto dateStr = getTagValueAs<std::string>(tagReader, TagType::OriginalReleaseDate))
         {
-            if (const Wt::WDate date{ utils::parseDate(*dateStr) }; date.isValid())
-            {
+            if (const core::PartialDateTime date{ core::PartialDateTime::fromString(*dateStr) }; date.isValid())
                 track.originalDate = date;
-                track.originalYear = date.year();
-            }
-            else
-            {
-                track.originalYear = utils::parseYear(*dateStr);
-            }
         }
-        if (auto dateStr = getTagValueAs<std::string>(tagReader, TagType::OriginalReleaseYear))
-        {
+        if (const auto dateStr{ getTagValueAs<std::string>(tagReader, TagType::OriginalReleaseYear) })
             track.originalYear = utils::parseYear(*dateStr);
+
+        if (const auto encodingTimeStr{ getTagValueAs<std::string>(tagReader, TagType::EncodingTime) })
+        {
+            if (const core::PartialDateTime date{ core::PartialDateTime::fromString(*encodingTimeStr) }; date.isValid())
+                track.encodingTime = date;
         }
 
         track.advisory = getAdvisory(tagReader);
 
-        if (const auto encodingTime{ getTagValueAs<std::string>(tagReader, TagType::EncodingTime) })
-        {
-            if (auto dateTime{ core::stringUtils::fromISO8601String(*encodingTime) }; dateTime.isValid())
-                track.encodingTime = dateTime;
-            else if (const Wt::WDate date{ utils::parseDate(*encodingTime) }; date.isValid())
-                track.encodingTime = Wt::WDateTime{ date };
-        }
         track.lyrics = getLyrics(tagReader); // no custom delimiter on lyrics
         track.comments = getTagValuesAs<std::string>(tagReader, TagType::Comment, {} /* no custom delimiter on comments */);
         track.copyright = getTagValueAs<std::string>(tagReader, TagType::Copyright).value_or("");
@@ -432,13 +416,9 @@ namespace lms::metadata
         track.remixerArtists = getArtists(tagReader, { TagType::Remixers, TagType::Remixer }, { TagType::RemixersSortOrder, TagType::RemixerSortOrder }, {}, _artistTagDelimiters, _defaultTagDelimiters);
         track.performerArtists = getPerformerArtists(tagReader); // artistDelimiters not supported
 
-        // If a file has date but no year, set it
-        if (!track.year && track.date.isValid())
-            track.year = track.date.year();
-
         // If a file has originalDate but no originalYear, set it
-        if (!track.originalYear && track.originalDate.isValid())
-            track.originalYear = track.originalDate.year();
+        if (!track.originalYear)
+            track.originalYear = track.originalDate.getYear();
     }
 
     std::optional<Medium> Parser::getMedium(const ITagReader& tagReader)

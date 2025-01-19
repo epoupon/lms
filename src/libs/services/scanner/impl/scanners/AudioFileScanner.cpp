@@ -22,6 +22,7 @@
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
+#include "core/PartialDateTime.hpp"
 #include "core/Path.hpp"
 #include "core/Service.hpp"
 #include "database/Artist.hpp"
@@ -479,7 +480,17 @@ namespace lms::scanner
             {
                 track = dbSession.create<db::Track>();
                 track.modify()->setAbsoluteFilePath(_file);
-                track.modify()->setAddedTime(fileInfo->lastWriteTime); // may be erased by encodingTime
+
+                const core::PartialDateTime addedTime{
+                    fileInfo->lastWriteTime.date().year(),
+                    static_cast<unsigned>(fileInfo->lastWriteTime.date().month()),
+                    static_cast<unsigned>(fileInfo->lastWriteTime.date().day()),
+                    static_cast<unsigned>(fileInfo->lastWriteTime.time().hour()),
+                    static_cast<unsigned>(fileInfo->lastWriteTime.time().minute()),
+                    static_cast<unsigned>(fileInfo->lastWriteTime.time().second())
+                };
+
+                track.modify()->setAddedTime(addedTime); // may be erased by encodingTime
                 added = true;
             }
 
@@ -555,17 +566,13 @@ namespace lms::scanner
             track.modify()->setTrackNumber(_parsedTrack->position);
             track.modify()->setDiscNumber(_parsedTrack->medium ? _parsedTrack->medium->position : std::nullopt);
             track.modify()->setDate(_parsedTrack->date);
-            track.modify()->setYear(_parsedTrack->year);
             track.modify()->setOriginalDate(_parsedTrack->originalDate);
-            track.modify()->setOriginalYear(_parsedTrack->originalYear);
+            if (!track->getOriginalDate().isValid() && _parsedTrack->originalYear)
+                track.modify()->setOriginalDate(core::PartialDateTime{ *_parsedTrack->originalYear });
 
             // If a file has an OriginalDate but no date, set it to ease filtering
             if (!_parsedTrack->date.isValid() && _parsedTrack->originalDate.isValid())
                 track.modify()->setDate(_parsedTrack->originalDate);
-
-            // If a file has an OriginalYear but no Year, set it to ease filtering
-            if (!_parsedTrack->year && _parsedTrack->originalYear)
-                track.modify()->setYear(_parsedTrack->originalYear);
 
             track.modify()->setRecordingMBID(_parsedTrack->recordingMBID);
             track.modify()->setTrackMBID(_parsedTrack->mbid);

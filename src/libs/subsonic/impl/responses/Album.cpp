@@ -204,7 +204,7 @@ namespace lms::api::subsonic
             albumNode.createEmptyArrayChild("artists");
             albumNode.setAttribute("displayArtist", "");
         }
-        albumNode.addChild("originalReleaseDate", createItemDateNode(release->getOriginalDate(), release->getOriginalYear()));
+        albumNode.addChild("originalReleaseDate", createItemDateNode(release->getOriginalDate()));
 
         albumNode.setAttribute("isCompilation", release->isCompilation());
 

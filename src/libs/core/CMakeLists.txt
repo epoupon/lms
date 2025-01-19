@@ -12,6 +12,7 @@ add_library(lmscore SHARED
 	impl/IOContextRunner.cpp
 	impl/Logger.cpp
 	impl/NetAddress.cpp
+	impl/PartialDateTime.cpp
 	impl/Path.cpp
 	impl/Random.cpp
 	impl/RecursiveSharedMutex.cpp

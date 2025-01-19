@@ -100,12 +100,10 @@ namespace lms::db
         }
     };
 
-    struct DateRange
+    struct YearRange
     {
-        int begin;
-        int end;
-
-        static DateRange fromYearRange(int from, int to);
+        int begin{};
+        int end{};
     };
 
     struct DiscInfo

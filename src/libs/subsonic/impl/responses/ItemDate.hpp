@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <Wt/WDate.h>
+#include "core/PartialDateTime.hpp"
 
 #include "SubsonicResponse.hpp"
 
 namespace lms::api::subsonic
 {
-    Response::Node createItemDateNode(const Wt::WDate& date, std::optional<int> year);
+    Response::Node createItemDateNode(const core::PartialDateTime& date);
 }

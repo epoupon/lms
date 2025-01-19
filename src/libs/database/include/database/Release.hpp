@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <filesystem>
 #include <optional>
 #include <span>
 #include <string>
@@ -30,6 +29,7 @@
 #include <Wt/WDateTime.h>
 
 #include "core/EnumSet.hpp"
+#include "core/PartialDateTime.hpp"
 #include "core/UUID.hpp"
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
@@ -126,7 +126,7 @@ namespace lms::db
             ReleaseSortMethod sortMethod{ ReleaseSortMethod::None };
             std::optional<Range> range;
             Wt::WDateTime writtenAfter;
-            std::optional<DateRange> dateRange;
+            std::optional<YearRange> dateRange;
             UserId starringUser;                                             // only releases starred by this user
             std::optional<FeedbackBackend> feedbackBackend;                  //    and for this backend
             ArtistId artist;                                                 // only releases that involved this user
@@ -167,7 +167,7 @@ namespace lms::db
                 writtenAfter = _after;
                 return *this;
             }
-            FindParameters& setDateRange(const std::optional<DateRange>& _dateRange)
+            FindParameters& setDateRange(const std::optional<YearRange>& _dateRange)
             {
                 dateRange = _dateRange;
                 return *this;
@@ -227,9 +227,9 @@ namespace lms::db
         std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const;
 
         // Utility functions (if all tracks have the same values, which is legit to not be the case)
-        Wt::WDate getDate() const;
+        core::PartialDateTime getDate() const;
         std::optional<int> getYear() const;
-        Wt::WDate getOriginalDate() const;
+        core::PartialDateTime getOriginalDate() const;
         std::optional<int> getOriginalYear() const;
         std::optional<std::string> getCopyright() const;
         std::optional<std::string> getCopyrightURL() const;
@@ -302,7 +302,7 @@ namespace lms::db
         Release(const std::string& name, const std::optional<core::UUID>& MBID = {});
         static pointer create(Session& session, const std::string& name, const std::optional<core::UUID>& MBID = {});
 
-        Wt::WDate getDate(bool original) const;
+        core::PartialDateTime getDate(bool original) const;
         std::optional<int> getYear(bool original) const;
 
         static constexpr std::size_t _maxNameLength{ 512 };

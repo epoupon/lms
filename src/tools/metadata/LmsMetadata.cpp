@@ -235,12 +235,10 @@ namespace lms::metadata
             std::cout << "Position: " << *track->position << std::endl;
 
         if (track->date.isValid())
-            std::cout << "Date: " << track->date.toString("yyyy-MM-dd") << std::endl;
-        if (track->year)
-            std::cout << "Year: " << *track->year << std::endl;
+            std::cout << "Date: " << track->date.toISO8601String() << std::endl;
 
         if (track->originalDate.isValid())
-            std::cout << "Original date: " << track->originalDate.toString("yyyy-MM-dd") << std::endl;
+            std::cout << "Original date: " << track->originalDate.toISO8601String() << std::endl;
         if (track->originalYear)
             std::cout << "Original year: " << *track->originalYear << std::endl;
 
@@ -269,7 +267,7 @@ namespace lms::metadata
             std::cout << "Advisory: " << *track->advisory << std::endl;
 
         if (track->encodingTime.isValid())
-            std::cout << "Encoding time: " << core::stringUtils::toISO8601String(track->encodingTime) << std::endl;
+            std::cout << "Encoding time: " << track->encodingTime.toISO8601String() << std::endl;
 
         if (track->medium)
             std::cout << "Medium: " << *track->medium;
