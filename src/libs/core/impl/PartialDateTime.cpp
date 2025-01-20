@@ -66,6 +66,9 @@ namespace lms::core
             "%Y-%m-%dT%H:%M:%S",
             "%Y-%m-%d %H:%M:%S",
             "%Y/%m/%d %H:%M:%S",
+            "%Y-%m",
+            "%Y/%m",
+            "%Y",
         };
 
         for (const char* format : formats)
