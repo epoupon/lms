@@ -497,18 +497,21 @@ namespace lms::db
         const char* field{ original ? "original_date" : "date" };
         auto query{ session()->query<core::PartialDateTime>(std::string{ "SELECT " } + "t." + field + " FROM track t").where("t.release_id = ?").bind(getId()).groupBy(field) };
 
-        bool multiYears{};
+        bool valid{ true };
         std::optional<int> year{};
         utils::forEachQueryResult(query, [&](core::PartialDateTime dateTime) {
-            assert(dateTime.isValid());
-
-            if (!year)
-                year = dateTime.getYear().value();
-            else if (*year != dateTime.getYear().value())
-                multiYears = true;
+            if (!dateTime.isValid())
+                valid = false;
+            else if (!year)
+                year = dateTime.getYear();
+            else if (year != dateTime.getYear().value())
+                valid = false;
         });
 
-        if (multiYears)
+        if (!year)
+            valid = false;
+
+        if (!valid)
             return std::nullopt;
 
         assert(year);
