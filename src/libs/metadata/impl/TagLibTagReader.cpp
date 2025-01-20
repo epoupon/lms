@@ -312,6 +312,12 @@ namespace lms::metadata
                     if (!attributes.isEmpty())
                         _propertyMap[strName] = std::move(attributes);
                 }
+
+                if (auto itAuthor{ _propertyMap.find("AUTHOR") }; itAuthor != _propertyMap.cend() && _propertyMap.unsupportedData().contains("Author"))
+                {
+                    if (!_propertyMap.contains("ARTISTS"))
+                        _propertyMap["ARTIST"].append(itAuthor->second);
+                }
             }
         }
         // MP3
