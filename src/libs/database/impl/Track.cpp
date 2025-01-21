@@ -175,8 +175,11 @@ namespace lms::db
             case TrackSortMethod::Id:
                 query.orderBy("t.id");
                 break;
-            case TrackSortMethod::LastWritten:
+            case TrackSortMethod::LastWrittenDesc:
                 query.orderBy("t.file_last_write DESC");
+                break;
+            case TrackSortMethod::AddedDesc:
+                query.orderBy("t.file_added DESC");
                 break;
             case TrackSortMethod::Random:
                 query.orderBy("RANDOM()");

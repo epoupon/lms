@@ -92,7 +92,7 @@ namespace lms::ui
                 params.setClusters(getFilters().getClusters());
                 params.setMediaLibrary(getFilters().getMediaLibrary());
                 params.setKeywords(getSearchKeywords());
-                params.setSortMethod(ReleaseSortMethod::LastWritten);
+                params.setSortMethod(ReleaseSortMethod::AddedDesc);
                 params.setRange(range);
 
                 {

@@ -50,7 +50,8 @@ namespace lms::db
             auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " from release r") };
 
             if (params.sortMethod == ReleaseSortMethod::ArtistNameThenName
-                || params.sortMethod == ReleaseSortMethod::LastWritten
+                || params.sortMethod == ReleaseSortMethod::LastWrittenDesc
+                || params.sortMethod == ReleaseSortMethod::AddedDesc
                 || params.sortMethod == ReleaseSortMethod::DateAsc
                 || params.sortMethod == ReleaseSortMethod::DateDesc
                 || params.sortMethod == ReleaseSortMethod::OriginalDate
@@ -207,8 +208,11 @@ namespace lms::db
             case ReleaseSortMethod::Random:
                 query.orderBy("RANDOM()");
                 break;
-            case ReleaseSortMethod::LastWritten:
+            case ReleaseSortMethod::LastWrittenDesc:
                 query.orderBy("t.file_last_write DESC");
+                break;
+            case ReleaseSortMethod::AddedDesc:
+                query.orderBy("t.file_added DESC");
                 break;
             case ReleaseSortMethod::DateAsc:
                 query.orderBy("t.date ASC, r.name COLLATE NOCASE");

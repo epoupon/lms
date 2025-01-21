@@ -124,7 +124,7 @@ namespace lms::api::subsonic
             else if (type == "newest")
             {
                 Release::FindParameters params;
-                params.setSortMethod(ReleaseSortMethod::LastWritten);
+                params.setSortMethod(ReleaseSortMethod::AddedDesc);
                 params.setRange(range);
                 params.setMediaLibrary(mediaLibraryId);
 

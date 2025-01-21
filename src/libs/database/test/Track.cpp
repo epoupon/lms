@@ -377,4 +377,54 @@ namespace lms::db::tests
             EXPECT_EQ(track->getComment(), "MyComment");
         }
     }
+
+    TEST_F(DatabaseFixture, Track_sortDateAdded)
+    {
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+        ScopedTrack track4{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2 });
+            track2.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 1 });
+            track4.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2, 15, 36, 24 });
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setSortMethod(TrackSortMethod::AddedDesc)) };
+            ASSERT_EQ(tracks.results.size(), 4);
+            EXPECT_EQ(tracks.results[0], track4.getId());
+            EXPECT_EQ(tracks.results[1], track1.getId());
+            EXPECT_EQ(tracks.results[2], track2.getId());
+            EXPECT_EQ(tracks.results[3], track3.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Track_sortLastWritten)
+    {
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+        ScopedTrack track4{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            track2.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 1 } });
+            track4.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 }, Wt::WTime{ 15, 36, 24 } });
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setSortMethod(TrackSortMethod::LastWrittenDesc)) };
+            ASSERT_EQ(tracks.results.size(), 4);
+            EXPECT_EQ(tracks.results[0], track4.getId());
+            EXPECT_EQ(tracks.results[1], track1.getId());
+            EXPECT_EQ(tracks.results[2], track2.getId());
+            EXPECT_EQ(tracks.results[3], track3.getId());
+        }
+    }
 } // namespace lms::db::tests

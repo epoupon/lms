@@ -669,7 +669,8 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Artist_findByRelease)
     {
         ScopedArtist artist{ session, "artist" };
-        ScopedTrack track{ session };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
         ScopedRelease release{ session, "MyRelease" };
 
         {
@@ -680,7 +681,8 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track1.get(), artist.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, track2.get(), artist.get(), TrackArtistLinkType::Artist);
         }
 
         {
@@ -691,7 +693,8 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setRelease(release.get());
+            track1.get().modify()->setRelease(release.get());
+            track2.get().modify()->setRelease(release.get());
         }
 
         {
@@ -699,6 +702,12 @@ namespace lms::db::tests
             const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setRelease(release.getId())) };
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const std::size_t count{ Release::getCount(session, Release::FindParameters{}.setArtist(artist.getId())) };
+            EXPECT_EQ(count, 1);
         }
     }
 
@@ -723,6 +732,86 @@ namespace lms::db::tests
             auto artistImage(release.get()->getImage());
             ASSERT_TRUE(artistImage);
             EXPECT_EQ(artistImage->getId(), image.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_sortDateAdded)
+    {
+        ScopedArtist artistA{ session, "artistA" };
+        ScopedArtist artistB{ session, "artistB" };
+        ScopedArtist artistC{ session, "artistC" };
+        ScopedArtist artistD{ session, "artistD" };
+
+        ScopedTrack trackA1{ session };
+        ScopedTrack trackB1{ session };
+        ScopedTrack trackC1{ session };
+        ScopedTrack trackD1{ session };
+
+        ScopedTrack trackA2{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            trackA1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2 });
+            trackB1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 1 });
+            trackD1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2, 15, 36, 24 });
+            trackD1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 3 });
+            trackA2.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 4 });
+
+            TrackArtistLink::create(session, trackA1.get(), artistA.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackA2.get(), artistA.get(), TrackArtistLinkType::Producer);
+            TrackArtistLink::create(session, trackB1.get(), artistB.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackC1.get(), artistC.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackD1.get(), artistD.get(), TrackArtistLinkType::Artist);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::AddedDesc)) };
+            ASSERT_EQ(artists.results.size(), 4);
+            EXPECT_EQ(artists.results[0], artistA.getId());
+            EXPECT_EQ(artists.results[1], artistD.getId());
+            EXPECT_EQ(artists.results[2], artistB.getId());
+            EXPECT_EQ(artists.results[3], artistC.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_sortLastWritten)
+    {
+        ScopedArtist artistA{ session, "artistA" };
+        ScopedArtist artistB{ session, "artistB" };
+        ScopedArtist artistC{ session, "artistC" };
+        ScopedArtist artistD{ session, "artistD" };
+
+        ScopedTrack trackA1{ session };
+        ScopedTrack trackB1{ session };
+        ScopedTrack trackC1{ session };
+        ScopedTrack trackD1{ session };
+
+        ScopedTrack trackA2{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            trackA1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            trackB1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 1 } });
+            trackD1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 }, Wt::WTime{ 15, 36, 24 } });
+            trackD1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 3 } });
+            trackA2.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 4 } });
+
+            TrackArtistLink::create(session, trackA1.get(), artistA.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackA2.get(), artistA.get(), TrackArtistLinkType::Producer);
+            TrackArtistLink::create(session, trackB1.get(), artistB.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackC1.get(), artistC.get(), TrackArtistLinkType::Artist);
+            TrackArtistLink::create(session, trackD1.get(), artistD.get(), TrackArtistLinkType::Artist);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::LastWrittenDesc)) };
+            ASSERT_EQ(artists.results.size(), 4);
+            EXPECT_EQ(artists.results[0], artistA.getId());
+            EXPECT_EQ(artists.results[1], artistD.getId());
+            EXPECT_EQ(artists.results[2], artistB.getId());
+            EXPECT_EQ(artists.results[3], artistC.getId());
         }
     }
 } // namespace lms::db::tests

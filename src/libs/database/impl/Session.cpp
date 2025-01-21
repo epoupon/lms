@@ -240,7 +240,10 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_date_idx ON track(date)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_directory_release_idx ON track(directory_id, release_id);");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_directory_file_stem_idx ON track(directory_id, file_stem);");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_file_added_idx ON track(file_added)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_file_added_desc_idx ON track(file_added DESC)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_file_last_write_idx ON track(file_last_write)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_file_last_write_desc_idx ON track(file_last_write DESC)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_file_name_idx ON track(file_name COLLATE NOCASE)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_media_library_idx ON track(media_library_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_media_library_release_idx ON track(media_library_id, release_id)");
@@ -250,8 +253,12 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_original_date_idx ON track(original_date)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_recording_mbid_idx ON track(recording_mbid)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_idx ON track(release_id)");
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_file_last_write_idx ON track(release_id, file_last_write)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_date_idx ON track(release_id, date)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_date_desc_idx ON track(release_id, date DESC)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_file_last_write_idx ON track(release_id, file_last_write)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_file_last_write_desc_idx ON track(release_id, file_last_write DESC)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_file_added_idx ON track(release_id, file_added)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_file_added_desc_idx ON track(release_id, file_added DESC)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS tracklist_name_idx ON tracklist(name)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS tracklist_user_type_idx ON tracklist(user_id, type)");

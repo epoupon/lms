@@ -1121,4 +1121,84 @@ namespace lms::db::tests
             EXPECT_EQ(releaseImage->getId(), image.getId());
         }
     }
+
+    TEST_F(DatabaseFixture, Release_sortDateAdded)
+    {
+        ScopedRelease releaseA{ session, "relA" };
+        ScopedRelease releaseB{ session, "relB" };
+        ScopedRelease releaseC{ session, "relC" };
+        ScopedRelease releaseD{ session, "relD" };
+
+        ScopedTrack trackA1{ session };
+        ScopedTrack trackB1{ session };
+        ScopedTrack trackC1{ session };
+        ScopedTrack trackD1{ session };
+
+        ScopedTrack trackA2{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            trackA1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2 });
+            trackB1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 1 });
+            trackD1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2, 15, 36, 24 });
+            trackD1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 3 });
+            trackA2.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 4 });
+
+            trackA1.get().modify()->setRelease(releaseA.get());
+            trackA2.get().modify()->setRelease(releaseA.get());
+            trackB1.get().modify()->setRelease(releaseB.get());
+            trackC1.get().modify()->setRelease(releaseC.get());
+            trackD1.get().modify()->setRelease(releaseD.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::AddedDesc)) };
+            ASSERT_EQ(releases.results.size(), 4);
+            EXPECT_EQ(releases.results[0], releaseA.getId());
+            EXPECT_EQ(releases.results[1], releaseD.getId());
+            EXPECT_EQ(releases.results[2], releaseB.getId());
+            EXPECT_EQ(releases.results[3], releaseC.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Release_sortLastWritten)
+    {
+        ScopedRelease releaseA{ session, "relA" };
+        ScopedRelease releaseB{ session, "relB" };
+        ScopedRelease releaseC{ session, "relC" };
+        ScopedRelease releaseD{ session, "relD" };
+
+        ScopedTrack trackA1{ session };
+        ScopedTrack trackB1{ session };
+        ScopedTrack trackC1{ session };
+        ScopedTrack trackD1{ session };
+
+        ScopedTrack trackA2{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            trackA1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            trackB1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 1 } });
+            trackD1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 }, Wt::WTime{ 15, 36, 24 } });
+            trackD1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 3 } });
+            trackA2.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 4 } });
+
+            trackA1.get().modify()->setRelease(releaseA.get());
+            trackA2.get().modify()->setRelease(releaseA.get());
+            trackB1.get().modify()->setRelease(releaseB.get());
+            trackC1.get().modify()->setRelease(releaseC.get());
+            trackD1.get().modify()->setRelease(releaseD.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto releases{ Release::findIds(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::LastWrittenDesc)) };
+            ASSERT_EQ(releases.results.size(), 4);
+            EXPECT_EQ(releases.results[0], releaseA.getId());
+            EXPECT_EQ(releases.results[1], releaseD.getId());
+            EXPECT_EQ(releases.results[2], releaseB.getId());
+            EXPECT_EQ(releases.results[3], releaseC.getId());
+        }
+    }
 } // namespace lms::db::tests

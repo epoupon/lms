@@ -48,9 +48,12 @@ namespace lms::db
             {
                 prepare();
             }
+            ~Connection() override = default;
 
         private:
             Connection& operator=(const Connection&) = delete;
+            Connection(Connection&&) = delete;
+            Connection&& operator=(Connection&&) = delete;
 
             std::unique_ptr<SqlConnection> clone() const override
             {

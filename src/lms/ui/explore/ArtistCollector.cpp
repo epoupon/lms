@@ -99,7 +99,7 @@ namespace lms::ui
                 params.setKeywords(getSearchKeywords());
                 params.setMediaLibrary(filters.getMediaLibrary());
                 params.setLinkType(_linkType);
-                params.setSortMethod(ArtistSortMethod::LastWritten);
+                params.setSortMethod(ArtistSortMethod::AddedDesc);
                 params.setRange(range);
 
                 {

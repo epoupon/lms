@@ -119,7 +119,8 @@ namespace lms::db
         Name,
         SortName,
         Random,
-        LastWritten,
+        LastWrittenDesc,
+        AddedDesc,
         StarredDateDesc,
     };
 
@@ -146,7 +147,8 @@ namespace lms::db
         OriginalDate,
         OriginalDateDesc,
         Random,
-        LastWritten,
+        LastWrittenDesc,
+        AddedDesc,
         StarredDateDesc,
     };
 
@@ -162,7 +164,8 @@ namespace lms::db
         None,
         Id,
         Random,
-        LastWritten,
+        LastWrittenDesc,
+        AddedDesc,
         StarredDateDesc,
         FileName,
         Name,
