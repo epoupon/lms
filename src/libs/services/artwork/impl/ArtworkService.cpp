@@ -93,7 +93,7 @@ namespace lms::cover
         std::vector<CandidatePicture> candidatePictures;
         std::size_t pictureIndex{};
         input.visitAttachedPictures([&](const av::Picture& picture, const av::IAudioFile::MetadataMap& metadata) {
-            candidatePictures.emplace_back(picture, metadataHasFrontKeyword(metadata), pictureIndex++);
+            candidatePictures.emplace_back(CandidatePicture{ picture, metadataHasFrontKeyword(metadata), pictureIndex++ });
         });
         std::stable_sort(std::begin(candidatePictures), std::end(candidatePictures), std::greater<>());
 
