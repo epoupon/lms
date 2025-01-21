@@ -313,7 +313,7 @@ namespace lms::metadata
                         _propertyMap[strName] = std::move(attributes);
                 }
 
-                if (auto itAuthor{ _propertyMap.find("AUTHOR") }; itAuthor != _propertyMap.cend() && _propertyMap.unsupportedData().contains("Author"))
+                if (auto itAuthor{ _propertyMap.find("AUTHOR") }; itAuthor != _propertyMap.end() && _propertyMap.unsupportedData().contains("Author"))
                 {
                     if (!_propertyMap.contains("ARTISTS"))
                         _propertyMap["ARTIST"].append(itAuthor->second);
