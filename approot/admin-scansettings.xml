@@ -69,9 +69,7 @@
 		</div>
 	</form>
 	<hr/>
-	<div class="col-12">
-		${save-btn class="btn btn-primary me-1"}${discard-btn class="btn btn-secondary"}
-	</div>
+	${save-btn class="btn btn-primary me-1"}${discard-btn class="btn btn-secondary"}
 </message>
 
 <message id="Lms.Admin.Database.template.line-edit-entry">
