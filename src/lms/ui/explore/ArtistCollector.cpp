@@ -109,6 +109,23 @@ namespace lms::ui
                 break;
             }
 
+        case Mode::RecentlyModified:
+            {
+                Artist::FindParameters params;
+                params.setClusters(filters.getClusters());
+                params.setKeywords(getSearchKeywords());
+                params.setMediaLibrary(filters.getMediaLibrary());
+                params.setLinkType(_linkType);
+                params.setSortMethod(ArtistSortMethod::LastWrittenDesc);
+                params.setRange(range);
+
+                {
+                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+                    artists = Artist::findIds(LmsApp->getDbSession(), params);
+                }
+                break;
+            }
+
         case Mode::All:
             {
                 Artist::FindParameters params;

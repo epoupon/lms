@@ -103,6 +103,22 @@ namespace lms::ui
                 break;
             }
 
+        case Mode::RecentlyModified:
+            {
+                Track::FindParameters params;
+                params.setClusters(getFilters().getClusters());
+                params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setKeywords(getSearchKeywords());
+                params.setSortMethod(TrackSortMethod::LastWrittenDesc);
+                params.setRange(range);
+
+                {
+                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+                    tracks = Track::findIds(LmsApp->getDbSession(), params);
+                }
+                break;
+            }
+
         case Mode::All:
             {
                 Track::FindParameters params;

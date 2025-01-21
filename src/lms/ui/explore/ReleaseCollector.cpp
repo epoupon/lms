@@ -102,6 +102,22 @@ namespace lms::ui
                 break;
             }
 
+        case Mode::RecentlyModified:
+            {
+                Release::FindParameters params;
+                params.setClusters(getFilters().getClusters());
+                params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setKeywords(getSearchKeywords());
+                params.setSortMethod(ReleaseSortMethod::LastWrittenDesc);
+                params.setRange(range);
+
+                {
+                    auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+                    releases = Release::findIds(LmsApp->getDbSession(), params);
+                }
+                break;
+            }
+
         case Mode::All:
             {
                 Release::FindParameters params;
