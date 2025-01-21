@@ -138,7 +138,7 @@ namespace lms::metadata
             { TagType::ProducerSortOrder, { "PRODUCERSORTORDER" } },
             { TagType::Producers, { "PRODUCERS" } },
             { TagType::ProducersSortOrder, { "PRODUCERSSORTORDER" } },
-            { TagType::RecordLabel, { "LABEL", "PUBLISHER" } },
+            { TagType::RecordLabel, { "LABEL", "PUBLISHER", "ORGANIZATION" } },
             { TagType::ReleaseCountry, { "RELEASECOUNTRY" } },
             { TagType::ReleaseDate, { "RELEASEDATE" } },
             { TagType::ReleaseStatus, { "RELEASESTATUS" } },
