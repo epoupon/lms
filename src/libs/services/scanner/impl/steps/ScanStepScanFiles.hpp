@@ -28,7 +28,7 @@
 namespace lms::scanner
 {
     class IFileScanner;
-    class MediaLibraryInfo;
+    struct MediaLibraryInfo;
 
     class ScanStepScanFiles : public ScanStepBase
     {
