@@ -90,7 +90,7 @@ namespace lms::av::transcoding
             throw Exception{ "File error '" + _inputParameters.trackPath.string() + "': " + e.what() };
         }
 
-        LOG(INFO, "Transcoding file '" << _inputParameters.trackPath.string() << "'");
+        LOG(INFO, "Transcoding file " << _inputParameters.trackPath);
 
         std::vector<std::string> args;
 

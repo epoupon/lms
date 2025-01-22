@@ -17,10 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <map>
 #include <vector>
 
 #include <gtest/gtest.h>
+
+#include <Wt/WTime.h>
 
 #include "Parser.hpp"
 #include "TestTagReader.hpp"
@@ -33,6 +34,7 @@ namespace lms::metadata
         TestTagReader testTags{
             {
                 { TagType::AcoustID, { "e987a441-e134-4960-8019-274eddacc418" } },
+                { TagType::Advisory, { "2" } },
                 { TagType::Album, { "MyAlbum" } },
                 { TagType::AlbumSortOrder, { "MyAlbumSortName" } },
                 { TagType::Artist, { "MyArtist1 & MyArtist2" } },
@@ -99,6 +101,8 @@ namespace lms::metadata
         }
 
         EXPECT_EQ(track->acoustID, core::UUID::fromString("e987a441-e134-4960-8019-274eddacc418"));
+        ASSERT_TRUE(track->advisory.has_value());
+        EXPECT_EQ(track->advisory.value(), Track::Advisory::Clean);
         EXPECT_EQ(track->artistDisplayName, "MyArtist1 & MyArtist2");
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "MyArtist1");
@@ -121,9 +125,9 @@ namespace lms::metadata
         EXPECT_EQ(track->copyright, "MyCopyright");
         EXPECT_EQ(track->copyrightURL, "MyCopyrightURL");
         ASSERT_TRUE(track->date.isValid());
-        EXPECT_EQ(track->date.year(), 2020);
-        EXPECT_EQ(track->date.month(), 3);
-        EXPECT_EQ(track->date.day(), 4);
+        EXPECT_EQ(track->date.getYear(), 2020);
+        EXPECT_EQ(track->date.getMonth(), 3);
+        EXPECT_EQ(track->date.getDay(), 4);
         EXPECT_FALSE(track->hasCover);
         ASSERT_EQ(track->genres.size(), 2);
         EXPECT_EQ(track->genres[0], "Genre1");
@@ -153,9 +157,9 @@ namespace lms::metadata
         EXPECT_EQ(track->moods[0], "Mood1");
         EXPECT_EQ(track->moods[1], "Mood2");
         ASSERT_TRUE(track->originalDate.isValid());
-        EXPECT_EQ(track->originalDate.year(), 2019);
-        EXPECT_EQ(track->originalDate.month(), 2);
-        EXPECT_EQ(track->originalDate.day(), 3);
+        EXPECT_EQ(track->originalDate.getYear(), 2019);
+        EXPECT_EQ(track->originalDate.getMonth(), 2);
+        EXPECT_EQ(track->originalDate.getDay(), 3);
         ASSERT_TRUE(track->originalYear.has_value());
         EXPECT_EQ(track->originalYear.value(), 2019);
         ASSERT_TRUE(track->performerArtists.contains("Rolea"));
@@ -184,8 +188,6 @@ namespace lms::metadata
         ASSERT_EQ(track->userExtraTags["MY_AWESOME_TAG_B"].size(), 2);
         EXPECT_EQ(track->userExtraTags["MY_AWESOME_TAG_B"][0], "MyTagValue1ForTagB");
         EXPECT_EQ(track->userExtraTags["MY_AWESOME_TAG_B"][1], "MyTagValue2ForTagB");
-        ASSERT_TRUE(track->year.has_value());
-        EXPECT_EQ(track->year.value(), 2020);
 
         // Medium
         ASSERT_TRUE(track->medium.has_value());
@@ -581,4 +583,79 @@ namespace lms::metadata
         EXPECT_EQ(track->artists[1].mbid, std::nullopt);
         EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct the artist display name
     }
+
+    TEST(Parser, advisory)
+    {
+        auto doTest = [](std::string_view value, std::optional<Track::Advisory> expectedValue) {
+            const TestTagReader testTags{
+                {
+                    { TagType::Advisory, { value } },
+                }
+            };
+
+            Parser parser;
+            std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+            ASSERT_EQ(track->advisory.has_value(), expectedValue.has_value()) << "Value = '" << value << "'";
+            if (track->advisory.has_value())
+            {
+                EXPECT_EQ(track->advisory.value(), expectedValue);
+            }
+        };
+
+        doTest("0", Track::Advisory::Unknown);
+        doTest("1", Track::Advisory::Explicit);
+        doTest("4", Track::Advisory::Explicit);
+        doTest("2", Track::Advisory::Clean);
+        doTest("", std::nullopt);
+        doTest("3", std::nullopt);
+    }
+
+    TEST(Parser, encodingTime)
+    {
+        auto doTest = [](std::string_view value, core::PartialDateTime expectedValue) {
+            const TestTagReader testTags{
+                {
+                    { TagType::EncodingTime, { value } },
+                }
+            };
+
+            Parser parser;
+            std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+            ASSERT_EQ(track->encodingTime, expectedValue) << "Value = '" << value << "'";
+        };
+
+        doTest("", core::PartialDateTime{});
+        doTest("foo", core::PartialDateTime{});
+        doTest("2020-01-03T09:08:11.075", core::PartialDateTime{ 2020, 01, 03, 9, 8, 11 });
+        doTest("2020-01-03", core::PartialDateTime{ 2020, 01, 03 });
+        doTest("2020/01/03", core::PartialDateTime{ 2020, 01, 03 });
+    }
+
+    TEST(Parser, date)
+    {
+        auto doTest = [](std::string_view value, core::PartialDateTime expectedValue) {
+            const TestTagReader testTags{
+                {
+                    { TagType::Date, { value } },
+                }
+            };
+
+            Parser parser;
+            std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+            ASSERT_EQ(track->date, expectedValue) << "Value = '" << value << "'";
+        };
+
+        doTest("", core::PartialDateTime{});
+        doTest("foo", core::PartialDateTime{});
+        doTest("2020-01-03", core::PartialDateTime{ 2020, 01, 03 });
+        doTest("2020-01", core::PartialDateTime{ 2020, 1 });
+        doTest("2020", core::PartialDateTime{ 2020 });
+        doTest("2020/01/03", core::PartialDateTime{ 2020, 01, 03 });
+        doTest("2020/01", core::PartialDateTime{ 2020, 1 });
+        doTest("2020", core::PartialDateTime{ 2020 });
+    }
+
 } // namespace lms::metadata

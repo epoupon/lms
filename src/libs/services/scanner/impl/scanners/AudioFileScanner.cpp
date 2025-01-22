@@ -22,6 +22,7 @@
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
+#include "core/PartialDateTime.hpp"
 #include "core/Path.hpp"
 #include "core/Service.hpp"
 #include "database/Artist.hpp"
@@ -35,6 +36,7 @@
 #include "database/TrackArtistLink.hpp"
 #include "database/TrackFeatures.hpp"
 #include "database/TrackLyrics.hpp"
+#include "database/Types.hpp"
 #include "metadata/Exception.hpp"
 #include "metadata/IParser.hpp"
 
@@ -309,6 +311,24 @@ namespace lms::scanner
             return lyrics;
         }
 
+        db::Advisory getAdvisory(std::optional<metadata::Track::Advisory> advisory)
+        {
+            if (!advisory)
+                return db::Advisory::UnSet;
+
+            switch (advisory.value())
+            {
+            case metadata::Track::Advisory::Clean:
+                return db::Advisory::Clean;
+            case metadata::Track::Advisory::Explicit:
+                return db::Advisory::Explicit;
+            case metadata::Track::Advisory::Unknown:
+                return db::Advisory::Unknown;
+            }
+
+            return db::Advisory::UnSet;
+        }
+
         class AudioFileScanOperation : public IFileScanOperation
         {
         public:
@@ -349,7 +369,7 @@ namespace lms::scanner
             }
             catch (const metadata::Exception& e)
             {
-                LMS_LOG(DBUPDATER, INFO, "Failed to parse audio file '" << _file.string() << "'");
+                LMS_LOG(DBUPDATER, ERROR, "Failed to parse audio file " << _file);
             }
         }
 
@@ -391,7 +411,7 @@ namespace lms::scanner
                     std::error_code ec;
                     if (!std::filesystem::exists(otherTrack->getAbsoluteFilePath(), ec))
                     {
-                        LMS_LOG(DBUPDATER, DEBUG, "Considering track '" << _file.string() << "' moved from '" << otherTrack->getAbsoluteFilePath() << "'");
+                        LMS_LOG(DBUPDATER, DEBUG, "Considering track " << _file << " moved from " << otherTrack->getAbsoluteFilePath());
                         track = otherTrack;
                         track.modify()->setAbsoluteFilePath(_file);
                     }
@@ -415,7 +435,7 @@ namespace lms::scanner
                             continue;
                         }
 
-                        LMS_LOG(DBUPDATER, DEBUG, "Skipped '" << _file.string() << "' (similar MBID in '" << otherTrack->getAbsoluteFilePath().string() << "')");
+                        LMS_LOG(DBUPDATER, DEBUG, "Skipped " << _file << " (similar MBID in " << otherTrack->getAbsoluteFilePath() << ")");
                         // As this MBID already exists, just remove what we just scanned
                         if (track)
                         {
@@ -430,7 +450,7 @@ namespace lms::scanner
             // We estimate this is an audio file if the duration is not null
             if (_parsedTrack->audioProperties.duration == std::chrono::milliseconds::zero())
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Skipped '" << _file.string() << "' (duration is 0)");
+                LMS_LOG(DBUPDATER, DEBUG, "Skipped " << _file << " (duration is 0)");
 
                 // If Track exists here, delete it!
                 if (track)
@@ -460,6 +480,17 @@ namespace lms::scanner
             {
                 track = dbSession.create<db::Track>();
                 track.modify()->setAbsoluteFilePath(_file);
+
+                const core::PartialDateTime addedTime{
+                    fileInfo->lastWriteTime.date().year(),
+                    static_cast<unsigned>(fileInfo->lastWriteTime.date().month()),
+                    static_cast<unsigned>(fileInfo->lastWriteTime.date().day()),
+                    static_cast<unsigned>(fileInfo->lastWriteTime.time().hour()),
+                    static_cast<unsigned>(fileInfo->lastWriteTime.time().minute()),
+                    static_cast<unsigned>(fileInfo->lastWriteTime.time().second())
+                };
+
+                track.modify()->setAddedTime(addedTime); // may be erased by encodingTime
                 added = true;
             }
 
@@ -476,6 +507,9 @@ namespace lms::scanner
             track.modify()->setRelativeFilePath(fileInfo->relativePath);
             track.modify()->setFileSize(fileInfo->fileSize);
             track.modify()->setLastWriteTime(fileInfo->lastWriteTime);
+
+            if (_parsedTrack->encodingTime.isValid())
+                track.modify()->setAddedTime(_parsedTrack->encodingTime);
 
             db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, _mediaLibrary.id) }; // may be null if settings are updated in // => next scan will correct this
             track.modify()->setMediaLibrary(mediaLibrary);
@@ -529,21 +563,16 @@ namespace lms::scanner
             track.modify()->setDiscSubtitle(_parsedTrack->medium ? _parsedTrack->medium->name : "");
             track.modify()->setClusters(getOrCreateClusters(dbSession, *_parsedTrack));
             track.modify()->setName(title);
-            track.modify()->setAddedTime(Wt::WDateTime::currentDateTime());
             track.modify()->setTrackNumber(_parsedTrack->position);
             track.modify()->setDiscNumber(_parsedTrack->medium ? _parsedTrack->medium->position : std::nullopt);
             track.modify()->setDate(_parsedTrack->date);
-            track.modify()->setYear(_parsedTrack->year);
             track.modify()->setOriginalDate(_parsedTrack->originalDate);
-            track.modify()->setOriginalYear(_parsedTrack->originalYear);
+            if (!track->getOriginalDate().isValid() && _parsedTrack->originalYear)
+                track.modify()->setOriginalDate(core::PartialDateTime{ *_parsedTrack->originalYear });
 
             // If a file has an OriginalDate but no date, set it to ease filtering
             if (!_parsedTrack->date.isValid() && _parsedTrack->originalDate.isValid())
                 track.modify()->setDate(_parsedTrack->originalDate);
-
-            // If a file has an OriginalYear but no Year, set it to ease filtering
-            if (!_parsedTrack->year && _parsedTrack->originalYear)
-                track.modify()->setYear(_parsedTrack->originalYear);
 
             track.modify()->setRecordingMBID(_parsedTrack->recordingMBID);
             track.modify()->setTrackMBID(_parsedTrack->mbid);
@@ -552,6 +581,7 @@ namespace lms::scanner
             track.modify()->setHasCover(_parsedTrack->hasCover);
             track.modify()->setCopyright(_parsedTrack->copyright);
             track.modify()->setCopyrightURL(_parsedTrack->copyrightURL);
+            track.modify()->setAdvisory(getAdvisory(_parsedTrack->advisory));
             track.modify()->setComment(!_parsedTrack->comments.empty() ? _parsedTrack->comments.front() : ""); // only take the first one for now
             track.modify()->setTrackReplayGain(_parsedTrack->replayGain);
             track.modify()->setArtistDisplayName(_parsedTrack->artistDisplayName);
@@ -565,12 +595,12 @@ namespace lms::scanner
 
             if (added)
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Added audio file '" << _file.string() << "'");
+                LMS_LOG(DBUPDATER, DEBUG, "Added audio file " << _file);
                 stats.additions++;
             }
             else
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Updated audio file '" << _file.string() << "'");
+                LMS_LOG(DBUPDATER, DEBUG, "Updated audio file " << _file);
                 stats.updates++;
             }
         }

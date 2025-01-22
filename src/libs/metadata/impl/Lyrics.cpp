@@ -28,7 +28,7 @@ namespace lms::metadata
 {
     std::span<const std::filesystem::path> getSupportedLyricsFileExtensions()
     {
-        static const std::array<std::filesystem::path, 1> fileExtensions{ ".lrc" }; // TODO handle ".txt" and ".elrc"
+        static const std::array<std::filesystem::path, 2> fileExtensions{ ".lrc", ".txt" }; // TODO handle ".elrc"
         return fileExtensions;
     }
 

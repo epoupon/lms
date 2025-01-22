@@ -41,9 +41,4 @@ namespace lms::db
     {
         return allowedAudioBitrates.find(bitrate) != std::cend(allowedAudioBitrates);
     }
-
-    DateRange DateRange::fromYearRange(int from, int to)
-    {
-        return DateRange{ from, to };
-    }
 } // namespace lms::db

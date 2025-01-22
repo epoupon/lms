@@ -23,7 +23,7 @@
 
 namespace lms::scanner
 {
-    class MediaLibraryInfo;
+    struct MediaLibraryInfo;
 
     class ScanStepUpdateLibraryFields : public ScanStepBase
     {

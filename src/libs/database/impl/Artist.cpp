@@ -42,9 +42,9 @@ namespace lms::db
         {
             session.checkReadTransaction();
 
-            // TODO remove distinct and use group by
             auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM artist a") };
-            if (params.sortMethod == ArtistSortMethod::LastWritten
+            if (params.sortMethod == ArtistSortMethod::LastWrittenDesc
+                || params.sortMethod == ArtistSortMethod::AddedDesc
                 || params.writtenAfter.isValid()
                 || params.linkType
                 || params.track.isValid()
@@ -55,7 +55,8 @@ namespace lms::db
                 query.join("track_artist_link t_a_l ON t_a_l.artist_id = a.id");
             }
 
-            if (params.sortMethod == ArtistSortMethod::LastWritten
+            if (params.sortMethod == ArtistSortMethod::LastWrittenDesc
+                || params.sortMethod == ArtistSortMethod::AddedDesc
                 || params.writtenAfter.isValid()
                 || params.release.isValid()
                 || params.mediaLibrary.isValid())
@@ -151,8 +152,11 @@ namespace lms::db
             case ArtistSortMethod::Random:
                 query.orderBy("RANDOM()");
                 break;
-            case ArtistSortMethod::LastWritten:
-                query.orderBy("t.file_last_write DESC");
+            case ArtistSortMethod::LastWrittenDesc:
+                query.orderBy("MAX(t.file_last_write) DESC");
+                break;
+            case ArtistSortMethod::AddedDesc:
+                query.orderBy("MAX(t.file_added) DESC");
                 break;
             case ArtistSortMethod::StarredDateDesc:
                 assert(params.starringUser.isValid());

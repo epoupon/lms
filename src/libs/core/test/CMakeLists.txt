@@ -3,6 +3,7 @@ include(GoogleTest)
 add_executable(test-core
 	EnumSet.cpp
 	LiteralString.cpp
+	PartialDateTime.cpp
 	Path.cpp
 	RecursiveSharedMutex.cpp
 	Service.cpp

@@ -1,4 +1,4 @@
-add_library(lmsdatabase SHARED
+add_library(lmsdatabase STATIC
 	impl/Artist.cpp
 	impl/AuthToken.cpp
 	impl/Cluster.cpp
@@ -53,8 +53,6 @@ target_link_libraries(lmsdatabase PUBLIC
 	std::filesystem
 	Wt::Dbo
 	)
-
-install(TARGETS lmsdatabase DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 if(BUILD_TESTING)
 	add_subdirectory(test)

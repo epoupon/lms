@@ -48,6 +48,10 @@
 #include "core/String.hpp"
 #include "metadata/Exception.hpp"
 
+#if (TAGLIB_MAJOR_VERSION > 2) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_MINOR_VERSION > 0)
+    #define TAGLIB_HAS_MP4_ITEM_TYPE
+#endif
+
 namespace lms::metadata
 {
     namespace
@@ -59,6 +63,7 @@ namespace lms::metadata
         // Mapping to internal taglib names and/or common alternative custom names
         const std::unordered_map<TagType, std::vector<std::string>> tagMapping{
             { TagType::AcoustID, { "ACOUSTID_ID", "ACOUSTID ID" } },
+            { TagType::Advisory, { "ITUNESADVISORY" } },
             { TagType::Album, { "ALBUM" } },
             { TagType::AlbumArtist, { "ALBUMARTIST" } },
             { TagType::AlbumArtistSortOrder, { "ALBUMARTISTSORT" } },
@@ -91,6 +96,7 @@ namespace lms::metadata
             { TagType::DiscSubtitle, { "DISCSUBTITLE", "SETSUBTITLE" } },
             { TagType::EncodedBy, { "ENCODEDBY" } },
             { TagType::Engineer, { "ENGINEER" } },
+            { TagType::EncodingTime, { "ENCODINGTIME" } },
             { TagType::GaplessPlayback, { "GAPLESSPLAYBACK" } },
             { TagType::Genre, { "GENRE" } },
             { TagType::Grouping, { "GROUPING", "ALBUMGROUPING" } },
@@ -132,7 +138,7 @@ namespace lms::metadata
             { TagType::ProducerSortOrder, { "PRODUCERSORTORDER" } },
             { TagType::Producers, { "PRODUCERS" } },
             { TagType::ProducersSortOrder, { "PRODUCERSSORTORDER" } },
-            { TagType::RecordLabel, { "LABEL" } },
+            { TagType::RecordLabel, { "LABEL", "PUBLISHER", "ORGANIZATION" } },
             { TagType::ReleaseCountry, { "RELEASECOUNTRY" } },
             { TagType::ReleaseDate, { "RELEASEDATE" } },
             { TagType::ReleaseStatus, { "RELEASESTATUS" } },
@@ -188,7 +194,7 @@ namespace lms::metadata
         {
             LMS_SCOPED_TRACE_DETAILED("MetaData", "TagLibParseFile");
 
-            return TagLib::FileRef{ p.string().c_str(), true // read audio properties
+            return TagLib::FileRef{ p.c_str(), true // read audio properties
                 ,
                 readStyleToTagLibReadStyle(parserReadStyle) };
         }
@@ -199,13 +205,13 @@ namespace lms::metadata
     {
         if (_file.isNull())
         {
-            LMS_LOG(METADATA, ERROR, "File '" << p.string() << "': parsing failed");
+            LMS_LOG(METADATA, ERROR, "File " << p << ": parsing failed");
             throw ParsingFailedException{};
         }
 
         if (!_file.audioProperties())
         {
-            LMS_LOG(METADATA, ERROR, "File '" << p.string() << "': no audio properties");
+            LMS_LOG(METADATA, ERROR, "File " << p << ": no audio properties");
             throw ParsingFailedException{};
         }
 
@@ -306,6 +312,12 @@ namespace lms::metadata
                     if (!attributes.isEmpty())
                         _propertyMap[strName] = std::move(attributes);
                 }
+
+                if (auto itAuthor{ _propertyMap.find("AUTHOR") }; itAuthor != _propertyMap.end() && _propertyMap.unsupportedData().contains("Author"))
+                {
+                    if (!_propertyMap.contains("ARTISTS"))
+                        _propertyMap["ARTIST"].append(itAuthor->second);
+                }
             }
         }
         // MP3
@@ -319,10 +331,22 @@ namespace lms::metadata
         // MP4
         else if (TagLib::MP4::File * mp4File{ dynamic_cast<TagLib::MP4::File*>(_file.file()) })
         {
-            TagLib::MP4::Item coverItem{ mp4File->tag()->item("covr") };
-            TagLib::MP4::CoverArtList coverArtList{ coverItem.toCoverArtList() };
-            if (!coverArtList.isEmpty())
-                _hasEmbeddedCover = true;
+            if (const TagLib::MP4::Item coverItem{ mp4File->tag()->item("covr") }; coverItem.isValid())
+            {
+#if TAGLIB_HAS_MP4_ITEM_TYPE
+                if (coverItem.type() == TagLib::MP4::Item::Type::CoverArtList)
+#endif
+                    _hasEmbeddedCover = true;
+            }
+
+            // Taglib does not expose rtng in properties
+            if (const TagLib::MP4::Item rtngItem{ mp4File->tag()->item("rtng") }; rtngItem.isValid())
+            {
+#if TAGLIB_HAS_MP4_ITEM_TYPE
+                if (rtngItem.type() == TagLib::MP4::Item::Type::Byte)
+#endif
+                    _propertyMap["ITUNESADVISORY"] = TagLib::String{ std::to_string(rtngItem.toByte()) };
+            }
 
             if (!_propertyMap.contains("ORIGINALDATE"))
             {

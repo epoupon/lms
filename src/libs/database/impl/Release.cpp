@@ -21,7 +21,7 @@
 
 #include <Wt/Dbo/WtSqlTraits.h>
 
-#include "core/ILogger.hpp"
+#include "core/PartialDateTime.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Directory.hpp"
@@ -32,6 +32,7 @@
 
 #include "EnumSetTraits.hpp"
 #include "IdTypeTraits.hpp"
+#include "PartialDateTimeTraits.hpp"
 #include "SqlQuery.hpp"
 #include "StringViewTraits.hpp"
 #include "Utils.hpp"
@@ -49,7 +50,8 @@ namespace lms::db
             auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " from release r") };
 
             if (params.sortMethod == ReleaseSortMethod::ArtistNameThenName
-                || params.sortMethod == ReleaseSortMethod::LastWritten
+                || params.sortMethod == ReleaseSortMethod::LastWrittenDesc
+                || params.sortMethod == ReleaseSortMethod::AddedDesc
                 || params.sortMethod == ReleaseSortMethod::DateAsc
                 || params.sortMethod == ReleaseSortMethod::DateDesc
                 || params.sortMethod == ReleaseSortMethod::OriginalDate
@@ -90,8 +92,8 @@ namespace lms::db
 
             if (params.dateRange)
             {
-                query.where("COALESCE(CAST(SUBSTR(t.date, 1, 4) AS INTEGER), t.year) >= ?").bind(params.dateRange->begin);
-                query.where("COALESCE(CAST(SUBSTR(t.date, 1, 4) AS INTEGER), t.year) <= ?").bind(params.dateRange->end);
+                query.where("CAST(SUBSTR(t.date, 1, 4) AS INTEGER) >= ?").bind(params.dateRange->begin);
+                query.where("CAST(SUBSTR(t.date, 1, 4) AS INTEGER) <= ?").bind(params.dateRange->end);
             }
 
             if (!params.name.empty())
@@ -206,20 +208,23 @@ namespace lms::db
             case ReleaseSortMethod::Random:
                 query.orderBy("RANDOM()");
                 break;
-            case ReleaseSortMethod::LastWritten:
+            case ReleaseSortMethod::LastWrittenDesc:
                 query.orderBy("t.file_last_write DESC");
                 break;
+            case ReleaseSortMethod::AddedDesc:
+                query.orderBy("t.file_added DESC");
+                break;
             case ReleaseSortMethod::DateAsc:
-                query.orderBy("COALESCE(t.date, CAST(t.year AS TEXT)) ASC, r.name COLLATE NOCASE");
+                query.orderBy("t.date ASC, r.name COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::DateDesc:
-                query.orderBy("COALESCE(t.date, CAST(t.year AS TEXT)) DESC, r.name COLLATE NOCASE");
+                query.orderBy("t.date DESC, r.name COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::OriginalDate:
-                query.orderBy("COALESCE(original_date, CAST(original_year AS TEXT), date, CAST(year AS TEXT)), r.name COLLATE NOCASE");
+                query.orderBy("COALESCE(t.original_date, t.date), r.name COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::OriginalDateDesc:
-                query.orderBy("COALESCE(original_date, CAST(original_year AS TEXT), date, CAST(year AS TEXT)) DESC, r.name COLLATE NOCASE");
+                query.orderBy("COALESCE(t.original_date, t.date) DESC, r.name COLLATE NOCASE");
                 break;
             case ReleaseSortMethod::StarredDateDesc:
                 assert(params.starringUser.isValid());
@@ -453,22 +458,22 @@ namespace lms::db
         return discs;
     }
 
-    Wt::WDate Release::getDate() const
+    core::PartialDateTime Release::getDate() const
     {
         return getDate(false);
     }
 
-    Wt::WDate Release::getOriginalDate() const
+    core::PartialDateTime Release::getOriginalDate() const
     {
         return getDate(true);
     }
 
-    Wt::WDate Release::getDate(bool original) const
+    core::PartialDateTime Release::getDate(bool original) const
     {
         assert(session());
 
         const char* field{ original ? "original_date" : "date" };
-        auto query{ (session()->query<Wt::WDate>(std::string{ "SELECT " } + "t." + field + " FROM track t").where("t.release_id = ?").groupBy(field).bind(getId())) };
+        auto query{ (session()->query<core::PartialDateTime>(std::string{ "SELECT " } + "t." + field + " FROM track t").where("t.release_id = ?").groupBy(field).bind(getId())) };
 
         const auto dates{ utils::fetchQueryResults(query) };
 
@@ -493,17 +498,28 @@ namespace lms::db
     {
         assert(session());
 
-        const char* field{ original ? "original_year" : "year" };
-        auto query{ session()->query<std::optional<int>>(std::string{ "SELECT " } + "t." + field + " FROM track t").where("t.release_id = ?").bind(getId()).groupBy(field) };
+        const char* field{ original ? "original_date" : "date" };
+        auto query{ session()->query<core::PartialDateTime>(std::string{ "SELECT " } + "t." + field + " FROM track t").where("t.release_id = ?").bind(getId()).groupBy(field) };
 
-        const auto years{ utils::fetchQueryResults(query) };
+        bool valid{ true };
+        std::optional<int> year{};
+        utils::forEachQueryResult(query, [&](core::PartialDateTime dateTime) {
+            if (!dateTime.isValid())
+                valid = false;
+            else if (!year)
+                year = dateTime.getYear();
+            else if (year != dateTime.getYear().value())
+                valid = false;
+        });
 
-        // various years => invalid years
-        const std::size_t count{ years.size() };
-        if (count == 0 || count > 1)
+        if (!year)
+            valid = false;
+
+        if (!valid)
             return std::nullopt;
 
-        return years.front();
+        assert(year);
+        return *year;
     }
 
     std::optional<std::string> Release::getCopyright() const
@@ -664,6 +680,19 @@ namespace lms::db
         assert(session());
         auto query{ _labels.find() };
         utils::forEachQueryResult(query, _func);
+    }
+
+    core::EnumSet<Advisory> Release::getAdvisories() const
+    {
+        core::EnumSet<Advisory> res;
+
+        auto query{ session()->query<Advisory>("SELECT DISTINCT advisory FROM track t").where("t.release_id = ?").bind(getId()) };
+
+        utils::forEachQueryResult(query, [&](Advisory advisory) {
+            res.insert(advisory);
+        });
+
+        return res;
     }
 
     std::chrono::milliseconds Release::getDuration() const

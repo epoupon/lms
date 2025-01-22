@@ -476,6 +476,12 @@ namespace lms::core::stringUtils
         return date.toString("yyyy-MM-dd").toUTF8();
     }
 
+    Wt::WDateTime fromISO8601String(std::string_view dateTime)
+    {
+        // assume UTC
+        return Wt::WDateTime::fromString(Wt::WString{ std::string{ dateTime } }, "yyyy-MM-ddThh:mm:ss.zzz");
+    }
+
     std::string formatTimestamp(std::chrono::milliseconds timestamp)
     {
         using namespace std::chrono;

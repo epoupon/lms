@@ -28,6 +28,7 @@
 #include "database/Image.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
+#include "database/Types.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
@@ -203,7 +204,7 @@ namespace lms::api::subsonic
             albumNode.createEmptyArrayChild("artists");
             albumNode.setAttribute("displayArtist", "");
         }
-        albumNode.addChild("originalReleaseDate", createItemDateNode(release->getOriginalDate(), release->getOriginalYear()));
+        albumNode.addChild("originalReleaseDate", createItemDateNode(release->getOriginalDate()));
 
         albumNode.setAttribute("isCompilation", release->isCompilation());
 
@@ -222,6 +223,18 @@ namespace lms::api::subsonic
         release->visitLabels([&](const Label::pointer& label) {
             albumNode.addArrayChild("recordLabels", createRecordLabel(label));
         });
+
+        auto advisoryToExplicitStatus = [&](const core::EnumSet<db::Advisory> advisories) -> std::string_view {
+            if (advisories.contains(db::Advisory::Explicit))
+                return "explicit";
+
+            if (advisories.contains(db::Advisory::Clean))
+                return "clean";
+
+            return "";
+        };
+
+        albumNode.setAttribute("explicitStatus", advisoryToExplicitStatus(release->getAdvisories()));
 
         return albumNode;
     }

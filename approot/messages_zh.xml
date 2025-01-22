@@ -78,12 +78,15 @@
 
 <message id="Lms.Admin.Database.hourly">每小时</message>
 <message id="Lms.Admin.Database.immediate-scan">立即扫描！</message>
+
 <message id="Lms.Admin.Database.monthly">每月</message>
 <message id="Lms.Admin.Database.never">从不</message>
 
 <message id="Lms.Admin.Database.scan-complete">扫描完成：总文件 {1}，添加文件 {2}，更新文件 {3}，删除文件 {4}，重复文件 {5}，错误文件 {6}</message>
 <message id="Lms.Admin.Database.scan-launched">扫描已完成！</message>
 <message id="Lms.Admin.Database.scan-settings">扫描选项</message>
+
+
 
 
 

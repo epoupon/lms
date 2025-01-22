@@ -1,4 +1,4 @@
-FROM	alpine:3.19 AS build
+FROM	alpine:3.20 AS build
 
 WORKDIR	/tmp/workdir
 
@@ -56,8 +56,8 @@ RUN \
 	--disable-postproc \
 	--disable-pixelutils \
 	--disable-network \
-	--enable-shared \
-	--disable-static \
+	--disable-shared \
+	--enable-static \
 	--enable-gpl \
 	--enable-small \
 	--enable-version3 \
@@ -73,13 +73,14 @@ RUN \
 	--enable-muxer=ogg,matroska,mp3,webm \
 	--enable-protocol=file,pipe \
 	--enable-filter=aresample \
+	--enable-lto \
 	--extra-libs=-ldl && \
 	make -j$(nproc) && \
 	make install && \
 	make distclean
 
 # WT
-ARG	WT_VERSION=4.10.4
+ARG	WT_VERSION=4.11.1
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/emweb/wt/archive/${WT_VERSION}.tar.gz && \
@@ -87,12 +88,12 @@ RUN \
 
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
-	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF -DUSE_SYSTEM_SQLITE3=ON && \
+	cmake -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DSHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF -DUSE_SYSTEM_SQLITE3=ON && \
 	make -j$(nproc) && \
 	make install
 
 # STB
-ARG	STB_VERSION=ae721c50eaf761660b4f90cc590453cdb0c2acd0
+ARG	STB_VERSION=5c205738c191bcb0abc65c4febfa9bd25ff35234
 RUN \
 	DIR=/tmp/stb && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/nothings/stb/archive/${STB_VERSION}.tar.gz && \
@@ -101,7 +102,7 @@ RUN \
 	cp ./*.h ${PREFIX}/include/stb
 
 # TAGLIB
-ARG TAGLIB_VERSION=v2.0.1
+ARG TAGLIB_VERSION=v2.0.2
 RUN \
 	DIR=/tmp/taglib && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/taglib/taglib/archive/${TAGLIB_VERSION}.tar.gz && \
@@ -109,7 +110,7 @@ RUN \
 
 RUN \
 	DIR=/tmp/taglib && mkdir -p ${DIR} && cd ${DIR} && \
-	CXXFLAGS="-I/usr/include/utf8cpp" cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=ON -DBUILD_EXAMPLES=OFF -DBUILD_BINDINGS=OFF -DBUILD_TESTING=OFF -DTRACE_IN_RELEASE=OFF -DWITH_ZLIB=ON  && \
+	CXXFLAGS="-I/usr/include/utf8cpp" cmake -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_BINDINGS=OFF -DBUILD_TESTING=OFF -DTRACE_IN_RELEASE=OFF -DWITH_ZLIB=ON  && \
 	make -j$(nproc) && \
 	make install
 
@@ -117,7 +118,7 @@ RUN \
 COPY . /tmp/lms/
 RUN \
 	DIR=/tmp/lms/build && mkdir -p ${DIR} && cd ${DIR} && \
-	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake /tmp/lms/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_PREFIX_PATH=${PREFIX} && \
+	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake /tmp/lms/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_PREFIX_PATH=${PREFIX} && \
 	LD_LIBRARY_PATH=${PREFIX}/lib make -j$(nproc) && \
 	LD_LIBRARY_PATH=${PREFIX}/lib make test && \
 	make install && \
@@ -132,11 +133,6 @@ RUN \
 		strip --strip-all $bin && \
 		cp $bin /tmp/fakeroot/bin/; \
 	done && \
-	for lib in ${PREFIX}/lib/*.so; \
-	do \
-		strip --strip-all $lib; \
-	done && \
-	cp -r ${PREFIX}/lib /tmp/fakeroot/lib && \
 	cp -r ${PREFIX}/share /tmp/fakeroot/share && \
 	rm -rf /tmp/fakeroot/share/doc && \
 	rm -rf /tmp/fakeroot/share/man
@@ -147,7 +143,7 @@ RUN \
 	rm -rf /tmp/fakeroot/share/Wt/resources/themes
 
 ## Release Stage
-FROM		alpine:3.19 AS release
+FROM		alpine:3.20 AS release
 LABEL		maintainer="Emeric Poupon <itmfr@yahoo.fr>"
 
 ARG	RUNTIME_PACKAGES=" \

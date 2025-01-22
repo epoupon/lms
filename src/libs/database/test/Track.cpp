@@ -259,8 +259,8 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, Track_date)
     {
         ScopedTrack track{ session };
-        const Wt::WDate date{ 1995, 5, 5 };
-        const Wt::WDate originalDate{ 1994, 2, 2 };
+        const core::PartialDateTime date{ 1995, 5, 5 };
+        const core::PartialDateTime originalDate{ 1994, 2, 2 };
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(track->getYear(), std::nullopt);
@@ -275,22 +275,16 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(track->getYear(), std::nullopt);
-            EXPECT_EQ(track->getOriginalYear(), std::nullopt);
+            EXPECT_EQ(track->getYear(), 1995);
+            EXPECT_EQ(track->getOriginalYear(), 1994);
             EXPECT_EQ(track->getDate(), date);
             EXPECT_EQ(track->getOriginalDate(), originalDate);
         }
 
         {
-            auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setYear(date.year());
-            track.get().modify()->setOriginalYear(originalDate.year());
-        }
-
-        {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(track->getYear(), date.year());
-            EXPECT_EQ(track->getOriginalYear(), originalDate.year());
+            EXPECT_EQ(track->getYear(), date.getYear());
+            EXPECT_EQ(track->getOriginalYear(), originalDate.getYear());
         }
     }
 
@@ -381,6 +375,56 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(track->getComment(), "MyComment");
+        }
+    }
+
+    TEST_F(DatabaseFixture, Track_sortDateAdded)
+    {
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+        ScopedTrack track4{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2 });
+            track2.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 1 });
+            track4.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2, 15, 36, 24 });
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setSortMethod(TrackSortMethod::AddedDesc)) };
+            ASSERT_EQ(tracks.results.size(), 4);
+            EXPECT_EQ(tracks.results[0], track4.getId());
+            EXPECT_EQ(tracks.results[1], track1.getId());
+            EXPECT_EQ(tracks.results[2], track2.getId());
+            EXPECT_EQ(tracks.results[3], track3.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Track_sortLastWritten)
+    {
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+        ScopedTrack track4{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            track2.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 1 } });
+            track4.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 }, Wt::WTime{ 15, 36, 24 } });
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setSortMethod(TrackSortMethod::LastWrittenDesc)) };
+            ASSERT_EQ(tracks.results.size(), 4);
+            EXPECT_EQ(tracks.results[0], track4.getId());
+            EXPECT_EQ(tracks.results[1], track1.getId());
+            EXPECT_EQ(tracks.results[2], track2.getId());
+            EXPECT_EQ(tracks.results[3], track3.getId());
         }
     }
 } // namespace lms::db::tests

@@ -116,6 +116,8 @@ namespace lms::core::stringUtils
     [[nodiscard]] std::string toISO8601String(const Wt::WDateTime& dateTime);
     [[nodiscard]] std::string toISO8601String(const Wt::WDate& date);
 
+    [[nodiscard]] Wt::WDateTime fromISO8601String(std::string_view dateTime);
+
     // to "[minutes:seconds.milliseconds]"
     std::string formatTimestamp(std::chrono::milliseconds timestamp);
 } // namespace lms::core::stringUtils

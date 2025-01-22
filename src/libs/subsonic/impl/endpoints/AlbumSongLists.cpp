@@ -25,6 +25,7 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "database/Types.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
@@ -106,7 +107,7 @@ namespace lms::api::subsonic
                 Release::FindParameters params;
                 params.setSortMethod(fromYear > toYear ? ReleaseSortMethod::DateDesc : ReleaseSortMethod::DateAsc);
                 params.setRange(range);
-                params.setDateRange(DateRange::fromYearRange(std::min(fromYear, toYear), std::max(fromYear, toYear)));
+                params.setDateRange(YearRange{ std::min(fromYear, toYear), std::max(fromYear, toYear) });
                 params.setMediaLibrary(mediaLibraryId);
 
                 releases = Release::findIds(context.dbSession, params);
@@ -123,7 +124,7 @@ namespace lms::api::subsonic
             else if (type == "newest")
             {
                 Release::FindParameters params;
-                params.setSortMethod(ReleaseSortMethod::LastWritten);
+                params.setSortMethod(ReleaseSortMethod::AddedDesc);
                 params.setRange(range);
                 params.setMediaLibrary(mediaLibraryId);
 

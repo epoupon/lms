@@ -238,7 +238,7 @@ namespace lms::zip
     {
         assert(_currentEntry != std::cend(_entries));
 
-        std::ifstream ifs{ _currentEntry->filePath.c_str(), std::ios_base::binary };
+        std::ifstream ifs{ _currentEntry->filePath, std::ios_base::binary };
         if (!ifs)
             throw FileException{ _currentEntry->filePath, "cannot open file", errno };
 

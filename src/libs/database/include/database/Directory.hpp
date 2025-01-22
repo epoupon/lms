@@ -55,6 +55,7 @@ namespace lms::db
             DirectoryId parentDirectory;                             // If set, directories that have this parent
             bool withNoTrack{};                                      // If set, directories that do not contain any track
             MediaLibraryId mediaLibrary;                             // If set, directories in this library
+            DirectorySortMethod sortMethod{ DirectorySortMethod::None };
 
             FindParameters& setRange(std::optional<Range> _range)
             {
@@ -90,6 +91,11 @@ namespace lms::db
             FindParameters& setMediaLibrary(MediaLibraryId _mediaLibrary)
             {
                 mediaLibrary = _mediaLibrary;
+                return *this;
+            }
+            FindParameters& setSortMethod(DirectorySortMethod _method)
+            {
+                sortMethod = _method;
                 return *this;
             }
         };

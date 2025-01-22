@@ -10,4 +10,3 @@ target_link_libraries(lms-metadata PRIVATE
 	)
 
 install(TARGETS lms-metadata DESTINATION bin)
-

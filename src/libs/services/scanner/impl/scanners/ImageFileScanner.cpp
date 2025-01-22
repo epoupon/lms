@@ -27,6 +27,7 @@
 #include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
 #include "image/Exception.hpp"
+#include "image/IRawImage.hpp"
 #include "image/Image.hpp"
 
 #include "IFileScanOperation.hpp"
@@ -55,29 +56,19 @@ namespace lms::scanner
             const MediaLibraryInfo _mediaLibrary;
             db::Db& _db;
 
-            struct ImageInfo
-            {
-                std::size_t height{};
-                std::size_t width{};
-            };
-            std::optional<ImageInfo> _parsedImageInfo;
+            std::optional<image::ImageProperties> _parsedImageProperties;
         };
 
         void ImageFileScanOperation::scan()
         {
             try
             {
-                std::unique_ptr<image::IRawImage> rawImage{ image::decodeImage(_file) };
-
-                ImageInfo imageInfo;
-                imageInfo.width = rawImage->getWidth();
-                imageInfo.height = rawImage->getHeight();
-
-                _parsedImageInfo = imageInfo;
+                _parsedImageProperties = image::probeImage(_file);
             }
             catch (const image::Exception& e)
             {
-                LMS_LOG(DBUPDATER, ERROR, "Cannot read image in file '" << _file.string() << "': " << e.what());
+                _parsedImageProperties.reset();
+                LMS_LOG(DBUPDATER, ERROR, "Cannot read image in file " << _file << ": " << e.what());
             }
         }
 
@@ -95,12 +86,13 @@ namespace lms::scanner
             db::Session& dbSession{ _db.getTLSSession() };
             db::Image::pointer image{ db::Image::find(dbSession, _file) };
 
-            if (!_parsedImageInfo)
+            if (!_parsedImageProperties)
             {
                 if (image)
                 {
                     image.remove();
                     stats.deletions++;
+                    LMS_LOG(DBUPDATER, DEBUG, "Removed image " << _file);
                 }
                 context.stats.errors.emplace_back(_file, ScanErrorType::CannotReadImageFile);
                 return;
@@ -112,19 +104,19 @@ namespace lms::scanner
 
             image.modify()->setLastWriteTime(fileInfo->lastWriteTime);
             image.modify()->setFileSize(fileInfo->fileSize);
-            image.modify()->setHeight(_parsedImageInfo->height);
-            image.modify()->setWidth(_parsedImageInfo->width);
+            image.modify()->setHeight(_parsedImageProperties->height);
+            image.modify()->setWidth(_parsedImageProperties->width);
             db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, _mediaLibrary.id) }; // may be null if settings are updated in // => next scan will correct this
             image.modify()->setDirectory(utils::getOrCreateDirectory(dbSession, _file.parent_path(), mediaLibrary));
 
             if (added)
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Added image '" << _file.string() << "'");
+                LMS_LOG(DBUPDATER, DEBUG, "Added image " << _file);
                 stats.additions++;
             }
             else
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Updated image '" << _file.string() << "'");
+                LMS_LOG(DBUPDATER, DEBUG, "Updated image " << _file);
                 stats.updates++;
             }
         }

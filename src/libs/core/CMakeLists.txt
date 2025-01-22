@@ -1,7 +1,7 @@
 pkg_check_modules(Config++ REQUIRED IMPORTED_TARGET libconfig++)
 pkg_check_modules(Archive REQUIRED IMPORTED_TARGET libarchive)
 
-add_library(lmscore SHARED
+add_library(lmscore STATIC
 	impl/http/Client.cpp
 	impl/http/SendQueue.cpp
 	impl/ArchiveZipper.cpp
@@ -12,6 +12,7 @@ add_library(lmscore SHARED
 	impl/IOContextRunner.cpp
 	impl/Logger.cpp
 	impl/NetAddress.cpp
+	impl/PartialDateTime.cpp
 	impl/Path.cpp
 	impl/Random.cpp
 	impl/RecursiveSharedMutex.cpp
@@ -40,8 +41,6 @@ target_link_libraries(lmscore PUBLIC
 	std::filesystem
 	Wt::Wt
 	)
-
-install(TARGETS lmscore DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 if(BUILD_TESTING)
 	add_subdirectory(test)

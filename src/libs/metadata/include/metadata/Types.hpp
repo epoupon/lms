@@ -26,8 +26,7 @@
 #include <string_view>
 #include <vector>
 
-#include <Wt/WDate.h>
-
+#include "core/PartialDateTime.hpp"
 #include "core/UUID.hpp"
 
 #include "Lyrics.hpp"
@@ -102,6 +101,12 @@ namespace lms::metadata
 
     struct Track
     {
+        enum class Advisory
+        {
+            Unknown,
+            Explicit,
+            Clean,
+        };
         AudioProperties audioProperties;
         std::optional<core::UUID> mbid;
         std::optional<core::UUID> recordingMBID;
@@ -113,10 +118,11 @@ namespace lms::metadata
         std::vector<std::string> moods;
         std::vector<std::string> languages;
         Tags userExtraTags;
-        std::optional<int> year{};
-        Wt::WDate date;
-        std::optional<int> originalYear{};
-        Wt::WDate originalDate;
+        core::PartialDateTime date;
+        std::optional<int> originalYear;
+        core::PartialDateTime originalDate;
+        std::optional<Advisory> advisory;
+        core::PartialDateTime encodingTime;
         bool hasCover{};
         std::optional<core::UUID> acoustID;
         std::string copyright;

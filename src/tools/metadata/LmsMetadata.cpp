@@ -135,6 +135,24 @@ namespace lms::metadata
         return os;
     }
 
+    std::ostream& operator<<(std::ostream& os, Track::Advisory advisory)
+    {
+        switch (advisory)
+        {
+        case Track::Advisory::Clean:
+            os << "clean";
+            break;
+        case Track::Advisory::Explicit:
+            os << "Explicit";
+            break;
+        case Track::Advisory::Unknown:
+            os << "Unknown";
+            break;
+        }
+
+        return os;
+    }
+
     void parse(IParser& parser, const std::filesystem::path& file)
     {
         using namespace metadata;
@@ -184,9 +202,6 @@ namespace lms::metadata
         for (const Artist& artist : track->remixerArtists)
             std::cout << "Remixer: " << artist << std::endl;
 
-        if (track->medium)
-            std::cout << "Medium: " << *track->medium;
-
         std::cout << "Title: " << track->title << std::endl;
 
         if (track->mbid)
@@ -220,12 +235,10 @@ namespace lms::metadata
             std::cout << "Position: " << *track->position << std::endl;
 
         if (track->date.isValid())
-            std::cout << "Date: " << track->date.toString("yyyy-MM-dd") << std::endl;
-        if (track->year)
-            std::cout << "Year: " << *track->year << std::endl;
+            std::cout << "Date: " << track->date.toISO8601String() << std::endl;
 
         if (track->originalDate.isValid())
-            std::cout << "Original date: " << track->originalDate.toString("yyyy-MM-dd") << std::endl;
+            std::cout << "Original date: " << track->originalDate.toISO8601String() << std::endl;
         if (track->originalYear)
             std::cout << "Original year: " << *track->originalYear << std::endl;
 
@@ -249,6 +262,15 @@ namespace lms::metadata
 
         if (!track->copyrightURL.empty())
             std::cout << "CopyrightURL: " << track->copyrightURL << std::endl;
+
+        if (track->advisory)
+            std::cout << "Advisory: " << *track->advisory << std::endl;
+
+        if (track->encodingTime.isValid())
+            std::cout << "Encoding time: " << track->encodingTime.toISO8601String() << std::endl;
+
+        if (track->medium)
+            std::cout << "Medium: " << *track->medium;
 
         std::cout << std::endl;
     }
@@ -365,14 +387,14 @@ int main(int argc, char* argv[])
                 {
                     std::cout << "Using Lyrics:" << std::endl;
 
-                    std::ifstream ifs{ file.string() };
+                    std::ifstream ifs{ file };
                     if (ifs)
                     {
                         const metadata::Lyrics lyrics{ metadata::parseLyrics(ifs) };
                         std::cout << lyrics << std::endl;
                     }
                     else
-                        std::cerr << "Cannot open file '" << file.string() << "'";
+                        std::cerr << "Cannot open file " << file;
                 }
                 catch (metadata::Exception& e)
                 {

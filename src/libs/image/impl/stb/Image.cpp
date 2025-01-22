@@ -21,14 +21,14 @@
 
 #include <array>
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image_write.h>
+#include "StbImage.hpp"
+#include "StbImageWrite.hpp"
 
 #include "core/ITraceLogger.hpp"
+#include "image/Exception.hpp"
 
 #include "EncodedImage.hpp"
 #include "RawImage.hpp"
-#include "image/Exception.hpp"
 
 namespace lms::image
 {
@@ -40,6 +40,24 @@ namespace lms::image
     {
         static const std::array<std::filesystem::path, 4> fileExtensions{ ".jpg", ".jpeg", ".png", ".bmp" };
         return fileExtensions;
+    }
+
+    ImageProperties probeImage(const std::filesystem::path& path)
+    {
+        LMS_SCOPED_TRACE_DETAILED("Image", "ProbeFile");
+
+        int x{};
+        int y{};
+        int comp{};
+
+        if (::stbi_info(path.c_str(), &x, &y, &comp) == 0)
+            throw StbiException{ "Probe failed" };
+
+        ImageProperties properties;
+        properties.width = x;
+        properties.height = y;
+
+        return properties;
     }
 
     std::unique_ptr<IRawImage> decodeImage(std::span<const std::byte> encodedData)

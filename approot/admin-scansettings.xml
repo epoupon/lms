@@ -4,7 +4,7 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Admin.Database.template">
-	<form class="row g-3">
+	<form class="row g-3 mb-3">
 		<legend>${tr:Lms.Admin.Database.scan-settings}</legend>
 		<div class="col-sm-6">
 			<label class="form-label" for="${id:update-period}">
@@ -24,15 +24,7 @@
 				${update-start-time-info}
 			</div>
 		</div>
-		<div class="col-12">
-			<label class="form-label" for="${id:similarity-engine-type}">
-				${tr:Lms.Admin.Database.similarity-engine-type}
-			</label>
-			${similarity-engine-type class="form-control"}
-			<div class="invalid-feedback">
-				${similarity-engine-type-info}
-			</div>
-		</div>
+		<legend>${tr:Lms.Admin.Database.tag-parsing}</legend>
 		<div class="col-12">
 			<label class="form-label" for="${id:extra-tags-to-scan}">
 				${tr:Lms.Admin.Database.extra-tags-to-scan}
@@ -54,10 +46,30 @@
 			</label>
 			${default-tag-delimiter-container class="row gy-3"}
 		</div>
+		<legend>${tr:Lms.Admin.Database.misc}</legend>
 		<div class="col-12">
-			${save-btn class="btn btn-primary me-1"}${discard-btn class="btn btn-secondary"}
+			<div class="form-check">
+				${skip-single-release-playlists class="form-check-input"}
+				<label class="form-check-label" for="${id:skip-single-release-playlists}">
+					${tr:Lms.Admin.Database.skip-single-release-playlists}
+				</label>
+				<div class="invalid-feedback">
+					${skip-single-release-playlists-info}
+				</div>
+			</div>
+		</div>
+		<div class="col-12">
+			<label class="form-label" for="${id:similarity-engine-type}">
+				${tr:Lms.Admin.Database.similarity-engine-type}
+			</label>
+			${similarity-engine-type class="form-control"}
+			<div class="invalid-feedback">
+				${similarity-engine-type-info}
+			</div>
 		</div>
 	</form>
+	<hr/>
+	${save-btn class="btn btn-primary me-1"}${discard-btn class="btn btn-secondary"}
 </message>
 
 <message id="Lms.Admin.Database.template.line-edit-entry">

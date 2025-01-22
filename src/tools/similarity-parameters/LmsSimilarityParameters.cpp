@@ -384,7 +384,7 @@ int main(int argc, char* argv[])
 
         ServiceProvider<Config>::create(configFilePath);
 
-        db::Db db{ ServiceProvider<Config>::get()->getPath("working-dir") / "lms.db" };
+        db::Db db{ ServiceProvider<Config>::get()->getPath("working-dir", "/var/lms") / "lms.db" };
         db::SessionPool sessionPool{ db, nbWorkers };
 
         std::cout << "Caching all features..." << std::endl;

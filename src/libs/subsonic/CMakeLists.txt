@@ -1,5 +1,5 @@
 
-add_library(lmssubsonic SHARED
+add_library(lmssubsonic STATIC
 	impl/endpoints/AlbumSongLists.cpp
 	impl/endpoints/Bookmarks.cpp
 	impl/endpoints/Browsing.cpp
@@ -59,8 +59,6 @@ target_link_libraries(lmssubsonic PRIVATE
 target_link_libraries(lmssubsonic PUBLIC
 	Wt::Wt
 	)
-
-install(TARGETS lmssubsonic DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 if (BUILD_BENCHMARKS)
        add_subdirectory(bench)

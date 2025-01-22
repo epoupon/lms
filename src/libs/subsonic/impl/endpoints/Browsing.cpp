@@ -88,6 +88,7 @@ namespace lms::api::subsonic
         {
             Directory::FindParameters params;
             params.setParentDirectory(parentDirectory->getId());
+            params.setSortMethod(DirectorySortMethod::Name);
 
             Directory::find(context.dbSession, params, [&](const Directory::pointer& directory) {
                 const std::string_view name{ directory->getName() };
@@ -313,6 +314,7 @@ namespace lms::api::subsonic
         {
             Directory::FindParameters params;
             params.setParentDirectory(directory->getId());
+            params.setSortMethod(DirectorySortMethod::Name);
 
             Directory::find(context.dbSession, params, [&](const Directory::pointer& subDirectory) {
                 const Release::pointer release{ getReleaseFromDirectory(context.dbSession, subDirectory->getId()) };
@@ -338,6 +340,7 @@ namespace lms::api::subsonic
         {
             Track::FindParameters params;
             params.setDirectory(directory->getId());
+            params.setSortMethod(TrackSortMethod::FileName);
 
             Track::find(context.dbSession, params, [&](const Track::pointer& track) {
                 directoryNode.addArrayChild("child", createSongNode(context, track, context.user));

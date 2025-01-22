@@ -26,9 +26,12 @@
 #include "database/Db.hpp"
 #include "database/Directory.hpp"
 #include "database/PlayListFile.hpp"
+#include "database/ReleaseId.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
+
+#include "ScannerSettings.hpp"
 
 namespace lms::scanner
 {
@@ -37,10 +40,17 @@ namespace lms::scanner
         constexpr std::size_t readBatchSize{ 20 };
         constexpr std::size_t writeBatchSize{ 5 };
 
+        struct TrackInfo
+        {
+            db::TrackId trackId;
+            db::ReleaseId releaseId;
+        };
+
         struct PlayListFileAssociation
         {
             db::PlayListFileId playListFileIdId;
-            std::vector<db::TrackId> trackIds;
+
+            std::vector<TrackInfo> tracks;
         };
         using PlayListFileAssociationContainer = std::deque<PlayListFileAssociation>;
 
@@ -49,6 +59,7 @@ namespace lms::scanner
             db::Session& session;
             db::PlayListFileId lastRetrievedPlayListFileId;
             std::size_t processedPlayListFileCount{};
+            const ScannerSettings& settings;
         };
 
         db::Track::pointer getMatchingTrack(db::Session& session, const std::filesystem::path& filePath, const db::Directory::pointer& playListDirectory)
@@ -67,7 +78,19 @@ namespace lms::scanner
             return matchingTrack;
         }
 
-        bool trackListNeedsUpdate(db::Session& session, std::string_view name, std::span<const db::TrackId> trackIds, const db::TrackList::pointer& trackList)
+        bool isSingleReleasePlayList(std::span<const TrackInfo> tracks)
+        {
+            if (tracks.empty())
+                return true;
+
+            const db::ReleaseId releaseId{ tracks.front().releaseId };
+            if (std::all_of(std::cbegin(tracks) + 1, std::cend(tracks), [=](const TrackInfo& trackInfo) { return trackInfo.releaseId == releaseId; }))
+                return true;
+
+            return false;
+        }
+
+        bool trackListNeedsUpdate(db::Session& session, std::string_view name, std::span<const TrackInfo> tracks, const db::TrackList::pointer& trackList)
         {
             if (trackList->getName() != name)
                 return true;
@@ -78,13 +101,13 @@ namespace lms::scanner
             bool needUpdate{};
             std::size_t currentIndex{};
             db::TrackListEntry::find(session, params, [&](const db::TrackListEntry::pointer& entry) {
-                if (currentIndex > trackIds.size() || trackIds[currentIndex] != entry->getTrackId())
+                if (currentIndex > tracks.size() || tracks[currentIndex].trackId != entry->getTrackId())
                     needUpdate = true;
 
                 currentIndex += 1;
             });
 
-            if (currentIndex != trackIds.size())
+            if (currentIndex != tracks.size())
                 needUpdate = true;
 
             return needUpdate;
@@ -108,20 +131,27 @@ namespace lms::scanner
                         // TODO optim: no need to fetch the whole track
                         db::Track::pointer track{ getMatchingTrack(searchContext.session, file, playListFile->getDirectory()) };
                         if (track)
-                            playListAssociation.trackIds.push_back(track->getId());
+                            playListAssociation.tracks.push_back(TrackInfo{ .trackId = track->getId(), .releaseId = track->getReleaseId() });
                         else
-                            LMS_LOG(DBUPDATER, DEBUG, "Track '" << file.string() << "' not found in playlist '" << playListFile->getAbsoluteFilePath().string() << "'");
+                            LMS_LOG(DBUPDATER, DEBUG, "Track " << file << " not found in playlist " << playListFile->getAbsoluteFilePath());
+                    }
+
+                    if (playListAssociation.tracks.empty()
+                        || (searchContext.settings.skipSingleReleasePlayLists && isSingleReleasePlayList(playListAssociation.tracks)))
+                    {
+                        playListAssociation.tracks.clear();
                     }
 
                     bool needUpdate{ true };
                     if (const db::TrackList::pointer trackList{ playListFile->getTrackList() })
-                        needUpdate = trackListNeedsUpdate(searchContext.session, playListFile->getName(), playListAssociation.trackIds, trackList);
+                    {
+                        if (!playListAssociation.tracks.empty())
+                            needUpdate = trackListNeedsUpdate(searchContext.session, playListFile->getName(), playListAssociation.tracks, trackList);
+                    }
 
                     if (needUpdate)
-                    {
-                        LMS_LOG(DBUPDATER, DEBUG, "Updating PlayList '" << playListFile->getAbsoluteFilePath().string() << "' (" << playListAssociation.trackIds.size() << " files)");
                         playListFileAssociations.emplace_back(std::move(playListAssociation));
-                    }
+
                     searchContext.processedPlayListFileCount++;
                 });
             }
@@ -135,7 +165,19 @@ namespace lms::scanner
             assert(playListFile);
 
             db::TrackList::pointer trackList{ playListFile->getTrackList() };
-            if (!trackList)
+            if (playListFileAssociation.tracks.empty())
+            {
+                if (trackList)
+                {
+                    LMS_LOG(DBUPDATER, DEBUG, "Removed associated tracklist for " << playListFile->getAbsoluteFilePath() << "");
+                    trackList.remove();
+                }
+
+                return;
+            }
+
+            const bool createTrackList{ !trackList };
+            if (createTrackList)
             {
                 trackList = session.create<db::TrackList>(playListFile->getName(), db::TrackListType::PlayList);
                 playListFile.modify()->setTrackList(trackList);
@@ -146,11 +188,13 @@ namespace lms::scanner
             trackList.modify()->setName(playListFile->getName());
 
             trackList.modify()->clear();
-            for (const db::TrackId trackId : playListFileAssociation.trackIds)
+            for (const TrackInfo trackInfo : playListFileAssociation.tracks)
             {
-                if (db::Track::pointer track{ db::Track::find(session, trackId) })
+                if (db::Track::pointer track{ db::Track::find(session, trackInfo.trackId) })
                     session.create<db::TrackListEntry>(track, trackList, playListFile->getLastWriteTime());
             }
+
+            LMS_LOG(DBUPDATER, DEBUG, std::string_view{ createTrackList ? "Created" : "Updated" } << " associated tracklist for " << playListFile->getAbsoluteFilePath() << " (" << playListFileAssociation.tracks.size() << " tracks)");
         }
 
         void updatePlayListFiles(db::Session& session, PlayListFileAssociationContainer& playListFileAssociations)
@@ -186,6 +230,7 @@ namespace lms::scanner
         SearchPlayListFileContext searchContext{
             .session = session,
             .lastRetrievedPlayListFileId = {},
+            .settings = _settings,
         };
 
         PlayListFileAssociationContainer playListFileAssociations;

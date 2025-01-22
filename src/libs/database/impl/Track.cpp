@@ -34,6 +34,7 @@
 #include "database/User.hpp"
 
 #include "IdTypeTraits.hpp"
+#include "PartialDateTimeTraits.hpp"
 #include "PathTraits.hpp"
 #include "SqlQuery.hpp"
 #include "StringViewTraits.hpp"
@@ -174,8 +175,11 @@ namespace lms::db
             case TrackSortMethod::Id:
                 query.orderBy("t.id");
                 break;
-            case TrackSortMethod::LastWritten:
+            case TrackSortMethod::LastWrittenDesc:
                 query.orderBy("t.file_last_write DESC");
+                break;
+            case TrackSortMethod::AddedDesc:
+                query.orderBy("t.file_added DESC");
                 break;
             case TrackSortMethod::Random:
                 query.orderBy("RANDOM()");
@@ -186,6 +190,9 @@ namespace lms::db
                 break;
             case TrackSortMethod::Name:
                 query.orderBy("t.name COLLATE NOCASE");
+                break;
+            case TrackSortMethod::FileName:
+                query.orderBy("t.file_name COLLATE NOCASE");
                 break;
             case TrackSortMethod::DateDescAndRelease:
                 query.orderBy("COALESCE(t.date, CAST(t.year AS TEXT)) DESC,t.release_id,t.disc_number,t.track_number");
@@ -233,7 +240,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Track>>("SELECT t from track t").where("t.absolute_file_path = ?").bind(p.string()));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Track>>("SELECT t from track t").where("t.absolute_file_path = ?").bind(p));
     }
 
     Track::pointer Track::find(Session& session, TrackId id)
@@ -445,6 +452,16 @@ namespace lms::db
     void Track::addLyrics(const ObjectPtr<TrackLyrics>& lyrics)
     {
         _trackLyrics.insert(getDboPtr(lyrics));
+    }
+
+    std::optional<int> Track::getYear() const
+    {
+        return _date.getYear();
+    }
+
+    std::optional<int> Track::getOriginalYear() const
+    {
+        return _originalDate.getYear();
     }
 
     bool Track::hasLyrics() const

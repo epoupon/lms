@@ -22,6 +22,7 @@
 #include <span>
 
 #include "core/ILogger.hpp"
+#include "core/PartialDateTime.hpp"
 #include "core/String.hpp"
 #include "metadata/Exception.hpp"
 
@@ -246,6 +247,25 @@ namespace lms::metadata
 
             return artistDisplayName;
         }
+
+        std::optional<Track::Advisory> getAdvisory(const ITagReader& tagReader)
+        {
+            if (const auto value{ getTagValueAs<int>(tagReader, TagType::Advisory) })
+            {
+                switch (*value)
+                {
+                case 1:
+                case 4:
+                    return Track::Advisory::Explicit;
+                case 2:
+                    return Track::Advisory::Clean;
+                case 0:
+                    return Track::Advisory::Unknown;
+                }
+            }
+
+            return std::nullopt;
+        }
     } // namespace
 
     std::unique_ptr<IParser> createParser(ParserBackend parserBackend, ParserReadStyle parserReadStyle)
@@ -317,7 +337,7 @@ namespace lms::metadata
         }
         catch (const Exception& e)
         {
-            LMS_LOG(METADATA, ERROR, "File '" << p.string() << "': parsing failed");
+            LMS_LOG(METADATA, ERROR, "File " << p << ": parsing failed");
             throw ParseException{};
         }
     }
@@ -341,34 +361,26 @@ namespace lms::metadata
         track.recordingMBID = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzRecordingID);
         track.acoustID = getTagValueAs<core::UUID>(tagReader, TagType::AcoustID);
         track.position = getTagValueAs<std::size_t>(tagReader, TagType::TrackNumber); // May parse 'Number/Total', that's fine
-        if (auto dateStr = getTagValueAs<std::string>(tagReader, TagType::Date))
+        if (const auto dateStr{ getTagValueAs<std::string>(tagReader, TagType::Date) })
         {
-            if (const Wt::WDate date{ utils::parseDate(*dateStr) }; date.isValid())
-            {
+            if (const core::PartialDateTime date{ core::PartialDateTime::fromString(*dateStr) }; date.isValid())
                 track.date = date;
-                track.year = date.year();
-            }
-            else
-            {
-                track.year = utils::parseYear(*dateStr);
-            }
         }
-        if (auto dateStr = getTagValueAs<std::string>(tagReader, TagType::OriginalReleaseDate))
+        if (const auto dateStr = getTagValueAs<std::string>(tagReader, TagType::OriginalReleaseDate))
         {
-            if (const Wt::WDate date{ utils::parseDate(*dateStr) }; date.isValid())
-            {
+            if (const core::PartialDateTime date{ core::PartialDateTime::fromString(*dateStr) }; date.isValid())
                 track.originalDate = date;
-                track.originalYear = date.year();
-            }
-            else
-            {
-                track.originalYear = utils::parseYear(*dateStr);
-            }
         }
-        if (auto dateStr = getTagValueAs<std::string>(tagReader, TagType::OriginalReleaseYear))
-        {
+        if (const auto dateStr{ getTagValueAs<std::string>(tagReader, TagType::OriginalReleaseYear) })
             track.originalYear = utils::parseYear(*dateStr);
+
+        if (const auto encodingTimeStr{ getTagValueAs<std::string>(tagReader, TagType::EncodingTime) })
+        {
+            if (const core::PartialDateTime date{ core::PartialDateTime::fromString(*encodingTimeStr) }; date.isValid())
+                track.encodingTime = date;
         }
+
+        track.advisory = getAdvisory(tagReader);
 
         track.lyrics = getLyrics(tagReader); // no custom delimiter on lyrics
         track.comments = getTagValuesAs<std::string>(tagReader, TagType::Comment, {} /* no custom delimiter on comments */);
@@ -404,13 +416,9 @@ namespace lms::metadata
         track.remixerArtists = getArtists(tagReader, { TagType::Remixers, TagType::Remixer }, { TagType::RemixersSortOrder, TagType::RemixerSortOrder }, {}, _artistTagDelimiters, _defaultTagDelimiters);
         track.performerArtists = getPerformerArtists(tagReader); // artistDelimiters not supported
 
-        // If a file has date but no year, set it
-        if (!track.year && track.date.isValid())
-            track.year = track.date.year();
-
         // If a file has originalDate but no originalYear, set it
-        if (!track.originalYear && track.originalDate.isValid())
-            track.originalYear = track.originalDate.year();
+        if (!track.originalYear)
+            track.originalYear = track.originalDate.getYear();
     }
 
     std::optional<Medium> Parser::getMedium(const ITagReader& tagReader)

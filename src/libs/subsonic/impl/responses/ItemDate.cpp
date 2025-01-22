@@ -23,20 +23,16 @@
 
 namespace lms::api::subsonic
 {
-    Response::Node createItemDateNode(const Wt::WDate& date, std::optional<int> year)
+    Response::Node createItemDateNode(const core::PartialDateTime& date)
     {
         Response::Node itemDateNode;
 
-        if (date.isValid())
-        {
-            itemDateNode.setAttribute("year", date.year());
-            itemDateNode.setAttribute("month", date.month());
-            itemDateNode.setAttribute("day", date.day());
-        }
-        else if (year)
-        {
+        if (auto year{ date.getYear() })
             itemDateNode.setAttribute("year", *year);
-        }
+        if (auto month{ date.getMonth() })
+            itemDateNode.setAttribute("month", *month);
+        if (auto day{ date.getDay() })
+            itemDateNode.setAttribute("day", *day);
 
         return itemDateNode;
     }

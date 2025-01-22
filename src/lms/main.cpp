@@ -109,33 +109,35 @@ namespace lms
 
         std::vector<std::string> generateWtConfig(std::string execPath, core::logging::Severity minSeverity)
         {
+            core::IConfig& config{ *core::Service<core::IConfig>::get() };
+
             std::vector<std::string> args;
 
-            const std::filesystem::path wtConfigPath{ core::Service<core::IConfig>::get()->getPath("working-dir") / "wt_config.xml" };
-            const std::filesystem::path wtLogFilePath{ core::Service<core::IConfig>::get()->getPath("log-file", "/var/log/lms.log") };
-            const std::filesystem::path wtAccessLogFilePath{ core::Service<core::IConfig>::get()->getPath("access-log-file", "/var/log/lms.access.log") };
-            const std::filesystem::path wtResourcesPath{ core::Service<core::IConfig>::get()->getPath("wt-resources", "/usr/share/Wt/resources") };
+            const std::filesystem::path wtConfigPath{ config.getPath("working-dir", "/var/lms") / "wt_config.xml" };
+            const std::filesystem::path wtLogFilePath{ config.getPath("log-file", "") };
+            const std::filesystem::path wtAccessLogFilePath{ config.getPath("access-log-file", "") };
+            const std::filesystem::path wtResourcesPath{ config.getPath("wt-resources", "/usr/share/Wt/resources") };
 
             args.push_back(execPath);
             args.push_back("--config=" + wtConfigPath.string());
-            args.push_back("--docroot=" + std::string{ core::Service<core::IConfig>::get()->getString("docroot") });
-            args.push_back("--approot=" + std::string{ core::Service<core::IConfig>::get()->getString("approot") });
-            args.push_back("--deploy-path=" + std::string{ core::Service<core::IConfig>::get()->getString("deploy-path", "/") });
+            args.push_back("--docroot=" + std::string{ config.getString("docroot", "/usr/share/lms/docroot/;/resources,/css,/images,/js,/favicon.ico") });
+            args.push_back("--approot=" + std::string{ config.getString("approot", "/usr/share/lms/approot") });
+            args.push_back("--deploy-path=" + std::string{ config.getString("deploy-path", "/") });
             if (!wtResourcesPath.empty())
                 args.push_back("--resources-dir=" + wtResourcesPath.string());
 
             if (core::Service<core::IConfig>::get()->getBool("tls-enable", false))
             {
-                args.push_back("--https-port=" + std::to_string(core::Service<core::IConfig>::get()->getULong("listen-port", 5082)));
-                args.push_back("--https-address=" + std::string{ core::Service<core::IConfig>::get()->getString("listen-addr", "0.0.0.0") });
-                args.push_back("--ssl-certificate=" + std::string{ core::Service<core::IConfig>::get()->getString("tls-cert") });
-                args.push_back("--ssl-private-key=" + std::string{ core::Service<core::IConfig>::get()->getString("tls-key") });
-                args.push_back("--ssl-tmp-dh=" + std::string{ core::Service<core::IConfig>::get()->getString("tls-dh") });
+                args.push_back("--https-port=" + std::to_string(config.getULong("listen-port", 5082)));
+                args.push_back("--https-address=" + std::string{ config.getString("listen-addr", "0.0.0.0") });
+                args.push_back("--ssl-certificate=" + std::string{ config.getString("tls-cert", "/var/lms/cert.pem") });
+                args.push_back("--ssl-private-key=" + std::string{ config.getString("tls-key", "/var/lms/privkey.pem") });
+                args.push_back("--ssl-tmp-dh=" + std::string{ config.getString("tls-dh", "/var/lms/dh2048.pem") });
             }
             else
             {
-                args.push_back("--http-port=" + std::to_string(core::Service<core::IConfig>::get()->getULong("listen-port", 5082)));
-                args.push_back("--http-address=" + std::string{ core::Service<core::IConfig>::get()->getString("listen-addr", "0.0.0.0") });
+                args.push_back("--http-port=" + std::to_string(config.getULong("listen-port", 5082)));
+                args.push_back("--http-address=" + std::string{ config.getString("listen-addr", "0.0.0.0") });
             }
 
             if (!wtAccessLogFilePath.empty())
@@ -153,10 +155,10 @@ namespace lms
             pt.put("server.application-settings.log-config", core::logging::WtLogger::computeLogConfig(minSeverity));
 
             // Reverse proxy
-            if (core::Service<core::IConfig>::get()->getBool("behind-reverse-proxy", false))
+            if (config.getBool("behind-reverse-proxy", false))
             {
-                pt.put("server.application-settings.trusted-proxy-config.original-ip-header", core::Service<core::IConfig>::get()->getString("original-ip-header", "X-Forwarded-For"));
-                core::Service<core::IConfig>::get()->visitStrings("trusted-proxies", [&](std::string_view trustedProxy) {
+                pt.put("server.application-settings.trusted-proxy-config.original-ip-header", config.getString("original-ip-header", "X-Forwarded-For"));
+                config.visitStrings("trusted-proxies", [&](std::string_view trustedProxy) {
                     pt.add("server.application-settings.trusted-proxy-config.trusted-proxies.proxy", std::string{ trustedProxy });
                 },
                     { "127.0.0.1", "::1" });
@@ -176,7 +178,7 @@ namespace lms
             }
 
             {
-                std::ofstream oss{ wtConfigPath.string().c_str(), std::ios::out };
+                std::ofstream oss{ wtConfigPath, std::ios::out };
                 if (!oss)
                     throw core::LmsException{ "Can't open '" + wtConfigPath.string() + "' for writing!" };
 
@@ -284,8 +286,8 @@ namespace lms
                 LMS_LOG(MAIN, WARNING, "Cannot set locale from system");
 
             // Make sure the working directory exists
-            std::filesystem::create_directories(config->getPath("working-dir"));
-            std::filesystem::create_directories(config->getPath("working-dir") / "cache");
+            std::filesystem::create_directories(config->getPath("working-dir", "/var/lms"));
+            std::filesystem::create_directories(config->getPath("working-dir", "/var/lms") / "cache");
 
             // Construct WT configuration and get the argc/argv back
             const std::vector<std::string> wtServerArgs{ generateWtConfig(argv[0], minLogSeverity) };
@@ -313,7 +315,7 @@ namespace lms
             core::IOContextRunner ioContextRunner{ ioContext, getThreadCount(), "Misc" };
 
             // Connection pool size must be twice the number of threads: we have at least 2 io pools with getThreadCount() each and they all may access the database
-            db::Db database{ config->getPath("working-dir") / "lms.db", getThreadCount() * 2 };
+            db::Db database{ config->getPath("working-dir", "/var/lms") / "lms.db", getThreadCount() * 2 };
             {
                 db::Session session{ database };
                 session.prepareTablesIfNeeded();

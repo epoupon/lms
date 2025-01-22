@@ -1,5 +1,5 @@
 
-add_library(lmsimage SHARED
+add_library(lmsimage STATIC
 	impl/EncodedImage.cpp
 	)
 
@@ -27,6 +27,9 @@ if (${LMS_IMAGE_BACKEND} STREQUAL "stb")
 	target_sources(lmsimage PRIVATE
 		impl/stb/Image.cpp
 		impl/stb/RawImage.cpp
+		impl/stb/StbImage.cpp
+		impl/stb/StbImageResize.cpp
+		impl/stb/StbImageWrite.cpp
 	)
 	target_compile_options(lmsimage PRIVATE "-DSTB_IMAGE_RESIZE_VERSION=${STB_IMAGE_RESIZE_VERSION}")
 	target_include_directories(lmsimage PRIVATE ${STB_IMAGE_INCLUDE_DIR})
@@ -44,6 +47,3 @@ elseif (${LMS_IMAGE_BACKEND} STREQUAL "graphicsmagick")
 else ()
 	message(FATAL_ERROR "Invalid image library")
 endif ()
-
-install(TARGETS lmsimage DESTINATION ${CMAKE_INSTALL_LIBDIR})
-

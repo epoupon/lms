@@ -33,6 +33,7 @@
 #include <Wt/WDateTime.h>
 
 #include "core/EnumSet.hpp"
+#include "core/PartialDateTime.hpp"
 #include "core/UUID.hpp"
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
@@ -193,12 +194,6 @@ namespace lms::db
             }
         };
 
-        struct PathResult
-        {
-            TrackId trackId;
-            std::filesystem::path path;
-        };
-
         Track() = default;
 
         // Find utility functions
@@ -229,21 +224,20 @@ namespace lms::db
         void setRelativeFilePath(const std::filesystem::path& filePath);
         void setFileSize(std::size_t fileSize) { _fileSize = fileSize; }
         void setLastWriteTime(Wt::WDateTime time) { _fileLastWrite = time; }
-        void setAddedTime(Wt::WDateTime time) { _fileAdded = time; }
+        void setAddedTime(core::PartialDateTime time) { _fileAdded = time; }
         void setBitrate(std::size_t bitrate) { _bitrate = bitrate; }
         void setBitsPerSample(std::size_t bitsPerSample) { _bitsPerSample = bitsPerSample; }
         void setDuration(std::chrono::milliseconds duration) { _duration = duration; }
         void setChannelCount(std::size_t channelCount) { _channelCount = channelCount; }
         void setSampleRate(std::size_t channelCount) { _sampleRate = channelCount; }
-        void setDate(const Wt::WDate& date) { _date = date; }
-        void setYear(std::optional<int> year) { _year = year; }
-        void setOriginalDate(const Wt::WDate& date) { _originalDate = date; }
-        void setOriginalYear(std::optional<int> year) { _originalYear = year; }
+        void setDate(const core::PartialDateTime& date) { _date = date; }
+        void setOriginalDate(const core::PartialDateTime& date) { _originalDate = date; }
         void setHasCover(bool hasCover) { _hasCover = hasCover; }
         void setTrackMBID(const std::optional<core::UUID>& MBID) { _trackMBID = MBID ? MBID->getAsString() : ""; }
         void setRecordingMBID(const std::optional<core::UUID>& MBID) { _recordingMBID = MBID ? MBID->getAsString() : ""; }
         void setCopyright(std::string_view copyright);
         void setCopyrightURL(std::string_view copyrightURL);
+        void setAdvisory(Advisory advisory) { _advisory = advisory; }
         void setTrackReplayGain(std::optional<float> replayGain) { _trackReplayGain = replayGain; }
         void setReleaseReplayGain(std::optional<float> replayGain) { _releaseReplayGain = replayGain; } // may be by disc!
         void setArtistDisplayName(std::string_view name) { _artistDisplayName = name; }
@@ -273,18 +267,19 @@ namespace lms::db
         std::chrono::milliseconds getDuration() const { return _duration; }
         std::size_t getSampleRate() const { return _sampleRate; }
         const Wt::WDateTime& getLastWritten() const { return _fileLastWrite; }
-        const Wt::WDate& getDate() const { return _date; }
-        std::optional<int> getYear() const { return _year; }
-        const Wt::WDate& getOriginalDate() const { return _originalDate; }
-        std::optional<int> getOriginalYear() const { return _originalYear; };
+        const core::PartialDateTime& getDate() const { return _date; }
+        std::optional<int> getYear() const;
+        const core::PartialDateTime& getOriginalDate() const { return _originalDate; }
+        std::optional<int> getOriginalYear() const;
         const Wt::WDateTime& getLastWriteTime() const { return _fileLastWrite; }
-        const Wt::WDateTime& getAddedTime() const { return _fileAdded; }
+        const core::PartialDateTime& getAddedTime() const { return _fileAdded; }
         bool hasCover() const { return _hasCover; }
         bool hasLyrics() const;
         std::optional<core::UUID> getTrackMBID() const { return core::UUID::fromString(_trackMBID); }
         std::optional<core::UUID> getRecordingMBID() const { return core::UUID::fromString(_recordingMBID); }
         std::optional<std::string> getCopyright() const;
         std::optional<std::string> getCopyrightURL() const;
+        Advisory getAdvisory() const { return _advisory; }
         std::optional<float> getTrackReplayGain() const { return _trackReplayGain; }
         std::optional<float> getReleaseReplayGain() const { return _releaseReplayGain; }
         std::string_view getArtistDisplayName() const { return _artistDisplayName; }
@@ -294,6 +289,7 @@ namespace lms::db
         std::vector<ObjectPtr<Artist>> getArtists(core::EnumSet<TrackArtistLinkType> artistLinkTypes) const; // no type means all
         std::vector<ArtistId> getArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes) const;        // no type means all
         std::vector<ObjectPtr<TrackArtistLink>> getArtistLinks() const;
+        ReleaseId getReleaseId() const { return _release.id(); }
         ObjectPtr<Release> getRelease() const { return _release; }
         std::vector<ObjectPtr<Cluster>> getClusters() const;
         std::vector<ClusterId> getClusterIds() const;
@@ -317,9 +313,7 @@ namespace lms::db
             Wt::Dbo::field(a, _channelCount, "channel_count");
             Wt::Dbo::field(a, _sampleRate, "sample_rate");
             Wt::Dbo::field(a, _date, "date");
-            Wt::Dbo::field(a, _year, "year");
             Wt::Dbo::field(a, _originalDate, "original_date");
-            Wt::Dbo::field(a, _originalYear, "original_year");
             Wt::Dbo::field(a, _absoluteFilePath, "absolute_file_path");
             Wt::Dbo::field(a, _relativeFilePath, "relative_file_path");
             Wt::Dbo::field(a, _fileStem, "file_stem");
@@ -332,6 +326,7 @@ namespace lms::db
             Wt::Dbo::field(a, _recordingMBID, "recording_mbid");
             Wt::Dbo::field(a, _copyright, "copyright");
             Wt::Dbo::field(a, _copyrightURL, "copyright_url");
+            Wt::Dbo::field(a, _advisory, "advisory");
             Wt::Dbo::field(a, _trackReplayGain, "track_replay_gain");
             Wt::Dbo::field(a, _releaseReplayGain, "release_replay_gain"); // here in Track since Release does not have concept of "disc" (yet?)
             Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
@@ -364,27 +359,25 @@ namespace lms::db
         int _channelCount{};
         std::chrono::duration<int, std::milli> _duration{};
         int _sampleRate{};
-        Wt::WDate _date;
-        std::optional<int> _year;
-        Wt::WDate _originalDate;
-        std::optional<int> _originalYear;
+        core::PartialDateTime _date;
+        core::PartialDateTime _originalDate;
         std::filesystem::path _absoluteFilePath; // full path
         std::filesystem::path _relativeFilePath; // relative to root (that may be deleted)
         std::filesystem::path _fileStem;
         std::filesystem::path _fileName;
         long long _fileSize{};
         Wt::WDateTime _fileLastWrite;
-        Wt::WDateTime _fileAdded;
+        core::PartialDateTime _fileAdded;
         bool _hasCover{};
         std::string _trackMBID;
         std::string _recordingMBID;
         std::string _copyright;
         std::string _copyrightURL;
+        Advisory _advisory{ Advisory::UnSet };
         std::optional<float> _trackReplayGain;
         std::optional<float> _releaseReplayGain;
         std::string _artistDisplayName;
         std::string _comment;
-
         Wt::Dbo::ptr<Release> _release;
         Wt::Dbo::ptr<MediaLibrary> _mediaLibrary;
         Wt::Dbo::ptr<Directory> _directory;

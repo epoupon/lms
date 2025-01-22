@@ -56,7 +56,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<PlayListFile>>("SELECT pl_f from playlist_file pl_f").where("pl_f.absolute_file_path = ?").bind(p.string()));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<PlayListFile>>("SELECT pl_f from playlist_file pl_f").where("pl_f.absolute_file_path = ?").bind(p));
     }
 
     void PlayListFile::find(Session& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(const pointer&)>& func)

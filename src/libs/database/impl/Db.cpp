@@ -48,9 +48,12 @@ namespace lms::db
             {
                 prepare();
             }
+            ~Connection() override = default;
 
         private:
             Connection& operator=(const Connection&) = delete;
+            Connection(Connection&&) = delete;
+            Connection&& operator=(Connection&&) = delete;
 
             std::unique_ptr<SqlConnection> clone() const override
             {
@@ -72,9 +75,9 @@ namespace lms::db
     // Session living class handling the database and the login
     Db::Db(const std::filesystem::path& dbPath, std::size_t connectionCount)
     {
-        LMS_LOG(DB, INFO, "Creating connection pool on file " << dbPath.string());
+        LMS_LOG(DB, INFO, "Creating connection pool on file " << dbPath);
 
-        auto connection{ std::make_unique<Connection>(dbPath.string()) };
+        auto connection{ std::make_unique<Connection>(dbPath) };
         if (core::IConfig * config{ core::Service<core::IConfig>::get() }) // may not be here on testU
             connection->setProperty("show-queries", config->getBool("db-show-queries", false) ? "true" : "false");
 

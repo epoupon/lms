@@ -78,6 +78,7 @@
 <message id="Lms.Admin.Database.extra-tags-to-scan">Tags supplémentaires à scanner</message>
 <message id="Lms.Admin.Database.hourly">Toutes les heures</message>
 <message id="Lms.Admin.Database.immediate-scan">Scanner maintenant !</message>
+<message id="Lms.Admin.Database.misc">Divers</message>
 <message id="Lms.Admin.Database.monthly">Tous les mois</message>
 <message id="Lms.Admin.Database.never">Jamais</message>
 <message id="Lms.Admin.Database.scan-aborted">Scan interrompu !</message>
@@ -87,7 +88,9 @@
 <message id="Lms.Admin.Database.similarity-engine-type">Moteur de similarité</message>
 <message id="Lms.Admin.Database.similarity-engine-type.clusters">Basé sur les tags</message>
 <message id="Lms.Admin.Database.similarity-engine-type.none">Aucun</message>
+<message id="Lms.Admin.Database.skip-single-release-playlists">Ignorer les playlists contenant des pistes d'un même album</message>
 <message id="Lms.Admin.Database.tag-delimiter-must-not-contain-only-spaces">Le délimiteur de tag ne doit pas comporter uniquement des espaces</message>
+<message id="Lms.Admin.Database.tag-parsing">Analyse des tags</message>
 <message id="Lms.Admin.Database.update-period">Périodicité des mises à jour</message>
 <message id="Lms.Admin.Database.update-start-time">Heure de départ de la mise à jour</message>
 <message id="Lms.Admin.Database.weekly">Toutes les semaines</message>

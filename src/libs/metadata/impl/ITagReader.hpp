@@ -26,12 +26,13 @@
 
 namespace lms::metadata
 {
-    // using picard internal names
+    // prefer using picard internal names
     // see https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html
     enum class TagType
     {
         AcoustID,
         AcoustIDFingerprint,
+        Advisory, // non standard
         Album,
         AlbumArtist,
         AlbumArtists, // non standard
@@ -64,6 +65,7 @@ namespace lms::metadata
         DiscSubtitle,
         EncodedBy,
         EncoderSettings,
+        EncodingTime,
         Engineer,
         GaplessPlayback,
         Genre,

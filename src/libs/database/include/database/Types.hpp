@@ -100,12 +100,10 @@ namespace lms::db
         }
     };
 
-    struct DateRange
+    struct YearRange
     {
-        int begin;
-        int end;
-
-        static DateRange fromYearRange(int from, int to);
+        int begin{};
+        int end{};
     };
 
     struct DiscInfo
@@ -121,11 +119,18 @@ namespace lms::db
         Name,
         SortName,
         Random,
-        LastWritten,
+        LastWrittenDesc,
+        AddedDesc,
         StarredDateDesc,
     };
 
     enum class ClusterSortMethod
+    {
+        None,
+        Name,
+    };
+
+    enum class DirectorySortMethod
     {
         None,
         Name,
@@ -142,7 +147,8 @@ namespace lms::db
         OriginalDate,
         OriginalDateDesc,
         Random,
-        LastWritten,
+        LastWrittenDesc,
+        AddedDesc,
         StarredDateDesc,
     };
 
@@ -158,8 +164,10 @@ namespace lms::db
         None,
         Id,
         Random,
-        LastWritten,
+        LastWrittenDesc,
+        AddedDesc,
         StarredDateDesc,
+        FileName,
         Name,
         DateDescAndRelease,
         Release,   // order by disc/track number
@@ -248,5 +256,13 @@ namespace lms::db
     {
         PlayList = 0, // user controlled playlists
         Internal = 1, // internal usage (current playqueue, history, ...)
+    };
+
+    enum class Advisory
+    {
+        UnSet = 0,
+        Unknown = 1,
+        Clean = 2,
+        Explicit = 3,
     };
 } // namespace lms::db

@@ -1,5 +1,5 @@
 
-add_library(lmsscrobbling SHARED
+add_library(lmsscrobbling STATIC
 	impl/internal/InternalBackend.cpp
 	impl/listenbrainz/ListenBrainzBackend.cpp
 	impl/listenbrainz/ListenTypes.cpp
@@ -25,8 +25,6 @@ target_link_libraries(lmsscrobbling PRIVATE
 target_link_libraries(lmsscrobbling PUBLIC
 	lmsdatabase
 	)
-
-install(TARGETS lmsscrobbling DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 if(BUILD_TESTING)
 	add_subdirectory(test)

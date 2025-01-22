@@ -21,6 +21,7 @@
 
 #include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
+#include "database/Types.hpp"
 
 #include "IdTypeTraits.hpp"
 #include "PathTraits.hpp"
@@ -81,6 +82,15 @@ namespace lms::db
             if (params.withNoTrack)
                 query.where("NOT EXISTS (SELECT 1 FROM track t WHERE t.directory_id = d.id)");
 
+            switch (params.sortMethod)
+            {
+            case DirectorySortMethod::None:
+                break;
+            case DirectorySortMethod::Name:
+                query.orderBy("name COLLATE NOCASE");
+                break;
+            }
+
             return query;
         }
 
@@ -89,17 +99,12 @@ namespace lms::db
             if (path.empty())
                 return path;
 
-            // Convert the path to string
             std::string pathStr{ path.string() };
 
             // Check if the last character is a directory separator
             if (pathStr.back() != std::filesystem::path::preferred_separator)
-            {
-                // If not, add the preferred separator
                 pathStr += std::filesystem::path::preferred_separator;
-            }
 
-            // Return the new path
             return std::filesystem::path{ pathStr };
         }
     } // namespace

@@ -1,5 +1,5 @@
 
-add_library(lmsfeedback SHARED
+add_library(lmsfeedback STATIC
 	impl/internal/InternalBackend.cpp
 	impl/listenbrainz/FeedbacksParser.cpp
 	impl/listenbrainz/FeedbacksSynchronizer.cpp
@@ -25,5 +25,3 @@ target_link_libraries(lmsfeedback PRIVATE
 target_link_libraries(lmsfeedback PUBLIC
 	lmsdatabase
 	)
-
-install(TARGETS lmsfeedback DESTINATION ${CMAKE_INSTALL_LIBDIR})

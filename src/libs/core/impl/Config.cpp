@@ -32,7 +32,7 @@ namespace lms::core
     {
         try
         {
-            _config.readFile(p.string().c_str());
+            _config.readFile(p.c_str());
         }
         catch (libconfig::FileIOException& e)
         {

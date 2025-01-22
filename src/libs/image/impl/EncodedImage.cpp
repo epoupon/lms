@@ -53,7 +53,7 @@ namespace lms::image
         {
             LMS_SCOPED_TRACE_DETAILED("Image", "ReadFile");
 
-            std::ifstream ifs{ p.string(), std::ios::binary };
+            std::ifstream ifs{ p, std::ios::binary };
             if (!ifs.is_open())
                 throw Exception{ "Cannot open file '" + p.string() + "' for reading purpose" };
 
