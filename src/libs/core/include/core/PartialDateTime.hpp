@@ -46,6 +46,8 @@ namespace lms::core
         constexpr auto operator<=>(const PartialDateTime& other) const = default;
 
     private:
+        static PartialDateTime parseDateTime(const char* format, const std::string& dateTimeStr);
+
         std::int16_t _year{};
         std::uint8_t _month{}; // 1 to 12
         std::uint8_t _day{};   // 1 to 31

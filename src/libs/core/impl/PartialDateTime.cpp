@@ -73,57 +73,7 @@ namespace lms::core
 
         for (const char* format : formats)
         {
-            PartialDateTime candidate;
-
-            std::tm tm{};
-            tm.tm_year = std::numeric_limits<decltype(tm.tm_year)>::min();
-            tm.tm_mon = std::numeric_limits<decltype(tm.tm_mon)>::min();
-            tm.tm_mday = std::numeric_limits<decltype(tm.tm_mday)>::min();
-            tm.tm_hour = std::numeric_limits<decltype(tm.tm_hour)>::min();
-            tm.tm_min = std::numeric_limits<decltype(tm.tm_min)>::min();
-            tm.tm_sec = std::numeric_limits<decltype(tm.tm_sec)>::min();
-
-            std::istringstream ss{ dateTimeStr };
-            ss >> std::get_time(&tm, format);
-            if (ss.fail())
-                continue;
-
-            if (tm.tm_sec != std::numeric_limits<decltype(tm.tm_sec)>::min())
-            {
-                candidate._sec = tm.tm_sec;
-                candidate._precision = Precision::Sec;
-            }
-            if (tm.tm_min != std::numeric_limits<decltype(tm.tm_min)>::min())
-            {
-                candidate._min = tm.tm_min;
-                if (candidate._precision == Precision::Invalid)
-                    candidate._precision = Precision::Min;
-            }
-            if (tm.tm_hour != std::numeric_limits<decltype(tm.tm_hour)>::min())
-            {
-                candidate._hour = tm.tm_hour;
-                if (candidate._precision == Precision::Invalid)
-                    candidate._precision = Precision::Hour;
-            }
-            if (tm.tm_mday != std::numeric_limits<decltype(tm.tm_mday)>::min())
-            {
-                candidate._day = tm.tm_mday;
-                if (candidate._precision == Precision::Invalid)
-                    candidate._precision = Precision::Day;
-            }
-            if (tm.tm_mon != std::numeric_limits<decltype(tm.tm_mon)>::min())
-            {
-                candidate._month = tm.tm_mon + 1; // tm.tm_mon is [0, 11]
-                if (candidate._precision == Precision::Invalid)
-                    candidate._precision = Precision::Month;
-            }
-            if (tm.tm_year != std::numeric_limits<decltype(tm.tm_year)>::min())
-            {
-                candidate._year = tm.tm_year + 1900; // tm.tm_year is years since 1900
-                if (candidate._precision == Precision::Invalid)
-                    candidate._precision = Precision::Year;
-            }
-
+            PartialDateTime candidate{ parseDateTime(format, dateTimeStr) };
             if (candidate > res)
                 res = candidate;
 
@@ -154,5 +104,61 @@ namespace lms::core
             ss << ':' << std::setw(2) << static_cast<int>(_sec);
 
         return ss.str();
+    }
+
+    PartialDateTime PartialDateTime::parseDateTime(const char* format, const std::string& dateTimeStr)
+    {
+        PartialDateTime res;
+
+        std::tm tm{};
+        tm.tm_year = std::numeric_limits<decltype(tm.tm_year)>::min();
+        tm.tm_mon = std::numeric_limits<decltype(tm.tm_mon)>::min();
+        tm.tm_mday = std::numeric_limits<decltype(tm.tm_mday)>::min();
+        tm.tm_hour = std::numeric_limits<decltype(tm.tm_hour)>::min();
+        tm.tm_min = std::numeric_limits<decltype(tm.tm_min)>::min();
+        tm.tm_sec = std::numeric_limits<decltype(tm.tm_sec)>::min();
+
+        std::istringstream ss{ dateTimeStr };
+        ss >> std::get_time(&tm, format);
+        if (ss.fail())
+            return res;
+
+        if (tm.tm_sec != std::numeric_limits<decltype(tm.tm_sec)>::min())
+        {
+            res._sec = tm.tm_sec;
+            res._precision = Precision::Sec;
+        }
+        if (tm.tm_min != std::numeric_limits<decltype(tm.tm_min)>::min())
+        {
+            res._min = tm.tm_min;
+            if (res._precision == Precision::Invalid)
+                res._precision = Precision::Min;
+        }
+        if (tm.tm_hour != std::numeric_limits<decltype(tm.tm_hour)>::min())
+        {
+            res._hour = tm.tm_hour;
+            if (res._precision == Precision::Invalid)
+                res._precision = Precision::Hour;
+        }
+        if (tm.tm_mday != std::numeric_limits<decltype(tm.tm_mday)>::min())
+        {
+            res._day = tm.tm_mday;
+            if (res._precision == Precision::Invalid)
+                res._precision = Precision::Day;
+        }
+        if (tm.tm_mon != std::numeric_limits<decltype(tm.tm_mon)>::min())
+        {
+            res._month = tm.tm_mon + 1; // tm.tm_mon is [0, 11]
+            if (res._precision == Precision::Invalid)
+                res._precision = Precision::Month;
+        }
+        if (tm.tm_year != std::numeric_limits<decltype(tm.tm_year)>::min())
+        {
+            res._year = tm.tm_year + 1900; // tm.tm_year is years since 1900
+            if (res._precision == Precision::Invalid)
+                res._precision = Precision::Year;
+        }
+
+        return res;
     }
 } // namespace lms::core
