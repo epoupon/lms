@@ -1,5 +1,5 @@
 
-add_library(lmsimage SHARED
+add_library(lmsimage STATIC
 	impl/EncodedImage.cpp
 	)
 
@@ -47,6 +47,3 @@ elseif (${LMS_IMAGE_BACKEND} STREQUAL "graphicsmagick")
 else ()
 	message(FATAL_ERROR "Invalid image library")
 endif ()
-
-install(TARGETS lmsimage DESTINATION ${CMAKE_INSTALL_LIBDIR})
-

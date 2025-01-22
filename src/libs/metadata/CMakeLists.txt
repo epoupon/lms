@@ -8,7 +8,7 @@ if (BUILD_BENCHMARKS)
 	add_subdirectory(bench)
 endif()
 
-add_library(lmsmetadata SHARED
+add_library(lmsmetadata STATIC
 	impl/AvFormatTagReader.cpp
 	impl/Lyrics.cpp
 	impl/Parser.cpp
@@ -34,6 +34,3 @@ target_link_libraries(lmsmetadata PUBLIC
 	lmscore
 	std::filesystem
 	)
-
-install(TARGETS lmsmetadata DESTINATION ${CMAKE_INSTALL_LIBDIR})
-

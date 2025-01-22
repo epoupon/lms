@@ -1,5 +1,5 @@
 
-add_library(lmsartwork SHARED
+add_library(lmsartwork STATIC
 	impl/ImageCache.cpp
 	impl/ArtworkService.cpp
 	)
@@ -24,6 +24,3 @@ target_link_libraries(lmsartwork PUBLIC
 	lmscore
 	std::filesystem
 	)
-
-install(TARGETS lmsartwork DESTINATION ${CMAKE_INSTALL_LIBDIR})
-

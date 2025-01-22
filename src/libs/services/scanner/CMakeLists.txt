@@ -1,4 +1,4 @@
-add_library(lmsscanner SHARED
+add_library(lmsscanner STATIC
 	impl/scanners/AudioFileScanner.cpp
 	impl/scanners/ImageFileScanner.cpp
 	impl/scanners/LyricsFileScanner.cpp
@@ -43,6 +43,3 @@ target_link_libraries(lmsscanner PUBLIC
 	std::filesystem
 	Wt::Wt
 	)
-
-install(TARGETS lmsscanner DESTINATION ${CMAKE_INSTALL_LIBDIR})
-

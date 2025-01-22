@@ -50,7 +50,6 @@ endif()
 
 if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DNDEBUG)
-	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 add_subdirectory(src)
