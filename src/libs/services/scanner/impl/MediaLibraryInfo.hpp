@@ -29,6 +29,7 @@ namespace lms::scanner
     {
         db::MediaLibraryId id;
         std::filesystem::path rootDirectory;
+        bool firstScan{};
 
         auto operator<=>(const MediaLibraryInfo& other) const = default;
     };

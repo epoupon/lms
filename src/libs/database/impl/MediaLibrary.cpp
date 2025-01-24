@@ -78,6 +78,13 @@ namespace lms::db
         });
     }
 
+    bool MediaLibrary::isEmpty() const
+    {
+        assert(session());
+        auto query{ session()->query<bool>("SELECT EXISTS (SELECT 1 FROM track WHERE media_library_id = ? LIMIT 1) AS is_media_library_empty").bind(getId()) };
+        return !utils::fetchQuerySingleResult(query);
+    }
+
     void MediaLibrary::setPath(const std::filesystem::path& p)
     {
         assert(p.is_absolute());

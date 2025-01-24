@@ -152,18 +152,30 @@ namespace lms::db::tests
         ScopedMediaLibrary otherLibrary{ session, "OtherLibrary", "/otherRoot" };
 
         {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_TRUE(library->isEmpty());
+            EXPECT_TRUE(otherLibrary->isEmpty());
+        }
+
+        {
             auto transaction{ session.createWriteTransaction() };
             track.get().modify()->setMediaLibrary(library.get());
         }
 
         {
-            auto transaction{ session.createWriteTransaction() };
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_FALSE(library->isEmpty());
+            EXPECT_TRUE(otherLibrary->isEmpty());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
             const auto tracks{ Track::findIds(session, Track::FindParameters{}.setMediaLibrary(library->getId())) };
             ASSERT_EQ(tracks.results.size(), 1);
             EXPECT_EQ(tracks.results.front(), track.getId());
         }
         {
-            auto transaction{ session.createWriteTransaction() };
+            auto transaction{ session.createReadTransaction() };
             const auto tracks{ Track::findIds(session, Track::FindParameters{}.setMediaLibrary(otherLibrary->getId())) };
             EXPECT_EQ(tracks.results.size(), 0);
         }

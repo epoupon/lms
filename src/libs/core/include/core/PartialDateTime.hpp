@@ -23,6 +23,11 @@
 #include <string>
 #include <string_view>
 
+namespace Wt
+{
+    class WDateTime;
+}
+
 namespace lms::core
 {
     class PartialDateTime
@@ -35,6 +40,7 @@ namespace lms::core
         PartialDateTime(int year, unsigned month, unsigned day, unsigned hour, unsigned min, unsigned sec);
 
         static PartialDateTime fromString(std::string_view str);
+        static PartialDateTime fromWtDateTime(const Wt::WDateTime& dateTime);
         std::string toISO8601String() const;
 
         bool isValid() const { return _precision != Precision::Invalid; }

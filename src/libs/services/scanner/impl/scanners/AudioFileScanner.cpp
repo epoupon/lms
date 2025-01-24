@@ -479,19 +479,14 @@ namespace lms::scanner
             if (!track)
             {
                 track = dbSession.create<db::Track>();
-                track.modify()->setAbsoluteFilePath(_file);
-
-                const core::PartialDateTime addedTime{
-                    fileInfo->lastWriteTime.date().year(),
-                    static_cast<unsigned>(fileInfo->lastWriteTime.date().month()),
-                    static_cast<unsigned>(fileInfo->lastWriteTime.date().day()),
-                    static_cast<unsigned>(fileInfo->lastWriteTime.time().hour()),
-                    static_cast<unsigned>(fileInfo->lastWriteTime.time().minute()),
-                    static_cast<unsigned>(fileInfo->lastWriteTime.time().second())
-                };
-
-                track.modify()->setAddedTime(addedTime); // may be erased by encodingTime
                 added = true;
+
+                track.modify()->setAbsoluteFilePath(_file);
+                if (!_parsedTrack->encodingTime.isValid())
+                {
+                    const core::PartialDateTime addedTime{ core::PartialDateTime::fromWtDateTime(_mediaLibrary.firstScan ? fileInfo->lastWriteTime : Wt::WDateTime::currentDateTime()) };
+                    track.modify()->setAddedTime(addedTime); // may be erased by encodingTime
+                }
             }
 
             // Track related data

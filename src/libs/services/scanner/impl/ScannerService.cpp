@@ -395,7 +395,12 @@ namespace lms::scanner
             newSettings.updatePeriod = scanSettings->getUpdatePeriod();
 
             MediaLibrary::find(_db.getTLSSession(), [&](const MediaLibrary::pointer& mediaLibrary) {
-                newSettings.mediaLibraries.push_back(MediaLibraryInfo{ .id = mediaLibrary->getId(), .rootDirectory = mediaLibrary->getPath().lexically_normal() });
+                MediaLibraryInfo info;
+                info.firstScan = mediaLibrary->isEmpty();
+                info.id = mediaLibrary->getId();
+                info.rootDirectory = mediaLibrary->getPath().lexically_normal();
+
+                newSettings.mediaLibraries.push_back(info);
             });
 
             {
