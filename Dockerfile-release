@@ -56,8 +56,8 @@ RUN \
 	--disable-postproc \
 	--disable-pixelutils \
 	--disable-network \
-	--disable-shared \
-	--enable-static \
+	--enable-shared \
+	--disable-static \
 	--enable-gpl \
 	--enable-small \
 	--enable-version3 \
@@ -88,7 +88,7 @@ RUN \
 
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
-	cmake -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DSHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF -DUSE_SYSTEM_SQLITE3=ON && \
+	cmake -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DSHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF -DUSE_SYSTEM_SQLITE3=ON && \
 	make -j$(nproc) && \
 	make install
 
@@ -110,7 +110,7 @@ RUN \
 
 RUN \
 	DIR=/tmp/taglib && mkdir -p ${DIR} && cd ${DIR} && \
-	CXXFLAGS="-I/usr/include/utf8cpp" cmake -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_BINDINGS=OFF -DBUILD_TESTING=OFF -DTRACE_IN_RELEASE=OFF -DWITH_ZLIB=ON  && \
+	CXXFLAGS="-I/usr/include/utf8cpp" cmake -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=ON -DBUILD_EXAMPLES=OFF -DBUILD_BINDINGS=OFF -DBUILD_TESTING=OFF -DTRACE_IN_RELEASE=OFF -DWITH_ZLIB=ON  && \
 	make -j$(nproc) && \
 	make install
 
@@ -133,6 +133,11 @@ RUN \
 		strip --strip-all $bin && \
 		cp $bin /tmp/fakeroot/bin/; \
 	done && \
+	for lib in ${PREFIX}/lib/*.so; \
+	do \
+		strip --strip-all $lib; \
+	done && \
+	cp -r ${PREFIX}/lib /tmp/fakeroot/lib && \
 	cp -r ${PREFIX}/share /tmp/fakeroot/share && \
 	rm -rf /tmp/fakeroot/share/doc && \
 	rm -rf /tmp/fakeroot/share/man
