@@ -1201,4 +1201,66 @@ namespace lms::db::tests
             EXPECT_EQ(releases.results[3], releaseC.getId());
         }
     }
+
+    TEST_F(DatabaseFixture, Release_LastWritten)
+    {
+        ScopedRelease release{ session, "relA" };
+
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            Wt::WDateTime lastWritten{ release.get()->getLastWritten() };
+            EXPECT_FALSE(lastWritten.isValid());
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track1.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            track2.get().modify()->setLastWriteTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 }, Wt::WTime{ 15, 36, 24 } });
+            track1.get().modify()->setRelease(release.get());
+            track2.get().modify()->setRelease(release.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            Wt::WDateTime lastWritten{ release.get()->getLastWritten() };
+            ASSERT_TRUE(lastWritten.isValid());
+            EXPECT_EQ(lastWritten, track2.get()->getLastWriteTime());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Release_AddedTime)
+    {
+        ScopedRelease release{ session, "relA" };
+
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            core::PartialDateTime addedTime{ release.get()->getAddedTime() };
+            EXPECT_FALSE(addedTime.isValid());
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2 });
+            track2.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2, 15, 36, 24 });
+            track1.get().modify()->setRelease(release.get());
+            track2.get().modify()->setRelease(release.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            core::PartialDateTime addedTime{ release.get()->getAddedTime() };
+            ASSERT_TRUE(addedTime.isValid());
+            EXPECT_EQ(addedTime, track2.get()->getAddedTime());
+        }
+    }
 } // namespace lms::db::tests

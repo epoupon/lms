@@ -244,6 +244,7 @@ namespace lms::db
         std::size_t getDiscCount() const; // may not be total disc (if incomplete for example)
         std::vector<DiscInfo> getDiscs() const;
         std::chrono::milliseconds getDuration() const;
+        core::PartialDateTime getAddedTime() const;
         Wt::WDateTime getLastWritten() const;
         std::string_view getArtistDisplayName() const { return _artistDisplayName; }
         bool isCompilation() const { return _isCompilation; }

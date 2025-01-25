@@ -145,7 +145,7 @@ namespace lms::api::subsonic
         trackResponse.setAttribute("duration", std::chrono::duration_cast<std::chrono::seconds>(track->getDuration()).count());
         trackResponse.setAttribute("bitRate", (track->getBitrate() / 1000));
         trackResponse.setAttribute("type", "music");
-        trackResponse.setAttribute("created", core::stringUtils::toISO8601String(track->getLastWritten()));
+        trackResponse.setAttribute("created", track->getAddedTime().toISO8601String());
         trackResponse.setAttribute("contentType", av::getMimeType(track->getAbsoluteFilePath().extension()));
         if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.user->getId(), track->getId()) })
             trackResponse.setAttribute("userRating", *rating);
