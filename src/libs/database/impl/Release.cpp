@@ -704,18 +704,18 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session()->query<milli>("SELECT COALESCE(SUM(duration), 0) FROM track t").where("t.release_id = ?").bind(getId()));
     }
 
-    Wt::WDateTime Release::getLastWritten() const
+    Wt::WDateTime Release::getLastWrittenTime() const
     {
         assert(session());
 
         return utils::fetchQuerySingleResult(session()->query<Wt::WDateTime>("SELECT MAX(file_last_write) FROM track t").where("t.release_id = ?").bind(getId()));
     }
 
-    core::PartialDateTime Release::getAddedTime() const
+    Wt::WDateTime Release::getAddedTime() const
     {
         assert(session());
 
-        return utils::fetchQuerySingleResult(session()->query<core::PartialDateTime>("SELECT MAX(file_added) FROM track t").where("t.release_id = ?").bind(getId()));
+        return utils::fetchQuerySingleResult(session()->query<Wt::WDateTime>("SELECT MAX(file_added) FROM track t").where("t.release_id = ?").bind(getId()));
     }
 
     std::vector<std::vector<Cluster::pointer>> Release::getClusterGroups(const std::vector<ClusterTypeId>& clusterTypeIds, std::size_t size) const

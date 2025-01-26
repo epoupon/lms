@@ -85,7 +85,7 @@ namespace lms::api::subsonic
             albumNode.setAttribute("isDir", true);
         }
 
-        albumNode.setAttribute("created", release->getAddedTime().toISO8601String());
+        albumNode.setAttribute("created", core::stringUtils::toISO8601String(release->getAddedTime()));
         if (const auto image{ release->getImage() })
         {
             const CoverArtId coverArtId{ image->getId(), image->getLastWriteTime().toTime_t() };

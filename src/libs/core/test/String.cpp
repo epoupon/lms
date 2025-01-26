@@ -301,14 +301,33 @@ namespace lms::core::stringUtils::tests
 
     TEST(Stringutils, DateToString)
     {
-        const Wt::WDate date{ 2020, 01, 03 };
-        EXPECT_EQ(toISO8601String(date), "2020-01-03");
+        {
+            const Wt::WDate date{ 2020, 01, 03 };
+            EXPECT_EQ(toISO8601String(date), "2020-01-03");
+        }
+
+        {
+            const Wt::WDate date;
+            EXPECT_EQ(toISO8601String(date), "");
+        }
     }
 
     TEST(Stringutils, DateTimeToString)
     {
-        const Wt::WDateTime dateTime{ Wt::WDate{ 2020, 01, 03 }, Wt::WTime{ 9, 8, 11, 75 } };
-        EXPECT_EQ(toISO8601String(dateTime), "2020-01-03T09:08:11.075");
+        {
+            const Wt::WDateTime dateTime{ Wt::WDate{ 2020, 01, 03 }, Wt::WTime{ 9, 8, 11, 75 } };
+            EXPECT_EQ(toISO8601String(dateTime), "2020-01-03T09:08:11.075");
+        }
+
+        {
+            const Wt::WDateTime dateTime{ Wt::WDate{ 2020, 01, 03 } };
+            EXPECT_EQ(toISO8601String(dateTime), "2020-01-03T00:00:00.000");
+        }
+
+        {
+            const Wt::WDateTime dateTime;
+            EXPECT_EQ(toISO8601String(dateTime), "");
+        }
     }
 
     TEST(Stringutils, DateTimeFromString)

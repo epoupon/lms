@@ -223,8 +223,8 @@ namespace lms::db
         void setAbsoluteFilePath(const std::filesystem::path& filePath);
         void setRelativeFilePath(const std::filesystem::path& filePath);
         void setFileSize(std::size_t fileSize) { _fileSize = fileSize; }
-        void setLastWriteTime(Wt::WDateTime time) { _fileLastWrite = time; }
-        void setAddedTime(core::PartialDateTime time) { _fileAdded = time; }
+        void setLastWriteTime(const Wt::WDateTime& time) { _fileLastWrite = time; }
+        void setAddedTime(const Wt::WDateTime& time) { _fileAdded = time; }
         void setBitrate(std::size_t bitrate) { _bitrate = bitrate; }
         void setBitsPerSample(std::size_t bitsPerSample) { _bitsPerSample = bitsPerSample; }
         void setDuration(std::chrono::milliseconds duration) { _duration = duration; }
@@ -272,7 +272,7 @@ namespace lms::db
         const core::PartialDateTime& getOriginalDate() const { return _originalDate; }
         std::optional<int> getOriginalYear() const;
         const Wt::WDateTime& getLastWriteTime() const { return _fileLastWrite; }
-        const core::PartialDateTime& getAddedTime() const { return _fileAdded; }
+        const Wt::WDateTime& getAddedTime() const { return _fileAdded; }
         bool hasCover() const { return _hasCover; }
         bool hasLyrics() const;
         std::optional<core::UUID> getTrackMBID() const { return core::UUID::fromString(_trackMBID); }
@@ -367,7 +367,7 @@ namespace lms::db
         std::filesystem::path _fileName;
         long long _fileSize{};
         Wt::WDateTime _fileLastWrite;
-        core::PartialDateTime _fileAdded;
+        Wt::WDateTime _fileAdded;
         bool _hasCover{};
         std::string _trackMBID;
         std::string _recordingMBID;

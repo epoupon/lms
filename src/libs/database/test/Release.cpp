@@ -1138,11 +1138,11 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            trackA1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2 });
-            trackB1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 1 });
-            trackD1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2, 15, 36, 24 });
-            trackD1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 3 });
-            trackA2.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 4 });
+            trackA1.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            trackB1.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 1 } });
+            trackD1.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 }, Wt::WTime{ 15, 36, 24 } });
+            trackD1.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 3 } });
+            trackA2.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 4 } });
 
             trackA1.get().modify()->setRelease(releaseA.get());
             trackA2.get().modify()->setRelease(releaseA.get());
@@ -1212,7 +1212,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            Wt::WDateTime lastWritten{ release.get()->getLastWritten() };
+            Wt::WDateTime lastWritten{ release.get()->getLastWrittenTime() };
             EXPECT_FALSE(lastWritten.isValid());
         }
 
@@ -1227,7 +1227,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            Wt::WDateTime lastWritten{ release.get()->getLastWritten() };
+            Wt::WDateTime lastWritten{ release.get()->getLastWrittenTime() };
             ASSERT_TRUE(lastWritten.isValid());
             EXPECT_EQ(lastWritten, track2.get()->getLastWriteTime());
         }
@@ -1243,14 +1243,14 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            core::PartialDateTime addedTime{ release.get()->getAddedTime() };
+            const Wt::WDateTime addedTime{ release.get()->getAddedTime() };
             EXPECT_FALSE(addedTime.isValid());
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2 });
-            track2.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2, 15, 36, 24 });
+            track1.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            track2.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 }, Wt::WTime{ 15, 36, 24 } });
             track1.get().modify()->setRelease(release.get());
             track2.get().modify()->setRelease(release.get());
         }
@@ -1258,7 +1258,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            core::PartialDateTime addedTime{ release.get()->getAddedTime() };
+            const Wt::WDateTime addedTime{ release.get()->getAddedTime() };
             ASSERT_TRUE(addedTime.isValid());
             EXPECT_EQ(addedTime, track2.get()->getAddedTime());
         }

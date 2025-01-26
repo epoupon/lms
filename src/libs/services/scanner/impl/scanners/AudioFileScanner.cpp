@@ -482,11 +482,7 @@ namespace lms::scanner
                 added = true;
 
                 track.modify()->setAbsoluteFilePath(_file);
-                if (!_parsedTrack->encodingTime.isValid())
-                {
-                    const core::PartialDateTime addedTime{ core::PartialDateTime::fromWtDateTime(_mediaLibrary.firstScan ? fileInfo->lastWriteTime : Wt::WDateTime::currentDateTime()) };
-                    track.modify()->setAddedTime(addedTime); // may be erased by encodingTime
-                }
+                track.modify()->setAddedTime(_mediaLibrary.firstScan ? fileInfo->lastWriteTime : Wt::WDateTime::currentDateTime()); // may be erased by encodingTime
             }
 
             // Track related data
@@ -504,7 +500,18 @@ namespace lms::scanner
             track.modify()->setLastWriteTime(fileInfo->lastWriteTime);
 
             if (_parsedTrack->encodingTime.isValid())
-                track.modify()->setAddedTime(_parsedTrack->encodingTime);
+            {
+                const core::PartialDateTime& encodingTime{ _parsedTrack->encodingTime };
+                Wt::WDate date;
+                Wt::WTime time;
+                if (encodingTime.getPrecision() >= core::PartialDateTime::Precision::Day)
+                    date = Wt::WDate{ *encodingTime.getYear(), *encodingTime.getMonth(), *encodingTime.getDay() };
+                if (encodingTime.getPrecision() >= core::PartialDateTime::Precision::Sec)
+                    time = Wt::WTime{ *encodingTime.getHour(), *encodingTime.getMin(), *encodingTime.getSec() };
+
+                if (date.isValid())
+                    track.modify()->setAddedTime(Wt::WDateTime{ date, time });
+            }
 
             db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, _mediaLibrary.id) }; // may be null if settings are updated in // => next scan will correct this
             track.modify()->setMediaLibrary(mediaLibrary);
