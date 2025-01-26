@@ -510,7 +510,7 @@ namespace lms::scanner
                     time = Wt::WTime{ *encodingTime.getHour(), *encodingTime.getMin(), *encodingTime.getSec() };
 
                 if (date.isValid())
-                    track.modify()->setAddedTime(Wt::WDateTime{ date, time });
+                    track.modify()->setAddedTime(time.isValid() ? Wt::WDateTime{ date, time } : Wt::WDateTime{ date });
             }
 
             db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, _mediaLibrary.id) }; // may be null if settings are updated in // => next scan will correct this
