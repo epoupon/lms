@@ -25,6 +25,7 @@ The following extra fields are implemented:
   * `artists`
   * `discTitles`: discs with no subtitle are omitted
   * `displayArtist`
+  * `explicitStatus`
   * `genres`
   * `isCompilation`
   * `played`
@@ -44,6 +45,7 @@ The following extra fields are implemented:
   * `contributors`
   * `displayAlbumArtist`
   * `displayArtist`
+  * `explicitStatus`
   * `genres`
   * `mediaType`
   * `moods`
