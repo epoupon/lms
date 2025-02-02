@@ -71,6 +71,8 @@ _LMS_ supports lyrics in `lrc` files, `txt` files, and embedded track metadata. 
 * Next track: <kbd>Ctrl</kbd> + <kbd>Right</kbd>
 * Decrease volume: <kbd>Ctrl</kbd> + <kbd>Down</kbd>
 * Increase volume: <kbd>Ctrl</kbd> + <kbd>Up</kbd>
+* Seek back by 5 seconds: <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Left</kbd>
+* Seek forward by 5 seconds: <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Right</kbd>
 
 
 ## Installation

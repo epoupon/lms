@@ -18,6 +18,9 @@ Object.freeze(Mode);
 // How much to increase / decrease volume when adjusting it with keyboard shortcuts
 const volumeStepAmount = 0.05;
 
+// How much to seek back / forward (in seconds) with keyboard shortcuts
+const seekAmount = 5;
+
 LMS.mediaplayer = function () {
 	let _root = {};
 	let _elems = {};
@@ -245,6 +248,18 @@ LMS.mediaplayer = function () {
 		_updateMediaSessionState();
 	}
 
+	let _seekBack = function() {
+		let currentPosition = _offset + _elems.audio.currentTime;
+		let newPosition = currentPosition - seekAmount;
+		_seekTo(Math.max(newPosition, 0));
+	}
+
+	let _seekForward = function() {
+		let currentPosition = _offset + _elems.audio.currentTime;
+		let newPosition = currentPosition + seekAmount;
+		_seekTo(Math.min(newPosition, _duration));
+	}
+
 	let _updateMediaSessionState = function() {
 		if ("mediaSession" in navigator) {
 			navigator.mediaSession.setPositionState({
@@ -346,11 +361,11 @@ LMS.mediaplayer = function () {
 				_playPause();
 				handled = true;
 			}
-			else if (event.ctrlKey && event.keyCode == 37) {
+			else if (event.ctrlKey && !event.shiftKey && event.keyCode == 37) {
 				_playPrevious();
 				handled = true;
 			}
-			else if (event.ctrlKey && event.keyCode == 39) {
+			else if (event.ctrlKey && !event.shiftKey && event.keyCode == 39) {
 				_playNext();
 				handled = true;
 			}
@@ -360,6 +375,14 @@ LMS.mediaplayer = function () {
 			}
 			else if (event.ctrlKey && event.keyCode == 38) {
 				_stepVolumeUp();
+				handled = true;
+			}
+			else if (event.ctrlKey && event.shiftKey && event.keyCode == 37) {
+				_seekBack();
+				handled = true;
+			}
+			else if (event.ctrlKey && event.shiftKey && event.keyCode == 39) {
+				_seekForward();
 				handled = true;
 			}
 
