@@ -80,7 +80,7 @@ RUN \
 	make distclean
 
 # WT
-ARG	WT_VERSION=4.11.1
+ARG	WT_VERSION=4.11.2
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/emweb/wt/archive/${WT_VERSION}.tar.gz && \
@@ -88,7 +88,7 @@ RUN \
 
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
-	cmake -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DSHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF -DUSE_SYSTEM_SQLITE3=ON && \
+	cmake -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DCMAKE_CXX_STANDARD=17 -DSHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF -DUSE_SYSTEM_SQLITE3=ON && \
 	make -j$(nproc) && \
 	make install
 
@@ -164,7 +164,6 @@ ARG	RUNTIME_PACKAGES=" \
 	boost-filesystem \
 	boost-iostreams \
 	boost-program_options \
-	boost-system \
 	boost-thread \
 	libarchive \
 	libconfig++ \
