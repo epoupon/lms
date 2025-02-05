@@ -68,6 +68,7 @@ namespace lms::metadata
         std::vector<std::string> releaseTypes;
         bool isCompilation{};
         std::string barcode;
+        std::string comment;
 
         auto operator<=>(const Release&) const = default;
     };

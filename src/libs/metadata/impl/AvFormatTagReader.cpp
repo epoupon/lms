@@ -38,6 +38,7 @@ namespace lms::metadata
             { TagType::AlbumArtistSortOrder, { "ALBUMARTISTSORT", "TSO2" } },
             { TagType::AlbumArtists, { "ALBUMARTISTS" } },
             { TagType::AlbumArtistsSortOrder, { "ALBUMARTISTSSORT" } },
+            { TagType::AlbumComment, { "ALBUMCOMMENT", "MUSICBRAINZ_ALBUMCOMMENT, MUSICBRAINZ ALBUM COMMENT", "MUSICBRAINZ/ALBUM COMMENT", "ALBUMVERSION", "VERSION" } },
             { TagType::AlbumSortOrder, { "ALBUMSORT", "ALBUM-SORT" } },
             { TagType::Arranger, { "ARRANGER" } },
             { TagType::Artist, { "ARTIST" } },

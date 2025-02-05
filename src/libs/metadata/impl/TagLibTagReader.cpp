@@ -69,6 +69,7 @@ namespace lms::metadata
             { TagType::AlbumArtistSortOrder, { "ALBUMARTISTSORT" } },
             { TagType::AlbumArtists, { "ALBUMARTISTS" } },
             { TagType::AlbumArtistsSortOrder, { "ALBUMARTISTSSORT" } },
+            { TagType::AlbumComment, { "ALBUMCOMMENT", "MUSICBRAINZ_ALBUMCOMMENT, MUSICBRAINZ ALBUM COMMENT", "ALBUMVERSION", "VERSION" } },
             { TagType::AlbumSortOrder, { "ALBUMSORT" } },
             { TagType::Arranger, { "ARRANGER" } },
             { TagType::Artist, { "ARTIST" } },

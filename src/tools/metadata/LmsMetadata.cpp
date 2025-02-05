@@ -94,13 +94,16 @@ namespace lms::metadata
         if (release.mediumCount)
             std::cout << "\tMediumCount: " << *release.mediumCount << std::endl;
 
-        if (!release.artistDisplayName.empty())
-            std::cout << "\tDisplay artist: " << release.artistDisplayName << std::endl;
-
         std::cout << "\tIsCompilation: " << std::boolalpha << release.isCompilation << std::endl;
 
         if (!release.barcode.empty())
             std::cout << "\tBarcode: " << release.barcode << std::endl;
+
+        if (!release.comment.empty())
+            std::cout << "\tComment: " << release.comment << std::endl;
+
+        if (!release.artistDisplayName.empty())
+            std::cout << "\tDisplay artist: " << release.artistDisplayName << std::endl;
 
         for (const Artist& artist : release.artists)
             std::cout << "\tRelease artist: " << artist << std::endl;

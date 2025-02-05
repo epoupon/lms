@@ -520,6 +520,7 @@ namespace lms::metadata
         release->isCompilation = getTagValueAs<bool>(tagReader, TagType::Compilation).value_or(false);
         release->barcode = getTagValueAs<std::string>(tagReader, TagType::Barcode).value_or("");
         release->labels = getTagValuesAs<std::string>(tagReader, TagType::RecordLabel, _defaultTagDelimiters);
+        release->comment = getTagValueAs<std::string>(tagReader, TagType::AlbumComment).value_or("");
         if (!release->mediumCount)
         {
             // mediumCount may be encoded as "position/count"

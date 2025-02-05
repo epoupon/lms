@@ -166,6 +166,8 @@ namespace lms::scanner
                 release.modify()->setCompilation(releaseInfo.isCompilation);
             if (release->getBarcode() != releaseInfo.barcode)
                 release.modify()->setBarcode(releaseInfo.barcode);
+            if (release->getComment() != releaseInfo.comment)
+                release.modify()->setComment(releaseInfo.comment);
             if (release->getReleaseTypeNames() != releaseInfo.releaseTypes)
             {
                 release.modify()->clearReleaseTypes();
