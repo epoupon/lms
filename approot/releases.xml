@@ -27,15 +27,15 @@
 			<div class="Lms-responsive-square Lms-cover-container mb-1">
 				${cover class="shadow-sm"}
 			</div>
-			${release-name class="d-block text-truncate text-nowrap text-decoration-none link-success"}
-			${<if-has-artist>}${artist-name class="d-block text-truncate text-nowrap"}${</if-has-artist>}
+			${release-name class="Lms-multiline-clamp text-decoration-none link-success"}
+			${<if-has-artist>}${artist-name class="Lms-multiline-clamp"}${</if-has-artist>}
 			${<if-has-year>}<div class="small text-muted">${year}</div>${</if-has-year>}
 		</div>
 	</div>
 </message>
 
 <message id="Lms.Explore.Releases.template.container">
-	${elements class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-6 gx-2 gy-4"}
+	${elements class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 gx-2 gy-4"}
 	${loading-indicator}
 </message>
 

@@ -216,7 +216,7 @@ namespace lms::ui
         if (!releaseId)
             throw ReleaseNotFoundException{};
 
-        auto similarReleasesIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarReleases(*releaseId, 6) };
+        auto similarReleasesIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarReleases(*releaseId, 5) };
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
@@ -232,6 +232,11 @@ namespace lms::ui
         refreshSimilarReleases(similarReleasesIds);
 
         bindString("name", Wt::WString::fromUTF8(std::string{ release->getName() }), Wt::TextFormat::Plain);
+        if (std::string_view comment{ release->getComment() }; !comment.empty())
+        {
+            setCondition("if-has-release-comment", true);
+            bindString("comment", Wt::WString::fromUTF8(std::string{ comment }), Wt::TextFormat::Plain);
+        }
 
         Wt::WString year{ releaseHelpers::buildReleaseYearString(release->getYear(), release->getOriginalYear()) };
         if (!year.empty())

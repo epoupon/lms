@@ -103,6 +103,15 @@ body {
   background-color: var(--bs-gray-900);
 }
 
+.Lms-multiline-clamp {
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    display: -webkit-box;
+    word-break: break-word;
+    -webkit-box-orient: vertical;
+}
+
 .Lms-notification-container {
 	position: fixed;
 	bottom: 78px;

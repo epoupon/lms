@@ -12,7 +12,7 @@
 			${cover}
 		</div>
 		<div class="col">
-			<h2>${name}</h2>
+			<h2>${name}${<if-has-release-comment>}<span class="ms-1 text-muted">[${comment}]</span>${</if-has-release-comment>}</h2>
 			${<if-has-release-artists>}${artists}${</if-has-release-artists>}
 			<div class="small text-muted">${<if-has-year>}${year} · ${</if-has-year>}${duration}</div>
 			${clusters class="mb-2"}
@@ -41,7 +41,7 @@
 	</div>
 	${<if-has-similar-releases>}
 	<h3>${tr:Lms.Explore.Release.similar-releases}</h3>
-	${similar-releases class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-6 gx-2 gy-4"}
+	${similar-releases class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 gx-2 gy-4"}
 	${</if-has-similar-releases>}
 </message>
 
