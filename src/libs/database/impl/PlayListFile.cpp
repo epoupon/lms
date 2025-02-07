@@ -81,6 +81,8 @@ namespace lms::db
     std::vector<std::filesystem::path> PlayListFile::getFiles() const
     {
         std::vector<std::filesystem::path> files;
+
+        try
         {
             Wt::Json::Object root;
             Wt::Json::parse(_entries, root);
@@ -89,6 +91,10 @@ namespace lms::db
             const Wt::Json::Array& filesArray = root.get("files");
             for (const Wt::Json::Value& file : filesArray)
                 files.push_back(static_cast<std::string>(file.toString()));
+        }
+        catch (const Wt::Json::ParseError& e)
+        {
+            LMS_LOG(DB, ERROR, "Cannot parse files saved in " << _absoluteFilePath << ": corrupted data?");
         }
 
         return files;
