@@ -57,6 +57,7 @@ namespace lms::ui
                 params.setClusters(filters.getClusters());
                 params.setKeywords(getSearchKeywords());
                 params.setMediaLibrary(filters.getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setLinkType(_linkType);
                 params.setSortMethod(ArtistSortMethod::StarredDateDesc);
                 params.setRange(range);
@@ -71,6 +72,7 @@ namespace lms::ui
                 params.setClusters(filters.getClusters());
                 params.setKeywords(getSearchKeywords());
                 params.setMediaLibrary(filters.getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setLinkType(_linkType);
                 params.setRange(range);
 
@@ -85,6 +87,7 @@ namespace lms::ui
                 params.setClusters(filters.getClusters());
                 params.setKeywords(getSearchKeywords());
                 params.setMediaLibrary(filters.getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setLinkType(_linkType);
                 params.setRange(range);
 
@@ -98,6 +101,7 @@ namespace lms::ui
                 params.setClusters(filters.getClusters());
                 params.setKeywords(getSearchKeywords());
                 params.setMediaLibrary(filters.getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setLinkType(_linkType);
                 params.setSortMethod(ArtistSortMethod::AddedDesc);
                 params.setRange(range);
@@ -115,6 +119,7 @@ namespace lms::ui
                 params.setClusters(filters.getClusters());
                 params.setKeywords(getSearchKeywords());
                 params.setMediaLibrary(filters.getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setLinkType(_linkType);
                 params.setSortMethod(ArtistSortMethod::LastWrittenDesc);
                 params.setRange(range);
@@ -131,6 +136,7 @@ namespace lms::ui
                 Artist::FindParameters params;
                 params.setClusters(filters.getClusters());
                 params.setMediaLibrary(filters.getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setKeywords(getSearchKeywords());
                 params.setLinkType(_linkType);
                 params.setSortMethod(ArtistSortMethod::SortName);
@@ -159,6 +165,7 @@ namespace lms::ui
             Artist::FindParameters params;
             params.setClusters(getFilters().getClusters());
             params.setMediaLibrary(getFilters().getMediaLibrary());
+            params.setLabel(getFilters().getLabel());
             params.setKeywords(getSearchKeywords());
             params.setLinkType(_linkType);
             params.setSortMethod(ArtistSortMethod::Random);

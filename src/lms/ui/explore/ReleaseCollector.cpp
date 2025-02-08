@@ -54,6 +54,7 @@ namespace lms::ui
                 params.setUser(LmsApp->getUserId());
                 params.setClusters(getFilters().getClusters());
                 params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
                 releases = feedbackService.findStarredReleases(params);
@@ -66,6 +67,7 @@ namespace lms::ui
                 params.setUser(LmsApp->getUserId());
                 params.setClusters(getFilters().getClusters());
                 params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
 
@@ -79,6 +81,7 @@ namespace lms::ui
                 params.setUser(LmsApp->getUserId());
                 params.setClusters(getFilters().getClusters());
                 params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
 
@@ -91,6 +94,7 @@ namespace lms::ui
                 Release::FindParameters params;
                 params.setClusters(getFilters().getClusters());
                 params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setKeywords(getSearchKeywords());
                 params.setSortMethod(ReleaseSortMethod::AddedDesc);
                 params.setRange(range);
@@ -107,6 +111,7 @@ namespace lms::ui
                 Release::FindParameters params;
                 params.setClusters(getFilters().getClusters());
                 params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setKeywords(getSearchKeywords());
                 params.setSortMethod(ReleaseSortMethod::LastWrittenDesc);
                 params.setRange(range);
@@ -123,6 +128,7 @@ namespace lms::ui
                 Release::FindParameters params;
                 params.setClusters(getFilters().getClusters());
                 params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setSortMethod(ReleaseSortMethod::Name);
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
@@ -150,6 +156,7 @@ namespace lms::ui
             Release::FindParameters params;
             params.setClusters(getFilters().getClusters());
             params.setMediaLibrary(getFilters().getMediaLibrary());
+            params.setLabel(getFilters().getLabel());
             params.setKeywords(getSearchKeywords());
             params.setSortMethod(ReleaseSortMethod::Random);
             params.setRange(Range{ 0, getMaxCount() });

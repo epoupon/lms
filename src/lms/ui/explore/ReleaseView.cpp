@@ -26,6 +26,7 @@
 #include <Wt/WPushButton.h>
 
 #include "av/IAudioFile.hpp"
+#include "core/String.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
@@ -126,6 +127,13 @@ namespace lms::ui
                     artistsEntry->bindWidget("artist-container", std::move(artistContainer));
                     artistTable->addWidget(std::move(artistsEntry));
                 }
+            }
+
+            // TODO make labels clickable to automatically add filters
+            if (const std::vector<std::string> labels{ release->getLabelNames() }; !labels.empty())
+            {
+                releaseInfo->setCondition("if-has-labels", true);
+                releaseInfo->bindString("release-labels", core::stringUtils::joinStrings(labels, " · "));
             }
 
             // TODO: save in DB and aggregate all this
@@ -391,6 +399,7 @@ namespace lms::ui
         params.setSortMethod(db::TrackSortMethod::Release);
         params.setClusters(_filters.getClusters());
         params.setMediaLibrary(_filters.getMediaLibrary());
+        params.setLabel(_filters.getLabel()); // TODO: do we really want to hide all tracks when a release does not match the current label filter?
 
         db::Track::find(LmsApp->getDbSession(), params, [&](const db::Track::pointer& track) {
             const db::TrackId trackId{ track->getId() };

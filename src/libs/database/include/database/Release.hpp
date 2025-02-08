@@ -93,6 +93,7 @@ namespace lms::db
         static std::size_t getCount(Session& session);
         static pointer find(Session& session, LabelId id);
         static pointer find(Session& session, std::string_view name);
+        static void find(Session& session, LabelSortMethod sortMethod, std::function<void(const Label::pointer& label)> func);
         static RangeResults<LabelId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
 
         // Accessors
@@ -166,6 +167,7 @@ namespace lms::db
             core::EnumSet<TrackArtistLinkType> excludedTrackArtistLinkTypes; //    but not for these link types
             std::string releaseType;                                         // If set, albums that has this release type
             MediaLibraryId mediaLibrary;                                     // If set, releases that has at least a track in this library
+            LabelId label;                                                   // If set, releases that has this label
             DirectoryId directory;                                           // if set, releases in this directory (cannot be set with parent directory)
             DirectoryId parentDirectory;                                     // if set, releases in this parent directory (cannot be set with directory)
 
@@ -225,6 +227,11 @@ namespace lms::db
             FindParameters& setMediaLibrary(MediaLibraryId _mediaLibrary)
             {
                 mediaLibrary = _mediaLibrary;
+                return *this;
+            }
+            FindParameters& setLabel(LabelId _label)
+            {
+                label = _label;
                 return *this;
             }
             FindParameters& setDirectory(DirectoryId _directory)

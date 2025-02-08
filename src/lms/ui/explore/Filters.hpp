@@ -27,6 +27,7 @@
 #include <Wt/WTemplate.h>
 
 #include "database/ClusterId.hpp"
+#include "database/LabelId.hpp"
 #include "database/MediaLibraryId.hpp"
 
 namespace lms::ui
@@ -38,6 +39,7 @@ namespace lms::ui
 
         std::span<const db::ClusterId> getClusters() const { return _clusterIds; }
         db::MediaLibraryId getMediaLibrary() const { return _mediaLibraryId; }
+        db::LabelId getLabel() const { return _labelId; }
 
         void add(db::ClusterId clusterId);
 
@@ -45,6 +47,7 @@ namespace lms::ui
 
     private:
         void showDialog();
+        void set(db::LabelId labelId);
         void set(db::MediaLibraryId mediaLibraryId);
         void emitFilterAddedNotification();
 
@@ -54,5 +57,8 @@ namespace lms::ui
 
         Wt::WInteractWidget* _mediaLibraryFilter{};
         db::MediaLibraryId _mediaLibraryId;
+
+        Wt::WInteractWidget* _labelFilter{};
+        db::LabelId _labelId;
     };
 } // namespace lms::ui

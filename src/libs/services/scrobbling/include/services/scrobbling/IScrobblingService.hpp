@@ -29,6 +29,7 @@
 
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
+#include "database/LabelId.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
@@ -65,6 +66,7 @@ namespace lms::scrobbling
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords
             std::optional<db::Range> range;
             db::MediaLibraryId library; // if set, match this library
+            db::LabelId label;          // if set, match this label
             db::ArtistId artist;        // if set, match this artist
 
             FindParameters& setUser(const db::UserId _user)
@@ -90,6 +92,11 @@ namespace lms::scrobbling
             FindParameters& setMediaLibrary(db::MediaLibraryId _library)
             {
                 library = _library;
+                return *this;
+            }
+            FindParameters& setLabel(db::LabelId _label)
+            {
+                label = _label;
                 return *this;
             }
             FindParameters& setArtist(db::ArtistId _artist)

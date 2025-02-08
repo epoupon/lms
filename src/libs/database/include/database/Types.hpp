@@ -136,6 +136,12 @@ namespace lms::db
         Name,
     };
 
+    enum class LabelSortMethod
+    {
+        None,
+        Name,
+    };
+
     enum class ReleaseSortMethod
     {
         None,

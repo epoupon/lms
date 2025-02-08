@@ -42,10 +42,18 @@ namespace lms::db
 
             assert(!params.artist.isValid()); // poor check
 
-            if (params.library.isValid())
+            if (params.library.isValid() || params.label.isValid())
             {
                 query.join("track t ON t.id = t_a_l.track_id");
+            }
+
+            if (params.library.isValid())
                 query.where("t.media_library_id = ?").bind(params.library);
+
+            if (params.label.isValid())
+            {
+                query.join("release_label r_l ON t.release_id = r_l.release_id");
+                query.where("r_l.label_id = ?").bind(params.label);
             }
 
             if (params.linkType)
@@ -113,6 +121,12 @@ namespace lms::db
             if (params.library.isValid())
                 query.where("t.media_library_id = ?").bind(params.library);
 
+            if (params.label.isValid())
+            {
+                query.join("release_label r_l ON r_l.release_id = r.id");
+                query.where("r_l.label_id = ?").bind(params.label);
+            }
+
             if (!params.clusters.empty())
             {
                 std::ostringstream oss;
@@ -159,6 +173,12 @@ namespace lms::db
 
             if (params.library.isValid())
                 query.where("t.media_library_id = ?").bind(params.library);
+
+            if (params.label.isValid())
+            {
+                query.join("release_label r_l ON r_l.release_id = t.release_id");
+                query.where("r_l.label_id = ?").bind(params.label);
+            }
 
             if (!params.clusters.empty())
             {

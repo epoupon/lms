@@ -162,6 +162,12 @@ namespace lms::db
             if (params.mediaLibrary.isValid())
                 query.where("t.media_library_id = ?").bind(params.mediaLibrary);
 
+            if (params.label.isValid())
+            {
+                query.join("release_label r_l ON r_l.release_id = t.release_id");
+                query.where("r_l.label_id = ?").bind(params.label);
+            }
+
             if (params.directory.isValid())
                 query.where("t.directory_id = ?").bind(params.directory);
 

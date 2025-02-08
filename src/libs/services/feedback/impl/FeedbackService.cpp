@@ -104,6 +104,7 @@ namespace lms::feedback
         searchParams.setSortMethod(params.sortMethod);
         searchParams.setRange(params.range);
         searchParams.setMediaLibrary(params.library);
+        searchParams.setLabel(params.label);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
@@ -154,6 +155,7 @@ namespace lms::feedback
         searchParams.setSortMethod(ReleaseSortMethod::StarredDateDesc);
         searchParams.setRange(params.range);
         searchParams.setMediaLibrary(params.library);
+        searchParams.setLabel(params.label);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
@@ -204,6 +206,7 @@ namespace lms::feedback
         searchParams.setSortMethod(TrackSortMethod::StarredDateDesc);
         searchParams.setRange(params.range);
         searchParams.setMediaLibrary(params.library);
+        searchParams.setLabel(params.label);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };

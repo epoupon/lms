@@ -28,6 +28,7 @@
 #include "database/Image.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "database/Types.hpp"
 #include "database/User.hpp"
 
 #include "EnumSetTraits.hpp"
@@ -75,6 +76,12 @@ namespace lms::db
 
             if (params.mediaLibrary.isValid())
                 query.where("t.media_library_id = ?").bind(params.mediaLibrary);
+
+            if (params.label.isValid())
+            {
+                query.join("release_label r_l ON r_l.release_id = r.id");
+                query.where("r_l.label_id = ?").bind(params.label);
+            }
 
             if (params.directory.isValid())
                 query.where("t.directory_id = ?").bind(params.directory);
@@ -330,6 +337,24 @@ namespace lms::db
             throw Exception{ "Requeted Label name is too long: " + std::string{ name } + "'" };
 
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Label>>("SELECT l from label l").where("l.name = ?").bind(name));
+    }
+
+    void Label::find(Session& session, LabelSortMethod sortMethod, std::function<void(const Label::pointer& label)> func)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession()->find<Label>() };
+        switch (sortMethod)
+        {
+        case LabelSortMethod::None:
+            break;
+        case LabelSortMethod::Name:
+            query.orderBy("name COLLATE NOCASE");
+        }
+
+        utils::forEachQueryResult(query, [&](const Label::pointer& label) {
+            func(label);
+        });
     }
 
     RangeResults<LabelId> Label::findOrphanIds(Session& session, std::optional<Range> range)

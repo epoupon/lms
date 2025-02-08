@@ -1074,6 +1074,9 @@ FROM tracklist)");
 
     void migrateFromV81(Session& session)
     {
+        // Make sure we remove all the previoulsy created index, the createIndexesIfNeeded will recreate them all
+        dropIndexes(session);
+
         // Add country + release country
         utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "country" (
   "id" integer primary key autoincrement,

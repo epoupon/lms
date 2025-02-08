@@ -46,6 +46,7 @@ namespace lms::ui
                 params.setSortMethod(db::TrackSortMethod::DateDescAndRelease);
                 params.setClusters(filters.getClusters());
                 params.setMediaLibrary(filters.getMediaLibrary());
+                params.setLabel(filters.getLabel());
                 params.setRange(db::Range{ 0, maxTrackCount - res.size() });
 
                 const auto tracks{ db::Track::findIds(session, params) };
@@ -76,6 +77,7 @@ namespace lms::ui
                 params.setSortMethod(db::TrackSortMethod::Release);
                 params.setClusters(filters.getClusters());
                 params.setMediaLibrary(filters.getMediaLibrary());
+                params.setLabel(filters.getLabel());
                 params.setRange(db::Range{ 0, maxTrackCount - res.size() });
 
                 const auto tracks{ db::Track::findIds(session, params) };
@@ -107,6 +109,7 @@ namespace lms::ui
                 params.setDiscNumber(disc.discNumber);
                 params.setClusters(filters.getClusters());
                 params.setMediaLibrary(filters.getMediaLibrary());
+                params.setLabel(filters.getLabel());
                 params.setRange(db::Range{ 0, maxTrackCount - res.size() });
 
                 const auto tracks{ db::Track::findIds(session, params) };
@@ -132,6 +135,7 @@ namespace lms::ui
             params.setTrackList(trackListId);
             params.setClusters(filters.getClusters());
             params.setMediaLibrary(filters.getMediaLibrary());
+            params.setLabel(filters.getLabel());
             params.setRange(db::Range{ 0, maxTrackCount });
             params.setSortMethod(TrackSortMethod::TrackList);
 

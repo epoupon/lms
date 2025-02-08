@@ -28,6 +28,7 @@
 
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
+#include "database/LabelId.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
@@ -57,6 +58,7 @@ namespace lms::feedback
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords
             std::optional<db::Range> range;
             db::MediaLibraryId library;
+            db::LabelId label;
 
             FindParameters& setUser(const db::UserId _user)
             {
@@ -81,6 +83,11 @@ namespace lms::feedback
             FindParameters& setMediaLibrary(db::MediaLibraryId _library)
             {
                 library = _library;
+                return *this;
+            }
+            FindParameters& setLabel(db::LabelId _label)
+            {
+                label = _label;
                 return *this;
             }
         };

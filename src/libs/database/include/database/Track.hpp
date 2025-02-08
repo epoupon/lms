@@ -38,6 +38,7 @@
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
 #include "database/DirectoryId.hpp"
+#include "database/LabelId.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
@@ -85,6 +86,7 @@ namespace lms::db
             std::optional<int> trackNumber;                          // matching this track number
             std::optional<int> discNumber;                           // matching this disc number
             MediaLibraryId mediaLibrary;                             // If set, tracks in this library
+            LabelId label;                                           // If set, tracks that belongs to a release with this label
             DirectoryId directory;                                   // if set, tracks in this directory
             std::optional<bool> hasEmbeddedImage;                    // if set, tracks that have or not embedded images
 
@@ -180,6 +182,11 @@ namespace lms::db
             FindParameters& setMediaLibrary(MediaLibraryId _mediaLibrary)
             {
                 mediaLibrary = _mediaLibrary;
+                return *this;
+            }
+            FindParameters& setLabel(LabelId _label)
+            {
+                label = _label;
                 return *this;
             }
             FindParameters& setDirectory(DirectoryId _directory)

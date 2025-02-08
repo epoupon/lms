@@ -201,7 +201,7 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS cluster_type_name_idx ON cluster_type(name)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS country_id_idx ON country(id)");
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS country_name_idx ON country(name)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS country_name_idx ON country(name COLLATE NOCASE)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS directory_id_idx ON directory(id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS directory_parent_directory_idx ON directory(parent_directory_id)");
@@ -215,7 +215,7 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS image_stem_idx ON image(stem COLLATE NOCASE)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS label_id_idx ON label(id)");
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS label_name_idx ON label(name)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS label_name_idx ON label(name COLLATE NOCASE)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS listen_backend_idx ON listen(backend)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS listen_id_idx ON listen(id)");

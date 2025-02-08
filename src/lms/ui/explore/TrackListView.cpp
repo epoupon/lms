@@ -189,6 +189,7 @@ namespace lms::ui
         db::Track::FindParameters params;
         params.setClusters(_filters.getClusters());
         params.setMediaLibrary(_filters.getMediaLibrary());
+        params.setLabel(_filters.getLabel());
         params.setTrackList(_trackListId);
         params.setSortMethod(db::TrackSortMethod::TrackList);
         params.setRange(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize });

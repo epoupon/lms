@@ -54,6 +54,7 @@ namespace lms::ui
                 feedback::IFeedbackService::FindParameters params;
                 params.setClusters(getFilters().getClusters());
                 params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
                 params.setUser(LmsApp->getUserId());
@@ -67,6 +68,7 @@ namespace lms::ui
                 params.setUser(LmsApp->getUserId());
                 params.setClusters(getFilters().getClusters());
                 params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
 
@@ -80,6 +82,7 @@ namespace lms::ui
                 params.setUser(LmsApp->getUserId());
                 params.setClusters(getFilters().getClusters());
                 params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
 
@@ -92,6 +95,7 @@ namespace lms::ui
                 Track::FindParameters params;
                 params.setClusters(getFilters().getClusters());
                 params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setKeywords(getSearchKeywords());
                 params.setSortMethod(TrackSortMethod::AddedDesc);
                 params.setRange(range);
@@ -108,6 +112,7 @@ namespace lms::ui
                 Track::FindParameters params;
                 params.setClusters(getFilters().getClusters());
                 params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setKeywords(getSearchKeywords());
                 params.setSortMethod(TrackSortMethod::LastWrittenDesc);
                 params.setRange(range);
@@ -124,6 +129,7 @@ namespace lms::ui
                 Track::FindParameters params;
                 params.setClusters(getFilters().getClusters());
                 params.setMediaLibrary(getFilters().getMediaLibrary());
+                params.setLabel(getFilters().getLabel());
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
 
@@ -150,6 +156,7 @@ namespace lms::ui
             Track::FindParameters params;
             params.setClusters(getFilters().getClusters());
             params.setMediaLibrary(getFilters().getMediaLibrary());
+            params.setLabel(getFilters().getLabel());
             params.setKeywords(getSearchKeywords());
             params.setSortMethod(TrackSortMethod::Random);
             params.setRange(Range{ 0, getMaxCount() });

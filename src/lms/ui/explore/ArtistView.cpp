@@ -195,6 +195,7 @@ namespace lms::ui
         Release::FindParameters params;
         params.setClusters(_filters.getClusters());
         params.setMediaLibrary(_filters.getMediaLibrary());
+        params.setLabel(_filters.getLabel());
         params.setArtist(_artistId, { TrackArtistLinkType::ReleaseArtist }, {});
         params.setSortMethod(LmsApp->getUser()->getUIArtistReleaseSortMethod());
 
@@ -253,6 +254,7 @@ namespace lms::ui
         Release::FindParameters params;
         params.setClusters(_filters.getClusters());
         params.setMediaLibrary(_filters.getMediaLibrary());
+        params.setLabel(_filters.getLabel());
         params.setArtist(_artistId, types, { TrackArtistLinkType::ReleaseArtist });
         params.setSortMethod(ReleaseSortMethod::OriginalDateDesc);
 
@@ -338,6 +340,7 @@ namespace lms::ui
         Track::FindParameters params;
         params.setClusters(_filters.getClusters());
         params.setMediaLibrary(_filters.getMediaLibrary());
+        params.setLabel(_filters.getLabel());
         params.setArtist(_artistId);
         params.setRange(range);
         params.setSortMethod(TrackSortMethod::Name);

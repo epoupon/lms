@@ -32,6 +32,7 @@
 #include "core/UUID.hpp"
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
+#include "database/LabelId.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
@@ -68,6 +69,7 @@ namespace lms::db
             TrackId track;                                  // artists involved in this track
             ReleaseId release;                              // artists involved in this release
             MediaLibraryId mediaLibrary;                    // artists that belong to this library
+            LabelId label;                                  // artists that have issued releases using this label
 
             FindParameters& setClusters(std::span<const ClusterId> _clusters)
             {
@@ -118,6 +120,11 @@ namespace lms::db
             FindParameters& setMediaLibrary(MediaLibraryId _mediaLibrary)
             {
                 mediaLibrary = _mediaLibrary;
+                return *this;
+            }
+            FindParameters& setLabel(LabelId _label)
+            {
+                label = _label;
                 return *this;
             }
         };

@@ -132,6 +132,16 @@
 						${<if-has-artist>}
 						${artist-table class="d-grid gap-2"}
 						${</if-has-artist>}
+						${<if-has-labels>}
+						<div class="row align-items-center">
+							<div class="col-4">
+								${tr:Lms.Explore.label}
+							</div>
+							<div class="col">
+								${release-labels}
+							</div>
+						</div>
+						${</if-has-labels>}
 						${<if-has-codec>}
 						<div class="row align-items-center">
 							<div class="col-4">

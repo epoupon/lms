@@ -27,7 +27,9 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Cluster.hpp"
+#include "database/LabelId.hpp"
 #include "database/MediaLibrary.hpp"
+#include "database/Release.hpp"
 #include "database/Session.hpp"
 
 #include "LmsApplication.hpp"
@@ -44,7 +46,11 @@ namespace lms::ui
         {
         };
 
-        using TypeVariant = std::variant<db::ClusterTypeId, MediaLibraryTag>;
+        struct LabelTag
+        {
+        };
+
+        using TypeVariant = std::variant<db::ClusterTypeId, MediaLibraryTag, LabelTag>;
         using TypeModel = ValueStringModel<TypeVariant>;
 
         std::unique_ptr<TypeModel> createTypeModel()
@@ -59,11 +65,12 @@ namespace lms::ui
             }
 
             typeModel->add(Wt::WString::tr("Lms.Explore.media-library"), MediaLibraryTag{});
+            typeModel->add(Wt::WString::tr("Lms.Explore.label"), LabelTag{});
 
             return typeModel;
         }
 
-        using ValueVariant = std::variant<db::ClusterId, db::MediaLibraryId>;
+        using ValueVariant = std::variant<db::ClusterId, db::MediaLibraryId, db::LabelId>;
         using ValueModel = ValueStringModel<ValueVariant>;
 
         std::unique_ptr<ValueModel> createValueModel(TypeVariant type)
@@ -78,6 +85,12 @@ namespace lms::ui
             {
                 db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer& library) {
                     valueModel->add(Wt::WString::fromUTF8(std::string{ library->getName() }), library->getId());
+                });
+            }
+            else if (std::holds_alternative<LabelTag>(type))
+            {
+                db::Label::find(session, db::LabelSortMethod::Name, [&](const db::Label::pointer& label) {
+                    valueModel->add(Wt::WString::fromUTF8(std::string{ label->getName() }), label->getId());
                 });
             }
             else if (const db::ClusterTypeId * clusterTypeId{ std::get_if<db::ClusterTypeId>(&type) })
@@ -118,6 +131,11 @@ namespace lms::ui
                 set(*mediaLibraryId);
                 state::writeValue<db::MediaLibraryId::ValueType>("filters_media_library_id", mediaLibraryId->getValue());
             }
+            else if (const db::LabelId * labelId{ std::get_if<db::LabelId>(&value) })
+            {
+                set(*labelId);
+                state::writeValue<db::LabelId::ValueType>("filters_label_id", labelId->getValue());
+            }
             else if (const db::ClusterId * clusterId{ std::get_if<db::ClusterId>(&value) })
             {
                 add(*clusterId);
@@ -157,7 +175,9 @@ namespace lms::ui
         _filters = bindNew<Wt::WContainerWidget>("clusters");
 
         if (const std::optional<db::MediaLibraryId::ValueType> mediaLibraryId{ state::readValue<db::MediaLibraryId::ValueType>("filters_media_library_id") })
-            set(*mediaLibraryId);
+            set(db::MediaLibraryId{ *mediaLibraryId });
+        if (const std::optional<db::LabelId::ValueType> mediaLibraryId{ state::readValue<db::LabelId::ValueType>("filters_label_id") })
+            set(db::LabelId{ *mediaLibraryId });
     }
 
     void Filters::add(db::ClusterId clusterId)
@@ -214,6 +234,39 @@ namespace lms::ui
             _mediaLibraryFilter = nullptr;
             _sigUpdated.emit();
             state::writeValue<db::MediaLibraryId::ValueType>("filters_media_library_id", std::nullopt);
+        });
+
+        emitFilterAddedNotification();
+    }
+
+    void Filters::set(db::LabelId labelId)
+    {
+        if (_labelFilter)
+        {
+            _filters->removeWidget(_labelFilter);
+            _labelFilter = nullptr;
+            _labelId = db::LabelId{};
+        }
+
+        std::string name;
+        {
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+
+            const auto label{ db::Label::find(LmsApp->getDbSession(), labelId) };
+            if (!label)
+                return;
+
+            name = label->getName();
+        }
+
+        _labelId = labelId;
+        _labelFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(name), Wt::WString::tr("Lms.Explore.label"), "bg-secondary", true));
+        _labelFilter->clicked().connect(_labelFilter, [this] {
+            _filters->removeWidget(_labelFilter);
+            _labelId = db::LabelId{};
+            _labelFilter = nullptr;
+            _sigUpdated.emit();
+            state::writeValue<db::LabelId::ValueType>("filters_label_id", std::nullopt);
         });
 
         emitFilterAddedNotification();

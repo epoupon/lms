@@ -50,7 +50,8 @@ namespace lms::db
                 || params.track.isValid()
                 || params.release.isValid()
                 || params.clusters.size() == 1
-                || params.mediaLibrary.isValid())
+                || params.mediaLibrary.isValid()
+                || params.label.isValid())
             {
                 query.join("track_artist_link t_a_l ON t_a_l.artist_id = a.id");
             }
@@ -59,7 +60,8 @@ namespace lms::db
                 || params.sortMethod == ArtistSortMethod::AddedDesc
                 || params.writtenAfter.isValid()
                 || params.release.isValid()
-                || params.mediaLibrary.isValid())
+                || params.mediaLibrary.isValid()
+                || params.label.isValid())
             {
                 query.join("track t ON t.id = t_a_l.track_id");
 
@@ -71,6 +73,12 @@ namespace lms::db
 
                 if (params.mediaLibrary.isValid())
                     query.where("t.media_library_id = ?").bind(params.mediaLibrary);
+
+                if (params.label.isValid())
+                {
+                    query.join("release_label r_l ON r_l.release_id = t.release_id");
+                    query.where("r_l.label_id = ?").bind(params.label);
+                }
             }
 
             if (params.linkType)

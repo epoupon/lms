@@ -26,6 +26,7 @@
 
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
+#include "database/LabelId.hpp"
 #include "database/ListenId.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
@@ -90,6 +91,7 @@ namespace lms::db
             std::optional<Range> range;
             ArtistId artist; // if set, matching this artist
             MediaLibraryId library;
+            LabelId label;
 
             StatsFindParameters& setUser(UserId _user)
             {
@@ -124,6 +126,11 @@ namespace lms::db
             StatsFindParameters& setMediaLibrary(MediaLibraryId _library)
             {
                 library = _library;
+                return *this;
+            }
+            StatsFindParameters& setLabel(LabelId _label)
+            {
+                label = _label;
                 return *this;
             }
         };
