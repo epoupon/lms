@@ -69,6 +69,7 @@ namespace lms::metadata
                 { TagType::Producer, { "MyProducer1", "MyProducer2" } },
                 { TagType::Remixer, { "MyRemixer1", "MyRemixer2" } },
                 { TagType::RecordLabel, { "Label1", "Label2" } },
+                { TagType::ReleaseCountry, { "MyCountry1", "MyCountry2" } },
                 { TagType::Language, { "Language1", "Language2" } },
                 { TagType::Lyricist, { "MyLyricist1", "MyLyricist2" } },
                 { TagType::OriginalReleaseDate, { "2019/02/03" } },
@@ -224,6 +225,9 @@ namespace lms::metadata
         EXPECT_EQ(release.name, "MyAlbum");
         EXPECT_EQ(release.sortName, "MyAlbumSortName");
         EXPECT_EQ(release.comment, "MyAlbumComment");
+        ASSERT_EQ(release.countries.size(), 2);
+        EXPECT_EQ(release.countries[0], "MyCountry1");
+        EXPECT_EQ(release.countries[1], "MyCountry2");
         {
             std::vector<std::string> expectedReleaseTypes{ "Album", "Compilation" };
             EXPECT_EQ(release.releaseTypes, expectedReleaseTypes);

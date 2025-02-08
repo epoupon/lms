@@ -26,6 +26,7 @@ namespace lms::db::tests
 {
     using ScopedImage = ScopedEntity<db::Image>;
     using ScopedLabel = ScopedEntity<db::Label>;
+    using ScopedCountry = ScopedEntity<db::Country>;
     using ScopedReleaseType = ScopedEntity<db::ReleaseType>;
 
     TEST_F(DatabaseFixture, Release)
@@ -808,6 +809,30 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Release_getLabelNames)
+    {
+        ScopedRelease release{ session, "MyRelease" };
+        ScopedLabel label{ session, "MyLabel" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto names{ release.get()->getLabelNames() };
+            EXPECT_EQ(names.size(), 0);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            release.get().modify()->addLabel(label.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto names{ release.get()->getLabelNames() };
+            ASSERT_EQ(names.size(), 1);
+            EXPECT_EQ(names[0], "MyLabel");
+        }
+    }
+
     TEST_F(DatabaseFixture, Label_orphan)
     {
         ScopedLabel label{ session, "MyLabel" };
@@ -842,6 +867,78 @@ namespace lms::db::tests
             auto labels{ Label::findOrphanIds(session) };
             ASSERT_EQ(labels.results.size(), 1);
             EXPECT_EQ(labels.results.front(), label.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Country)
+    {
+        {
+            auto transaction{ session.createReadTransaction() };
+            Country::pointer res{ Country::find(session, "country") };
+            EXPECT_EQ(res, Country::pointer{});
+        }
+
+        ScopedCountry country{ session, "MyCountry" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            Country::pointer res{ Country::find(session, "MyCountry") };
+            EXPECT_EQ(res, country.get());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Release_getCountryNames)
+    {
+        ScopedCountry country{ session, "MyCountry" };
+        ScopedRelease release{ session, "MyRelease" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            release.get().modify()->addCountry(country.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto names{ release.get()->getCountryNames() };
+            ASSERT_EQ(names.size(), 1);
+            EXPECT_EQ(names[0], "MyCountry");
+        }
+    }
+
+    TEST_F(DatabaseFixture, Country_orphan)
+    {
+        ScopedCountry country{ session, "MyCountry" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto countries{ Country::findOrphanIds(session) };
+            ASSERT_EQ(countries.results.size(), 1);
+            EXPECT_EQ(countries.results.front(), country.getId());
+        }
+
+        ScopedRelease release{ session, "MyRelease" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            release.get().modify()->addCountry(country.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto countries{ Country::findOrphanIds(session) };
+            EXPECT_EQ(countries.results.size(), 0);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            release.get().modify()->clearCountries();
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto countries{ Country::findOrphanIds(session) };
+            ASSERT_EQ(countries.results.size(), 1);
+            EXPECT_EQ(countries.results.front(), country.getId());
         }
     }
 

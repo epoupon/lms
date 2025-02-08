@@ -33,6 +33,7 @@
 #include "core/UUID.hpp"
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
+#include "database/CountryId.hpp"
 #include "database/DirectoryId.hpp"
 #include "database/LabelId.hpp"
 #include "database/MediaLibraryId.hpp"
@@ -52,6 +53,37 @@ namespace lms::db
     class Session;
     class Track;
     class User;
+
+    class Country final : public Object<Country, CountryId>
+    {
+    public:
+        Country() = default;
+
+        static std::size_t getCount(Session& session);
+        static pointer find(Session& session, CountryId id);
+        static pointer find(Session& session, std::string_view name);
+        static RangeResults<CountryId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+
+        // Accessors
+        std::string_view getName() const { return _name; }
+
+        template<class Action>
+        void persist(Action& a)
+        {
+            Wt::Dbo::field(a, _name, "name");
+            Wt::Dbo::hasMany(a, _releases, Wt::Dbo::ManyToMany, "release_country", "", Wt::Dbo::OnDeleteCascade);
+        }
+
+    private:
+        static constexpr std::size_t _maxNameLength{ 32 };
+
+        friend class Session;
+        Country(std::string_view name);
+        static pointer create(Session& session, std::string_view name);
+
+        std::string _name;
+        Wt::Dbo::collection<Wt::Dbo::ptr<Release>> _releases; // releases that match this country
+    };
 
     class Label final : public Object<Label, LabelId>
     {
@@ -251,6 +283,7 @@ namespace lms::db
         std::size_t getTrackCount() const;
         std::vector<ObjectPtr<ReleaseType>> getReleaseTypes() const;
         std::vector<std::string> getLabelNames() const;
+        std::vector<std::string> getCountryNames() const;
         std::vector<std::string> getReleaseTypeNames() const;
         void visitLabels(const std::function<void(const Label::pointer& label)>& _func) const;
         core::EnumSet<Advisory> getAdvisories() const;
@@ -267,8 +300,10 @@ namespace lms::db
         void setArtistDisplayName(std::string_view name) { _artistDisplayName = name; }
         void setCompilation(bool value) { _isCompilation = value; }
         void clearLabels();
+        void clearCountries();
         void clearReleaseTypes();
-        void addLabel(ObjectPtr<Label> releaseType);
+        void addLabel(ObjectPtr<Label> label);
+        void addCountry(ObjectPtr<Country> country);
         void addReleaseType(ObjectPtr<ReleaseType> releaseType);
         void setBarcode(std::string_view barcode) { _barcode = barcode; }
         void setComment(std::string_view comment) { _comment = comment; }
@@ -299,6 +334,7 @@ namespace lms::db
             Wt::Dbo::belongsTo(a, _image, "image", Wt::Dbo::OnDeleteSetNull);
             Wt::Dbo::hasMany(a, _labels, Wt::Dbo::ManyToMany, "release_label", "", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::hasMany(a, _releaseTypes, Wt::Dbo::ManyToMany, "release_release_type", "", Wt::Dbo::OnDeleteCascade);
+            Wt::Dbo::hasMany(a, _countries, Wt::Dbo::ManyToMany, "release_country", "", Wt::Dbo::OnDeleteCascade);
         }
 
     private:
@@ -325,6 +361,7 @@ namespace lms::db
         Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
         Wt::Dbo::collection<Wt::Dbo::ptr<Label>> _labels;
         Wt::Dbo::collection<Wt::Dbo::ptr<ReleaseType>> _releaseTypes;
+        Wt::Dbo::collection<Wt::Dbo::ptr<Country>> _countries;
     };
 
 } // namespace lms::db

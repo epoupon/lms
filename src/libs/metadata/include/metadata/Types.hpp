@@ -69,6 +69,7 @@ namespace lms::metadata
         bool isCompilation{};
         std::string barcode;
         std::string comment;
+        std::vector<std::string> countries;
 
         auto operator<=>(const Release&) const = default;
     };

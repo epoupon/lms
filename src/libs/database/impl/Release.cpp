@@ -253,6 +253,50 @@ namespace lms::db
 
     } // namespace
 
+    Country::Country(std::string_view name)
+        : _name{ name }
+    {
+        // As we use the name to uniquely identoify release type, we must throw (and not truncate)
+        if (name.size() > _maxNameLength)
+            throw Exception{ "Country name is too long: " + std::string{ name } + "'" };
+    }
+
+    Country::pointer Country::create(Session& session, std::string_view name)
+    {
+        return session.getDboSession()->add(std::unique_ptr<Country>{ new Country{ name } });
+    }
+
+    std::size_t Country::getCount(Session& session)
+    {
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM country"));
+    }
+
+    Country::pointer Country::find(Session& session, CountryId id)
+    {
+        session.checkReadTransaction();
+
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Country>>("SELECT c from country c").where("c.id = ?").bind(id));
+    }
+
+    Country::pointer Country::find(Session& session, std::string_view name)
+    {
+        session.checkReadTransaction();
+
+        if (name.size() > _maxNameLength)
+            throw Exception{ "Requeted Country name is too long: " + std::string{ name } + "'" };
+
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Country>>("SELECT c from country c").where("c.name = ?").bind(name));
+    }
+
+    RangeResults<CountryId> Country::findOrphanIds(Session& session, std::optional<Range> range)
+    {
+        session.checkReadTransaction();
+
+        // select the labels that have no releases
+        auto query{ session.getDboSession()->query<CountryId>("select c.id from country c LEFT OUTER JOIN release_country r_c ON c.id = r_c.country_id WHERE r_c.release_id IS NULL") };
+        return utils::execRangeQuery<CountryId>(query, range);
+    }
+
     Label::Label(std::string_view name)
         : _name{ name }
     {
@@ -612,6 +656,11 @@ namespace lms::db
         _labels.clear();
     }
 
+    void Release::clearCountries()
+    {
+        _countries.clear();
+    }
+
     void Release::clearReleaseTypes()
     {
         _releaseTypes.clear();
@@ -620,6 +669,11 @@ namespace lms::db
     void Release::addLabel(ObjectPtr<Label> label)
     {
         _labels.insert(getDboPtr(label));
+    }
+
+    void Release::addCountry(ObjectPtr<Country> country)
+    {
+        _countries.insert(getDboPtr(country));
     }
 
     void Release::addReleaseType(ObjectPtr<ReleaseType> releaseType)
@@ -659,8 +713,22 @@ namespace lms::db
     {
         std::vector<std::string> res;
 
-        for (const auto& label : _labels)
+        auto query{ _labels.find() };
+        utils::forEachQueryResult(query, [&](const Label::pointer& label) {
             res.push_back(std::string{ label->getName() });
+        });
+
+        return res;
+    }
+
+    std::vector<std::string> Release::getCountryNames() const
+    {
+        std::vector<std::string> res;
+
+        auto query{ _countries.find() };
+        utils::forEachQueryResult(query, [&](const Country::pointer& country) {
+            res.push_back(std::string{ country->getName() });
+        });
 
         return res;
     }
@@ -669,8 +737,10 @@ namespace lms::db
     {
         std::vector<std::string> res;
 
-        for (const auto& releaseType : _releaseTypes)
+        auto query{ _releaseTypes.find() };
+        utils::forEachQueryResult(query, [&](const ReleaseType::pointer& releaseType) {
             res.push_back(std::string{ releaseType->getName() });
+        });
 
         return res;
     }

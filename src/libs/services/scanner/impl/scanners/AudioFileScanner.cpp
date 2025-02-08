@@ -141,6 +141,15 @@ namespace lms::scanner
             return releaseType;
         }
 
+        db::Country::pointer getOrCreateCountry(db::Session& session, std::string_view name)
+        {
+            db::Country::pointer country{ db::Country::find(session, name) };
+            if (!country)
+                country = session.create<db::Country>(name);
+
+            return country;
+        }
+
         db::Label::pointer getOrCreateLabel(db::Session& session, std::string_view name)
         {
             db::Label::pointer label{ db::Label::find(session, name) };
@@ -174,7 +183,12 @@ namespace lms::scanner
                 for (std::string_view releaseType : releaseInfo.releaseTypes)
                     release.modify()->addReleaseType(getOrCreateReleaseType(session, releaseType));
             }
-
+            if (release->getCountryNames() != releaseInfo.countries)
+            {
+                release.modify()->clearCountries();
+                for (std::string_view country : releaseInfo.countries)
+                    release.modify()->addCountry(getOrCreateCountry(session, country));
+            }
             if (release->getLabelNames() != releaseInfo.labels)
             {
                 release.modify()->clearLabels();

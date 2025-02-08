@@ -521,6 +521,7 @@ namespace lms::metadata
         release->barcode = getTagValueAs<std::string>(tagReader, TagType::Barcode).value_or("");
         release->labels = getTagValuesAs<std::string>(tagReader, TagType::RecordLabel, _defaultTagDelimiters);
         release->comment = getTagValueAs<std::string>(tagReader, TagType::AlbumComment).value_or("");
+        release->countries = getTagValuesAs<std::string>(tagReader, TagType::ReleaseCountry, _defaultTagDelimiters);
         if (!release->mediumCount)
         {
             // mediumCount may be encoded as "position/count"
