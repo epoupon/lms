@@ -20,7 +20,6 @@
 #pragma once
 
 #include <optional>
-#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -32,9 +31,9 @@
 #include "core/PartialDateTime.hpp"
 #include "core/UUID.hpp"
 #include "database/ArtistId.hpp"
-#include "database/ClusterId.hpp"
 #include "database/CountryId.hpp"
 #include "database/DirectoryId.hpp"
+#include "database/Filters.hpp"
 #include "database/LabelId.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
@@ -153,7 +152,7 @@ namespace lms::db
     public:
         struct FindParameters
         {
-            std::vector<ClusterId> clusters;        // if non empty, releases that belong to these clusters
+            Filters filters;
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords (cannot be set with keywords)
             std::string name;                       // must match this name (cannot be set with keywords)
             ReleaseSortMethod sortMethod{ ReleaseSortMethod::None };
@@ -166,14 +165,12 @@ namespace lms::db
             core::EnumSet<TrackArtistLinkType> trackArtistLinkTypes;         //    and for these link types
             core::EnumSet<TrackArtistLinkType> excludedTrackArtistLinkTypes; //    but not for these link types
             std::string releaseType;                                         // If set, albums that has this release type
-            MediaLibraryId mediaLibrary;                                     // If set, releases that has at least a track in this library
-            LabelId label;                                                   // If set, releases that has this label
             DirectoryId directory;                                           // if set, releases in this directory (cannot be set with parent directory)
             DirectoryId parentDirectory;                                     // if set, releases in this parent directory (cannot be set with directory)
 
-            FindParameters& setClusters(std::span<const ClusterId> _clusters)
+            FindParameters& setFilters(const Filters& _filters)
             {
-                clusters.assign(std::cbegin(_clusters), std::cend(_clusters));
+                filters = _filters;
                 return *this;
             }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
@@ -222,16 +219,6 @@ namespace lms::db
             FindParameters& setReleaseType(std::string_view _releaseType)
             {
                 releaseType = _releaseType;
-                return *this;
-            }
-            FindParameters& setMediaLibrary(MediaLibraryId _mediaLibrary)
-            {
-                mediaLibrary = _mediaLibrary;
-                return *this;
-            }
-            FindParameters& setLabel(LabelId _label)
-            {
-                label = _label;
                 return *this;
             }
             FindParameters& setDirectory(DirectoryId _directory)

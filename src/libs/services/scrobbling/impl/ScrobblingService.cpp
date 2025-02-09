@@ -41,11 +41,9 @@ namespace lms::scrobbling
         {
             db::Listen::StatsFindParameters listenFindParams;
             listenFindParams.setUser(params.user);
-            listenFindParams.setClusters(params.clusters);
+            listenFindParams.setFilters(params.filters);
             listenFindParams.setKeywords(params.keywords);
             listenFindParams.setRange(params.range);
-            listenFindParams.setMediaLibrary(params.library);
-            listenFindParams.setLabel(params.label);
             listenFindParams.setArtist(params.artist);
 
             return listenFindParams;

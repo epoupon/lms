@@ -324,13 +324,13 @@ namespace lms::db::tests
         }
         {
             auto transaction{ session.createReadTransaction() };
-            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setMediaLibrary(library->getId())) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFilters(Filters{}.setMediaLibrary(library->getId()))) };
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };
-            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setMediaLibrary(otherLibrary->getId())) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFilters(Filters{}.setMediaLibrary(otherLibrary->getId()))) };
             EXPECT_EQ(artists.results.size(), 0);
         }
     }

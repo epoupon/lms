@@ -23,7 +23,6 @@
 #include <filesystem>
 #include <optional>
 #include <ostream>
-#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -38,7 +37,7 @@
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
 #include "database/DirectoryId.hpp"
-#include "database/LabelId.hpp"
+#include "database/Filters.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
@@ -66,7 +65,7 @@ namespace lms::db
     public:
         struct FindParameters
         {
-            std::vector<ClusterId> clusters;        // if non empty, tracks that belong to these clusters
+            Filters filters;
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords
             std::string name;                       // if non empty, must match this name (title)
             std::string fileStem;                   // if non empty, must match this file stem
@@ -85,14 +84,12 @@ namespace lms::db
             TrackListId trackList;                                   // matching this trackList
             std::optional<int> trackNumber;                          // matching this track number
             std::optional<int> discNumber;                           // matching this disc number
-            MediaLibraryId mediaLibrary;                             // If set, tracks in this library
-            LabelId label;                                           // If set, tracks that belongs to a release with this label
             DirectoryId directory;                                   // if set, tracks in this directory
             std::optional<bool> hasEmbeddedImage;                    // if set, tracks that have or not embedded images
 
-            FindParameters& setClusters(std::span<const ClusterId> _clusters)
+            FindParameters& setFilters(const Filters& _filters)
             {
-                clusters.assign(std::cbegin(_clusters), std::cend(_clusters));
+                filters = _filters;
                 return *this;
             }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
@@ -177,16 +174,6 @@ namespace lms::db
             FindParameters& setDiscNumber(int _discNumber)
             {
                 discNumber = _discNumber;
-                return *this;
-            }
-            FindParameters& setMediaLibrary(MediaLibraryId _mediaLibrary)
-            {
-                mediaLibrary = _mediaLibrary;
-                return *this;
-            }
-            FindParameters& setLabel(LabelId _label)
-            {
-                label = _label;
                 return *this;
             }
             FindParameters& setDirectory(DirectoryId _directory)

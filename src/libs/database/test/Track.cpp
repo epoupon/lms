@@ -170,13 +170,13 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setMediaLibrary(library->getId())) };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setFilters(Filters{}.setMediaLibrary(library->getId()))) };
             ASSERT_EQ(tracks.results.size(), 1);
             EXPECT_EQ(tracks.results.front(), track.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };
-            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setMediaLibrary(otherLibrary->getId())) };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setFilters(Filters{}.setMediaLibrary(otherLibrary->getId()))) };
             EXPECT_EQ(tracks.results.size(), 0);
         }
     }

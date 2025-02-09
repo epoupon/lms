@@ -26,6 +26,11 @@
 
 #include "database/Types.hpp"
 
+namespace lms::db
+{
+    struct Filters;
+}
+
 namespace lms::ui
 {
     class Filters;
@@ -57,7 +62,7 @@ namespace lms::ui
     protected:
         Range getActualRange(std::optional<Range> range) const;
         std::size_t getMaxCount() const;
-        const Filters& getFilters() { return _filters; }
+        const db::Filters& getDbFilters() const;
         const std::vector<std::string_view>& getSearchKeywords() const { return _searchKeywords; }
 
     private:

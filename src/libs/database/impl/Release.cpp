@@ -60,8 +60,8 @@ namespace lms::db
                 || params.writtenAfter.isValid()
                 || params.dateRange
                 || params.artist.isValid()
-                || params.clusters.size() == 1
-                || params.mediaLibrary.isValid()
+                || params.filters.clusters.size() == 1
+                || params.filters.mediaLibrary.isValid()
                 || params.directory.isValid()
                 || params.parentDirectory.isValid())
             {
@@ -74,13 +74,13 @@ namespace lms::db
                 query.where("d.parent_directory_id = ?").bind(params.parentDirectory);
             }
 
-            if (params.mediaLibrary.isValid())
-                query.where("t.media_library_id = ?").bind(params.mediaLibrary);
+            if (params.filters.mediaLibrary.isValid())
+                query.where("t.media_library_id = ?").bind(params.filters.mediaLibrary);
 
-            if (params.label.isValid())
+            if (params.filters.label.isValid())
             {
                 query.join("release_label r_l ON r_l.release_id = r.id");
-                query.where("r_l.label_id = ?").bind(params.label);
+                query.where("r_l.label_id = ?").bind(params.filters.label);
             }
 
             if (params.directory.isValid())
@@ -174,27 +174,27 @@ namespace lms::db
                 }
             }
 
-            if (params.clusters.size() == 1)
+            if (params.filters.clusters.size() == 1)
             {
                 query.join("track_cluster t_c ON t_c.track_id = t.id")
                     .where("t_c.cluster_id = ?")
-                    .bind(params.clusters.front());
+                    .bind(params.filters.clusters.front());
             }
-            else if (params.clusters.size() > 1)
+            else if (params.filters.clusters.size() > 1)
             {
                 std::ostringstream oss;
                 oss << "r.id IN (SELECT DISTINCT t.release_id FROM track t"
                        " INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
 
                 WhereClause clusterClause;
-                for (const ClusterId clusterId : params.clusters)
+                for (const ClusterId clusterId : params.filters.clusters)
                 {
                     clusterClause.Or(WhereClause("t_c.cluster_id = ?"));
                     query.bind(clusterId);
                 }
 
                 oss << " " << clusterClause.get();
-                oss << " GROUP BY t.id HAVING COUNT(*) = " << params.clusters.size() << ")";
+                oss << " GROUP BY t.id HAVING COUNT(*) = " << params.filters.clusters.size() << ")";
 
                 query.where(oss.str());
             }

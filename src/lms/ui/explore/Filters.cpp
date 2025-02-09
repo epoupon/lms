@@ -182,7 +182,7 @@ namespace lms::ui
 
     void Filters::add(db::ClusterId clusterId)
     {
-        if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), clusterId) != std::cend(_clusterIds))
+        if (std::find(std::cbegin(_dbFilters.clusters), std::cend(_dbFilters.clusters), clusterId) != std::cend(_dbFilters.clusters))
             return;
 
         Wt::WInteractWidget* filter{};
@@ -195,11 +195,11 @@ namespace lms::ui
             filter = _filters->addWidget(std::move(cluster));
         }
 
-        _clusterIds.push_back(clusterId);
+        _dbFilters.clusters.push_back(clusterId);
 
         filter->clicked().connect([this, filter, clusterId] {
             _filters->removeWidget(filter);
-            _clusterIds.erase(std::remove_if(std::begin(_clusterIds), std::end(_clusterIds), [clusterId](db::ClusterId id) { return id == clusterId; }), std::end(_clusterIds));
+            _dbFilters.clusters.erase(std::remove_if(std::begin(_dbFilters.clusters), std::end(_dbFilters.clusters), [clusterId](db::ClusterId id) { return id == clusterId; }), std::end(_dbFilters.clusters));
             _sigUpdated.emit();
         });
 
@@ -212,7 +212,7 @@ namespace lms::ui
         {
             _filters->removeWidget(_mediaLibraryFilter);
             _mediaLibraryFilter = nullptr;
-            _mediaLibraryId = db::MediaLibraryId{};
+            _dbFilters.mediaLibrary = db::MediaLibraryId{};
         }
 
         std::string libraryName;
@@ -226,11 +226,11 @@ namespace lms::ui
             libraryName = library->getName();
         }
 
-        _mediaLibraryId = mediaLibraryId;
+        _dbFilters.mediaLibrary = mediaLibraryId;
         _mediaLibraryFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(libraryName), Wt::WString::tr("Lms.Explore.media-library"), "bg-primary", true));
         _mediaLibraryFilter->clicked().connect(_mediaLibraryFilter, [this] {
             _filters->removeWidget(_mediaLibraryFilter);
-            _mediaLibraryId = db::MediaLibraryId{};
+            _dbFilters.mediaLibrary = db::MediaLibraryId{};
             _mediaLibraryFilter = nullptr;
             _sigUpdated.emit();
             state::writeValue<db::MediaLibraryId::ValueType>("filters_media_library_id", std::nullopt);
@@ -245,7 +245,7 @@ namespace lms::ui
         {
             _filters->removeWidget(_labelFilter);
             _labelFilter = nullptr;
-            _labelId = db::LabelId{};
+            _dbFilters.label = db::LabelId{};
         }
 
         std::string name;
@@ -259,11 +259,11 @@ namespace lms::ui
             name = label->getName();
         }
 
-        _labelId = labelId;
+        _dbFilters.label = labelId;
         _labelFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(name), Wt::WString::tr("Lms.Explore.label"), "bg-secondary", true));
         _labelFilter->clicked().connect(_labelFilter, [this] {
             _filters->removeWidget(_labelFilter);
-            _labelId = db::LabelId{};
+            _dbFilters.label = db::LabelId{};
             _labelFilter = nullptr;
             _sigUpdated.emit();
             state::writeValue<db::LabelId::ValueType>("filters_label_id", std::nullopt);

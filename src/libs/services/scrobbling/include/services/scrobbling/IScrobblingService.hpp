@@ -28,9 +28,7 @@
 #include <boost/asio/io_service.hpp>
 
 #include "database/ArtistId.hpp"
-#include "database/ClusterId.hpp"
-#include "database/LabelId.hpp"
-#include "database/MediaLibraryId.hpp"
+#include "database/Filters.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 #include "database/Types.hpp"
@@ -62,21 +60,19 @@ namespace lms::scrobbling
         struct FindParameters
         {
             db::UserId user;
-            std::vector<db::ClusterId> clusters;    // if non empty, at least one artist that belongs to these clusters
+            db::Filters filters;
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords
             std::optional<db::Range> range;
-            db::MediaLibraryId library; // if set, match this library
-            db::LabelId label;          // if set, match this label
-            db::ArtistId artist;        // if set, match this artist
+            db::ArtistId artist; // if set, match this artist
 
             FindParameters& setUser(const db::UserId _user)
             {
                 user = _user;
                 return *this;
             }
-            FindParameters& setClusters(std::span<const db::ClusterId> _clusters)
+            FindParameters& setFilters(const db::Filters& _filters)
             {
-                clusters.assign(std::cbegin(_clusters), std::cend(_clusters));
+                filters = _filters;
                 return *this;
             }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
@@ -87,16 +83,6 @@ namespace lms::scrobbling
             FindParameters& setRange(std::optional<db::Range> _range)
             {
                 range = _range;
-                return *this;
-            }
-            FindParameters& setMediaLibrary(db::MediaLibraryId _library)
-            {
-                library = _library;
-                return *this;
-            }
-            FindParameters& setLabel(db::LabelId _label)
-            {
-                label = _label;
                 return *this;
             }
             FindParameters& setArtist(db::ArtistId _artist)

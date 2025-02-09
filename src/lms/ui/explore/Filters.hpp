@@ -26,9 +26,7 @@
 #include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
 
-#include "database/ClusterId.hpp"
-#include "database/LabelId.hpp"
-#include "database/MediaLibraryId.hpp"
+#include "database/Filters.hpp"
 
 namespace lms::ui
 {
@@ -37,9 +35,7 @@ namespace lms::ui
     public:
         Filters();
 
-        std::span<const db::ClusterId> getClusters() const { return _clusterIds; }
-        db::MediaLibraryId getMediaLibrary() const { return _mediaLibraryId; }
-        db::LabelId getLabel() const { return _labelId; }
+        const db::Filters& getDbFilters() const { return _dbFilters; }
 
         void add(db::ClusterId clusterId);
 
@@ -52,13 +48,11 @@ namespace lms::ui
         void emitFilterAddedNotification();
 
         Wt::WContainerWidget* _filters{};
-        Wt::Signal<> _sigUpdated;
-        std::vector<db::ClusterId> _clusterIds;
-
         Wt::WInteractWidget* _mediaLibraryFilter{};
-        db::MediaLibraryId _mediaLibraryId;
-
         Wt::WInteractWidget* _labelFilter{};
-        db::LabelId _labelId;
+
+        Wt::Signal<> _sigUpdated;
+
+        db::Filters _dbFilters;
     };
 } // namespace lms::ui

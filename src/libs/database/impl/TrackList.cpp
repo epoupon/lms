@@ -42,7 +42,9 @@ namespace lms::db
 
             auto query{ session.getDboSession()->query<ResultType>("SELECT " + std::string{ itemToSelect } + " FROM tracklist t_l") };
 
-            if (!params.clusters.empty() || params.mediaLibrary.isValid())
+            if (!params.filters.clusters.empty()
+                || params.filters.mediaLibrary.isValid()
+                || params.filters.label.isValid())
             {
                 query.join("tracklist_entry t_l_e ON t_l_e.tracklist_id = t_l.id");
                 query.groupBy("t_l.id");
@@ -51,11 +53,20 @@ namespace lms::db
             for (std::string_view keyword : params.keywords)
                 query.where("t_l.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
 
-            if (params.mediaLibrary.isValid())
+            if (params.filters.mediaLibrary.isValid()
+                || params.filters.label.isValid())
+            {
                 query.join("track t ON t.id = t_l_e.track_id");
 
-            if (params.mediaLibrary.isValid())
-                query.where("t.media_library_id = ?").bind(params.mediaLibrary);
+                if (params.filters.mediaLibrary.isValid())
+                    query.where("t.media_library_id = ?").bind(params.filters.mediaLibrary);
+
+                if (params.filters.label.isValid())
+                {
+                    query.join("release_label r_l ON r_l.release_id = t.release_id");
+                    query.where("r_l.label_id = ?").bind(params.filters.label);
+                }
+            }
 
             if (params.user.isValid())
                 query.where("t_l.user_id = ?").bind(params.user);
@@ -68,7 +79,7 @@ namespace lms::db
             if (params.visibility)
                 query.where("t_l.visibility = ?").bind(*params.visibility);
 
-            if (!params.clusters.empty())
+            if (!params.filters.clusters.empty())
             {
                 std::ostringstream oss;
                 oss << "t_l_e.track_id IN (SELECT DISTINCT t.id FROM track t"
@@ -76,14 +87,14 @@ namespace lms::db
                        " INNER JOIN cluster c ON c.id = t_c.cluster_id";
 
                 WhereClause clusterClause;
-                for (const ClusterId clusterId : params.clusters)
+                for (const ClusterId clusterId : params.filters.clusters)
                 {
                     clusterClause.Or(WhereClause("c.id = ?"));
                     query.bind(clusterId);
                 }
 
                 oss << " " << clusterClause.get();
-                oss << " GROUP BY t.id HAVING COUNT(*) = " << params.clusters.size() << ")";
+                oss << " GROUP BY t.id HAVING COUNT(*) = " << params.filters.clusters.size() << ")";
 
                 query.where(oss.str());
             }

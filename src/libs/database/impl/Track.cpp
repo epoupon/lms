@@ -79,28 +79,28 @@ namespace lms::db
                     .bind(SyncState::PendingRemove);
             }
 
-            if (params.clusters.size() == 1)
+            if (params.filters.clusters.size() == 1)
             {
                 // optim
                 query.join("track_cluster t_c ON t_c.track_id = t.id")
                     .where("t_c.cluster_id = ?")
-                    .bind(params.clusters.front());
+                    .bind(params.filters.clusters.front());
             }
-            else if (params.clusters.size() > 1)
+            else if (params.filters.clusters.size() > 1)
             {
                 std::ostringstream oss;
                 oss << "t.id IN (SELECT DISTINCT t.id FROM track t"
                        " INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
 
                 WhereClause clusterClause;
-                for (const ClusterId clusterId : params.clusters)
+                for (const ClusterId clusterId : params.filters.clusters)
                 {
                     clusterClause.Or(WhereClause("t_c.cluster_id = ?"));
                     query.bind(clusterId);
                 }
 
                 oss << " " << clusterClause.get();
-                oss << " GROUP BY t.id HAVING COUNT(*) = " << params.clusters.size() << ")";
+                oss << " GROUP BY t.id HAVING COUNT(*) = " << params.filters.clusters.size() << ")";
 
                 query.where(oss.str());
             }
@@ -159,13 +159,13 @@ namespace lms::db
             if (params.discNumber)
                 query.where("t.disc_number = ?").bind(*params.discNumber);
 
-            if (params.mediaLibrary.isValid())
-                query.where("t.media_library_id = ?").bind(params.mediaLibrary);
+            if (params.filters.mediaLibrary.isValid())
+                query.where("t.media_library_id = ?").bind(params.filters.mediaLibrary);
 
-            if (params.label.isValid())
+            if (params.filters.label.isValid())
             {
                 query.join("release_label r_l ON r_l.release_id = t.release_id");
-                query.where("r_l.label_id = ?").bind(params.label);
+                query.where("r_l.label_id = ?").bind(params.filters.label);
             }
 
             if (params.directory.isValid())

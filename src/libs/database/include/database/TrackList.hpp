@@ -20,7 +20,6 @@
 #pragma once
 
 #include <optional>
-#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -28,8 +27,7 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
-#include "database/ClusterId.hpp"
-#include "database/MediaLibraryId.hpp"
+#include "database/Filters.hpp"
 #include "database/Object.hpp"
 #include "database/TrackId.hpp"
 #include "database/TrackListId.hpp"
@@ -62,19 +60,18 @@ namespace lms::db
         // Search utility
         struct FindParameters
         {
-            std::vector<ClusterId> clusters;        // if non empty, tracklists that have tracks that belong to these clusters
+            Filters filters;
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords (on either name field OR sort name field)
             std::optional<Range> range;
             std::optional<TrackListType> type;
-            UserId user;                 // only tracklists owned by this user
-            UserId excludedUser;         // only tracklists *not* owned by this user
-            MediaLibraryId mediaLibrary; // only tracklists that have songs in this media library
+            UserId user;         // only tracklists owned by this user
+            UserId excludedUser; // only tracklists *not* owned by this user
             TrackListSortMethod sortMethod{ TrackListSortMethod::None };
             std::optional<Visibility> visibility;
 
-            FindParameters& setClusters(std::span<const ClusterId> _clusters)
+            FindParameters& setFilters(const Filters& _filters)
             {
-                clusters.assign(std::cbegin(_clusters), std::cend(_clusters));
+                filters = _filters;
                 return *this;
             }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
@@ -103,11 +100,6 @@ namespace lms::db
                 return *this;
             }
 
-            FindParameters& setMediaLibrary(MediaLibraryId _mediaLibrary)
-            {
-                mediaLibrary = _mediaLibrary;
-                return *this;
-            }
             FindParameters& setSortMethod(TrackListSortMethod _sortMethod)
             {
                 sortMethod = _sortMethod;

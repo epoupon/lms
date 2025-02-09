@@ -193,9 +193,7 @@ namespace lms::ui
         _releaseContainers.clear();
 
         Release::FindParameters params;
-        params.setClusters(_filters.getClusters());
-        params.setMediaLibrary(_filters.getMediaLibrary());
-        params.setLabel(_filters.getLabel());
+        params.setFilters(_filters.getDbFilters());
         params.setArtist(_artistId, { TrackArtistLinkType::ReleaseArtist }, {});
         params.setSortMethod(LmsApp->getUser()->getUIArtistReleaseSortMethod());
 
@@ -252,9 +250,7 @@ namespace lms::ui
         _appearsOnReleaseContainer = {};
 
         Release::FindParameters params;
-        params.setClusters(_filters.getClusters());
-        params.setMediaLibrary(_filters.getMediaLibrary());
-        params.setLabel(_filters.getLabel());
+        params.setFilters(_filters.getDbFilters());
         params.setArtist(_artistId, types, { TrackArtistLinkType::ReleaseArtist });
         params.setSortMethod(ReleaseSortMethod::OriginalDateDesc);
 
@@ -338,9 +334,7 @@ namespace lms::ui
         const Range range{ static_cast<std::size_t>(_trackContainer->getCount()), _tracksBatchSize };
 
         Track::FindParameters params;
-        params.setClusters(_filters.getClusters());
-        params.setMediaLibrary(_filters.getMediaLibrary());
-        params.setLabel(_filters.getLabel());
+        params.setFilters(_filters.getDbFilters());
         params.setArtist(_artistId);
         params.setRange(range);
         params.setSortMethod(TrackSortMethod::Name);

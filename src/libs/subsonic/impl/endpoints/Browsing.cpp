@@ -398,7 +398,7 @@ namespace lms::api::subsonic
                 break;
             }
         }
-        parameters.setMediaLibrary(mediaLibrary);
+        parameters.filters.setMediaLibrary(mediaLibrary);
 
         // This endpoint does not scale: make sort lived transactions in order not to block the whole application
 

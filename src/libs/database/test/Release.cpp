@@ -246,13 +246,13 @@ namespace lms::db::tests
         }
         {
             auto transaction{ session.createReadTransaction() };
-            auto releases{ Release::findIds(session, Release::FindParameters{}.setMediaLibrary(library->getId())) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setFilters(Filters{}.setMediaLibrary(library->getId()))) };
             ASSERT_EQ(releases.results.size(), 1);
             EXPECT_EQ(releases.results.front(), release.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };
-            auto releases{ Release::findIds(session, Release::FindParameters{}.setMediaLibrary(otherLibrary->getId())) };
+            auto releases{ Release::findIds(session, Release::FindParameters{}.setFilters(Filters{}.setMediaLibrary(otherLibrary->getId()))) };
             EXPECT_EQ(releases.results.size(), 0);
         }
     }

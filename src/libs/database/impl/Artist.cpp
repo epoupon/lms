@@ -49,9 +49,9 @@ namespace lms::db
                 || params.linkType
                 || params.track.isValid()
                 || params.release.isValid()
-                || params.clusters.size() == 1
-                || params.mediaLibrary.isValid()
-                || params.label.isValid())
+                || params.filters.clusters.size() == 1
+                || params.filters.mediaLibrary.isValid()
+                || params.filters.label.isValid())
             {
                 query.join("track_artist_link t_a_l ON t_a_l.artist_id = a.id");
             }
@@ -60,8 +60,8 @@ namespace lms::db
                 || params.sortMethod == ArtistSortMethod::AddedDesc
                 || params.writtenAfter.isValid()
                 || params.release.isValid()
-                || params.mediaLibrary.isValid()
-                || params.label.isValid())
+                || params.filters.mediaLibrary.isValid()
+                || params.filters.label.isValid())
             {
                 query.join("track t ON t.id = t_a_l.track_id");
 
@@ -71,13 +71,13 @@ namespace lms::db
                 if (params.release.isValid())
                     query.where("t.release_id = ?").bind(params.release);
 
-                if (params.mediaLibrary.isValid())
-                    query.where("t.media_library_id = ?").bind(params.mediaLibrary);
+                if (params.filters.mediaLibrary.isValid())
+                    query.where("t.media_library_id = ?").bind(params.filters.mediaLibrary);
 
-                if (params.label.isValid())
+                if (params.filters.label.isValid())
                 {
                     query.join("release_label r_l ON r_l.release_id = t.release_id");
-                    query.where("r_l.label_id = ?").bind(params.label);
+                    query.where("r_l.label_id = ?").bind(params.filters.label);
                 }
             }
 
@@ -116,27 +116,27 @@ namespace lms::db
                     .bind(SyncState::PendingRemove);
             }
 
-            if (params.clusters.size() == 1)
+            if (params.filters.clusters.size() == 1)
             {
                 query.join("track_cluster t_c ON t_c.track_id = t_a_l.track_id")
                     .where("t_c.cluster_id = ?")
-                    .bind(params.clusters.front());
+                    .bind(params.filters.clusters.front());
             }
-            else if (params.clusters.size() > 1)
+            else if (params.filters.clusters.size() > 1)
             {
                 std::ostringstream oss;
                 oss << "a.id IN (SELECT DISTINCT t_a_l.artist_id FROM track_artist_link t_a_l"
                        " INNER JOIN track_cluster t_c ON t_c.track_id = t_a_l.track_id";
 
                 WhereClause clusterClause;
-                for (const ClusterId clusterId : params.clusters)
+                for (const ClusterId clusterId : params.filters.clusters)
                 {
                     clusterClause.Or(WhereClause("t_c.cluster_id = ?"));
                     query.bind(clusterId);
                 }
 
                 oss << " " << clusterClause.get();
-                oss << " GROUP BY t_a_l.track_id,t_a_l.artist_id HAVING COUNT(DISTINCT t_c.cluster_id) = " << params.clusters.size() << ")";
+                oss << " GROUP BY t_a_l.track_id,t_a_l.artist_id HAVING COUNT(DISTINCT t_c.cluster_id) = " << params.filters.clusters.size() << ")";
 
                 query.where(oss.str());
             }

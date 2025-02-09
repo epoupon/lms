@@ -397,9 +397,7 @@ namespace lms::ui
         db::Track::FindParameters params;
         params.setRelease(_releaseId);
         params.setSortMethod(db::TrackSortMethod::Release);
-        params.setClusters(_filters.getClusters());
-        params.setMediaLibrary(_filters.getMediaLibrary());
-        params.setLabel(_filters.getLabel()); // TODO: do we really want to hide all tracks when a release does not match the current label filter?
+        params.setFilters(_filters.getDbFilters()); // TODO: do we really want to hide all tracks when a release does not match the current label filter?
 
         db::Track::find(LmsApp->getDbSession(), params, [&](const db::Track::pointer& track) {
             const db::TrackId trackId{ track->getId() };

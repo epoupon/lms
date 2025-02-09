@@ -25,10 +25,8 @@
 #include <Wt/WDateTime.h>
 
 #include "database/ArtistId.hpp"
-#include "database/ClusterId.hpp"
-#include "database/LabelId.hpp"
+#include "database/Filters.hpp"
 #include "database/ListenId.hpp"
-#include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
@@ -86,12 +84,10 @@ namespace lms::db
         {
             UserId user;
             std::optional<ScrobblingBackend> backend;
-            std::vector<ClusterId> clusters;        // if non empty, entities that belong to these clusters
+            db::Filters filters;
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords
             std::optional<Range> range;
             ArtistId artist; // if set, matching this artist
-            MediaLibraryId library;
-            LabelId label;
 
             StatsFindParameters& setUser(UserId _user)
             {
@@ -103,9 +99,9 @@ namespace lms::db
                 backend = _backend;
                 return *this;
             }
-            StatsFindParameters& setClusters(const std::vector<ClusterId>& _clusters)
+            StatsFindParameters& setFilters(const db::Filters& _filters)
             {
-                clusters = _clusters;
+                filters = _filters;
                 return *this;
             }
             StatsFindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
@@ -121,16 +117,6 @@ namespace lms::db
             StatsFindParameters& setArtist(ArtistId _artist)
             {
                 artist = _artist;
-                return *this;
-            }
-            StatsFindParameters& setMediaLibrary(MediaLibraryId _library)
-            {
-                library = _library;
-                return *this;
-            }
-            StatsFindParameters& setLabel(LabelId _label)
-            {
-                label = _label;
                 return *this;
             }
         };
