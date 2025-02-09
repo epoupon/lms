@@ -168,6 +168,12 @@ namespace lms::db
                 query.where("r_l.label_id = ?").bind(params.filters.label);
             }
 
+            if (params.filters.releaseType.isValid())
+            {
+                query.join("release_release_type r_r_t ON r_r_t.release_id = t.release_id");
+                query.where("r_r_t.release_type_id = ?").bind(params.filters.releaseType);
+            }
+
             if (params.directory.isValid())
                 query.where("t.directory_id = ?").bind(params.directory);
 

@@ -158,6 +158,12 @@ namespace lms::db
         StarredDateDesc,
     };
 
+    enum class ReleaseTypeSortMethod
+    {
+        None,
+        Name,
+    };
+
     enum class TrackListSortMethod
     {
         None,

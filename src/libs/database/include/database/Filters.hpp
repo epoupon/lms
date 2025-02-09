@@ -24,6 +24,7 @@
 #include "database/ClusterId.hpp"
 #include "database/LabelId.hpp"
 #include "database/MediaLibraryId.hpp"
+#include "database/ReleaseTypeId.hpp"
 
 namespace lms::db
 {
@@ -32,6 +33,7 @@ namespace lms::db
         MediaLibraryId mediaLibrary;     // tracks that belongs to this library
         std::vector<ClusterId> clusters; // tracks that belong to all these clusters
         LabelId label;                   // tracks which release has this label
+        ReleaseTypeId releaseType;       // tracks which release has this type
 
         Filters& setClusters(std::span<const ClusterId> _clusters)
         {
@@ -46,6 +48,11 @@ namespace lms::db
         Filters& setLabel(LabelId _label)
         {
             label = _label;
+            return *this;
+        }
+        Filters& setReleaseType(ReleaseTypeId _releaseType)
+        {
+            releaseType = _releaseType;
             return *this;
         }
     };

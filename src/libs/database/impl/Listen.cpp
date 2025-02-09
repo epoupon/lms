@@ -42,18 +42,26 @@ namespace lms::db
 
             assert(!params.artist.isValid()); // poor check
 
-            if (params.filters.mediaLibrary.isValid() || params.filters.label.isValid())
+            if (params.filters.mediaLibrary.isValid()
+                || params.filters.label.isValid()
+                || params.filters.releaseType.isValid())
             {
                 query.join("track t ON t.id = t_a_l.track_id");
-            }
 
-            if (params.filters.mediaLibrary.isValid())
-                query.where("t.media_library_id = ?").bind(params.filters.mediaLibrary);
+                if (params.filters.mediaLibrary.isValid())
+                    query.where("t.media_library_id = ?").bind(params.filters.mediaLibrary);
 
-            if (params.filters.label.isValid())
-            {
-                query.join("release_label r_l ON t.release_id = r_l.release_id");
-                query.where("r_l.label_id = ?").bind(params.filters.label);
+                if (params.filters.label.isValid())
+                {
+                    query.join("release_label r_l ON r_l.release_id = t.release_id");
+                    query.where("r_l.label_id = ?").bind(params.filters.label);
+                }
+
+                if (params.filters.releaseType.isValid())
+                {
+                    query.join("release_release_type r_r_t ON r_r_t.release_id = t.release_id");
+                    query.where("r_r_t.release_type_id = ?").bind(params.filters.releaseType);
+                }
             }
 
             if (params.linkType)
@@ -127,6 +135,12 @@ namespace lms::db
                 query.where("r_l.label_id = ?").bind(params.filters.label);
             }
 
+            if (params.filters.releaseType.isValid())
+            {
+                query.join("release_release_type r_r_t ON r_r_t.release_id = r.id");
+                query.where("r_r_t.release_type_id = ?").bind(params.filters.releaseType);
+            }
+
             if (!params.filters.clusters.empty())
             {
                 std::ostringstream oss;
@@ -178,6 +192,12 @@ namespace lms::db
             {
                 query.join("release_label r_l ON r_l.release_id = t.release_id");
                 query.where("r_l.label_id = ?").bind(params.filters.label);
+            }
+
+            if (params.filters.releaseType.isValid())
+            {
+                query.join("release_release_type r_r_t ON r_r_t.release_id = t.release_id");
+                query.where("r_r_t.release_type_id = ?").bind(params.filters.releaseType);
             }
 
             if (!params.filters.clusters.empty())

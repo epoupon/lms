@@ -124,6 +124,7 @@ namespace lms::db
         static std::size_t getCount(Session& session);
         static pointer find(Session& session, ReleaseTypeId id);
         static pointer find(Session& session, std::string_view name);
+        static void find(Session& session, ReleaseTypeSortMethod sortMethod, std::function<void(const ReleaseType::pointer& releaseType)> func);
         static RangeResults<ReleaseTypeId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
 
         // Accessors

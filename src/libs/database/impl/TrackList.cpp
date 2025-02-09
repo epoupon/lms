@@ -54,7 +54,8 @@ namespace lms::db
                 query.where("t_l.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
 
             if (params.filters.mediaLibrary.isValid()
-                || params.filters.label.isValid())
+                || params.filters.label.isValid()
+                || params.filters.releaseType.isValid())
             {
                 query.join("track t ON t.id = t_l_e.track_id");
 
@@ -65,6 +66,12 @@ namespace lms::db
                 {
                     query.join("release_label r_l ON r_l.release_id = t.release_id");
                     query.where("r_l.label_id = ?").bind(params.filters.label);
+                }
+
+                if (params.filters.releaseType.isValid())
+                {
+                    query.join("release_release_type r_r_t ON r_r_t.release_id = t.release_id");
+                    query.where("r_r_t.release_type_id = ?").bind(params.filters.releaseType);
                 }
             }
 

@@ -51,7 +51,8 @@ namespace lms::db
                 || params.release.isValid()
                 || params.filters.clusters.size() == 1
                 || params.filters.mediaLibrary.isValid()
-                || params.filters.label.isValid())
+                || params.filters.label.isValid()
+                || params.filters.releaseType.isValid())
             {
                 query.join("track_artist_link t_a_l ON t_a_l.artist_id = a.id");
             }
@@ -61,7 +62,8 @@ namespace lms::db
                 || params.writtenAfter.isValid()
                 || params.release.isValid()
                 || params.filters.mediaLibrary.isValid()
-                || params.filters.label.isValid())
+                || params.filters.label.isValid()
+                || params.filters.releaseType.isValid())
             {
                 query.join("track t ON t.id = t_a_l.track_id");
 
@@ -78,6 +80,12 @@ namespace lms::db
                 {
                     query.join("release_label r_l ON r_l.release_id = t.release_id");
                     query.where("r_l.label_id = ?").bind(params.filters.label);
+                }
+
+                if (params.filters.releaseType.isValid())
+                {
+                    query.join("release_release_type r_r_t ON r_r_t.release_id = t.release_id");
+                    query.where("r_r_t.release_type_id = ?").bind(params.filters.releaseType);
                 }
             }
 

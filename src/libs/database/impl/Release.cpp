@@ -83,6 +83,12 @@ namespace lms::db
                 query.where("r_l.label_id = ?").bind(params.filters.label);
             }
 
+            if (params.filters.releaseType.isValid())
+            {
+                query.join("release_release_type r_r_t ON r_r_t.release_id = r.id");
+                query.where("r_r_t.release_type_id = ?").bind(params.filters.releaseType);
+            }
+
             if (params.directory.isValid())
                 query.where("t.directory_id = ?").bind(params.directory);
 
@@ -399,6 +405,24 @@ namespace lms::db
             throw Exception{ "Requeted ReleaseType name is too long: " + std::string{ name } + "'" };
 
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ReleaseType>>("SELECT r_t from release_type r_t").where("r_t.name = ?").bind(name));
+    }
+
+    void ReleaseType::find(Session& session, ReleaseTypeSortMethod sortMethod, std::function<void(const ReleaseType::pointer& releaseType)> func)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession()->find<ReleaseType>() };
+        switch (sortMethod)
+        {
+        case ReleaseTypeSortMethod::None:
+            break;
+        case ReleaseTypeSortMethod::Name:
+            query.orderBy("name COLLATE NOCASE");
+        }
+
+        utils::forEachQueryResult(query, [&](const ReleaseType::pointer& releaseType) {
+            func(releaseType);
+        });
     }
 
     RangeResults<ReleaseTypeId> ReleaseType::findOrphanIds(Session& session, std::optional<Range> range)

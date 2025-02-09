@@ -19,9 +19,6 @@
 
 #pragma once
 
-#include <span>
-#include <vector>
-
 #include <Wt/WContainerWidget.h>
 #include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
@@ -45,11 +42,13 @@ namespace lms::ui
         void showDialog();
         void set(db::LabelId labelId);
         void set(db::MediaLibraryId mediaLibraryId);
+        void set(db::ReleaseTypeId releaseTypeId);
         void emitFilterAddedNotification();
 
         Wt::WContainerWidget* _filters{};
         Wt::WInteractWidget* _mediaLibraryFilter{};
         Wt::WInteractWidget* _labelFilter{};
+        Wt::WInteractWidget* _releaseTypeFilter{};
 
         Wt::Signal<> _sigUpdated;
 
