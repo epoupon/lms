@@ -21,10 +21,9 @@
 
 #include <memory>
 #include <optional>
-#include <span>
 
 #include <Wt/WDateTime.h>
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
 
 #include "database/ArtistId.hpp"
 #include "database/Filters.hpp"
@@ -126,6 +125,6 @@ namespace lms::feedback
         virtual std::optional<db::Rating> getRating(db::UserId userId, db::TrackId trackId) = 0;
     };
 
-    std::unique_ptr<IFeedbackService> createFeedbackService(boost::asio::io_service& ioContext, db::Db& db);
+    std::unique_ptr<IFeedbackService> createFeedbackService(boost::asio::io_context& ioContext, db::Db& db);
 
 } // namespace lms::feedback

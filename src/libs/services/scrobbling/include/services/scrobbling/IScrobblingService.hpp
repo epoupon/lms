@@ -22,10 +22,9 @@
 #include <chrono>
 #include <memory>
 #include <optional>
-#include <span>
 
 #include <Wt/WDateTime.h>
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
 
 #include "database/ArtistId.hpp"
 #include "database/Filters.hpp"
