@@ -246,7 +246,7 @@ namespace lms::scanner
         if (dateTime.isNull())
         {
             LMS_LOG(DBUPDATER, INFO, "Scheduling next scan right now");
-            _scheduleTimer.expires_from_now(std::chrono::seconds{ 0 });
+            _scheduleTimer.expires_after(std::chrono::seconds{ 0 });
             _scheduleTimer.async_wait(cb);
         }
         else
