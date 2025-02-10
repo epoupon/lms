@@ -448,7 +448,7 @@ namespace lms::api::subsonic
         if (!apiKey && !password)
             throw RequiredParameterMissingError{ "apiKey" };
 
-        const auto clientAddress{ boost::asio::ip::address::from_string(request.clientAddress()) };
+        const auto clientAddress{ boost::asio::ip::make_address(request.clientAddress()) };
         const std::string authToken{ apiKey ? *apiKey : decodePasswordIfNeeded(*password) };
 
         const auto authResult{ core::Service<auth::IAuthTokenService>::get()->processAuthToken("subsonic", clientAddress, authToken) };

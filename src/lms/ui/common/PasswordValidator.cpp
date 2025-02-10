@@ -100,7 +100,7 @@ namespace lms::ui
             return Wt::WValidator::validate(input);
 
         const auto checkResult{ _passwordService.checkUserPassword(
-            boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
+            boost::asio::ip::make_address(LmsApp->environment().clientAddress()),
             LmsApp->getUserLoginName(),
             input.toUTF8()) };
         switch (checkResult.state)
