@@ -28,7 +28,7 @@ namespace lms::core
 {
     IOContextRunner::IOContextRunner(boost::asio::io_context& ioContext, std::size_t threadCount, std::string_view name)
         : _ioContext{ ioContext }
-        , _work{ ioContext }
+        , _work{ boost::asio::make_work_guard(ioContext) }
     {
         LMS_LOG(UTILS, INFO, "Starting IO context with " << threadCount << " threads...");
 

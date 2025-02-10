@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include <optional>
 #include <thread>
 
+#include <boost/asio/executor_work_guard.hpp>
 #include <boost/asio/io_context.hpp>
 
 namespace lms::core
@@ -39,7 +39,7 @@ namespace lms::core
 
     private:
         boost::asio::io_context& _ioContext;
-        std::optional<boost::asio::io_context::work> _work;
+        boost::asio::executor_work_guard<boost::asio::io_context::executor_type> _work;
         std::vector<std::thread> _threads;
     };
 } // namespace lms::core
