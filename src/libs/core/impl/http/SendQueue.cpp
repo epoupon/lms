@@ -21,6 +21,7 @@
 
 #include <boost/asio/bind_executor.hpp>
 #include <boost/asio/dispatch.hpp>
+#include <boost/asio/post.hpp>
 
 #include "core/Exception.hpp"
 #include "core/ILogger.hpp"
@@ -64,9 +65,9 @@ namespace lms::core::http
         , _baseUrl{ baseUrl }
     {
         _client.done().connect([this](Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg) {
-            _strand.dispatch([this, ec, msg = std::move(msg)] {
+            boost::asio::post(boost::asio::bind_executor(_strand, [this, ec, msg = std::move(msg)] {
                 onClientDone(ec, msg);
-            });
+            }));
         });
     }
 

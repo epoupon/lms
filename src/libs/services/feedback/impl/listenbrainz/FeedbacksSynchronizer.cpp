@@ -24,6 +24,7 @@
 #include <Wt/Json/Serializer.h>
 #include <Wt/Json/Value.h>
 #include <boost/asio/bind_executor.hpp>
+#include <boost/asio/post.hpp>
 
 #include "core/IConfig.hpp"
 #include "core/Service.hpp"
@@ -132,9 +133,9 @@ namespace lms::feedback::listenBrainz
             request.message.addHeader("Content-Type", "application/json");
 
             request.onSuccessFunc = [this, type, starredTrackId](std::string_view /*msgBody*/) {
-                _strand.dispatch([this, type, starredTrackId] {
+                boost::asio::post(boost::asio::bind_executor(_strand, [this, type, starredTrackId] {
                     onFeedbackSent(type, starredTrackId);
-                });
+                }));
             };
             _client.sendPOSTRequest(std::move(request));
         }
@@ -295,13 +296,13 @@ namespace lms::feedback::listenBrainz
 
     void FeedbacksSynchronizer::onSyncEnded(UserContext& context)
     {
-        _strand.dispatch([this, &context] {
+        boost::asio::post(boost::asio::bind_executor(_strand, [this, &context] {
             LOG(INFO, "Feedback sync done for user '" << context.listenBrainzUserName << "', fetched: " << context.fetchedFeedbackCount << ", matched: " << context.matchedFeedbackCount << ", imported: " << context.importedFeedbackCount);
             context.syncing = false;
 
             if (!isSyncing())
                 scheduleSync(_syncFeedbacksPeriod);
-        });
+        }));
     }
 
     void FeedbacksSynchronizer::enqueValidateToken(UserContext& context)
@@ -344,7 +345,7 @@ namespace lms::feedback::listenBrainz
         request.priority = core::http::ClientRequestParameters::Priority::Low;
         request.onSuccessFunc = [this, &context](std::string_view msgBody) {
             std::string msgBodyCopy{ msgBody };
-            _strand.dispatch([this, msgBodyCopy, &context] {
+            boost::asio::post(boost::asio::bind_executor(_strand, [this, msgBodyCopy, &context] {
                 LOG(DEBUG, "Current feedback count = " << (context.feedbackCount ? *context.feedbackCount : 0) << " for user '" << context.listenBrainzUserName << "'");
 
                 const auto totalFeedbackCount = parseTotalFeedbackCount(msgBodyCopy);
@@ -358,7 +359,7 @@ namespace lms::feedback::listenBrainz
                     enqueGetFeedbacks(context);
                 else
                     onSyncEnded(context);
-            });
+            }));
         };
         request.onFailureFunc = [this, &context] {
             onSyncEnded(context);
@@ -376,7 +377,7 @@ namespace lms::feedback::listenBrainz
         request.priority = core::http::ClientRequestParameters::Priority::Low;
         request.onSuccessFunc = [this, &context](std::string_view msgBody) {
             std::string msgBodyCopy{ msgBody };
-            _strand.dispatch([this, msgBodyCopy, &context] {
+            boost::asio::post(boost::asio::bind_executor(_strand, [this, msgBodyCopy, &context] {
                 const std::size_t fetchedFeedbackCount{ processGetFeedbacks(msgBodyCopy, context) };
                 if (fetchedFeedbackCount == 0                                // no more thing available on server
                     || context.fetchedFeedbackCount >= context.feedbackCount // we may miss something, but we will get it next time
@@ -388,7 +389,7 @@ namespace lms::feedback::listenBrainz
                 {
                     enqueGetFeedbacks(context);
                 }
-            });
+            }));
         };
         request.onFailureFunc = [this, &context] {
             onSyncEnded(context);
