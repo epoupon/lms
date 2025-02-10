@@ -207,7 +207,7 @@ namespace lms::db
                 query.orderBy("t.file_name COLLATE NOCASE");
                 break;
             case TrackSortMethod::DateDescAndRelease:
-                query.orderBy("COALESCE(t.date, CAST(t.year AS TEXT)) DESC,t.release_id,t.disc_number,t.track_number");
+                query.orderBy("t.date DESC,t.release_id,t.disc_number,t.track_number");
                 break;
             case TrackSortMethod::Release:
                 query.orderBy("t.disc_number,t.track_number");
