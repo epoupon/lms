@@ -87,6 +87,30 @@ body {
 	min-width: 64px;
 }
 
+.Lms-cover-full-modal-dialog {
+    width: auto;
+    max-width: none;
+    max-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Lms-cover-full {
+    max-width: 100%;
+    max-height: 95vh;
+    width: auto;
+    height: auto;
+    display: block;
+    margin: auto;
+    cursor: pointer;
+    object-fit: contain;
+}
+
+.Lms-cursor-pointer {
+    cursor: pointer;
+}
+
 #lms-mp-progress {
 	transition: none;
 }

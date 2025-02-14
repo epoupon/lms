@@ -52,7 +52,7 @@ namespace lms::ui
         beingDeleted();
     }
 
-    std::string ArtworkResource::getArtistImageUrl(db::ArtistId artistId, Size size) const
+    std::string ArtworkResource::getArtistImageUrl(db::ArtistId artistId, std::optional<Size> size) const
     {
         std::string url;
 
@@ -73,7 +73,7 @@ namespace lms::ui
         return url;
     }
 
-    std::string ArtworkResource::getReleaseCoverUrl(db::ReleaseId releaseId, Size size) const
+    std::string ArtworkResource::getReleaseCoverUrl(db::ReleaseId releaseId, std::optional<Size> size) const
     {
         std::string url;
 
@@ -107,7 +107,7 @@ namespace lms::ui
         return url;
     }
 
-    std::string ArtworkResource::getTrackImageUrl(db::TrackId trackId, Size size) const
+    std::string ArtworkResource::getTrackImageUrl(db::TrackId trackId, std::optional<Size> size) const
     {
         std::string url;
 
@@ -135,14 +135,21 @@ namespace lms::ui
         return url;
     }
 
-    std::string ArtworkResource::getImageUrl(db::ImageId imageId, Size size, std::string_view type) const
+    std::string ArtworkResource::getImageUrl(db::ImageId imageId, std::optional<Size> size, std::string_view type) const
     {
-        return url() + "&imageid=" + imageId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size)) + "&type=" + std::string{ type };
+        std::string res{ url() + "&imageid=" + imageId.toString() + "&type=" + std::string{ type } };
+        if (size)
+            res += "&size=" + std::to_string(static_cast<std::size_t>(*size));
+
+        return res;
     }
 
-    std::string ArtworkResource::getImageUrl(db::TrackId trackId, Size size, std::string_view type) const
+    std::string ArtworkResource::getImageUrl(db::TrackId trackId, std::optional<Size> size, std::string_view type) const
     {
-        return url() + "&trackid=" + trackId.toString() + "&size=" + std::to_string(static_cast<std::size_t>(size)) + "&type=" + std::string{ type };
+        std::string res{ url() + "&trackid=" + trackId.toString() + "&type=" + std::string{ type } };
+        if (size)
+            res += "&size=" + std::to_string(static_cast<std::size_t>(*size));
+        return res;
     }
 
     std::string ArtworkResource::getDefaultArtistImageUrl() const

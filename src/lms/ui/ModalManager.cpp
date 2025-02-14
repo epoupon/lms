@@ -44,22 +44,24 @@ namespace lms::ui
     void ModalManager::show(std::unique_ptr<Wt::WWidget> modalWidget)
     {
         LMS_LOG(UI, DEBUG, "Want to show, id = " << modalWidget->id());
+        Wt::WWidget* modal{ modalWidget.get() };
+        addWidget(std::move(modalWidget));
 
         std::ostringstream oss;
         oss
-            << R"({const modalElement = )" << jsRef() << R"(.getElementsByClassName('modal')[0];)"
-            << R"(const modal = bootstrap.Modal.getOrCreateInstance(modalElement);)"
+            << R"({const modalElementParent = document.getElementById(')" << modal->id() << R"(');)"
+            << R"(const modalElement = modalElementParent.getElementsByClassName('modal')[0];)"
+            << R"(const modal = bootstrap.Modal.getOrCreateInstance(modalElement,{backdrop:true, keyboard:true, focus:true});)"
             << R"(modal.show();)"
             << R"(modalElement.addEventListener('hidden.bs.modal', function () {)"
-            << _closed.createCall({ "'" + modalWidget->id() + "'" })
+            << _closed.createCall({ "'" + modal->id() + "'" })
             << R"(modal.dispose();)"
             << R"(});})";
 
         LMS_LOG(UI, DEBUG, "Running JS '" << oss.str() << "'");
 
-        doJavaScript(oss.str());
-
-        addWidget(std::move(modalWidget));
+        // Execute in the modal's context to make sure the DOM is properly updated
+        modal->doJavaScript(oss.str());
     }
 
     void ModalManager::dispose(Wt::WWidget* modalWidget)
@@ -74,6 +76,6 @@ namespace lms::ui
 
         LMS_LOG(UI, DEBUG, "Running JS '" << oss.str() << "'");
 
-        doJavaScript(oss.str());
+        modalWidget->doJavaScript(oss.str());
     }
 } // namespace lms::ui
