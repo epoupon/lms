@@ -85,7 +85,7 @@ class LMSMediaPlayer {
 		this.#elems.audio.addEventListener("playing", this.#updateMediaSessionState.bind(this));
 		this.#elems.audio.addEventListener("pause", this.#updateMediaSessionState.bind(this));
 
-		this.#elems.audio.addEventListener("pause", this.#pauseTimer);
+		this.#elems.audio.addEventListener("pause", this.#pauseTimer.bind(this));
 		this.#elems.audio.addEventListener("playing", this.#startTimer.bind(this));
 		this.#elems.audio.addEventListener("waiting", this.#pauseTimer.bind(this));
 
@@ -176,10 +176,8 @@ class LMSMediaPlayer {
 	};
 
 	#initAudioCtx() {
-		if (this.#audioIsInit) {
-			this.#audioCtx.resume(); // not sure of this
+		if (this.#audioIsInit)
 			return;
-		}
 
 		this.#audioIsInit = true;
 
