@@ -20,6 +20,8 @@
 #include "core/String.hpp"
 
 #include <algorithm>
+#include <array>
+#include <cstring>
 #include <iomanip>
 #include <utility>
 
@@ -503,5 +505,12 @@ namespace lms::core::stringUtils
         const auto millis{ timestamp.count() };
 
         return "[" + std::to_string(mins) + ":" + (secs < 10 ? "0" : "") + std::to_string(secs) + "." + (millis < 100 ? (millis < 10 ? "00" : "0") : "") + std::to_string(millis) + "]";
+    }
+
+    std::string systemErrorToString(int err)
+    {
+        std::array<char, 128> buffer{};
+        ::strerror_r(err, buffer.data(), buffer.size());
+        return std::string{ buffer.data() };
     }
 } // namespace lms::core::stringUtils

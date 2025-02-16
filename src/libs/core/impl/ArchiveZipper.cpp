@@ -21,13 +21,13 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cstring> // strerror
 #include <fstream>
 
 #include <archive.h>
 #include <archive_entry.h>
 
 #include "core/ILogger.hpp"
+#include "core/String.hpp"
 
 namespace lms::zip
 {
@@ -45,7 +45,7 @@ namespace lms::zip
         }
 
         FileException(const std::filesystem::path& p, std::string_view message, int err)
-            : Exception{ "File '" + p.string() + "': " + std::string{ message } + ": " + ::strerror(err) }
+            : Exception{ "File '" + p.string() + "': " + std::string{ message } + ": " + core::stringUtils::systemErrorToString(err) }
         {
         }
     };
@@ -75,7 +75,7 @@ namespace lms::zip
     {
         const int res{ ::archive_write_free(arch) };
         if (res != ARCHIVE_OK)
-            LMS_LOG(UTILS, ERROR, "Failure while freeing archive control struct: " << std::string{ ::strerror(res) });
+            LMS_LOG(UTILS, ERROR, "Failure while freeing archive control struct: error code = " << res);
     }
 
     void ArchiveZipper::ArchiveEntryDeleter::operator()(struct ::archive_entry* archEntry)

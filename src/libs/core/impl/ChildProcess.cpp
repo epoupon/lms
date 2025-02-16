@@ -20,10 +20,9 @@
 #include "ChildProcess.hpp"
 
 #include <cerrno>
-#include <cstring>
+#include <cstddef>
 #include <fcntl.h>
 #include <signal.h>
-#include <stdexcept>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -35,8 +34,8 @@
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/read.hpp>
 
-#include "core/Exception.hpp"
 #include "core/ILogger.hpp"
+#include "core/String.hpp"
 
 namespace lms::core
 {
@@ -46,7 +45,7 @@ namespace lms::core
         {
         public:
             SystemException(int err, const std::string& errMsg)
-                : ChildProcessException{ errMsg + ": " + ::strerror(err) }
+                : ChildProcessException{ errMsg + ": " + stringUtils::systemErrorToString(err) }
             {
             }
 
@@ -86,14 +85,30 @@ namespace lms::core
             throw SystemException{ errno, "fcntl failed to set FD_CLOEXEC!" };
 
 #if defined(__linux__) && defined(F_SETPIPE_SZ)
+        for (const int fd : { pipefd[0], pipefd[1] })
         {
-            // Just a hint here to prevent the writer from writing too many bytes ahead of the reader
-            constexpr std::size_t pipeSize{ 65536 * 4 };
-
-            if (fcntl(pipefd[0], F_SETPIPE_SZ, pipeSize) == -1)
-                throw SystemException{ errno, "fcntl failed!" };
-            if (fcntl(pipefd[1], F_SETPIPE_SZ, pipeSize) == -1)
-                throw SystemException{ errno, "fcntl failed!" };
+            constexpr std::size_t targetPipeSize{ static_cast<long>(65'536) * 4 };
+            std::size_t currentPipeSize{ 65'536 }; // common default value
+    #if defined(F_GETPIPE_SZ)
+            const int pipeSizeRes{ fcntl(fd, F_GETPIPE_SZ) };
+            if (pipeSizeRes == -1)
+            {
+                const int err{ errno };
+                LMS_LOG(CHILDPROCESS, DEBUG, "F_GETPIPE_SZ failed: " << stringUtils::systemErrorToString(err));
+            }
+            else
+            {
+                currentPipeSize = pipeSizeRes;
+            }
+    #endif
+            if (currentPipeSize < targetPipeSize)
+            {
+                if (fcntl(fd, F_SETPIPE_SZ, targetPipeSize) == -1)
+                {
+                    const int err{ errno };
+                    LMS_LOG(CHILDPROCESS, DEBUG, "F_SETPIPE_SZ failed: " << stringUtils::systemErrorToString(err));
+                }
+            }
         }
 #endif
 
@@ -153,7 +168,7 @@ namespace lms::core
         // process may already have finished
         LMS_LOG(CHILDPROCESS, DEBUG, "Killing child process...");
         if (::kill(_childPID, SIGKILL) == -1)
-            LMS_LOG(CHILDPROCESS, DEBUG, "Kill failed: " << ::strerror(errno));
+            LMS_LOG(CHILDPROCESS, DEBUG, "Kill failed: " << stringUtils::systemErrorToString(errno));
     }
 
     bool ChildProcess::wait(bool block)
@@ -165,7 +180,7 @@ namespace lms::core
 
         if (pid == -1)
             throw SystemException{ errno, "waitpid failed!" };
-        else if (pid == 0)
+        if (pid == 0)
             return false;
 
         if (WIFEXITED(wstatus))

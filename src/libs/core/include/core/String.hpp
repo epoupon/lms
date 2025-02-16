@@ -20,7 +20,6 @@
 #pragma once
 
 #include <chrono>
-#include <initializer_list>
 #include <optional>
 #include <span>
 #include <sstream>
@@ -120,4 +119,6 @@ namespace lms::core::stringUtils
 
     // to "[minutes:seconds.milliseconds]"
     std::string formatTimestamp(std::chrono::milliseconds timestamp);
+
+    std::string systemErrorToString(int err);
 } // namespace lms::core::stringUtils
