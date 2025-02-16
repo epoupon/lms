@@ -86,6 +86,7 @@ namespace lms::db
             std::optional<int> discNumber;                           // matching this disc number
             DirectoryId directory;                                   // if set, tracks in this directory
             std::optional<bool> hasEmbeddedImage;                    // if set, tracks that have or not embedded images
+            std::optional<std::size_t> fileSize;                     // if set, tracks that match this file size
 
             FindParameters& setFilters(const Filters& _filters)
             {
@@ -184,6 +185,11 @@ namespace lms::db
             FindParameters& setHasEmbeddedImage(std::optional<bool> _hasEmbeddedImage)
             {
                 hasEmbeddedImage = _hasEmbeddedImage;
+                return *this;
+            }
+            FindParameters& setFileSize(std::optional<std::size_t> _fileSize)
+            {
+                fileSize = _fileSize;
                 return *this;
             }
         };

@@ -180,6 +180,9 @@ namespace lms::db
             if (params.hasEmbeddedImage.has_value())
                 query.where("t.has_cover = ?").bind(params.hasEmbeddedImage.value());
 
+            if (params.fileSize.has_value())
+                query.where("t.file_size = ?").bind(static_cast<long long>(params.fileSize.value()));
+
             switch (params.sortMethod)
             {
             case TrackSortMethod::None:

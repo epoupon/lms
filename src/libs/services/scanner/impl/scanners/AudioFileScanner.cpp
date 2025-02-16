@@ -345,6 +345,45 @@ namespace lms::scanner
             return db::Advisory::UnSet;
         }
 
+        db::Track::pointer findMovedTrackBySizeAndMetaData(db::Session& session, const metadata::Track& parsedTrack, const FileInfo& fileInfo)
+        {
+            db::Track::FindParameters params;
+            // Add as many fields as possible to limit errors
+            params.setName(parsedTrack.title);
+            if (parsedTrack.medium)
+            {
+                if (parsedTrack.medium->position)
+                    params.setDiscNumber(*parsedTrack.medium->position);
+                if (parsedTrack.medium->release)
+                    params.setReleaseName(parsedTrack.medium->release->name);
+            }
+            if (parsedTrack.position)
+                params.setTrackNumber(*parsedTrack.position);
+            params.setHasEmbeddedImage(parsedTrack.hasCover);
+            params.setFileSize(fileInfo.fileSize);
+
+            bool error{};
+            db::Track::pointer res;
+            db::Track::find(session, params, [&](const db::Track::pointer& track) {
+                // Check that the track is truly no longer where it was during the last scan
+                std::error_code ec;
+                if (std::filesystem::exists(track->getAbsoluteFilePath(), ec))
+                    return;
+
+                if (res)
+                {
+                    LMS_LOG(DBUPDATER, DEBUG, "Found too many candidates for file move. New file = " << fileInfo.relativePath << ", candidate = " << track->getAbsoluteFilePath() << ", previous candidate = " << res->getAbsoluteFilePath());
+                    error = true;
+                }
+                res = track;
+            });
+
+            if (error)
+                res = db::Track::pointer{};
+
+            return res;
+        }
+
         class AudioFileScanOperation : public IFileScanOperation
         {
         public:
@@ -460,6 +499,17 @@ namespace lms::scanner
                         }
                         return;
                     }
+                }
+            }
+
+            if (!track)
+            {
+                // maybe the file just moved?
+                track = findMovedTrackBySizeAndMetaData(dbSession, *_parsedTrack, *fileInfo);
+                if (track)
+                {
+                    LMS_LOG(DBUPDATER, DEBUG, "Considering track " << _file << " moved from " << track->getAbsoluteFilePath());
+                    track.modify()->setAbsoluteFilePath(_file);
                 }
             }
 
