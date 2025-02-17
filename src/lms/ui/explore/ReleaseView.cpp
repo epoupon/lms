@@ -238,6 +238,7 @@ namespace lms::ui
 
         refreshCopyright(release);
         refreshLinks(release);
+        refreshOtherVersions(release);
         refreshSimilarReleases(similarReleasesIds);
 
         bindString("name", Wt::WString::fromUTF8(std::string{ release->getName() }), Wt::TextFormat::Plain);
@@ -560,15 +561,44 @@ namespace lms::ui
         }
     }
 
-    void Release::refreshSimilarReleases(const std::vector<ReleaseId>& similarReleasesId)
+    void Release::refreshOtherVersions(const db::Release::pointer& release)
     {
-        if (similarReleasesId.empty())
+        const auto groupMBID{ release->getGroupMBID() };
+        if (!groupMBID)
+            return;
+
+        db::Release::FindParameters params;
+        params.setReleaseGroupMBID(groupMBID);
+
+        const auto releaseIds{ db::Release::findIds(LmsApp->getDbSession(), params) };
+        if (releaseIds.results.size() <= 1)
+            return;
+
+        setCondition("if-has-other-versions", true);
+        auto* container{ bindNew<Wt::WContainerWidget>("other-versions") };
+
+        for (const ReleaseId id : releaseIds.results)
+        {
+            if (id == _releaseId)
+                continue;
+
+            const db::Release::pointer release{ db::Release::find(LmsApp->getDbSession(), id) };
+            if (!release)
+                continue;
+
+            container->addWidget(releaseListHelpers::createEntryForOtherVersions(release));
+        }
+    }
+
+    void Release::refreshSimilarReleases(const std::vector<ReleaseId>& similarReleaseIds)
+    {
+        if (similarReleaseIds.empty())
             return;
 
         setCondition("if-has-similar-releases", true);
         auto* similarReleasesContainer{ bindNew<Wt::WContainerWidget>("similar-releases") };
 
-        for (const ReleaseId id : similarReleasesId)
+        for (const ReleaseId id : similarReleaseIds)
         {
             const db::Release::pointer similarRelease{ db::Release::find(LmsApp->getDbSession(), id) };
             if (!similarRelease)

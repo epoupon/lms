@@ -250,9 +250,10 @@
 </message>
 
 <!--Explore:Release-->
-<message id="Lms.Explore.Release.similar-releases">Album simili</message>
 <message id="Lms.Explore.Release.copyright">Copyright</message>
 <message id="Lms.Explore.Release.disc">Disco {1}</message>
+<message id="Lms.Explore.Release.other-versions">Altre versioni</message>
+<message id="Lms.Explore.Release.similar-releases">Album simili</message>
 <message id="Lms.Explore.Release.type">Tipo</message>
 <message id="Lms.Explore.Release.type-primary-album">Album</message>
 <message id="Lms.Explore.Release.type-primary-broadcast">Trasmissione</message>

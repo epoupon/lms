@@ -250,9 +250,10 @@
 
 
 <!--Explore:Release-->
-<message id="Lms.Explore.Release.similar-releases">相似专辑</message>
 <message id="Lms.Explore.Release.copyright">版权所有</message>
 <message id="Lms.Explore.Release.disc">唱片 {1}</message>
+
+<message id="Lms.Explore.Release.similar-releases">相似专辑</message>
 
 
 
