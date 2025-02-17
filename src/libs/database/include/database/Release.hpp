@@ -165,7 +165,8 @@ namespace lms::db
             ArtistId artist;                                                 // only releases that involved this user
             core::EnumSet<TrackArtistLinkType> trackArtistLinkTypes;         //    and for these link types
             core::EnumSet<TrackArtistLinkType> excludedTrackArtistLinkTypes; //    but not for these link types
-            std::string releaseType;                                         // If set, albums that has this release type
+            std::string releaseType;                                         // If set, releases that has this release type
+            std::optional<core::UUID> releaseGroupMBID;                      // If set, releases that belong to this release group
             DirectoryId directory;                                           // if set, releases in this directory (cannot be set with parent directory)
             DirectoryId parentDirectory;                                     // if set, releases in this parent directory (cannot be set with directory)
 
@@ -220,6 +221,11 @@ namespace lms::db
             FindParameters& setReleaseType(std::string_view _releaseType)
             {
                 releaseType = _releaseType;
+                return *this;
+            }
+            FindParameters& setReleaseGroupMBID(const std::optional<core::UUID>& _releaseGroupMBID)
+            {
+                releaseGroupMBID = _releaseGroupMBID;
                 return *this;
             }
             FindParameters& setDirectory(DirectoryId _directory)

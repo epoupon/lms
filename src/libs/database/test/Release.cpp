@@ -1360,4 +1360,30 @@ namespace lms::db::tests
             EXPECT_EQ(addedTime, track2.get()->getAddedTime());
         }
     }
+
+    TEST_F(DatabaseFixture, Release_groupMBID)
+    {
+        ScopedRelease release{ session, "relA" };
+        const std::optional<core::UUID> groupMBID{ core::UUID::fromString("1ad8f716-2fd6-4d09-8ada-39525947217c") };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto releases{ Release::find(session, Release::FindParameters{}.setReleaseGroupMBID(groupMBID)) };
+            EXPECT_EQ(releases.results.size(), 0);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            release.get().modify()->setGroupMBID(groupMBID);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto releases{ Release::find(session, Release::FindParameters{}.setReleaseGroupMBID(groupMBID)) };
+            EXPECT_EQ(releases.results.size(), 1);
+            EXPECT_EQ(releases.results[0]->getId(), release->getId());
+        }
+    }
 } // namespace lms::db::tests

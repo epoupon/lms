@@ -235,6 +235,7 @@ namespace lms::db
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS release_id_idx ON release(id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS release_image_idx ON release(image_id)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS release_group_mbid_idx ON release(group_mbid)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS release_mbid_idx ON release(mbid)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS release_name_idx ON release(name)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS release_name_nocase_idx ON release(name COLLATE NOCASE)");

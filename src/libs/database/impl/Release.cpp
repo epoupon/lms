@@ -205,6 +205,9 @@ namespace lms::db
                 query.where(oss.str());
             }
 
+            if (params.releaseGroupMBID)
+                query.where("group_mbid = ?").bind(params.releaseGroupMBID->getAsString());
+
             switch (params.sortMethod)
             {
             case ReleaseSortMethod::None:
