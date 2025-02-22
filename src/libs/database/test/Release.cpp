@@ -1386,4 +1386,34 @@ namespace lms::db::tests
             EXPECT_EQ(releases.results[0]->getId(), release->getId());
         }
     }
+
+    TEST_F(DatabaseFixture, Release_sortName)
+    {
+        ScopedRelease release1{ session, "MyRelease1" };
+        ScopedRelease release2{ session, "MyRelease2" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            release1.get().modify()->setSortName("BB");
+            release2.get().modify()->setSortName("AA");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto releases{ Release::find(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::Name)) };
+            ASSERT_EQ(releases.results.size(), 2);
+            EXPECT_EQ(releases.results[0]->getId(), release1->getId());
+            EXPECT_EQ(releases.results[1]->getId(), release2->getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto releases{ Release::find(session, Release::FindParameters{}.setSortMethod(ReleaseSortMethod::SortName)) };
+            ASSERT_EQ(releases.results.size(), 2);
+            EXPECT_EQ(releases.results[0]->getId(), release2->getId());
+            EXPECT_EQ(releases.results[1]->getId(), release1->getId());
+        }
+    }
 } // namespace lms::db::tests

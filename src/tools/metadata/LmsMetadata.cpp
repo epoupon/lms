@@ -78,7 +78,7 @@ namespace lms::metadata
     std::ostream& operator<<(std::ostream& os, const Release& release)
     {
         os << release.name;
-        if (!release.sortName.empty())
+        if (release.sortName != release.name)
             os << " '" << release.sortName << "'";
         os << std::endl;
 

@@ -163,11 +163,8 @@ namespace lms::scanner
         {
             if (release->getName() != releaseInfo.name)
                 release.modify()->setName(releaseInfo.name);
-            {
-                std::string_view sortName{ !releaseInfo.sortName.empty() ? releaseInfo.sortName : releaseInfo.name };
-                if (release->getSortName() != sortName)
-                    release.modify()->setSortName(sortName);
-            }
+            if (release->getSortName() != releaseInfo.sortName)
+                release.modify()->setSortName(releaseInfo.sortName);
             if (release->getGroupMBID() != releaseInfo.groupMBID)
                 release.modify()->setGroupMBID(releaseInfo.groupMBID);
             if (release->getTotalDisc() != releaseInfo.mediumCount)

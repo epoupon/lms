@@ -716,6 +716,21 @@ namespace lms::metadata
         EXPECT_EQ(track->composerArtists[0].mbid.value(), core::UUID::fromString("6643f584-5edc-45ce-927d-0a4ab25c2673"));
     }
 
+    TEST(Parser, release_sortNameFallback)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Album, { "MyAlbum" } },
+                // No AlbumSortOrder
+            }
+        };
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_TRUE(track->medium.has_value());
+        ASSERT_TRUE(track->medium->release.has_value());
+        EXPECT_EQ(track->medium->release->sortName, "MyAlbum");
+    }
+
     TEST(Parser, advisory)
     {
         auto doTest = [](std::string_view value, std::optional<Track::Advisory> expectedValue) {
