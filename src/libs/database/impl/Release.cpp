@@ -218,6 +218,9 @@ namespace lms::db
             case ReleaseSortMethod::Name:
                 query.orderBy("r.name COLLATE NOCASE");
                 break;
+            case ReleaseSortMethod::SortName:
+                query.orderBy("r.sort_name COLLATE NOCASE");
+                break;
             case ReleaseSortMethod::ArtistNameThenName:
                 query.orderBy("a.name COLLATE NOCASE, r.name COLLATE NOCASE");
                 break;

@@ -147,6 +147,7 @@ namespace lms::db
         None,
         Id,
         Name,
+        SortName,
         ArtistNameThenName,
         DateAsc,
         DateDesc,

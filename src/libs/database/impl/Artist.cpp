@@ -205,7 +205,6 @@ namespace lms::db
         : _mbid{ mbid ? mbid->getAsString() : "" }
     {
         setName(name);
-        _sortName = _name;
     }
 
     Artist::pointer Artist::create(Session& session, const std::string& name, const std::optional<core::UUID>& mbid)

@@ -117,7 +117,7 @@ namespace lms::ui
             {
                 Release::FindParameters params;
                 params.setFilters(getDbFilters());
-                params.setSortMethod(ReleaseSortMethod::Name);
+                params.setSortMethod(ReleaseSortMethod::SortName);
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
 
