@@ -264,7 +264,6 @@ namespace lms::metadata
         };
 
         auto processID3v2Tags = [&](TagLib::ID3v2::Tag& id3v2Tags) {
-
             // Dedup values for some tags that may be written in both a standard tag and in a custom tag
             dedupTagValues(_propertyMap, p);
 
