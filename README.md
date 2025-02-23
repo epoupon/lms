@@ -11,6 +11,7 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
 * Multi-valued tags: `genre`, `mood`, `artists`, ...
 * Artist relationships: `composer`, `conductor`, `lyricist`, `mixer`, `performer`, `producer`, `remixer`
 * [Release types](https://musicbrainz.org/doc/Release_Group/Type): `album`, `single`, `EP`, `compilation`, `live`, ...
+* [Release groups](https://musicbrainz.org/doc/Release_Group) support to show different versions of albums, such as remasters, reissues, etc.
 * [MusicBrainz Identifier](https://musicbrainz.org/doc/MusicBrainz_Identifier) support to handle duplicated artist and release names
 * [ListenBrainz](https://listenbrainz.org) support for:
   * Scrobbling and synchronizing listens
@@ -62,9 +63,7 @@ $setmulti(albumartistssort,%_albumartists_sort%)
 ### Album track grouping
 The recommended way to group tracks within an album is to use the `MUSICBRAINZ_ALBUMID` tag.
 
-When this tag is not present, _LMS_ will attempt to group them as best as possible:
-
-If the analyzed file contains a disc number and the total number of discs is greater than 1, sibling directories are also scanned to find a matching album.
+When this tag is not present, _LMS_ will attempt to group them as best as possible: if the analyzed file contains a disc number and the total number of discs is greater than 1, sibling directories are also scanned to find a matching album.
 Otherwise, _LMS_ will only consider albums within the current directory.  
 
 For an album to be considered a match, the following conditions must be met:
@@ -78,10 +77,10 @@ For an album to be considered a match, the following conditions must be met:
 ## Artist image lookup
 The recommended method is to name the file using the artist's MusicBrainz ArtistID. This file can be placed anywhere within one of the scanned libraries.
 
-If no file with the MusicBrainz ArtistID is found, _LMS_ will look for a file named `artist` (or another name configured in `lms.conf`) in the artist's directories. Here's how it works:
+If no file with the MusicBrainz ArtistID is found, _LMS_ will look for a file named `artist` (or another name configured in `lms.conf`) in the artist's directories:
 
 1. Identify the artist's directory: _LMS_ selects all albums by the artist using the "AlbumArtist" link and determines the longest common path among them.
-2. Scan for the image: the directory is scanned starting from this common path, moving upwards if needed, until the cover art file is found.
+2. Scan for the image: the directory is scanned starting from this common path, moving upwards if needed, until the artist image file is found.
 3. Fallback search: if no image is found, _LMS_ will then search within each individual album folder.
 
 ## Playlist support
