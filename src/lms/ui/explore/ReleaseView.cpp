@@ -583,11 +583,11 @@ namespace lms::ui
             if (id == _releaseId)
                 continue;
 
-            const db::Release::pointer release{ db::Release::find(LmsApp->getDbSession(), id) };
-            if (!release)
+            const db::Release::pointer otherVersionRelease{ db::Release::find(LmsApp->getDbSession(), id) };
+            if (!otherVersionRelease)
                 continue;
 
-            container->addWidget(releaseListHelpers::createEntryForOtherVersions(release));
+            container->addWidget(releaseListHelpers::createEntryForOtherVersions(otherVersionRelease));
         }
     }
 
