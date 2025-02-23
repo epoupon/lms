@@ -34,7 +34,7 @@ namespace lms::ui::ArtistListHelpers
 
         Wt::WAnchor* anchor{ entry->bindWidget("image", utils::createArtistAnchor(artist, false)) };
         auto image{ utils::createArtistImage(artist->getId(), ArtworkResource::Size::Large) };
-        image->addStyleClass("Lms-cover-release Lms-cover-anchor");
+        image->addStyleClass("Lms-cover-release Lms-cover-anchor rounded"); // hack
         anchor->setImage(std::move(image));
 
         return entry;

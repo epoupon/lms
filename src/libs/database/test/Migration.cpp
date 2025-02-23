@@ -340,6 +340,7 @@ VALUES
 
             EXPECT_FALSE(Artist::find(session, ArtistId{}));
             EXPECT_FALSE(AuthToken::find(session, AuthTokenId{}));
+            EXPECT_FALSE(Country::find(session, CountryId{}));
             EXPECT_FALSE(Cluster::find(session, ClusterId{}));
             EXPECT_FALSE(ClusterType::find(session, ClusterTypeId{}));
             EXPECT_FALSE(Directory::find(session, DirectoryId{}));

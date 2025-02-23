@@ -491,7 +491,7 @@ namespace lms::ui
         }
 
         auto image{ utils::createTrackImage(track->getId(), ArtworkResource::Size::Small) };
-        image->addStyleClass("Lms-cover-track");
+        image->addStyleClass("Lms-cover-track rounded");
         if (const auto release{ track->getRelease() })
         {
             entry->setCondition("if-has-release", true);

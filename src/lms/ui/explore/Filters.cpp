@@ -27,7 +27,10 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Cluster.hpp"
+#include "database/LabelId.hpp"
 #include "database/MediaLibrary.hpp"
+#include "database/Release.hpp"
+#include "database/ReleaseTypeId.hpp"
 #include "database/Session.hpp"
 
 #include "LmsApplication.hpp"
@@ -44,7 +47,15 @@ namespace lms::ui
         {
         };
 
-        using TypeVariant = std::variant<db::ClusterTypeId, MediaLibraryTag>;
+        struct LabelTag
+        {
+        };
+
+        struct ReleaseTypeTag
+        {
+        };
+
+        using TypeVariant = std::variant<db::ClusterTypeId, MediaLibraryTag, LabelTag, ReleaseTypeTag>;
         using TypeModel = ValueStringModel<TypeVariant>;
 
         std::unique_ptr<TypeModel> createTypeModel()
@@ -59,11 +70,13 @@ namespace lms::ui
             }
 
             typeModel->add(Wt::WString::tr("Lms.Explore.media-library"), MediaLibraryTag{});
+            typeModel->add(Wt::WString::tr("Lms.Explore.label"), LabelTag{});
+            typeModel->add(Wt::WString::tr("Lms.Explore.release-type"), ReleaseTypeTag{});
 
             return typeModel;
         }
 
-        using ValueVariant = std::variant<db::ClusterId, db::MediaLibraryId>;
+        using ValueVariant = std::variant<db::ClusterId, db::MediaLibraryId, db::LabelId, db::ReleaseTypeId>;
         using ValueModel = ValueStringModel<ValueVariant>;
 
         std::unique_ptr<ValueModel> createValueModel(TypeVariant type)
@@ -78,6 +91,18 @@ namespace lms::ui
             {
                 db::MediaLibrary::find(session, [&](const db::MediaLibrary::pointer& library) {
                     valueModel->add(Wt::WString::fromUTF8(std::string{ library->getName() }), library->getId());
+                });
+            }
+            else if (std::holds_alternative<LabelTag>(type))
+            {
+                db::Label::find(session, db::LabelSortMethod::Name, [&](const db::Label::pointer& label) {
+                    valueModel->add(Wt::WString::fromUTF8(std::string{ label->getName() }), label->getId());
+                });
+            }
+            else if (std::holds_alternative<ReleaseTypeTag>(type))
+            {
+                db::ReleaseType::find(session, db::ReleaseTypeSortMethod::Name, [&](const db::ReleaseType::pointer& releaseType) {
+                    valueModel->add(Wt::WString::fromUTF8(std::string{ releaseType->getName() }), releaseType->getId());
                 });
             }
             else if (const db::ClusterTypeId * clusterTypeId{ std::get_if<db::ClusterTypeId>(&type) })
@@ -118,6 +143,16 @@ namespace lms::ui
                 set(*mediaLibraryId);
                 state::writeValue<db::MediaLibraryId::ValueType>("filters_media_library_id", mediaLibraryId->getValue());
             }
+            else if (const db::LabelId * labelId{ std::get_if<db::LabelId>(&value) })
+            {
+                set(*labelId);
+                state::writeValue<db::LabelId::ValueType>("filters_label_id", labelId->getValue());
+            }
+            else if (const db::ReleaseTypeId * releaseTypeId{ std::get_if<db::ReleaseTypeId>(&value) })
+            {
+                set(*releaseTypeId);
+                state::writeValue<db::ReleaseTypeId::ValueType>("filters_release_type_id", releaseTypeId->getValue());
+            }
             else if (const db::ClusterId * clusterId{ std::get_if<db::ClusterId>(&value) })
             {
                 add(*clusterId);
@@ -157,12 +192,16 @@ namespace lms::ui
         _filters = bindNew<Wt::WContainerWidget>("clusters");
 
         if (const std::optional<db::MediaLibraryId::ValueType> mediaLibraryId{ state::readValue<db::MediaLibraryId::ValueType>("filters_media_library_id") })
-            set(*mediaLibraryId);
+            set(db::MediaLibraryId{ *mediaLibraryId });
+        if (const std::optional<db::LabelId::ValueType> labelId{ state::readValue<db::LabelId::ValueType>("filters_label_id") })
+            set(db::LabelId{ *labelId });
+        if (const std::optional<db::ReleaseTypeId::ValueType> releaseTypeId{ state::readValue<db::ReleaseTypeId::ValueType>("filters_release_type_id") })
+            set(db::ReleaseTypeId{ *releaseTypeId });
     }
 
     void Filters::add(db::ClusterId clusterId)
     {
-        if (std::find(std::cbegin(_clusterIds), std::cend(_clusterIds), clusterId) != std::cend(_clusterIds))
+        if (std::find(std::cbegin(_dbFilters.clusters), std::cend(_dbFilters.clusters), clusterId) != std::cend(_dbFilters.clusters))
             return;
 
         Wt::WInteractWidget* filter{};
@@ -175,11 +214,11 @@ namespace lms::ui
             filter = _filters->addWidget(std::move(cluster));
         }
 
-        _clusterIds.push_back(clusterId);
+        _dbFilters.clusters.push_back(clusterId);
 
         filter->clicked().connect([this, filter, clusterId] {
             _filters->removeWidget(filter);
-            _clusterIds.erase(std::remove_if(std::begin(_clusterIds), std::end(_clusterIds), [clusterId](db::ClusterId id) { return id == clusterId; }), std::end(_clusterIds));
+            _dbFilters.clusters.erase(std::remove_if(std::begin(_dbFilters.clusters), std::end(_dbFilters.clusters), [clusterId](db::ClusterId id) { return id == clusterId; }), std::end(_dbFilters.clusters));
             _sigUpdated.emit();
         });
 
@@ -192,7 +231,7 @@ namespace lms::ui
         {
             _filters->removeWidget(_mediaLibraryFilter);
             _mediaLibraryFilter = nullptr;
-            _mediaLibraryId = db::MediaLibraryId{};
+            _dbFilters.mediaLibrary = db::MediaLibraryId{};
         }
 
         std::string libraryName;
@@ -206,14 +245,80 @@ namespace lms::ui
             libraryName = library->getName();
         }
 
-        _mediaLibraryId = mediaLibraryId;
+        _dbFilters.mediaLibrary = mediaLibraryId;
         _mediaLibraryFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(libraryName), Wt::WString::tr("Lms.Explore.media-library"), "bg-primary", true));
         _mediaLibraryFilter->clicked().connect(_mediaLibraryFilter, [this] {
             _filters->removeWidget(_mediaLibraryFilter);
-            _mediaLibraryId = db::MediaLibraryId{};
+            _dbFilters.mediaLibrary = db::MediaLibraryId{};
             _mediaLibraryFilter = nullptr;
             _sigUpdated.emit();
             state::writeValue<db::MediaLibraryId::ValueType>("filters_media_library_id", std::nullopt);
+        });
+
+        emitFilterAddedNotification();
+    }
+
+    void Filters::set(db::LabelId labelId)
+    {
+        if (_labelFilter)
+        {
+            _filters->removeWidget(_labelFilter);
+            _labelFilter = nullptr;
+            _dbFilters.label = db::LabelId{};
+        }
+
+        std::string name;
+        {
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+
+            const auto label{ db::Label::find(LmsApp->getDbSession(), labelId) };
+            if (!label)
+                return;
+
+            name = label->getName();
+        }
+
+        _dbFilters.label = labelId;
+        _labelFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(name), Wt::WString::tr("Lms.Explore.label"), "bg-secondary", true));
+        _labelFilter->clicked().connect(_labelFilter, [this] {
+            _filters->removeWidget(_labelFilter);
+            _dbFilters.label = db::LabelId{};
+            _labelFilter = nullptr;
+            _sigUpdated.emit();
+            state::writeValue<db::LabelId::ValueType>("filters_label_id", std::nullopt);
+        });
+
+        emitFilterAddedNotification();
+    }
+
+    void Filters::set(db::ReleaseTypeId releaseTypeId)
+    {
+        if (_releaseTypeFilter)
+        {
+            _filters->removeWidget(_releaseTypeFilter);
+            _releaseTypeFilter = nullptr;
+            _dbFilters.releaseType = db::ReleaseTypeId{};
+        }
+
+        std::string name;
+        {
+            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+
+            const auto releaseType{ db::ReleaseType::find(LmsApp->getDbSession(), releaseTypeId) };
+            if (!releaseType)
+                return;
+
+            name = releaseType->getName();
+        }
+
+        _dbFilters.releaseType = releaseTypeId;
+        _releaseTypeFilter = _filters->addWidget(utils::createFilter(Wt::WString::fromUTF8(name), Wt::WString::tr("Lms.Explore.release-type"), "bg-dark", true));
+        _releaseTypeFilter->clicked().connect(_releaseTypeFilter, [this] {
+            _filters->removeWidget(_releaseTypeFilter);
+            _dbFilters.releaseType = db::ReleaseTypeId{};
+            _releaseTypeFilter = nullptr;
+            _sigUpdated.emit();
+            state::writeValue<db::LabelId::ValueType>("filters_release_type_id", std::nullopt);
         });
 
         emitFilterAddedNotification();

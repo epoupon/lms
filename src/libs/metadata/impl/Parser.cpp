@@ -266,6 +266,54 @@ namespace lms::metadata
 
             return std::nullopt;
         }
+
+        void fillInArtistsWithMbid(std::span<const Artist> artists, std::unordered_map<std::string_view, core::UUID>& artistsWithMbid)
+        {
+            for (const Artist& artist : artists)
+            {
+                if (artist.mbid.has_value())
+                {
+                    // there may collisions, we don't want to replace
+                    artistsWithMbid.emplace(artist.name, *artist.mbid);
+                }
+            }
+        }
+
+        void fillInMbids(std::span<Artist> artists, const std::unordered_map<std::string_view, core::UUID>& artistsWithMbid)
+        {
+            for (Artist& artist : artists)
+            {
+                if (!artist.mbid)
+                {
+                    const auto it{ artistsWithMbid.find(artist.name) };
+                    if (it != std::cend(artistsWithMbid))
+                        artist.mbid = it->second;
+                }
+            }
+        }
+
+        void fillMissingMbids(Track& track)
+        {
+            // first pass: collect all artists that have mbids
+            std::unordered_map<std::string_view, core::UUID> artistsWithMbid;
+
+            // For now, mbids can only set in artist and album artist tags
+            // filling order is important: we estimate track-level artists are more likely
+            // to be set in other fields than album artists
+            fillInArtistsWithMbid(track.artists, artistsWithMbid);
+            if (track.medium && track.medium->release)
+                fillInArtistsWithMbid(track.medium->release->artists, artistsWithMbid);
+
+            // second pass: fill in all artists that have no mbid set with the same name
+            fillInMbids(track.conductorArtists, artistsWithMbid);
+            fillInMbids(track.composerArtists, artistsWithMbid);
+            fillInMbids(track.lyricistArtists, artistsWithMbid);
+            fillInMbids(track.mixerArtists, artistsWithMbid);
+            fillInMbids(track.producerArtists, artistsWithMbid);
+            fillInMbids(track.remixerArtists, artistsWithMbid);
+            for (auto& [role, artists] : track.performerArtists)
+                fillInMbids(artists, artistsWithMbid);
+        }
     } // namespace
 
     std::unique_ptr<IParser> createParser(ParserBackend parserBackend, ParserReadStyle parserReadStyle)
@@ -416,6 +464,8 @@ namespace lms::metadata
         track.remixerArtists = getArtists(tagReader, { TagType::Remixers, TagType::Remixer }, { TagType::RemixersSortOrder, TagType::RemixerSortOrder }, {}, _artistTagDelimiters, _defaultTagDelimiters);
         track.performerArtists = getPerformerArtists(tagReader); // artistDelimiters not supported
 
+        fillMissingMbids(track);
+
         // If a file has originalDate but no originalYear, set it
         if (!track.originalYear)
             track.originalYear = track.originalDate.getYear();
@@ -461,7 +511,7 @@ namespace lms::metadata
 
         release.emplace();
         release->name = std::move(*releaseName);
-        release->sortName = getTagValueAs<std::string>(tagReader, TagType::AlbumSortOrder).value_or("");
+        release->sortName = getTagValueAs<std::string>(tagReader, TagType::AlbumSortOrder).value_or(release->name);
         release->artists = getArtists(tagReader, { TagType::AlbumArtists, TagType::AlbumArtist }, { TagType::AlbumArtistsSortOrder, TagType::AlbumArtistSortOrder }, { TagType::MusicBrainzReleaseArtistID }, _artistTagDelimiters, _defaultTagDelimiters);
         release->artistDisplayName = computeArtistDisplayName(release->artists, getTagValueAs<std::string>(tagReader, TagType::AlbumArtist), _artistTagDelimiters);
         release->mbid = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzReleaseID);
@@ -470,6 +520,8 @@ namespace lms::metadata
         release->isCompilation = getTagValueAs<bool>(tagReader, TagType::Compilation).value_or(false);
         release->barcode = getTagValueAs<std::string>(tagReader, TagType::Barcode).value_or("");
         release->labels = getTagValuesAs<std::string>(tagReader, TagType::RecordLabel, _defaultTagDelimiters);
+        release->comment = getTagValueAs<std::string>(tagReader, TagType::AlbumComment).value_or("");
+        release->countries = getTagValuesAs<std::string>(tagReader, TagType::ReleaseCountry, _defaultTagDelimiters);
         if (!release->mediumCount)
         {
             // mediumCount may be encoded as "position/count"

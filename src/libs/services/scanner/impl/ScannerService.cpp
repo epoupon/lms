@@ -246,7 +246,7 @@ namespace lms::scanner
         if (dateTime.isNull())
         {
             LMS_LOG(DBUPDATER, INFO, "Scheduling next scan right now");
-            _scheduleTimer.expires_from_now(std::chrono::seconds{ 0 });
+            _scheduleTimer.expires_after(std::chrono::seconds{ 0 });
             _scheduleTimer.async_wait(cb);
         }
         else
@@ -395,7 +395,12 @@ namespace lms::scanner
             newSettings.updatePeriod = scanSettings->getUpdatePeriod();
 
             MediaLibrary::find(_db.getTLSSession(), [&](const MediaLibrary::pointer& mediaLibrary) {
-                newSettings.mediaLibraries.push_back(MediaLibraryInfo{ .id = mediaLibrary->getId(), .rootDirectory = mediaLibrary->getPath().lexically_normal() });
+                MediaLibraryInfo info;
+                info.firstScan = mediaLibrary->isEmpty();
+                info.id = mediaLibrary->getId();
+                info.rootDirectory = mediaLibrary->getPath().lexically_normal();
+
+                newSettings.mediaLibraries.push_back(info);
             });
 
             {

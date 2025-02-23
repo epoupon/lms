@@ -120,8 +120,7 @@ namespace lms::ui
 
         if (!_searchText.empty())
             params.setKeywords(core::stringUtils::splitString(_searchText, ' '));
-        params.setClusters(_filters.getClusters());
-        params.setMediaLibrary(_filters.getMediaLibrary());
+        params.setFilters(_filters.getDbFilters());
         params.setType(TrackListType::PlayList);
         params.setRange(range);
 

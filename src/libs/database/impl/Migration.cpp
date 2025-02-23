@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 80 };
+        static constexpr Version LMS_DATABASE_VERSION{ 82 };
     }
 
     VersionInfo::VersionInfo()
@@ -1063,6 +1063,42 @@ FROM tracklist)");
         utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV80(Session& session)
+    {
+        // Add release comment support
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE release ADD COLUMN comment TEXT NOT NULL DEFAULT ''");
+
+        // Just increment the scan version of the settings to make the next scan rescan everything
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
+
+    void migrateFromV81(Session& session)
+    {
+        // Make sure we remove all the previoulsy created index, the createIndexesIfNeeded will recreate them all
+        dropIndexes(session);
+
+        // Add country + release country
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "country" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null
+    ))");
+
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "release_country" (
+        "country_id" bigint,
+        "release_id" bigint,
+        primary key ("country_id", "release_id"),
+        constraint "fk_release_country_key1" foreign key ("country_id") references "country" ("id") on delete cascade deferrable initially deferred,
+        constraint "fk_release_country_key2" foreign key ("release_id") references "release" ("id") on delete cascade deferrable initially deferred
+    ))");
+
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "release_country_country" on "release_country" ("country_id"))");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE INDEX "release_country_release" on "release_country" ("release_id"))");
+
+        // Just increment the scan version of the settings to make the next scan rescan everything
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1119,6 +1155,8 @@ FROM tracklist)");
             { 77, migrateFromV77 },
             { 78, migrateFromV78 },
             { 79, migrateFromV79 },
+            { 80, migrateFromV80 },
+            { 81, migrateFromV81 },
         };
 
         bool migrationPerformed{};

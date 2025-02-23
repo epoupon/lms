@@ -9,10 +9,10 @@
 <message id="Lms.Explore.Release.template">
 	<div class="row mb-3 gy-3">
 		<div class="col-lg-3 col-md-4">
-			${cover}
+			${cover class="Lms-cursor-pointer rounded"}
 		</div>
 		<div class="col">
-			<h2>${name}</h2>
+			<h2>${name}${<if-has-release-comment>}<span class="ms-1 text-muted">[${comment}]</span>${</if-has-release-comment>}</h2>
 			${<if-has-release-artists>}${artists}${</if-has-release-artists>}
 			<div class="small text-muted">${<if-has-year>}${year} · ${</if-has-year>}${duration}</div>
 			${clusters class="mb-2"}
@@ -39,10 +39,26 @@
 			${</if-has-copyright>}
 		</div>
 	</div>
+	${<if-has-other-versions>}
+	<h3>${tr:Lms.Explore.Release.other-versions}</h3>
+	${other-versions class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 gx-2 gy-4"}
+	${</if-has-other-versions>}
 	${<if-has-similar-releases>}
 	<h3>${tr:Lms.Explore.Release.similar-releases}</h3>
-	${similar-releases class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-6 gx-2 gy-4"}
+	${similar-releases class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 gx-2 gy-4"}
 	${</if-has-similar-releases>}
+</message>
+
+<message id="Lms.Explore.Release.template.full-cover">
+	<div class="modal fade" tabindex="-1">
+		<div class="modal-dialog modal-dialog-centered Lms-cover-full-modal-dialog">
+			<div class="modal-content bg-transparent border-0">
+				<div class="modal-body text-center">
+					${cover-full class="Lms-cover-full"}
+				</div>
+			</div>
+		</div>
+	</div>
 </message>
 
 <message id="Lms.Explore.Release.template.entry-release-artist">
@@ -132,6 +148,16 @@
 						${<if-has-artist>}
 						${artist-table class="d-grid gap-2"}
 						${</if-has-artist>}
+						${<if-has-labels>}
+						<div class="row align-items-center">
+							<div class="col-4">
+								${tr:Lms.Explore.label}
+							</div>
+							<div class="col">
+								${release-labels}
+							</div>
+						</div>
+						${</if-has-labels>}
 						${<if-has-codec>}
 						<div class="row align-items-center">
 							<div class="col-4">

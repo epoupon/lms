@@ -38,6 +38,7 @@ namespace lms::metadata
         AlbumArtists, // non standard
         AlbumArtistSortOrder,
         AlbumArtistsSortOrder, // non standard
+        AlbumComment,          // non standard
         AlbumSortOrder,
         Arranger,
         Artist,

@@ -43,6 +43,7 @@ namespace lms::metadata
                 { TagType::AlbumArtist, { "MyAlbumArtist1 & MyAlbumArtist2" } },
                 { TagType::AlbumArtists, { "MyAlbumArtist1", "MyAlbumArtist2" } },
                 { TagType::AlbumArtistsSortOrder, { "MyAlbumArtist1SortName", "MyAlbumArtist2SortName" } },
+                { TagType::AlbumComment, { "MyAlbumComment" } },
                 { TagType::Barcode, { "MyBarcode" } },
                 { TagType::Comment, { "Comment1", "Comment2" } },
                 { TagType::Compilation, { "1" } },
@@ -68,6 +69,7 @@ namespace lms::metadata
                 { TagType::Producer, { "MyProducer1", "MyProducer2" } },
                 { TagType::Remixer, { "MyRemixer1", "MyRemixer2" } },
                 { TagType::RecordLabel, { "Label1", "Label2" } },
+                { TagType::ReleaseCountry, { "MyCountry1", "MyCountry2" } },
                 { TagType::Language, { "Language1", "Language2" } },
                 { TagType::Lyricist, { "MyLyricist1", "MyLyricist2" } },
                 { TagType::OriginalReleaseDate, { "2019/02/03" } },
@@ -202,28 +204,33 @@ namespace lms::metadata
 
         // Release
         ASSERT_TRUE(track->medium->release.has_value());
-        EXPECT_EQ(track->medium->release->artistDisplayName, "MyAlbumArtist1 & MyAlbumArtist2");
-        ASSERT_EQ(track->medium->release->artists.size(), 2);
-        EXPECT_EQ(track->medium->release->artists[0].name, "MyAlbumArtist1");
-        EXPECT_EQ(track->medium->release->artists[0].sortName, "MyAlbumArtist1SortName");
-        EXPECT_EQ(track->medium->release->artists[0].mbid, core::UUID::fromString("6fbf097c-1487-43e8-874b-50dd074398a7"));
-        EXPECT_EQ(track->medium->release->artists[1].name, "MyAlbumArtist2");
-        EXPECT_EQ(track->medium->release->artists[1].sortName, "MyAlbumArtist2SortName");
-        EXPECT_EQ(track->medium->release->artists[1].mbid, core::UUID::fromString("5ed3d6b3-2aed-4a03-828c-3c4d4f7406e1"));
-        EXPECT_TRUE(track->medium->release->isCompilation);
-        EXPECT_EQ(track->medium->release->barcode, "MyBarcode");
-        ASSERT_EQ(track->medium->release->labels.size(), 2);
-        EXPECT_EQ(track->medium->release->labels[0], "Label1");
-        EXPECT_EQ(track->medium->release->labels[1], "Label2");
-        ASSERT_TRUE(track->medium->release->mbid.has_value());
-        EXPECT_EQ(track->medium->release->mbid.value(), core::UUID::fromString("3fa39992-b786-4585-a70e-85d5cc15ef69"));
-        EXPECT_EQ(track->medium->release->groupMBID.value(), core::UUID::fromString("5b1a5a44-8420-4426-9b86-d25dc8d04838"));
-        EXPECT_EQ(track->medium->release->mediumCount, 3);
-        EXPECT_EQ(track->medium->release->name, "MyAlbum");
-        EXPECT_EQ(track->medium->release->sortName, "MyAlbumSortName");
+        const Release& release{ track->medium->release.value() };
+        EXPECT_EQ(release.artistDisplayName, "MyAlbumArtist1 & MyAlbumArtist2");
+        ASSERT_EQ(release.artists.size(), 2);
+        EXPECT_EQ(release.artists[0].name, "MyAlbumArtist1");
+        EXPECT_EQ(release.artists[0].sortName, "MyAlbumArtist1SortName");
+        EXPECT_EQ(release.artists[0].mbid, core::UUID::fromString("6fbf097c-1487-43e8-874b-50dd074398a7"));
+        EXPECT_EQ(release.artists[1].name, "MyAlbumArtist2");
+        EXPECT_EQ(release.artists[1].sortName, "MyAlbumArtist2SortName");
+        EXPECT_EQ(release.artists[1].mbid, core::UUID::fromString("5ed3d6b3-2aed-4a03-828c-3c4d4f7406e1"));
+        EXPECT_TRUE(release.isCompilation);
+        EXPECT_EQ(release.barcode, "MyBarcode");
+        ASSERT_EQ(release.labels.size(), 2);
+        EXPECT_EQ(release.labels[0], "Label1");
+        EXPECT_EQ(release.labels[1], "Label2");
+        ASSERT_TRUE(release.mbid.has_value());
+        EXPECT_EQ(release.mbid.value(), core::UUID::fromString("3fa39992-b786-4585-a70e-85d5cc15ef69"));
+        EXPECT_EQ(release.groupMBID.value(), core::UUID::fromString("5b1a5a44-8420-4426-9b86-d25dc8d04838"));
+        EXPECT_EQ(release.mediumCount, 3);
+        EXPECT_EQ(release.name, "MyAlbum");
+        EXPECT_EQ(release.sortName, "MyAlbumSortName");
+        EXPECT_EQ(release.comment, "MyAlbumComment");
+        ASSERT_EQ(release.countries.size(), 2);
+        EXPECT_EQ(release.countries[0], "MyCountry1");
+        EXPECT_EQ(release.countries[1], "MyCountry2");
         {
             std::vector<std::string> expectedReleaseTypes{ "Album", "Compilation" };
-            EXPECT_EQ(track->medium->release->releaseTypes, expectedReleaseTypes);
+            EXPECT_EQ(release.releaseTypes, expectedReleaseTypes);
         }
     }
 
@@ -584,6 +591,146 @@ namespace lms::metadata
         EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct the artist display name
     }
 
+    TEST(Parser, MBIDs_fallback)
+    {
+        TestTagReader testTags{
+            {
+                { TagType::Artist, { "Artist1", "Artist2" } },
+                { TagType::Album, { "MyAlbum" } },
+                { TagType::AlbumArtists, { "Artist3", "Artist4" } },
+                { TagType::MusicBrainzArtistID, { "6643f584-5edc-45ce-927d-0a4ab25c2673", "481c5912-bf1a-47f7-b03c-d34e49711706" } },
+                { TagType::MusicBrainzReleaseArtistID, { "ed42bcaf-e147-4f34-8f26-d74acc97670a", "6fc64a4b-26f5-441f-993c-fd511290233b" } },
+                { TagType::Composer, { "Artist1", "Artist3" } },
+                { TagType::Conductor, { "Artist1", "Artist3" } },
+                { TagType::Lyricist, { "Artist1", "Artist3" } },
+                { TagType::Mixer, { "Artist1", "Artist3" } },
+                { TagType::Producer, { "Artist1", "Artist3" } },
+                { TagType::Remixers, { "Artist1", "Artist3" } },
+            }
+        };
+
+        testTags.setPerformersTags({ { "RoleA", { "Artist1", "Artist3" } },
+            { "RoleB", { "Artist2", "Artist4" } } });
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "Artist1");
+        ASSERT_TRUE(track->artists[0].mbid.has_value());
+        EXPECT_EQ(track->artists[0].mbid.value(), core::UUID::fromString("6643f584-5edc-45ce-927d-0a4ab25c2673"));
+        EXPECT_EQ(track->artists[1].name, "Artist2");
+        ASSERT_TRUE(track->artists[1].mbid.has_value());
+        EXPECT_EQ(track->artists[1].mbid.value(), core::UUID::fromString("481c5912-bf1a-47f7-b03c-d34e49711706"));
+
+        ASSERT_TRUE(track->medium.has_value());
+        ASSERT_TRUE(track->medium->release.has_value());
+        ASSERT_EQ(track->medium->release->artists.size(), 2);
+        EXPECT_EQ(track->medium->release->artists[0].name, "Artist3");
+        ASSERT_TRUE(track->medium->release->artists[0].mbid.has_value());
+        EXPECT_EQ(track->medium->release->artists[0].mbid.value(), core::UUID::fromString("ed42bcaf-e147-4f34-8f26-d74acc97670a"));
+        EXPECT_EQ(track->medium->release->artists[1].name, "Artist4");
+        ASSERT_TRUE(track->medium->release->artists[1].mbid.has_value());
+        EXPECT_EQ(track->medium->release->artists[1].mbid.value(), core::UUID::fromString("6fc64a4b-26f5-441f-993c-fd511290233b"));
+
+        ASSERT_EQ(track->composerArtists.size(), 2);
+        EXPECT_EQ(track->composerArtists[0].name, "Artist1");
+        ASSERT_TRUE(track->composerArtists[0].mbid.has_value());
+        EXPECT_EQ(track->composerArtists[0].mbid.value(), core::UUID::fromString("6643f584-5edc-45ce-927d-0a4ab25c2673"));
+        EXPECT_EQ(track->composerArtists[1].name, "Artist3");
+        ASSERT_TRUE(track->composerArtists[1].mbid.has_value());
+        EXPECT_EQ(track->composerArtists[1].mbid.value(), core::UUID::fromString("ed42bcaf-e147-4f34-8f26-d74acc97670a"));
+
+        ASSERT_EQ(track->conductorArtists.size(), 2);
+        EXPECT_EQ(track->conductorArtists[0].name, "Artist1");
+        ASSERT_TRUE(track->conductorArtists[0].mbid.has_value());
+        EXPECT_EQ(track->conductorArtists[0].mbid.value(), core::UUID::fromString("6643f584-5edc-45ce-927d-0a4ab25c2673"));
+        EXPECT_EQ(track->conductorArtists[1].name, "Artist3");
+        ASSERT_TRUE(track->conductorArtists[1].mbid.has_value());
+        EXPECT_EQ(track->conductorArtists[1].mbid.value(), core::UUID::fromString("ed42bcaf-e147-4f34-8f26-d74acc97670a"));
+
+        ASSERT_EQ(track->lyricistArtists.size(), 2);
+        EXPECT_EQ(track->lyricistArtists[0].name, "Artist1");
+        ASSERT_TRUE(track->lyricistArtists[0].mbid.has_value());
+        EXPECT_EQ(track->lyricistArtists[0].mbid.value(), core::UUID::fromString("6643f584-5edc-45ce-927d-0a4ab25c2673"));
+        EXPECT_EQ(track->lyricistArtists[1].name, "Artist3");
+        ASSERT_TRUE(track->lyricistArtists[1].mbid.has_value());
+        EXPECT_EQ(track->lyricistArtists[1].mbid.value(), core::UUID::fromString("ed42bcaf-e147-4f34-8f26-d74acc97670a"));
+
+        ASSERT_EQ(track->mixerArtists.size(), 2);
+        EXPECT_EQ(track->mixerArtists[0].name, "Artist1");
+        ASSERT_TRUE(track->mixerArtists[0].mbid.has_value());
+        EXPECT_EQ(track->mixerArtists[0].mbid.value(), core::UUID::fromString("6643f584-5edc-45ce-927d-0a4ab25c2673"));
+        EXPECT_EQ(track->mixerArtists[1].name, "Artist3");
+        ASSERT_TRUE(track->mixerArtists[1].mbid.has_value());
+        EXPECT_EQ(track->mixerArtists[1].mbid.value(), core::UUID::fromString("ed42bcaf-e147-4f34-8f26-d74acc97670a"));
+
+        ASSERT_EQ(track->producerArtists.size(), 2);
+        EXPECT_EQ(track->producerArtists[0].name, "Artist1");
+        ASSERT_TRUE(track->producerArtists[0].mbid.has_value());
+        EXPECT_EQ(track->producerArtists[0].mbid.value(), core::UUID::fromString("6643f584-5edc-45ce-927d-0a4ab25c2673"));
+        EXPECT_EQ(track->producerArtists[1].name, "Artist3");
+        ASSERT_TRUE(track->producerArtists[1].mbid.has_value());
+        EXPECT_EQ(track->producerArtists[1].mbid.value(), core::UUID::fromString("ed42bcaf-e147-4f34-8f26-d74acc97670a"));
+
+        ASSERT_EQ(track->remixerArtists.size(), 2);
+        EXPECT_EQ(track->remixerArtists[0].name, "Artist1");
+        ASSERT_TRUE(track->remixerArtists[0].mbid.has_value());
+        EXPECT_EQ(track->remixerArtists[0].mbid.value(), core::UUID::fromString("6643f584-5edc-45ce-927d-0a4ab25c2673"));
+        EXPECT_EQ(track->remixerArtists[1].name, "Artist3");
+        ASSERT_TRUE(track->remixerArtists[1].mbid.has_value());
+        EXPECT_EQ(track->remixerArtists[1].mbid.value(), core::UUID::fromString("ed42bcaf-e147-4f34-8f26-d74acc97670a"));
+
+        ASSERT_TRUE(track->performerArtists.contains("Rolea"));
+        ASSERT_EQ(track->performerArtists["Rolea"].size(), 2);
+        EXPECT_EQ(track->performerArtists["Rolea"][0].name, "Artist1");
+        ASSERT_TRUE(track->performerArtists["Rolea"][0].mbid.has_value());
+        EXPECT_EQ(track->performerArtists["Rolea"][0].mbid.value(), core::UUID::fromString("6643f584-5edc-45ce-927d-0a4ab25c2673"));
+        EXPECT_EQ(track->performerArtists["Rolea"][1].name, "Artist3");
+        ASSERT_TRUE(track->performerArtists["Rolea"][1].mbid.has_value());
+        EXPECT_EQ(track->performerArtists["Rolea"][1].mbid.value(), core::UUID::fromString("ed42bcaf-e147-4f34-8f26-d74acc97670a"));
+        ASSERT_EQ(track->performerArtists["Roleb"].size(), 2);
+        EXPECT_EQ(track->performerArtists["Roleb"][0].name, "Artist2");
+        ASSERT_TRUE(track->performerArtists["Roleb"][0].mbid.has_value());
+        EXPECT_EQ(track->performerArtists["Roleb"][0].mbid.value(), core::UUID::fromString("481c5912-bf1a-47f7-b03c-d34e49711706"));
+        EXPECT_EQ(track->performerArtists["Roleb"][1].name, "Artist4");
+        ASSERT_TRUE(track->performerArtists["Roleb"][1].mbid.has_value());
+        EXPECT_EQ(track->performerArtists["Roleb"][1].mbid.value(), core::UUID::fromString("6fc64a4b-26f5-441f-993c-fd511290233b"));
+    }
+
+    TEST(Parser, MBIDs_fallback_priority)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "Artist1" } },
+                { TagType::Album, { "MyAlbum" } },
+                { TagType::AlbumArtists, { "Artist1" } },
+                { TagType::MusicBrainzArtistID, { "6643f584-5edc-45ce-927d-0a4ab25c2673" } },
+                { TagType::MusicBrainzReleaseArtistID, { "ed42bcaf-e147-4f34-8f26-d74acc97670a" } },
+                { TagType::Composer, { "Artist1" } },
+            }
+        };
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_EQ(track->composerArtists.size(), 1);
+        EXPECT_EQ(track->composerArtists[0].name, "Artist1");
+        ASSERT_TRUE(track->composerArtists[0].mbid.has_value());
+        EXPECT_EQ(track->composerArtists[0].mbid.value(), core::UUID::fromString("6643f584-5edc-45ce-927d-0a4ab25c2673"));
+    }
+
+    TEST(Parser, release_sortNameFallback)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Album, { "MyAlbum" } },
+                // No AlbumSortOrder
+            }
+        };
+        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+
+        ASSERT_TRUE(track->medium.has_value());
+        ASSERT_TRUE(track->medium->release.has_value());
+        EXPECT_EQ(track->medium->release->sortName, "MyAlbum");
+    }
+
     TEST(Parser, advisory)
     {
         auto doTest = [](std::string_view value, std::optional<Track::Advisory> expectedValue) {
@@ -657,5 +804,4 @@ namespace lms::metadata
         doTest("2020/01", core::PartialDateTime{ 2020, 1 });
         doTest("2020", core::PartialDateTime{ 2020 });
     }
-
 } // namespace lms::metadata

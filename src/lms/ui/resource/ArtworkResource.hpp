@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include <Wt/WResource.h>
 
 #include "database/ArtistId.hpp"
@@ -42,13 +44,13 @@ namespace lms::ui
             Large = 512,
         };
 
-        std::string getArtistImageUrl(db::ArtistId artistId, Size size) const;
-        std::string getReleaseCoverUrl(db::ReleaseId releaseId, Size size) const;
-        std::string getTrackImageUrl(db::TrackId trackId, Size size) const;
+        std::string getArtistImageUrl(db::ArtistId artistId, std::optional<Size> size = std::nullopt) const;
+        std::string getReleaseCoverUrl(db::ReleaseId releaseId, std::optional<Size> size = std::nullopt) const;
+        std::string getTrackImageUrl(db::TrackId trackId, std::optional<Size> size = std::nullopt) const;
 
     private:
-        std::string getImageUrl(db::ImageId imageId, Size size, std::string_view type) const;
-        std::string getImageUrl(db::TrackId trackId, Size size, std::string_view type) const;
+        std::string getImageUrl(db::ImageId imageId, std::optional<Size> size, std::string_view type) const;
+        std::string getImageUrl(db::TrackId trackId, std::optional<Size> size, std::string_view type) const;
 
         std::string getDefaultArtistImageUrl() const;
         std::string getDefaultReleaseCoverUrl() const;

@@ -19,15 +19,11 @@
 
 #pragma once
 
-#include <span>
-#include <vector>
-
 #include <Wt/WContainerWidget.h>
 #include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
 
-#include "database/ClusterId.hpp"
-#include "database/MediaLibraryId.hpp"
+#include "database/Filters.hpp"
 
 namespace lms::ui
 {
@@ -36,8 +32,7 @@ namespace lms::ui
     public:
         Filters();
 
-        std::span<const db::ClusterId> getClusters() const { return _clusterIds; }
-        db::MediaLibraryId getMediaLibrary() const { return _mediaLibraryId; }
+        const db::Filters& getDbFilters() const { return _dbFilters; }
 
         void add(db::ClusterId clusterId);
 
@@ -45,14 +40,18 @@ namespace lms::ui
 
     private:
         void showDialog();
+        void set(db::LabelId labelId);
         void set(db::MediaLibraryId mediaLibraryId);
+        void set(db::ReleaseTypeId releaseTypeId);
         void emitFilterAddedNotification();
 
         Wt::WContainerWidget* _filters{};
-        Wt::Signal<> _sigUpdated;
-        std::vector<db::ClusterId> _clusterIds;
-
         Wt::WInteractWidget* _mediaLibraryFilter{};
-        db::MediaLibraryId _mediaLibraryId;
+        Wt::WInteractWidget* _labelFilter{};
+        Wt::WInteractWidget* _releaseTypeFilter{};
+
+        Wt::Signal<> _sigUpdated;
+
+        db::Filters _dbFilters;
     };
 } // namespace lms::ui

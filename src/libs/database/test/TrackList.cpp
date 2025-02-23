@@ -176,7 +176,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
             std::vector<TrackListId> visitedTrackLists;
-            TrackList::find(session, TrackList::FindParameters{}.setMediaLibrary(library->getId()), [&](const TrackList::pointer& trackList) {
+            TrackList::find(session, TrackList::FindParameters{}.setFilters(Filters{}.setMediaLibrary(library->getId())), [&](const TrackList::pointer& trackList) {
                 visitedTrackLists.push_back(trackList->getId());
             });
             ASSERT_EQ(visitedTrackLists.size(), 1);
@@ -195,7 +195,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setClusters(std::initializer_list<ClusterId>{ cluster.getId() })) };
+            auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setFilters(Filters{}.setClusters(std::initializer_list<ClusterId>{ cluster.getId() }))) };
             EXPECT_EQ(trackLists.results.size(), 0);
         }
 
@@ -209,7 +209,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setClusters(std::initializer_list<ClusterId>{ cluster.getId() })) };
+            auto trackLists{ TrackList::find(session, TrackList::FindParameters{}.setFilters(Filters{}.setClusters(std::initializer_list<ClusterId>{ cluster.getId() }))) };
             ASSERT_EQ(trackLists.results.size(), 1);
             EXPECT_EQ(trackLists.results.front(), trackList1.getId());
         }

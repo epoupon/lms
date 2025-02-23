@@ -299,10 +299,16 @@ namespace lms::ui::utils
     std::unique_ptr<Wt::WAnchor> createReleaseAnchor(db::Release::pointer release, bool setText)
     {
         auto res = std::make_unique<Wt::WAnchor>(createReleaseLink(release));
-
         if (setText)
         {
             std::string releaseName{ release->getName() };
+            if (std::string_view releaseComment{ release->getComment() }; !releaseComment.empty())
+            {
+                releaseName += " [";
+                releaseName += releaseComment;
+                releaseName += ']';
+            }
+
             res->setTextFormat(Wt::TextFormat::Plain);
             res->setText(Wt::WString::fromUTF8(releaseName));
             res->setToolTip(Wt::WString::fromUTF8(releaseName), Wt::TextFormat::Plain);

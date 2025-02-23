@@ -177,6 +177,7 @@
 <message id="Lms.Explore.duration">Durée</message>
 <message id="Lms.Explore.filter-added">Filtre ajouté</message>
 <message id="Lms.Explore.filters">Filtres</message>
+<message id="Lms.Explore.label">Label</message>
 <message id="Lms.Explore.media-library">Bibliothèque musicale</message>
 <message id="Lms.Explore.most-played">Plus joués</message>
 <message id="Lms.Explore.musicbrainz-artist">MusicBrainz Artist</message>
@@ -191,6 +192,7 @@
 <message id="Lms.Explore.recently-modified">Modifiés récemment</message>
 <message id="Lms.Explore.recently-played">Joués récemment</message>
 <message id="Lms.Explore.release-info">Informations sur l'album</message>
+<message id="Lms.Explore.release-type">Type de publication</message>
 <message id="Lms.Explore.releases">Albums</message>
 <message id="Lms.Explore.search">Rechercher</message>
 <message id="Lms.Explore.star">Ajouter aux favoris</message>
@@ -248,9 +250,10 @@
 </message>
 
 <!--Explore:Release-->
-<message id="Lms.Explore.Release.similar-releases">Albums similaires</message>
 <message id="Lms.Explore.Release.copyright">Copyright</message>
 <message id="Lms.Explore.Release.disc">Disque {1}</message>
+<message id="Lms.Explore.Release.other-versions">Autres versions</message>
+<message id="Lms.Explore.Release.similar-releases">Albums similaires</message>
 <message id="Lms.Explore.Release.type">Type</message>
 <message id="Lms.Explore.Release.type-primary-album">Album</message>
 <message id="Lms.Explore.Release.type-primary-broadcast">Diffusion</message>

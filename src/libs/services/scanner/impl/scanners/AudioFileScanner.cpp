@@ -55,8 +55,8 @@ namespace lms::scanner
 
             if (artistInfo.mbid)
                 artist.modify()->setMBID(artistInfo.mbid);
-            if (artistInfo.sortName)
-                artist.modify()->setSortName(*artistInfo.sortName);
+
+            artist.modify()->setSortName(artistInfo.sortName ? *artistInfo.sortName : artistInfo.name);
 
             return artist;
         }
@@ -141,6 +141,15 @@ namespace lms::scanner
             return releaseType;
         }
 
+        db::Country::pointer getOrCreateCountry(db::Session& session, std::string_view name)
+        {
+            db::Country::pointer country{ db::Country::find(session, name) };
+            if (!country)
+                country = session.create<db::Country>(name);
+
+            return country;
+        }
+
         db::Label::pointer getOrCreateLabel(db::Session& session, std::string_view name)
         {
             db::Label::pointer label{ db::Label::find(session, name) };
@@ -166,13 +175,20 @@ namespace lms::scanner
                 release.modify()->setCompilation(releaseInfo.isCompilation);
             if (release->getBarcode() != releaseInfo.barcode)
                 release.modify()->setBarcode(releaseInfo.barcode);
+            if (release->getComment() != releaseInfo.comment)
+                release.modify()->setComment(releaseInfo.comment);
             if (release->getReleaseTypeNames() != releaseInfo.releaseTypes)
             {
                 release.modify()->clearReleaseTypes();
                 for (std::string_view releaseType : releaseInfo.releaseTypes)
                     release.modify()->addReleaseType(getOrCreateReleaseType(session, releaseType));
             }
-
+            if (release->getCountryNames() != releaseInfo.countries)
+            {
+                release.modify()->clearCountries();
+                for (std::string_view country : releaseInfo.countries)
+                    release.modify()->addCountry(getOrCreateCountry(session, country));
+            }
             if (release->getLabelNames() != releaseInfo.labels)
             {
                 release.modify()->clearLabels();
@@ -329,6 +345,45 @@ namespace lms::scanner
             return db::Advisory::UnSet;
         }
 
+        db::Track::pointer findMovedTrackBySizeAndMetaData(db::Session& session, const metadata::Track& parsedTrack, const FileInfo& fileInfo)
+        {
+            db::Track::FindParameters params;
+            // Add as many fields as possible to limit errors
+            params.setName(parsedTrack.title);
+            if (parsedTrack.medium)
+            {
+                if (parsedTrack.medium->position)
+                    params.setDiscNumber(*parsedTrack.medium->position);
+                if (parsedTrack.medium->release)
+                    params.setReleaseName(parsedTrack.medium->release->name);
+            }
+            if (parsedTrack.position)
+                params.setTrackNumber(*parsedTrack.position);
+            params.setHasEmbeddedImage(parsedTrack.hasCover);
+            params.setFileSize(fileInfo.fileSize);
+
+            bool error{};
+            db::Track::pointer res;
+            db::Track::find(session, params, [&](const db::Track::pointer& track) {
+                // Check that the track is truly no longer where it was during the last scan
+                std::error_code ec;
+                if (std::filesystem::exists(track->getAbsoluteFilePath(), ec))
+                    return;
+
+                if (res)
+                {
+                    LMS_LOG(DBUPDATER, DEBUG, "Found too many candidates for file move. New file = " << fileInfo.relativePath << ", candidate = " << track->getAbsoluteFilePath() << ", previous candidate = " << res->getAbsoluteFilePath());
+                    error = true;
+                }
+                res = track;
+            });
+
+            if (error)
+                res = db::Track::pointer{};
+
+            return res;
+        }
+
         class AudioFileScanOperation : public IFileScanOperation
         {
         public:
@@ -447,6 +502,17 @@ namespace lms::scanner
                 }
             }
 
+            if (!track)
+            {
+                // maybe the file just moved?
+                track = findMovedTrackBySizeAndMetaData(dbSession, *_parsedTrack, *fileInfo);
+                if (track)
+                {
+                    LMS_LOG(DBUPDATER, DEBUG, "Considering track " << _file << " moved from " << track->getAbsoluteFilePath());
+                    track.modify()->setAbsoluteFilePath(_file);
+                }
+            }
+
             // We estimate this is an audio file if the duration is not null
             if (_parsedTrack->audioProperties.duration == std::chrono::milliseconds::zero())
             {
@@ -479,19 +545,10 @@ namespace lms::scanner
             if (!track)
             {
                 track = dbSession.create<db::Track>();
-                track.modify()->setAbsoluteFilePath(_file);
-
-                const core::PartialDateTime addedTime{
-                    fileInfo->lastWriteTime.date().year(),
-                    static_cast<unsigned>(fileInfo->lastWriteTime.date().month()),
-                    static_cast<unsigned>(fileInfo->lastWriteTime.date().day()),
-                    static_cast<unsigned>(fileInfo->lastWriteTime.time().hour()),
-                    static_cast<unsigned>(fileInfo->lastWriteTime.time().minute()),
-                    static_cast<unsigned>(fileInfo->lastWriteTime.time().second())
-                };
-
-                track.modify()->setAddedTime(addedTime); // may be erased by encodingTime
                 added = true;
+
+                track.modify()->setAbsoluteFilePath(_file);
+                track.modify()->setAddedTime(_mediaLibrary.firstScan ? fileInfo->lastWriteTime : Wt::WDateTime::currentDateTime()); // may be erased by encodingTime
             }
 
             // Track related data
@@ -509,7 +566,18 @@ namespace lms::scanner
             track.modify()->setLastWriteTime(fileInfo->lastWriteTime);
 
             if (_parsedTrack->encodingTime.isValid())
-                track.modify()->setAddedTime(_parsedTrack->encodingTime);
+            {
+                const core::PartialDateTime& encodingTime{ _parsedTrack->encodingTime };
+                Wt::WDate date;
+                Wt::WTime time;
+                if (encodingTime.getPrecision() >= core::PartialDateTime::Precision::Day)
+                    date = Wt::WDate{ *encodingTime.getYear(), *encodingTime.getMonth(), *encodingTime.getDay() };
+                if (encodingTime.getPrecision() >= core::PartialDateTime::Precision::Sec)
+                    time = Wt::WTime{ *encodingTime.getHour(), *encodingTime.getMin(), *encodingTime.getSec() };
+
+                if (date.isValid())
+                    track.modify()->setAddedTime(time.isValid() ? Wt::WDateTime{ date, time } : Wt::WDateTime{ date });
+            }
 
             db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, _mediaLibrary.id) }; // may be null if settings are updated in // => next scan will correct this
             track.modify()->setMediaLibrary(mediaLibrary);

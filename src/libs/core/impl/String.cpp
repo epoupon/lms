@@ -20,6 +20,8 @@
 #include "core/String.hpp"
 
 #include <algorithm>
+#include <array>
+#include <cstring>
 #include <iomanip>
 #include <utility>
 
@@ -466,14 +468,24 @@ namespace lms::core::stringUtils
 
     std::string toISO8601String(const Wt::WDateTime& dateTime)
     {
-        // assume UTC
-        return dateTime.toString("yyyy-MM-ddThh:mm:ss.zzz", false).toUTF8();
+        if (dateTime.isValid())
+        {
+            // assume UTC
+            return dateTime.toString("yyyy-MM-ddThh:mm:ss.zzz", false).toUTF8();
+        }
+
+        return "";
     }
 
     std::string toISO8601String(const Wt::WDate& date)
     {
-        // assume UTC
-        return date.toString("yyyy-MM-dd").toUTF8();
+        if (date.isValid())
+        {
+            // assume UTC
+            return date.toString("yyyy-MM-dd").toUTF8();
+        }
+
+        return "";
     }
 
     Wt::WDateTime fromISO8601String(std::string_view dateTime)
@@ -493,5 +505,12 @@ namespace lms::core::stringUtils
         const auto millis{ timestamp.count() };
 
         return "[" + std::to_string(mins) + ":" + (secs < 10 ? "0" : "") + std::to_string(secs) + "." + (millis < 100 ? (millis < 10 ? "00" : "0") : "") + std::to_string(millis) + "]";
+    }
+
+    std::string systemErrorToString(int err)
+    {
+        std::array<char, 128> buffer{};
+        ::strerror_r(err, buffer.data(), buffer.size());
+        return std::string{ buffer.data() };
     }
 } // namespace lms::core::stringUtils

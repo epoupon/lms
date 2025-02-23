@@ -152,19 +152,31 @@ namespace lms::db::tests
         ScopedMediaLibrary otherLibrary{ session, "OtherLibrary", "/otherRoot" };
 
         {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_TRUE(library->isEmpty());
+            EXPECT_TRUE(otherLibrary->isEmpty());
+        }
+
+        {
             auto transaction{ session.createWriteTransaction() };
             track.get().modify()->setMediaLibrary(library.get());
         }
 
         {
-            auto transaction{ session.createWriteTransaction() };
-            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setMediaLibrary(library->getId())) };
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_FALSE(library->isEmpty());
+            EXPECT_TRUE(otherLibrary->isEmpty());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setFilters(Filters{}.setMediaLibrary(library->getId()))) };
             ASSERT_EQ(tracks.results.size(), 1);
             EXPECT_EQ(tracks.results.front(), track.getId());
         }
         {
-            auto transaction{ session.createWriteTransaction() };
-            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setMediaLibrary(otherLibrary->getId())) };
+            auto transaction{ session.createReadTransaction() };
+            const auto tracks{ Track::findIds(session, Track::FindParameters{}.setFilters(Filters{}.setMediaLibrary(otherLibrary->getId()))) };
             EXPECT_EQ(tracks.results.size(), 0);
         }
     }
@@ -387,9 +399,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            track1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2 });
-            track2.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 1 });
-            track4.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2, 15, 36, 24 });
+            track1.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            track2.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 1 } });
+            track4.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 }, Wt::WTime{ 15, 36, 24 } });
         }
 
         {

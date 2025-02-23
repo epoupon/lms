@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,18 +19,6 @@
 
 #pragma once
 
-#include <filesystem>
+#include "database/IdType.hpp"
 
-#include "database/MediaLibraryId.hpp"
-
-namespace lms::scanner
-{
-    struct MediaLibraryInfo
-    {
-        db::MediaLibraryId id;
-        std::filesystem::path rootDirectory;
-        bool firstScan{};
-
-        auto operator<=>(const MediaLibraryInfo& other) const = default;
-    };
-} // namespace lms::scanner
+LMS_DECLARE_IDTYPE(CountryId)

@@ -23,7 +23,6 @@
 #include <filesystem>
 #include <optional>
 #include <ostream>
-#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -38,6 +37,7 @@
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
 #include "database/DirectoryId.hpp"
+#include "database/Filters.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
@@ -65,7 +65,7 @@ namespace lms::db
     public:
         struct FindParameters
         {
-            std::vector<ClusterId> clusters;        // if non empty, tracks that belong to these clusters
+            Filters filters;
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords
             std::string name;                       // if non empty, must match this name (title)
             std::string fileStem;                   // if non empty, must match this file stem
@@ -84,13 +84,13 @@ namespace lms::db
             TrackListId trackList;                                   // matching this trackList
             std::optional<int> trackNumber;                          // matching this track number
             std::optional<int> discNumber;                           // matching this disc number
-            MediaLibraryId mediaLibrary;                             // If set, tracks in this library
             DirectoryId directory;                                   // if set, tracks in this directory
             std::optional<bool> hasEmbeddedImage;                    // if set, tracks that have or not embedded images
+            std::optional<std::size_t> fileSize;                     // if set, tracks that match this file size
 
-            FindParameters& setClusters(std::span<const ClusterId> _clusters)
+            FindParameters& setFilters(const Filters& _filters)
             {
-                clusters.assign(std::cbegin(_clusters), std::cend(_clusters));
+                filters = _filters;
                 return *this;
             }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
@@ -177,11 +177,6 @@ namespace lms::db
                 discNumber = _discNumber;
                 return *this;
             }
-            FindParameters& setMediaLibrary(MediaLibraryId _mediaLibrary)
-            {
-                mediaLibrary = _mediaLibrary;
-                return *this;
-            }
             FindParameters& setDirectory(DirectoryId _directory)
             {
                 directory = _directory;
@@ -190,6 +185,11 @@ namespace lms::db
             FindParameters& setHasEmbeddedImage(std::optional<bool> _hasEmbeddedImage)
             {
                 hasEmbeddedImage = _hasEmbeddedImage;
+                return *this;
+            }
+            FindParameters& setFileSize(std::optional<std::size_t> _fileSize)
+            {
+                fileSize = _fileSize;
                 return *this;
             }
         };
@@ -223,8 +223,8 @@ namespace lms::db
         void setAbsoluteFilePath(const std::filesystem::path& filePath);
         void setRelativeFilePath(const std::filesystem::path& filePath);
         void setFileSize(std::size_t fileSize) { _fileSize = fileSize; }
-        void setLastWriteTime(Wt::WDateTime time) { _fileLastWrite = time; }
-        void setAddedTime(core::PartialDateTime time) { _fileAdded = time; }
+        void setLastWriteTime(const Wt::WDateTime& time) { _fileLastWrite = time; }
+        void setAddedTime(const Wt::WDateTime& time) { _fileAdded = time; }
         void setBitrate(std::size_t bitrate) { _bitrate = bitrate; }
         void setBitsPerSample(std::size_t bitsPerSample) { _bitsPerSample = bitsPerSample; }
         void setDuration(std::chrono::milliseconds duration) { _duration = duration; }
@@ -272,7 +272,7 @@ namespace lms::db
         const core::PartialDateTime& getOriginalDate() const { return _originalDate; }
         std::optional<int> getOriginalYear() const;
         const Wt::WDateTime& getLastWriteTime() const { return _fileLastWrite; }
-        const core::PartialDateTime& getAddedTime() const { return _fileAdded; }
+        const Wt::WDateTime& getAddedTime() const { return _fileAdded; }
         bool hasCover() const { return _hasCover; }
         bool hasLyrics() const;
         std::optional<core::UUID> getTrackMBID() const { return core::UUID::fromString(_trackMBID); }
@@ -367,7 +367,7 @@ namespace lms::db
         std::filesystem::path _fileName;
         long long _fileSize{};
         Wt::WDateTime _fileLastWrite;
-        core::PartialDateTime _fileAdded;
+        Wt::WDateTime _fileAdded;
         bool _hasCover{};
         std::string _trackMBID;
         std::string _recordingMBID;

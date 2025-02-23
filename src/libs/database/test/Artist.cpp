@@ -324,13 +324,13 @@ namespace lms::db::tests
         }
         {
             auto transaction{ session.createReadTransaction() };
-            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setMediaLibrary(library->getId())) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFilters(Filters{}.setMediaLibrary(library->getId()))) };
             ASSERT_EQ(artists.results.size(), 1);
             EXPECT_EQ(artists.results.front(), artist.getId());
         }
         {
             auto transaction{ session.createReadTransaction() };
-            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setMediaLibrary(otherLibrary->getId())) };
+            auto artists{ Artist::findIds(session, Artist::FindParameters{}.setFilters(Filters{}.setMediaLibrary(otherLibrary->getId()))) };
             EXPECT_EQ(artists.results.size(), 0);
         }
     }
@@ -751,11 +751,11 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
-            trackA1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2 });
-            trackB1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 1 });
-            trackD1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 2, 15, 36, 24 });
-            trackD1.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 3 });
-            trackA2.get().modify()->setAddedTime(core::PartialDateTime{ 2021, 1, 4 });
+            trackA1.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 } });
+            trackB1.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 1 } });
+            trackD1.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 2 }, Wt::WTime{ 15, 36, 24 } });
+            trackD1.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 3 } });
+            trackA2.get().modify()->setAddedTime(Wt::WDateTime{ Wt::WDate{ 2021, 1, 4 } });
 
             TrackArtistLink::create(session, trackA1.get(), artistA.get(), TrackArtistLinkType::Artist);
             TrackArtistLink::create(session, trackA2.get(), artistA.get(), TrackArtistLinkType::Producer);

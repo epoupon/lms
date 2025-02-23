@@ -97,13 +97,12 @@ namespace lms::feedback
             return {};
 
         Artist::FindParameters searchParams;
+        searchParams.setFilters(params.filters);
         searchParams.setStarringUser(params.user, *backend);
-        searchParams.setClusters(params.clusters);
         searchParams.setKeywords(params.keywords);
         searchParams.setLinkType(params.linkType);
         searchParams.setSortMethod(params.sortMethod);
         searchParams.setRange(params.range);
-        searchParams.setMediaLibrary(params.library);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
@@ -149,11 +148,10 @@ namespace lms::feedback
 
         Release::FindParameters searchParams;
         searchParams.setStarringUser(params.user, *backend);
-        searchParams.setClusters(params.clusters);
+        searchParams.setFilters(params.filters);
         searchParams.setKeywords(params.keywords);
         searchParams.setSortMethod(ReleaseSortMethod::StarredDateDesc);
         searchParams.setRange(params.range);
-        searchParams.setMediaLibrary(params.library);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
@@ -199,11 +197,10 @@ namespace lms::feedback
 
         Track::FindParameters searchParams;
         searchParams.setStarringUser(params.user, *backend);
-        searchParams.setClusters(params.clusters);
+        searchParams.setFilters(params.filters);
         searchParams.setKeywords(params.keywords);
         searchParams.setSortMethod(TrackSortMethod::StarredDateDesc);
         searchParams.setRange(params.range);
-        searchParams.setMediaLibrary(params.library);
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };

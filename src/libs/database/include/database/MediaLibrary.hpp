@@ -50,6 +50,7 @@ namespace lms::db
         // getters
         std::string_view getName() const { return _name; }
         const std::filesystem::path& getPath() const { return _path; }
+        bool isEmpty() const;
 
         // setters
         void setName(std::string_view name) { _name = name; }

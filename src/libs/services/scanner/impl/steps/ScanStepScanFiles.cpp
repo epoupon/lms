@@ -75,7 +75,7 @@ namespace lms::scanner
     void ScanStepScanFiles::process(ScanContext& context, const MediaLibraryInfo& mediaLibrary)
     {
         const std::size_t scanQueueMaxScanRequestCount{ 100 * _fileScanQueue.getThreadCount() };
-        const std::size_t processFileResultsBatchSize{ 5 };
+        const std::size_t processFileResultsBatchSize{ 10 };
 
         std::vector<std::unique_ptr<IFileScanOperation>> scanOperations;
 

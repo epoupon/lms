@@ -213,7 +213,7 @@ namespace lms::ui
             Settings defaultSettings;
 
             std::ostringstream oss;
-            oss << "LMS.mediaplayer.init("
+            oss << jsRef() + ".mediaplayer = new LMSMediaPlayer("
                 << jsRef()
                 << ", defaultSettings = " << settingsToJSString(defaultSettings)
                 << ")";
@@ -260,7 +260,7 @@ namespace lms::ui
             // Update 'sizes' above to match this:
             static_assert(static_cast<std::underlying_type_t<ArtworkResource::Size>>(ArtworkResource::Size::Small) == 128);
             static_assert(static_cast<std::underlying_type_t<ArtworkResource::Size>>(ArtworkResource::Size::Large) == 512);
-            oss << "LMS.mediaplayer.loadTrack(params, " << (play ? "true" : "false") << ")"; // true to autoplay
+            oss << jsRef() + ".mediaplayer.loadTrack(params, " << (play ? "true" : "false") << ")"; // true to autoplay
 
             _title->setTextFormat(Wt::TextFormat::Plain);
             _title->setText(Wt::WString::fromUTF8(track->getName()));
@@ -308,7 +308,7 @@ namespace lms::ui
 
     void MediaPlayer::stop()
     {
-        doJavaScript("LMS.mediaplayer.stop()");
+        doJavaScript(jsRef() + ".mediaplayer.stop()");
     }
 
     void MediaPlayer::setSettings(const Settings& settings)
@@ -317,7 +317,7 @@ namespace lms::ui
 
         {
             std::ostringstream oss;
-            oss << "LMS.mediaplayer.setSettings(settings = " << settingsToJSString(settings) << ")";
+            oss << jsRef() + ".mediaplayer.setSettings(settings = " << settingsToJSString(settings) << ")";
 
             LMS_LOG(UI, DEBUG, "Running js = '" << oss.str() << "'");
             doJavaScript(oss.str());

@@ -19,6 +19,7 @@
 
 #include "TagLibTagReader.hpp"
 
+#include <algorithm>
 #include <unordered_map>
 
 #include <taglib/aifffile.h>
@@ -69,6 +70,7 @@ namespace lms::metadata
             { TagType::AlbumArtistSortOrder, { "ALBUMARTISTSORT" } },
             { TagType::AlbumArtists, { "ALBUMARTISTS" } },
             { TagType::AlbumArtistsSortOrder, { "ALBUMARTISTSSORT" } },
+            { TagType::AlbumComment, { "ALBUMCOMMENT", "MUSICBRAINZ_ALBUMCOMMENT, MUSICBRAINZ ALBUM COMMENT", "ALBUMVERSION", "VERSION" } },
             { TagType::AlbumSortOrder, { "ALBUMSORT" } },
             { TagType::Arranger, { "ARRANGER" } },
             { TagType::Artist, { "ARTIST" } },
@@ -190,6 +192,28 @@ namespace lms::metadata
             }
         }
 
+        void dedupTagValues(TagLib::PropertyMap& propertyMap, const std::filesystem::path& file)
+        {
+            for (auto& [key, values] : propertyMap)
+            {
+                if (values.size() <= 1)
+                    continue;
+
+                TagLib::StringList newList;
+                for (const TagLib::String& value : values)
+                {
+                    if (!std::any_of(std::cbegin(newList), std::cend(newList), [&](const TagLib::String& v) { return v == value; }))
+                        newList.append(value);
+                }
+
+                if (values != newList)
+                {
+                    LMS_LOG(METADATA, DEBUG, "File " << file << ": removed " << (values.size() - newList.size()) << " duplicated value(s) in tag '" << key << "', " << newList.size() << " remaining value(s)");
+                    values = newList;
+                }
+            }
+        }
+
         TagLib::FileRef parseFile(const std::filesystem::path& p, ParserReadStyle parserReadStyle)
         {
             LMS_SCOPED_TRACE_DETAILED("MetaData", "TagLibParseFile");
@@ -219,6 +243,18 @@ namespace lms::metadata
 
         _propertyMap = _file.file()->properties();
 
+        if (debug && core::Service<core::logging::ILogger>::get()->isSeverityActive(core::logging::Severity::DEBUG))
+        {
+            for (const auto& [key, values] : _propertyMap)
+            {
+                for (const auto& value : values)
+                    LMS_LOG(METADATA, DEBUG, "Key = '" << key << "', value = '" << value.to8Bit(true) << "'");
+            }
+
+            for (const auto& value : _propertyMap.unsupportedData())
+                LMS_LOG(METADATA, DEBUG, "Unknown value: '" << value.to8Bit(true) << "'");
+        }
+
         // Some tags may not be known by TagLib
         auto getAPETags = [&](const TagLib::APE::Tag* apeTag) {
             if (!apeTag)
@@ -228,6 +264,9 @@ namespace lms::metadata
         };
 
         auto processID3v2Tags = [&](TagLib::ID3v2::Tag& id3v2Tags) {
+            // Dedup values for some tags that may be written in both a standard tag and in a custom tag
+            dedupTagValues(_propertyMap, p);
+
             const auto& frameListMap{ id3v2Tags.frameListMap() };
 
             // Not that good embedded pictures handling
@@ -404,18 +443,6 @@ namespace lms::metadata
         {
             if (wavFile->hasID3v2Tag())
                 processID3v2Tags(*wavFile->ID3v2Tag());
-        }
-
-        if (debug && core::Service<core::logging::ILogger>::get()->isSeverityActive(core::logging::Severity::DEBUG))
-        {
-            for (const auto& [key, values] : _propertyMap)
-            {
-                for (const auto& value : values)
-                    LMS_LOG(METADATA, DEBUG, "Key = '" << key << "', value = '" << value.to8Bit(true) << "'");
-            }
-
-            for (const auto& value : _propertyMap.unsupportedData())
-                LMS_LOG(METADATA, DEBUG, "Unknown value: '" << value.to8Bit(true) << "'");
         }
     }
 

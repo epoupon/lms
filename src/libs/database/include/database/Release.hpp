@@ -20,7 +20,6 @@
 #pragma once
 
 #include <optional>
-#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -32,8 +31,9 @@
 #include "core/PartialDateTime.hpp"
 #include "core/UUID.hpp"
 #include "database/ArtistId.hpp"
-#include "database/ClusterId.hpp"
+#include "database/CountryId.hpp"
 #include "database/DirectoryId.hpp"
+#include "database/Filters.hpp"
 #include "database/LabelId.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
@@ -53,6 +53,37 @@ namespace lms::db
     class Track;
     class User;
 
+    class Country final : public Object<Country, CountryId>
+    {
+    public:
+        Country() = default;
+
+        static std::size_t getCount(Session& session);
+        static pointer find(Session& session, CountryId id);
+        static pointer find(Session& session, std::string_view name);
+        static RangeResults<CountryId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+
+        // Accessors
+        std::string_view getName() const { return _name; }
+
+        template<class Action>
+        void persist(Action& a)
+        {
+            Wt::Dbo::field(a, _name, "name");
+            Wt::Dbo::hasMany(a, _releases, Wt::Dbo::ManyToMany, "release_country", "", Wt::Dbo::OnDeleteCascade);
+        }
+
+    private:
+        static constexpr std::size_t _maxNameLength{ 32 };
+
+        friend class Session;
+        Country(std::string_view name);
+        static pointer create(Session& session, std::string_view name);
+
+        std::string _name;
+        Wt::Dbo::collection<Wt::Dbo::ptr<Release>> _releases; // releases that match this country
+    };
+
     class Label final : public Object<Label, LabelId>
     {
     public:
@@ -61,6 +92,7 @@ namespace lms::db
         static std::size_t getCount(Session& session);
         static pointer find(Session& session, LabelId id);
         static pointer find(Session& session, std::string_view name);
+        static void find(Session& session, LabelSortMethod sortMethod, std::function<void(const Label::pointer& label)> func);
         static RangeResults<LabelId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
 
         // Accessors
@@ -92,6 +124,7 @@ namespace lms::db
         static std::size_t getCount(Session& session);
         static pointer find(Session& session, ReleaseTypeId id);
         static pointer find(Session& session, std::string_view name);
+        static void find(Session& session, ReleaseTypeSortMethod sortMethod, std::function<void(const ReleaseType::pointer& releaseType)> func);
         static RangeResults<ReleaseTypeId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
 
         // Accessors
@@ -120,7 +153,7 @@ namespace lms::db
     public:
         struct FindParameters
         {
-            std::vector<ClusterId> clusters;        // if non empty, releases that belong to these clusters
+            Filters filters;
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords (cannot be set with keywords)
             std::string name;                       // must match this name (cannot be set with keywords)
             ReleaseSortMethod sortMethod{ ReleaseSortMethod::None };
@@ -132,14 +165,14 @@ namespace lms::db
             ArtistId artist;                                                 // only releases that involved this user
             core::EnumSet<TrackArtistLinkType> trackArtistLinkTypes;         //    and for these link types
             core::EnumSet<TrackArtistLinkType> excludedTrackArtistLinkTypes; //    but not for these link types
-            std::string releaseType;                                         // If set, albums that has this release type
-            MediaLibraryId mediaLibrary;                                     // If set, releases that has at least a track in this library
+            std::string releaseType;                                         // If set, releases that has this release type
+            std::optional<core::UUID> releaseGroupMBID;                      // If set, releases that belong to this release group
             DirectoryId directory;                                           // if set, releases in this directory (cannot be set with parent directory)
             DirectoryId parentDirectory;                                     // if set, releases in this parent directory (cannot be set with directory)
 
-            FindParameters& setClusters(std::span<const ClusterId> _clusters)
+            FindParameters& setFilters(const Filters& _filters)
             {
-                clusters.assign(std::cbegin(_clusters), std::cend(_clusters));
+                filters = _filters;
                 return *this;
             }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
@@ -190,9 +223,9 @@ namespace lms::db
                 releaseType = _releaseType;
                 return *this;
             }
-            FindParameters& setMediaLibrary(MediaLibraryId _mediaLibrary)
+            FindParameters& setReleaseGroupMBID(const std::optional<core::UUID>& _releaseGroupMBID)
             {
-                mediaLibrary = _mediaLibrary;
+                releaseGroupMBID = _releaseGroupMBID;
                 return *this;
             }
             FindParameters& setDirectory(DirectoryId _directory)
@@ -244,16 +277,19 @@ namespace lms::db
         std::size_t getDiscCount() const; // may not be total disc (if incomplete for example)
         std::vector<DiscInfo> getDiscs() const;
         std::chrono::milliseconds getDuration() const;
-        Wt::WDateTime getLastWritten() const;
+        Wt::WDateTime getAddedTime() const;
+        Wt::WDateTime getLastWrittenTime() const;
         std::string_view getArtistDisplayName() const { return _artistDisplayName; }
         bool isCompilation() const { return _isCompilation; }
         std::size_t getTrackCount() const;
         std::vector<ObjectPtr<ReleaseType>> getReleaseTypes() const;
         std::vector<std::string> getLabelNames() const;
+        std::vector<std::string> getCountryNames() const;
         std::vector<std::string> getReleaseTypeNames() const;
         void visitLabels(const std::function<void(const Label::pointer& label)>& _func) const;
         core::EnumSet<Advisory> getAdvisories() const;
         std::string_view getBarcode() const { return _barcode; }
+        std::string_view getComment() const { return _comment; }
         ObjectPtr<Image> getImage() const;
 
         // Setters
@@ -265,10 +301,13 @@ namespace lms::db
         void setArtistDisplayName(std::string_view name) { _artistDisplayName = name; }
         void setCompilation(bool value) { _isCompilation = value; }
         void clearLabels();
+        void clearCountries();
         void clearReleaseTypes();
-        void addLabel(ObjectPtr<Label> releaseType);
+        void addLabel(ObjectPtr<Label> label);
+        void addCountry(ObjectPtr<Country> country);
         void addReleaseType(ObjectPtr<ReleaseType> releaseType);
         void setBarcode(std::string_view barcode) { _barcode = barcode; }
+        void setComment(std::string_view comment) { _comment = comment; }
         void setImage(ObjectPtr<Image> image);
 
         // Get the artists of this release
@@ -290,11 +329,13 @@ namespace lms::db
             Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
             Wt::Dbo::field(a, _isCompilation, "is_compilation");
             Wt::Dbo::field(a, _barcode, "barcode");
+            Wt::Dbo::field(a, _comment, "comment");
             Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "release");
 
             Wt::Dbo::belongsTo(a, _image, "image", Wt::Dbo::OnDeleteSetNull);
             Wt::Dbo::hasMany(a, _labels, Wt::Dbo::ManyToMany, "release_label", "", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::hasMany(a, _releaseTypes, Wt::Dbo::ManyToMany, "release_release_type", "", Wt::Dbo::OnDeleteCascade);
+            Wt::Dbo::hasMany(a, _countries, Wt::Dbo::ManyToMany, "release_country", "", Wt::Dbo::OnDeleteCascade);
         }
 
     private:
@@ -315,11 +356,13 @@ namespace lms::db
         std::string _artistDisplayName;
         bool _isCompilation{}; // See https://picard-docs.musicbrainz.org/en/appendices/tag_mapping.html#compilation-itunes-5
         std::string _barcode;
+        std::string _comment;
 
         Wt::Dbo::ptr<Image> _image;
         Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
         Wt::Dbo::collection<Wt::Dbo::ptr<Label>> _labels;
         Wt::Dbo::collection<Wt::Dbo::ptr<ReleaseType>> _releaseTypes;
+        Wt::Dbo::collection<Wt::Dbo::ptr<Country>> _countries;
     };
 
 } // namespace lms::db

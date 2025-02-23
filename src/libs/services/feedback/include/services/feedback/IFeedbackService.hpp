@@ -21,14 +21,12 @@
 
 #include <memory>
 #include <optional>
-#include <span>
 
 #include <Wt/WDateTime.h>
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/io_context.hpp>
 
 #include "database/ArtistId.hpp"
-#include "database/ClusterId.hpp"
-#include "database/MediaLibraryId.hpp"
+#include "database/Filters.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 #include "database/Types.hpp"
@@ -53,19 +51,18 @@ namespace lms::feedback
         struct FindParameters
         {
             db::UserId user;
-            std::vector<db::ClusterId> clusters;    // if non empty, at least one artist that belongs to these clusters
+            db::Filters filters;
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords
             std::optional<db::Range> range;
-            db::MediaLibraryId library;
 
             FindParameters& setUser(const db::UserId _user)
             {
                 user = _user;
                 return *this;
             }
-            FindParameters& setClusters(std::span<const db::ClusterId> _clusters)
+            FindParameters& setFilters(const db::Filters& _filters)
             {
-                clusters.assign(std::cbegin(_clusters), std::cend(_clusters));
+                filters = _filters;
                 return *this;
             }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
@@ -76,11 +73,6 @@ namespace lms::feedback
             FindParameters& setRange(std::optional<db::Range> _range)
             {
                 range = _range;
-                return *this;
-            }
-            FindParameters& setMediaLibrary(db::MediaLibraryId _library)
-            {
-                library = _library;
                 return *this;
             }
         };
@@ -133,6 +125,6 @@ namespace lms::feedback
         virtual std::optional<db::Rating> getRating(db::UserId userId, db::TrackId trackId) = 0;
     };
 
-    std::unique_ptr<IFeedbackService> createFeedbackService(boost::asio::io_service& ioContext, db::Db& db);
+    std::unique_ptr<IFeedbackService> createFeedbackService(boost::asio::io_context& ioContext, db::Db& db);
 
 } // namespace lms::feedback

@@ -107,7 +107,7 @@ namespace lms::ui
                 if (field == PasswordField)
                 {
                     const auto checkResult{ _passwordService.checkUserPassword(
-                        boost::asio::ip::address::from_string(LmsApp->environment().clientAddress()),
+                        boost::asio::ip::make_address(LmsApp->environment().clientAddress()),
                         valueText(LoginNameField).toUTF8(),
                         valueText(PasswordField).toUTF8()) };
                     switch (checkResult.state)
@@ -153,7 +153,7 @@ namespace lms::ui
 
         const std::string hashedCookie{ Wt::Auth::SHA1HashFunction{}.compute(*authCookie, authCookieSalt) };
 
-        const auto res{ core::Service<auth::IAuthTokenService>::get()->processAuthToken(authTokenDomain, boost::asio::ip::address::from_string(env.clientAddress()), hashedCookie) };
+        const auto res{ core::Service<auth::IAuthTokenService>::get()->processAuthToken(authTokenDomain, boost::asio::ip::make_address(env.clientAddress()), hashedCookie) };
         switch (res.state)
         {
         case auth::IAuthTokenService::AuthTokenProcessResult::State::Denied:

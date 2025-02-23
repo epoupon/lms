@@ -38,6 +38,7 @@ namespace lms::scanner
         removeOrphanedReleases(context);
         removeOrphanedReleaseTypes(context);
         removeOrphanedLabels(context);
+        removeOrphanedCountries(context);
         removeOrphanedDirectories(context);
     }
 
@@ -75,6 +76,12 @@ namespace lms::scanner
     {
         LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned labels...");
         removeOrphanedEntries<db::Label>(context);
+    }
+
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedCountries(ScanContext& context)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned countries...");
+        removeOrphanedEntries<db::Country>(context);
     }
 
     void ScanStepRemoveOrphanedDbEntries::removeOrphanedDirectories(ScanContext& context)

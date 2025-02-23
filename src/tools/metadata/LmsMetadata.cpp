@@ -78,12 +78,12 @@ namespace lms::metadata
     std::ostream& operator<<(std::ostream& os, const Release& release)
     {
         os << release.name;
-        if (!release.sortName.empty())
+        if (release.sortName != release.name)
             os << " '" << release.sortName << "'";
         os << std::endl;
 
-        for (std::string_view label : release.labels)
-            std::cout << "\tLabel: " << label << std::endl;
+        for (std::string_view releaseType : release.releaseTypes)
+            std::cout << "\tRelease type: " << releaseType << std::endl;
 
         if (release.mbid)
             os << "\tRelease MBID = " << release.mbid->getAsString() << std::endl;
@@ -94,19 +94,25 @@ namespace lms::metadata
         if (release.mediumCount)
             std::cout << "\tMediumCount: " << *release.mediumCount << std::endl;
 
-        if (!release.artistDisplayName.empty())
-            std::cout << "\tDisplay artist: " << release.artistDisplayName << std::endl;
-
         std::cout << "\tIsCompilation: " << std::boolalpha << release.isCompilation << std::endl;
+
+        for (std::string_view label : release.labels)
+            std::cout << "\tLabel: " << label << std::endl;
+
+        for (std::string_view country : release.countries)
+            std::cout << "\tCountry: " << country << std::endl;
 
         if (!release.barcode.empty())
             std::cout << "\tBarcode: " << release.barcode << std::endl;
 
+        if (!release.comment.empty())
+            std::cout << "\tComment: " << release.comment << std::endl;
+
+        if (!release.artistDisplayName.empty())
+            std::cout << "\tDisplay artist: " << release.artistDisplayName << std::endl;
+
         for (const Artist& artist : release.artists)
             std::cout << "\tRelease artist: " << artist << std::endl;
-
-        for (std::string_view releaseType : release.releaseTypes)
-            std::cout << "\tRelease type: " << releaseType << std::endl;
 
         return os;
     }

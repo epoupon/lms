@@ -22,6 +22,10 @@
 #include <limits>
 #include <sstream>
 
+#include <Wt/WDate.h>
+#include <Wt/WDateTime.h>
+#include <Wt/WTime.h>
+
 namespace lms::core
 {
     PartialDateTime::PartialDateTime(int year)
@@ -82,6 +86,18 @@ namespace lms::core
         }
 
         return res;
+    }
+
+    PartialDateTime PartialDateTime::fromWtDateTime(const Wt::WDateTime& dateTime)
+    {
+        return core::PartialDateTime{
+            dateTime.date().year(),
+            static_cast<unsigned>(dateTime.date().month()),
+            static_cast<unsigned>(dateTime.date().day()),
+            static_cast<unsigned>(dateTime.time().hour()),
+            static_cast<unsigned>(dateTime.time().minute()),
+            static_cast<unsigned>(dateTime.time().second())
+        };
     }
 
     std::string PartialDateTime::toISO8601String() const

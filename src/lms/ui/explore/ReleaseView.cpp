@@ -24,8 +24,10 @@
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
 #include <Wt/WPushButton.h>
+#include <Wt/WTemplate.h>
 
 #include "av/IAudioFile.hpp"
+#include "core/String.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
@@ -128,6 +130,13 @@ namespace lms::ui
                 }
             }
 
+            // TODO make labels clickable to automatically add filters
+            if (const std::vector<std::string> labels{ release->getLabelNames() }; !labels.empty())
+            {
+                releaseInfo->setCondition("if-has-labels", true);
+                releaseInfo->bindString("release-labels", core::stringUtils::joinStrings(labels, " · "));
+            }
+
             // TODO: save in DB and aggregate all this
             for (const Track::pointer& track : Track::find(LmsApp->getDbSession(), Track::FindParameters{}.setRelease(releaseId).setRange(Range{ 0, 1 })).results)
             {
@@ -216,7 +225,7 @@ namespace lms::ui
         if (!releaseId)
             throw ReleaseNotFoundException{};
 
-        auto similarReleasesIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarReleases(*releaseId, 6) };
+        auto similarReleasesIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarReleases(*releaseId, 5) };
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
@@ -229,9 +238,15 @@ namespace lms::ui
 
         refreshCopyright(release);
         refreshLinks(release);
+        refreshOtherVersions(release);
         refreshSimilarReleases(similarReleasesIds);
 
         bindString("name", Wt::WString::fromUTF8(std::string{ release->getName() }), Wt::TextFormat::Plain);
+        if (std::string_view comment{ release->getComment() }; !comment.empty())
+        {
+            setCondition("if-has-release-comment", true);
+            bindString("comment", Wt::WString::fromUTF8(std::string{ comment }), Wt::TextFormat::Plain);
+        }
 
         Wt::WString year{ releaseHelpers::buildReleaseYearString(release->getYear(), release->getOriginalYear()) };
         if (!year.empty())
@@ -244,7 +259,17 @@ namespace lms::ui
 
         refreshReleaseArtists(release);
 
-        bindWidget<Wt::WImage>("cover", utils::createReleaseCover(release->getId(), ArtworkResource::Size::Large));
+        auto* image{ bindWidget<Wt::WImage>("cover", utils::createReleaseCover(release->getId(), ArtworkResource::Size::Large)) };
+        image->clicked().connect([=] {
+            auto fullCover{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.full-cover")) };
+            fullCover->bindNew<Wt::WImage>("cover-full", Wt::WLink{ LmsApp->getArtworkResource()->getReleaseCoverUrl(*releaseId) });
+
+            Wt::WTemplate* fullCoverPtr{ fullCover.get() };
+            fullCover->clicked().connect([=] {
+                LmsApp->getModalManager().dispose(fullCoverPtr);
+            });
+            LmsApp->getModalManager().show(std::move(fullCover));
+        });
 
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
         {
@@ -384,8 +409,7 @@ namespace lms::ui
         db::Track::FindParameters params;
         params.setRelease(_releaseId);
         params.setSortMethod(db::TrackSortMethod::Release);
-        params.setClusters(_filters.getClusters());
-        params.setMediaLibrary(_filters.getMediaLibrary());
+        params.setFilters(_filters.getDbFilters()); // TODO: do we really want to hide all tracks when a release does not match the current label filter?
 
         db::Track::find(LmsApp->getDbSession(), params, [&](const db::Track::pointer& track) {
             const db::TrackId trackId{ track->getId() };
@@ -537,15 +561,45 @@ namespace lms::ui
         }
     }
 
-    void Release::refreshSimilarReleases(const std::vector<ReleaseId>& similarReleasesId)
+    void Release::refreshOtherVersions(const db::Release::pointer& release)
     {
-        if (similarReleasesId.empty())
+        const auto groupMBID{ release->getGroupMBID() };
+        if (!groupMBID)
+            return;
+
+        db::Release::FindParameters params;
+        params.setReleaseGroupMBID(groupMBID);
+        params.setSortMethod(db::ReleaseSortMethod::DateAsc);
+
+        const auto releaseIds{ db::Release::findIds(LmsApp->getDbSession(), params) };
+        if (releaseIds.results.size() <= 1)
+            return;
+
+        setCondition("if-has-other-versions", true);
+        auto* container{ bindNew<Wt::WContainerWidget>("other-versions") };
+
+        for (const ReleaseId id : releaseIds.results)
+        {
+            if (id == _releaseId)
+                continue;
+
+            const db::Release::pointer otherVersionRelease{ db::Release::find(LmsApp->getDbSession(), id) };
+            if (!otherVersionRelease)
+                continue;
+
+            container->addWidget(releaseListHelpers::createEntryForOtherVersions(otherVersionRelease));
+        }
+    }
+
+    void Release::refreshSimilarReleases(const std::vector<ReleaseId>& similarReleaseIds)
+    {
+        if (similarReleaseIds.empty())
             return;
 
         setCondition("if-has-similar-releases", true);
         auto* similarReleasesContainer{ bindNew<Wt::WContainerWidget>("similar-releases") };
 
-        for (const ReleaseId id : similarReleasesId)
+        for (const ReleaseId id : similarReleaseIds)
         {
             const db::Release::pointer similarRelease{ db::Release::find(LmsApp->getDbSession(), id) };
             if (!similarRelease)

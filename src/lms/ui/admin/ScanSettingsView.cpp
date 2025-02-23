@@ -218,8 +218,8 @@ namespace lms::ui
             }
 
             bool validate() { return _model->validate(); }
-            void updateModel() { Wt::WTemplateFormView::updateModel(_model.get()); }
-            void updateView() { Wt::WTemplateFormView::updateView(_model.get()); }
+            void refreshModel() { Wt::WTemplateFormView::updateModel(_model.get()); }
+            void refreshView() { Wt::WTemplateFormView::updateView(_model.get()); }
 
             Wt::WString getValue() const
             {
@@ -259,21 +259,21 @@ namespace lms::ui
                 return res;
             }
 
-            void updateModels()
+            void refreshModels()
             {
                 for (int i{}; i < count(); ++i)
                 {
                     LineEditEntryWidget* entry{ static_cast<LineEditEntryWidget*>(widget(i)) };
-                    entry->updateModel();
+                    entry->refreshModel();
                 }
             }
 
-            void updateViews()
+            void refreshViews()
             {
                 for (int i{}; i < count(); ++i)
                 {
                     LineEditEntryWidget* entry{ static_cast<LineEditEntryWidget*>(widget(i)) };
-                    entry->updateView();
+                    entry->refreshView();
                 }
             }
 
@@ -392,16 +392,16 @@ namespace lms::ui
 
         auto updateModels{ [=] {
             t->updateModel(model.get());
-            extraTagsToScan->updateModels();
-            artistTagDelimiters->updateModels();
-            defaultTagDelimiters->updateModels();
+            extraTagsToScan->refreshModels();
+            artistTagDelimiters->refreshModels();
+            defaultTagDelimiters->refreshModels();
         } };
 
         auto updateViews{ [=] {
             t->updateView(model.get());
-            extraTagsToScan->updateViews();
-            artistTagDelimiters->updateViews();
-            defaultTagDelimiters->updateViews();
+            extraTagsToScan->refreshViews();
+            artistTagDelimiters->refreshViews();
+            defaultTagDelimiters->refreshViews();
         } };
 
         auto loadInitialData{ [=] {

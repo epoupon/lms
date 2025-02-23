@@ -21,6 +21,8 @@
 
 #include "core/String.hpp"
 
+#include "explore/Filters.hpp"
+
 namespace lms::ui
 {
     DatabaseCollectorBase::DatabaseCollectorBase(Filters& filters, Mode defaultMode, std::size_t maxCount)
@@ -54,6 +56,11 @@ namespace lms::ui
     std::size_t DatabaseCollectorBase::getMaxCount() const
     {
         return _maxCount;
+    }
+
+    const db::Filters& DatabaseCollectorBase::getDbFilters() const
+    {
+        return _filters.getDbFilters();
     }
 
     void DatabaseCollectorBase::setSearch(std::string_view searchText)

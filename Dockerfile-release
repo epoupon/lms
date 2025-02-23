@@ -1,4 +1,4 @@
-FROM	alpine:3.20 AS build
+FROM	alpine:3.21.3 AS build
 
 WORKDIR	/tmp/workdir
 
@@ -37,7 +37,7 @@ ARG	BUILD_PACKAGES=" \
 RUN	apk add --no-cache --update ${BUILD_PACKAGES}
 
 # ffmpeg
-ARG	FFMPEG_VERSION=6.1.1
+ARG	FFMPEG_VERSION=6.1.2
 RUN  \
 	DIR=/tmp/ffmpeg && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 && \
@@ -56,8 +56,8 @@ RUN \
 	--disable-postproc \
 	--disable-pixelutils \
 	--disable-network \
-	--disable-shared \
-	--enable-static \
+	--enable-shared \
+	--disable-static \
 	--enable-gpl \
 	--enable-small \
 	--enable-version3 \
@@ -75,12 +75,11 @@ RUN \
 	--enable-filter=aresample \
 	--enable-lto \
 	--extra-libs=-ldl && \
-	make -j$(nproc) && \
-	make install && \
-	make distclean
+	make -j$(nproc) install 
 
 # WT
-ARG	WT_VERSION=4.11.1
+ARG	WT_VERSION=4.11.3
+ARG WT_DEBUG=OFF
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/emweb/wt/archive/${WT_VERSION}.tar.gz && \
@@ -88,9 +87,8 @@ RUN \
 
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
-	cmake -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DSHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF -DUSE_SYSTEM_SQLITE3=ON && \
-	make -j$(nproc) && \
-	make install
+	cmake -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DCMAKE_CXX_STANDARD=17 -DSHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_EXAMPLES=OFF -DENABLE_LIBWTTEST=OFF -DCONNECTOR_FCGI=OFF -DUSE_SYSTEM_SQLITE3=ON -DDEBUG=${WT_DEBUG} && \
+	make -j$(nproc) install 
 
 # STB
 ARG	STB_VERSION=5c205738c191bcb0abc65c4febfa9bd25ff35234
@@ -110,18 +108,16 @@ RUN \
 
 RUN \
 	DIR=/tmp/taglib && mkdir -p ${DIR} && cd ${DIR} && \
-	CXXFLAGS="-I/usr/include/utf8cpp" cmake -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_BINDINGS=OFF -DBUILD_TESTING=OFF -DTRACE_IN_RELEASE=OFF -DWITH_ZLIB=ON  && \
-	make -j$(nproc) && \
-	make install
+	CXXFLAGS="-I/usr/include/utf8cpp" cmake -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PREFIX} -DBUILD_SHARED_LIBS=ON -DBUILD_EXAMPLES=OFF -DBUILD_BINDINGS=OFF -DBUILD_TESTING=OFF -DTRACE_IN_RELEASE=OFF -DWITH_ZLIB=ON  && \
+	make -j$(nproc) install
 
 # LMS
 COPY . /tmp/lms/
 RUN \
 	DIR=/tmp/lms/build && mkdir -p ${DIR} && cd ${DIR} && \
 	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake /tmp/lms/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_PREFIX_PATH=${PREFIX} && \
-	LD_LIBRARY_PATH=${PREFIX}/lib make -j$(nproc) && \
+	LD_LIBRARY_PATH=${PREFIX}/lib make -j$(nproc) install && \
 	LD_LIBRARY_PATH=${PREFIX}/lib make test && \
-	make install && \
 	mkdir -p ${PREFIX}/etc/ && \
 	cp /tmp/lms/conf/lms.conf ${PREFIX}/etc
 
@@ -133,6 +129,11 @@ RUN \
 		strip --strip-all $bin && \
 		cp $bin /tmp/fakeroot/bin/; \
 	done && \
+	for lib in ${PREFIX}/lib/*.so; \
+	do \
+		strip --strip-all $lib; \
+	done && \
+	cp -r ${PREFIX}/lib /tmp/fakeroot/lib && \
 	cp -r ${PREFIX}/share /tmp/fakeroot/share && \
 	rm -rf /tmp/fakeroot/share/doc && \
 	rm -rf /tmp/fakeroot/share/man
@@ -143,7 +144,7 @@ RUN \
 	rm -rf /tmp/fakeroot/share/Wt/resources/themes
 
 ## Release Stage
-FROM		alpine:3.20 AS release
+FROM		alpine:3.21.3 AS release
 LABEL		maintainer="Emeric Poupon <itmfr@yahoo.fr>"
 
 ARG	RUNTIME_PACKAGES=" \
@@ -159,7 +160,6 @@ ARG	RUNTIME_PACKAGES=" \
 	boost-filesystem \
 	boost-iostreams \
 	boost-program_options \
-	boost-system \
 	boost-thread \
 	libarchive \
 	libconfig++ \

@@ -32,6 +32,7 @@
 #include "core/UUID.hpp"
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
+#include "database/Filters.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
@@ -57,7 +58,7 @@ namespace lms::db
     public:
         struct FindParameters
         {
-            std::vector<ClusterId> clusters;             // if non empty, at least one artist that belongs to these clusters
+            Filters filters;
             std::vector<std::string_view> keywords;      // if non empty, name must match all of these keywords (on either name field OR sort name field)
             std::optional<TrackArtistLinkType> linkType; // if set, only artists that have produced at least one track with this link type
             ArtistSortMethod sortMethod{ ArtistSortMethod::None };
@@ -67,11 +68,10 @@ namespace lms::db
             std::optional<FeedbackBackend> feedbackBackend; // and for this feedback backend
             TrackId track;                                  // artists involved in this track
             ReleaseId release;                              // artists involved in this release
-            MediaLibraryId mediaLibrary;                    // artists that belong to this library
 
-            FindParameters& setClusters(std::span<const ClusterId> _clusters)
+            FindParameters& setFilters(const Filters& _filters)
             {
-                clusters.assign(std::cbegin(_clusters), std::cend(_clusters));
+                filters = _filters;
                 return *this;
             }
             FindParameters& setKeywords(const std::vector<std::string_view>& _keywords)
@@ -113,11 +113,6 @@ namespace lms::db
             FindParameters& setRelease(ReleaseId _release)
             {
                 release = _release;
-                return *this;
-            }
-            FindParameters& setMediaLibrary(MediaLibraryId _mediaLibrary)
-            {
-                mediaLibrary = _mediaLibrary;
                 return *this;
             }
         };
