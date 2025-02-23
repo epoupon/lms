@@ -569,6 +569,7 @@ namespace lms::ui
 
         db::Release::FindParameters params;
         params.setReleaseGroupMBID(groupMBID);
+        params.setSortMethod(db::ReleaseSortMethod::DateAsc);
 
         const auto releaseIds{ db::Release::findIds(LmsApp->getDbSession(), params) };
         if (releaseIds.results.size() <= 1)

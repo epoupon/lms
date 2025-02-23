@@ -38,6 +38,7 @@ namespace lms::ui::releaseListHelpers
         enum class ReleaseOptions
         {
             ShowArtist,
+            ShowYearAndOriginalYear,
             ShowYear,
         };
 
@@ -51,7 +52,7 @@ namespace lms::ui::releaseListHelpers
             {
                 Wt::WAnchor* anchor{ entry->bindWidget("cover", utils::createReleaseAnchor(release, false)) };
                 auto image{ utils::createReleaseCover(release->getId(), ArtworkResource::Size::Large) };
-                image->addStyleClass("Lms-cover-release Lms-cover-anchor"); // hack
+                image->addStyleClass("Lms-cover-release Lms-cover-anchor rounded"); // hack
                 anchor->setImage(std::move(image));
             }
 
@@ -65,13 +66,21 @@ namespace lms::ui::releaseListHelpers
                 }
             }
 
-            if (options.contains(ReleaseOptions::ShowYear))
+            if (options.contains(ReleaseOptions::ShowYearAndOriginalYear))
             {
                 Wt::WString year{ releaseHelpers::buildReleaseYearString(release->getYear(), release->getOriginalYear()) };
                 if (!year.empty())
                 {
                     entry->setCondition("if-has-year", true);
                     entry->bindString("year", year, Wt::TextFormat::Plain);
+                }
+            }
+            else if (options.contains(ReleaseOptions::ShowYear))
+            {
+                if (release->getYear())
+                {
+                    entry->setCondition("if-has-year", true);
+                    entry->bindInt("year", *release->getYear());
                 }
             }
 
@@ -86,7 +95,7 @@ namespace lms::ui::releaseListHelpers
 
     std::unique_ptr<Wt::WTemplate> createEntryForArtist(const db::Release::pointer& release, const db::Artist::pointer& artist)
     {
-        return createEntryInternal(release, artist, core::EnumSet<ReleaseOptions>{ ReleaseOptions::ShowArtist, ReleaseOptions::ShowYear });
+        return createEntryInternal(release, artist, core::EnumSet<ReleaseOptions>{ ReleaseOptions::ShowArtist, ReleaseOptions::ShowYearAndOriginalYear });
     }
 
     std::unique_ptr<Wt::WTemplate> createEntryForOtherVersions(const db::ObjectPtr<db::Release>& release)

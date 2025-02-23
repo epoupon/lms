@@ -220,7 +220,7 @@ namespace lms::ui::TrackListHelpers
         }
 
         auto image{ utils::createTrackImage(trackId, ArtworkResource::Size::Small) };
-        image->addStyleClass("Lms-cover-track");
+        image->addStyleClass("Lms-cover-track rounded");
         if (track->getRelease())
         {
             entry->setCondition("if-has-release", true);
