@@ -41,8 +41,6 @@ class LMSMediaPlayer {
 		this.#offset = 0;
 		this.#trackId = null;
 		this.#duration = 0;
-		this.#audioNativeSrc;
-		this.#audioTranscodingSrc;
 		this.#settings = {};
 		this.#playedDuration = 0;
 		this.#lastStartPlaying = null;
