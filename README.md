@@ -75,7 +75,7 @@ For an album to be considered a match, the following conditions must be met:
 * Same barcode
 
 ## Artist image lookup
-The recommended method is to name the file using the artist's MusicBrainz ArtistID. This file can be placed anywhere within one of the scanned libraries.
+The recommended method is to name the artist image file using the artist's MusicBrainz ArtistID. This file can be placed anywhere within one of the scanned libraries.
 
 If no file with the MusicBrainz ArtistID is found, _LMS_ will look for a file named `artist` (or another name configured in `lms.conf`) in the artist's directories:
 
