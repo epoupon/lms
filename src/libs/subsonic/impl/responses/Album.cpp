@@ -145,6 +145,7 @@ namespace lms::api::subsonic
             return albumNode;
 
         // OpenSubsonic specific fields (must always be set)
+        albumNode.setAttribute("version", release->getComment());
         albumNode.setAttribute("sortName", release->getSortName());
         albumNode.setAttribute("mediaType", "album");
 
