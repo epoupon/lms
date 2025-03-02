@@ -33,6 +33,7 @@ namespace lms::image
 
     // All these methods may throw Exception
     ImageProperties probeImage(const std::filesystem::path& path);
+    ImageProperties probeImage(std::span<const std::byte> encodedData);
 
     std::unique_ptr<IRawImage> decodeImage(std::span<const std::byte> encodedData);
     std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path);
