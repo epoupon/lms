@@ -437,6 +437,13 @@ namespace lms::ui
                 entry->bindWidget("artists-md", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
             }
 
+            const auto remixers{ track->getArtistIds({ TrackArtistLinkType::Remixer }) };
+            if (!remixers.empty())
+            {
+                entry->setCondition("if-has-remixers", true);
+                entry->bindWidget("remixers", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), remixers));
+            }
+
             auto trackNumber{ track->getTrackNumber() };
             if (trackNumber)
             {

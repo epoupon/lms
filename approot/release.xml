@@ -123,6 +123,9 @@
 			</div>
 		</div>
 	</div>
+	${<if-has-remixers>}<div class="ms-5 pb-2 px-2 text-small">
+		Remixer — ${remixers class="d-inline d-md-inline"}
+	</div>${</if-has-remixers>}
 </message>
 
 <message id="Lms.Explore.Release.template.release-info">
