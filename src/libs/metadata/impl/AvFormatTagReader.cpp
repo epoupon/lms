@@ -156,7 +156,6 @@ namespace lms::metadata
 
             _containerInfo = audioFile->getContainerInfo();
             _metaDataMap = audioFile->getMetaData();
-            _hasEmbeddedCover = audioFile->hasAttachedPictures();
 
             if (debug && core::Service<core::logging::ILogger>::get()->isSeverityActive(core::logging::Severity::DEBUG))
             {

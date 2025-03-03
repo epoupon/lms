@@ -32,9 +32,9 @@ namespace lms::db
     class Session;
 }
 
-namespace lms::av
+namespace lms::metadata
 {
-    class IAudioFile;
+    class IAudioFileParser;
 }
 
 namespace lms::cover
@@ -43,7 +43,7 @@ namespace lms::cover
     {
     public:
         ArtworkService(db::Db& db, const std::filesystem::path& defaultReleaseCoverSvgPath, const std::filesystem::path& defaultArtistImageSvgPath);
-        ~ArtworkService() override = default;
+        ~ArtworkService() override;
         ArtworkService(const ArtworkService&) = delete;
         ArtworkService& operator=(const ArtworkService&) = delete;
 
@@ -56,7 +56,6 @@ namespace lms::cover
         void flushCache() override;
         void setJpegQuality(unsigned quality) override;
 
-        std::unique_ptr<image::IEncodedImage> getFromAvMediaFile(const av::IAudioFile& input, std::optional<image::ImageSize> width) const;
         std::unique_ptr<image::IEncodedImage> getFromImageFile(const std::filesystem::path& p, std::optional<image::ImageSize> width) const;
         std::unique_ptr<image::IEncodedImage> getTrackImage(const std::filesystem::path& path, std::optional<image::ImageSize> width) const;
 
@@ -64,6 +63,7 @@ namespace lms::cover
 
         db::Db& _db;
 
+        std::unique_ptr<metadata::IAudioFileParser> _audioFileParser;
         ImageCache _cache;
         std::shared_ptr<image::IEncodedImage> _defaultReleaseCover;
         std::shared_ptr<image::IEncodedImage> _defaultArtistImage;

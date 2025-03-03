@@ -40,12 +40,10 @@ namespace lms::metadata
         void visitTagValues(std::string_view tag, TagValueVisitor visitor) const override;
         void visitPerformerTags(PerformerVisitor visitor) const override;
         void visitLyricsTags(LyricsVisitor visitor) const override;
-        bool hasEmbeddedCover() const override { return _hasEmbeddedCover; }
         const AudioProperties& getAudioProperties() const override { return _audioProperties; }
 
         AudioProperties _audioProperties;
         av::IAudioFile::MetadataMap _metaDataMap;
         av::ContainerInfo _containerInfo;
-        bool _hasEmbeddedCover{};
     };
 } // namespace lms::metadata

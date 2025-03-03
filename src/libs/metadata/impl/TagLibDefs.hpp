@@ -1,6 +1,5 @@
-
 /*
- * Copyright (C) 2016 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -20,25 +19,14 @@
 
 #pragma once
 
-#include <optional>
-#include <string_view>
+#include <taglib/taglib.h>
 
-#include <Wt/WDate.h>
+// TAGLIB_HAS_MP4_ITEM_TYPE if version >= 2.0.1
+#if ((TAGLIB_MAJOR_VERSION > 2) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_MINOR_VERSION > 0) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_PATCH_VERSION >= 1))
+    #define TAGLIB_HAS_MP4_ITEM_TYPE 1
+#endif
 
-#include "metadata/Types.hpp"
-
-namespace lms::metadata::utils
-{
-    Wt::WDate parseDate(std::string_view dateStr);
-    std::optional<int> parseYear(std::string_view yearStr);
-    std::string_view readStyleToString(ParserReadStyle readStyle);
-
-    struct PerformerArtist
-    {
-        Artist artist;
-        std::string role;
-    };
-
-    // format is "artist name (role)"
-    PerformerArtist extractPerformerAndRole(std::string_view entry);
-} // namespace lms::metadata::utils
+// TAGLIB_HAS_APE_COMPLEX_PROPERTIES if version >= 2.0.2
+#if ((TAGLIB_MAJOR_VERSION > 2) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_MINOR_VERSION > 0) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_PATCH_VERSION >= 2))
+    #define TAGLIB_HAS_APE_COMPLEX_PROPERTIES 1
+#endif

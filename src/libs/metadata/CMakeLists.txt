@@ -9,10 +9,12 @@ if (BUILD_BENCHMARKS)
 endif()
 
 add_library(lmsmetadata STATIC
+	impl/AvFormatImageReader.cpp
 	impl/AvFormatTagReader.cpp
 	impl/Lyrics.cpp
-	impl/Parser.cpp
+	impl/AudioFileParser.cpp
 	impl/PlayList.cpp
+	impl/TagLibImageReader.cpp
 	impl/TagLibTagReader.cpp
 	impl/Utils.cpp
 	)

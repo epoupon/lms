@@ -31,7 +31,8 @@
 #include "core/StreamLogger.hpp"
 #include "core/String.hpp"
 #include "metadata/Exception.hpp"
-#include "metadata/IParser.hpp"
+#include "metadata/IAudioFileParser.hpp"
+#include "metadata/Types.hpp"
 
 namespace lms::metadata
 {
@@ -159,15 +160,79 @@ namespace lms::metadata
         return os;
     }
 
-    void parse(IParser& parser, const std::filesystem::path& file)
+    const char* imageTypeToString(Image::Type type)
+    {
+        switch (type)
+        {
+        case Image::Type::Other:
+            return "Other";
+        case Image::Type::FileIcon:
+            return "FileIcon";
+        case Image::Type::OtherFileIcon:
+            return "OtherFileIcon";
+        case Image::Type::FrontCover:
+            return "FrontCover";
+        case Image::Type::BackCover:
+            return "BackCover";
+        case Image::Type::LeafletPage:
+            return "LeafletPage";
+        case Image::Type::Media:
+            return "Media";
+        case Image::Type::LeadArtist:
+            return "LeadArtist";
+        case Image::Type::Artist:
+            return "Artist";
+        case Image::Type::Conductor:
+            return "Conductor";
+        case Image::Type::Band:
+            return "Band";
+        case Image::Type::Composer:
+            return "Composer";
+        case Image::Type::Lyricist:
+            return "Lyricist";
+        case Image::Type::RecordingLocation:
+            return "RecordingLocation";
+        case Image::Type::DuringRecording:
+            return "DuringRecording";
+        case Image::Type::DuringPerformance:
+            return "DuringPerformance";
+        case Image::Type::MovieScreenCapture:
+            return "MovieScreenCapture";
+        case Image::Type::ColouredFish:
+            return "ColouredFish";
+        case Image::Type::Illustration:
+            return "Illustration";
+        case Image::Type::BandLogo:
+            return "BandLogo";
+        case Image::Type::PublisherLogo:
+            return "PublisherLogo";
+        case Image::Type::Unknown:
+            break;
+        }
+
+        return "Unknown";
+    }
+
+    std::ostream& operator<<(std::ostream& os, const Image& image)
+    {
+        os << "type = " << imageTypeToString(image.type) << std::endl;
+        if (!image.description.empty())
+            os << "\tdesc = " << image.description << std::endl;
+        os << "\tmimeType = " << image.mimeType << std::endl;
+        os << "\tsize = " << image.data.size() << std::endl;
+
+        return os;
+    }
+
+    void parseMetaData(IAudioFileParser& parser, const std::filesystem::path& file)
     {
         using namespace metadata;
 
         const auto start{ std::chrono::steady_clock::now() };
-        std::unique_ptr<Track> track{ parser.parse(file, true) };
+        std::unique_ptr<Track> track{ parser.parseMetaData(file) };
         const auto end{ std::chrono::steady_clock::now() };
 
-        std::cout << "Parsing time: " << std::fixed << std::setprecision(2) << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000. << "ms" << std::endl;
+        std::cout << "MetaData parsing time: " << std::fixed << std::setprecision(2) << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000. << "ms" << std::endl;
 
         std::cout << "Audio properties:\n"
                   << track->audioProperties << std::endl;
@@ -248,8 +313,6 @@ namespace lms::metadata
         if (track->originalYear)
             std::cout << "Original year: " << *track->originalYear << std::endl;
 
-        std::cout << "HasCover = " << std::boolalpha << track->hasCover << std::endl;
-
         if (track->replayGain)
             std::cout << "Track replay gain: " << *track->replayGain << std::endl;
 
@@ -280,6 +343,20 @@ namespace lms::metadata
 
         std::cout << std::endl;
     }
+
+    void parseImages(IAudioFileParser& parser, const std::filesystem::path& file)
+    {
+        using namespace metadata;
+
+        const auto start{ std::chrono::steady_clock::now() };
+        parser.parseImages(file, [](const Image& image) {
+            std::cout << "Image: " << image << std::endl;
+        });
+        const auto end{ std::chrono::steady_clock::now() };
+
+        std::cout << "Image parsing time: " << std::fixed << std::setprecision(2) << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 1000. << "ms" << std::endl;
+    }
+
 } // namespace lms::metadata
 
 int main(int argc, char* argv[])
@@ -408,41 +485,31 @@ int main(int argc, char* argv[])
                 }
             }
 
-            if (parsers.contains(Parser::Ffmpeg))
-            {
+            auto parseAudioFile{ [&](metadata::ParserBackend backend) {
+                metadata::AudioFileParserParameters params;
+                params.artistTagDelimiters = artistTagDelimiters;
+                params.defaultTagDelimiters = tagDelimiters;
+                params.readStyle = metadata::ParserReadStyle::Accurate;
+                params.debug = true;
+                params.backend = backend;
+
                 try
                 {
-                    std::cout << "Using Ffmpeg:" << std::endl;
-
-                    auto parser{ metadata::createParser(metadata::ParserBackend::AvFormat, metadata::ParserReadStyle::Accurate) };
-                    parser->setArtistTagDelimiters(artistTagDelimiters);
-                    parser->setDefaultTagDelimiters(tagDelimiters);
-
-                    parse(*parser, file);
+                    auto parser{ metadata::createAudioFileParser(params) };
+                    parseMetaData(*parser, file);
+                    parseImages(*parser, file);
                 }
                 catch (metadata::Exception& e)
                 {
                     std::cerr << "Parsing failed: " << e.what() << std::endl;
                 }
-            }
+            } };
+
+            if (parsers.contains(Parser::Ffmpeg))
+                parseAudioFile(metadata::ParserBackend::AvFormat);
 
             if (parsers.contains(Parser::Taglib))
-            {
-                try
-                {
-                    std::cout << "Using TagLib:" << std::endl;
-
-                    auto parser{ metadata::createParser(metadata::ParserBackend::TagLib, metadata::ParserReadStyle::Accurate) };
-                    parser->setArtistTagDelimiters(artistTagDelimiters);
-                    parser->setDefaultTagDelimiters(tagDelimiters);
-
-                    parse(*parser, file);
-                }
-                catch (metadata::Exception& e)
-                {
-                    std::cerr << "Parsing failed: " << e.what() << std::endl;
-                }
-            }
+                parseAudioFile(metadata::ParserBackend::TagLib);
         }
     }
     catch (std::exception& e)

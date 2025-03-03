@@ -1,6 +1,5 @@
-
 /*
- * Copyright (C) 2016 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -20,25 +19,27 @@
 
 #pragma once
 
-#include <optional>
-#include <string_view>
+#include "IImageReader.hpp"
 
-#include <Wt/WDate.h>
-
-#include "metadata/Types.hpp"
-
-namespace lms::metadata::utils
+namespace lms::av
 {
-    Wt::WDate parseDate(std::string_view dateStr);
-    std::optional<int> parseYear(std::string_view yearStr);
-    std::string_view readStyleToString(ParserReadStyle readStyle);
+    class IAudioFile;
+}
 
-    struct PerformerArtist
+namespace lms::metadata
+{
+    class AvFormatImageReader : public IImageReader
     {
-        Artist artist;
-        std::string role;
-    };
+    public:
+        AvFormatImageReader(const std::filesystem::path& p);
+        ~AvFormatImageReader() override;
 
-    // format is "artist name (role)"
-    PerformerArtist extractPerformerAndRole(std::string_view entry);
-} // namespace lms::metadata::utils
+        AvFormatImageReader(const AvFormatImageReader&) = delete;
+        AvFormatImageReader& operator=(const AvFormatImageReader&) = delete;
+
+    private:
+        void visitImages(ImageVisitor visitor) const override;
+
+        std::unique_ptr<av::IAudioFile> _audioFile;
+    };
+} // namespace lms::metadata

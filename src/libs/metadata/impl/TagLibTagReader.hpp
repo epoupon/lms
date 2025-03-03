@@ -26,8 +26,6 @@
 #include <taglib/fileref.h>
 #include <taglib/tpropertymap.h>
 
-#include "metadata/IParser.hpp"
-
 #include "ITagReader.hpp"
 
 namespace lms::metadata
@@ -36,24 +34,22 @@ namespace lms::metadata
     {
     public:
         TagLibTagReader(const std::filesystem::path& path, ParserReadStyle parserReadStyle, bool debug);
-
-    private:
+        ~TagLibTagReader() = default;
         TagLibTagReader(const TagLibTagReader&) = delete;
         TagLibTagReader& operator=(const TagLibTagReader&) = delete;
 
+    private:
         void computeAudioProperties();
         void visitTagValues(TagType tag, TagValueVisitor visitor) const override;
         void visitTagValues(std::string_view tag, TagValueVisitor visitor) const override;
         void visitPerformerTags(PerformerVisitor visitor) const override;
         void visitLyricsTags(LyricsVisitor visitor) const override;
-        bool hasEmbeddedCover() const override { return _hasEmbeddedCover; }
 
         const AudioProperties& getAudioProperties() const override { return _audioProperties; }
 
         const TagLib::FileRef _file;
         AudioProperties _audioProperties;
         TagLib::PropertyMap _propertyMap; // case-insensitive keys
-        bool _hasEmbeddedCover{};
         std::multimap<std::string /* language*/, std::string /* lyrics */> _id3v2Lyrics;
     };
 } // namespace lms::metadata
