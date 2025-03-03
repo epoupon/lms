@@ -1,6 +1,5 @@
-
 /*
- * Copyright (C) 2016 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -20,25 +19,18 @@
 
 #pragma once
 
-#include <optional>
-#include <string_view>
-
-#include <Wt/WDate.h>
+#include <functional>
 
 #include "metadata/Types.hpp"
 
-namespace lms::metadata::utils
+namespace lms::metadata
 {
-    Wt::WDate parseDate(std::string_view dateStr);
-    std::optional<int> parseYear(std::string_view yearStr);
-    std::string_view readStyleToString(ParserReadStyle readStyle);
-
-    struct PerformerArtist
+    class IImageReader
     {
-        Artist artist;
-        std::string role;
-    };
+    public:
+        virtual ~IImageReader() = default;
 
-    // format is "artist name (role)"
-    PerformerArtist extractPerformerAndRole(std::string_view entry);
-} // namespace lms::metadata::utils
+        using ImageVisitor = std::function<void(const Image& image)>;
+        virtual void visitImages(ImageVisitor visitor) const = 0;
+    };
+} // namespace lms::metadata

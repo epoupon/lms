@@ -37,13 +37,16 @@
 #include "database/TrackFeatures.hpp"
 #include "database/TrackLyrics.hpp"
 #include "database/Types.hpp"
+#include "image/Exception.hpp"
+#include "image/Image.hpp"
 #include "metadata/Exception.hpp"
-#include "metadata/IParser.hpp"
+#include "metadata/IAudioFileParser.hpp"
 
 #include "IFileScanOperation.hpp"
 #include "ScanContext.hpp"
 #include "ScannerSettings.hpp"
 #include "Utils.hpp"
+#include "metadata/Types.hpp"
 
 namespace lms::scanner
 {
@@ -345,7 +348,7 @@ namespace lms::scanner
             return db::Advisory::UnSet;
         }
 
-        db::Track::pointer findMovedTrackBySizeAndMetaData(db::Session& session, const metadata::Track& parsedTrack, const FileInfo& fileInfo)
+        db::Track::pointer findMovedTrackBySizeAndMetaData(db::Session& session, const metadata::Track& parsedTrack, bool hasEmbeddedCover, const FileInfo& fileInfo)
         {
             db::Track::FindParameters params;
             // Add as many fields as possible to limit errors
@@ -359,7 +362,7 @@ namespace lms::scanner
             }
             if (parsedTrack.position)
                 params.setTrackNumber(*parsedTrack.position);
-            params.setHasEmbeddedImage(parsedTrack.hasCover);
+            params.setHasEmbeddedImage(hasEmbeddedCover);
             params.setFileSize(fileInfo.fileSize);
 
             bool error{};
@@ -387,7 +390,7 @@ namespace lms::scanner
         class AudioFileScanOperation : public IFileScanOperation
         {
         public:
-            AudioFileScanOperation(const FileToScan& fileToScan, db::Db& db, metadata::IParser& parser, const ScannerSettings& settings)
+            AudioFileScanOperation(const FileToScan& fileToScan, db::Db& db, metadata::IAudioFileParser& parser, const ScannerSettings& settings)
                 : _file{ fileToScan.file }
                 , _mediaLibrary{ fileToScan.mediaLibrary }
                 , _db{ db }
@@ -408,9 +411,10 @@ namespace lms::scanner
             const std::filesystem::path _file;
             const MediaLibraryInfo _mediaLibrary;
             db::Db& _db;
-            metadata::IParser& _parser;
+            metadata::IAudioFileParser& _parser;
             const ScannerSettings& _settings;
             std::unique_ptr<metadata::Track> _parsedTrack;
+            bool _hasEmbeddedCover{};
         };
 
         void AudioFileScanOperation::scan()
@@ -420,7 +424,19 @@ namespace lms::scanner
 
             try
             {
-                _parsedTrack = _parser.parse(_file);
+                _parsedTrack = _parser.parseMetaData(_file);
+
+                _parser.parseImages(_file, [&](const metadata::Image& image) {
+                    try
+                    {
+                        image::probeImage(image.data);
+                        _hasEmbeddedCover = true;
+                    }
+                    catch (const image::Exception& e)
+                    {
+                        LMS_LOG(DBUPDATER, ERROR, "Failed to parse image in track file " << _file);
+                    }
+                });
             }
             catch (const metadata::Exception& e)
             {
@@ -505,7 +521,7 @@ namespace lms::scanner
             if (!track)
             {
                 // maybe the file just moved?
-                track = findMovedTrackBySizeAndMetaData(dbSession, *_parsedTrack, *fileInfo);
+                track = findMovedTrackBySizeAndMetaData(dbSession, *_parsedTrack, _hasEmbeddedCover, *fileInfo);
                 if (track)
                 {
                     LMS_LOG(DBUPDATER, DEBUG, "Considering track " << _file << " moved from " << track->getAbsoluteFilePath());
@@ -646,7 +662,7 @@ namespace lms::scanner
             track.modify()->setTrackMBID(_parsedTrack->mbid);
             if (auto trackFeatures{ db::TrackFeatures::find(dbSession, track->getId()) })
                 trackFeatures.remove(); // TODO: only if MBID changed?
-            track.modify()->setHasCover(_parsedTrack->hasCover);
+            track.modify()->setHasCover(_hasEmbeddedCover);
             track.modify()->setCopyright(_parsedTrack->copyright);
             track.modify()->setCopyrightURL(_parsedTrack->copyrightURL);
             track.modify()->setAdvisory(getAdvisory(_parsedTrack->advisory));
@@ -686,18 +702,26 @@ namespace lms::scanner
 
             throw core::LmsException{ "Invalid value for 'scanner-parser-read-style'" };
         }
+
+        metadata::AudioFileParserParameters createAudioFileParserParameters(const ScannerSettings& settings)
+        {
+            metadata::AudioFileParserParameters params;
+            params.userExtraTags = settings.extraTags;
+            params.artistTagDelimiters = settings.artistTagDelimiters;
+            params.defaultTagDelimiters = settings.defaultTagDelimiters;
+            params.backend = metadata::ParserBackend::TagLib;
+            params.readStyle = getParserReadStyle();
+
+            return params;
+        }
+
     } // namespace
 
     AudioFileScanner::AudioFileScanner(db::Db& db, const ScannerSettings& settings)
         : _db{ db }
         , _settings{ settings }
-        , _metadataParser{ metadata::createParser(metadata::ParserBackend::TagLib, getParserReadStyle()) } // For now, always use TagLib
+        , _metadataParser{ metadata::createAudioFileParser(createAudioFileParserParameters(settings)) } // For now, always use TagLib
     {
-        std::vector<std::string> tagsToParse{ _extraTagsToParse };
-        tagsToParse.insert(std::end(tagsToParse), std::cbegin(settings.extraTags), std::cend(settings.extraTags));
-        _metadataParser->setUserExtraTags(tagsToParse);
-        _metadataParser->setArtistTagDelimiters(settings.artistTagDelimiters);
-        _metadataParser->setDefaultTagDelimiters(settings.defaultTagDelimiters);
     }
 
     AudioFileScanner::~AudioFileScanner() = default;

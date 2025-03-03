@@ -20,6 +20,7 @@
 #pragma once
 
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <span>
 
@@ -27,30 +28,18 @@
 
 namespace lms::metadata
 {
-    class IParser
+    class IAudioFileParser
     {
     public:
-        virtual ~IParser() = default;
+        virtual ~IAudioFileParser() = default;
 
-        virtual std::unique_ptr<Track> parse(const std::filesystem::path& p, bool debug = false) = 0;
+        virtual std::unique_ptr<Track> parseMetaData(const std::filesystem::path& p) = 0;
+
+        using ImageVisitor = std::function<void(const Image&)>;
+        virtual void parseImages(const std::filesystem::path& p, ImageVisitor visitor) = 0;
 
         virtual std::span<const std::filesystem::path> getSupportedExtensions() const = 0;
-        virtual void setUserExtraTags(std::span<const std::string> extraTags) = 0;
-        virtual void setArtistTagDelimiters(std::span<const std::string> delimiters) = 0;
-        virtual void setDefaultTagDelimiters(std::span<const std::string> delimiters) = 0;
     };
 
-    enum class ParserBackend
-    {
-        TagLib,
-        AvFormat,
-    };
-
-    enum class ParserReadStyle
-    {
-        Fast,
-        Average,
-        Accurate,
-    };
-    std::unique_ptr<IParser> createParser(ParserBackend parserBackend, ParserReadStyle parserReadStyle);
+    std::unique_ptr<IAudioFileParser> createAudioFileParser(const AudioFileParserParameters& parameters);
 } // namespace lms::metadata

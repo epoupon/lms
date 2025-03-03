@@ -1,6 +1,5 @@
-
 /*
- * Copyright (C) 2016 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -20,25 +19,19 @@
 
 #pragma once
 
-#include <optional>
-#include <string_view>
+#include "IImageReader.hpp"
 
-#include <Wt/WDate.h>
+#include <taglib/fileref.h>
 
-#include "metadata/Types.hpp"
-
-namespace lms::metadata::utils
+namespace lms::metadata
 {
-    Wt::WDate parseDate(std::string_view dateStr);
-    std::optional<int> parseYear(std::string_view yearStr);
-    std::string_view readStyleToString(ParserReadStyle readStyle);
-
-    struct PerformerArtist
+    class TagLibImageReader : public IImageReader
     {
-        Artist artist;
-        std::string role;
-    };
+    public:
+        TagLibImageReader(const std::filesystem::path& p);
 
-    // format is "artist name (role)"
-    PerformerArtist extractPerformerAndRole(std::string_view entry);
-} // namespace lms::metadata::utils
+        void visitImages(ImageVisitor visitor) const override;
+
+        const TagLib::FileRef _file;
+    };
+} // namespace lms::metadata

@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Parser.hpp"
+#include "AudioFileParser.hpp"
 
 #include <span>
 
@@ -26,7 +26,9 @@
 #include "core/String.hpp"
 #include "metadata/Exception.hpp"
 
+#include "AvFormatImageReader.hpp"
 #include "AvFormatTagReader.hpp"
+#include "TagLibImageReader.hpp"
 #include "TagLibTagReader.hpp"
 #include "Utils.hpp"
 
@@ -316,19 +318,18 @@ namespace lms::metadata
         }
     } // namespace
 
-    std::unique_ptr<IParser> createParser(ParserBackend parserBackend, ParserReadStyle parserReadStyle)
+    std::unique_ptr<IAudioFileParser> createAudioFileParser(const AudioFileParserParameters& params)
     {
-        return std::make_unique<Parser>(parserBackend, parserReadStyle);
+        return std::make_unique<AudioFileParser>(params);
     }
 
-    Parser::Parser(ParserBackend parserBackend, ParserReadStyle readStyle)
-        : _parserBackend{ parserBackend }
-        , _readStyle{ readStyle }
+    AudioFileParser::AudioFileParser(const AudioFileParserParameters& params)
+        : _params{ params }
     {
-        switch (_parserBackend)
+        switch (_params.backend)
         {
         case ParserBackend::TagLib:
-            LMS_LOG(METADATA, INFO, "Using TagLib parser with read style = " << utils::readStyleToString(readStyle));
+            LMS_LOG(METADATA, INFO, "Using TagLib parser with read style = " << utils::readStyleToString(_params.readStyle));
             break;
 
         case ParserBackend::AvFormat:
@@ -337,7 +338,7 @@ namespace lms::metadata
         }
     }
 
-    std::span<const std::filesystem::path> Parser::getSupportedExtensions() const
+    std::span<const std::filesystem::path> AudioFileParser::getSupportedExtensions() const
     {
         // TODO: use backend capability to retrieve supported formats
         static const std::array<std::filesystem::path, 18> fileExtensions{
@@ -363,34 +364,61 @@ namespace lms::metadata
         return fileExtensions;
     }
 
-    std::unique_ptr<Track> Parser::parse(const std::filesystem::path& p, bool debug)
+    std::unique_ptr<Track> AudioFileParser::parseMetaData(const std::filesystem::path& p)
     {
         try
         {
             std::unique_ptr<ITagReader> tagReader;
-            switch (_parserBackend)
+            switch (_params.backend)
             {
             case ParserBackend::TagLib:
-                tagReader = std::make_unique<TagLibTagReader>(p, _readStyle, debug);
+                tagReader = std::make_unique<TagLibTagReader>(p, _params.readStyle, _params.debug);
                 break;
 
             case ParserBackend::AvFormat:
-                tagReader = std::make_unique<AvFormatTagReader>(p, debug);
+                tagReader = std::make_unique<AvFormatTagReader>(p, _params.debug);
                 break;
             }
             if (!tagReader)
                 throw ParseException{ "Unhandled parser backend" };
 
-            return parse(*tagReader);
+            return parseMetaData(*tagReader);
         }
         catch (const Exception& e)
         {
-            LMS_LOG(METADATA, ERROR, "File " << p << ": parsing failed");
+            LMS_LOG(METADATA, ERROR, "File " << p << ": metadata parsing failed");
             throw ParseException{};
         }
     }
 
-    std::unique_ptr<Track> Parser::parse(const ITagReader& tagReader)
+    void AudioFileParser::parseImages(const std::filesystem::path& p, ImageVisitor visitor)
+    {
+        try
+        {
+            std::unique_ptr<IImageReader> imageReader;
+            switch (_params.backend)
+            {
+            case ParserBackend::TagLib:
+                imageReader = std::make_unique<TagLibImageReader>(p);
+                break;
+
+            case ParserBackend::AvFormat:
+                imageReader = std::make_unique<AvFormatImageReader>(p);
+                break;
+            }
+            if (!imageReader)
+                throw ParseException{ "Unhandled parser backend" };
+
+            parseImages(*imageReader, std::move(visitor));
+        }
+        catch (const Exception& e)
+        {
+            LMS_LOG(METADATA, ERROR, "File " << p << ": image parsing failed");
+            throw ParseException{};
+        }
+    }
+
+    std::unique_ptr<Track> AudioFileParser::parseMetaData(const ITagReader& tagReader)
     {
         auto track{ std::make_unique<Track>() };
 
@@ -400,10 +428,8 @@ namespace lms::metadata
         return track;
     }
 
-    void Parser::processTags(const ITagReader& tagReader, Track& track)
+    void AudioFileParser::processTags(const ITagReader& tagReader, Track& track)
     {
-        track.hasCover = tagReader.hasEmbeddedCover();
-
         track.title = getTagValueAs<std::string>(tagReader, TagType::TrackTitle).value_or("");
         track.mbid = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzTrackID);
         track.recordingMBID = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzRecordingID);
@@ -436,32 +462,32 @@ namespace lms::metadata
         track.copyrightURL = getTagValueAs<std::string>(tagReader, TagType::CopyrightURL).value_or("");
         track.replayGain = getTagValueAs<float>(tagReader, TagType::ReplayGainTrackGain);
 
-        for (const std::string& userExtraTag : _userExtraTags)
+        for (const std::string& userExtraTag : _params.userExtraTags)
         {
-            visitTagValues(tagReader, userExtraTag, _defaultTagDelimiters, [&](std::string_view value) {
+            visitTagValues(tagReader, userExtraTag, _params.defaultTagDelimiters, [&](std::string_view value) {
                 value = core::stringUtils::stringTrim(value);
                 if (!value.empty())
                     track.userExtraTags[userExtraTag].push_back(std::string{ value });
             });
         }
 
-        track.genres = getTagValuesAs<std::string>(tagReader, TagType::Genre, _defaultTagDelimiters);
-        track.moods = getTagValuesAs<std::string>(tagReader, TagType::Mood, _defaultTagDelimiters);
-        track.groupings = getTagValuesAs<std::string>(tagReader, TagType::Grouping, _defaultTagDelimiters);
-        track.languages = getTagValuesAs<std::string>(tagReader, TagType::Language, _defaultTagDelimiters);
+        track.genres = getTagValuesAs<std::string>(tagReader, TagType::Genre, _params.defaultTagDelimiters);
+        track.moods = getTagValuesAs<std::string>(tagReader, TagType::Mood, _params.defaultTagDelimiters);
+        track.groupings = getTagValuesAs<std::string>(tagReader, TagType::Grouping, _params.defaultTagDelimiters);
+        track.languages = getTagValuesAs<std::string>(tagReader, TagType::Language, _params.defaultTagDelimiters);
 
         std::vector<std::string_view> artistDelimiters{};
 
         track.medium = getMedium(tagReader);
-        track.artists = getArtists(tagReader, { TagType::Artists, TagType::Artist }, { TagType::ArtistSortOrder }, { TagType::MusicBrainzArtistID }, _artistTagDelimiters, _defaultTagDelimiters);
-        track.artistDisplayName = computeArtistDisplayName(track.artists, getTagValueAs<std::string>(tagReader, TagType::Artist), _artistTagDelimiters);
+        track.artists = getArtists(tagReader, { TagType::Artists, TagType::Artist }, { TagType::ArtistSortOrder }, { TagType::MusicBrainzArtistID }, _params.artistTagDelimiters, _params.defaultTagDelimiters);
+        track.artistDisplayName = computeArtistDisplayName(track.artists, getTagValueAs<std::string>(tagReader, TagType::Artist), _params.artistTagDelimiters);
 
-        track.conductorArtists = getArtists(tagReader, { TagType::Conductors, TagType::Conductor }, { TagType::ConductorsSortOrder, TagType::ConductorSortOrder }, {}, _artistTagDelimiters, _defaultTagDelimiters);
-        track.composerArtists = getArtists(tagReader, { TagType::Composers, TagType::Composer }, { TagType::ComposersSortOrder, TagType::ComposerSortOrder }, {}, _artistTagDelimiters, _defaultTagDelimiters);
-        track.lyricistArtists = getArtists(tagReader, { TagType::Lyricists, TagType::Lyricist }, { TagType::LyricistsSortOrder, TagType::LyricistSortOrder }, {}, _artistTagDelimiters, _defaultTagDelimiters);
-        track.mixerArtists = getArtists(tagReader, { TagType::Mixers, TagType::Mixer }, { TagType::MixersSortOrder, TagType::MixerSortOrder }, {}, _artistTagDelimiters, _defaultTagDelimiters);
-        track.producerArtists = getArtists(tagReader, { TagType::Producers, TagType::Producer }, { TagType::ProducersSortOrder, TagType::ProducerSortOrder }, {}, _artistTagDelimiters, _defaultTagDelimiters);
-        track.remixerArtists = getArtists(tagReader, { TagType::Remixers, TagType::Remixer }, { TagType::RemixersSortOrder, TagType::RemixerSortOrder }, {}, _artistTagDelimiters, _defaultTagDelimiters);
+        track.conductorArtists = getArtists(tagReader, { TagType::Conductors, TagType::Conductor }, { TagType::ConductorsSortOrder, TagType::ConductorSortOrder }, {}, _params.artistTagDelimiters, _params.defaultTagDelimiters);
+        track.composerArtists = getArtists(tagReader, { TagType::Composers, TagType::Composer }, { TagType::ComposersSortOrder, TagType::ComposerSortOrder }, {}, _params.artistTagDelimiters, _params.defaultTagDelimiters);
+        track.lyricistArtists = getArtists(tagReader, { TagType::Lyricists, TagType::Lyricist }, { TagType::LyricistsSortOrder, TagType::LyricistSortOrder }, {}, _params.artistTagDelimiters, _params.defaultTagDelimiters);
+        track.mixerArtists = getArtists(tagReader, { TagType::Mixers, TagType::Mixer }, { TagType::MixersSortOrder, TagType::MixerSortOrder }, {}, _params.artistTagDelimiters, _params.defaultTagDelimiters);
+        track.producerArtists = getArtists(tagReader, { TagType::Producers, TagType::Producer }, { TagType::ProducersSortOrder, TagType::ProducerSortOrder }, {}, _params.artistTagDelimiters, _params.defaultTagDelimiters);
+        track.remixerArtists = getArtists(tagReader, { TagType::Remixers, TagType::Remixer }, { TagType::RemixersSortOrder, TagType::RemixerSortOrder }, {}, _params.artistTagDelimiters, _params.defaultTagDelimiters);
         track.performerArtists = getPerformerArtists(tagReader); // artistDelimiters not supported
 
         fillMissingMbids(track);
@@ -471,7 +497,7 @@ namespace lms::metadata
             track.originalYear = track.originalDate.getYear();
     }
 
-    std::optional<Medium> Parser::getMedium(const ITagReader& tagReader)
+    std::optional<Medium> AudioFileParser::getMedium(const ITagReader& tagReader)
     {
         std::optional<Medium> medium;
         medium.emplace();
@@ -501,7 +527,7 @@ namespace lms::metadata
         return medium;
     }
 
-    std::optional<Release> Parser::getRelease(const ITagReader& tagReader)
+    std::optional<Release> AudioFileParser::getRelease(const ITagReader& tagReader)
     {
         std::optional<Release> release;
 
@@ -512,16 +538,16 @@ namespace lms::metadata
         release.emplace();
         release->name = std::move(*releaseName);
         release->sortName = getTagValueAs<std::string>(tagReader, TagType::AlbumSortOrder).value_or(release->name);
-        release->artists = getArtists(tagReader, { TagType::AlbumArtists, TagType::AlbumArtist }, { TagType::AlbumArtistsSortOrder, TagType::AlbumArtistSortOrder }, { TagType::MusicBrainzReleaseArtistID }, _artistTagDelimiters, _defaultTagDelimiters);
-        release->artistDisplayName = computeArtistDisplayName(release->artists, getTagValueAs<std::string>(tagReader, TagType::AlbumArtist), _artistTagDelimiters);
+        release->artists = getArtists(tagReader, { TagType::AlbumArtists, TagType::AlbumArtist }, { TagType::AlbumArtistsSortOrder, TagType::AlbumArtistSortOrder }, { TagType::MusicBrainzReleaseArtistID }, _params.artistTagDelimiters, _params.defaultTagDelimiters);
+        release->artistDisplayName = computeArtistDisplayName(release->artists, getTagValueAs<std::string>(tagReader, TagType::AlbumArtist), _params.artistTagDelimiters);
         release->mbid = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzReleaseID);
         release->groupMBID = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzReleaseGroupID);
         release->mediumCount = getTagValueAs<std::size_t>(tagReader, TagType::TotalDiscs);
         release->isCompilation = getTagValueAs<bool>(tagReader, TagType::Compilation).value_or(false);
         release->barcode = getTagValueAs<std::string>(tagReader, TagType::Barcode).value_or("");
-        release->labels = getTagValuesAs<std::string>(tagReader, TagType::RecordLabel, _defaultTagDelimiters);
+        release->labels = getTagValuesAs<std::string>(tagReader, TagType::RecordLabel, _params.defaultTagDelimiters);
         release->comment = getTagValueAs<std::string>(tagReader, TagType::AlbumComment).value_or("");
-        release->countries = getTagValuesAs<std::string>(tagReader, TagType::ReleaseCountry, _defaultTagDelimiters);
+        release->countries = getTagValuesAs<std::string>(tagReader, TagType::ReleaseCountry, _params.defaultTagDelimiters);
         if (!release->mediumCount)
         {
             // mediumCount may be encoded as "position/count"
@@ -534,8 +560,15 @@ namespace lms::metadata
             }
         }
 
-        release->releaseTypes = getTagValuesAs<std::string>(tagReader, TagType::ReleaseType, _defaultTagDelimiters);
+        release->releaseTypes = getTagValuesAs<std::string>(tagReader, TagType::ReleaseType, _params.defaultTagDelimiters);
 
         return release;
+    }
+
+    void AudioFileParser::parseImages(const IImageReader& reader, ImageVisitor visitor)
+    {
+        reader.visitImages([&](const Image& image) {
+            visitor(image);
+        });
     }
 } // namespace lms::metadata
