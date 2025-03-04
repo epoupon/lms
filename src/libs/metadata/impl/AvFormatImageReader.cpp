@@ -40,7 +40,7 @@ namespace lms::metadata
     void AvFormatImageReader::visitImages(ImageVisitor visitor) const
     {
         auto metaDataHasKeyword{ [](const av::IAudioFile::MetadataMap& metadata, std::string_view keyword) {
-            return std::any_of(std::cbegin(metadata), std::cend(metadata), [](const auto& keyValue) { return core::stringUtils::stringCaseInsensitiveContains(keyValue.second, keyword); });
+            return std::any_of(std::cbegin(metadata), std::cend(metadata), [&](const auto& keyValue) { return core::stringUtils::stringCaseInsensitiveContains(keyValue.second, keyword); });
         } };
 
         _audioFile->visitAttachedPictures([&](const av::Picture& picture, const av::IAudioFile::MetadataMap& metaData) {
