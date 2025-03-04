@@ -437,11 +437,44 @@ namespace lms::ui
                 entry->bindWidget("artists-md", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
             }
 
-            const auto remixers{ track->getArtistIds({ TrackArtistLinkType::Remixer }) };
-            if (!remixers.empty())
-            {
-                entry->setCondition("if-has-remixers", true);
-                entry->bindWidget("remixers", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), remixers));
+            { // Generate all artist link widgets
+                // TODO: add config to chose whether to only show Remixer or show All.
+                std::vector<std::pair<Wt::WString, std::unique_ptr<Wt::WContainerWidget>>> artistLinksList;
+                auto createTrackArtistLink = [&](TrackArtistLinkType linkType, const std::string& trkey) {
+                    const auto artists{ track->getArtistIds({ linkType }) };
+                    const auto text = Wt::WString::trn(trkey, artists.size()).arg(artists.size());
+                    auto anchors{ utils::createArtistAnchorList(std::vector(std::cbegin(artists), std::cend(artists))) };
+                    if (!artists.empty())
+                    {
+                        auto myPair = std::make_pair(text, std::move(anchors));
+                        artistLinksList.push_back(std::move(myPair));
+                    }
+                };
+                createTrackArtistLink(TrackArtistLinkType::Remixer, "Lms.Explore.Artists.linktype-remixer");
+                createTrackArtistLink(TrackArtistLinkType::Producer, "Lms.Explore.Artists.linktype-producer");
+                createTrackArtistLink(TrackArtistLinkType::Performer, "Lms.Explore.Artists.linktype-performer");
+                createTrackArtistLink(TrackArtistLinkType::Composer, "Lms.Explore.Artists.linktype-composer");
+                createTrackArtistLink(TrackArtistLinkType::Conductor, "Lms.Explore.Artists.linktype-conductor");
+                createTrackArtistLink(TrackArtistLinkType::Lyricist, "Lms.Explore.Artists.linktype-lyricist");
+                createTrackArtistLink(TrackArtistLinkType::Mixer, "Lms.Explore.Artists.linktype-mixer");
+
+                if (!artistLinksList.empty())
+                {
+                    entry->setCondition("if-has-artist-links", true);
+                    Wt::WContainerWidget* artistLinksContainer = entry->bindNew<Wt::WContainerWidget>("artist-links");
+
+                    for (auto& [role, artistWidget] : artistLinksList)
+                    {
+                        auto* currContainer = artistLinksContainer->addNew<Wt::WContainerWidget>();
+                        currContainer->setStyleClass("overflow-hidden ms-5 pb-2 px-2 text-small d-flex");
+
+                        auto* roleText = currContainer->addNew<Wt::WText>(role + Wt::WString::fromUTF8("&nbsp;—&nbsp;"));
+                        roleText->setStyleClass("d-inline");
+
+                        auto* newArtistWidget = currContainer->addWidget(std::move(artistWidget));
+                        newArtistWidget->setInline(true);
+                    }
+                }
             }
 
             auto trackNumber{ track->getTrackNumber() };
