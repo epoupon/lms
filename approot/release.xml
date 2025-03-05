@@ -123,6 +123,9 @@
 			</div>
 		</div>
 	</div>
+	${<if-has-artist-links>}
+		${artist-links}
+	${</if-has-artist-links>}
 </message>
 
 <message id="Lms.Explore.Release.template.release-info">
