@@ -19,8 +19,6 @@
 
 #include "TrackListHelpers.hpp"
 
-#include <map>
-
 #include <Wt/WAnchor.h>
 #include <Wt/WImage.h>
 #include <Wt/WPushButton.h>
@@ -33,6 +31,7 @@
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"
 #include "database/TrackLyrics.hpp"
+#include "database/Types.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
@@ -50,11 +49,14 @@ namespace lms::ui::TrackListHelpers
 {
     using namespace db;
 
-    std::map<Wt::WString, std::set<ArtistId>> getArtistsByRole(db::TrackId trackId)
+    std::map<Wt::WString, std::set<ArtistId>> getArtistsByRole(db::TrackId trackId, core::EnumSet<db::TrackArtistLinkType> artistLinkTypes)
     {
         std::map<Wt::WString, std::set<ArtistId>> artistMap;
 
         auto addArtists = [&](TrackArtistLinkType linkType, const char* type) {
+            if (!artistLinkTypes.contains(linkType))
+                return;
+
             Artist::FindParameters params;
             params.setTrack(trackId);
             params.setLinkType(linkType);
@@ -69,6 +71,9 @@ namespace lms::ui::TrackListHelpers
         };
 
         auto addPerformerArtists = [&] {
+            if (!artistLinkTypes.contains(db::TrackArtistLinkType::Performer))
+                return;
+
             TrackArtistLink::FindParameters params;
             params.setTrack(trackId);
             params.setLinkType(TrackArtistLinkType::Performer);

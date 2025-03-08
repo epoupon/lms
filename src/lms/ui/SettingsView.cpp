@@ -25,12 +25,15 @@
 #include <Wt/WFormModel.h>
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
+#include <Wt/WSelectionBox.h>
 #include <Wt/WString.h>
 #include <Wt/WTemplateFormView.h>
 
 #include "core/IConfig.hpp"
 #include "core/Service.hpp"
+#include "core/String.hpp"
 #include "database/Session.hpp"
+#include "database/Types.hpp"
 #include "database/User.hpp"
 #include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/IPasswordService.hpp"
@@ -46,6 +49,44 @@
 
 namespace lms::ui
 {
+    namespace
+    {
+        // highly unefficient hack to make WSelectionBox work with Wt::WFormModel
+        class SelectionBox : public Wt::WSelectionBox
+        {
+        public:
+            static inline constexpr std::string_view valueSeparator{ ", " };
+
+        private:
+            void setValueText(const Wt::WString& values) override
+            {
+                std::set<int> selectedIndexes;
+                const std::string strValues{ values.toUTF8() };
+                for (std::string_view value : core::stringUtils::splitString(strValues, valueSeparator))
+                {
+                    const int index{ findText(std::string{ value }) };
+                    if (index >= 0)
+                        selectedIndexes.insert(index);
+                }
+
+                setSelectedIndexes(selectedIndexes);
+            }
+
+            Wt::WString valueText() const override
+            {
+                Wt::WString res;
+                for (int index : selectedIndexes())
+                {
+                    if (!res.empty())
+                        res += std::string{ valueSeparator };
+                    res += itemText(index);
+                }
+
+                return res;
+            }
+        };
+    } // namespace
+
     using namespace db;
 
     class SettingsModel : public Wt::WFormModel
@@ -53,6 +94,8 @@ namespace lms::ui
     public:
         // Associate each field with a unique string literal.
         static inline const Field ArtistReleaseSortMethodField{ "artist-release-sort-method" };
+        static inline const Field EnableInlineArtistRelationships{ "enable-inline-artist-relationships" };
+        static inline const Field InlineArtistRelationships{ "inline-artist-relationships" };
         static inline const Field TranscodingModeField{ "transcoding-mode" };
         static inline const Field TranscodeFormatField{ "transcoding-output-format" };
         static inline const Field TranscodeBitrateField{ "transcoding-output-bitrate" };
@@ -72,6 +115,7 @@ namespace lms::ui
         static inline const Field PasswordConfirmField{ "password-confirm" };
 
         using ArtistReleaseSortMethodModel = ValueStringModel<db::ReleaseSortMethod>;
+        using ArtistRelationshipsModel = ValueStringModel<db::TrackArtistLinkType>;
         using TranscodingModeModel = ValueStringModel<MediaPlayer::Settings::Transcoding::Mode>;
         using ReplayGainModeModel = ValueStringModel<MediaPlayer::Settings::ReplayGain::Mode>;
         using FeedbackBackendModel = ValueStringModel<db::FeedbackBackend>;
@@ -85,6 +129,8 @@ namespace lms::ui
             initializeModels();
 
             addField(ArtistReleaseSortMethodField);
+            addField(EnableInlineArtistRelationships);
+            addField(InlineArtistRelationships);
             addField(TranscodingModeField);
             addField(TranscodeBitrateField);
             addField(TranscodeFormatField);
@@ -133,6 +179,7 @@ namespace lms::ui
         }
 
         std::shared_ptr<ArtistReleaseSortMethodModel> getArtistReleaseSortMethodModel() { return _artistReleaseSortMethodModel; }
+        std::shared_ptr<ArtistRelationshipsModel> getArtistRelationshipsModel() { return _artistRelationshipsModel; }
         std::shared_ptr<TranscodingModeModel> getTranscodingModeModel() { return _transcodingModeModeModel; }
         std::shared_ptr<Wt::WAbstractItemModel> getTranscodingOutputBitrateModel() { return _transcodingOutputBitrateModel; }
         std::shared_ptr<Wt::WAbstractItemModel> getTranscodingOutputFormatModel() { return _transcodingOutputFormatModel; }
@@ -148,9 +195,23 @@ namespace lms::ui
             User::pointer user{ LmsApp->getUser() };
 
             {
-                auto artistReleaseSortMethodRow{ _artistReleaseSortMethodModel->getRowFromString(valueText(ArtistReleaseSortMethodField)) };
+                const auto artistReleaseSortMethodRow{ _artistReleaseSortMethodModel->getRowFromString(valueText(ArtistReleaseSortMethodField)) };
                 if (artistReleaseSortMethodRow)
                     user.modify()->setUIArtistReleaseSortMethod(_artistReleaseSortMethodModel->getValue(*artistReleaseSortMethodRow));
+
+                const bool enableInlineArtistRelationships{ Wt::asNumber(value(EnableInlineArtistRelationships)) != 0 };
+                user.modify()->setUIEnableInlineArtistRelationships(enableInlineArtistRelationships);
+
+                core::EnumSet<db::TrackArtistLinkType> artistLinkTypes;
+                const std::string relationships{ valueText(InlineArtistRelationships).toUTF8() };
+                for (std::string_view relationship : core::stringUtils::splitString(relationships, SelectionBox::valueSeparator))
+                {
+                    auto artistRelationshipRow{ _artistRelationshipsModel->getRowFromString(Wt::WString{ std::string{ relationship } }) };
+                    if (artistRelationshipRow)
+                        artistLinkTypes.insert(_artistRelationshipsModel->getValue(*artistRelationshipRow));
+                }
+
+                user.modify()->setUIInlineArtistRelationships(artistLinkTypes);
             }
 
             {
@@ -248,12 +309,30 @@ namespace lms::ui
 
             const User::pointer user{ LmsApp->getUser() };
 
+            // UI
             {
                 auto artistReleaseSortMethodRow{ _artistReleaseSortMethodModel->getRowFromValue(user->getUIArtistReleaseSortMethod()) };
                 if (artistReleaseSortMethodRow)
                     setValue(ArtistReleaseSortMethodField, _artistReleaseSortMethodModel->getString(*artistReleaseSortMethodRow));
+
+                setValue(EnableInlineArtistRelationships, user->getUIEnableInlineArtistRelationships());
+                setReadOnly(InlineArtistRelationships, !user->getUIEnableInlineArtistRelationships());
+
+                Wt::WString inlineArtistRelationships;
+                for (db::TrackArtistLinkType artistLinkType : user->getUIInlineArtistRelationships())
+                {
+                    if (auto artistRelationshipsRow{ _artistRelationshipsModel->getRowFromValue(artistLinkType) })
+                    {
+                        if (!inlineArtistRelationships.empty())
+                            inlineArtistRelationships += std::string{ SelectionBox::valueSeparator };
+                        inlineArtistRelationships += _artistRelationshipsModel->getString(*artistRelationshipsRow);
+                    }
+                }
+
+                setValue(InlineArtistRelationships, inlineArtistRelationships);
             }
 
+            // Audio
             {
                 const auto settings{ *LmsApp->getMediaPlayer().getSettings() };
 
@@ -379,6 +458,15 @@ namespace lms::ui
             _artistReleaseSortMethodModel->add(Wt::WString::tr("Lms.Settings.original-date-desc"), db::ReleaseSortMethod::OriginalDateDesc);
             _artistReleaseSortMethodModel->add(Wt::WString::tr("Lms.Settings.name"), db::ReleaseSortMethod::Name);
 
+            _artistRelationshipsModel = std::make_shared<ArtistRelationshipsModel>();
+            _artistRelationshipsModel->add(Wt::WString::trn("Lms.Explore.Artists.linktype-composer", 2), db::TrackArtistLinkType::Composer);
+            _artistRelationshipsModel->add(Wt::WString::trn("Lms.Explore.Artists.linktype-conductor", 2), db::TrackArtistLinkType::Conductor);
+            _artistRelationshipsModel->add(Wt::WString::trn("Lms.Explore.Artists.linktype-lyricist", 2), db::TrackArtistLinkType::Lyricist);
+            _artistRelationshipsModel->add(Wt::WString::trn("Lms.Explore.Artists.linktype-mixer", 2), db::TrackArtistLinkType::Mixer);
+            _artistRelationshipsModel->add(Wt::WString::trn("Lms.Explore.Artists.linktype-performer", 2), db::TrackArtistLinkType::Performer);
+            _artistRelationshipsModel->add(Wt::WString::trn("Lms.Explore.Artists.linktype-producer", 2), db::TrackArtistLinkType::Producer);
+            _artistRelationshipsModel->add(Wt::WString::trn("Lms.Explore.Artists.linktype-remixer", 2), db::TrackArtistLinkType::Remixer);
+
             _transcodingModeModeModel = std::make_shared<TranscodingModeModel>();
             _transcodingModeModeModel->add(Wt::WString::tr("Lms.Settings.transcoding-mode.always"), MediaPlayer::Settings::Transcoding::Mode::Always);
             _transcodingModeModeModel->add(Wt::WString::tr("Lms.Settings.transcoding-mode.never"), MediaPlayer::Settings::Transcoding::Mode::Never);
@@ -422,6 +510,7 @@ namespace lms::ui
         auth::IAuthTokenService& _authTokenService;
 
         std::shared_ptr<ArtistReleaseSortMethodModel> _artistReleaseSortMethodModel;
+        std::shared_ptr<ArtistRelationshipsModel> _artistRelationshipsModel;
         std::shared_ptr<TranscodingModeModel> _transcodingModeModeModel;
         std::shared_ptr<ValueStringModel<Bitrate>> _transcodingOutputBitrateModel;
         std::shared_ptr<ValueStringModel<TranscodingOutputFormat>> _transcodingOutputFormatModel;
@@ -498,6 +587,23 @@ namespace lms::ui
             auto artistReleaseSortMethod{ std::make_unique<Wt::WComboBox>() };
             artistReleaseSortMethod->setModel(model->getArtistReleaseSortMethodModel());
             t->setFormWidget(SettingsModel::ArtistReleaseSortMethodField, std::move(artistReleaseSortMethod));
+
+            auto enableInlineArtistRelationships{ std::make_unique<Wt::WCheckBox>() };
+            auto inlineArtistRelationships{ std::make_unique<SelectionBox>() };
+            inlineArtistRelationships->setSelectionMode(Wt::SelectionMode::Extended);
+            inlineArtistRelationships->setVerticalSize(3);
+            inlineArtistRelationships->setModel(model->getArtistRelationshipsModel());
+
+            auto updateInlineArtistRelationships{ [=](bool readOnly) {
+                model->setReadOnly(SettingsModel::InlineArtistRelationships, readOnly);
+                t->updateModel(model.get());
+                t->updateView(model.get());
+            } };
+            enableInlineArtistRelationships->checked().connect([=] { updateInlineArtistRelationships(false); });
+            enableInlineArtistRelationships->unChecked().connect([=] { updateInlineArtistRelationships(true); });
+
+            t->setFormWidget(SettingsModel::EnableInlineArtistRelationships, std::move(enableInlineArtistRelationships));
+            t->setFormWidget(SettingsModel::InlineArtistRelationships, std::move(inlineArtistRelationships));
         }
 
         // Audio

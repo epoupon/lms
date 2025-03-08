@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 82 };
+        static constexpr Version LMS_DATABASE_VERSION{ 83 };
     }
 
     VersionInfo::VersionInfo()
@@ -1099,6 +1099,13 @@ FROM tracklist)");
         utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV82(Session& session)
+    {
+        // new setting to display inline artist relationships in the release view
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE user ADD COLUMN ui_enable_inline_artist_relationships BOOLEAN NOT NULL DEFAULT(false)");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE user ADD COLUMN ui_inline_artist_relationships BIGINT NOT NULL DEFAULT(68)"); // Composer + Performer
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1157,6 +1164,7 @@ FROM tracklist)");
             { 79, migrateFromV79 },
             { 80, migrateFromV80 },
             { 81, migrateFromV81 },
+            { 82, migrateFromV82 },
         };
 
         bool migrationPerformed{};

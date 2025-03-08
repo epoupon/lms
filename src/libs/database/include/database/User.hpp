@@ -21,11 +21,11 @@
 
 #include <optional>
 #include <string_view>
-#include <vector>
 
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
+#include "core/EnumSet.hpp"
 #include "core/UUID.hpp"
 #include "database/Object.hpp"
 #include "database/Types.hpp"
@@ -110,6 +110,8 @@ namespace lms::db
         void setSubsonicDefaultTranscodingOutputBitrate(Bitrate bitrate);
         void setUITheme(UITheme uiTheme) { _uiTheme = uiTheme; }
         void setUIArtistReleaseSortMethod(ReleaseSortMethod method) { _uiArtistReleaseSortMethod = method; }
+        void setUIEnableInlineArtistRelationships(bool enable) { _uiEnableInlineArtistRelationships = enable; }
+        void setUIInlineArtistRelationships(core::EnumSet<TrackArtistLinkType> types) { _uiInlineArtistRelationships = types; }
         void setSubsonicArtistListMode(SubsonicArtistListMode mode) { _subsonicArtistListMode = mode; }
         void setFeedbackBackend(FeedbackBackend feedbackBackend) { _feedbackBackend = feedbackBackend; }
         void setScrobblingBackend(ScrobblingBackend scrobblingBackend) { _scrobblingBackend = scrobblingBackend; }
@@ -124,6 +126,8 @@ namespace lms::db
         Bitrate getSubsonicDefaultTranscodingOutputBitrate() const { return _subsonicDefaultTranscodingOutputBitrate; }
         UITheme getUITheme() const { return _uiTheme; }
         ReleaseSortMethod getUIArtistReleaseSortMethod() const { return _uiArtistReleaseSortMethod; }
+        bool getUIEnableInlineArtistRelationships() const { return _uiEnableInlineArtistRelationships; }
+        core::EnumSet<TrackArtistLinkType> getUIInlineArtistRelationships() const { return _uiInlineArtistRelationships; }
         SubsonicArtistListMode getSubsonicArtistListMode() const { return _subsonicArtistListMode; }
         FeedbackBackend getFeedbackBackend() const { return _feedbackBackend; }
         ScrobblingBackend getScrobblingBackend() const { return _scrobblingBackend; }
@@ -144,6 +148,8 @@ namespace lms::db
             Wt::Dbo::field(a, _subsonicArtistListMode, "subsonic_artist_list_mode");
             Wt::Dbo::field(a, _uiTheme, "ui_theme");
             Wt::Dbo::field(a, _uiArtistReleaseSortMethod, "ui_artist_release_sort_method");
+            Wt::Dbo::field(a, _uiEnableInlineArtistRelationships, "ui_enable_inline_artist_relationships");
+            Wt::Dbo::field(a, _uiInlineArtistRelationships, "ui_inline_artist_relationships");
             Wt::Dbo::field(a, _feedbackBackend, "feedback_backend");
             Wt::Dbo::field(a, _scrobblingBackend, "scrobbling_backend");
             Wt::Dbo::field(a, _listenbrainzToken, "listenbrainz_token");
@@ -164,6 +170,8 @@ namespace lms::db
         Wt::WDateTime _lastLogin;
         UITheme _uiTheme{ defaultUITheme };
         ReleaseSortMethod _uiArtistReleaseSortMethod{ _defaultUIArtistReleaseSortMethod };
+        bool _uiEnableInlineArtistRelationships{};
+        core::EnumSet<TrackArtistLinkType> _uiInlineArtistRelationships{ TrackArtistLinkType::Composer, TrackArtistLinkType::Performer };
         FeedbackBackend _feedbackBackend{ defaultFeedbackBackend };
         ScrobblingBackend _scrobblingBackend{ defaultScrobblingBackend };
         std::string _listenbrainzToken; // Musicbrainz Identifier

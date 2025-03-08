@@ -35,6 +35,7 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"
+#include "database/Types.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
@@ -188,8 +189,15 @@ namespace lms::ui
 
         void fillTrackArtistLinks(Wt::WTemplate* trackEntry, db::TrackId trackId)
         {
-            const std::map<Wt::WString, std::set<ArtistId>> artistsByRole{ TrackListHelpers::getArtistsByRole(trackId) };
+            const User::pointer user{ LmsApp->getUser() };
+            if (!user->getUIEnableInlineArtistRelationships())
+                return;
 
+            const core::EnumSet<db::TrackArtistLinkType> inlineArtistRelationships{ user->getUIInlineArtistRelationships() };
+            if (inlineArtistRelationships.empty())
+                return;
+
+            const std::map<Wt::WString, std::set<ArtistId>> artistsByRole{ TrackListHelpers::getArtistsByRole(trackId, inlineArtistRelationships) };
             if (artistsByRole.empty())
                 return;
 
