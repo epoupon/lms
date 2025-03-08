@@ -186,9 +186,9 @@ namespace lms::ui
             return core::stringUtils::readAs<ReleaseId::ValueType>(wApp->internalPathNextPart("/release/"));
         }
 
-        void fillTrackArtistLinks(Wt::WTemplate* trackEntry, const db::Track::pointer& track)
+        void fillTrackArtistLinks(Wt::WTemplate* trackEntry, db::TrackId trackId)
         {
-            const std::map<Wt::WString, std::set<ArtistId>> artistsByRole{ TrackListHelpers::getArtistsByRole(track->getId()) };
+            const std::map<Wt::WString, std::set<ArtistId>> artistsByRole{ TrackListHelpers::getArtistsByRole(trackId) };
 
             if (artistsByRole.empty())
                 return;
@@ -196,7 +196,7 @@ namespace lms::ui
             trackEntry->setCondition("if-has-artist-links", true);
             Wt::WContainerWidget* artistLinksContainer = trackEntry->bindNew<Wt::WContainerWidget>("artist-links");
 
-            for (auto& [role, artists] : artistsByRole)
+            for (const auto& [role, artists] : artistsByRole)
             {
                 Wt::WTemplate* artistLinkEntry{ artistLinksContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.artist-links-entry")) };
                 artistLinkEntry->bindString("role", role, Wt::TextFormat::Plain);
@@ -455,7 +455,7 @@ namespace lms::ui
                 entry->bindWidget("artists-md", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
             }
 
-            fillTrackArtistLinks(entry, track);
+            fillTrackArtistLinks(entry, track->getId());
 
             auto trackNumber{ track->getTrackNumber() };
             if (trackNumber)
