@@ -94,13 +94,14 @@
 			${<if-has-track-number>}${track-number}${</if-has-track-number>}
 		</div>
 		<div class="row align-items-center flex-fill overflow-hidden">
-			<div class="col-12 col-md-6">
+			<div class="col-12 col-md-8">
 				<div class="p-2">
 					${name}
 					${<if-has-artists>}${artists class="d-block d-md-none"}${</if-has-artists>}
+					${<if-has-artist-links>}${artist-links}${</if-has-artist-links>}
 				</div>
 			</div>
-			<div class="col-md-6">
+			<div class="col-md-4">
 				${<if-has-artists>}${artists-md class="d-none d-md-block"}${</if-has-artists>}
 			</div>
 		</div>
@@ -123,9 +124,12 @@
 			</div>
 		</div>
 	</div>
-	${<if-has-artist-links>}
-		${artist-links}
-	${</if-has-artist-links>}
+</message>
+
+<message id="Lms.Explore.Release.template.artist-links-entry">
+	<div class=" text-muted small ms-2 d-flex">
+		<span class="text-nowrap text-muted">${role} — </span>${anchors class="ms-1"}
+	</div>
 </message>
 
 <message id="Lms.Explore.Release.template.release-info">

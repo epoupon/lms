@@ -50,18 +50,8 @@ namespace lms::ui::TrackListHelpers
 {
     using namespace db;
 
-    void showTrackInfoModal(db::TrackId trackId, Filters& filters)
+    std::map<Wt::WString, std::set<ArtistId>> getArtistsByRole(db::TrackId trackId)
     {
-        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-
-        const db::Track::pointer track{ Track::find(LmsApp->getDbSession(), trackId) };
-        if (!track)
-            return;
-
-        auto trackInfo{ std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Tracks.template.track-info")) };
-        Wt::WWidget* trackInfoPtr{ trackInfo.get() };
-        trackInfo->addFunction("tr", &Wt::WTemplate::Functions::tr);
-
         std::map<Wt::WString, std::set<ArtistId>> artistMap;
 
         auto addArtists = [&](TrackArtistLinkType linkType, const char* type) {
@@ -73,7 +63,7 @@ namespace lms::ui::TrackListHelpers
                 return;
 
             Wt::WString typeStr{ Wt::WString::trn(type, artistIds.results.size()) };
-            ;
+
             for (ArtistId artistId : artistIds.results)
                 artistMap[typeStr].insert(artistId);
         };
@@ -103,6 +93,22 @@ namespace lms::ui::TrackListHelpers
             artistMap.erase(itRolelessPerformers);
         }
 
+        return artistMap;
+    }
+
+    void showTrackInfoModal(db::TrackId trackId, Filters& filters)
+    {
+        auto transaction{ LmsApp->getDbSession().createReadTransaction() };
+
+        const db::Track::pointer track{ Track::find(LmsApp->getDbSession(), trackId) };
+        if (!track)
+            return;
+
+        auto trackInfo{ std::make_unique<Template>(Wt::WString::tr("Lms.Explore.Tracks.template.track-info")) };
+        Wt::WWidget* trackInfoPtr{ trackInfo.get() };
+        trackInfo->addFunction("tr", &Wt::WTemplate::Functions::tr);
+
+        std::map<Wt::WString, std::set<ArtistId>> artistMap{ getArtistsByRole(trackId) };
         if (!artistMap.empty())
         {
             trackInfo->setCondition("if-has-artist", true);
