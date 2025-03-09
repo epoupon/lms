@@ -11,6 +11,7 @@ add_executable(test-core
 	TraceLogger.cpp
 	Utils.cpp
 	UUID.cpp
+	XxHash3.cpp
 	)
 
 target_link_libraries(test-core PRIVATE
