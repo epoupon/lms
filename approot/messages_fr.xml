@@ -309,8 +309,10 @@
 <message id="Lms.Settings.default-transcoding-output-bitrate">Bitrate par défaut du transcodage</message>
 <message id="Lms.Settings.default-transcoding-output-format">Format par défaut du transcodage</message>
 <message id="Lms.Settings.demo-cannot-save">Impossible de sauvegarder en utilisant un compte de démo !</message>
+<message id="Lms.Settings.enable-inline-artist-relationships">Afficher les relations d'artiste en ligne dans les albums</message>
 <message id="Lms.Settings.enable-transcoding-by-default">Activer par défaut le transcodage</message>
 <message id="Lms.Settings.feedback">Feedback</message>
+<message id="Lms.Settings.inline-artist-relationships">Types de relations d'artiste à afficher</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Paramètres</message>
 <message id="Lms.Settings.name">Nom de l'album</message>
 <message id="Lms.Settings.original-date-asc">Date de sortie originale (Croissant)</message>

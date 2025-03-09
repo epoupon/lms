@@ -35,6 +35,7 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"
+#include "database/Types.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
@@ -184,6 +185,31 @@ namespace lms::ui
             }
 
             return core::stringUtils::readAs<ReleaseId::ValueType>(wApp->internalPathNextPart("/release/"));
+        }
+
+        void fillTrackArtistLinks(Wt::WTemplate* trackEntry, db::TrackId trackId)
+        {
+            const User::pointer user{ LmsApp->getUser() };
+            if (!user->getUIEnableInlineArtistRelationships())
+                return;
+
+            const core::EnumSet<db::TrackArtistLinkType> inlineArtistRelationships{ user->getUIInlineArtistRelationships() };
+            if (inlineArtistRelationships.empty())
+                return;
+
+            const std::map<Wt::WString, std::set<ArtistId>> artistsByRole{ TrackListHelpers::getArtistsByRole(trackId, inlineArtistRelationships) };
+            if (artistsByRole.empty())
+                return;
+
+            trackEntry->setCondition("if-has-artist-links", true);
+            Wt::WContainerWidget* artistLinksContainer = trackEntry->bindNew<Wt::WContainerWidget>("artist-links");
+
+            for (const auto& [role, artists] : artistsByRole)
+            {
+                Wt::WTemplate* artistLinkEntry{ artistLinksContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.artist-links-entry")) };
+                artistLinkEntry->bindString("role", role, Wt::TextFormat::Plain);
+                artistLinkEntry->bindWidget("anchors", utils::createArtistAnchorList(std::vector<db::ArtistId>(std::cbegin(artists), std::cend(artists))));
+            }
         }
     } // namespace
 
@@ -415,7 +441,7 @@ namespace lms::ui
             const db::TrackId trackId{ track->getId() };
             const auto discNumber{ track->getDiscNumber() };
 
-            Wt::WContainerWidget* container;
+            Wt::WContainerWidget* container{};
             if (useSubtitleContainers && discNumber)
                 container = getOrAddDiscContainer(*discNumber, track->getDiscSubtitle());
             else if (hasDiscSubtitle && !discNumber)
@@ -436,6 +462,8 @@ namespace lms::ui
                 entry->bindWidget("artists", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
                 entry->bindWidget("artists-md", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
             }
+
+            fillTrackArtistLinks(entry, track->getId());
 
             auto trackNumber{ track->getTrackNumber() };
             if (trackNumber)

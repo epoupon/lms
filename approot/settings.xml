@@ -15,6 +15,26 @@
 				${artist-release-sort-method-info}
 			</div>
 		</div>
+		<div class="col-12">
+			<div class="form-check">
+				${enable-inline-artist-relationships class="form-check-input"}
+				<label class="form-check-label" for="${id:enable-inline-artist-relationships}">
+					${tr:Lms.Settings.enable-inline-artist-relationships}
+				</label>
+				<div class="invalid-feedback">
+					${enable-inline-artist-relationships}
+				</div>
+			</div>
+		</div>
+		<div class="col-12">
+			<label class="form-label" for="${id:inline-artist-relationships}">
+				${tr:Lms.Settings.inline-artist-relationships}
+			</label>
+			${inline-artist-relationships class="form-control"}
+			<div class="invalid-feedback">
+				${inline-artist-relationships-info}
+			</div>
+		</div>
 		<legend>${tr:Lms.Settings.audio}
 			<button type="button" class="btn btn-sm p-0" data-bs-toggle="tooltip" data-bs-placement="right" title="${tr:Lms.Settings.audio-settings-are-local}">
         		<i class="fa fa-fw fa-info-circle" aria-hidden="true"></i>
