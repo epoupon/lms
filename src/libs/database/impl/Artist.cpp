@@ -169,10 +169,10 @@ namespace lms::db
                 query.orderBy("RANDOM()");
                 break;
             case ArtistSortMethod::LastWrittenDesc:
-                query.orderBy("MAX(t.file_last_write) DESC");
+                query.orderBy("MAX(t.file_last_write) DESC, a.sort_name");
                 break;
             case ArtistSortMethod::AddedDesc:
-                query.orderBy("MAX(t.file_added) DESC");
+                query.orderBy("MIN(t.file_added) DESC, a.sort_name");
                 break;
             case ArtistSortMethod::StarredDateDesc:
                 assert(params.starringUser.isValid());
