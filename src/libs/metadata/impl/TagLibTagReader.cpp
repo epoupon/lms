@@ -328,25 +328,39 @@ namespace lms::metadata
                     if (attributeList.isEmpty())
                         continue;
 
-                    std::string strName{ core::stringUtils::stringToUpper(name.to8Bit(true)) };
-                    if (strName.find("WM/") == 0 || _propertyMap.find(strName) != std::cend(_propertyMap))
+                    const std::string strName{ core::stringUtils::stringToUpper(name.to8Bit(true)) };
+                    if (debug)
+                    {
+                        for (const auto& attribute : attributeList)
+                            LMS_LOG(METADATA, DEBUG, "ASF Attribute, Key = '" << strName << "', value = '" << (attribute.type() == TagLib::ASF::Attribute::AttributeTypes::UnicodeType ? attribute.toString() : TagLib::String{ "<Non unicode>" }) << "'");
+                    }
+
+                    if (strName.find("WM/") == 0 || _propertyMap.contains(strName))
                         continue;
 
-                    TagLib::StringList attributes;
+                    TagLib::StringList strAttributes;
                     for (const TagLib::ASF::Attribute& attribute : attributeList)
                     {
                         if (attribute.type() == TagLib::ASF::Attribute::AttributeTypes::UnicodeType)
-                            attributes.append(attribute.toString());
+                            strAttributes.append(attribute.toString());
                     }
 
-                    if (!attributes.isEmpty())
-                        _propertyMap[strName] = std::move(attributes);
+                    if (!strAttributes.isEmpty())
+                        _propertyMap[strName] = strAttributes;
                 }
 
+                // Merge artists that may have been saved only in Author (see #597)
                 if (auto itAuthor{ _propertyMap.find("AUTHOR") }; itAuthor != _propertyMap.end() && _propertyMap.unsupportedData().contains("Author"))
                 {
                     if (!_propertyMap.contains("ARTISTS"))
-                        _propertyMap["ARTIST"].append(itAuthor->second);
+                    {
+                        auto& artistEntries{ _propertyMap["ARTIST"] };
+                        for (const auto& author : itAuthor->second)
+                        {
+                            if (!artistEntries.contains(author))
+                                artistEntries.append(author);
+                        }
+                    }
                 }
             }
         }
