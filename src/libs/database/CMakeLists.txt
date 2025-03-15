@@ -25,6 +25,8 @@ add_library(lmsdatabase STATIC
 	impl/SqlQuery.cpp
 	impl/Track.cpp
 	impl/TrackBookmark.cpp
+	impl/TrackEmbeddedImage.cpp
+	impl/TrackEmbeddedImageLink.cpp
 	impl/TrackLyrics.cpp
 	impl/Types.cpp
 	impl/UIState.cpp

@@ -26,9 +26,9 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 
-#include "IdTypeTraits.hpp"
-#include "PathTraits.hpp"
 #include "Utils.hpp"
+#include "traits/IdTypeTraits.hpp"
+#include "traits/PathTraits.hpp"
 
 namespace lms::db
 {

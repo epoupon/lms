@@ -26,6 +26,7 @@
 #include "database/ArtistId.hpp"
 #include "database/ImageId.hpp"
 #include "database/ReleaseId.hpp"
+#include "database/TrackEmbeddedImageId.hpp"
 #include "database/TrackId.hpp"
 
 namespace lms::ui
@@ -46,11 +47,11 @@ namespace lms::ui
 
         std::string getArtistImageUrl(db::ArtistId artistId, std::optional<Size> size = std::nullopt) const;
         std::string getReleaseCoverUrl(db::ReleaseId releaseId, std::optional<Size> size = std::nullopt) const;
-        std::string getTrackImageUrl(db::TrackId trackId, std::optional<Size> size = std::nullopt) const;
+        std::string getPreferredTrackImageUrl(db::TrackId trackId, std::optional<Size> size = std::nullopt) const;
 
     private:
         std::string getImageUrl(db::ImageId imageId, std::optional<Size> size, std::string_view type) const;
-        std::string getImageUrl(db::TrackId trackId, std::optional<Size> size, std::string_view type) const;
+        std::string getImageUrl(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<Size> size, std::string_view type) const;
 
         std::string getDefaultArtistImageUrl() const;
         std::string getDefaultReleaseCoverUrl() const;

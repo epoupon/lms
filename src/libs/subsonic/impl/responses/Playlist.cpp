@@ -20,7 +20,7 @@
 #include "Playlist.hpp"
 
 #include "core/String.hpp"
-#include "database/Track.hpp"
+#include "database/TrackEmbeddedImage.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
 
@@ -43,14 +43,14 @@ namespace lms::api::subsonic
         if (const db::User::pointer user{ tracklist->getUser() })
             playlistNode.setAttribute("owner", user->getLoginName());
 
-        db::Track::FindParameters params;
+        db::TrackEmbeddedImage::FindParameters params;
         params.setTrackList(tracklist->getId());
-        params.setHasEmbeddedImage(true);
-        params.setRange(db::Range{ 0, 1 });
-        params.setSortMethod(db::TrackSortMethod::TrackList);
+        params.setIsPreferred(true);
+        params.setSortMethod(db::TrackEmbeddedImageSortMethod::FrontCoverAndSize);
+        params.setRange(db::Range{ .offset = 0, .size = 1 });
 
-        db::Track::find(session, params, [&](const db::Track::pointer& track) {
-            const CoverArtId coverArtId{ track->getId(), track->getLastWriteTime().toTime_t() };
+        db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
+            const CoverArtId coverArtId{ image->getId() };
             playlistNode.setAttribute("coverArt", idToString(coverArtId));
         });
 

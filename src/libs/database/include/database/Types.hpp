@@ -26,6 +26,7 @@
 #include <Wt/WDate.h>
 
 #include "core/Exception.hpp"
+#include "core/TaggedType.hpp"
 
 namespace lms::db
 {
@@ -136,6 +137,8 @@ namespace lms::db
         Name,
     };
 
+    using ImageHashType = core::TaggedType<class ImageHash, std::uint64_t>;
+
     enum class LabelSortMethod
     {
         None,
@@ -165,6 +168,12 @@ namespace lms::db
         Name,
     };
 
+    enum class TrackEmbeddedImageSortMethod
+    {
+        None,
+        FrontCoverAndSize,
+    };
+
     enum class TrackListSortMethod
     {
         None,
@@ -192,6 +201,32 @@ namespace lms::db
         None,
         ExternalFirst,
         EmbeddedFirst,
+    };
+
+    enum class ImageType
+    {
+        Unknown = 0,
+        Other = 1,
+        FileIcon = 2,
+        OtherFileIcon = 3,
+        FrontCover = 4,
+        BackCover = 5,
+        LeafletPage = 6,
+        Media = 7,
+        LeadArtist = 8,
+        Artist = 9,
+        Conductor = 10,
+        Band = 11,
+        Composer = 12,
+        Lyricist = 13,
+        RecordingLocation = 14,
+        DuringRecording = 15,
+        DuringPerformance = 16,
+        MovieScreenCapture = 17,
+        ColouredFish = 18,
+        Illustration = 19,
+        BandLogo = 20,
+        PublisherLogo = 21
     };
 
     enum class TrackArtistLinkType

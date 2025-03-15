@@ -41,6 +41,7 @@ namespace lms::scanner
         void removeOrphanedLabels(ScanContext& context);
         void removeOrphanedCountries(ScanContext& context);
         void removeOrphanedDirectories(ScanContext& context);
+        void removeOrphanedTrackEmbeddedImages(ScanContext& context);
 
         template<typename T>
         void removeOrphanedEntries(ScanContext& context);

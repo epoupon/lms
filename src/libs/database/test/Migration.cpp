@@ -32,6 +32,8 @@
 #include "database/StarredArtist.hpp"
 #include "database/StarredRelease.hpp"
 #include "database/StarredTrack.hpp"
+#include "database/TrackEmbeddedImage.hpp"
+#include "database/TrackEmbeddedImageLink.hpp"
 #include "database/TrackLyrics.hpp"
 #include "database/UIState.hpp"
 #include "database/User.hpp"
@@ -344,6 +346,8 @@ VALUES
             EXPECT_FALSE(Cluster::find(session, ClusterId{}));
             EXPECT_FALSE(ClusterType::find(session, ClusterTypeId{}));
             EXPECT_FALSE(Directory::find(session, DirectoryId{}));
+            EXPECT_FALSE(TrackEmbeddedImage::find(session, TrackEmbeddedImageId{}));
+            EXPECT_FALSE(TrackEmbeddedImageLink::find(session, TrackEmbeddedImageLinkId{}));
             EXPECT_FALSE(Image::find(session, ImageId{}));
             EXPECT_FALSE(Label::find(session, LabelId{}));
             EXPECT_FALSE(Listen::find(session, ListenId{}));

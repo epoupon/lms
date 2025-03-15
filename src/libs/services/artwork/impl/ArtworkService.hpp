@@ -22,7 +22,6 @@
 #include <filesystem>
 #include <vector>
 
-#include "image/IEncodedImage.hpp"
 #include "services/artwork/IArtworkService.hpp"
 
 #include "ImageCache.hpp"
@@ -49,7 +48,8 @@ namespace lms::cover
 
     private:
         std::shared_ptr<image::IEncodedImage> getImage(db::ImageId imageId, std::optional<image::ImageSize> width) override;
-        std::shared_ptr<image::IEncodedImage> getTrackImage(db::TrackId trackId, std::optional<image::ImageSize> width) override;
+        std::shared_ptr<image::IEncodedImage> getTrackEmbeddedImage(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<image::ImageSize> width) override;
+
         std::shared_ptr<image::IEncodedImage> getDefaultReleaseCover() override;
         std::shared_ptr<image::IEncodedImage> getDefaultArtistImage() override;
 

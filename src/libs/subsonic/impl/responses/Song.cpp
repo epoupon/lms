@@ -32,6 +32,7 @@
 #include "database/Release.hpp"
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"
+#include "database/TrackEmbeddedImage.hpp"
 #include "database/Types.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
@@ -110,17 +111,25 @@ namespace lms::api::subsonic
 
         const Release::pointer release{ track->getRelease() };
 
-        if (track->hasCover())
         {
-            const CoverArtId coverArtId{ track->getId(), track->getLastWriteTime().toTime_t() };
-            trackResponse.setAttribute("coverArt", idToString(coverArtId));
-        }
-        else if (release)
-        {
-            if (const db::Image::pointer image{ release->getImage() })
-            {
-                const CoverArtId coverArtId{ image->getId(), image->getLastWriteTime().toTime_t() };
+            TrackEmbeddedImage::FindParameters params;
+            params.setTrack(track->getId());
+            params.setIsPreferred(true);
+            params.setRange(Range{ .offset = 0, .size = 1 });
+
+            bool hasEmbeddedImage{};
+            TrackEmbeddedImage::find(context.dbSession, params, [&](const TrackEmbeddedImage::pointer& image) {
+                const CoverArtId coverArtId{ image->getId() };
                 trackResponse.setAttribute("coverArt", idToString(coverArtId));
+            });
+
+            if (!hasEmbeddedImage && release)
+            {
+                if (const db::Image::pointer image{ release->getImage() })
+                {
+                    const CoverArtId coverArtId{ image->getId(), image->getLastWriteTime().toTime_t() };
+                    trackResponse.setAttribute("coverArt", idToString(coverArtId));
+                }
             }
         }
 

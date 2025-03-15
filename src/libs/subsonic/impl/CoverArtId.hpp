@@ -24,18 +24,23 @@
 
 #include "core/String.hpp"
 #include "database/ImageId.hpp"
-#include "database/TrackId.hpp"
+#include "database/TrackEmbeddedImageId.hpp"
 
 namespace lms::api::subsonic
 {
     struct CoverArtId
     {
-        std::variant<db::ImageId, db::TrackId> id;
-        std::time_t timestamp;
+        std::variant<db::ImageId, db::TrackEmbeddedImageId> id;
+        std::optional<std::time_t> timestamp;
+
+        CoverArtId(db::ImageId _id, std::time_t _timestamp)
+            : id{ _id }
+            , timestamp{ _timestamp } {}
+        CoverArtId(db::TrackEmbeddedImageId _id)
+            : id{ _id } {}
     };
 
     std::string idToString(CoverArtId coverId);
-    std::string idToString(db::ImageId imageId);
 } // namespace lms::api::subsonic
 
 // Used to parse parameters

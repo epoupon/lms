@@ -24,7 +24,6 @@
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
-#include "core/String.hpp"
 #include "core/Utils.hpp"
 #include "database/Db.hpp"
 #include "database/Image.hpp"
@@ -204,9 +203,9 @@ namespace lms::cover
         return cover;
     }
 
-    std::shared_ptr<image::IEncodedImage> ArtworkService::getTrackImage(db::TrackId trackId, std::optional<image::ImageSize> width)
+    std::shared_ptr<image::IEncodedImage> ArtworkService::getTrackEmbeddedImage(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<image::ImageSize> width)
     {
-        const ImageCache::EntryDesc cacheEntryDesc{ trackId, width };
+        const ImageCache::EntryDesc cacheEntryDesc{ trackEmbeddedImageId, width };
 
         std::shared_ptr<image::IEncodedImage> cover{ _cache.getImage(cacheEntryDesc) };
         if (cover)
@@ -217,12 +216,14 @@ namespace lms::cover
             db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
-            const db::Track::pointer track{ db::Track::find(session, trackId) };
-            if (track && track->hasCover())
-                trackFile = track->getAbsoluteFilePath();
+            db::Track::FindParameters params;
+            params.setEmbeddedImage(trackEmbeddedImageId);
+            db::Track::find(session, params, [&](const db::Track::pointer& track) {
+                if (!cover)
+                    cover = getTrackImage(track->getAbsoluteFilePath(), width);
+            });
         }
 
-        cover = getTrackImage(trackFile, width);
         if (cover)
             _cache.addImage(cacheEntryDesc, cover);
 

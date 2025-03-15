@@ -26,6 +26,7 @@
 #include <variant>
 
 #include "database/ImageId.hpp"
+#include "database/TrackEmbeddedImageId.hpp"
 #include "database/TrackId.hpp"
 #include "image/IEncodedImage.hpp"
 
@@ -38,7 +39,7 @@ namespace lms::cover
 
         struct EntryDesc
         {
-            using VariantType = std::variant<db::TrackId, db::ImageId>;
+            using VariantType = std::variant<db::TrackEmbeddedImageId, db::ImageId>;
             VariantType id;
             std::optional<std::size_t> size;
 

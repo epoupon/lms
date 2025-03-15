@@ -25,8 +25,8 @@
 #include "database/Track.hpp"
 #include "database/User.hpp"
 
-#include "IdTypeTraits.hpp"
 #include "Utils.hpp"
+#include "traits/IdTypeTraits.hpp"
 
 namespace lms::db
 {

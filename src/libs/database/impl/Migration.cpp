@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 83 };
+        static constexpr Version LMS_DATABASE_VERSION{ 84 };
     }
 
     VersionInfo::VersionInfo()
@@ -1101,9 +1101,40 @@ FROM tracklist)");
 
     void migrateFromV82(Session& session)
     {
-        // new setting to display inline artist relationships in the release view
+        // New setting to display inline artist relationships in the release view
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE user ADD COLUMN ui_enable_inline_artist_relationships BOOLEAN NOT NULL DEFAULT(false)");
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE user ADD COLUMN ui_inline_artist_relationships BIGINT NOT NULL DEFAULT(68)"); // Composer + Performer
+    }
+
+    void migrateFromV83(Session& session)
+    {
+        // New embedded track image handling
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE track DROP COLUMN has_cover");
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "track_embedded_image" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "hash" text not null,
+  "size" integer not null,
+  "width" integer not null,
+  "height" integer not null,
+  "mime_type" text not null
+))");
+
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "track_embedded_image_link" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "index" integer not null,
+  "is_preferred" boolean not null,
+  "type" integer not null,
+  "description" text not null,
+  "track_id" bigint,
+  "track_embedded_image_id" bigint,
+  constraint "fk_track_embedded_image_link_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_track_embedded_image_link_track_embedded_image" foreign key ("track_embedded_image_id") references "track_embedded_image" ("id") on delete cascade deferrable initially deferred
+    ))");
+
+        // Just increment the scan version of the settings to make the next scan rescan everything
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
     bool doDbMigration(Session& session)
@@ -1165,6 +1196,7 @@ FROM tracklist)");
             { 80, migrateFromV80 },
             { 81, migrateFromV81 },
             { 82, migrateFromV82 },
+            { 83, migrateFromV83 },
         };
 
         bool migrationPerformed{};

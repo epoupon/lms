@@ -43,6 +43,8 @@
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"
 #include "database/TrackBookmark.hpp"
+#include "database/TrackEmbeddedImage.hpp"
+#include "database/TrackEmbeddedImageLink.hpp"
 #include "database/TrackFeatures.hpp"
 #include "database/TrackList.hpp"
 #include "database/TrackLyrics.hpp"
@@ -50,11 +52,12 @@
 #include "database/UIState.hpp"
 #include "database/User.hpp"
 
-#include "EnumSetTraits.hpp"
 #include "Migration.hpp"
-#include "PartialDateTimeTraits.hpp"
-#include "PathTraits.hpp"
 #include "Utils.hpp"
+#include "traits/EnumSetTraits.hpp"
+#include "traits/ImageHashTypeTraits.hpp"
+#include "traits/PartialDateTimeTraits.hpp"
+#include "traits/PathTraits.hpp"
 
 namespace lms::db
 {
@@ -122,6 +125,8 @@ namespace lms::db
         _session.mapClass<Track>("track");
         _session.mapClass<TrackBookmark>("track_bookmark");
         _session.mapClass<TrackArtistLink>("track_artist_link");
+        _session.mapClass<TrackEmbeddedImage>("track_embedded_image");
+        _session.mapClass<TrackEmbeddedImageLink>("track_embedded_image_link");
         _session.mapClass<TrackFeatures>("track_features");
         _session.mapClass<TrackList>("tracklist");
         _session.mapClass<TrackListEntry>("tracklist_entry");
@@ -208,6 +213,13 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS directory_path_idx ON directory(absolute_path)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS directory_media_library_idx ON directory(media_library_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS directory_name_idx ON directory(name COLLATE NOCASE)");
+
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_embedded_image_id_idx ON track_embedded_image(id)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_embedded_image_hash_idx ON track_embedded_image(hash)");
+
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_embedded_image_link_track_id_idx ON track_embedded_image_link(track_id)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_embedded_image_link_track_embedded_image_id_track_id_idx ON track_embedded_image_link(track_embedded_image_id, track_id)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_embedded_image_link_is_preferred_track_id_track_embedded_image_id_idx ON track_embedded_image_link(is_preferred, track_id, track_embedded_image_id)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS image_directory_stem_idx ON image(directory_id, stem COLLATE NOCASE)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS image_id_idx ON image(id)");

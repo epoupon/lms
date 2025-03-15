@@ -30,6 +30,7 @@
 #include "core/Utils.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "database/TrackEmbeddedImageId.hpp"
 #include "database/TrackLyrics.hpp"
 #include "database/User.hpp"
 #include "services/artwork/IArtworkService.hpp"
@@ -336,8 +337,8 @@ namespace lms::api::subsonic
             *size = core::utils::clamp(*size, std::size_t{ 32 }, std::size_t{ 2048 });
 
         std::shared_ptr<image::IEncodedImage> image;
-        if (const db::TrackId * trackId{ std::get_if<db::TrackId>(&coverArtId.id) })
-            image = core::Service<cover::IArtworkService>::get()->getTrackImage(*trackId, size);
+        if (const db::TrackEmbeddedImageId * trackEmbeddedImageId{ std::get_if<db::TrackEmbeddedImageId>(&coverArtId.id) })
+            image = core::Service<cover::IArtworkService>::get()->getTrackEmbeddedImage(*trackEmbeddedImageId, size);
         else if (const db::ImageId * imageId{ std::get_if<db::ImageId>(&coverArtId.id) })
             image = core::Service<cover::IArtworkService>::get()->getImage(*imageId, size);
 

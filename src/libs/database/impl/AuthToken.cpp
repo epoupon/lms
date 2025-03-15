@@ -24,9 +24,9 @@
 #include "database/Session.hpp"
 #include "database/User.hpp"
 
-#include "IdTypeTraits.hpp"
-#include "StringViewTraits.hpp"
 #include "Utils.hpp"
+#include "traits/IdTypeTraits.hpp"
+#include "traits/StringViewTraits.hpp"
 
 namespace lms::db
 {

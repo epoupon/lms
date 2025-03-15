@@ -84,7 +84,7 @@ namespace lms::ui::utils
     std::unique_ptr<Wt::WImage> createTrackImage(db::TrackId trackId, ArtworkResource::Size size)
     {
         auto cover{ std::make_unique<Wt::WImage>() };
-        cover->setImageLink(LmsApp->getArtworkResource()->getTrackImageUrl(trackId, size));
+        cover->setImageLink(LmsApp->getArtworkResource()->getPreferredTrackImageUrl(trackId, size));
         cover->setStyleClass("Lms-cover img-fluid");                                          // HACK
         cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)"); // HACK
 
