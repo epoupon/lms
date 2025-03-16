@@ -211,6 +211,28 @@ namespace lms::ui
                 artistLinkEntry->bindWidget("anchors", utils::createArtistAnchorList(std::vector<db::ArtistId>(std::cbegin(artists), std::cend(artists))));
             }
         }
+
+        bool shouldDisplayTrackArtists(db::ReleaseId releaseId)
+        {
+            bool res{ true };
+
+            db::Artist::FindParameters params;
+            params.setRelease(releaseId);
+            params.setLinkType(db::TrackArtistLinkType::ReleaseArtist);
+            auto releaseArtists{ db::Artist::findIds(LmsApp->getDbSession(), params) };
+
+            params.setLinkType(db::TrackArtistLinkType::Artist);
+            auto trackArtists{ db::Artist::findIds(LmsApp->getDbSession(), params) };
+
+            if (trackArtists.results.size() == 1)
+            {
+                if (releaseArtists.results.empty() || trackArtists.results == releaseArtists.results)
+                    res = false;
+            }
+
+            return res;
+        }
+
     } // namespace
 
     Release::Release(Filters& filters, PlayQueueController& playQueueController)
@@ -368,7 +390,7 @@ namespace lms::ui
 
         Wt::WContainerWidget* rootContainer{ bindNew<Wt::WContainerWidget>("container") };
 
-        const bool variousArtists{ release->hasVariousArtists() };
+        bool displayTrackArtists{ shouldDisplayTrackArtists(*releaseId) };
         const auto totalDisc{ release->getTotalDisc() };
         const std::size_t discCount{ release->getDiscCount() };
         const bool hasDiscSubtitle{ release->hasDiscSubtitle() };
@@ -455,8 +477,7 @@ namespace lms::ui
             entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
             const auto artists{ track->getArtistIds({ TrackArtistLinkType::Artist }) };
-            // TODO: display artist if it is single and not the one of the release (variousArtists is false in that case)
-            if (variousArtists && !artists.empty())
+            if (displayTrackArtists && !artists.empty())
             {
                 entry->setCondition("if-has-artists", true);
                 entry->bindWidget("artists", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
