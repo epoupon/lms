@@ -151,15 +151,14 @@ namespace lms::metadata
             std::initializer_list<TagType> artistTagNames,
             std::initializer_list<TagType> artistSortTagNames,
             std::initializer_list<TagType> artistMBIDTagNames,
-            std::span<const std::string> artistTagDelimiters,
-            std::span<const std::string> defaultTagDelimiters)
+            const AudioFileParserParameters& params)
         {
-            std::vector<std::string> artistNames{ getTagValuesFirstMatchAs<std::string>(tagReader, artistTagNames, artistTagDelimiters) };
+            std::vector<std::string> artistNames{ getTagValuesFirstMatchAs<std::string>(tagReader, artistTagNames, params.artistTagDelimiters) };
             if (artistNames.empty())
                 return {};
 
-            std::vector<std::string> artistSortNames{ getTagValuesFirstMatchAs<std::string>(tagReader, artistSortTagNames, artistTagDelimiters) };
-            std::vector<core::UUID> artistMBIDs{ getTagValuesFirstMatchAs<core::UUID>(tagReader, artistMBIDTagNames, defaultTagDelimiters) };
+            std::vector<std::string> artistSortNames{ getTagValuesFirstMatchAs<std::string>(tagReader, artistSortTagNames, params.artistTagDelimiters) };
+            std::vector<core::UUID> artistMBIDs{ getTagValuesFirstMatchAs<core::UUID>(tagReader, artistMBIDTagNames, params.defaultTagDelimiters) };
 
             std::vector<Artist> artists;
             artists.reserve(artistNames.size());
@@ -224,7 +223,7 @@ namespace lms::metadata
             return std::any_of(std::cbegin(subStrs), std::cend(subStrs), [&str](const std::string& subStr) { return str.find(subStr) != std::string_view::npos; });
         }
 
-        std::string computeArtistDisplayName(std::span<const Artist> artists, const std::optional<std::string> artistTag, std::span<const std::string> artistTagDelimiters)
+        std::string computeArtistDisplayName(std::span<const Artist> artists, const std::optional<std::string>& artistTag, std::span<const std::string> artistTagDelimiters)
         {
             std::string artistDisplayName;
 
@@ -479,15 +478,15 @@ namespace lms::metadata
         std::vector<std::string_view> artistDelimiters{};
 
         track.medium = getMedium(tagReader);
-        track.artists = getArtists(tagReader, { TagType::Artists, TagType::Artist }, { TagType::ArtistSortOrder }, { TagType::MusicBrainzArtistID }, _params.artistTagDelimiters, _params.defaultTagDelimiters);
+        track.artists = getArtists(tagReader, { TagType::Artists, TagType::Artist }, { TagType::ArtistSortOrder }, { TagType::MusicBrainzArtistID }, _params);
         track.artistDisplayName = computeArtistDisplayName(track.artists, getTagValueAs<std::string>(tagReader, TagType::Artist), _params.artistTagDelimiters);
 
-        track.conductorArtists = getArtists(tagReader, { TagType::Conductors, TagType::Conductor }, { TagType::ConductorsSortOrder, TagType::ConductorSortOrder }, {}, _params.artistTagDelimiters, _params.defaultTagDelimiters);
-        track.composerArtists = getArtists(tagReader, { TagType::Composers, TagType::Composer }, { TagType::ComposersSortOrder, TagType::ComposerSortOrder }, {}, _params.artistTagDelimiters, _params.defaultTagDelimiters);
-        track.lyricistArtists = getArtists(tagReader, { TagType::Lyricists, TagType::Lyricist }, { TagType::LyricistsSortOrder, TagType::LyricistSortOrder }, {}, _params.artistTagDelimiters, _params.defaultTagDelimiters);
-        track.mixerArtists = getArtists(tagReader, { TagType::Mixers, TagType::Mixer }, { TagType::MixersSortOrder, TagType::MixerSortOrder }, {}, _params.artistTagDelimiters, _params.defaultTagDelimiters);
-        track.producerArtists = getArtists(tagReader, { TagType::Producers, TagType::Producer }, { TagType::ProducersSortOrder, TagType::ProducerSortOrder }, {}, _params.artistTagDelimiters, _params.defaultTagDelimiters);
-        track.remixerArtists = getArtists(tagReader, { TagType::Remixers, TagType::Remixer }, { TagType::RemixersSortOrder, TagType::RemixerSortOrder }, {}, _params.artistTagDelimiters, _params.defaultTagDelimiters);
+        track.conductorArtists = getArtists(tagReader, { TagType::Conductors, TagType::Conductor }, { TagType::ConductorsSortOrder, TagType::ConductorSortOrder }, {}, _params);
+        track.composerArtists = getArtists(tagReader, { TagType::Composers, TagType::Composer }, { TagType::ComposersSortOrder, TagType::ComposerSortOrder }, {}, _params);
+        track.lyricistArtists = getArtists(tagReader, { TagType::Lyricists, TagType::Lyricist }, { TagType::LyricistsSortOrder, TagType::LyricistSortOrder }, {}, _params);
+        track.mixerArtists = getArtists(tagReader, { TagType::Mixers, TagType::Mixer }, { TagType::MixersSortOrder, TagType::MixerSortOrder }, {}, _params);
+        track.producerArtists = getArtists(tagReader, { TagType::Producers, TagType::Producer }, { TagType::ProducersSortOrder, TagType::ProducerSortOrder }, {}, _params);
+        track.remixerArtists = getArtists(tagReader, { TagType::Remixers, TagType::Remixer }, { TagType::RemixersSortOrder, TagType::RemixerSortOrder }, {}, _params);
         track.performerArtists = getPerformerArtists(tagReader); // artistDelimiters not supported
 
         fillMissingMbids(track);
@@ -538,7 +537,7 @@ namespace lms::metadata
         release.emplace();
         release->name = std::move(*releaseName);
         release->sortName = getTagValueAs<std::string>(tagReader, TagType::AlbumSortOrder).value_or(release->name);
-        release->artists = getArtists(tagReader, { TagType::AlbumArtists, TagType::AlbumArtist }, { TagType::AlbumArtistsSortOrder, TagType::AlbumArtistSortOrder }, { TagType::MusicBrainzReleaseArtistID }, _params.artistTagDelimiters, _params.defaultTagDelimiters);
+        release->artists = getArtists(tagReader, { TagType::AlbumArtists, TagType::AlbumArtist }, { TagType::AlbumArtistsSortOrder, TagType::AlbumArtistSortOrder }, { TagType::MusicBrainzReleaseArtistID }, _params);
         release->artistDisplayName = computeArtistDisplayName(release->artists, getTagValueAs<std::string>(tagReader, TagType::AlbumArtist), _params.artistTagDelimiters);
         release->mbid = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzReleaseID);
         release->groupMBID = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzReleaseGroupID);

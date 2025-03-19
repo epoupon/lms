@@ -31,7 +31,7 @@ namespace lms::metadata
     class AudioFileParser : public IAudioFileParser
     {
     public:
-        AudioFileParser(const AudioFileParserParameters& parameters = {});
+        AudioFileParser(const AudioFileParserParameters& params = {});
         ~AudioFileParser() override = default;
         AudioFileParser(const AudioFileParser&) = delete;
         AudioFileParser& operator=(const AudioFileParser&) = delete;
@@ -39,7 +39,7 @@ namespace lms::metadata
     protected:
         std::unique_ptr<Track> parseMetaData(const std::filesystem::path& p) override;
         std::unique_ptr<Track> parseMetaData(const ITagReader& reader);
-        void parseImages(const IImageReader& reader, ImageVisitor visitor);
+        static void parseImages(const IImageReader& reader, ImageVisitor visitor);
 
     private:
         void parseImages(const std::filesystem::path& p, ImageVisitor visitor) override;

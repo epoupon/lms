@@ -41,5 +41,5 @@ namespace lms::metadata
         virtual std::span<const std::filesystem::path> getSupportedExtensions() const = 0;
     };
 
-    std::unique_ptr<IAudioFileParser> createAudioFileParser(const AudioFileParserParameters& parameters);
+    std::unique_ptr<IAudioFileParser> createAudioFileParser(const AudioFileParserParameters& params);
 } // namespace lms::metadata

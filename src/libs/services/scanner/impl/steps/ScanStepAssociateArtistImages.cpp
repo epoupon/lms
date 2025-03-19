@@ -83,71 +83,81 @@ namespace lms::scanner
             return image;
         }
 
+        db::Image::pointer getImageFromMbid(SearchImageContext& searchContext, const core::UUID& mbid)
+        {
+            db::Image::pointer image;
+
+            // Find anywhere, since it is supposed to be unique!
+            db::Image::find(searchContext.session, db::Image::FindParameters{}.setFileStem(mbid.getAsString()), [&](const db::Image::pointer foundImg) {
+                if (!image)
+                    image = foundImg;
+            });
+
+            return image;
+        }
+
+        db::Image::pointer searchImageInDirectories(SearchImageContext& searchContext, db::ArtistId artistId)
+        {
+            db::Image::pointer image;
+
+            std::set<std::filesystem::path> releasePaths;
+            db::Directory::FindParameters params;
+            params.setArtist(artistId, { db::TrackArtistLinkType::ReleaseArtist });
+
+            db::Directory::find(searchContext.session, params, [&](const db::Directory::pointer& directory) {
+                releasePaths.insert(directory->getAbsolutePath());
+            });
+
+            if (!releasePaths.empty())
+            {
+                // Expect layout like this:
+                // ReleaseArtist/Release/Tracks'
+                //              /artist.jpg
+                //              /someOtherUserConfiguredArtistFile.jpg
+                //
+                // Or:
+                // ReleaseArtist/SomeGrouping/Release/Tracks'
+                //              /artist.jpg
+                //              /someOtherUserConfiguredArtistFile.jpg
+                //
+                std::filesystem::path directoryToInspect{ core::pathUtils::getLongestCommonPath(std::cbegin(releasePaths), std::cend(releasePaths)) };
+                while (true)
+                {
+                    image = findImageInDirectory(searchContext, directoryToInspect);
+                    if (image)
+                        return image;
+
+                    std::filesystem::path parentPath{ directoryToInspect.parent_path() };
+                    if (parentPath == directoryToInspect)
+                        break;
+
+                    directoryToInspect = parentPath;
+                }
+
+                // Expect layout like this:
+                // ReleaseArtist/Release/Tracks'
+                //                      /artist.jpg
+                //                      /someOtherUserConfiguredArtistFile.jpg
+                for (const std::filesystem::path& releasePath : releasePaths)
+                {
+                    image = findImageInDirectory(searchContext, releasePath);
+                    if (image)
+                        return image;
+                }
+            }
+
+            return image;
+        }
+
         db::Image::pointer computeBestArtistImage(SearchImageContext& searchContext, const db::Artist::pointer& artist)
         {
             db::Image::pointer image;
 
-            const auto mbid{ artist->getMBID() };
-            if (mbid)
-            {
-                // Find anywhere, since it is suppoed to be unique!
-                db::Image::find(searchContext.session, db::Image::FindParameters{}.setFileStem(mbid->getAsString()), [&](const db::Image::pointer foundImg) {
-                    if (!image)
-                        image = foundImg;
-                });
-            }
+            if (const auto mbid{ artist->getMBID() })
+                image = getImageFromMbid(searchContext, *mbid);
 
             if (!image)
-            {
-                std::set<std::filesystem::path> releasePaths;
-                db::Directory::FindParameters params;
-                params.setArtist(artist->getId(), { db::TrackArtistLinkType::ReleaseArtist });
-
-                db::Directory::find(searchContext.session, params, [&](const db::Directory::pointer& directory) {
-                    releasePaths.insert(directory->getAbsolutePath());
-                });
-
-                if (!releasePaths.empty())
-                {
-                    // Expect layout like this:
-                    // ReleaseArtist/Release/Tracks'
-                    //              /artist.jpg
-                    //              /someOtherUserConfiguredArtistFile.jpg
-                    //
-                    // Or:
-                    // ReleaseArtist/SomeGrouping/Release/Tracks'
-                    //              /artist.jpg
-                    //              /someOtherUserConfiguredArtistFile.jpg
-                    //
-                    std::filesystem::path directoryToInspect{ core::pathUtils::getLongestCommonPath(std::cbegin(releasePaths), std::cend(releasePaths)) };
-                    while (true)
-                    {
-                        image = findImageInDirectory(searchContext, directoryToInspect);
-                        if (image)
-                            break;
-
-                        std::filesystem::path parentPath{ directoryToInspect.parent_path() };
-                        if (parentPath == directoryToInspect)
-                            break;
-
-                        directoryToInspect = parentPath;
-                    }
-
-                    if (!image)
-                    {
-                        // Expect layout like this:
-                        // ReleaseArtist/Release/Tracks'
-                        //                      /artist.jpg
-                        //                      /someOtherUserConfiguredArtistFile.jpg
-                        for (const std::filesystem::path& releasePath : releasePaths)
-                        {
-                            image = findImageInDirectory(searchContext, releasePath);
-                            if (image)
-                                break;
-                        }
-                    }
-                }
-            }
+                image = searchImageInDirectories(searchContext, artist->getId());
 
             return image;
         }
