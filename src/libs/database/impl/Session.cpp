@@ -19,10 +19,10 @@
 
 #include "database/Session.hpp"
 
-#include "core/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "database/Artist.hpp"
+#include "database/ArtistInfo.hpp"
 #include "database/AuthToken.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
@@ -100,8 +100,8 @@ namespace lms::db
     {
         _session.setConnectionPool(_db.getConnectionPool());
 
-        _session.mapClass<VersionInfo>("version_info");
         _session.mapClass<Artist>("artist");
+        _session.mapClass<ArtistInfo>("artist_info");
         _session.mapClass<AuthToken>("auth_token");
         _session.mapClass<Cluster>("cluster");
         _session.mapClass<ClusterType>("cluster_type");
@@ -133,6 +133,7 @@ namespace lms::db
         _session.mapClass<TrackLyrics>("track_lyrics");
         _session.mapClass<UIState>("ui_state");
         _session.mapClass<User>("user");
+        _session.mapClass<VersionInfo>("version_info");
     }
 
     WriteTransaction Session::createWriteTransaction()
@@ -197,6 +198,10 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_name_idx ON artist(name)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_sort_name_nocase_idx ON artist(sort_name COLLATE NOCASE)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_mbid_idx ON artist(mbid)");
+
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_info_path_idx ON artist_info(absolute_file_path)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_info_directory_id_idx ON artist_info(directory_id)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_info_artist_id_idx ON artist_info(artist_id)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS auth_token_user_domain_idx ON auth_token(user_id, domain)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS auth_token_domain_expiry_idx ON auth_token(domain, expiry)");

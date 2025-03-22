@@ -1,6 +1,7 @@
 include(GoogleTest)
 
 add_executable(test-metadata
+	ArtistInfo.cpp
 	Lyrics.cpp
 	Metadata.cpp
 	AudioFileParser.cpp

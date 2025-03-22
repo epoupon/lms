@@ -20,6 +20,8 @@
 #include "Common.hpp"
 
 #include "core/String.hpp"
+#include "database/Artist.hpp"
+#include "database/ArtistInfo.hpp"
 #include "database/AuthToken.hpp"
 #include "database/Db.hpp"
 #include "database/Directory.hpp"
@@ -341,6 +343,7 @@ VALUES
             auto transaction{ session.createReadTransaction() };
 
             EXPECT_FALSE(Artist::find(session, ArtistId{}));
+            EXPECT_FALSE(ArtistInfo::find(session, ArtistInfoId{}));
             EXPECT_FALSE(AuthToken::find(session, AuthTokenId{}));
             EXPECT_FALSE(Country::find(session, CountryId{}));
             EXPECT_FALSE(Cluster::find(session, ClusterId{}));

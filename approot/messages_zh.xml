@@ -97,6 +97,7 @@
 
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">无法获得音轨时间</message>
+
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">无法解析文件</message>
 
 <message id="Lms.Admin.ScannerController.cannot-read-file">无法读取文件</message>

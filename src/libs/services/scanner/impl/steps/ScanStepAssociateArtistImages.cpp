@@ -28,7 +28,9 @@
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/Path.hpp"
+#include "core/String.hpp"
 #include "database/Artist.hpp"
+#include "database/ArtistInfo.hpp"
 #include "database/Db.hpp"
 #include "database/Directory.hpp"
 #include "database/Image.hpp"
@@ -57,14 +59,14 @@ namespace lms::scanner
             std::span<const std::string> artistFileNames;
         };
 
-        db::Image::pointer findImageInDirectory(SearchImageContext& searchContext, const std::filesystem::path& directoryPath)
+        db::Image::pointer findImageInDirectory(SearchImageContext& searchContext, const std::filesystem::path& directoryPath, std::span<const std::string> fileStemsToSearch)
         {
             db::Image::pointer image;
 
             const db::Directory::pointer directory{ db::Directory::find(searchContext.session, directoryPath) };
             if (directory) // may not exist for artists that are split on different media libraries
             {
-                for (std::string_view fileStem : searchContext.artistFileNames)
+                for (std::string_view fileStem : fileStemsToSearch)
                 {
                     db::Image::FindParameters params;
                     params.setDirectory(directory->getId());
@@ -96,6 +98,24 @@ namespace lms::scanner
             return image;
         }
 
+        db::Image::pointer searchImageInArtistInfoDirectory(SearchImageContext& searchContext, db::ArtistId artistId)
+        {
+            db::Image::pointer image;
+
+            std::vector<std::string> fileInfoPaths;
+            db::ArtistInfo::find(searchContext.session, artistId, [&](const db::ArtistInfo::pointer& artistInfo) {
+                fileInfoPaths.push_back(artistInfo->getAbsoluteFilePath());
+
+                if (!image)
+                    image = findImageInDirectory(searchContext, artistInfo->getDirectory()->getAbsolutePath(), std::array<std::string, 2>{ "thumb", "folder" });
+            });
+
+            if (fileInfoPaths.size() > 1)
+                LMS_LOG(DBUPDATER, DEBUG, "Found " << fileInfoPaths.size() << " artist info files for same artist: " << core::stringUtils::joinStrings(fileInfoPaths, ", "));
+
+            return image;
+        }
+
         db::Image::pointer searchImageInDirectories(SearchImageContext& searchContext, db::ArtistId artistId)
         {
             db::Image::pointer image;
@@ -123,7 +143,7 @@ namespace lms::scanner
                 std::filesystem::path directoryToInspect{ core::pathUtils::getLongestCommonPath(std::cbegin(releasePaths), std::cend(releasePaths)) };
                 while (true)
                 {
-                    image = findImageInDirectory(searchContext, directoryToInspect);
+                    image = findImageInDirectory(searchContext, directoryToInspect, searchContext.artistFileNames);
                     if (image)
                         return image;
 
@@ -140,7 +160,7 @@ namespace lms::scanner
                 //                      /someOtherUserConfiguredArtistFile.jpg
                 for (const std::filesystem::path& releasePath : releasePaths)
                 {
-                    image = findImageInDirectory(searchContext, releasePath);
+                    image = findImageInDirectory(searchContext, releasePath, searchContext.artistFileNames);
                     if (image)
                         return image;
                 }
@@ -155,6 +175,9 @@ namespace lms::scanner
 
             if (const auto mbid{ artist->getMBID() })
                 image = getImageFromMbid(searchContext, *mbid);
+
+            if (!image)
+                image = searchImageInArtistInfoDirectory(searchContext, artist->getId());
 
             if (!image)
                 image = searchImageInDirectories(searchContext, artist->getId());

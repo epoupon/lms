@@ -116,6 +116,8 @@ namespace lms::ui
             {
             case scanner::ScanErrorType::CannotReadFile:
                 return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-file");
+            case scanner::ScanErrorType::CannotReadArtistInfoFile:
+                return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-artist-info-file");
             case scanner::ScanErrorType::CannotReadAudioFile:
                 return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-audio-file");
             case scanner::ScanErrorType::CannotReadImageFile:

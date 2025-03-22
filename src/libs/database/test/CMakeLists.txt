@@ -1,7 +1,8 @@
 
 add_executable(test-database
-	AuthToken.cpp
 	Artist.cpp
+	ArtistInfo.cpp
+	AuthToken.cpp
 	Cluster.cpp
 	Common.cpp
 	DatabaseTest.cpp

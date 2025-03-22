@@ -23,6 +23,7 @@
 #include "core/Random.hpp"
 #include "core/Service.hpp"
 #include "database/Artist.hpp"
+#include "database/ArtistInfo.hpp"
 #include "database/Cluster.hpp"
 #include "database/Directory.hpp"
 #include "database/MediaLibrary.hpp"
@@ -544,6 +545,11 @@ namespace lms::api::subsonic
                     break;
                 }
             }
+
+            ArtistInfo::find(context.dbSession, id, Range{ .offset = 0, .size = 1 }, [&](const ArtistInfo::pointer& artistInfo) {
+                if (!artistInfo->getBiography().empty())
+                    artistInfoNode.setAttribute("biography", artistInfo->getBiography());
+            });
         }
 
         auto similarArtistsId{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(id, { TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist }, count) };

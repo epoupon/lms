@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 84 };
+        static constexpr Version LMS_DATABASE_VERSION{ 85 };
     }
 
     VersionInfo::VersionInfo()
@@ -1137,6 +1137,28 @@ FROM tracklist)");
         utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV84(Session& session)
+    {
+        // New artist info feature
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "artist_info" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "absolute_file_path" text not null,
+  "file_last_write" text,
+  "type" text not null,
+  "gender" text not null,
+  "disambiguation" text not null,
+  "biography" text not null,
+  "directory_id" bigint,
+  "artist_id" bigint,
+  constraint "fk_artist_info_directory" foreign key ("directory_id") references "directory" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_artist_info_artist" foreign key ("artist_id") references "artist" ("id") on delete cascade deferrable initially deferred
+    ))");
+
+        // Just increment the scan version of the settings to make the next scan rescan everything
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1197,6 +1219,7 @@ FROM tracklist)");
             { 81, migrateFromV81 },
             { 82, migrateFromV82 },
             { 83, migrateFromV83 },
+            { 84, migrateFromV84 },
         };
 
         bool migrationPerformed{};

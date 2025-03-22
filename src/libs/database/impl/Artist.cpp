@@ -265,7 +265,18 @@ namespace lms::db
     RangeResults<ArtistId> Artist::findOrphanIds(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
-        auto query{ session.getDboSession()->query<ArtistId>("SELECT DISTINCT a.id FROM artist a WHERE NOT EXISTS(SELECT 1 FROM track t INNER JOIN track_artist_link t_a_l ON t_a_l.artist_id = a.id WHERE t.id = t_a_l.track_id)") };
+        auto query{ session.getDboSession()->query<ArtistId>(R"(SELECT DISTINCT a.id FROM artist a 
+WHERE NOT EXISTS (
+    SELECT 1 
+    FROM track t 
+    INNER JOIN track_artist_link t_a_l 
+    ON t_a_l.artist_id = a.id 
+    WHERE t.id = t_a_l.track_id
+)
+AND NOT EXISTS (
+    SELECT 1 
+    FROM artist_info ai 
+    WHERE ai.artist_id = a.id))") };
         return utils::execRangeQuery<ArtistId>(query, range);
     }
 
