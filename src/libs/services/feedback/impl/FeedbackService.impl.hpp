@@ -123,6 +123,7 @@ namespace lms::feedback
             }
 
             ratedObject.modify()->setRating(*rating);
+            ratedObject.modify()->setLastUpdated(Wt::WDateTime::currentDateTime());
         }
         else
         {
