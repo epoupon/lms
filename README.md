@@ -43,6 +43,11 @@ __Note__: depending on your database size and/or your hardware, the tag-based re
 ## About tags
 _LMS_ primarily relies on tags to organize your music collection but also supports browsing by directory using the [Subsonic/OpenSubsonic API](SUBSONIC.md).
 
+## Artist information folder
+_LMS_ looks for `artist.nfo` files to retrieve additional artist information, such as biography, sort name, and MusicBrainz ArtistID. These files can be placed anywhere within the scanned libraries. The format follows the same structure as Kodi's, as detailed here: https://kodi.wiki/view/NFO_files/Artists
+
+Additionally, the folder where the `artist.nfo` file is located is used to retrieve the artist image, allowing a centralized location for managing artist metadata.
+
 ### Filtering
 It is possible to apply global filters on your collection using `genre`, `mood`, `grouping`, `language`, and by music library. More tags, including custom ones, can be added in the database administration settings.
 
@@ -77,8 +82,8 @@ For an album to be considered a match, the following conditions must be met:
 ## Artist image lookup
 The recommended method is to name the artist image file using the artist's MusicBrainz ArtistID. This file can be placed anywhere within one of the scanned libraries.
 
-If no file with the MusicBrainz ArtistID is found, _LMS_ will look for a file named `artist` (or another name configured in `lms.conf`) in the artist's directories:
-
+If no file with the MusicBrainz ArtistID is found, _LMS_ will first look for files named `folder` and then `thumb` in the artist information directory, where the corresponding `artist.nfo` file is located.
+If neither exists, it will then search for a file named `artist` (or another name configured in `lms.conf`) in the artist's directories, using this logic:
 1. Identify the artist's directory: _LMS_ selects all albums by the artist using the "AlbumArtist" link and determines the longest common path among them.
 2. Scan for the image: the directory is scanned starting from this common path, moving upwards if needed, until the artist image file is found.
 3. Fallback search: if no image is found, _LMS_ will then search within each individual album folder.
