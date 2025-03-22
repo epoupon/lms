@@ -19,9 +19,8 @@
 
 #include "ScannerController.hpp"
 
-#include <iomanip>
-
 #include <Wt/Http/Response.h>
+#include <Wt/Utils.h>
 #include <Wt/WCheckBox.h>
 #include <Wt/WDateTime.h>
 #include <Wt/WLocale.h>
@@ -29,6 +28,7 @@
 #include <Wt/WResource.h>
 
 #include "core/Service.hpp"
+#include "core/String.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "services/scanner/IScannerService.hpp"
@@ -48,15 +48,13 @@ namespace lms::ui
     class ReportResource : public Wt::WResource
     {
     public:
-        ReportResource()
-        {
-            suggestFileName("report.txt");
-        }
-
-        ~ReportResource()
+        ReportResource() = default;
+        ~ReportResource() override
         {
             beingDeleted();
         }
+        ReportResource(const ReportResource&) = delete;
+        ReportResource& operator=(const ReportResource&) = delete;
 
         void setScanStats(const scanner::ScanStats& stats)
         {
@@ -66,10 +64,18 @@ namespace lms::ui
             *_stats = stats;
         }
 
-        void handleRequest(const Wt::Http::Request&, Wt::Http::Response& response)
+        void handleRequest(const Wt::Http::Request&, Wt::Http::Response& response) override
         {
             if (!_stats)
                 return;
+
+            auto encodeHttpHeaderField = [](const std::string& fieldName, const std::string& fieldValue) {
+                // This implements RFC 5987
+                return fieldName + "*=UTF-8''" + Wt::Utils::urlEncode(fieldValue);
+            };
+
+            const std::string cdp{ encodeHttpHeaderField("filename", "LMS_scan_report_" + core::stringUtils::toISO8601String(_stats->startTime) + ".txt") };
+            response.addHeader("Content-Disposition", "attachment; " + cdp);
 
             response.out() << Wt::WString::tr("Lms.Admin.ScannerController.errors-header").arg(_stats->errors.size()).toUTF8() << std::endl;
 
