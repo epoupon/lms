@@ -191,10 +191,13 @@ namespace lms::scanner
         db::Session& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createReadTransaction() };
         db::ArtistInfo::pointer artistInfo{ db::ArtistInfo::find(dbSession, file.file) };
-        if (!artistInfo)
-            return true;
+        if (artistInfo && artistInfo->getLastWriteTime() == lastWriteTime)
+        {
+            context.stats.skips++;
+            return false;
+        }
 
-        return artistInfo->getLastWriteTime() != lastWriteTime;
+        return true;
     }
 
     std::unique_ptr<IFileScanOperation> ArtistInfoFileScanner::createScanOperation(const FileToScan& fileToScan) const
