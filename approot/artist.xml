@@ -5,7 +5,7 @@
 <message id="Lms.Explore.Artist.template">
 	<div class="row mb-3 gy-3">
 		<div class="col-lg-3 col-md-4">
-			${artwork class="Lms-cursor-pointer rounded"}
+			${artwork class="Lms-cursor-pointer rounded d-block mx-auto"}
 		</div>
 		<div class="col">
 			<h2>${name}</h2>

@@ -9,7 +9,7 @@
 <message id="Lms.Explore.Release.template">
 	<div class="row mb-3 gy-3">
 		<div class="col-lg-3 col-md-4">
-			${cover class="Lms-cursor-pointer rounded"}
+			${cover class="Lms-cursor-pointer rounded d-block mx-auto"}
 		</div>
 		<div class="col">
 			<h2>${name}${<if-has-release-comment>}<span class="ms-1 text-muted">[${comment}]</span>${</if-has-release-comment>}</h2>
