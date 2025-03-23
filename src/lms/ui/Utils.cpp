@@ -35,6 +35,7 @@
 #include "database/TrackList.hpp"
 
 #include "LmsApplication.hpp"
+#include "ModalManager.hpp"
 #include "explore/Filters.hpp"
 
 namespace lms::ui::utils
@@ -61,6 +62,18 @@ namespace lms::ui::utils
         }
 
         return oss.str();
+    }
+
+    void showArtworkModal(Wt::WLink image)
+    {
+        auto rawImage{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.template.full-modal-artwork")) };
+        rawImage->bindNew<Wt::WImage>("artwork", image);
+
+        Wt::WTemplate* rawImagePtr{ rawImage.get() };
+        rawImage->clicked().connect([=] {
+            LmsApp->getModalManager().dispose(rawImagePtr);
+        });
+        LmsApp->getModalManager().show(std::move(rawImage));
     }
 
     std::unique_ptr<Wt::WImage> createArtistImage(db::ArtistId artistId, ArtworkResource::Size size)

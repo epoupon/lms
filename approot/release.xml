@@ -49,18 +49,6 @@
 	${</if-has-similar-releases>}
 </message>
 
-<message id="Lms.Explore.Release.template.full-cover">
-	<div class="modal fade" tabindex="-1">
-		<div class="modal-dialog modal-dialog-centered Lms-cover-full-modal-dialog">
-			<div class="modal-content bg-transparent border-0">
-				<div class="modal-body text-center">
-					${cover-full class="Lms-cover-full"}
-				</div>
-			</div>
-		</div>
-	</div>
-</message>
-
 <message id="Lms.Explore.Release.template.entry-release-artist">
 	${artist class="text-decoration-none link-success"}
 </message>

@@ -47,6 +47,8 @@ namespace lms::ui
 
     private:
         void refreshView();
+        void refreshArtwork();
+        void refreshArtistInfo();
         void refreshReleases();
         void refreshAppearsOnReleases();
         void refreshNonReleaseTracks();

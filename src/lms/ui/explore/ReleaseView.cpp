@@ -309,14 +309,7 @@ namespace lms::ui
 
         auto* image{ bindWidget<Wt::WImage>("cover", utils::createReleaseCover(release->getId(), ArtworkResource::Size::Large)) };
         image->clicked().connect([=] {
-            auto fullCover{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.full-cover")) };
-            fullCover->bindNew<Wt::WImage>("cover-full", Wt::WLink{ LmsApp->getArtworkResource()->getReleaseCoverUrl(*releaseId) });
-
-            Wt::WTemplate* fullCoverPtr{ fullCover.get() };
-            fullCover->clicked().connect([=] {
-                LmsApp->getModalManager().dispose(fullCoverPtr);
-            });
-            LmsApp->getModalManager().show(std::move(fullCover));
+            utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getReleaseCoverUrl(*releaseId) });
         });
 
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };

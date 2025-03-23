@@ -209,6 +209,7 @@
 
 <!--Explore:Artist-->
 <message id="Lms.Explore.Artist.appears-on">Appears on</message>
+<message id="Lms.Explore.Artist.biography">Biography</message>
 <message id="Lms.Explore.Artist.similar-artists">Similar artists</message>
 
 <!--Explore:Artists-->

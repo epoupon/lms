@@ -226,6 +226,7 @@
 
 <!--Explore:Artist-->
 <message id="Lms.Explore.Artist.appears-on">Pojawia się na</message>
+<message id="Lms.Explore.Artist.biography">Biografia</message>
 <message id="Lms.Explore.Artist.similar-artists">Podobni artyści</message>
 
 <!--Explore:Artists-->

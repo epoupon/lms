@@ -54,6 +54,8 @@ namespace lms::ui::utils
 {
     std::string durationToString(std::chrono::milliseconds msDuration);
 
+    void showArtworkModal(Wt::WLink image);
+
     std::unique_ptr<Wt::WImage> createReleaseCover(db::ReleaseId releaseId, ArtworkResource::Size size);
     std::unique_ptr<Wt::WImage> createTrackImage(db::TrackId trackId, ArtworkResource::Size size);
     std::unique_ptr<Wt::WImage> createArtistImage(db::ArtistId artistId, ArtworkResource::Size size);

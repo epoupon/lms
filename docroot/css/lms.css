@@ -87,7 +87,7 @@ body {
 	min-width: 64px;
 }
 
-.Lms-cover-full-modal-dialog {
+.Lms-artwork-full-modal-dialog {
     width: auto;
     max-width: none;
     max-height: 90vh;
@@ -103,12 +103,11 @@ body {
     height: auto;
     display: block;
     margin: auto;
-    cursor: pointer;
     object-fit: contain;
 }
 
 .Lms-cursor-pointer {
-    cursor: pointer;
+	cursor: pointer;
 }
 
 #lms-mp-progress {
