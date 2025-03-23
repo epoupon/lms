@@ -48,7 +48,9 @@ _LMS_ looks for `artist.nfo` files to retrieve additional artist information, su
 
 Additionally, the folder where the `artist.nfo` file is located is used to retrieve the artist image, allowing for a centralized location to manage artist metadata.
 
-__Note__: `artist.nfo` files must include both `name` and `musicBrainzArtistID` fields to be recognized.
+__Notes__:
+* `artist.nfo` files must include both `name` and `musicBrainzArtistID` fields to be recognized.
+* while `artist.nfo` files can be placed anywhere, to ensure maximum compatibility with other software that also parses these files, they should all be grouped in a dedicated artist info folder named `ArtistInfo` in the root of a media library. Alternatively, you can add this directory via a dedicated library if it is not located in the same place as the music files.
 
 ### Filtering
 It is possible to apply global filters on your collection using `genre`, `mood`, `grouping`, `language`, and by music library. More tags, including custom ones, can be added in the database administration settings.
