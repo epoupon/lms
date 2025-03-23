@@ -44,13 +44,11 @@ __Note__: depending on your database size and/or your hardware, the tag-based re
 _LMS_ primarily relies on tags to organize your music collection but also supports browsing by directory using the [Subsonic/OpenSubsonic API](SUBSONIC.md).
 
 ## Artist information folder
-_LMS_ looks for `artist.nfo` files to retrieve additional artist information, such as biography, sort name, and MusicBrainz ArtistID. These files can be placed anywhere within the scanned libraries. The format follows the same structure as Kodi's, as detailed [here](https://kodi.wiki/view/NFO_files/Artists).
+_LMS_ supports an Artist information folder to manage metadata and images for artists. This folder can be placed anywhere within the scanned libraries but is best located in a dedicated `ArtistInfo` directory in the root of a media library for maximum compatibility with other softwares.
 
-Additionally, the folder where the `artist.nfo` file is located is used to retrieve the artist image, allowing for a centralized location to manage artist metadata.
+The folder must follow a structure defined by Kodi, as detailed [here](https://kodi.wiki/view/Artist_information_folder). `artist.nfo` files are used to define additional artist information such as biography, sort name, and MusicBrainz ArtistID. See the format [here](https://kodi.wiki/view/NFO_files/Artists).
 
-__Notes__:
-* `artist.nfo` files must include both `name` and `musicBrainzArtistID` fields to be recognized.
-* while `artist.nfo` files can be placed anywhere, to ensure maximum compatibility with other software that also parses these files, they should all be grouped in a dedicated artist info folder named `ArtistInfo` in the root of a media library. Alternatively, you can add this directory via a dedicated library if it is not located in the same place as the music files.
+__Note__: `artist.nfo` files must include both `name` and `musicBrainzArtistID` fields to be recognized.
 
 ### Filtering
 It is possible to apply global filters on your collection using `genre`, `mood`, `grouping`, `language`, and by music library. More tags, including custom ones, can be added in the database administration settings.
