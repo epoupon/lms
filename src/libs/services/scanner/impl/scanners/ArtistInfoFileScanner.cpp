@@ -22,6 +22,7 @@
 #include <fstream>
 
 #include "core/ILogger.hpp"
+#include "core/String.hpp"
 #include "database/Artist.hpp"
 #include "database/ArtistInfo.hpp"
 #include "database/Db.hpp"
@@ -171,6 +172,11 @@ namespace lms::scanner
 
     bool ArtistInfoFileScanner::needsScan(ScanContext& context, const FileToScan& file) const
     {
+        // Special case: only files named "artist.nfo" are compatible with this scanner
+        // Hack here since the scanner framework only handle extensions (the discover count is not accurate)
+        if (!core::stringUtils::stringCaseInsensitiveEqual(file.file.stem().string(), "artist"))
+            return false;
+
         const Wt::WDateTime lastWriteTime{ utils::retrieveFileGetLastWrite(file.file) };
         // Should rarely fail as we are currently iterating it
         if (!lastWriteTime.isValid())
@@ -178,6 +184,9 @@ namespace lms::scanner
             context.stats.skips++;
             return false;
         }
+
+        if (context.scanOptions.fullScan)
+            return true;
 
         db::Session& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createReadTransaction() };
