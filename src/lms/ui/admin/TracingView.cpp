@@ -20,6 +20,7 @@
 #include "TracingView.hpp"
 
 #include <Wt/Http/Response.h>
+#include <Wt/Utils.h>
 #include <Wt/WDateTime.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WResource.h>
@@ -49,7 +50,14 @@ namespace lms::ui
             void handleRequest(const Wt::Http::Request&, Wt::Http::Response& response)
             {
                 response.setMimeType("application/gzip");
-                suggestFileName(core::stringUtils::toISO8601String(Wt::WDateTime::currentDateTime()) + "-traces.json.gz");
+
+                auto encodeHttpHeaderField = [](const std::string& fieldName, const std::string& fieldValue) {
+                    // This implements RFC 5987
+                    return fieldName + "*=UTF-8''" + Wt::Utils::urlEncode(fieldValue);
+                };
+
+                const std::string cdp{ encodeHttpHeaderField("filename", "LMS_traces_" + core::stringUtils::toISO8601String(Wt::WDateTime::currentDateTime()) + ".json.gz") };
+                response.addHeader("Content-Disposition", "attachment; " + cdp);
 
                 boost::iostreams::filtering_ostream gzipStream;
                 gzipStream.push(boost::iostreams::gzip_compressor{});
