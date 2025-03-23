@@ -44,9 +44,11 @@ __Note__: depending on your database size and/or your hardware, the tag-based re
 _LMS_ primarily relies on tags to organize your music collection but also supports browsing by directory using the [Subsonic/OpenSubsonic API](SUBSONIC.md).
 
 ## Artist information folder
-_LMS_ looks for `artist.nfo` files to retrieve additional artist information, such as biography, sort name, and MusicBrainz ArtistID. These files can be placed anywhere within the scanned libraries. The format follows the same structure as Kodi's, as detailed here: https://kodi.wiki/view/NFO_files/Artists
+_LMS_ looks for `artist.nfo` files to retrieve additional artist information, such as biography, sort name, and MusicBrainz ArtistID. These files can be placed anywhere within the scanned libraries. The format follows the same structure as Kodi's, as detailed [here](https://kodi.wiki/view/NFO_files/Artists).
 
-Additionally, the folder where the `artist.nfo` file is located is used to retrieve the artist image, allowing a centralized location for managing artist metadata.
+Additionally, the folder where the `artist.nfo` file is located is used to retrieve the artist image, allowing for a centralized location to manage artist metadata.
+
+__Note__: `artist.nfo` files must include both `name` and `musicBrainzArtistID` fields to be recognized.
 
 ### Filtering
 It is possible to apply global filters on your collection using `genre`, `mood`, `grouping`, `language`, and by music library. More tags, including custom ones, can be added in the database administration settings.
