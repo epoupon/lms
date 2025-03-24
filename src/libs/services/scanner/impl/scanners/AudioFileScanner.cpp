@@ -393,6 +393,8 @@ namespace lms::scanner
             case metadata::Image::Type::PublisherLogo:
                 return db::ImageType::PublisherLogo;
             }
+
+            return db::ImageType::Unknown;
         }
 
         db::TrackEmbeddedImage::pointer getOrCreateTrackEmbeddedImage(db::Session& session, const ImageInfo& imageInfo)

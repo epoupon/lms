@@ -267,7 +267,6 @@ namespace lms::metadata
                 { TagType::Artist, { " Artist1 / Artist2 feat. Artist3  " } },
                 { TagType::Genre, { "Genre1 ; Genre2" } },
                 { TagType::Language, { " Lang1/Lang2 / Lang3" } },
-
             }
         };
 
