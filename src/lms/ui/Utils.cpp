@@ -35,6 +35,7 @@
 #include "database/TrackList.hpp"
 
 #include "LmsApplication.hpp"
+#include "ModalManager.hpp"
 #include "explore/Filters.hpp"
 
 namespace lms::ui::utils
@@ -63,6 +64,18 @@ namespace lms::ui::utils
         return oss.str();
     }
 
+    void showArtworkModal(Wt::WLink image)
+    {
+        auto rawImage{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.template.full-modal-artwork")) };
+        rawImage->bindNew<Wt::WImage>("artwork", image);
+
+        Wt::WTemplate* rawImagePtr{ rawImage.get() };
+        rawImage->clicked().connect([=] {
+            LmsApp->getModalManager().dispose(rawImagePtr);
+        });
+        LmsApp->getModalManager().show(std::move(rawImage));
+    }
+
     std::unique_ptr<Wt::WImage> createArtistImage(db::ArtistId artistId, ArtworkResource::Size size)
     {
         auto image{ std::make_unique<Wt::WImage>() };
@@ -84,7 +97,7 @@ namespace lms::ui::utils
     std::unique_ptr<Wt::WImage> createTrackImage(db::TrackId trackId, ArtworkResource::Size size)
     {
         auto cover{ std::make_unique<Wt::WImage>() };
-        cover->setImageLink(LmsApp->getArtworkResource()->getTrackImageUrl(trackId, size));
+        cover->setImageLink(LmsApp->getArtworkResource()->getPreferredTrackImageUrl(trackId, size));
         cover->setStyleClass("Lms-cover img-fluid");                                          // HACK
         cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)"); // HACK
 

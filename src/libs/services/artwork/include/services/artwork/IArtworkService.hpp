@@ -24,7 +24,7 @@
 #include <optional>
 
 #include "database/ImageId.hpp"
-#include "database/TrackId.hpp"
+#include "database/TrackEmbeddedImageId.hpp"
 #include "image/IEncodedImage.hpp"
 
 namespace lms::db
@@ -40,9 +40,7 @@ namespace lms::cover
         virtual ~IArtworkService() = default;
 
         virtual std::shared_ptr<image::IEncodedImage> getImage(db::ImageId imageId, std::optional<image::ImageSize> width) = 0;
-
-        // no logic to fallback to release here
-        virtual std::shared_ptr<image::IEncodedImage> getTrackImage(db::TrackId trackId, std::optional<image::ImageSize> width) = 0;
+        virtual std::shared_ptr<image::IEncodedImage> getTrackEmbeddedImage(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<image::ImageSize> width) = 0;
 
         // Svg images dont have image "size"
         virtual std::shared_ptr<image::IEncodedImage> getDefaultReleaseCover() = 0;

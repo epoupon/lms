@@ -23,14 +23,25 @@
 
 #include <Wt/WTime.h>
 
-#include "Parser.hpp"
+#include "AudioFileParser.hpp"
 #include "TestTagReader.hpp"
+#include "metadata/Types.hpp"
 
 namespace lms::metadata
 {
-    TEST(Parser, generalTest)
+    class TestAudioFileParser : public AudioFileParser
     {
-        Parser parser;
+    public:
+        using AudioFileParser::AudioFileParser;
+        using AudioFileParser::parseMetaData;
+    };
+
+    TEST(AudioFileParser, generalTest)
+    {
+        AudioFileParserParameters params;
+        params.userExtraTags = { "MY_AWESOME_TAG_A", "MY_AWESOME_TAG_B", "MY_AWESOME_MISSING_TAG" };
+
+        TestAudioFileParser parser{ params };
         TestTagReader testTags{
             {
                 { TagType::AcoustID, { "e987a441-e134-4960-8019-274eddacc418" } },
@@ -88,9 +99,7 @@ namespace lms::metadata
             { "RoleB", { "MyPerformer1ForRoleB", "MyPerformer2ForRoleB" } } });
         testTags.setLyricsTags({ { "eng", "[00:00.00]First line\n[00:01.00]Second line" } });
 
-        static_cast<IParser&>(parser).setUserExtraTags(std::vector<std::string>{ "MY_AWESOME_TAG_A", "MY_AWESOME_TAG_B", "MY_AWESOME_MISSING_TAG" });
-
-        const std::unique_ptr<Track> track{ parser.parse(testTags) };
+        const std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
 
         // Audio properties
         {
@@ -130,7 +139,6 @@ namespace lms::metadata
         EXPECT_EQ(track->date.getYear(), 2020);
         EXPECT_EQ(track->date.getMonth(), 3);
         EXPECT_EQ(track->date.getDay(), 4);
-        EXPECT_FALSE(track->hasCover);
         ASSERT_EQ(track->genres.size(), 2);
         EXPECT_EQ(track->genres[0], "Genre1");
         EXPECT_EQ(track->genres[1], "Genre2");
@@ -234,7 +242,7 @@ namespace lms::metadata
         }
     }
 
-    TEST(Parser, trim)
+    TEST(AudioFileParser, trim)
     {
         const TestTagReader testTags{
             {
@@ -242,7 +250,7 @@ namespace lms::metadata
             }
         };
 
-        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+        std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
 
         ASSERT_EQ(track->genres.size(), 3);
         EXPECT_EQ(track->genres[0], "Genre1");
@@ -250,7 +258,7 @@ namespace lms::metadata
         EXPECT_EQ(track->genres[2], "Genre3");
     }
 
-    TEST(Parser, customDelimiters)
+    TEST(AudioFileParser, customDelimiters)
     {
         const TestTagReader testTags{
             {
@@ -259,14 +267,14 @@ namespace lms::metadata
                 { TagType::Artist, { " Artist1 / Artist2 feat. Artist3  " } },
                 { TagType::Genre, { "Genre1 ; Genre2" } },
                 { TagType::Language, { " Lang1/Lang2 / Lang3" } },
-
             }
         };
 
-        Parser parser;
-        static_cast<IParser&>(parser).setDefaultTagDelimiters(std::vector<std::string>{ " ; ", "/" });
-        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ " / ", " feat. " });
-        std::unique_ptr<Track> track{ parser.parse(testTags) };
+        AudioFileParserParameters params;
+        params.defaultTagDelimiters = { " ; ", "/" };
+        params.artistTagDelimiters = { " / ", " feat. " };
+        TestAudioFileParser parser{ params };
+        std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
 
         ASSERT_EQ(track->artists.size(), 3);
         EXPECT_EQ(track->artists[0].name, "Artist1");
@@ -292,7 +300,7 @@ namespace lms::metadata
         EXPECT_EQ(track->medium->release->artistDisplayName, "AlbumArtist1, AlbumArtist2");
     }
 
-    TEST(Parser, customDelimiters_foundInArtist)
+    TEST(AudioFileParser, customDelimiters_foundInArtist)
     {
         const TestTagReader testTags{
             {
@@ -301,10 +309,11 @@ namespace lms::metadata
             }
         };
 
-        Parser parser;
-        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ "; " });
+        AudioFileParserParameters params;
+        params.artistTagDelimiters = { "; " };
+        TestAudioFileParser parser{ params };
 
-        std::unique_ptr<Track> track{ parser.parse(testTags) };
+        std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
 
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "Artist1");
@@ -312,7 +321,7 @@ namespace lms::metadata
         EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct the display name since we hit a custom delimiter in Artist
     }
 
-    TEST(Parser, customDelimiters_foundInArtists)
+    TEST(AudioFileParser, customDelimiters_foundInArtists)
     {
         const TestTagReader testTags{
             {
@@ -321,10 +330,11 @@ namespace lms::metadata
             }
         };
 
-        Parser parser;
-        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ "; " });
+        AudioFileParserParameters params;
+        params.artistTagDelimiters = { "; " };
+        TestAudioFileParser parser{ params };
 
-        std::unique_ptr<Track> track{ parser.parse(testTags) };
+        std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
 
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "Artist1");
@@ -332,7 +342,7 @@ namespace lms::metadata
         EXPECT_EQ(track->artistDisplayName, "Artist1 feat. Artist2");
     }
 
-    TEST(Parser, customDelimiters_notUsed)
+    TEST(AudioFileParser, customDelimiters_notUsed)
     {
         const TestTagReader testTags{
             {
@@ -341,10 +351,11 @@ namespace lms::metadata
             }
         };
 
-        Parser parser;
-        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ "; " });
+        AudioFileParserParameters params;
+        params.artistTagDelimiters = { "; " };
+        TestAudioFileParser parser{ params };
 
-        std::unique_ptr<Track> track{ parser.parse(testTags) };
+        std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
 
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "Artist1");
@@ -352,7 +363,7 @@ namespace lms::metadata
         EXPECT_EQ(track->artistDisplayName, "Artist1 & Artist2");
     }
 
-    TEST(Parser, customDelimiters_onlyInArtist)
+    TEST(AudioFileParser, customDelimiters_onlyInArtist)
     {
         const TestTagReader testTags{
             {
@@ -360,10 +371,11 @@ namespace lms::metadata
             }
         };
 
-        Parser parser;
-        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ " & " });
+        AudioFileParserParameters params;
+        params.artistTagDelimiters = { " & " };
+        TestAudioFileParser parser{ params };
 
-        std::unique_ptr<Track> track{ parser.parse(testTags) };
+        std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
 
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "Artist1");
@@ -371,7 +383,7 @@ namespace lms::metadata
         EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstructed since a custom delimiter was hit for parsing
     }
 
-    TEST(Parser, customDelimitersUsedForArtists)
+    TEST(AudioFileParser, customDelimitersUsedForArtists)
     {
         const TestTagReader testTags{
             {
@@ -379,10 +391,11 @@ namespace lms::metadata
             }
         };
 
-        Parser parser;
-        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ " & " });
+        AudioFileParserParameters params;
+        params.artistTagDelimiters = { " & " };
+        TestAudioFileParser parser{ params };
 
-        std::unique_ptr<Track> track{ parser.parse(testTags) };
+        std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
 
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "Artist1");
@@ -390,7 +403,7 @@ namespace lms::metadata
         EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstructed since a custom delimiter was hit for parsing
     }
 
-    TEST(Parser, noArtistInArtist)
+    TEST(AudioFileParser, noArtistInArtist)
     {
         const TestTagReader testTags{
             {
@@ -398,13 +411,13 @@ namespace lms::metadata
             }
         };
 
-        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+        std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
 
         ASSERT_EQ(track->artists.size(), 0);
         EXPECT_EQ(track->artistDisplayName, "");
     }
 
-    TEST(Parser, singleArtistInArtists)
+    TEST(AudioFileParser, singleArtistInArtists)
     {
         const TestTagReader testTags{
             {
@@ -413,14 +426,14 @@ namespace lms::metadata
             }
         };
 
-        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+        std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
 
         ASSERT_EQ(track->artists.size(), 1);
         EXPECT_EQ(track->artists[0].name, "Artist1");
         EXPECT_EQ(track->artistDisplayName, "Artist1");
     }
 
-    TEST(Parser, multipleArtistsInArtist)
+    TEST(AudioFileParser, multipleArtistsInArtist)
     {
         const TestTagReader testTags{
             {
@@ -429,7 +442,7 @@ namespace lms::metadata
             }
         };
 
-        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+        std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
 
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "Artist1");
@@ -437,7 +450,7 @@ namespace lms::metadata
         EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct artist display name since multiple entries are found
     }
 
-    TEST(Parser, multipleArtistsInArtists)
+    TEST(AudioFileParser, multipleArtistsInArtists)
     {
         const TestTagReader testTags{
             {
@@ -446,7 +459,7 @@ namespace lms::metadata
             }
         };
 
-        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+        std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
 
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "Artist1");
@@ -454,7 +467,7 @@ namespace lms::metadata
         EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct artist display name since multiple entries are found and nothing is set in artist
     }
 
-    TEST(Parser, multipleArtistsInArtistsWithEndDelimiter)
+    TEST(AudioFileParser, multipleArtistsInArtistsWithEndDelimiter)
     {
         const TestTagReader testTags{
             {
@@ -463,7 +476,7 @@ namespace lms::metadata
             }
         };
 
-        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+        std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
 
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "Artist1");
@@ -471,7 +484,7 @@ namespace lms::metadata
         EXPECT_EQ(track->artistDisplayName, "Artist1 & (CV. Artist2)");
     }
 
-    TEST(Parser, singleArtistInAlbumArtists)
+    TEST(AudioFileParser, singleArtistInAlbumArtists)
     {
         const TestTagReader testTags{
             {
@@ -481,7 +494,7 @@ namespace lms::metadata
             }
         };
 
-        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+        std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
 
         ASSERT_TRUE(track->medium);
         ASSERT_TRUE(track->medium->release);
@@ -490,7 +503,7 @@ namespace lms::metadata
         EXPECT_EQ(track->medium->release->artistDisplayName, "Artist1");
     }
 
-    TEST(Parser, multipleArtistsInAlbumArtist)
+    TEST(AudioFileParser, multipleArtistsInAlbumArtist)
     {
         const TestTagReader testTags{
             {
@@ -500,7 +513,7 @@ namespace lms::metadata
             }
         };
 
-        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+        std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
 
         ASSERT_TRUE(track->medium);
         ASSERT_TRUE(track->medium->release);
@@ -510,7 +523,7 @@ namespace lms::metadata
         EXPECT_EQ(track->medium->release->artistDisplayName, "Artist1, Artist2"); // reconstruct artist display name since multiple entries are found
     }
 
-    TEST(Parser, multipleArtistsInAlbumArtists_displayName)
+    TEST(AudioFileParser, multipleArtistsInAlbumArtists_displayName)
     {
         const TestTagReader testTags{
             {
@@ -520,7 +533,7 @@ namespace lms::metadata
             }
         };
 
-        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+        std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
 
         ASSERT_TRUE(track->medium);
         ASSERT_TRUE(track->medium->release);
@@ -530,7 +543,7 @@ namespace lms::metadata
         EXPECT_EQ(track->medium->release->artistDisplayName, "Artist1 & Artist2");
     }
 
-    TEST(Parser, multipleArtistsInAlbumArtists)
+    TEST(AudioFileParser, multipleArtistsInAlbumArtists)
     {
         const TestTagReader testTags{
             {
@@ -540,7 +553,7 @@ namespace lms::metadata
             }
         };
 
-        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+        std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
 
         ASSERT_TRUE(track->medium);
         ASSERT_TRUE(track->medium->release);
@@ -550,7 +563,7 @@ namespace lms::metadata
         EXPECT_EQ(track->medium->release->artistDisplayName, "Artist1, Artist2"); // reconstruct artist display name since multiple entries are found and nothing is set in artist
     }
 
-    TEST(Parser, multipleArtistsInArtistsButNotAllMBIDs)
+    TEST(AudioFileParser, multipleArtistsInArtistsButNotAllMBIDs)
     {
         const TestTagReader testTags{
             {
@@ -560,7 +573,7 @@ namespace lms::metadata
             }
         };
 
-        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+        std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
 
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "Artist1");
@@ -570,7 +583,7 @@ namespace lms::metadata
         EXPECT_EQ(track->artistDisplayName, "Artist1 & Artist2");
     }
 
-    TEST(Parser, multipleArtistsInArtistsButNotAllMBIDs_customDelimiters)
+    TEST(AudioFileParser, multipleArtistsInArtistsButNotAllMBIDs_customDelimiters)
     {
         const TestTagReader testTags{
             {
@@ -579,9 +592,10 @@ namespace lms::metadata
             }
         };
 
-        Parser parser;
-        static_cast<IParser&>(parser).setArtistTagDelimiters(std::vector<std::string>{ " / " });
-        std::unique_ptr<Track> track{ parser.parse(testTags) };
+        AudioFileParserParameters params;
+        params.artistTagDelimiters = { " / " };
+        TestAudioFileParser parser{ params };
+        std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
 
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "Artist1");
@@ -591,7 +605,7 @@ namespace lms::metadata
         EXPECT_EQ(track->artistDisplayName, "Artist1, Artist2"); // reconstruct the artist display name
     }
 
-    TEST(Parser, MBIDs_fallback)
+    TEST(AudioFileParser, MBIDs_fallback)
     {
         TestTagReader testTags{
             {
@@ -611,7 +625,7 @@ namespace lms::metadata
 
         testTags.setPerformersTags({ { "RoleA", { "Artist1", "Artist3" } },
             { "RoleB", { "Artist2", "Artist4" } } });
-        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+        std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
 
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "Artist1");
@@ -696,7 +710,7 @@ namespace lms::metadata
         EXPECT_EQ(track->performerArtists["Roleb"][1].mbid.value(), core::UUID::fromString("6fc64a4b-26f5-441f-993c-fd511290233b"));
     }
 
-    TEST(Parser, MBIDs_fallback_priority)
+    TEST(AudioFileParser, MBIDs_fallback_priority)
     {
         const TestTagReader testTags{
             {
@@ -708,7 +722,7 @@ namespace lms::metadata
                 { TagType::Composer, { "Artist1" } },
             }
         };
-        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+        std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
 
         ASSERT_EQ(track->composerArtists.size(), 1);
         EXPECT_EQ(track->composerArtists[0].name, "Artist1");
@@ -716,7 +730,7 @@ namespace lms::metadata
         EXPECT_EQ(track->composerArtists[0].mbid.value(), core::UUID::fromString("6643f584-5edc-45ce-927d-0a4ab25c2673"));
     }
 
-    TEST(Parser, release_sortNameFallback)
+    TEST(AudioFileParser, release_sortNameFallback)
     {
         const TestTagReader testTags{
             {
@@ -724,14 +738,14 @@ namespace lms::metadata
                 // No AlbumSortOrder
             }
         };
-        std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+        std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
 
         ASSERT_TRUE(track->medium.has_value());
         ASSERT_TRUE(track->medium->release.has_value());
         EXPECT_EQ(track->medium->release->sortName, "MyAlbum");
     }
 
-    TEST(Parser, advisory)
+    TEST(AudioFileParser, advisory)
     {
         auto doTest = [](std::string_view value, std::optional<Track::Advisory> expectedValue) {
             const TestTagReader testTags{
@@ -740,8 +754,8 @@ namespace lms::metadata
                 }
             };
 
-            Parser parser;
-            std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+            AudioFileParser parser;
+            std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
 
             ASSERT_EQ(track->advisory.has_value(), expectedValue.has_value()) << "Value = '" << value << "'";
             if (track->advisory.has_value())
@@ -758,7 +772,7 @@ namespace lms::metadata
         doTest("3", std::nullopt);
     }
 
-    TEST(Parser, encodingTime)
+    TEST(AudioFileParser, encodingTime)
     {
         auto doTest = [](std::string_view value, core::PartialDateTime expectedValue) {
             const TestTagReader testTags{
@@ -767,8 +781,7 @@ namespace lms::metadata
                 }
             };
 
-            Parser parser;
-            std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+            std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
 
             ASSERT_EQ(track->encodingTime, expectedValue) << "Value = '" << value << "'";
         };
@@ -780,7 +793,7 @@ namespace lms::metadata
         doTest("2020/01/03", core::PartialDateTime{ 2020, 01, 03 });
     }
 
-    TEST(Parser, date)
+    TEST(AudioFileParser, date)
     {
         auto doTest = [](std::string_view value, core::PartialDateTime expectedValue) {
             const TestTagReader testTags{
@@ -789,8 +802,7 @@ namespace lms::metadata
                 }
             };
 
-            Parser parser;
-            std::unique_ptr<Track> track{ Parser{}.parse(testTags) };
+            std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
 
             ASSERT_EQ(track->date, expectedValue) << "Value = '" << value << "'";
         };

@@ -98,9 +98,9 @@ namespace lms::scanner
                 {
                     playList.remove();
                     stats.deletions++;
+                    LMS_LOG(DBUPDATER, DEBUG, "Removed playlist file " << _file);
                 }
                 context.stats.errors.emplace_back(_file, ScanErrorType::CannotReadPlayListFile);
-                LMS_LOG(DBUPDATER, DEBUG, "Removed playlist file " << _file);
                 return;
             }
 

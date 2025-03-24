@@ -20,6 +20,8 @@
 #include "Common.hpp"
 
 #include "core/String.hpp"
+#include "database/Artist.hpp"
+#include "database/ArtistInfo.hpp"
 #include "database/AuthToken.hpp"
 #include "database/Db.hpp"
 #include "database/Directory.hpp"
@@ -32,6 +34,8 @@
 #include "database/StarredArtist.hpp"
 #include "database/StarredRelease.hpp"
 #include "database/StarredTrack.hpp"
+#include "database/TrackEmbeddedImage.hpp"
+#include "database/TrackEmbeddedImageLink.hpp"
 #include "database/TrackLyrics.hpp"
 #include "database/UIState.hpp"
 #include "database/User.hpp"
@@ -339,11 +343,14 @@ VALUES
             auto transaction{ session.createReadTransaction() };
 
             EXPECT_FALSE(Artist::find(session, ArtistId{}));
+            EXPECT_FALSE(ArtistInfo::find(session, ArtistInfoId{}));
             EXPECT_FALSE(AuthToken::find(session, AuthTokenId{}));
             EXPECT_FALSE(Country::find(session, CountryId{}));
             EXPECT_FALSE(Cluster::find(session, ClusterId{}));
             EXPECT_FALSE(ClusterType::find(session, ClusterTypeId{}));
             EXPECT_FALSE(Directory::find(session, DirectoryId{}));
+            EXPECT_FALSE(TrackEmbeddedImage::find(session, TrackEmbeddedImageId{}));
+            EXPECT_FALSE(TrackEmbeddedImageLink::find(session, TrackEmbeddedImageLinkId{}));
             EXPECT_FALSE(Image::find(session, ImageId{}));
             EXPECT_FALSE(Label::find(session, LabelId{}));
             EXPECT_FALSE(Listen::find(session, ListenId{}));

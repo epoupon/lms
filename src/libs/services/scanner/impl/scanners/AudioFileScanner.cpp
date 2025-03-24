@@ -25,6 +25,7 @@
 #include "core/PartialDateTime.hpp"
 #include "core/Path.hpp"
 #include "core/Service.hpp"
+#include "core/XxHash3.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
@@ -34,16 +35,21 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"
+#include "database/TrackEmbeddedImage.hpp"
+#include "database/TrackEmbeddedImageLink.hpp"
 #include "database/TrackFeatures.hpp"
 #include "database/TrackLyrics.hpp"
 #include "database/Types.hpp"
+#include "image/Exception.hpp"
+#include "image/Image.hpp"
 #include "metadata/Exception.hpp"
-#include "metadata/IParser.hpp"
+#include "metadata/IAudioFileParser.hpp"
 
 #include "IFileScanOperation.hpp"
 #include "ScanContext.hpp"
 #include "ScannerSettings.hpp"
 #include "Utils.hpp"
+#include "metadata/Types.hpp"
 
 namespace lms::scanner
 {
@@ -327,6 +333,119 @@ namespace lms::scanner
             return lyrics;
         }
 
+        struct ImageInfo
+        {
+            std::size_t index;
+            metadata::Image::Type type{ metadata::Image::Type::Unknown };
+            std::uint64_t hash{};
+            std::size_t size{};
+            image::ImageProperties properties;
+            std::string mimeType;
+            std::string description;
+        };
+
+        db::ImageType convertImageType(metadata::Image::Type type)
+        {
+            switch (type)
+            {
+            case metadata::Image::Type::Unknown:
+                return db::ImageType::Unknown;
+            case metadata::Image::Type::Other:
+                return db::ImageType::Other;
+            case metadata::Image::Type::FileIcon:
+                return db::ImageType::FileIcon;
+            case metadata::Image::Type::OtherFileIcon:
+                return db::ImageType::OtherFileIcon;
+            case metadata::Image::Type::FrontCover:
+                return db::ImageType::FrontCover;
+            case metadata::Image::Type::BackCover:
+                return db::ImageType::BackCover;
+            case metadata::Image::Type::LeafletPage:
+                return db::ImageType::LeafletPage;
+            case metadata::Image::Type::Media:
+                return db::ImageType::Media;
+            case metadata::Image::Type::LeadArtist:
+                return db::ImageType::LeadArtist;
+            case metadata::Image::Type::Artist:
+                return db::ImageType::Artist;
+            case metadata::Image::Type::Conductor:
+                return db::ImageType::Conductor;
+            case metadata::Image::Type::Band:
+                return db::ImageType::Band;
+            case metadata::Image::Type::Composer:
+                return db::ImageType::Composer;
+            case metadata::Image::Type::Lyricist:
+                return db::ImageType::Lyricist;
+            case metadata::Image::Type::RecordingLocation:
+                return db::ImageType::RecordingLocation;
+            case metadata::Image::Type::DuringRecording:
+                return db::ImageType::DuringRecording;
+            case metadata::Image::Type::DuringPerformance:
+                return db::ImageType::DuringPerformance;
+            case metadata::Image::Type::MovieScreenCapture:
+                return db::ImageType::MovieScreenCapture;
+            case metadata::Image::Type::ColouredFish:
+                return db::ImageType::ColouredFish;
+            case metadata::Image::Type::Illustration:
+                return db::ImageType::Illustration;
+            case metadata::Image::Type::BandLogo:
+                return db::ImageType::BandLogo;
+            case metadata::Image::Type::PublisherLogo:
+                return db::ImageType::PublisherLogo;
+            }
+
+            return db::ImageType::Unknown;
+        }
+
+        db::TrackEmbeddedImage::pointer getOrCreateTrackEmbeddedImage(db::Session& session, const ImageInfo& imageInfo)
+        {
+            db::TrackEmbeddedImage::pointer image{ db::TrackEmbeddedImage::find(session, imageInfo.size, db::ImageHashType{ imageInfo.hash }) };
+            if (!image)
+            {
+                image = session.create<db::TrackEmbeddedImage>();
+                image.modify()->setSize(imageInfo.size);
+                image.modify()->setHash(db::ImageHashType{ imageInfo.hash });
+                image.modify()->setWidth(imageInfo.properties.width);
+                image.modify()->setHeight(imageInfo.properties.height);
+                image.modify()->setMimeType(imageInfo.mimeType);
+            }
+
+            return image;
+        }
+
+        db::TrackEmbeddedImageLink::pointer createTrackEmbeddedImageLink(db::Session& session, const db::Track::pointer& track, const ImageInfo& imageInfo)
+        {
+            const db::TrackEmbeddedImage::pointer image{ getOrCreateTrackEmbeddedImage(session, imageInfo) };
+            db::TrackEmbeddedImageLink::pointer imageLink{ session.create<db::TrackEmbeddedImageLink>(track, image) };
+            imageLink.modify()->setIndex(imageInfo.index);
+            imageLink.modify()->setType(convertImageType(imageInfo.type));
+            imageLink.modify()->setDescription(imageInfo.description);
+
+            return imageLink;
+        }
+
+        void updateEmbeddedImages(db::Session& session, db::Track::pointer& track, std::span<const ImageInfo> images)
+        {
+            db::TrackEmbeddedImageLink::pointer preferredImageLink;
+
+            track.modify()->clearEmbeddedImageLinks();
+            for (const ImageInfo& imageInfo : images)
+            {
+                db::TrackEmbeddedImageLink::pointer link{ createTrackEmbeddedImageLink(session, track, imageInfo) };
+                track.modify()->addEmbeddedImageLink(link);
+
+                if (!preferredImageLink
+                    || (preferredImageLink->getType() != db::ImageType::FrontCover && link->getType() == db::ImageType::FrontCover)
+                    || (preferredImageLink->getImage()->getSize() < link->getImage()->getSize()))
+                {
+                    preferredImageLink = link;
+                }
+            }
+
+            if (preferredImageLink)
+                preferredImageLink.modify()->setIsPreferred(true);
+        }
+
         db::Advisory getAdvisory(std::optional<metadata::Track::Advisory> advisory)
         {
             if (!advisory)
@@ -359,7 +478,6 @@ namespace lms::scanner
             }
             if (parsedTrack.position)
                 params.setTrackNumber(*parsedTrack.position);
-            params.setHasEmbeddedImage(parsedTrack.hasCover);
             params.setFileSize(fileInfo.fileSize);
 
             bool error{};
@@ -387,7 +505,7 @@ namespace lms::scanner
         class AudioFileScanOperation : public IFileScanOperation
         {
         public:
-            AudioFileScanOperation(const FileToScan& fileToScan, db::Db& db, metadata::IParser& parser, const ScannerSettings& settings)
+            AudioFileScanOperation(const FileToScan& fileToScan, db::Db& db, metadata::IAudioFileParser& parser, const ScannerSettings& settings)
                 : _file{ fileToScan.file }
                 , _mediaLibrary{ fileToScan.mediaLibrary }
                 , _db{ db }
@@ -408,9 +526,10 @@ namespace lms::scanner
             const std::filesystem::path _file;
             const MediaLibraryInfo _mediaLibrary;
             db::Db& _db;
-            metadata::IParser& _parser;
+            metadata::IAudioFileParser& _parser;
             const ScannerSettings& _settings;
             std::unique_ptr<metadata::Track> _parsedTrack;
+            std::vector<ImageInfo> _parsedImages;
         };
 
         void AudioFileScanOperation::scan()
@@ -420,7 +539,35 @@ namespace lms::scanner
 
             try
             {
-                _parsedTrack = _parser.parse(_file);
+                _parsedTrack = _parser.parseMetaData(_file);
+
+                std::size_t index{};
+                _parser.parseImages(_file, [&](const metadata::Image& image) {
+                    try
+                    {
+                        image::ImageProperties properties{ image::probeImage(image.data) };
+
+                        ImageInfo info;
+                        info.index = index;
+                        info.type = image.type;
+                        {
+                            LMS_SCOPED_TRACE_DETAILED("Scanner", "ImageHash");
+                            info.hash = core::xxHash3_64(image.data);
+                        }
+                        info.size = image.data.size();
+                        info.mimeType = image.mimeType;
+                        info.description = image.description;
+                        info.properties = properties;
+
+                        _parsedImages.push_back(std::move(info));
+                    }
+                    catch (const image::Exception& e)
+                    {
+                        LMS_LOG(DBUPDATER, ERROR, "Failed to parse image in track file " << _file);
+                    }
+
+                    index++;
+                });
             }
             catch (const metadata::Exception& e)
             {
@@ -646,7 +793,6 @@ namespace lms::scanner
             track.modify()->setTrackMBID(_parsedTrack->mbid);
             if (auto trackFeatures{ db::TrackFeatures::find(dbSession, track->getId()) })
                 trackFeatures.remove(); // TODO: only if MBID changed?
-            track.modify()->setHasCover(_parsedTrack->hasCover);
             track.modify()->setCopyright(_parsedTrack->copyright);
             track.modify()->setCopyrightURL(_parsedTrack->copyrightURL);
             track.modify()->setAdvisory(getAdvisory(_parsedTrack->advisory));
@@ -656,10 +802,9 @@ namespace lms::scanner
 
             track.modify()->clearEmbeddedLyrics();
             for (const metadata::Lyrics& lyricsInfo : _parsedTrack->lyrics)
-            {
-                db::TrackLyrics::pointer lyrics{ createLyrics(dbSession, lyricsInfo) };
-                track.modify()->addLyrics(lyrics);
-            }
+                track.modify()->addLyrics(createLyrics(dbSession, lyricsInfo));
+
+            updateEmbeddedImages(dbSession, track, _parsedImages);
 
             if (added)
             {
@@ -686,18 +831,26 @@ namespace lms::scanner
 
             throw core::LmsException{ "Invalid value for 'scanner-parser-read-style'" };
         }
+
+        metadata::AudioFileParserParameters createAudioFileParserParameters(const ScannerSettings& settings)
+        {
+            metadata::AudioFileParserParameters params;
+            params.userExtraTags = settings.extraTags;
+            params.artistTagDelimiters = settings.artistTagDelimiters;
+            params.defaultTagDelimiters = settings.defaultTagDelimiters;
+            params.backend = metadata::ParserBackend::TagLib;
+            params.readStyle = getParserReadStyle();
+
+            return params;
+        }
+
     } // namespace
 
     AudioFileScanner::AudioFileScanner(db::Db& db, const ScannerSettings& settings)
         : _db{ db }
         , _settings{ settings }
-        , _metadataParser{ metadata::createParser(metadata::ParserBackend::TagLib, getParserReadStyle()) } // For now, always use TagLib
+        , _metadataParser{ metadata::createAudioFileParser(createAudioFileParserParameters(settings)) } // For now, always use TagLib
     {
-        std::vector<std::string> tagsToParse{ _extraTagsToParse };
-        tagsToParse.insert(std::end(tagsToParse), std::cbegin(settings.extraTags), std::cend(settings.extraTags));
-        _metadataParser->setUserExtraTags(tagsToParse);
-        _metadataParser->setArtistTagDelimiters(settings.artistTagDelimiters);
-        _metadataParser->setDefaultTagDelimiters(settings.defaultTagDelimiters);
     }
 
     AudioFileScanner::~AudioFileScanner() = default;

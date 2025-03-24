@@ -22,7 +22,7 @@
 
 #include <gtest/gtest.h>
 
-#include "Parser.hpp"
+#include "ITagReader.hpp"
 
 namespace lms::metadata
 {
@@ -94,8 +94,6 @@ namespace lms::metadata
             for (const auto& [language, lyrics] : _lyricsTags)
                 visitor(language, lyrics);
         }
-
-        bool hasEmbeddedCover() const override { return false; };
 
         const AudioProperties& getAudioProperties() const override { return audioProperties; }
 

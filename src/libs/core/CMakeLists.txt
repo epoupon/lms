@@ -1,5 +1,6 @@
 pkg_check_modules(Config++ REQUIRED IMPORTED_TARGET libconfig++)
 pkg_check_modules(Archive REQUIRED IMPORTED_TARGET libarchive)
+pkg_check_modules(XXHASH REQUIRED IMPORTED_TARGET libxxhash)
 
 add_library(lmscore STATIC
 	impl/http/Client.cpp
@@ -21,6 +22,7 @@ add_library(lmscore STATIC
 	impl/TraceLogger.cpp
 	impl/UUID.cpp
 	impl/WtLogger.cpp
+	impl/XxHash3.cpp
 	)
 
 target_include_directories(lmscore INTERFACE
@@ -34,6 +36,7 @@ target_include_directories(lmscore PRIVATE
 target_link_libraries(lmscore PRIVATE
 	PkgConfig::Config++
 	PkgConfig::Archive
+	PkgConfig::XXHASH
 	)
 
 target_link_libraries(lmscore PUBLIC

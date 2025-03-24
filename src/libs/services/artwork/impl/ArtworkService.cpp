@@ -22,11 +22,8 @@
 #include <algorithm>
 #include <functional>
 
-#include "av/IAudioFile.hpp"
-#include "av/Types.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
-#include "core/String.hpp"
 #include "core/Utils.hpp"
 #include "database/Db.hpp"
 #include "database/Image.hpp"
@@ -35,6 +32,7 @@
 #include "image/Exception.hpp"
 #include "image/IEncodedImage.hpp"
 #include "image/Image.hpp"
+#include "metadata/IAudioFileParser.hpp"
 
 namespace lms::cover
 {
@@ -55,6 +53,7 @@ namespace lms::cover
         const std::filesystem::path& defaultReleaseCoverSvgPath,
         const std::filesystem::path& defaultArtistImageSvgPath)
         : _db{ db }
+        , _audioFileParser{ metadata::createAudioFileParser(metadata::AudioFileParserParameters{}) }
         , _cache{ core::Service<core::IConfig>::get()->getULong("cover-max-cache-size", 30) * 1000 * 1000 }
     {
         setJpegQuality(core::Service<core::IConfig>::get()->getULong("cover-jpeg-quality", 75));
@@ -66,61 +65,7 @@ namespace lms::cover
         _defaultArtistImage = image::readImage(defaultArtistImageSvgPath);   // may throw
     }
 
-    std::unique_ptr<image::IEncodedImage> ArtworkService::getFromAvMediaFile(const av::IAudioFile& input, std::optional<image::ImageSize> width) const
-    {
-        struct CandidatePicture
-        {
-            av::Picture picture;
-            bool isFront{};
-            std::size_t index;
-
-            // > means is better candidate
-            bool operator>(const CandidatePicture& other) const
-            {
-                if (!isFront && other.isFront)
-                    return false;
-                if (isFront && !other.isFront)
-                    return true;
-
-                return index < other.index;
-            }
-        };
-
-        auto metadataHasFrontKeyword{ [](const av::IAudioFile::MetadataMap& metadata) {
-            return std::any_of(std::cbegin(metadata), std::cend(metadata), [](const auto& keyValue) { return core::stringUtils::stringCaseInsensitiveContains(keyValue.second, "front"); });
-        } };
-
-        std::vector<CandidatePicture> candidatePictures;
-        std::size_t pictureIndex{};
-        input.visitAttachedPictures([&](const av::Picture& picture, const av::IAudioFile::MetadataMap& metadata) {
-            candidatePictures.emplace_back(CandidatePicture{ picture, metadataHasFrontKeyword(metadata), pictureIndex++ });
-        });
-        std::stable_sort(std::begin(candidatePictures), std::end(candidatePictures), std::greater<>());
-
-        std::unique_ptr<image::IEncodedImage> image;
-        for (const CandidatePicture& candidatePicture : candidatePictures)
-        {
-            try
-            {
-                if (!width)
-                {
-                    image = image::readImage(candidatePicture.picture.data, candidatePicture.picture.mimeType);
-                }
-                else
-                {
-                    auto rawImage{ image::decodeImage(candidatePicture.picture.data) };
-                    rawImage->resize(*width);
-                    image = image::encodeToJPEG(*rawImage, _jpegQuality);
-                }
-            }
-            catch (const image::Exception& e)
-            {
-                LMS_LOG(COVER, ERROR, "Cannot read embedded cover: " << e.what());
-            }
-        }
-
-        return image;
-    }
+    ArtworkService::~ArtworkService() = default;
 
     std::unique_ptr<image::IEncodedImage> ArtworkService::getFromImageFile(const std::filesystem::path& p, std::optional<image::ImageSize> width) const
     {
@@ -175,18 +120,62 @@ namespace lms::cover
 
     std::unique_ptr<image::IEncodedImage> ArtworkService::getTrackImage(const std::filesystem::path& p, std::optional<image::ImageSize> width) const
     {
-        std::unique_ptr<image::IEncodedImage> image;
+        struct CandidateImage
+        {
+            std::unique_ptr<image::IEncodedImage> image;
+            bool isFront{};
+            std::size_t index;
+
+            // > means is better candidate
+            bool operator>(const CandidateImage& other) const
+            {
+                if (!isFront && other.isFront)
+                    return false;
+                if (isFront && !other.isFront)
+                    return true;
+
+                return index < other.index;
+            }
+        };
+
+        std::vector<CandidateImage> candidateImages;
+        std::size_t pictureIndex{};
 
         try
         {
-            image = getFromAvMediaFile(*av::parseAudioFile(p), width);
+            _audioFileParser->parseImages(p, [&](const metadata::Image& parsedImage) {
+                std::unique_ptr<image::IEncodedImage> image;
+                try
+                {
+                    if (!width)
+                    {
+                        image = image::readImage(parsedImage.data, parsedImage.mimeType);
+                    }
+                    else
+                    {
+                        auto rawImage{ image::decodeImage(parsedImage.data) };
+                        rawImage->resize(*width);
+                        image = image::encodeToJPEG(*rawImage, _jpegQuality);
+                    }
+                }
+                catch (const image::Exception& e)
+                {
+                    LMS_LOG(COVER, ERROR, "Cannot decode image from track " << p << ": " << e.what());
+                }
+
+                candidateImages.emplace_back(CandidateImage{ .image = std::move(image), .isFront = parsedImage.type == metadata::Image::Type::FrontCover, .index = pictureIndex++ });
+            });
         }
-        catch (av::Exception& e)
+        catch (const metadata::Exception& e)
         {
-            LMS_LOG(COVER, ERROR, "Cannot get covers from track " << p << ": " << e.what());
+            LMS_LOG(COVER, ERROR, "Cannot parse images from track " << p << ": " << e.what());
         }
 
-        return image;
+        std::stable_sort(std::begin(candidateImages), std::end(candidateImages), std::greater<>());
+        if (!candidateImages.empty())
+            return std::move(candidateImages.front().image);
+
+        return {};
     }
 
     std::shared_ptr<image::IEncodedImage> ArtworkService::getImage(db::ImageId imageId, std::optional<image::ImageSize> width)
@@ -214,9 +203,9 @@ namespace lms::cover
         return cover;
     }
 
-    std::shared_ptr<image::IEncodedImage> ArtworkService::getTrackImage(db::TrackId trackId, std::optional<image::ImageSize> width)
+    std::shared_ptr<image::IEncodedImage> ArtworkService::getTrackEmbeddedImage(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<image::ImageSize> width)
     {
-        const ImageCache::EntryDesc cacheEntryDesc{ trackId, width };
+        const ImageCache::EntryDesc cacheEntryDesc{ trackEmbeddedImageId, width };
 
         std::shared_ptr<image::IEncodedImage> cover{ _cache.getImage(cacheEntryDesc) };
         if (cover)
@@ -227,12 +216,14 @@ namespace lms::cover
             db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
-            const db::Track::pointer track{ db::Track::find(session, trackId) };
-            if (track && track->hasCover())
-                trackFile = track->getAbsoluteFilePath();
+            db::Track::FindParameters params;
+            params.setEmbeddedImage(trackEmbeddedImageId);
+            db::Track::find(session, params, [&](const db::Track::pointer& track) {
+                if (!cover)
+                    cover = getTrackImage(track->getAbsoluteFilePath(), width);
+            });
         }
 
-        cover = getTrackImage(trackFile, width);
         if (cover)
             _cache.addImage(cacheEntryDesc, cover);
 

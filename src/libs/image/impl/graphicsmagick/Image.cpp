@@ -77,6 +77,29 @@ namespace lms::image
         }
     }
 
+    ImageProperties probeImage(std::span<const std::byte> encodedData)
+    {
+        LMS_SCOPED_TRACE_DETAILED("Image", "ProbeBuffer");
+
+        try
+        {
+            Magick::Image image;
+            Magick::Blob blob{ encodedData.data(), encodedData.size() };
+            image.ping(blob);
+
+            ImageProperties properties;
+            properties.width = image.size().width();
+            properties.height = image.size().height();
+
+            return properties;
+        }
+        catch (Magick::Exception& e)
+        {
+            LMS_LOG(COVER, ERROR, "Caught Magick exception: " << e.what());
+            throw Exception{ std::string{ "Magick probe error: " } + e.what() };
+        }
+    }
+
     std::unique_ptr<IRawImage> decodeImage(std::span<const std::byte> encodedData)
     {
         LMS_SCOPED_TRACE_DETAILED("Image", "DecodeBuffer");

@@ -26,10 +26,10 @@
 #include "database/Track.hpp"
 #include "database/User.hpp"
 
-#include "IdTypeTraits.hpp"
 #include "SqlQuery.hpp"
-#include "StringViewTraits.hpp"
 #include "Utils.hpp"
+#include "traits/IdTypeTraits.hpp"
+#include "traits/StringViewTraits.hpp"
 
 namespace lms::db
 {

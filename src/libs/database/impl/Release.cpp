@@ -31,12 +31,12 @@
 #include "database/Types.hpp"
 #include "database/User.hpp"
 
-#include "EnumSetTraits.hpp"
-#include "IdTypeTraits.hpp"
-#include "PartialDateTimeTraits.hpp"
 #include "SqlQuery.hpp"
-#include "StringViewTraits.hpp"
 #include "Utils.hpp"
+#include "traits/EnumSetTraits.hpp"
+#include "traits/IdTypeTraits.hpp"
+#include "traits/PartialDateTimeTraits.hpp"
+#include "traits/StringViewTraits.hpp"
 
 namespace lms::db
 {

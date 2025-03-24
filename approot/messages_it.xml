@@ -97,6 +97,7 @@
 
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Non sono stato in grado di determinare la durata della traccia</message>
+<message id="Lms.Admin.ScannerController.cannot-read-artist-info-file">Impossibile analizzare il file delle informazioni sull'artista</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">Impossibile analizzare il file audio</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">Non in grado di leggere il file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-image-file">Impossibile analizzare il file immagine</message>
@@ -208,6 +209,7 @@
 
 <!--Explore:Artist-->
 <message id="Lms.Explore.Artist.appears-on">Appare su</message>
+<message id="Lms.Explore.Artist.biography">Biografia</message>
 <message id="Lms.Explore.Artist.similar-artists">Artisti simili</message>
 
 <!--Explore:Artists-->
@@ -309,8 +311,10 @@
 <message id="Lms.Settings.default-transcoding-output-bitrate">Bitrate di default per la transcodifica</message>
 <message id="Lms.Settings.default-transcoding-output-format">Formato di default per la transcodifica</message>
 <message id="Lms.Settings.demo-cannot-save">Non posso salvare le impostazioni utilizzando l'account demo!</message>
+<message id="Lms.Settings.enable-inline-artist-relationships">Mostra le relazioni degli artisti in linea negli album</message>
 <message id="Lms.Settings.enable-transcoding-by-default">Abilita transcodifica di default</message>
 <message id="Lms.Settings.feedback">Feedback</message>
+<message id="Lms.Settings.inline-artist-relationships">Tipi di relazioni artistiche da visualizzare</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Impostazioni</message>
 <message id="Lms.Settings.name">Nome dell'album</message>
 <message id="Lms.Settings.original-date-asc">Data di uscita originale (Crescente)</message>

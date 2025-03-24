@@ -32,7 +32,8 @@ ARG	BUILD_PACKAGES=" \
 	libconfig-dev \
 	utfcpp \
 	sqlite-dev \
-	gtest-dev"
+	gtest-dev \
+	xxhash-dev"
 
 RUN	apk add --no-cache --update ${BUILD_PACKAGES}
 

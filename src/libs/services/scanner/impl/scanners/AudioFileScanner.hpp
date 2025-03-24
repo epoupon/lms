@@ -19,9 +19,6 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-
 #include "IFileScanner.hpp"
 
 namespace lms
@@ -33,7 +30,7 @@ namespace lms
 
     namespace metadata
     {
-        class IParser;
+        class IAudioFileParser;
     }
 } // namespace lms
 
@@ -57,7 +54,6 @@ namespace lms::scanner
 
         db::Db& _db;
         const ScannerSettings& _settings;
-        std::unique_ptr<metadata::IParser> _metadataParser;
-        const std::vector<std::string> _extraTagsToParse;
+        std::unique_ptr<metadata::IAudioFileParser> _metadataParser;
     };
 } // namespace lms::scanner

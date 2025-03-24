@@ -35,6 +35,7 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"
+#include "database/Types.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
@@ -185,6 +186,53 @@ namespace lms::ui
 
             return core::stringUtils::readAs<ReleaseId::ValueType>(wApp->internalPathNextPart("/release/"));
         }
+
+        void fillTrackArtistLinks(Wt::WTemplate* trackEntry, db::TrackId trackId)
+        {
+            const User::pointer user{ LmsApp->getUser() };
+            if (!user->getUIEnableInlineArtistRelationships())
+                return;
+
+            const core::EnumSet<db::TrackArtistLinkType> inlineArtistRelationships{ user->getUIInlineArtistRelationships() };
+            if (inlineArtistRelationships.empty())
+                return;
+
+            const std::map<Wt::WString, std::set<ArtistId>> artistsByRole{ TrackListHelpers::getArtistsByRole(trackId, inlineArtistRelationships) };
+            if (artistsByRole.empty())
+                return;
+
+            trackEntry->setCondition("if-has-artist-links", true);
+            Wt::WContainerWidget* artistLinksContainer = trackEntry->bindNew<Wt::WContainerWidget>("artist-links");
+
+            for (const auto& [role, artists] : artistsByRole)
+            {
+                Wt::WTemplate* artistLinkEntry{ artistLinksContainer->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.artist-links-entry")) };
+                artistLinkEntry->bindString("role", role, Wt::TextFormat::Plain);
+                artistLinkEntry->bindWidget("anchors", utils::createArtistAnchorList(std::vector<db::ArtistId>(std::cbegin(artists), std::cend(artists))));
+            }
+        }
+
+        bool shouldDisplayTrackArtists(db::ReleaseId releaseId)
+        {
+            bool res{ true };
+
+            db::Artist::FindParameters params;
+            params.setRelease(releaseId);
+            params.setLinkType(db::TrackArtistLinkType::ReleaseArtist);
+            auto releaseArtists{ db::Artist::findIds(LmsApp->getDbSession(), params) };
+
+            params.setLinkType(db::TrackArtistLinkType::Artist);
+            auto trackArtists{ db::Artist::findIds(LmsApp->getDbSession(), params) };
+
+            if (trackArtists.results.size() == 1)
+            {
+                if (releaseArtists.results.empty() || trackArtists.results == releaseArtists.results)
+                    res = false;
+            }
+
+            return res;
+        }
+
     } // namespace
 
     Release::Release(Filters& filters, PlayQueueController& playQueueController)
@@ -261,14 +309,7 @@ namespace lms::ui
 
         auto* image{ bindWidget<Wt::WImage>("cover", utils::createReleaseCover(release->getId(), ArtworkResource::Size::Large)) };
         image->clicked().connect([=] {
-            auto fullCover{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Release.template.full-cover")) };
-            fullCover->bindNew<Wt::WImage>("cover-full", Wt::WLink{ LmsApp->getArtworkResource()->getReleaseCoverUrl(*releaseId) });
-
-            Wt::WTemplate* fullCoverPtr{ fullCover.get() };
-            fullCover->clicked().connect([=] {
-                LmsApp->getModalManager().dispose(fullCoverPtr);
-            });
-            LmsApp->getModalManager().show(std::move(fullCover));
+            utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getReleaseCoverUrl(*releaseId) });
         });
 
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
@@ -342,7 +383,7 @@ namespace lms::ui
 
         Wt::WContainerWidget* rootContainer{ bindNew<Wt::WContainerWidget>("container") };
 
-        const bool variousArtists{ release->hasVariousArtists() };
+        bool displayTrackArtists{ shouldDisplayTrackArtists(*releaseId) };
         const auto totalDisc{ release->getTotalDisc() };
         const std::size_t discCount{ release->getDiscCount() };
         const bool hasDiscSubtitle{ release->hasDiscSubtitle() };
@@ -415,7 +456,7 @@ namespace lms::ui
             const db::TrackId trackId{ track->getId() };
             const auto discNumber{ track->getDiscNumber() };
 
-            Wt::WContainerWidget* container;
+            Wt::WContainerWidget* container{};
             if (useSubtitleContainers && discNumber)
                 container = getOrAddDiscContainer(*discNumber, track->getDiscSubtitle());
             else if (hasDiscSubtitle && !discNumber)
@@ -429,13 +470,14 @@ namespace lms::ui
             entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
             const auto artists{ track->getArtistIds({ TrackArtistLinkType::Artist }) };
-            // TODO: display artist if it is single and not the one of the release (variousArtists is false in that case)
-            if (variousArtists && !artists.empty())
+            if (displayTrackArtists && !artists.empty())
             {
                 entry->setCondition("if-has-artists", true);
                 entry->bindWidget("artists", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
                 entry->bindWidget("artists-md", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
             }
+
+            fillTrackArtistLinks(entry, track->getId());
 
             auto trackNumber{ track->getTrackNumber() };
             if (trackNumber)

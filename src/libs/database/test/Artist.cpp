@@ -768,8 +768,8 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             const auto artists{ Artist::findIds(session, Artist::FindParameters{}.setSortMethod(ArtistSortMethod::AddedDesc)) };
             ASSERT_EQ(artists.results.size(), 4);
-            EXPECT_EQ(artists.results[0], artistA.getId());
-            EXPECT_EQ(artists.results[1], artistD.getId());
+            EXPECT_EQ(artists.results[0], artistD.getId());
+            EXPECT_EQ(artists.results[1], artistA.getId());
             EXPECT_EQ(artists.results[2], artistB.getId());
             EXPECT_EQ(artists.results[3], artistC.getId());
         }

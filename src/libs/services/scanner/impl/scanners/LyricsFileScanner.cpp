@@ -94,6 +94,7 @@ namespace lms::scanner
                 {
                     trackLyrics.remove();
                     stats.deletions++;
+                    LMS_LOG(DBUPDATER, DEBUG, "Removed lyrics file " << _file);
                 }
                 context.stats.errors.emplace_back(_file, ScanErrorType::CannotReadLyricsFile);
                 return;

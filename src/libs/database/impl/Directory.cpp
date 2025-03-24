@@ -23,9 +23,9 @@
 #include "database/Session.hpp"
 #include "database/Types.hpp"
 
-#include "IdTypeTraits.hpp"
-#include "PathTraits.hpp"
 #include "Utils.hpp"
+#include "traits/IdTypeTraits.hpp"
+#include "traits/PathTraits.hpp"
 
 namespace lms::db
 {
@@ -176,11 +176,13 @@ namespace lms::db
         query.leftJoin("image i ON d.id = i.directory_id");
         query.leftJoin("track_lyrics l_lrc ON d.id = l_lrc.directory_id");
         query.leftJoin("playlist_file pl_f ON d.id = pl_f.directory_id");
+        query.leftJoin("artist_info a_i ON d.id = a_i.directory_id");
         query.where("d_child.id IS NULL");
         query.where("t.directory_id IS NULL");
         query.where("i.directory_id IS NULL");
         query.where("l_lrc.directory_id IS NULL");
         query.where("pl_f.directory_id IS NULL");
+        query.where("a_i.directory_id IS NULL");
 
         return utils::execRangeQuery<DirectoryId>(query, range);
     }

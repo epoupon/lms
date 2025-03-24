@@ -23,7 +23,8 @@ ARG	LMS_BUILD_PACKAGES=" \
 	taglib-dev \
 	stb \
 	wt-dev \
-	gtest-dev"
+	gtest-dev \
+	xxhash-dev"
 
 COPY --from=xx / /
 

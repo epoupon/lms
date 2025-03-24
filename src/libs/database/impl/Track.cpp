@@ -29,16 +29,18 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/TrackArtistLink.hpp"
+#include "database/TrackEmbeddedImage.hpp"
+#include "database/TrackEmbeddedImageLink.hpp"
 #include "database/TrackFeatures.hpp"
 #include "database/TrackLyrics.hpp"
 #include "database/User.hpp"
 
-#include "IdTypeTraits.hpp"
-#include "PartialDateTimeTraits.hpp"
-#include "PathTraits.hpp"
 #include "SqlQuery.hpp"
-#include "StringViewTraits.hpp"
 #include "Utils.hpp"
+#include "traits/IdTypeTraits.hpp"
+#include "traits/PartialDateTimeTraits.hpp"
+#include "traits/PathTraits.hpp"
+#include "traits/StringViewTraits.hpp"
 
 namespace lms::db
 {
@@ -177,11 +179,14 @@ namespace lms::db
             if (params.directory.isValid())
                 query.where("t.directory_id = ?").bind(params.directory);
 
-            if (params.hasEmbeddedImage.has_value())
-                query.where("t.has_cover = ?").bind(params.hasEmbeddedImage.value());
-
             if (params.fileSize.has_value())
                 query.where("t.file_size = ?").bind(static_cast<long long>(params.fileSize.value()));
+
+            if (params.embeddedImageId.isValid())
+            {
+                query.join("track_embedded_image_link t_e_i_l ON t_e_i_l.track_id = t.id");
+                query.where("t_e_i_l.track_embedded_image_id = ?").bind(params.embeddedImageId);
+            }
 
             switch (params.sortMethod)
             {
@@ -467,6 +472,16 @@ namespace lms::db
     void Track::addLyrics(const ObjectPtr<TrackLyrics>& lyrics)
     {
         _trackLyrics.insert(getDboPtr(lyrics));
+    }
+
+    void Track::clearEmbeddedImageLinks()
+    {
+        _embeddedImageLinks.clear();
+    }
+
+    void Track::addEmbeddedImageLink(const ObjectPtr<TrackEmbeddedImageLink>& image)
+    {
+        _embeddedImageLinks.insert(getDboPtr(image));
     }
 
     std::optional<int> Track::getYear() const

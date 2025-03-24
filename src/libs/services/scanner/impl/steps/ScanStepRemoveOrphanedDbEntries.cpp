@@ -27,6 +27,7 @@
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "database/TrackEmbeddedImage.hpp"
 
 namespace lms::scanner
 {
@@ -40,6 +41,7 @@ namespace lms::scanner
         removeOrphanedLabels(context);
         removeOrphanedCountries(context);
         removeOrphanedDirectories(context);
+        removeOrphanedTrackEmbeddedImages(context);
     }
 
     void ScanStepRemoveOrphanedDbEntries::removeOrphanedClusters(ScanContext& context)
@@ -88,6 +90,12 @@ namespace lms::scanner
     {
         LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned directories...");
         removeOrphanedEntries<db::Directory>(context);
+    }
+
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedTrackEmbeddedImages(ScanContext& context)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned embedded images in tracks...");
+        removeOrphanedEntries<db::TrackEmbeddedImage>(context);
     }
 
     template<typename T>

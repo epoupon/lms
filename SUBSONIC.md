@@ -36,6 +36,7 @@ The following extra fields are implemented:
   * `recordLabels`
   * `releaseTypes`
   * `userRating`
+  * `version`
 * `Child` response:
   * `albumArtists`
   * `artists`

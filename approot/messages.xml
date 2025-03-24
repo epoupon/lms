@@ -97,6 +97,7 @@
 
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Cannot get track duration</message>
+<message id="Lms.Admin.ScannerController.cannot-read-artist-info-file">Cannot parse artist info file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">Cannot parse audio file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">Cannot read file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-image-file">Cannot parse image file</message>
@@ -208,6 +209,7 @@
 
 <!--Explore:Artist-->
 <message id="Lms.Explore.Artist.appears-on">Appears on</message>
+<message id="Lms.Explore.Artist.biography">Biography</message>
 <message id="Lms.Explore.Artist.similar-artists">Similar artists</message>
 
 <!--Explore:Artists-->
@@ -309,8 +311,10 @@
 <message id="Lms.Settings.default-transcoding-output-bitrate">Default transcoding output bitrate</message>
 <message id="Lms.Settings.default-transcoding-output-format">Default transcoding output format</message>
 <message id="Lms.Settings.demo-cannot-save">Cannot save using a demo account!</message>
+<message id="Lms.Settings.enable-inline-artist-relationships">Display artist relationships inline within albums</message>
 <message id="Lms.Settings.enable-transcoding-by-default">Enable transcoding by default</message>
 <message id="Lms.Settings.feedback">Feedback</message>
+<message id="Lms.Settings.inline-artist-relationships">Types of artist relationships to display</message>
 <message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Settings</message>
 <message id="Lms.Settings.name">Album Name</message>
 <message id="Lms.Settings.original-date-asc">Original Release Date (Ascending)</message>

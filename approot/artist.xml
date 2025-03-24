@@ -3,22 +3,30 @@
 <!--FORMS message blocks-->
 
 <message id="Lms.Explore.Artist.template">
-	<div class="mb-3">
-		<h2>${name}</h2>
-		${clusters class="mb-2"}
-		<div class="btn-group">
-			${play-btn class="btn btn-primary"}
-			<button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"/>
-			<ul class="dropdown-menu">
-				<li>${play-next class="dropdown-item"}</li>
-				<li>${play-last class="dropdown-item"}</li>
-				<li>${play-shuffled class="dropdown-item"}</li>
-				<li>${star class="dropdown-item"}</li>
-				${<if-has-mbid>}
-				<li><a href="${mbid-link}" target="_blank" class="dropdown-item">${tr:Lms.Explore.musicbrainz-artist}</a></li>
-				${</if-has-mbid>}
-				<li>${download class="dropdown-item"}</li>
-			</ul>
+	<div class="row mb-3 gy-3">
+		<div class="col-lg-3 col-md-4">
+			${artwork class="Lms-cursor-pointer rounded d-block mx-auto"}
+		</div>
+		<div class="col">
+			<h2>${name}</h2>
+			${clusters class="mb-2"}
+			${<if-has-biography>}
+			${biography class="mb-2 Lms-multiline-clamp Lms-cursor-pointer"}
+			${</if-has-biography>}
+			<div class="btn-group">
+				${play-btn class="btn btn-primary"}
+				<button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"/>
+				<ul class="dropdown-menu">
+					<li>${play-next class="dropdown-item"}</li>
+					<li>${play-last class="dropdown-item"}</li>
+					<li>${play-shuffled class="dropdown-item"}</li>
+					<li>${star class="dropdown-item"}</li>
+					${<if-has-mbid>}
+					<li><a href="${mbid-link}" target="_blank" class="dropdown-item">${tr:Lms.Explore.musicbrainz-artist}</a></li>
+					${</if-has-mbid>}
+					<li>${download class="dropdown-item"}</li>
+				</ul>
+			</div>
 		</div>
 	</div>
 	${release-containers}

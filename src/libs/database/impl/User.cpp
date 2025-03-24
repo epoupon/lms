@@ -19,16 +19,18 @@
 
 #include "database/User.hpp"
 
-#include "core/ILogger.hpp"
+#include <cassert>
+
 #include "database/Artist.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/UIState.hpp"
 
-#include "IdTypeTraits.hpp"
-#include "StringViewTraits.hpp"
 #include "Utils.hpp"
+#include "traits/EnumSetTraits.hpp"
+#include "traits/IdTypeTraits.hpp"
+#include "traits/StringViewTraits.hpp"
 
 namespace lms::db
 {

@@ -23,6 +23,7 @@
 
 #include "core/String.hpp"
 #include "database/Artist.hpp"
+#include "database/ArtistInfo.hpp"
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
@@ -118,6 +119,8 @@ namespace lms::ui
         LmsApp->setTitle(artist->getName());
         _artistId = *artistId;
 
+        refreshArtwork();
+        refreshArtistInfo();
         refreshReleases();
         refreshAppearsOnReleases();
         refreshNonReleaseTracks();
@@ -186,6 +189,30 @@ namespace lms::ui
                 }
             });
         }
+    }
+
+    void Artist::refreshArtwork()
+    {
+        auto* image{ bindWidget<Wt::WImage>("artwork", utils::createArtistImage(_artistId, ArtworkResource::Size::Large)) };
+        image->clicked().connect([this] {
+            utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getArtistImageUrl(_artistId) });
+        });
+    }
+
+    void Artist::refreshArtistInfo()
+    {
+        db::ArtistInfo::find(LmsApp->getDbSession(), _artistId, db::Range{ .offset = 0, .size = 1 }, [this](const db::ArtistInfo::pointer& _info) {
+            if (!_info->getBiography().empty())
+            {
+                setCondition("if-has-biography", true);
+                Wt::WText* bio{ bindNew<Wt::WText>("biography", std::string{ _info->getBiography() }, Wt::TextFormat::Plain) };
+                bio->setInline(false);
+                bio->setToolTip(tr("Lms.Explore.Artist.biography"));
+                bio->clicked().connect([bio] {
+                    bio->toggleStyleClass("Lms-multiline-clamp", !bio->hasStyleClass("Lms-multiline-clamp")); // hack
+                });
+            }
+        });
     }
 
     void Artist::refreshReleases()

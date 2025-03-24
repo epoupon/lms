@@ -52,6 +52,13 @@ namespace lms::ui
             else
             {
                 zipper = createZipper();
+                if (!zipper)
+                {
+                    // no track, may be a legit case
+                    response.setStatus(404);
+                    return;
+                }
+
                 response.setMimeType("application/zip");
             }
 

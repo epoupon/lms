@@ -29,6 +29,7 @@
 #include "database/MediaLibrary.hpp"
 #include "database/ScanSettings.hpp"
 
+#include "scanners/ArtistInfoFileScanner.hpp"
 #include "scanners/AudioFileScanner.hpp"
 #include "scanners/ImageFileScanner.hpp"
 #include "scanners/LyricsFileScanner.hpp"
@@ -347,6 +348,7 @@ namespace lms::scanner
         } };
 
         _fileScanners.clear();
+        _fileScanners.emplace_back(std::make_unique<ArtistInfoFileScanner>(_db));
         _fileScanners.emplace_back(std::make_unique<AudioFileScanner>(_db, _settings));
         _fileScanners.emplace_back(std::make_unique<ImageFileScanner>(_db));
         _fileScanners.emplace_back(std::make_unique<LyricsFileScanner>(_db));

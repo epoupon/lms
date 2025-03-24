@@ -161,7 +161,6 @@ namespace lms::metadata
         using LyricsVisitor = std::function<void(std::string_view language, std::string_view lyrics)>;
         virtual void visitLyricsTags(LyricsVisitor visitor) const = 0;
 
-        virtual bool hasEmbeddedCover() const = 0;
         virtual const AudioProperties& getAudioProperties() const = 0;
     };
 } // namespace lms::metadata

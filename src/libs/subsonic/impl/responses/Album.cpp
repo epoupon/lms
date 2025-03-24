@@ -28,6 +28,7 @@
 #include "database/Image.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
+#include "database/TrackEmbeddedImage.hpp"
 #include "database/Types.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
@@ -93,13 +94,14 @@ namespace lms::api::subsonic
         }
         else
         {
-            db::Track::FindParameters params;
+            db::TrackEmbeddedImage::FindParameters params;
             params.setRelease(release->getId());
-            params.setHasEmbeddedImage(true);
+            params.setIsPreferred(true);
+            params.setSortMethod(db::TrackEmbeddedImageSortMethod::FrontCoverAndSize);
             params.setRange(db::Range{ 0, 1 });
 
-            db::Track::find(context.dbSession, params, [&](const db::Track::pointer& track) {
-                const CoverArtId coverArtId{ track->getId(), track->getLastWriteTime().toTime_t() };
+            db::TrackEmbeddedImage::find(context.dbSession, params, [&](const db::TrackEmbeddedImage::pointer& image) {
+                const CoverArtId coverArtId{ image->getId() };
                 albumNode.setAttribute("coverArt", idToString(coverArtId));
             });
         }
@@ -145,6 +147,7 @@ namespace lms::api::subsonic
             return albumNode;
 
         // OpenSubsonic specific fields (must always be set)
+        albumNode.setAttribute("version", release->getComment());
         albumNode.setAttribute("sortName", release->getSortName());
         albumNode.setAttribute("mediaType", "album");
 

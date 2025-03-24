@@ -1,5 +1,6 @@
 add_library(lmsdatabase STATIC
 	impl/Artist.cpp
+	impl/ArtistInfo.cpp
 	impl/AuthToken.cpp
 	impl/Cluster.cpp
 	impl/Db.cpp
@@ -25,6 +26,8 @@ add_library(lmsdatabase STATIC
 	impl/SqlQuery.cpp
 	impl/Track.cpp
 	impl/TrackBookmark.cpp
+	impl/TrackEmbeddedImage.cpp
+	impl/TrackEmbeddedImageLink.cpp
 	impl/TrackLyrics.cpp
 	impl/Types.cpp
 	impl/UIState.cpp

@@ -31,6 +31,7 @@ namespace lms::scanner
     enum class ScanErrorType
     {
         CannotReadFile,
+        CannotReadArtistInfoFile,
         CannotReadAudioFile,
         CannotReadImageFile,
         CannotReadLyricsFile,

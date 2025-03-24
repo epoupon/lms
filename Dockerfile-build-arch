@@ -13,7 +13,8 @@ ARG BUILD_PACKAGES="\
 	make \
 	pkgconfig \
 	taglib \
-	wt"
+	wt \
+	xxhash"
 
 RUN	pacman -Syu --noconfirm
 RUN pacman -S --noconfirm ${BUILD_PACKAGES}
