@@ -20,6 +20,8 @@
 #pragma once
 
 #include <atomic>
+#include <cassert>
+#include <memory>
 #include <optional>
 #include <shared_mutex>
 #include <unordered_map>
@@ -27,7 +29,6 @@
 
 #include "database/ImageId.hpp"
 #include "database/TrackEmbeddedImageId.hpp"
-#include "database/TrackId.hpp"
 #include "image/IEncodedImage.hpp"
 
 namespace lms::cover

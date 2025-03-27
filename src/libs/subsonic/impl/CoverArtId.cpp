@@ -19,6 +19,8 @@
 
 #include "CoverArtId.hpp"
 
+#include <cassert>
+
 #include "core/String.hpp"
 #include "database/ImageId.hpp"
 #include "database/TrackEmbeddedImageId.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Emeric Poupon
+ * Copyright (C) 2021 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,17 +17,36 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "database/IdType.hpp"
 
-#include <cstddef>
+#include <cassert>
+#include <type_traits>
 
-namespace lms::image
+#include <Wt/Dbo/ptr.h>
+
+namespace lms::db
 {
-    using ImageSize = std::size_t;
+    static_assert(std::is_same_v<IdType::ValueType, Wt::Dbo::dbo_default_traits::IdType>);
 
-    struct ImageProperties
+    IdType::IdType()
+        : _id{ Wt::Dbo::dbo_default_traits::invalidId() }
     {
-        ImageSize width{};
-        ImageSize height{};
-    };
-} // namespace lms::image
+    }
+
+    IdType::IdType(ValueType id)
+        : _id{ id }
+    {
+    }
+
+    bool IdType::isValid() const
+    {
+        return _id != Wt::Dbo::dbo_default_traits::invalidId();
+    }
+
+    std::string IdType::toString() const
+    {
+        assert(isValid());
+        return std::to_string(_id);
+    }
+
+} // namespace lms::db

@@ -19,9 +19,6 @@
 
 #pragma once
 
-#include <Wt/Dbo/ptr.h>
-#include <cassert>
-#include <functional>
 #include <string>
 
 namespace lms::db
@@ -29,24 +26,19 @@ namespace lms::db
     class IdType
     {
     public:
-        using ValueType = Wt::Dbo::dbo_default_traits::IdType;
+        using ValueType = long long;
 
-        IdType() = default;
-        IdType(ValueType id)
-            : _id{ id } {}
+        IdType();
+        IdType(ValueType id);
 
-        bool isValid() const { return _id != Wt::Dbo::dbo_default_traits::invalidId(); }
-        std::string toString() const
-        {
-            assert(isValid());
-            return std::to_string(_id);
-        }
+        bool isValid() const;
+        std::string toString() const;
 
         ValueType getValue() const { return _id; }
         auto operator<=>(const IdType& other) const = default;
 
     private:
-        Wt::Dbo::dbo_default_traits::IdType _id{ Wt::Dbo::dbo_default_traits::invalidId() };
+        ValueType _id;
     };
 
 #define LMS_DECLARE_IDTYPE(name)                                             \
