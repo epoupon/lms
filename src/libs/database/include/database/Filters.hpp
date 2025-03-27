@@ -20,6 +20,7 @@
 #pragma once
 
 #include <span>
+#include <vector>
 
 #include "database/ClusterId.hpp"
 #include "database/LabelId.hpp"
