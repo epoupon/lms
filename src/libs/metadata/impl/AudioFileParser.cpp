@@ -267,54 +267,6 @@ namespace lms::metadata
 
             return std::nullopt;
         }
-
-        void fillInArtistsWithMbid(std::span<const Artist> artists, std::unordered_map<std::string_view, core::UUID>& artistsWithMbid)
-        {
-            for (const Artist& artist : artists)
-            {
-                if (artist.mbid.has_value())
-                {
-                    // there may collisions, we don't want to replace
-                    artistsWithMbid.emplace(artist.name, *artist.mbid);
-                }
-            }
-        }
-
-        void fillInMbids(std::span<Artist> artists, const std::unordered_map<std::string_view, core::UUID>& artistsWithMbid)
-        {
-            for (Artist& artist : artists)
-            {
-                if (!artist.mbid)
-                {
-                    const auto it{ artistsWithMbid.find(artist.name) };
-                    if (it != std::cend(artistsWithMbid))
-                        artist.mbid = it->second;
-                }
-            }
-        }
-
-        void fillMissingMbids(Track& track)
-        {
-            // first pass: collect all artists that have mbids
-            std::unordered_map<std::string_view, core::UUID> artistsWithMbid;
-
-            // For now, mbids can only set in artist and album artist tags
-            // filling order is important: we estimate track-level artists are more likely
-            // to be set in other fields than album artists
-            fillInArtistsWithMbid(track.artists, artistsWithMbid);
-            if (track.medium && track.medium->release)
-                fillInArtistsWithMbid(track.medium->release->artists, artistsWithMbid);
-
-            // second pass: fill in all artists that have no mbid set with the same name
-            fillInMbids(track.conductorArtists, artistsWithMbid);
-            fillInMbids(track.composerArtists, artistsWithMbid);
-            fillInMbids(track.lyricistArtists, artistsWithMbid);
-            fillInMbids(track.mixerArtists, artistsWithMbid);
-            fillInMbids(track.producerArtists, artistsWithMbid);
-            fillInMbids(track.remixerArtists, artistsWithMbid);
-            for (auto& [role, artists] : track.performerArtists)
-                fillInMbids(artists, artistsWithMbid);
-        }
     } // namespace
 
     std::unique_ptr<IAudioFileParser> createAudioFileParser(const AudioFileParserParameters& params)
@@ -488,8 +440,6 @@ namespace lms::metadata
         track.producerArtists = getArtists(tagReader, { TagType::Producers, TagType::Producer }, { TagType::ProducersSortOrder, TagType::ProducerSortOrder }, {}, _params);
         track.remixerArtists = getArtists(tagReader, { TagType::Remixers, TagType::Remixer }, { TagType::RemixersSortOrder, TagType::RemixerSortOrder }, {}, _params);
         track.performerArtists = getPerformerArtists(tagReader); // artistDelimiters not supported
-
-        fillMissingMbids(track);
 
         // If a file has originalDate but no originalYear, set it
         if (!track.originalYear)
