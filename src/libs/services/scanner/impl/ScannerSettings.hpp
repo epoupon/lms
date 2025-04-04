@@ -38,11 +38,12 @@ namespace lms::scanner
         std::size_t scanVersion{};
         Wt::WTime startTime;
         db::ScanSettings::UpdatePeriod updatePeriod{ db::ScanSettings::UpdatePeriod::Never };
-        bool skipDuplicateMBID{};
+        bool skipDuplicateTrackMBID{};
         std::vector<std::string> extraTags;
         std::vector<std::string> artistTagDelimiters;
         std::vector<std::string> defaultTagDelimiters;
         bool skipSingleReleasePlayLists{};
+        bool allowArtistMBIDFallback{ true }; // TODO false?
 
         std::vector<MediaLibraryInfo> mediaLibraries;
 

@@ -35,6 +35,7 @@
 #include "scanners/LyricsFileScanner.hpp"
 #include "scanners/PlayListFileScanner.hpp"
 
+#include "steps/ScanStepArtistReconciliation.hpp"
 #include "steps/ScanStepAssociateArtistImages.hpp"
 #include "steps/ScanStepAssociateExternalLyrics.hpp"
 #include "steps/ScanStepAssociatePlayListTracks.hpp"
@@ -348,7 +349,7 @@ namespace lms::scanner
         } };
 
         _fileScanners.clear();
-        _fileScanners.emplace_back(std::make_unique<ArtistInfoFileScanner>(_db));
+        _fileScanners.emplace_back(std::make_unique<ArtistInfoFileScanner>(_settings, _db));
         _fileScanners.emplace_back(std::make_unique<AudioFileScanner>(_db, _settings));
         _fileScanners.emplace_back(std::make_unique<ImageFileScanner>(_db));
         _fileScanners.emplace_back(std::make_unique<LyricsFileScanner>(_db));
@@ -370,6 +371,7 @@ namespace lms::scanner
         _scanSteps.emplace_back(std::make_unique<ScanStepDiscoverFiles>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepScanFiles>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepCheckForRemovedFiles>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepArtistReconciliation>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociatePlayListTracks>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepUpdateLibraryFields>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociateArtistImages>(params));
@@ -386,7 +388,7 @@ namespace lms::scanner
     {
         ScannerSettings newSettings;
 
-        newSettings.skipDuplicateMBID = core::Service<core::IConfig>::get()->getBool("scanner-skip-duplicate-mbid", false);
+        newSettings.skipDuplicateTrackMBID = core::Service<core::IConfig>::get()->getBool("scanner-skip-duplicate-mbid", false);
         {
             auto transaction{ _db.getTLSSession().createReadTransaction() };
 

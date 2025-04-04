@@ -31,10 +31,12 @@ namespace lms
 
 namespace lms::scanner
 {
+    struct ScannerSettings;
+
     class ArtistInfoFileScanner : public IFileScanner
     {
     public:
-        ArtistInfoFileScanner(db::Db& db);
+        ArtistInfoFileScanner(const ScannerSettings& _settings, db::Db& db);
         ~ArtistInfoFileScanner() override = default;
         ArtistInfoFileScanner(const ArtistInfoFileScanner&) = delete;
         ArtistInfoFileScanner& operator=(const ArtistInfoFileScanner&) = delete;
@@ -45,6 +47,7 @@ namespace lms::scanner
         bool needsScan(ScanContext& context, const FileToScan& file) const override;
         std::unique_ptr<IFileScanOperation> createScanOperation(const FileToScan& fileToScan) const override;
 
+        const ScannerSettings& _settings;
         db::Db& _db;
     };
 } // namespace lms::scanner

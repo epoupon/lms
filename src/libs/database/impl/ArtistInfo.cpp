@@ -70,7 +70,7 @@ namespace lms::db
 
     void ArtistInfo::find(Session& session, ArtistId id, const std::function<void(const pointer&)>& func)
     {
-        find(session, id, std::nullopt, std::move(func));
+        find(session, id, std::nullopt, func);
     }
 
     void ArtistInfo::find(Session& session, ArtistInfoId& lastRetrievedId, std::size_t count, const std::function<void(const pointer&)>& func)
@@ -82,6 +82,45 @@ namespace lms::db
         utils::forEachQueryResult(query, [&](const ArtistInfo::pointer& entry) {
             func(entry);
             lastRetrievedId = entry->getId();
+        });
+    }
+
+    void ArtistInfo::findArtistNameNoLongerMatch(Session& session, std::optional<Range> range, const std::function<void(const pointer&)>& func)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i FROM artist_info a_i") };
+        query.join("artist a ON a_i.artist_id = a.id");
+        query.where("a_i.mbid_matched = FALSE");
+        query.where("a_i.name <> a.name");
+
+        utils::applyRange(query, range);
+        utils::forEachQueryResult(query, [&](const pointer& info) {
+            func(info);
+        });
+    }
+
+    void ArtistInfo::findWithArtistNameAmbiguity(Session& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const pointer&)>& func)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<ArtistInfo>>("SELECT a_i FROM artist_info a_i") };
+        query.join("artist a ON a_i.artist_id = a.id");
+        query.where("a_i.mbid_matched = FALSE");
+        if (!allowArtistMBIDFallback)
+        {
+            query.where("a.mbid <> ''");
+        }
+        else
+        {
+            query.where(R"(
+                (a.mbid <> '' AND EXISTS (SELECT 1 FROM artist a2 WHERE a2.name = a.name AND a2.mbid <> '' AND a2.mbid <> a.mbid))
+                OR (a.mbid = '' AND (SELECT COUNT(*) FROM artist a2 WHERE a2.name = a.name AND a2.mbid <> '') = 1))");
+        }
+
+        utils::applyRange(query, range);
+        utils::forEachQueryResult(query, [&](const pointer& info) {
+            func(info);
         });
     }
 

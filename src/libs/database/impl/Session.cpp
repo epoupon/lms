@@ -195,13 +195,14 @@ namespace lms::db
             auto transaction{ createWriteTransaction() };
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_id_idx ON artist(id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_image_idx ON artist(image_id)");
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_name_idx ON artist(name)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_name_mbid_idx ON artist(name, mbid)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_sort_name_nocase_idx ON artist(sort_name COLLATE NOCASE)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_mbid_idx ON artist(mbid)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_info_path_idx ON artist_info(absolute_file_path)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_info_directory_id_idx ON artist_info(directory_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_info_artist_id_idx ON artist_info(artist_id)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_info_mbid_matched_artist_idx ON artist_info(mbid_matched, artist_id)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS auth_token_user_domain_idx ON auth_token(user_id, domain)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS auth_token_domain_expiry_idx ON auth_token(domain, expiry)");
@@ -296,8 +297,9 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS tracklist_entry_tracklist_track_idx ON tracklist_entry(tracklist_id, track_id)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_artist_idx ON track_artist_link(artist_id)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_artist_mbid_matched_artist_idx ON track_artist_link(artist_mbid_matched, artist_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_artist_track_idx ON track_artist_link(artist_id, track_id)");
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_artist_type_idx ON track_artist_link(artist_id,type)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_artist_type_idx ON track_artist_link(artist_id, type)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_track_artist_idx ON track_artist_link(track_id, artist_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_track_type_idx ON track_artist_link(track_id,type)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_type_track_artist_idx ON track_artist_link(type, track_id, artist_id)");

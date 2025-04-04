@@ -256,30 +256,6 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Artist>>("SELECT a FROM artist a").where("a.id = ?").bind(id));
     }
 
-    bool Artist::exists(Session& session, ArtistId id)
-    {
-        session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT 1 FROM artist").where("id = ?").bind(id)) == 1;
-    }
-
-    RangeResults<ArtistId> Artist::findOrphanIds(Session& session, std::optional<Range> range)
-    {
-        session.checkReadTransaction();
-        auto query{ session.getDboSession()->query<ArtistId>(R"(SELECT DISTINCT a.id FROM artist a 
-WHERE NOT EXISTS (
-    SELECT 1 
-    FROM track t 
-    INNER JOIN track_artist_link t_a_l 
-    ON t_a_l.artist_id = a.id 
-    WHERE t.id = t_a_l.track_id
-)
-AND NOT EXISTS (
-    SELECT 1 
-    FROM artist_info ai 
-    WHERE ai.artist_id = a.id))") };
-        return utils::execRangeQuery<ArtistId>(query, range);
-    }
-
     RangeResults<ArtistId> Artist::findIds(Session& session, const FindParameters& params)
     {
         session.checkReadTransaction();
@@ -302,6 +278,41 @@ AND NOT EXISTS (
 
         auto query{ createQuery<Wt::Dbo::ptr<Artist>>(session, params) };
         utils::forEachQueryRangeResult(query, params.range, func);
+    }
+
+    RangeResults<ArtistId> Artist::findOrphanIds(Session& session, std::optional<Range> range)
+    {
+        session.checkReadTransaction();
+        auto query{ session.getDboSession()->query<ArtistId>(R"(SELECT DISTINCT a.id FROM artist a 
+WHERE NOT EXISTS (
+    SELECT 1 
+    FROM track t 
+    INNER JOIN track_artist_link t_a_l 
+    ON t_a_l.artist_id = a.id 
+    WHERE t.id = t_a_l.track_id
+)
+AND NOT EXISTS (
+    SELECT 1 
+    FROM artist_info ai 
+    WHERE ai.artist_id = a.id))") };
+        return utils::execRangeQuery<ArtistId>(query, range);
+    }
+
+    bool Artist::exists(Session& session, ArtistId id)
+    {
+        session.checkReadTransaction();
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT 1 FROM artist").where("id = ?").bind(id)) == 1;
+    }
+
+    std::optional<core::UUID> Artist::getMBID() const
+    {
+        return core::UUID::fromString(_mbid);
+    }
+
+    bool Artist::hasMBID() const
+    {
+        // TODO optim this
+        return getMBID().has_value();
     }
 
     ObjectPtr<Image> Artist::getImage() const

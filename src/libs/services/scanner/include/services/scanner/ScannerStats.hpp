@@ -75,6 +75,7 @@ namespace lms::scanner
         DiscoverFiles,
         FetchTrackFeatures,
         Optimize,
+        ReconciliateArtists,
         ReloadSimilarityEngine,
         RemoveOrphanedDbEntries,
         ScanFiles,

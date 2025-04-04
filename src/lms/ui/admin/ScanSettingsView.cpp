@@ -70,7 +70,8 @@ namespace lms::ui
             static inline constexpr Field UpdatePeriodField{ "update-period" };
             static inline constexpr Field UpdateStartTimeField{ "update-start-time" };
             static inline constexpr Field SimilarityEngineTypeField{ "similarity-engine-type" };
-            static inline constexpr Field SkipSingleReleasePlayLists{ "skip-single-release-playlists" };
+            static inline constexpr Field SkipSingleReleasePlayListsField{ "skip-single-release-playlists" };
+            static inline constexpr Field AllowMBIDArtistMergeField{ "allow-mbid-artist-merge" };
 
             using UpdatePeriodModel = ValueStringModel<ScanSettings::UpdatePeriod>;
 
@@ -81,12 +82,14 @@ namespace lms::ui
                 addField(UpdatePeriodField);
                 addField(UpdateStartTimeField);
                 addField(SimilarityEngineTypeField);
-                addField(SkipSingleReleasePlayLists);
+                addField(SkipSingleReleasePlayListsField);
+                addField(AllowMBIDArtistMergeField);
 
                 setValidator(UpdatePeriodField, createMandatoryValidator());
                 setValidator(UpdateStartTimeField, createMandatoryValidator());
                 setValidator(SimilarityEngineTypeField, createMandatoryValidator());
-                setValidator(SkipSingleReleasePlayLists, createMandatoryValidator());
+                setValidator(SkipSingleReleasePlayListsField, createMandatoryValidator());
+                setValidator(AllowMBIDArtistMergeField, createMandatoryValidator());
             }
 
             std::shared_ptr<UpdatePeriodModel> updatePeriodModel() { return _updatePeriodModel; }
@@ -113,7 +116,8 @@ namespace lms::ui
                     setReadOnly(DatabaseSettingsModel::UpdateStartTimeField, true);
                 }
 
-                setValue(SkipSingleReleasePlayLists, scanSettings->getSkipSingleReleasePlayLists());
+                setValue(SkipSingleReleasePlayListsField, scanSettings->getSkipSingleReleasePlayLists());
+                setValue(AllowMBIDArtistMergeField, scanSettings->getAllowMBIDArtistMerge());
 
                 auto similarityEngineTypeRow{ _similarityEngineTypeModel->getRowFromValue(scanSettings->getSimilarityEngineType()) };
                 if (similarityEngineTypeRow)
@@ -145,8 +149,13 @@ namespace lms::ui
                 }
 
                 {
-                    const bool skipSingleReleasePlayLists{ Wt::asNumber(value(SkipSingleReleasePlayLists)) != 0 };
+                    const bool skipSingleReleasePlayLists{ Wt::asNumber(value(SkipSingleReleasePlayListsField)) != 0 };
                     scanSettings.modify()->setSkipSingleReleasePlayLists(skipSingleReleasePlayLists);
+                }
+
+                {
+                    const bool allowMBIDArtistMerge{ Wt::asNumber(value(AllowMBIDArtistMergeField)) != 0 };
+                    scanSettings.modify()->setAllowMBIDArtistMerge(allowMBIDArtistMerge);
                 }
 
                 {
@@ -336,7 +345,10 @@ namespace lms::ui
         t->setFormWidget(DatabaseSettingsModel::UpdateStartTimeField, std::move(updateStartTime));
 
         // Skip playlists
-        t->setFormWidget(DatabaseSettingsModel::SkipSingleReleasePlayLists, std::make_unique<Wt::WCheckBox>());
+        t->setFormWidget(DatabaseSettingsModel::SkipSingleReleasePlayListsField, std::make_unique<Wt::WCheckBox>());
+
+        // Allow to merge artists without MBID with those with one
+        t->setFormWidget(DatabaseSettingsModel::AllowMBIDArtistMergeField, std::make_unique<Wt::WCheckBox>());
 
         // Similarity engine type
         auto similarityEngineType{ std::make_unique<Wt::WComboBox>() };

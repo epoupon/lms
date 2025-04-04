@@ -57,12 +57,11 @@ namespace lms::scanner
             , _fileScanners(std::cbegin(initParams.fileScanners), std::cend(initParams.fileScanners))
         {
         }
-
-    protected:
         ~ScanStepBase() override = default;
         ScanStepBase(const ScanStepBase&) = delete;
         ScanStepBase& operator=(const ScanStepBase&) = delete;
 
+    protected:
         const ScannerSettings& _settings;
         ProgressCallback _progressCallback;
         bool& _abortScan;

@@ -39,6 +39,9 @@ namespace lms::scanner
 {
     class IFileScanner;
 
+    // Main goals to keepthe scanner fast:
+    // - single pass on files: only 1 filesystem exploration must be done (no further reads triggered by parsed values)
+    // - stable: 1 single scan (full or not) is enough: successive scans must have no effect if there is no change in the files
     class ScannerService : public IScannerService
     {
     public:

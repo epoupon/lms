@@ -46,92 +46,30 @@
 #include "ScanContext.hpp"
 #include "ScannerSettings.hpp"
 #include "Utils.hpp"
+#include "helpers/ArtistHelpers.hpp"
 
 namespace lms::scanner
 {
     namespace
     {
-        db::Artist::pointer createArtist(db::Session& session, const metadata::Artist& artistInfo)
+        void createTrackArtistLinks(db::Session& session, const db::Track::pointer& track, db::TrackArtistLinkType linkType, std::string_view role, std::span<const metadata::Artist> artists, helpers::AllowFallbackOnMBIDEntry allowArtistMBIDFallback)
         {
-            db::Artist::pointer artist{ session.create<db::Artist>(artistInfo.name) };
-
-            if (artistInfo.mbid)
-                artist.modify()->setMBID(artistInfo.mbid);
-
-            artist.modify()->setSortName(artistInfo.sortName ? *artistInfo.sortName : artistInfo.name);
-
-            return artist;
-        }
-
-        std::string optionalMBIDAsString(const std::optional<core::UUID>& uuid)
-        {
-            return uuid ? std::string{ uuid->getAsString() } : "<no MBID>";
-        }
-
-        void updateArtistIfNeeded(db::Artist::pointer artist, const metadata::Artist& artistInfo)
-        {
-            // Name may have been updated
-            if (artist->getName() != artistInfo.name)
+            for (const metadata::Artist& artistInfo : artists)
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Artist [" << optionalMBIDAsString(artist->getMBID()) << "], updated name from '" << artist->getName() << "' to '" << artistInfo.name << "'");
-                artist.modify()->setName(artistInfo.name);
-            }
+                db::Artist::pointer artist{ helpers::getOrCreateArtist(session, artistInfo, allowArtistMBIDFallback) };
 
-            // Sortname may have been updated
-            // As the sort name is quite often not filled in, we update it only if already set (for now?)
-            if (artistInfo.sortName && *artistInfo.sortName != artist->getSortName())
-            {
-                LMS_LOG(DBUPDATER, DEBUG, "Artist [" << optionalMBIDAsString(artist->getMBID()) << "], updated sort name from '" << artist->getSortName() << "' to '" << *artistInfo.sortName << "'");
-                artist.modify()->setSortName(*artistInfo.sortName);
+                const bool matchedUsingMbid{ artist->getMBID() == artistInfo.mbid };
+                db::TrackArtistLink::pointer link{ session.create<db::TrackArtistLink>(track, artist, linkType, role, matchedUsingMbid) };
+                link.modify()->setArtistName(artistInfo.name);
+                if (artistInfo.sortName)
+                    link.modify()->setArtistSortName(*artistInfo.sortName);
             }
         }
 
-        std::vector<db::Artist::pointer> getOrCreateArtists(db::Session& session, const std::vector<metadata::Artist>& artistsInfo, bool allowFallbackOnMBIDEntries)
+        void createTrackArtistLinks(db::Session& session, const db::Track::pointer& track, db::TrackArtistLinkType linkType, std::span<const metadata::Artist> artists, helpers::AllowFallbackOnMBIDEntry allowArtistMBIDFallback)
         {
-            std::vector<db::Artist::pointer> artists;
-
-            for (const metadata::Artist& artistInfo : artistsInfo)
-            {
-                db::Artist::pointer artist;
-
-                // First try to get by MBID
-                if (artistInfo.mbid)
-                {
-                    artist = db::Artist::find(session, *artistInfo.mbid);
-                    if (!artist)
-                        artist = createArtist(session, artistInfo);
-                    else
-                        updateArtistIfNeeded(artist, artistInfo);
-
-                    artists.emplace_back(std::move(artist));
-                    continue;
-                }
-
-                // Fall back on artist name (collisions may occur)
-                if (!artistInfo.name.empty())
-                {
-                    for (const db::Artist::pointer& sameNamedArtist : db::Artist::find(session, artistInfo.name))
-                    {
-                        // Do not fallback on artist that is correctly tagged
-                        if (!allowFallbackOnMBIDEntries && sameNamedArtist->getMBID())
-                            continue;
-
-                        artist = sameNamedArtist;
-                        break;
-                    }
-
-                    // No Artist found with the same name and without MBID -> creating
-                    if (!artist)
-                        artist = createArtist(session, artistInfo);
-                    else
-                        updateArtistIfNeeded(artist, artistInfo);
-
-                    artists.emplace_back(std::move(artist));
-                    continue;
-                }
-            }
-
-            return artists;
+            constexpr std::string_view noRole{};
+            createTrackArtistLinks(session, track, linkType, noRole, artists, allowArtistMBIDFallback);
         }
 
         db::ReleaseType::pointer getOrCreateReleaseType(db::Session& session, std::string_view name)
@@ -609,7 +547,7 @@ namespace lms::scanner
             return;
         }
 
-        if (_parsedTrack->mbid && (!track || _settings.skipDuplicateMBID))
+        if (_parsedTrack->mbid && (!track || _settings.skipDuplicateTrackMBID))
         {
             std::vector<db::Track::pointer> duplicateTracks{ db::Track::findByMBID(dbSession, *_parsedTrack->mbid) };
 
@@ -627,7 +565,7 @@ namespace lms::scanner
             }
 
             // Skip duplicate track MBID
-            if (_settings.skipDuplicateMBID)
+            if (_settings.skipDuplicateTrackMBID)
             {
                 for (db::Track::pointer& otherTrack : duplicateTracks)
                 {
@@ -739,41 +677,20 @@ namespace lms::scanner
         track.modify()->setDirectory(directory);
 
         track.modify()->clearArtistLinks();
-        // Do not fallback on artists with the same name but having a MBID for artist and releaseArtists, as it may be corrected by properly tagging files
-        for (const db::Artist::pointer& artist : getOrCreateArtists(dbSession, _parsedTrack->artists, false))
-            track.modify()->addArtistLink(db::TrackArtistLink::create(dbSession, track, artist, db::TrackArtistLinkType::Artist));
 
+        const helpers::AllowFallbackOnMBIDEntry allowFallback{ _settings.allowArtistMBIDFallback };
+        createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Artist, _parsedTrack->artists, allowFallback);
         if (_parsedTrack->medium && _parsedTrack->medium->release)
-        {
-            for (const db::Artist::pointer& releaseArtist : getOrCreateArtists(dbSession, _parsedTrack->medium->release->artists, false))
-                track.modify()->addArtistLink(db::TrackArtistLink::create(dbSession, track, releaseArtist, db::TrackArtistLinkType::ReleaseArtist));
-        }
+            createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::ReleaseArtist, _parsedTrack->medium->release->artists, allowFallback);
 
-        // Allow fallbacks on artists with the same name even if they have MBID, since there is no tag to indicate the MBID of these artists
-        // We could ask MusicBrainz to get all the information, but that would heavily slow down the import process
-        for (const db::Artist::pointer& conductor : getOrCreateArtists(dbSession, _parsedTrack->conductorArtists, true))
-            track.modify()->addArtistLink(db::TrackArtistLink::create(dbSession, track, conductor, db::TrackArtistLinkType::Conductor));
-
-        for (const db::Artist::pointer& composer : getOrCreateArtists(dbSession, _parsedTrack->composerArtists, true))
-            track.modify()->addArtistLink(db::TrackArtistLink::create(dbSession, track, composer, db::TrackArtistLinkType::Composer));
-
-        for (const db::Artist::pointer& lyricist : getOrCreateArtists(dbSession, _parsedTrack->lyricistArtists, true))
-            track.modify()->addArtistLink(db::TrackArtistLink::create(dbSession, track, lyricist, db::TrackArtistLinkType::Lyricist));
-
-        for (const db::Artist::pointer& mixer : getOrCreateArtists(dbSession, _parsedTrack->mixerArtists, true))
-            track.modify()->addArtistLink(db::TrackArtistLink::create(dbSession, track, mixer, db::TrackArtistLinkType::Mixer));
+        createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Conductor, _parsedTrack->conductorArtists, allowFallback);
+        createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Composer, _parsedTrack->composerArtists, allowFallback);
+        createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Lyricist, _parsedTrack->lyricistArtists, allowFallback);
+        createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Mixer, _parsedTrack->mixerArtists, allowFallback);
+        createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Remixer, _parsedTrack->remixerArtists, allowFallback);
 
         for (const auto& [role, performers] : _parsedTrack->performerArtists)
-        {
-            for (const db::Artist::pointer& performer : getOrCreateArtists(dbSession, performers, true))
-                track.modify()->addArtistLink(db::TrackArtistLink::create(dbSession, track, performer, db::TrackArtistLinkType::Performer, role));
-        }
-
-        for (const db::Artist::pointer& producer : getOrCreateArtists(dbSession, _parsedTrack->producerArtists, true))
-            track.modify()->addArtistLink(db::TrackArtistLink::create(dbSession, track, producer, db::TrackArtistLinkType::Producer));
-
-        for (const db::Artist::pointer& remixer : getOrCreateArtists(dbSession, _parsedTrack->remixerArtists, true))
-            track.modify()->addArtistLink(db::TrackArtistLink::create(dbSession, track, remixer, db::TrackArtistLinkType::Remixer));
+            createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Performer, role, performers, allowFallback);
 
         track.modify()->setScanVersion(_settings.scanVersion);
         if (_parsedTrack->medium && _parsedTrack->medium->release)

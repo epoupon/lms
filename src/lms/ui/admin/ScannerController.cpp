@@ -330,6 +330,11 @@ namespace lms::ui
                                      .arg(stepStats.progress()));
             break;
 
+        case ScanStep::ReconciliateArtists:
+            _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-reconciliate-artists")
+                                     .arg(stepStats.processedElems));
+            break;
+
         case ScanStep::RemoveOrphanedDbEntries:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-removing-orphaned-entries")
                                      .arg(stepStats.processedElems));

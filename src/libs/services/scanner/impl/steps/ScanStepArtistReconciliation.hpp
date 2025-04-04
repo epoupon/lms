@@ -19,26 +19,23 @@
 
 #pragma once
 
-namespace lms::core
+#include "ScanStepBase.hpp"
+
+namespace lms::scanner
 {
-    template<typename Tag, typename T>
-    class TaggedType
+    class ScanStepArtistReconciliation : public ScanStepBase
     {
     public:
-        using underlying_type = T;
-
-        explicit constexpr TaggedType() = default;
-        explicit constexpr TaggedType(T value)
-            : _value{ value } {}
-
-        constexpr T value() const { return _value; }
-
-        auto operator<=>(const TaggedType&) const = default;
+        using ScanStepBase::ScanStepBase;
 
     private:
-        T _value{};
-    };
+        ScanStep getStep() const override { return ScanStep::ReconciliateArtists; }
+        core::LiteralString getStepName() const override { return "Artist reconciliation"; }
+        void process(ScanContext& context) override;
 
-    template<typename Tag>
-    using TaggedBool = TaggedType<Tag, bool>;
-} // namespace lms::core
+        void updateLinksForArtistNameNoLongerMatch(ScanContext& context);
+        void updateLinksWithArtistNameAmbiguity(ScanContext& context);
+        void updateArtistInfoForArtistNameNoLongerMatch(ScanContext& context);
+        void updateArtistInfoWithArtistNameAmbiguity(ScanContext& context);
+    };
+} // namespace lms::scanner

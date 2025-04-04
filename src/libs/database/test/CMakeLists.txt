@@ -19,6 +19,7 @@ add_executable(test-database
 	StarredRelease.cpp
 	StarredTrack.cpp
 	Track.cpp
+	TrackArtistLink.cpp
 	TrackBookmark.cpp
 	TrackEmbeddedImage.cpp
 	TrackFeatures.cpp

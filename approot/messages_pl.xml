@@ -73,6 +73,7 @@
 <message id="Lms.Admin.MediaLibrary.root-path">Katalog główny</message>
 
 <!--Scan settings-->
+<message id="Lms.Admin.Database.allow-mbid-artist-merge">Pozwól na łączenie artystów bez MBID z tymi, którzy go mają</message>
 <message id="Lms.Admin.Database.artist-tag-delimiters">Znaki rozdzielające artystów</message>
 <message id="Lms.Admin.Database.daily">Codziennie</message>
 <message id="Lms.Admin.Database.default-tag-delimiters">Znaki rozdzielające inne oznaczenia</message>
@@ -150,6 +151,7 @@
 </message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Pobieranie danych o ścieżce z AcousticBrainz: {1}/{2} ścieżek ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Optymalizowanie bazy danych... {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-reconciliate-artists">Uzgodnianie artystów: {1} wpisów...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Przeładowywanie silnika podobieństw: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">Usuwanie osieroconych wpisów: {1} wpisów...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Skanowanie plików: {1}/{2} ({3}%)...</message>

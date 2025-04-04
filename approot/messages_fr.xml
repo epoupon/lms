@@ -72,6 +72,7 @@
 <message id="Lms.Admin.MediaLibrary.root-path">Répertoire racine</message>
 
 <!--Scan settings-->
+<message id="Lms.Admin.Database.allow-mbid-artist-merge">Permettre la fusion des artistes sans MBID avec ceux qui en ont un</message>
 <message id="Lms.Admin.Database.artist-tag-delimiters">Délimiteurs à utiliser pour séparer les tags d'artistes</message>
 <message id="Lms.Admin.Database.daily">Tous les jours</message>
 <message id="Lms.Admin.Database.default-tag-delimiters">Délimiteurs à utiliser pour séparer les autres tags</message>
@@ -133,6 +134,7 @@
 <message id="Lms.Admin.ScannerController.step-discovering-files">Découverte des fichiers : {1} fichiers</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Récupération des métadonnées AcousticBrainz : {1}/{2} fichiers ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Optimisation de la base de données... {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-reconciliate-artists">Reconciliation des artistes: {1} entrées...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Rechargement du moteur de recommandation : {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">Retrait des entrées orphelines: {1} entrées...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Scan des fichiers : {1}/{2} ({3}%)...</message>

@@ -59,6 +59,17 @@
 			</div>
 		</div>
 		<div class="col-12">
+			<div class="form-check">
+				${allow-mbid-artist-merge class="form-check-input"}
+				<label class="form-check-label" for="${id:allow-mbid-artist-merge}">
+					${tr:Lms.Admin.Database.allow-mbid-artist-merge}
+				</label>
+				<div class="invalid-feedback">
+					${allow-mbid-artist-merge-info}
+				</div>
+			</div>
+		</div>
+		<div class="col-12">
 			<label class="form-label" for="${id:similarity-engine-type}">
 				${tr:Lms.Admin.Database.similarity-engine-type}
 			</label>

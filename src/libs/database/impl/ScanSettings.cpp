@@ -103,6 +103,15 @@ namespace lms::db
         }
     }
 
+    void ScanSettings::setAllowMBIDArtistMerge(bool value)
+    {
+        if (_allowMBIDArtistMerge != value)
+        {
+            _allowMBIDArtistMerge = value;
+            incScanVersion();
+        }
+    }
+
     void ScanSettings::incScanVersion()
     {
         _scanVersion += 1;
