@@ -532,8 +532,7 @@ namespace lms::api::subsonic
             if (!artist)
                 throw RequestedDataNotFoundError{};
 
-            std::optional<core::UUID> artistMBID{ artist->getMBID() };
-            if (artistMBID)
+            if (const std::optional<core::UUID> artistMBID{ artist->getMBID() })
             {
                 switch (context.responseFormat)
                 {
