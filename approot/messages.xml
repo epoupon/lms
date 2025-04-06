@@ -33,6 +33,7 @@
 	<plural case="1">{1} tracks</plural>
 </message>
 <message id="Lms.user">User</message>
+<message id="Lms.uuid-invalid">Invalid UUID</message>
 
 <!--Locale-->
 <message id="Lms.locale.decimal-point">.</message>

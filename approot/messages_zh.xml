@@ -34,6 +34,7 @@
 
 <message id="Lms.user">用户</message>
 
+
 <!--Locale-->
 <message id="Lms.locale.decimal-point">.</message>
 <message id="Lms.locale.group-separator">,</message>
@@ -72,6 +73,7 @@
 
 
 <!--Scan settings-->
+
 
 <message id="Lms.Admin.Database.daily">每日</message>
 
@@ -132,6 +134,7 @@
 
 <message id="Lms.Admin.ScannerController.step-discovering-files">检索文件中: {1} 文件</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">从 AcousticBrainz 获取音轨特征: {1}/{2} 音轨 ({3}%)...</message>
+
 
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">重载相似引擎中 {1}%...</message>
 
@@ -352,6 +355,7 @@
 <message id="Lms.Settings.transcoding-output-format.ogg_opus">Ogg/Opus</message>
 <message id="Lms.Settings.transcoding-output-format.ogg_vorbis">Ogg/Vorbis</message>
 <message id="Lms.Settings.transcoding-output-format.webm_vorbis">WebM/Vorbis</message>
+
 
 <!--Wt-->
 <message id="Wt.WMessageBox.Yes">是</message>

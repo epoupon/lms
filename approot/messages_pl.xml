@@ -34,6 +34,7 @@
 	<plural case="2">{1} ścieżek</plural>
 </message>
 <message id="Lms.user">Użytkownik</message>
+<message id="Lms.uuid-invalid">Nieprawidłowy UUID</message>
 
 <!--Locale-->
 <message id="Lms.locale.decimal-point">,</message>

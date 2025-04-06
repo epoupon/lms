@@ -33,6 +33,7 @@
 	<plural case="1">{1} pistes</plural>
 </message>
 <message id="Lms.user">Utilisateur</message>
+<message id="Lms.uuid-invalid">UUID invalide</message>	
 
 <!--Locale-->
 <message id="Lms.locale.decimal-point">,</message>
