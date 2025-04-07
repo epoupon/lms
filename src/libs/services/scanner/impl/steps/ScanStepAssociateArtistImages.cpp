@@ -254,14 +254,16 @@ namespace lms::scanner
     {
     }
 
+    bool ScanStepAssociateArtistImages::needProcess(const ScanContext& context) const
+    {
+        if (context.stats.nbChanges() > 0)
+            return true;
+
+        return false;
+    }
+
     void ScanStepAssociateArtistImages::process(ScanContext& context)
     {
-        if (_abortScan)
-            return;
-
-        if (context.stats.nbChanges() == 0)
-            return;
-
         auto& session{ _db.getTLSSession() };
 
         {

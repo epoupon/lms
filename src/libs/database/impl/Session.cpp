@@ -180,7 +180,9 @@ namespace lms::db
         // TODO: move this elsewhere
         {
             auto uniqueTransaction{ createWriteTransaction() };
-            ScanSettings::init(*this);
+
+            if (!ScanSettings::get(*this))
+                create<ScanSettings>();
         }
 
         return migrationPerformed;

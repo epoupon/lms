@@ -74,6 +74,12 @@ namespace lms::scanner
         }
     } // namespace
 
+    bool ScanStepArtistReconciliation::needProcess([[maybe_unused]] const ScanContext& context) const
+    {
+        // Since this step is very fast in case there is nothing to do, no need to skip if nothing has changed
+        return true;
+    }
+
     void ScanStepArtistReconciliation::process(ScanContext& context)
     {
         // Reconcile artist links
@@ -99,7 +105,7 @@ namespace lms::scanner
         db::Session& session{ _db.getTLSSession() };
 
         std::vector<db::ArtistInfo::pointer> artistInfo;
-        while (true)
+        while (!_abortScan)
         {
             artistInfo.clear();
             {
@@ -133,7 +139,7 @@ namespace lms::scanner
         db::Session& session{ _db.getTLSSession() };
 
         std::vector<db::ArtistInfo::pointer> artistInfo;
-        while (true)
+        while (!_abortScan)
         {
             artistInfo.clear();
             {
@@ -166,7 +172,7 @@ namespace lms::scanner
         db::Session& session{ _db.getTLSSession() };
 
         std::vector<db::TrackArtistLink::pointer> links;
-        while (true)
+        while (!_abortScan)
         {
             links.clear();
             {
@@ -200,7 +206,7 @@ namespace lms::scanner
         db::Session& session{ _db.getTLSSession() };
 
         std::vector<db::TrackArtistLink::pointer> links;
-        while (true)
+        while (!_abortScan)
         {
             links.clear();
             {

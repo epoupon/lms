@@ -17,21 +17,19 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
 #include "ScanStepBase.hpp"
 
 namespace lms::scanner
 {
-    class ScanStepCheckForDuplicatedFiles : public ScanStepBase
+    ScanStepBase::ScanStepBase(InitParams& initParams)
+        : _settings{ initParams.settings }
+        , _progressCallback{ initParams.progressCallback }
+        , _abortScan{ initParams.abortScan }
+        , _db{ initParams.db }
+        , _fileScanners(std::cbegin(initParams.fileScanners), std::cend(initParams.fileScanners))
+        , _lastScanSettings{ initParams.lastScanSettings }
     {
-    public:
-        using ScanStepBase::ScanStepBase;
+    }
 
-    private:
-        core::LiteralString getStepName() const override { return "Check for duplicated files"; }
-        ScanStep getStep() const override { return ScanStep::CheckForDuplicatedFiles; }
-        bool needProcess(const ScanContext& context) const override;
-        void process(ScanContext& context) override;
-    };
+    ScanStepBase::~ScanStepBase() = default;
 } // namespace lms::scanner

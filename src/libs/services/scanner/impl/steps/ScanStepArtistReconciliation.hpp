@@ -31,6 +31,7 @@ namespace lms::scanner
     private:
         ScanStep getStep() const override { return ScanStep::ReconciliateArtists; }
         core::LiteralString getStepName() const override { return "Artist reconciliation"; }
+        bool needProcess(const ScanContext& context) const override;
         void process(ScanContext& context) override;
 
         void updateLinksForArtistNameNoLongerMatch(ScanContext& context);

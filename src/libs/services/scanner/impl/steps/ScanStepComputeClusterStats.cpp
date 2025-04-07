@@ -25,12 +25,17 @@
 
 namespace lms::scanner
 {
+    bool ScanStepComputeClusterStats::needProcess(const ScanContext& context) const
+    {
+        if (context.stats.nbChanges() > 0)
+            return true;
+
+        return false;
+    }
+
     void ScanStepComputeClusterStats::process(ScanContext& context)
     {
         using namespace db;
-
-        if (context.stats.nbChanges() == 0)
-            return;
 
         Session& dbSession{ _db.getTLSSession() };
 

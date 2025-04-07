@@ -199,14 +199,16 @@ namespace lms::scanner
     {
     }
 
+    bool ScanStepAssociateReleaseImages::needProcess(const ScanContext& context) const
+    {
+        if (context.stats.nbChanges() > 0)
+            return true;
+
+        return false;
+    }
+
     void ScanStepAssociateReleaseImages::process(ScanContext& context)
     {
-        if (_abortScan)
-            return;
-
-        if (context.stats.nbChanges() == 0)
-            return;
-
         auto& session{ _db.getTLSSession() };
 
         {

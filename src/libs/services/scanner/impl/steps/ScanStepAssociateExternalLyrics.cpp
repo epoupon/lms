@@ -138,14 +138,16 @@ namespace lms::scanner
         }
     } // namespace
 
+    bool ScanStepAssociateExternalLyrics::needProcess(const ScanContext& context) const
+    {
+        if (context.stats.nbChanges() > 0)
+            return true;
+
+        return false;
+    }
+
     void ScanStepAssociateExternalLyrics::process(ScanContext& context)
     {
-        if (_abortScan)
-            return;
-
-        if (context.stats.nbChanges() == 0)
-            return;
-
         auto& session{ _db.getTLSSession() };
 
         {

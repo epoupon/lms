@@ -645,6 +645,7 @@ namespace lms::scanner
 
         // Track related data
         assert(track);
+        track.modify()->setScanVersion(_settings.audioScanVersion);
 
         // Audio properties
         track.modify()->setBitrate(_parsedTrack->audioProperties.bitrate);
@@ -692,7 +693,6 @@ namespace lms::scanner
         for (const auto& [role, performers] : _parsedTrack->performerArtists)
             createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Performer, role, performers, allowFallback);
 
-        track.modify()->setScanVersion(_settings.scanVersion);
         if (_parsedTrack->medium && _parsedTrack->medium->release)
             track.modify()->setRelease(getOrCreateRelease(dbSession, *_parsedTrack->medium->release, directory));
         else

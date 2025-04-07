@@ -106,7 +106,7 @@ namespace lms::scanner
             const db::Track::pointer track{ db::Track::findByPath(dbSession, file.file) };
             if (track
                 && track->getLastWriteTime() == lastWriteTime
-                && track->getScanVersion() == _settings.scanVersion)
+                && track->getScanVersion() == _settings.audioScanVersion)
             {
                 // this file may have been moved from one library to another, then we just need to update the media library id instead of a full rescan
                 const auto trackMediaLibrary{ track->getMediaLibrary() };

@@ -13,6 +13,7 @@ add_library(lmsscanner STATIC
 	impl/steps/ScanStepAssociateExternalLyrics.cpp
 	impl/steps/ScanStepAssociatePlayListTracks.cpp
 	impl/steps/ScanStepAssociateReleaseImages.cpp
+	impl/steps/ScanStepBase.cpp
 	impl/steps/ScanStepCheckForDuplicatedFiles.cpp
 	impl/steps/ScanStepCheckForRemovedFiles.cpp
 	impl/steps/ScanStepCompact.cpp

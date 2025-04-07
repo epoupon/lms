@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <filesystem>
 #include <span>
 #include <string>
 #include <string_view>
@@ -58,12 +57,12 @@ namespace lms::db
             None,
         };
 
-        static void init(Session& session);
+        ScanSettings() = default;
 
-        static pointer get(Session& session);
+        static pointer get(Session& session, std::string_view name = "");
 
         // Getters
-        std::size_t getScanVersion() const { return _scanVersion; }
+        std::size_t getAudioScanVersion() const { return _audioScanVersion; }
         Wt::WTime getUpdateStartTime() const { return _startTime; }
         UpdatePeriod getUpdatePeriod() const { return _updatePeriod; }
         std::vector<std::string_view> getExtraTagsToScan() const;
@@ -82,12 +81,12 @@ namespace lms::db
         void setDefaultTagDelimiters(std::span<const std::string_view> delimiters);
         void setSkipSingleReleasePlayLists(bool value);
         void setAllowMBIDArtistMerge(bool value);
-        void incScanVersion();
 
         template<class Action>
         void persist(Action& a)
         {
-            Wt::Dbo::field(a, _scanVersion, "scan_version");
+            Wt::Dbo::field(a, _name, "name");
+            Wt::Dbo::field(a, _audioScanVersion, "audio_scan_version");
             Wt::Dbo::field(a, _startTime, "start_time");
             Wt::Dbo::field(a, _updatePeriod, "update_period");
             Wt::Dbo::field(a, _similarityEngineType, "similarity_engine_type");
@@ -99,7 +98,15 @@ namespace lms::db
         }
 
     private:
-        int _scanVersion{};
+        friend class Session;
+
+        ScanSettings(std::string_view name);
+        static pointer create(Session& session, std::string_view name = "");
+
+        void incAudioScanVersion();
+
+        std::string _name;
+        int _audioScanVersion{};
         Wt::WTime _startTime = Wt::WTime{ 0, 0, 0 };
         UpdatePeriod _updatePeriod{ UpdatePeriod::Never };
         SimilarityEngineType _similarityEngineType{ SimilarityEngineType::Clusters };

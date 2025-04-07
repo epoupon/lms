@@ -212,14 +212,19 @@ namespace lms::scanner
         }
     } // namespace
 
+    bool ScanStepAssociatePlayListTracks::needProcess(const ScanContext& context) const
+    {
+        if (context.stats.nbChanges() > 0)
+            return true;
+
+        if (getLastScanSettings() && getLastScanSettings()->skipSingleReleasePlayLists != _settings.skipSingleReleasePlayLists)
+            return true;
+
+        return false;
+    }
+
     void ScanStepAssociatePlayListTracks::process(ScanContext& context)
     {
-        if (_abortScan)
-            return;
-
-        if (context.stats.nbChanges() == 0)
-            return;
-
         auto& session{ _db.getTLSSession() };
 
         {

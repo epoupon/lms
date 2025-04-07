@@ -26,24 +26,25 @@
 #include "database/Session.hpp"
 
 #include "Utils.hpp"
+#include "traits/StringViewTraits.hpp"
 
 namespace lms::db
 {
-    void ScanSettings::init(Session& session)
+    ScanSettings::ScanSettings(std::string_view name)
+        : _name{ name }
     {
-        session.checkWriteTransaction();
-
-        if (pointer settings{ get(session) })
-            return;
-
-        session.getDboSession()->add(std::make_unique<ScanSettings>());
     }
 
-    ScanSettings::pointer ScanSettings::get(Session& session)
+    ScanSettings::pointer ScanSettings::create(Session& session, std::string_view name)
+    {
+        return session.getDboSession()->add(std::unique_ptr<ScanSettings>(new ScanSettings{ name }));
+    }
+
+    ScanSettings::pointer ScanSettings::get(Session& session, std::string_view name)
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ScanSettings>());
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<ScanSettings>().where("name = ?").bind(name));
     }
 
     std::vector<std::string_view> ScanSettings::getExtraTagsToScan() const
@@ -69,7 +70,7 @@ namespace lms::db
     {
         std::string newTagsToScan{ core::stringUtils::joinStrings(extraTags, ";") };
         if (newTagsToScan != _extraTagsToScan)
-            incScanVersion();
+            incAudioScanVersion();
 
         _extraTagsToScan = std::move(newTagsToScan);
     }
@@ -80,7 +81,7 @@ namespace lms::db
         if (tagDelimiters != _artistTagDelimiters)
         {
             _artistTagDelimiters.swap(tagDelimiters);
-            incScanVersion();
+            incAudioScanVersion();
         }
     }
 
@@ -90,30 +91,24 @@ namespace lms::db
         if (tagDelimiters != _defaultTagDelimiters)
         {
             _defaultTagDelimiters.swap(tagDelimiters);
-            incScanVersion();
+            incAudioScanVersion();
         }
     }
 
     void ScanSettings::setSkipSingleReleasePlayLists(bool value)
     {
         if (_skipSingleReleasePlayLists != value)
-        {
             _skipSingleReleasePlayLists = value;
-            incScanVersion();
-        }
     }
 
     void ScanSettings::setAllowMBIDArtistMerge(bool value)
     {
         if (_allowMBIDArtistMerge != value)
-        {
             _allowMBIDArtistMerge = value;
-            incScanVersion();
-        }
     }
 
-    void ScanSettings::incScanVersion()
+    void ScanSettings::incAudioScanVersion()
     {
-        _scanVersion += 1;
+        _audioScanVersion += 1;
     }
 } // namespace lms::db

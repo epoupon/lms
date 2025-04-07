@@ -31,6 +31,12 @@
 
 namespace lms::scanner
 {
+    bool ScanStepRemoveOrphanedDbEntries::needProcess([[maybe_unused]] const ScanContext& context) const
+    {
+        // fast enough when there is nothing to do
+        return true;
+    }
+
     void ScanStepRemoveOrphanedDbEntries::process(ScanContext& context)
     {
         removeOrphanedClusters(context);

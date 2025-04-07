@@ -32,6 +32,7 @@ namespace lms::scanner
 
         virtual ScanStep getStep() const = 0;
         virtual core::LiteralString getStepName() const = 0;
+        virtual bool needProcess(const ScanContext& context) const = 0;
         virtual void process(ScanContext& context) = 0;
     };
 } // namespace lms::scanner

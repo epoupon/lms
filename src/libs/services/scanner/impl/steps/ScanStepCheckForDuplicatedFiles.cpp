@@ -26,12 +26,15 @@
 
 namespace lms::scanner
 {
+    bool ScanStepCheckForDuplicatedFiles::needProcess([[maybe_unused]] const ScanContext& context) const
+    {
+        // Always check for everything
+        return true;
+    }
+
     void ScanStepCheckForDuplicatedFiles::process(ScanContext& context)
     {
         using namespace db;
-
-        if (_abortScan)
-            return;
 
         Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };

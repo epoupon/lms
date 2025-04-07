@@ -28,6 +28,12 @@
 
 namespace lms::scanner
 {
+    bool ScanStepDiscoverFiles::needProcess([[maybe_unused]] const ScanContext& context) const
+    {
+        // always discover files
+        return true;
+    }
+
     void ScanStepDiscoverFiles::process(ScanContext& context)
     {
         context.stats.totalFileCount = 0;

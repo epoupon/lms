@@ -68,12 +68,12 @@ namespace lms::scanner
 
         // Update database (scheduled callback)
         void scan(const ScanOptions& scanOptions);
+        void processScanSteps(ScanContext& context);
 
         void scanMediaDirectory(const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats);
 
         // Helpers
         void refreshScanSettings();
-        ScannerSettings readSettings();
 
         void notifyInProgressIfNeeded(const ScanStepStats& stats);
         void notifyInProgress(const ScanStepStats& stats);
@@ -96,5 +96,6 @@ namespace lms::scanner
         Wt::WDateTime _nextScheduledScan;
 
         ScannerSettings _settings;
+        std::optional<ScannerSettings> _lastScanSettings;
     };
 } // namespace lms::scanner

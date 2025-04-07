@@ -29,6 +29,11 @@
 
 namespace lms::scanner
 {
+    bool ScanStepUpdateLibraryFields::needProcess([[maybe_unused]] const ScanContext& context) const
+    {
+        // Fast enough when nothing to do
+        return true;
+    }
 
     void ScanStepUpdateLibraryFields::process(ScanContext& context)
     {
