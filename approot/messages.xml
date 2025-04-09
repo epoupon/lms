@@ -109,7 +109,7 @@
 <message id="Lms.Admin.ScannerController.duplicates-header">{1} duplicate files:</message>
 <message id="Lms.Admin.ScannerController.errors-header">{1} errors:</message>
 <message id="Lms.Admin.ScannerController.force-optimize">Force database optimization</message>
-<message id="Lms.Admin.ScannerController.full-scan">Rescan all files</message>
+<message id="Lms.Admin.ScannerController.full-scan">Force scan all files</message>
 <message id="Lms.Admin.ScannerController.get-report">Get report</message>
 <message id="Lms.Admin.ScannerController.last-scan">Last scan</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Not available</message>

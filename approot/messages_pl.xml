@@ -118,7 +118,7 @@
 	<plural case="2">{1} błędów:</plural>
 </message>
 <message id="Lms.Admin.ScannerController.force-optimize">Wymuś optymalizację bazy danych</message>
-<message id="Lms.Admin.ScannerController.full-scan">Ponownie przeskanuj wszystkie pliki</message>
+<message id="Lms.Admin.ScannerController.full-scan">Wymuś skanowanie wszystkich plików</message>
 <message id="Lms.Admin.ScannerController.get-report">Pokaż raport</message>
 <message id="Lms.Admin.ScannerController.last-scan">Ostatnie skanowanie</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Niedostępne</message>
