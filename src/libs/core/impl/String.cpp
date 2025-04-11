@@ -471,7 +471,7 @@ namespace lms::core::stringUtils
         if (dateTime.isValid())
         {
             // assume UTC
-            return dateTime.toString("yyyy-MM-ddThh:mm:ss.zzz", false).toUTF8();
+            return dateTime.toString("yyyy-MM-ddThh:mm:ss.zzz", false).toUTF8() + 'Z';
         }
 
         return "";
@@ -491,6 +491,9 @@ namespace lms::core::stringUtils
     Wt::WDateTime fromISO8601String(std::string_view dateTime)
     {
         // assume UTC
+        if (!dateTime.empty() && dateTime.back() == 'Z')
+            dateTime.remove_suffix(1);
+
         return Wt::WDateTime::fromString(Wt::WString{ std::string{ dateTime } }, "yyyy-MM-ddThh:mm:ss.zzz");
     }
 

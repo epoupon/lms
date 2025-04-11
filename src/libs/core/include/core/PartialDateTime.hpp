@@ -41,7 +41,7 @@ namespace lms::core
 
         static PartialDateTime fromString(std::string_view str);
         static PartialDateTime fromWtDateTime(const Wt::WDateTime& dateTime);
-        std::string toISO8601String() const;
+        std::string toString() const;
 
         constexpr bool isValid() const { return _precision != Precision::Invalid; }
 

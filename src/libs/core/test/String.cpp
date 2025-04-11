@@ -316,12 +316,12 @@ namespace lms::core::stringUtils::tests
     {
         {
             const Wt::WDateTime dateTime{ Wt::WDate{ 2020, 01, 03 }, Wt::WTime{ 9, 8, 11, 75 } };
-            EXPECT_EQ(toISO8601String(dateTime), "2020-01-03T09:08:11.075");
+            EXPECT_EQ(toISO8601String(dateTime), "2020-01-03T09:08:11.075Z");
         }
 
         {
             const Wt::WDateTime dateTime{ Wt::WDate{ 2020, 01, 03 } };
-            EXPECT_EQ(toISO8601String(dateTime), "2020-01-03T00:00:00.000");
+            EXPECT_EQ(toISO8601String(dateTime), "2020-01-03T00:00:00.000Z");
         }
 
         {
@@ -332,6 +332,7 @@ namespace lms::core::stringUtils::tests
 
     TEST(Stringutils, DateTimeFromString)
     {
+        EXPECT_EQ(fromISO8601String("2020-01-03T09:08:11.075Z"), (Wt::WDateTime{ Wt::WDate{ 2020, 01, 03 }, Wt::WTime{ 9, 8, 11, 75 } }));
         EXPECT_EQ(fromISO8601String("2020-01-03T09:08:11.075"), (Wt::WDateTime{ Wt::WDate{ 2020, 01, 03 }, Wt::WTime{ 9, 8, 11, 75 } }));
         EXPECT_EQ(fromISO8601String("2020-01-03"), Wt::WDateTime{});
         EXPECT_EQ(fromISO8601String(""), Wt::WDateTime{});
