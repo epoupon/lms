@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions"
+	nplurals="2" plural="n > 1 ? 1 : 0">
+
+<!--Common-->
+<message id="Lms.add">Añadir</message>
+<message id="Lms.administration">Administración</message>
+<message id="Lms.cancel">Cancelar</message>
+<message id="Lms.clusters">Etiquetas</message>
+<message id="Lms.create">Crear</message>
+<message id="Lms.delete">Eliminar</message>
+<message id="Lms.discard">Descartar</message>
+<message id="Lms.edit">Editar</message>
+<message id="Lms.field-must-be-in-upper-case">Este campo debe estar en mayúsculas</message>
+<message id="Lms.loading">Cargando...</message>
+<message id="Lms.login">Usuario</message>
+<message id="Lms.logout"><i class="fa fa-fw fa-sign-out" aria-hidden="true"></i> Salir</message>
+<message id="Lms.ok">Ok</message>
+<message id="Lms.password">Contraseña</message>
+<message id="Lms.password-bad-login-combination">Combinación incorrecta de usuario / contraseña</message>
+<message id="Lms.password-client-throttled">Demasiados intentos de conexión, inténtelo de nuevo mas tarde</message>
+<message id="Lms.password-confirm">Confirma la contraseña</message>
+<message id="Lms.password-must-match-login">¡La contraseña debe coincidir con el usuario!</message>
+<message id="Lms.password-new">Contraseña nueva</message>
+<message id="Lms.password-old">Contraseña antigua</message>
+<message id="Lms.password-too-weak">La contraseña es demasiado débil</message>
+<message id="Lms.passwords-dont-match">Las contraseñas no coinciden</message>
+<message id="Lms.quit-other-session">Se ha abierto otra sesión. ¿Reabrir la actúal?</message>
+<message id="Lms.save">Guardar</message>
+<message id="Lms.settings-saved">¡Ajustes guardados!</message>
+<message id="Lms.track-count">
+	<plural case="0">{1} pista</plural>
+	<plural case="1">{1} pistas</plural>
+</message>
+<message id="Lms.user">Usuario</message>
+
+<!--Locale-->
+<message id="Lms.locale.decimal-point">.</message>
+<message id="Lms.locale.group-separator"></message>
+<message id="Lms.locale.date-format">dd/MM/yyyy</message>
+<message id="Lms.locale.time-format">HH:mm:ss</message>
+<message id="Lms.locale.date-time-format">dd/MM/yyyy HH:mm:ss</message>
+
+<!--Errors-->
+<message id="Lms.Error.artist-not-found">No se ha entrado el artista</message>
+<message id="Lms.Error.error-occurred">¡Ha ocurrido un error!</message>
+<message id="Lms.Error.go-home">Volver a la pantalla de bienvenida</message>
+<message id="Lms.Error.release-not-found">Este álbum no existe</message>
+<message id="Lms.Error.tracklist-not-found">Lista de reproducción no encontrada</message>
+<message id="Lms.Error.user-not-allowed">No tiene los permisos para efectuar esta operación</message>
+<message id="Lms.Error.user-not-found">No existe el usuario</message>
+
+<!--Administration-->
+<message id="Lms.Admin.menu-media-libraries"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Bibliotecas</message>
+<message id="Lms.Admin.menu-scan-settings"><i class="fa fa-fw fa-cogs" aria-hidden="true"></i> Opciones de escaneo</message>
+<message id="Lms.Admin.menu-scanner"><i class="fa fa-fw fa-wrench" aria-hidden="true"></i> Escanear</message>
+<message id="Lms.Admin.menu-tracing"><i class="fa fa-fw fa-bar-chart" aria-hidden="true"></i> Traces</message>
+<message id="Lms.Admin.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Usuarios</message>
+
+<!--MediaLibraries-->
+<message id="Lms.Admin.MediaLibraries.media-libraries">Bibliotecas musicales</message>
+<message id="Lms.Admin.MediaLibrary.create-library">Crear una biblioteca</message>
+<message id="Lms.Admin.MediaLibrary.del-library-confirm">¿Eliminar la biblioteca?</message>
+<message id="Lms.Admin.MediaLibrary.edit-library">Edición de la biblioteca</message>
+<message id="Lms.Admin.MediaLibrary.library-created">¡Biblioteca creada!</message>
+<message id="Lms.Admin.MediaLibrary.library-deleted">¡Biblioteca eliminada!</message>
+<message id="Lms.Admin.MediaLibrary.name">Nombre de la biblioteca</message>
+<message id="Lms.Admin.MediaLibrary.name-already-exists">Ya hay una biblioteca con ese nombre</message>
+<message id="Lms.Admin.MediaLibrary.path-must-be-absolute">La ruta del fichero debe ser absoluta</message>
+<message id="Lms.Admin.MediaLibrary.path-must-not-overlap">La ruta no debe solapar la de otra biblioteca</message>
+<message id="Lms.Admin.MediaLibrary.path-must-be-existing-directory">El directorio no existe</message>
+<message id="Lms.Admin.MediaLibrary.root-path">Ruta raíz</message>
+
+<!--Scan settings-->
+<message id="Lms.Admin.Database.artist-tag-delimiters">Delimitadores usados para separar las etiquetas de los artistas</message>
+<message id="Lms.Admin.Database.daily">Diariamente</message>
+<message id="Lms.Admin.Database.default-tag-delimiters">Delimitadores usados para separar otras etiquetas</message>
+<message id="Lms.Admin.Database.extra-tags-to-scan">Etiquetas adicionales a escanear</message>
+<message id="Lms.Admin.Database.hourly">Cada hora</message>
+<message id="Lms.Admin.Database.immediate-scan">¡Escanear ahora!</message>
+<message id="Lms.Admin.Database.misc">Varios</message>
+<message id="Lms.Admin.Database.monthly">Mensualmente</message>
+<message id="Lms.Admin.Database.never">Nunca</message>
+<message id="Lms.Admin.Database.scan-aborted">¡Escaneo interrumpido!</message>
+<message id="Lms.Admin.Database.scan-complete">Escaneo terminado : {1} ficheros, {2} añadidos, {3} actualizados, {4} eliminados, {5} duplicados, {6} errores</message>
+<message id="Lms.Admin.Database.scan-launched">¡Escaneo comenzado!</message>
+<message id="Lms.Admin.Database.scan-settings">Opciones de escaneo</message>
+<message id="Lms.Admin.Database.similarity-engine-type">Motor de semejanza</message>
+<message id="Lms.Admin.Database.similarity-engine-type.clusters">Basado en las etiquetas</message>
+<message id="Lms.Admin.Database.similarity-engine-type.none">Ninguno</message>
+<message id="Lms.Admin.Database.skip-single-release-playlists">Ignorar las lista de reproducción que contienen pistas del mismo álbum</message>
+<message id="Lms.Admin.Database.tag-delimiter-must-not-contain-only-spaces">Los delimitadores de las etiquetas no deben consistir solo en espacios</message>
+<message id="Lms.Admin.Database.tag-parsing">Análisis de las etiquetas</message>
+<message id="Lms.Admin.Database.update-period">Frecuencia de la actualización</message>
+<message id="Lms.Admin.Database.update-start-time">Hora de la actualización</message>
+<message id="Lms.Admin.Database.weekly">Semanalmente</message>
+
+<!--Scanner Controller-->
+<message id="Lms.Admin.ScannerController.bad-duration">No ha sido posible obtener la duración de la pista</message>
+<message id="Lms.Admin.ScannerController.cannot-read-artist-info-file">No ha sido posible analizar el fichero de información sobre el artista</message>
+<message id="Lms.Admin.ScannerController.cannot-read-audio-file">No ha sido posible analizar el fichero de audio</message>
+<message id="Lms.Admin.ScannerController.cannot-read-file">No ha sido posible leer el fichero</message>
+<message id="Lms.Admin.ScannerController.cannot-read-image-file">No ha sido posible analizar del fichero de imagen</message>
+<message id="Lms.Admin.ScannerController.cannot-read-lyrics-file">No ha sido posible analizar el fichero de letras</message>
+<message id="Lms.Admin.ScannerController.cannot-read-playlist-file">No ha sido posible analizar el fichero de la lista de distribución</message>
+<message id="Lms.Admin.ScannerController.compact">Compactar la base de datos. <strong>¡Atención!:</strong> esta operación puede tardar bastante tiempo y la aplicación se bloqueará mientras dura la operación de compactación</message>
+<message id="Lms.Admin.ScannerController.duplicates-header">{1} ficheros duplicados:</message>
+<message id="Lms.Admin.ScannerController.errors-header">{1} errores :</message>
+<message id="Lms.Admin.ScannerController.force-optimize">Forzar la optimización de la base de datos</message>
+<message id="Lms.Admin.ScannerController.full-scan">Reescanear todos los ficheros</message>
+<message id="Lms.Admin.ScannerController.get-report">Informe</message>
+<message id="Lms.Admin.ScannerController.last-scan">Último escaneo</message>
+<message id="Lms.Admin.ScannerController.last-scan-not-available">No disponible</message>
+<message id="Lms.Admin.ScannerController.last-scan-status">{1} ficheros analizados en {2} el {3} a las {4} (UTC) - {5} errores, {6} duplicados</message>
+<message id="Lms.Admin.ScannerController.no-audio-track">No es una pista de audio</message>
+<message id="Lms.Admin.ScannerController.same-hash">Hash del fichero duplicado</message>
+<message id="Lms.Admin.ScannerController.same-mbid">MBID de la pista duplicado</message>
+<message id="Lms.Admin.ScannerController.scan-now">Escanear ahora</message>
+<message id="Lms.Admin.ScannerController.scan-options">Opciones de escaneo</message>
+<message id="Lms.Admin.ScannerController.scanner">Escanear</message>
+<message id="Lms.Admin.ScannerController.status">Estado</message>
+<message id="Lms.Admin.ScannerController.status-not-scheduled">No progamado</message>
+<message id="Lms.Admin.ScannerController.status-scheduled">Programado el {1} a las {2} (UTC)</message>
+<message id="Lms.Admin.ScannerController.status-in-progress">Escaneando: etapa {1}/{2}</message>
+<message id="Lms.Admin.ScannerController.step-associating-artist-images">Association des images des artistes: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-associating-external-lyrics">Association des paroles externes: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-associating-playlist-tracks">Association des pistes des listes de lectures: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-associating-release-images">Asignando imágenes de los álbumes: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">Comprobando ficheros duplicados ... {1} ficheros</message>
+<message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Comprobando ficheros eliminados... {1}%</message>
+<message id="Lms.Admin.ScannerController.step-compact">Compactando la base de datos...</message>
+<message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Calculando estadísticas... {1}%</message>
+<message id="Lms.Admin.ScannerController.step-discovering-files">Descubriendo ficheros: {1} ficheros</message>
+<message id="Lms.Admin.ScannerController.step-fetching-track-features">Accediendo a las características de la pista desde AcousticBrainz : {1}/{2} ficheros ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-optimize">Optimizando la base de datos... {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Recargando el motor de similitud: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">Borrando entradas huérfanas: {1} entradas...</message>
+<message id="Lms.Admin.ScannerController.step-scanning-files">Escaneando ficheros: {1} / {2} ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-status">Estado de las etapas</message>
+<message id="Lms.Admin.ScannerController.step-updating-library-fields">Actualizando campos de la biblioteca: {1} entradas</message>
+
+<!--Tracing-->
+<message id="Lms.Admin.Tracing.export-current-buffer">Exportar las trazas</message>
+<message id="Lms.Admin.Tracing.tracing">Trazas</message>
+
+<!--Users-->
+<message id="Lms.Admin.Users.add">Añadir</message>
+<message id="Lms.Admin.Users.admin">Administrador</message>
+<message id="Lms.Admin.Users.del-user-confirm">¿Eliminar el usuario?</message>
+<message id="Lms.Admin.Users.demo">Demo</message>
+<message id="Lms.Admin.Users.users">Usuarios</message>
+
+<!--User-->
+<message id="Lms.Admin.User.demo-account">Cuenta de demostración</message>
+<message id="Lms.Admin.User.demo-account-already-exists">¡Ya existe una cuenta de demostración!</message>
+<message id="Lms.Admin.User.last-login">Última fecha de inicio de sesión</message>
+<message id="Lms.Admin.User.user-already-exists">¡Ya existe ese usuario!</message>
+<message id="Lms.Admin.User.user-create">Nuevo usuario</message>
+<message id="Lms.Admin.User.user-created">¡Nuevo usuario creado!</message>
+<message id="Lms.Admin.User.user-edit">Usuario '{1}'</message>
+<message id="Lms.Admin.User.user-updated">¡Se ha actualizado el usuario!</message>
+
+<!--Wizard-->
+<message id="Lms.Admin.InitWizard.done">Se ha creado la cuenta de administrador. ¡Recarga la página para continuar!</message>
+<message id="Lms.Admin.InitWizard.header">Crear cuenta de administrador</message>
+
+<!--Auth-->
+<message id="Lms.Auth.remember-me">Recordarme</message>
+<message id="Lms.Auth.welcome">¡Bienvenido!</message>
+
+<!--Explore-->
+<message id="Lms.Explore.add-filter">Añadir filtro</message>
+<message id="Lms.Explore.all">Todos</message>
+<message id="Lms.Explore.artists">Artistas</message>
+<message id="Lms.Explore.bitrate">Bitrate</message>
+<message id="Lms.Explore.codec">Codec</message>
+<message id="Lms.Explore.download">Descargar</message>
+<message id="Lms.Explore.duration">Duración</message>
+<message id="Lms.Explore.filter-added">Filtro añadido</message>
+<message id="Lms.Explore.filters">Filtros</message>
+<message id="Lms.Explore.label">Sello discográfico</message>
+<message id="Lms.Explore.media-library">Biblioteca musical</message>
+<message id="Lms.Explore.most-played">Reproducidos frecuentemente</message>
+<message id="Lms.Explore.musicbrainz-artist">Artista de MusicBrainz</message>
+<message id="Lms.Explore.musicbrainz-release">Álbum de MusicBrainz</message>
+<message id="Lms.Explore.play">Reproducir</message>
+<message id="Lms.Explore.play-last">Reproducir al final</message>
+<message id="Lms.Explore.play-next">Reproducir a continuación</message>
+<message id="Lms.Explore.play-shuffled">Reproducción aleatoria</message>
+<message id="Lms.Explore.playcount">Número de reproducciones</message>
+<message id="Lms.Explore.random">Aleatorio</message>
+<message id="Lms.Explore.recently-added">Añadidos recientemente</message>
+<message id="Lms.Explore.recently-modified">Modificados recientemente</message>
+<message id="Lms.Explore.recently-played">Reproducidos recientemente</message>
+<message id="Lms.Explore.release-info">Información sobre el álbum</message>
+<message id="Lms.Explore.release-type">Tipo de publicación</message>
+<message id="Lms.Explore.releases">Álbumes</message>
+<message id="Lms.Explore.search">Buscar</message>
+<message id="Lms.Explore.star">Añadir a favoritos</message>
+<message id="Lms.Explore.starred">Favoritos</message>
+<message id="Lms.Explore.track-info">Información sobre la pista</message>
+<message id="Lms.Explore.track-lyrics">Letras</message>
+<message id="Lms.Explore.tracklists">Listas de reproducción</message>
+<message id="Lms.Explore.tracks">Pistas</message>
+<message id="Lms.Explore.type">Type</message>
+<message id="Lms.Explore.unstar">Eliminar de favoritos</message>
+<message id="Lms.Explore.value">Valor</message>
+<message id="Lms.Explore.various-artists">Varios artistas</message>
+
+<!--Explore:Artist-->
+<message id="Lms.Explore.Artist.appears-on">Aparece en</message>
+<message id="Lms.Explore.Artist.biography">Biografía</message>
+<message id="Lms.Explore.Artist.similar-artists">Artistas similares</message>
+
+<!--Explore:Artists-->
+<message id="Lms.Explore.Artists.linktype-all">Todos los artistas</message>
+<message id="Lms.Explore.Artists.linktype-artist">
+	<plural case="0">Artista de la pista</plural>
+	<plural case="1">Artistas de la pista</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-composer">
+	<plural case="0">Compositor</plural>
+	<plural case="1">Compositores</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-conductor">
+	<plural case="0">Director de orquesta</plural>
+	<plural case="1">Directores de orquesta</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-lyricist">
+	<plural case="0">Letrista</plural>
+	<plural case="1">Letristas</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-mixer">
+	<plural case="0">Mezclador</plural>
+	<plural case="1">Mezcladores</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-performer">
+	<plural case="0">Intérprete</plural>
+	<plural case="1">Intérpretes</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-producer">
+	<plural case="0">Productor</plural>
+	<plural case="1">Productores</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-releaseartist">
+	<plural case="0">Artista del álbum</plural>
+	<plural case="1">Artistas del álbum</plural>
+</message>
+<message id="Lms.Explore.Artists.linktype-remixer">
+	<plural case="0">Remezclador</plural>
+	<plural case="1">Remezcladores</plural>
+</message>
+
+<!--Explore:Release-->
+<message id="Lms.Explore.Release.copyright">Copyright</message>
+<message id="Lms.Explore.Release.disc">Disco {1}</message>
+<message id="Lms.Explore.Release.other-versions">Otras versiones</message>
+<message id="Lms.Explore.Release.similar-releases">Álbumes similares</message>
+<message id="Lms.Explore.Release.type">Tipo</message>
+<message id="Lms.Explore.Release.type-primary-album">Álbum</message>
+<message id="Lms.Explore.Release.type-primary-broadcast">Difusión</message>
+<message id="Lms.Explore.Release.type-primary-ep">EP</message>
+<message id="Lms.Explore.Release.type-primary-other">Otro</message>
+<message id="Lms.Explore.Release.type-primary-single">Single</message>
+<message id="Lms.Explore.Release.type-secondary-audiobook">Audiolibro</message>
+<message id="Lms.Explore.Release.type-secondary-audiodrama">Drama</message>
+<message id="Lms.Explore.Release.type-secondary-compilation">Recopilatorio</message>
+<message id="Lms.Explore.Release.type-secondary-demo">Demo</message>
+<message id="Lms.Explore.Release.type-secondary-djmix">DJ-mix</message>
+<message id="Lms.Explore.Release.type-secondary-field-recording">Grabación de campo</message>
+<message id="Lms.Explore.Release.type-secondary-interview">Entrevista</message>
+<message id="Lms.Explore.Release.type-secondary-live">En vivo</message>
+<message id="Lms.Explore.Release.type-secondary-mixtape-street">Mixtape/Street</message>
+<message id="Lms.Explore.Release.type-secondary-remix">Remix</message>
+<message id="Lms.Explore.Release.type-secondary-soundtrack">Banda sonora</message>
+<message id="Lms.Explore.Release.type-secondary-spokenword">Creación locutada</message>
+
+<!--Explore:TrackLists-->
+<message id="Lms.Explore.TrackLists.del-tracklist-confirm">¿Eliminar la lista de reproducción?</message>
+<message id="Lms.Explore.TrackLists.type-owned">Mis listas</message>
+<message id="Lms.Explore.TrackLists.type-shared">Listas compartidas</message>
+
+<!--Explore:Search-->
+<message id="Lms.Explore.Search.search-placeholder">Buscar...</message>
+
+<!--Player-->
+<message id="Lms.Player.transcoding-active">Transcodificación activa</message>
+
+<!--Playqueue-->
+<message id="Lms.PlayQueue.clear">Vaciar la lista</message>
+<message id="Lms.PlayQueue.create-tracklist">Crear una nueva lista de reproducción</message>
+<message id="Lms.PlayQueue.playqueue">Lista de reproducción</message>
+<message id="Lms.PlayQueue.radio-mode">Modo radio</message>
+<message id="Lms.PlayQueue.repeat">Repetir</message>
+<message id="Lms.PlayQueue.replace-tracklist">Reemplazar una lista de distribución existente</message>
+<message id="Lms.PlayQueue.shuffle">Modo aleatorio</message>
+
+<!--PlayHistory-->
+<message id="Lms.PlayHistory.playhistory">Histórico de reproducciones</message>
+
+<!--Settings-->
+<message id="Lms.Settings.artist-release-sort-method">Método para ordenar los álbumes del artista</message>
+<message id="Lms.Settings.audio">Audio</message>
+<message id="Lms.Settings.audio-settings-are-local">Estas opciones de audio son locales a tu navegador</message>
+<message id="Lms.Settings.backend.internal">Interno</message>
+<message id="Lms.Settings.backend.listenbrainz">ListenBrainz</message>
+<message id="Lms.Settings.backend.listenbrainz-token">Token de la API de ListenBrainz</message>
+<message id="Lms.Settings.change-password">Cambiar contraseña</message>
+<message id="Lms.Settings.date-asc">Fecha de publicación (Ascendiente)</message>
+<message id="Lms.Settings.date-desc">Fecha de publicación (Descendiente)</message>
+<message id="Lms.Settings.default-transcoding-output-bitrate">Bitrate por omisión de transcodificación</message>
+<message id="Lms.Settings.default-transcoding-output-format">Formato por omisión de transcodificación</message>
+<message id="Lms.Settings.demo-cannot-save">¡No se puede guardar usando una cuenta de demostración!</message>
+<message id="Lms.Settings.enable-inline-artist-relationships">Mostrar las relaciones entre artistas dentro de los álbumes</message>
+<message id="Lms.Settings.enable-transcoding-by-default">Activar por defecto la transcodificación</message>
+<message id="Lms.Settings.feedback">Feedback</message>
+<message id="Lms.Settings.inline-artist-relationships">Tipos de relaciones entre artistas a mostrar</message>
+<message id="Lms.Settings.menu-settings"><i class="fa fa-fw fa-cog" aria-hidden="true"></i> Ajustes</message>
+<message id="Lms.Settings.name">Nombre del álbum</message>
+<message id="Lms.Settings.original-date-asc">Fecha de publicación original (Ascendiente)</message>
+<message id="Lms.Settings.original-date-desc">Fecha de publicación original (Descendiente)</message>
+<message id="Lms.Settings.password-bad">Contraseña incorrecta</message>
+<message id="Lms.Settings.password-must-fill-old-password">La contraseña antigua debe ser introducida</message>
+<message id="Lms.Settings.regen-token">Regenerar</message>
+<message id="Lms.Settings.replaygain-mode">Modo ReplayGain</message>
+<message id="Lms.Settings.replaygain-mode.none">Sin ReplayGain</message>
+<message id="Lms.Settings.replaygain-mode.auto">Automático</message>
+<message id="Lms.Settings.replaygain-mode.track">Pista</message>
+<message id="Lms.Settings.replaygain-mode.release">Álbum</message>
+<message id="Lms.Settings.replaygain-preamp">Pre-amplificación ReplayGain</message>
+<message id="Lms.Settings.replaygain-preamp-no-rg-info">Pre-amplification ReplayGain (si no hay información)</message>
+<message id="Lms.Settings.scrobbling">Scrobbling</message>
+<message id="Lms.Settings.services">Servicios</message>
+<message id="Lms.Settings.settings">Ajustes</message>
+<message id="Lms.Settings.settings-saved">¡Ajustes guardados!</message>
+<message id="Lms.Settings.subsonic-artist-list-mode">Modo de listado de artistas</message>
+<message id="Lms.Settings.subsonic-artist-list-mode.all-artists">Todos los artistas</message>
+<message id="Lms.Settings.subsonic-artist-list-mode.release-artists">Todos los artistas de álbum</message>
+<message id="Lms.Settings.subsonic-artist-list-mode.track-artists">Todos los artistas de pistas</message>
+<message id="Lms.Settings.subsonic-api">API Subsonic</message>
+<message id="Lms.Settings.subsonic-token">Clave para la API de OpenSubsonic</message>
+<message id="Lms.Settings.subsonic-token-usage">Use esta clave como la contraseña en aquellos clientes que no soporten la extensión 'API Key Authentication'</message>
+<message id="Lms.Settings.transcoding">Transcodificación</message>
+<message id="Lms.Settings.transcoding-mode">Aplicar la transcodificación</message>
+<message id="Lms.Settings.transcoding-mode.always">Siempre</message>
+<message id="Lms.Settings.transcoding-mode.if-format-not-supported">Únicamente cuando el formato no esté soportado por el navegador</message>
+<message id="Lms.Settings.transcoding-mode.never">Nunca</message>
+<message id="Lms.Settings.transcoding-output-bitrate">Bitrate de transcodificación</message>
+<message id="Lms.Settings.transcoding-output-format">Formato de transcodificación</message>
+<message id="Lms.Settings.transcoding-output-format.matroska_opus">Matroska/Opus</message>
+<message id="Lms.Settings.transcoding-output-format.mp3">MP3</message>
+<message id="Lms.Settings.transcoding-output-format.ogg_opus">Ogg/Opus</message>
+<message id="Lms.Settings.transcoding-output-format.ogg_vorbis">Ogg/Vorbis</message>
+<message id="Lms.Settings.transcoding-output-format.webm_vorbis">WebM/Vorbis</message>
+<message id="Lms.Settings.user-interface">Interfaz de usuario</message>
+
+<!--Wt-->
+<message id="Wt.WDateTime.LessThanASecond">menos de uns segundo</message>
+<message id="Wt.WDateTime.seconds">
+	<plural case="0">un segundo</plural>
+	<plural case="1">{1} segundos</plural>
+</message>
+<message id="Wt.WDateTime.minutes">
+	<plural case="0">un minuto</plural>
+	<plural case="1">{1} minutos</plural>
+</message>
+<message id="Wt.WDateTime.hours">
+	<plural case="0">una hora</plural>
+	<plural case="1">{1} horas</plural>
+</message>
+<message id="Wt.WDateTime.days">
+	<plural case="0">un día</plural>
+	<plural case="1">{1} días</plural>
+</message>
+<message id="Wt.WDateTime.weeks">
+	<plural case="0">una semana</plural>
+	<plural case="1">{1} semanas</plural>
+</message>
+<message id="Wt.WDateTime.months">
+	<plural case="0">un mes</plural>
+	<plural case="1">{1} meses</plural>
+</message>
+<message id="Wt.WDateTime.years">
+	<plural case="0">un año</plural>
+	<plural case="1">{1} años</plural>
+</message>
+<message id="Wt.WDateTime.null"></message>
+<message id="Wt.WMessageBox.Yes">Si</message>
+<message id="Wt.WMessageBox.No">No</message>
+<message id="Wt.WValidator.Invalid">Este campo no puede estar vacío</message>
+<message id="Wt.WDoubleValidator.BadRange">La cifra debe estar comprendida entre {1} y {2}</message>
+</messages>
