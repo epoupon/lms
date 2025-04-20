@@ -56,7 +56,7 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_BUILD_TYPE=Release ..
+          cmake -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_UNITY_BUILD=ON ..
           make -j$(nproc)
 
       - name: Perform CodeQL Analysis
