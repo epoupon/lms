@@ -42,6 +42,6 @@ namespace lms::ui
         Wt::WLineEdit* _lastScanStatus;
         Wt::WLineEdit* _status;
         Wt::WLineEdit* _stepStatus;
-        class ReportResource* _reportResource;
+        class ScannerReportResource* _reportResource;
     };
 } // namespace lms::ui

@@ -45,16 +45,16 @@ namespace lms::ui
         }
     } // namespace
 
-    class ReportResource : public Wt::WResource
+    class ScannerReportResource : public Wt::WResource
     {
     public:
-        ReportResource() = default;
-        ~ReportResource() override
+        ScannerReportResource() = default;
+        ~ScannerReportResource() override
         {
             beingDeleted();
         }
-        ReportResource(const ReportResource&) = delete;
-        ReportResource& operator=(const ReportResource&) = delete;
+        ScannerReportResource(const ScannerReportResource&) = delete;
+        ScannerReportResource& operator=(const ScannerReportResource&) = delete;
 
         void setScanStats(const scanner::ScanStats& stats)
         {
@@ -160,7 +160,7 @@ namespace lms::ui
         {
             _reportBtn = bindNew<Wt::WPushButton>("report-btn", Wt::WString::tr("Lms.Admin.ScannerController.get-report"));
 
-            auto reportResource{ std::make_shared<ReportResource>() };
+            auto reportResource{ std::make_shared<ScannerReportResource>() };
             reportResource->setTakesUpdateLock(true);
             _reportResource = reportResource.get();
 

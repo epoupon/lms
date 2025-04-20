@@ -21,6 +21,7 @@
 
 #include <array>
 
+#include "Exception.hpp"
 #include "StbImage.hpp"
 #include "StbImageWrite.hpp"
 

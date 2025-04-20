@@ -35,8 +35,6 @@
 
 namespace lms::ui
 {
-    using namespace db;
-
     TrackLists::TrackLists(Filters& filters)
         : Template{ Wt::WString::tr("Lms.Explore.TrackLists.template") }
         , _filters{ filters }
@@ -111,17 +109,17 @@ namespace lms::ui
 
     void TrackLists::addSome()
     {
-        const Range range{ static_cast<std::size_t>(_container->getCount()), _batchSize };
+        const db::Range range{ static_cast<std::size_t>(_container->getCount()), _batchSize };
 
-        Session& session{ LmsApp->getDbSession() };
+        db::Session& session{ LmsApp->getDbSession() };
         auto transaction{ session.createReadTransaction() };
 
-        TrackList::FindParameters params;
+        db::TrackList::FindParameters params;
 
         if (!_searchText.empty())
             params.setKeywords(core::stringUtils::splitString(_searchText, ' '));
         params.setFilters(_filters.getDbFilters());
-        params.setType(TrackListType::PlayList);
+        params.setType(db::TrackListType::PlayList);
         params.setRange(range);
 
         switch (_type)
@@ -139,26 +137,26 @@ namespace lms::ui
         switch (_sortMode)
         {
         case SortMode::All:
-            params.setSortMethod(TrackListSortMethod::Name);
+            params.setSortMethod(db::TrackListSortMethod::Name);
             break;
         case SortMode::RecentlyModified:
-            params.setSortMethod(TrackListSortMethod::LastModifiedDesc);
+            params.setSortMethod(db::TrackListSortMethod::LastModifiedDesc);
             break;
         }
 
-        const auto trackListIds{ TrackList::find(session, params) };
-        for (const TrackListId trackListId : trackListIds.results)
+        const auto trackListIds{ db::TrackList::find(session, params) };
+        for (const db::TrackListId trackListId : trackListIds.results)
         {
-            if (const TrackList::pointer trackList{ TrackList::find(LmsApp->getDbSession(), trackListId) })
+            if (const db::TrackList::pointer trackList{ db::TrackList::find(LmsApp->getDbSession(), trackListId) })
                 addTracklist(trackList);
         }
 
         _container->setHasMore(trackListIds.moreResults);
     }
 
-    void TrackLists::addTracklist(const ObjectPtr<TrackList>& trackList)
+    void TrackLists::addTracklist(const db::ObjectPtr<db::TrackList>& trackList)
     {
-        const TrackListId trackListId{ trackList->getId() };
+        const db::TrackListId trackListId{ trackList->getId() };
 
         WTemplate* entry{ _container->addNew<Template>(Wt::WString::tr("Lms.Explore.TrackLists.template.entry")) };
         entry->bindWidget("name", utils::createTrackListAnchor(trackList));

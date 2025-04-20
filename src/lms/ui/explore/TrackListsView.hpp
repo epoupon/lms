@@ -71,7 +71,6 @@ namespace lms::ui
         Type _type{ _defaultType };
         std::string _searchText;
         Filters& _filters;
-        Wt::WWidget* _currentActiveItem{};
         InfiniteScrollingContainer* _container{};
         std::unordered_map<db::TrackListId, Wt::WWidget*> _trackListWidgets;
     };

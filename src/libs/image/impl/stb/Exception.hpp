@@ -19,9 +19,18 @@
 
 #pragma once
 
-#define STBI_ONLY_JPEG
-#define STBI_ONLY_PNG
-#define STBI_ONLY_BMP
-#define STBI_FAILURE_USERMSG
+#include <string_view>
 
-#include <stb_image.h>
+#include "image/Exception.hpp"
+
+namespace lms::image
+{
+    class StbiException : public Exception
+    {
+    public:
+        StbiException(std::string_view desc);
+
+    private:
+        static std::string getLastFailureReason();
+    };
+} // namespace lms::image

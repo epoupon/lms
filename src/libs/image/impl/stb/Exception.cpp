@@ -17,11 +17,20 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "Exception.hpp"
 
-#define STBI_ONLY_JPEG
-#define STBI_ONLY_PNG
-#define STBI_ONLY_BMP
-#define STBI_FAILURE_USERMSG
+#include "StbImage.hpp"
 
-#include <stb_image.h>
+namespace lms::image
+{
+    StbiException::StbiException(std::string_view desc)
+        : Exception{ std::string{ desc } + ": " + getLastFailureReason() }
+    {
+    }
+
+    std::string StbiException::getLastFailureReason()
+    {
+        const char* failureReason{ ::stbi_failure_reason() };
+        return failureReason ? failureReason : "unknown reason";
+    }
+} // namespace lms::image

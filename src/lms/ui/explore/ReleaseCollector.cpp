@@ -31,16 +31,14 @@
 
 namespace lms::ui
 {
-    using namespace db;
-
-    RangeResults<ReleaseId> ReleaseCollector::get(std::optional<db::Range> requestedRange)
+    db::RangeResults<db::ReleaseId> ReleaseCollector::get(std::optional<db::Range> requestedRange)
     {
         feedback::IFeedbackService& feedbackService{ *core::Service<feedback::IFeedbackService>::get() };
         scrobbling::IScrobblingService& scrobblingService{ *core::Service<scrobbling::IScrobblingService>::get() };
 
-        const Range range{ getActualRange(requestedRange) };
+        const db::Range range{ getActualRange(requestedRange) };
 
-        RangeResults<ReleaseId> releases;
+        db::RangeResults<db::ReleaseId> releases;
 
         switch (getMode())
         {
@@ -85,45 +83,45 @@ namespace lms::ui
 
         case Mode::RecentlyAdded:
             {
-                Release::FindParameters params;
+                db::Release::FindParameters params;
                 params.setFilters(getDbFilters());
                 params.setKeywords(getSearchKeywords());
-                params.setSortMethod(ReleaseSortMethod::AddedDesc);
+                params.setSortMethod(db::ReleaseSortMethod::AddedDesc);
                 params.setRange(range);
 
                 {
                     auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    releases = Release::findIds(LmsApp->getDbSession(), params);
+                    releases = db::Release::findIds(LmsApp->getDbSession(), params);
                 }
                 break;
             }
 
         case Mode::RecentlyModified:
             {
-                Release::FindParameters params;
+                db::Release::FindParameters params;
                 params.setFilters(getDbFilters());
                 params.setKeywords(getSearchKeywords());
-                params.setSortMethod(ReleaseSortMethod::LastWrittenDesc);
+                params.setSortMethod(db::ReleaseSortMethod::LastWrittenDesc);
                 params.setRange(range);
 
                 {
                     auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    releases = Release::findIds(LmsApp->getDbSession(), params);
+                    releases = db::Release::findIds(LmsApp->getDbSession(), params);
                 }
                 break;
             }
 
         case Mode::All:
             {
-                Release::FindParameters params;
+                db::Release::FindParameters params;
                 params.setFilters(getDbFilters());
-                params.setSortMethod(ReleaseSortMethod::SortName);
+                params.setSortMethod(db::ReleaseSortMethod::SortName);
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
 
                 {
                     auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    releases = Release::findIds(LmsApp->getDbSession(), params);
+                    releases = db::Release::findIds(LmsApp->getDbSession(), params);
                 }
                 break;
             }
@@ -135,21 +133,21 @@ namespace lms::ui
         return releases;
     }
 
-    RangeResults<ReleaseId> ReleaseCollector::getRandomReleases(Range range)
+    db::RangeResults<db::ReleaseId> ReleaseCollector::getRandomReleases(Range range)
     {
         assert(getMode() == Mode::Random);
 
         if (!_randomReleases)
         {
-            Release::FindParameters params;
+            db::Release::FindParameters params;
             params.setFilters(getDbFilters());
             params.setKeywords(getSearchKeywords());
-            params.setSortMethod(ReleaseSortMethod::Random);
-            params.setRange(Range{ 0, getMaxCount() });
+            params.setSortMethod(db::ReleaseSortMethod::Random);
+            params.setRange(db::Range{ 0, getMaxCount() });
 
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                _randomReleases = Release::findIds(LmsApp->getDbSession(), params);
+                _randomReleases = db::Release::findIds(LmsApp->getDbSession(), params);
             }
         }
 

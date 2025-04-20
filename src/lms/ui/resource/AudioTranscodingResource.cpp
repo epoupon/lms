@@ -34,7 +34,7 @@
 
 #include "LmsApplication.hpp"
 
-#define LOG(severity, message) LMS_LOG(UI, severity, "Audio transcode resource: " << message)
+#define TRANSCODE_LOG(severity, message) LMS_LOG(UI, severity, "Audio transcode resource: " << message)
 
 namespace lms::core::stringUtils
 {
@@ -62,7 +62,7 @@ namespace lms::core::stringUtils
             return format;
         }
 
-        LOG(ERROR, "Cannot determine audio format from value '" << str << "'");
+        TRANSCODE_LOG(ERROR, "Cannot determine audio format from value '" << str << "'");
 
         return std::nullopt;
     }
@@ -88,7 +88,7 @@ namespace lms::ui
                 return av::transcoding::OutputFormat::WEBM_VORBIS;
             }
 
-            LOG(ERROR, "Cannot convert from audio format to AV format");
+            TRANSCODE_LOG(ERROR, "Cannot convert from audio format to AV format");
 
             return std::nullopt;
         }
@@ -99,13 +99,13 @@ namespace lms::ui
             auto paramStr{ request.getParameter(parameterName) };
             if (!paramStr)
             {
-                LOG(DEBUG, "Missing parameter '" << parameterName << "'");
+                TRANSCODE_LOG(DEBUG, "Missing parameter '" << parameterName << "'");
                 return std::nullopt;
             }
 
             auto res{ core::stringUtils::readAs<T>(*paramStr) };
             if (!res)
-                LOG(ERROR, "Cannot parse parameter '" << parameterName << "' from value '" << *paramStr << "'");
+                TRANSCODE_LOG(ERROR, "Cannot parse parameter '" << parameterName << "' from value '" << *paramStr << "'");
 
             return res;
         }
@@ -130,7 +130,7 @@ namespace lms::ui
 
             if (!db::isAudioBitrateAllowed(*bitrate))
             {
-                LOG(ERROR, "Bitrate '" << *bitrate << "' is not allowed");
+                TRANSCODE_LOG(ERROR, "Bitrate '" << *bitrate << "' is not allowed");
                 return std::nullopt;
             }
 
@@ -148,7 +148,7 @@ namespace lms::ui
                 const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), *trackId) };
                 if (!track)
                 {
-                    LOG(ERROR, "Missing track");
+                    TRANSCODE_LOG(ERROR, "Missing track");
                     return std::nullopt;
                 }
 
@@ -201,7 +201,7 @@ namespace lms::ui
         }
         catch (const av::Exception& e)
         {
-            LOG(ERROR, "Caught Av exception: " << e.what());
+            TRANSCODE_LOG(ERROR, "Caught Av exception: " << e.what());
         }
     }
 

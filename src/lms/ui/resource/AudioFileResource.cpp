@@ -32,7 +32,7 @@
 
 namespace lms::ui
 {
-#define LOG(severity, message) LMS_LOG(UI, severity, "Audio file resource: " << message)
+#define AUDIO_RESOURCE_LOG(severity, message) LMS_LOG(UI, severity, "Audio file resource: " << message)
 
     namespace
     {
@@ -43,7 +43,7 @@ namespace lms::ui
             const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), trackId) };
             if (!track)
             {
-                LOG(ERROR, "Missing track");
+                AUDIO_RESOURCE_LOG(ERROR, "Missing track");
                 return std::nullopt;
             }
 
@@ -55,14 +55,14 @@ namespace lms::ui
             const std::string* trackIdParameter{ request.getParameter("trackid") };
             if (!trackIdParameter)
             {
-                LOG(ERROR, "Missing trackid URL parameter!");
+                AUDIO_RESOURCE_LOG(ERROR, "Missing trackid URL parameter!");
                 return std::nullopt;
             }
 
             const std::optional<db::TrackId> trackId{ core::stringUtils::readAs<db::TrackId::ValueType>(*trackIdParameter) };
             if (!trackId)
             {
-                LOG(ERROR, "Bad trackid URL parameter!");
+                AUDIO_RESOURCE_LOG(ERROR, "Bad trackid URL parameter!");
                 return std::nullopt;
             }
 

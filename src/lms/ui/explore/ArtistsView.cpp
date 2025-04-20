@@ -36,8 +36,6 @@
 
 namespace lms::ui
 {
-    using namespace db;
-
     Artists::Artists(Filters& filters)
         : Template{ Wt::WString::tr("Lms.Explore.Artists.template") }
         , _artistCollector{ filters, _defaultSortMode, _maxCount }
@@ -63,12 +61,12 @@ namespace lms::ui
         }
 
         {
-            const std::optional<TrackArtistLinkType> linkType{ state::readValue<TrackArtistLinkType>("artists_link_type") };
+            const std::optional<db::TrackArtistLinkType> linkType{ state::readValue<db::TrackArtistLinkType>("artists_link_type") };
             _artistCollector.setArtistLinkType(linkType);
 
             TrackArtistLinkTypeSelector* linkTypeSelector{ bindNew<TrackArtistLinkTypeSelector>("link-type", linkType) };
-            linkTypeSelector->itemSelected.connect([this](std::optional<TrackArtistLinkType> newLinkType) {
-                state::writeValue<TrackArtistLinkType>("artists_link_type", newLinkType);
+            linkTypeSelector->itemSelected.connect([this](std::optional<db::TrackArtistLinkType> newLinkType) {
+                state::writeValue<db::TrackArtistLinkType>("artists_link_type", newLinkType);
                 refreshView(newLinkType);
             });
         }
@@ -97,7 +95,7 @@ namespace lms::ui
         refreshView();
     }
 
-    void Artists::refreshView(std::optional<TrackArtistLinkType> linkType)
+    void Artists::refreshView(std::optional<db::TrackArtistLinkType> linkType)
     {
         _artistCollector.setArtistLinkType(linkType);
         refreshView();
@@ -111,14 +109,14 @@ namespace lms::ui
 
     void Artists::addSome()
     {
-        const auto artistIds{ _artistCollector.get(Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }) };
+        const auto artistIds{ _artistCollector.get(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }) };
 
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-            for (const ArtistId artistId : artistIds.results)
+            for (const db::ArtistId artistId : artistIds.results)
             {
-                if (const auto artist{ Artist::find(LmsApp->getDbSession(), artistId) })
+                if (const auto artist{ db::Artist::find(LmsApp->getDbSession(), artistId) })
                     _container->add(ArtistListHelpers::createEntry(artist));
             }
         }

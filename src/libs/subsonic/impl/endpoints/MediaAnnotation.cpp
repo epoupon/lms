@@ -62,7 +62,7 @@ namespace lms::api::subsonic
             return res;
         }
 
-        ReleaseId getReleaseFromDirectory(Session& session, DirectoryId directory)
+        ReleaseId getReleaseIdFromDirectory(Session& session, DirectoryId directory)
         {
             auto transaction{ session.createReadTransaction() };
 
@@ -117,7 +117,7 @@ namespace lms::api::subsonic
 
         for (const DirectoryId id : params.directoryIds)
         {
-            if (const ReleaseId releaseId{ getReleaseFromDirectory(context.dbSession, id) }; releaseId.isValid())
+            if (const ReleaseId releaseId{ getReleaseIdFromDirectory(context.dbSession, id) }; releaseId.isValid())
                 core::Service<feedback::IFeedbackService>::get()->star(context.user->getId(), releaseId);
         }
 
@@ -139,7 +139,7 @@ namespace lms::api::subsonic
 
         for (const DirectoryId id : params.directoryIds)
         {
-            if (const ReleaseId releaseId{ getReleaseFromDirectory(context.dbSession, id) }; releaseId.isValid())
+            if (const ReleaseId releaseId{ getReleaseIdFromDirectory(context.dbSession, id) }; releaseId.isValid())
                 core::Service<feedback::IFeedbackService>::get()->unstar(context.user->getId(), releaseId);
         }
 
@@ -163,7 +163,7 @@ namespace lms::api::subsonic
             core::Service<feedback::IFeedbackService>::get()->setRating(context.user->getId(), *artistId, params.rating);
         else if (const DirectoryId * directoryId{ std::get_if<DirectoryId>(&params.id) })
         {
-            if (const ReleaseId releaseId{ getReleaseFromDirectory(context.dbSession, *directoryId) }; releaseId.isValid())
+            if (const ReleaseId releaseId{ getReleaseIdFromDirectory(context.dbSession, *directoryId) }; releaseId.isValid())
                 core::Service<feedback::IFeedbackService>::get()->setRating(context.user->getId(), releaseId, params.rating);
         }
         else if (const ReleaseId * releaseId{ std::get_if<ReleaseId>(&params.id) })

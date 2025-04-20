@@ -26,11 +26,17 @@ if (${LMS_IMAGE_BACKEND} STREQUAL "stb")
 
 	target_sources(lmsimage PRIVATE
 		impl/stb/Image.cpp
+		impl/stb/Exception.cpp
 		impl/stb/RawImage.cpp
 		impl/stb/StbImage.cpp
 		impl/stb/StbImageResize.cpp
 		impl/stb/StbImageWrite.cpp
 	)
+
+	set_property(SOURCE impl/stb/StbImage.cpp PROPERTY SKIP_UNITY_BUILD_INCLUSION ON)
+	set_property(SOURCE impl/stb/StbImageResize.cpp PROPERTY SKIP_UNITY_BUILD_INCLUSION ON)
+	set_property(SOURCE impl/stb/StbImageWrite.cpp PROPERTY SKIP_UNITY_BUILD_INCLUSION ON)
+
 	target_compile_options(lmsimage PRIVATE "-DSTB_IMAGE_RESIZE_VERSION=${STB_IMAGE_RESIZE_VERSION}")
 	target_include_directories(lmsimage PRIVATE ${STB_IMAGE_INCLUDE_DIR})
 

@@ -37,9 +37,6 @@ namespace lms::scanner
 {
     namespace
     {
-        constexpr std::size_t readBatchSize{ 20 };
-        constexpr std::size_t writeBatchSize{ 5 };
-
         struct TrackInfo
         {
             db::TrackId trackId;
@@ -118,6 +115,8 @@ namespace lms::scanner
             const db::PlayListFileId playListFileIdId{ searchContext.lastRetrievedPlayListFileId };
 
             {
+                constexpr std::size_t readBatchSize{ 20 };
+
                 auto transaction{ searchContext.session.createReadTransaction() };
 
                 db::PlayListFile::find(searchContext.session, searchContext.lastRetrievedPlayListFileId, readBatchSize, [&](const db::PlayListFile::pointer& playListFile) {
@@ -199,6 +198,8 @@ namespace lms::scanner
 
         void updatePlayListFiles(db::Session& session, PlayListFileAssociationContainer& playListFileAssociations)
         {
+            constexpr std::size_t writeBatchSize{ 5 };
+
             while (!playListFileAssociations.empty())
             {
                 auto transaction{ session.createWriteTransaction() };
