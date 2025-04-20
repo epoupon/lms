@@ -1,5 +1,5 @@
-name: Build (arch)
-on: [push, pull_request]
+name: Multi-option Builds (Arch)
+on: [pull_request]
 jobs:
   Build:
     strategy:
@@ -22,7 +22,7 @@ jobs:
 
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Build
         uses: docker/build-push-action@v3
