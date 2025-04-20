@@ -4,7 +4,8 @@ jobs:
   Build:
     strategy:
       matrix:
-        BUILD_TYPE: [Release, Debug]
+        LMS_BUILD_TYPE: [Release, Debug]
+        LMS_UNITY_BUILD: [ON, OFF]
     runs-on: ubuntu-latest
     steps:
       - name: Check Out Repo
@@ -28,7 +29,9 @@ jobs:
           context: ./
           file: ./Dockerfile-build-arch
           builder: ${{ steps.buildx.outputs.name }}
-          build-args: LMS_BUILD_TYPE=${{ matrix.BUILD_TYPE }}
+          build-args: |
+            LMS_BUILD_TYPE=${{ matrix.LMS_BUILD_TYPE }}
+            LMS_UNITY_BUILD=${{ matrix.LMS_UNITY_BUILD }}
           push: false
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
