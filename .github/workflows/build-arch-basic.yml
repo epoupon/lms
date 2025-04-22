@@ -1,12 +1,7 @@
-name: Multi-option Builds (Arch)
-on: [pull_request]
+name: Basic Build (Arch)
+on: [push]
 jobs:
   Build:
-    strategy:
-      matrix:
-        LMS_BUILD_TYPE: [Release, Debug]
-        LMS_UNITY_BUILD: [ON, OFF]
-        LMS_IMAGE_BACKEND: [stb, graphicsmagick]
     runs-on: ubuntu-latest
     steps:
       - name: Check Out Repo
@@ -31,9 +26,9 @@ jobs:
           file: ./Dockerfile-build-arch
           builder: ${{ steps.buildx.outputs.name }}
           build-args: |
-            LMS_BUILD_TYPE=${{ matrix.LMS_BUILD_TYPE }}
-            LMS_UNITY_BUILD=${{ matrix.LMS_UNITY_BUILD }}
-            LMS_IMAGE_BACKEND=${{ matrix.LMS_IMAGE_BACKEND }}
+            LMS_BUILD_TYPE=Release
+            LMS_UNITY_BUILD=ON
+            LMS_IMAGE_BACKEND=stb
           push: false
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
