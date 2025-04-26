@@ -103,6 +103,7 @@ namespace lms::api::subsonic
             trackResponse.setAttribute("suffix", extension.string().substr(1) /* skip leading .*/);
         }
 
+        if (context.user->getSubsonicEnableTranscodingByDefault())
         {
             const std::string fileSuffix{ formatToSuffix(context.user->getSubsonicDefaultTranscodingOutputFormat()) };
             trackResponse.setAttribute("transcodedSuffix", fileSuffix);
