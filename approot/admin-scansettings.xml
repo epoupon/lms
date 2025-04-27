@@ -40,6 +40,15 @@
 			${artist-tag-delimiter-container class="row gy-3"}
 		</div>
 		<div class="col-12">
+			<label class="form-label" for="${id:artists-to-not-split}">
+				${tr:Lms.Admin.Database.artists-to-not-split}
+			</label>
+			${artists-to-not-split class="form-control"}
+			<div class="invalid-feedback">
+				${artists-to-not-split-info}
+			</div>
+		</div>
+		<div class="col-12">
 			<label class="form-label">
 				${tr:Lms.Admin.Database.default-tag-delimiters}
 				${default-tag-delimiter-add-btn class="ms-1 btn btn-sm btn-secondary"}

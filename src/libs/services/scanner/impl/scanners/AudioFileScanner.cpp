@@ -55,6 +55,7 @@ namespace lms::scanner
             params.userExtraTags = settings.extraTags;
             params.artistTagDelimiters = settings.artistTagDelimiters;
             params.defaultTagDelimiters = settings.defaultTagDelimiters;
+            params.artistsToNotSplit.insert(settings.artistsToNotSplit.cbegin(), settings.artistsToNotSplit.end());
             params.backend = metadata::ParserBackend::TagLib;
             params.readStyle = getParserReadStyle();
 

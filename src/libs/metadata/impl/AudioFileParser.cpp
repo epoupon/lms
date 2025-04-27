@@ -62,36 +62,41 @@ namespace lms::metadata
         }
 
         template<typename T>
-        std::vector<T> getTagValuesFirstMatchAs(const ITagReader& tagReader, std::initializer_list<TagType> tagTypes, std::span<const std::string> tagDelimiters)
+        void addTagIfNonEmpty(std::vector<T>& res, std::string_view tag)
+        {
+            tag = core::stringUtils::stringTrim(tag);
+            if (tag.empty())
+                return;
+
+            if (std::optional<T> val{ core::stringUtils::readAs<T>(tag) })
+                res.emplace_back(std::move(*val));
+        }
+
+        template<typename T>
+        std::vector<T> getTagValuesFirstMatchAs(const ITagReader& tagReader, std::initializer_list<TagType> tagTypes, std::span<const std::string> tagDelimiters, const WhiteList* whitelist = nullptr)
         {
             std::vector<T> res;
 
             for (const TagType tagType : tagTypes)
             {
-                auto addTagIfNonEmpty{ [&res](std::string_view tag) {
-                    tag = core::stringUtils::stringTrim(tag);
-                    if (!tag.empty())
-                    {
-                        std::optional<T> val{ core::stringUtils::readAs<T>(tag) };
-                        if (val)
-                            res.emplace_back(std::move(*val));
-                    }
-                } };
-
                 tagReader.visitTagValues(tagType, [&](std::string_view value) {
-                    for (std::string_view tagDelimiter : tagDelimiters)
+                    value = core::stringUtils::stringTrim(value);
+                    if (!whitelist || !whitelist->contains(value))
                     {
-                        if (value.find(tagDelimiter) != std::string_view::npos)
+                        for (std::string_view tagDelimiter : tagDelimiters)
                         {
-                            for (std::string_view splitTag : core::stringUtils::splitString(value, tagDelimiters))
-                                addTagIfNonEmpty(splitTag);
+                            if (value.find(tagDelimiter) != std::string_view::npos)
+                            {
+                                for (std::string_view splitTag : core::stringUtils::splitString(value, tagDelimiters))
+                                    addTagIfNonEmpty(res, splitTag);
 
-                            return;
+                                return;
+                            }
                         }
                     }
 
                     // no delimiter found, or no delimiter to be used
-                    addTagIfNonEmpty(value);
+                    addTagIfNonEmpty(res, value);
                 });
 
                 if (!res.empty())
@@ -153,11 +158,11 @@ namespace lms::metadata
             std::initializer_list<TagType> artistMBIDTagNames,
             const AudioFileParserParameters& params)
         {
-            std::vector<std::string> artistNames{ getTagValuesFirstMatchAs<std::string>(tagReader, artistTagNames, params.artistTagDelimiters) };
+            std::vector<std::string> artistNames{ getTagValuesFirstMatchAs<std::string>(tagReader, artistTagNames, params.artistTagDelimiters, &params.artistsToNotSplit) };
             if (artistNames.empty())
                 return {};
 
-            std::vector<std::string> artistSortNames{ getTagValuesFirstMatchAs<std::string>(tagReader, artistSortTagNames, params.artistTagDelimiters) };
+            std::vector<std::string> artistSortNames{ getTagValuesFirstMatchAs<std::string>(tagReader, artistSortTagNames, params.artistTagDelimiters, &params.artistsToNotSplit) };
             std::vector<core::UUID> artistMBIDs{ getTagValuesFirstMatchAs<core::UUID>(tagReader, artistMBIDTagNames, params.defaultTagDelimiters) };
 
             std::vector<Artist> artists;
@@ -238,6 +243,7 @@ namespace lms::metadata
                 // Otherwise, we reconstruct the string using a standard, hardcoded, join
                 if (artistTag && strIsMatchingArtistNames(*artistTag, artistNames))
                 {
+                    // Limitation: this test does not take the whitelist into account
                     if (!strIsContainingAny(*artistTag, artistTagDelimiters))
                         artistDisplayName = *artistTag;
                 }

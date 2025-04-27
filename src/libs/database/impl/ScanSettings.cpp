@@ -26,6 +26,7 @@
 #include "database/Session.hpp"
 
 #include "Utils.hpp"
+#include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
 
 namespace lms::db
@@ -40,7 +41,14 @@ namespace lms::db
         return session.getDboSession()->add(std::unique_ptr<ScanSettings>(new ScanSettings{ name }));
     }
 
-    ScanSettings::pointer ScanSettings::get(Session& session, std::string_view name)
+    ScanSettings::pointer ScanSettings::find(Session& session, ScanSettingsId id)
+    {
+        session.checkReadTransaction();
+
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ScanSettings>>("SELECT s_s from scan_settings s_s").where("s_s.id = ?").bind(id));
+    }
+
+    ScanSettings::pointer ScanSettings::find(Session& session, std::string_view name)
     {
         session.checkReadTransaction();
 
@@ -66,13 +74,19 @@ namespace lms::db
         return core::stringUtils::splitEscapedStrings(_defaultTagDelimiters, ';', '\\');
     }
 
+    std::vector<std::string> ScanSettings::getArtistsToNotSplit() const
+    {
+        return core::stringUtils::splitEscapedStrings(_artistsToNotSplit, ';', '\\');
+    }
+
     void ScanSettings::setExtraTagsToScan(std::span<const std::string_view> extraTags)
     {
         std::string newTagsToScan{ core::stringUtils::joinStrings(extraTags, ";") };
         if (newTagsToScan != _extraTagsToScan)
+        {
+            _extraTagsToScan.swap(newTagsToScan);
             incAudioScanVersion();
-
-        _extraTagsToScan = std::move(newTagsToScan);
+        }
     }
 
     void ScanSettings::setArtistTagDelimiters(std::span<const std::string_view> delimiters)
@@ -81,6 +95,16 @@ namespace lms::db
         if (tagDelimiters != _artistTagDelimiters)
         {
             _artistTagDelimiters.swap(tagDelimiters);
+            incAudioScanVersion();
+        }
+    }
+
+    void ScanSettings::setArtistsToNotSplit(std::span<const std::string_view> artists)
+    {
+        std::string artistsToNotSplit{ core::stringUtils::escapeAndJoinStrings(artists, ';', '\\') };
+        if (artistsToNotSplit != _artistsToNotSplit)
+        {
+            _artistsToNotSplit.swap(artistsToNotSplit);
             incAudioScanVersion();
         }
     }

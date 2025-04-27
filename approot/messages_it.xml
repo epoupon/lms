@@ -75,6 +75,7 @@
 <!--Scan settings-->
 <message id="Lms.Admin.Database.allow-mbid-artist-merge">Consentire la fusione degli artisti senza MBID con quelli che ne hanno uno</message>
 <message id="Lms.Admin.Database.artist-tag-delimiters">Delimitatori da utilizzare per separare i tag degli artisti</message>
+<message id="Lms.Admin.Database.artists-to-not-split">Artisti da non suddividere utilizzando i delimitatori (un artista per riga)</message>
 <message id="Lms.Admin.Database.daily">Giornaliera</message>
 <message id="Lms.Admin.Database.default-tag-delimiters">Delimitatori da utilizzare per separare gli altri tag</message>
 <message id="Lms.Admin.Database.extra-tags-to-scan">Tag aggiuntivi da scansionare</message>

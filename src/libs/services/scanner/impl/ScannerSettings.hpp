@@ -41,6 +41,7 @@ namespace lms::scanner
         bool skipDuplicateTrackMBID{};
         std::vector<std::string> extraTags;
         std::vector<std::string> artistTagDelimiters;
+        std::vector<std::string> artistsToNotSplit;
         std::vector<std::string> defaultTagDelimiters;
         bool skipSingleReleasePlayLists{};
         bool allowArtistMBIDFallback{ true }; // TODO false?

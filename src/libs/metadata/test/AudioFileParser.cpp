@@ -263,9 +263,9 @@ namespace lms::metadata
         const TestTagReader testTags{
             {
                 { TagType::Album, { "MyAlbum" } },
-                { TagType::AlbumArtist, { "AlbumArtist1 / AlbumArtist2" } },
+                { TagType::AlbumArtist, { "AlbumArtist1 /  AlbumArtist2" } },
                 { TagType::Artist, { " Artist1 / Artist2 feat. Artist3  " } },
-                { TagType::Genre, { "Genre1 ; Genre2" } },
+                { TagType::Genre, { "Genre1 ;  Genre2" } },
                 { TagType::Language, { " Lang1/Lang2 / Lang3" } },
             }
         };
@@ -295,9 +295,58 @@ namespace lms::metadata
         // Release
         ASSERT_TRUE(track->medium->release.has_value());
         EXPECT_EQ(track->medium->release->name, "MyAlbum");
+        ASSERT_EQ(track->medium->release->artists.size(), 2);
         EXPECT_EQ(track->medium->release->artists[0].name, "AlbumArtist1");
         EXPECT_EQ(track->medium->release->artists[1].name, "AlbumArtist2");
         EXPECT_EQ(track->medium->release->artistDisplayName, "AlbumArtist1, AlbumArtist2");
+    }
+
+    TEST(AudioFileParser, customArtistDelimiters_whitelist)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Album, { "MyAlbum" } },
+                { TagType::AlbumArtist, { "  AC/DC " } },
+                { TagType::Artist, { "AC/DC  " } },
+            }
+        };
+
+        AudioFileParserParameters params;
+        params.artistTagDelimiters = { "/" };
+        params.artistsToNotSplit = { "AC/DC" };
+        TestAudioFileParser parser{ params };
+        std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 1);
+        EXPECT_EQ(track->artists[0].name, "AC/DC");
+        EXPECT_EQ(track->artistDisplayName, "AC/DC");
+        ASSERT_TRUE(track->medium.has_value());
+        ASSERT_TRUE(track->medium->release.has_value());
+        EXPECT_EQ(track->medium->release->name, "MyAlbum");
+        ASSERT_EQ(track->medium->release->artists.size(), 1);
+        EXPECT_EQ(track->medium->release->artists[0].name, "AC/DC");
+        EXPECT_EQ(track->medium->release->artistDisplayName, "AC/DC");
+    }
+
+    TEST(AudioFileParser, customArtistDelimiters_whitelist_multi)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "AC/DC and MyArtist" } },
+                { TagType::Artists, { "AC/DC", "MyArtist" } },
+            }
+        };
+
+        AudioFileParserParameters params;
+        params.artistTagDelimiters = { "/" };
+        params.artistsToNotSplit = { "AC/DC" };
+        TestAudioFileParser parser{ params };
+        std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "AC/DC");
+        EXPECT_EQ(track->artists[1].name, "MyArtist");
+        EXPECT_EQ(track->artistDisplayName, "AC/DC, MyArtist"); // Reconstructed since this use case is not handled
     }
 
     TEST(AudioFileParser, customDelimiters_foundInArtist)

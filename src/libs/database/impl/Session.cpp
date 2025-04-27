@@ -181,7 +181,7 @@ namespace lms::db
         {
             auto uniqueTransaction{ createWriteTransaction() };
 
-            if (!ScanSettings::get(*this))
+            if (!ScanSettings::find(*this))
                 create<ScanSettings>();
         }
 

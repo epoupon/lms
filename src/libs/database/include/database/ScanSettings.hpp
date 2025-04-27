@@ -59,7 +59,8 @@ namespace lms::db
 
         ScanSettings() = default;
 
-        static pointer get(Session& session, std::string_view name = "");
+        static pointer find(Session& session, std::string_view name = "");
+        static pointer find(Session& session, ScanSettingsId id);
 
         // Getters
         std::size_t getAudioScanVersion() const { return _audioScanVersion; }
@@ -69,6 +70,7 @@ namespace lms::db
         SimilarityEngineType getSimilarityEngineType() const { return _similarityEngineType; }
         std::vector<std::string> getArtistTagDelimiters() const;
         std::vector<std::string> getDefaultTagDelimiters() const;
+        std::vector<std::string> getArtistsToNotSplit() const;
         bool getSkipSingleReleasePlayLists() const { return _skipSingleReleasePlayLists; }
         bool getAllowMBIDArtistMerge() const { return _allowMBIDArtistMerge; }
 
@@ -78,6 +80,7 @@ namespace lms::db
         void setExtraTagsToScan(std::span<const std::string_view> extraTags);
         void setSimilarityEngineType(SimilarityEngineType type) { _similarityEngineType = type; }
         void setArtistTagDelimiters(std::span<const std::string_view> delimiters);
+        void setArtistsToNotSplit(std::span<const std::string_view> artists);
         void setDefaultTagDelimiters(std::span<const std::string_view> delimiters);
         void setSkipSingleReleasePlayLists(bool value);
         void setAllowMBIDArtistMerge(bool value);
@@ -92,6 +95,7 @@ namespace lms::db
             Wt::Dbo::field(a, _similarityEngineType, "similarity_engine_type");
             Wt::Dbo::field(a, _extraTagsToScan, "extra_tags_to_scan");
             Wt::Dbo::field(a, _artistTagDelimiters, "artist_tag_delimiters");
+            Wt::Dbo::field(a, _artistsToNotSplit, "artists_to_not_split");
             Wt::Dbo::field(a, _defaultTagDelimiters, "default_tag_delimiters");
             Wt::Dbo::field(a, _skipSingleReleasePlayLists, "skip_single_release_playlists");
             Wt::Dbo::field(a, _allowMBIDArtistMerge, "allow_mbid_artist_merge");
@@ -112,6 +116,7 @@ namespace lms::db
         SimilarityEngineType _similarityEngineType{ SimilarityEngineType::Clusters };
         std::string _extraTagsToScan;
         std::string _artistTagDelimiters;
+        std::string _artistsToNotSplit;
         std::string _defaultTagDelimiters;
         bool _skipSingleReleasePlayLists{};
         bool _allowMBIDArtistMerge{};

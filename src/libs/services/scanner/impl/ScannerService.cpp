@@ -86,7 +86,7 @@ namespace lms::scanner
 
             auto transaction{ session.createReadTransaction() };
 
-            const ScanSettings::pointer scanSettings{ ScanSettings::get(session, name) };
+            const ScanSettings::pointer scanSettings{ ScanSettings::find(session, name) };
             if (!scanSettings)
                 return settings;
 
@@ -111,6 +111,7 @@ namespace lms::scanner
 
             settings->artistTagDelimiters = scanSettings->getArtistTagDelimiters();
             settings->defaultTagDelimiters = scanSettings->getDefaultTagDelimiters();
+            settings->artistsToNotSplit = scanSettings->getArtistsToNotSplit();
 
             settings->skipSingleReleasePlayLists = scanSettings->getSkipSingleReleasePlayLists();
             settings->allowArtistMBIDFallback = scanSettings->getAllowMBIDArtistMerge();
@@ -125,7 +126,7 @@ namespace lms::scanner
         {
             auto transaction{ session.createWriteTransaction() };
 
-            ScanSettings::pointer scanSettings{ ScanSettings::get(session, name) };
+            ScanSettings::pointer scanSettings{ ScanSettings::find(session, name) };
             if (!scanSettings)
                 scanSettings = session.create<ScanSettings>(name);
 
