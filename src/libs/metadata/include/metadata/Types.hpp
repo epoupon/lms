@@ -217,6 +217,16 @@ namespace lms::metadata
     struct WhiteListHash : std::hash<std::string>, std::hash<std::string_view>
     {
         using is_transparent = void;
+
+        [[nodiscard]] size_t operator()(std::string_view str) const
+        {
+            return std::hash<std::string_view>{}(str);
+        }
+
+        [[nodiscard]] size_t operator()(const std::string& str) const
+        {
+            return std::hash<std::string>{}(str);
+        }
     };
 
     using WhiteList = std::unordered_set<std::string, WhiteListHash, std::equal_to<>>;
