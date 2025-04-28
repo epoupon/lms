@@ -73,9 +73,9 @@
 <message id="Lms.Admin.MediaLibrary.root-path">Ruta raíz</message>
 
 <!--Scan settings-->
-<message id="Lms.Admin.Database.allow-mbid-artist-merge">Permitir la fusión de artistas sin MBID con aquellos que tienen uno</message>
+<message id="Lms.Admin.Database.allow-mbid-artist-merge">Permitir la fusión de artistas sin MBID con aquellos que sí lo tienen</message>
 <message id="Lms.Admin.Database.artist-tag-delimiters">Delimitadores usados para separar las etiquetas de los artistas</message>
-<message id="Lms.Admin.Database.artists-to-not-split">Artistas que no se deben dividir usando los delimitadores (un artista por línea)</message>
+<message id="Lms.Admin.Database.artists-to-not-split">Artistas que no se deben separar usando los delimitadores (un artista por línea)</message>
 <message id="Lms.Admin.Database.daily">Diariamente</message>
 <message id="Lms.Admin.Database.default-tag-delimiters">Delimitadores usados para separar otras etiquetas</message>
 <message id="Lms.Admin.Database.extra-tags-to-scan">Etiquetas adicionales a escanear</message>
