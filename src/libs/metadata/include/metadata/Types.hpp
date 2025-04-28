@@ -25,6 +25,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 #include <vector>
 
 #include "core/PartialDateTime.hpp"
@@ -213,11 +214,28 @@ namespace lms::metadata
         Accurate,
     };
 
+    struct WhiteListHash : std::hash<std::string>, std::hash<std::string_view>
+    {
+        using is_transparent = void;
+
+        [[nodiscard]] size_t operator()(std::string_view str) const
+        {
+            return std::hash<std::string_view>{}(str);
+        }
+
+        [[nodiscard]] size_t operator()(const std::string& str) const
+        {
+            return std::hash<std::string>{}(str);
+        }
+    };
+
+    using WhiteList = std::unordered_set<std::string, WhiteListHash, std::equal_to<>>;
     struct AudioFileParserParameters
     {
         ParserBackend backend{ ParserBackend::TagLib };
         ParserReadStyle readStyle{ ParserReadStyle::Average };
         std::vector<std::string> artistTagDelimiters;
+        WhiteList artistsToNotSplit;
         std::vector<std::string> defaultTagDelimiters;
         std::vector<std::string> userExtraTags;
         bool debug{};

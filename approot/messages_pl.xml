@@ -34,6 +34,7 @@
 	<plural case="2">{1} ścieżek</plural>
 </message>
 <message id="Lms.user">Użytkownik</message>
+<message id="Lms.uuid-invalid">Nieprawidłowy UUID</message>
 
 <!--Locale-->
 <message id="Lms.locale.decimal-point">,</message>
@@ -73,7 +74,9 @@
 <message id="Lms.Admin.MediaLibrary.root-path">Katalog główny</message>
 
 <!--Scan settings-->
+<message id="Lms.Admin.Database.allow-mbid-artist-merge">Pozwól na łączenie artystów bez MBID z tymi, którzy go mają</message>
 <message id="Lms.Admin.Database.artist-tag-delimiters">Znaki rozdzielające artystów</message>
+<message id="Lms.Admin.Database.artists-to-not-split">Artyści, których nie należy dzielić przy użyciu separatorów (jeden artysta na linię)</message>
 <message id="Lms.Admin.Database.daily">Codziennie</message>
 <message id="Lms.Admin.Database.default-tag-delimiters">Znaki rozdzielające inne oznaczenia</message>
 <message id="Lms.Admin.Database.extra-tags-to-scan">Szukaj dodatkowych znaczników</message>
@@ -116,7 +119,7 @@
 	<plural case="2">{1} błędów:</plural>
 </message>
 <message id="Lms.Admin.ScannerController.force-optimize">Wymuś optymalizację bazy danych</message>
-<message id="Lms.Admin.ScannerController.full-scan">Ponownie przeskanuj wszystkie pliki</message>
+<message id="Lms.Admin.ScannerController.full-scan">Wymuś skanowanie wszystkich plików</message>
 <message id="Lms.Admin.ScannerController.get-report">Pokaż raport</message>
 <message id="Lms.Admin.ScannerController.last-scan">Ostatnie skanowanie</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Niedostępne</message>
@@ -150,6 +153,7 @@
 </message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Pobieranie danych o ścieżce z AcousticBrainz: {1}/{2} ścieżek ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Optymalizowanie bazy danych... {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-reconciliate-artists">Uzgodnianie artystów: {1} wpisów...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Przeładowywanie silnika podobieństw: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">Usuwanie osieroconych wpisów: {1} wpisów...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Skanowanie plików: {1}/{2} ({3}%)...</message>

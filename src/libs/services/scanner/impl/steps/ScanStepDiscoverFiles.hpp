@@ -31,6 +31,7 @@ namespace lms::scanner
     private:
         ScanStep getStep() const override { return ScanStep::DiscoverFiles; }
         core::LiteralString getStepName() const override { return "Discover files"; }
+        bool needProcess(const ScanContext& context) const override;
         void process(ScanContext& context) override;
     };
 } // namespace lms::scanner

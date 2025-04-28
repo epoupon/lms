@@ -38,9 +38,6 @@ namespace lms::scanner
 {
     namespace
     {
-        constexpr std::size_t readBatchSize{ 100 };
-        constexpr std::size_t writeBatchSize{ 20 };
-
         struct ReleaseImageAssociation
         {
             db::ReleaseId releaseId;
@@ -48,7 +45,7 @@ namespace lms::scanner
         };
         using ReleaseImageAssociationContainer = std::deque<ReleaseImageAssociation>;
 
-        struct SearchImageContext
+        struct SearchReleaseImageContext
         {
             db::Session& session;
             db::ReleaseId lastRetrievedReleaseId;
@@ -56,7 +53,7 @@ namespace lms::scanner
             const std::vector<std::string>& releaseFileNames;
         };
 
-        db::Image::pointer findImageInDirectory(SearchImageContext& searchContext, const std::filesystem::path& directoryPath)
+        db::Image::pointer findImageInDirectory(SearchReleaseImageContext& searchContext, const std::filesystem::path& directoryPath)
         {
             db::Image::pointer image;
 
@@ -82,7 +79,7 @@ namespace lms::scanner
             return image;
         }
 
-        db::Image::pointer computeBestReleaseImage(SearchImageContext& searchContext, const db::Release::pointer& release)
+        db::Image::pointer computeBestReleaseImage(SearchReleaseImageContext& searchContext, const db::Release::pointer& release)
         {
             db::Image::pointer image;
 
@@ -130,11 +127,13 @@ namespace lms::scanner
             return image;
         }
 
-        bool fetchNextReleaseImagesToUpdate(SearchImageContext& searchContext, ReleaseImageAssociationContainer& releaseImageAssociations)
+        bool fetchNextReleaseImagesToUpdate(SearchReleaseImageContext& searchContext, ReleaseImageAssociationContainer& releaseImageAssociations)
         {
             const db::ReleaseId releaseId{ searchContext.lastRetrievedReleaseId };
 
             {
+                constexpr std::size_t readBatchSize{ 100 };
+
                 auto transaction{ searchContext.session.createReadTransaction() };
 
                 db::Release::find(searchContext.session, searchContext.lastRetrievedReleaseId, readBatchSize, [&](const db::Release::pointer& release) {
@@ -166,6 +165,8 @@ namespace lms::scanner
 
         void updateReleaseImages(db::Session& session, ReleaseImageAssociationContainer& imageAssociations)
         {
+            constexpr std::size_t writeBatchSize{ 20 };
+
             while (!imageAssociations.empty())
             {
                 auto transaction{ session.createWriteTransaction() };
@@ -199,14 +200,16 @@ namespace lms::scanner
     {
     }
 
+    bool ScanStepAssociateReleaseImages::needProcess(const ScanContext& context) const
+    {
+        if (context.stats.nbChanges() > 0)
+            return true;
+
+        return false;
+    }
+
     void ScanStepAssociateReleaseImages::process(ScanContext& context)
     {
-        if (_abortScan)
-            return;
-
-        if (context.stats.nbChanges() == 0)
-            return;
-
         auto& session{ _db.getTLSSession() };
 
         {
@@ -214,7 +217,7 @@ namespace lms::scanner
             context.currentStepStats.totalElems = db::Release::getCount(session);
         }
 
-        SearchImageContext searchContext{
+        SearchReleaseImageContext searchContext{
             .session = session,
             .lastRetrievedReleaseId = {},
             .releaseFileNames = _releaseFileNames,

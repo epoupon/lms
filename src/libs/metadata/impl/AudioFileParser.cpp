@@ -62,36 +62,41 @@ namespace lms::metadata
         }
 
         template<typename T>
-        std::vector<T> getTagValuesFirstMatchAs(const ITagReader& tagReader, std::initializer_list<TagType> tagTypes, std::span<const std::string> tagDelimiters)
+        void addTagIfNonEmpty(std::vector<T>& res, std::string_view tag)
+        {
+            tag = core::stringUtils::stringTrim(tag);
+            if (tag.empty())
+                return;
+
+            if (std::optional<T> val{ core::stringUtils::readAs<T>(tag) })
+                res.emplace_back(std::move(*val));
+        }
+
+        template<typename T>
+        std::vector<T> getTagValuesFirstMatchAs(const ITagReader& tagReader, std::initializer_list<TagType> tagTypes, std::span<const std::string> tagDelimiters, const WhiteList* whitelist = nullptr)
         {
             std::vector<T> res;
 
             for (const TagType tagType : tagTypes)
             {
-                auto addTagIfNonEmpty{ [&res](std::string_view tag) {
-                    tag = core::stringUtils::stringTrim(tag);
-                    if (!tag.empty())
-                    {
-                        std::optional<T> val{ core::stringUtils::readAs<T>(tag) };
-                        if (val)
-                            res.emplace_back(std::move(*val));
-                    }
-                } };
-
                 tagReader.visitTagValues(tagType, [&](std::string_view value) {
-                    for (std::string_view tagDelimiter : tagDelimiters)
+                    value = core::stringUtils::stringTrim(value);
+                    if (!whitelist || !whitelist->contains(value))
                     {
-                        if (value.find(tagDelimiter) != std::string_view::npos)
+                        for (std::string_view tagDelimiter : tagDelimiters)
                         {
-                            for (std::string_view splitTag : core::stringUtils::splitString(value, tagDelimiters))
-                                addTagIfNonEmpty(splitTag);
+                            if (value.find(tagDelimiter) != std::string_view::npos)
+                            {
+                                for (std::string_view splitTag : core::stringUtils::splitString(value, tagDelimiters))
+                                    addTagIfNonEmpty(res, splitTag);
 
-                            return;
+                                return;
+                            }
                         }
                     }
 
                     // no delimiter found, or no delimiter to be used
-                    addTagIfNonEmpty(value);
+                    addTagIfNonEmpty(res, value);
                 });
 
                 if (!res.empty())
@@ -153,11 +158,11 @@ namespace lms::metadata
             std::initializer_list<TagType> artistMBIDTagNames,
             const AudioFileParserParameters& params)
         {
-            std::vector<std::string> artistNames{ getTagValuesFirstMatchAs<std::string>(tagReader, artistTagNames, params.artistTagDelimiters) };
+            std::vector<std::string> artistNames{ getTagValuesFirstMatchAs<std::string>(tagReader, artistTagNames, params.artistTagDelimiters, &params.artistsToNotSplit) };
             if (artistNames.empty())
                 return {};
 
-            std::vector<std::string> artistSortNames{ getTagValuesFirstMatchAs<std::string>(tagReader, artistSortTagNames, params.artistTagDelimiters) };
+            std::vector<std::string> artistSortNames{ getTagValuesFirstMatchAs<std::string>(tagReader, artistSortTagNames, params.artistTagDelimiters, &params.artistsToNotSplit) };
             std::vector<core::UUID> artistMBIDs{ getTagValuesFirstMatchAs<core::UUID>(tagReader, artistMBIDTagNames, params.defaultTagDelimiters) };
 
             std::vector<Artist> artists;
@@ -238,6 +243,7 @@ namespace lms::metadata
                 // Otherwise, we reconstruct the string using a standard, hardcoded, join
                 if (artistTag && strIsMatchingArtistNames(*artistTag, artistNames))
                 {
+                    // Limitation: this test does not take the whitelist into account
                     if (!strIsContainingAny(*artistTag, artistTagDelimiters))
                         artistDisplayName = *artistTag;
                 }
@@ -266,54 +272,6 @@ namespace lms::metadata
             }
 
             return std::nullopt;
-        }
-
-        void fillInArtistsWithMbid(std::span<const Artist> artists, std::unordered_map<std::string_view, core::UUID>& artistsWithMbid)
-        {
-            for (const Artist& artist : artists)
-            {
-                if (artist.mbid.has_value())
-                {
-                    // there may collisions, we don't want to replace
-                    artistsWithMbid.emplace(artist.name, *artist.mbid);
-                }
-            }
-        }
-
-        void fillInMbids(std::span<Artist> artists, const std::unordered_map<std::string_view, core::UUID>& artistsWithMbid)
-        {
-            for (Artist& artist : artists)
-            {
-                if (!artist.mbid)
-                {
-                    const auto it{ artistsWithMbid.find(artist.name) };
-                    if (it != std::cend(artistsWithMbid))
-                        artist.mbid = it->second;
-                }
-            }
-        }
-
-        void fillMissingMbids(Track& track)
-        {
-            // first pass: collect all artists that have mbids
-            std::unordered_map<std::string_view, core::UUID> artistsWithMbid;
-
-            // For now, mbids can only set in artist and album artist tags
-            // filling order is important: we estimate track-level artists are more likely
-            // to be set in other fields than album artists
-            fillInArtistsWithMbid(track.artists, artistsWithMbid);
-            if (track.medium && track.medium->release)
-                fillInArtistsWithMbid(track.medium->release->artists, artistsWithMbid);
-
-            // second pass: fill in all artists that have no mbid set with the same name
-            fillInMbids(track.conductorArtists, artistsWithMbid);
-            fillInMbids(track.composerArtists, artistsWithMbid);
-            fillInMbids(track.lyricistArtists, artistsWithMbid);
-            fillInMbids(track.mixerArtists, artistsWithMbid);
-            fillInMbids(track.producerArtists, artistsWithMbid);
-            fillInMbids(track.remixerArtists, artistsWithMbid);
-            for (auto& [role, artists] : track.performerArtists)
-                fillInMbids(artists, artistsWithMbid);
         }
     } // namespace
 
@@ -488,8 +446,6 @@ namespace lms::metadata
         track.producerArtists = getArtists(tagReader, { TagType::Producers, TagType::Producer }, { TagType::ProducersSortOrder, TagType::ProducerSortOrder }, {}, _params);
         track.remixerArtists = getArtists(tagReader, { TagType::Remixers, TagType::Remixer }, { TagType::RemixersSortOrder, TagType::RemixerSortOrder }, {}, _params);
         track.performerArtists = getPerformerArtists(tagReader); // artistDelimiters not supported
-
-        fillMissingMbids(track);
 
         // If a file has originalDate but no originalYear, set it
         if (!track.originalYear)

@@ -39,6 +39,9 @@ namespace lms::scanner
 {
     class IFileScanner;
 
+    // Main goals to keepthe scanner fast:
+    // - single pass on files: only 1 filesystem exploration must be done (no further reads triggered by parsed values)
+    // - stable: 1 single scan (full or not) is enough: successive scans must have no effect if there is no change in the files
     class ScannerService : public IScannerService
     {
     public:
@@ -65,12 +68,12 @@ namespace lms::scanner
 
         // Update database (scheduled callback)
         void scan(const ScanOptions& scanOptions);
+        void processScanSteps(ScanContext& context);
 
         void scanMediaDirectory(const std::filesystem::path& mediaDirectory, bool forceScan, ScanStats& stats);
 
         // Helpers
         void refreshScanSettings();
-        ScannerSettings readSettings();
 
         void notifyInProgressIfNeeded(const ScanStepStats& stats);
         void notifyInProgress(const ScanStepStats& stats);
@@ -93,5 +96,6 @@ namespace lms::scanner
         Wt::WDateTime _nextScheduledScan;
 
         ScannerSettings _settings;
+        std::optional<ScannerSettings> _lastScanSettings;
     };
 } // namespace lms::scanner

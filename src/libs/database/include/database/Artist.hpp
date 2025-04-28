@@ -134,8 +134,10 @@ namespace lms::db
         // Accessors
         const std::string& getName() const { return _name; }
         const std::string& getSortName() const { return _sortName; }
-        std::optional<core::UUID> getMBID() const { return core::UUID::fromString(_mbid); }
+        std::optional<core::UUID> getMBID() const;
+        bool hasMBID() const;
         ObjectPtr<Image> getImage() const;
+        void visitLinks(std::function<void(const ObjectPtr<TrackArtistLink>& link)> visitor) const;
 
         // No artistLinkTypes means get them all
         RangeResults<ArtistId> findSimilarArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes = {}, std::optional<Range> range = std::nullopt) const;

@@ -51,7 +51,7 @@ namespace lms::scanner
         };
         using ArtistImageAssociationContainer = std::deque<ArtistImageAssociation>;
 
-        struct SearchImageContext
+        struct SearchArtistImageContext
         {
             db::Session& session;
             db::ArtistId lastRetrievedArtistId;
@@ -59,7 +59,7 @@ namespace lms::scanner
             std::span<const std::string> artistFileNames;
         };
 
-        db::Image::pointer findImageInDirectory(SearchImageContext& searchContext, const std::filesystem::path& directoryPath, std::span<const std::string> fileStemsToSearch)
+        db::Image::pointer findImageInDirectory(SearchArtistImageContext& searchContext, const std::filesystem::path& directoryPath, std::span<const std::string> fileStemsToSearch)
         {
             db::Image::pointer image;
 
@@ -85,7 +85,7 @@ namespace lms::scanner
             return image;
         }
 
-        db::Image::pointer getImageFromMbid(SearchImageContext& searchContext, const core::UUID& mbid)
+        db::Image::pointer getImageFromMbid(SearchArtistImageContext& searchContext, const core::UUID& mbid)
         {
             db::Image::pointer image;
 
@@ -98,7 +98,7 @@ namespace lms::scanner
             return image;
         }
 
-        db::Image::pointer searchImageInArtistInfoDirectory(SearchImageContext& searchContext, db::ArtistId artistId)
+        db::Image::pointer searchImageInArtistInfoDirectory(SearchArtistImageContext& searchContext, db::ArtistId artistId)
         {
             db::Image::pointer image;
 
@@ -116,7 +116,7 @@ namespace lms::scanner
             return image;
         }
 
-        db::Image::pointer searchImageInDirectories(SearchImageContext& searchContext, db::ArtistId artistId)
+        db::Image::pointer searchImageInDirectories(SearchArtistImageContext& searchContext, db::ArtistId artistId)
         {
             db::Image::pointer image;
 
@@ -169,7 +169,7 @@ namespace lms::scanner
             return image;
         }
 
-        db::Image::pointer computeBestArtistImage(SearchImageContext& searchContext, const db::Artist::pointer& artist)
+        db::Image::pointer computeBestArtistImage(SearchArtistImageContext& searchContext, const db::Artist::pointer& artist)
         {
             db::Image::pointer image;
 
@@ -185,7 +185,7 @@ namespace lms::scanner
             return image;
         }
 
-        bool fetchNextArtistImagesToUpdate(SearchImageContext& searchContext, ArtistImageAssociationContainer& artistImageAssociations)
+        bool fetchNextArtistImagesToUpdate(SearchArtistImageContext& searchContext, ArtistImageAssociationContainer& artistImageAssociations)
         {
             const db::ArtistId artistId{ searchContext.lastRetrievedArtistId };
 
@@ -254,14 +254,16 @@ namespace lms::scanner
     {
     }
 
+    bool ScanStepAssociateArtistImages::needProcess(const ScanContext& context) const
+    {
+        if (context.stats.nbChanges() > 0)
+            return true;
+
+        return false;
+    }
+
     void ScanStepAssociateArtistImages::process(ScanContext& context)
     {
-        if (_abortScan)
-            return;
-
-        if (context.stats.nbChanges() == 0)
-            return;
-
         auto& session{ _db.getTLSSession() };
 
         {
@@ -269,7 +271,7 @@ namespace lms::scanner
             context.currentStepStats.totalElems = db::Artist::getCount(session);
         }
 
-        SearchImageContext searchContext{
+        SearchArtistImageContext searchContext{
             .session = session,
             .lastRetrievedArtistId = {},
             .artistFileNames = _artistFileNames,

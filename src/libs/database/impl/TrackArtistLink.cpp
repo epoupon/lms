@@ -55,28 +55,41 @@ namespace lms::db
         }
     } // namespace
 
-    TrackArtistLink::TrackArtistLink(ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type, std::string_view subType)
+    TrackArtistLink::TrackArtistLink(const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched)
         : _type{ type }
         , _subType{ subType }
+        , _artistMBIDMatched{ artistMBIDMatched }
         , _track{ getDboPtr(track) }
         , _artist{ getDboPtr(artist) }
     {
     }
 
-    TrackArtistLink::pointer TrackArtistLink::create(Session& session, ObjectPtr<Track> track, ObjectPtr<Artist> artist, TrackArtistLinkType type, std::string_view subType)
+    TrackArtistLink::pointer TrackArtistLink::create(Session& session, const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, std::string_view subType, bool artistMBIDMatched)
     {
         session.checkWriteTransaction();
 
-        TrackArtistLink::pointer res{ session.getDboSession()->add(std::make_unique<TrackArtistLink>(track, artist, type, subType)) };
+        TrackArtistLink::pointer res{ session.getDboSession()->add(std::make_unique<TrackArtistLink>(track, artist, type, subType, artistMBIDMatched)) };
         session.getDboSession()->flush();
 
         return res;
     }
 
+    std::size_t TrackArtistLink::getCount(Session& session)
+    {
+        session.checkReadTransaction();
+
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT COUNT(*) FROM track_artist_link"));
+    }
+
+    TrackArtistLink::pointer TrackArtistLink::create(Session& session, const ObjectPtr<Track>& track, const ObjectPtr<Artist>& artist, TrackArtistLinkType type, bool artistMBIDMatched)
+    {
+        return create(session, track, artist, type, std::string_view{}, artistMBIDMatched);
+    }
+
     TrackArtistLink::pointer TrackArtistLink::find(Session& session, TrackArtistLinkId id)
     {
         session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackArtistLink>().where("id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<TrackArtistLink>>("SELECT t_a_l from track_artist_link t_a_l").where("t_a_l.id = ?").bind(id));
     }
 
     void TrackArtistLink::find(Session& session, TrackId trackId, const std::function<void(const TrackArtistLink::pointer& link, const ObjectPtr<Artist>& artist)>& func)
@@ -112,5 +125,59 @@ namespace lms::db
             res.insert(linkType);
         });
         return res;
+    }
+
+    void TrackArtistLink::findArtistNameNoLongerMatch(Session& session, std::optional<Range> range, const std::function<void(const TrackArtistLink::pointer&)>& func)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<TrackArtistLink>>("SELECT t_a_l FROM track_artist_link t_a_l") };
+        query.join("artist a ON t_a_l.artist_id = a.id");
+        query.where("t_a_l.artist_mbid_matched = FALSE");
+        query.where("t_a_l.artist_name <> a.name");
+
+        utils::applyRange(query, range);
+        utils::forEachQueryResult(query, [&](const TrackArtistLink::pointer& link) {
+            func(link);
+        });
+    }
+
+    void TrackArtistLink::findWithArtistNameAmbiguity(Session& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const TrackArtistLink::pointer&)>& func)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<TrackArtistLink>>("SELECT t_a_l FROM track_artist_link t_a_l") };
+        query.join("artist a ON t_a_l.artist_id = a.id");
+        query.where("t_a_l.artist_mbid_matched = FALSE");
+        if (!allowArtistMBIDFallback)
+        {
+            query.where("a.mbid <> ''");
+        }
+        else
+        {
+            query.where(R"(
+                (a.mbid <> '' AND EXISTS (SELECT 1 FROM artist a2 WHERE a2.name = a.name AND a2.mbid <> '' AND a2.mbid <> a.mbid))
+                OR (a.mbid = '' AND (SELECT COUNT(*) FROM artist a2 WHERE a2.name = a.name AND a2.mbid <> '') = 1))");
+        }
+
+        utils::applyRange(query, range);
+        utils::forEachQueryResult(query, [&](const TrackArtistLink::pointer& link) {
+            func(link);
+        });
+    }
+
+    void TrackArtistLink::setArtist(ObjectPtr<Artist> artist)
+    {
+        _artist = getDboPtr(artist);
+    }
+
+    void TrackArtistLink::setArtistName(std::string_view artistName)
+    {
+        _artistName = artistName;
+    }
+
+    void TrackArtistLink::setArtistSortName(std::string_view artistSortName)
+    {
+        _artistSortName = artistSortName;
     }
 } // namespace lms::db

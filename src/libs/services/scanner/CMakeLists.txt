@@ -1,15 +1,19 @@
 add_library(lmsscanner STATIC
+	impl/helpers/ArtistHelpers.cpp
 	impl/scanners/ArtistInfoFileScanner.cpp
+	impl/scanners/AudioFileScanOperation.cpp
 	impl/scanners/AudioFileScanner.cpp
 	impl/scanners/ImageFileScanner.cpp
 	impl/scanners/LyricsFileScanner.cpp
 	impl/scanners/PlayListFileScanner.cpp
 	impl/scanners/Utils.cpp
 	impl/steps/FileScanQueue.cpp
+	impl/steps/ScanStepArtistReconciliation.cpp
 	impl/steps/ScanStepAssociateArtistImages.cpp
 	impl/steps/ScanStepAssociateExternalLyrics.cpp
 	impl/steps/ScanStepAssociatePlayListTracks.cpp
 	impl/steps/ScanStepAssociateReleaseImages.cpp
+	impl/steps/ScanStepBase.cpp
 	impl/steps/ScanStepCheckForDuplicatedFiles.cpp
 	impl/steps/ScanStepCheckForRemovedFiles.cpp
 	impl/steps/ScanStepCompact.cpp

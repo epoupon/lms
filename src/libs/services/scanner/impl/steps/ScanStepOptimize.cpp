@@ -25,32 +25,38 @@
 
 namespace lms::scanner
 {
+    bool ScanStepOptimize::needProcess(const ScanContext& context) const
+    {
+        if (context.scanOptions.forceOptimize)
+            return true;
+
+        if (context.stats.nbChanges() > (context.stats.nbFiles() / 10))
+            return true;
+
+        return false;
+    }
+
     void ScanStepOptimize::process(ScanContext& context)
     {
-        ScanStats& stats{ context.stats };
+        LMS_LOG(DBUPDATER, INFO, "Database analyze started");
 
-        if (context.scanOptions.forceOptimize || (stats.nbChanges() > (stats.nbFiles() / 10)))
+        auto& session{ _db.getTLSSession() };
+
+        std::vector<std::string> entries;
+        session.retrieveEntriesToAnalyze(entries);
+        context.currentStepStats.totalElems = entries.size();
+        _progressCallback(context.currentStepStats);
+
+        for (const std::string& entry : entries)
         {
-            LMS_LOG(DBUPDATER, INFO, "Database analyze started");
+            if (_abortScan)
+                break;
 
-            auto& session{ _db.getTLSSession() };
-
-            std::vector<std::string> entries;
-            session.retrieveEntriesToAnalyze(entries);
-            context.currentStepStats.totalElems = entries.size();
+            _db.getTLSSession().analyzeEntry(entry);
+            context.currentStepStats.processedElems++;
             _progressCallback(context.currentStepStats);
-
-            for (const std::string& entry : entries)
-            {
-                if (_abortScan)
-                    break;
-
-                _db.getTLSSession().analyzeEntry(entry);
-                context.currentStepStats.processedElems++;
-                _progressCallback(context.currentStepStats);
-            }
-
-            LMS_LOG(DBUPDATER, INFO, "Database analyze complete");
         }
+
+        LMS_LOG(DBUPDATER, INFO, "Database analyze complete");
     }
 } // namespace lms::scanner

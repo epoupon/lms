@@ -23,6 +23,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 
 #include "core/ILogger.hpp"
+#include "core/String.hpp"
 
 namespace lms::metadata
 {
@@ -43,12 +44,12 @@ namespace lms::metadata
 
             const auto& artistNode{ root.get_child("artist") };
 
-            artistInfo.mbid = core::UUID::fromString(artistNode.get_optional<std::string>("musicBrainzArtistID").value_or(""));
-            artistInfo.name = artistNode.get_optional<std::string>("name").value_or("");
-            artistInfo.sortName = artistNode.get_optional<std::string>("sortname").value_or("");
-            artistInfo.type = artistNode.get_optional<std::string>("type").value_or("");
-            artistInfo.gender = artistNode.get_optional<std::string>("gender").value_or("");
-            artistInfo.disambiguation = artistNode.get_optional<std::string>("disambiguation").value_or("");
+            artistInfo.mbid = core::UUID::fromString(core::stringUtils::stringTrim(artistNode.get_optional<std::string>("musicBrainzArtistID").value_or("")));
+            artistInfo.name = core::stringUtils::stringTrim(artistNode.get_optional<std::string>("name").value_or(""));
+            artistInfo.sortName = core::stringUtils::stringTrim(artistNode.get_optional<std::string>("sortname").value_or(""));
+            artistInfo.type = core::stringUtils::stringTrim(artistNode.get_optional<std::string>("type").value_or(""));
+            artistInfo.gender = core::stringUtils::stringTrim(artistNode.get_optional<std::string>("gender").value_or(""));
+            artistInfo.disambiguation = core::stringUtils::stringTrim(artistNode.get_optional<std::string>("disambiguation").value_or(""));
             artistInfo.biography = artistNode.get_optional<std::string>("biography").value_or("");
 
             return artistInfo;

@@ -24,19 +24,13 @@
 
 #include "core/LiteralString.hpp"
 
-#include "MediaLibraryInfo.hpp"
+#include "FileToScan.hpp"
 
 namespace lms::scanner
 {
     class IFileScanOperation;
     struct ScanContext;
     struct ScannerSettings;
-
-    struct FileToScan
-    {
-        std::filesystem::path file;
-        MediaLibraryInfo mediaLibrary;
-    };
 
     class IFileScanner
     {

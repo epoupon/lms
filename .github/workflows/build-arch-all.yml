@@ -1,0 +1,39 @@
+name: All-option Builds (Arch)
+on: [pull_request]
+jobs:
+  Build:
+    strategy:
+      matrix:
+        LMS_BUILD_TYPE: [Release, Debug]
+        LMS_UNITY_BUILD: [ON, OFF]
+        LMS_IMAGE_BACKEND: [stb, graphicsmagick]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build
+        uses: docker/build-push-action@v3
+        with:
+          context: ./
+          file: ./Dockerfile-build-arch
+          builder: ${{ steps.buildx.outputs.name }}
+          build-args: |
+            LMS_BUILD_TYPE=${{ matrix.LMS_BUILD_TYPE }}
+            LMS_UNITY_BUILD=${{ matrix.LMS_UNITY_BUILD }}
+            LMS_IMAGE_BACKEND=${{ matrix.LMS_IMAGE_BACKEND }}
+          push: false
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache

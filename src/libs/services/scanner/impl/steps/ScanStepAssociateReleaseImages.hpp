@@ -37,6 +37,7 @@ namespace lms::scanner
     private:
         ScanStep getStep() const override { return ScanStep::AssociateReleaseImages; }
         core::LiteralString getStepName() const override { return "Associate release images"; }
+        bool needProcess(const ScanContext& context) const override;
         void process(ScanContext& context) override;
 
         const std::vector<std::string> _releaseFileNames;

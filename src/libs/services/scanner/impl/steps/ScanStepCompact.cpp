@@ -24,10 +24,14 @@
 
 namespace lms::scanner
 {
-    void ScanStepCompact::process(ScanContext& context)
+    bool ScanStepCompact::needProcess(const ScanContext& context) const
     {
         // Don't auto compact as it may be too annoying to block the whole application for very large databases
-        if (context.scanOptions.compact)
-            _db.getTLSSession().vacuum();
+        return context.scanOptions.compact;
+    }
+
+    void ScanStepCompact::process([[maybe_unused]] ScanContext& context)
+    {
+        _db.getTLSSession().vacuum();
     }
 } // namespace lms::scanner

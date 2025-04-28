@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "database/StarredArtistId.hpp"
 #include "database/StarredReleaseId.hpp"
 #include "database/StarredTrackId.hpp"

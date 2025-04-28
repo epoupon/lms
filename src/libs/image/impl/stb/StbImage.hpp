@@ -24,19 +24,3 @@
 #define STBI_FAILURE_USERMSG
 
 #include <stb_image.h>
-
-#include <string_view>
-
-#include "image/Exception.hpp"
-
-namespace lms::image
-{
-    class StbiException : public Exception
-    {
-    public:
-        StbiException(std::string_view desc);
-
-    private:
-        static std::string getLastFailureReason();
-    };
-} // namespace lms::image

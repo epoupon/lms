@@ -19,6 +19,7 @@
 
 #include "RawImage.hpp"
 
+#include "Exception.hpp"
 #include "StbImage.hpp"
 #include "StbImageResize.hpp"
 

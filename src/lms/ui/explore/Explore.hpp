@@ -38,6 +38,5 @@ namespace lms::ui
 
     private:
         PlayQueueController _playQueueController;
-        SearchView* _search{};
     };
 } // namespace lms::ui

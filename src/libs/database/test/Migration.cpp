@@ -31,9 +31,11 @@
 #include "database/RatedArtist.hpp"
 #include "database/RatedRelease.hpp"
 #include "database/RatedTrack.hpp"
+#include "database/ScanSettings.hpp"
 #include "database/StarredArtist.hpp"
 #include "database/StarredRelease.hpp"
 #include "database/StarredTrack.hpp"
+#include "database/TrackArtistLink.hpp"
 #include "database/TrackEmbeddedImage.hpp"
 #include "database/TrackEmbeddedImageLink.hpp"
 #include "database/TrackLyrics.hpp"
@@ -361,10 +363,12 @@ VALUES
             EXPECT_FALSE(RatedTrack::find(session, RatedTrackId{}));
             EXPECT_FALSE(Release::find(session, ReleaseId{}));
             EXPECT_FALSE(ReleaseType::find(session, ReleaseTypeId{}));
+            EXPECT_FALSE(ScanSettings::find(session, ScanSettingsId{}));
             EXPECT_FALSE(StarredArtist::find(session, StarredArtistId{}));
             EXPECT_FALSE(StarredRelease::find(session, StarredReleaseId{}));
             EXPECT_FALSE(StarredTrack::find(session, StarredTrackId{}));
             EXPECT_FALSE(Track::find(session, TrackId{}));
+            EXPECT_FALSE(TrackArtistLink::find(session, TrackArtistLinkId{}));
             EXPECT_FALSE(TrackList::find(session, TrackListId{}));
             EXPECT_FALSE(TrackLyrics::find(session, TrackLyricsId{}));
             EXPECT_FALSE(UIState::find(session, UIStateId{}));

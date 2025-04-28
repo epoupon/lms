@@ -47,26 +47,24 @@
 
 namespace lms::ui::TrackListHelpers
 {
-    using namespace db;
-
-    std::map<Wt::WString, std::set<ArtistId>> getArtistsByRole(db::TrackId trackId, core::EnumSet<db::TrackArtistLinkType> artistLinkTypes)
+    std::map<Wt::WString, std::set<db::ArtistId>> getArtistsByRole(db::TrackId trackId, core::EnumSet<db::TrackArtistLinkType> artistLinkTypes)
     {
-        std::map<Wt::WString, std::set<ArtistId>> artistMap;
+        std::map<Wt::WString, std::set<db::ArtistId>> artistMap;
 
-        auto addArtists = [&](TrackArtistLinkType linkType, const char* type) {
+        auto addArtists = [&](db::TrackArtistLinkType linkType, const char* type) {
             if (!artistLinkTypes.contains(linkType))
                 return;
 
-            Artist::FindParameters params;
+            db::Artist::FindParameters params;
             params.setTrack(trackId);
             params.setLinkType(linkType);
-            const auto artistIds{ Artist::findIds(LmsApp->getDbSession(), params) };
+            const auto artistIds{ db::Artist::findIds(LmsApp->getDbSession(), params) };
             if (artistIds.results.empty())
                 return;
 
             Wt::WString typeStr{ Wt::WString::trn(type, artistIds.results.size()) };
 
-            for (ArtistId artistId : artistIds.results)
+            for (db::ArtistId artistId : artistIds.results)
                 artistMap[typeStr].insert(artistId);
         };
 
@@ -74,21 +72,21 @@ namespace lms::ui::TrackListHelpers
             if (!artistLinkTypes.contains(db::TrackArtistLinkType::Performer))
                 return;
 
-            TrackArtistLink::FindParameters params;
+            db::TrackArtistLink::FindParameters params;
             params.setTrack(trackId);
-            params.setLinkType(TrackArtistLinkType::Performer);
+            params.setLinkType(db::TrackArtistLinkType::Performer);
 
-            TrackArtistLink::find(LmsApp->getDbSession(), params, [&](const TrackArtistLink::pointer& link) {
+            db::TrackArtistLink::find(LmsApp->getDbSession(), params, [&](const db::TrackArtistLink::pointer& link) {
                 artistMap[std::string{ link->getSubType() }].insert(link->getArtist()->getId());
             });
         };
 
-        addArtists(TrackArtistLinkType::Composer, "Lms.Explore.Artists.linktype-composer");
-        addArtists(TrackArtistLinkType::Conductor, "Lms.Explore.Artists.linktype-conductor");
-        addArtists(TrackArtistLinkType::Lyricist, "Lms.Explore.Artists.linktype-lyricist");
-        addArtists(TrackArtistLinkType::Mixer, "Lms.Explore.Artists.linktype-mixer");
-        addArtists(TrackArtistLinkType::Remixer, "Lms.Explore.Artists.linktype-remixer");
-        addArtists(TrackArtistLinkType::Producer, "Lms.Explore.Artists.linktype-producer");
+        addArtists(db::TrackArtistLinkType::Composer, "Lms.Explore.Artists.linktype-composer");
+        addArtists(db::TrackArtistLinkType::Conductor, "Lms.Explore.Artists.linktype-conductor");
+        addArtists(db::TrackArtistLinkType::Lyricist, "Lms.Explore.Artists.linktype-lyricist");
+        addArtists(db::TrackArtistLinkType::Mixer, "Lms.Explore.Artists.linktype-mixer");
+        addArtists(db::TrackArtistLinkType::Remixer, "Lms.Explore.Artists.linktype-remixer");
+        addArtists(db::TrackArtistLinkType::Producer, "Lms.Explore.Artists.linktype-producer");
         addPerformerArtists();
 
         if (auto itRolelessPerformers{ artistMap.find("") }; itRolelessPerformers != std::cend(artistMap))
@@ -105,7 +103,7 @@ namespace lms::ui::TrackListHelpers
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const db::Track::pointer track{ Track::find(LmsApp->getDbSession(), trackId) };
+        const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), trackId) };
         if (!track)
             return;
 
@@ -113,7 +111,7 @@ namespace lms::ui::TrackListHelpers
         Wt::WWidget* trackInfoPtr{ trackInfo.get() };
         trackInfo->addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-        std::map<Wt::WString, std::set<ArtistId>> artistMap{ getArtistsByRole(trackId) };
+        std::map<Wt::WString, std::set<db::ArtistId>> artistMap{ getArtistsByRole(trackId) };
         if (!artistMap.empty())
         {
             trackInfo->setCondition("if-has-artist", true);
@@ -219,10 +217,10 @@ namespace lms::ui::TrackListHelpers
 
         entry->bindString("name", Wt::WString::fromUTF8(track->getName()), Wt::TextFormat::Plain);
 
-        const Release::pointer release{ track->getRelease() };
-        const TrackId trackId{ track->getId() };
+        const db::Release::pointer release{ track->getRelease() };
+        const db::TrackId trackId{ track->getId() };
 
-        const auto artists{ track->getArtistIds({ TrackArtistLinkType::Artist }) };
+        const auto artists{ track->getArtistIds({ db::TrackArtistLinkType::Artist }) };
         if (!artists.empty())
         {
             entry->setCondition("if-has-artists", true);

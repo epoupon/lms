@@ -31,6 +31,7 @@ namespace lms::scanner
     private:
         ScanStep getStep() const override { return ScanStep::Optimize; }
         core::LiteralString getStepName() const override { return "Optimize"; }
+        bool needProcess(const ScanContext& context) const override;
         void process(ScanContext& context) override;
     };
 } // namespace lms::scanner

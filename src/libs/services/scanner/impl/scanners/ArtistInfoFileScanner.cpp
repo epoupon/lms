@@ -32,7 +32,10 @@
 
 #include "IFileScanOperation.hpp"
 #include "ScanContext.hpp"
+#include "ScannerSettings.hpp"
 #include "Utils.hpp"
+#include "helpers/ArtistHelpers.hpp"
+#include "metadata/Types.hpp"
 
 namespace lms::scanner
 {
@@ -41,10 +44,13 @@ namespace lms::scanner
         class ArtistInfoFileScanOperation : public IFileScanOperation
         {
         public:
-            ArtistInfoFileScanOperation(const FileToScan& file, db::Db& db)
+            ArtistInfoFileScanOperation(const FileToScan& file, const ScannerSettings& settings, db::Db& db)
                 : _file{ file.file }
                 , _mediaLibrary{ file.mediaLibrary }
-                , _db{ db } {}
+                , _settings{ settings }
+                , _db{ db }
+            {
+            }
             ~ArtistInfoFileScanOperation() override = default;
             ArtistInfoFileScanOperation(const ArtistInfoFileScanOperation&) = delete;
             ArtistInfoFileScanOperation& operator=(const ArtistInfoFileScanOperation&) = delete;
@@ -59,6 +65,7 @@ namespace lms::scanner
 
             const std::filesystem::path _file;
             const MediaLibraryInfo _mediaLibrary;
+            const ScannerSettings& _settings;
             db::Db& _db;
 
             std::optional<metadata::ArtistInfo> _parsedArtistInfo;
@@ -76,12 +83,7 @@ namespace lms::scanner
                 }
 
                 _parsedArtistInfo = metadata::parseArtistInfo(ifs);
-                if (!_parsedArtistInfo->mbid.has_value())
-                {
-                    LMS_LOG(DBUPDATER, DEBUG, "Discarding artist info in file " << _file << ": no mbid set");
-                    _parsedArtistInfo.reset();
-                }
-                else if (_parsedArtistInfo->name.empty())
+                if (_parsedArtistInfo->name.empty())
                 {
                     LMS_LOG(DBUPDATER, DEBUG, "Discarding artist info in file " << _file << ": no name set");
                     _parsedArtistInfo.reset();
@@ -125,6 +127,8 @@ namespace lms::scanner
                 artistInfo.modify()->setAbsoluteFilePath(_file);
             }
 
+            artistInfo.modify()->setName(_parsedArtistInfo->name);
+            artistInfo.modify()->setSortName(_parsedArtistInfo->sortName);
             artistInfo.modify()->setLastWriteTime(fileInfo->lastWriteTime);
             artistInfo.modify()->setType(_parsedArtistInfo->type);
             artistInfo.modify()->setGender(_parsedArtistInfo->gender);
@@ -134,12 +138,8 @@ namespace lms::scanner
             db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, _mediaLibrary.id) }; // may be null if settings are updated in // => next scan will correct this
             artistInfo.modify()->setDirectory(utils::getOrCreateDirectory(dbSession, _file.parent_path(), mediaLibrary));
 
-            db::Artist::pointer artist{ db::Artist::find(dbSession, *_parsedArtistInfo->mbid) };
-            if (!artist)
-                artist = dbSession.create<db::Artist>(_parsedArtistInfo->name, _parsedArtistInfo->mbid);
-
-            artist.modify()->setName(_parsedArtistInfo->name);
-            artist.modify()->setSortName(_parsedArtistInfo->sortName);
+            const metadata::Artist artistMetadata{ _parsedArtistInfo->mbid, _parsedArtistInfo->name, _parsedArtistInfo->sortName.empty() ? std::nullopt : std::make_optional<std::string>(_parsedArtistInfo->sortName) };
+            db::Artist::pointer artist{ helpers::getOrCreateArtist(dbSession, artistMetadata, helpers::AllowFallbackOnMBIDEntry{ _settings.allowArtistMBIDFallback }) };
             artistInfo.modify()->setArtist(artist);
 
             if (added)
@@ -155,8 +155,9 @@ namespace lms::scanner
         }
     } // namespace
 
-    ArtistInfoFileScanner::ArtistInfoFileScanner(db::Db& db)
-        : _db{ db }
+    ArtistInfoFileScanner::ArtistInfoFileScanner(const ScannerSettings& settings, db::Db& db)
+        : _settings{ settings }
+        , _db{ db }
     {
     }
 
@@ -202,6 +203,6 @@ namespace lms::scanner
 
     std::unique_ptr<IFileScanOperation> ArtistInfoFileScanner::createScanOperation(const FileToScan& fileToScan) const
     {
-        return std::make_unique<ArtistInfoFileScanOperation>(fileToScan, _db);
+        return std::make_unique<ArtistInfoFileScanOperation>(fileToScan, _settings, _db);
     }
 } // namespace lms::scanner

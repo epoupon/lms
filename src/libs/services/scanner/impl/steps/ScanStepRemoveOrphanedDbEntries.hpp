@@ -31,6 +31,7 @@ namespace lms::scanner
     private:
         core::LiteralString getStepName() const override { return "Remove orphaned DB entries"; }
         ScanStep getStep() const override { return ScanStep::RemoveOrphanedDbEntries; }
+        bool needProcess(const ScanContext& context) const override;
         void process(ScanContext& context) override;
 
         void removeOrphanedClusters(ScanContext& context);

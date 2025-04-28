@@ -19,17 +19,3 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "StbImage.hpp"
-
-namespace lms::image
-{
-    StbiException::StbiException(std::string_view desc)
-        : Exception{ std::string{ desc } + ": " + getLastFailureReason() }
-    {
-    }
-
-    std::string StbiException::getLastFailureReason()
-    {
-        const char* failureReason{ ::stbi_failure_reason() };
-        return failureReason ? failureReason : "unknown reason";
-    }
-} // namespace lms::image

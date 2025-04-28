@@ -33,6 +33,7 @@
 	<plural case="1">{1} pistes</plural>
 </message>
 <message id="Lms.user">Utilisateur</message>
+<message id="Lms.uuid-invalid">UUID invalide</message>	
 
 <!--Locale-->
 <message id="Lms.locale.decimal-point">,</message>
@@ -72,7 +73,9 @@
 <message id="Lms.Admin.MediaLibrary.root-path">Répertoire racine</message>
 
 <!--Scan settings-->
+<message id="Lms.Admin.Database.allow-mbid-artist-merge">Permettre la fusion des artistes sans MBID avec ceux qui en ont un</message>
 <message id="Lms.Admin.Database.artist-tag-delimiters">Délimiteurs à utiliser pour séparer les tags d'artistes</message>
+<message id="Lms.Admin.Database.artists-to-not-split">Artistes à ne pas séparer en utilisant les délimiteurs (un artiste par ligne)</message>
 <message id="Lms.Admin.Database.daily">Tous les jours</message>
 <message id="Lms.Admin.Database.default-tag-delimiters">Délimiteurs à utiliser pour séparer les autres tags</message>
 <message id="Lms.Admin.Database.extra-tags-to-scan">Tags supplémentaires à scanner</message>
@@ -107,7 +110,7 @@
 <message id="Lms.Admin.ScannerController.duplicates-header">{1} fichiers dupliqués :</message>
 <message id="Lms.Admin.ScannerController.errors-header">{1} erreurs :</message>
 <message id="Lms.Admin.ScannerController.force-optimize">Forcer l'optimisation de la base de données</message>
-<message id="Lms.Admin.ScannerController.full-scan">Rescanner tous les fichiers</message>
+<message id="Lms.Admin.ScannerController.full-scan">Forcer le scan de tous les fichiers</message>
 <message id="Lms.Admin.ScannerController.get-report">Rapport</message>
 <message id="Lms.Admin.ScannerController.last-scan">Dernier scan</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Non disponible</message>
@@ -133,6 +136,7 @@
 <message id="Lms.Admin.ScannerController.step-discovering-files">Découverte des fichiers : {1} fichiers</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Récupération des métadonnées AcousticBrainz : {1}/{2} fichiers ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Optimisation de la base de données... {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-reconciliate-artists">Reconciliation des artistes: {1} entrées...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Rechargement du moteur de recommandation : {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">Retrait des entrées orphelines: {1} entrées...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Scan des fichiers : {1}/{2} ({3}%)...</message>

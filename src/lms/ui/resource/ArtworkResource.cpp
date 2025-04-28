@@ -37,7 +37,7 @@
 
 #include "LmsApplication.hpp"
 
-#define LOG(severity, message) LMS_LOG(UI, severity, "Image resource: " << message)
+#define ARTWORK_RESOURCE_LOG(severity, message) LMS_LOG(UI, severity, "Image resource: " << message)
 
 namespace lms::ui
 {
@@ -190,7 +190,7 @@ namespace lms::ui
             const auto size{ sizeStr ? core::stringUtils::readAs<std::size_t>(*sizeStr) : std::nullopt };
             if (size && *size > maxSize)
             {
-                LOG(DEBUG, "invalid size provided!");
+                ARTWORK_RESOURCE_LOG(DEBUG, "invalid size provided!");
                 return;
             }
 

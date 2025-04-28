@@ -5,6 +5,7 @@ add_library(lmsdatabase STATIC
 	impl/Cluster.cpp
 	impl/Db.cpp
 	impl/Directory.cpp
+	impl/IdType.cpp
 	impl/Image.cpp
 	impl/Listen.cpp
 	impl/MediaLibrary.cpp

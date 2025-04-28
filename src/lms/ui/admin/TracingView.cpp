@@ -34,18 +34,20 @@ namespace lms::ui
 {
     namespace
     {
-        class ReportResource : public Wt::WResource
+        class TracingReportResource : public Wt::WResource
         {
         public:
-            ReportResource(core::tracing::ITraceLogger& traceLogger)
+            TracingReportResource(core::tracing::ITraceLogger& traceLogger)
                 : _traceLogger{ traceLogger }
             {
             }
 
-            ~ReportResource()
+            ~TracingReportResource()
             {
                 beingDeleted();
             }
+            TracingReportResource(const TracingReportResource&) = delete;
+            TracingReportResource& operator=(const TracingReportResource&) = delete;
 
             void handleRequest(const Wt::Http::Request&, Wt::Http::Response& response)
             {
@@ -80,7 +82,7 @@ namespace lms::ui
 
         if (auto traceLogger{ core::Service<core::tracing::ITraceLogger>::get() })
         {
-            Wt::WLink link{ std::make_shared<ReportResource>(*traceLogger) };
+            Wt::WLink link{ std::make_shared<TracingReportResource>(*traceLogger) };
             link.setTarget(Wt::LinkTarget::NewWindow);
             dumpBtn->setLink(link);
         }

@@ -32,9 +32,11 @@ namespace lms::ui
         std::string javaScriptValidate() const override { return {}; }
     };
 
-    std::unique_ptr<Wt::WValidator>
-    createUUIDValidator()
+    std::unique_ptr<Wt::WValidator> createUUIDValidator()
     {
-        return std::make_unique<RegExpValidator>("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}");
+        auto validator{ std::make_unique<RegExpValidator>("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}") };
+        validator->setInvalidNoMatchText(Wt::WString::tr("Lms.uuid-invalid"));
+
+        return validator;
     }
 } // namespace lms::ui

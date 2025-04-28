@@ -41,11 +41,14 @@ namespace lms::scanner
         constexpr std::size_t batchSize = 100;
     }
 
+    bool ScanStepCheckForRemovedFiles::needProcess([[maybe_unused]] const ScanContext& context) const
+    {
+        // always check for removed files
+        return true;
+    }
+
     void ScanStepCheckForRemovedFiles::process(ScanContext& context)
     {
-        if (_abortScan)
-            return;
-
         db::Session& session{ _db.getTLSSession() };
 
         {

@@ -61,21 +61,21 @@ namespace lms::core::stringUtils::tests
 
     TEST(PartialDateTime, stringComparison)
     {
-        EXPECT_EQ((PartialDateTime{ 1992, 3, 27 }.toISO8601String()), (PartialDateTime{ 1992, 3, 27 }.toISO8601String()));
-        EXPECT_EQ((PartialDateTime{ 1992, 3 }.toISO8601String()), (PartialDateTime{ 1992, 3 }.toISO8601String()));
-        EXPECT_EQ(PartialDateTime{ 1992 }.toISO8601String(), PartialDateTime{ 1992 }.toISO8601String());
-        EXPECT_NE((PartialDateTime{ 1992, 3, 27 }.toISO8601String()), (PartialDateTime{ 1992, 3 }.toISO8601String()));
-        EXPECT_NE((PartialDateTime{ 1992, 3, 27 }.toISO8601String()), (PartialDateTime{ 1992 }.toISO8601String()));
-        EXPECT_NE((PartialDateTime{ 1992, 3 }.toISO8601String()), (PartialDateTime{ 1992 }.toISO8601String()));
-        EXPECT_NE((PartialDateTime{ 1992, 3, 27 }.toISO8601String()), (PartialDateTime{ 1992, 3, 28 }.toISO8601String()));
-        EXPECT_NE((PartialDateTime{ 1992, 3, 27 }.toISO8601String()), (PartialDateTime{ 1992, 4, 27 }.toISO8601String()));
-        EXPECT_NE((PartialDateTime{ 1992, 3, 27 }.toISO8601String()), (PartialDateTime{ 1993, 3, 27 }.toISO8601String()));
-        EXPECT_GT((PartialDateTime{ 1993, 3, 28 }.toISO8601String()), (PartialDateTime{ 1993, 3, 27 }.toISO8601String()));
-        EXPECT_GT((PartialDateTime{ 1993, 4 }.toISO8601String()), (PartialDateTime{ 1993, 3, 27 }.toISO8601String()));
-        EXPECT_GT((PartialDateTime{ 1994 }.toISO8601String()), (PartialDateTime{ 1993, 3, 27 }.toISO8601String()));
-        EXPECT_LT((PartialDateTime{ 1993, 3, 27 }.toISO8601String()), (PartialDateTime{ 1993, 3, 28 }.toISO8601String()));
-        EXPECT_LT((PartialDateTime{ 1993, 3, 27 }.toISO8601String()), (PartialDateTime{ 1993, 4 }.toISO8601String()));
-        EXPECT_LT((PartialDateTime{ 1993, 3, 27 }.toISO8601String()), (PartialDateTime{ 1994 }.toISO8601String()));
+        EXPECT_EQ((PartialDateTime{ 1992, 3, 27 }.toString()), (PartialDateTime{ 1992, 3, 27 }.toString()));
+        EXPECT_EQ((PartialDateTime{ 1992, 3 }.toString()), (PartialDateTime{ 1992, 3 }.toString()));
+        EXPECT_EQ(PartialDateTime{ 1992 }.toString(), PartialDateTime{ 1992 }.toString());
+        EXPECT_NE((PartialDateTime{ 1992, 3, 27 }.toString()), (PartialDateTime{ 1992, 3 }.toString()));
+        EXPECT_NE((PartialDateTime{ 1992, 3, 27 }.toString()), (PartialDateTime{ 1992 }.toString()));
+        EXPECT_NE((PartialDateTime{ 1992, 3 }.toString()), (PartialDateTime{ 1992 }.toString()));
+        EXPECT_NE((PartialDateTime{ 1992, 3, 27 }.toString()), (PartialDateTime{ 1992, 3, 28 }.toString()));
+        EXPECT_NE((PartialDateTime{ 1992, 3, 27 }.toString()), (PartialDateTime{ 1992, 4, 27 }.toString()));
+        EXPECT_NE((PartialDateTime{ 1992, 3, 27 }.toString()), (PartialDateTime{ 1993, 3, 27 }.toString()));
+        EXPECT_GT((PartialDateTime{ 1993, 3, 28 }.toString()), (PartialDateTime{ 1993, 3, 27 }.toString()));
+        EXPECT_GT((PartialDateTime{ 1993, 4 }.toString()), (PartialDateTime{ 1993, 3, 27 }.toString()));
+        EXPECT_GT((PartialDateTime{ 1994 }.toString()), (PartialDateTime{ 1993, 3, 27 }.toString()));
+        EXPECT_LT((PartialDateTime{ 1993, 3, 27 }.toString()), (PartialDateTime{ 1993, 3, 28 }.toString()));
+        EXPECT_LT((PartialDateTime{ 1993, 3, 27 }.toString()), (PartialDateTime{ 1993, 4 }.toString()));
+        EXPECT_LT((PartialDateTime{ 1993, 3, 27 }.toString()), (PartialDateTime{ 1994 }.toString()));
     }
 
     TEST(PartialDateTime, stringConversions)
@@ -120,7 +120,7 @@ namespace lms::core::stringUtils::tests
         for (const TestCase& test : tests)
         {
             const PartialDateTime dateTime{ PartialDateTime::fromString(test.input) };
-            EXPECT_EQ(dateTime.toISO8601String(), test.expectedOutput) << "Input = '" << test.input;
+            EXPECT_EQ(dateTime.toString(), test.expectedOutput) << "Input = '" << test.input;
         }
     }
 } // namespace lms::core::stringUtils::tests

@@ -38,4 +38,7 @@ namespace lms::core
     private:
         T _value{};
     };
+
+    template<typename Tag>
+    using TaggedBool = TaggedType<Tag, bool>;
 } // namespace lms::core

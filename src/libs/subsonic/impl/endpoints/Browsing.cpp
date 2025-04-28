@@ -532,8 +532,7 @@ namespace lms::api::subsonic
             if (!artist)
                 throw RequestedDataNotFoundError{};
 
-            std::optional<core::UUID> artistMBID{ artist->getMBID() };
-            if (artistMBID)
+            if (const std::optional<core::UUID> artistMBID{ artist->getMBID() })
             {
                 switch (context.responseFormat)
                 {
@@ -548,7 +547,17 @@ namespace lms::api::subsonic
 
             ArtistInfo::find(context.dbSession, id, Range{ .offset = 0, .size = 1 }, [&](const ArtistInfo::pointer& artistInfo) {
                 if (!artistInfo->getBiography().empty())
-                    artistInfoNode.setAttribute("biography", artistInfo->getBiography());
+                {
+                    switch (context.responseFormat)
+                    {
+                    case ResponseFormat::json:
+                        artistInfoNode.setAttribute("biography", artistInfo->getBiography());
+                        break;
+                    case ResponseFormat::xml:
+                        artistInfoNode.createChild("biography").setValue(artistInfo->getBiography());
+                        break;
+                    }
+                }
             });
         }
 

@@ -38,7 +38,7 @@ namespace Wt::Dbo
             if (!dateTime.isValid())
                 statement->bindNull(column);
             else
-                statement->bind(column, dateTime.toISO8601String());
+                statement->bind(column, dateTime.toString());
         }
 
         static bool read(lms::core::PartialDateTime& dateTime, SqlStatement* statement, int column, int size)

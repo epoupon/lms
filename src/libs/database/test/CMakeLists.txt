@@ -15,10 +15,12 @@ add_executable(test-database
 	RatedRelease.cpp
 	RatedTrack.cpp
 	Release.cpp
+	ScanSettings.cpp
 	StarredArtist.cpp
 	StarredRelease.cpp
 	StarredTrack.cpp
 	Track.cpp
+	TrackArtistLink.cpp
 	TrackBookmark.cpp
 	TrackEmbeddedImage.cpp
 	TrackFeatures.cpp

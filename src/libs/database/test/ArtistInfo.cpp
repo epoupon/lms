@@ -109,4 +109,103 @@ namespace lms::db::tests
             EXPECT_TRUE(visited);
         }
     }
+
+    TEST_F(DatabaseFixture, ArtistInfo_findArtistNameNoLongerMatch)
+    {
+        ScopedArtistInfo artistInfo{ session };
+        ScopedArtist artist{ session, "MyArtist" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            artistInfo.get().modify()->setArtist(artist.get());
+            artistInfo.get().modify()->setName("MyArtist");
+            artistInfo.get().modify()->setMBIDMatched(false);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            bool visited{};
+            ArtistInfo::findArtistNameNoLongerMatch(session, std::nullopt, [&](const ArtistInfo::pointer&) {
+                visited = true;
+            });
+            ASSERT_FALSE(visited);
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            artist.get().modify()->setName("MyArtist2");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            bool visited{};
+            ArtistInfo::findArtistNameNoLongerMatch(session, std::nullopt, [&](const ArtistInfo::pointer&) {
+                visited = true;
+            });
+            ASSERT_TRUE(visited);
+        }
+    }
+
+    TEST_F(DatabaseFixture, ArtistInfo_findWithArtistNameAmbiguity_split)
+    {
+        ScopedArtistInfo artistInfo1{ session };
+        ScopedArtist artist1{ session, "MyArtist", core::UUID::fromString("b227426f-98b8-4b39-b3a7-ff25e7711e9b") };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            artistInfo1.get().modify()->setArtist(artist1.get());
+            artistInfo1.get().modify()->setName("MyArtist");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            bool visited{};
+            ArtistInfo::findWithArtistNameAmbiguity(session, std::nullopt, true /*allow fallback*/, [&](const ArtistInfo::pointer&) {
+                visited = true;
+            });
+            ASSERT_FALSE(visited);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            bool visited{};
+            ArtistInfo::findWithArtistNameAmbiguity(session, std::nullopt, false /*allow fallback*/, [&](const ArtistInfo::pointer&) {
+                visited = true;
+            });
+            ASSERT_TRUE(visited);
+        }
+
+        ScopedArtist artist2{ session, "MyArtist", core::UUID::fromString("97d1fb6f-db09-4760-b0b3-816559bcb632") };
+        ScopedArtistInfo artistInfo2{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            artistInfo2.get().modify()->setArtist(artist2.get());
+            artistInfo2.get().modify()->setName("MyArtist");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            bool visited{};
+            ArtistInfo::findWithArtistNameAmbiguity(session, std::nullopt, true /*allow fallback*/, [&](const ArtistInfo::pointer&) {
+                visited = true;
+            });
+            ASSERT_TRUE(visited);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            bool visited{};
+            ArtistInfo::findWithArtistNameAmbiguity(session, std::nullopt, false /*allow fallback*/, [&](const ArtistInfo::pointer&) {
+                visited = true;
+            });
+            ASSERT_TRUE(visited);
+        }
+    }
 } // namespace lms::db::tests

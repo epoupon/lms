@@ -32,9 +32,6 @@ namespace lms::scanner
 {
     namespace
     {
-        constexpr std::size_t readBatchSize{ 100 };
-        constexpr std::size_t writeBatchSize{ 20 };
-
         struct TrackLyricsAssociation
         {
             db::TrackLyricsId trackLyricsId;
@@ -83,6 +80,8 @@ namespace lms::scanner
 
         bool fetchNextTrackLyricsToUpdate(SearchTrackLyricsContext& searchContext, TrackLyricsAssociationContainer& trackLyricsAssociations)
         {
+            constexpr std::size_t readBatchSize{ 100 };
+
             const db::TrackLyricsId trackLyricsId{ searchContext.lastRetrievedTrackLyricsId };
 
             {
@@ -125,6 +124,8 @@ namespace lms::scanner
 
         void updateTrackLyrics(db::Session& session, TrackLyricsAssociationContainer& lyricsAssociations)
         {
+            constexpr std::size_t writeBatchSize{ 20 };
+
             while (!lyricsAssociations.empty())
             {
                 auto transaction{ session.createWriteTransaction() };
@@ -138,14 +139,16 @@ namespace lms::scanner
         }
     } // namespace
 
+    bool ScanStepAssociateExternalLyrics::needProcess(const ScanContext& context) const
+    {
+        if (context.stats.nbChanges() > 0)
+            return true;
+
+        return false;
+    }
+
     void ScanStepAssociateExternalLyrics::process(ScanContext& context)
     {
-        if (_abortScan)
-            return;
-
-        if (context.stats.nbChanges() == 0)
-            return;
-
         auto& session{ _db.getTLSSession() };
 
         {

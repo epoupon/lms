@@ -36,7 +36,7 @@ namespace lms::recommendation
         {
             auto transaction{ session.createReadTransaction() };
 
-            return db::ScanSettings::get(session)->getSimilarityEngineType();
+            return db::ScanSettings::find(session)->getSimilarityEngineType();
         }
     } // namespace
 

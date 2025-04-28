@@ -48,7 +48,7 @@ namespace lms::metadata
 {
     namespace
     {
-        class ParsingFailedException : public Exception
+        class ImageParsingFailedException : public Exception
         {
         };
 
@@ -362,7 +362,7 @@ namespace lms::metadata
         if (_file.isNull())
         {
             LMS_LOG(METADATA, ERROR, "File " << p << ": parsing failed");
-            throw ParsingFailedException{};
+            throw ImageParsingFailedException{};
         }
     }
 

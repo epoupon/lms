@@ -55,12 +55,12 @@ namespace lms::metadata
 {
     namespace
     {
-        class ParsingFailedException : public Exception
+        class TagParsingFailedException : public Exception
         {
         };
 
         // Mapping to internal taglib names and/or common alternative custom names
-        const std::unordered_map<TagType, std::vector<std::string>> tagMapping{
+        const std::unordered_map<TagType, std::vector<std::string>> tagLibTagMapping{
             { TagType::AcoustID, { "ACOUSTID_ID", "ACOUSTID ID" } },
             { TagType::Advisory, { "ITUNESADVISORY" } },
             { TagType::Album, { "ALBUM" } },
@@ -228,13 +228,13 @@ namespace lms::metadata
         if (_file.isNull())
         {
             LMS_LOG(METADATA, ERROR, "File " << p << ": parsing failed");
-            throw ParsingFailedException{};
+            throw TagParsingFailedException{};
         }
 
         if (!_file.audioProperties())
         {
             LMS_LOG(METADATA, ERROR, "File " << p << ": no audio properties");
-            throw ParsingFailedException{};
+            throw TagParsingFailedException{};
         }
 
         computeAudioProperties();
@@ -465,8 +465,8 @@ namespace lms::metadata
 
     void TagLibTagReader::visitTagValues(TagType tag, TagValueVisitor visitor) const
     {
-        auto itTagNames{ tagMapping.find(tag) };
-        if (itTagNames == std::cend(tagMapping))
+        auto itTagNames{ tagLibTagMapping.find(tag) };
+        if (itTagNames == std::cend(tagLibTagMapping))
             return;
 
         for (const std::string& tagName : itTagNames->second)

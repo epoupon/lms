@@ -31,7 +31,7 @@
 
 #include "LmsApplication.hpp"
 
-#define LOG(severity, message) LMS_LOG(UI, severity, "Download resource: " << message)
+#define DL_RESOURCE_LOG(severity, message) LMS_LOG(UI, severity, "Download resource: " << message)
 
 namespace lms::ui
 {
@@ -71,7 +71,7 @@ namespace lms::ui
         }
         catch (zip::Exception& exception)
         {
-            LOG(ERROR, "Zipper exception: " << exception.what());
+            DL_RESOURCE_LOG(ERROR, "Zipper exception: " << exception.what());
         }
     }
 
@@ -220,7 +220,7 @@ namespace lms::ui
         const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), _trackId) };
         if (!track)
         {
-            LOG(DEBUG, "Cannot find track");
+            DL_RESOURCE_LOG(DEBUG, "Cannot find track");
             return {};
         }
 

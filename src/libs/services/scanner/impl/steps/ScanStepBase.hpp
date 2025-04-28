@@ -44,29 +44,27 @@ namespace lms::scanner
         struct InitParams
         {
             const ScannerSettings& settings;
+            const ScannerSettings* lastScanSettings{};
             ProgressCallback progressCallback;
             bool& abortScan;
             db::Db& db;
             std::span<IFileScanner*> fileScanners;
         };
-        ScanStepBase(InitParams& initParams)
-            : _settings{ initParams.settings }
-            , _progressCallback{ initParams.progressCallback }
-            , _abortScan{ initParams.abortScan }
-            , _db{ initParams.db }
-            , _fileScanners(std::cbegin(initParams.fileScanners), std::cend(initParams.fileScanners))
-        {
-        }
-
-    protected:
-        ~ScanStepBase() override = default;
+        ScanStepBase(InitParams& initParams);
+        ~ScanStepBase() override;
         ScanStepBase(const ScanStepBase&) = delete;
         ScanStepBase& operator=(const ScanStepBase&) = delete;
+
+    protected:
+        const ScannerSettings* getLastScanSettings() const { return _lastScanSettings; }
 
         const ScannerSettings& _settings;
         ProgressCallback _progressCallback;
         bool& _abortScan;
         db::Db& _db;
         std::vector<IFileScanner*> _fileScanners;
+
+    private:
+        const ScannerSettings* _lastScanSettings{};
     };
 } // namespace lms::scanner

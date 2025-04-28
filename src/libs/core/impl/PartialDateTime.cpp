@@ -100,7 +100,7 @@ namespace lms::core
         };
     }
 
-    std::string PartialDateTime::toISO8601String() const
+    std::string PartialDateTime::toString() const
     {
         if (_precision == Precision::Invalid)
             return "";

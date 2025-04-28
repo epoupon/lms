@@ -26,24 +26,33 @@
 #include "database/Session.hpp"
 
 #include "Utils.hpp"
+#include "traits/IdTypeTraits.hpp"
+#include "traits/StringViewTraits.hpp"
 
 namespace lms::db
 {
-    void ScanSettings::init(Session& session)
+    ScanSettings::ScanSettings(std::string_view name)
+        : _name{ name }
     {
-        session.checkWriteTransaction();
-
-        if (pointer settings{ get(session) })
-            return;
-
-        session.getDboSession()->add(std::make_unique<ScanSettings>());
     }
 
-    ScanSettings::pointer ScanSettings::get(Session& session)
+    ScanSettings::pointer ScanSettings::create(Session& session, std::string_view name)
+    {
+        return session.getDboSession()->add(std::unique_ptr<ScanSettings>(new ScanSettings{ name }));
+    }
+
+    ScanSettings::pointer ScanSettings::find(Session& session, ScanSettingsId id)
     {
         session.checkReadTransaction();
 
-        return utils::fetchQuerySingleResult(session.getDboSession()->find<ScanSettings>());
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ScanSettings>>("SELECT s_s from scan_settings s_s").where("s_s.id = ?").bind(id));
+    }
+
+    ScanSettings::pointer ScanSettings::find(Session& session, std::string_view name)
+    {
+        session.checkReadTransaction();
+
+        return utils::fetchQuerySingleResult(session.getDboSession()->find<ScanSettings>().where("name = ?").bind(name));
     }
 
     std::vector<std::string_view> ScanSettings::getExtraTagsToScan() const
@@ -65,13 +74,19 @@ namespace lms::db
         return core::stringUtils::splitEscapedStrings(_defaultTagDelimiters, ';', '\\');
     }
 
+    std::vector<std::string> ScanSettings::getArtistsToNotSplit() const
+    {
+        return core::stringUtils::splitEscapedStrings(_artistsToNotSplit, ';', '\\');
+    }
+
     void ScanSettings::setExtraTagsToScan(std::span<const std::string_view> extraTags)
     {
         std::string newTagsToScan{ core::stringUtils::joinStrings(extraTags, ";") };
         if (newTagsToScan != _extraTagsToScan)
-            incScanVersion();
-
-        _extraTagsToScan = std::move(newTagsToScan);
+        {
+            _extraTagsToScan.swap(newTagsToScan);
+            incAudioScanVersion();
+        }
     }
 
     void ScanSettings::setArtistTagDelimiters(std::span<const std::string_view> delimiters)
@@ -80,7 +95,17 @@ namespace lms::db
         if (tagDelimiters != _artistTagDelimiters)
         {
             _artistTagDelimiters.swap(tagDelimiters);
-            incScanVersion();
+            incAudioScanVersion();
+        }
+    }
+
+    void ScanSettings::setArtistsToNotSplit(std::span<const std::string_view> artists)
+    {
+        std::string artistsToNotSplit{ core::stringUtils::escapeAndJoinStrings(artists, ';', '\\') };
+        if (artistsToNotSplit != _artistsToNotSplit)
+        {
+            _artistsToNotSplit.swap(artistsToNotSplit);
+            incAudioScanVersion();
         }
     }
 
@@ -90,21 +115,24 @@ namespace lms::db
         if (tagDelimiters != _defaultTagDelimiters)
         {
             _defaultTagDelimiters.swap(tagDelimiters);
-            incScanVersion();
+            incAudioScanVersion();
         }
     }
 
     void ScanSettings::setSkipSingleReleasePlayLists(bool value)
     {
         if (_skipSingleReleasePlayLists != value)
-        {
             _skipSingleReleasePlayLists = value;
-            incScanVersion();
-        }
     }
 
-    void ScanSettings::incScanVersion()
+    void ScanSettings::setAllowMBIDArtistMerge(bool value)
     {
-        _scanVersion += 1;
+        if (_allowMBIDArtistMerge != value)
+            _allowMBIDArtistMerge = value;
+    }
+
+    void ScanSettings::incAudioScanVersion()
+    {
+        _audioScanVersion += 1;
     }
 } // namespace lms::db

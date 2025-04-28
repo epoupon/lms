@@ -28,6 +28,7 @@
 #include "core/ITraceLogger.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/ScanSettings.hpp"
+#include "database/Session.hpp"
 
 #include "scanners/ArtistInfoFileScanner.hpp"
 #include "scanners/AudioFileScanner.hpp"
@@ -35,6 +36,7 @@
 #include "scanners/LyricsFileScanner.hpp"
 #include "scanners/PlayListFileScanner.hpp"
 
+#include "steps/ScanStepArtistReconciliation.hpp"
 #include "steps/ScanStepAssociateArtistImages.hpp"
 #include "steps/ScanStepAssociateExternalLyrics.hpp"
 #include "steps/ScanStepAssociatePlayListTracks.hpp"
@@ -55,6 +57,9 @@ namespace lms::scanner
 
     namespace
     {
+        static constexpr std::string_view currentSettingsName{ "" };
+        static constexpr std::string_view lastScanSettingsName{ "last_scan" };
+
         Wt::WDate getNextMonday(Wt::WDate current)
         {
             do
@@ -73,6 +78,61 @@ namespace lms::scanner
             } while (current.day() != 1);
 
             return current;
+        }
+
+        std::optional<ScannerSettings> readScannerSettings(db::Session& session, std::string_view name)
+        {
+            std::optional<ScannerSettings> settings;
+
+            auto transaction{ session.createReadTransaction() };
+
+            const ScanSettings::pointer scanSettings{ ScanSettings::find(session, name) };
+            if (!scanSettings)
+                return settings;
+
+            settings.emplace();
+            settings->audioScanVersion = scanSettings->getAudioScanVersion();
+            settings->startTime = scanSettings->getUpdateStartTime();
+            settings->updatePeriod = scanSettings->getUpdatePeriod();
+
+            MediaLibrary::find(session, [&](const MediaLibrary::pointer& mediaLibrary) {
+                MediaLibraryInfo info;
+                info.firstScan = mediaLibrary->isEmpty();
+                info.id = mediaLibrary->getId();
+                info.rootDirectory = mediaLibrary->getPath().lexically_normal();
+
+                settings->mediaLibraries.push_back(info);
+            });
+
+            {
+                const auto& tags{ scanSettings->getExtraTagsToScan() };
+                std::transform(std::cbegin(tags), std::cend(tags), std::back_inserter(settings->extraTags), [](std::string_view tag) { return std::string{ tag }; });
+            }
+
+            settings->artistTagDelimiters = scanSettings->getArtistTagDelimiters();
+            settings->defaultTagDelimiters = scanSettings->getDefaultTagDelimiters();
+            settings->artistsToNotSplit = scanSettings->getArtistsToNotSplit();
+
+            settings->skipSingleReleasePlayLists = scanSettings->getSkipSingleReleasePlayLists();
+            settings->allowArtistMBIDFallback = scanSettings->getAllowMBIDArtistMerge();
+
+            // TODO, store this in DB + expose in UI
+            settings->skipDuplicateTrackMBID = core::Service<core::IConfig>::get()->getBool("scanner-skip-duplicate-mbid", false);
+
+            return settings;
+        }
+
+        void writeScannerSettings(db::Session& session, std::string_view name, const ScannerSettings& settings)
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            ScanSettings::pointer scanSettings{ ScanSettings::find(session, name) };
+            if (!scanSettings)
+                scanSettings = session.create<ScanSettings>(name);
+
+            scanSettings.modify()->setAllowMBIDArtistMerge(settings.allowArtistMBIDFallback);
+            scanSettings.modify()->setSkipSingleReleasePlayLists(settings.skipSingleReleasePlayLists);
+            // TODO add more fields
         }
     } // namespace
 
@@ -282,26 +342,7 @@ namespace lms::scanner
         ScanStats& stats{ scanContext.stats };
         stats.startTime = Wt::WDateTime::currentDateTime();
 
-        std::size_t stepIndex{};
-        for (auto& scanStep : _scanSteps)
-        {
-            LMS_SCOPED_TRACE_OVERVIEW("Scanner", scanStep->getStepName());
-
-            LMS_LOG(DBUPDATER, DEBUG, "Starting scan step '" << scanStep->getStepName() << "'");
-            scanContext.currentStepStats = ScanStepStats{
-                .startTime = Wt::WDateTime::currentDateTime(),
-                .stepCount = _scanSteps.size(),
-                .stepIndex = stepIndex++,
-                .currentStep = scanStep->getStep(),
-                .totalElems = 0,
-                .processedElems = 0
-            };
-
-            notifyInProgress(scanContext.currentStepStats);
-            scanStep->process(scanContext);
-            notifyInProgress(scanContext.currentStepStats);
-            LMS_LOG(DBUPDATER, DEBUG, "Completed scan step '" << scanStep->getStepName() << "'");
-        }
+        processScanSteps(scanContext);
 
         {
             std::unique_lock lock{ _statusMutex };
@@ -321,6 +362,10 @@ namespace lms::scanner
                 _lastCompleteScanStats = stats;
             }
 
+            // save current settings as last scan settings to compare during next scans if something changed
+            writeScannerSettings(_db.getTLSSession(), lastScanSettingsName, _settings);
+            _lastScanSettings = _settings;
+
             LMS_LOG(DBUPDATER, DEBUG, "Scan not aborted, scheduling next scan!");
             scheduleNextScan();
 
@@ -332,23 +377,61 @@ namespace lms::scanner
         }
     }
 
+    void ScannerService::processScanSteps(ScanContext& context)
+    {
+        std::size_t stepIndex{};
+        for (auto& scanStep : _scanSteps)
+        {
+            context.currentStepStats = ScanStepStats{
+                .startTime = Wt::WDateTime::currentDateTime(),
+                .stepCount = _scanSteps.size(),
+                .stepIndex = stepIndex++,
+                .currentStep = scanStep->getStep(),
+                .totalElems = 0,
+                .processedElems = 0
+            };
+
+            if (_abortScan)
+                break;
+
+            if (!scanStep->needProcess(context))
+            {
+                LMS_LOG(DBUPDATER, DEBUG, "Skipping scan step '" << scanStep->getStepName() << "'");
+                continue;
+            }
+
+            {
+                LMS_SCOPED_TRACE_OVERVIEW("Scanner", scanStep->getStepName());
+
+                LMS_LOG(DBUPDATER, DEBUG, "Starting scan step '" << scanStep->getStepName() << "'");
+                notifyInProgress(context.currentStepStats);
+                scanStep->process(context);
+                notifyInProgress(context.currentStepStats);
+                LMS_LOG(DBUPDATER, DEBUG, "Completed scan step '" << scanStep->getStepName() << "'");
+            }
+        }
+    }
+
     void ScannerService::refreshScanSettings()
     {
-        ScannerSettings newSettings{ readSettings() };
-        if (_settings == newSettings)
+        std::optional<ScannerSettings> newSettings{ readScannerSettings(_db.getTLSSession(), currentSettingsName) };
+        assert(newSettings.has_value());
+        if (_settings == *newSettings)
             return;
 
         LMS_LOG(DBUPDATER, DEBUG, "Scanner settings updated");
-        LMS_LOG(DBUPDATER, DEBUG, "Using scan settings version " << newSettings.scanVersion);
+        LMS_LOG(DBUPDATER, DEBUG, "Using audio scan settings version " << newSettings->audioScanVersion);
 
-        _settings = std::move(newSettings);
+        _settings = std::move(*newSettings);
+        if (!_lastScanSettings)
+            _lastScanSettings = readScannerSettings(_db.getTLSSession(), lastScanSettingsName);
 
         auto cbFunc{ [this](const ScanStepStats& stats) {
             notifyInProgressIfNeeded(stats);
         } };
 
         _fileScanners.clear();
-        _fileScanners.emplace_back(std::make_unique<ArtistInfoFileScanner>(_db));
+        _fileScanners.emplace_back(std::make_unique<ArtistInfoFileScanner>(_settings, _db));
         _fileScanners.emplace_back(std::make_unique<AudioFileScanner>(_db, _settings));
         _fileScanners.emplace_back(std::make_unique<ImageFileScanner>(_db));
         _fileScanners.emplace_back(std::make_unique<LyricsFileScanner>(_db));
@@ -359,6 +442,7 @@ namespace lms::scanner
 
         ScanStepBase::InitParams params{
             .settings = _settings,
+            .lastScanSettings = _lastScanSettings.has_value() ? &(_lastScanSettings.value()) : nullptr,
             .progressCallback = cbFunc,
             .abortScan = _abortScan,
             .db = _db,
@@ -370,6 +454,7 @@ namespace lms::scanner
         _scanSteps.emplace_back(std::make_unique<ScanStepDiscoverFiles>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepScanFiles>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepCheckForRemovedFiles>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepArtistReconciliation>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociatePlayListTracks>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepUpdateLibraryFields>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociateArtistImages>(params));
@@ -380,43 +465,6 @@ namespace lms::scanner
         _scanSteps.emplace_back(std::make_unique<ScanStepOptimize>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepComputeClusterStats>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepCheckForDuplicatedFiles>(params));
-    }
-
-    ScannerSettings ScannerService::readSettings()
-    {
-        ScannerSettings newSettings;
-
-        newSettings.skipDuplicateMBID = core::Service<core::IConfig>::get()->getBool("scanner-skip-duplicate-mbid", false);
-        {
-            auto transaction{ _db.getTLSSession().createReadTransaction() };
-
-            const ScanSettings::pointer scanSettings{ ScanSettings::get(_db.getTLSSession()) };
-
-            newSettings.scanVersion = scanSettings->getScanVersion();
-            newSettings.startTime = scanSettings->getUpdateStartTime();
-            newSettings.updatePeriod = scanSettings->getUpdatePeriod();
-
-            MediaLibrary::find(_db.getTLSSession(), [&](const MediaLibrary::pointer& mediaLibrary) {
-                MediaLibraryInfo info;
-                info.firstScan = mediaLibrary->isEmpty();
-                info.id = mediaLibrary->getId();
-                info.rootDirectory = mediaLibrary->getPath().lexically_normal();
-
-                newSettings.mediaLibraries.push_back(info);
-            });
-
-            {
-                const auto& tags{ scanSettings->getExtraTagsToScan() };
-                std::transform(std::cbegin(tags), std::cend(tags), std::back_inserter(newSettings.extraTags), [](std::string_view tag) { return std::string{ tag }; });
-            }
-
-            newSettings.artistTagDelimiters = scanSettings->getArtistTagDelimiters();
-            newSettings.defaultTagDelimiters = scanSettings->getDefaultTagDelimiters();
-
-            newSettings.skipSingleReleasePlayLists = scanSettings->getSkipSingleReleasePlayLists();
-        }
-
-        return newSettings;
     }
 
     void ScannerService::notifyInProgress(const ScanStepStats& stepStats)

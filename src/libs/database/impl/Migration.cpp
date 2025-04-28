@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 85 };
+        static constexpr Version LMS_DATABASE_VERSION{ 88 };
     }
 
     VersionInfo::VersionInfo()
@@ -1159,6 +1159,36 @@ FROM tracklist)");
         utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
+    void migrateFromV85(Session& session)
+    {
+        dropIndexes(session);
+
+        // Artist merging feature
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN allow_mbid_artist_merge BOLLEAN DEFAULT(false)");
+
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE track_artist_link ADD COLUMN artist_name TEXT NULL DEFAULT('')");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE track_artist_link ADD COLUMN artist_sort_name TEXT NULL DEFAULT('')");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE track_artist_link ADD COLUMN artist_mbid_matched BOOLEAN NOT NULL DEFAULT(false)");
+
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE artist_info ADD COLUMN name TEXT NULL DEFAULT('')");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE artist_info ADD COLUMN sort_name TEXT NULL DEFAULT('')");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE artist_info ADD COLUMN mbid_matched BOOLEAN NOT NULL DEFAULT(false)");
+
+        // Just increment the scan version of the settings to make the next scan rescan everything
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
+    }
+
+    void migrateFromV86(Session& session)
+    {
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN name TEXT NON NULL DEFAULT('')");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings RENAME COLUMN scan_version TO audio_scan_version");
+    }
+
+    void migrateFromV87(Session& session)
+    {
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN artists_to_not_split TEXT NON NULL DEFAULT('')");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1220,6 +1250,9 @@ FROM tracklist)");
             { 82, migrateFromV82 },
             { 83, migrateFromV83 },
             { 84, migrateFromV84 },
+            { 85, migrateFromV85 },
+            { 86, migrateFromV86 },
+            { 87, migrateFromV87 },
         };
 
         bool migrationPerformed{};

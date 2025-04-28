@@ -64,6 +64,12 @@ namespace lms::scanner
         LMS_LOG(DBUPDATER, INFO, "Using " << _fileScanQueue.getThreadCount() << " thread(s) for scanning file metadata");
     }
 
+    bool ScanStepScanFiles::needProcess([[maybe_unused]] const ScanContext& context) const
+    {
+        // Always need to scan files
+        return true;
+    }
+
     void ScanStepScanFiles::process(ScanContext& context)
     {
         context.currentStepStats.totalElems = context.stats.totalFileCount;
