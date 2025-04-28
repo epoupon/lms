@@ -33,6 +33,7 @@
 	<plural case="1">{1} pistas</plural>
 </message>
 <message id="Lms.user">Usuario</message>
+<message id="Lms.uuid-invalid">UUID inválido</message>
 
 <!--Locale-->
 <message id="Lms.locale.decimal-point">.</message>
@@ -72,7 +73,9 @@
 <message id="Lms.Admin.MediaLibrary.root-path">Ruta raíz</message>
 
 <!--Scan settings-->
+<message id="Lms.Admin.Database.allow-mbid-artist-merge">Permitir la fusión de artistas sin MBID con aquellos que tienen uno</message>
 <message id="Lms.Admin.Database.artist-tag-delimiters">Delimitadores usados para separar las etiquetas de los artistas</message>
+<message id="Lms.Admin.Database.artists-to-not-split">Artistas que no se deben dividir usando los delimitadores (un artista por línea)</message>
 <message id="Lms.Admin.Database.daily">Diariamente</message>
 <message id="Lms.Admin.Database.default-tag-delimiters">Delimitadores usados para separar otras etiquetas</message>
 <message id="Lms.Admin.Database.extra-tags-to-scan">Etiquetas adicionales a escanear</message>
@@ -133,6 +136,7 @@
 <message id="Lms.Admin.ScannerController.step-discovering-files">Descubriendo ficheros: {1} ficheros</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Accediendo a las características de la pista desde AcousticBrainz : {1}/{2} ficheros ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Optimizando la base de datos... {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-reconciliate-artists">Reconciliando artistas: {1} entradas...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Recargando el motor de similitud: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">Borrando entradas huérfanas: {1} entradas...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Escaneando ficheros: {1} / {2} ({3}%)...</message>
