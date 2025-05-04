@@ -20,6 +20,8 @@
 #include "AudioFileParser.hpp"
 
 #include <span>
+#include <string>
+#include <string_view>
 
 #include "core/ILogger.hpp"
 #include "core/PartialDateTime.hpp"
@@ -64,7 +66,6 @@ namespace lms::metadata
         template<typename T>
         void addTagIfNonEmpty(std::vector<T>& res, std::string_view tag)
         {
-            tag = core::stringUtils::stringTrim(tag);
             if (tag.empty())
                 return;
 
@@ -81,22 +82,62 @@ namespace lms::metadata
             {
                 tagReader.visitTagValues(tagType, [&](std::string_view value) {
                     value = core::stringUtils::stringTrim(value);
-                    if (!whitelist || !whitelist->contains(value))
-                    {
-                        for (std::string_view tagDelimiter : tagDelimiters)
-                        {
-                            if (value.find(tagDelimiter) != std::string_view::npos)
-                            {
-                                for (std::string_view splitTag : core::stringUtils::splitString(value, tagDelimiters))
-                                    addTagIfNonEmpty(res, splitTag);
 
-                                return;
-                            }
+                    // short path: no custom delimiter
+                    if (tagDelimiters.empty())
+                    {
+                        addTagIfNonEmpty(res, value);
+                        return;
+                    }
+
+                    // Algo:
+                    // 1. replace whitelist entries by placeholders
+                    // 2. apply delimiters
+                    // 3. replace whitelist entries back
+
+                    constexpr std::string_view substitutionPrefix{ "__LMS_ENTRY__" };
+                    std::unordered_map<std::string, std::string_view> substitutionMap;
+                    std::string strToSplit{ value };
+                    if (whitelist)
+                    {
+                        std::size_t counter{};
+
+                        for (std::string_view whiteListEntry : *whitelist)
+                        {
+                            whiteListEntry = core::stringUtils::stringTrim(whiteListEntry);
+
+                            const std::string::size_type pos{ strToSplit.find(whiteListEntry) };
+                            if (pos == std::string::npos)
+                                continue;
+
+                            std::string substitutionStr{ std::string{ substitutionPrefix } + std::to_string(counter++) };
+                            strToSplit.replace(pos, whiteListEntry.size(), substitutionStr);
+                            substitutionMap.emplace(std::move(substitutionStr), whiteListEntry);
                         }
                     }
 
-                    // no delimiter found, or no delimiter to be used
-                    addTagIfNonEmpty(res, value);
+                    for (std::string_view strSplit : core::stringUtils::splitString(strToSplit, tagDelimiters))
+                    {
+                        std::string str{ core::stringUtils::stringTrim(strSplit) };
+
+                        while (true)
+                        {
+                            std::string::size_type prefixPos{ str.find(substitutionPrefix) };
+                            if (prefixPos == std::string::npos)
+                                break;
+
+                            std::string::size_type counterEnd{ prefixPos + substitutionPrefix.size() };
+                            while (std::isdigit(str[counterEnd]))
+                                counterEnd++;
+
+                            std::string substitutionStr{ str.substr(prefixPos, counterEnd - prefixPos) };
+                            auto it{ substitutionMap.find(substitutionStr) };
+                            if (it != std::cend(substitutionMap))
+                                str.replace(prefixPos, counterEnd - prefixPos, it->second);
+                        }
+
+                        addTagIfNonEmpty(res, str);
+                    }
                 });
 
                 if (!res.empty())

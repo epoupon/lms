@@ -90,5 +90,3 @@ namespace lms::metadata::benchmarks
     BENCHMARK(BM_Lyrics);
 
 } // namespace lms::metadata::benchmarks
-
-BENCHMARK_MAIN();
