@@ -362,7 +362,7 @@ namespace lms::metadata
         return fileExtensions;
     }
 
-    std::unique_ptr<Track> AudioFileParser::parseMetaData(const std::filesystem::path& p)
+    std::unique_ptr<Track> AudioFileParser::parseMetaData(const std::filesystem::path& p) const
     {
         try
         {
@@ -389,7 +389,7 @@ namespace lms::metadata
         }
     }
 
-    void AudioFileParser::parseImages(const std::filesystem::path& p, ImageVisitor visitor)
+    void AudioFileParser::parseImages(const std::filesystem::path& p, ImageVisitor visitor) const
     {
         try
         {
@@ -416,7 +416,7 @@ namespace lms::metadata
         }
     }
 
-    std::unique_ptr<Track> AudioFileParser::parseMetaData(const ITagReader& tagReader)
+    std::unique_ptr<Track> AudioFileParser::parseMetaData(const ITagReader& tagReader) const
     {
         auto track{ std::make_unique<Track>() };
 
@@ -426,7 +426,7 @@ namespace lms::metadata
         return track;
     }
 
-    void AudioFileParser::processTags(const ITagReader& tagReader, Track& track)
+    void AudioFileParser::processTags(const ITagReader& tagReader, Track& track) const
     {
         track.title = getTagValueAs<std::string>(tagReader, TagType::TrackTitle).value_or("");
         track.mbid = getTagValueAs<core::UUID>(tagReader, TagType::MusicBrainzTrackID);
@@ -493,7 +493,7 @@ namespace lms::metadata
             track.originalYear = track.originalDate.getYear();
     }
 
-    std::optional<Medium> AudioFileParser::getMedium(const ITagReader& tagReader)
+    std::optional<Medium> AudioFileParser::getMedium(const ITagReader& tagReader) const
     {
         std::optional<Medium> medium;
         medium.emplace();
@@ -523,7 +523,7 @@ namespace lms::metadata
         return medium;
     }
 
-    std::optional<Release> AudioFileParser::getRelease(const ITagReader& tagReader)
+    std::optional<Release> AudioFileParser::getRelease(const ITagReader& tagReader) const
     {
         std::optional<Release> release;
 

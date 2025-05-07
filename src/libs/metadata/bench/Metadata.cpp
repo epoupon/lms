@@ -39,10 +39,9 @@ namespace lms::metadata::benchmarks
         params.userExtraTags = { "MY_AWESOME_TAG_A", "MY_AWESOME_TAG_B", "MY_AWESOME_MISSING_TAG" };
 
         std::unique_ptr<ITagReader> testTags{ tests::createDefaultPopulatedTestTagReader() };
-
+        const TestAudioFileParser parser{ params };
         for (auto _ : state)
         {
-            TestAudioFileParser parser{ params };
             std::unique_ptr<Track> track{ parser.parseMetaData(*testTags) };
         }
     }
@@ -55,11 +54,11 @@ namespace lms::metadata::benchmarks
             }
         };
 
-        AudioFileParserParameters params;
+        const AudioFileParserParameters params;
+        const TestAudioFileParser parser{ params };
 
         for (auto _ : state)
         {
-            TestAudioFileParser parser{ params };
             std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
         }
     }
@@ -114,9 +113,9 @@ namespace lms::metadata::benchmarks
             "White/Light",
             "Yamantaka // Sonic Titan" };
 
+        const TestAudioFileParser parser{ params };
         for (auto _ : state)
         {
-            TestAudioFileParser parser{ params };
             std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
         }
     }
@@ -132,9 +131,10 @@ namespace lms::metadata::benchmarks
         AudioFileParserParameters params;
         params.artistTagDelimiters = { "/", ";" };
 
+        const TestAudioFileParser parser{ params };
+
         for (auto _ : state)
         {
-            TestAudioFileParser parser{ params };
             std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
         }
     }

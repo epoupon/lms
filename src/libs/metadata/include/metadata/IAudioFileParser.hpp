@@ -33,10 +33,10 @@ namespace lms::metadata
     public:
         virtual ~IAudioFileParser() = default;
 
-        virtual std::unique_ptr<Track> parseMetaData(const std::filesystem::path& p) = 0;
+        virtual std::unique_ptr<Track> parseMetaData(const std::filesystem::path& p) const = 0;
 
         using ImageVisitor = std::function<void(const Image&)>;
-        virtual void parseImages(const std::filesystem::path& p, ImageVisitor visitor) = 0;
+        virtual void parseImages(const std::filesystem::path& p, ImageVisitor visitor) const = 0;
 
         virtual std::span<const std::filesystem::path> getSupportedExtensions() const = 0;
     };
