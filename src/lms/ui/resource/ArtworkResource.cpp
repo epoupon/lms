@@ -26,13 +26,6 @@
 #include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
-#include "database/Artist.hpp"
-#include "database/Image.hpp"
-#include "database/Release.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackEmbeddedImage.hpp"
-#include "database/Types.hpp"
 #include "services/artwork/IArtworkService.hpp"
 
 #include "LmsApplication.hpp"
@@ -58,19 +51,15 @@ namespace lms::ui
     {
         std::string url;
 
-        {
-            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-
-            const db::Artist::pointer artist{ db::Artist::find(LmsApp->getDbSession(), artistId) };
-            if (artist)
-            {
-                if (const db::Image::pointer image{ artist->getImage() })
-                    url = getImageUrl(image->getId(), size, "artist");
-            }
-        }
-
-        if (url.empty())
-            url = getDefaultArtistImageUrl();
+        const auto imageResult{ core::Service<cover::IArtworkService>::get()->findArtistImage(artistId) };
+        std::visit([&](const auto& arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, std::monostate>)
+                url = getDefaultArtistImageUrl();
+            else
+                url = getImageUrl(arg, size, "artist");
+        },
+            imageResult);
 
         return url;
     }
@@ -79,33 +68,15 @@ namespace lms::ui
     {
         std::string url;
 
-        {
-            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-
-            const db::Release::pointer release{ db::Release::find(LmsApp->getDbSession(), releaseId) };
-            if (release)
-            {
-                if (const db::Image::pointer image{ release->getImage() })
-                {
-                    url = getImageUrl(image->getId(), size, "release");
-                }
-                else
-                {
-                    db::TrackEmbeddedImage::FindParameters params;
-                    params.setRelease(releaseId);
-                    params.setIsPreferred(true);
-                    params.setSortMethod(db::TrackEmbeddedImageSortMethod::FrontCoverAndSize);
-                    params.setRange(db::Range{ 0, 1 });
-
-                    db::TrackEmbeddedImage::find(LmsApp->getDbSession(), params, [&](const db::TrackEmbeddedImage::pointer& image) {
-                        url = getImageUrl(image->getId(), size, "release");
-                    });
-                }
-            }
-        }
-
-        if (url.empty())
-            url = getDefaultReleaseCoverUrl();
+        const auto imageResult{ core::Service<cover::IArtworkService>::get()->findReleaseImage(releaseId) };
+        std::visit([&](const auto& arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, std::monostate>)
+                url = getDefaultReleaseCoverUrl();
+            else
+                url = getImageUrl(arg, size, "release");
+        },
+            imageResult);
 
         return url;
     }
@@ -114,34 +85,15 @@ namespace lms::ui
     {
         std::string url;
 
-        {
-            auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-
-            db::TrackEmbeddedImage::FindParameters params;
-            params.setTrack(trackId);
-            params.setIsPreferred(true);
-            params.setRange(db::Range{ .offset = 0, .size = 1 });
-
-            db::TrackEmbeddedImage::find(LmsApp->getDbSession(), params, [&](const db::TrackEmbeddedImage::pointer& image) {
-                url = getImageUrl(image->getId(), size, "release");
-            });
-
-            if (url.empty())
-            {
-                db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), trackId) };
-                if (track)
-                {
-                    if (const db::Release::pointer release{ track->getRelease() })
-                    {
-                        if (const db::Image::pointer image{ release->getImage() })
-                            url = getImageUrl(image->getId(), size, "release");
-                    }
-                }
-            }
-        }
-
-        if (url.empty())
-            url = getDefaultReleaseCoverUrl();
+        const auto imageResult{ core::Service<cover::IArtworkService>::get()->findPreferredTrackImage(trackId) };
+        std::visit([&](const auto& arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, std::monostate>)
+                url = getDefaultReleaseCoverUrl();
+            else
+                url = getImageUrl(arg, size, "release");
+        },
+            imageResult);
 
         return url;
     }
@@ -155,9 +107,9 @@ namespace lms::ui
         return res;
     }
 
-    std::string ArtworkResource::getImageUrl(db::TrackEmbeddedImageId trackId, std::optional<Size> size, std::string_view type) const
+    std::string ArtworkResource::getImageUrl(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<Size> size, std::string_view type) const
     {
-        std::string res{ url() + "&trimageid=" + trackId.toString() + "&type=" + std::string{ type } };
+        std::string res{ url() + "&trimageid=" + trackEmbeddedImageId.toString() + "&type=" + std::string{ type } };
         if (size)
             res += "&size=" + std::to_string(static_cast<std::size_t>(*size));
         return res;
