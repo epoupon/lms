@@ -260,6 +260,26 @@ namespace lms::cover
         return res;
     }
 
+    ArtworkService::ImageFindResult ArtworkService::findTrackListImage(db::TrackListId trackListId)
+    {
+        db::Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createReadTransaction() };
+
+        ImageFindResult res;
+
+        db::TrackEmbeddedImage::FindParameters params;
+        params.setTrackList(trackListId);
+        params.setIsPreferred(true);
+        params.setSortMethod(db::TrackEmbeddedImageSortMethod::FrontCoverAndSize);
+        params.setRange(db::Range{ .offset = 0, .size = 1 });
+
+        db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
+            res = image->getId();
+        });
+
+        return res;
+    }
+
     std::shared_ptr<image::IEncodedImage> ArtworkService::getImage(db::ImageId imageId, std::optional<image::ImageSize> width)
     {
         const ImageCache::EntryDesc cacheEntryDesc{ imageId, width };
