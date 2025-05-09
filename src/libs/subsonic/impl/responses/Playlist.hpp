@@ -26,10 +26,11 @@
 namespace lms::db
 {
     class TrackList;
-    class Session;
 } // namespace lms::db
 
 namespace lms::api::subsonic
 {
-    Response::Node createPlaylistNode(const db::ObjectPtr<db::TrackList>& tracklist, db::Session& session);
-}
+    struct RequestContext;
+
+    Response::Node createPlaylistNode(RequestContext& context, const db::ObjectPtr<db::TrackList>& tracklist);
+} // namespace lms::api::subsonic

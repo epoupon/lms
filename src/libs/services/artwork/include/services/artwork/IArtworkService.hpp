@@ -29,6 +29,7 @@
 #include "database/ReleaseId.hpp"
 #include "database/TrackEmbeddedImageId.hpp"
 #include "database/TrackId.hpp"
+#include "database/TrackListId.hpp"
 #include "image/IEncodedImage.hpp"
 
 namespace lms::db
@@ -48,6 +49,7 @@ namespace lms::cover
         virtual ImageFindResult findArtistImage(db::ArtistId artistId) = 0;
         virtual ImageFindResult findPreferredTrackImage(db::TrackId trackId) = 0;
         virtual ImageFindResult findReleaseImage(db::ReleaseId releaseId) = 0;
+        virtual ImageFindResult findTrackListImage(db::TrackListId trackListId) = 0;
 
         // Image retrieval
         virtual std::shared_ptr<image::IEncodedImage> getImage(db::ImageId imageId, std::optional<image::ImageSize> width) = 0;

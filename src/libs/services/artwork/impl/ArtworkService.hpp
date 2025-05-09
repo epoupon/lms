@@ -50,6 +50,7 @@ namespace lms::cover
         ImageFindResult findArtistImage(db::ArtistId artistId) override;
         ImageFindResult findPreferredTrackImage(db::TrackId trackId) override;
         ImageFindResult findReleaseImage(db::ReleaseId releaseId) override;
+        ImageFindResult findTrackListImage(db::TrackListId trackListId) override;
 
         std::shared_ptr<image::IEncodedImage> getImage(db::ImageId imageId, std::optional<image::ImageSize> width) override;
         std::shared_ptr<image::IEncodedImage> getTrackEmbeddedImage(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<image::ImageSize> width) override;

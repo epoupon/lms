@@ -59,7 +59,7 @@ namespace lms::api::subsonic
         Response::Node& playlistsNode{ response.createNode("playlists") };
 
         auto addTrackList{ [&](const db::TrackList::pointer& trackList) {
-            playlistsNode.addArrayChild("playlist", createPlaylistNode(trackList, context.dbSession));
+            playlistsNode.addArrayChild("playlist", createPlaylistNode(context, trackList));
         } };
 
         // First add user's playlists
@@ -104,7 +104,7 @@ namespace lms::api::subsonic
             throw RequestedDataNotFoundError{};
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-        Response::Node playlistNode{ createPlaylistNode(trackList, context.dbSession) };
+        Response::Node playlistNode{ createPlaylistNode(context, trackList) };
 
         auto entries{ trackList->getEntries() };
         for (const TrackListEntry::pointer& entry : entries.results)
@@ -157,7 +157,7 @@ namespace lms::api::subsonic
         }
 
         Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-        Response::Node playlistNode{ createPlaylistNode(trackList, context.dbSession) };
+        Response::Node playlistNode{ createPlaylistNode(context, trackList) };
 
         auto entries{ trackList->getEntries() };
         for (const TrackListEntry::pointer& entry : entries.results)
