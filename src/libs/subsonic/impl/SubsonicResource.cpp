@@ -87,27 +87,31 @@ namespace lms::api::subsonic
 
         std::string parameterMapToDebugString(const Wt::Http::ParameterMap& parameterMap)
         {
-            auto censorValue = [](const std::string& type, const std::string& value) -> std::string {
-                if (type == "p" || type == "password")
-                    return "*REDACTED*";
+            constexpr std::string_view redactedStr{ "*REDACTED*" };
+            auto redactValueIfNeeded = [redactedStr](const std::string& type, const std::string& value) -> std::string_view {
+                if (type == "p" || type == "password" || type == "apiKey")
+                    return redactedStr;
 
                 return value;
             };
 
             std::string res;
 
-            for (const auto& params : parameterMap)
+            for (const auto& [type, values] : parameterMap)
             {
-                res += "{" + params.first + "=";
-                if (params.second.size() == 1)
+                res += "{" + type + "=";
+                if (values.size() == 1)
                 {
-                    res += censorValue(params.first, params.second.front());
+                    res += redactValueIfNeeded(type, values.front());
                 }
                 else
                 {
                     res += "{";
-                    for (const std::string& param : params.second)
-                        res += censorValue(params.first, param) + ",";
+                    for (const std::string& value : values)
+                    {
+                        res += redactValueIfNeeded(type, value);
+                        res += ',';
+                    }
                     res += "}";
                 }
                 res += "}, ";
