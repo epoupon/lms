@@ -706,6 +706,11 @@ namespace lms::db
         return ObjectPtr<Image>{ _image };
     }
 
+    ImageId Release::getImageId() const
+    {
+        return _image.id();
+    }
+
     void Release::clearLabels()
     {
         _labels.clear();

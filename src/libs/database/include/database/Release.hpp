@@ -34,6 +34,7 @@
 #include "database/CountryId.hpp"
 #include "database/DirectoryId.hpp"
 #include "database/Filters.hpp"
+#include "database/ImageId.hpp"
 #include "database/LabelId.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
@@ -292,6 +293,7 @@ namespace lms::db
         std::string_view getBarcode() const { return _barcode; }
         std::string_view getComment() const { return _comment; }
         ObjectPtr<Image> getImage() const;
+        ImageId getImageId() const;
 
         // Setters
         void setName(std::string_view name) { _name = name; }

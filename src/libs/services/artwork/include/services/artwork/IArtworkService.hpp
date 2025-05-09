@@ -22,9 +22,13 @@
 #include <filesystem>
 #include <memory>
 #include <optional>
+#include <variant>
 
+#include "database/ArtistId.hpp"
 #include "database/ImageId.hpp"
+#include "database/ReleaseId.hpp"
 #include "database/TrackEmbeddedImageId.hpp"
+#include "database/TrackId.hpp"
 #include "image/IEncodedImage.hpp"
 
 namespace lms::db
@@ -39,6 +43,13 @@ namespace lms::cover
     public:
         virtual ~IArtworkService() = default;
 
+        // Helpers to find artworks
+        using ImageFindResult = std::variant<std::monostate, db::ImageId, db::TrackEmbeddedImageId>;
+        virtual ImageFindResult findArtistImage(db::ArtistId artistId) = 0;
+        virtual ImageFindResult findPreferredTrackImage(db::TrackId trackId) = 0;
+        virtual ImageFindResult findReleaseImage(db::ReleaseId releaseId) = 0;
+
+        // Image retrieval
         virtual std::shared_ptr<image::IEncodedImage> getImage(db::ImageId imageId, std::optional<image::ImageSize> width) = 0;
         virtual std::shared_ptr<image::IEncodedImage> getTrackEmbeddedImage(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<image::ImageSize> width) = 0;
 
