@@ -33,6 +33,7 @@
 #include "database/ArtistId.hpp"
 #include "database/ClusterId.hpp"
 #include "database/Filters.hpp"
+#include "database/ImageId.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
@@ -137,6 +138,7 @@ namespace lms::db
         std::optional<core::UUID> getMBID() const;
         bool hasMBID() const;
         ObjectPtr<Image> getImage() const;
+        ImageId getImageId() const;
         void visitLinks(std::function<void(const ObjectPtr<TrackArtistLink>& link)> visitor) const;
 
         // No artistLinkTypes means get them all
