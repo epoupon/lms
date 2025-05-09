@@ -320,6 +320,11 @@ AND NOT EXISTS (
         return ObjectPtr<Image>{ _image };
     }
 
+    ImageId Artist::getImageId() const
+    {
+        return _image.id();
+    }
+
     RangeResults<ArtistId> Artist::findSimilarArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes, std::optional<Range> range) const
     {
         assert(session());

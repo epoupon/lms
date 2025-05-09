@@ -47,6 +47,10 @@ namespace lms::cover
         ArtworkService& operator=(const ArtworkService&) = delete;
 
     private:
+        ImageFindResult findArtistImage(db::ArtistId artistId) override;
+        ImageFindResult findPreferredTrackImage(db::TrackId trackId) override;
+        ImageFindResult findReleaseImage(db::ReleaseId releaseId) override;
+
         std::shared_ptr<image::IEncodedImage> getImage(db::ImageId imageId, std::optional<image::ImageSize> width) override;
         std::shared_ptr<image::IEncodedImage> getTrackEmbeddedImage(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<image::ImageSize> width) override;
 

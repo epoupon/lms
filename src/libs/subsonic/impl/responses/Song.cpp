@@ -32,9 +32,9 @@
 #include "database/Release.hpp"
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"
-#include "database/TrackEmbeddedImage.hpp"
 #include "database/Types.hpp"
 #include "database/User.hpp"
+#include "services/artwork/IArtworkService.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 
@@ -110,28 +110,18 @@ namespace lms::api::subsonic
             trackResponse.setAttribute("transcodedContentType", av::getMimeType(std::filesystem::path{ "." + fileSuffix }));
         }
 
-        const Release::pointer release{ track->getRelease() };
-
         {
-            TrackEmbeddedImage::FindParameters params;
-            params.setTrack(track->getId());
-            params.setIsPreferred(true);
-            params.setRange(Range{ .offset = 0, .size = 1 });
-
-            bool hasEmbeddedImage{};
-            TrackEmbeddedImage::find(context.dbSession, params, [&](const TrackEmbeddedImage::pointer& image) {
-                const CoverArtId coverArtId{ image->getId() };
-                trackResponse.setAttribute("coverArt", idToString(coverArtId));
-            });
-
-            if (!hasEmbeddedImage && release)
+            const auto imageResult{ core::Service<cover::IArtworkService>::get()->findPreferredTrackImage(track->getId()) };
+            if (const db::ImageId * imageId{ std::get_if<db::ImageId>(&imageResult) })
             {
-                if (const db::Image::pointer image{ release->getImage() })
+                if (const db::Image::pointer image{ db::Image::find(context.dbSession, *imageId) })
                 {
-                    const CoverArtId coverArtId{ image->getId(), image->getLastWriteTime().toTime_t() };
+                    const CoverArtId coverArtId{ *imageId, image->getLastWriteTime().toTime_t() };
                     trackResponse.setAttribute("coverArt", idToString(coverArtId));
                 }
             }
+            else if (const db::TrackEmbeddedImageId * embeddedImageId{ std::get_if<db::TrackEmbeddedImageId>(&imageResult) })
+                trackResponse.setAttribute("coverArt", idToString(*embeddedImageId));
         }
 
         const std::vector<Artist::pointer>& artists{ track->getArtists({ TrackArtistLinkType::Artist }) };
@@ -146,6 +136,7 @@ namespace lms::api::subsonic
                 trackResponse.setAttribute("artistId", idToString(artists.front()->getId()));
         }
 
+        const Release::pointer release{ track->getRelease() };
         if (release)
         {
             trackResponse.setAttribute("album", release->getName());

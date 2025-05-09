@@ -25,10 +25,13 @@
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/Utils.hpp"
+#include "database/Artist.hpp"
 #include "database/Db.hpp"
 #include "database/Image.hpp"
+#include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "database/TrackEmbeddedImage.hpp"
 #include "image/Exception.hpp"
 #include "image/IEncodedImage.hpp"
 #include "image/Image.hpp"
@@ -176,6 +179,85 @@ namespace lms::cover
             return std::move(candidateImages.front().image);
 
         return {};
+    }
+
+    ArtworkService::ImageFindResult ArtworkService::findArtistImage(db::ArtistId artistId)
+    {
+        db::Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createReadTransaction() };
+
+        ImageFindResult res;
+
+        if (const db::Artist::pointer artist{ db::Artist::find(session, artistId) })
+        {
+            if (const db::ImageId imageId{ artist->getImageId() }; imageId.isValid())
+                res = imageId;
+
+            // TODO fallback on first release?
+        }
+
+        return res;
+    }
+
+    ArtworkService::ImageFindResult ArtworkService::findPreferredTrackImage(db::TrackId trackId)
+    {
+        db::Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createReadTransaction() };
+        ImageFindResult res;
+
+        db::TrackEmbeddedImage::FindParameters params;
+        params.setTrack(trackId);
+        params.setIsPreferred(true);
+        params.setRange(db::Range{ .offset = 0, .size = 1 });
+
+        db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
+            res = image->getId();
+        });
+
+        if (res.index() == 0)
+        {
+            if (db::Track::pointer track{ db::Track::find(session, trackId) })
+            {
+                if (const db::Release::pointer release{ track->getRelease() })
+                {
+                    if (const db::ImageId imageId{ release->getImageId() }; imageId.isValid())
+                        res = imageId;
+                }
+            }
+        }
+
+        return res;
+    }
+
+    ArtworkService::ImageFindResult ArtworkService::findReleaseImage(db::ReleaseId releaseId)
+    {
+        db::Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createReadTransaction() };
+
+        ImageFindResult res;
+
+        const db::Release::pointer release{ db::Release::find(session, releaseId) };
+        if (release)
+        {
+            if (const db::ImageId imageId{ release->getImageId() }; imageId.isValid())
+            {
+                res = imageId;
+            }
+            else
+            {
+                db::TrackEmbeddedImage::FindParameters params;
+                params.setRelease(releaseId);
+                params.setIsPreferred(true);
+                params.setSortMethod(db::TrackEmbeddedImageSortMethod::FrontCoverAndSize);
+                params.setRange(db::Range{ .offset = 0, .size = 1 });
+
+                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
+                    res = image->getId();
+                });
+            }
+        }
+
+        return res;
     }
 
     std::shared_ptr<image::IEncodedImage> ArtworkService::getImage(db::ImageId imageId, std::optional<image::ImageSize> width)
