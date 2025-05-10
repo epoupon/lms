@@ -1208,6 +1208,7 @@ FROM tracklist)");
 
     void migrateFromV90(Session& session)
     {
+        dropIndexes(session);
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE track_embedded_image_link DROP COLUMN is_preferred");
     }
 
