@@ -133,7 +133,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             TrackEmbeddedImage::FindParameters params;
-            params.setSortMethod(TrackEmbeddedImageSortMethod::FrontTypeThenSize);
+            params.setSortMethod(TrackEmbeddedImageSortMethod::FrontTypeThenSizeDesc);
 
             bool visited{};
             TrackEmbeddedImage::find(session, params, [&](const auto&) { visited = true; });
@@ -144,8 +144,32 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             TrackEmbeddedImage::FindParameters params;
+            params.setImageType(ImageType::FrontCover);
+            params.setSortMethod(TrackEmbeddedImageSortMethod::FrontTypeThenSizeDesc);
+
+            bool visited{};
+            TrackEmbeddedImage::find(session, params, [&](const auto&) { visited = true; });
+            EXPECT_TRUE(visited);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackEmbeddedImage::FindParameters params;
+            params.setImageType(ImageType::Media);
+            params.setSortMethod(TrackEmbeddedImageSortMethod::FrontTypeThenSizeDesc);
+
+            bool visited{};
+            TrackEmbeddedImage::find(session, params, [&](const auto&) { visited = true; });
+            EXPECT_FALSE(visited);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackEmbeddedImage::FindParameters params;
             params.setRelease(release.getId());
-            params.setSortMethod(TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSize);
+            params.setSortMethod(TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSizeDescDesc);
 
             bool visited{};
             TrackEmbeddedImage::find(session, params, [&](const auto&) { visited = true; });
@@ -162,7 +186,7 @@ namespace lms::db::tests
 
             TrackEmbeddedImage::FindParameters params;
             params.setRelease(release.getId());
-            params.setSortMethod(TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSize);
+            params.setSortMethod(TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSizeDescDesc);
 
             bool visited{};
             TrackEmbeddedImage::find(session, params, [&](const auto&) { visited = true; });
@@ -174,7 +198,7 @@ namespace lms::db::tests
 
             TrackEmbeddedImage::FindParameters params;
             params.setTrack(track.getId());
-            params.setSortMethod(TrackEmbeddedImageSortMethod::FrontTypeThenSize);
+            params.setSortMethod(TrackEmbeddedImageSortMethod::FrontTypeThenSizeDesc);
 
             bool visited{};
             TrackEmbeddedImage::find(session, params, [&](const auto&) { visited = true; });
@@ -196,6 +220,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
             link1.get().modify()->setType(ImageType::FrontCover);
+            image1.get().modify()->setSize(750);
             link2.get().modify()->setType(ImageType::Media);
             image2.get().modify()->setSize(1000);
             link3.get().modify()->setType(ImageType::Media);
@@ -206,7 +231,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             TrackEmbeddedImage::FindParameters params;
-            params.setSortMethod(TrackEmbeddedImageSortMethod::FrontTypeThenSize);
+            params.setSortMethod(TrackEmbeddedImageSortMethod::FrontTypeThenSizeDesc);
 
             std::vector<TrackEmbeddedImageId> visitedIds;
             TrackEmbeddedImage::find(session, params, [&](const TrackEmbeddedImage::pointer& image) { visitedIds.push_back(image->getId()); });
@@ -220,7 +245,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             TrackEmbeddedImage::FindParameters params;
-            params.setSortMethod(TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSize);
+            params.setSortMethod(TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSizeDescDesc);
 
             std::vector<TrackEmbeddedImageId> visitedIds;
             TrackEmbeddedImage::find(session, params, [&](const TrackEmbeddedImage::pointer& image) { visitedIds.push_back(image->getId()); });
@@ -228,6 +253,20 @@ namespace lms::db::tests
             EXPECT_EQ(visitedIds[0], image3.getId());
             EXPECT_EQ(visitedIds[1], image2.getId());
             EXPECT_EQ(visitedIds[2], image1.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackEmbeddedImage::FindParameters params;
+            params.setSortMethod(TrackEmbeddedImageSortMethod::SizeDesc);
+
+            std::vector<TrackEmbeddedImageId> visitedIds;
+            TrackEmbeddedImage::find(session, params, [&](const TrackEmbeddedImage::pointer& image) { visitedIds.push_back(image->getId()); });
+            ASSERT_EQ(visitedIds.size(), 3);
+            EXPECT_EQ(visitedIds[0], image3.getId());
+            EXPECT_EQ(visitedIds[2], image1.getId());
+            EXPECT_EQ(visitedIds[1], image2.getId());
         }
     }
 
