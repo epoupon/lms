@@ -104,6 +104,20 @@ namespace lms::ui::utils
         return cover;
     }
 
+    std::unique_ptr<Wt::WImage> createTrackMediaImage(db::TrackId trackId, ArtworkResource::Size size)
+    {
+        std::string url{ LmsApp->getArtworkResource()->getTrackMediaImageUrl(trackId, size) };
+        if (url.empty())
+            return nullptr;
+
+        auto cover{ std::make_unique<Wt::WImage>() };
+        cover->setImageLink(std::move(url));
+        cover->setStyleClass("Lms-cover img-fluid");                                          // HACK
+        cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)"); // HACK
+
+        return cover;
+    }
+
     std::unique_ptr<Wt::WInteractWidget> createFilter(const Wt::WString& name, const Wt::WString& tooltip, std::string_view colorStyleClass, bool canDelete)
     {
         auto res{ std::make_unique<Wt::WText>(Wt::WString{ canDelete ? "<i class=\"fa fa-times-circle\"></i> " : "" } + name, Wt::TextFormat::UnsafeXHTML) };

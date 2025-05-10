@@ -98,6 +98,21 @@ namespace lms::ui
         return url;
     }
 
+    std::string ArtworkResource::getTrackMediaImageUrl(db::TrackId trackId, std::optional<Size> size)
+    {
+        std::string url;
+
+        const auto imageResult{ core::Service<cover::IArtworkService>::get()->findTrackMediaImage(trackId) };
+        std::visit([&](const auto& arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (!std::is_same_v<T, std::monostate>)
+                url = getImageUrl(arg, size, "release");
+        },
+            imageResult);
+
+        return url;
+    }
+
     std::string ArtworkResource::getImageUrl(db::ImageId imageId, std::optional<Size> size, std::string_view type) const
     {
         std::string res{ url() + "&imageid=" + imageId.toString() + "&type=" + std::string{ type } };
