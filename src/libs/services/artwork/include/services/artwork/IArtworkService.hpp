@@ -51,7 +51,10 @@ namespace lms::cover
         // Will get Disc/Media artwork if available, otherwise, will fallback on release artwork
         virtual ImageFindResult findTrackImage(db::TrackId trackId) = 0;
 
-        // Will get Release if available, otherwise, will fallback on embedded  artworks
+        // Will get Disc/Media artwork if available, no fallback
+        virtual ImageFindResult findTrackMediaImage(db::TrackId trackId) = 0;
+
+        // Will get Release if available, otherwise, will fallback on embedded artworks
         virtual ImageFindResult findReleaseImage(db::ReleaseId releaseId) = 0;
         virtual ImageFindResult findTrackListImage(db::TrackListId trackListId) = 0;
 
