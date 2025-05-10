@@ -48,7 +48,7 @@ namespace lms::cover
 
     private:
         ImageFindResult findArtistImage(db::ArtistId artistId) override;
-        ImageFindResult findPreferredTrackImage(db::TrackId trackId) override;
+        ImageFindResult findTrackImage(db::TrackId trackId) override;
         ImageFindResult findReleaseImage(db::ReleaseId releaseId) override;
         ImageFindResult findTrackListImage(db::TrackListId trackListId) override;
 
@@ -62,9 +62,7 @@ namespace lms::cover
         void setJpegQuality(unsigned quality) override;
 
         std::unique_ptr<image::IEncodedImage> getFromImageFile(const std::filesystem::path& p, std::optional<image::ImageSize> width) const;
-        std::unique_ptr<image::IEncodedImage> getTrackImage(const std::filesystem::path& path, std::optional<image::ImageSize> width) const;
-
-        static bool checkImageFile(const std::filesystem::path& filePath);
+        std::unique_ptr<image::IEncodedImage> getTrackImage(const std::filesystem::path& path, std::size_t index, std::optional<image::ImageSize> width) const;
 
         db::Db& _db;
 

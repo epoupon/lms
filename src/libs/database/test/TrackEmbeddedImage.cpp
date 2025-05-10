@@ -118,23 +118,22 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             TrackEmbeddedImage::FindParameters params;
-            params.setIsPreferred(true);
 
             bool visited{};
             TrackEmbeddedImage::find(session, params, [&](const auto&) { visited = true; });
-            EXPECT_FALSE(visited);
+            EXPECT_TRUE(visited);
         }
 
         {
             auto transaction{ session.createWriteTransaction() };
-            link.get().modify()->setIsPreferred(true);
+            link.get().modify()->setType(ImageType::FrontCover);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             TrackEmbeddedImage::FindParameters params;
-            params.setIsPreferred(true);
+            params.setSortMethod(TrackEmbeddedImageSortMethod::FrontTypeThenSize);
 
             bool visited{};
             TrackEmbeddedImage::find(session, params, [&](const auto&) { visited = true; });
@@ -145,8 +144,8 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             TrackEmbeddedImage::FindParameters params;
-            params.setIsPreferred(true);
             params.setRelease(release.getId());
+            params.setSortMethod(TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSize);
 
             bool visited{};
             TrackEmbeddedImage::find(session, params, [&](const auto&) { visited = true; });
@@ -162,9 +161,8 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             TrackEmbeddedImage::FindParameters params;
-            params.setIsPreferred(true);
             params.setRelease(release.getId());
-            params.setSortMethod(TrackEmbeddedImageSortMethod::FrontCoverAndSize);
+            params.setSortMethod(TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSize);
 
             bool visited{};
             TrackEmbeddedImage::find(session, params, [&](const auto&) { visited = true; });
@@ -175,13 +173,61 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             TrackEmbeddedImage::FindParameters params;
-            params.setIsPreferred(true);
             params.setTrack(track.getId());
-            params.setSortMethod(TrackEmbeddedImageSortMethod::FrontCoverAndSize);
+            params.setSortMethod(TrackEmbeddedImageSortMethod::FrontTypeThenSize);
 
             bool visited{};
             TrackEmbeddedImage::find(session, params, [&](const auto&) { visited = true; });
             EXPECT_TRUE(visited);
+        }
+    }
+
+    TEST_F(DatabaseFixture, TrackEmbeddedImage_findByParams_sorts)
+    {
+        ScopedTrackEmbeddedImage image1{ session };
+        ScopedTrackEmbeddedImage image2{ session };
+        ScopedTrackEmbeddedImage image3{ session };
+        ScopedTrack track{ session };
+        ScopedRelease release{ session, "MyRelease" };
+        ScopedTrackEmbeddedImageLink link1{ session, track.lockAndGet(), image1.lockAndGet() };
+        ScopedTrackEmbeddedImageLink link2{ session, track.lockAndGet(), image2.lockAndGet() };
+        ScopedTrackEmbeddedImageLink link3{ session, track.lockAndGet(), image3.lockAndGet() };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            link1.get().modify()->setType(ImageType::FrontCover);
+            link2.get().modify()->setType(ImageType::Media);
+            image2.get().modify()->setSize(1000);
+            link3.get().modify()->setType(ImageType::Media);
+            image3.get().modify()->setSize(2000);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackEmbeddedImage::FindParameters params;
+            params.setSortMethod(TrackEmbeddedImageSortMethod::FrontTypeThenSize);
+
+            std::vector<TrackEmbeddedImageId> visitedIds;
+            TrackEmbeddedImage::find(session, params, [&](const TrackEmbeddedImage::pointer& image) { visitedIds.push_back(image->getId()); });
+            ASSERT_EQ(visitedIds.size(), 3);
+            EXPECT_EQ(visitedIds[0], image1.getId());
+            EXPECT_EQ(visitedIds[1], image3.getId());
+            EXPECT_EQ(visitedIds[2], image2.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackEmbeddedImage::FindParameters params;
+            params.setSortMethod(TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSize);
+
+            std::vector<TrackEmbeddedImageId> visitedIds;
+            TrackEmbeddedImage::find(session, params, [&](const TrackEmbeddedImage::pointer& image) { visitedIds.push_back(image->getId()); });
+            ASSERT_EQ(visitedIds.size(), 3);
+            EXPECT_EQ(visitedIds[0], image3.getId());
+            EXPECT_EQ(visitedIds[1], image2.getId());
+            EXPECT_EQ(visitedIds[2], image1.getId());
         }
     }
 
@@ -278,6 +324,21 @@ namespace lms::db::tests
             EXPECT_EQ(img->getIndex(), 2);
             EXPECT_EQ(img->getType(), ImageType::FrontCover);
             EXPECT_EQ(img->getDescription(), "MyDesc");
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            bool visited{};
+            TrackEmbeddedImageLink::find(session, image->getId(), [&](const TrackEmbeddedImageLink::pointer& link) {
+                EXPECT_EQ(link->getIndex(), 2);
+                EXPECT_EQ(link->getType(), ImageType::FrontCover);
+                EXPECT_EQ(link->getDescription(), "MyDesc");
+                EXPECT_EQ(link->getTrack(), track.get());
+
+                visited = true;
+            });
+            EXPECT_TRUE(visited);
         }
     }
 } // namespace lms::db::tests

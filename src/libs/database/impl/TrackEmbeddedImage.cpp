@@ -38,16 +38,13 @@ namespace lms::db
 
             auto query{ session.getDboSession()->query<Wt::Dbo::ptr<TrackEmbeddedImage>>("SELECT t_e_i FROM track_embedded_image t_e_i") };
 
-            if (params.isPreferred
-                || params.track.isValid()
+            if (params.track.isValid()
                 || params.release.isValid()
                 || params.trackList.isValid()
-                || params.sortMethod == TrackEmbeddedImageSortMethod::FrontCoverAndSize)
+                || params.sortMethod == TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSize
+                || params.sortMethod == TrackEmbeddedImageSortMethod::FrontTypeThenSize)
             {
                 query.join("track_embedded_image_link t_e_i_l ON t_e_i_l.track_embedded_image_id = t_e_i.id");
-
-                if (params.isPreferred)
-                    query.where("t_e_i_l.is_preferred = ?").bind(params.isPreferred.value());
 
                 if (params.track.isValid())
                     query.where("t_e_i_l.track_id = ?").bind(params.track);
@@ -69,8 +66,11 @@ namespace lms::db
             {
             case TrackEmbeddedImageSortMethod::None:
                 break;
-            case TrackEmbeddedImageSortMethod::FrontCoverAndSize:
-                query.orderBy("CASE WHEN t_e_i_l.type = ? THEN 0 ELSE 1 END, t_e_i.size").bind(ImageType::FrontCover);
+            case TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSize:
+                query.orderBy("CASE t_e_i_l.type WHEN ? THEN 1 WHEN ? THEN 2 ELSE 3 END, t_e_i.size DESC").bind(ImageType::Media).bind(ImageType::FrontCover);
+                break;
+            case TrackEmbeddedImageSortMethod::FrontTypeThenSize:
+                query.orderBy("CASE WHEN t_e_i_l.type = ? THEN 0 ELSE 1 END, t_e_i.size DESC").bind(ImageType::FrontCover);
                 break;
             }
 

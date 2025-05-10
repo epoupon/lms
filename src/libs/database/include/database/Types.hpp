@@ -171,7 +171,8 @@ namespace lms::db
     enum class TrackEmbeddedImageSortMethod
     {
         None,
-        FrontCoverAndSize,
+        MediaTypeThenFrontTypeThenSize,
+        FrontTypeThenSize,
     };
 
     enum class TrackListSortMethod
