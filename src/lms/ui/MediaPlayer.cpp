@@ -253,8 +253,8 @@ namespace lms::ui
                 << " artist: \"" << (!artists.empty() ? core::stringUtils::jsEscape(track->getArtistDisplayName()) : "") << "\","
                 << " release: \"" << (track->getRelease() ? core::stringUtils::jsEscape(track->getRelease()->getName()) : "") << "\","
                 << " artwork: ["
-                << "   { src: \"" << LmsApp->getArtworkResource()->getPreferredTrackImageUrl(trackId, ArtworkResource::Size::Small) << "\", sizes: \"128x128\",	type: \"image/jpeg\" },"
-                << "   { src: \"" << LmsApp->getArtworkResource()->getPreferredTrackImageUrl(trackId, ArtworkResource::Size::Large) << "\", sizes: \"512x512\",	type: \"image/jpeg\" },"
+                << "   { src: \"" << LmsApp->getArtworkResource()->getTrackImageUrl(trackId, ArtworkResource::Size::Small) << "\", sizes: \"128x128\",	type: \"image/jpeg\" },"
+                << "   { src: \"" << LmsApp->getArtworkResource()->getTrackImageUrl(trackId, ArtworkResource::Size::Large) << "\", sizes: \"512x512\",	type: \"image/jpeg\" },"
                 << " ]"
                 << "};";
             // Update 'sizes' above to match this:

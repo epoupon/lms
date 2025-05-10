@@ -25,6 +25,7 @@
 #include <Wt/Dbo/Dbo.h>
 
 #include "database/Object.hpp"
+#include "database/TrackEmbeddedImageId.hpp"
 #include "database/TrackEmbeddedImageLinkId.hpp"
 #include "database/Types.hpp"
 
@@ -44,18 +45,17 @@ namespace lms::db
         // find
         static std::size_t getCount(Session& session);
         static pointer find(Session& session, TrackEmbeddedImageLinkId id);
+        static void find(Session& session, TrackEmbeddedImageId trackEmbeddedImageId, std::function<void(const pointer&)> visitor);
 
         // getters
         ObjectPtr<Track> getTrack() const;
         ObjectPtr<TrackEmbeddedImage> getImage() const;
         std::size_t getIndex() const { return _index; }
-        bool isPreferred() const { return _isPreferred; }
         ImageType getType() const { return _type; }
         std::string_view getDescription() const { return _description; }
 
         // setters
         void setIndex(std::size_t index) { _index = static_cast<int>(index); }
-        void setIsPreferred(bool isPreferred) { _isPreferred = isPreferred; }
         void setType(ImageType type) { _type = type; }
         void setDescription(std::string_view description) { _description = description; }
 
@@ -63,7 +63,6 @@ namespace lms::db
         void persist(Action& a)
         {
             Wt::Dbo::field(a, _index, "index");
-            Wt::Dbo::field(a, _isPreferred, "is_preferred");
             Wt::Dbo::field(a, _type, "type");
             Wt::Dbo::field(a, _description, "description");
 
@@ -78,7 +77,6 @@ namespace lms::db
         static pointer create(Session& session, ObjectPtr<Track> track, ObjectPtr<TrackEmbeddedImage> image);
 
         int _index{}; // index within the track
-        bool _isPreferred{};
         ImageType _type{ ImageType::Unknown };
         std::string _description;
 
