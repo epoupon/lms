@@ -19,9 +19,6 @@
 
 #include "ArtworkService.hpp"
 
-#include <algorithm>
-#include <functional>
-
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/Utils.hpp"
@@ -32,6 +29,8 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackEmbeddedImage.hpp"
+#include "database/TrackEmbeddedImageLink.hpp"
+#include "database/Types.hpp"
 #include "image/Exception.hpp"
 #include "image/IEncodedImage.hpp"
 #include "image/Image.hpp"
@@ -39,14 +38,6 @@
 
 namespace lms::cover
 {
-    namespace
-    {
-        bool isFileSupported(const std::filesystem::path& file, const std::vector<std::filesystem::path>& extensions)
-        {
-            return (std::find(std::cbegin(extensions), std::cend(extensions), file.extension()) != std::cend(extensions));
-        }
-    } // namespace
-
     std::unique_ptr<IArtworkService> createArtworkService(db::Db& db, const std::filesystem::path& defaultReleaseCoverSvgPath, const std::filesystem::path& defaultArtistImageSvgPath)
     {
         return std::make_unique<ArtworkService>(db, defaultReleaseCoverSvgPath, defaultArtistImageSvgPath);
@@ -105,49 +96,18 @@ namespace lms::cover
         return _defaultArtistImage;
     }
 
-    bool ArtworkService::checkImageFile(const std::filesystem::path& filePath)
+    std::unique_ptr<image::IEncodedImage> ArtworkService::getTrackImage(const std::filesystem::path& p, std::size_t index, std::optional<image::ImageSize> width) const
     {
-        std::error_code ec;
-
-        if (!isFileSupported(filePath, _fileExtensions))
-            return false;
-
-        if (!std::filesystem::exists(filePath, ec))
-            return false;
-
-        if (!std::filesystem::is_regular_file(filePath, ec))
-            return false;
-
-        return true;
-    }
-
-    std::unique_ptr<image::IEncodedImage> ArtworkService::getTrackImage(const std::filesystem::path& p, std::optional<image::ImageSize> width) const
-    {
-        struct CandidateImage
-        {
-            std::unique_ptr<image::IEncodedImage> image;
-            bool isFront{};
-            std::size_t index;
-
-            // > means is better candidate
-            bool operator>(const CandidateImage& other) const
-            {
-                if (!isFront && other.isFront)
-                    return false;
-                if (isFront && !other.isFront)
-                    return true;
-
-                return index < other.index;
-            }
-        };
-
-        std::vector<CandidateImage> candidateImages;
-        std::size_t pictureIndex{};
+        std::unique_ptr<image::IEncodedImage> image;
 
         try
         {
+            std::size_t currentIndex{};
+
             _audioFileParser->parseImages(p, [&](const metadata::Image& parsedImage) {
-                std::unique_ptr<image::IEncodedImage> image;
+                if (currentIndex++ != index)
+                    return;
+
                 try
                 {
                     if (!width)
@@ -165,8 +125,6 @@ namespace lms::cover
                 {
                     LMS_LOG(COVER, ERROR, "Cannot decode image from track " << p << ": " << e.what());
                 }
-
-                candidateImages.emplace_back(CandidateImage{ .image = std::move(image), .isFront = parsedImage.type == metadata::Image::Type::FrontCover, .index = pictureIndex++ });
             });
         }
         catch (const metadata::Exception& e)
@@ -174,11 +132,7 @@ namespace lms::cover
             LMS_LOG(COVER, ERROR, "Cannot parse images from track " << p << ": " << e.what());
         }
 
-        std::stable_sort(std::begin(candidateImages), std::end(candidateImages), std::greater<>());
-        if (!candidateImages.empty())
-            return std::move(candidateImages.front().image);
-
-        return {};
+        return image;
     }
 
     ArtworkService::ImageFindResult ArtworkService::findArtistImage(db::ArtistId artistId)
@@ -199,7 +153,7 @@ namespace lms::cover
         return res;
     }
 
-    ArtworkService::ImageFindResult ArtworkService::findPreferredTrackImage(db::TrackId trackId)
+    ArtworkService::ImageFindResult ArtworkService::findTrackImage(db::TrackId trackId)
     {
         db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
@@ -207,16 +161,17 @@ namespace lms::cover
 
         db::TrackEmbeddedImage::FindParameters params;
         params.setTrack(trackId);
-        params.setIsPreferred(true);
+        params.setSortMethod(db::TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSize);
         params.setRange(db::Range{ .offset = 0, .size = 1 });
 
         db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
             res = image->getId();
         });
 
+        // No embedded image found, fallback on release image
         if (res.index() == 0)
         {
-            if (db::Track::pointer track{ db::Track::find(session, trackId) })
+            if (const db::Track::pointer track{ db::Track::find(session, trackId) })
             {
                 if (const db::Release::pointer release{ track->getRelease() })
                 {
@@ -247,8 +202,7 @@ namespace lms::cover
             {
                 db::TrackEmbeddedImage::FindParameters params;
                 params.setRelease(releaseId);
-                params.setIsPreferred(true);
-                params.setSortMethod(db::TrackEmbeddedImageSortMethod::FrontCoverAndSize);
+                params.setSortMethod(db::TrackEmbeddedImageSortMethod::FrontTypeThenSize);
                 params.setRange(db::Range{ .offset = 0, .size = 1 });
 
                 db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
@@ -269,8 +223,7 @@ namespace lms::cover
 
         db::TrackEmbeddedImage::FindParameters params;
         params.setTrackList(trackListId);
-        params.setIsPreferred(true);
-        params.setSortMethod(db::TrackEmbeddedImageSortMethod::FrontCoverAndSize);
+        params.setSortMethod(db::TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSize);
         params.setRange(db::Range{ .offset = 0, .size = 1 });
 
         db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
@@ -309,27 +262,24 @@ namespace lms::cover
     {
         const ImageCache::EntryDesc cacheEntryDesc{ trackEmbeddedImageId, width };
 
-        std::shared_ptr<image::IEncodedImage> cover{ _cache.getImage(cacheEntryDesc) };
-        if (cover)
-            return cover;
+        std::shared_ptr<image::IEncodedImage> image{ _cache.getImage(cacheEntryDesc) };
+        if (image)
+            return image;
 
-        std::filesystem::path trackFile;
         {
             db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
-            db::Track::FindParameters params;
-            params.setEmbeddedImage(trackEmbeddedImageId);
-            db::Track::find(session, params, [&](const db::Track::pointer& track) {
-                if (!cover)
-                    cover = getTrackImage(track->getAbsoluteFilePath(), width);
+            db::TrackEmbeddedImageLink::find(session, trackEmbeddedImageId, [&](const db::TrackEmbeddedImageLink::pointer& link) {
+                if (!image)
+                    image = getTrackImage(link->getTrack()->getAbsoluteFilePath(), link->getIndex(), width);
             });
         }
 
-        if (cover)
-            _cache.addImage(cacheEntryDesc, cover);
+        if (image)
+            _cache.addImage(cacheEntryDesc, image);
 
-        return cover;
+        return image;
     }
 
     void ArtworkService::flushCache()
