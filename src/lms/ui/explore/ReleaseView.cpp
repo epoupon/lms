@@ -391,12 +391,23 @@ namespace lms::ui
 
         // Expect to be called in asc order
         std::map<std::size_t, Wt::WContainerWidget*> trackContainers;
-        auto getOrAddDiscContainer = [&, releaseId = _releaseId](std::size_t discNumber, const std::string& discSubtitle) -> Wt::WContainerWidget* {
+        auto getOrAddDiscContainer = [&, releaseId = _releaseId](std::size_t discNumber, const std::string& discSubtitle, db::TrackId trackId) -> Wt::WContainerWidget* {
             if (auto it{ trackContainers.find(discNumber) }; it != std::cend(trackContainers))
                 return it->second;
 
             Template* disc{ rootContainer->addNew<Template>(Wt::WString::tr("Lms.Explore.Release.template.entry-disc")) };
             disc->addFunction("id", &Wt::WTemplate::Functions::id);
+
+            if (auto image{ utils::createTrackMediaImage(trackId, ArtworkResource::Size::Large) })
+            {
+                disc->setCondition("if-has-image", true);
+
+                image->addStyleClass("Lms-cover-track rounded"); // HACK
+                image->clicked().connect([=] {
+                    utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getTrackMediaImageUrl(trackId) });
+                });
+                disc->bindWidget<Wt::WImage>("image", std::move(image));
+            }
 
             if (discSubtitle.empty())
                 disc->bindNew<Wt::WText>("disc-title", Wt::WString::tr("Lms.Explore.Release.disc").arg(discNumber));
@@ -458,9 +469,9 @@ namespace lms::ui
 
             Wt::WContainerWidget* container{};
             if (useSubtitleContainers && discNumber)
-                container = getOrAddDiscContainer(*discNumber, track->getDiscSubtitle());
+                container = getOrAddDiscContainer(*discNumber, track->getDiscSubtitle(), track->getId());
             else if (hasDiscSubtitle && !discNumber)
-                container = getOrAddDiscContainer(0, track->getDiscSubtitle());
+                container = getOrAddDiscContainer(0, track->getDiscSubtitle(), track->getId());
             else
                 container = getOrAddNoDiscContainer();
 
