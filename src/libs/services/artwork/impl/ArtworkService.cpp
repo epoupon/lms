@@ -161,7 +161,7 @@ namespace lms::cover
 
         db::TrackEmbeddedImage::FindParameters params;
         params.setTrack(trackId);
-        params.setSortMethod(db::TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSize);
+        params.setSortMethod(db::TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSizeDescDesc);
         params.setRange(db::Range{ .offset = 0, .size = 1 });
 
         db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
@@ -184,6 +184,25 @@ namespace lms::cover
         return res;
     }
 
+    ArtworkService::ImageFindResult ArtworkService::findTrackMediaImage(db::TrackId trackId)
+    {
+        db::Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createReadTransaction() };
+        ImageFindResult res;
+
+        db::TrackEmbeddedImage::FindParameters params;
+        params.setTrack(trackId);
+        params.setImageType(db::ImageType::Media);
+        params.setSortMethod(db::TrackEmbeddedImageSortMethod::SizeDesc);
+        params.setRange(db::Range{ .offset = 0, .size = 1 });
+
+        db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
+            res = image->getId();
+        });
+
+        return res;
+    }
+
     ArtworkService::ImageFindResult ArtworkService::findReleaseImage(db::ReleaseId releaseId)
     {
         db::Session& session{ _db.getTLSSession() };
@@ -202,7 +221,7 @@ namespace lms::cover
             {
                 db::TrackEmbeddedImage::FindParameters params;
                 params.setRelease(releaseId);
-                params.setSortMethod(db::TrackEmbeddedImageSortMethod::FrontTypeThenSize);
+                params.setSortMethod(db::TrackEmbeddedImageSortMethod::FrontTypeThenSizeDesc);
                 params.setRange(db::Range{ .offset = 0, .size = 1 });
 
                 db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
@@ -223,7 +242,7 @@ namespace lms::cover
 
         db::TrackEmbeddedImage::FindParameters params;
         params.setTrackList(trackListId);
-        params.setSortMethod(db::TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSize);
+        params.setSortMethod(db::TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSizeDescDesc);
         params.setRange(db::Range{ .offset = 0, .size = 1 });
 
         db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {

@@ -49,6 +49,7 @@ namespace lms::cover
     private:
         ImageFindResult findArtistImage(db::ArtistId artistId) override;
         ImageFindResult findTrackImage(db::TrackId trackId) override;
+        ImageFindResult findTrackMediaImage(db::TrackId trackId) override;
         ImageFindResult findReleaseImage(db::ReleaseId releaseId) override;
         ImageFindResult findTrackListImage(db::TrackListId trackListId) override;
 

@@ -49,6 +49,7 @@ namespace lms::db
             TrackId track;
             ReleaseId release;
             TrackListId trackList;
+            std::optional<ImageType> imageType;
             TrackEmbeddedImageSortMethod sortMethod{ TrackEmbeddedImageSortMethod::None };
 
             FindParameters& setRange(std::optional<Range> _range)
@@ -69,6 +70,11 @@ namespace lms::db
             FindParameters& setTrackList(TrackListId _trackList)
             {
                 trackList = _trackList;
+                return *this;
+            }
+            FindParameters& setImageType(std::optional<ImageType> _imageType)
+            {
+                imageType = _imageType;
                 return *this;
             }
             FindParameters& setSortMethod(TrackEmbeddedImageSortMethod _sortMethod)

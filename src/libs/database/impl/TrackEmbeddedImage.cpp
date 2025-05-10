@@ -41,8 +41,9 @@ namespace lms::db
             if (params.track.isValid()
                 || params.release.isValid()
                 || params.trackList.isValid()
-                || params.sortMethod == TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSize
-                || params.sortMethod == TrackEmbeddedImageSortMethod::FrontTypeThenSize)
+                || params.imageType.has_value()
+                || params.sortMethod == TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSizeDescDesc
+                || params.sortMethod == TrackEmbeddedImageSortMethod::FrontTypeThenSizeDesc)
             {
                 query.join("track_embedded_image_link t_e_i_l ON t_e_i_l.track_embedded_image_id = t_e_i.id");
 
@@ -60,16 +61,22 @@ namespace lms::db
                     query.join("tracklist_entry t_l_e ON t_l_e.track_id = t_e_i_l.track_id");
                     query.where("t_l_e.tracklist_id = ?").bind(params.trackList);
                 }
+
+                if (params.imageType.has_value())
+                    query.where("t_e_i_l.type = ?").bind(params.imageType.value());
             }
 
             switch (params.sortMethod)
             {
             case TrackEmbeddedImageSortMethod::None:
                 break;
-            case TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSize:
+            case TrackEmbeddedImageSortMethod::SizeDesc:
+                query.orderBy("t_e_i.size DESC");
+                break;
+            case TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSizeDescDesc:
                 query.orderBy("CASE t_e_i_l.type WHEN ? THEN 1 WHEN ? THEN 2 ELSE 3 END, t_e_i.size DESC").bind(ImageType::Media).bind(ImageType::FrontCover);
                 break;
-            case TrackEmbeddedImageSortMethod::FrontTypeThenSize:
+            case TrackEmbeddedImageSortMethod::FrontTypeThenSizeDesc:
                 query.orderBy("CASE WHEN t_e_i_l.type = ? THEN 0 ELSE 1 END, t_e_i.size DESC").bind(ImageType::FrontCover);
                 break;
             }
