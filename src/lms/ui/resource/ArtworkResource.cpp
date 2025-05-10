@@ -81,11 +81,11 @@ namespace lms::ui
         return url;
     }
 
-    std::string ArtworkResource::getPreferredTrackImageUrl(db::TrackId trackId, std::optional<Size> size) const
+    std::string ArtworkResource::getTrackImageUrl(db::TrackId trackId, std::optional<Size> size) const
     {
         std::string url;
 
-        const auto imageResult{ core::Service<cover::IArtworkService>::get()->findPreferredTrackImage(trackId) };
+        const auto imageResult{ core::Service<cover::IArtworkService>::get()->findTrackImage(trackId) };
         std::visit([&](const auto& arg) {
             using T = std::decay_t<decltype(arg)>;
             if constexpr (std::is_same_v<T, std::monostate>)

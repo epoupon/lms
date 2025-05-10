@@ -350,24 +350,12 @@ namespace lms::scanner
 
         void updateEmbeddedImages(db::Session& session, db::Track::pointer& track, std::span<const ImageInfo> images)
         {
-            db::TrackEmbeddedImageLink::pointer preferredImageLink;
-
             track.modify()->clearEmbeddedImageLinks();
             for (const ImageInfo& imageInfo : images)
             {
                 db::TrackEmbeddedImageLink::pointer link{ createTrackEmbeddedImageLink(session, track, imageInfo) };
                 track.modify()->addEmbeddedImageLink(link);
-
-                if (!preferredImageLink
-                    || (preferredImageLink->getType() != db::ImageType::FrontCover && link->getType() == db::ImageType::FrontCover)
-                    || (preferredImageLink->getImage()->getSize() < link->getImage()->getSize()))
-                {
-                    preferredImageLink = link;
-                }
             }
-
-            if (preferredImageLink)
-                preferredImageLink.modify()->setIsPreferred(true);
         }
 
         db::Advisory getAdvisory(std::optional<metadata::Track::Advisory> advisory)

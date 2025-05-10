@@ -47,7 +47,7 @@ namespace lms::ui
 
         std::string getArtistImageUrl(db::ArtistId artistId, std::optional<Size> size = std::nullopt) const;
         std::string getReleaseCoverUrl(db::ReleaseId releaseId, std::optional<Size> size = std::nullopt) const;
-        std::string getPreferredTrackImageUrl(db::TrackId trackId, std::optional<Size> size = std::nullopt) const;
+        std::string getTrackImageUrl(db::TrackId trackId, std::optional<Size> size = std::nullopt) const;
 
     private:
         std::string getImageUrl(db::ImageId imageId, std::optional<Size> size, std::string_view type) const;
