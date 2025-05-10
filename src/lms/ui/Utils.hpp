@@ -34,6 +34,7 @@
 #include "database/ReleaseId.hpp"
 #include "database/TrackId.hpp"
 
+#include "database/Types.hpp"
 #include "resource/ArtworkResource.hpp"
 
 namespace lms::db
@@ -58,6 +59,7 @@ namespace lms::ui::utils
 
     std::unique_ptr<Wt::WImage> createReleaseCover(db::ReleaseId releaseId, ArtworkResource::Size size);
     std::unique_ptr<Wt::WImage> createTrackImage(db::TrackId trackId, ArtworkResource::Size size);
+    std::unique_ptr<Wt::WImage> createTrackMediaImage(db::TrackId trackId, ArtworkResource::Size size); // return nullptr if no image
     std::unique_ptr<Wt::WImage> createArtistImage(db::ArtistId artistId, ArtworkResource::Size size);
 
     std::unique_ptr<Wt::WInteractWidget> createFilter(const Wt::WString& name, const Wt::WString& tooltip, std::string_view colorStyleClass, bool canDelete = false);
