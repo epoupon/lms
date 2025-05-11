@@ -192,7 +192,7 @@ namespace lms::cover
 
         db::TrackEmbeddedImage::FindParameters params;
         params.setTrack(trackId);
-        params.setImageType(db::ImageType::Media);
+        params.setImageTypes({ db::ImageType::Media });
         params.setSortMethod(db::TrackEmbeddedImageSortMethod::SizeDesc);
         params.setRange(db::Range{ .offset = 0, .size = 1 });
 
