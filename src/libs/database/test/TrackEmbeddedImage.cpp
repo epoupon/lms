@@ -144,7 +144,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             TrackEmbeddedImage::FindParameters params;
-            params.setImageType(ImageType::FrontCover);
+            params.setImageTypes({ ImageType::FrontCover });
             params.setSortMethod(TrackEmbeddedImageSortMethod::FrontTypeThenSizeDesc);
 
             bool visited{};
@@ -156,7 +156,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             TrackEmbeddedImage::FindParameters params;
-            params.setImageType(ImageType::Media);
+            params.setImageTypes({ ImageType::Media });
             params.setSortMethod(TrackEmbeddedImageSortMethod::FrontTypeThenSizeDesc);
 
             bool visited{};
@@ -169,6 +169,7 @@ namespace lms::db::tests
 
             TrackEmbeddedImage::FindParameters params;
             params.setRelease(release.getId());
+            params.setImageTypes({ ImageType::Media, ImageType::FrontCover });
             params.setSortMethod(TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSizeDescDesc);
 
             bool visited{};

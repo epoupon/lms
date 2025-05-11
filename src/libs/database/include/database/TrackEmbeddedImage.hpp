@@ -25,6 +25,7 @@
 
 #include <Wt/Dbo/Dbo.h>
 
+#include "core/EnumSet.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackEmbeddedImageId.hpp"
@@ -49,7 +50,7 @@ namespace lms::db
             TrackId track;
             ReleaseId release;
             TrackListId trackList;
-            std::optional<ImageType> imageType;
+            core::EnumSet<ImageType> imageTypes;
             TrackEmbeddedImageSortMethod sortMethod{ TrackEmbeddedImageSortMethod::None };
 
             FindParameters& setRange(std::optional<Range> _range)
@@ -72,9 +73,9 @@ namespace lms::db
                 trackList = _trackList;
                 return *this;
             }
-            FindParameters& setImageType(std::optional<ImageType> _imageType)
+            FindParameters& setImageTypes(core::EnumSet<ImageType> _imageTypes)
             {
-                imageType = _imageType;
+                imageTypes = _imageTypes;
                 return *this;
             }
             FindParameters& setSortMethod(TrackEmbeddedImageSortMethod _sortMethod)
