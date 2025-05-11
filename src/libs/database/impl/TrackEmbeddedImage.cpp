@@ -41,7 +41,7 @@ namespace lms::db
             if (params.track.isValid()
                 || params.release.isValid()
                 || params.trackList.isValid()
-                || params.imageType.has_value()
+                || !params.imageTypes.empty()
                 || params.sortMethod == TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSizeDescDesc
                 || params.sortMethod == TrackEmbeddedImageSortMethod::FrontTypeThenSizeDesc)
             {
@@ -62,8 +62,19 @@ namespace lms::db
                     query.where("t_l_e.tracklist_id = ?").bind(params.trackList);
                 }
 
-                if (params.imageType.has_value())
-                    query.where("t_e_i_l.type = ?").bind(params.imageType.value());
+                if (!params.imageTypes.empty())
+                {
+                    std::string clause{ "t_e_i_l.type IN (" };
+                    for (const auto& type : params.imageTypes)
+                    {
+                        if (clause.back() != '(')
+                            clause += ",";
+                        clause += "?";
+                        query.bind(type);
+                    }
+                    clause += ")";
+                    query.where(clause);
+                }
             }
 
             switch (params.sortMethod)
