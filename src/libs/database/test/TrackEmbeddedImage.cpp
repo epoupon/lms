@@ -271,6 +271,77 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, TrackEmbeddedImage_findByParams_artist)
+    {
+        ScopedTrackEmbeddedImage image{ session };
+        ScopedTrack track{ session };
+        ScopedArtist artist{ session, "MyArtist" };
+        ScopedTrackEmbeddedImageLink link{ session, track.lockAndGet(), image.lockAndGet() };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackEmbeddedImage::FindParameters params;
+            params.setArtist(artist.getId());
+
+            bool visited{};
+            TrackEmbeddedImage::find(session, params, [&](const TrackEmbeddedImage::pointer&) { visited = true; });
+            ASSERT_TRUE(visited);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackEmbeddedImage::FindParameters params;
+            params.setArtist(artist.getId(), { TrackArtistLinkType::ReleaseArtist });
+
+            bool visited{};
+            TrackEmbeddedImage::find(session, params, [&](const TrackEmbeddedImage::pointer&) { visited = true; });
+            ASSERT_FALSE(visited);
+        }
+    }
+
+    TEST_F(DatabaseFixture, TrackEmbeddedImage_findByParams_discNumber)
+    {
+        ScopedTrackEmbeddedImage image{ session };
+        ScopedTrack track{ session };
+        ScopedRelease release{ session, "MyRelease" };
+        ScopedTrackEmbeddedImageLink link{ session, track.lockAndGet(), image.lockAndGet() };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track.get().modify()->setRelease(release.get());
+            track.get().modify()->setDiscNumber(1);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackEmbeddedImage::FindParameters params;
+            params.setDiscNumber(1);
+
+            bool visited{};
+            TrackEmbeddedImage::find(session, params, [&](const TrackEmbeddedImage::pointer&) { visited = true; });
+            ASSERT_TRUE(visited);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackEmbeddedImage::FindParameters params;
+            params.setDiscNumber(2);
+
+            bool visited{};
+            TrackEmbeddedImage::find(session, params, [&](const TrackEmbeddedImage::pointer&) { visited = true; });
+            ASSERT_FALSE(visited);
+        }
+    }
+
     TEST_F(DatabaseFixture, Track_findByEmbeddedImage)
     {
         ScopedTrackEmbeddedImage image{ session };
