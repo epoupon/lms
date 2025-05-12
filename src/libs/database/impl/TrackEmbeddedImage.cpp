@@ -38,7 +38,9 @@ namespace lms::db
 
             auto query{ session.getDboSession()->query<Wt::Dbo::ptr<TrackEmbeddedImage>>("SELECT t_e_i FROM track_embedded_image t_e_i") };
 
-            if (params.track.isValid()
+            if (params.artist.isValid()
+                || params.discNumber.has_value()
+                || params.track.isValid()
                 || params.release.isValid()
                 || params.trackList.isValid()
                 || !params.imageTypes.empty()
@@ -47,13 +49,36 @@ namespace lms::db
             {
                 query.join("track_embedded_image_link t_e_i_l ON t_e_i_l.track_embedded_image_id = t_e_i.id");
 
+                if (params.artist.isValid())
+                {
+                    query.join("track_artist_link t_a_l ON t_a_l.track_id = t_e_i_l.track_id");
+                    query.where("t_a_l.artist_id = ?").bind(params.artist);
+
+                    if (!params.trackArtistLinkTypes.empty())
+                    {
+                        std::string clause{ "t_a_l.type IN (" };
+                        for (const auto& type : params.trackArtistLinkTypes)
+                        {
+                            if (clause.back() != '(')
+                                clause += ",";
+                            clause += "?";
+                            query.bind(type);
+                        }
+                        clause += ")";
+                        query.where(clause);
+                    }
+                }
+
                 if (params.track.isValid())
                     query.where("t_e_i_l.track_id = ?").bind(params.track);
 
-                if (params.release.isValid())
+                if (params.release.isValid() || params.discNumber.has_value())
                 {
                     query.join("track t ON t_e_i_l.track_id = t.id");
-                    query.where("t.release_id = ?").bind(params.release);
+                    if (params.release.isValid())
+                        query.where("t.release_id = ?").bind(params.release);
+                    if (params.discNumber.has_value())
+                        query.where("t.disc_number = ?").bind(params.discNumber.value());
                 }
 
                 if (params.trackList.isValid())
