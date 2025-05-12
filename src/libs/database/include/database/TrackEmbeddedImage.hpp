@@ -26,6 +26,7 @@
 #include <Wt/Dbo/Dbo.h>
 
 #include "core/EnumSet.hpp"
+#include "database/ArtistId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackEmbeddedImageId.hpp"
@@ -47,8 +48,11 @@ namespace lms::db
         struct FindParameters
         {
             std::optional<Range> range;
+            ArtistId artist;
+            core::EnumSet<TrackArtistLinkType> trackArtistLinkTypes;
             TrackId track;
             ReleaseId release;
+            std::optional<int> discNumber;
             TrackListId trackList;
             core::EnumSet<ImageType> imageTypes;
             TrackEmbeddedImageSortMethod sortMethod{ TrackEmbeddedImageSortMethod::None };
@@ -58,6 +62,13 @@ namespace lms::db
                 range = _range;
                 return *this;
             }
+            FindParameters& setArtist(ArtistId _artist, core::EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {})
+            {
+                artist = _artist;
+                trackArtistLinkTypes = _trackArtistLinkTypes;
+                return *this;
+            }
+
             FindParameters& setTrack(TrackId _track)
             {
                 track = _track;
@@ -66,6 +77,11 @@ namespace lms::db
             FindParameters& setRelease(ReleaseId _release)
             {
                 release = _release;
+                return *this;
+            }
+            FindParameters& setDiscNumber(std::optional<int> _discNumber)
+            {
+                discNumber = _discNumber;
                 return *this;
             }
             FindParameters& setTrackList(TrackListId _trackList)
