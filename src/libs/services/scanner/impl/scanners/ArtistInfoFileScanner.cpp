@@ -149,7 +149,7 @@ namespace lms::scanner
             }
             else
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Updated artist info file '" << _file);
+                LMS_LOG(DBUPDATER, DEBUG, "Updated artist info file " << _file);
                 stats.updates++;
             }
         }

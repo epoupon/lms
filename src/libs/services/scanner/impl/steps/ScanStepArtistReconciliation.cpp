@@ -41,7 +41,7 @@ namespace lms::scanner
     {
         std::ostream& operator<<(std::ostream& os, const db::Artist::pointer& artist)
         {
-            os << artist->getName();
+            os << "'" << artist->getName() << "'";
             if (const auto mbid{ artist->getMBID() })
                 os << " [" << mbid->getAsString() << "]";
 
@@ -55,7 +55,7 @@ namespace lms::scanner
             metadata::Artist artistInfo{ std::nullopt, link->getArtistName(), link->getArtistSortName().empty() ? std::nullopt : std::make_optional<std::string>(link->getArtistSortName()) };
 
             db::Artist::pointer newArtist{ helpers::getOrCreateArtistByName(session, artistInfo, helpers::AllowFallbackOnMBIDEntry{ allowArtistMBIDFallback }) };
-            LMS_LOG(DB, INFO, "Reconcile artist link for track " << link->getTrack()->getAbsoluteFilePath() << ", type " << static_cast<int>(link->getType()) << " from " << link->getArtist() << " to " << newArtist);
+            LMS_LOG(DB, DEBUG, "Reconcile artist link for track " << link->getTrack()->getAbsoluteFilePath() << ", type " << static_cast<int>(link->getType()) << " from " << link->getArtist() << " to " << newArtist);
 
             assert(newArtist != link->getArtist());
             link.modify()->setArtist(newArtist);
@@ -67,7 +67,7 @@ namespace lms::scanner
 
             const metadata::Artist artistMetadata{ std::nullopt, artistInfo->getName(), artistInfo->getSortName().empty() ? std::nullopt : std::make_optional<std::string>(artistInfo->getSortName()) };
             db::Artist::pointer newArtist{ helpers::getOrCreateArtistByName(session, artistMetadata, helpers::AllowFallbackOnMBIDEntry{ allowArtistMBIDFallback }) };
-            LMS_LOG(DB, INFO, "Reconcile artist link for artist info " << artistInfo->getAbsoluteFilePath() << " from " << artistInfo->getArtist() << " to " << newArtist);
+            LMS_LOG(DB, DEBUG, "Reconcile artist link for artist info " << artistInfo->getAbsoluteFilePath() << " from " << artistInfo->getArtist() << " to " << newArtist);
 
             assert(newArtist != artistInfo->getArtist());
             artistInfo.modify()->setArtist(newArtist);
