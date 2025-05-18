@@ -92,6 +92,7 @@ namespace lms::scanner
 
             settings.emplace();
             settings->audioScanVersion = scanSettings->getAudioScanVersion();
+            settings->artistInfoScanVersion = scanSettings->getArtistInfoScanVersion();
             settings->startTime = scanSettings->getUpdateStartTime();
             settings->updatePeriod = scanSettings->getUpdatePeriod();
 
@@ -420,7 +421,8 @@ namespace lms::scanner
             return;
 
         LMS_LOG(DBUPDATER, DEBUG, "Scanner settings updated");
-        LMS_LOG(DBUPDATER, DEBUG, "Using audio scan settings version " << newSettings->audioScanVersion);
+        LMS_LOG(DBUPDATER, DEBUG, "Using audio scan version " << newSettings->audioScanVersion);
+        LMS_LOG(DBUPDATER, DEBUG, "Using artist info scan version " << newSettings->artistInfoScanVersion);
 
         _settings = std::move(*newSettings);
         if (!_lastScanSettings)

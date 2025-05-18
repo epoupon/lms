@@ -64,6 +64,7 @@ namespace lms::db
 
         // Getters
         std::size_t getAudioScanVersion() const { return _audioScanVersion; }
+        std::size_t getArtistInfoScanVersion() const { return _artistInfoScanVersion; }
         Wt::WTime getUpdateStartTime() const { return _startTime; }
         UpdatePeriod getUpdatePeriod() const { return _updatePeriod; }
         std::vector<std::string_view> getExtraTagsToScan() const;
@@ -90,6 +91,7 @@ namespace lms::db
         {
             Wt::Dbo::field(a, _name, "name");
             Wt::Dbo::field(a, _audioScanVersion, "audio_scan_version");
+            Wt::Dbo::field(a, _artistInfoScanVersion, "artist_info_scan_version");
             Wt::Dbo::field(a, _startTime, "start_time");
             Wt::Dbo::field(a, _updatePeriod, "update_period");
             Wt::Dbo::field(a, _similarityEngineType, "similarity_engine_type");
@@ -111,6 +113,7 @@ namespace lms::db
 
         std::string _name;
         int _audioScanVersion{};
+        int _artistInfoScanVersion{};
         Wt::WTime _startTime = Wt::WTime{ 0, 0, 0 };
         UpdatePeriod _updatePeriod{ UpdatePeriod::Never };
         SimilarityEngineType _similarityEngineType{ SimilarityEngineType::Clusters };

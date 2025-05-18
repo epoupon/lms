@@ -55,6 +55,7 @@ namespace lms::db
         static void findWithArtistNameAmbiguity(Session& session, std::optional<Range> range, bool allowArtistMBIDFallback, const std::function<void(const pointer&)>& func);
 
         // getters
+        std::size_t getScanVersion() const { return _scanVersion; }
         const std::filesystem::path& getAbsoluteFilePath() const { return _absoluteFilePath; }
         const Wt::WDateTime& getLastWriteTime() const { return _fileLastWrite; }
         ObjectPtr<Directory> getDirectory() const;
@@ -69,6 +70,7 @@ namespace lms::db
         bool isMBIDMatched() const { return _MBIDMatched; }
 
         // setters
+        void setScanVersion(std::size_t version) { _scanVersion = version; }
         void setAbsoluteFilePath(const std::filesystem::path& filePath);
         void setLastWriteTime(Wt::WDateTime time) { _fileLastWrite = time; }
         void setDirectory(ObjectPtr<Directory> directory);
@@ -84,6 +86,7 @@ namespace lms::db
         template<class Action>
         void persist(Action& a)
         {
+            Wt::Dbo::field(a, _scanVersion, "scan_version");
             Wt::Dbo::field(a, _absoluteFilePath, "absolute_file_path");
             Wt::Dbo::field(a, _fileLastWrite, "file_last_write");
 
@@ -103,6 +106,8 @@ namespace lms::db
     private:
         friend class Session;
         static pointer create(Session& session);
+
+        int _scanVersion{};
 
         // Set when coming from artist info file
         std::filesystem::path _absoluteFilePath;

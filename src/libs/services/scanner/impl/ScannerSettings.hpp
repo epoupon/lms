@@ -36,6 +36,7 @@ namespace lms::scanner
     struct ScannerSettings
     {
         std::size_t audioScanVersion{};
+        std::size_t artistInfoScanVersion{};
         Wt::WTime startTime;
         db::ScanSettings::UpdatePeriod updatePeriod{ db::ScanSettings::UpdatePeriod::Never };
         bool skipDuplicateTrackMBID{};

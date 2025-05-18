@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 89 };
+        static constexpr Version LMS_DATABASE_VERSION{ 90 };
     }
 
     VersionInfo::VersionInfo()
@@ -1196,6 +1196,16 @@ FROM tracklist)");
         utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET audio_scan_version = audio_scan_version + 1");
     }
 
+    void migrateFromV89(Session& session)
+    {
+        // ArtistInfo need to be force rescanned: introduced a field for this
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN artist_info_scan_version INTEGER NOT NULL DEFAULT(0)");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE artist_info ADD COLUMN scan_version INTEGER NOT NULL DEFAULT(0)");
+
+        // Just increment the scan version of the settings to make the next scan rescan everything
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET artist_info_scan_version = artist_info_scan_version + 1");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1261,6 +1271,7 @@ FROM tracklist)");
             { 86, migrateFromV86 },
             { 87, migrateFromV87 },
             { 88, migrateFromV88 },
+            { 89, migrateFromV89 },
         };
 
         bool migrationPerformed{};
