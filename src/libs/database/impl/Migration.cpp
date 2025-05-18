@@ -1164,7 +1164,7 @@ FROM tracklist)");
         dropIndexes(session);
 
         // Artist merging feature
-        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN allow_mbid_artist_merge BOLLEAN DEFAULT(false)");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN allow_mbid_artist_merge BOOLEAN DEFAULT(false)");
 
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE track_artist_link ADD COLUMN artist_name TEXT NULL DEFAULT('')");
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE track_artist_link ADD COLUMN artist_sort_name TEXT NULL DEFAULT('')");
@@ -1180,13 +1180,13 @@ FROM tracklist)");
 
     void migrateFromV86(Session& session)
     {
-        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN name TEXT NON NULL DEFAULT('')");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN name TEXT NOT NULL DEFAULT('')");
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings RENAME COLUMN scan_version TO audio_scan_version");
     }
 
     void migrateFromV87(Session& session)
     {
-        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN artists_to_not_split TEXT NON NULL DEFAULT('')");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN artists_to_not_split TEXT NOT NULL DEFAULT('')");
     }
 
     void migrateFromV88(Session& session)
