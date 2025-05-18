@@ -1193,7 +1193,7 @@ FROM tracklist)");
     {
         // Badly populated mbid_matched fields for tracks and artist info: need to rescan everything
         // Just increment the scan version of the settings to make the next scan rescan everything
-        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET audio_scan_version = audio_scan_version + 1");
     }
 
     bool doDbMigration(Session& session)
@@ -1260,6 +1260,7 @@ FROM tracklist)");
             { 85, migrateFromV85 },
             { 86, migrateFromV86 },
             { 87, migrateFromV87 },
+            { 88, migrateFromV88 },
         };
 
         bool migrationPerformed{};
