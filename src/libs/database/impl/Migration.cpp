@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 88 };
+        static constexpr Version LMS_DATABASE_VERSION{ 89 };
     }
 
     VersionInfo::VersionInfo()
@@ -1187,6 +1187,13 @@ FROM tracklist)");
     void migrateFromV87(Session& session)
     {
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN artists_to_not_split TEXT NON NULL DEFAULT('')");
+    }
+
+    void migrateFromV88(Session& session)
+    {
+        // Badly populated mbid_matched fields for tracks and artist info: need to rescan everything
+        // Just increment the scan version of the settings to make the next scan rescan everything
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET scan_version = scan_version + 1");
     }
 
     bool doDbMigration(Session& session)
