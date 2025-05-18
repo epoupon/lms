@@ -37,18 +37,18 @@ namespace lms::metadata
         AudioFileParser& operator=(const AudioFileParser&) = delete;
 
     protected:
-        std::unique_ptr<Track> parseMetaData(const std::filesystem::path& p) override;
-        std::unique_ptr<Track> parseMetaData(const ITagReader& reader);
+        std::unique_ptr<Track> parseMetaData(const std::filesystem::path& p) const override;
+        std::unique_ptr<Track> parseMetaData(const ITagReader& reader) const;
         static void parseImages(const IImageReader& reader, ImageVisitor visitor);
 
     private:
-        void parseImages(const std::filesystem::path& p, ImageVisitor visitor) override;
+        void parseImages(const std::filesystem::path& p, ImageVisitor visitor) const override;
         std::span<const std::filesystem::path> getSupportedExtensions() const override;
 
-        void processTags(const ITagReader& reader, Track& track);
+        void processTags(const ITagReader& reader, Track& track) const;
 
-        std::optional<Medium> getMedium(const ITagReader& tagReader);
-        std::optional<Release> getRelease(const ITagReader& tagReader);
+        std::optional<Medium> getMedium(const ITagReader& tagReader) const;
+        std::optional<Release> getRelease(const ITagReader& tagReader) const;
 
         const AudioFileParserParameters _params;
     };

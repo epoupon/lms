@@ -25,9 +25,8 @@
 
 #include "AudioFileParser.hpp"
 #include "TestTagReader.hpp"
-#include "metadata/Types.hpp"
 
-namespace lms::metadata
+namespace lms::metadata::tests
 {
     class TestAudioFileParser : public AudioFileParser
     {
@@ -42,68 +41,13 @@ namespace lms::metadata
         params.userExtraTags = { "MY_AWESOME_TAG_A", "MY_AWESOME_TAG_B", "MY_AWESOME_MISSING_TAG" };
 
         TestAudioFileParser parser{ params };
-        TestTagReader testTags{
-            {
-                { TagType::AcoustID, { "e987a441-e134-4960-8019-274eddacc418" } },
-                { TagType::Advisory, { "2" } },
-                { TagType::Album, { "MyAlbum" } },
-                { TagType::AlbumSortOrder, { "MyAlbumSortName" } },
-                { TagType::Artist, { "MyArtist1 & MyArtist2" } },
-                { TagType::Artists, { "MyArtist1", "MyArtist2" } },
-                { TagType::ArtistSortOrder, { "MyArtist1SortName", "MyArtist2SortName" } },
-                { TagType::AlbumArtist, { "MyAlbumArtist1 & MyAlbumArtist2" } },
-                { TagType::AlbumArtists, { "MyAlbumArtist1", "MyAlbumArtist2" } },
-                { TagType::AlbumArtistsSortOrder, { "MyAlbumArtist1SortName", "MyAlbumArtist2SortName" } },
-                { TagType::AlbumComment, { "MyAlbumComment" } },
-                { TagType::Barcode, { "MyBarcode" } },
-                { TagType::Comment, { "Comment1", "Comment2" } },
-                { TagType::Compilation, { "1" } },
-                { TagType::Composer, { "MyComposer1", "MyComposer2" } },
-                { TagType::ComposerSortOrder, { "MyComposerSortOrder1", "MyComposerSortOrder2" } },
-                { TagType::Conductor, { "MyConductor1", "MyConductor2" } },
-                { TagType::Copyright, { "MyCopyright" } },
-                { TagType::CopyrightURL, { "MyCopyrightURL" } },
-                { TagType::Date, { "2020/03/04" } },
-                { TagType::DiscNumber, { "2" } },
-                { TagType::DiscSubtitle, { "MySubtitle" } },
-                { TagType::Genre, { "Genre1", "Genre2" } },
-                { TagType::Grouping, { "Grouping1", "Grouping2" } },
-                { TagType::Media, { "CD" } },
-                { TagType::Mixer, { "MyMixer1", "MyMixer2" } },
-                { TagType::Mood, { "Mood1", "Mood2" } },
-                { TagType::MusicBrainzArtistID, { "9d2e0c8c-8c5e-4372-a061-590955eaeaae", "5e2cf87f-c8d7-4504-8a86-954dc0840229" } },
-                { TagType::MusicBrainzTrackID, { "0afb190a-6735-46df-a16d-199f48206e4a" } },
-                { TagType::MusicBrainzReleaseArtistID, { "6fbf097c-1487-43e8-874b-50dd074398a7", "5ed3d6b3-2aed-4a03-828c-3c4d4f7406e1" } },
-                { TagType::MusicBrainzReleaseID, { "3fa39992-b786-4585-a70e-85d5cc15ef69" } },
-                { TagType::MusicBrainzReleaseGroupID, { "5b1a5a44-8420-4426-9b86-d25dc8d04838" } },
-                { TagType::MusicBrainzRecordingID, { "bd3fc666-89de-4ac8-93f6-2dbf028ad8d5" } },
-                { TagType::Producer, { "MyProducer1", "MyProducer2" } },
-                { TagType::Remixer, { "MyRemixer1", "MyRemixer2" } },
-                { TagType::RecordLabel, { "Label1", "Label2" } },
-                { TagType::ReleaseCountry, { "MyCountry1", "MyCountry2" } },
-                { TagType::Language, { "Language1", "Language2" } },
-                { TagType::Lyricist, { "MyLyricist1", "MyLyricist2" } },
-                { TagType::OriginalReleaseDate, { "2019/02/03" } },
-                { TagType::ReleaseType, { "Album", "Compilation" } },
-                { TagType::ReplayGainTrackGain, { "-0.33" } },
-                { TagType::ReplayGainAlbumGain, { "-0.5" } },
-                { TagType::TrackTitle, { "MyTitle" } },
-                { TagType::TrackNumber, { "7" } },
-                { TagType::TotalTracks, { "12" } },
-                { TagType::TotalDiscs, { "3" } },
-            }
-        };
-        testTags.setExtraUserTags({ { "MY_AWESOME_TAG_A", { "MyTagValue1ForTagA", "MyTagValue2ForTagA" } },
-            { "MY_AWESOME_TAG_B", { "MyTagValue1ForTagB", "MyTagValue2ForTagB" } } });
-        testTags.setPerformersTags({ { "RoleA", { "MyPerformer1ForRoleA", "MyPerformer2ForRoleA" } },
-            { "RoleB", { "MyPerformer1ForRoleB", "MyPerformer2ForRoleB" } } });
-        testTags.setLyricsTags({ { "eng", "[00:00.00]First line\n[00:01.00]Second line" } });
+        std::unique_ptr<ITagReader> testTags{ createDefaultPopulatedTestTagReader() };
 
-        const std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
+        const std::unique_ptr<Track> track{ parser.parseMetaData(*testTags) };
 
         // Audio properties
         {
-            const AudioProperties& audioProperties{ testTags.getAudioProperties() };
+            const AudioProperties& audioProperties{ testTags->getAudioProperties() };
             EXPECT_EQ(track->audioProperties.bitrate, audioProperties.bitrate);
             EXPECT_EQ(track->audioProperties.bitsPerSample, audioProperties.bitsPerSample);
             EXPECT_EQ(track->audioProperties.channelCount, audioProperties.channelCount);
@@ -328,7 +272,7 @@ namespace lms::metadata
         EXPECT_EQ(track->medium->release->artistDisplayName, "AC/DC");
     }
 
-    TEST(AudioFileParser, customArtistDelimiters_whitelist_multi)
+    TEST(AudioFileParser, customArtistDelimiters_whitelist_multi_artists)
     {
         const TestTagReader testTags{
             {
@@ -339,6 +283,26 @@ namespace lms::metadata
 
         AudioFileParserParameters params;
         params.artistTagDelimiters = { "/" };
+        params.artistsToNotSplit = { "  AC/DC " };
+        TestAudioFileParser parser{ params };
+        std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "AC/DC");
+        EXPECT_EQ(track->artists[1].name, "MyArtist");
+        EXPECT_EQ(track->artistDisplayName, "AC/DC, MyArtist"); // Reconstructed since this use case is not handled
+    }
+
+    TEST(AudioFileParser, customArtistDelimiters_whitelist_multi_separators_first)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "AC/DC;MyArtist" } },
+            }
+        };
+
+        AudioFileParserParameters params;
+        params.artistTagDelimiters = { "/", ";" };
         params.artistsToNotSplit = { "AC/DC" };
         TestAudioFileParser parser{ params };
         std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
@@ -347,6 +311,124 @@ namespace lms::metadata
         EXPECT_EQ(track->artists[0].name, "AC/DC");
         EXPECT_EQ(track->artists[1].name, "MyArtist");
         EXPECT_EQ(track->artistDisplayName, "AC/DC, MyArtist"); // Reconstructed since this use case is not handled
+    }
+
+    TEST(AudioFileParser, customArtistDelimiters_whitelist_multi_separators_middle)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { " MyArtist1; AC/DC  ; MyArtist2   " } },
+            }
+        };
+
+        AudioFileParserParameters params;
+        params.artistTagDelimiters = { "/", ";" };
+        params.artistsToNotSplit = { "AC/DC" };
+        TestAudioFileParser parser{ params };
+        std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 3);
+        EXPECT_EQ(track->artists[0].name, "MyArtist1");
+        EXPECT_EQ(track->artists[1].name, "AC/DC");
+        EXPECT_EQ(track->artists[2].name, "MyArtist2");
+        EXPECT_EQ(track->artistDisplayName, "MyArtist1, AC/DC, MyArtist2"); // Reconstructed since this use case is not handled
+    }
+
+    TEST(AudioFileParser, customArtistDelimiters_whitelist_multi_separators_last)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "  AC/DC; MyArtist" } },
+            }
+        };
+
+        AudioFileParserParameters params;
+        params.artistTagDelimiters = { ";", "/" };
+        params.artistsToNotSplit = { "AC/DC" };
+        TestAudioFileParser parser{ params };
+        std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "AC/DC");
+        EXPECT_EQ(track->artists[1].name, "MyArtist");
+        EXPECT_EQ(track->artistDisplayName, "AC/DC, MyArtist"); // Reconstructed since this use case is not handled
+    }
+
+    TEST(AudioFileParser, customArtistDelimiters_whitelist_longest_first)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "  AC/DC; MyArtist" } },
+            }
+        };
+
+        AudioFileParserParameters params;
+        params.artistTagDelimiters = { ";", "/" };
+        params.artistsToNotSplit = { "AC", "DC", "AC/DC" };
+        TestAudioFileParser parser{ params };
+        std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 2);
+        EXPECT_EQ(track->artists[0].name, "AC/DC");
+        EXPECT_EQ(track->artists[1].name, "MyArtist");
+        EXPECT_EQ(track->artistDisplayName, "AC/DC, MyArtist"); // Reconstructed since this use case is not handled
+    }
+
+    TEST(AudioFileParser, customArtistDelimiters_whitelist_partial_begin)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "  AC/DC; MyArtist" } },
+            }
+        };
+
+        AudioFileParserParameters params;
+        params.artistTagDelimiters = { "/" };
+        params.artistsToNotSplit = { "AC/DC" };
+        TestAudioFileParser parser{ params };
+        std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 1);
+        EXPECT_EQ(track->artists[0].name, "AC/DC; MyArtist");
+        EXPECT_EQ(track->artistDisplayName, "AC/DC; MyArtist");
+    }
+
+    TEST(AudioFileParser, customArtistDelimiters_whitelist_partial_middle)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "  MyArtist1;  AC/DC ; MyArtist2" } },
+            }
+        };
+
+        AudioFileParserParameters params;
+        params.artistTagDelimiters = { "/" };
+        params.artistsToNotSplit = { "AC/DC" };
+        TestAudioFileParser parser{ params };
+        std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 1);
+        EXPECT_EQ(track->artists[0].name, "MyArtist1;  AC/DC ; MyArtist2");
+        EXPECT_EQ(track->artistDisplayName, "MyArtist1;  AC/DC ; MyArtist2");
+    }
+
+    TEST(AudioFileParser, customArtistDelimiters_whitelist_partial_end)
+    {
+        const TestTagReader testTags{
+            {
+                { TagType::Artist, { "  MyArtist;  AC/DC " } },
+            }
+        };
+
+        AudioFileParserParameters params;
+        params.artistTagDelimiters = { "/" };
+        params.artistsToNotSplit = { "AC/DC" };
+        TestAudioFileParser parser{ params };
+        std::unique_ptr<Track> track{ parser.parseMetaData(testTags) };
+
+        ASSERT_EQ(track->artists.size(), 1);
+        EXPECT_EQ(track->artists[0].name, "MyArtist;  AC/DC");
+        EXPECT_EQ(track->artistDisplayName, "MyArtist;  AC/DC");
     }
 
     TEST(AudioFileParser, customDelimiters_foundInArtist)
@@ -740,4 +822,4 @@ namespace lms::metadata
         doTest("2020/01", core::PartialDateTime{ 2020, 1 });
         doTest("2020", core::PartialDateTime{ 2020 });
     }
-} // namespace lms::metadata
+} // namespace lms::metadata::tests

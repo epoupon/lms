@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 88 };
+        static constexpr Version LMS_DATABASE_VERSION{ 90 };
     }
 
     VersionInfo::VersionInfo()
@@ -1164,7 +1164,7 @@ FROM tracklist)");
         dropIndexes(session);
 
         // Artist merging feature
-        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN allow_mbid_artist_merge BOLLEAN DEFAULT(false)");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN allow_mbid_artist_merge BOOLEAN DEFAULT(false)");
 
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE track_artist_link ADD COLUMN artist_name TEXT NULL DEFAULT('')");
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE track_artist_link ADD COLUMN artist_sort_name TEXT NULL DEFAULT('')");
@@ -1180,13 +1180,30 @@ FROM tracklist)");
 
     void migrateFromV86(Session& session)
     {
-        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN name TEXT NON NULL DEFAULT('')");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN name TEXT NOT NULL DEFAULT('')");
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings RENAME COLUMN scan_version TO audio_scan_version");
     }
 
     void migrateFromV87(Session& session)
     {
-        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN artists_to_not_split TEXT NON NULL DEFAULT('')");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN artists_to_not_split TEXT NOT NULL DEFAULT('')");
+    }
+
+    void migrateFromV88(Session& session)
+    {
+        // Badly populated mbid_matched fields for tracks and artist info: need to rescan everything
+        // Just increment the scan version of the settings to make the next scan rescan everything
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET audio_scan_version = audio_scan_version + 1");
+    }
+
+    void migrateFromV89(Session& session)
+    {
+        // ArtistInfo need to be force rescanned: introduced a field for this
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN artist_info_scan_version INTEGER NOT NULL DEFAULT(0)");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE artist_info ADD COLUMN scan_version INTEGER NOT NULL DEFAULT(0)");
+
+        // Just increment the scan version of the settings to make the next scan rescan everything
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET artist_info_scan_version = artist_info_scan_version + 1");
     }
 
     bool doDbMigration(Session& session)
@@ -1253,6 +1270,8 @@ FROM tracklist)");
             { 85, migrateFromV85 },
             { 86, migrateFromV86 },
             { 87, migrateFromV87 },
+            { 88, migrateFromV88 },
+            { 89, migrateFromV89 },
         };
 
         bool migrationPerformed{};

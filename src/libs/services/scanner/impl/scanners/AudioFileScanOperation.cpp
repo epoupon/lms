@@ -58,7 +58,7 @@ namespace lms::scanner
             {
                 db::Artist::pointer artist{ helpers::getOrCreateArtist(session, artistInfo, allowArtistMBIDFallback) };
 
-                const bool matchedUsingMbid{ artist->getMBID() == artistInfo.mbid };
+                const bool matchedUsingMbid{ artistInfo.mbid.has_value() && artist->getMBID() == artistInfo.mbid };
                 db::TrackArtistLink::pointer link{ session.create<db::TrackArtistLink>(track, artist, linkType, role, matchedUsingMbid) };
                 link.modify()->setArtistName(artistInfo.name);
                 if (artistInfo.sortName)

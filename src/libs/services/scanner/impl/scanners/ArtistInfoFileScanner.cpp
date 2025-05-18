@@ -127,6 +127,7 @@ namespace lms::scanner
                 artistInfo.modify()->setAbsoluteFilePath(_file);
             }
 
+            artistInfo.modify()->setScanVersion(_settings.artistInfoScanVersion);
             artistInfo.modify()->setName(_parsedArtistInfo->name);
             artistInfo.modify()->setSortName(_parsedArtistInfo->sortName);
             artistInfo.modify()->setLastWriteTime(fileInfo->lastWriteTime);
@@ -141,6 +142,7 @@ namespace lms::scanner
             const metadata::Artist artistMetadata{ _parsedArtistInfo->mbid, _parsedArtistInfo->name, _parsedArtistInfo->sortName.empty() ? std::nullopt : std::make_optional<std::string>(_parsedArtistInfo->sortName) };
             db::Artist::pointer artist{ helpers::getOrCreateArtist(dbSession, artistMetadata, helpers::AllowFallbackOnMBIDEntry{ _settings.allowArtistMBIDFallback }) };
             artistInfo.modify()->setArtist(artist);
+            artistInfo.modify()->setMBIDMatched(_parsedArtistInfo->mbid.has_value() && _parsedArtistInfo->mbid == artist->getMBID());
 
             if (added)
             {
@@ -149,7 +151,7 @@ namespace lms::scanner
             }
             else
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Updated artist info file '" << _file);
+                LMS_LOG(DBUPDATER, DEBUG, "Updated artist info file " << _file);
                 stats.updates++;
             }
         }
@@ -163,7 +165,7 @@ namespace lms::scanner
 
     core::LiteralString ArtistInfoFileScanner::getName() const
     {
-        return "Artist info scanner ";
+        return "Artist info scanner";
     }
 
     std::span<const std::filesystem::path> ArtistInfoFileScanner::getSupportedExtensions() const
@@ -192,7 +194,9 @@ namespace lms::scanner
         db::Session& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createReadTransaction() };
         db::ArtistInfo::pointer artistInfo{ db::ArtistInfo::find(dbSession, file.file) };
-        if (artistInfo && artistInfo->getLastWriteTime() == lastWriteTime)
+        if (artistInfo
+            && artistInfo->getLastWriteTime() == lastWriteTime
+            && artistInfo->getScanVersion() == _settings.artistInfoScanVersion)
         {
             context.stats.skips++;
             return false;

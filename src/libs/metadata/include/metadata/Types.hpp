@@ -22,10 +22,10 @@
 #include <chrono>
 #include <map>
 #include <optional>
+#include <set>
 #include <span>
 #include <string>
 #include <string_view>
-#include <unordered_set>
 #include <vector>
 
 #include "core/PartialDateTime.hpp"
@@ -214,22 +214,17 @@ namespace lms::metadata
         Accurate,
     };
 
-    struct WhiteListHash : std::hash<std::string>, std::hash<std::string_view>
+    struct SortByLengthDesc
     {
-        using is_transparent = void;
-
-        [[nodiscard]] size_t operator()(std::string_view str) const
+        bool operator()(const std::string& a, const std::string& b) const
         {
-            return std::hash<std::string_view>{}(str);
-        }
-
-        [[nodiscard]] size_t operator()(const std::string& str) const
-        {
-            return std::hash<std::string>{}(str);
+            if (a.length() != b.length())
+                return a.length() > b.length();
+            return a < b; // Break ties using lexicographical order
         }
     };
 
-    using WhiteList = std::unordered_set<std::string, WhiteListHash, std::equal_to<>>;
+    using WhiteList = std::set<std::string, SortByLengthDesc>;
     struct AudioFileParserParameters
     {
         ParserBackend backend{ ParserBackend::TagLib };

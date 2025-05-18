@@ -206,7 +206,7 @@ namespace lms::ui
             }
         }
 
-        if (!image)
+        if (!image && typeStr)
         {
             if (*typeStr == "release")
                 image = core::Service<cover::IArtworkService>::get()->getDefaultReleaseCover();
