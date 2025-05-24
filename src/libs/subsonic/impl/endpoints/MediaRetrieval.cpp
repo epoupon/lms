@@ -39,6 +39,7 @@
 #include "ParameterParsing.hpp"
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"
+#include "core/IConfig.hpp"
 #include "responses/Lyrics.hpp"
 
 namespace lms::api::subsonic
@@ -47,6 +48,36 @@ namespace lms::api::subsonic
 
     namespace
     {
+
+        enum CachingConfig
+        {
+            UNINITIALIZED,
+            ENABLED,
+            DISABLED,
+        } cacheMode = UNINITIALIZED;
+        std::mutex cacheLog{};
+        std::filesystem::path cachePath{};
+
+        void loadCacheSettings()
+        {
+            if (cacheMode != UNINITIALIZED)
+                return;
+            std::lock_guard<std::mutex> lock(cacheLog);
+            cacheMode = DISABLED;
+            auto *config = core::Service<core::IConfig>::get();
+            if (config->getLong("transcode-cache-size", 0) <= 0)
+                return; // TODO: Should be size of cache in MB, auto-clean (LRU)
+            cachePath = config->getPath("working-dir", "/var/lms") / "cache" / "transcode";
+            std::error_code ec;
+            std::filesystem::create_directories(cachePath, ec);
+            if (ec)
+            {
+                LMS_LOG(TRANSCODING, WARNING, "Creating transcoding cache failed, disabling");
+                return;
+            }
+            cacheMode = ENABLED;
+        }
+
         std::optional<av::transcoding::OutputFormat> subsonicStreamFormatToAvOutputFormat(std::string_view format)
         {
             for (const auto& [str, avFormat] : std::initializer_list<std::pair<std::string_view, av::transcoding::OutputFormat>>{
@@ -307,10 +338,20 @@ namespace lms::api::subsonic
             if (!continuation)
             {
                 StreamParameters streamParameters{ getStreamParameters(context) };
+
                 if (streamParameters.outputParameters)
-                    resourceHandler = av::transcoding::createResourceHandler(streamParameters.inputParameters, *streamParameters.outputParameters, streamParameters.estimateContentLength);
+                {
+                    loadCacheSettings();
+                    // Only allow caching if the client didn't request a start offset (as time, not bytes)
+                    if (cacheMode == ENABLED && streamParameters.outputParameters->offset.count() == 0)
+                        resourceHandler = av::transcoding::createCachingResourceHandler(cachePath, streamParameters.inputParameters, *streamParameters.outputParameters, streamParameters.estimateContentLength);
+                    else
+                        resourceHandler = av::transcoding::createResourceHandler(streamParameters.inputParameters, *streamParameters.outputParameters, streamParameters.estimateContentLength);
+                }
                 else
+                {
                     resourceHandler = av::createRawResourceHandler(streamParameters.inputParameters.trackPath);
+                }
             }
             else
             {

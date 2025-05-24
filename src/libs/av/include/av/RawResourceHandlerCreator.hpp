@@ -26,5 +26,5 @@
 
 namespace lms::av
 {
-    std::unique_ptr<IResourceHandler> createRawResourceHandler(const std::filesystem::path& path);
+    std::unique_ptr<IResourceHandler> createRawResourceHandler(const std::filesystem::path& path, std::string_view view = {});
 }

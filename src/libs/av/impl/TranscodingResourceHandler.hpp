@@ -47,9 +47,6 @@ namespace lms::av::transcoding
         std::array<std::byte, _chunkSize> _buffer;
         std::size_t _bytesReadyCount{};
         std::size_t _totalServedByteCount{};
-        std::uint64_t _firstByte{};
-        std::uint64_t _remainingBytes{};
-        std::uint64_t _jobHash;
         Transcoder _transcoder;
     };
 } // namespace lms::av::transcoding

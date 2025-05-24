@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "Types.hpp"
 #include "core/XxHash3.hpp"
 
 #include <chrono>
@@ -53,7 +54,24 @@ namespace lms::av::transcoding
         WEBM_VORBIS,
     };
 
-    std::string_view toMimetype(OutputFormat format);
+    static inline std::string_view formatToMimetype(OutputFormat format)
+    {
+        switch (format)
+        {
+        case OutputFormat::MP3:
+            return "audio/mpeg";
+        case OutputFormat::OGG_OPUS:
+            return "audio/opus";
+        case OutputFormat::MATROSKA_OPUS:
+            return "audio/x-matroska";
+        case OutputFormat::OGG_VORBIS:
+            return "audio/ogg";
+        case OutputFormat::WEBM_VORBIS:
+            return "audio/webm";
+        }
+
+        throw Exception{ "Invalid encoding" };
+    }
 
     struct OutputParameters
     {

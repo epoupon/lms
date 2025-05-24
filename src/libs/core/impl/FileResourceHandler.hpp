@@ -33,6 +33,8 @@ namespace lms
     public:
         FileResourceHandler(const std::filesystem::path& filePath, std::string_view mimeType);
 
+        bool sourceGood() const override { return _ifs && _ifs.good(); }
+
     private:
         Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
         void abort() override{};

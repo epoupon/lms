@@ -5,7 +5,7 @@ add_library(lmsav STATIC
 	impl/RawResourceHandlerCreator.cpp
 	impl/Transcoder.cpp
 	impl/TranscodingResourceHandler.cpp
-        impl/CachingTranscoder.cpp impl/CachingTranscoder.hpp)
+		impl/CachingTranscoderSession.cpp impl/CachingTranscoderSession.hpp impl/CachingTranscoderClientHandler.cpp impl/CachingTranscoderClientHandler.hpp)
 
 target_include_directories(lmsav INTERFACE
 	include

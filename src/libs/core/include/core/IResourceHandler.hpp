@@ -31,6 +31,8 @@ namespace lms
     public:
         virtual ~IResourceHandler() = default;
 
+        virtual bool sourceGood() const { return true; }
+
         [[nodiscard]] virtual Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) = 0;
         virtual void abort() = 0;
     };
