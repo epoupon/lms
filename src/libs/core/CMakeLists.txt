@@ -31,12 +31,12 @@ target_include_directories(lmscore INTERFACE
 
 target_include_directories(lmscore PRIVATE
 	include
+	${XXHASH_INCLUDE_DIRS}
 	)
 
 target_link_libraries(lmscore PRIVATE
 	PkgConfig::Config++
 	PkgConfig::Archive
-	PkgConfig::XXHASH
 	)
 
 target_link_libraries(lmscore PUBLIC
