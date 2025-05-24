@@ -19,8 +19,6 @@
 
 #include "FileResourceHandler.hpp"
 
-#include <fstream>
-
 #include "core/ILogger.hpp"
 #include "core/MimeTypes.hpp"
 
@@ -32,38 +30,37 @@ namespace lms::core
     }
 
     FileResourceHandler::FileResourceHandler(const std::filesystem::path& path, std::string_view mimeType)
-        : _path{ path }
-        , _mimeType{ mimeType }
+        : _mimeType{ mimeType }
+        , _ifs{ path, std::ios::in | std::ios::binary }
     {
+        if (!_ifs)
+            LMS_LOG(UTILS, ERROR, "Cannot open file stream for " << path);
+        else
+        {
+            _ifs.seekg(0, std::ios::end);
+            if (!_ifs.fail())
+                _fileSize = static_cast<::uint64_t>(_ifs.tellg());
+            LMS_LOG(UTILS, DEBUG, "File " << path << ", fileSize = " << _fileSize);
+        }
     }
 
     Wt::Http::ResponseContinuation* FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
     {
-        ::uint64_t startByte{ _offset };
-        std::ifstream ifs{ _path, std::ios::in | std::ios::binary };
-
-        if (startByte == 0)
+        if (_offset == 0)
         {
-            if (!ifs)
+            if (!_ifs)
             {
-                LMS_LOG(UTILS, ERROR, "Cannot open file stream for " << _path);
                 response.setStatus(404);
                 return {};
             }
 
-            ifs.seekg(0, std::ios::end);
-            const ::uint64_t fileSize{ static_cast<::uint64_t>(ifs.tellg()) };
-            ifs.seekg(0, std::ios::beg);
-
-            LMS_LOG(UTILS, DEBUG, "File " << _path << ", fileSize = " << fileSize);
-
             response.addHeader("Accept-Ranges", "bytes");
 
-            const Wt::Http::Request::ByteRangeSpecifier ranges{ request.getRanges(fileSize) };
+            const Wt::Http::Request::ByteRangeSpecifier ranges{ request.getRanges(_fileSize) };
             if (!ranges.isSatisfiable())
             {
                 std::ostringstream contentRange;
-                contentRange << "bytes */" << fileSize;
+                contentRange << "bytes */" << _fileSize;
                 response.setStatus(416); // Requested range not satisfiable
                 response.addHeader("Content-Range", contentRange.str());
 
@@ -76,57 +73,51 @@ namespace lms::core
                 LMS_LOG(UTILS, DEBUG, "Range requested = " << ranges[0].firstByte() << "-" << ranges[0].lastByte());
 
                 response.setStatus(206);
-                startByte = ranges[0].firstByte();
+                _offset = ranges[0].firstByte();
                 _beyondLastByte = ranges[0].lastByte() + 1;
 
                 std::ostringstream contentRange;
-                contentRange << "bytes " << startByte << "-"
-                             << _beyondLastByte - 1 << "/" << fileSize;
+                contentRange << "bytes " << _offset << "-"
+                             << _beyondLastByte - 1 << "/" << _fileSize;
 
                 response.addHeader("Content-Range", contentRange.str());
-                response.setContentLength(_beyondLastByte - startByte);
+                response.setContentLength(_beyondLastByte - _offset);
             }
             else
             {
                 LMS_LOG(UTILS, DEBUG, "No range requested");
 
                 response.setStatus(200);
-                _beyondLastByte = fileSize;
+                _beyondLastByte = _fileSize;
                 response.setContentLength(_beyondLastByte);
             }
 
             LMS_LOG(UTILS, DEBUG, "Mimetype set to '" << _mimeType << "'");
             response.setMimeType(_mimeType);
-        }
-        else if (!ifs)
-        {
-            LMS_LOG(UTILS, ERROR, "Cannot reopen file stream for " << _path);
-            return {};
-        }
 
-        ifs.seekg(static_cast<std::istream::pos_type>(startByte));
+            _ifs.seekg(static_cast<std::istream::pos_type>(_offset));
+        } // end initial response setup
 
-        std::vector<char> buf;
-        buf.resize(_chunkSize);
+        ::uint64_t restSize = _beyondLastByte - _offset;
+        ::uint64_t pieceSize = std::min(restSize, _chunkSize);
 
-        ::uint64_t restSize = _beyondLastByte - startByte;
-        ::uint64_t pieceSize = buf.size() > restSize ? restSize : buf.size();
+        std::vector<char> buf(pieceSize);
 
-        ifs.read(&buf[0], pieceSize);
-        const ::uint64_t actualPieceSize{ static_cast<::uint64_t>(ifs.gcount()) };
+        _ifs.read(buf.data(), buf.size());
+        const ::uint64_t actualPieceSize{ static_cast<::uint64_t>(_ifs.gcount()) };
         if (actualPieceSize > 0)
         {
-            response.out().write(&buf[0], actualPieceSize);
-            LMS_LOG(UTILS, DEBUG, "Written " << actualPieceSize << " bytes, range = " << startByte << "-" << startByte + actualPieceSize - 1 << "");
+            response.out().write(buf.data(), actualPieceSize);
+            LMS_LOG(UTILS, DEBUG, "Written " << actualPieceSize << " bytes, range = " << _offset << "-" << _offset + actualPieceSize - 1 << "");
         }
         else
-        {
             LMS_LOG(UTILS, DEBUG, "Written 0 byte");
-        }
 
-        if (ifs.good() && actualPieceSize < restSize)
+        if (!_ifs.good())
+            LMS_LOG(UTILS, WARNING, "Error reading from file!");
+        else if (actualPieceSize < restSize)
         {
-            _offset = startByte + actualPieceSize;
+            _offset += actualPieceSize;
             LMS_LOG(UTILS, DEBUG, "Job not complete! Remaining range: " << _offset << "-" << _beyondLastByte - 1);
 
             return response.createContinuation();
