@@ -22,6 +22,7 @@
 #include <filesystem>
 #include <string>
 #include <string_view>
+#include <fstream>
 
 #include "core/IResourceHandler.hpp"
 
@@ -38,9 +39,10 @@ namespace lms
 
         static constexpr std::size_t _chunkSize{ 262'144 };
 
-        std::filesystem::path _path;
         std::string _mimeType;
         ::uint64_t _beyondLastByte{};
         ::uint64_t _offset{};
+        ::int64_t _fileSize{-1};
+        std::ifstream _ifs;
     };
 } // namespace lms
