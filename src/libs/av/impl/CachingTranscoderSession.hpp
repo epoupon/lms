@@ -48,6 +48,7 @@ namespace lms::av::transcoding
     private:
         bool sourceGood() const { return _fs && _fs.good(); }
         void keepReading();
+        void notifyClients(CachingTranscoderClientHandler::UpdateStatus status);
 
         static constexpr std::size_t CHUNK_SIZE{ 262'144 };
         std::uint64_t _estimatedContentLength;

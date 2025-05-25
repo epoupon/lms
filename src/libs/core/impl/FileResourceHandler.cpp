@@ -44,7 +44,7 @@ namespace lms
 
     Wt::Http::ResponseContinuation* FileResourceHandler::processRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
     {
-        if (!response.continuation())
+        if (!_beyondLastByte) // Is zero if we haven't handled the request headers yet
         {
             if (!_ifs)
             {
@@ -106,7 +106,7 @@ namespace lms
         if (actualPieceSize > 0)
         {
             response.out().write(buf.data(), actualPieceSize);
-            LMS_LOG(UTILS, DEBUG, "Written " << actualPieceSize << " bytes, range = " << _offset << "-" << _offset + actualPieceSize - 1 << "");
+            LMS_LOG(UTILS, DEBUG, "Written " << actualPieceSize << " bytes, range = " << _offset << "-" << (_offset + actualPieceSize - 1) << "...");
         }
         else
         {

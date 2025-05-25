@@ -55,17 +55,19 @@ namespace lms::api::subsonic
             ENABLED,
             DISABLED,
         } cacheMode = UNINITIALIZED;
-        std::mutex cacheLog{};
+        std::mutex cacheMutex{};
         std::filesystem::path cachePath{};
 
         void loadCacheSettings()
         {
             if (cacheMode != UNINITIALIZED)
                 return;
-            std::lock_guard<std::mutex> lock(cacheLog);
+            std::lock_guard<std::mutex> lock(cacheMutex);
             cacheMode = DISABLED;
             auto *config = core::Service<core::IConfig>::get();
-            if (config->getLong("transcode-cache-size", 0) <= 0)
+            auto size = config->getULong("transcode-cache-size", 0);
+            LMS_LOG(API_SUBSONIC, DEBUG, "Transcoding cache size: " << size);
+            if (size <= 0)
                 return; // TODO: Should be size of cache in MB, auto-clean (LRU)
             cachePath = config->getPath("working-dir", "/var/lms") / "cache" / "transcode";
             std::error_code ec;
@@ -343,6 +345,7 @@ namespace lms::api::subsonic
                 {
                     loadCacheSettings();
                     // Only allow caching if the client didn't request a start offset (as time, not bytes)
+                    LMS_LOG(API_SUBSONIC, DEBUG, "Cache Mode: " << cacheMode << ", offset: " << streamParameters.outputParameters->offset.count());
                     if (cacheMode == ENABLED && streamParameters.outputParameters->offset.count() == 0)
                         resourceHandler = av::transcoding::createCachingResourceHandler(cachePath, streamParameters.inputParameters, *streamParameters.outputParameters, streamParameters.estimateContentLength);
                     else

@@ -21,7 +21,7 @@
 
 #include "core/IResourceHandler.hpp"
 
-#include <optional>
+#include <boost/asio.hpp>
 
 namespace Wt::Http
 {
@@ -35,26 +35,36 @@ namespace lms::av::transcoding
     class CachingTranscoderClientHandler : public IResourceHandler
     {
     public:
+        enum UpdateStatus
+        {
+            WORKING,
+            DONE,
+            ERROR,
+        };
         CachingTranscoderClientHandler(const std::shared_ptr<CachingTranscoderSession>& transcoder, bool estimateContentLength);
         ~CachingTranscoderClientHandler() override;
 
         CachingTranscoderClientHandler(const CachingTranscoderClientHandler&) = delete;
         CachingTranscoderClientHandler& operator=(const CachingTranscoderClientHandler&) = delete;
 
-        bool update(std::uint64_t currentFileLength, bool done);
+        bool update(std::uint64_t currentFileLength, UpdateStatus status);
+
+        void abort() override { _dead = true; }
 
     private:
         Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
-        void abort() override { _dead = true; }
 
         std::shared_ptr<CachingTranscoderSession> _transcoder;
         bool _dead{};
         bool _estimateContentLength;
+        bool _headerSet{};
         std::uint64_t _currentFileLength{};
+        std::uint64_t _finalFileLength{};
         Wt::Http::ResponseContinuation* _continuation{};
         std::mutex _lock{};
         std::uint64_t _nextOffset{};
         std::uint64_t _endOffset{ UINT64_MAX };
+        boost::asio::steady_timer _signal;
     };
 
 } // namespace lms::av::transcoding

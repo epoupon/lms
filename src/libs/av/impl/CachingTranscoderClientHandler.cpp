@@ -17,8 +17,10 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "CachingTranscoderClientHandler.hpp"
+#include <utility>
+
 #include "CachingTranscoderSession.hpp"
+#include "core/IChildProcessManager.hpp"
 #include "core/ILogger.hpp"
 
 namespace lms::av::transcoding
@@ -29,6 +31,7 @@ namespace lms::av::transcoding
     CachingTranscoderClientHandler::CachingTranscoderClientHandler(const std::shared_ptr<CachingTranscoderSession>& transcoder, bool estimateContentLength)
         : _transcoder{ transcoder }
         , _estimateContentLength{ estimateContentLength }
+        , _signal{ core::Service<core::IChildProcessManager>::get()->ioContext() }
     {
         LMS_LOG(TRANSCODING, DEBUG, "CachingTranscoderClientHandler instances: " << ++instCount);
     }
@@ -38,27 +41,37 @@ namespace lms::av::transcoding
         LMS_LOG(TRANSCODING, DEBUG, "CachingTranscoderClientHandler instances: " << --instCount);
     }
 
-    bool CachingTranscoderClientHandler::update(std::uint64_t currentFileLength, bool done)
+    bool CachingTranscoderClientHandler::update(std::uint64_t currentFileLength, UpdateStatus status)
     {
+        LMS_LOG(TRANSCODING, WARNING, "Client->update() when " << (_dead ? "DEAD" : "alive"));
         if (_dead)
             return false;
+        if (status == UpdateStatus::ERROR)
+        {
+            _signal.cancel();
+            _dead = true;
+            return false;
+        }
         std::lock_guard<std::mutex> guard{ _lock };
         _currentFileLength = currentFileLength;
-        if (done && _endOffset > currentFileLength)
-            _endOffset = currentFileLength;
-        if (_continuation != nullptr && _currentFileLength > _nextOffset)
+        if (status == UpdateStatus::DONE)
+            _finalFileLength = currentFileLength;
+        if (_currentFileLength > _nextOffset || status != WORKING)
         {
-            auto *tmp = _continuation;
-            _continuation = nullptr;
-            tmp->haveMoreData();
+            // This is being called from another thread (potentially), so use a timer for signalling
+            _signal.cancel();
         }
         return true;
     }
 
     Wt::Http::ResponseContinuation* CachingTranscoderClientHandler::processRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
     {
-        if (!request.continuation())
+        if (_dead)
+            return nullptr;
+        if (!_headerSet)
         {
+            _headerSet = true;
+            LMS_LOG(TRANSCODING, DEBUG, "Initial processRequest");
             response.addHeader("Accept-Ranges", "bytes");
             if (_estimateContentLength && _endOffset == UINT64_MAX)
                 _endOffset = _transcoder->estimatedContentLength();
@@ -80,7 +93,13 @@ namespace lms::av::transcoding
 
                 std::ostringstream contentRange;
                 contentRange << "bytes " << ranges[0].firstByte() << "-"
-                             << ranges[0].lastByte() << "/*";
+                             << ranges[0].lastByte() << "/";
+                if (_finalFileLength)
+                    contentRange << _finalFileLength;
+                else if (_endOffset != UINT64_MAX)
+                    contentRange << _endOffset;
+                else
+                    contentRange << "*";
 
                 response.addHeader("Content-Range", contentRange.str());
             }
@@ -96,21 +115,35 @@ namespace lms::av::transcoding
         } // end init
 
         std::lock_guard<std::mutex> guard{ _lock };
-        if (_nextOffset >= _endOffset)
-        {
-            LMS_LOG(TRANSCODING, DEBUG, "Client request already done after transcoding finished and size is known");
-            _dead = true;
-            return nullptr;
-        }
         int64_t bytesToRead = static_cast<std::int64_t>(std::min(_endOffset, _currentFileLength)) - _nextOffset;
+        int64_t bytesWritten{};
+        LMS_LOG(TRANSCODING, DEBUG, "Can send up to "<< bytesToRead << "(" << _endOffset << "/" << _currentFileLength << ") bytes to a cache client, start: " << _nextOffset);
         if (bytesToRead > 0)
         {
-            int64_t bytesWritten = _transcoder->serveBytes(response.out(), _nextOffset, bytesToRead);
+            bytesWritten = _transcoder->serveBytes(response.out(), _nextOffset, bytesToRead);
+            LMS_LOG(TRANSCODING, DEBUG, "Wrote " << bytesWritten << " cached bytes back to client");
             if (bytesWritten > 0)
             {
-                LMS_LOG(TRANSCODING, DEBUG, "Wrote " << bytesWritten << " cached bytes back to client");
                 _nextOffset += bytesWritten;
             }
+        }
+        if (_finalFileLength && _nextOffset >= _finalFileLength && _nextOffset < _endOffset)
+        {
+            if (_endOffset == UINT64_MAX)
+            {
+                LMS_LOG(TRANSCODING, DEBUG, "End of file, no content-length, killing connection");
+                _dead = true;
+                return nullptr;
+            }
+            // Transcode finished, but we overestimated the final file size - pad with zeros
+            const std::size_t padSize{ _endOffset - _nextOffset };
+
+            LMS_LOG(TRANSCODING, DEBUG, "Adding " << padSize << " padding bytes");
+
+            for (std::size_t i{}; i < padSize; ++i)
+                response.out().put(0);
+
+            _nextOffset += padSize;
         }
         if (_nextOffset >= _endOffset)
         {
@@ -118,8 +151,30 @@ namespace lms::av::transcoding
             _dead = true;
             return nullptr;
         }
+        // Still some work to do
+        if (bytesWritten > 0 && _currentFileLength > _nextOffset)
+        {
+            // Can continue directly
+            LMS_LOG(TRANSCODING, DEBUG, "PROCESSOR: Continue directly");
+            _continuation = nullptr;
+            return response.createContinuation();
+        }
+        LMS_LOG(TRANSCODING, DEBUG, "PROCESSOR: Wait for more data");
+        // Need to wait for transcoder
         _continuation = response.createContinuation();
         _continuation->waitForMoreData();
+        _signal.expires_after(std::chrono::seconds(60));
+        _signal.async_wait([this](const boost::system::error_code& ec) {
+            if (_dead)
+                return;
+            if (ec != boost::asio::error::operation_aborted)
+            {
+                // This should not happen but let's see
+                _dead = true;
+                LMS_LOG(TRANSCODING, DEBUG, "***************** CLIENT TIMEOUT **************************");
+            }
+            this->_continuation->haveMoreData(); // Will end the request if we set _dead above
+        });
         return _continuation;
     }
 

@@ -33,6 +33,8 @@ namespace lms::core
         virtual ~IChildProcessManager() = default;
 
         virtual std::unique_ptr<IChildProcess> spawnChildProcess(const std::filesystem::path& path, const IChildProcess::Args& args) = 0;
+
+        virtual boost::asio::io_context& ioContext() const = 0;
     };
 
     std::unique_ptr<IChildProcessManager> createChildProcessManager(boost::asio::io_context& ioContext);

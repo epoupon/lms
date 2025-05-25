@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <utility>
+
 #include "CachingTranscoderSession.hpp"
 #include "CachingTranscoderClientHandler.hpp"
 #include "TranscodingResourceHandler.hpp"
@@ -63,18 +65,23 @@ namespace lms::av::transcoding
         }
     } // namespace
 
-    std::shared_ptr<IResourceHandler> createCachingResourceHandler(const std::filesystem::path& cachePath, const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength)
+    std::shared_ptr<IResourceHandler> createCachingResourceHandler(const std::filesystem::path& cachePath, const InputParameters& inputParameters, const OutputParameters& outputParametersOriginal, bool estimateContentLength)
     {
-        assert(outputParameters.offset.count() == 0);
+        assert(outputParametersOriginal.offset.count() == 0);
         // Snap to predefined values, to increase chances of cache hit
-        OutputParameters copy = outputParameters;
+        OutputParameters outputParameters = outputParametersOriginal;
         for (auto rate : ALLOWED_BITRATES)
         {
-            if (copy.bitrate > rate)
-                copy.bitrate = rate;
+            if (outputParameters.bitrate >= rate)
+            {
+                outputParameters.bitrate = rate;
+                break;
+            }
         }
         // Enforce minimum
-        copy.bitrate = std::max(copy.bitrate, ALLOWED_BITRATES.back());
+        outputParameters.bitrate = std::max(outputParameters.bitrate, ALLOWED_BITRATES.back());
+        if (outputParametersOriginal.bitrate != outputParameters.bitrate)
+            LMS_LOG(TRANSCODING, DEBUG, "Bitrate forced from " << outputParametersOriginal.bitrate / 1000 << " to " << outputParameters.bitrate / 1000);
         // Lookup in cache
         auto hash = inputParameters.hash() ^ outputParameters.hash();
         std::lock_guard<std::mutex> guard{ jobMutex };
@@ -117,18 +124,19 @@ namespace lms::av::transcoding
             std::lock_guard<std::mutex> guard{ _clientMutex };
             _clients.emplace_back(ptr);
         }
-        ptr->update(_currentFileLength, false);
+        ptr->update(_currentFileLength, CachingTranscoderClientHandler::WORKING);
         return ptr;
     }
 
     CachingTranscoderSession::CachingTranscoderSession(uint64_t hash, const std::filesystem::path &file, const InputParameters& inputParameters, const OutputParameters& outputParameters)
         : _estimatedContentLength{ doEstimateContentLength(inputParameters, outputParameters) }
-        , _fs{ file, std::ios::in | std::ios::out | std::ios::binary }
+        , _fs{ file, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc }
         , _transcoder{ inputParameters, outputParameters }
         , _jobHash{ hash }
     {
         LMS_LOG(TRANSCODING, DEBUG, "CachingTranscoderSession instances: " << ++instCount);
         LMS_LOG(TRANSCODING, DEBUG, "Estimated content length = " << _estimatedContentLength);
+        keepReading();
     }
 
     CachingTranscoderSession::~CachingTranscoderSession()
@@ -138,33 +146,37 @@ namespace lms::av::transcoding
 
     int64_t CachingTranscoderSession::serveBytes(std::ostream& stream, uint64_t offset, int64_t len)
     {
-        std::lock_guard<std::mutex> guard{ _fsMutex };
-        if (offset <= _currentFileLength || len <= 0)
+        LMS_LOG(TRANSCODING, DEBUG, "######## Offset: " << offset << ", FileSize: " << _currentFileLength << ", Length: " << len);
+        if (offset >= _currentFileLength || len <= 0)
             return 0;
+        std::size_t bytesRead;
+        bool good;
         std::vector<char> buffer(std::min<std::size_t>(len, CHUNK_SIZE));
-        _fs.seekg(offset);
-        _fs.read(buffer.data(), buffer.size());
-        if (!_fs.good())
+        {
+            std::lock_guard<std::mutex> guard{ _fsMutex };
+            _fs.seekg(offset);
+            _fs.read(buffer.data(), buffer.size());
+            bytesRead = _fs.gcount();
+            LMS_LOG(TRANSCODING, DEBUG, "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX " << bytesRead << " XXXX " << _fs.tellg() << " YYYY " << _currentFileLength);
+            good = _fs.good();
+        }
+        if (!good)
         {
             LMS_LOG(TRANSCODING, WARNING, "Error on cached file fstream while serving a client");
             return -1;
         }
-        stream.write(buffer.data(), _fs.gcount());
-        return _fs.gcount();
+        stream.write(buffer.data(), bytesRead);
+        return bytesRead;
     }
 
     void CachingTranscoderSession::keepReading()
     {
+        LMS_LOG(TRANSCODING, DEBUG, "keepReading");
         if (_transcoder.finished())
         {
             {
-                std::lock_guard<std::mutex> guard{ _clientMutex };
                 LMS_LOG(TRANSCODING, DEBUG, "Caching transcoder job finished, clients left: " << _clients.size());
-                for (const auto& ptr : _clients)
-                {
-                    ptr->update(_currentFileLength, true);
-                }
-                _clients.clear();
+                notifyClients(CachingTranscoderClientHandler::DONE);
             }
             removeJobFromMap(_jobHash);
             return;
@@ -174,32 +186,51 @@ namespace lms::av::transcoding
             LMS_LOG(TRANSCODING, DEBUG, "Have " << nbBytesRead << " more bytes to send back and cache");
             if (nbBytesRead)
             {
-                std::lock_guard<std::mutex> guard{ _fsMutex };
-                _fs.write(reinterpret_cast<const char*>(_buffer.data()), nbBytesRead);
-                if (_fs.good())
+                bool good;
+                {
+                    std::lock_guard<std::mutex> guard{ _fsMutex };
+                    _fs.write(reinterpret_cast<const char*>(_buffer.data()), nbBytesRead);
+                    good = _fs.good();
+                }
+                if (good)
                     _currentFileLength += nbBytesRead;
                 else
-                    LMS_LOG(TRANSCODING, WARNING, "Error writing to transcoded cache file");
-            }
-            int done{};
-            std::size_t remaining{};
-            {
-                std::lock_guard<std::mutex> guard{ _clientMutex };
-                for (int i = static_cast<int>(_clients.size()) - 1; i >= 0; --i)
                 {
-                    if (!_clients[i]->update(_currentFileLength, false))
-                    {
-                        done++;
-                        _clients[i] = std::move(_clients.back());
-                        _clients.pop_back();
-                    }
+                    LMS_LOG(TRANSCODING, WARNING, "Error writing to transcoded cache file");
+                    notifyClients(CachingTranscoderClientHandler::ERROR);
                 }
-                remaining = _clients.size();
             }
-            if (done)
-                LMS_LOG(TRANSCODING, DEBUG, "Clients done with shared transcoder: " << done << ", remaining: " << remaining);
+            LMS_LOG(TRANSCODING, DEBUG, "Before notify in session " << _currentFileLength);
+            notifyClients(CachingTranscoderClientHandler::WORKING);
             this->keepReading();
         });
+    }
 
+    void CachingTranscoderSession::notifyClients(CachingTranscoderClientHandler::UpdateStatus status)
+    {
+        int done{};
+        std::size_t remaining;
+        std::lock_guard<std::mutex> guard{ _clientMutex };
+
+        if (status == CachingTranscoderClientHandler::WORKING)
+        {
+            for (int i = static_cast<int>(_clients.size()) - 1; i >= 0; --i)
+            {
+                if (!_clients[i]->update(_currentFileLength, status))
+                {
+                    done++;
+                    _clients[i] = std::move(_clients.back());
+                    _clients.pop_back();
+                }
+            }
+            remaining = _clients.size();
+            LMS_LOG(TRANSCODING, DEBUG, "Clients done with shared transcoder: " << done << ", remaining: " << remaining);
+        }
+        else
+        {
+            for (const auto& client : _clients)
+                client->update(_currentFileLength, status);
+            _clients.clear();
+        }
     }
 } // namespace lms::av::transcoding
