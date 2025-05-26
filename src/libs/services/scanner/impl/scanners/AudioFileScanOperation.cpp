@@ -41,9 +41,10 @@
 #include "image/Exception.hpp"
 #include "image/Image.hpp"
 #include "metadata/Exception.hpp"
+#include "metadata/IAudioFileParser.hpp"
+#include "services/scanner/ScanErrors.hpp"
 
 #include "IFileScanOperation.hpp"
-#include "ScanContext.hpp"
 #include "ScannerSettings.hpp"
 #include "Utils.hpp"
 #include "helpers/ArtistHelpers.hpp"
@@ -387,7 +388,7 @@ namespace lms::scanner
             return db::Advisory::UnSet;
         }
 
-        db::Track::pointer findMovedTrackBySizeAndMetaData(db::Session& session, const metadata::Track& parsedTrack, const FileInfo& fileInfo)
+        db::Track::pointer findMovedTrackBySizeAndMetaData(db::Session& session, const metadata::Track& parsedTrack, size_t fileSize, const std::filesystem::path& relativePath)
         {
             db::Track::FindParameters params;
             // Add as many fields as possible to limit errors
@@ -401,7 +402,7 @@ namespace lms::scanner
             }
             if (parsedTrack.position)
                 params.setTrackNumber(*parsedTrack.position);
-            params.setFileSize(fileInfo.fileSize);
+            params.setFileSize(fileSize);
 
             bool error{};
             db::Track::pointer res;
@@ -413,7 +414,7 @@ namespace lms::scanner
 
                 if (res)
                 {
-                    LMS_LOG(DBUPDATER, DEBUG, "Found too many candidates for file move. New file = " << fileInfo.relativePath << ", candidate = " << track->getAbsoluteFilePath() << ", previous candidate = " << res->getAbsoluteFilePath());
+                    LMS_LOG(DBUPDATER, DEBUG, "Found too many candidates for file move. New file = " << relativePath << ", candidate = " << track->getAbsoluteFilePath() << ", previous candidate = " << res->getAbsoluteFilePath());
                     error = true;
                 }
                 res = track;
@@ -474,6 +475,14 @@ namespace lms::scanner
         }
     } // namespace
 
+    AudioFileScanOperation::AudioFileScanOperation(FileToScan&& fileToScan, db::Db& db, const ScannerSettings& settings, metadata::IAudioFileParser& parser)
+        : FileScanOperationBase{ std::move(fileToScan), db, settings }
+        , _parser{ parser }
+    {
+    }
+
+    AudioFileScanOperation::~AudioFileScanOperation() = default;
+
     void AudioFileScanOperation::scan()
     {
         LMS_SCOPED_TRACE_OVERVIEW("Scanner", "ScanAudioFile");
@@ -481,13 +490,13 @@ namespace lms::scanner
 
         try
         {
-            _parsedTrack = _parser.parseMetaData(_file);
+            _parsedTrack = _parser.parseMetaData(getFilePath());
 
             // We fill missing artist mbids with mbids found on other artist roles
             fillMissingMbids(*_parsedTrack);
 
             std::size_t index{};
-            _parser.parseImages(_file, [&](const metadata::Image& image) {
+            _parser.parseImages(getFilePath(), [&](const metadata::Image& image) {
                 try
                 {
                     image::ImageProperties properties{ image::probeImage(image.data) };
@@ -508,46 +517,43 @@ namespace lms::scanner
                 }
                 catch (const image::Exception& e)
                 {
-                    LMS_LOG(DBUPDATER, ERROR, "Failed to parse image in track file " << _file);
+                    addError<EmbeddedImageScanError>(getFilePath(), index);
                 }
 
                 index++;
             });
         }
+        catch (const metadata::AudioFileNoAudioPropertiesException&)
+        {
+            addError<NoAudioTrackFoundError>(getFilePath());
+        }
+        catch (const metadata::IOException& e)
+        {
+            addError<IOScanError>(getFilePath(), e.getErrorCode());
+        }
         catch (const metadata::Exception& e)
         {
-            LMS_LOG(DBUPDATER, ERROR, "Failed to parse audio file " << _file);
+            addError<AudioFileScanError>(getFilePath());
         }
     }
 
-    void AudioFileScanOperation::processResult(ScanContext& context)
+    AudioFileScanOperation::OperationResult AudioFileScanOperation::processResult()
     {
         LMS_SCOPED_TRACE_DETAILED("Scanner", "ProcessAudioScanData");
 
-        ScanStats& stats{ context.stats };
-
-        const std::optional<FileInfo> fileInfo{ utils::retrieveFileInfo(_file, _mediaLibrary.rootDirectory) };
-        if (!fileInfo)
-        {
-            stats.skips++;
-            return;
-        }
-
-        db::Session& dbSession{ _db.getTLSSession() };
-        db::Track::pointer track{ db::Track::findByPath(dbSession, _file) };
-
+        db::Session& dbSession{ getDb().getTLSSession() };
+        db::Track::pointer track{ db::Track::findByPath(dbSession, getFilePath()) };
         if (!_parsedTrack)
         {
             if (track)
             {
                 track.remove();
-                stats.deletions++;
+                return OperationResult::Removed;
             }
-            context.stats.errors.emplace_back(_file, ScanErrorType::CannotReadAudioFile);
-            return;
+            return OperationResult::Skipped;
         }
 
-        if (_parsedTrack->mbid && (!track || _settings.skipDuplicateTrackMBID))
+        if (_parsedTrack->mbid && (!track || getScannerSettings().skipDuplicateTrackMBID))
         {
             std::vector<db::Track::pointer> duplicateTracks{ db::Track::findByMBID(dbSession, *_parsedTrack->mbid) };
 
@@ -558,14 +564,14 @@ namespace lms::scanner
                 std::error_code ec;
                 if (!std::filesystem::exists(otherTrack->getAbsoluteFilePath(), ec))
                 {
-                    LMS_LOG(DBUPDATER, DEBUG, "Considering track " << _file << " moved from " << otherTrack->getAbsoluteFilePath());
+                    LMS_LOG(DBUPDATER, DEBUG, "Considering track " << getFilePath() << " moved from " << otherTrack->getAbsoluteFilePath());
                     track = otherTrack;
-                    track.modify()->setAbsoluteFilePath(_file);
+                    track.modify()->setAbsoluteFilePath(getFilePath());
                 }
             }
 
             // Skip duplicate track MBID
-            if (_settings.skipDuplicateTrackMBID)
+            if (getScannerSettings().skipDuplicateTrackMBID)
             {
                 for (db::Track::pointer& otherTrack : duplicateTracks)
                 {
@@ -574,22 +580,26 @@ namespace lms::scanner
                         continue;
 
                     // Skip if duplicate files no longer in media root: as it will be removed later, we will end up with no file
-                    if (std::none_of(std::cbegin(_settings.mediaLibraries), std::cend(_settings.mediaLibraries),
+                    auto& mediaLibraries{ getScannerSettings().mediaLibraries };
+                    if (std::none_of(std::cbegin(mediaLibraries), std::cend(mediaLibraries),
                             [&](const MediaLibraryInfo& libraryInfo) {
-                                return core::pathUtils::isPathInRootPath(_file, libraryInfo.rootDirectory, &excludeDirFileName);
+                                return core::pathUtils::isPathInRootPath(getFilePath(), libraryInfo.rootDirectory, &excludeDirFileName);
                             }))
                     {
                         continue;
                     }
 
-                    LMS_LOG(DBUPDATER, DEBUG, "Skipped " << _file << " (similar MBID in " << otherTrack->getAbsoluteFilePath() << ")");
+                    LMS_LOG(DBUPDATER, DEBUG, "Skipped " << getFilePath() << ": same MBID already found in " << otherTrack->getAbsoluteFilePath());
                     // As this MBID already exists, just remove what we just scanned
                     if (track)
                     {
                         track.remove();
-                        stats.deletions++;
+
+                        LMS_LOG(DBUPDATER, DEBUG, "Removed " << getFilePath() << ": same MBID already found in " << otherTrack->getAbsoluteFilePath());
+                        return OperationResult::Removed;
                     }
-                    return;
+
+                    return OperationResult::Skipped;
                 }
             }
         }
@@ -597,27 +607,25 @@ namespace lms::scanner
         if (!track)
         {
             // maybe the file just moved?
-            track = findMovedTrackBySizeAndMetaData(dbSession, *_parsedTrack, *fileInfo);
+            track = findMovedTrackBySizeAndMetaData(dbSession, *_parsedTrack, getFileSize(), getRelativeFilePath());
             if (track)
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Considering track " << _file << " moved from " << track->getAbsoluteFilePath());
-                track.modify()->setAbsoluteFilePath(_file);
+                LMS_LOG(DBUPDATER, DEBUG, "Considering track " << getFilePath() << " moved from " << track->getAbsoluteFilePath());
+                track.modify()->setAbsoluteFilePath(getFilePath());
             }
         }
 
         // We estimate this is an audio file if the duration is not null
         if (_parsedTrack->audioProperties.duration == std::chrono::milliseconds::zero())
         {
-            LMS_LOG(DBUPDATER, DEBUG, "Skipped " << _file << " (duration is 0)");
+            addError<BadAudioDurationError>(getFilePath());
 
-            // If Track exists here, delete it!
             if (track)
             {
                 track.remove();
-                stats.deletions++;
+                return OperationResult::Removed;
             }
-            stats.errors.emplace_back(_file, ScanErrorType::BadDuration);
-            return;
+            return OperationResult::Skipped;
         }
 
         // ***** Title
@@ -626,9 +634,9 @@ namespace lms::scanner
             title = _parsedTrack->title;
         else
         {
-            // TODO parse file name guess track etc.
-            // For now juste use file name as title
-            title = _file.filename().string();
+            // TODO parse file name to guess track etc.
+            // For now, we just use file name as title
+            title = getFilePath().filename().string();
         }
 
         // If file already exists, update its data
@@ -639,13 +647,13 @@ namespace lms::scanner
             track = dbSession.create<db::Track>();
             added = true;
 
-            track.modify()->setAbsoluteFilePath(_file);
-            track.modify()->setAddedTime(_mediaLibrary.firstScan ? fileInfo->lastWriteTime : Wt::WDateTime::currentDateTime()); // may be erased by encodingTime
+            track.modify()->setAbsoluteFilePath(getFilePath());
+            track.modify()->setAddedTime(getMediaLibrary().firstScan ? getLastWriteTime() : Wt::WDateTime::currentDateTime()); // may be erased by encodingTime
         }
 
         // Track related data
         assert(track);
-        track.modify()->setScanVersion(_settings.audioScanVersion);
+        track.modify()->setScanVersion(getScannerSettings().audioScanVersion);
 
         // Audio properties
         track.modify()->setBitrate(_parsedTrack->audioProperties.bitrate);
@@ -654,9 +662,9 @@ namespace lms::scanner
         track.modify()->setDuration(_parsedTrack->audioProperties.duration);
         track.modify()->setSampleRate(_parsedTrack->audioProperties.sampleRate);
 
-        track.modify()->setRelativeFilePath(fileInfo->relativePath);
-        track.modify()->setFileSize(fileInfo->fileSize);
-        track.modify()->setLastWriteTime(fileInfo->lastWriteTime);
+        track.modify()->setRelativeFilePath(getRelativeFilePath());
+        track.modify()->setFileSize(getFileSize());
+        track.modify()->setLastWriteTime(getLastWriteTime());
 
         if (_parsedTrack->encodingTime.isValid())
         {
@@ -672,14 +680,14 @@ namespace lms::scanner
                 track.modify()->setAddedTime(time.isValid() ? Wt::WDateTime{ date, time } : Wt::WDateTime{ date });
         }
 
-        db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, _mediaLibrary.id) }; // may be null if settings are updated in // => next scan will correct this
+        db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, getMediaLibrary().id) }; // may be null if settings are updated in // => next scan will correct this
         track.modify()->setMediaLibrary(mediaLibrary);
-        db::Directory::pointer directory{ utils::getOrCreateDirectory(dbSession, _file.parent_path(), mediaLibrary) };
+        db::Directory::pointer directory{ utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary) };
         track.modify()->setDirectory(directory);
 
         track.modify()->clearArtistLinks();
 
-        const helpers::AllowFallbackOnMBIDEntry allowFallback{ _settings.allowArtistMBIDFallback };
+        const helpers::AllowFallbackOnMBIDEntry allowFallback{ getScannerSettings().allowArtistMBIDFallback };
         createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Artist, _parsedTrack->artists, allowFallback);
         if (_parsedTrack->medium && _parsedTrack->medium->release)
             createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::ReleaseArtist, _parsedTrack->medium->release->artists, allowFallback);
@@ -732,13 +740,11 @@ namespace lms::scanner
 
         if (added)
         {
-            LMS_LOG(DBUPDATER, DEBUG, "Added audio file " << _file);
-            stats.additions++;
+            LMS_LOG(DBUPDATER, DEBUG, "Added audio file " << getFilePath());
+            return OperationResult::Added;
         }
-        else
-        {
-            LMS_LOG(DBUPDATER, DEBUG, "Updated audio file " << _file);
-            stats.updates++;
-        }
+
+        LMS_LOG(DBUPDATER, DEBUG, "Updated audio file " << getFilePath());
+        return OperationResult::Updated;
     }
 } // namespace lms::scanner

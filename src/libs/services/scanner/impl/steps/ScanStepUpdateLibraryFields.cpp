@@ -25,6 +25,7 @@
 #include "database/Session.hpp"
 
 #include "MediaLibraryInfo.hpp"
+#include "ScanContext.hpp"
 #include "ScannerSettings.hpp"
 
 namespace lms::scanner

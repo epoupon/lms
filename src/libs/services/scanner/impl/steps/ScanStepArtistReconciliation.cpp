@@ -32,6 +32,7 @@
 #include "database/TrackList.hpp"
 #include "metadata/Types.hpp"
 
+#include "ScanContext.hpp"
 #include "ScannerSettings.hpp"
 #include "helpers/ArtistHelpers.hpp"
 

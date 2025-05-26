@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <system_error>
+
 #include "core/Exception.hpp"
 
 namespace lms::metadata
@@ -29,9 +31,31 @@ namespace lms::metadata
         using LmsException::LmsException;
     };
 
-    class ParseException : public Exception
+    class IOException : public Exception
+    {
+    public:
+        IOException(std::string_view message, std::error_code err)
+            : Exception{ std::string{ message } + ": " + err.message() }
+            , _err{ err }
+        {
+        }
+
+        std::error_code getErrorCode() const { return _err; }
+
+    private:
+        std::error_code _err;
+    };
+
+    class AudioFileParsingException : public Exception
     {
     public:
         using Exception::Exception;
     };
+
+    class AudioFileNoAudioPropertiesException : public AudioFileParsingException
+    {
+    public:
+        using AudioFileParsingException::AudioFileParsingException;
+    };
+
 } // namespace lms::metadata

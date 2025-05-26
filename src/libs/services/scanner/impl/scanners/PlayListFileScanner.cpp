@@ -30,7 +30,7 @@
 #include "metadata/Exception.hpp"
 #include "metadata/PlayList.hpp"
 
-#include "IFileScanOperation.hpp"
+#include "FileScanOperationBase.hpp"
 #include "ScanContext.hpp"
 #include "Utils.hpp"
 
@@ -38,26 +38,18 @@ namespace lms::scanner
 {
     namespace
     {
-        class PlayListFileScanOperation : public IFileScanOperation
+        class PlayListFileScanOperation : public FileScanOperationBase
         {
         public:
-            PlayListFileScanOperation(const FileToScan& file, db::Db& db)
-                : _file{ file.file }
-                , _mediaLibrary{ file.mediaLibrary }
-                , _db{ db } {}
+            using FileScanOperationBase::FileScanOperationBase;
             ~PlayListFileScanOperation() override = default;
             PlayListFileScanOperation(const PlayListFileScanOperation&) = delete;
             PlayListFileScanOperation& operator=(const PlayListFileScanOperation&) = delete;
 
         private:
-            const std::filesystem::path& getFile() const override { return _file; };
             core::LiteralString getName() const override { return "ScanPlayListFile"; }
             void scan() override;
-            void processResult(ScanContext& context) override;
-
-            const std::filesystem::path _file;
-            const MediaLibraryInfo _mediaLibrary;
-            db::Db& _db;
+            OperationResult processResult() override;
 
             std::optional<metadata::PlayList> _parsedPlayList;
         };
@@ -66,74 +58,72 @@ namespace lms::scanner
         {
             try
             {
-                std::ifstream ifs{ _file };
+                std::ifstream ifs{ getFilePath() };
                 if (!ifs)
-                    LMS_LOG(DBUPDATER, ERROR, "Cannot open file " << _file);
-                else
-                    _parsedPlayList = metadata::parsePlayList(ifs);
+                {
+                    const std::error_code ec{ errno, std::generic_category() };
+
+                    addError<IOScanError>(getFilePath(), ec);
+                    return;
+                }
+
+                _parsedPlayList = metadata::parsePlayList(ifs);
             }
             catch (const metadata::Exception& e)
             {
-                LMS_LOG(DBUPDATER, ERROR, "Cannot read playlist in file " << _file << ": " << e.what());
+                addError<PlayListFileScanError>(getFilePath());
             }
         }
 
-        void PlayListFileScanOperation::processResult(ScanContext& context)
+        PlayListFileScanOperation::OperationResult PlayListFileScanOperation::processResult()
         {
-            ScanStats& stats{ context.stats };
-
-            const std::optional<FileInfo> fileInfo{ utils::retrieveFileInfo(_file, _mediaLibrary.rootDirectory) };
-            if (!fileInfo)
-            {
-                stats.skips++;
-                return;
-            }
-
-            db::Session& dbSession{ _db.getTLSSession() };
-            db::PlayListFile::pointer playList{ db::PlayListFile::find(dbSession, _file) };
+            db::Session& dbSession{ getDb().getTLSSession() };
+            db::PlayListFile::pointer playList{ db::PlayListFile::find(dbSession, getFilePath()) };
 
             if (!_parsedPlayList)
             {
                 if (playList)
                 {
                     playList.remove();
-                    stats.deletions++;
-                    LMS_LOG(DBUPDATER, DEBUG, "Removed playlist file " << _file);
+
+                    LMS_LOG(DBUPDATER, DEBUG, "Removed playlist file " << getFilePath());
+                    return OperationResult::Removed;
                 }
-                context.stats.errors.emplace_back(_file, ScanErrorType::CannotReadPlayListFile);
-                return;
+
+                return OperationResult::Skipped;
             }
 
             const bool added{ !playList };
             if (!playList)
-                playList = dbSession.create<db::PlayListFile>(_file);
+                playList = dbSession.create<db::PlayListFile>(getFilePath());
 
-            playList.modify()->setLastWriteTime(fileInfo->lastWriteTime);
-            playList.modify()->setFileSize(fileInfo->fileSize);
+            playList.modify()->setLastWriteTime(getLastWriteTime());
+            playList.modify()->setFileSize(getFileSize());
             if (!_parsedPlayList->name.empty())
                 playList.modify()->setName(_parsedPlayList->name);
             else
-                playList.modify()->setName(_file.stem().string());
+                playList.modify()->setName(getFilePath().stem().string());
             playList.modify()->setFiles(_parsedPlayList->files);
 
-            db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, _mediaLibrary.id) }; // may be null if settings are updated in // => next scan will correct this
-            playList.modify()->setDirectory(utils::getOrCreateDirectory(dbSession, _file.parent_path(), mediaLibrary));
+            db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, getMediaLibrary().id) }; // may be null if settings are updated in // => next scan will correct this
+            playList.modify()->setDirectory(utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary));
 
             if (added)
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Added playlist file " << _file);
-                stats.additions++;
+                LMS_LOG(DBUPDATER, DEBUG, "Added playlist file " << getFilePath());
+                return OperationResult::Added;
             }
             else
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Updated playlist file '" << _file);
-                stats.updates++;
+                LMS_LOG(DBUPDATER, DEBUG, "Updated playlist file '" << getFilePath());
+                return OperationResult::Updated;
             }
         }
     } // namespace
 
-    PlayListFileScanner::PlayListFileScanner(db::Db& db)
+    PlayListFileScanner::PlayListFileScanner(db::Db& db, ScannerSettings& settings)
         : _db{ db }
+        , _settings{ settings }
     {
     }
 
@@ -142,41 +132,27 @@ namespace lms::scanner
         return "PlayList scanner";
     }
 
+    std::span<const std::filesystem::path> PlayListFileScanner::getSupportedFiles() const
+    {
+        return {};
+    }
+
     std::span<const std::filesystem::path> PlayListFileScanner::getSupportedExtensions() const
     {
         return metadata::getSupportedPlayListFileExtensions();
     }
 
-    bool PlayListFileScanner::needsScan(ScanContext& context, const FileToScan& file) const
+    bool PlayListFileScanner::needsScan(const FileToScan& file) const
     {
-        ScanStats& stats{ context.stats };
+        db::Session& dbSession{ _db.getTLSSession() };
+        auto transaction{ _db.getTLSSession().createReadTransaction() };
 
-        const Wt::WDateTime lastWriteTime{ utils::retrieveFileGetLastWrite(file.file) };
-        // Should rarely fail as we are currently iterating it
-        if (!lastWriteTime.isValid())
-        {
-            stats.skips++;
-            return false;
-        }
-
-        if (!context.scanOptions.fullScan)
-        {
-            db::Session& dbSession{ _db.getTLSSession() };
-            auto transaction{ _db.getTLSSession().createReadTransaction() };
-
-            const db::PlayListFile::pointer playList{ db::PlayListFile::find(dbSession, file.file) };
-            if (playList && playList->getLastWriteTime() == lastWriteTime)
-            {
-                stats.skips++;
-                return false;
-            }
-        }
-
-        return true; // need to scan
+        const db::PlayListFile::pointer playList{ db::PlayListFile::find(dbSession, file.filePath) };
+        return !playList || playList->getLastWriteTime() != file.lastWriteTime;
     }
 
-    std::unique_ptr<IFileScanOperation> PlayListFileScanner::createScanOperation(const FileToScan& fileToScan) const
+    std::unique_ptr<IFileScanOperation> PlayListFileScanner::createScanOperation(FileToScan&& fileToScan) const
     {
-        return std::make_unique<PlayListFileScanOperation>(fileToScan, _db);
+        return std::make_unique<PlayListFileScanOperation>(std::move(fileToScan), _db, _settings);
     }
 } // namespace lms::scanner

@@ -30,6 +30,7 @@ namespace lms::metadata::tests
 #PLAYLIST:My super playlist  
  01-Foo.mp3
 
+    
 
 #EXTINF:263,Alice in Chains - Don't Follow
 02-FooBar.mp3

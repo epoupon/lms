@@ -34,6 +34,8 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 
+#include "ScanContext.hpp"
+
 namespace lms::scanner
 {
     namespace

@@ -100,9 +100,10 @@
 
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Cannot get track duration</message>
+<message id="Lms.Admin.ScannerController.bad-embedded-image">Unable to read the image at index {1}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-artist-info-file">Cannot parse artist info file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">Cannot parse audio file</message>
-<message id="Lms.Admin.ScannerController.cannot-read-file">Cannot read file</message>
+<message id="Lms.Admin.ScannerController.cannot-read-file">Cannot read file ({1})</message>
 <message id="Lms.Admin.ScannerController.cannot-read-image-file">Cannot parse image file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-lyrics-file">Cannot parse lyrics file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-playlist-file">Cannot parse playlist file</message>
@@ -115,6 +116,9 @@
 <message id="Lms.Admin.ScannerController.last-scan">Last scan</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Not available</message>
 <message id="Lms.Admin.ScannerController.last-scan-status">{1} files were scanned in {2} at {4} on {3} (UTC) - {5} errors, {6} duplicates</message>
+<message id="Lms.Admin.ScannerController.missing-artist-name">Missing artist name</message>
+<message id="Lms.Admin.ScannerController.playlist-all-pathes-missing">Unable to find track paths</message>
+<message id="Lms.Admin.ScannerController.playlist-path-missing">Unable to find the path "{1}"</message>
 <message id="Lms.Admin.ScannerController.no-audio-track">No audio track</message>
 <message id="Lms.Admin.ScannerController.same-hash">Duplicated file hash</message>
 <message id="Lms.Admin.ScannerController.same-mbid">Duplicated track MBID</message>

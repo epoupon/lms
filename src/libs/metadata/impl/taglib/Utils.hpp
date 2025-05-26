@@ -19,14 +19,21 @@
 
 #pragma once
 
-#include <taglib/taglib.h>
+#include <filesystem>
+#include <memory>
+#include <span>
 
-// TAGLIB_HAS_MP4_ITEM_TYPE if version >= 2.0.1
-#if ((TAGLIB_MAJOR_VERSION > 2) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_MINOR_VERSION > 0) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_PATCH_VERSION >= 1))
-    #define TAGLIB_HAS_MP4_ITEM_TYPE 1
-#endif
+#include <taglib/audioproperties.h>
+#include <taglib/tfile.h>
 
-// TAGLIB_HAS_APE_COMPLEX_PROPERTIES if version >= 2.0.2
-#if ((TAGLIB_MAJOR_VERSION > 2) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_MINOR_VERSION > 0) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_PATCH_VERSION >= 2))
-    #define TAGLIB_HAS_APE_COMPLEX_PROPERTIES 1
-#endif
+#include "core/TaggedType.hpp"
+#include "metadata/Types.hpp"
+
+namespace lms::metadata::taglib::utils
+{
+    std::span<const std::filesystem::path> getSupportedExtensions();
+    TagLib::AudioProperties::ReadStyle readStyleToTagLibReadStyle(ParserReadStyle readStyle);
+
+    using ReadAudioProperties = core::TaggedBool<struct ReadAudioPropertiesTag>;
+    std::unique_ptr<TagLib::File> parseFile(const std::filesystem::path& p, TagLib::AudioProperties::ReadStyle readStyle, ReadAudioProperties readAudioProperties);
+} // namespace lms::metadata::taglib::utils

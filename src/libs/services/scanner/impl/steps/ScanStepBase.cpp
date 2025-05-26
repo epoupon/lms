@@ -19,6 +19,11 @@
 
 #include "ScanStepBase.hpp"
 
+#include "core/String.hpp"
+
+#include "ScanContext.hpp"
+#include "scanners/IFileScanner.hpp"
+
 namespace lms::scanner
 {
     ScanStepBase::ScanStepBase(InitParams& initParams)
@@ -29,7 +34,58 @@ namespace lms::scanner
         , _fileScanners(std::cbegin(initParams.fileScanners), std::cend(initParams.fileScanners))
         , _lastScanSettings{ initParams.lastScanSettings }
     {
+        for (IFileScanner* scanner : _fileScanners)
+        {
+            for (const std::filesystem::path& file : scanner->getSupportedFiles())
+            {
+                [[maybe_unused]] auto [it, inserted]{ _scannerByFile.emplace(file, scanner) };
+                assert(inserted);
+            }
+
+            for (const std::filesystem::path& extension : scanner->getSupportedExtensions())
+            {
+                [[maybe_unused]] auto [it, inserted]{ _scannerByExtension.emplace(extension, scanner) };
+                assert(inserted);
+            }
+        }
     }
 
     ScanStepBase::~ScanStepBase() = default;
+
+    IFileScanner* ScanStepBase::selectFileScanner(const std::filesystem::path& filePath) const
+    {
+        {
+            const std::string fileName{ core::stringUtils::stringToLower(filePath.filename().string()) };
+
+            auto itScanner{ _scannerByFile.find(fileName) };
+            if (itScanner != std::cend(_scannerByFile))
+                return itScanner->second;
+        }
+
+        {
+            const std::string extension{ core::stringUtils::stringToLower(filePath.extension().string()) };
+
+            auto itScanner{ _scannerByExtension.find(extension) };
+            if (itScanner != std::cend(_scannerByExtension))
+                return itScanner->second;
+        }
+
+        return nullptr;
+    }
+
+    void ScanStepBase::visitFileScanners(const std::function<void(IFileScanner*)>& visitor) const
+    {
+        for (IFileScanner* scanner : _fileScanners)
+            visitor(scanner);
+    }
+
+    void ScanStepBase::addError(ScanContext& context, std::shared_ptr<ScanError> error)
+    {
+        error->accept(_scanErrorLogger);
+
+        context.stats.errorsCount++;
+
+        if (context.stats.errors.size() < ScanStats::maxStoredErrorCount)
+            context.stats.errors.emplace_back(error);
+    }
 } // namespace lms::scanner

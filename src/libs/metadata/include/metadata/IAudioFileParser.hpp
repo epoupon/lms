@@ -24,6 +24,7 @@
 #include <memory>
 #include <span>
 
+#include "metadata/Exception.hpp"
 #include "metadata/Types.hpp"
 
 namespace lms::metadata

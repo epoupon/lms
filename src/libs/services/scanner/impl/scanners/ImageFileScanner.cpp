@@ -27,34 +27,26 @@
 #include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
 #include "image/Exception.hpp"
-#include "image/IRawImage.hpp"
 #include "image/Image.hpp"
+#include "services/scanner/ScanErrors.hpp"
 
+#include "FileScanOperationBase.hpp"
 #include "IFileScanOperation.hpp"
-#include "ScanContext.hpp"
 #include "Utils.hpp"
 
 namespace lms::scanner
 {
     namespace
     {
-        class ImageFileScanOperation : public IFileScanOperation
+        class ImageFileScanOperation : public FileScanOperationBase
         {
         public:
-            ImageFileScanOperation(const FileToScan& file, db::Db& db)
-                : _file{ file.file }
-                , _mediaLibrary{ file.mediaLibrary }
-                , _db{ db } {}
+            using FileScanOperationBase::FileScanOperationBase;
 
         private:
-            const std::filesystem::path& getFile() const override { return _file; };
             core::LiteralString getName() const override { return "ScanImageFile"; }
             void scan() override;
-            void processResult(ScanContext& context) override;
-
-            const std::filesystem::path _file;
-            const MediaLibraryInfo _mediaLibrary;
-            db::Db& _db;
+            OperationResult processResult() override;
 
             std::optional<image::ImageProperties> _parsedImageProperties;
         };
@@ -63,67 +55,58 @@ namespace lms::scanner
         {
             try
             {
-                _parsedImageProperties = image::probeImage(_file);
+                _parsedImageProperties = image::probeImage(getFilePath());
             }
             catch (const image::Exception& e)
             {
                 _parsedImageProperties.reset();
-                LMS_LOG(DBUPDATER, ERROR, "Cannot read image in file " << _file << ": " << e.what());
+                addError<ImageFileScanError>(getFilePath());
             }
         }
 
-        void ImageFileScanOperation::processResult(ScanContext& context)
+        ImageFileScanOperation::OperationResult ImageFileScanOperation::processResult()
         {
-            ScanStats& stats{ context.stats };
-
-            const std::optional<FileInfo> fileInfo{ utils::retrieveFileInfo(_file, _mediaLibrary.rootDirectory) };
-            if (!fileInfo)
-            {
-                stats.skips++;
-                return;
-            }
-
-            db::Session& dbSession{ _db.getTLSSession() };
-            db::Image::pointer image{ db::Image::find(dbSession, _file) };
+            db::Session& dbSession{ getDb().getTLSSession() };
+            db::Image::pointer image{ db::Image::find(dbSession, getFilePath()) };
 
             if (!_parsedImageProperties)
             {
                 if (image)
                 {
                     image.remove();
-                    stats.deletions++;
-                    LMS_LOG(DBUPDATER, DEBUG, "Removed image " << _file);
+
+                    LMS_LOG(DBUPDATER, DEBUG, "Removed image " << getFilePath());
+                    return OperationResult::Removed;
                 }
-                context.stats.errors.emplace_back(_file, ScanErrorType::CannotReadImageFile);
-                return;
+
+                return OperationResult::Skipped;
             }
 
             const bool added{ !image };
             if (!image)
-                image = dbSession.create<db::Image>(_file);
+                image = dbSession.create<db::Image>(getFilePath());
 
-            image.modify()->setLastWriteTime(fileInfo->lastWriteTime);
-            image.modify()->setFileSize(fileInfo->fileSize);
+            image.modify()->setLastWriteTime(getLastWriteTime());
+            image.modify()->setFileSize(getFileSize());
             image.modify()->setHeight(_parsedImageProperties->height);
             image.modify()->setWidth(_parsedImageProperties->width);
-            db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, _mediaLibrary.id) }; // may be null if settings are updated in // => next scan will correct this
-            image.modify()->setDirectory(utils::getOrCreateDirectory(dbSession, _file.parent_path(), mediaLibrary));
+            db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, getMediaLibrary().id) }; // may be null if settings are updated in // => next scan will correct this
+            image.modify()->setDirectory(utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary));
 
             if (added)
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Added image " << _file);
-                stats.additions++;
+                LMS_LOG(DBUPDATER, DEBUG, "Added image " << getFilePath());
+                return OperationResult::Added;
             }
-            else
-            {
-                LMS_LOG(DBUPDATER, DEBUG, "Updated image " << _file);
-                stats.updates++;
-            }
+
+            LMS_LOG(DBUPDATER, DEBUG, "Updated image " << getFilePath());
+            return OperationResult::Updated;
         }
     } // namespace
 
-    ImageFileScanner::ImageFileScanner(db::Db& db)
+    ImageFileScanner::ImageFileScanner(db::Db& db, ScannerSettings& settings)
         : _db{ db }
+        , _settings{ settings }
     {
     }
 
@@ -132,41 +115,27 @@ namespace lms::scanner
         return "Image scanner";
     }
 
+    std::span<const std::filesystem::path> ImageFileScanner::getSupportedFiles() const
+    {
+        return {};
+    }
+
     std::span<const std::filesystem::path> ImageFileScanner::getSupportedExtensions() const
     {
         return image::getSupportedFileExtensions();
     }
 
-    bool ImageFileScanner::needsScan(ScanContext& context, const FileToScan& file) const
+    bool ImageFileScanner::needsScan(const FileToScan& file) const
     {
-        ScanStats& stats{ context.stats };
+        db::Session& dbSession{ _db.getTLSSession() };
+        auto transaction{ _db.getTLSSession().createReadTransaction() };
 
-        const Wt::WDateTime lastWriteTime{ utils::retrieveFileGetLastWrite(file.file) };
-        // Should rarely fail as we are currently iterating it
-        if (!lastWriteTime.isValid())
-        {
-            stats.skips++;
-            return false;
-        }
-
-        if (!context.scanOptions.fullScan)
-        {
-            db::Session& dbSession{ _db.getTLSSession() };
-            auto transaction{ _db.getTLSSession().createReadTransaction() };
-
-            const db::Image::pointer image{ db::Image::find(dbSession, file.file) };
-            if (image && image->getLastWriteTime() == lastWriteTime)
-            {
-                stats.skips++;
-                return false;
-            }
-        }
-
-        return true; // need to scan
+        const db::Image::pointer image{ db::Image::find(dbSession, file.filePath) };
+        return (!image || image->getLastWriteTime() != file.lastWriteTime);
     }
 
-    std::unique_ptr<IFileScanOperation> ImageFileScanner::createScanOperation(const FileToScan& fileToScan) const
+    std::unique_ptr<IFileScanOperation> ImageFileScanner::createScanOperation(FileToScan&& fileToScan) const
     {
-        return std::make_unique<ImageFileScanOperation>(fileToScan, _db);
+        return std::make_unique<ImageFileScanOperation>(std::move(fileToScan), _db, _settings);
     }
 } // namespace lms::scanner

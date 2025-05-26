@@ -22,38 +22,31 @@
 #include <fstream>
 #include <optional>
 
+#include "FileScanOperationBase.hpp"
+#include "ScannerSettings.hpp"
 #include "core/ILogger.hpp"
 #include "database/Db.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
 #include "database/TrackLyrics.hpp"
 #include "metadata/Lyrics.hpp"
+#include "services/scanner/ScanErrors.hpp"
 
-#include "IFileScanOperation.hpp"
-#include "ScanContext.hpp"
 #include "Utils.hpp"
 
 namespace lms::scanner
 {
     namespace
     {
-        class LyricsFileScanOperation : public IFileScanOperation
+        class LyricsFileScanOperation : public FileScanOperationBase
         {
         public:
-            LyricsFileScanOperation(const FileToScan& file, db::Db& db)
-                : _file{ file.file }
-                , _mediaLibrary{ file.mediaLibrary }
-                , _db{ db } {}
+            using FileScanOperationBase::FileScanOperationBase;
 
         private:
-            const std::filesystem::path& getFile() const override { return _file; };
             core::LiteralString getName() const override { return "ScanLyricsFile"; }
             void scan() override;
-            void processResult(ScanContext& context) override;
-
-            const std::filesystem::path _file;
-            const MediaLibraryInfo _mediaLibrary;
-            db::Db& _db;
+            OperationResult processResult() override;
 
             std::optional<metadata::Lyrics> _parsedLyrics;
         };
@@ -62,53 +55,50 @@ namespace lms::scanner
         {
             try
             {
-                std::ifstream ifs{ _file };
+                std::ifstream ifs{ getFilePath() };
                 if (!ifs)
-                    LMS_LOG(DBUPDATER, ERROR, "Cannot open file " << _file);
-                else
-                    _parsedLyrics = metadata::parseLyrics(ifs);
+                {
+                    const std::error_code ec{ errno, std::generic_category() };
+
+                    addError<IOScanError>(getFilePath(), ec);
+                    return;
+                }
+
+                _parsedLyrics = metadata::parseLyrics(ifs);
             }
             catch (const metadata::Exception& e)
             {
-                LMS_LOG(DBUPDATER, ERROR, "Cannot read lyrics in file " << _file << ": " << e.what());
+                addError<LyricsFileScanError>(getFilePath());
             }
         }
 
-        void LyricsFileScanOperation::processResult(ScanContext& context)
+        LyricsFileScanOperation::OperationResult LyricsFileScanOperation::processResult()
         {
-            ScanStats& stats{ context.stats };
-
-            const std::optional<FileInfo> fileInfo{ utils::retrieveFileInfo(_file, _mediaLibrary.rootDirectory) };
-            if (!fileInfo)
-            {
-                stats.skips++;
-                return;
-            }
-
-            db::Session& dbSession{ _db.getTLSSession() };
-            db::TrackLyrics::pointer trackLyrics{ db::TrackLyrics::find(dbSession, _file) };
+            db::Session& dbSession{ getDb().getTLSSession() };
+            db::TrackLyrics::pointer trackLyrics{ db::TrackLyrics::find(dbSession, getFilePath()) };
 
             if (!_parsedLyrics)
             {
                 if (trackLyrics)
                 {
                     trackLyrics.remove();
-                    stats.deletions++;
-                    LMS_LOG(DBUPDATER, DEBUG, "Removed lyrics file " << _file);
+
+                    LMS_LOG(DBUPDATER, DEBUG, "Removed lyrics file " << getFilePath());
+                    return OperationResult::Removed;
                 }
-                context.stats.errors.emplace_back(_file, ScanErrorType::CannotReadLyricsFile);
-                return;
+
+                return OperationResult::Skipped;
             }
 
             const bool added{ !trackLyrics };
             if (!trackLyrics)
             {
                 trackLyrics = dbSession.create<db::TrackLyrics>();
-                trackLyrics.modify()->setAbsoluteFilePath(_file);
+                trackLyrics.modify()->setAbsoluteFilePath(getFilePath());
             }
 
-            trackLyrics.modify()->setLastWriteTime(fileInfo->lastWriteTime);
-            trackLyrics.modify()->setFileSize(fileInfo->fileSize);
+            trackLyrics.modify()->setLastWriteTime(getLastWriteTime());
+            trackLyrics.modify()->setFileSize(getFileSize());
             trackLyrics.modify()->setLanguage(!_parsedLyrics->language.empty() ? _parsedLyrics->language : "xxx");
             trackLyrics.modify()->setOffset(_parsedLyrics->offset);
             trackLyrics.modify()->setDisplayTitle(_parsedLyrics->displayTitle);
@@ -118,24 +108,23 @@ namespace lms::scanner
             else
                 trackLyrics.modify()->setUnsynchronizedLines(_parsedLyrics->unsynchronizedLines);
 
-            db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, _mediaLibrary.id) }; // may be null if settings are updated in // => next scan will correct this
-            trackLyrics.modify()->setDirectory(utils::getOrCreateDirectory(dbSession, _file.parent_path(), mediaLibrary));
+            db::MediaLibrary::pointer mediaLibrary{ db::MediaLibrary::find(dbSession, getMediaLibrary().id) }; // may be null if settings are updated in // => next scan will correct this
+            trackLyrics.modify()->setDirectory(utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary));
 
             if (added)
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Added external lyrics " << _file);
-                stats.additions++;
+                LMS_LOG(DBUPDATER, DEBUG, "Added external lyrics " << getFilePath());
+                return OperationResult::Added;
             }
-            else
-            {
-                LMS_LOG(DBUPDATER, DEBUG, "Updated external lyrics " << _file);
-                stats.updates++;
-            }
+
+            LMS_LOG(DBUPDATER, DEBUG, "Updated external lyrics " << getFilePath());
+            return OperationResult::Updated;
         }
     } // namespace
 
-    LyricsFileScanner::LyricsFileScanner(db::Db& db)
+    LyricsFileScanner::LyricsFileScanner(db::Db& db, ScannerSettings& _settings)
         : _db{ db }
+        , _settings{ _settings }
     {
     }
 
@@ -144,41 +133,27 @@ namespace lms::scanner
         return "Lyrics scanner";
     }
 
+    std::span<const std::filesystem::path> LyricsFileScanner::getSupportedFiles() const
+    {
+        return {};
+    }
+
     std::span<const std::filesystem::path> LyricsFileScanner::getSupportedExtensions() const
     {
         return metadata::getSupportedLyricsFileExtensions();
     }
 
-    bool LyricsFileScanner::needsScan(ScanContext& context, const FileToScan& file) const
+    bool LyricsFileScanner::needsScan(const FileToScan& file) const
     {
-        ScanStats& stats{ context.stats };
+        db::Session& dbSession{ _db.getTLSSession() };
+        auto transaction{ _db.getTLSSession().createReadTransaction() };
 
-        const Wt::WDateTime lastWriteTime{ utils::retrieveFileGetLastWrite(file.file) };
-        // Should rarely fail as we are currently iterating it
-        if (!lastWriteTime.isValid())
-        {
-            stats.skips++;
-            return false;
-        }
-
-        if (!context.scanOptions.fullScan)
-        {
-            db::Session& dbSession{ _db.getTLSSession() };
-            auto transaction{ _db.getTLSSession().createReadTransaction() };
-
-            const db::TrackLyrics::pointer lyrics{ db::TrackLyrics::find(dbSession, file.file) };
-            if (lyrics && lyrics->getLastWriteTime() == lastWriteTime)
-            {
-                stats.skips++;
-                return false;
-            }
-        }
-
-        return true; // need to scan
+        const db::TrackLyrics::pointer lyrics{ db::TrackLyrics::find(dbSession, file.filePath) };
+        return !lyrics || lyrics->getLastWriteTime() != file.lastWriteTime;
     }
 
-    std::unique_ptr<IFileScanOperation> LyricsFileScanner::createScanOperation(const FileToScan& fileToScan) const
+    std::unique_ptr<IFileScanOperation> LyricsFileScanner::createScanOperation(FileToScan&& fileToScan) const
     {
-        return std::make_unique<LyricsFileScanOperation>(fileToScan, _db);
+        return std::make_unique<LyricsFileScanOperation>(std::move(fileToScan), _db, _settings);
     }
 } // namespace lms::scanner

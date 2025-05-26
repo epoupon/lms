@@ -17,23 +17,18 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ScanStepCompact.hpp"
+#include "FileScanOperationBase.hpp"
 
-#include "database/Db.hpp"
-#include "database/Session.hpp"
-
-#include "ScanContext.hpp"
+#include "services/scanner/ScanErrors.hpp"
 
 namespace lms::scanner
 {
-    bool ScanStepCompact::needProcess(const ScanContext& context) const
+    FileScanOperationBase::FileScanOperationBase(FileToScan&& fileToScan, db::Db& db, const ScannerSettings& settings)
+        : _file{ std::move(fileToScan) }
+        , _db{ db }
+        , _settings{ settings }
     {
-        // Don't auto compact as it may be too annoying to block the whole application for very large databases
-        return context.scanOptions.compact;
     }
 
-    void ScanStepCompact::process([[maybe_unused]] ScanContext& context)
-    {
-        _db.getTLSSession().vacuum();
-    }
+    FileScanOperationBase::~FileScanOperationBase() = default;
 } // namespace lms::scanner

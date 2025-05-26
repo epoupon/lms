@@ -100,9 +100,10 @@
 
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Non sono stato in grado di determinare la durata della traccia</message>
+<message id="Lms.Admin.ScannerController.bad-embedded-image">Impossibile leggere l'immagine all'indice {1}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-artist-info-file">Impossibile analizzare il file delle informazioni sull'artista</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">Impossibile analizzare il file audio</message>
-<message id="Lms.Admin.ScannerController.cannot-read-file">Non in grado di leggere il file</message>
+<message id="Lms.Admin.ScannerController.cannot-read-file">Non in grado di leggere il file ({1})</message>
 <message id="Lms.Admin.ScannerController.cannot-read-image-file">Impossibile analizzare il file immagine</message>
 <message id="Lms.Admin.ScannerController.cannot-read-lyrics-file">Impossibile analizzare il file dei testi</message>
 <message id="Lms.Admin.ScannerController.cannot-read-playlist-file">Impossibile analizzare il file della playlist</message>
@@ -115,6 +116,9 @@
 <message id="Lms.Admin.ScannerController.last-scan">Ultima scansione</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Non disponibile</message>
 <message id="Lms.Admin.ScannerController.last-scan-status">{1} file scansionati in {2} alle {3} il {4} (UTC) - {5} errori, {6} duplicati</message>
+<message id="Lms.Admin.ScannerController.missing-artist-name">Nome dell'artista mancante</message>
+<message id="Lms.Admin.ScannerController.playlist-all-pathes-missing">Impossibile trovare i percorsi delle tracce</message>
+<message id="Lms.Admin.ScannerController.playlist-path-missing">Impossibile trovare il percorso "{1}"</message>
 <message id="Lms.Admin.ScannerController.no-audio-track">Nessuna traccia audio</message>
 <message id="Lms.Admin.ScannerController.same-hash">Hash doppio</message>
 <message id="Lms.Admin.ScannerController.same-mbid">Track MBID doppio</message>

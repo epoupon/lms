@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,23 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ScanStepCompact.hpp"
+#pragma once
 
-#include "database/Db.hpp"
-#include "database/Session.hpp"
+#include <filesystem>
+#include <span>
 
-#include "ScanContext.hpp"
-
-namespace lms::scanner
+namespace lms::metadata::avformat::utils
 {
-    bool ScanStepCompact::needProcess(const ScanContext& context) const
-    {
-        // Don't auto compact as it may be too annoying to block the whole application for very large databases
-        return context.scanOptions.compact;
-    }
-
-    void ScanStepCompact::process([[maybe_unused]] ScanContext& context)
-    {
-        _db.getTLSSession().vacuum();
-    }
-} // namespace lms::scanner
+    std::span<const std::filesystem::path> getSupportedExtensions();
+} // namespace lms::metadata::avformat::utils

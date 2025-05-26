@@ -51,6 +51,6 @@ namespace lms::metadata
         using Exception::Exception;
     };
 
-    std::span<const std::filesystem::path> getSupportedInfoFileExtensions();
+    std::span<const std::filesystem::path> getSupportedArtistInfoFiles();
     ArtistInfo parseArtistInfo(std::istream& is);
 } // namespace lms::metadata

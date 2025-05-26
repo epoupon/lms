@@ -542,7 +542,7 @@ namespace lms::ui
                         .arg(static_cast<unsigned>(stats.updates))
                         .arg(static_cast<unsigned>(stats.deletions))
                         .arg(static_cast<unsigned>(stats.duplicates.size()))
-                        .arg(static_cast<unsigned>(stats.errors.size())));
+                        .arg(static_cast<unsigned>(stats.errorsCount)));
             });
         }
 

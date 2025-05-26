@@ -23,6 +23,8 @@
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 
+#include "ScanContext.hpp"
+
 namespace lms::scanner
 {
     bool ScanStepComputeClusterStats::needProcess(const ScanContext& context) const

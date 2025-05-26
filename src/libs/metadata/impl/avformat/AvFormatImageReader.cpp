@@ -18,10 +18,12 @@
  */
 
 #include "AvFormatImageReader.hpp"
+
 #include "av/IAudioFile.hpp"
 #include "av/Types.hpp"
+#include "metadata/Exception.hpp"
 
-namespace lms::metadata
+namespace lms::metadata::avformat
 {
     AvFormatImageReader::AvFormatImageReader(const std::filesystem::path& p)
     {
@@ -31,7 +33,7 @@ namespace lms::metadata
         }
         catch (av::Exception& e)
         {
-            throw ParseException{};
+            throw AudioFileParsingException{ e.what() };
         }
     }
 
@@ -56,4 +58,4 @@ namespace lms::metadata
         });
     }
 
-} // namespace lms::metadata
+} // namespace lms::metadata::avformat

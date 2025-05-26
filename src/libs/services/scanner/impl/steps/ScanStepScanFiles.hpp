@@ -40,10 +40,10 @@ namespace lms::scanner
         core::LiteralString getStepName() const override { return "Scan files"; }
         bool needProcess(const ScanContext& context) const override;
         void process(ScanContext& context) override;
+
         void process(ScanContext& context, const MediaLibraryInfo& mediaLibrary);
         void processFileScanResults(ScanContext& context, std::span<std::unique_ptr<IFileScanOperation>> scanOperations);
 
         FileScanQueue _fileScanQueue;
-        std::unordered_map<std::filesystem::path, IFileScanner*> _scannerByExtension;
     };
 } // namespace lms::scanner

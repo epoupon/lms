@@ -101,9 +101,10 @@
 
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Nie udało się ustalić długości ścieżki</message>
+<message id="Lms.Admin.ScannerController.bad-embedded-image">Nie można odczytać obrazu pod indeksem {1}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-artist-info-file">Nie można przetworzyć pliku z informacjami o artyście"</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">Nie można przeanalizować pliku audio</message>
-<message id="Lms.Admin.ScannerController.cannot-read-file">Nie udało się odczytać pliku</message>
+<message id="Lms.Admin.ScannerController.cannot-read-file">Nie udało się odczytać pliku ({1})</message>
 <message id="Lms.Admin.ScannerController.cannot-read-image-file">Nie można przeanalizować pliku obrazu</message>
 <message id="Lms.Admin.ScannerController.cannot-read-lyrics-file">Nie można przetworzyć pliku z tekstem</message>
 <message id="Lms.Admin.ScannerController.cannot-read-playlist-file">Nie można przeanalizować pliku playlisty</message>
@@ -124,6 +125,9 @@
 <message id="Lms.Admin.ScannerController.last-scan">Ostatnie skanowanie</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Niedostępne</message>
 <message id="Lms.Admin.ScannerController.last-scan-status">Przeskanowano {1} plików w {2} o {4} dnia {3} (UTC) - {5} błędów, {6} duplikatów</message>
+<message id="Lms.Admin.ScannerController.missing-artist-name">Brakuje nazwy artysty</message>
+<message id="Lms.Admin.ScannerController.playlist-all-pathes-missing">Nie można znaleźć ścieżek utworów</message>
+<message id="Lms.Admin.ScannerController.playlist-path-missing">Nie można znaleźć ścieżki „{1}”</message>
 <message id="Lms.Admin.ScannerController.no-audio-track">Brak ścieżki dźwiękowej</message>
 <message id="Lms.Admin.ScannerController.same-hash">Zduplikowny hash pliku</message>
 <message id="Lms.Admin.ScannerController.same-mbid">Zduplikowany MBID pliku</message>

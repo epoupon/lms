@@ -11,12 +11,14 @@ endif()
 add_library(lmsmetadata STATIC
 	impl/ArtistInfo.cpp
 	impl/AudioFileParser.cpp
-	impl/AvFormatImageReader.cpp
-	impl/AvFormatTagReader.cpp
+	impl/avformat/AvFormatImageReader.cpp
+	impl/avformat/AvFormatTagReader.cpp
+	impl/avformat/Utils.cpp
 	impl/Lyrics.cpp
 	impl/PlayList.cpp
-	impl/TagLibImageReader.cpp
-	impl/TagLibTagReader.cpp
+	impl/taglib/TagLibImageReader.cpp
+	impl/taglib/TagLibTagReader.cpp
+	impl/taglib/Utils.cpp
 	impl/Utils.cpp
 	)
 
@@ -26,6 +28,7 @@ target_include_directories(lmsmetadata INTERFACE
 
 target_include_directories(lmsmetadata PRIVATE
 	include
+	impl
 	)
 
 target_link_libraries(lmsmetadata PRIVATE

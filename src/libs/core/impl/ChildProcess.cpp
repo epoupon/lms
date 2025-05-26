@@ -25,6 +25,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <system_error>
 #include <unistd.h>
 
 #include <algorithm>
@@ -35,7 +36,6 @@
 #include <boost/asio/read.hpp>
 
 #include "core/ILogger.hpp"
-#include "core/String.hpp"
 
 namespace lms::core
 {
@@ -44,8 +44,8 @@ namespace lms::core
         class SystemException : public ChildProcessException
         {
         public:
-            SystemException(int err, const std::string& errMsg)
-                : ChildProcessException{ errMsg + ": " + stringUtils::systemErrorToString(err) }
+            SystemException(std::error_code err, const std::string& errMsg)
+                : ChildProcessException{ errMsg + ": " + err.message() }
             {
             }
 
@@ -69,20 +69,20 @@ namespace lms::core
 
         // Use 'pipe' instead of 'pipe2', more portable
         if (pipe(pipefd) < 0)
-            throw SystemException{ errno, "pipe failed!" };
+            throw SystemException{ std::error_code{ errno, std::generic_category() }, "pipe failed!" };
 
         // Manually set the O_NONBLOCK and O_CLOEXEC flags for both ends of the pipe
         if (fcntl(pipefd[0], F_SETFL, O_NONBLOCK) == -1)
-            throw SystemException{ errno, "fcntl failed to set O_NONBLOCK!" };
+            throw SystemException{ std::error_code{ errno, std::generic_category() }, "fcntl failed to set O_NONBLOCK!" };
 
         if (fcntl(pipefd[1], F_SETFL, O_NONBLOCK) == -1)
-            throw SystemException{ errno, "fcntl failed to set O_NONBLOCK!" };
+            throw SystemException{ std::error_code{ errno, std::generic_category() }, "fcntl failed to set O_NONBLOCK!" };
 
         if (fcntl(pipefd[0], F_SETFD, FD_CLOEXEC) == -1)
-            throw SystemException{ errno, "fcntl failed to set FD_CLOEXEC!" };
+            throw SystemException{ std::error_code{ errno, std::generic_category() }, "fcntl failed to set FD_CLOEXEC!" };
 
         if (fcntl(pipefd[1], F_SETFD, FD_CLOEXEC) == -1)
-            throw SystemException{ errno, "fcntl failed to set FD_CLOEXEC!" };
+            throw SystemException{ std::error_code{ errno, std::generic_category() }, "fcntl failed to set FD_CLOEXEC!" };
 
 #if defined(__linux__) && defined(F_SETPIPE_SZ)
         for (const int fd : { pipefd[0], pipefd[1] })
@@ -94,7 +94,7 @@ namespace lms::core
             if (pipeSizeRes == -1)
             {
                 const int err{ errno };
-                LMS_LOG(CHILDPROCESS, DEBUG, "F_GETPIPE_SZ failed: " << stringUtils::systemErrorToString(err));
+                LMS_LOG(CHILDPROCESS, DEBUG, "F_GETPIPE_SZ failed: " << (std::error_code{ err, std::generic_category() }.message()));
             }
             else
             {
@@ -103,10 +103,10 @@ namespace lms::core
     #endif
             if (currentPipeSize < targetPipeSize)
             {
-                if (fcntl(fd, F_SETPIPE_SZ, targetPipeSize) == -1)
+                if (::fcntl(fd, F_SETPIPE_SZ, targetPipeSize) == -1)
                 {
                     const int err{ errno };
-                    LMS_LOG(CHILDPROCESS, DEBUG, "F_SETPIPE_SZ failed: " << stringUtils::systemErrorToString(err));
+                    LMS_LOG(CHILDPROCESS, DEBUG, "F_SETPIPE_SZ failed: " << (std::error_code{ err, std::generic_category() }.message()));
                 }
             }
         }
@@ -114,7 +114,7 @@ namespace lms::core
 
         int res{ fork() };
         if (res == -1)
-            throw SystemException{ errno, "fork failed!" };
+            throw SystemException{ std::error_code{ errno, std::generic_category() }, "fork failed!" };
 
         if (res == 0) // CHILD
         {
@@ -168,7 +168,10 @@ namespace lms::core
         // process may already have finished
         LMS_LOG(CHILDPROCESS, DEBUG, "Killing child process...");
         if (::kill(_childPID, SIGKILL) == -1)
-            LMS_LOG(CHILDPROCESS, DEBUG, "Kill failed: " << stringUtils::systemErrorToString(errno));
+        {
+            const int err{ errno };
+            LMS_LOG(CHILDPROCESS, DEBUG, "Kill failed: " << (std::error_code{ err, std::generic_category() }.message()));
+        }
     }
 
     bool ChildProcess::wait(bool block)
@@ -179,7 +182,7 @@ namespace lms::core
         const pid_t pid{ waitpid(_childPID, &wstatus, block ? 0 : WNOHANG) };
 
         if (pid == -1)
-            throw SystemException{ errno, "waitpid failed!" };
+            throw SystemException{ std::error_code{ errno, std::generic_category() }, "waitpid failed!" };
         if (pid == 0)
             return false;
 

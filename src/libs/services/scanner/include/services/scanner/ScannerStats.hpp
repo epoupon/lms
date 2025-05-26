@@ -21,38 +21,19 @@
 
 #include <Wt/WDateTime.h>
 
-#include <filesystem>
+#include <memory>
 #include <vector>
 
 #include "database/TrackId.hpp"
 
+#include "ScanErrors.hpp"
+
 namespace lms::scanner
 {
-    enum class ScanErrorType
-    {
-        CannotReadFile,
-        CannotReadArtistInfoFile,
-        CannotReadAudioFile,
-        CannotReadImageFile,
-        CannotReadLyricsFile,
-        CannotReadPlayListFile,
-        NoAudioTrack,
-        BadDuration,
-    };
-
     enum class DuplicateReason
     {
         SameHash,
         SameTrackMBID,
-    };
-
-    struct ScanError
-    {
-        std::filesystem::path file;
-        ScanErrorType error;
-        std::string systemError;
-
-        ScanError(const std::filesystem::path& file, ScanErrorType error, const std::string& systemError = "");
     };
 
     struct ScanDuplicate
@@ -105,15 +86,18 @@ namespace lms::scanner
         std::size_t totalFileCount{}; // Total number of files (estimated)
 
         std::size_t skips{}; // no change since last scan
-        std::size_t scans{}; // actually scanned filed
+        std::size_t scans{}; // count of scanned files
 
         std::size_t additions{}; // added in DB
         std::size_t deletions{}; // removed from DB
         std::size_t updates{};   // updated file in DB
+        std::size_t failures{};  // scan failure
 
         std::size_t featuresFetched{}; // features fetched in DB
 
-        std::vector<ScanError> errors;
+        static constexpr std::size_t maxStoredErrorCount{ 5'000 }; // TODO make this configurable
+        std::vector<std::shared_ptr<ScanError>> errors;
+        std::size_t errorsCount{}; // maybe bigger than errors.size() if too many errors
         std::vector<ScanDuplicate> duplicates;
 
         std::size_t nbFiles() const;

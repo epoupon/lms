@@ -19,21 +19,19 @@
 
 #include "ScannerController.hpp"
 
-#include <Wt/Http/Response.h>
-#include <Wt/Utils.h>
 #include <Wt/WCheckBox.h>
 #include <Wt/WDateTime.h>
 #include <Wt/WLocale.h>
 #include <Wt/WPushButton.h>
 #include <Wt/WResource.h>
+#include <Wt/WTime.h>
 
 #include "core/Service.hpp"
 #include "core/String.hpp"
-#include "database/Session.hpp"
-#include "database/Track.hpp"
 #include "services/scanner/IScannerService.hpp"
 
 #include "LmsApplication.hpp"
+#include "ScannerReportResource.hpp"
 
 namespace lms::ui
 {
@@ -44,110 +42,6 @@ namespace lms::ui
             return begin.timeTo(end).toUTF8();
         }
     } // namespace
-
-    class ScannerReportResource : public Wt::WResource
-    {
-    public:
-        ScannerReportResource() = default;
-        ~ScannerReportResource() override
-        {
-            beingDeleted();
-        }
-        ScannerReportResource(const ScannerReportResource&) = delete;
-        ScannerReportResource& operator=(const ScannerReportResource&) = delete;
-
-        void setScanStats(const scanner::ScanStats& stats)
-        {
-            if (!_stats)
-                _stats = std::make_unique<scanner::ScanStats>();
-
-            *_stats = stats;
-        }
-
-        void handleRequest(const Wt::Http::Request&, Wt::Http::Response& response) override
-        {
-            if (!_stats)
-                return;
-
-            auto encodeHttpHeaderField = [](const std::string& fieldName, const std::string& fieldValue) {
-                // This implements RFC 5987
-                return fieldName + "*=UTF-8''" + Wt::Utils::urlEncode(fieldValue);
-            };
-
-            const std::string cdp{ encodeHttpHeaderField("filename", "LMS_scan_report_" + core::stringUtils::toISO8601String(_stats->startTime) + ".txt") };
-            response.addHeader("Content-Disposition", "attachment; " + cdp);
-
-            response.out() << Wt::WString::tr("Lms.Admin.ScannerController.errors-header").arg(_stats->errors.size()).toUTF8() << std::endl;
-
-            for (const auto& error : _stats->errors)
-            {
-                response.out() << error.file.string() << " - " << errorTypeToWString(error.error).toUTF8();
-                if (!error.systemError.empty())
-                    response.out() << ": " << error.systemError;
-                response.out() << std::endl;
-            }
-
-            response.out() << std::endl;
-
-            response.out() << Wt::WString::tr("Lms.Admin.ScannerController.duplicates-header").arg(_stats->duplicates.size()).toUTF8() << std::endl;
-
-            {
-                auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-
-                for (const auto& duplicate : _stats->duplicates)
-                {
-                    const auto& track{ db::Track::find(LmsApp->getDbSession(), duplicate.trackId) };
-                    if (!track)
-                        continue;
-
-                    response.out() << track->getAbsoluteFilePath().string();
-                    if (auto mbid{ track->getTrackMBID() })
-                        response.out() << " (Track MBID " << mbid->getAsString() << ")";
-
-                    response.out() << " - " << duplicateReasonToWString(duplicate.reason).toUTF8() << '\n';
-                }
-            }
-        }
-
-    private:
-        static Wt::WString errorTypeToWString(scanner::ScanErrorType error)
-        {
-            switch (error)
-            {
-            case scanner::ScanErrorType::CannotReadFile:
-                return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-file");
-            case scanner::ScanErrorType::CannotReadArtistInfoFile:
-                return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-artist-info-file");
-            case scanner::ScanErrorType::CannotReadAudioFile:
-                return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-audio-file");
-            case scanner::ScanErrorType::CannotReadImageFile:
-                return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-image-file");
-            case scanner::ScanErrorType::CannotReadLyricsFile:
-                return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-lyrics-file");
-            case scanner::ScanErrorType::CannotReadPlayListFile:
-                return Wt::WString::tr("Lms.Admin.ScannerController.cannot-read-playlist-file");
-            case scanner::ScanErrorType::NoAudioTrack:
-                return Wt::WString::tr("Lms.Admin.ScannerController.no-audio-track");
-            case scanner::ScanErrorType::BadDuration:
-                return Wt::WString::tr("Lms.Admin.ScannerController.bad-duration");
-            }
-            return "?";
-        }
-
-        static Wt::WString duplicateReasonToWString(scanner::DuplicateReason reason)
-        {
-            switch (reason)
-            {
-            case scanner::DuplicateReason::SameHash:
-                return Wt::WString::tr("Lms.Admin.ScannerController.same-hash");
-            case scanner::DuplicateReason::SameTrackMBID:
-                return Wt::WString::tr("Lms.Admin.ScannerController.same-mbid");
-            }
-            return "?";
-        }
-
-        std::unique_ptr<scanner::ScanStats> _stats;
-    };
 
     ScannerController::ScannerController()
         : WTemplate{ Wt::WString::tr("Lms.Admin.ScannerController.template") }
@@ -225,7 +119,7 @@ namespace lms::ui
                                          .arg(durationToString(status.lastCompleteScanStats->startTime, status.lastCompleteScanStats->stopTime))
                                          .arg(status.lastCompleteScanStats->stopTime.date().toString(Wt::WLocale::currentLocale().dateFormat()))
                                          .arg(status.lastCompleteScanStats->stopTime.time().toString(Wt::WLocale::currentLocale().timeFormat()))
-                                         .arg(status.lastCompleteScanStats->errors.size())
+                                         .arg(status.lastCompleteScanStats->errorsCount)
                                          .arg(status.lastCompleteScanStats->duplicates.size()));
 
             _reportResource->setScanStats(*status.lastCompleteScanStats);

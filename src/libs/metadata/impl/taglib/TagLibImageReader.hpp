@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,23 +17,21 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ScanStepCompact.hpp"
+#pragma once
 
-#include "database/Db.hpp"
-#include "database/Session.hpp"
+#include "IImageReader.hpp"
 
-#include "ScanContext.hpp"
+#include <taglib/tfile.h>
 
-namespace lms::scanner
+namespace lms::metadata::taglib
 {
-    bool ScanStepCompact::needProcess(const ScanContext& context) const
+    class TagLibImageReader : public IImageReader
     {
-        // Don't auto compact as it may be too annoying to block the whole application for very large databases
-        return context.scanOptions.compact;
-    }
+    public:
+        TagLibImageReader(const std::filesystem::path& p);
 
-    void ScanStepCompact::process([[maybe_unused]] ScanContext& context)
-    {
-        _db.getTLSSession().vacuum();
-    }
-} // namespace lms::scanner
+        void visitImages(ImageVisitor visitor) const override;
+
+        std::unique_ptr<TagLib::File> _file;
+    };
+} // namespace lms::metadata::taglib

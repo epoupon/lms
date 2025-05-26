@@ -19,6 +19,8 @@
 
 #include "TagLibImageReader.hpp"
 
+#include "TagLibDefs.hpp"
+
 #include <taglib/aifffile.h>
 #include <taglib/apetag.h>
 #include <taglib/asffile.h>
@@ -34,24 +36,16 @@
 #include <taglib/vorbisfile.h>
 #include <taglib/wavfile.h>
 #include <taglib/wavpackfile.h>
-#include <tbytevector.h>
 
 #include "core/ILogger.hpp"
-#include "core/ITraceLogger.hpp"
-
-#include "core/String.hpp"
 #include "metadata/Exception.hpp"
 
-#include "TagLibDefs.hpp"
+#include "taglib/Utils.hpp"
 
-namespace lms::metadata
+namespace lms::metadata::taglib
 {
     namespace
     {
-        class ImageParsingFailedException : public Exception
-        {
-        };
-
         Image::Type imageTypeFromfromIDv2(TagLib::ID3v2::AttachedPictureFrame::Type type)
         {
             switch (type)
@@ -349,44 +343,37 @@ namespace lms::metadata
         }
     } // namespace
 
-    TagLib::FileRef parseFile(const std::filesystem::path& p)
-    {
-        LMS_SCOPED_TRACE_DETAILED("MetaData", "TagLibParseFileForImages");
-
-        return TagLib::FileRef{ p.c_str(), false };
-    }
-
     TagLibImageReader::TagLibImageReader(const std::filesystem::path& p)
-        : _file{ parseFile(p) }
+        : _file{ utils::parseFile(p, TagLib::AudioProperties::ReadStyle::Fast, utils::ReadAudioProperties{ false }) }
     {
-        if (_file.isNull())
+        if (!_file)
         {
             LMS_LOG(METADATA, ERROR, "File " << p << ": parsing failed");
-            throw ImageParsingFailedException{};
+            throw AudioFileParsingException{};
         }
     }
 
     void TagLibImageReader::visitImages(ImageVisitor visitor) const
     {
         // MP3
-        if (TagLib::MPEG::File * mp3File{ dynamic_cast<TagLib::MPEG::File*>(_file.file()) })
+        if (TagLib::MPEG::File * mp3File{ dynamic_cast<TagLib::MPEG::File*>(_file.get()) })
         {
             if (mp3File->hasID3v2Tag())
                 visitID3V2Images(*mp3File->ID3v2Tag(), std::move(visitor));
         }
         // MP4
-        else if (TagLib::MP4::File * mp4File{ dynamic_cast<TagLib::MP4::File*>(_file.file()) })
+        else if (TagLib::MP4::File * mp4File{ dynamic_cast<TagLib::MP4::File*>(_file.get()) })
         {
             visitMP4Images(*mp4File, std::move(visitor));
         }
         // WMA
-        else if (TagLib::ASF::File * asfFile{ dynamic_cast<TagLib::ASF::File*>(_file.file()) })
+        else if (TagLib::ASF::File * asfFile{ dynamic_cast<TagLib::ASF::File*>(_file.get()) })
         {
             if (const TagLib::ASF::Tag * tag{ asfFile->tag() })
                 visitASFImages(*tag, std::move(visitor));
         }
         // FLAC
-        else if (TagLib::FLAC::File * flacFile{ dynamic_cast<TagLib::FLAC::File*>(_file.file()) })
+        else if (TagLib::FLAC::File * flacFile{ dynamic_cast<TagLib::FLAC::File*>(_file.get()) })
         {
             if (flacFile->hasID3v2Tag()) // usage discouraged
                 visitID3V2Images(*flacFile->ID3v2Tag(), std::move(visitor));
@@ -394,38 +381,38 @@ namespace lms::metadata
                 visitFLACImages(flacFile->pictureList(), std::move(visitor));
         }
         // Ogg vorbis
-        else if (TagLib::Ogg::Vorbis::File * vorbisFile{ dynamic_cast<TagLib::Ogg::Vorbis::File*>(_file.file()) })
+        else if (TagLib::Ogg::Vorbis::File * vorbisFile{ dynamic_cast<TagLib::Ogg::Vorbis::File*>(_file.get()) })
         {
             visitFLACImages(vorbisFile->tag()->pictureList(), std::move(visitor));
         }
         // Ogg Opus
-        else if (TagLib::Ogg::Opus::File * opusFile{ dynamic_cast<TagLib::Ogg::Opus::File*>(_file.file()) })
+        else if (TagLib::Ogg::Opus::File * opusFile{ dynamic_cast<TagLib::Ogg::Opus::File*>(_file.get()) })
         {
             visitFLACImages(opusFile->tag()->pictureList(), std::move(visitor));
         }
         // Aiff
-        else if (TagLib::RIFF::AIFF::File * aiffFile{ dynamic_cast<TagLib::RIFF::AIFF::File*>(_file.file()) })
+        else if (TagLib::RIFF::AIFF::File * aiffFile{ dynamic_cast<TagLib::RIFF::AIFF::File*>(_file.get()) })
         {
             if (aiffFile->hasID3v2Tag())
                 visitID3V2Images(*aiffFile->tag(), std::move(visitor));
         }
         // Wav
-        else if (TagLib::RIFF::WAV::File * wavFile{ dynamic_cast<TagLib::RIFF::WAV::File*>(_file.file()) })
+        else if (TagLib::RIFF::WAV::File * wavFile{ dynamic_cast<TagLib::RIFF::WAV::File*>(_file.get()) })
         {
             if (wavFile->hasID3v2Tag())
                 visitID3V2Images(*wavFile->ID3v2Tag(), std::move(visitor));
         }
         // MPC
-        else if (TagLib::MPC::File * mpcFile{ dynamic_cast<TagLib::MPC::File*>(_file.file()) })
+        else if (TagLib::MPC::File * mpcFile{ dynamic_cast<TagLib::MPC::File*>(_file.get()) })
         {
             if (mpcFile->hasAPETag())
                 visitAPEImages(*mpcFile->APETag(), std::move(visitor));
         }
         // WavPack
-        else if (TagLib::WavPack::File * wavPackFile{ dynamic_cast<TagLib::WavPack::File*>(_file.file()) })
+        else if (TagLib::WavPack::File * wavPackFile{ dynamic_cast<TagLib::WavPack::File*>(_file.get()) })
         {
             if (wavPackFile->hasAPETag())
                 visitAPEImages(*wavPackFile->APETag(), std::move(visitor));
         }
     }
-} // namespace lms::metadata
+} // namespace lms::metadata::taglib

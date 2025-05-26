@@ -27,8 +27,11 @@
 #include "core/Path.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
+#include "scanners/FileToScan.hpp"
 #include "scanners/IFileScanOperation.hpp"
 #include "scanners/IFileScanner.hpp"
+
+#include "ScanContext.hpp"
 
 namespace lms::scanner
 {
@@ -45,21 +48,38 @@ namespace lms::scanner
 
             return threadCount;
         }
+
+        FileToScan retrieveFileInfo(const std::filesystem::path& file, const MediaLibraryInfo& mediaLibrary, std::error_code& ec)
+        {
+            FileToScan res;
+
+            res.lastWriteTime = core::pathUtils::getLastWriteTime(file, ec);
+            if (!ec)
+                res.relativePath = std::filesystem::relative(file, mediaLibrary.rootDirectory, ec);
+            if (!ec)
+                res.fileSize = std::filesystem::file_size(file, ec);
+
+            if (!ec)
+            {
+                res.filePath = file;
+                res.mediaLibrary = mediaLibrary;
+            }
+
+            return res;
+        }
     } // namespace
 
     ScanStepScanFiles::ScanStepScanFiles(InitParams& initParams)
         : ScanStepBase{ initParams }
         , _fileScanQueue{ getScanMetaDataThreadCount(), _abortScan }
     {
-        for (IFileScanner* scanner : _fileScanners)
-        {
+        visitFileScanners([](IFileScanner* scanner) {
+            for (const std::filesystem::path& file : scanner->getSupportedFiles())
+                LMS_LOG(DBUPDATER, INFO, scanner->getName() << ": supporting file " << file);
+
             for (const std::filesystem::path& extension : scanner->getSupportedExtensions())
-            {
-                [[maybe_unused]] auto [it, inserted]{ _scannerByExtension.emplace(extension, scanner) };
-                assert(inserted);
-                LMS_LOG(DBUPDATER, INFO, "Registered extension " << extension << " for " << scanner->getName());
-            }
-        }
+                LMS_LOG(DBUPDATER, INFO, scanner->getName() << ": supporting file extension " << extension);
+        });
 
         LMS_LOG(DBUPDATER, INFO, "Using " << _fileScanQueue.getThreadCount() << " thread(s) for scanning file metadata");
     }
@@ -94,26 +114,28 @@ namespace lms::scanner
 
                 if (ec)
                 {
-                    LMS_LOG(DBUPDATER, ERROR, "Cannot scan file " << path << ": " << ec.message());
-                    context.stats.errors.emplace_back(ScanError{ path, ScanErrorType::CannotReadFile, ec.message() });
+                    addError<IOScanError>(context, path, ec);
+                    context.stats.skips++;
                 }
-                else
+                else if (IFileScanner * scanner{ selectFileScanner(path) })
                 {
-                    auto itScanner{ _scannerByExtension.find(core::stringUtils::stringToLower(path.extension().c_str())) };
-                    if (itScanner != std::cend(_scannerByExtension))
+                    FileToScan fileToScan{ retrieveFileInfo(path, mediaLibrary, ec) };
+                    if (ec)
                     {
-                        IFileScanner& scanner{ *itScanner->second };
-
-                        FileToScan fileToScan{ .file = path, .mediaLibrary = mediaLibrary };
-                        if (scanner.needsScan(context, fileToScan))
+                        addError<IOScanError>(context, path, ec);
+                        context.stats.skips++;
+                    }
+                    else
+                    {
+                        if (context.scanOptions.fullScan || scanner->needsScan(fileToScan))
                         {
-                            auto scanOperation{ scanner.createScanOperation(fileToScan) };
+                            auto scanOperation{ scanner->createScanOperation(std::move(fileToScan)) };
                             _fileScanQueue.pushScanRequest(std::move(scanOperation));
                         }
-
-                        context.currentStepStats.processedElems++;
-                        _progressCallback(context.currentStepStats);
                     }
+
+                    context.currentStepStats.processedElems++;
+                    _progressCallback(context.currentStepStats);
                 }
 
                 while (_fileScanQueue.getResultsCount() > (scanQueueMaxScanRequestCount / 2))
@@ -146,9 +168,27 @@ namespace lms::scanner
             if (_abortScan)
                 return;
 
-            LMS_LOG(DBUPDATER, DEBUG, scanOperation->getName() << ": processing result for " << scanOperation->getFile());
-            scanOperation->processResult(context);
+            LMS_LOG(DBUPDATER, DEBUG, scanOperation->getName() << ": processing result for " << scanOperation->getFilePath());
+            const IFileScanOperation::OperationResult res{ scanOperation->processResult() };
+            switch (res)
+            {
+            case IFileScanOperation::OperationResult::Added:
+                context.stats.additions++;
+                break;
+            case IFileScanOperation::OperationResult::Removed:
+                context.stats.deletions++;
+                break;
+            case IFileScanOperation::OperationResult::Skipped:
+                context.stats.failures++;
+                break;
+            case IFileScanOperation::OperationResult::Updated:
+                context.stats.updates++;
+                break;
+            }
             context.stats.scans++;
+
+            for (const auto& error : scanOperation->getErrors())
+                addError(context, error);
         }
     }
 } // namespace lms::scanner

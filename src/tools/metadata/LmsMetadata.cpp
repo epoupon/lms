@@ -462,7 +462,7 @@ int main(int argc, char* argv[])
         {
             std::filesystem::path file{ inputFile };
 
-            std::cout << "Parsing file '" << file << "'" << std::endl;
+            std::cout << "Parsing file " << file << std::endl;
 
             if (parsers.contains(Parser::Lyrics))
             {

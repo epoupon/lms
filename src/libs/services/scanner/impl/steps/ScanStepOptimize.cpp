@@ -23,6 +23,8 @@
 #include "database/Db.hpp"
 #include "database/Session.hpp"
 
+#include "ScanContext.hpp"
+
 namespace lms::scanner
 {
     bool ScanStepOptimize::needProcess(const ScanContext& context) const

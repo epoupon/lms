@@ -19,6 +19,7 @@ add_executable(lms
 	ui/admin/MediaLibraryModal.cpp
 	ui/admin/TracingView.cpp
 	ui/admin/ScannerController.cpp
+	ui/admin/ScannerReportResource.cpp
 	ui/admin/ScanSettingsView.cpp
 	ui/admin/UserView.cpp
 	ui/admin/UsersView.cpp
