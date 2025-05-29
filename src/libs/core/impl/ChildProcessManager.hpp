@@ -38,6 +38,7 @@ namespace lms::core
         ChildProcessManager& operator=(const ChildProcessManager&) = delete;
         ChildProcessManager& operator=(ChildProcessManager&&) = delete;
 
+        // TODO Need a nice way to get this into CachingTranscoderSession...
         boost::asio::io_context& ioContext() const { return _ioContext; }
 
     private:

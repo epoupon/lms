@@ -37,6 +37,8 @@ namespace lms::av::transcoding
 
         CachingTranscoderSession(const CachingTranscoderSession&) = delete;
         CachingTranscoderSession& operator=(const CachingTranscoderSession&) = delete;
+        CachingTranscoderSession(CachingTranscoderSession&&) = delete;
+        CachingTranscoderSession& operator=(CachingTranscoderSession&&) = delete;
 
         std::shared_ptr<CachingTranscoderClientHandler> newClient(bool estimateContentLength);
 

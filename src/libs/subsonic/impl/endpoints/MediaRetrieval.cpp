@@ -344,7 +344,11 @@ namespace lms::api::subsonic
                 if (streamParameters.outputParameters)
                 {
                     loadCacheSettings();
-                    // Only allow caching if the client didn't request a start offset (as time, not bytes)
+                    // Only allow caching if the client didn't request a timeOffset.
+                    // I don't know which clients are using this feature, but if it's being used a lot by
+                    // popular ones it might make sense to support this by adding yet another transcoder
+                    // job that would just use "-c:a copy" with "-ss" to quickly serve those from cache,
+                    // after the file has been successfully transcoded in its entirety and written to cache.
                     LMS_LOG(API_SUBSONIC, DEBUG, "Cache Mode: " << cacheMode << ", offset: " << streamParameters.outputParameters->offset.count());
                     if (cacheMode == ENABLED && streamParameters.outputParameters->offset.count() == 0)
                         resourceHandler = av::transcoding::createCachingResourceHandler(cachePath, streamParameters.inputParameters, *streamParameters.outputParameters, streamParameters.estimateContentLength);

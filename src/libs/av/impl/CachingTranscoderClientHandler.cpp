@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <utility>
+#include <utility> // XXX: Fixes compile on Debian 12 for me (See #681)
 
 #include "CachingTranscoderSession.hpp"
 #include "core/IChildProcessManager.hpp"
@@ -26,7 +26,7 @@
 namespace lms::av::transcoding
 {
 
-    static std::atomic<size_t> instCount{};
+    static std::atomic<size_t> instCount{}; // XXX: Just during development to find memory leaks through dangling/cyclic references
 
     CachingTranscoderClientHandler::CachingTranscoderClientHandler(const std::shared_ptr<CachingTranscoderSession>& transcoder, bool estimateContentLength)
         : _transcoder{ transcoder }
@@ -52,13 +52,14 @@ namespace lms::av::transcoding
             _dead = true;
             return false;
         }
-        std::lock_guard<std::mutex> guard{ _lock };
+        assert(currentFileLength >= _currentFileLength);
         _currentFileLength = currentFileLength;
         if (status == UpdateStatus::DONE)
             _finalFileLength = currentFileLength;
         if (_currentFileLength > _nextOffset || status != WORKING)
         {
-            // This is being called from another thread (potentially), so use a timer for signalling
+            // This is being called from another thread (potentially), so use a timer for signalling,
+            // as calling _continuation->haveMoreData() here will deadlock. Also something something io_context.
             _signal.cancel();
         }
         return true;
@@ -71,7 +72,7 @@ namespace lms::av::transcoding
         if (!_headerSet)
         {
             _headerSet = true;
-            LMS_LOG(TRANSCODING, DEBUG, "Initial processRequest");
+            LMS_LOG(TRANSCODING, DEBUG, "CACHE PROCESSOR: Initial processRequest");
             response.addHeader("Accept-Ranges", "bytes");
             if (_estimateContentLength && _endOffset == UINT64_MAX)
                 _endOffset = _transcoder->estimatedContentLength();
@@ -80,12 +81,12 @@ namespace lms::av::transcoding
             if (!ranges.isSatisfiable())
             {
                 response.setStatus(416); // Requested range not satisfiable
-                LMS_LOG(TRANSCODING, DEBUG, "Range not satisfiable");
+                LMS_LOG(TRANSCODING, DEBUG, "CACHE PROCESSOR: Range not satisfiable");
                 return {};
             }
             if (ranges.size() == 1)
             {
-                LMS_LOG(TRANSCODING, DEBUG, "Range requested = " << ranges[0].firstByte() << "-" << ranges[0].lastByte());
+                LMS_LOG(TRANSCODING, DEBUG, "CACHE PROCESSOR: Range requested = " << ranges[0].firstByte() << "-" << ranges[0].lastByte());
 
                 response.setStatus(206);
                 _nextOffset = ranges[0].firstByte();
@@ -97,7 +98,7 @@ namespace lms::av::transcoding
                 if (_finalFileLength)
                     contentRange << _finalFileLength;
                 else if (_endOffset != UINT64_MAX)
-                    contentRange << _endOffset;
+                    contentRange << _transcoder->estimatedContentLength();
                 else
                     contentRange << "*";
 
@@ -105,7 +106,7 @@ namespace lms::av::transcoding
             }
             else
             {
-                LMS_LOG(TRANSCODING, DEBUG, "No/multiple range requested");
+                LMS_LOG(TRANSCODING, DEBUG, "CACHE PROCESSOR: No/multiple ranges requested");
                 response.setStatus(200);
             }
             if (_endOffset != UINT64_MAX)
@@ -114,31 +115,36 @@ namespace lms::av::transcoding
             response.setMimeType(_transcoder->getOutputMimeType());
         } // end init
 
-        std::lock_guard<std::mutex> guard{ _lock };
-        int64_t bytesToRead = static_cast<std::int64_t>(std::min(_endOffset, _currentFileLength)) - _nextOffset;
+        int64_t bytesReady = static_cast<std::int64_t>(std::min<std::uint64_t>(_endOffset, _currentFileLength)) - _nextOffset;
         int64_t bytesWritten{};
-        LMS_LOG(TRANSCODING, DEBUG, "Can send up to "<< bytesToRead << "(" << _endOffset << "/" << _currentFileLength << ") bytes to a cache client, start: " << _nextOffset);
-        if (bytesToRead > 0)
+        if (bytesReady <= 0)
+            LMS_LOG(TRANSCODING, DEBUG, "CACHE PROCESSOR: Still have to wait for " << -bytesReady << " more transcoded bytes before being able to handle client");
+        else
         {
-            bytesWritten = _transcoder->serveBytes(response.out(), _nextOffset, bytesToRead);
-            LMS_LOG(TRANSCODING, DEBUG, "Wrote " << bytesWritten << " cached bytes back to client");
-            if (bytesWritten > 0)
-            {
+            bytesWritten = _transcoder->serveBytes(response.out(), _nextOffset, bytesReady);
+            LMS_LOG(TRANSCODING, DEBUG, "CACHE PROCESSOR: Wrote " << bytesWritten << "/" << bytesReady << " bytes to client");
+            if (bytesWritten >= 0)
                 _nextOffset += bytesWritten;
+            else
+            {
+                // I/O Error
+                _dead = true;
+                return nullptr;
             }
         }
         if (_finalFileLength && _nextOffset >= _finalFileLength && _nextOffset < _endOffset)
         {
+            // Transcode finished, and read pos is past end of transcoded file
             if (_endOffset == UINT64_MAX)
             {
-                LMS_LOG(TRANSCODING, DEBUG, "End of file, no content-length, killing connection");
+                // No content length was sent, no range requested - just end this request
+                LMS_LOG(TRANSCODING, DEBUG, "CACHE PROCESSOR: End of file, no content-length, finished");
                 _dead = true;
                 return nullptr;
             }
-            // Transcode finished, but we overestimated the final file size - pad with zeros
+            // We promised the client there would be more data than there actually is - pad with zeros
             const std::size_t padSize{ _endOffset - _nextOffset };
-
-            LMS_LOG(TRANSCODING, DEBUG, "Adding " << padSize << " padding bytes");
+            LMS_LOG(TRANSCODING, DEBUG, "CACHE PROCESSOR: Adding " << padSize << " padding bytes");
 
             for (std::size_t i{}; i < padSize; ++i)
                 response.out().put(0);
@@ -147,31 +153,35 @@ namespace lms::av::transcoding
         }
         if (_nextOffset >= _endOffset)
         {
-            LMS_LOG(TRANSCODING, DEBUG, "Range request of client fully satisfied");
+            LMS_LOG(TRANSCODING, DEBUG, "CACHE PROCESSOR: Range request of client fully satisfied");
             _dead = true;
             return nullptr;
         }
+
         // Still some work to do
+
         if (bytesWritten > 0 && _currentFileLength > _nextOffset)
         {
-            // Can continue directly
-            LMS_LOG(TRANSCODING, DEBUG, "PROCESSOR: Continue directly");
+            // We made progress, and there's still data ready in cache - can continue directly
+            LMS_LOG(TRANSCODING, DEBUG, "CACHE PROCESSOR: Continue directly");
             _continuation = nullptr;
             return response.createContinuation();
         }
-        LMS_LOG(TRANSCODING, DEBUG, "PROCESSOR: Wait for more data");
+
         // Need to wait for transcoder
+        LMS_LOG(TRANSCODING, DEBUG, "CACHE PROCESSOR: Wait for more data");
         _continuation = response.createContinuation();
         _continuation->waitForMoreData();
         _signal.expires_after(std::chrono::seconds(60));
         _signal.async_wait([this](const boost::system::error_code& ec) {
             if (_dead)
                 return;
+            _signal.expires_after(std::chrono::seconds(60));
             if (ec != boost::asio::error::operation_aborted)
             {
-                // This should not happen but let's see
+                // This should never happen but let's see
                 _dead = true;
-                LMS_LOG(TRANSCODING, DEBUG, "***************** CLIENT TIMEOUT **************************");
+                LMS_LOG(TRANSCODING, WARNING, "CACHE PROCESSOR: Client timer expired, this should not happen :>");
             }
             this->_continuation->haveMoreData(); // Will end the request if we set _dead above
         });

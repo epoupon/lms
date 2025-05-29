@@ -46,6 +46,8 @@ namespace lms::av::transcoding
 
         CachingTranscoderClientHandler(const CachingTranscoderClientHandler&) = delete;
         CachingTranscoderClientHandler& operator=(const CachingTranscoderClientHandler&) = delete;
+        CachingTranscoderClientHandler(CachingTranscoderClientHandler&&) = delete;
+        CachingTranscoderClientHandler& operator=(CachingTranscoderClientHandler&&) = delete;
 
         bool update(std::uint64_t currentFileLength, UpdateStatus status);
 
@@ -58,10 +60,9 @@ namespace lms::av::transcoding
         bool _dead{};
         bool _estimateContentLength;
         bool _headerSet{};
-        std::uint64_t _currentFileLength{};
-        std::uint64_t _finalFileLength{};
+        std::atomic<std::uint64_t> _currentFileLength{};
+        std::atomic<std::uint64_t> _finalFileLength{}; // Zero if not known yet
         Wt::Http::ResponseContinuation* _continuation{};
-        std::mutex _lock{};
         std::uint64_t _nextOffset{};
         std::uint64_t _endOffset{ UINT64_MAX };
         boost::asio::steady_timer _signal;
