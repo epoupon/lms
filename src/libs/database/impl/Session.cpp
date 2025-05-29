@@ -210,6 +210,7 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS auth_token_domain_expiry_idx ON auth_token(domain, expiry)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS auth_token_domain_value_idx ON auth_token(domain, value)");
 
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS cluster_id_idx ON cluster(id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS cluster_cluster_type_idx ON cluster(cluster_type_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS cluster_type_name_idx ON cluster_type(name)");
 
@@ -225,6 +226,7 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_embedded_image_id_idx ON track_embedded_image(id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_embedded_image_hash_idx ON track_embedded_image(hash)");
 
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_embedded_image_link_id_idx ON track_embedded_image_link(id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_embedded_image_link_track_id_idx ON track_embedded_image_link(track_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_embedded_image_link_track_embedded_image_id_track_id_idx ON track_embedded_image_link(track_embedded_image_id, track_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_embedded_image_link_is_preferred_track_id_track_embedded_image_id_idx ON track_embedded_image_link(is_preferred, track_id, track_embedded_image_id)");
@@ -291,6 +293,7 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_file_added_idx ON track(release_id, file_added)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_file_added_desc_idx ON track(release_id, file_added DESC)");
 
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS tracklist_id_idx ON tracklist(id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS tracklist_name_idx ON tracklist(name)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS tracklist_user_type_idx ON tracklist(user_id, type)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS tracklist_last_modified_date_time_idx ON tracklist(last_modified_date_time)");
@@ -298,6 +301,7 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS tracklist_entry_idx ON tracklist_entry(id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS tracklist_entry_tracklist_track_idx ON tracklist_entry(tracklist_id, track_id)");
 
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_id_idx ON track_artist_link(id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_artist_idx ON track_artist_link(artist_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_artist_mbid_matched_artist_idx ON track_artist_link(artist_mbid_matched, artist_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_artist_track_idx ON track_artist_link(artist_id, track_id)");
