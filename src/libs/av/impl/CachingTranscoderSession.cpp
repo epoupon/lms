@@ -189,7 +189,9 @@ namespace lms::av::transcoding
                 bool good;
                 {
                     std::lock_guard<std::mutex> guard{ _fsMutex };
+                    _fs.seekp(_currentFileLength, std::ios::beg);
                     _fs.write(reinterpret_cast<const char*>(_buffer.data()), nbBytesRead);
+                    _fs.flush();
                     good = _fs.good();
                 }
                 if (good)
