@@ -24,9 +24,9 @@
 
 namespace lms::av
 {
-    std::unique_ptr<IResourceHandler> createRawResourceHandler(const std::filesystem::path& path)
+    std::unique_ptr<IResourceHandler> createRawResourceHandler(const std::filesystem::path& path, std::string_view view)
     {
-        std::string_view mimeType{ getMimeType(path.extension()) };
+        std::string_view mimeType{ view.empty() ? getMimeType(path.extension()) : view };
         return createFileResourceHandler(path, mimeType.empty() ? "application/octet-stream" : mimeType);
     }
 } // namespace lms::av

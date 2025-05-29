@@ -39,6 +39,7 @@
 #include "ParameterParsing.hpp"
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"
+#include "core/IConfig.hpp"
 #include "responses/Lyrics.hpp"
 
 namespace lms::api::subsonic
@@ -47,6 +48,38 @@ namespace lms::api::subsonic
 
     namespace
     {
+
+        enum CachingConfig
+        {
+            UNINITIALIZED,
+            ENABLED,
+            DISABLED,
+        } cacheMode = UNINITIALIZED;
+        std::mutex cacheMutex{};
+        std::filesystem::path cachePath{};
+
+        void loadCacheSettings()
+        {
+            if (cacheMode != UNINITIALIZED)
+                return;
+            std::lock_guard<std::mutex> lock(cacheMutex);
+            cacheMode = DISABLED;
+            auto *config = core::Service<core::IConfig>::get();
+            auto size = config->getULong("transcode-cache-size", 0);
+            LMS_LOG(API_SUBSONIC, DEBUG, "Transcoding cache size: " << size);
+            if (size <= 0)
+                return; // TODO: Should be size of cache in MB, auto-clean (LRU)
+            cachePath = config->getPath("working-dir", "/var/lms") / "cache" / "transcode";
+            std::error_code ec;
+            std::filesystem::create_directories(cachePath, ec);
+            if (ec)
+            {
+                LMS_LOG(TRANSCODING, WARNING, "Creating transcoding cache failed, disabling");
+                return;
+            }
+            cacheMode = ENABLED;
+        }
+
         std::optional<av::transcoding::OutputFormat> subsonicStreamFormatToAvOutputFormat(std::string_view format)
         {
             for (const auto& [str, avFormat] : std::initializer_list<std::pair<std::string_view, av::transcoding::OutputFormat>>{
@@ -307,10 +340,25 @@ namespace lms::api::subsonic
             if (!continuation)
             {
                 StreamParameters streamParameters{ getStreamParameters(context) };
+
                 if (streamParameters.outputParameters)
-                    resourceHandler = av::transcoding::createResourceHandler(streamParameters.inputParameters, *streamParameters.outputParameters, streamParameters.estimateContentLength);
+                {
+                    loadCacheSettings();
+                    // Only allow caching if the client didn't request a timeOffset.
+                    // I don't know which clients are using this feature, but if it's being used a lot by
+                    // popular ones it might make sense to support this by adding yet another transcoder
+                    // job that would just use "-c:a copy" with "-ss" to quickly serve those from cache,
+                    // after the file has been successfully transcoded in its entirety and written to cache.
+                    LMS_LOG(API_SUBSONIC, DEBUG, "Cache Mode: " << cacheMode << ", offset: " << streamParameters.outputParameters->offset.count());
+                    if (cacheMode == ENABLED && streamParameters.outputParameters->offset.count() == 0)
+                        resourceHandler = av::transcoding::createCachingResourceHandler(cachePath, streamParameters.inputParameters, *streamParameters.outputParameters, streamParameters.estimateContentLength);
+                    else
+                        resourceHandler = av::transcoding::createResourceHandler(streamParameters.inputParameters, *streamParameters.outputParameters, streamParameters.estimateContentLength);
+                }
                 else
+                {
                     resourceHandler = av::createRawResourceHandler(streamParameters.inputParameters.trackPath);
+                }
             }
             else
             {

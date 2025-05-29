@@ -63,26 +63,17 @@ namespace lms::core
     {
         // make sure only one thread is executing this part of code
         static std::mutex mutex;
-        std::unique_lock<std::mutex> lock{ mutex };
+        const std::lock_guard<std::mutex> lock{ mutex };
 
         int pipefd[2];
 
         // Use 'pipe' instead of 'pipe2', more portable
-        if (pipe(pipefd) < 0)
+        if (pipe(pipefd) == -1)
             throw SystemException{ errno, "pipe failed!" };
 
-        // Manually set the O_NONBLOCK and O_CLOEXEC flags for both ends of the pipe
+        // Only set O_NONBLOCK on read end - usually programs don't expect stdout to be non-blocking
         if (fcntl(pipefd[0], F_SETFL, O_NONBLOCK) == -1)
             throw SystemException{ errno, "fcntl failed to set O_NONBLOCK!" };
-
-        if (fcntl(pipefd[1], F_SETFL, O_NONBLOCK) == -1)
-            throw SystemException{ errno, "fcntl failed to set O_NONBLOCK!" };
-
-        if (fcntl(pipefd[0], F_SETFD, FD_CLOEXEC) == -1)
-            throw SystemException{ errno, "fcntl failed to set FD_CLOEXEC!" };
-
-        if (fcntl(pipefd[1], F_SETFD, FD_CLOEXEC) == -1)
-            throw SystemException{ errno, "fcntl failed to set FD_CLOEXEC!" };
 
 #if defined(__linux__) && defined(F_SETPIPE_SZ)
         for (const int fd : { pipefd[0], pipefd[1] })
@@ -118,21 +109,30 @@ namespace lms::core
 
         if (res == 0) // CHILD
         {
-            close(pipefd[0]);
-            close(STDIN_FILENO);
-            close(STDERR_FILENO);
+            // Never close stdin/out/err, most programs expect these to exist;
+            // rather connect them to /dev/null if unwanted
+            int nullFd = open("/dev/null", O_RDONLY);
+            // Ignore errors, worst thing is stderr writes to the same fd as lms
+            if (nullFd != -1)
+            {
+                dup2(nullFd, STDIN_FILENO);
+                dup2(nullFd, STDERR_FILENO);
+                close(nullFd);
+            }
 
             // Replace stdout with pipe write
             if (dup2(pipefd[1], STDOUT_FILENO) == -1)
                 exit(-1);
+            // Close pipe: read end not needed, write end was dup2ed
+            close(pipefd[0]);
+            close(pipefd[1]);
 
             std::vector<const char*> execArgs;
             std::transform(std::cbegin(args), std::cend(args), std::back_inserter(execArgs), [](const std::string& arg) { return arg.c_str(); });
             execArgs.push_back(nullptr);
 
-            res = execv(path.string().c_str(), (char* const*)&execArgs[0]);
-            if (res == -1)
-                exit(-1);
+            execv(path.string().c_str(), (char* const*)&execArgs[0]);
+            exit(-1);
         }
         else // PARENT
         {
@@ -141,7 +141,7 @@ namespace lms::core
                 boost::system::error_code assignError;
                 _childStdout.assign(pipefd[0], assignError);
                 if (assignError)
-                    throw SystemException{ assignError, "fork failed!" };
+                    throw SystemException{ assignError, "assigning read end of pipe to asio stream failed!" };
             }
             _childPID = res;
         }

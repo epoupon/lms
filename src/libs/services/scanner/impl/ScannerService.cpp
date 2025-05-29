@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <utility>
+
 #include "ScannerService.hpp"
 
 #include <ctime>

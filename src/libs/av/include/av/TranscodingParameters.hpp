@@ -19,6 +19,9 @@
 
 #pragma once
 
+#include "Types.hpp"
+#include "core/XxHash3.hpp"
+
 #include <chrono>
 #include <filesystem>
 #include <optional>
@@ -29,6 +32,17 @@ namespace lms::av::transcoding
     {
         std::filesystem::path trackPath;
         std::chrono::milliseconds duration; // used to estimate content length
+
+        uint64_t hash() const
+        {
+            const auto str{ trackPath.string() };
+            return core::xxHash3_64({
+                reinterpret_cast<const std::byte*>(str.data()),
+                str.size()
+            })
+                ^
+            static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
+        }
     };
 
     enum class OutputFormat
@@ -40,7 +54,24 @@ namespace lms::av::transcoding
         WEBM_VORBIS,
     };
 
-    std::string_view toMimetype(OutputFormat format);
+    static inline std::string_view formatToMimetype(OutputFormat format)
+    {
+        switch (format)
+        {
+        case OutputFormat::MP3:
+            return "audio/mpeg";
+        case OutputFormat::OGG_OPUS:
+            return "audio/opus";
+        case OutputFormat::MATROSKA_OPUS:
+            return "audio/x-matroska";
+        case OutputFormat::OGG_VORBIS:
+            return "audio/ogg";
+        case OutputFormat::WEBM_VORBIS:
+            return "audio/webm";
+        }
+
+        throw Exception{ "Invalid encoding" };
+    }
 
     struct OutputParameters
     {
@@ -49,5 +80,10 @@ namespace lms::av::transcoding
         std::optional<std::size_t> stream; // Id of the stream to be transcoded (auto detect by default)
         std::chrono::milliseconds offset{ 0 };
         bool stripMetadata{ true };
+
+        uint64_t hash() const
+        {
+            return static_cast<uint64_t>(format) ^ bitrate ^ (stream ? *stream : UINT64_MAX) ^ static_cast<uint64_t>(stripMetadata);
+        }
     };
 } // namespace lms::av::transcoding

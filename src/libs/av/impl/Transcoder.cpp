@@ -37,25 +37,6 @@ namespace lms::av::transcoding
     static std::atomic<size_t> globalId{};
     static std::filesystem::path ffmpegPath;
 
-    std::string_view formatToMimetype(OutputFormat format)
-    {
-        switch (format)
-        {
-        case OutputFormat::MP3:
-            return "audio/mpeg";
-        case OutputFormat::OGG_OPUS:
-            return "audio/opus";
-        case OutputFormat::MATROSKA_OPUS:
-            return "audio/x-matroska";
-        case OutputFormat::OGG_VORBIS:
-            return "audio/ogg";
-        case OutputFormat::WEBM_VORBIS:
-            return "audio/webm";
-        }
-
-        throw Exception{ "Invalid encoding" };
-    }
-
     void Transcoder::init()
     {
         ffmpegPath = core::Service<core::IConfig>::get()->getPath("ffmpeg-file", "/usr/bin/ffmpeg");

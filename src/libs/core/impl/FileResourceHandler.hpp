@@ -22,6 +22,7 @@
 #include <filesystem>
 #include <string>
 #include <string_view>
+#include <fstream>
 
 #include "core/IResourceHandler.hpp"
 
@@ -32,15 +33,18 @@ namespace lms
     public:
         FileResourceHandler(const std::filesystem::path& filePath, std::string_view mimeType);
 
+        bool sourceGood() const override { return _ifs && _ifs.good(); }
+
     private:
         Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
         void abort() override{};
 
         static constexpr std::size_t _chunkSize{ 262'144 };
 
-        std::filesystem::path _path;
         std::string _mimeType;
         ::uint64_t _beyondLastByte{};
         ::uint64_t _offset{};
+        ::int64_t _fileSize{-1};
+        std::ifstream _ifs;
     };
 } // namespace lms

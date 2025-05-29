@@ -29,4 +29,5 @@ namespace lms::av::transcoding
     struct OutputParameters;
 
     std::unique_ptr<IResourceHandler> createResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength);
+    std::shared_ptr<IResourceHandler> createCachingResourceHandler(const std::filesystem::path& cachePath, const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength);
 } // namespace lms::av::transcoding
