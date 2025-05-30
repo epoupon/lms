@@ -25,7 +25,7 @@
 
 #include "core/IResourceHandler.hpp"
 
-namespace lms
+namespace lms::core
 {
     class FileResourceHandler final : public IResourceHandler
     {
@@ -43,4 +43,4 @@ namespace lms
         ::uint64_t _beyondLastByte{};
         ::uint64_t _offset{};
     };
-} // namespace lms
+} // namespace lms::core

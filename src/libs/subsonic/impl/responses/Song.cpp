@@ -23,6 +23,7 @@
 
 #include "av/IAudioFile.hpp"
 #include "core/ITraceLogger.hpp"
+#include "core/MimeTypes.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
 #include "database/Artist.hpp"
@@ -107,7 +108,7 @@ namespace lms::api::subsonic
         {
             const std::string fileSuffix{ formatToSuffix(context.user->getSubsonicDefaultTranscodingOutputFormat()) };
             trackResponse.setAttribute("transcodedSuffix", fileSuffix);
-            trackResponse.setAttribute("transcodedContentType", av::getMimeType(std::filesystem::path{ "." + fileSuffix }));
+            trackResponse.setAttribute("transcodedContentType", core::getMimeType(std::filesystem::path{ "." + fileSuffix }));
         }
 
         const Release::pointer release{ track->getRelease() };
@@ -156,7 +157,7 @@ namespace lms::api::subsonic
         trackResponse.setAttribute("bitRate", (track->getBitrate() / 1000));
         trackResponse.setAttribute("type", "music");
         trackResponse.setAttribute("created", core::stringUtils::toISO8601String(track->getAddedTime()));
-        trackResponse.setAttribute("contentType", av::getMimeType(track->getAbsoluteFilePath().extension()));
+        trackResponse.setAttribute("contentType", core::getMimeType(track->getAbsoluteFilePath().extension()));
         if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.user->getId(), track->getId()) })
             trackResponse.setAttribute("userRating", *rating);
 

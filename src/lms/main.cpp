@@ -44,6 +44,7 @@
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scanner/IScannerService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
+#include "services/transcoding/ITranscodingService.hpp"
 #include "subsonic/SubsonicResource.hpp"
 #include "ui/Auth.hpp"
 #include "ui/LmsApplication.hpp"
@@ -373,6 +374,7 @@ namespace lms
             core::Service<recommendation::IRecommendationService> recommendationService{ recommendation::createRecommendationService(database) };
             core::Service<recommendation::IPlaylistGeneratorService> playlistGeneratorService{ recommendation::createPlaylistGeneratorService(database, *recommendationService.get()) };
             core::Service<scanner::IScannerService> scannerService{ scanner::createScannerService(database) };
+            core::Service<transcoding::ITranscodingService> transcodingService{ transcoding::createTranscodingService(*childProcessManagerService.get()) };
 
             scannerService->getEvents().scanComplete.connect([&] {
                 // Flush cover cache even if no changes:

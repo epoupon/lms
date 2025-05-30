@@ -21,7 +21,7 @@
 
 #include <Wt/Http/Response.h>
 
-#include "av/RawResourceHandlerCreator.hpp"
+#include "core/FileResourceHandlerCreator.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/String.hpp"
@@ -85,7 +85,7 @@ namespace lms::ui
     {
         LMS_SCOPED_TRACE_OVERVIEW("UI", "HandleAudioFileRequest");
 
-        std::shared_ptr<IResourceHandler> fileResourceHandler;
+        std::shared_ptr<core::IResourceHandler> fileResourceHandler;
 
         if (!request.continuation())
         {
@@ -93,11 +93,11 @@ namespace lms::ui
             if (!trackPath)
                 return;
 
-            fileResourceHandler = av::createRawResourceHandler(*trackPath);
+            fileResourceHandler = core::createFileResourceHandler(*trackPath);
         }
         else
         {
-            fileResourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(request.continuation()->data());
+            fileResourceHandler = Wt::cpp17::any_cast<std::shared_ptr<core::IResourceHandler>>(request.continuation()->data());
         }
 
         auto* continuation{ fileResourceHandler->processRequest(request, response) };

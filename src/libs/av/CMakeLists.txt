@@ -2,9 +2,7 @@ pkg_check_modules(LIBAV IMPORTED_TARGET libavcodec libavutil libavformat)
 
 add_library(lmsav STATIC
 	impl/AudioFile.cpp
-	impl/RawResourceHandlerCreator.cpp
 	impl/Transcoder.cpp
-	impl/TranscodingResourceHandler.cpp
 	)
 
 target_include_directories(lmsav INTERFACE

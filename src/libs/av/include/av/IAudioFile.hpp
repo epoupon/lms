@@ -101,7 +101,4 @@ namespace lms::av
     };
 
     std::unique_ptr<IAudioFile> parseAudioFile(const std::filesystem::path& p);
-
-    std::string_view getMimeType(const std::filesystem::path& fileExtension);
-
 } // namespace lms::av

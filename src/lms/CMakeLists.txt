@@ -73,6 +73,7 @@ target_link_libraries(lms PRIVATE
 	lmsscrobbling
 	lmsartwork
 	lmssubsonic
+	lmstranscoding
 	lmscore
 	)
 

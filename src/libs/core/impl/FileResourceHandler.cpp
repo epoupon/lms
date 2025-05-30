@@ -22,12 +22,13 @@
 #include <fstream>
 
 #include "core/ILogger.hpp"
+#include "core/MimeTypes.hpp"
 
-namespace lms
+namespace lms::core
 {
     std::unique_ptr<IResourceHandler> createFileResourceHandler(const std::filesystem::path& path, std::string_view mimeType)
     {
-        return std::make_unique<FileResourceHandler>(path, mimeType);
+        return std::make_unique<FileResourceHandler>(path, mimeType.empty() ? getMimeType(path.extension()) : mimeType);
     }
 
     FileResourceHandler::FileResourceHandler(const std::filesystem::path& path, std::string_view mimeType)
@@ -134,4 +135,4 @@ namespace lms
         LMS_LOG(UTILS, DEBUG, "Job complete!");
         return nullptr;
     }
-} // namespace lms
+} // namespace lms::core

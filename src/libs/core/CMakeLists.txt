@@ -12,6 +12,7 @@ add_library(lmscore STATIC
 	impl/FileResourceHandler.cpp
 	impl/IOContextRunner.cpp
 	impl/Logger.cpp
+	impl/MimeTypes.cpp
 	impl/NetAddress.cpp
 	impl/PartialDateTime.cpp
 	impl/Path.cpp

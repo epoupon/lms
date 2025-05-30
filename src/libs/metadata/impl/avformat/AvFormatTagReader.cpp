@@ -19,8 +19,8 @@
 
 #include "AvFormatTagReader.hpp"
 
+#include "av/Exception.hpp"
 #include "av/IAudioFile.hpp"
-#include "av/Types.hpp"
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 #include "metadata/Exception.hpp"

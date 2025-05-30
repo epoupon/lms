@@ -20,20 +20,24 @@
 #pragma once
 
 #include <array>
+#include <memory>
 #include <optional>
 
-#include "av/TranscodingParameters.hpp"
 #include "core/IResourceHandler.hpp"
+#include "services/transcoding/ITranscodingService.hpp"
 
-#include "Transcoder.hpp"
-
-namespace lms::av::transcoding
+namespace lms::av
 {
-    class TranscodingResourceHandler final : public IResourceHandler
+    class ITranscoder;
+}
+
+namespace lms::transcoding
+{
+    class TranscodingResourceHandler final : public core::IResourceHandler
     {
     public:
         TranscodingResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength);
-        ~TranscodingResourceHandler() override = default;
+        ~TranscodingResourceHandler() override;
 
         TranscodingResourceHandler(const TranscodingResourceHandler&) = delete;
         TranscodingResourceHandler& operator=(const TranscodingResourceHandler&) = delete;
@@ -47,6 +51,6 @@ namespace lms::av::transcoding
         std::array<std::byte, _chunkSize> _buffer;
         std::size_t _bytesReadyCount{};
         std::size_t _totalServedByteCount{};
-        Transcoder _transcoder;
+        std::unique_ptr<av::ITranscoder> _transcoder;
     };
-} // namespace lms::av::transcoding
+} // namespace lms::transcoding

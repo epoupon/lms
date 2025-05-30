@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,16 +19,24 @@
 
 #pragma once
 
-#include <chrono>
 #include <filesystem>
+#include <memory>
 #include <optional>
 
-namespace lms::av::transcoding
+namespace lms::core
+{
+    class IChildProcessManager;
+    class IResourceHandler;
+} // namespace lms::core
+
+namespace lms::transcoding
 {
     struct InputParameters
     {
-        std::filesystem::path trackPath;
-        std::chrono::milliseconds duration; // used to estimate content length
+        std::filesystem::path file;             // Path to the input file
+        std::chrono::milliseconds duration;     // Offset in the input file to start transcoding from
+        std::chrono::milliseconds offset{};     // Offset in the input file to start transcoding from
+        std::optional<std::size_t> streamIndex; // Index of the stream to be transcoded (select "best" audio stream if not set)
     };
 
     enum class OutputFormat
@@ -40,14 +48,20 @@ namespace lms::av::transcoding
         WEBM_VORBIS,
     };
 
-    std::string_view toMimetype(OutputFormat format);
-
     struct OutputParameters
     {
         OutputFormat format;
         std::size_t bitrate{ 128'000 };
-        std::optional<std::size_t> stream; // Id of the stream to be transcoded (auto detect by default)
-        std::chrono::milliseconds offset{ 0 };
         bool stripMetadata{ true };
     };
-} // namespace lms::av::transcoding
+
+    class ITranscodingService
+    {
+    public:
+        virtual ~ITranscodingService() = default;
+
+        virtual std::unique_ptr<core::IResourceHandler> createResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength) = 0;
+    };
+
+    std::unique_ptr<ITranscodingService> createTranscodingService(core::IChildProcessManager& childProcessManager);
+} // namespace lms::transcoding

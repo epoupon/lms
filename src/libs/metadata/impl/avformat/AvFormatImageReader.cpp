@@ -19,8 +19,8 @@
 
 #include "AvFormatImageReader.hpp"
 
+#include "av/Exception.hpp"
 #include "av/IAudioFile.hpp"
-#include "av/Types.hpp"
 #include "metadata/Exception.hpp"
 
 namespace lms::metadata::avformat

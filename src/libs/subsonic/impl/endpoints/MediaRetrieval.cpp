@@ -19,11 +19,9 @@
 
 #include "MediaRetrieval.hpp"
 
+#include "av/Exception.hpp"
 #include "av/IAudioFile.hpp"
-#include "av/RawResourceHandlerCreator.hpp"
-#include "av/TranscodingParameters.hpp"
-#include "av/TranscodingResourceHandlerCreator.hpp"
-#include "av/Types.hpp"
+#include "core/FileResourceHandlerCreator.hpp"
 #include "core/ILogger.hpp"
 #include "core/IResourceHandler.hpp"
 #include "core/String.hpp"
@@ -34,6 +32,7 @@
 #include "database/TrackLyrics.hpp"
 #include "database/User.hpp"
 #include "services/artwork/IArtworkService.hpp"
+#include "services/transcoding/ITranscodingService.hpp"
 
 #include "CoverArtId.hpp"
 #include "ParameterParsing.hpp"
@@ -47,12 +46,12 @@ namespace lms::api::subsonic
 
     namespace
     {
-        std::optional<av::transcoding::OutputFormat> subsonicStreamFormatToAvOutputFormat(std::string_view format)
+        std::optional<transcoding::OutputFormat> subsonicStreamFormatToAvOutputFormat(std::string_view format)
         {
-            for (const auto& [str, avFormat] : std::initializer_list<std::pair<std::string_view, av::transcoding::OutputFormat>>{
-                     { "mp3", av::transcoding::OutputFormat::MP3 },
-                     { "opus", av::transcoding::OutputFormat::OGG_OPUS },
-                     { "vorbis", av::transcoding::OutputFormat::OGG_VORBIS },
+            for (const auto& [str, avFormat] : std::initializer_list<std::pair<std::string_view, transcoding::OutputFormat>>{
+                     { "mp3", transcoding::OutputFormat::MP3 },
+                     { "opus", transcoding::OutputFormat::OGG_OPUS },
+                     { "vorbis", transcoding::OutputFormat::OGG_VORBIS },
                  })
             {
                 if (core::stringUtils::stringCaseInsensitiveEqual(str, format))
@@ -61,37 +60,37 @@ namespace lms::api::subsonic
             return std::nullopt;
         }
 
-        av::transcoding::OutputFormat userTranscodeFormatToAvFormat(db::TranscodingOutputFormat format)
+        transcoding::OutputFormat userTranscodeFormatToAvFormat(db::TranscodingOutputFormat format)
         {
             switch (format)
             {
             case db::TranscodingOutputFormat::MP3:
-                return av::transcoding::OutputFormat::MP3;
+                return transcoding::OutputFormat::MP3;
             case db::TranscodingOutputFormat::OGG_OPUS:
-                return av::transcoding::OutputFormat::OGG_OPUS;
+                return transcoding::OutputFormat::OGG_OPUS;
             case db::TranscodingOutputFormat::MATROSKA_OPUS:
-                return av::transcoding::OutputFormat::MATROSKA_OPUS;
+                return transcoding::OutputFormat::MATROSKA_OPUS;
             case db::TranscodingOutputFormat::OGG_VORBIS:
-                return av::transcoding::OutputFormat::OGG_VORBIS;
+                return transcoding::OutputFormat::OGG_VORBIS;
             case db::TranscodingOutputFormat::WEBM_VORBIS:
-                return av::transcoding::OutputFormat::WEBM_VORBIS;
+                return transcoding::OutputFormat::WEBM_VORBIS;
             }
-            return av::transcoding::OutputFormat::OGG_OPUS;
+            return transcoding::OutputFormat::OGG_OPUS;
         }
 
-        bool isCodecCompatibleWithOutputFormat(av::DecodingCodec codec, av::transcoding::OutputFormat outputFormat)
+        bool isCodecCompatibleWithOutputFormat(av::DecodingCodec codec, transcoding::OutputFormat outputFormat)
         {
             switch (outputFormat)
             {
-            case av::transcoding::OutputFormat::MP3:
+            case transcoding::OutputFormat::MP3:
                 return codec == av::DecodingCodec::MP3;
 
-            case av::transcoding::OutputFormat::OGG_OPUS:
-            case av::transcoding::OutputFormat::MATROSKA_OPUS:
+            case transcoding::OutputFormat::OGG_OPUS:
+            case transcoding::OutputFormat::MATROSKA_OPUS:
                 return codec == av::DecodingCodec::OPUS;
 
-            case av::transcoding::OutputFormat::OGG_VORBIS:
-            case av::transcoding::OutputFormat::WEBM_VORBIS:
+            case transcoding::OutputFormat::OGG_VORBIS:
+            case transcoding::OutputFormat::WEBM_VORBIS:
                 return codec == av::DecodingCodec::VORBIS;
             }
 
@@ -100,13 +99,14 @@ namespace lms::api::subsonic
 
         struct StreamParameters
         {
-            av::transcoding::InputParameters inputParameters;
-            std::optional<av::transcoding::OutputParameters> outputParameters;
+            transcoding::InputParameters inputParameters;
+            std::optional<transcoding::OutputParameters> outputParameters;
             bool estimateContentLength{};
         };
 
-        bool isOutputFormatCompatible(const std::filesystem::path& trackPath, av::transcoding::OutputFormat outputFormat)
+        bool isOutputFormatCompatible(const std::filesystem::path& trackPath, transcoding::OutputFormat outputFormat)
         {
+            // TODO: put this information in db during scan
             try
             {
                 const auto audioFile{ av::parseAudioFile(trackPath) };
@@ -143,14 +143,15 @@ namespace lms::api::subsonic
             if (!track)
                 throw RequestedDataNotFoundError{};
 
-            parameters.inputParameters.trackPath = track->getAbsoluteFilePath();
+            parameters.inputParameters.file = track->getAbsoluteFilePath();
             parameters.inputParameters.duration = track->getDuration();
+            parameters.inputParameters.offset = std::chrono::seconds{ timeOffset };
             parameters.estimateContentLength = estimateContentLength;
 
             if (format == "raw") // raw => no transcoding
                 return parameters;
 
-            std::optional<av::transcoding::OutputFormat> requestedFormat{ subsonicStreamFormatToAvOutputFormat(format) };
+            std::optional<transcoding::OutputFormat> requestedFormat{ subsonicStreamFormatToAvOutputFormat(format) };
             if (!requestedFormat)
             {
                 if (context.user->getSubsonicEnableTranscodingByDefault())
@@ -185,10 +186,8 @@ namespace lms::api::subsonic
             if (maxBitRate)
                 bitrate = std::min<std::size_t>(bitrate, maxBitRate);
 
-            av::transcoding::OutputParameters& outputParameters{ parameters.outputParameters.emplace() };
-
+            transcoding::OutputParameters& outputParameters{ parameters.outputParameters.emplace() };
             outputParameters.stripMetadata = false; // We want clients to use metadata (offline use, replay gain, etc.)
-            outputParameters.offset = std::chrono::seconds{ timeOffset };
             outputParameters.format = *requestedFormat;
             outputParameters.bitrate = bitrate;
 
@@ -266,7 +265,7 @@ namespace lms::api::subsonic
 
     void handleDownload(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response)
     {
-        std::shared_ptr<IResourceHandler> resourceHandler;
+        std::shared_ptr<core::IResourceHandler> resourceHandler;
 
         Wt::Http::ResponseContinuation* continuation{ request.continuation() };
         if (!continuation)
@@ -285,11 +284,11 @@ namespace lms::api::subsonic
                 trackPath = track->getAbsoluteFilePath();
             }
 
-            resourceHandler = av::createRawResourceHandler(trackPath);
+            resourceHandler = core::createFileResourceHandler(trackPath);
         }
         else
         {
-            resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(continuation->data());
+            resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<core::IResourceHandler>>(continuation->data());
         }
 
         continuation = resourceHandler->processRequest(request, response);
@@ -299,7 +298,7 @@ namespace lms::api::subsonic
 
     void handleStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response)
     {
-        std::shared_ptr<IResourceHandler> resourceHandler;
+        std::shared_ptr<core::IResourceHandler> resourceHandler;
 
         try
         {
@@ -308,13 +307,13 @@ namespace lms::api::subsonic
             {
                 StreamParameters streamParameters{ getStreamParameters(context) };
                 if (streamParameters.outputParameters)
-                    resourceHandler = av::transcoding::createResourceHandler(streamParameters.inputParameters, *streamParameters.outputParameters, streamParameters.estimateContentLength);
+                    resourceHandler = core::Service<transcoding::ITranscodingService>::get()->createResourceHandler(streamParameters.inputParameters, *streamParameters.outputParameters, streamParameters.estimateContentLength);
                 else
-                    resourceHandler = av::createRawResourceHandler(streamParameters.inputParameters.trackPath);
+                    resourceHandler = core::createFileResourceHandler(streamParameters.inputParameters.file);
             }
             else
             {
-                resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<IResourceHandler>>(continuation->data());
+                resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<core::IResourceHandler>>(continuation->data());
             }
 
             continuation = resourceHandler->processRequest(request, response);
