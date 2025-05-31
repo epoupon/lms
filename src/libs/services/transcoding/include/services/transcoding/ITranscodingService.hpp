@@ -23,19 +23,28 @@
 #include <memory>
 #include <optional>
 
-namespace lms::core
+#include "database/TrackId.hpp"
+
+namespace lms
 {
-    class IChildProcessManager;
-    class IResourceHandler;
-} // namespace lms::core
+    namespace core
+    {
+        class IChildProcessManager;
+        class IResourceHandler;
+    } // namespace core
+
+    namespace db
+    {
+        class Db;
+    }
+} // namespace lms
 
 namespace lms::transcoding
 {
     struct InputParameters
     {
-        std::filesystem::path file;             // Path to the input file
-        std::chrono::milliseconds duration;     // Offset in the input file to start transcoding from
-        std::chrono::milliseconds offset{};     // Offset in the input file to start transcoding from
+        db::TrackId trackId;
+        std::chrono::milliseconds offset{};     // Offset in the track file to start transcoding from
         std::optional<std::size_t> streamIndex; // Index of the stream to be transcoded (select "best" audio stream if not set)
     };
 
@@ -63,5 +72,5 @@ namespace lms::transcoding
         virtual std::unique_ptr<core::IResourceHandler> createResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength) = 0;
     };
 
-    std::unique_ptr<ITranscodingService> createTranscodingService(core::IChildProcessManager& childProcessManager);
+    std::unique_ptr<ITranscodingService> createTranscodingService(db::Db& db, core::IChildProcessManager& childProcessManager);
 } // namespace lms::transcoding

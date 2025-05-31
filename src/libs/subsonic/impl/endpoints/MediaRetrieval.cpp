@@ -101,6 +101,7 @@ namespace lms::api::subsonic
         {
             transcoding::InputParameters inputParameters;
             std::optional<transcoding::OutputParameters> outputParameters;
+            std::filesystem::path trackPath;
             bool estimateContentLength{};
         };
 
@@ -143,10 +144,10 @@ namespace lms::api::subsonic
             if (!track)
                 throw RequestedDataNotFoundError{};
 
-            parameters.inputParameters.file = track->getAbsoluteFilePath();
-            parameters.inputParameters.duration = track->getDuration();
+            parameters.inputParameters.trackId = id;
             parameters.inputParameters.offset = std::chrono::seconds{ timeOffset };
             parameters.estimateContentLength = estimateContentLength;
+            parameters.trackPath = track->getAbsoluteFilePath();
 
             if (format == "raw") // raw => no transcoding
                 return parameters;
@@ -309,7 +310,7 @@ namespace lms::api::subsonic
                 if (streamParameters.outputParameters)
                     resourceHandler = core::Service<transcoding::ITranscodingService>::get()->createResourceHandler(streamParameters.inputParameters, *streamParameters.outputParameters, streamParameters.estimateContentLength);
                 else
-                    resourceHandler = core::createFileResourceHandler(streamParameters.inputParameters.file);
+                    resourceHandler = core::createFileResourceHandler(streamParameters.trackPath);
             }
             else
             {

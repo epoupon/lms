@@ -15,3 +15,8 @@ target_include_directories(lmstranscoding PRIVATE
 target_link_libraries(lmstranscoding PRIVATE
 	lmsav
 	)
+
+target_link_libraries(lmstranscoding PUBLIC
+	lmsdatabase
+	)
+

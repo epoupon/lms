@@ -18,14 +18,11 @@ target_include_directories(lmsauth PRIVATE
 	impl
 	)
 
-target_link_libraries(lmsauth PRIVATE
-	lmscore
-	lmsdatabase
-	)
-
 target_link_libraries(lmsauth PUBLIC
 	Boost::system
 	Wt::Wt
+	lmscore
+	lmsdatabase
 	)
 	
 # PAM

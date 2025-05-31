@@ -25,39 +25,19 @@
 
 namespace lms::transcoding
 {
-    namespace
-    {
-        std::size_t doEstimateContentLength(const InputParameters& inputParameters, const OutputParameters& outputParameters)
-        {
-            const std::size_t estimatedContentLength{ outputParameters.bitrate / 8 * static_cast<std::size_t>(std::chrono::duration_cast<std::chrono::milliseconds>(inputParameters.duration).count()) / 1000 };
-            return estimatedContentLength;
-        }
-
-        av::InputParameters toAv(const InputParameters& in)
-        {
-            return { .file = in.file, .offset = in.offset, .streamIndex = in.streamIndex };
-        }
-
-        av::OutputParameters toAv(const OutputParameters& out)
-        {
-            return { .format = static_cast<lms::av::OutputFormat>(out.format), .bitrate = out.bitrate, .stripMetadata = out.stripMetadata };
-        }
-
-    } // namespace
-
-    std::unique_ptr<core::IResourceHandler> createResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength)
+    std::unique_ptr<core::IResourceHandler> createResourceHandler(const av::InputParameters& inputParameters, const av::OutputParameters& outputParameters, bool estimateContentLength)
     {
         return std::make_unique<TranscodingResourceHandler>(inputParameters, outputParameters, estimateContentLength);
     }
 
     // TODO set some nice HTTP return code
 
-    TranscodingResourceHandler::TranscodingResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength)
-        : _estimatedContentLength{ estimateContentLength ? std::make_optional(doEstimateContentLength(inputParameters, outputParameters)) : std::nullopt }
+    TranscodingResourceHandler::TranscodingResourceHandler(const av::InputParameters& inputParameters, const av::OutputParameters& outputParameters, std::optional<std::size_t> estimatedContentLength)
+        : _estimatedContentLength{ estimatedContentLength }
     {
         try
         {
-            _transcoder = av::createTranscoder(toAv(inputParameters), toAv(outputParameters));
+            _transcoder = av::createTranscoder(inputParameters, outputParameters);
 
             if (_estimatedContentLength)
                 LMS_LOG(TRANSCODING, DEBUG, "Estimated content length = " << *_estimatedContentLength);

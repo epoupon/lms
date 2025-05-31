@@ -19,19 +19,38 @@
 
 #include "TranscodingService.hpp"
 
+#include "av/ITranscoder.hpp"
 #include "core/ILogger.hpp"
+#include "database/Db.hpp"
+#include "database/Session.hpp"
+#include "database/Track.hpp"
 
 #include "TranscodingResourceHandler.hpp"
 
 namespace lms::transcoding
 {
-    std::unique_ptr<ITranscodingService> createTranscodingService(core::IChildProcessManager& childProcessManager)
+    namespace
     {
-        return std::make_unique<TranscodingService>(childProcessManager);
+        av::OutputParameters toAv(const OutputParameters& out)
+        {
+            return { .format = static_cast<lms::av::OutputFormat>(out.format), .bitrate = out.bitrate, .stripMetadata = out.stripMetadata };
+        }
+
+        std::size_t doEstimateContentLength(std::size_t bitrate, std::chrono::milliseconds duration)
+        {
+            const std::size_t estimatedContentLength{ (bitrate / 8 * duration.count()) / 1000 };
+            return estimatedContentLength;
+        }
+    } // namespace
+
+    std::unique_ptr<ITranscodingService> createTranscodingService(db::Db& db, core::IChildProcessManager& childProcessManager)
+    {
+        return std::make_unique<TranscodingService>(db, childProcessManager);
     }
 
-    TranscodingService::TranscodingService(core::IChildProcessManager& childProcessManager)
-        : _childProcessManager(childProcessManager)
+    TranscodingService::TranscodingService(db::Db& db, core::IChildProcessManager& childProcessManager)
+        : _db{ db }
+        , _childProcessManager(childProcessManager)
     {
         LMS_LOG(TRANSCODING, INFO, "Service started!");
     }
@@ -43,6 +62,24 @@ namespace lms::transcoding
 
     std::unique_ptr<core::IResourceHandler> TranscodingService::createResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength)
     {
-        return std::make_unique<TranscodingResourceHandler>(inputParameters, outputParameters, estimateContentLength);
+        av::InputParameters avInputParams;
+        std::optional<std::size_t> estimatedContentLength;
+        {
+            auto& session{ _db.getTLSSession() };
+            auto transaction{ session.createReadTransaction() };
+
+            db::Track::pointer track{ db::Track::find(session, inputParameters.trackId) };
+            if (!track)
+                return nullptr;
+
+            avInputParams.file = track->getAbsoluteFilePath();
+            avInputParams.offset = inputParameters.offset;
+            avInputParams.streamIndex = inputParameters.streamIndex;
+
+            if (estimateContentLength)
+                estimatedContentLength = doEstimateContentLength(outputParameters.bitrate, track->getDuration());
+        }
+
+        return std::make_unique<TranscodingResourceHandler>(avInputParams, toAv(outputParameters), estimatedContentLength);
     }
 } // namespace lms::transcoding

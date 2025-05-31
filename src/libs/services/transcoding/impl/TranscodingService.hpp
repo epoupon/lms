@@ -26,7 +26,7 @@ namespace lms::transcoding
     class TranscodingService : public ITranscodingService
     {
     public:
-        explicit TranscodingService(core::IChildProcessManager& childProcessManager);
+        explicit TranscodingService(db::Db& db, core::IChildProcessManager& childProcessManager);
         ~TranscodingService() override;
 
         TranscodingService(const TranscodingService&) = delete;
@@ -35,6 +35,7 @@ namespace lms::transcoding
     private:
         std::unique_ptr<core::IResourceHandler> createResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength) override;
 
+        db::Db& _db;
         core::IChildProcessManager& _childProcessManager;
     };
 } // namespace lms::transcoding

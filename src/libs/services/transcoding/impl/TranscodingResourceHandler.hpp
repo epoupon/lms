@@ -23,20 +23,15 @@
 #include <memory>
 #include <optional>
 
+#include "av/ITranscoder.hpp"
 #include "core/IResourceHandler.hpp"
-#include "services/transcoding/ITranscodingService.hpp"
-
-namespace lms::av
-{
-    class ITranscoder;
-}
 
 namespace lms::transcoding
 {
     class TranscodingResourceHandler final : public core::IResourceHandler
     {
     public:
-        TranscodingResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength);
+        TranscodingResourceHandler(const av::InputParameters& inputParameters, const av::OutputParameters& outputParameters, std::optional<std::size_t> estimatedContentLength);
         ~TranscodingResourceHandler() override;
 
         TranscodingResourceHandler(const TranscodingResourceHandler&) = delete;
