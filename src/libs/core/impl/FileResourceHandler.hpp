@@ -20,9 +20,9 @@
 #pragma once
 
 #include <filesystem>
+#include <fstream>
 #include <string>
 #include <string_view>
-#include <fstream>
 
 #include "core/IResourceHandler.hpp"
 
