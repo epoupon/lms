@@ -38,7 +38,7 @@ namespace lms::transcoding
 
         std::size_t doEstimateContentLength(std::size_t bitrate, std::chrono::milliseconds duration)
         {
-            const std::size_t estimatedContentLength{ (bitrate / 8 * duration.count()) / 1000 };
+            const std::size_t estimatedContentLength{ static_cast<size_t>((bitrate / 8 * duration.count()) / 1000) };
             return estimatedContentLength;
         }
     } // namespace
