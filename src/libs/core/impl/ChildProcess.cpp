@@ -19,18 +19,17 @@
 
 #include "ChildProcess.hpp"
 
-#include <cerrno>
-#include <cstddef>
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <system_error>
 #include <unistd.h>
 
 #include <algorithm>
-#include <iostream>
+#include <cerrno>
+#include <cstddef>
 #include <mutex>
+#include <system_error>
 
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/read.hpp>
@@ -63,7 +62,7 @@ namespace lms::core
     {
         // make sure only one thread is executing this part of code
         static std::mutex mutex;
-        const std::lock_guard<std::mutex> lock{ mutex };
+        const std::scoped_lock lock{ mutex };
 
         int pipefd[2];
 
