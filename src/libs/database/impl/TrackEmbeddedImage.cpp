@@ -115,6 +115,10 @@ namespace lms::db
             case TrackEmbeddedImageSortMethod::FrontTypeThenSizeDesc:
                 query.orderBy("CASE WHEN t_e_i_l.type = ? THEN 0 ELSE 1 END, t_e_i.size DESC").bind(ImageType::FrontCover);
                 break;
+            case TrackEmbeddedImageSortMethod::TrackListIndexAscThenSizeDesc:
+                assert(params.trackList.isValid());
+                query.orderBy("t_l_e.id, t_e_i.size DESC");
+                break;
             }
 
             return query;
