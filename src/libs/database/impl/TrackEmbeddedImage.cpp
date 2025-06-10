@@ -44,8 +44,8 @@ namespace lms::db
                 || params.release.isValid()
                 || params.trackList.isValid()
                 || !params.imageTypes.empty()
-                || params.sortMethod == TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSizeDescDesc
-                || params.sortMethod == TrackEmbeddedImageSortMethod::FrontTypeThenSizeDesc)
+                || params.sortMethod == TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc
+                || params.sortMethod == TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc)
             {
                 query.join("track_embedded_image_link t_e_i_l ON t_e_i_l.track_embedded_image_id = t_e_i.id");
 
@@ -72,7 +72,10 @@ namespace lms::db
                 if (params.track.isValid())
                     query.where("t_e_i_l.track_id = ?").bind(params.track);
 
-                if (params.release.isValid() || params.discNumber.has_value())
+                if (params.release.isValid()
+                    || params.discNumber.has_value()
+                    || params.sortMethod == TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc
+                    || params.sortMethod == TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc)
                 {
                     query.join("track t ON t_e_i_l.track_id = t.id");
                     if (params.release.isValid())
@@ -109,11 +112,11 @@ namespace lms::db
             case TrackEmbeddedImageSortMethod::SizeDesc:
                 query.orderBy("t_e_i.size DESC");
                 break;
-            case TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSizeDescDesc:
-                query.orderBy("CASE t_e_i_l.type WHEN ? THEN 1 WHEN ? THEN 2 ELSE 3 END, t_e_i.size DESC").bind(ImageType::Media).bind(ImageType::FrontCover);
+            case TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc:
+                query.orderBy("t.disc_number, t.track_number, t_e_i.size DESC");
                 break;
-            case TrackEmbeddedImageSortMethod::FrontTypeThenSizeDesc:
-                query.orderBy("CASE WHEN t_e_i_l.type = ? THEN 0 ELSE 1 END, t_e_i.size DESC").bind(ImageType::FrontCover);
+            case TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc:
+                query.orderBy("t.track_number, t_e_i.size DESC");
                 break;
             case TrackEmbeddedImageSortMethod::TrackListIndexAscThenSizeDesc:
                 assert(params.trackList.isValid());

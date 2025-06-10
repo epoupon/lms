@@ -181,7 +181,7 @@ namespace lms::artwork
         if (isImageFound(res))
             return res;
 
-        // fallback on another track of the same disc
+        // Fallback on another track of the same disc
         const db::Track::pointer track{ db::Track::find(session, trackId) };
         if (!track)
             return res;
@@ -195,7 +195,7 @@ namespace lms::artwork
             params.setRelease(releaseId);
             params.setDiscNumber(track->getDiscNumber());
             params.setImageTypes({ db::ImageType::Media });
-            params.setSortMethod(db::TrackEmbeddedImageSortMethod::SizeDesc);
+            params.setSortMethod(db::TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc);
             params.setRange(db::Range{ .offset = 0, .size = 1 });
             db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) { res = image->getId(); });
         }
@@ -267,7 +267,7 @@ namespace lms::artwork
                 params.setRelease(releaseId);
                 params.setDiscNumber(track->getDiscNumber());
                 params.setImageTypes({ db::ImageType::Media });
-                params.setSortMethod(db::TrackEmbeddedImageSortMethod::SizeDesc);
+                params.setSortMethod(db::TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc);
                 params.setRange(db::Range{ .offset = 0, .size = 1 });
                 db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) { res = image->getId(); });
             }
@@ -282,22 +282,39 @@ namespace lms::artwork
         auto transaction{ session.createReadTransaction() };
 
         ImageFindResult res;
-        if (const db::Release::pointer release{ db::Release::find(session, releaseId) })
-        {
-            if (const db::ImageId imageId{ release->getImageId() }; imageId.isValid())
-            {
-                res = imageId;
-            }
-            else
-            {
-                db::TrackEmbeddedImage::FindParameters params;
-                params.setRelease(releaseId);
-                params.setImageTypes({ db::ImageType::FrontCover, db::ImageType::Media, db::ImageType::Unknown /* give unknown a chance */ });
-                params.setSortMethod(db::TrackEmbeddedImageSortMethod::FrontTypeThenSizeDesc);
-                params.setRange(db::Range{ .offset = 0, .size = 1 });
+        const db::Release::pointer release{ db::Release::find(session, releaseId) };
+        if (!release)
+            return res;
 
-                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) { res = image->getId(); });
-            }
+        if (const db::ImageId imageId{ release->getImageId() }; imageId.isValid())
+            res = imageId;
+
+        if (isImageFound(res))
+            return res;
+
+        // Fallback on embedded Front image
+        {
+            db::TrackEmbeddedImage::FindParameters params;
+            params.setRelease(releaseId);
+            params.setImageTypes({ db::ImageType::FrontCover });
+            params.setSortMethod(db::TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc);
+            params.setRange(db::Range{ .offset = 0, .size = 1 });
+
+            db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) { res = image->getId(); });
+        }
+
+        if (isImageFound(res))
+            return res;
+
+        // Fallback on embedded media image
+        {
+            db::TrackEmbeddedImage::FindParameters params;
+            params.setRelease(releaseId);
+            params.setImageTypes({ db::ImageType::Media });
+            params.setSortMethod(db::TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc);
+            params.setRange(db::Range{ .offset = 0, .size = 1 });
+
+            db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) { res = image->getId(); });
         }
 
         return res;

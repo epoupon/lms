@@ -172,8 +172,8 @@ namespace lms::db
     {
         None,
         SizeDesc,
-        MediaTypeThenFrontTypeThenSizeDescDesc,
-        FrontTypeThenSizeDesc,
+        TrackNumberThenSizeDesc,
+        DiscNumberThenTrackNumberThenSizeDesc,
         TrackListIndexAscThenSizeDesc,
     };
 
