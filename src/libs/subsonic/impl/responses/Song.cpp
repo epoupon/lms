@@ -112,7 +112,7 @@ namespace lms::api::subsonic
         }
 
         {
-            const auto imageResult{ core::Service<cover::IArtworkService>::get()->findTrackImage(track->getId()) };
+            const auto imageResult{ core::Service<artwork::IArtworkService>::get()->findTrackImage(track->getId()) };
             if (const db::ImageId * imageId{ std::get_if<db::ImageId>(&imageResult) })
             {
                 if (const db::Image::pointer image{ db::Image::find(context.dbSession, *imageId) })

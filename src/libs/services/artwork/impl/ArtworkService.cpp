@@ -36,7 +36,7 @@
 #include "image/Image.hpp"
 #include "metadata/IAudioFileParser.hpp"
 
-namespace lms::cover
+namespace lms::artwork
 {
     namespace
     {
@@ -382,4 +382,4 @@ namespace lms::cover
 
         LMS_LOG(COVER, INFO, "JPEG export quality = " << _jpegQuality);
     }
-} // namespace lms::cover
+} // namespace lms::artwork

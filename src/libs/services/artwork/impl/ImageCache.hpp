@@ -31,7 +31,7 @@
 #include "database/TrackEmbeddedImageId.hpp"
 #include "image/IEncodedImage.hpp"
 
-namespace lms::cover
+namespace lms::artwork
 {
     class ImageCache
     {
@@ -72,4 +72,4 @@ namespace lms::cover
         mutable std::atomic<std::size_t> _cacheMisses{};
         mutable std::atomic<std::size_t> _cacheHits{};
     };
-} // namespace lms::cover
+} // namespace lms::artwork

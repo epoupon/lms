@@ -370,7 +370,7 @@ namespace lms
             }
 
             image::init(argv[0]);
-            core::Service<cover::IArtworkService> artworkService{ cover::createArtworkService(database, server.appRoot() + "/images/unknown-cover.svg", server.appRoot() + "/images/unknown-artist.svg") };
+            core::Service<artwork::IArtworkService> artworkService{ artwork::createArtworkService(database, server.appRoot() + "/images/unknown-cover.svg", server.appRoot() + "/images/unknown-artist.svg") };
             core::Service<recommendation::IRecommendationService> recommendationService{ recommendation::createRecommendationService(database) };
             core::Service<recommendation::IPlaylistGeneratorService> playlistGeneratorService{ recommendation::createPlaylistGeneratorService(database, *recommendationService.get()) };
             core::Service<scanner::IScannerService> scannerService{ scanner::createScannerService(database) };
