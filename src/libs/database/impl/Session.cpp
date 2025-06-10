@@ -397,6 +397,16 @@ namespace lms::db
         LMS_LOG(DB, INFO, "Analyze complete!");
     }
 
+    bool Session::areAllTablesEmpty()
+    {
+        const std::vector<std::string> entryList{ utils::fetchQueryResults(_session.query<std::string>("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")) };
+
+        return std::all_of(entryList.cbegin(), entryList.cend(), [this](const std::string& entry) {
+            const auto count{ utils::fetchQuerySingleResult(_session.query<long>("SELECT COUNT(*) FROM " + entry)) };
+            return count == 0;
+        });
+    }
+
     void Session::retrieveEntriesToAnalyze(std::vector<std::string>& entryList)
     {
         auto transaction{ createReadTransaction() };

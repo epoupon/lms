@@ -96,6 +96,8 @@ namespace lms::db
         void retrieveEntriesToAnalyze(std::vector<std::string>& entryList);
         void analyzeEntry(const std::string& entry);
 
+        bool areAllTablesEmpty(); // need to acquire a read transaction
+
         void prepareTablesIfNeeded(); // need to run only once at startup
         bool migrateSchemaIfNeeded(); // returns true if migration was performed
         void createIndexesIfNeeded();
