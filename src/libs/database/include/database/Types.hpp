@@ -174,6 +174,7 @@ namespace lms::db
         SizeDesc,
         MediaTypeThenFrontTypeThenSizeDescDesc,
         FrontTypeThenSizeDesc,
+        TrackListIndexAscThenSizeDesc,
     };
 
     enum class TrackListSortMethod

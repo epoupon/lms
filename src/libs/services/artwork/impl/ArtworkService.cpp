@@ -312,13 +312,14 @@ namespace lms::artwork
 
         db::TrackEmbeddedImage::FindParameters params;
         params.setTrackList(trackListId);
-        params.setSortMethod(db::TrackEmbeddedImageSortMethod::MediaTypeThenFrontTypeThenSizeDescDesc);
+        params.setSortMethod(db::TrackEmbeddedImageSortMethod::TrackListIndexAscThenSizeDesc);
         params.setRange(db::Range{ .offset = 0, .size = 1 });
 
         db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
             res = image->getId();
         });
 
+        // TODO fallback on release image if not found
         return res;
     }
 

@@ -21,6 +21,7 @@
 
 #include "database/TrackEmbeddedImage.hpp"
 #include "database/TrackEmbeddedImageLink.hpp"
+#include "database/TrackList.hpp"
 #include "database/Types.hpp"
 
 #include "Common.hpp"
@@ -450,6 +451,40 @@ namespace lms::db::tests
                 visited = true;
             });
             EXPECT_TRUE(visited);
+        }
+    }
+
+    TEST_F(DatabaseFixture, TrackEmbeddedImage_TrackList)
+    {
+        ScopedTrackList trackList{ session, "MytrackList", TrackListType::PlayList };
+
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrackEmbeddedImage image1{ session };
+        ScopedTrackEmbeddedImageLink imageLink1{ session, track1.lockAndGet(), image1.lockAndGet() };
+        ScopedTrackEmbeddedImage image2{ session };
+        ScopedTrackEmbeddedImageLink imageLink2{ session, track2.lockAndGet(), image2.lockAndGet() };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            session.create<TrackListEntry>(track2.get(), trackList.get());
+            session.create<TrackListEntry>(track1.get(), trackList.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackEmbeddedImage::FindParameters params;
+            params.setTrackList(trackList.getId());
+            params.setSortMethod(TrackEmbeddedImageSortMethod::TrackListIndexAscThenSizeDesc);
+
+            std::vector<TrackEmbeddedImageId> visitedIds;
+            TrackEmbeddedImage::find(session, params, [&](const TrackEmbeddedImage::pointer& image) {
+                visitedIds.push_back(image->getId());
+            });
+            ASSERT_EQ(visitedIds.size(), 2);
+            EXPECT_EQ(visitedIds[0], image2.getId());
+            EXPECT_EQ(visitedIds[1], image1.getId());
         }
     }
 } // namespace lms::db::tests
