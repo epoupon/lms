@@ -97,7 +97,7 @@ namespace lms::api::subsonic
         artistNode.setAttribute("id", idToString(artist->getId()));
         artistNode.setAttribute("name", artist->getName());
         {
-            const auto imageResult{ core::Service<cover::IArtworkService>::get()->findArtistImage(artist->getId()) };
+            const auto imageResult{ core::Service<artwork::IArtworkService>::get()->findArtistImage(artist->getId()) };
             if (const db::ImageId * imageId{ std::get_if<db::ImageId>(&imageResult) })
             {
                 if (const db::Image::pointer image{ db::Image::find(context.dbSession, *imageId) })

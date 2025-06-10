@@ -51,7 +51,7 @@ namespace lms::ui
     {
         std::string url;
 
-        const auto imageResult{ core::Service<cover::IArtworkService>::get()->findArtistImage(artistId) };
+        const auto imageResult{ core::Service<artwork::IArtworkService>::get()->findArtistImage(artistId) };
         std::visit([&](const auto& arg) {
             using T = std::decay_t<decltype(arg)>;
             if constexpr (std::is_same_v<T, std::monostate>)
@@ -68,7 +68,7 @@ namespace lms::ui
     {
         std::string url;
 
-        const auto imageResult{ core::Service<cover::IArtworkService>::get()->findReleaseImage(releaseId) };
+        const auto imageResult{ core::Service<artwork::IArtworkService>::get()->findReleaseImage(releaseId) };
         std::visit([&](const auto& arg) {
             using T = std::decay_t<decltype(arg)>;
             if constexpr (std::is_same_v<T, std::monostate>)
@@ -85,7 +85,7 @@ namespace lms::ui
     {
         std::string url;
 
-        const auto imageResult{ core::Service<cover::IArtworkService>::get()->findTrackImage(trackId) };
+        const auto imageResult{ core::Service<artwork::IArtworkService>::get()->findTrackImage(trackId) };
         std::visit([&](const auto& arg) {
             using T = std::decay_t<decltype(arg)>;
             if constexpr (std::is_same_v<T, std::monostate>)
@@ -102,7 +102,7 @@ namespace lms::ui
     {
         std::string url;
 
-        const auto imageResult{ core::Service<cover::IArtworkService>::get()->findTrackMediaImage(trackId) };
+        const auto imageResult{ core::Service<artwork::IArtworkService>::get()->findTrackMediaImage(trackId) };
         std::visit([&](const auto& arg) {
             using T = std::decay_t<decltype(arg)>;
             if constexpr (!std::is_same_v<T, std::monostate>)
@@ -164,21 +164,21 @@ namespace lms::ui
             if (imageIdStr)
             {
                 if (const auto imageId{ core::stringUtils::readAs<db::ImageId::ValueType>(*imageIdStr) })
-                    image = core::Service<cover::IArtworkService>::get()->getImage(*imageId, size);
+                    image = core::Service<artwork::IArtworkService>::get()->getImage(*imageId, size);
             }
             else if (trackEmbeddedImageIdStr)
             {
                 if (const auto imageId{ core::stringUtils::readAs<db::TrackEmbeddedImageId::ValueType>(*trackEmbeddedImageIdStr) })
-                    image = core::Service<cover::IArtworkService>::get()->getTrackEmbeddedImage(*imageId, size);
+                    image = core::Service<artwork::IArtworkService>::get()->getTrackEmbeddedImage(*imageId, size);
             }
         }
 
         if (!image && typeStr)
         {
             if (*typeStr == "release")
-                image = core::Service<cover::IArtworkService>::get()->getDefaultReleaseCover();
+                image = core::Service<artwork::IArtworkService>::get()->getDefaultReleaseCover();
             else if (*typeStr == "artist")
-                image = core::Service<cover::IArtworkService>::get()->getDefaultArtistImage();
+                image = core::Service<artwork::IArtworkService>::get()->getDefaultArtistImage();
         }
 
         if (image)

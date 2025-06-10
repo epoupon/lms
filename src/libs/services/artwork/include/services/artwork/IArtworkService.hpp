@@ -37,7 +37,7 @@ namespace lms::db
     class Db;
 }
 
-namespace lms::cover
+namespace lms::artwork
 {
     class IArtworkService
     {
@@ -73,4 +73,4 @@ namespace lms::cover
 
     std::unique_ptr<IArtworkService> createArtworkService(db::Db& db, const std::filesystem::path& defaultReleaseCoverSvgPath, const std::filesystem::path& defaultArtistImageSvgPath);
 
-} // namespace lms::cover
+} // namespace lms::artwork

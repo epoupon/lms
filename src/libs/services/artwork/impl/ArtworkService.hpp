@@ -36,7 +36,7 @@ namespace lms::metadata
     class IAudioFileParser;
 }
 
-namespace lms::cover
+namespace lms::artwork
 {
     class ArtworkService : public IArtworkService
     {
@@ -76,4 +76,4 @@ namespace lms::cover
         unsigned _jpegQuality;
     };
 
-} // namespace lms::cover
+} // namespace lms::artwork

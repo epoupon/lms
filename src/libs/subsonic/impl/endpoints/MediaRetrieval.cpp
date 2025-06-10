@@ -338,9 +338,9 @@ namespace lms::api::subsonic
 
         std::shared_ptr<image::IEncodedImage> image;
         if (const db::TrackEmbeddedImageId * trackEmbeddedImageId{ std::get_if<db::TrackEmbeddedImageId>(&coverArtId.id) })
-            image = core::Service<cover::IArtworkService>::get()->getTrackEmbeddedImage(*trackEmbeddedImageId, size);
+            image = core::Service<artwork::IArtworkService>::get()->getTrackEmbeddedImage(*trackEmbeddedImageId, size);
         else if (const db::ImageId * imageId{ std::get_if<db::ImageId>(&coverArtId.id) })
-            image = core::Service<cover::IArtworkService>::get()->getImage(*imageId, size);
+            image = core::Service<artwork::IArtworkService>::get()->getImage(*imageId, size);
 
         if (!image)
         {

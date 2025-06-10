@@ -47,7 +47,7 @@ namespace lms::api::subsonic
             playlistNode.setAttribute("owner", user->getLoginName());
 
         {
-            const auto imageResult{ core::Service<cover::IArtworkService>::get()->findTrackListImage(tracklist->getId()) };
+            const auto imageResult{ core::Service<artwork::IArtworkService>::get()->findTrackListImage(tracklist->getId()) };
             if (const db::ImageId * imageId{ std::get_if<db::ImageId>(&imageResult) })
             {
                 if (const db::Image::pointer image{ db::Image::find(context.dbSession, *imageId) })

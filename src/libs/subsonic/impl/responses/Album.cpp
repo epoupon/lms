@@ -89,7 +89,7 @@ namespace lms::api::subsonic
         albumNode.setAttribute("created", core::stringUtils::toISO8601String(release->getAddedTime()));
 
         {
-            const auto imageResult{ core::Service<cover::IArtworkService>::get()->findReleaseImage(release->getId()) };
+            const auto imageResult{ core::Service<artwork::IArtworkService>::get()->findReleaseImage(release->getId()) };
             if (const db::ImageId * imageId{ std::get_if<db::ImageId>(&imageResult) })
             {
                 if (const db::Image::pointer image{ db::Image::find(context.dbSession, *imageId) })

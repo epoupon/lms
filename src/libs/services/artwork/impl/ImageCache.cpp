@@ -24,7 +24,7 @@
 #include "core/ILogger.hpp"
 #include "core/Random.hpp"
 
-namespace lms::cover
+namespace lms::artwork
 {
     ImageCache::ImageCache(std::size_t maxCacheSize)
         : _maxCacheSize{ maxCacheSize }
@@ -79,4 +79,4 @@ namespace lms::cover
         _cacheSize = 0;
         _cache.clear();
     }
-} // namespace lms::cover
+} // namespace lms::artwork
