@@ -62,7 +62,7 @@ namespace lms::artwork
         virtual std::shared_ptr<image::IEncodedImage> getImage(db::ImageId imageId, std::optional<image::ImageSize> width) = 0;
         virtual std::shared_ptr<image::IEncodedImage> getTrackEmbeddedImage(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<image::ImageSize> width) = 0;
 
-        // Svg images dont have image "size"
+        // Svg images don't have image "size"
         virtual std::shared_ptr<image::IEncodedImage> getDefaultReleaseCover() = 0;
         virtual std::shared_ptr<image::IEncodedImage> getDefaultArtistImage() = 0;
 
