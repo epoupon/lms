@@ -867,18 +867,34 @@ namespace lms::db
         for (const std::string& bindArg : where.getBindArgs())
             query.bind(bindArg);
 
-        auto queryRes{ query.resultList() };
-
         std::map<ClusterTypeId, std::vector<Cluster::pointer>> clustersByType;
-        for (const Wt::Dbo::ptr<Cluster>& cluster : queryRes)
-        {
+        utils::forEachQueryResult(query, [&](const Wt::Dbo::ptr<Cluster>& cluster) {
             if (clustersByType[cluster->getType()->getId()].size() < size)
                 clustersByType[cluster->getType()->getId()].push_back(cluster);
-        }
+        });
 
         std::vector<std::vector<Cluster::pointer>> res;
         for (const auto& [clusterTypeId, clusters] : clustersByType)
             res.push_back(clusters);
+
+        return res;
+    }
+
+    std::vector<ObjectPtr<Cluster>> Release::getClusters(ClusterTypeId clusterTypeId, std::size_t maxCount) const
+    {
+        assert(session());
+
+        auto query{ session()->query<Wt::Dbo::ptr<Cluster>>("SELECT c FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id INNER JOIN track t ON t.id = t_c.track_id")
+                        .where("t.release_id = ?").bind(getId())
+                        .where("c.cluster_type_id = ?").bind(clusterTypeId.toString())
+                        .groupBy("c.id")
+                        .orderBy("COUNT(c.id) DESC")
+                        .limit(static_cast<int>(maxCount)) };
+
+        std::vector<ObjectPtr<Cluster>> res;
+        utils::forEachQueryResult(query, [&](const Wt::Dbo::ptr<Cluster>& cluster) {
+            res.push_back(cluster);
+        });
 
         return res;
     }

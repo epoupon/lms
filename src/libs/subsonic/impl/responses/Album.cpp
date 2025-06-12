@@ -131,9 +131,9 @@ namespace lms::api::subsonic
         const ClusterType::pointer genreClusterType{ ClusterType::find(context.dbSession, "GENRE") };
         if (genreClusterType)
         {
-            auto clusters{ release->getClusterGroups({ genreClusterType->getId() }, 1) };
-            if (!clusters.empty() && !clusters.front().empty())
-                albumNode.setAttribute("genre", clusters.front().front()->getName());
+            const auto clusters{ release->getClusters(genreClusterType->getId(), 1) };
+            if (!clusters.empty())
+                albumNode.setAttribute("genre", clusters.front()->getName());
         }
 
         if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.user->getId(), release->getId()) }; dateTime.isValid())
