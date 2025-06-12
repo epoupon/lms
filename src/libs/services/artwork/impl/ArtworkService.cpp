@@ -203,23 +203,10 @@ namespace lms::artwork
         if (isImageFound(res))
             return res;
 
-        // Fallback on front cover
+        // Fallback on front cover for this track
         {
             db::TrackEmbeddedImage::FindParameters params;
             params.setTrack(trackId);
-            params.setImageTypes({ db::ImageType::FrontCover });
-            params.setSortMethod(db::TrackEmbeddedImageSortMethod::SizeDesc);
-            params.setRange(db::Range{ .offset = 0, .size = 1 });
-            db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) { res = image->getId(); });
-        }
-
-        if (isImageFound(res))
-            return res;
-
-        // Fallback on whatever front cover found on the release
-        {
-            db::TrackEmbeddedImage::FindParameters params;
-            params.setRelease(releaseId);
             params.setImageTypes({ db::ImageType::FrontCover });
             params.setSortMethod(db::TrackEmbeddedImageSortMethod::SizeDesc);
             params.setRange(db::Range{ .offset = 0, .size = 1 });
@@ -234,6 +221,19 @@ namespace lms::artwork
         {
             if (const db::ImageId imageId{ release->getImageId() }; imageId.isValid())
                 res = imageId;
+        }
+
+        if (isImageFound(res))
+            return res;
+
+        // Fallback on the first front cover found on the release
+        {
+            db::TrackEmbeddedImage::FindParameters params;
+            params.setRelease(releaseId);
+            params.setImageTypes({ db::ImageType::FrontCover });
+            params.setSortMethod(db::TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc);
+            params.setRange(db::Range{ .offset = 0, .size = 1 });
+            db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) { res = image->getId(); });
         }
 
         return res;
