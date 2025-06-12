@@ -884,12 +884,12 @@ namespace lms::db
     {
         assert(session());
 
-        auto query{ session()->query<Wt::Dbo::ptr<Cluster>>("SELECT c FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id INNER JOIN track t ON t.id = t_c.track_id")
-                        .where("t.release_id = ?").bind(getId())
-                        .where("c.cluster_type_id = ?").bind(clusterTypeId.toString())
-                        .groupBy("c.id")
-                        .orderBy("COUNT(c.id) DESC")
-                        .limit(static_cast<int>(maxCount)) };
+        auto query{ session()->query<Wt::Dbo::ptr<Cluster>>("SELECT c FROM cluster c INNER JOIN track_cluster t_c ON t_c.cluster_id = c.id INNER JOIN track t ON t.id = t_c.track_id") };
+        query.where("t.release_id = ?").bind(getId());
+        query.where("c.cluster_type_id = ?").bind(clusterTypeId);
+        query.groupBy("c.id");
+        query.orderBy("COUNT(c.id) DESC");
+        query.limit(static_cast<int>(maxCount));
 
         std::vector<ObjectPtr<Cluster>> res;
         utils::forEachQueryResult(query, [&](const Wt::Dbo::ptr<Cluster>& cluster) {
