@@ -75,8 +75,8 @@ namespace lms::scanner
                 _parsedArtistInfo = metadata::parseArtistInfo(ifs);
                 if (_parsedArtistInfo->name.empty())
                 {
-                    addError<MissingArtistNameError>(getFilePath());
-                    _parsedArtistInfo.reset();
+                    _parsedArtistInfo->name = getFilePath().parent_path().filename();
+                    LMS_LOG(DBUPDATER, DEBUG, "No name found in " << getFilePath() << ", using '" << _parsedArtistInfo->name << "'");
                 }
             }
             catch (const metadata::ArtistInfoParseException& e)
