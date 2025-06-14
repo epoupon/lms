@@ -105,7 +105,9 @@ namespace lms::api::subsonic
                 albumNode.setAttribute("coverArt", idToString(coverArtId));
             });
         }
-        if (const auto year{ release->getYear() })
+        if (const auto originalYear{ release->getOriginalYear() })
+            albumNode.setAttribute("year", *originalYear);
+        else if (const auto year{ release->getYear() })
             albumNode.setAttribute("year", *year);
 
         auto artists{ release->getReleaseArtists() };
