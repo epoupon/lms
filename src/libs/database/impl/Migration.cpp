@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 90 };
+        static constexpr Version LMS_DATABASE_VERSION{ 91 };
     }
 
     VersionInfo::VersionInfo()
@@ -1206,6 +1206,13 @@ FROM tracklist)");
         utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET artist_info_scan_version = artist_info_scan_version + 1");
     }
 
+    void migrateFromV90(Session& session)
+    {
+        // Added a fallback for missing name, using parent directory name
+        // Just increment the scan version of the settings to make the next scan rescan everything
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET artist_info_scan_version = artist_info_scan_version + 1");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1272,6 +1279,7 @@ FROM tracklist)");
             { 87, migrateFromV87 },
             { 88, migrateFromV88 },
             { 89, migrateFromV89 },
+            { 90, migrateFromV90 },
         };
 
         bool migrationPerformed{};
