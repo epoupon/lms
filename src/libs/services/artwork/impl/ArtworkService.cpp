@@ -23,6 +23,7 @@
 #include "core/ILogger.hpp"
 #include "core/Utils.hpp"
 #include "database/Artist.hpp"
+#include "database/Artwork.hpp"
 #include "database/Db.hpp"
 #include "database/Image.hpp"
 #include "database/Release.hpp"
@@ -215,14 +216,14 @@ namespace lms::artwork
 
         if (isImageFound(res))
             return res;
-
+#if 0
         // Fallback on external cover of the release
         if (const db::Release::pointer release{ db::Release::find(session, releaseId) })
         {
             if (const db::ImageId imageId{ release->getImageId() }; imageId.isValid())
                 res = imageId;
         }
-
+#endif
         if (isImageFound(res))
             return res;
 
@@ -286,36 +287,11 @@ namespace lms::artwork
         if (!release)
             return res;
 
-        if (const db::ImageId imageId{ release->getImageId() }; imageId.isValid())
-            res = imageId;
-
-        if (isImageFound(res))
-            return res;
-
-        // Fallback on embedded Front image
-        {
-            db::TrackEmbeddedImage::FindParameters params;
-            params.setRelease(releaseId);
-            params.setImageTypes({ db::ImageType::FrontCover });
-            params.setSortMethod(db::TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc);
-            params.setRange(db::Range{ .offset = 0, .size = 1 });
-
-            db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) { res = image->getId(); });
-        }
-
-        if (isImageFound(res))
-            return res;
-
-        // Fallback on embedded media image
-        {
-            db::TrackEmbeddedImage::FindParameters params;
-            params.setRelease(releaseId);
-            params.setImageTypes({ db::ImageType::Media });
-            params.setSortMethod(db::TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc);
-            params.setRange(db::Range{ .offset = 0, .size = 1 });
-
-            db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) { res = image->getId(); });
-        }
+        const db::Artwork::pointer artwork{ release->getPreferredArtwork() };
+        if (artwork && artwork->getImageId().isValid())
+            res = artwork->getImageId();
+        else if (artwork && artwork->getTrackEmbeddedImageId().isValid())
+            res = artwork->getTrackEmbeddedImageId();
 
         return res;
     }

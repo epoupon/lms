@@ -34,7 +34,6 @@ namespace lms::db
 {
     class Artist;
     class Directory;
-    class Release;
     class Session;
 
     class Image final : public Object<Image, ImageId>
@@ -101,7 +100,6 @@ namespace lms::db
             Wt::Dbo::field(a, _height, "height");
 
             Wt::Dbo::hasMany(a, _artists, Wt::Dbo::ManyToOne, "image");
-            Wt::Dbo::hasMany(a, _releases, Wt::Dbo::ManyToOne, "image");
             Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
         }
 
@@ -118,7 +116,6 @@ namespace lms::db
         int _height{};
 
         Wt::Dbo::collection<Wt::Dbo::ptr<Artist>> _artists;
-        Wt::Dbo::collection<Wt::Dbo::ptr<Release>> _releases;
         Wt::Dbo::ptr<Directory> _directory;
     };
 } // namespace lms::db

@@ -23,7 +23,6 @@
 
 #include "database/Artist.hpp"
 #include "database/Directory.hpp"
-#include "database/Release.hpp"
 #include "database/Session.hpp"
 
 #include "Utils.hpp"

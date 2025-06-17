@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 92 };
+        static constexpr Version LMS_DATABASE_VERSION{ 93 };
     }
 
     VersionInfo::VersionInfo()
@@ -411,7 +411,7 @@ SELECT
  copyright_url,
  track_replay_gain,
  release_replay_gain,
- COALESCE(artist_display_name, ""),
+ artist_display_name,
  release_id,
  1
  FROM track)");
@@ -1219,6 +1219,58 @@ FROM tracklist)");
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE track_embedded_image_link DROP COLUMN is_preferred");
     }
 
+    void migrateFromV92(Session& session)
+    {
+        // Create the new artwork table
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "artwork" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "track_embedded_image_id" bigint,
+  "image_id" bigint,
+  constraint "fk_artwork_track_embedded_image" foreign key ("track_embedded_image_id") references "track_embedded_image" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_artwork_image" foreign key ("image_id") references "image" ("id") on delete cascade deferrable initially deferred))");
+
+        // Replaced image by artwork for release
+        // Create the new table, copy the data, drop the old table, rename the new one
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "release_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null,
+  "sort_name" text not null,
+  "mbid" text not null,
+  "group_mbid" text not null,
+  "total_disc" integer,
+  "artist_display_name" text not null,
+  "is_compilation" boolean not null,
+  "barcode" text not null,
+  "comment" text not null,
+  "preferred_artwork_id" bigint,
+  constraint "fk_release_preferred_artwork" foreign key ("preferred_artwork_id") references "artwork" ("id") on delete set null deferrable initially deferred))");
+
+        // Migrate data, with the new preferred_artwork_id field set to null
+        utils::executeCommand(*session.getDboSession(), R"(INSERT INTO release_backup
+SELECT
+ id,
+ version,
+ name,
+ sort_name,
+ mbid,
+ group_mbid,
+ total_disc,
+ COALESCE(artist_display_name, ''),
+ is_compilation,
+ barcode,
+ comment,
+ NULL as preferred_artwork_id
+FROM release)");
+
+        utils::executeCommand(*session.getDboSession(), "DROP TABLE release");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE release_backup RENAME TO release");
+
+        // Just increment the scan version of the settings to make the next scan rescan everything
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET artist_info_scan_version = artist_info_scan_version + 1");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1286,7 +1338,8 @@ FROM tracklist)");
             { 88, migrateFromV88 },
             { 89, migrateFromV89 },
             { 90, migrateFromV90 },
-            { 91, migrateFromV91 }
+            { 91, migrateFromV91 },
+            { 92, migrateFromV92 }
         };
 
         bool migrationPerformed{};

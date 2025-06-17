@@ -23,9 +23,9 @@
 
 #include "core/PartialDateTime.hpp"
 #include "database/Artist.hpp"
+#include "database/Artwork.hpp"
 #include "database/Cluster.hpp"
 #include "database/Directory.hpp"
-#include "database/Image.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/Types.hpp"
@@ -701,14 +701,9 @@ namespace lms::db
         return utils::fetchQueryResults<Release::pointer>(query);
     }
 
-    ObjectPtr<Image> Release::getImage() const
+    ObjectPtr<Artwork> Release::getPreferredArtwork() const
     {
-        return ObjectPtr<Image>{ _image };
-    }
-
-    ImageId Release::getImageId() const
-    {
-        return _image.id();
+        return ObjectPtr<Artwork>{ _preferredArtwork };
     }
 
     void Release::clearLabels()
@@ -741,9 +736,9 @@ namespace lms::db
         _releaseTypes.insert(getDboPtr(releaseType));
     }
 
-    void Release::setImage(ObjectPtr<Image> image)
+    void Release::setPreferredArtwork(ObjectPtr<Artwork> artwork)
     {
-        _image = getDboPtr(image);
+        _preferredArtwork = getDboPtr(artwork);
     }
 
     bool Release::hasVariousArtists() const

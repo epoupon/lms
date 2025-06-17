@@ -1,6 +1,7 @@
 add_library(lmsdatabase STATIC
 	impl/Artist.cpp
 	impl/ArtistInfo.cpp
+	impl/Artwork.cpp
 	impl/AuthToken.cpp
 	impl/Cluster.cpp
 	impl/Db.cpp

@@ -23,6 +23,7 @@
 #include "core/ITraceLogger.hpp"
 #include "database/Artist.hpp"
 #include "database/ArtistInfo.hpp"
+#include "database/Artwork.hpp"
 #include "database/AuthToken.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
@@ -102,6 +103,7 @@ namespace lms::db
 
         _session.mapClass<Artist>("artist");
         _session.mapClass<ArtistInfo>("artist_info");
+        _session.mapClass<Artwork>("artwork");
         _session.mapClass<AuthToken>("auth_token");
         _session.mapClass<Cluster>("cluster");
         _session.mapClass<ClusterType>("cluster_type");
@@ -206,6 +208,10 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_info_artist_id_idx ON artist_info(artist_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_info_mbid_matched_artist_idx ON artist_info(mbid_matched, artist_id)");
 
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artwork_id_idx ON artwork(id)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artwork_image_idx ON artwork(image_id)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artwork_track_embedded_image_idx ON artwork(track_embedded_image_id)");
+
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS auth_token_user_domain_idx ON auth_token(user_id, domain)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS auth_token_domain_expiry_idx ON auth_token(domain, expiry)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS auth_token_domain_value_idx ON auth_token(domain, value)");
@@ -256,7 +262,6 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS rated_track_user_track_idx ON rated_track(user_id,track_id)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS release_id_idx ON release(id)");
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS release_image_idx ON release(image_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS release_group_mbid_idx ON release(group_mbid)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS release_mbid_idx ON release(mbid)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS release_name_idx ON release(name)");

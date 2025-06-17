@@ -21,4 +21,4 @@
 
 #include "database/IdType.hpp"
 
-LMS_DECLARE_IDTYPE(ArtistInfoId)
+LMS_DECLARE_IDTYPE(ArtworkId)

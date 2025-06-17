@@ -40,6 +40,6 @@ namespace lms::scanner
         bool needProcess(const ScanContext& context) const override;
         void process(ScanContext& context) override;
 
-        const std::vector<std::string> _releaseFileNames;
+        const std::vector<std::string> _releaseImageFileNames;
     };
 } // namespace lms::scanner
