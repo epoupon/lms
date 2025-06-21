@@ -329,14 +329,20 @@ namespace lms::db
     {
         session.checkWriteTransaction();
 
-        utils::executeCommand(*session.getDboSession(), "UPDATE track SET preferred_artwork_id = ? WHERE id = ?", artworkId, trackId);
+        if (artworkId.isValid())
+            utils::executeCommand(*session.getDboSession(), "UPDATE track SET preferred_artwork_id = ? WHERE id = ?", artworkId, trackId);
+        else
+            utils::executeCommand(*session.getDboSession(), "UPDATE track SET preferred_artwork_id = NULL WHERE id = ?", trackId);
     }
 
     void Track::updatePreferredMediaArtwork(Session& session, TrackId trackId, ArtworkId artworkId)
     {
         session.checkWriteTransaction();
 
-        utils::executeCommand(*session.getDboSession(), "UPDATE track SET preferred_media_artwork_id = ? WHERE id = ?", artworkId, trackId);
+        if (artworkId.isValid())
+            utils::executeCommand(*session.getDboSession(), "UPDATE track SET preferred_media_artwork_id = ? WHERE id = ?", artworkId, trackId);
+        else
+            utils::executeCommand(*session.getDboSession(), "UPDATE track SET preferred_media_artwork_id = NULL WHERE id = ?", trackId);
     }
 
     std::vector<Cluster::pointer> Track::getClusters() const
