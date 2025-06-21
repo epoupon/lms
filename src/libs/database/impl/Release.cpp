@@ -706,6 +706,11 @@ namespace lms::db
         return ObjectPtr<Artwork>{ _preferredArtwork };
     }
 
+    ArtworkId Release::getPreferredArtworkId() const
+    {
+        return _preferredArtwork.id();
+    }
+
     void Release::clearLabels()
     {
         _labels.clear();

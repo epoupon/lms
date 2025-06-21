@@ -1220,6 +1220,18 @@ namespace lms::db::tests
             ASSERT_TRUE(releaseArtwork);
             EXPECT_EQ(releaseArtwork->getId(), artwork.getId());
         }
+
+        // Check cascade delete
+        {
+            auto transaction{ session.createWriteTransaction() };
+            image.lockAndGet().remove();
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto releaseArtwork(release.get()->getPreferredArtwork());
+            ASSERT_FALSE(releaseArtwork);
+        }
     }
 
     TEST_F(DatabaseFixture, Release_sortDateAdded)

@@ -21,16 +21,21 @@
 
 #include <filesystem>
 
+#include "database/ArtworkId.hpp"
+#include "database/ImageId.hpp"
 #include "database/Object.hpp"
+#include "database/TrackEmbeddedImageId.hpp"
 
 namespace lms::db
 {
-    class Directory;
-    class MediaLibrary;
+    class Artwork;
     class Session;
 } // namespace lms::db
 
 namespace lms::scanner::utils
 {
-    db::ObjectPtr<db::Directory> getOrCreateDirectory(db::Session& session, const std::filesystem::path& path, const db::ObjectPtr<db::MediaLibrary>& mediaLibrary);
+    db::ObjectPtr<db::Artwork> getOrCreateArtworkFromTrackEmbeddedImage(db::Session& session, db::TrackEmbeddedImageId trackEmbeddedImageId);
+    db::ObjectPtr<db::Artwork> getOrCreateArtworkFromImage(db::Session& session, db::ImageId imageId);
+
+    std::filesystem::path toPath(db::Session& session, db::ArtworkId artworkId);
 } // namespace lms::scanner::utils

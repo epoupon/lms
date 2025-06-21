@@ -35,6 +35,7 @@
 #include "core/PartialDateTime.hpp"
 #include "core/UUID.hpp"
 #include "database/ArtistId.hpp"
+#include "database/ArtworkId.hpp"
 #include "database/ClusterId.hpp"
 #include "database/DirectoryId.hpp"
 #include "database/Filters.hpp"
@@ -50,6 +51,7 @@
 namespace lms::db
 {
     class Artist;
+    class Artwork;
     class Cluster;
     class ClusterType;
     class Directory;
@@ -215,6 +217,10 @@ namespace lms::db
         static RangeResults<TrackId> findIdsTrackMBIDDuplicates(Session& session, std::optional<Range> range = std::nullopt);
         static RangeResults<TrackId> findIdsWithRecordingMBIDAndMissingFeatures(Session& session, std::optional<Range> range = std::nullopt);
 
+        // Update utility functions
+        static void updatePreferredArtwork(Session& session, TrackId trackId, ArtworkId artworkId);
+        static void updatePreferredMediaArtwork(Session& session, TrackId trackId, ArtworkId artworkId);
+
         // Accessors
         void setScanVersion(std::size_t version) { _scanVersion = version; }
         void setTrackNumber(std::optional<int> num) { _trackNumber = num; }
@@ -252,8 +258,10 @@ namespace lms::db
         void addLyrics(const ObjectPtr<TrackLyrics>& lyrics);
         void clearEmbeddedImageLinks();
         void addEmbeddedImageLink(const ObjectPtr<TrackEmbeddedImageLink>& link);
-        void setMediaLibrary(ObjectPtr<MediaLibrary> mediaLibrary) { _mediaLibrary = getDboPtr(mediaLibrary); }
-        void setDirectory(ObjectPtr<Directory> directory) { _directory = getDboPtr(directory); }
+        void setMediaLibrary(ObjectPtr<MediaLibrary> mediaLibrary);
+        void setDirectory(ObjectPtr<Directory> directory);
+        void setPreferredArtwork(ObjectPtr<Artwork> artwork);
+        void setPreferredMediaArtwork(ObjectPtr<Artwork> artwork);
 
         std::size_t getScanVersion() const { return _scanVersion; }
         std::optional<std::size_t> getTrackNumber() const { return _trackNumber; }
@@ -295,8 +303,10 @@ namespace lms::db
         ObjectPtr<Release> getRelease() const { return _release; }
         std::vector<ObjectPtr<Cluster>> getClusters() const;
         std::vector<ClusterId> getClusterIds() const;
-        ObjectPtr<MediaLibrary> getMediaLibrary() const { return _mediaLibrary; }
-        ObjectPtr<Directory> getDirectory() const { return _directory; }
+        ObjectPtr<MediaLibrary> getMediaLibrary() const;
+        ObjectPtr<Directory> getDirectory() const;
+        ObjectPtr<Artwork> getPreferredArtwork() const;
+        ObjectPtr<Artwork> getPreferredMediaArtwork() const;
 
         std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ClusterTypeId>& clusterTypes, std::size_t size) const;
 
@@ -331,11 +341,13 @@ namespace lms::db
             Wt::Dbo::field(a, _trackReplayGain, "track_replay_gain");
             Wt::Dbo::field(a, _releaseReplayGain, "release_replay_gain"); // here in Track since Release does not have concept of "disc" (yet?)
             Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
-            Wt::Dbo::field(a, _comment, "comment");
+            Wt::Dbo::field(a, _comment, "comment"); // TODO: move in a dedicated table
 
             Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::belongsTo(a, _mediaLibrary, "media_library", Wt::Dbo::OnDeleteSetNull); // don't delete track on media library removal, we want to wait for the next scan to have a chance to migrate files
             Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
+            Wt::Dbo::belongsTo(a, _preferredArtwork, "preferred_artwork", Wt::Dbo::OnDeleteSetNull);
+            Wt::Dbo::belongsTo(a, _preferredMediaArtwork, "preferred_media_artwork", Wt::Dbo::OnDeleteSetNull);
             Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "track");
             Wt::Dbo::hasMany(a, _clusters, Wt::Dbo::ManyToMany, "track_cluster", "", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::hasMany(a, _trackLyrics, Wt::Dbo::ManyToOne, "track");
@@ -382,6 +394,8 @@ namespace lms::db
         Wt::Dbo::ptr<Release> _release;
         Wt::Dbo::ptr<MediaLibrary> _mediaLibrary;
         Wt::Dbo::ptr<Directory> _directory;
+        Wt::Dbo::ptr<Artwork> _preferredArtwork;
+        Wt::Dbo::ptr<Artwork> _preferredMediaArtwork;
         Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks;
         Wt::Dbo::collection<Wt::Dbo::ptr<Cluster>> _clusters;
         Wt::Dbo::collection<Wt::Dbo::ptr<TrackLyrics>> _trackLyrics;

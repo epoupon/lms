@@ -41,6 +41,7 @@
 #include "steps/ScanStepAssociateExternalLyrics.hpp"
 #include "steps/ScanStepAssociatePlayListTracks.hpp"
 #include "steps/ScanStepAssociateReleaseImages.hpp"
+#include "steps/ScanStepAssociateTrackImages.hpp"
 #include "steps/ScanStepCheckForDuplicatedFiles.hpp"
 #include "steps/ScanStepCheckForRemovedFiles.hpp"
 #include "steps/ScanStepCompact.hpp"
@@ -463,6 +464,7 @@ namespace lms::scanner
         _scanSteps.emplace_back(std::make_unique<ScanStepUpdateLibraryFields>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociateArtistImages>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociateReleaseImages>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateTrackImages>(params)); // must come after ScanStepAssociateReleaseImages
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociateExternalLyrics>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepRemoveOrphanedDbEntries>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepCompact>(params));

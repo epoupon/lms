@@ -38,14 +38,15 @@
 #include "database/TrackEmbeddedImage.hpp"
 #include "database/TrackEmbeddedImageId.hpp"
 
+#include "ArtworkUtils.hpp"
 #include "ScanContext.hpp"
 
 namespace lms::scanner
 {
     namespace
     {
-        using PreferredArtwork = std::variant<std::monostate, db::TrackEmbeddedImageId, db::ImageId>;
-        bool isSameArtwork(PreferredArtwork preferredArtwork, const db::Artwork::pointer& artwork)
+        using Artwork = std::variant<std::monostate, db::TrackEmbeddedImageId, db::ImageId>;
+        bool isSameArtwork(Artwork preferredArtwork, const db::ObjectPtr<db::Artwork>& artwork)
         {
             if (std::holds_alternative<std::monostate>(preferredArtwork))
                 return !artwork;
@@ -59,30 +60,10 @@ namespace lms::scanner
             return false;
         }
 
-        std::filesystem::path toPath(db::Session& session, const db::TrackEmbeddedImageId trackEmbeddedImageId)
-        {
-            std::filesystem::path res;
-
-            db::Track::FindParameters params;
-            params.setEmbeddedImage(trackEmbeddedImageId);
-            params.setRange(db::Range{ .offset = 0, .size = 1 });
-            db::Track::find(session, params, [&](const db::Track::pointer& track) {
-                res = track->getAbsoluteFilePath();
-            });
-
-            return res;
-        }
-
-        std::filesystem::path toPath(db::Session& session, const db::ImageId imageId)
-        {
-            db::Image::pointer image{ db::Image::find(session, imageId) };
-            return image ? image->getAbsoluteFilePath() : std::filesystem::path{};
-        }
-
         struct ReleaseImageAssociation
         {
             db::ReleaseId releaseId;
-            PreferredArtwork preferredArtwork;
+            Artwork preferredArtwork;
         };
         using ReleaseImageAssociationContainer = std::deque<ReleaseImageAssociation>;
 
@@ -120,7 +101,7 @@ namespace lms::scanner
             return image;
         }
 
-        db::Image::pointer computeBestReleaseImage(SearchReleaseImageContext& searchContext, const db::Release::pointer& release)
+        db::Image::pointer computePreferredReleaseImage(SearchReleaseImageContext& searchContext, const db::Release::pointer& release)
         {
             db::Image::pointer image;
 
@@ -168,11 +149,11 @@ namespace lms::scanner
             return image;
         }
 
-        PreferredArtwork computeBestReleaseArtwork(SearchReleaseImageContext& searchContext, const db::Release::pointer& release)
+        Artwork computePreferredReleaseArtwork(SearchReleaseImageContext& searchContext, const db::Release::pointer& release)
         {
-            const db::Image::pointer image{ computeBestReleaseImage(searchContext, release) };
+            const db::Image::pointer image{ computePreferredReleaseImage(searchContext, release) };
             if (image)
-                return PreferredArtwork{ image->getId() };
+                return Artwork{ image->getId() };
 
             // Fallback on embedded Front image
             db::TrackEmbeddedImageId trackEmbeddedImageId;
@@ -187,7 +168,7 @@ namespace lms::scanner
             }
 
             if (trackEmbeddedImageId.isValid())
-                return PreferredArtwork{ trackEmbeddedImageId };
+                return Artwork{ trackEmbeddedImageId };
 
             // Fallback on embedded media image
             {
@@ -201,9 +182,9 @@ namespace lms::scanner
             }
 
             if (trackEmbeddedImageId.isValid())
-                return PreferredArtwork{ trackEmbeddedImageId };
+                return Artwork{ trackEmbeddedImageId };
 
-            return PreferredArtwork{};
+            return Artwork{};
         }
 
         bool fetchNextReleaseArtworksToUpdate(SearchReleaseImageContext& searchContext, ReleaseImageAssociationContainer& releaseImageAssociations)
@@ -216,7 +197,7 @@ namespace lms::scanner
                 auto transaction{ searchContext.session.createReadTransaction() };
 
                 db::Release::find(searchContext.session, searchContext.lastRetrievedReleaseId, readBatchSize, [&](const db::Release::pointer& release) {
-                    const PreferredArtwork preferredArtwork{ computeBestReleaseArtwork(searchContext, release) };
+                    const Artwork preferredArtwork{ computePreferredReleaseArtwork(searchContext, release) };
                     const db::Artwork::pointer currentPreferredArtwork{ release->getPreferredArtwork() };
 
                     if (!isSameArtwork(preferredArtwork, currentPreferredArtwork))
@@ -228,30 +209,6 @@ namespace lms::scanner
             return releaseId != searchContext.lastRetrievedReleaseId;
         }
 
-        db::Artwork::pointer getOrCreateArtworkFromTrackEmbeddedImage(db::Session& session, const db::TrackEmbeddedImageId& trackEmbeddedImageId)
-        {
-            db::Artwork::pointer artwork{ db::Artwork::find(session, trackEmbeddedImageId) };
-            if (!artwork)
-            {
-                db::TrackEmbeddedImage::pointer trackEmbeddedImage{ db::TrackEmbeddedImage::find(session, trackEmbeddedImageId) };
-                assert(trackEmbeddedImage);
-                artwork = session.create<db::Artwork>(trackEmbeddedImage);
-            }
-            return artwork;
-        }
-
-        db::Artwork::pointer getOrCreateArtworkFromImage(db::Session& session, const db::ImageId& imageId)
-        {
-            db::Artwork::pointer artwork{ db::Artwork::find(session, imageId) };
-            if (!artwork)
-            {
-                db::Image::pointer image{ db::Image::find(session, imageId) };
-                assert(image);
-                artwork = session.create<db::Artwork>(image);
-            }
-            return artwork;
-        }
-
         void updateReleaseArtwork(db::Session& session, const ReleaseImageAssociation& releaseImageAssociation)
         {
             db::Release::pointer release{ db::Release::find(session, releaseImageAssociation.releaseId) };
@@ -260,21 +217,16 @@ namespace lms::scanner
             db::Artwork::pointer artwork;
 
             if (const db::TrackEmbeddedImageId * trackEmbeddedImageId{ std::get_if<db::TrackEmbeddedImageId>(&releaseImageAssociation.preferredArtwork) })
-            {
-                artwork = getOrCreateArtworkFromTrackEmbeddedImage(session, *trackEmbeddedImageId);
-                LMS_LOG(DBUPDATER, DEBUG, "Updating preferred artwork in release '" << release->getName() << "' with embedded image in track " << toPath(session, *trackEmbeddedImageId));
-            }
+                artwork = utils::getOrCreateArtworkFromTrackEmbeddedImage(session, *trackEmbeddedImageId);
             else if (const db::ImageId * imageId{ std::get_if<db::ImageId>(&releaseImageAssociation.preferredArtwork) })
-            {
-                artwork = getOrCreateArtworkFromImage(session, *imageId);
-                LMS_LOG(DBUPDATER, DEBUG, "Updating preferred artwork in release '" << release->getName() << "' with image " << toPath(session, *imageId));
-            }
-            else
-            {
-                LMS_LOG(DBUPDATER, DEBUG, "Removing preferred artwork from release '" << release->getName() << "'");
-            }
+                artwork = utils::getOrCreateArtworkFromImage(session, *imageId);
 
             release.modify()->setPreferredArtwork(artwork);
+
+            if (artwork)
+                LMS_LOG(DBUPDATER, DEBUG, "Updated preferred artwork in release '" << release->getName() << "' with image in " << utils::toPath(session, artwork->getId()));
+            else
+                LMS_LOG(DBUPDATER, DEBUG, "Removed preferred artwork from release '" << release->getName() << "'");
         }
 
         void updateReleaseImages(db::Session& session, ReleaseImageAssociationContainer& imageAssociations)
