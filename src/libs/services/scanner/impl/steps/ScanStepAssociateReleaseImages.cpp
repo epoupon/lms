@@ -45,8 +45,8 @@ namespace lms::scanner
 {
     namespace
     {
-        using Artwork = std::variant<std::monostate, db::TrackEmbeddedImageId, db::ImageId>;
-        bool isSameArtwork(Artwork preferredArtwork, const db::ObjectPtr<db::Artwork>& artwork)
+        using ReleaseArtwork = std::variant<std::monostate, db::TrackEmbeddedImageId, db::ImageId>;
+        bool isSameArtwork(ReleaseArtwork preferredArtwork, const db::ObjectPtr<db::Artwork>& artwork)
         {
             if (std::holds_alternative<std::monostate>(preferredArtwork))
                 return !artwork;
@@ -63,7 +63,7 @@ namespace lms::scanner
         struct ReleaseImageAssociation
         {
             db::ReleaseId releaseId;
-            Artwork preferredArtwork;
+            ReleaseArtwork preferredArtwork;
         };
         using ReleaseImageAssociationContainer = std::deque<ReleaseImageAssociation>;
 
@@ -149,11 +149,11 @@ namespace lms::scanner
             return image;
         }
 
-        Artwork computePreferredReleaseArtwork(SearchReleaseImageContext& searchContext, const db::Release::pointer& release)
+        ReleaseArtwork computePreferredReleaseArtwork(SearchReleaseImageContext& searchContext, const db::Release::pointer& release)
         {
             const db::Image::pointer image{ computePreferredReleaseImage(searchContext, release) };
             if (image)
-                return Artwork{ image->getId() };
+                return ReleaseArtwork{ image->getId() };
 
             // Fallback on embedded Front image
             db::TrackEmbeddedImageId trackEmbeddedImageId;
@@ -168,7 +168,7 @@ namespace lms::scanner
             }
 
             if (trackEmbeddedImageId.isValid())
-                return Artwork{ trackEmbeddedImageId };
+                return ReleaseArtwork{ trackEmbeddedImageId };
 
             // Fallback on embedded media image
             {
@@ -182,9 +182,9 @@ namespace lms::scanner
             }
 
             if (trackEmbeddedImageId.isValid())
-                return Artwork{ trackEmbeddedImageId };
+                return ReleaseArtwork{ trackEmbeddedImageId };
 
-            return Artwork{};
+            return ReleaseArtwork{};
         }
 
         bool fetchNextReleaseArtworksToUpdate(SearchReleaseImageContext& searchContext, ReleaseImageAssociationContainer& releaseImageAssociations)
@@ -197,7 +197,7 @@ namespace lms::scanner
                 auto transaction{ searchContext.session.createReadTransaction() };
 
                 db::Release::find(searchContext.session, searchContext.lastRetrievedReleaseId, readBatchSize, [&](const db::Release::pointer& release) {
-                    const Artwork preferredArtwork{ computePreferredReleaseArtwork(searchContext, release) };
+                    const ReleaseArtwork preferredArtwork{ computePreferredReleaseArtwork(searchContext, release) };
                     const db::Artwork::pointer currentPreferredArtwork{ release->getPreferredArtwork() };
 
                     if (!isSameArtwork(preferredArtwork, currentPreferredArtwork))
