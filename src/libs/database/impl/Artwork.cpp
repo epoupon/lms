@@ -65,13 +65,13 @@ namespace lms::db
     Artwork::pointer Artwork::find(Session& session, TrackEmbeddedImageId id)
     {
         session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Artwork>>("SELECT a FROM artwork a JOIN track_embedded_image t_e_i ON a.track_embedded_image_id = t_e_i.id").where("t_e_i.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Artwork>>("SELECT a FROM artwork a").where("a.track_embedded_image_id = ?").bind(id));
     }
 
     Artwork::pointer Artwork::find(Session& session, ImageId id)
     {
         session.checkReadTransaction();
-        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Artwork>>("SELECT a FROM artwork a JOIN image i ON a.image_id = i.id").where("i.id = ?").bind(id));
+        return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Artwork>>("SELECT a FROM artwork a").where("a.image_id = ?").bind(id));
     }
 
 } // namespace lms::db
