@@ -32,7 +32,7 @@ namespace lms::scanner
         ScanStepAssociateTrackImages& operator=(const ScanStepAssociateTrackImages&) = delete;
 
     private:
-        ScanStep getStep() const override { return ScanStep::AssociateReleaseImages; }
+        ScanStep getStep() const override { return ScanStep::AssociateTrackImages; }
         core::LiteralString getStepName() const override { return "Associate track images"; }
         bool needProcess(const ScanContext& context) const override;
         void process(ScanContext& context) override;

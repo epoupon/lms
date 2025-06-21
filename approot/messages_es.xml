@@ -133,6 +133,7 @@
 <message id="Lms.Admin.ScannerController.step-associating-external-lyrics">Association des paroles externes: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-playlist-tracks">Association des pistes des listes de lectures: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-release-images">Asignando imágenes de los álbumes: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-associating-track-images">Asignando imágenes de las pistas: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">Comprobando ficheros duplicados ... {1} ficheros</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Comprobando ficheros eliminados... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">Compactando la base de datos...</message>
