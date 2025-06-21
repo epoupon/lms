@@ -231,7 +231,7 @@ namespace lms::scanner
 
         void updateReleaseImages(db::Session& session, ReleaseImageAssociationContainer& imageAssociations)
         {
-            constexpr std::size_t writeBatchSize{ 20 };
+            constexpr std::size_t writeBatchSize{ 50 };
 
             while (!imageAssociations.empty())
             {

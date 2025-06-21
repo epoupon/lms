@@ -198,7 +198,6 @@ namespace lms::db
         {
             auto transaction{ createWriteTransaction() };
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_id_idx ON artist(id)");
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_image_idx ON artist(image_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_name_mbid_idx ON artist(name, mbid)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_sort_name_nocase_idx ON artist(sort_name COLLATE NOCASE)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_mbid_idx ON artist(mbid)");

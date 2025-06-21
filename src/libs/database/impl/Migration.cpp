@@ -1245,7 +1245,6 @@ FROM tracklist)");
   "comment" text not null,
   "preferred_artwork_id" bigint,
   constraint "fk_release_preferred_artwork" foreign key ("preferred_artwork_id") references "artwork" ("id") on delete set null deferrable initially deferred))");
-
         // Migrate data, with the new preferred_artwork_id field set to null
         utils::executeCommand(*session.getDboSession(), R"(INSERT INTO release_backup
 SELECT
@@ -1310,7 +1309,6 @@ FROM release)");
   constraint "fk_track_preferred_artwork" foreign key ("preferred_artwork_id") references "artwork" ("id") on delete set null deferrable initially deferred,
   constraint "fk_track_preferred_media_artwork" foreign key ("preferred_media_artwork_id") references "artwork" ("id") on delete set null deferrable initially deferred
     ))");
-
         // Migrate data, with the new preferred_artwork_id and preferred_media_artwork_id fields set to null
         utils::executeCommand(*session.getDboSession(), R"(INSERT INTO track_backup
 SELECT
@@ -1353,6 +1351,30 @@ SELECT
 FROM track)");
         utils::executeCommand(*session.getDboSession(), "DROP TABLE track");
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE track_backup RENAME TO track");
+
+        // Replaced image by artwork for artist
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "artist_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null,
+  "sort_name" text not null,
+  "mbid" text not null,
+  "preferred_artwork_id" bigint,
+  constraint "fk_artist_preferred_artwork" foreign key ("preferred_artwork_id") references "artwork" ("id") on delete set null deferrable initially deferred
+    ))");
+        // Migrate data, with the new preferred_artwork_id field set to null
+        utils::executeCommand(*session.getDboSession(), R"(INSERT INTO artist_backup
+SELECT
+ id,
+ version,
+ name,
+ sort_name,
+ mbid,
+ NULL as preferred_artwork_id
+FROM artist)");
+
+        utils::executeCommand(*session.getDboSession(), "DROP TABLE artist");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE artist_backup RENAME TO artist");
 
         // Just increment the scan version of the settings to make the next scan rescan everything
         utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET audio_scan_version = audio_scan_version + 1");

@@ -143,14 +143,15 @@ namespace lms::artwork
 
         ImageFindResult res;
 
-        if (const db::Artist::pointer artist{ db::Artist::find(session, artistId) })
-        {
-            if (const db::ImageId imageId{ artist->getImageId() }; imageId.isValid())
-                res = imageId;
+        const db::Artist::pointer artist{ db::Artist::find(session, artistId) };
+        if (!artist)
+            return res;
 
-            // TODO fallback on embedded Band/LeadArtist/Artist?
-            // TODO fallback on first release?
-        }
+        const db::Artwork::pointer artwork{ artist->getPreferredArtwork() };
+        if (artwork && artwork->getImageId().isValid())
+            res = artwork->getImageId();
+        else if (artwork && artwork->getTrackEmbeddedImageId().isValid())
+            res = artwork->getTrackEmbeddedImageId();
 
         return res;
     }

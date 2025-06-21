@@ -21,9 +21,9 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "core/ILogger.hpp"
+#include "database/Artwork.hpp"
 #include "database/Cluster.hpp"
 #include "database/Directory.hpp"
-#include "database/Image.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
@@ -315,14 +315,14 @@ AND NOT EXISTS (
         return getMBID().has_value();
     }
 
-    ObjectPtr<Image> Artist::getImage() const
+    ObjectPtr<Artwork> Artist::getPreferredArtwork() const
     {
-        return ObjectPtr<Image>{ _image };
+        return ObjectPtr<Artwork>{ _preferredArtwork };
     }
 
-    ImageId Artist::getImageId() const
+    ArtworkId Artist::getPreferredArtworkId() const
     {
-        return _image.id();
+        return _preferredArtwork.id();
     }
 
     RangeResults<ArtistId> Artist::findSimilarArtistIds(core::EnumSet<TrackArtistLinkType> artistLinkTypes, std::optional<Range> range) const
@@ -421,8 +421,8 @@ AND NOT EXISTS (
             LMS_LOG(DB, WARNING, "Artist sort name too long, truncated to '" << _sortName << "'");
     }
 
-    void Artist::setImage(ObjectPtr<Image> image)
+    void Artist::setPreferredArtwork(ObjectPtr<Artwork> artwork)
     {
-        _image = getDboPtr(image);
+        _preferredArtwork = getDboPtr(artwork);
     }
 } // namespace lms::db

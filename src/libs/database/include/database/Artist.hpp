@@ -31,9 +31,9 @@
 #include "core/EnumSet.hpp"
 #include "core/UUID.hpp"
 #include "database/ArtistId.hpp"
+#include "database/ArtworkId.hpp"
 #include "database/ClusterId.hpp"
 #include "database/Filters.hpp"
-#include "database/ImageId.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
@@ -43,10 +43,9 @@
 
 namespace lms::db
 {
-
+    class Artwork;
     class Cluster;
     class ClusterType;
-    class Image;
     class Release;
     class Session;
     class StarredArtist;
@@ -137,8 +136,8 @@ namespace lms::db
         const std::string& getSortName() const { return _sortName; }
         std::optional<core::UUID> getMBID() const;
         bool hasMBID() const;
-        ObjectPtr<Image> getImage() const;
-        ImageId getImageId() const;
+        ObjectPtr<Artwork> getPreferredArtwork() const;
+        ArtworkId getPreferredArtworkId() const;
         void visitLinks(std::function<void(const ObjectPtr<TrackArtistLink>& link)> visitor) const;
 
         // No artistLinkTypes means get them all
@@ -152,7 +151,7 @@ namespace lms::db
         void setName(std::string_view name);
         void setMBID(const std::optional<core::UUID>& mbid) { _mbid = mbid ? mbid->getAsString() : ""; }
         void setSortName(std::string_view sortName);
-        void setImage(ObjectPtr<Image> image);
+        void setPreferredArtwork(ObjectPtr<Artwork> artwork);
 
         template<class Action>
         void persist(Action& a)
@@ -161,7 +160,7 @@ namespace lms::db
             Wt::Dbo::field(a, _sortName, "sort_name");
             Wt::Dbo::field(a, _mbid, "mbid");
 
-            Wt::Dbo::belongsTo(a, _image, "image", Wt::Dbo::OnDeleteSetNull);
+            Wt::Dbo::belongsTo(a, _preferredArtwork, "preferred_artwork", Wt::Dbo::OnDeleteSetNull);
             Wt::Dbo::hasMany(a, _trackArtistLinks, Wt::Dbo::ManyToOne, "artist");
             Wt::Dbo::hasMany(a, _starredArtists, Wt::Dbo::ManyToMany, "user_starred_artists", "", Wt::Dbo::OnDeleteCascade);
         }
@@ -178,7 +177,7 @@ namespace lms::db
         std::string _sortName;
         std::string _mbid; // Musicbrainz Identifier
 
-        Wt::Dbo::ptr<Image> _image;
+        Wt::Dbo::ptr<Artwork> _preferredArtwork;
         Wt::Dbo::collection<Wt::Dbo::ptr<TrackArtistLink>> _trackArtistLinks; // Tracks involving this artist
         Wt::Dbo::collection<Wt::Dbo::ptr<StarredArtist>> _starredArtists;     // starred entries for this artist
     };

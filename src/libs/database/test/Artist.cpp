@@ -19,10 +19,12 @@
 
 #include "Common.hpp"
 
+#include "database/Artwork.hpp"
 #include "database/Image.hpp"
 
 namespace lms::db::tests
 {
+    using ScopedArtwork = ScopedEntity<db::Artwork>;
     using ScopedImage = ScopedEntity<db::Image>;
 
     TEST_F(DatabaseFixture, Artist)
@@ -711,27 +713,28 @@ namespace lms::db::tests
         }
     }
 
-    TEST_F(DatabaseFixture, Artist_image)
+    TEST_F(DatabaseFixture, Artist_artwork)
     {
-        ScopedArtist release{ session, "MyArtist" };
+        ScopedImage image{ session, "/image1.jpg" };
+        ScopedArtwork artwork{ session, image.lockAndGet() };
+
+        ScopedArtist artist{ session, "MyArtist" };
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_FALSE(release.get()->getImage());
+            EXPECT_FALSE(artist.get()->getPreferredArtwork());
         }
-
-        ScopedImage image{ session, "/myImage" };
 
         {
             auto transaction{ session.createWriteTransaction() };
-            release.get().modify()->setImage(image.get());
+            artist.get().modify()->setPreferredArtwork(artwork.get());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            auto artistImage(release.get()->getImage());
-            ASSERT_TRUE(artistImage);
-            EXPECT_EQ(artistImage->getId(), image.getId());
+            auto artistArtwork(artist.get()->getPreferredArtwork());
+            ASSERT_TRUE(artistArtwork);
+            EXPECT_EQ(artistArtwork->getId(), artwork.getId());
         }
     }
 
