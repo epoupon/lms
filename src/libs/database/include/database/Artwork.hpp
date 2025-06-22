@@ -20,6 +20,7 @@
 #pragma once
 
 #include <Wt/Dbo/Dbo.h>
+#include <Wt/WDateTime.h>
 
 #include "database/ArtworkId.hpp"
 #include "database/ImageId.hpp"
@@ -46,6 +47,7 @@ namespace lms::db
         // getters
         TrackEmbeddedImageId getTrackEmbeddedImageId() const { return _trackEmbeddedImage.id(); }
         ImageId getImageId() const { return _image.id(); }
+        Wt::WDateTime getLastWrittenTime() const;
 
         template<class Action>
         void persist(Action& a)

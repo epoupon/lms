@@ -306,11 +306,7 @@ namespace lms::ui
         bindString("duration", utils::durationToString(release->getDuration()), Wt::TextFormat::Plain);
 
         refreshReleaseArtists(release);
-
-        auto* image{ bindWidget<Wt::WImage>("cover", utils::createReleaseCover(release->getId(), ArtworkResource::Size::Large)) };
-        image->clicked().connect([=] {
-            utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getReleaseCoverUrl(*releaseId) });
-        });
+        refreshArtwork(release->getPreferredArtworkId());
 
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
         {
@@ -391,22 +387,24 @@ namespace lms::ui
 
         // Expect to be called in asc order
         std::map<std::size_t, Wt::WContainerWidget*> trackContainers;
-        auto getOrAddDiscContainer = [&, releaseId = _releaseId](std::size_t discNumber, const std::string& discSubtitle, db::TrackId trackId) -> Wt::WContainerWidget* {
+        auto getOrAddDiscContainer = [&, releaseId = _releaseId](std::size_t discNumber, const std::string& discSubtitle, db::ArtworkId mediaArtworkId) -> Wt::WContainerWidget* {
             if (auto it{ trackContainers.find(discNumber) }; it != std::cend(trackContainers))
                 return it->second;
 
             Template* disc{ rootContainer->addNew<Template>(Wt::WString::tr("Lms.Explore.Release.template.entry-disc")) };
             disc->addFunction("id", &Wt::WTemplate::Functions::id);
 
-            if (auto image{ utils::createTrackMediaImage(trackId, ArtworkResource::Size::Large) })
+            if (mediaArtworkId.isValid())
             {
-                disc->setCondition("if-has-image", true);
+                auto image{ utils::createArtworkImage(mediaArtworkId, ArtworkResource::Size::Small) };
+
+                disc->setCondition("if-has-artwork", true);
 
                 image->addStyleClass("Lms-cover-track rounded"); // HACK
                 image->clicked().connect([=] {
-                    utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getTrackMediaImageUrl(trackId) });
+                    utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getArtworkUrl(mediaArtworkId) });
                 });
-                disc->bindWidget<Wt::WImage>("image", std::move(image));
+                disc->bindWidget<Wt::WImage>("artwork", std::move(image));
             }
 
             if (discSubtitle.empty())
@@ -469,9 +467,9 @@ namespace lms::ui
 
             Wt::WContainerWidget* container{};
             if (useSubtitleContainers && discNumber)
-                container = getOrAddDiscContainer(*discNumber, track->getDiscSubtitle(), track->getId());
+                container = getOrAddDiscContainer(*discNumber, track->getDiscSubtitle(), track->getPreferredMediaArtworkId());
             else if (hasDiscSubtitle && !discNumber)
-                container = getOrAddDiscContainer(0, track->getDiscSubtitle(), track->getId());
+                container = getOrAddDiscContainer(0, track->getDiscSubtitle(), track->getPreferredMediaArtworkId());
             else
                 container = getOrAddNoDiscContainer();
 
@@ -565,6 +563,26 @@ namespace lms::ui
             else
                 entry->removeStyleClass("Lms-entry-playing");
         });
+    }
+
+    void Release::refreshArtwork(db::ArtworkId artworkId)
+    {
+        std::unique_ptr<Wt::WImage> artworkImage;
+        if (artworkId.isValid())
+        {
+            artworkImage = utils::createArtworkImage(artworkId, ArtworkResource::Size::Large);
+            artworkImage->addStyleClass("Lms-cursor-pointer"); // HACK
+        }
+        else
+            artworkImage = utils::createDefaultReleaseArtworkImage();
+
+        auto* image{ bindWidget<Wt::WImage>("artwork", std::move(artworkImage)) };
+        if (artworkId.isValid())
+        {
+            image->clicked().connect([artworkId] {
+                utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getArtworkUrl(artworkId) });
+            });
+        }
     }
 
     void Release::refreshReleaseArtists(const db::Release::pointer& release)

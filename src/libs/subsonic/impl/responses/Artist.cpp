@@ -23,11 +23,10 @@
 #include "core/Service.hpp"
 #include "core/String.hpp"
 #include "database/Artist.hpp"
-#include "database/Image.hpp"
+#include "database/Artwork.hpp"
 #include "database/Release.hpp"
 #include "database/TrackArtistLink.hpp"
 #include "database/User.hpp"
-#include "services/artwork/IArtworkService.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 
 #include "CoverArtId.hpp"
@@ -96,18 +95,10 @@ namespace lms::api::subsonic
 
         artistNode.setAttribute("id", idToString(artist->getId()));
         artistNode.setAttribute("name", artist->getName());
+        if (const auto artwork{ artist->getPreferredArtwork() })
         {
-            const auto imageResult{ core::Service<artwork::IArtworkService>::get()->findArtistImage(artist->getId()) };
-            if (const db::ImageId * imageId{ std::get_if<db::ImageId>(&imageResult) })
-            {
-                if (const db::Image::pointer image{ db::Image::find(context.dbSession, *imageId) })
-                {
-                    const CoverArtId coverArtId{ *imageId, image->getLastWriteTime().toTime_t() };
-                    artistNode.setAttribute("coverArt", idToString(coverArtId));
-                }
-            }
-            else if (const db::TrackEmbeddedImageId * embeddedImageId{ std::get_if<db::TrackEmbeddedImageId>(&imageResult) })
-                artistNode.setAttribute("coverArt", idToString(*embeddedImageId));
+            CoverArtId coverArtId{ artwork->getId(), artwork->getLastWrittenTime().toTime_t() };
+            artistNode.setAttribute("coverArt", idToString(coverArtId));
         }
 
         const std::size_t count{ Release::getCount(context.dbSession, Release::FindParameters{}.setArtist(artist->getId())) };

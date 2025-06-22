@@ -19,6 +19,8 @@
 
 #include "database/Artwork.hpp"
 
+#include <Wt/Dbo/WtSqlTraits.h>
+
 #include "database/Image.hpp"
 #include "database/Session.hpp"
 #include "database/TrackEmbeddedImage.hpp"
@@ -74,4 +76,15 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Artwork>>("SELECT a FROM artwork a").where("a.image_id = ?").bind(id));
     }
 
+    Wt::WDateTime Artwork::getLastWrittenTime() const
+    {
+        auto query{ session()->query<Wt::WDateTime>("SELECT MAX(COALESCE(image.file_last_write, track.file_last_write)) AS last_written_datetime FROM artwork") };
+        query.leftJoin("image ON artwork.image_id = image.id");
+        query.leftJoin("track_embedded_image ON artwork.track_embedded_image_id = track_embedded_image.id");
+        query.leftJoin("track_embedded_image_link ON track_embedded_image.id = track_embedded_image_link.track_embedded_image_id");
+        query.leftJoin("track ON track.id = track_embedded_image_link.track_id");
+        query.where("artwork.id = ?").bind(getId());
+
+        return utils::fetchQuerySingleResult(query);
+    }
 } // namespace lms::db

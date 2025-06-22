@@ -62,22 +62,22 @@ namespace lms::scanner
             return !std::holds_alternative<std::monostate>(res);
         }
 
-        struct TrackImageAssociation
+        struct TrackArtworksAssociation
         {
             db::Track::pointer track;
             TrackArtwork preferredArtwork;
             TrackArtwork preferredMediaArtwork;
         };
-        using TrackImageAssociationContainer = std::deque<TrackImageAssociation>;
+        using TrackArtworksAssociationContainer = std::deque<TrackArtworksAssociation>;
 
-        struct SearchTrackImageContext
+        struct SearchTrackArtworkContext
         {
             db::Session& session;
             db::TrackId lastRetrievedTrackId;
             std::size_t processedTrackCount{};
         };
 
-        TrackArtwork computePreferredTrackArtwork(SearchTrackImageContext& searchContext, const db::Track::pointer& track)
+        TrackArtwork computePreferredTrackArtwork(SearchTrackArtworkContext& searchContext, const db::Track::pointer& track)
         {
             // Try to get a media image
             TrackArtwork res;
@@ -135,7 +135,7 @@ namespace lms::scanner
             return res;
         }
 
-        TrackArtwork computePreferredTrackMediaArtwork(SearchTrackImageContext& searchContext, const db::Track::pointer& track)
+        TrackArtwork computePreferredTrackMediaArtwork(SearchTrackArtworkContext& searchContext, const db::Track::pointer& track)
         {
             TrackArtwork res;
             {
@@ -165,7 +165,7 @@ namespace lms::scanner
             return res;
         }
 
-        bool fetchNextTrackArtworksToUpdate(SearchTrackImageContext& searchContext, TrackImageAssociationContainer& trackImageAssociations)
+        bool fetchNextTrackArtworksToUpdate(SearchTrackArtworkContext& searchContext, TrackArtworksAssociationContainer& TrackArtworksAssociations)
         {
             const db::TrackId trackId{ searchContext.lastRetrievedTrackId };
 
@@ -184,7 +184,7 @@ namespace lms::scanner
                     if (!isSameArtwork(preferredArtwork, currentPreferredArtwork)
                         || !isSameArtwork(preferredMediaArtwork, currentPreferredMediaArtwork))
                     {
-                        trackImageAssociations.push_back(TrackImageAssociation{ track, preferredArtwork, preferredMediaArtwork });
+                        TrackArtworksAssociations.push_back(TrackArtworksAssociation{ track, preferredArtwork, preferredMediaArtwork });
                     }
 
                     searchContext.processedTrackCount++;
@@ -226,24 +226,24 @@ namespace lms::scanner
                 LMS_LOG(DBUPDATER, DEBUG, "Removed preferred media artwork from track '" << track->getAbsoluteFilePath() << "'");
         }
 
-        void updateTrackPreferredArtworks(db::Session& session, const TrackImageAssociation& trackImageAssociation)
+        void updateTrackPreferredArtworks(db::Session& session, const TrackArtworksAssociation& TrackArtworksAssociation)
         {
-            db::Track::pointer track{ trackImageAssociation.track };
+            db::Track::pointer track{ TrackArtworksAssociation.track };
 
             {
                 const db::Artwork::pointer currentPreferredArtwork{ track->getPreferredArtwork() };
-                if (!isSameArtwork(trackImageAssociation.preferredArtwork, currentPreferredArtwork))
-                    updateTrackPreferredArtwork(session, track, trackImageAssociation.preferredArtwork);
+                if (!isSameArtwork(TrackArtworksAssociation.preferredArtwork, currentPreferredArtwork))
+                    updateTrackPreferredArtwork(session, track, TrackArtworksAssociation.preferredArtwork);
             }
 
             {
                 const db::Artwork::pointer currentPreferredMediaArtwork{ track->getPreferredMediaArtwork() };
-                if (!isSameArtwork(trackImageAssociation.preferredMediaArtwork, currentPreferredMediaArtwork))
-                    updateTrackPreferredMediaArtwork(session, track, trackImageAssociation.preferredMediaArtwork);
+                if (!isSameArtwork(TrackArtworksAssociation.preferredMediaArtwork, currentPreferredMediaArtwork))
+                    updateTrackPreferredMediaArtwork(session, track, TrackArtworksAssociation.preferredMediaArtwork);
             }
         }
 
-        void updateTrackPreferredArtworks(db::Session& session, TrackImageAssociationContainer& imageAssociations)
+        void updateTrackPreferredArtworks(db::Session& session, TrackArtworksAssociationContainer& imageAssociations)
         {
             constexpr std::size_t writeBatchSize{ 50 };
 
@@ -279,18 +279,18 @@ namespace lms::scanner
             context.currentStepStats.totalElems = db::Track::getCount(session);
         }
 
-        SearchTrackImageContext searchContext{
+        SearchTrackArtworkContext searchContext{
             .session = session,
             .lastRetrievedTrackId = {},
         };
 
-        TrackImageAssociationContainer trackImageAssociations;
-        while (fetchNextTrackArtworksToUpdate(searchContext, trackImageAssociations))
+        TrackArtworksAssociationContainer TrackArtworksAssociations;
+        while (fetchNextTrackArtworksToUpdate(searchContext, TrackArtworksAssociations))
         {
             if (_abortScan)
                 return;
 
-            updateTrackPreferredArtworks(session, trackImageAssociations);
+            updateTrackPreferredArtworks(session, TrackArtworksAssociations);
             context.currentStepStats.processedElems = searchContext.processedTrackCount;
             _progressCallback(context.currentStepStats);
         }

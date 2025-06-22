@@ -22,6 +22,8 @@
 #include <filesystem>
 #include <vector>
 
+#include "database/ImageId.hpp"
+#include "database/TrackEmbeddedImageId.hpp"
 #include "services/artwork/IArtworkService.hpp"
 
 #include "ImageCache.hpp"
@@ -47,20 +49,18 @@ namespace lms::artwork
         ArtworkService& operator=(const ArtworkService&) = delete;
 
     private:
-        ImageFindResult findArtistImage(db::ArtistId artistId) override;
-        ImageFindResult findTrackImage(db::TrackId trackId) override;
-        ImageFindResult findTrackMediaImage(db::TrackId trackId) override;
-        ImageFindResult findReleaseImage(db::ReleaseId releaseId) override;
-        ImageFindResult findTrackListImage(db::TrackListId trackListId) override;
+        db::ArtworkId findTrackListImage(db::TrackListId trackListId) override;
 
-        std::shared_ptr<image::IEncodedImage> getImage(db::ImageId imageId, std::optional<image::ImageSize> width) override;
-        std::shared_ptr<image::IEncodedImage> getTrackEmbeddedImage(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<image::ImageSize> width) override;
+        std::shared_ptr<image::IEncodedImage> getImage(db::ArtworkId artworkId, std::optional<image::ImageSize> width) override;
 
-        std::shared_ptr<image::IEncodedImage> getDefaultReleaseCover() override;
-        std::shared_ptr<image::IEncodedImage> getDefaultArtistImage() override;
+        std::shared_ptr<image::IEncodedImage> getDefaultReleaseArtwork() override;
+        std::shared_ptr<image::IEncodedImage> getDefaultArtistArtwork() override;
 
         void flushCache() override;
         void setJpegQuality(unsigned quality) override;
+
+        std::shared_ptr<image::IEncodedImage> getImage(db::ImageId imageId, std::optional<image::ImageSize> width);
+        std::shared_ptr<image::IEncodedImage> getTrackEmbeddedImage(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<image::ImageSize> width);
 
         std::unique_ptr<image::IEncodedImage> getFromImageFile(const std::filesystem::path& p, std::optional<image::ImageSize> width) const;
         std::unique_ptr<image::IEncodedImage> getTrackImage(const std::filesystem::path& path, std::size_t index, std::optional<image::ImageSize> width) const;

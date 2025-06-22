@@ -23,14 +23,13 @@
 #include "core/Service.hpp"
 #include "core/String.hpp"
 #include "database/Artist.hpp"
+#include "database/Artwork.hpp"
 #include "database/Cluster.hpp"
 #include "database/Directory.hpp"
-#include "database/Image.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
 #include "database/Types.hpp"
 #include "database/User.hpp"
-#include "services/artwork/IArtworkService.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 
@@ -88,19 +87,12 @@ namespace lms::api::subsonic
 
         albumNode.setAttribute("created", core::stringUtils::toISO8601String(release->getAddedTime()));
 
+        if (const auto artwork{ release->getPreferredArtwork() })
         {
-            const auto imageResult{ core::Service<artwork::IArtworkService>::get()->findReleaseImage(release->getId()) };
-            if (const db::ImageId * imageId{ std::get_if<db::ImageId>(&imageResult) })
-            {
-                if (const db::Image::pointer image{ db::Image::find(context.dbSession, *imageId) })
-                {
-                    const CoverArtId coverArtId{ *imageId, image->getLastWriteTime().toTime_t() };
-                    albumNode.setAttribute("coverArt", idToString(coverArtId));
-                }
-            }
-            else if (const db::TrackEmbeddedImageId * embeddedImageId{ std::get_if<db::TrackEmbeddedImageId>(&imageResult) })
-                albumNode.setAttribute("coverArt", idToString(*embeddedImageId));
+            CoverArtId coverArtId{ artwork->getId(), artwork->getLastWrittenTime().toTime_t() };
+            albumNode.setAttribute("coverArt", idToString(coverArtId));
         }
+
         if (const auto originalYear{ release->getOriginalYear() })
             albumNode.setAttribute("year", *originalYear);
         else if (const auto year{ release->getYear() })

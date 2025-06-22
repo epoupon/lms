@@ -26,12 +26,13 @@
 #include "database/Artwork.hpp"
 #include "database/Db.hpp"
 #include "database/Image.hpp"
+#include "database/ImageId.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackEmbeddedImage.hpp"
 #include "database/TrackEmbeddedImageLink.hpp"
-#include "database/Types.hpp"
+#include "database/TrackList.hpp"
 #include "image/Exception.hpp"
 #include "image/IEncodedImage.hpp"
 #include "image/Image.hpp"
@@ -87,12 +88,12 @@ namespace lms::artwork
         return image;
     }
 
-    std::shared_ptr<image::IEncodedImage> ArtworkService::getDefaultReleaseCover()
+    std::shared_ptr<image::IEncodedImage> ArtworkService::getDefaultReleaseArtwork()
     {
         return _defaultReleaseCover;
     }
 
-    std::shared_ptr<image::IEncodedImage> ArtworkService::getDefaultArtistImage()
+    std::shared_ptr<image::IEncodedImage> ArtworkService::getDefaultArtistArtwork()
     {
         return _defaultArtistImage;
     }
@@ -136,149 +137,103 @@ namespace lms::artwork
         return image;
     }
 
-    ArtworkService::ImageFindResult ArtworkService::findArtistImage(db::ArtistId artistId)
+    db::ArtworkId ArtworkService::findTrackListImage(db::TrackListId trackListId)
     {
+        db::ArtworkId artworkId;
+
+        // Iterate over all tracks and stop when we find an artwork
         db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        ImageFindResult res;
+        db::TrackList::pointer trackList{ db::TrackList::find(session, trackListId) };
+        if (!trackList)
+            return artworkId;
 
-        const db::Artist::pointer artist{ db::Artist::find(session, artistId) };
-        if (!artist)
-            return res;
+        const auto entries{ trackList->getEntries(db::Range{ 0, 10 }) };
+        for (const auto& entry : entries.results)
+        {
+            const auto track{ entry->getTrack() };
+            if (track->getPreferredMediaArtworkId().isValid())
+            {
+                artworkId = track->getPreferredMediaArtworkId();
+                break; // stop iteration
+            }
 
-        const db::Artwork::pointer artwork{ artist->getPreferredArtwork() };
-        if (artwork && artwork->getImageId().isValid())
-            res = artwork->getImageId();
-        else if (artwork && artwork->getTrackEmbeddedImageId().isValid())
-            res = artwork->getTrackEmbeddedImageId();
+            if (track->getPreferredArtworkId().isValid())
+            {
+                artworkId = track->getPreferredArtworkId();
+                break; // stop iteration
+            }
+        }
 
-        return res;
+        return artworkId;
     }
 
-    ArtworkService::ImageFindResult ArtworkService::findTrackImage(db::TrackId trackId)
+    std::shared_ptr<image::IEncodedImage> ArtworkService::getImage(db::ArtworkId artworkId, std::optional<image::ImageSize> width)
     {
-        ImageFindResult res;
+        const ImageCache::EntryDesc cacheEntryDesc{ artworkId, width };
 
-        db::Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
+        std::shared_ptr<image::IEncodedImage> image{ _cache.getImage(cacheEntryDesc) };
+        if (image)
+            return image;
 
-        const db::Track::pointer track{ db::Track::find(session, trackId) };
-        if (!track)
-            return res;
+        db::TrackEmbeddedImageId trackEmbeddedImageId;
+        db::ImageId imageId;
 
-        const db::Artwork::pointer artwork{ track->getPreferredArtwork() };
-        if (artwork && artwork->getImageId().isValid())
-            res = artwork->getImageId();
-        else if (artwork && artwork->getTrackEmbeddedImageId().isValid())
-            res = artwork->getTrackEmbeddedImageId();
+        {
+            db::Session& session{ _db.getTLSSession() };
+            auto transaction{ session.createReadTransaction() };
 
-        return res;
-    }
+            db::Artwork::pointer artwork{ db::Artwork::find(session, artworkId) };
+            if (artwork)
+            {
+                trackEmbeddedImageId = artwork->getTrackEmbeddedImageId();
+                imageId = artwork->getImageId();
+            }
+        }
 
-    ArtworkService::ImageFindResult ArtworkService::findTrackMediaImage(db::TrackId trackId)
-    {
-        db::Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-        ImageFindResult res;
+        if (trackEmbeddedImageId.isValid())
+            image = getTrackEmbeddedImage(trackEmbeddedImageId, width);
+        else if (imageId.isValid())
+            image = getImage(imageId, width);
 
-        const db::Track::pointer track{ db::Track::find(session, trackId) };
-        if (!track)
-            return res;
+        if (image)
+            _cache.addImage(cacheEntryDesc, image);
 
-        const db::Artwork::pointer artwork{ track->getPreferredMediaArtwork() };
-        if (artwork && artwork->getImageId().isValid())
-            res = artwork->getImageId();
-        else if (artwork && artwork->getTrackEmbeddedImageId().isValid())
-            res = artwork->getTrackEmbeddedImageId();
-
-        return res;
-    }
-
-    ArtworkService::ImageFindResult ArtworkService::findReleaseImage(db::ReleaseId releaseId)
-    {
-        db::Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-
-        ImageFindResult res;
-        const db::Release::pointer release{ db::Release::find(session, releaseId) };
-        if (!release)
-            return res;
-
-        const db::Artwork::pointer artwork{ release->getPreferredArtwork() };
-        if (artwork && artwork->getImageId().isValid())
-            res = artwork->getImageId();
-        else if (artwork && artwork->getTrackEmbeddedImageId().isValid())
-            res = artwork->getTrackEmbeddedImageId();
-
-        return res;
-    }
-
-    ArtworkService::ImageFindResult ArtworkService::findTrackListImage(db::TrackListId trackListId)
-    {
-        db::Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-
-        ImageFindResult res;
-
-        db::TrackEmbeddedImage::FindParameters params;
-        params.setTrackList(trackListId);
-        params.setSortMethod(db::TrackEmbeddedImageSortMethod::TrackListIndexAscThenSizeDesc);
-        params.setRange(db::Range{ .offset = 0, .size = 1 });
-
-        db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
-            res = image->getId();
-        });
-
-        // TODO fallback on release image if not found
-        return res;
+        return image;
     }
 
     std::shared_ptr<image::IEncodedImage> ArtworkService::getImage(db::ImageId imageId, std::optional<image::ImageSize> width)
     {
-        const ImageCache::EntryDesc cacheEntryDesc{ imageId, width };
-
-        std::shared_ptr<image::IEncodedImage> cover{ _cache.getImage(cacheEntryDesc) };
-        if (cover)
-            return cover;
-
         std::filesystem::path imageFile;
         {
             db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
             const db::Image::pointer image{ db::Image::find(session, imageId) };
-            if (image)
-                imageFile = image->getAbsoluteFilePath();
+            if (!image)
+                return nullptr;
+
+            imageFile = image->getAbsoluteFilePath();
         }
 
-        cover = getFromImageFile(imageFile, width);
-        if (cover)
-            _cache.addImage(cacheEntryDesc, cover);
-
-        return cover;
+        return getFromImageFile(imageFile, width);
     }
 
     std::shared_ptr<image::IEncodedImage> ArtworkService::getTrackEmbeddedImage(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<image::ImageSize> width)
     {
-        const ImageCache::EntryDesc cacheEntryDesc{ trackEmbeddedImageId, width };
-
-        std::shared_ptr<image::IEncodedImage> image{ _cache.getImage(cacheEntryDesc) };
-        if (image)
-            return image;
+        std::shared_ptr<image::IEncodedImage> image;
 
         {
             db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
+            // TODO: could be put outside transaction
             db::TrackEmbeddedImageLink::find(session, trackEmbeddedImageId, [&](const db::TrackEmbeddedImageLink::pointer& link) {
                 if (!image)
                     image = getTrackImage(link->getTrack()->getAbsoluteFilePath(), link->getIndex(), width);
             });
         }
-
-        if (image)
-            _cache.addImage(cacheEntryDesc, image);
 
         return image;
     }

@@ -57,10 +57,10 @@ namespace lms::ui::utils
 
     void showArtworkModal(Wt::WLink image);
 
-    std::unique_ptr<Wt::WImage> createReleaseCover(db::ReleaseId releaseId, ArtworkResource::Size size);
-    std::unique_ptr<Wt::WImage> createTrackImage(db::TrackId trackId, ArtworkResource::Size size);
-    std::unique_ptr<Wt::WImage> createTrackMediaImage(db::TrackId trackId, ArtworkResource::Size size); // return nullptr if no image
-    std::unique_ptr<Wt::WImage> createArtistImage(db::ArtistId artistId, ArtworkResource::Size size);
+    std::unique_ptr<Wt::WImage> createArtworkImage(db::ArtworkId artworkId, ArtworkResource::Size size);
+    std::unique_ptr<Wt::WImage> createDefaultArtistArtworkImage();
+    std::unique_ptr<Wt::WImage> createDefaultReleaseArtworkImage();
+    std::unique_ptr<Wt::WImage> createDefaultTrackArtworkImage();
 
     std::unique_ptr<Wt::WInteractWidget> createFilter(const Wt::WString& name, const Wt::WString& tooltip, std::string_view colorStyleClass, bool canDelete = false);
     std::unique_ptr<Wt::WInteractWidget> createFilterCluster(db::ClusterId clusterId, bool canDelete = false);

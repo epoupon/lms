@@ -306,7 +306,9 @@ namespace lms::db
         ObjectPtr<MediaLibrary> getMediaLibrary() const;
         ObjectPtr<Directory> getDirectory() const;
         ObjectPtr<Artwork> getPreferredArtwork() const;
+        ArtworkId getPreferredArtworkId() const;
         ObjectPtr<Artwork> getPreferredMediaArtwork() const;
+        ArtworkId getPreferredMediaArtworkId() const;
 
         std::vector<std::vector<ObjectPtr<Cluster>>> getClusterGroups(const std::vector<ClusterTypeId>& clusterTypes, std::size_t size) const;
 

@@ -9,7 +9,7 @@
 <message id="Lms.Explore.Release.template">
 	<div class="row mb-3 gy-3">
 		<div class="col-lg-3 col-md-4">
-			${cover class="Lms-cursor-pointer rounded d-block mx-auto"}
+			${artwork class="rounded d-block mx-auto"}
 		</div>
 		<div class="col">
 			<h2>${name}${<if-has-release-comment>}<span class="ms-1 text-muted">[${comment}]</span>${</if-has-release-comment>}</h2>
@@ -55,9 +55,9 @@
 
 <message id="Lms.Explore.Release.template.entry-disc">
 	<h4 class="d-flex align-items-center">
-		${<if-has-image>}
-		<div class="p-1">${image class="Lms-cursor-pointer"}</div>
-		${</if-has-image>}
+		${<if-has-artwork>}
+		<div class="p-1">${artwork class="Lms-cursor-pointer"}</div>
+		${</if-has-artwork>}
 		<div class="p-2 flex-fill">${disc-title}</div>
 		<div class="p-2 d-flex">
 			${play-btn class="d-none d-sm-block btn btn-sm btn-outline-secondary border-0"}

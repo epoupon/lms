@@ -21,21 +21,19 @@
 
 #include <string_view>
 
-#include "av/IAudioFile.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/MimeTypes.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
 #include "database/Artist.hpp"
+#include "database/Artwork.hpp"
 #include "database/Cluster.hpp"
 #include "database/Directory.hpp"
-#include "database/Image.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"
 #include "database/Types.hpp"
 #include "database/User.hpp"
-#include "services/artwork/IArtworkService.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 
@@ -111,18 +109,14 @@ namespace lms::api::subsonic
             trackResponse.setAttribute("transcodedContentType", core::getMimeType(std::filesystem::path{ "." + fileSuffix }));
         }
 
+        auto artwork{ track->getPreferredMediaArtwork() };
+        if (!artwork)
+            artwork = track->getPreferredArtwork();
+
+        if (artwork)
         {
-            const auto imageResult{ core::Service<artwork::IArtworkService>::get()->findTrackImage(track->getId()) };
-            if (const db::ImageId * imageId{ std::get_if<db::ImageId>(&imageResult) })
-            {
-                if (const db::Image::pointer image{ db::Image::find(context.dbSession, *imageId) })
-                {
-                    const CoverArtId coverArtId{ *imageId, image->getLastWriteTime().toTime_t() };
-                    trackResponse.setAttribute("coverArt", idToString(coverArtId));
-                }
-            }
-            else if (const db::TrackEmbeddedImageId * embeddedImageId{ std::get_if<db::TrackEmbeddedImageId>(&imageResult) })
-                trackResponse.setAttribute("coverArt", idToString(*embeddedImageId));
+            CoverArtId coverArtId{ artwork->getId(), artwork->getLastWrittenTime().toTime_t() };
+            trackResponse.setAttribute("coverArt", idToString(coverArtId));
         }
 
         const std::vector<Artist::pointer>& artists{ track->getArtists({ TrackArtistLinkType::Artist }) };

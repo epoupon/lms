@@ -25,10 +25,8 @@
 #include <optional>
 #include <shared_mutex>
 #include <unordered_map>
-#include <variant>
 
-#include "database/ImageId.hpp"
-#include "database/TrackEmbeddedImageId.hpp"
+#include "database/ArtworkId.hpp"
 #include "image/IEncodedImage.hpp"
 
 namespace lms::artwork
@@ -40,8 +38,7 @@ namespace lms::artwork
 
         struct EntryDesc
         {
-            using VariantType = std::variant<db::TrackEmbeddedImageId, db::ImageId>;
-            VariantType id;
+            db::ArtworkId id;
             std::optional<std::size_t> size;
 
             bool operator==(const EntryDesc& other) const = default;
@@ -63,13 +60,13 @@ namespace lms::artwork
             std::size_t operator()(const EntryDesc& entry) const
             {
                 assert(entry.size); // should not cache unresized images
-                return std::hash<EntryDesc::VariantType>{}(entry.id) ^ std::hash<std::size_t>{}(*entry.size);
+                return std::hash<db::ArtworkId>{}(entry.id) ^ std::hash<std::size_t>{}(*entry.size);
             }
         };
 
         std::unordered_map<EntryDesc, std::shared_ptr<image::IEncodedImage>, EntryHasher> _cache;
         std::size_t _cacheSize{};
-        mutable std::atomic<std::size_t> _cacheMisses{};
-        mutable std::atomic<std::size_t> _cacheHits{};
+        mutable std::atomic<std::size_t> _cacheMisses;
+        mutable std::atomic<std::size_t> _cacheHits;
     };
 } // namespace lms::artwork

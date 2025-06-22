@@ -51,7 +51,13 @@ namespace lms::ui::releaseListHelpers
 
             {
                 Wt::WAnchor* anchor{ entry->bindWidget("cover", utils::createReleaseAnchor(release, false)) };
-                auto image{ utils::createReleaseCover(release->getId(), ArtworkResource::Size::Large) };
+
+                std::unique_ptr<Wt::WImage> image;
+                if (release->getPreferredArtworkId().isValid())
+                    image = utils::createArtworkImage(release->getPreferredArtworkId(), ArtworkResource::Size::Large);
+                else
+                    image = utils::createDefaultReleaseArtworkImage();
+
                 image->addStyleClass("Lms-cover-release Lms-cover-anchor rounded"); // hack
                 anchor->setImage(std::move(image));
             }

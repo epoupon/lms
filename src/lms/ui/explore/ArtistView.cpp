@@ -24,6 +24,7 @@
 #include "core/String.hpp"
 #include "database/Artist.hpp"
 #include "database/ArtistInfo.hpp"
+#include "database/ArtworkId.hpp"
 #include "database/Cluster.hpp"
 #include "database/Release.hpp"
 #include "database/ScanSettings.hpp"
@@ -119,7 +120,7 @@ namespace lms::ui
         LmsApp->setTitle(artist->getName());
         _artistId = *artistId;
 
-        refreshArtwork();
+        refreshArtwork(artist->getPreferredArtworkId());
         refreshArtistInfo();
         refreshReleases();
         refreshAppearsOnReleases();
@@ -191,12 +192,24 @@ namespace lms::ui
         }
     }
 
-    void Artist::refreshArtwork()
+    void Artist::refreshArtwork(db::ArtworkId artworkId)
     {
-        auto* image{ bindWidget<Wt::WImage>("artwork", utils::createArtistImage(_artistId, ArtworkResource::Size::Large)) };
-        image->clicked().connect([this] {
-            utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getArtistImageUrl(_artistId) });
-        });
+        std::unique_ptr<Wt::WImage> artworkImage;
+        if (artworkId.isValid())
+        {
+            artworkImage = utils::createArtworkImage(artworkId, ArtworkResource::Size::Large);
+            artworkImage->addStyleClass("Lms-cursor-pointer"); // HACK
+        }
+        else
+            artworkImage = utils::createDefaultArtistArtworkImage();
+
+        auto* image{ bindWidget<Wt::WImage>("artwork", std::move(artworkImage)) };
+        if (artworkId.isValid())
+        {
+            image->clicked().connect([artworkId] {
+                utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getArtworkUrl(artworkId) });
+            });
+        }
     }
 
     void Artist::refreshArtistInfo()

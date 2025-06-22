@@ -22,8 +22,7 @@
 #include <cassert>
 
 #include "core/String.hpp"
-#include "database/ImageId.hpp"
-#include "database/TrackEmbeddedImageId.hpp"
+#include "database/ArtworkId.hpp"
 
 namespace lms::api::subsonic
 {
@@ -31,14 +30,9 @@ namespace lms::api::subsonic
     {
         constexpr char timestampSeparatorChar{ '-' };
 
-        std::string idToString(db::ImageId id)
+        std::string idToString(db::ArtworkId id)
         {
-            return "im-" + id.toString();
-        }
-
-        std::string idToString(db::TrackEmbeddedImageId id)
-        {
-            return "trim-" + id.toString();
+            return "art-" + id.toString();
         }
     } // namespace
 
@@ -46,19 +40,10 @@ namespace lms::api::subsonic
     {
         std::string res;
 
-        // produce "type-id[-timestamp]"
-        if (db::TrackEmbeddedImageId * imageId{ std::get_if<db::TrackEmbeddedImageId>(&coverId.id) })
-        {
-            res = idToString(*imageId);
-            assert(!coverId.timestamp.has_value());
-        }
-        else if (db::ImageId * imageId{ std::get_if<db::ImageId>(&coverId.id) })
-        {
-            res = idToString(*imageId);
-            res += timestampSeparatorChar;
-            assert(coverId.timestamp.has_value());
-            res += std::to_string(*coverId.timestamp);
-        }
+        // produce "art-id-timestamp"
+        res = idToString(coverId.id);
+        res += timestampSeparatorChar;
+        res += std::to_string(coverId.timestamp);
 
         assert(!res.empty());
         return res;
@@ -74,30 +59,20 @@ namespace lms::core::stringUtils
         std::optional<api::subsonic::CoverArtId> res;
 
         std::vector<std::string_view> values{ core::stringUtils::splitString(str, '-') };
-        if (values.size() <= 1)
+
+        // expect "art-id-timestamp"
+        if (values.size() != 3)
+            return res;
+
+        if (values[0] != "art")
+            return res;
+
+        const auto value{ core::stringUtils::readAs<db::ArtworkId::ValueType>(values[1]) };
+        const auto timestamp{ core::stringUtils::readAs<std::time_t>(values[2]) };
+        if (!value || !timestamp)
             return std::nullopt;
 
-        if (values[0] == "trim")
-        {
-            // expect "trim-id"
-            if (values.size() == 2)
-            {
-                if (const auto value{ core::stringUtils::readAs<db::TrackEmbeddedImageId::ValueType>(values[1]) })
-                    res.emplace(db::TrackEmbeddedImageId{ *value });
-            }
-        }
-        else if (values[0] == "im")
-        {
-            // expect "im-id-timestamp"
-            if (values.size() == 3)
-            {
-                const auto imageId{ core::stringUtils::readAs<db::ImageId::ValueType>(values[1]) };
-                const auto timestamp{ core::stringUtils::readAs<std::time_t>(values[2]) };
-
-                if (imageId && timestamp)
-                    res.emplace(db::ImageId{ *imageId }, *timestamp);
-            }
-        }
+        res.emplace(api::subsonic::CoverArtId{ *value, *timestamp });
 
         return res;
     }

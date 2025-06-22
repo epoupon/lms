@@ -21,7 +21,7 @@
 
 #include "core/Service.hpp"
 #include "core/String.hpp"
-#include "database/Image.hpp"
+#include "database/Artwork.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
 #include "services/artwork/IArtworkService.hpp"
@@ -46,18 +46,13 @@ namespace lms::api::subsonic
         if (const db::User::pointer user{ tracklist->getUser() })
             playlistNode.setAttribute("owner", user->getLoginName());
 
+        if (const db::ArtworkId artworkId{ core::Service<artwork::IArtworkService>::get()->findTrackListImage(tracklist->getId()) }; artworkId.isValid())
         {
-            const auto imageResult{ core::Service<artwork::IArtworkService>::get()->findTrackListImage(tracklist->getId()) };
-            if (const db::ImageId * imageId{ std::get_if<db::ImageId>(&imageResult) })
+            if (const auto artwork{ db::Artwork::find(context.dbSession, artworkId) })
             {
-                if (const db::Image::pointer image{ db::Image::find(context.dbSession, *imageId) })
-                {
-                    const CoverArtId coverArtId{ *imageId, image->getLastWriteTime().toTime_t() };
-                    playlistNode.setAttribute("coverArt", idToString(coverArtId));
-                }
+                CoverArtId coverArtId{ artwork->getId(), artwork->getLastWrittenTime().toTime_t() };
+                playlistNode.setAttribute("coverArt", idToString(coverArtId));
             }
-            else if (const db::TrackEmbeddedImageId * embeddedImageId{ std::get_if<db::TrackEmbeddedImageId>(&imageResult) })
-                playlistNode.setAttribute("coverArt", idToString(*embeddedImageId));
         }
 
         return playlistNode;

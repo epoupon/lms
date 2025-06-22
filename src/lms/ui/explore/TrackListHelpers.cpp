@@ -228,8 +228,15 @@ namespace lms::ui::TrackListHelpers
             entry->bindWidget("artists-md", utils::createArtistDisplayNameWithAnchors(track->getArtistDisplayName(), artists));
         }
 
-        auto image{ utils::createTrackImage(trackId, ArtworkResource::Size::Small) };
-        image->addStyleClass("Lms-cover-track rounded");
+        std::unique_ptr<Wt::WImage> image;
+        if (track->getPreferredMediaArtworkId().isValid())
+            image = utils::createArtworkImage(track->getPreferredMediaArtworkId(), ArtworkResource::Size::Small);
+        else if (track->getPreferredArtworkId().isValid())
+            image = utils::createArtworkImage(track->getPreferredArtworkId(), ArtworkResource::Size::Small);
+        else
+            image = utils::createDefaultTrackArtworkImage();
+
+        image->addStyleClass("Lms-cover-track rounded"); // hack
         if (track->getRelease())
         {
             entry->setCondition("if-has-release", true);

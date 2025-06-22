@@ -374,9 +374,19 @@ namespace lms::db
         return _preferredArtwork;
     }
 
+    ArtworkId Track::getPreferredArtworkId() const
+    {
+        return _preferredArtwork.id();
+    }
+
     ObjectPtr<Artwork> Track::getPreferredMediaArtwork() const
     {
         return _preferredMediaArtwork;
+    }
+
+    ArtworkId Track::getPreferredMediaArtworkId() const
+    {
+        return _preferredMediaArtwork.id();
     }
 
     RangeResults<TrackId> Track::findIds(Session& session, const FindParameters& parameters)

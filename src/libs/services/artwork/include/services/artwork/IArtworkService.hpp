@@ -22,13 +22,8 @@
 #include <filesystem>
 #include <memory>
 #include <optional>
-#include <variant>
 
-#include "database/ArtistId.hpp"
-#include "database/ImageId.hpp"
-#include "database/ReleaseId.hpp"
-#include "database/TrackEmbeddedImageId.hpp"
-#include "database/TrackId.hpp"
+#include "database/ArtworkId.hpp"
 #include "database/TrackListId.hpp"
 #include "image/IEncodedImage.hpp"
 
@@ -44,27 +39,15 @@ namespace lms::artwork
     public:
         virtual ~IArtworkService() = default;
 
-        // Helpers to find artworks
-        using ImageFindResult = std::variant<std::monostate, db::ImageId, db::TrackEmbeddedImageId>;
-        virtual ImageFindResult findArtistImage(db::ArtistId artistId) = 0;
+        // Helpers to get preferred artworks
+        virtual db::ArtworkId findTrackListImage(db::TrackListId trackListId) = 0;
 
-        // Will get Disc/Media artwork if available, otherwise, will fallback on release artwork
-        virtual ImageFindResult findTrackImage(db::TrackId trackId) = 0;
-
-        // Will get Disc/Media artwork if available, no fallback
-        virtual ImageFindResult findTrackMediaImage(db::TrackId trackId) = 0;
-
-        // Will get Release if available, otherwise, will fallback on embedded artworks
-        virtual ImageFindResult findReleaseImage(db::ReleaseId releaseId) = 0;
-        virtual ImageFindResult findTrackListImage(db::TrackListId trackListId) = 0;
-
-        // Image retrieval
-        virtual std::shared_ptr<image::IEncodedImage> getImage(db::ImageId imageId, std::optional<image::ImageSize> width) = 0;
-        virtual std::shared_ptr<image::IEncodedImage> getTrackEmbeddedImage(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<image::ImageSize> width) = 0;
+        // Image retrieval, no width means original size
+        virtual std::shared_ptr<image::IEncodedImage> getImage(db::ArtworkId artworkId, std::optional<image::ImageSize> width) = 0;
 
         // Svg images don't have image "size"
-        virtual std::shared_ptr<image::IEncodedImage> getDefaultReleaseCover() = 0;
-        virtual std::shared_ptr<image::IEncodedImage> getDefaultArtistImage() = 0;
+        virtual std::shared_ptr<image::IEncodedImage> getDefaultReleaseArtwork() = 0;
+        virtual std::shared_ptr<image::IEncodedImage> getDefaultArtistArtwork() = 0;
 
         virtual void flushCache() = 0;
 
