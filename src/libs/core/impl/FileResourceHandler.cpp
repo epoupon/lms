@@ -19,6 +19,8 @@
 
 #include "FileResourceHandler.hpp"
 
+#include <algorithm>
+
 #include "core/ILogger.hpp"
 #include "core/MimeTypes.hpp"
 

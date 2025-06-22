@@ -19,6 +19,8 @@
 
 #include "PlaylistGeneratorService.hpp"
 
+#include <algorithm>
+
 #include "core/ILogger.hpp"
 #include "database/Db.hpp"
 #include "database/Session.hpp"
