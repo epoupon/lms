@@ -46,6 +46,10 @@ namespace lms::db
         core::RecursiveSharedMutex& getMutex() { return _sharedMutex; }
         Wt::Dbo::SqlConnectionPool& getConnectionPool() { return *_connectionPool; }
 
+        void performQuickCheck();
+        void performIntegrityCheck();
+        void performForeignKeyConstraintsCheck();
+
         class ScopedConnection
         {
         public:
@@ -53,6 +57,7 @@ namespace lms::db
             ~ScopedConnection();
 
             Wt::Dbo::SqlConnection* operator->() const;
+            Wt::Dbo::SqlConnection& operator*() const { return *_connection; }
 
         private:
             ScopedConnection(const ScopedConnection&) = delete;
