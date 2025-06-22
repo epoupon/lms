@@ -19,17 +19,20 @@
 
 #include "Playlist.hpp"
 
+#include "core/Service.hpp"
 #include "core/String.hpp"
-#include "database/TrackEmbeddedImage.hpp"
+#include "database/Artwork.hpp"
 #include "database/TrackList.hpp"
 #include "database/User.hpp"
+#include "services/artwork/IArtworkService.hpp"
 
 #include "CoverArtId.hpp"
+#include "RequestContext.hpp"
 #include "SubsonicId.hpp"
 
 namespace lms::api::subsonic
 {
-    Response::Node createPlaylistNode(const db::TrackList::pointer& tracklist, db::Session& session)
+    Response::Node createPlaylistNode(RequestContext& context, const db::TrackList::pointer& tracklist)
     {
         Response::Node playlistNode;
 
@@ -43,16 +46,14 @@ namespace lms::api::subsonic
         if (const db::User::pointer user{ tracklist->getUser() })
             playlistNode.setAttribute("owner", user->getLoginName());
 
-        db::TrackEmbeddedImage::FindParameters params;
-        params.setTrackList(tracklist->getId());
-        params.setIsPreferred(true);
-        params.setSortMethod(db::TrackEmbeddedImageSortMethod::FrontCoverAndSize);
-        params.setRange(db::Range{ .offset = 0, .size = 1 });
-
-        db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
-            const CoverArtId coverArtId{ image->getId() };
-            playlistNode.setAttribute("coverArt", idToString(coverArtId));
-        });
+        if (const db::ArtworkId artworkId{ core::Service<artwork::IArtworkService>::get()->findTrackListImage(tracklist->getId()) }; artworkId.isValid())
+        {
+            if (const auto artwork{ db::Artwork::find(context.dbSession, artworkId) })
+            {
+                CoverArtId coverArtId{ artwork->getId(), artwork->getLastWrittenTime().toTime_t() };
+                playlistNode.setAttribute("coverArt", idToString(coverArtId));
+            }
+        }
 
         return playlistNode;
     }

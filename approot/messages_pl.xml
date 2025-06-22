@@ -142,6 +142,7 @@
 <message id="Lms.Admin.ScannerController.step-associating-external-lyrics">Kojarzenie zewnętrznych tekstów: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-playlist-tracks">Kojarzenie utworów z playlisty: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-release-images">Kojarzenie obrazów albumów: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-associating-track-images">Kojarzenie obrazów ścieżek: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">
 	<plural case="0">Sprawdzanie duplikatów... {1} plik</plural>
 	<plural case="1">Sprawdzanie duplikatów... {1} pliki</plural>

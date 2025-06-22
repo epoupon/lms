@@ -49,6 +49,7 @@ namespace lms::scanner
         AssociateExternalLyrics,
         AssociatePlayListTracks,
         AssociateReleaseImages,
+        AssociateTrackImages,
         CheckForDuplicatedFiles,
         CheckForRemovedFiles,
         ComputeClusterStats,

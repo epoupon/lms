@@ -19,6 +19,8 @@
 
 #include "FileResourceHandler.hpp"
 
+#include <algorithm>
+
 #include "core/ILogger.hpp"
 #include "core/MimeTypes.hpp"
 
@@ -99,7 +101,7 @@ namespace lms::core
         } // end initial response setup
 
         ::uint64_t restSize = _beyondLastByte - _offset;
-        ::uint64_t pieceSize = std::min(restSize, _chunkSize);
+        ::uint64_t pieceSize = std::min(restSize, static_cast<::uint64_t>(_chunkSize));
 
         std::vector<char> buf(pieceSize);
 

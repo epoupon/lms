@@ -24,6 +24,7 @@
 #include <deque>
 #include <set>
 #include <span>
+#include <variant>
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
@@ -31,27 +32,38 @@
 #include "core/String.hpp"
 #include "database/Artist.hpp"
 #include "database/ArtistInfo.hpp"
+#include "database/Artwork.hpp"
 #include "database/Db.hpp"
 #include "database/Directory.hpp"
 #include "database/Image.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 
+#include "ArtworkUtils.hpp"
 #include "ScanContext.hpp"
 
 namespace lms::scanner
 {
     namespace
     {
-        constexpr std::size_t readBatchSize{ 100 };
-        constexpr std::size_t writeBatchSize{ 20 };
-
-        struct ArtistImageAssociation
+        using ArtistArtwork = std::variant<std::monostate, db::ImageId>; // TODO handle embedded images in tracks?
+        bool isSameArtwork(ArtistArtwork preferredArtwork, const db::ObjectPtr<db::Artwork>& artwork)
         {
-            db::ArtistId artistId;
-            db::ImageId imageId;
+            if (std::holds_alternative<std::monostate>(preferredArtwork))
+                return !artwork;
+
+            if (const db::ImageId* imageId = std::get_if<db::ImageId>(&preferredArtwork))
+                return artwork && *imageId == artwork->getImageId();
+
+            return false;
+        }
+
+        struct ArtistArtworkAssociation
+        {
+            db::Artist::pointer artist;
+            ArtistArtwork preferredArtwork;
         };
-        using ArtistImageAssociationContainer = std::deque<ArtistImageAssociation>;
+        using ArtistArtworkAssociationContainer = std::deque<ArtistArtworkAssociation>;
 
         struct SearchArtistImageContext
         {
@@ -87,7 +99,7 @@ namespace lms::scanner
             return image;
         }
 
-        db::Image::pointer getImageFromMbid(SearchArtistImageContext& searchContext, const core::UUID& mbid)
+        db::ImageId getImageFromMbid(SearchArtistImageContext& searchContext, const core::UUID& mbid)
         {
             db::Image::pointer image;
 
@@ -97,10 +109,10 @@ namespace lms::scanner
                     image = foundImg;
             });
 
-            return image;
+            return image ? image->getId() : db::ImageId{};
         }
 
-        db::Image::pointer searchImageInArtistInfoDirectory(SearchArtistImageContext& searchContext, db::ArtistId artistId)
+        db::ImageId searchImageInArtistInfoDirectory(SearchArtistImageContext& searchContext, db::ArtistId artistId)
         {
             db::Image::pointer image;
 
@@ -115,10 +127,10 @@ namespace lms::scanner
             if (fileInfoPaths.size() > 1)
                 LMS_LOG(DBUPDATER, DEBUG, "Found " << fileInfoPaths.size() << " artist info files for same artist: " << core::stringUtils::joinStrings(fileInfoPaths, ", "));
 
-            return image;
+            return image ? image->getId() : db::ImageId{};
         }
 
-        db::Image::pointer searchImageInDirectories(SearchArtistImageContext& searchContext, db::ArtistId artistId)
+        db::ImageId searchImageInDirectories(SearchArtistImageContext& searchContext, db::ArtistId artistId)
         {
             db::Image::pointer image;
 
@@ -147,7 +159,7 @@ namespace lms::scanner
                 {
                     image = findImageInDirectory(searchContext, directoryToInspect, searchContext.artistFileNames);
                     if (image)
-                        return image;
+                        return image->getId();
 
                     std::filesystem::path parentPath{ directoryToInspect.parent_path() };
                     if (parentPath == directoryToInspect)
@@ -164,44 +176,44 @@ namespace lms::scanner
                 {
                     image = findImageInDirectory(searchContext, releasePath, searchContext.artistFileNames);
                     if (image)
-                        return image;
+                        return image->getId();
                 }
             }
 
-            return image;
+            return image ? image->getId() : db::ImageId{};
         }
 
-        db::Image::pointer computeBestArtistImage(SearchArtistImageContext& searchContext, const db::Artist::pointer& artist)
+        ArtistArtwork computePreferredArtwork(SearchArtistImageContext& searchContext, const db::Artist::pointer& artist)
         {
-            db::Image::pointer image;
+            db::ImageId imageId;
 
             if (const auto mbid{ artist->getMBID() })
-                image = getImageFromMbid(searchContext, *mbid);
+                imageId = getImageFromMbid(searchContext, *mbid);
 
-            if (!image)
-                image = searchImageInArtistInfoDirectory(searchContext, artist->getId());
+            if (!imageId.isValid())
+                imageId = searchImageInArtistInfoDirectory(searchContext, artist->getId());
 
-            if (!image)
-                image = searchImageInDirectories(searchContext, artist->getId());
+            if (!imageId.isValid())
+                imageId = searchImageInDirectories(searchContext, artist->getId());
 
-            return image;
+            return imageId.isValid() ? ArtistArtwork{ imageId } : ArtistArtwork{};
         }
 
-        bool fetchNextArtistImagesToUpdate(SearchArtistImageContext& searchContext, ArtistImageAssociationContainer& artistImageAssociations)
+        bool fetchNextArtistArtworksToUpdate(SearchArtistImageContext& searchContext, ArtistArtworkAssociationContainer& ArtistArtworkAssociations)
         {
             const db::ArtistId artistId{ searchContext.lastRetrievedArtistId };
 
             {
+                constexpr std::size_t readBatchSize{ 100 };
+
                 auto transaction{ searchContext.session.createReadTransaction() };
 
                 db::Artist::find(searchContext.session, searchContext.lastRetrievedArtistId, readBatchSize, [&](const db::Artist::pointer& artist) {
-                    db::Image::pointer image{ computeBestArtistImage(searchContext, artist) };
+                    ArtistArtwork preferredArtwork{ computePreferredArtwork(searchContext, artist) };
 
-                    if (image != artist->getImage())
-                    {
-                        LMS_LOG(DBUPDATER, DEBUG, "Updating artist image for artist '" << artist->getName() << "', using '" << (image ? image->getAbsoluteFilePath().c_str() : "<none>") << "'");
-                        artistImageAssociations.push_back(ArtistImageAssociation{ artist->getId(), image ? image->getId() : db::ImageId{} });
-                    }
+                    if (!isSameArtwork(preferredArtwork, artist->getPreferredArtwork()))
+                        ArtistArtworkAssociations.push_back(ArtistArtworkAssociation{ artist, preferredArtwork });
+
                     searchContext.processedArtistCount++;
                 });
             }
@@ -209,27 +221,32 @@ namespace lms::scanner
             return artistId != searchContext.lastRetrievedArtistId;
         }
 
-        void updateArtistImage(db::Session& session, const ArtistImageAssociation& artistImageAssociation)
+        void updateArtistPreferredArtwork(db::Session& session, const ArtistArtworkAssociation& ArtistArtworkAssociation)
         {
-            db::Artist::pointer artist{ db::Artist::find(session, artistImageAssociation.artistId) };
-            assert(artist);
+            db::Artist::pointer artist{ ArtistArtworkAssociation.artist };
 
-            db::Image::pointer image;
-            if (artistImageAssociation.imageId.isValid())
-                image = db::Image::find(session, artistImageAssociation.imageId);
+            db::Artwork::pointer artwork;
+            if (const db::ImageId * imageId{ std::get_if<db::ImageId>(&ArtistArtworkAssociation.preferredArtwork) })
+                artwork = utils::getOrCreateArtworkFromImage(session, *imageId);
 
-            artist.modify()->setImage(image);
+            artist.modify()->setPreferredArtwork(artwork);
+            if (artwork)
+                LMS_LOG(DBUPDATER, DEBUG, "Updated preferred artwork for artist '" << artist->getName() << "' with image in " << utils::toPath(session, artwork->getId()));
+            else
+                LMS_LOG(DBUPDATER, DEBUG, "Removed preferred artwork from artist '" << artist->getName() << "'");
         }
 
-        void updateArtistImages(db::Session& session, ArtistImageAssociationContainer& imageAssociations)
+        void updateArtistArtworks(db::Session& session, ArtistArtworkAssociationContainer& imageAssociations)
         {
+            constexpr std::size_t writeBatchSize{ 50 };
+
             while (!imageAssociations.empty())
             {
                 auto transaction{ session.createWriteTransaction() };
 
                 for (std::size_t i{}; !imageAssociations.empty() && i < writeBatchSize; ++i)
                 {
-                    updateArtistImage(session, imageAssociations.front());
+                    updateArtistPreferredArtwork(session, imageAssociations.front());
                     imageAssociations.pop_front();
                 }
             }
@@ -258,10 +275,7 @@ namespace lms::scanner
 
     bool ScanStepAssociateArtistImages::needProcess(const ScanContext& context) const
     {
-        if (context.stats.nbChanges() > 0)
-            return true;
-
-        return false;
+        return context.stats.nbChanges() > 0;
     }
 
     void ScanStepAssociateArtistImages::process(ScanContext& context)
@@ -279,13 +293,13 @@ namespace lms::scanner
             .artistFileNames = _artistFileNames,
         };
 
-        ArtistImageAssociationContainer artistImageAssociations;
-        while (fetchNextArtistImagesToUpdate(searchContext, artistImageAssociations))
+        ArtistArtworkAssociationContainer ArtistArtworkAssociations;
+        while (fetchNextArtistArtworksToUpdate(searchContext, ArtistArtworkAssociations))
         {
             if (_abortScan)
                 return;
 
-            updateArtistImages(session, artistImageAssociations);
+            updateArtistArtworks(session, ArtistArtworkAssociations);
             context.currentStepStats.processedElems = searchContext.processedArtistCount;
             _progressCallback(context.currentStepStats);
         }

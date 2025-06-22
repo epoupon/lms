@@ -21,19 +21,17 @@
 
 #include <string_view>
 
-#include "av/IAudioFile.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/MimeTypes.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
 #include "database/Artist.hpp"
+#include "database/Artwork.hpp"
 #include "database/Cluster.hpp"
 #include "database/Directory.hpp"
-#include "database/Image.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"
-#include "database/TrackEmbeddedImage.hpp"
 #include "database/Types.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
@@ -111,28 +109,14 @@ namespace lms::api::subsonic
             trackResponse.setAttribute("transcodedContentType", core::getMimeType(std::filesystem::path{ "." + fileSuffix }));
         }
 
-        const Release::pointer release{ track->getRelease() };
+        auto artwork{ track->getPreferredMediaArtwork() };
+        if (!artwork)
+            artwork = track->getPreferredArtwork();
 
+        if (artwork)
         {
-            TrackEmbeddedImage::FindParameters params;
-            params.setTrack(track->getId());
-            params.setIsPreferred(true);
-            params.setRange(Range{ .offset = 0, .size = 1 });
-
-            bool hasEmbeddedImage{};
-            TrackEmbeddedImage::find(context.dbSession, params, [&](const TrackEmbeddedImage::pointer& image) {
-                const CoverArtId coverArtId{ image->getId() };
-                trackResponse.setAttribute("coverArt", idToString(coverArtId));
-            });
-
-            if (!hasEmbeddedImage && release)
-            {
-                if (const db::Image::pointer image{ release->getImage() })
-                {
-                    const CoverArtId coverArtId{ image->getId(), image->getLastWriteTime().toTime_t() };
-                    trackResponse.setAttribute("coverArt", idToString(coverArtId));
-                }
-            }
+            CoverArtId coverArtId{ artwork->getId(), artwork->getLastWrittenTime().toTime_t() };
+            trackResponse.setAttribute("coverArt", idToString(coverArtId));
         }
 
         const std::vector<Artist::pointer>& artists{ track->getArtists({ TrackArtistLinkType::Artist }) };
@@ -147,6 +131,7 @@ namespace lms::api::subsonic
                 trackResponse.setAttribute("artistId", idToString(artists.front()->getId()));
         }
 
+        const Release::pointer release{ track->getRelease() };
         if (release)
         {
             trackResponse.setAttribute("album", release->getName());

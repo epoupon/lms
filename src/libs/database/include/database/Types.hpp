@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <functional>
@@ -171,7 +172,10 @@ namespace lms::db
     enum class TrackEmbeddedImageSortMethod
     {
         None,
-        FrontCoverAndSize,
+        SizeDesc,
+        TrackNumberThenSizeDesc,
+        DiscNumberThenTrackNumberThenSizeDesc,
+        TrackListIndexAscThenSizeDesc,
     };
 
     enum class TrackListSortMethod

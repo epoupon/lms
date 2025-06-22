@@ -31,6 +31,7 @@
 #include "core/PartialDateTime.hpp"
 #include "core/UUID.hpp"
 #include "database/ArtistId.hpp"
+#include "database/ArtworkId.hpp"
 #include "database/CountryId.hpp"
 #include "database/DirectoryId.hpp"
 #include "database/Filters.hpp"
@@ -45,9 +46,9 @@
 namespace lms::db
 {
     class Artist;
+    class Artwork;
     class Cluster;
     class ClusterType;
-    class Image;
     class Release;
     class Session;
     class Track;
@@ -291,7 +292,8 @@ namespace lms::db
         core::EnumSet<Advisory> getAdvisories() const;
         std::string_view getBarcode() const { return _barcode; }
         std::string_view getComment() const { return _comment; }
-        ObjectPtr<Image> getImage() const;
+        ObjectPtr<Artwork> getPreferredArtwork() const;
+        ArtworkId getPreferredArtworkId() const;
 
         // Setters
         void setName(std::string_view name) { _name = name; }
@@ -309,7 +311,7 @@ namespace lms::db
         void addReleaseType(ObjectPtr<ReleaseType> releaseType);
         void setBarcode(std::string_view barcode) { _barcode = barcode; }
         void setComment(std::string_view comment) { _comment = comment; }
-        void setImage(ObjectPtr<Image> image);
+        void setPreferredArtwork(ObjectPtr<Artwork> artwork);
 
         // Get the artists of this release
         std::vector<ObjectPtr<Artist>> getArtists(TrackArtistLinkType type = TrackArtistLinkType::Artist) const;
@@ -331,9 +333,9 @@ namespace lms::db
             Wt::Dbo::field(a, _isCompilation, "is_compilation");
             Wt::Dbo::field(a, _barcode, "barcode");
             Wt::Dbo::field(a, _comment, "comment");
-            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "release");
 
-            Wt::Dbo::belongsTo(a, _image, "image", Wt::Dbo::OnDeleteSetNull);
+            Wt::Dbo::hasMany(a, _tracks, Wt::Dbo::ManyToOne, "release");
+            Wt::Dbo::belongsTo(a, _preferredArtwork, "preferred_artwork", Wt::Dbo::OnDeleteSetNull);
             Wt::Dbo::hasMany(a, _labels, Wt::Dbo::ManyToMany, "release_label", "", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::hasMany(a, _releaseTypes, Wt::Dbo::ManyToMany, "release_release_type", "", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::hasMany(a, _countries, Wt::Dbo::ManyToMany, "release_country", "", Wt::Dbo::OnDeleteCascade);
@@ -359,8 +361,8 @@ namespace lms::db
         std::string _barcode;
         std::string _comment;
 
-        Wt::Dbo::ptr<Image> _image;
         Wt::Dbo::collection<Wt::Dbo::ptr<Track>> _tracks;
+        Wt::Dbo::ptr<Artwork> _preferredArtwork;
         Wt::Dbo::collection<Wt::Dbo::ptr<Label>> _labels;
         Wt::Dbo::collection<Wt::Dbo::ptr<ReleaseType>> _releaseTypes;
         Wt::Dbo::collection<Wt::Dbo::ptr<Country>> _countries;

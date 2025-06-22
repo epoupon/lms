@@ -336,12 +336,7 @@ namespace lms::api::subsonic
         if (size)
             *size = core::utils::clamp(*size, std::size_t{ 32 }, std::size_t{ 2048 });
 
-        std::shared_ptr<image::IEncodedImage> image;
-        if (const db::TrackEmbeddedImageId * trackEmbeddedImageId{ std::get_if<db::TrackEmbeddedImageId>(&coverArtId.id) })
-            image = core::Service<cover::IArtworkService>::get()->getTrackEmbeddedImage(*trackEmbeddedImageId, size);
-        else if (const db::ImageId * imageId{ std::get_if<db::ImageId>(&coverArtId.id) })
-            image = core::Service<cover::IArtworkService>::get()->getImage(*imageId, size);
-
+        std::shared_ptr<image::IEncodedImage> image{ core::Service<artwork::IArtworkService>::get()->getImage(coverArtId.id, size) };
         if (!image)
         {
             response.setStatus(404);

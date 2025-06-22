@@ -251,12 +251,26 @@ namespace lms::ui
                 << " replayGain: " << replayGain << ","
                 << " title: \"" << core::stringUtils::jsEscape(track->getName()) << "\","
                 << " artist: \"" << (!artists.empty() ? core::stringUtils::jsEscape(track->getArtistDisplayName()) : "") << "\","
-                << " release: \"" << (track->getRelease() ? core::stringUtils::jsEscape(track->getRelease()->getName()) : "") << "\","
-                << " artwork: ["
-                << "   { src: \"" << LmsApp->getArtworkResource()->getPreferredTrackImageUrl(trackId, ArtworkResource::Size::Small) << "\", sizes: \"128x128\",	type: \"image/jpeg\" },"
-                << "   { src: \"" << LmsApp->getArtworkResource()->getPreferredTrackImageUrl(trackId, ArtworkResource::Size::Large) << "\", sizes: \"512x512\",	type: \"image/jpeg\" },"
-                << " ]"
-                << "};";
+                << " release: \"" << (track->getRelease() ? core::stringUtils::jsEscape(track->getRelease()->getName()) : "") << "\",";
+
+            db::ArtworkId artworkId{ track->getPreferredMediaArtworkId() };
+            if (!artworkId.isValid())
+                artworkId = track->getPreferredArtworkId();
+            if (artworkId.isValid())
+            {
+                oss << " artwork: ["
+                    << "   { src: \"" << LmsApp->getArtworkResource()->getArtworkUrl(artworkId, ArtworkResource::Size::Small) << "\", sizes: \"128x128\",	type: \"image/jpeg\" },"
+                    << "   { src: \"" << LmsApp->getArtworkResource()->getArtworkUrl(artworkId, ArtworkResource::Size::Large) << "\", sizes: \"512x512\",	type: \"image/jpeg\" },"
+                    << " ]";
+            }
+            else
+            {
+                oss << " artwork: ["
+                    << "   { src: \"" << LmsApp->getArtworkResource()->getDefaultTrackArtworkUrl() << "\", type: \"image/svg+xml\" },"
+                    << " ]";
+            }
+            oss << "};";
+
             // Update 'sizes' above to match this:
             static_assert(static_cast<std::underlying_type_t<ArtworkResource::Size>>(ArtworkResource::Size::Small) == 128);
             static_assert(static_cast<std::underlying_type_t<ArtworkResource::Size>>(ArtworkResource::Size::Large) == 512);

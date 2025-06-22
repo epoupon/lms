@@ -19,6 +19,8 @@
 
 #include "AlbumSongLists.hpp"
 
+#include <algorithm>
+
 #include "core/Service.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"

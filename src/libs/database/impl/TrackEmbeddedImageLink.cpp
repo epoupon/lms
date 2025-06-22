@@ -54,6 +54,14 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->find<TrackEmbeddedImageLink>().where("id = ?").bind(id));
     }
 
+    void TrackEmbeddedImageLink::find(Session& session, TrackEmbeddedImageId trackEmbeddedImageId, std::function<void(const pointer&)> visitor)
+    {
+        auto query{ session.getDboSession()->find<TrackEmbeddedImageLink>() };
+        query.where("track_embedded_image_id = ?").bind(trackEmbeddedImageId);
+
+        return utils::forEachQueryResult(query, visitor);
+    }
+
     ObjectPtr<Track> TrackEmbeddedImageLink::getTrack() const
     {
         return _track;

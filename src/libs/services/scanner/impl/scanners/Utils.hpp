@@ -30,10 +30,7 @@ namespace lms::db
     class Session;
 } // namespace lms::db
 
-namespace lms::scanner
+namespace lms::scanner::utils
 {
-    namespace utils
-    {
-        db::ObjectPtr<db::Directory> getOrCreateDirectory(db::Session& session, const std::filesystem::path& path, const db::ObjectPtr<db::MediaLibrary>& mediaLibrary);
-    } // namespace utils
-} // namespace lms::scanner
+    db::ObjectPtr<db::Directory> getOrCreateDirectory(db::Session& session, const std::filesystem::path& path, const db::ObjectPtr<db::MediaLibrary>& mediaLibrary);
+} // namespace lms::scanner::utils

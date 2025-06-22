@@ -21,6 +21,7 @@
 
 #include <Wt/Dbo/SqlTraits.h>
 
+#include "database/Artwork.hpp"
 #include "database/Directory.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/Release.hpp"

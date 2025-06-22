@@ -23,6 +23,7 @@
 #include "core/ITraceLogger.hpp"
 #include "database/Artist.hpp"
 #include "database/ArtistInfo.hpp"
+#include "database/Artwork.hpp"
 #include "database/AuthToken.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
@@ -102,6 +103,7 @@ namespace lms::db
 
         _session.mapClass<Artist>("artist");
         _session.mapClass<ArtistInfo>("artist_info");
+        _session.mapClass<Artwork>("artwork");
         _session.mapClass<AuthToken>("auth_token");
         _session.mapClass<Cluster>("cluster");
         _session.mapClass<ClusterType>("cluster_type");
@@ -196,7 +198,6 @@ namespace lms::db
         {
             auto transaction{ createWriteTransaction() };
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_id_idx ON artist(id)");
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_image_idx ON artist(image_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_name_mbid_idx ON artist(name, mbid)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_sort_name_nocase_idx ON artist(sort_name COLLATE NOCASE)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_mbid_idx ON artist(mbid)");
@@ -205,6 +206,10 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_info_directory_id_idx ON artist_info(directory_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_info_artist_id_idx ON artist_info(artist_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artist_info_mbid_matched_artist_idx ON artist_info(mbid_matched, artist_id)");
+
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artwork_id_idx ON artwork(id)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artwork_image_idx ON artwork(image_id)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS artwork_track_embedded_image_idx ON artwork(track_embedded_image_id)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS auth_token_user_domain_idx ON auth_token(user_id, domain)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS auth_token_domain_expiry_idx ON auth_token(domain, expiry)");
@@ -229,7 +234,7 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_embedded_image_link_id_idx ON track_embedded_image_link(id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_embedded_image_link_track_id_idx ON track_embedded_image_link(track_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_embedded_image_link_track_embedded_image_id_track_id_idx ON track_embedded_image_link(track_embedded_image_id, track_id)");
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_embedded_image_link_is_preferred_track_id_track_embedded_image_id_idx ON track_embedded_image_link(is_preferred, track_id, track_embedded_image_id)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_embedded_image_link_type_track_embedded_image_id_track_id_idx ON track_embedded_image_link(type,track_embedded_image_id,track_id)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS image_directory_stem_idx ON image(directory_id, stem COLLATE NOCASE)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS image_id_idx ON image(id)");
@@ -256,7 +261,6 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS rated_track_user_track_idx ON rated_track(user_id,track_id)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS release_id_idx ON release(id)");
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS release_image_idx ON release(image_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS release_group_mbid_idx ON release(group_mbid)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS release_mbid_idx ON release(mbid)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS release_name_idx ON release(name)");
@@ -395,6 +399,16 @@ namespace lms::db
             analyzeEntry(entry);
 
         LMS_LOG(DB, INFO, "Analyze complete!");
+    }
+
+    bool Session::areAllTablesEmpty()
+    {
+        const std::vector<std::string> entryList{ utils::fetchQueryResults(_session.query<std::string>("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")) };
+
+        return std::all_of(entryList.cbegin(), entryList.cend(), [this](const std::string& entry) {
+            const auto count{ utils::fetchQuerySingleResult(_session.query<long>("SELECT COUNT(*) FROM " + entry)) };
+            return count == 0;
+        });
     }
 
     void Session::retrieveEntriesToAnalyze(std::vector<std::string>& entryList)

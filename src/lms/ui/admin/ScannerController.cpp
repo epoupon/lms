@@ -188,6 +188,11 @@ namespace lms::ui
                                      .arg(stepStats.progress()));
             break;
 
+        case ScanStep::AssociateTrackImages:
+            _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-associating-track-images")
+                                     .arg(stepStats.progress()));
+            break;
+
         case ScanStep::CheckForDuplicatedFiles:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-checking-for-duplicate-files")
                                      .arg(stepStats.processedElems));

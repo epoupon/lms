@@ -19,25 +19,23 @@
 
 #pragma once
 
-#include <ctime>
+#include <filesystem>
 
-#include "core/String.hpp"
 #include "database/ArtworkId.hpp"
+#include "database/ImageId.hpp"
+#include "database/Object.hpp"
+#include "database/TrackEmbeddedImageId.hpp"
 
-namespace lms::api::subsonic
+namespace lms::db
 {
-    struct CoverArtId
-    {
-        db::ArtworkId id;
-        std::time_t timestamp;
-    };
+    class Artwork;
+    class Session;
+} // namespace lms::db
 
-    std::string idToString(CoverArtId coverId);
-} // namespace lms::api::subsonic
-
-// Used to parse parameters
-namespace lms::core::stringUtils
+namespace lms::scanner::utils
 {
-    template<>
-    std::optional<api::subsonic::CoverArtId> readAs(std::string_view str);
-} // namespace lms::core::stringUtils
+    db::ObjectPtr<db::Artwork> getOrCreateArtworkFromTrackEmbeddedImage(db::Session& session, db::TrackEmbeddedImageId trackEmbeddedImageId);
+    db::ObjectPtr<db::Artwork> getOrCreateArtworkFromImage(db::Session& session, db::ImageId imageId);
+
+    std::filesystem::path toPath(db::Session& session, db::ArtworkId artworkId);
+} // namespace lms::scanner::utils
