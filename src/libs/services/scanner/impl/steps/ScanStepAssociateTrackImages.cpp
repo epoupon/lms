@@ -126,11 +126,7 @@ namespace lms::scanner
 
             // Fallback on the artwork already resolved for the release
             if (const db::Release::pointer release{ db::Release::find(searchContext.session, releaseId) })
-            {
-                db::ArtworkId artworkId{ release->getPreferredArtworkId() };
-                if (artworkId.isValid())
-                    res = artworkId;
-            }
+                res = release->getPreferredArtworkId();
 
             return res;
         }
@@ -203,7 +199,7 @@ namespace lms::scanner
                 artwork = db::Artwork::find(session, *artworkId);
 
             // Using track.modify() is quite CPU intensive as the track class has too many fields
-            db::Track::updatePreferredArtwork(session, track->getId(), artwork->getId());
+            db::Track::updatePreferredArtwork(session, track->getId(), artwork ? artwork->getId() : db::ArtworkId{});
             if (artwork)
                 LMS_LOG(DBUPDATER, DEBUG, "Updated preferred artwork in track " << track->getAbsoluteFilePath() << " with image in " << utils::toPath(session, artwork->getId()));
             else
@@ -219,7 +215,7 @@ namespace lms::scanner
                 artwork = db::Artwork::find(session, *artworkId);
 
             // Using track.modify() is quite CPU intensive as the track class has too many fields
-            db::Track::updatePreferredMediaArtwork(session, track->getId(), artwork->getId());
+            db::Track::updatePreferredMediaArtwork(session, track->getId(), artwork ? artwork->getId() : db::ArtworkId{});
             if (artwork)
                 LMS_LOG(DBUPDATER, DEBUG, "Updated preferred media artwork in track '" << track->getAbsoluteFilePath() << "' with image in " << utils::toPath(session, artwork->getId()));
             else

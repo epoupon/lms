@@ -36,11 +36,6 @@
 
 namespace lms::scanner
 {
-    namespace
-    {
-        constexpr std::size_t batchSize = 100;
-    }
-
     bool ScanStepCheckForRemovedFiles::needProcess([[maybe_unused]] const ScanContext& context) const
     {
         // always check for removed files
@@ -90,6 +85,8 @@ namespace lms::scanner
 
             objectsToRemove.clear();
             {
+                constexpr std::size_t batchSize = 100;
+
                 auto transaction{ session.createReadTransaction() };
 
                 endReached = true;
