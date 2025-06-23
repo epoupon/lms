@@ -45,7 +45,8 @@ namespace lms::scanner
         std::vector<std::string> artistsToNotSplit;
         std::vector<std::string> defaultTagDelimiters;
         bool skipSingleReleasePlayLists{};
-        bool allowArtistMBIDFallback{ true }; // TODO false?
+        bool allowArtistMBIDFallback{ true };
+        bool artistImageFallbackToRelease{};
 
         std::vector<MediaLibraryInfo> mediaLibraries;
 

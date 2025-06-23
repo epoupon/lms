@@ -79,6 +79,17 @@
 			</div>
 		</div>
 		<div class="col-12">
+			<div class="form-check">
+				${artist-image-fallback-to-release class="form-check-input"}
+				<label class="form-check-label" for="${id:artist-image-fallback-to-release}">
+					${tr:Lms.Admin.Database.artist-image-fallback-to-release}
+				</label>
+				<div class="invalid-feedback">
+					${artist-image-fallback-to-release-info}
+				</div>
+			</div>
+		</div>
+		<div class="col-12">
 			<label class="form-label" for="${id:similarity-engine-type}">
 				${tr:Lms.Admin.Database.similarity-engine-type}
 			</label>

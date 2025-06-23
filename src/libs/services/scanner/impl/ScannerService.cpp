@@ -119,6 +119,7 @@ namespace lms::scanner
 
             settings->skipSingleReleasePlayLists = scanSettings->getSkipSingleReleasePlayLists();
             settings->allowArtistMBIDFallback = scanSettings->getAllowMBIDArtistMerge();
+            settings->artistImageFallbackToRelease = scanSettings->getArtistImageFallbackToReleaseField();
 
             // TODO, store this in DB + expose in UI
             settings->skipDuplicateTrackMBID = core::Service<core::IConfig>::get()->getBool("scanner-skip-duplicate-mbid", false);

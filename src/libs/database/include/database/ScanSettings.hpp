@@ -74,6 +74,7 @@ namespace lms::db
         std::vector<std::string> getArtistsToNotSplit() const;
         bool getSkipSingleReleasePlayLists() const { return _skipSingleReleasePlayLists; }
         bool getAllowMBIDArtistMerge() const { return _allowMBIDArtistMerge; }
+        bool getArtistImageFallbackToReleaseField() const { return _artistImageFallbackToReleaseField; }
 
         // Setters
         void setUpdateStartTime(Wt::WTime t) { _startTime = t; }
@@ -85,6 +86,7 @@ namespace lms::db
         void setDefaultTagDelimiters(std::span<const std::string_view> delimiters);
         void setSkipSingleReleasePlayLists(bool value);
         void setAllowMBIDArtistMerge(bool value);
+        void setArtistImageFallbackToReleaseField(bool value);
 
         template<class Action>
         void persist(Action& a)
@@ -101,6 +103,7 @@ namespace lms::db
             Wt::Dbo::field(a, _defaultTagDelimiters, "default_tag_delimiters");
             Wt::Dbo::field(a, _skipSingleReleasePlayLists, "skip_single_release_playlists");
             Wt::Dbo::field(a, _allowMBIDArtistMerge, "allow_mbid_artist_merge");
+            Wt::Dbo::field(a, _artistImageFallbackToReleaseField, "artist_image_fallback_to_release");
         }
 
     private:
@@ -123,5 +126,6 @@ namespace lms::db
         std::string _defaultTagDelimiters;
         bool _skipSingleReleasePlayLists{};
         bool _allowMBIDArtistMerge{};
+        bool _artistImageFallbackToReleaseField{};
     };
 } // namespace lms::db

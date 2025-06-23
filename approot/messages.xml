@@ -74,6 +74,7 @@
 
 <!--Scan settings-->
 <message id="Lms.Admin.Database.allow-mbid-artist-merge">Allow merging artists without an MBID to those with one</message>
+<message id="Lms.Admin.Database.artist-image-fallback-to-release">Use an album artwork if no artist image is available</message>
 <message id="Lms.Admin.Database.artist-tag-delimiters">Delimiters to be used for splitting artist tags</message>
 <message id="Lms.Admin.Database.artists-to-not-split">Artists to not split using the delimiters (one artist per line)</message>
 <message id="Lms.Admin.Database.daily">Daily</message>

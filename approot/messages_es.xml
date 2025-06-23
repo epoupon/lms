@@ -74,6 +74,7 @@
 
 <!--Scan settings-->
 <message id="Lms.Admin.Database.allow-mbid-artist-merge">Permitir la fusión de artistas sin MBID con aquellos que sí lo tienen</message>
+<message id="Lms.Admin.Database.artist-image-fallback-to-release">Usar una imagen del álbum si no hay una imagen disponible del artista</message>
 <message id="Lms.Admin.Database.artist-tag-delimiters">Delimitadores usados para separar las etiquetas de los artistas</message>
 <message id="Lms.Admin.Database.artists-to-not-split">Artistas que no se deben separar usando los delimitadores (un artista por línea)</message>
 <message id="Lms.Admin.Database.daily">Diariamente</message>

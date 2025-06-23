@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 93 };
+        static constexpr Version LMS_DATABASE_VERSION{ 94 };
     }
 
     VersionInfo::VersionInfo()
@@ -1380,6 +1380,12 @@ FROM artist)");
         utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET audio_scan_version = audio_scan_version + 1");
     }
 
+    void migrateFromV93(Session& session)
+    {
+        // add artist_image_fallback_to_release in ScanSettings
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN artist_image_fallback_to_release BOOLEAN NOT NULL DEFAULT(false)");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1449,6 +1455,7 @@ FROM artist)");
             { 90, migrateFromV90 },
             { 91, migrateFromV91 },
             { 92, migrateFromV92 },
+            { 93, migrateFromV93 },
         };
 
         bool migrationPerformed{};

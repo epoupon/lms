@@ -72,6 +72,7 @@ namespace lms::ui
             static inline constexpr Field SimilarityEngineTypeField{ "similarity-engine-type" };
             static inline constexpr Field SkipSingleReleasePlayListsField{ "skip-single-release-playlists" };
             static inline constexpr Field AllowMBIDArtistMergeField{ "allow-mbid-artist-merge" };
+            static inline constexpr Field ArtistImageFallbackToReleaseField{ "artist-image-fallback-to-release" };
             static inline constexpr Field ArtistsToNotSplitField{ "artists-to-not-split" };
 
             using UpdatePeriodModel = ValueStringModel<ScanSettings::UpdatePeriod>;
@@ -85,6 +86,7 @@ namespace lms::ui
                 addField(SimilarityEngineTypeField);
                 addField(SkipSingleReleasePlayListsField);
                 addField(AllowMBIDArtistMergeField);
+                addField(ArtistImageFallbackToReleaseField);
                 addField(ArtistsToNotSplitField);
 
                 setValidator(UpdatePeriodField, createMandatoryValidator());
@@ -92,6 +94,7 @@ namespace lms::ui
                 setValidator(SimilarityEngineTypeField, createMandatoryValidator());
                 setValidator(SkipSingleReleasePlayListsField, createMandatoryValidator());
                 setValidator(AllowMBIDArtistMergeField, createMandatoryValidator());
+                setValidator(ArtistImageFallbackToReleaseField, createMandatoryValidator());
             }
 
             std::shared_ptr<UpdatePeriodModel> updatePeriodModel() { return _updatePeriodModel; }
@@ -120,6 +123,7 @@ namespace lms::ui
 
                 setValue(SkipSingleReleasePlayListsField, scanSettings->getSkipSingleReleasePlayLists());
                 setValue(AllowMBIDArtistMergeField, scanSettings->getAllowMBIDArtistMerge());
+                setValue(ArtistImageFallbackToReleaseField, scanSettings->getArtistImageFallbackToReleaseField());
 
                 auto similarityEngineTypeRow{ _similarityEngineTypeModel->getRowFromValue(scanSettings->getSimilarityEngineType()) };
                 if (similarityEngineTypeRow)
@@ -165,6 +169,11 @@ namespace lms::ui
                 {
                     const bool allowMBIDArtistMerge{ Wt::asNumber(value(AllowMBIDArtistMergeField)) != 0 };
                     scanSettings.modify()->setAllowMBIDArtistMerge(allowMBIDArtistMerge);
+                }
+
+                {
+                    const bool artistImageFallbackToRelease{ Wt::asNumber(value(ArtistImageFallbackToReleaseField)) != 0 };
+                    scanSettings.modify()->setArtistImageFallbackToReleaseField(artistImageFallbackToRelease);
                 }
 
                 {
@@ -370,6 +379,9 @@ namespace lms::ui
 
         // Allow to merge artists without MBID with those with one
         t->setFormWidget(DatabaseSettingsModel::AllowMBIDArtistMergeField, std::make_unique<Wt::WCheckBox>());
+
+        // Allow to fallback on release image if artist image is not available
+        t->setFormWidget(DatabaseSettingsModel::ArtistImageFallbackToReleaseField, std::make_unique<Wt::WCheckBox>());
 
         // Similarity engine type
         auto similarityEngineType{ std::make_unique<Wt::WComboBox>() };
