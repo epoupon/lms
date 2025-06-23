@@ -39,7 +39,7 @@ namespace lms::ui::ArtistListHelpers
         else
             image = utils::createDefaultArtistArtworkImage();
 
-        image->addStyleClass("Lms-cover-release Lms-cover-anchor rounded"); // hack
+        image->addStyleClass("Lms-image-artist Lms-cover-anchor"); // hack
         anchor->setImage(std::move(image));
 
         return entry;
