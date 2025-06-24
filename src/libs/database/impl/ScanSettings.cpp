@@ -121,14 +121,17 @@ namespace lms::db
 
     void ScanSettings::setSkipSingleReleasePlayLists(bool value)
     {
-        if (_skipSingleReleasePlayLists != value)
-            _skipSingleReleasePlayLists = value;
+        _skipSingleReleasePlayLists = value;
     }
 
     void ScanSettings::setAllowMBIDArtistMerge(bool value)
     {
-        if (_allowMBIDArtistMerge != value)
-            _allowMBIDArtistMerge = value;
+        _allowMBIDArtistMerge = value;
+    }
+
+    void ScanSettings::setArtistImageFallbackToReleaseField(bool value)
+    {
+        _artistImageFallbackToReleaseField = value;
     }
 
     void ScanSettings::incAudioScanVersion()

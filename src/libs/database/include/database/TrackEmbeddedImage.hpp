@@ -25,6 +25,8 @@
 
 #include <Wt/Dbo/Dbo.h>
 
+#include "core/EnumSet.hpp"
+#include "database/ArtistId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/TrackEmbeddedImageId.hpp"
@@ -46,10 +48,13 @@ namespace lms::db
         struct FindParameters
         {
             std::optional<Range> range;
+            ArtistId artist;
+            core::EnumSet<TrackArtistLinkType> trackArtistLinkTypes;
             TrackId track;
             ReleaseId release;
+            std::optional<int> discNumber;
             TrackListId trackList;
-            std::optional<bool> isPreferred;
+            core::EnumSet<ImageType> imageTypes;
             TrackEmbeddedImageSortMethod sortMethod{ TrackEmbeddedImageSortMethod::None };
 
             FindParameters& setRange(std::optional<Range> _range)
@@ -57,6 +62,13 @@ namespace lms::db
                 range = _range;
                 return *this;
             }
+            FindParameters& setArtist(ArtistId _artist, core::EnumSet<TrackArtistLinkType> _trackArtistLinkTypes = {})
+            {
+                artist = _artist;
+                trackArtistLinkTypes = _trackArtistLinkTypes;
+                return *this;
+            }
+
             FindParameters& setTrack(TrackId _track)
             {
                 track = _track;
@@ -67,14 +79,19 @@ namespace lms::db
                 release = _release;
                 return *this;
             }
+            FindParameters& setDiscNumber(std::optional<int> _discNumber)
+            {
+                discNumber = _discNumber;
+                return *this;
+            }
             FindParameters& setTrackList(TrackListId _trackList)
             {
                 trackList = _trackList;
                 return *this;
             }
-            FindParameters& setIsPreferred(std::optional<bool> _isPreferred)
+            FindParameters& setImageTypes(core::EnumSet<ImageType> _imageTypes)
             {
-                isPreferred = _isPreferred;
+                imageTypes = _imageTypes;
                 return *this;
             }
             FindParameters& setSortMethod(TrackEmbeddedImageSortMethod _sortMethod)

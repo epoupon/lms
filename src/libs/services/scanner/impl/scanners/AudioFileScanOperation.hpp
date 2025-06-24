@@ -25,15 +25,20 @@
 #include <vector>
 
 #include "image/Types.hpp"
-#include "metadata/IAudioFileParser.hpp"
+#include "metadata/Types.hpp"
 
+#include "FileScanOperationBase.hpp"
 #include "FileToScan.hpp"
-#include "IFileScanner.hpp"
 
 namespace lms::db
 {
     class Db;
 } // namespace lms::db
+
+namespace lms::metadata
+{
+    class IAudioFileParser;
+} // namespace lms::metadata
 
 namespace lms::scanner
 {
@@ -48,32 +53,20 @@ namespace lms::scanner
         std::string description;
     };
 
-    class AudioFileScanOperation : public IFileScanOperation
+    class AudioFileScanOperation : public FileScanOperationBase
     {
     public:
-        AudioFileScanOperation(const FileToScan& fileToScan, db::Db& db, metadata::IAudioFileParser& parser, const ScannerSettings& settings)
-            : _file{ fileToScan.file }
-            , _mediaLibrary{ fileToScan.mediaLibrary }
-            , _db{ db }
-            , _parser{ parser }
-            , _settings{ settings }
-        {
-        }
-        ~AudioFileScanOperation() override = default;
+        AudioFileScanOperation(FileToScan&& fileToScan, db::Db& db, const ScannerSettings& settings, metadata::IAudioFileParser& parser);
+        ~AudioFileScanOperation() override;
         AudioFileScanOperation(const AudioFileScanOperation&) = delete;
         AudioFileScanOperation& operator=(const AudioFileScanOperation&) = delete;
 
     private:
-        const std::filesystem::path& getFile() const override { return _file; };
         core::LiteralString getName() const override { return "ScanAudioFile"; }
         void scan() override;
-        void processResult(ScanContext& context) override;
+        OperationResult processResult() override;
 
-        const std::filesystem::path _file;
-        const MediaLibraryInfo _mediaLibrary;
-        db::Db& _db;
         metadata::IAudioFileParser& _parser;
-        const ScannerSettings& _settings;
         std::unique_ptr<metadata::Track> _parsedTrack;
         std::vector<ImageInfo> _parsedImages;
     };

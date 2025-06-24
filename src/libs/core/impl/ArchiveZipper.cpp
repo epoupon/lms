@@ -22,12 +22,12 @@
 #include <algorithm>
 #include <cassert>
 #include <fstream>
+#include <system_error>
 
 #include <archive.h>
 #include <archive_entry.h>
 
 #include "core/ILogger.hpp"
-#include "core/String.hpp"
 
 namespace lms::zip
 {
@@ -43,9 +43,13 @@ namespace lms::zip
             : Exception{ "File '" + p.string() + "': " + std::string{ message } }
         {
         }
+    };
 
-        FileException(const std::filesystem::path& p, std::string_view message, int err)
-            : Exception{ "File '" + p.string() + "': " + std::string{ message } + ": " + core::stringUtils::systemErrorToString(err) }
+    class FileStdException : public FileException
+    {
+    public:
+        FileStdException(const std::filesystem::path& p, std::string_view message, int err)
+            : FileException{ p, std::string{ message } + "': " + std::error_code{ err, std::generic_category() }.message() }
         {
         }
     };
@@ -240,7 +244,7 @@ namespace lms::zip
 
         std::ifstream ifs{ _currentEntry->filePath, std::ios_base::binary };
         if (!ifs)
-            throw FileException{ _currentEntry->filePath, "cannot open file", errno };
+            throw FileStdException{ _currentEntry->filePath, "cannot open file", errno };
 
         ifs.seekg(0, std::ios::end);
         const std::uint64_t fileSize{ static_cast<std::uint64_t>(ifs.tellg()) };
@@ -254,10 +258,10 @@ namespace lms::zip
 
         // read from file
         if (!ifs.seekg(_currentEntryOffset, std::ios::beg))
-            throw FileException{ _currentEntry->filePath, "seek failed", errno };
+            throw FileStdException{ _currentEntry->filePath, "seek failed", errno };
 
         if (!ifs.read(reinterpret_cast<char*>(_readBuffer.data()), bytesToRead))
-            throw FileException{ _currentEntry->filePath, "read failed", errno };
+            throw FileStdException{ _currentEntry->filePath, "read failed", errno };
 
         const std::uint64_t actualBytesRead{ static_cast<std::uint64_t>(ifs.gcount()) };
 

@@ -40,6 +40,18 @@
 
 namespace lms::ui::utils
 {
+    namespace
+    {
+        std::unique_ptr<Wt::WImage> createArtworkImage()
+        {
+            auto image{ std::make_unique<Wt::WImage>() };
+            image->setStyleClass("Lms-cover img-fluid");                                          // HACK
+            image->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)"); // HACK
+
+            return image;
+        }
+    } // namespace
+
     std::string durationToString(std::chrono::milliseconds msDuration)
     {
         const std::chrono::seconds duration{ std::chrono::duration_cast<std::chrono::seconds>(msDuration) };
@@ -76,32 +88,32 @@ namespace lms::ui::utils
         LmsApp->getModalManager().show(std::move(rawImage));
     }
 
-    std::unique_ptr<Wt::WImage> createArtistImage(db::ArtistId artistId, ArtworkResource::Size size)
+    std::unique_ptr<Wt::WImage> createArtworkImage(db::ArtworkId artworkId, ArtworkResource::Size size)
     {
-        auto image{ std::make_unique<Wt::WImage>() };
-        image->setImageLink(LmsApp->getArtworkResource()->getArtistImageUrl(artistId, size));
-        image->setStyleClass("Lms-cover img-fluid");                                          // HACK
-        image->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)"); // HACK
+        auto image{ createArtworkImage() };
+        image->setImageLink(LmsApp->getArtworkResource()->getArtworkUrl(artworkId, size));
         return image;
     }
 
-    std::unique_ptr<Wt::WImage> createReleaseCover(db::ReleaseId releaseId, ArtworkResource::Size size)
+    std::unique_ptr<Wt::WImage> createDefaultArtistArtworkImage()
     {
-        auto cover{ std::make_unique<Wt::WImage>() };
-        cover->setImageLink(LmsApp->getArtworkResource()->getReleaseCoverUrl(releaseId, size));
-        cover->setStyleClass("Lms-cover img-fluid");                                          // HACK
-        cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)"); // HACK
-        return cover;
+        auto image{ createArtworkImage() };
+        image->setImageLink(LmsApp->getArtworkResource()->getDefaultArtistArtworkUrl());
+        return image;
     }
 
-    std::unique_ptr<Wt::WImage> createTrackImage(db::TrackId trackId, ArtworkResource::Size size)
+    std::unique_ptr<Wt::WImage> createDefaultReleaseArtworkImage()
     {
-        auto cover{ std::make_unique<Wt::WImage>() };
-        cover->setImageLink(LmsApp->getArtworkResource()->getPreferredTrackImageUrl(trackId, size));
-        cover->setStyleClass("Lms-cover img-fluid");                                          // HACK
-        cover->setAttributeValue("onload", LmsApp->javaScriptClass() + ".onLoadCover(this)"); // HACK
+        auto image{ createArtworkImage() };
+        image->setImageLink(LmsApp->getArtworkResource()->getDefaultReleaseArtworkUrl());
+        return image;
+    }
 
-        return cover;
+    std::unique_ptr<Wt::WImage> createDefaultTrackArtworkImage()
+    {
+        auto image{ createArtworkImage() };
+        image->setImageLink(LmsApp->getArtworkResource()->getDefaultTrackArtworkUrl());
+        return image;
     }
 
     std::unique_ptr<Wt::WInteractWidget> createFilter(const Wt::WString& name, const Wt::WString& tooltip, std::string_view colorStyleClass, bool canDelete)

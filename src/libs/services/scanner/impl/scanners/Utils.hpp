@@ -20,9 +20,6 @@
 #pragma once
 
 #include <filesystem>
-#include <optional>
-
-#include <Wt/WDateTime.h>
 
 #include "database/Object.hpp"
 
@@ -33,20 +30,7 @@ namespace lms::db
     class Session;
 } // namespace lms::db
 
-namespace lms::scanner
+namespace lms::scanner::utils
 {
-    struct FileInfo
-    {
-        Wt::WDateTime lastWriteTime;
-        std::filesystem::path relativePath;
-        std::size_t fileSize{};
-    };
-
-    namespace utils
-    {
-        Wt::WDateTime retrieveFileGetLastWrite(const std::filesystem::path& file);
-        std::optional<FileInfo> retrieveFileInfo(const std::filesystem::path& file, const std::filesystem::path& rootPath);
-
-        db::ObjectPtr<db::Directory> getOrCreateDirectory(db::Session& session, const std::filesystem::path& path, const db::ObjectPtr<db::MediaLibrary>& mediaLibrary);
-    } // namespace utils
-} // namespace lms::scanner
+    db::ObjectPtr<db::Directory> getOrCreateDirectory(db::Session& session, const std::filesystem::path& path, const db::ObjectPtr<db::MediaLibrary>& mediaLibrary);
+} // namespace lms::scanner::utils

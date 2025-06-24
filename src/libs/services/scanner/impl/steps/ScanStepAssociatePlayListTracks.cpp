@@ -30,7 +30,9 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackList.hpp"
+#include "services/scanner/ScanErrors.hpp"
 
+#include "ScanContext.hpp"
 #include "ScannerSettings.hpp"
 
 namespace lms::scanner
@@ -57,6 +59,7 @@ namespace lms::scanner
             db::PlayListFileId lastRetrievedPlayListFileId;
             std::size_t processedPlayListFileCount{};
             const ScannerSettings& settings;
+            std::vector<std::shared_ptr<ScanError>> errors;
         };
 
         db::Track::pointer getMatchingTrack(db::Session& session, const std::filesystem::path& filePath, const db::Directory::pointer& playListDirectory)
@@ -81,10 +84,7 @@ namespace lms::scanner
                 return true;
 
             const db::ReleaseId releaseId{ tracks.front().releaseId };
-            if (std::all_of(std::cbegin(tracks) + 1, std::cend(tracks), [=](const TrackInfo& trackInfo) { return trackInfo.releaseId == releaseId; }))
-                return true;
-
-            return false;
+            return std::all_of(std::cbegin(tracks) + 1, std::cend(tracks), [=](const TrackInfo& trackInfo) { return trackInfo.releaseId == releaseId; });
         }
 
         bool trackListNeedsUpdate(db::Session& session, std::string_view name, std::span<const TrackInfo> tracks, const db::TrackList::pointer& trackList)
@@ -124,16 +124,27 @@ namespace lms::scanner
 
                     playListAssociation.playListFileIdId = playListFile->getId();
 
+                    std::vector<std::shared_ptr<ScanError>> pendingErrors;
+
                     const auto files{ playListFile->getFiles() };
                     for (const std::filesystem::path& file : files)
                     {
                         // TODO optim: no need to fetch the whole track
-                        db::Track::pointer track{ getMatchingTrack(searchContext.session, file, playListFile->getDirectory()) };
+                        const db::Track::pointer track{ getMatchingTrack(searchContext.session, file, playListFile->getDirectory()) };
                         if (track)
                             playListAssociation.tracks.push_back(TrackInfo{ .trackId = track->getId(), .releaseId = track->getReleaseId() });
                         else
-                            LMS_LOG(DBUPDATER, DEBUG, "Track " << file << " not found in playlist " << playListFile->getAbsoluteFilePath());
+                        {
+                            pendingErrors.emplace_back(std::make_shared<PlayListFilePathMissingError>(playListFile->getAbsoluteFilePath(), file));
+                        }
                     }
+
+                    if (pendingErrors.size() == files.size())
+                    {
+                        pendingErrors.clear();
+                        pendingErrors.emplace_back(std::make_shared<PlayListFileAllPathesMissingError>(playListFile->getAbsoluteFilePath()));
+                    }
+                    searchContext.errors.insert(std::end(searchContext.errors), std::begin(pendingErrors), std::end(pendingErrors));
 
                     if (playListAssociation.tracks.empty()
                         || (searchContext.settings.skipSingleReleasePlayLists && isSingleReleasePlayList(playListAssociation.tracks)))
@@ -237,6 +248,7 @@ namespace lms::scanner
             .session = session,
             .lastRetrievedPlayListFileId = {},
             .settings = _settings,
+            .errors = context.stats.errors
         };
 
         PlayListFileAssociationContainer playListFileAssociations;
@@ -246,7 +258,12 @@ namespace lms::scanner
                 return;
 
             updatePlayListFiles(session, playListFileAssociations);
+
             context.currentStepStats.processedElems = searchContext.processedPlayListFileCount;
+            for (const std::shared_ptr<ScanError>& error : searchContext.errors)
+                addError(context, error);
+            searchContext.errors.clear();
+
             _progressCallback(context.currentStepStats);
         }
     }

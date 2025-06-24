@@ -14,9 +14,9 @@
 </message>
 
 <message id="Lms.Explore.Artists.template.entry">
-	<div class="col h-100 Lms-bg-dark-hover rounded">
+	<div class="col h-100 Lms-bg-dark-hover">
 		<div class="p-2">
-			<div class="Lms-responsive-square Lms-cover-container mb-1">
+			<div class="Lms-responsive-circle Lms-cover-container mb-1">
 				${image class="shadow-sm"}
 			</div>
 			${name class="d-block text-center text-truncate text-decoration-none link-secondary"}

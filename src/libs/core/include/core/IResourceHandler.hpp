@@ -22,8 +22,7 @@
 #include <Wt/Http/Request.h>
 #include <Wt/Http/Response.h>
 
-// TODO, move elsewhere
-namespace lms
+namespace lms::core
 {
     // Helper class to serve a resource (must be saved as continuation data if not complete)
     class IResourceHandler
@@ -34,4 +33,4 @@ namespace lms
         [[nodiscard]] virtual Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) = 0;
         virtual void abort() = 0;
     };
-} // namespace lms
+} // namespace lms::core

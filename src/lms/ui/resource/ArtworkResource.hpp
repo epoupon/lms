@@ -23,11 +23,7 @@
 
 #include <Wt/WResource.h>
 
-#include "database/ArtistId.hpp"
-#include "database/ImageId.hpp"
-#include "database/ReleaseId.hpp"
-#include "database/TrackEmbeddedImageId.hpp"
-#include "database/TrackId.hpp"
+#include "database/ArtworkId.hpp"
 
 namespace lms::ui
 {
@@ -37,7 +33,7 @@ namespace lms::ui
         static const std::size_t maxSize{ 512 };
 
         ArtworkResource();
-        ~ArtworkResource();
+        ~ArtworkResource() override;
 
         enum class Size : std::size_t
         {
@@ -45,17 +41,13 @@ namespace lms::ui
             Large = 512,
         };
 
-        std::string getArtistImageUrl(db::ArtistId artistId, std::optional<Size> size = std::nullopt) const;
-        std::string getReleaseCoverUrl(db::ReleaseId releaseId, std::optional<Size> size = std::nullopt) const;
-        std::string getPreferredTrackImageUrl(db::TrackId trackId, std::optional<Size> size = std::nullopt) const;
+        std::string getArtworkUrl(db::ArtworkId artworkId, std::optional<Size> size = std::nullopt) const;
+
+        std::string getDefaultArtistArtworkUrl() const;
+        std::string getDefaultReleaseArtworkUrl() const;
+        std::string getDefaultTrackArtworkUrl() const;
 
     private:
-        std::string getImageUrl(db::ImageId imageId, std::optional<Size> size, std::string_view type) const;
-        std::string getImageUrl(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<Size> size, std::string_view type) const;
-
-        std::string getDefaultArtistImageUrl() const;
-        std::string getDefaultReleaseCoverUrl() const;
-
         void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
     };
 } // namespace lms::ui

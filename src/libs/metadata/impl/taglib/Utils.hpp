@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,14 +19,21 @@
 
 #pragma once
 
+#include <filesystem>
 #include <memory>
+#include <span>
 
-#include "core/IResourceHandler.hpp"
+#include <taglib/audioproperties.h>
+#include <taglib/tfile.h>
 
-namespace lms::av::transcoding
+#include "core/TaggedType.hpp"
+#include "metadata/Types.hpp"
+
+namespace lms::metadata::taglib::utils
 {
-    struct InputParameters;
-    struct OutputParameters;
+    std::span<const std::filesystem::path> getSupportedExtensions();
+    TagLib::AudioProperties::ReadStyle readStyleToTagLibReadStyle(ParserReadStyle readStyle);
 
-    std::unique_ptr<IResourceHandler> createResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength);
-} // namespace lms::av::transcoding
+    using ReadAudioProperties = core::TaggedBool<struct ReadAudioPropertiesTag>;
+    std::unique_ptr<TagLib::File> parseFile(const std::filesystem::path& p, TagLib::AudioProperties::ReadStyle readStyle, ReadAudioProperties readAudioProperties);
+} // namespace lms::metadata::taglib::utils

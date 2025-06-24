@@ -36,17 +36,19 @@ namespace lms::scanner
     class LyricsFileScanner : public IFileScanner
     {
     public:
-        LyricsFileScanner(db::Db& db);
+        LyricsFileScanner(db::Db& db, ScannerSettings& settings);
         ~LyricsFileScanner() override = default;
         LyricsFileScanner(const LyricsFileScanner&) = delete;
         LyricsFileScanner& operator=(const LyricsFileScanner&) = delete;
 
     private:
         core::LiteralString getName() const override;
+        std::span<const std::filesystem::path> getSupportedFiles() const override;
         std::span<const std::filesystem::path> getSupportedExtensions() const override;
-        bool needsScan(ScanContext& context, const FileToScan& file) const override;
-        std::unique_ptr<IFileScanOperation> createScanOperation(const FileToScan& fileToScan) const override;
+        bool needsScan(const FileToScan& file) const override;
+        std::unique_ptr<IFileScanOperation> createScanOperation(FileToScan&& fileToScan) const override;
 
         db::Db& _db;
+        ScannerSettings& _settings;
     };
 } // namespace lms::scanner

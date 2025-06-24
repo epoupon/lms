@@ -34,7 +34,7 @@ extern "C"
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
-#include "av/Types.hpp"
+#include "av/Exception.hpp"
 
 namespace lms::av
 {
@@ -320,43 +320,5 @@ namespace lms::av
         res->sampleRate = static_cast<std::size_t>(avstream->codecpar->sample_rate);
 
         return res;
-    }
-
-    std::string_view getMimeType(const std::filesystem::path& fileExtension)
-    {
-        // List should be sync with the demuxers shipped in the lms's docker version
-        // + the _audioFileExtensions in ScanSettings
-        // std::filesystem::path does not seem to have std::hash specialization on freebsd
-        static const std::unordered_map<std::string, std::string_view> entries{
-            { ".mp3", "audio/mpeg" },
-            { ".ogg", "audio/ogg" },
-            { ".oga", "audio/ogg" },
-            { ".opus", "audio/opus" },
-            { ".aac", "audio/aac" },
-            { ".alac", "audio/mp4" },
-            { ".m4a", "audio/mp4" },
-            { ".m4b", "audio/mp4" },
-            { ".flac", "audio/flac" },
-            { ".webm", "audio/webm" },
-            { ".wav", "audio/x-wav" },
-            { ".wma", "audio/x-ms-wma" },
-            { ".ape", "audio/x-monkeys-audio" },
-            { ".mpc", "audio/x-musepack" },
-            { ".shn", "audio/x-shn" },
-            { ".aif", "audio/x-aiff" },
-            { ".aiff", "audio/x-aiff" },
-            { ".m3u", "audio/x-mpegurl" },
-            { ".pls", "audio/x-scpls" },
-            { ".dsf", "audio/x-dsd" },
-            { ".wv", "audio/x-wavpack" },
-            { ".wvp", "audio/x-wavpack" },
-            { ".mka", "audio/x-matroska" },
-        };
-
-        auto it{ entries.find(core::stringUtils::stringToLower(fileExtension.c_str())) };
-        if (it == std::cend(entries))
-            return "";
-
-        return it->second;
     }
 } // namespace lms::av

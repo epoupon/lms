@@ -19,47 +19,37 @@
 
 #pragma once
 
-#include <functional>
-
-#include "av/TranscodingParameters.hpp"
+#include "av/ITranscoder.hpp"
 
 namespace lms::core
 {
     class IChildProcess;
 }
 
-namespace lms::av::transcoding
+namespace lms::av
 {
-    class Transcoder
+    class Transcoder : public ITranscoder
     {
     public:
         Transcoder(const InputParameters& inputParameters, const OutputParameters& outputParameters);
-        ~Transcoder();
+        ~Transcoder() override;
         Transcoder(const Transcoder&) = delete;
         Transcoder& operator=(const Transcoder&) = delete;
-        Transcoder(Transcoder&&) = delete;
-        Transcoder& operator=(Transcoder&&) = delete;
-
-        // non blocking calls
-        using ReadCallback = std::function<void(std::size_t nbReadBytes)>;
-        void asyncRead(std::byte* buffer, std::size_t bufferSize, ReadCallback);
-        std::size_t readSome(std::byte* buffer, std::size_t bufferSize);
-
-        const std::string& getOutputMimeType() const { return _outputMimeType; }
-        const OutputParameters& getOutputParameters() const { return _outputParameters; }
-
-        bool finished() const;
 
     private:
-        static void init();
+        void asyncRead(std::byte* buffer, std::size_t bufferSize, ReadCallback) override;
+        std::size_t readSome(std::byte* buffer, std::size_t bufferSize) override;
 
+        std::string_view getOutputMimeType() const override;
+        const OutputParameters& getOutputParameters() const override { return _outputParams; }
+
+        bool finished() const override;
+        static void init();
         void start();
 
         const std::size_t _debugId{};
-        const InputParameters _inputParameters;
-        const OutputParameters _outputParameters;
-        std::string _outputMimeType;
-
+        const InputParameters _inputParams;
+        const OutputParameters _outputParams;
         std::unique_ptr<core::IChildProcess> _childProcess;
     };
-} // namespace lms::av::transcoding
+} // namespace lms::av

@@ -21,7 +21,11 @@ target_include_directories(lmsrecommendation PRIVATE
 	)
 
 target_link_libraries(lmsrecommendation PRIVATE
-	lmsdatabase
+
 	lmssom
 	std::filesystem
+	)
+
+target_link_libraries(lmsrecommendation PUBLIC
+	lmsdatabase
 	)

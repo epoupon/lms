@@ -21,9 +21,11 @@
 
 #include <functional>
 #include <span>
+#include <unordered_map>
 #include <vector>
 
 #include "IScanStep.hpp"
+#include "ScanErrorLogger.hpp"
 
 namespace lms::db
 {
@@ -35,6 +37,7 @@ namespace lms::scanner
     class IFileScanner;
     struct ScannerSettings;
     struct ScanStepStats;
+    struct ScanContext;
 
     class ScanStepBase : public IScanStep
     {
@@ -57,14 +60,29 @@ namespace lms::scanner
 
     protected:
         const ScannerSettings* getLastScanSettings() const { return _lastScanSettings; }
+        IFileScanner* selectFileScanner(const std::filesystem::path& filePath) const;
+        void visitFileScanners(const std::function<void(IFileScanner*)>& visitor) const;
+
+        void addError(ScanContext& context, std::shared_ptr<ScanError> error);
+
+        template<typename T, typename... CtrArgs>
+        void addError(ScanContext& context, CtrArgs&&... args)
+        {
+            auto error{ std::make_shared<T>(std::forward<CtrArgs>(args)...) };
+            addError(context, error);
+        }
 
         const ScannerSettings& _settings;
         ProgressCallback _progressCallback;
         bool& _abortScan;
         db::Db& _db;
-        std::vector<IFileScanner*> _fileScanners;
 
     private:
+        std::unordered_map<std::filesystem::path, IFileScanner*> _scannerByFile;
+        std::unordered_map<std::filesystem::path, IFileScanner*> _scannerByExtension;
+        std::vector<IFileScanner*> _fileScanners;
+
         const ScannerSettings* _lastScanSettings{};
+        ScanErrorLogger _scanErrorLogger;
     };
 } // namespace lms::scanner

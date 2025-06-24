@@ -22,6 +22,8 @@
 #include <filesystem>
 #include <vector>
 
+#include "database/ImageId.hpp"
+#include "database/TrackEmbeddedImageId.hpp"
 #include "services/artwork/IArtworkService.hpp"
 
 #include "ImageCache.hpp"
@@ -36,7 +38,7 @@ namespace lms::metadata
     class IAudioFileParser;
 }
 
-namespace lms::cover
+namespace lms::artwork
 {
     class ArtworkService : public IArtworkService
     {
@@ -47,19 +49,21 @@ namespace lms::cover
         ArtworkService& operator=(const ArtworkService&) = delete;
 
     private:
-        std::shared_ptr<image::IEncodedImage> getImage(db::ImageId imageId, std::optional<image::ImageSize> width) override;
-        std::shared_ptr<image::IEncodedImage> getTrackEmbeddedImage(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<image::ImageSize> width) override;
+        db::ArtworkId findTrackListImage(db::TrackListId trackListId) override;
 
-        std::shared_ptr<image::IEncodedImage> getDefaultReleaseCover() override;
-        std::shared_ptr<image::IEncodedImage> getDefaultArtistImage() override;
+        std::shared_ptr<image::IEncodedImage> getImage(db::ArtworkId artworkId, std::optional<image::ImageSize> width) override;
+
+        std::shared_ptr<image::IEncodedImage> getDefaultReleaseArtwork() override;
+        std::shared_ptr<image::IEncodedImage> getDefaultArtistArtwork() override;
 
         void flushCache() override;
         void setJpegQuality(unsigned quality) override;
 
-        std::unique_ptr<image::IEncodedImage> getFromImageFile(const std::filesystem::path& p, std::optional<image::ImageSize> width) const;
-        std::unique_ptr<image::IEncodedImage> getTrackImage(const std::filesystem::path& path, std::optional<image::ImageSize> width) const;
+        std::shared_ptr<image::IEncodedImage> getImage(db::ImageId imageId, std::optional<image::ImageSize> width);
+        std::shared_ptr<image::IEncodedImage> getTrackEmbeddedImage(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<image::ImageSize> width);
 
-        static bool checkImageFile(const std::filesystem::path& filePath);
+        std::unique_ptr<image::IEncodedImage> getFromImageFile(const std::filesystem::path& p, std::optional<image::ImageSize> width) const;
+        std::unique_ptr<image::IEncodedImage> getTrackImage(const std::filesystem::path& path, std::size_t index, std::optional<image::ImageSize> width) const;
 
         db::Db& _db;
 
@@ -72,4 +76,4 @@ namespace lms::cover
         unsigned _jpegQuality;
     };
 
-} // namespace lms::cover
+} // namespace lms::artwork

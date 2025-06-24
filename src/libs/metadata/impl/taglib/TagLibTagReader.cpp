@@ -19,44 +19,49 @@
 
 #include "TagLibTagReader.hpp"
 
-#include <algorithm>
 #include <unordered_map>
 
+#include "TagLibDefs.hpp"
+
 #include <taglib/aifffile.h>
+#include <taglib/apefile.h>
 #include <taglib/apeproperties.h>
 #include <taglib/apetag.h>
 #include <taglib/asffile.h>
-#if TAGLIB_MAJOR_VERSION >= 2
-    #include <taglib/dsffile.h>
-#endif
-#include <taglib/fileref.h>
 #include <taglib/flacfile.h>
 #include <taglib/id3v2tag.h>
 #include <taglib/mp4file.h>
 #include <taglib/mpcfile.h>
 #include <taglib/mpegfile.h>
+#include <taglib/oggflacfile.h>
 #include <taglib/opusfile.h>
+#include <taglib/speexfile.h>
 #include <taglib/synchronizedlyricsframe.h>
 #include <taglib/tag.h>
 #include <taglib/tpropertymap.h>
+#include <taglib/trueaudiofile.h>
 #include <taglib/unsynchronizedlyricsframe.h>
 #include <taglib/vorbisfile.h>
 #include <taglib/wavfile.h>
 #include <taglib/wavpackfile.h>
+#if TAGLIB_HAS_DSF
+    #include <taglib/dsffile.h>
+#endif
 
 #include "core/ILogger.hpp"
-#include "core/ITraceLogger.hpp"
 #include "core/String.hpp"
 #include "metadata/Exception.hpp"
 
-#include "TagLibDefs.hpp"
+#include "Utils.hpp"
 
-namespace lms::metadata
+namespace lms::metadata::taglib
 {
     namespace
     {
         class TagParsingFailedException : public Exception
         {
+        public:
+            using Exception::Exception;
         };
 
         // Mapping to internal taglib names and/or common alternative custom names
@@ -166,21 +171,6 @@ namespace lms::metadata
             { TagType::Writer, { "WRITER" } },
         };
 
-        TagLib::AudioProperties::ReadStyle readStyleToTagLibReadStyle(ParserReadStyle readStyle)
-        {
-            switch (readStyle)
-            {
-            case ParserReadStyle::Fast:
-                return TagLib::AudioProperties::ReadStyle::Fast;
-            case ParserReadStyle::Average:
-                return TagLib::AudioProperties::ReadStyle::Average;
-            case ParserReadStyle::Accurate:
-                return TagLib::AudioProperties::ReadStyle::Accurate;
-            }
-
-            throw core::LmsException{ "Cannot convert read style" };
-        }
-
         void mergeTagMaps(TagLib::PropertyMap& dst, TagLib::PropertyMap&& src)
         {
             for (auto&& [tag, values] : src)
@@ -211,35 +201,26 @@ namespace lms::metadata
                 }
             }
         }
-
-        TagLib::FileRef parseFile(const std::filesystem::path& p, ParserReadStyle parserReadStyle)
-        {
-            LMS_SCOPED_TRACE_DETAILED("MetaData", "TagLibParseFileForMetaData");
-
-            return TagLib::FileRef{ p.c_str(), true // read audio properties
-                ,
-                readStyleToTagLibReadStyle(parserReadStyle) };
-        }
     } // namespace
 
     TagLibTagReader::TagLibTagReader(const std::filesystem::path& p, ParserReadStyle parserReadStyle, bool debug)
-        : _file{ parseFile(p, parserReadStyle) }
+        : _file{ utils::parseFile(p, utils::readStyleToTagLibReadStyle(parserReadStyle), utils::ReadAudioProperties{ true }) }
     {
-        if (_file.isNull())
+        if (!_file)
         {
             LMS_LOG(METADATA, ERROR, "File " << p << ": parsing failed");
-            throw TagParsingFailedException{};
+            throw AudioFileParsingException{ "Parsing failed" };
         }
 
-        if (!_file.audioProperties())
+        if (!_file->audioProperties())
         {
             LMS_LOG(METADATA, ERROR, "File " << p << ": no audio properties");
-            throw TagParsingFailedException{};
+            throw AudioFileNoAudioPropertiesException{};
         }
 
         computeAudioProperties();
 
-        _propertyMap = _file.file()->properties();
+        _propertyMap = _file->properties();
 
         if (debug && core::Service<core::logging::ILogger>::get()->isSeverityActive(core::logging::Severity::DEBUG))
         {
@@ -319,7 +300,7 @@ namespace lms::metadata
         };
 
         // WMA
-        if (TagLib::ASF::File * asfFile{ dynamic_cast<TagLib::ASF::File*>(_file.file()) })
+        if (TagLib::ASF::File * asfFile{ dynamic_cast<TagLib::ASF::File*>(_file.get()) })
         {
             if (const TagLib::ASF::Tag * tag{ asfFile->tag() })
             {
@@ -365,7 +346,7 @@ namespace lms::metadata
             }
         }
         // MP3
-        else if (TagLib::MPEG::File * mp3File{ dynamic_cast<TagLib::MPEG::File*>(_file.file()) })
+        else if (TagLib::MPEG::File * mp3File{ dynamic_cast<TagLib::MPEG::File*>(_file.get()) })
         {
             if (mp3File->hasID3v2Tag())
                 processID3v2Tags(*mp3File->ID3v2Tag());
@@ -373,7 +354,7 @@ namespace lms::metadata
             getAPETags(mp3File->APETag());
         }
         // MP4
-        else if (TagLib::MP4::File * mp4File{ dynamic_cast<TagLib::MP4::File*>(_file.file()) })
+        else if (TagLib::MP4::File * mp4File{ dynamic_cast<TagLib::MP4::File*>(_file.get()) })
         {
             // Taglib does not expose rtng in properties
             if (const TagLib::MP4::Item rtngItem{ mp4File->tag()->item("rtng") }; rtngItem.isValid())
@@ -406,40 +387,42 @@ namespace lms::metadata
             }
         }
         // MPC
-        else if (TagLib::MPC::File * mpcFile{ dynamic_cast<TagLib::MPC::File*>(_file.file()) })
+        else if (TagLib::MPC::File * mpcFile{ dynamic_cast<TagLib::MPC::File*>(_file.get()) })
         {
             getAPETags(mpcFile->APETag());
         }
         // WavPack
-        else if (TagLib::WavPack::File * wavPackFile{ dynamic_cast<TagLib::WavPack::File*>(_file.file()) })
+        else if (TagLib::WavPack::File * wavPackFile{ dynamic_cast<TagLib::WavPack::File*>(_file.get()) })
         {
             getAPETags(wavPackFile->APETag());
         }
         // FLAC
-        else if (TagLib::FLAC::File * flacFile{ dynamic_cast<TagLib::FLAC::File*>(_file.file()) })
+        else if (TagLib::FLAC::File * flacFile{ dynamic_cast<TagLib::FLAC::File*>(_file.get()) })
         {
             if (flacFile->hasID3v2Tag()) // discouraged usage
                 processID3v2Tags(*flacFile->ID3v2Tag());
         }
-        else if (TagLib::RIFF::AIFF::File * aiffFile{ dynamic_cast<TagLib::RIFF::AIFF::File*>(_file.file()) })
+        else if (TagLib::RIFF::AIFF::File * aiffFile{ dynamic_cast<TagLib::RIFF::AIFF::File*>(_file.get()) })
         {
             if (aiffFile->hasID3v2Tag())
                 processID3v2Tags(*aiffFile->tag());
         }
-        else if (TagLib::RIFF::WAV::File * wavFile{ dynamic_cast<TagLib::RIFF::WAV::File*>(_file.file()) })
+        else if (TagLib::RIFF::WAV::File * wavFile{ dynamic_cast<TagLib::RIFF::WAV::File*>(_file.get()) })
         {
             if (wavFile->hasID3v2Tag())
                 processID3v2Tags(*wavFile->ID3v2Tag());
         }
     }
 
+    TagLibTagReader::~TagLibTagReader() = default;
+
     void TagLibTagReader::computeAudioProperties()
     {
-        const TagLib::AudioProperties* properties{ _file.audioProperties() };
+        const TagLib::AudioProperties* properties{ _file->audioProperties() };
 
         // Common properties
         _audioProperties.bitrate = static_cast<std::size_t>(properties->bitrate() * 1000);
-        _audioProperties.channelCount = static_cast<std::size_t>(_file.audioProperties()->channels());
+        _audioProperties.channelCount = static_cast<std::size_t>(_file->audioProperties()->channels());
         _audioProperties.duration = std::chrono::milliseconds{ properties->lengthInMilliseconds() };
         _audioProperties.sampleRate = static_cast<std::size_t>(properties->sampleRate());
 
@@ -457,7 +440,7 @@ namespace lms::metadata
             _audioProperties.bitsPerSample = aiffProperties->bitsPerSample();
         else if (const auto* wavProperties{ dynamic_cast<const TagLib::RIFF::WAV::Properties*>(properties) })
             _audioProperties.bitsPerSample = wavProperties->bitsPerSample();
-#if TAGLIB_MAJOR_VERSION >= 2
+#if TAGLIB_HAS_DSF
         else if (const auto* dsfProperties{ dynamic_cast<const TagLib::DSF::Properties*>(properties) })
             _audioProperties.bitsPerSample = dsfProperties->bitsPerSample();
 #endif
@@ -534,4 +517,4 @@ namespace lms::metadata
             });
         }
     }
-} // namespace lms::metadata
+} // namespace lms::metadata::taglib

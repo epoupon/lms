@@ -25,9 +25,9 @@
 #include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
+#include "metadata/IAudioFileParser.hpp"
 
 #include "AudioFileScanOperation.hpp"
-#include "ScanContext.hpp"
 #include "ScannerSettings.hpp"
 #include "Utils.hpp"
 
@@ -77,66 +77,29 @@ namespace lms::scanner
         return "Audio scanner";
     }
 
+    std::span<const std::filesystem::path> AudioFileScanner::getSupportedFiles() const
+    {
+        return {};
+    }
+
     std::span<const std::filesystem::path> AudioFileScanner::getSupportedExtensions() const
     {
         return _metadataParser->getSupportedExtensions();
     }
 
-    bool AudioFileScanner::needsScan(ScanContext& context, const FileToScan& file) const
+    bool AudioFileScanner::needsScan(const FileToScan& file) const
     {
-        ScanStats& stats{ context.stats };
-
-        const Wt::WDateTime lastWriteTime{ utils::retrieveFileGetLastWrite(file.file) };
-        // Should rarely fail as we are currently iterating it
-        if (!lastWriteTime.isValid())
-        {
-            stats.skips++;
-            return false;
-        }
-
-        if (context.scanOptions.fullScan)
-            return true;
-
-        bool needUpdateLibrary{};
         db::Session& dbSession{ _db.getTLSSession() };
+        auto transaction{ dbSession.createReadTransaction() };
 
-        {
-            auto transaction{ dbSession.createReadTransaction() };
-
-            // Skip file if last write is the same
-            const db::Track::pointer track{ db::Track::findByPath(dbSession, file.file) };
-            if (track
-                && track->getLastWriteTime() == lastWriteTime
-                && track->getScanVersion() == _settings.audioScanVersion)
-            {
-                // this file may have been moved from one library to another, then we just need to update the media library id instead of a full rescan
-                const auto trackMediaLibrary{ track->getMediaLibrary() };
-                if (trackMediaLibrary && trackMediaLibrary->getId() == file.mediaLibrary.id)
-                {
-                    stats.skips++;
-                    return false;
-                }
-
-                needUpdateLibrary = true;
-            }
-        }
-
-        if (needUpdateLibrary)
-        {
-            auto transaction{ dbSession.createWriteTransaction() };
-
-            db::Track::pointer track{ db::Track::findByPath(dbSession, file.file) };
-            assert(track);
-            track.modify()->setMediaLibrary(db::MediaLibrary::find(dbSession, file.mediaLibrary.id)); // may be null, will be handled in the next scan anyway
-            stats.updates++;
-            return false;
-        }
-
-        return true; // need to scan
+        const db::Track::pointer track{ db::Track::findByPath(dbSession, file.filePath) };
+        return !track
+            || track->getLastWriteTime() != file.lastWriteTime
+            || track->getScanVersion() != _settings.audioScanVersion;
     }
 
-    std::unique_ptr<IFileScanOperation> AudioFileScanner::createScanOperation(const FileToScan& fileToScan) const
+    std::unique_ptr<IFileScanOperation> AudioFileScanner::createScanOperation(FileToScan&& fileToScan) const
     {
-        return std::make_unique<AudioFileScanOperation>(fileToScan, _db, *_metadataParser, _settings);
+        return std::make_unique<AudioFileScanOperation>(std::move(fileToScan), _db, _settings, *_metadataParser);
     }
 } // namespace lms::scanner

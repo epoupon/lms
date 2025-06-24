@@ -38,24 +38,50 @@ namespace lms::db
 
             auto query{ session.getDboSession()->query<Wt::Dbo::ptr<TrackEmbeddedImage>>("SELECT t_e_i FROM track_embedded_image t_e_i") };
 
-            if (params.isPreferred
+            if (params.artist.isValid()
+                || params.discNumber.has_value()
                 || params.track.isValid()
                 || params.release.isValid()
                 || params.trackList.isValid()
-                || params.sortMethod == TrackEmbeddedImageSortMethod::FrontCoverAndSize)
+                || !params.imageTypes.empty()
+                || params.sortMethod == TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc
+                || params.sortMethod == TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc)
             {
                 query.join("track_embedded_image_link t_e_i_l ON t_e_i_l.track_embedded_image_id = t_e_i.id");
 
-                if (params.isPreferred)
-                    query.where("t_e_i_l.is_preferred = ?").bind(params.isPreferred.value());
+                if (params.artist.isValid())
+                {
+                    query.join("track_artist_link t_a_l ON t_a_l.track_id = t_e_i_l.track_id");
+                    query.where("t_a_l.artist_id = ?").bind(params.artist);
+
+                    if (!params.trackArtistLinkTypes.empty())
+                    {
+                        std::string clause{ "t_a_l.type IN (" };
+                        for (const auto& type : params.trackArtistLinkTypes)
+                        {
+                            if (clause.back() != '(')
+                                clause += ",";
+                            clause += "?";
+                            query.bind(type);
+                        }
+                        clause += ")";
+                        query.where(clause);
+                    }
+                }
 
                 if (params.track.isValid())
                     query.where("t_e_i_l.track_id = ?").bind(params.track);
 
-                if (params.release.isValid())
+                if (params.release.isValid()
+                    || params.discNumber.has_value()
+                    || params.sortMethod == TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc
+                    || params.sortMethod == TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc)
                 {
                     query.join("track t ON t_e_i_l.track_id = t.id");
-                    query.where("t.release_id = ?").bind(params.release);
+                    if (params.release.isValid())
+                        query.where("t.release_id = ?").bind(params.release);
+                    if (params.discNumber.has_value())
+                        query.where("t.disc_number = ?").bind(params.discNumber.value());
                 }
 
                 if (params.trackList.isValid())
@@ -63,14 +89,38 @@ namespace lms::db
                     query.join("tracklist_entry t_l_e ON t_l_e.track_id = t_e_i_l.track_id");
                     query.where("t_l_e.tracklist_id = ?").bind(params.trackList);
                 }
+
+                if (!params.imageTypes.empty())
+                {
+                    std::string clause{ "t_e_i_l.type IN (" };
+                    for (const auto& type : params.imageTypes)
+                    {
+                        if (clause.back() != '(')
+                            clause += ",";
+                        clause += "?";
+                        query.bind(type);
+                    }
+                    clause += ")";
+                    query.where(clause);
+                }
             }
 
             switch (params.sortMethod)
             {
             case TrackEmbeddedImageSortMethod::None:
                 break;
-            case TrackEmbeddedImageSortMethod::FrontCoverAndSize:
-                query.orderBy("CASE WHEN t_e_i_l.type = ? THEN 0 ELSE 1 END, t_e_i.size").bind(ImageType::FrontCover);
+            case TrackEmbeddedImageSortMethod::SizeDesc:
+                query.orderBy("t_e_i.size DESC");
+                break;
+            case TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc:
+                query.orderBy("t.disc_number, t.track_number, t_e_i.size DESC");
+                break;
+            case TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc:
+                query.orderBy("t.track_number, t_e_i.size DESC");
+                break;
+            case TrackEmbeddedImageSortMethod::TrackListIndexAscThenSizeDesc:
+                assert(params.trackList.isValid());
+                query.orderBy("t_l_e.id, t_e_i.size DESC");
                 break;
             }
 

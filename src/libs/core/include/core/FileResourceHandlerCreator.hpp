@@ -25,7 +25,7 @@
 
 #include "core/IResourceHandler.hpp"
 
-namespace lms
+namespace lms::core
 {
-    std::unique_ptr<IResourceHandler> createFileResourceHandler(const std::filesystem::path& path, std::string_view mimeType);
+    std::unique_ptr<IResourceHandler> createFileResourceHandler(const std::filesystem::path& path, std::string_view mimeType = "");
 }

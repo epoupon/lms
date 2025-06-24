@@ -27,34 +27,19 @@
 #include "core/ILogger.hpp"
 #include "core/Service.hpp"
 
-#include "av/Types.hpp"
+#include "av/Exception.hpp"
 
-namespace lms::av::transcoding
+namespace lms::av
 {
-
 #define LOG(severity, message) LMS_LOG(TRANSCODING, severity, "[" << _debugId << "] - " << message)
+
+    std::unique_ptr<ITranscoder> createTranscoder(const InputParameters& inputParameters, const OutputParameters& outputParameters)
+    {
+        return std::make_unique<Transcoder>(inputParameters, outputParameters);
+    }
 
     static std::atomic<size_t> globalId{};
     static std::filesystem::path ffmpegPath;
-
-    std::string_view formatToMimetype(OutputFormat format)
-    {
-        switch (format)
-        {
-        case OutputFormat::MP3:
-            return "audio/mpeg";
-        case OutputFormat::OGG_OPUS:
-            return "audio/opus";
-        case OutputFormat::MATROSKA_OPUS:
-            return "audio/x-matroska";
-        case OutputFormat::OGG_VORBIS:
-            return "audio/ogg";
-        case OutputFormat::WEBM_VORBIS:
-            return "audio/webm";
-        }
-
-        throw Exception{ "Invalid encoding" };
-    }
 
     void Transcoder::init()
     {
@@ -63,10 +48,10 @@ namespace lms::av::transcoding
             throw Exception{ "File '" + ffmpegPath.string() + "' does not exist!" };
     }
 
-    Transcoder::Transcoder(const InputParameters& inputParameters, const OutputParameters& outputParameters)
+    Transcoder::Transcoder(const InputParameters& inputParams, const OutputParameters& outputParams)
         : _debugId{ globalId++ }
-        , _inputParameters{ inputParameters }
-        , _outputParameters{ outputParameters }
+        , _inputParams{ inputParams }
+        , _outputParams{ outputParams }
     {
         start();
     }
@@ -80,17 +65,18 @@ namespace lms::av::transcoding
 
         try
         {
-            if (!std::filesystem::exists(_inputParameters.trackPath))
-                throw Exception{ "File '" + _inputParameters.trackPath.string() + "' does not exist!" };
-            if (!std::filesystem::is_regular_file(_inputParameters.trackPath))
-                throw Exception{ "File '" + _inputParameters.trackPath.string() + "' is not regular!" };
+            if (!std::filesystem::exists(_inputParams.file))
+                throw Exception{ "File " + _inputParams.file.string() + " does not exist!" };
+            if (!std::filesystem::is_regular_file(_inputParams.file))
+                throw Exception{ "File " + _inputParams.file.string() + " is not regular!" };
         }
         catch (const std::filesystem::filesystem_error& e)
         {
-            throw Exception{ "File error '" + _inputParameters.trackPath.string() + "': " + e.what() };
+            // TODO store/raise e.code()
+            throw Exception{ "File error '" + _inputParams.file.string() + "': " + e.what() };
         }
 
-        LOG(INFO, "Transcoding file " << _inputParameters.trackPath);
+        LOG(INFO, "Transcoding file " << _inputParams.file);
 
         std::vector<std::string> args;
 
@@ -109,22 +95,22 @@ namespace lms::av::transcoding
             args.emplace_back("-ss");
 
             std::ostringstream oss;
-            oss << std::fixed << std::showpoint << std::setprecision(3) << (_outputParameters.offset.count() / float{ 1'000 });
+            oss << std::fixed << std::showpoint << std::setprecision(3) << (_inputParams.offset.count() / float{ 1'000 });
             args.emplace_back(oss.str());
         }
 
         // Input file
         args.emplace_back("-i");
-        args.emplace_back(_inputParameters.trackPath.string());
+        args.emplace_back(_inputParams.file.string());
 
         // Stream mapping, if set
-        if (_outputParameters.stream)
+        if (_inputParams.streamIndex)
         {
             args.emplace_back("-map");
-            args.emplace_back("0:" + std::to_string(*_outputParameters.stream));
+            args.emplace_back("0:" + std::to_string(*_inputParams.streamIndex));
         }
 
-        if (_outputParameters.stripMetadata)
+        if (_outputParams.stripMetadata)
         {
             // Strip metadata
             args.emplace_back("-map_metadata");
@@ -136,10 +122,10 @@ namespace lms::av::transcoding
 
         // Output bitrates
         args.emplace_back("-b:a");
-        args.emplace_back(std::to_string(_outputParameters.bitrate));
+        args.emplace_back(std::to_string(_outputParams.bitrate));
 
         // Codecs and formats
-        switch (_outputParameters.format)
+        switch (_outputParams.format)
         {
         case OutputFormat::MP3:
             args.emplace_back("-f");
@@ -175,10 +161,8 @@ namespace lms::av::transcoding
             break;
 
         default:
-            throw Exception{ "Unhandled format (" + std::to_string(static_cast<int>(_outputParameters.format)) + ")" };
+            throw Exception{ "Unhandled format (" + std::to_string(static_cast<int>(_outputParams.format)) + ")" };
         }
-
-        _outputMimeType = formatToMimetype(_outputParameters.format);
 
         args.emplace_back("pipe:1");
 
@@ -213,6 +197,25 @@ namespace lms::av::transcoding
         return _childProcess->readSome(buffer, bufferSize);
     }
 
+    std::string_view Transcoder::getOutputMimeType() const
+    {
+        switch (_outputParams.format)
+        {
+        case OutputFormat::MP3:
+            return "audio/mpeg";
+        case OutputFormat::OGG_OPUS:
+            return "audio/opus";
+        case OutputFormat::MATROSKA_OPUS:
+            return "audio/x-matroska";
+        case OutputFormat::OGG_VORBIS:
+            return "audio/ogg";
+        case OutputFormat::WEBM_VORBIS:
+            return "audio/webm";
+        }
+
+        return "application/octet-stream"; // default, should not happen
+    }
+
     bool Transcoder::finished() const
     {
         assert(_childProcess);
@@ -220,4 +223,4 @@ namespace lms::av::transcoding
         return _childProcess->finished();
     }
 
-} // namespace lms::av::transcoding
+} // namespace lms::av

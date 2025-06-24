@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,16 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "av/RawResourceHandlerCreator.hpp"
+#pragma once
 
-#include "av/IAudioFile.hpp"
-#include "core/FileResourceHandlerCreator.hpp"
+#include <filesystem>
+#include <span>
 
-namespace lms::av
+namespace lms::metadata::avformat::utils
 {
-    std::unique_ptr<IResourceHandler> createRawResourceHandler(const std::filesystem::path& path)
-    {
-        std::string_view mimeType{ getMimeType(path.extension()) };
-        return createFileResourceHandler(path, mimeType.empty() ? "application/octet-stream" : mimeType);
-    }
-} // namespace lms::av
+    std::span<const std::filesystem::path> getSupportedExtensions();
+} // namespace lms::metadata::avformat::utils

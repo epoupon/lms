@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,14 +19,23 @@
 
 #pragma once
 
-#include <taglib/taglib.h>
+#include <filesystem>
 
-// TAGLIB_HAS_MP4_ITEM_TYPE if version >= 2.0.1
-#if ((TAGLIB_MAJOR_VERSION > 2) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_MINOR_VERSION > 0) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_PATCH_VERSION >= 1))
-    #define TAGLIB_HAS_MP4_ITEM_TYPE 1
-#endif
+#include "database/ArtworkId.hpp"
+#include "database/ImageId.hpp"
+#include "database/Object.hpp"
+#include "database/TrackEmbeddedImageId.hpp"
 
-// TAGLIB_HAS_APE_COMPLEX_PROPERTIES if version >= 2.0.2
-#if ((TAGLIB_MAJOR_VERSION > 2) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_MINOR_VERSION > 0) || (TAGLIB_MAJOR_VERSION == 2 && TAGLIB_PATCH_VERSION >= 2))
-    #define TAGLIB_HAS_APE_COMPLEX_PROPERTIES 1
-#endif
+namespace lms::db
+{
+    class Artwork;
+    class Session;
+} // namespace lms::db
+
+namespace lms::scanner::utils
+{
+    db::ObjectPtr<db::Artwork> getOrCreateArtworkFromTrackEmbeddedImage(db::Session& session, db::TrackEmbeddedImageId trackEmbeddedImageId);
+    db::ObjectPtr<db::Artwork> getOrCreateArtworkFromImage(db::Session& session, db::ImageId imageId);
+
+    std::filesystem::path toPath(db::Session& session, db::ArtworkId artworkId);
+} // namespace lms::scanner::utils

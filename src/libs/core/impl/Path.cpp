@@ -23,6 +23,7 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <system_error>
 #include <unistd.h>
 
 #include <boost/tokenizer.hpp>
@@ -66,16 +67,24 @@ namespace lms::core::pathUtils
             return std::filesystem::create_directory(dir);
     }
 
-    Wt::WDateTime getLastWriteTime(const std::filesystem::path& file)
+    Wt::WDateTime getLastWriteTime(const std::filesystem::path& file, std::error_code& ec)
     {
+        Wt::WDateTime res;
+
         struct stat sb
         {
         };
-
         if (stat(file.c_str(), &sb) == -1)
-            throw LmsException("Failed to get stats on file '" + file.string() + "'");
+        {
+            ec = std::error_code{ errno, std::generic_category() };
+        }
+        else
+        {
+            ec = std::error_code{};
+            res = Wt::WDateTime::fromTime_t(sb.st_mtime);
+        }
 
-        return Wt::WDateTime::fromTime_t(sb.st_mtime);
+        return res;
     }
 
     bool exploreFilesRecursive(const std::filesystem::path& directory, std::function<bool(std::error_code, const std::filesystem::path&)> cb, const std::filesystem::path* excludeDirFileName)

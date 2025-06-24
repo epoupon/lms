@@ -20,11 +20,12 @@
 #pragma once
 
 #include "core/LiteralString.hpp"
-
-#include "ScanContext.hpp"
+#include "services/scanner/ScannerStats.hpp"
 
 namespace lms::scanner
 {
+    struct ScanContext;
+
     class IScanStep
     {
     public:

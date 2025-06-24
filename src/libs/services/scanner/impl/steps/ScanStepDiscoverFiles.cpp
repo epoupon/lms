@@ -24,7 +24,8 @@
 
 #include "MediaLibraryInfo.hpp"
 #include "ScannerSettings.hpp"
-#include "scanners/IFileScanner.hpp"
+
+#include "ScanContext.hpp"
 
 namespace lms::scanner
 {
@@ -38,13 +39,6 @@ namespace lms::scanner
     {
         context.stats.totalFileCount = 0;
 
-        std::vector<std::filesystem::path> supportedFileExtensions;
-        for (IFileScanner* scanner : _fileScanners)
-        {
-            for (const std::filesystem::path& extension : scanner->getSupportedExtensions())
-                supportedFileExtensions.emplace_back(extension);
-        }
-
         for (const MediaLibraryInfo& mediaLibrary : _settings.mediaLibraries)
         {
             std::size_t currentDirectoryProcessElemsCount{};
@@ -53,7 +47,8 @@ namespace lms::scanner
                     if (_abortScan)
                         return false;
 
-                    if (!ec && core::pathUtils::hasFileAnyExtension(path, supportedFileExtensions))
+                    // we don't report errors here (done in the actual scan step)
+                    if (!ec && selectFileScanner(path))
                     {
                         context.currentStepStats.processedElems++;
                         currentDirectoryProcessElemsCount++;
@@ -64,7 +59,7 @@ namespace lms::scanner
                 },
                 &excludeDirFileName);
 
-            LMS_LOG(DBUPDATER, DEBUG, "Discovered " << currentDirectoryProcessElemsCount << " files in '" << mediaLibrary.rootDirectory << "'");
+            LMS_LOG(DBUPDATER, DEBUG, "Discovered " << currentDirectoryProcessElemsCount << " files in " << mediaLibrary.rootDirectory);
         }
 
         context.stats.totalFileCount = context.currentStepStats.processedElems;

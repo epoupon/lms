@@ -20,12 +20,13 @@
 #pragma once
 
 #include <filesystem>
+#include <fstream>
 #include <string>
 #include <string_view>
 
 #include "core/IResourceHandler.hpp"
 
-namespace lms
+namespace lms::core
 {
     class FileResourceHandler final : public IResourceHandler
     {
@@ -38,9 +39,10 @@ namespace lms
 
         static constexpr std::size_t _chunkSize{ 262'144 };
 
-        std::filesystem::path _path;
         std::string _mimeType;
         ::uint64_t _beyondLastByte{};
         ::uint64_t _offset{};
+        ::uint64_t _fileSize{};
+        std::ifstream _ifs;
     };
-} // namespace lms
+} // namespace lms::core

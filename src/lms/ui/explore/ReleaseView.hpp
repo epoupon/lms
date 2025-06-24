@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "database/ArtworkId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
 
@@ -41,6 +42,7 @@ namespace lms::ui
 
     private:
         void refreshView();
+        void refreshArtwork(db::ArtworkId artworkId);
         void refreshReleaseArtists(const db::ObjectPtr<db::Release>& release);
         void refreshCopyright(const db::ObjectPtr<db::Release>& release);
         void refreshLinks(const db::ObjectPtr<db::Release>& release);

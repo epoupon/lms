@@ -24,6 +24,8 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 
+#include "ScanContext.hpp"
+
 namespace lms::scanner
 {
     bool ScanStepCheckForDuplicatedFiles::needProcess([[maybe_unused]] const ScanContext& context) const

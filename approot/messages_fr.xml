@@ -74,6 +74,7 @@
 
 <!--Scan settings-->
 <message id="Lms.Admin.Database.allow-mbid-artist-merge">Permettre la fusion des artistes sans MBID avec ceux qui en ont un</message>
+<message id="Lms.Admin.Database.artist-image-fallback-to-release">Utilizza un'immagine dell'album se non è disponibile un'immagine dell'artista</message>
 <message id="Lms.Admin.Database.artist-tag-delimiters">Délimiteurs à utiliser pour séparer les tags d'artistes</message>
 <message id="Lms.Admin.Database.artists-to-not-split">Artistes à ne pas séparer en utilisant les délimiteurs (un artiste par ligne)</message>
 <message id="Lms.Admin.Database.daily">Tous les jours</message>
@@ -100,9 +101,10 @@
 
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Impossible de récupérer la durée de la piste</message>
+<message id="Lms.Admin.ScannerController.bad-embedded-image">Impossible de lire l'image à l'indice {1}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-artist-info-file">Impossible d'analyser le fichier d'informations sur l'artiste</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">Impossible d'analyser le fichier audio</message>
-<message id="Lms.Admin.ScannerController.cannot-read-file">Impossible de lire le fichier</message>
+<message id="Lms.Admin.ScannerController.cannot-read-file">Impossible de lire le fichier ({1})</message>
 <message id="Lms.Admin.ScannerController.cannot-read-image-file">Impossible d'analyser le fichier image</message>
 <message id="Lms.Admin.ScannerController.cannot-read-lyrics-file">Impossible d'analyser le fichier de paroles</message>
 <message id="Lms.Admin.ScannerController.cannot-read-playlist-file">Impossible d'analyser le fichier de liste de lecture</message>
@@ -115,6 +117,9 @@
 <message id="Lms.Admin.ScannerController.last-scan">Dernier scan</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Non disponible</message>
 <message id="Lms.Admin.ScannerController.last-scan-status">{1} fichiers analysés en {2} à {4} le {3} (UTC) - {5} erreurs, {6} duplicatas</message>
+<message id="Lms.Admin.ScannerController.missing-artist-name">Nom de l'artiste manquant</message>
+<message id="Lms.Admin.ScannerController.playlist-all-pathes-missing">Impossible de trouver les chemins des pistes</message>
+<message id="Lms.Admin.ScannerController.playlist-path-missing">Impossible de trouver le chemin "{1}"</message>
 <message id="Lms.Admin.ScannerController.no-audio-track">Pas de piste audio</message>
 <message id="Lms.Admin.ScannerController.same-hash">Hash dupliqué</message>
 <message id="Lms.Admin.ScannerController.same-mbid">Track MBID dupliqué</message>
@@ -129,6 +134,7 @@
 <message id="Lms.Admin.ScannerController.step-associating-external-lyrics">Association des paroles externes: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-playlist-tracks">Association des pistes des listes de lectures: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-release-images">Association des images des albums: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-associating-track-images">Association des images des pistes: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">Vérification des fichiers dupliqués... {1} fichiers</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Vérification des fichiers supprimés... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">Compactage de la base de données...</message>

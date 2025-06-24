@@ -19,6 +19,8 @@
 
 #include "DatabaseCollectorBase.hpp"
 
+#include <algorithm>
+
 #include "core/String.hpp"
 
 #include "explore/Filters.hpp"

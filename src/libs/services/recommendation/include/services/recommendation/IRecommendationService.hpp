@@ -23,6 +23,8 @@
 #include <vector>
 
 #include "core/EnumSet.hpp"
+#include "database/ArtistId.hpp"
+#include "database/ReleaseId.hpp"
 #include "database/TrackListId.hpp"
 #include "database/Types.hpp"
 #include "services/recommendation/Types.hpp"

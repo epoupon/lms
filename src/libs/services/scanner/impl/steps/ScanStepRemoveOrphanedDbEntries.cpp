@@ -29,6 +29,8 @@
 #include "database/Track.hpp"
 #include "database/TrackEmbeddedImage.hpp"
 
+#include "ScanContext.hpp"
+
 namespace lms::scanner
 {
     bool ScanStepRemoveOrphanedDbEntries::needProcess([[maybe_unused]] const ScanContext& context) const

@@ -24,10 +24,11 @@
 #include <shared_mutex>
 #include <vector>
 
+#include <boost/asio/system_timer.hpp>
+
 #include <Wt/WDateTime.h>
 #include <Wt/WIOService.h>
 #include <Wt/WSignal.h>
-#include <boost/asio/system_timer.hpp>
 
 #include "ScannerSettings.hpp"
 #include "database/Db.hpp"

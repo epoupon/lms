@@ -18,42 +18,52 @@
  */
 
 #include "TranscodingResourceHandler.hpp"
+
+#include "av/Exception.hpp"
+#include "av/ITranscoder.hpp"
 #include "core/ILogger.hpp"
 
-namespace lms::av::transcoding
+namespace lms::transcoding
 {
-    namespace
-    {
-        std::size_t doEstimateContentLength(const InputParameters& inputParameters, const OutputParameters& outputParameters)
-        {
-            const std::size_t estimatedContentLength{ outputParameters.bitrate / 8 * static_cast<std::size_t>(std::chrono::duration_cast<std::chrono::milliseconds>(inputParameters.duration).count()) / 1000 };
-            return estimatedContentLength;
-        }
-    } // namespace
-
-    std::unique_ptr<IResourceHandler> createResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength)
+    std::unique_ptr<core::IResourceHandler> createResourceHandler(const av::InputParameters& inputParameters, const av::OutputParameters& outputParameters, bool estimateContentLength)
     {
         return std::make_unique<TranscodingResourceHandler>(inputParameters, outputParameters, estimateContentLength);
     }
 
     // TODO set some nice HTTP return code
 
-    TranscodingResourceHandler::TranscodingResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength)
-        : _estimatedContentLength{ estimateContentLength ? std::make_optional(doEstimateContentLength(inputParameters, outputParameters)) : std::nullopt }
-        , _transcoder{ inputParameters, outputParameters }
+    TranscodingResourceHandler::TranscodingResourceHandler(const av::InputParameters& inputParameters, const av::OutputParameters& outputParameters, std::optional<std::size_t> estimatedContentLength)
+        : _estimatedContentLength{ estimatedContentLength }
     {
-        if (_estimatedContentLength)
-            LMS_LOG(TRANSCODING, DEBUG, "Estimated content length = " << *_estimatedContentLength);
-        else
-            LMS_LOG(TRANSCODING, DEBUG, "Not using estimated content length");
+        try
+        {
+            _transcoder = av::createTranscoder(inputParameters, outputParameters);
+
+            if (_estimatedContentLength)
+                LMS_LOG(TRANSCODING, DEBUG, "Estimated content length = " << *_estimatedContentLength);
+            else
+                LMS_LOG(TRANSCODING, DEBUG, "Not using estimated content length");
+        }
+        catch (av::Exception& e)
+        {
+            LMS_LOG(TRANSCODING, ERROR, "Failed to create transcoder: " << e.what());
+        }
     }
+
+    TranscodingResourceHandler::~TranscodingResourceHandler() = default;
 
     Wt::Http::ResponseContinuation* TranscodingResourceHandler::processRequest(const Wt::Http::Request& /*request*/, Wt::Http::Response& response)
     {
+        if (!_transcoder)
+        {
+            response.setStatus(404);
+            return {};
+        }
+
         if (_estimatedContentLength)
             response.setContentLength(*_estimatedContentLength);
-        response.setMimeType(_transcoder.getOutputMimeType());
-        LMS_LOG(TRANSCODING, DEBUG, "Transcoder finished = " << _transcoder.finished() << ", total served bytes = " << _totalServedByteCount << ", mime type = " << _transcoder.getOutputMimeType());
+        response.setMimeType(std::string{ _transcoder->getOutputMimeType() });
+        LMS_LOG(TRANSCODING, DEBUG, "Transcoder finished = " << _transcoder->finished() << ", total served bytes = " << _totalServedByteCount << ", mime type = " << _transcoder->getOutputMimeType());
 
         if (_bytesReadyCount > 0)
         {
@@ -64,11 +74,11 @@ namespace lms::av::transcoding
             _bytesReadyCount = 0;
         }
 
-        if (!_transcoder.finished())
+        if (!_transcoder->finished())
         {
             Wt::Http::ResponseContinuation* continuation{ response.createContinuation() };
             continuation->waitForMoreData();
-            _transcoder.asyncRead(_buffer.data(), _buffer.size(), [this, continuation](std::size_t nbBytesRead) {
+            _transcoder->asyncRead(_buffer.data(), _buffer.size(), [this, continuation](std::size_t nbBytesRead) {
                 LMS_LOG(TRANSCODING, DEBUG, "Have " << nbBytesRead << " more bytes to send back");
 
                 assert(_bytesReadyCount == 0);
@@ -96,4 +106,4 @@ namespace lms::av::transcoding
 
         return {};
     }
-} // namespace lms::av::transcoding
+} // namespace lms::transcoding

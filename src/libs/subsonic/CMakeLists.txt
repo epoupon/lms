@@ -44,6 +44,7 @@ target_include_directories(lmssubsonic PRIVATE
 	)
 
 target_link_libraries(lmssubsonic PRIVATE
+	lmsartwork
 	lmsauth
 	lmsav
 	lmsdatabase
@@ -51,7 +52,7 @@ target_link_libraries(lmssubsonic PRIVATE
 	lmsrecommendation
 	lmsscanner
 	lmsscrobbling
-	lmsartwork
+	lmstranscoding
 	lmscore
 	std::filesystem
 	)

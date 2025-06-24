@@ -28,6 +28,8 @@
 #include "database/Track.hpp"
 #include "database/TrackLyrics.hpp"
 
+#include "ScanContext.hpp"
+
 namespace lms::scanner
 {
     namespace

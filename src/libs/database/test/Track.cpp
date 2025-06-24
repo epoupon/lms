@@ -21,8 +21,14 @@
 
 #include <algorithm>
 
+#include "database/Artwork.hpp"
+#include "database/Image.hpp"
+
 namespace lms::db::tests
 {
+    using ScopedArtwork = ScopedEntity<db::Artwork>;
+    using ScopedImage = ScopedEntity<db::Image>;
+
     TEST_F(DatabaseFixture, Track)
     {
         {
@@ -437,6 +443,43 @@ namespace lms::db::tests
             EXPECT_EQ(tracks.results[1], track1.getId());
             EXPECT_EQ(tracks.results[2], track2.getId());
             EXPECT_EQ(tracks.results[3], track3.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Track_updateArtworks)
+    {
+        ScopedTrack track{ session };
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(track->getPreferredArtwork(), Artwork::pointer{});
+            EXPECT_EQ(track->getPreferredMediaArtwork(), Artwork::pointer{});
+        }
+
+        ScopedImage image1{ session, "/image1.jpg" };
+        ScopedArtwork artwork1{ session, image1.lockAndGet() };
+        ScopedImage image2{ session, "/image2.jpg" };
+        ScopedArtwork artwork2{ session, image2.lockAndGet() };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            Track::updatePreferredArtwork(session, track->getId(), artwork1->getId());
+            Track::updatePreferredMediaArtwork(session, track->getId(), artwork2->getId());
+        }
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(track->getPreferredArtwork()->getId(), artwork1->getId());
+            EXPECT_EQ(track->getPreferredMediaArtwork()->getId(), artwork2->getId());
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            Track::updatePreferredArtwork(session, track->getId(), ArtworkId{});
+            Track::updatePreferredMediaArtwork(session, track->getId(), ArtworkId{});
+        }
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(track->getPreferredArtwork(), Artwork::pointer{});
+            EXPECT_EQ(track->getPreferredMediaArtwork(), Artwork::pointer{});
         }
     }
 } // namespace lms::db::tests

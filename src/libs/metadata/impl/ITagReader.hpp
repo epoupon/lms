@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <chrono>
 #include <functional>
 
 #include "metadata/Types.hpp"

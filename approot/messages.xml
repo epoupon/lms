@@ -74,6 +74,7 @@
 
 <!--Scan settings-->
 <message id="Lms.Admin.Database.allow-mbid-artist-merge">Allow merging artists without an MBID to those with one</message>
+<message id="Lms.Admin.Database.artist-image-fallback-to-release">Use an album artwork if no artist image is available</message>
 <message id="Lms.Admin.Database.artist-tag-delimiters">Delimiters to be used for splitting artist tags</message>
 <message id="Lms.Admin.Database.artists-to-not-split">Artists to not split using the delimiters (one artist per line)</message>
 <message id="Lms.Admin.Database.daily">Daily</message>
@@ -100,9 +101,10 @@
 
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Cannot get track duration</message>
+<message id="Lms.Admin.ScannerController.bad-embedded-image">Unable to read the image at index {1}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-artist-info-file">Cannot parse artist info file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">Cannot parse audio file</message>
-<message id="Lms.Admin.ScannerController.cannot-read-file">Cannot read file</message>
+<message id="Lms.Admin.ScannerController.cannot-read-file">Cannot read file ({1})</message>
 <message id="Lms.Admin.ScannerController.cannot-read-image-file">Cannot parse image file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-lyrics-file">Cannot parse lyrics file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-playlist-file">Cannot parse playlist file</message>
@@ -115,6 +117,9 @@
 <message id="Lms.Admin.ScannerController.last-scan">Last scan</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">Not available</message>
 <message id="Lms.Admin.ScannerController.last-scan-status">{1} files were scanned in {2} at {4} on {3} (UTC) - {5} errors, {6} duplicates</message>
+<message id="Lms.Admin.ScannerController.missing-artist-name">Missing artist name</message>
+<message id="Lms.Admin.ScannerController.playlist-all-pathes-missing">Unable to find track paths</message>
+<message id="Lms.Admin.ScannerController.playlist-path-missing">Unable to find the path "{1}"</message>
 <message id="Lms.Admin.ScannerController.no-audio-track">No audio track</message>
 <message id="Lms.Admin.ScannerController.same-hash">Duplicated file hash</message>
 <message id="Lms.Admin.ScannerController.same-mbid">Duplicated track MBID</message>
@@ -129,6 +134,7 @@
 <message id="Lms.Admin.ScannerController.step-associating-external-lyrics">Associating external lyrics: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-playlist-tracks">Associating playlist tracks: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-associating-release-images">Associating release images: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-associating-track-images">Associating track images: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-duplicate-files">Checking for duplicate files... {1} files</message>
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Checking for removed files... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">Compacting database...</message>

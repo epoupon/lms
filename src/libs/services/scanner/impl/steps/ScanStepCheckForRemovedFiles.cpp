@@ -30,17 +30,12 @@
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackLyrics.hpp"
-#include "scanners/IFileScanner.hpp"
 
+#include "ScanContext.hpp"
 #include "ScannerSettings.hpp"
 
 namespace lms::scanner
 {
-    namespace
-    {
-        constexpr std::size_t batchSize = 100;
-    }
-
     bool ScanStepCheckForRemovedFiles::needProcess([[maybe_unused]] const ScanContext& context) const
     {
         // always check for removed files
@@ -62,22 +57,15 @@ namespace lms::scanner
         }
         LMS_LOG(DBUPDATER, DEBUG, context.currentStepStats.totalElems << " files to be checked...");
 
-        std::vector<std::filesystem::path> supportedFileExtensions;
-        for (IFileScanner* scanner : _fileScanners)
-        {
-            for (const std::filesystem::path& extension : scanner->getSupportedExtensions())
-                supportedFileExtensions.emplace_back(extension);
-        }
-
-        checkForRemovedFiles<db::Track>(context, supportedFileExtensions);
-        checkForRemovedFiles<db::Image>(context, supportedFileExtensions);
-        checkForRemovedFiles<db::TrackLyrics>(context, supportedFileExtensions);
-        checkForRemovedFiles<db::PlayListFile>(context, supportedFileExtensions);
-        checkForRemovedFiles<db::ArtistInfo>(context, supportedFileExtensions);
+        checkForRemovedFiles<db::Track>(context);
+        checkForRemovedFiles<db::Image>(context);
+        checkForRemovedFiles<db::TrackLyrics>(context);
+        checkForRemovedFiles<db::PlayListFile>(context);
+        checkForRemovedFiles<db::ArtistInfo>(context);
     }
 
     template<typename Object>
-    void ScanStepCheckForRemovedFiles::checkForRemovedFiles(ScanContext& context, std::span<const std::filesystem::path> supportedFileExtensions)
+    void ScanStepCheckForRemovedFiles::checkForRemovedFiles(ScanContext& context)
     {
         using namespace db;
 
@@ -97,6 +85,8 @@ namespace lms::scanner
 
             objectsToRemove.clear();
             {
+                constexpr std::size_t batchSize = 100;
+
                 auto transaction{ session.createReadTransaction() };
 
                 endReached = true;
@@ -110,7 +100,7 @@ namespace lms::scanner
                             return;
                     }
 
-                    if (!checkFile(object->getAbsoluteFilePath(), supportedFileExtensions))
+                    if (!checkFile(object->getAbsoluteFilePath()))
                         objectsToRemove.push_back(object);
 
                     context.currentStepStats.processedElems++;
@@ -132,7 +122,7 @@ namespace lms::scanner
         }
     }
 
-    bool ScanStepCheckForRemovedFiles::checkFile(const std::filesystem::path& p, std::span<const std::filesystem::path> allowedExtensions)
+    bool ScanStepCheckForRemovedFiles::checkFile(const std::filesystem::path& p)
     {
         try
         {
@@ -140,7 +130,7 @@ namespace lms::scanner
             // and still belongs to a media directory
             if (!std::filesystem::exists(p) || !std::filesystem::is_regular_file(p))
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Removing '" << p.string() << "': missing");
+                LMS_LOG(DBUPDATER, DEBUG, "Removing " << p << ": missing");
                 return false;
             }
 
@@ -149,13 +139,13 @@ namespace lms::scanner
                         return core::pathUtils::isPathInRootPath(p, libraryInfo.rootDirectory, &excludeDirFileName);
                     }))
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Removing '" << p.string() << "': out of media directory");
+                LMS_LOG(DBUPDATER, DEBUG, "Removing " << p << ": out of media directory");
                 return false;
             }
 
-            if (!core::pathUtils::hasFileAnyExtension(p, allowedExtensions))
+            if (!selectFileScanner(p))
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Removing '" << p.string() << "': file format no longer handled");
+                LMS_LOG(DBUPDATER, DEBUG, "Removing " << p.string() << ": file format no longer handled");
                 return false;
             }
 

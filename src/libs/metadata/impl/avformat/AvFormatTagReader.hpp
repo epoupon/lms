@@ -25,13 +25,13 @@
 
 #include "ITagReader.hpp"
 
-namespace lms::metadata
+namespace lms::metadata::avformat
 {
     class AvFormatTagReader : public ITagReader
     {
     public:
         AvFormatTagReader(const std::filesystem::path& path, bool debug);
-        ~AvFormatTagReader() override = default;
+        ~AvFormatTagReader() override;
         AvFormatTagReader(const AvFormatTagReader&) = delete;
         AvFormatTagReader& operator=(const AvFormatTagReader&) = delete;
 
@@ -46,4 +46,4 @@ namespace lms::metadata
         av::IAudioFile::MetadataMap _metaDataMap;
         av::ContainerInfo _containerInfo;
     };
-} // namespace lms::metadata
+} // namespace lms::metadata::avformat

@@ -108,7 +108,7 @@ namespace lms::metadata::utils
             return "accurate";
         }
 
-        throw core::LmsException{ "Unknown read style" };
+        throw Exception{ "Unknown read style" };
     }
 
     PerformerArtist extractPerformerAndRole(std::string_view entry)

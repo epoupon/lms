@@ -19,7 +19,8 @@
 
 #include "Utils.hpp"
 
-#include "core/ILogger.hpp"
+#include <system_error>
+
 #include "core/Path.hpp"
 #include "database/Directory.hpp"
 #include "database/MediaLibrary.hpp"
@@ -27,59 +28,6 @@
 
 namespace lms::scanner::utils
 {
-    Wt::WDateTime retrieveFileGetLastWrite(const std::filesystem::path& file)
-    {
-        Wt::WDateTime res;
-
-        try
-        {
-            res = core::pathUtils::getLastWriteTime(file);
-        }
-        catch (core::LmsException& e)
-        {
-            LMS_LOG(DBUPDATER, ERROR, "Cannot get last write time: " << e.what());
-        }
-
-        return res;
-    }
-
-    std::optional<FileInfo> retrieveFileInfo(const std::filesystem::path& file, const std::filesystem::path& rootPath)
-    {
-        std::optional<FileInfo> res;
-        res.emplace();
-
-        res->lastWriteTime = retrieveFileGetLastWrite(file);
-        if (!res->lastWriteTime.isValid())
-        {
-            res.reset();
-            return res;
-        }
-
-        {
-            std::error_code ec;
-            res->relativePath = std::filesystem::relative(file, rootPath, ec);
-            if (ec)
-            {
-                LMS_LOG(DBUPDATER, ERROR, "Cannot get relative file path for '" << file.string() << "' from '" << rootPath.string() << "': " << ec.message());
-                res.reset();
-                return res;
-            }
-        }
-
-        {
-            std::error_code ec;
-            res->fileSize = std::filesystem::file_size(file, ec);
-            if (ec)
-            {
-                LMS_LOG(DBUPDATER, ERROR, "Cannot get file size for '" << file.string() << "': " << ec.message());
-                res.reset();
-                return res;
-            }
-        }
-
-        return res;
-    }
-
     db::Directory::pointer getOrCreateDirectory(db::Session& session, const std::filesystem::path& path, const db::MediaLibrary::pointer& mediaLibrary)
     {
         db::Directory::pointer directory{ db::Directory::find(session, path) };

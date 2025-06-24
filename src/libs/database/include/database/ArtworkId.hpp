@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,12 +19,6 @@
 
 #pragma once
 
-#include <filesystem>
-#include <memory>
+#include "database/IdType.hpp"
 
-#include "core/IResourceHandler.hpp"
-
-namespace lms::av
-{
-    std::unique_ptr<IResourceHandler> createRawResourceHandler(const std::filesystem::path& path);
-}
+LMS_DECLARE_IDTYPE(ArtworkId)

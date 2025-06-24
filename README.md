@@ -48,7 +48,7 @@ _LMS_ supports an Artist information folder to manage metadata and images for ar
 
 The folder must follow a structure defined by Kodi, as detailed [here](https://kodi.wiki/view/Artist_information_folder). `artist.nfo` files are used to define additional artist information such as biography, sort name, and MusicBrainz ArtistID. See the format [here](https://kodi.wiki/view/NFO_files/Artists).
 
-__Note__: `artist.nfo` files must include both `name` and `musicBrainzArtistID` fields to be recognized.
+__Note__: If no name is provided in the `artist.nfo` file, the name of the containing folder is used.
 
 ### Filtering
 It is possible to apply global filters on your collection using `genre`, `mood`, `grouping`, `language`, and by music library. More tags, including custom ones, can be added in the database administration settings.

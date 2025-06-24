@@ -75,6 +75,7 @@
 <!--Scan settings-->
 
 
+
 <message id="Lms.Admin.Database.daily">每日</message>
 
 
@@ -100,9 +101,10 @@
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">无法获得音轨时间</message>
 
+
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">无法解析文件</message>
 
-<message id="Lms.Admin.ScannerController.cannot-read-file">无法读取文件</message>
+<message id="Lms.Admin.ScannerController.cannot-read-file">无法读取文件 ({1})</message>
 
 
 
@@ -114,6 +116,9 @@
 <message id="Lms.Admin.ScannerController.last-scan">最后扫描</message>
 <message id="Lms.Admin.ScannerController.last-scan-not-available">不可用</message>
 <message id="Lms.Admin.ScannerController.last-scan-status">已扫描 {1} 个文件，用时 {2}，在 {3} 的 {4} (UTC) - {5} 个错误，{6} 个重复项</message>
+
+
+
 <message id="Lms.Admin.ScannerController.no-audio-track">没有音轨</message>
 <message id="Lms.Admin.ScannerController.same-hash">相同文件哈希值</message>
 <message id="Lms.Admin.ScannerController.same-mbid">相同 MBID</message>

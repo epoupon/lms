@@ -21,20 +21,21 @@
 
 #include <filesystem>
 #include <map>
+#include <span>
 #include <string>
 
-#include <taglib/fileref.h>
+#include <taglib/tfile.h>
 #include <taglib/tpropertymap.h>
 
 #include "ITagReader.hpp"
 
-namespace lms::metadata
+namespace lms::metadata::taglib
 {
     class TagLibTagReader : public ITagReader
     {
     public:
         TagLibTagReader(const std::filesystem::path& path, ParserReadStyle parserReadStyle, bool debug);
-        ~TagLibTagReader() = default;
+        ~TagLibTagReader() override;
         TagLibTagReader(const TagLibTagReader&) = delete;
         TagLibTagReader& operator=(const TagLibTagReader&) = delete;
 
@@ -47,9 +48,9 @@ namespace lms::metadata
 
         const AudioProperties& getAudioProperties() const override { return _audioProperties; }
 
-        const TagLib::FileRef _file;
+        std::unique_ptr<TagLib::File> _file;
         AudioProperties _audioProperties;
         TagLib::PropertyMap _propertyMap; // case-insensitive keys
         std::multimap<std::string /* language*/, std::string /* lyrics */> _id3v2Lyrics;
     };
-} // namespace lms::metadata
+} // namespace lms::metadata::taglib

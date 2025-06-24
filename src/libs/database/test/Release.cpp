@@ -20,10 +20,12 @@
 #include "Common.hpp"
 
 #include "core/PartialDateTime.hpp"
+#include "database/Artwork.hpp"
 #include "database/Image.hpp"
 
 namespace lms::db::tests
 {
+    using ScopedArtwork = ScopedEntity<db::Artwork>;
     using ScopedImage = ScopedEntity<db::Image>;
     using ScopedLabel = ScopedEntity<db::Label>;
     using ScopedCountry = ScopedEntity<db::Country>;
@@ -1195,27 +1197,40 @@ namespace lms::db::tests
         }
     }
 
-    TEST_F(DatabaseFixture, Release_image)
+    TEST_F(DatabaseFixture, Release_artwork)
     {
         ScopedRelease release{ session, "MyRelease" };
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_FALSE(release.get()->getImage());
+            EXPECT_FALSE(release.get()->getPreferredArtwork());
         }
 
-        ScopedImage image{ session, "/myImage" };
+        ScopedImage image{ session, "/image.jpg" };
+        ScopedArtwork artwork{ session, image.lockAndGet() };
 
         {
             auto transaction{ session.createWriteTransaction() };
-            release.get().modify()->setImage(image.get());
+            release.get().modify()->setPreferredArtwork(artwork.get());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
-            auto releaseImage(release.get()->getImage());
-            ASSERT_TRUE(releaseImage);
-            EXPECT_EQ(releaseImage->getId(), image.getId());
+            auto releaseArtwork(release.get()->getPreferredArtwork());
+            ASSERT_TRUE(releaseArtwork);
+            EXPECT_EQ(releaseArtwork->getId(), artwork.getId());
+        }
+
+        // Check cascade delete
+        {
+            auto transaction{ session.createWriteTransaction() };
+            image.lockAndGet().remove();
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            auto releaseArtwork(release.get()->getPreferredArtwork());
+            ASSERT_FALSE(releaseArtwork);
         }
     }
 

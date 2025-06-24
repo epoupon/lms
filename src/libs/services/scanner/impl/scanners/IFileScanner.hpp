@@ -29,8 +29,6 @@
 namespace lms::scanner
 {
     class IFileScanOperation;
-    struct ScanContext;
-    struct ScannerSettings;
 
     class IFileScanner
     {
@@ -38,8 +36,9 @@ namespace lms::scanner
         virtual ~IFileScanner() = default;
 
         virtual core::LiteralString getName() const = 0;
+        virtual std::span<const std::filesystem::path> getSupportedFiles() const = 0;
         virtual std::span<const std::filesystem::path> getSupportedExtensions() const = 0;
-        virtual bool needsScan(ScanContext& context, const FileToScan& file) const = 0;
-        virtual std::unique_ptr<IFileScanOperation> createScanOperation(const FileToScan& fileToScan) const = 0;
+        virtual bool needsScan(const FileToScan& file) const = 0;
+        virtual std::unique_ptr<IFileScanOperation> createScanOperation(FileToScan&& fileToScan) const = 0;
     };
 } // namespace lms::scanner

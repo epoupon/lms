@@ -28,11 +28,13 @@
 #include "core/String.hpp"
 #include "metadata/Exception.hpp"
 
-#include "AvFormatImageReader.hpp"
-#include "AvFormatTagReader.hpp"
-#include "TagLibImageReader.hpp"
-#include "TagLibTagReader.hpp"
 #include "Utils.hpp"
+#include "avformat/AvFormatImageReader.hpp"
+#include "avformat/AvFormatTagReader.hpp"
+#include "avformat/Utils.hpp"
+#include "taglib/TagLibImageReader.hpp"
+#include "taglib/TagLibTagReader.hpp"
+#include "taglib/Utils.hpp"
 
 namespace lms::metadata
 {
@@ -338,82 +340,56 @@ namespace lms::metadata
 
     std::span<const std::filesystem::path> AudioFileParser::getSupportedExtensions() const
     {
-        // TODO: use backend capability to retrieve supported formats
-        static const std::array<std::filesystem::path, 18> fileExtensions{
-            ".aac",
-            ".alac",
-            ".aif",
-            ".aiff",
-            ".ape",
-            ".dsf",
-            ".flac",
-            ".m4a",
-            ".m4b",
-            ".mp3",
-            ".mpc",
-            ".oga",
-            ".ogg",
-            ".opus",
-            ".shn",
-            ".wav",
-            ".wma",
-            ".wv",
-        };
-        return fileExtensions;
+        switch (_params.backend)
+        {
+        case ParserBackend::TagLib:
+            return taglib::utils::getSupportedExtensions();
+            break;
+
+        case ParserBackend::AvFormat:
+            return avformat::utils::getSupportedExtensions();
+            break;
+        }
+
+        return {};
     }
 
     std::unique_ptr<Track> AudioFileParser::parseMetaData(const std::filesystem::path& p) const
     {
-        try
+        std::unique_ptr<ITagReader> tagReader;
+        switch (_params.backend)
         {
-            std::unique_ptr<ITagReader> tagReader;
-            switch (_params.backend)
-            {
-            case ParserBackend::TagLib:
-                tagReader = std::make_unique<TagLibTagReader>(p, _params.readStyle, _params.debug);
-                break;
+        case ParserBackend::TagLib:
+            tagReader = std::make_unique<taglib::TagLibTagReader>(p, _params.readStyle, _params.debug);
+            break;
 
-            case ParserBackend::AvFormat:
-                tagReader = std::make_unique<AvFormatTagReader>(p, _params.debug);
-                break;
-            }
-            if (!tagReader)
-                throw ParseException{ "Unhandled parser backend" };
+        case ParserBackend::AvFormat:
+            tagReader = std::make_unique<avformat::AvFormatTagReader>(p, _params.debug);
+            break;
+        }
+        if (!tagReader)
+            throw AudioFileParsingException{ "Unhandled parser backend" };
 
-            return parseMetaData(*tagReader);
-        }
-        catch (const Exception& e)
-        {
-            LMS_LOG(METADATA, ERROR, "File " << p << ": metadata parsing failed");
-            throw ParseException{};
-        }
+        return parseMetaData(*tagReader);
     }
 
     void AudioFileParser::parseImages(const std::filesystem::path& p, ImageVisitor visitor) const
     {
-        try
+        std::unique_ptr<IImageReader> imageReader;
+        switch (_params.backend)
         {
-            std::unique_ptr<IImageReader> imageReader;
-            switch (_params.backend)
-            {
-            case ParserBackend::TagLib:
-                imageReader = std::make_unique<TagLibImageReader>(p);
-                break;
+        case ParserBackend::TagLib:
+            imageReader = std::make_unique<taglib::TagLibImageReader>(p);
+            break;
 
-            case ParserBackend::AvFormat:
-                imageReader = std::make_unique<AvFormatImageReader>(p);
-                break;
-            }
-            if (!imageReader)
-                throw ParseException{ "Unhandled parser backend" };
+        case ParserBackend::AvFormat:
+            imageReader = std::make_unique<avformat::AvFormatImageReader>(p);
+            break;
+        }
+        if (!imageReader)
+            throw AudioFileParsingException{ "Unhandled parser backend" };
 
-            parseImages(*imageReader, std::move(visitor));
-        }
-        catch (const Exception& e)
-        {
-            LMS_LOG(METADATA, ERROR, "File " << p << ": image parsing failed");
-            throw ParseException{};
-        }
+        parseImages(*imageReader, std::move(visitor));
     }
 
     std::unique_ptr<Track> AudioFileParser::parseMetaData(const ITagReader& tagReader) const

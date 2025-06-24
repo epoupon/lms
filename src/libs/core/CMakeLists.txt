@@ -12,6 +12,7 @@ add_library(lmscore STATIC
 	impl/FileResourceHandler.cpp
 	impl/IOContextRunner.cpp
 	impl/Logger.cpp
+	impl/MimeTypes.cpp
 	impl/NetAddress.cpp
 	impl/PartialDateTime.cpp
 	impl/Path.cpp
@@ -31,12 +32,12 @@ target_include_directories(lmscore INTERFACE
 
 target_include_directories(lmscore PRIVATE
 	include
+	${XXHASH_INCLUDE_DIRS}
 	)
 
 target_link_libraries(lmscore PRIVATE
 	PkgConfig::Config++
 	PkgConfig::Archive
-	PkgConfig::XXHASH
 	)
 
 target_link_libraries(lmscore PUBLIC

@@ -19,23 +19,10 @@
 
 #include "Common.hpp"
 
-#include "database/Artist.hpp"
-#include "database/Cluster.hpp"
 #include "database/Db.hpp"
-#include "database/Image.hpp"
-#include "database/Listen.hpp"
-#include "database/MediaLibrary.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
-#include "database/StarredArtist.hpp"
-#include "database/StarredRelease.hpp"
-#include "database/StarredTrack.hpp"
-#include "database/Track.hpp"
-#include "database/TrackArtistLink.hpp"
-#include "database/TrackBookmark.hpp"
-#include "database/TrackList.hpp"
 #include "database/Types.hpp"
-#include "database/User.hpp"
 
 namespace lms::db::tests
 {
@@ -75,24 +62,9 @@ namespace lms::db::tests
     {
         using namespace db;
 
-        auto transaction{ session.createWriteTransaction() };
+        auto transaction{ session.createReadTransaction() };
 
-        EXPECT_EQ(Artist::getCount(session), 0);
-        EXPECT_EQ(Cluster::getCount(session), 0);
-        EXPECT_EQ(ClusterType::getCount(session), 0);
-        EXPECT_EQ(Label::getCount(session), 0);
-        EXPECT_EQ(Listen::getCount(session), 0);
-        EXPECT_EQ(Image::getCount(session), 0);
-        EXPECT_EQ(MediaLibrary::getCount(session), 0);
-        EXPECT_EQ(Release::getCount(session), 0);
-        EXPECT_EQ(ReleaseType::getCount(session), 0);
-        EXPECT_EQ(StarredArtist::getCount(session), 0);
-        EXPECT_EQ(StarredRelease::getCount(session), 0);
-        EXPECT_EQ(StarredTrack::getCount(session), 0);
-        EXPECT_EQ(Track::getCount(session), 0);
-        EXPECT_EQ(TrackBookmark::getCount(session), 0);
-        EXPECT_EQ(TrackList::getCount(session), 0);
-        EXPECT_EQ(User::getCount(session), 0);
+        EXPECT_TRUE(session.areAllTablesEmpty());
     }
 
     TEST_F(DatabaseFixture, vacuum)

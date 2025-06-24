@@ -27,10 +27,10 @@
 
 namespace lms::metadata
 {
-    std::span<const std::filesystem::path> getSupportedInfoFileExtensions()
+    std::span<const std::filesystem::path> getSupportedArtistInfoFiles()
     {
-        static const std::array<std::filesystem::path, 1> fileExtensions{ ".nfo" };
-        return fileExtensions;
+        static const std::array<std::filesystem::path, 1> files{ "artist.nfo" };
+        return files;
     }
 
     ArtistInfo parseArtistInfo(std::istream& is)
@@ -56,7 +56,7 @@ namespace lms::metadata
         }
         catch (boost::property_tree::ptree_error& error)
         {
-            LMS_LOG(RECOMMENDATION, ERROR, "Cannot read artist xml info: " << error.what());
+            LMS_LOG(METADATA, ERROR, "Cannot read artist xml info: " << error.what());
             throw ArtistInfoParseException{ error.what() };
         }
     }

@@ -26,7 +26,7 @@ namespace lms::av
     class IAudioFile;
 }
 
-namespace lms::metadata
+namespace lms::metadata::avformat
 {
     class AvFormatImageReader : public IImageReader
     {
@@ -42,4 +42,4 @@ namespace lms::metadata
 
         std::unique_ptr<av::IAudioFile> _audioFile;
     };
-} // namespace lms::metadata
+} // namespace lms::metadata::avformat

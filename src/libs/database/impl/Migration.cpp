@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 90 };
+        static constexpr Version LMS_DATABASE_VERSION{ 94 };
     }
 
     VersionInfo::VersionInfo()
@@ -411,7 +411,7 @@ SELECT
  copyright_url,
  track_replay_gain,
  release_replay_gain,
- COALESCE(artist_display_name, ""),
+ artist_display_name,
  release_id,
  1
  FROM track)");
@@ -1206,6 +1206,186 @@ FROM tracklist)");
         utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET artist_info_scan_version = artist_info_scan_version + 1");
     }
 
+    void migrateFromV90(Session& session)
+    {
+        // Added a fallback for missing name, using parent directory name
+        // Just increment the scan version of the settings to make the next scan rescan everything
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET artist_info_scan_version = artist_info_scan_version + 1");
+    }
+
+    void migrateFromV91(Session& session)
+    {
+        dropIndexes(session);
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE track_embedded_image_link DROP COLUMN is_preferred");
+    }
+
+    void migrateFromV92(Session& session)
+    {
+        // Create the new artwork table
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "artwork" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "track_embedded_image_id" bigint,
+  "image_id" bigint,
+  constraint "fk_artwork_track_embedded_image" foreign key ("track_embedded_image_id") references "track_embedded_image" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_artwork_image" foreign key ("image_id") references "image" ("id") on delete cascade deferrable initially deferred))");
+
+        // Replaced image by artwork for release
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "release_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null,
+  "sort_name" text not null,
+  "mbid" text not null,
+  "group_mbid" text not null,
+  "total_disc" integer,
+  "artist_display_name" text not null,
+  "is_compilation" boolean not null,
+  "barcode" text not null,
+  "comment" text not null,
+  "preferred_artwork_id" bigint,
+  constraint "fk_release_preferred_artwork" foreign key ("preferred_artwork_id") references "artwork" ("id") on delete set null deferrable initially deferred))");
+        // Migrate data, with the new preferred_artwork_id field set to null
+        utils::executeCommand(*session.getDboSession(), R"(INSERT INTO release_backup
+SELECT
+ id,
+ version,
+ name,
+ sort_name,
+ mbid,
+ group_mbid,
+ total_disc,
+ COALESCE(artist_display_name, ''),
+ is_compilation,
+ barcode,
+ comment,
+ NULL as preferred_artwork_id
+FROM release)");
+
+        utils::executeCommand(*session.getDboSession(), "DROP TABLE release");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE release_backup RENAME TO release");
+
+        // Replaced image by artwork for track
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "track_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "scan_version" integer not null,
+  "track_number" integer,
+  "disc_number" integer,
+  "total_track" integer,
+  "disc_subtitle" text not null,
+  "name" text not null,
+  "duration" integer,
+  "bitrate" integer not null,
+  "bits_per_sample" integer not null,
+  "channel_count" integer not null,
+  "sample_rate" integer not null,
+  "date" text,
+  "original_date" text,
+  "absolute_file_path" text not null,
+  "relative_file_path" text not null,
+  "file_stem" text not null,
+  "file_name" text not null,
+  "file_size" bigint not null,
+  "file_last_write" text,
+  "file_added" text,
+  "mbid" text not null,
+  "recording_mbid" text not null,
+  "copyright" text not null,
+  "copyright_url" text not null,
+  "advisory" integer not null,
+  "track_replay_gain" real,
+  "release_replay_gain" real,
+  "artist_display_name" text not null,
+  "comment" text not null,
+  "release_id" bigint,
+  "media_library_id" bigint,
+  "directory_id" bigint,
+  "preferred_artwork_id" bigint,
+  "preferred_media_artwork_id" bigint,
+  constraint "fk_track_release" foreign key ("release_id") references "release" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_track_media_library" foreign key ("media_library_id") references "media_library" ("id") on delete set null deferrable initially deferred,
+  constraint "fk_track_directory" foreign key ("directory_id") references "directory" ("id") on delete cascade deferrable initially deferred,
+  constraint "fk_track_preferred_artwork" foreign key ("preferred_artwork_id") references "artwork" ("id") on delete set null deferrable initially deferred,
+  constraint "fk_track_preferred_media_artwork" foreign key ("preferred_media_artwork_id") references "artwork" ("id") on delete set null deferrable initially deferred
+    ))");
+        // Migrate data, with the new preferred_artwork_id and preferred_media_artwork_id fields set to null
+        utils::executeCommand(*session.getDboSession(), R"(INSERT INTO track_backup
+SELECT
+ id,
+ version,
+ scan_version,
+ track_number,
+ disc_number,
+ total_track,
+ disc_subtitle,
+ name,
+ duration,
+ bitrate,
+ bits_per_sample,
+ channel_count,
+ sample_rate,
+ date,
+ original_date,
+ absolute_file_path,
+ relative_file_path,
+ file_stem,
+ file_name,
+ file_size,
+ file_last_write,
+ file_added,
+ mbid,
+ recording_mbid,
+ copyright,
+ copyright_url,
+ advisory,
+ track_replay_gain,
+ release_replay_gain,
+ artist_display_name,
+ comment,
+ release_id,
+ media_library_id,
+ directory_id,
+ NULL as preferred_artwork_id,
+ NULL as preferred_media_artwork_id
+FROM track)");
+        utils::executeCommand(*session.getDboSession(), "DROP TABLE track");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE track_backup RENAME TO track");
+
+        // Replaced image by artwork for artist
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "artist_backup" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "name" text not null,
+  "sort_name" text not null,
+  "mbid" text not null,
+  "preferred_artwork_id" bigint,
+  constraint "fk_artist_preferred_artwork" foreign key ("preferred_artwork_id") references "artwork" ("id") on delete set null deferrable initially deferred
+    ))");
+        // Migrate data, with the new preferred_artwork_id field set to null
+        utils::executeCommand(*session.getDboSession(), R"(INSERT INTO artist_backup
+SELECT
+ id,
+ version,
+ name,
+ sort_name,
+ mbid,
+ NULL as preferred_artwork_id
+FROM artist)");
+
+        utils::executeCommand(*session.getDboSession(), "DROP TABLE artist");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE artist_backup RENAME TO artist");
+
+        // Just increment the scan version of the settings to make the next scan rescan everything
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET audio_scan_version = audio_scan_version + 1");
+    }
+
+    void migrateFromV93(Session& session)
+    {
+        // add artist_image_fallback_to_release in ScanSettings
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN artist_image_fallback_to_release BOOLEAN NOT NULL DEFAULT(false)");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1272,6 +1452,10 @@ FROM tracklist)");
             { 87, migrateFromV87 },
             { 88, migrateFromV88 },
             { 89, migrateFromV89 },
+            { 90, migrateFromV90 },
+            { 91, migrateFromV91 },
+            { 92, migrateFromV92 },
+            { 93, migrateFromV93 },
         };
 
         bool migrationPerformed{};

@@ -22,6 +22,7 @@
 #include <map>
 
 #include "database/ArtistId.hpp"
+#include "database/ArtworkId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
 
@@ -47,7 +48,7 @@ namespace lms::ui
 
     private:
         void refreshView();
-        void refreshArtwork();
+        void refreshArtwork(db::ArtworkId artworkId);
         void refreshArtistInfo();
         void refreshReleases();
         void refreshAppearsOnReleases();

@@ -41,6 +41,7 @@
 #include "steps/ScanStepAssociateExternalLyrics.hpp"
 #include "steps/ScanStepAssociatePlayListTracks.hpp"
 #include "steps/ScanStepAssociateReleaseImages.hpp"
+#include "steps/ScanStepAssociateTrackImages.hpp"
 #include "steps/ScanStepCheckForDuplicatedFiles.hpp"
 #include "steps/ScanStepCheckForRemovedFiles.hpp"
 #include "steps/ScanStepCompact.hpp"
@@ -51,14 +52,16 @@
 #include "steps/ScanStepScanFiles.hpp"
 #include "steps/ScanStepUpdateLibraryFields.hpp"
 
+#include "ScanContext.hpp"
+
 namespace lms::scanner
 {
     using namespace db;
 
     namespace
     {
-        static constexpr std::string_view currentSettingsName{ "" };
-        static constexpr std::string_view lastScanSettingsName{ "last_scan" };
+        constexpr std::string_view currentSettingsName{};
+        constexpr std::string_view lastScanSettingsName{ "last_scan" };
 
         Wt::WDate getNextMonday(Wt::WDate current)
         {
@@ -116,6 +119,7 @@ namespace lms::scanner
 
             settings->skipSingleReleasePlayLists = scanSettings->getSkipSingleReleasePlayLists();
             settings->allowArtistMBIDFallback = scanSettings->getAllowMBIDArtistMerge();
+            settings->artistImageFallbackToRelease = scanSettings->getArtistImageFallbackToReleaseField();
 
             // TODO, store this in DB + expose in UI
             settings->skipDuplicateTrackMBID = core::Service<core::IConfig>::get()->getBool("scanner-skip-duplicate-mbid", false);
@@ -352,7 +356,7 @@ namespace lms::scanner
             _currentScanStepStats.reset(); // must be sync with _curState
         }
 
-        LMS_LOG(DBUPDATER, INFO, "Scan " << (_abortScan ? "aborted" : "complete") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errors.size() << "), features fetched = " << stats.featuresFetched << ",  duplicates = " << stats.duplicates.size());
+        LMS_LOG(DBUPDATER, INFO, "Scan " << (_abortScan ? "aborted" : "complete") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << ", failures = " << stats.failures << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errorsCount << "), features fetched = " << stats.featuresFetched << ",  duplicates = " << stats.duplicates.size());
 
         if (!_abortScan)
         {
@@ -433,11 +437,11 @@ namespace lms::scanner
         } };
 
         _fileScanners.clear();
-        _fileScanners.emplace_back(std::make_unique<ArtistInfoFileScanner>(_settings, _db));
+        _fileScanners.emplace_back(std::make_unique<ArtistInfoFileScanner>(_db, _settings));
         _fileScanners.emplace_back(std::make_unique<AudioFileScanner>(_db, _settings));
-        _fileScanners.emplace_back(std::make_unique<ImageFileScanner>(_db));
-        _fileScanners.emplace_back(std::make_unique<LyricsFileScanner>(_db));
-        _fileScanners.emplace_back(std::make_unique<PlayListFileScanner>(_db));
+        _fileScanners.emplace_back(std::make_unique<ImageFileScanner>(_db, _settings));
+        _fileScanners.emplace_back(std::make_unique<LyricsFileScanner>(_db, _settings));
+        _fileScanners.emplace_back(std::make_unique<PlayListFileScanner>(_db, _settings));
 
         std::vector<IFileScanner*> fileScanners;
         std::transform(std::cbegin(_fileScanners), std::cend(_fileScanners), std::back_inserter(fileScanners), [](const std::unique_ptr<IFileScanner>& scanner) { return scanner.get(); });
@@ -459,8 +463,9 @@ namespace lms::scanner
         _scanSteps.emplace_back(std::make_unique<ScanStepArtistReconciliation>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociatePlayListTracks>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepUpdateLibraryFields>(params));
-        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateArtistImages>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociateReleaseImages>(params));
+        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateArtistImages>(params)); // must come after ScanStepAssociateReleaseImages
+        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateTrackImages>(params));  // must come after ScanStepAssociateReleaseImages
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociateExternalLyrics>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepRemoveOrphanedDbEntries>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepCompact>(params));

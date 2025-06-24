@@ -23,6 +23,7 @@
 
 #include "core/ILogger.hpp"
 #include "database/Artist.hpp"
+#include "database/Artwork.hpp"
 #include "database/Cluster.hpp"
 #include "database/Directory.hpp"
 #include "database/MediaLibrary.hpp"
@@ -324,6 +325,26 @@ namespace lms::db
         return utils::execRangeQuery<TrackId>(query, range);
     }
 
+    void Track::updatePreferredArtwork(Session& session, TrackId trackId, ArtworkId artworkId)
+    {
+        session.checkWriteTransaction();
+
+        if (artworkId.isValid())
+            utils::executeCommand(*session.getDboSession(), "UPDATE track SET preferred_artwork_id = ? WHERE id = ?", artworkId, trackId);
+        else
+            utils::executeCommand(*session.getDboSession(), "UPDATE track SET preferred_artwork_id = NULL WHERE id = ?", trackId);
+    }
+
+    void Track::updatePreferredMediaArtwork(Session& session, TrackId trackId, ArtworkId artworkId)
+    {
+        session.checkWriteTransaction();
+
+        if (artworkId.isValid())
+            utils::executeCommand(*session.getDboSession(), "UPDATE track SET preferred_media_artwork_id = ? WHERE id = ?", artworkId, trackId);
+        else
+            utils::executeCommand(*session.getDboSession(), "UPDATE track SET preferred_media_artwork_id = NULL WHERE id = ?", trackId);
+    }
+
     std::vector<Cluster::pointer> Track::getClusters() const
     {
         return utils::fetchQueryResults<Cluster::pointer>(_clusters.find());
@@ -336,6 +357,36 @@ namespace lms::db
         const auto query{ session()->query<ClusterId>("SELECT t_c.cluster_id FROM track_cluster t_c").where("t_c.track_id = ?").bind(getId()).groupBy("t_c.cluster_id") };
 
         return utils::fetchQueryResults(query);
+    }
+
+    ObjectPtr<MediaLibrary> Track::getMediaLibrary() const
+    {
+        return _mediaLibrary;
+    }
+
+    ObjectPtr<Directory> Track::getDirectory() const
+    {
+        return _directory;
+    }
+
+    ObjectPtr<Artwork> Track::getPreferredArtwork() const
+    {
+        return _preferredArtwork;
+    }
+
+    ArtworkId Track::getPreferredArtworkId() const
+    {
+        return _preferredArtwork.id();
+    }
+
+    ObjectPtr<Artwork> Track::getPreferredMediaArtwork() const
+    {
+        return _preferredMediaArtwork;
+    }
+
+    ArtworkId Track::getPreferredMediaArtworkId() const
+    {
+        return _preferredMediaArtwork.id();
     }
 
     RangeResults<TrackId> Track::findIds(Session& session, const FindParameters& parameters)
@@ -482,6 +533,26 @@ namespace lms::db
     void Track::addEmbeddedImageLink(const ObjectPtr<TrackEmbeddedImageLink>& image)
     {
         _embeddedImageLinks.insert(getDboPtr(image));
+    }
+
+    void Track::setMediaLibrary(ObjectPtr<MediaLibrary> mediaLibrary)
+    {
+        _mediaLibrary = getDboPtr(mediaLibrary);
+    }
+
+    void Track::setDirectory(ObjectPtr<Directory> directory)
+    {
+        _directory = getDboPtr(directory);
+    }
+
+    void Track::setPreferredArtwork(ObjectPtr<Artwork> artwork)
+    {
+        _preferredArtwork = getDboPtr(artwork);
+    }
+
+    void Track::setPreferredMediaArtwork(ObjectPtr<Artwork> artwork)
+    {
+        _preferredMediaArtwork = getDboPtr(artwork);
     }
 
     std::optional<int> Track::getYear() const

@@ -23,12 +23,11 @@
 #include "core/Service.hpp"
 #include "core/String.hpp"
 #include "database/Artist.hpp"
+#include "database/Artwork.hpp"
 #include "database/Cluster.hpp"
 #include "database/Directory.hpp"
-#include "database/Image.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
-#include "database/TrackEmbeddedImage.hpp"
 #include "database/Types.hpp"
 #include "database/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
@@ -87,25 +86,16 @@ namespace lms::api::subsonic
         }
 
         albumNode.setAttribute("created", core::stringUtils::toISO8601String(release->getAddedTime()));
-        if (const auto image{ release->getImage() })
+
+        if (const auto artwork{ release->getPreferredArtwork() })
         {
-            const CoverArtId coverArtId{ image->getId(), image->getLastWriteTime().toTime_t() };
+            CoverArtId coverArtId{ artwork->getId(), artwork->getLastWrittenTime().toTime_t() };
             albumNode.setAttribute("coverArt", idToString(coverArtId));
         }
-        else
-        {
-            db::TrackEmbeddedImage::FindParameters params;
-            params.setRelease(release->getId());
-            params.setIsPreferred(true);
-            params.setSortMethod(db::TrackEmbeddedImageSortMethod::FrontCoverAndSize);
-            params.setRange(db::Range{ 0, 1 });
 
-            db::TrackEmbeddedImage::find(context.dbSession, params, [&](const db::TrackEmbeddedImage::pointer& image) {
-                const CoverArtId coverArtId{ image->getId() };
-                albumNode.setAttribute("coverArt", idToString(coverArtId));
-            });
-        }
-        if (const auto year{ release->getYear() })
+        if (const auto originalYear{ release->getOriginalYear() })
+            albumNode.setAttribute("year", *originalYear);
+        else if (const auto year{ release->getYear() })
             albumNode.setAttribute("year", *year);
 
         auto artists{ release->getReleaseArtists() };
@@ -131,9 +121,9 @@ namespace lms::api::subsonic
         const ClusterType::pointer genreClusterType{ ClusterType::find(context.dbSession, "GENRE") };
         if (genreClusterType)
         {
-            auto clusters{ release->getClusterGroups({ genreClusterType->getId() }, 1) };
-            if (!clusters.empty() && !clusters.front().empty())
-                albumNode.setAttribute("genre", clusters.front().front()->getName());
+            const auto clusters{ release->getClusters(genreClusterType->getId(), 1) };
+            if (!clusters.empty())
+                albumNode.setAttribute("genre", clusters.front()->getName());
         }
 
         if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.user->getId(), release->getId()) }; dateTime.isValid())
