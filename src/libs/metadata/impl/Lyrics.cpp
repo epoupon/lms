@@ -155,15 +155,20 @@ namespace lms::metadata
             accumulatedLyrics.clear();
         };
 
+        bool firstLine{ true };
         std::string line;
         while (std::getline(is, line))
         {
-            std::string_view trimmedLine{ core::stringUtils::stringTrimEnd(line) };
-
             // Remove potential UTF8 BOM
-            constexpr std::string_view utf8BOM{ "\xEF\xBB\xBF" };
-            if (trimmedLine.starts_with(utf8BOM))
-                trimmedLine = trimmedLine.substr(utf8BOM.size());
+            if (firstLine)
+            {
+                firstLine = false;
+                constexpr std::string_view utf8BOM{ "\xEF\xBB\xBF" };
+                if (line.starts_with(utf8BOM))
+                    line.erase(0, utf8BOM.size());
+            }
+
+            std::string_view trimmedLine{ core::stringUtils::stringTrimEnd(line) };
 
             // Skip comments
             if (!trimmedLine.empty() && trimmedLine.front() == '#')

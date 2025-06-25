@@ -134,9 +134,7 @@ namespace lms::scanner
                         if (track)
                             playListAssociation.tracks.push_back(TrackInfo{ .trackId = track->getId(), .releaseId = track->getReleaseId() });
                         else
-                        {
                             pendingErrors.emplace_back(std::make_shared<PlayListFilePathMissingError>(playListFile->getAbsoluteFilePath(), file));
-                        }
                     }
 
                     if (pendingErrors.size() == files.size())
