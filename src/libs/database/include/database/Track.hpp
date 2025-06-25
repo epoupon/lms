@@ -72,8 +72,6 @@ namespace lms::db
             Filters filters;
             std::vector<std::string_view> keywords; // if non empty, name must match all of these keywords
             std::string name;                       // if non empty, must match this name (title)
-            std::string fileStem;                   // if non empty, must match this file stem
-            std::string fileName;                   // if non empty, must match this file name
             TrackSortMethod sortMethod{ TrackSortMethod::None };
             std::optional<Range> range;
             Wt::WDateTime writtenAfter;
@@ -107,17 +105,6 @@ namespace lms::db
                 name = _name;
                 return *this;
             }
-            FindParameters& setFileStem(std::string_view _fileStem)
-            {
-                fileStem = _fileStem;
-                return *this;
-            }
-            FindParameters& setFileName(std::string_view _fileName)
-            {
-                fileName = _fileName;
-                return *this;
-            }
-
             FindParameters& setSortMethod(TrackSortMethod _method)
             {
                 sortMethod = _method;
@@ -229,7 +216,6 @@ namespace lms::db
         void setDiscSubtitle(std::string_view name) { _discSubtitle = name; }
         void setName(std::string_view name);
         void setAbsoluteFilePath(const std::filesystem::path& filePath);
-        void setRelativeFilePath(const std::filesystem::path& filePath);
         void setFileSize(std::size_t fileSize) { _fileSize = fileSize; }
         void setLastWriteTime(const Wt::WDateTime& time) { _fileLastWrite = time; }
         void setAddedTime(const Wt::WDateTime& time) { _fileAdded = time; }
@@ -270,7 +256,6 @@ namespace lms::db
         const std::string& getDiscSubtitle() const { return _discSubtitle; }
         std::string getName() const { return _name; }
         const std::filesystem::path& getAbsoluteFilePath() const { return _absoluteFilePath; }
-        const std::filesystem::path& getRelativeFilePath() const { return _relativeFilePath; }
         long long getFileSize() const { return _fileSize; }
         std::size_t getBitrate() const { return _bitrate; }
         std::size_t getBitsPerSample() const { return _bitsPerSample; }
@@ -329,9 +314,6 @@ namespace lms::db
             Wt::Dbo::field(a, _date, "date");
             Wt::Dbo::field(a, _originalDate, "original_date");
             Wt::Dbo::field(a, _absoluteFilePath, "absolute_file_path");
-            Wt::Dbo::field(a, _relativeFilePath, "relative_file_path");
-            Wt::Dbo::field(a, _fileStem, "file_stem");
-            Wt::Dbo::field(a, _fileName, "file_name");
             Wt::Dbo::field(a, _fileSize, "file_size");
             Wt::Dbo::field(a, _fileLastWrite, "file_last_write");
             Wt::Dbo::field(a, _fileAdded, "file_added");
@@ -378,9 +360,6 @@ namespace lms::db
         core::PartialDateTime _date;
         core::PartialDateTime _originalDate;
         std::filesystem::path _absoluteFilePath; // full path
-        std::filesystem::path _relativeFilePath; // relative to root (that may be deleted)
-        std::filesystem::path _fileStem;
-        std::filesystem::path _fileName;
         long long _fileSize{};
         Wt::WDateTime _fileLastWrite;
         Wt::WDateTime _fileAdded;

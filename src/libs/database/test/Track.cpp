@@ -343,13 +343,11 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
             track.get().modify()->setAbsoluteFilePath("/root/foo/file.path");
-            track.get().modify()->setRelativeFilePath("foo/file.path");
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(track->getAbsoluteFilePath(), "/root/foo/file.path");
-            EXPECT_EQ(track->getRelativeFilePath(), "foo/file.path");
         }
     }
 

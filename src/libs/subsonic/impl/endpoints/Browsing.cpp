@@ -341,7 +341,7 @@ namespace lms::api::subsonic
         {
             Track::FindParameters params;
             params.setDirectory(directory->getId());
-            params.setSortMethod(TrackSortMethod::FileName);
+            params.setSortMethod(TrackSortMethod::AbsoluteFilePath);
 
             Track::find(context.dbSession, params, [&](const Track::pointer& track) {
                 directoryNode.addArrayChild("child", createSongNode(context, track, context.user));

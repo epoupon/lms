@@ -193,7 +193,7 @@ namespace lms::db
         LastWrittenDesc,
         AddedDesc,
         StarredDateDesc,
-        FileName,
+        AbsoluteFilePath,
         Name,
         DateDescAndRelease,
         Release,   // order by disc/track number

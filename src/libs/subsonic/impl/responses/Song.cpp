@@ -19,7 +19,9 @@
 
 #include "responses/Song.hpp"
 
+#include <filesystem>
 #include <string_view>
+#include <system_error>
 
 #include "core/ITraceLogger.hpp"
 #include "core/MimeTypes.hpp"
@@ -29,6 +31,7 @@
 #include "database/Artwork.hpp"
 #include "database/Cluster.hpp"
 #include "database/Directory.hpp"
+#include "database/MediaLibrary.hpp"
 #include "database/Release.hpp"
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"
@@ -93,7 +96,16 @@ namespace lms::api::subsonic
         if (track->getYear())
             trackResponse.setAttribute("year", *track->getYear());
         trackResponse.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(context.user->getId(), track->getId()));
-        trackResponse.setAttribute("path", track->getRelativeFilePath().string());
+
+        // maybe not available if user just removed the library without rescanning
+        if (const db::MediaLibrary::pointer library{ track->getMediaLibrary() })
+        {
+            std::error_code ec;
+            const std::filesystem::path relativeTrackPath{ std::filesystem::relative(track->getAbsoluteFilePath(), library->getPath(), ec) };
+            if (!ec && !relativeTrackPath.empty())
+                trackResponse.setAttribute("path", relativeTrackPath.c_str());
+        }
+
         trackResponse.setAttribute("size", track->getFileSize());
 
         if (track->getAbsoluteFilePath().has_extension())

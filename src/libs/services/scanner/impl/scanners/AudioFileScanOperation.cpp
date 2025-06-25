@@ -650,7 +650,6 @@ namespace lms::scanner
         track.modify()->setDuration(_parsedTrack->audioProperties.duration);
         track.modify()->setSampleRate(_parsedTrack->audioProperties.sampleRate);
 
-        track.modify()->setRelativeFilePath(getRelativeFilePath());
         track.modify()->setFileSize(getFileSize());
         track.modify()->setLastWriteTime(getLastWriteTime());
 
