@@ -27,6 +27,7 @@
 
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
+#include "traits/PathTraits.hpp"
 
 namespace lms::db
 {
@@ -83,6 +84,19 @@ namespace lms::db
         query.leftJoin("track_embedded_image ON artwork.track_embedded_image_id = track_embedded_image.id");
         query.leftJoin("track_embedded_image_link ON track_embedded_image.id = track_embedded_image_link.track_embedded_image_id");
         query.leftJoin("track ON track.id = track_embedded_image_link.track_id");
+        query.where("artwork.id = ?").bind(getId());
+
+        return utils::fetchQuerySingleResult(query);
+    }
+
+    std::filesystem::path Artwork::getAbsoluteFilePath() const
+    {
+        auto query{ session()->query<std::filesystem::path>("SELECT COALESCE(image.absolute_file_path, track.absolute_file_path) AS absolute_file_path FROM artwork") };
+        query.leftJoin("image ON artwork.image_id = image.id");
+        query.leftJoin("track_embedded_image ON artwork.track_embedded_image_id = track_embedded_image.id");
+        query.leftJoin("track_embedded_image_link ON track_embedded_image.id = track_embedded_image_link.track_embedded_image_id");
+        query.leftJoin("track ON track.id = track_embedded_image_link.track_id");
+        query.limit(1); // there may be several tracks matching this artwork...
         query.where("artwork.id = ?").bind(getId());
 
         return utils::fetchQuerySingleResult(query);

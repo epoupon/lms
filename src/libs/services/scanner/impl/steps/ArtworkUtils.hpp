@@ -36,6 +36,4 @@ namespace lms::scanner::utils
 {
     db::ObjectPtr<db::Artwork> getOrCreateArtworkFromTrackEmbeddedImage(db::Session& session, db::TrackEmbeddedImageId trackEmbeddedImageId);
     db::ObjectPtr<db::Artwork> getOrCreateArtworkFromImage(db::Session& session, db::ImageId imageId);
-
-    std::filesystem::path toPath(db::Session& session, db::ArtworkId artworkId);
 } // namespace lms::scanner::utils

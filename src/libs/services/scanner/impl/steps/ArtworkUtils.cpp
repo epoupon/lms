@@ -27,34 +27,6 @@
 
 namespace lms::scanner::utils
 {
-    namespace
-    {
-        std::filesystem::path toPath(db::Session& session, const db::TrackEmbeddedImageId trackEmbeddedImageId)
-        {
-            session.checkReadTransaction();
-
-            std::filesystem::path res;
-
-            db::Track::FindParameters params;
-            params.setEmbeddedImage(trackEmbeddedImageId);
-            params.setRange(db::Range{ .offset = 0, .size = 1 });
-            db::Track::find(session, params, [&](const db::Track::pointer& track) {
-                res = track->getAbsoluteFilePath();
-            });
-
-            return res;
-        }
-
-        std::filesystem::path toPath(db::Session& session, db::ImageId imageId)
-        {
-            session.checkReadTransaction();
-
-            db::Image::pointer image{ db::Image::find(session, imageId) };
-            return image ? image->getAbsoluteFilePath() : std::filesystem::path{};
-        }
-
-    } // namespace
-
     db::ObjectPtr<db::Artwork> getOrCreateArtworkFromTrackEmbeddedImage(db::Session& session, db::TrackEmbeddedImageId trackEmbeddedImageId)
     {
         assert(trackEmbeddedImageId.isValid());
@@ -84,21 +56,4 @@ namespace lms::scanner::utils
         }
         return artwork;
     }
-
-    std::filesystem::path toPath(db::Session& session, db::ArtworkId artworkId)
-    {
-        session.checkReadTransaction();
-
-        db::Artwork::pointer artwork{ db::Artwork::find(session, artworkId) };
-        if (!artwork)
-            return std::filesystem::path{};
-
-        if (artwork->getTrackEmbeddedImageId().isValid())
-            return toPath(session, artwork->getTrackEmbeddedImageId());
-        if (artwork->getImageId().isValid())
-            return toPath(session, artwork->getImageId());
-
-        return std::filesystem::path{};
-    }
-
 } // namespace lms::scanner::utils

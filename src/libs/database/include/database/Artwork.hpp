@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <filesystem>
+
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/WDateTime.h>
 
@@ -48,6 +50,7 @@ namespace lms::db
         TrackEmbeddedImageId getTrackEmbeddedImageId() const { return _trackEmbeddedImage.id(); }
         ImageId getImageId() const { return _image.id(); }
         Wt::WDateTime getLastWrittenTime() const;
+        std::filesystem::path getAbsoluteFilePath() const;
 
         template<class Action>
         void persist(Action& a)

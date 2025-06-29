@@ -48,11 +48,13 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
             image.get().modify()->setLastWriteTime(dateTime);
+            image.get().modify()->setAbsoluteFilePath("/tmp/foo");
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(artwork.get()->getLastWrittenTime(), dateTime);
+            EXPECT_EQ(artwork.get()->getAbsoluteFilePath(), "/tmp/foo");
         }
     }
 
@@ -73,11 +75,13 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
             session.create<db::TrackEmbeddedImageLink>(track.get(), image.get());
             track.get().modify()->setLastWriteTime(dateTime);
+            track.get().modify()->setAbsoluteFilePath("/tmp/foo");
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(artwork.get()->getLastWrittenTime(), dateTime);
+            EXPECT_EQ(artwork.get()->getAbsoluteFilePath(), "/tmp/foo");
         }
     }
 } // namespace lms::db::tests

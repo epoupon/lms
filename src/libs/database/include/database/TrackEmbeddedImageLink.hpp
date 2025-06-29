@@ -40,8 +40,6 @@ namespace lms::db
     public:
         TrackEmbeddedImageLink() = default;
 
-        using HashType = std::uint64_t;
-
         // find
         static std::size_t getCount(Session& session);
         static pointer find(Session& session, TrackEmbeddedImageLinkId id);

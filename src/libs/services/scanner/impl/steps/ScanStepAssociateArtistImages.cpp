@@ -271,7 +271,7 @@ namespace lms::scanner
 
             artist.modify()->setPreferredArtwork(artwork);
             if (artwork)
-                LMS_LOG(DBUPDATER, DEBUG, "Updated preferred artwork for artist '" << artist->getName() << "' with image in " << utils::toPath(session, artwork->getId()));
+                LMS_LOG(DBUPDATER, DEBUG, "Updated preferred artwork for artist '" << artist->getName() << "' with image in " << artwork->getAbsoluteFilePath());
             else
                 LMS_LOG(DBUPDATER, DEBUG, "Removed preferred artwork from artist '" << artist->getName() << "'");
         }

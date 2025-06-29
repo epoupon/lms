@@ -49,10 +49,16 @@ namespace lms::scanner
                 return !artwork;
 
             if (const db::TrackEmbeddedImageId* trackEmbeddedImageId = std::get_if<db::TrackEmbeddedImageId>(&preferredArtwork))
+            {
+                assert(trackEmbeddedImageId->isValid());
                 return artwork && *trackEmbeddedImageId == artwork->getTrackEmbeddedImageId();
+            }
 
             if (const db::ArtworkId* artworkId = std::get_if<db::ArtworkId>(&preferredArtwork))
+            {
+                assert(artworkId->isValid());
                 return artwork && *artworkId == artwork->getId();
+            }
 
             return false;
         }
@@ -77,36 +83,9 @@ namespace lms::scanner
             std::size_t processedTrackCount{};
         };
 
-        TrackArtwork computePreferredTrackArtwork(SearchTrackArtworkContext& searchContext, const db::Track::pointer& track)
+        TrackArtwork computePreferredTrackArtwork(SearchTrackArtworkContext& searchContext, const db::Track::pointer& track, TrackArtwork preferredMediaArtwork)
         {
-            // Try to get a media image
-            TrackArtwork res;
-            {
-                db::TrackEmbeddedImage::FindParameters params;
-                params.setTrack(track->getId());
-                params.setImageTypes({ db::ImageType::Media });
-                params.setSortMethod(db::TrackEmbeddedImageSortMethod::SizeDesc);
-                params.setRange(db::Range{ .offset = 0, .size = 1 });
-                db::TrackEmbeddedImage::find(searchContext.session, params, [&](const db::TrackEmbeddedImage::pointer& image) { res = image->getId(); });
-            }
-
-            if (isValid(res))
-                return res;
-
-            // Fallback on another track of the same disc
-            const db::ReleaseId releaseId{ track->getReleaseId() };
-            if (!releaseId.isValid())
-                return res;
-
-            {
-                db::TrackEmbeddedImage::FindParameters params;
-                params.setRelease(releaseId);
-                params.setDiscNumber(track->getDiscNumber());
-                params.setImageTypes({ db::ImageType::Media });
-                params.setSortMethod(db::TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc);
-                params.setRange(db::Range{ .offset = 0, .size = 1 });
-                db::TrackEmbeddedImage::find(searchContext.session, params, [&](const db::TrackEmbeddedImage::pointer& image) { res = image->getId(); });
-            }
+            TrackArtwork res{ preferredMediaArtwork };
 
             if (isValid(res))
                 return res;
@@ -125,8 +104,15 @@ namespace lms::scanner
                 return res;
 
             // Fallback on the artwork already resolved for the release
+            const db::ReleaseId releaseId{ track->getReleaseId() };
+            if (!releaseId.isValid())
+                return res;
+
             if (const db::Release::pointer release{ db::Release::find(searchContext.session, releaseId) })
-                res = release->getPreferredArtworkId();
+            {
+                if (const db::ArtworkId releaseArtworkId{ release->getPreferredArtworkId() }; releaseArtworkId.isValid())
+                    res = releaseArtworkId;
+            }
 
             return res;
         }
@@ -147,11 +133,15 @@ namespace lms::scanner
                 return res;
 
             // fallback on another track of the same disc
-            if (const db::ReleaseId releaseId{ track->getReleaseId() }; releaseId.isValid())
+            const db::ReleaseId releaseId{ track->getReleaseId() };
+            if (!releaseId.isValid())
+                return res;
+
+            if (const auto discNumber{ track->getDiscNumber() })
             {
                 db::TrackEmbeddedImage::FindParameters params;
                 params.setRelease(releaseId);
-                params.setDiscNumber(track->getDiscNumber());
+                params.setDiscNumber(discNumber);
                 params.setImageTypes({ db::ImageType::Media });
                 params.setSortMethod(db::TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc);
                 params.setRange(db::Range{ .offset = 0, .size = 1 });
@@ -171,8 +161,8 @@ namespace lms::scanner
                 auto transaction{ searchContext.session.createReadTransaction() };
 
                 db::Track::find(searchContext.session, searchContext.lastRetrievedTrackId, readBatchSize, [&](const db::Track::pointer& track) {
-                    const TrackArtwork preferredArtwork{ computePreferredTrackArtwork(searchContext, track) };
                     const TrackArtwork preferredMediaArtwork{ computePreferredTrackMediaArtwork(searchContext, track) };
+                    const TrackArtwork preferredArtwork{ computePreferredTrackArtwork(searchContext, track, preferredMediaArtwork) };
 
                     const db::Artwork::pointer currentPreferredArtwork{ track->getPreferredArtwork() };
                     const db::Artwork::pointer currentPreferredMediaArtwork{ track->getPreferredMediaArtwork() };
@@ -180,7 +170,7 @@ namespace lms::scanner
                     if (!isSameArtwork(preferredArtwork, currentPreferredArtwork)
                         || !isSameArtwork(preferredMediaArtwork, currentPreferredMediaArtwork))
                     {
-                        TrackArtworksAssociations.push_back(TrackArtworksAssociation{ track, preferredArtwork, preferredMediaArtwork });
+                        TrackArtworksAssociations.push_back(TrackArtworksAssociation{ .track = track, .preferredArtwork = preferredArtwork, .preferredMediaArtwork = preferredMediaArtwork });
                     }
 
                     searchContext.processedTrackCount++;
@@ -201,7 +191,7 @@ namespace lms::scanner
             // Using track.modify() is quite CPU intensive as the track class has too many fields
             db::Track::updatePreferredArtwork(session, track->getId(), artwork ? artwork->getId() : db::ArtworkId{});
             if (artwork)
-                LMS_LOG(DBUPDATER, DEBUG, "Updated preferred artwork in track " << track->getAbsoluteFilePath() << " with image in " << utils::toPath(session, artwork->getId()));
+                LMS_LOG(DBUPDATER, DEBUG, "Updated preferred artwork in track " << track->getAbsoluteFilePath() << " with image in " << artwork->getAbsoluteFilePath());
             else
                 LMS_LOG(DBUPDATER, DEBUG, "Removed preferred artwork from track " << track->getAbsoluteFilePath());
         }
@@ -217,9 +207,9 @@ namespace lms::scanner
             // Using track.modify() is quite CPU intensive as the track class has too many fields
             db::Track::updatePreferredMediaArtwork(session, track->getId(), artwork ? artwork->getId() : db::ArtworkId{});
             if (artwork)
-                LMS_LOG(DBUPDATER, DEBUG, "Updated preferred media artwork in track '" << track->getAbsoluteFilePath() << "' with image in " << utils::toPath(session, artwork->getId()));
+                LMS_LOG(DBUPDATER, DEBUG, "Updated preferred media artwork in track " << track->getAbsoluteFilePath() << " with image in " << artwork->getAbsoluteFilePath());
             else
-                LMS_LOG(DBUPDATER, DEBUG, "Removed preferred media artwork from track '" << track->getAbsoluteFilePath() << "'");
+                LMS_LOG(DBUPDATER, DEBUG, "Removed preferred media artwork from track " << track->getAbsoluteFilePath());
         }
 
         void updateTrackPreferredArtworks(db::Session& session, const TrackArtworksAssociation& TrackArtworksAssociation)
