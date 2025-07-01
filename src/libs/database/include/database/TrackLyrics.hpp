@@ -82,6 +82,7 @@ namespace lms::db
         static void find(Session& session, const FindParameters& params, const std::function<void(const TrackLyrics::pointer&)>& func);
         static void find(Session& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(const TrackLyrics::pointer&)>& func);
         static RangeResults<TrackLyricsId> findOrphanIds(Session& session, std::optional<Range> range);
+        static void findAbsoluteFilePath(Session& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(TrackLyricsId trackLyricsId, const std::filesystem::path& absoluteFilePath)>& func);
 
         using SynchronizedLines = std::map<std::chrono::milliseconds, std::string>;
 

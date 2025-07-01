@@ -74,7 +74,7 @@ namespace lms::scanner
 
         Session& session{ _db.getTLSSession() };
 
-        std::vector<typename Object::pointer> objectsToRemove;
+        std::vector<typename Object::IdType> objectIdsToRemove;
 
         typename Object::IdType lastCheckedId;
         bool endReached{};
@@ -83,39 +83,36 @@ namespace lms::scanner
             if (_abortScan)
                 break;
 
-            objectsToRemove.clear();
+            objectIdsToRemove.clear();
             {
-                constexpr std::size_t batchSize = 100;
+                constexpr std::size_t batchSize = 200;
 
                 auto transaction{ session.createReadTransaction() };
 
                 endReached = true;
-                Object::find(session, lastCheckedId, batchSize, [&](const typename Object::pointer& object) {
+                Object::findAbsoluteFilePath(session, lastCheckedId, batchSize, [&](Object::IdType objectId, const std::filesystem::path& filePath) {
                     endReached = false;
 
                     // special case for track lyrics, only check external lyrics
                     if constexpr (std::is_same_v<Object, TrackLyrics>)
                     {
-                        if (object->getAbsoluteFilePath().empty())
+                        if (filePath.empty())
                             return;
                     }
 
-                    if (!checkFile(object->getAbsoluteFilePath()))
-                        objectsToRemove.push_back(object);
+                    if (!checkFile(filePath))
+                        objectIdsToRemove.push_back(objectId);
 
                     context.currentStepStats.processedElems++;
                 });
             }
 
-            if (!objectsToRemove.empty())
+            if (!objectIdsToRemove.empty())
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                for (typename Object::pointer& object : objectsToRemove)
-                {
-                    object.remove();
-                    context.stats.deletions++;
-                }
+                session.destroy<Object>(objectIdsToRemove);
+                context.stats.deletions += objectIdsToRemove.size();
             }
 
             _progressCallback(context.currentStepStats);
@@ -145,7 +142,7 @@ namespace lms::scanner
 
             if (!selectFileScanner(p))
             {
-                LMS_LOG(DBUPDATER, DEBUG, "Removing " << p.string() << ": file format no longer handled");
+                LMS_LOG(DBUPDATER, DEBUG, "Removing " << p << ": file format no longer handled");
                 return false;
             }
 
@@ -153,7 +150,7 @@ namespace lms::scanner
         }
         catch (std::filesystem::filesystem_error& e)
         {
-            LMS_LOG(DBUPDATER, ERROR, "Caught exception while checking file '" << p.string() << "': " << e.what());
+            LMS_LOG(DBUPDATER, ERROR, "Caught exception while checking file " << p << ": " << e.what());
             return false;
         }
     }

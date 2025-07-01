@@ -22,6 +22,7 @@
 #include <Wt/Dbo/Dbo.h>
 #include <Wt/Dbo/SqlConnectionPool.h>
 
+#include <span>
 #include <string>
 #include <vector>
 
@@ -106,14 +107,8 @@ namespace lms::db
         void refreshTracingLoggerStats();
 
         // returning a ptr here to ease further wrapping using operator->
-        Wt::Dbo::Session* getDboSession()
-        {
-            return &_session;
-        }
-        Db& getDb()
-        {
-            return _db;
-        }
+        Wt::Dbo::Session* getDboSession() { return &_session; }
+        Db& getDb() { return _db; }
 
         template<typename Object, typename... Args>
         typename Object::pointer create(Args&&... args)
@@ -126,7 +121,25 @@ namespace lms::db
             return res;
         }
 
+        template<typename Object>
+        void destroy(typename Object::IdType id)
+        {
+            destroy(std::span{ &id, 1 });
+        }
+
+        template<typename Object>
+        void destroy(std::span<const typename Object::IdType> ids)
+        {
+            checkWriteTransaction();
+
+            const std::string query{ std::string{ "DELETE FROM " } + _session.tableName<Object>() + " WHERE id = ?" };
+            for (typename Object::IdType id : ids)
+                execute(query, id.getValue());
+        }
+
     private:
+        void execute(std::string_view query, long long id);
+
         Db& _db;
         Wt::Dbo::Session _session;
     };

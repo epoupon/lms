@@ -71,6 +71,18 @@ namespace lms::db
         });
     }
 
+    void PlayListFile::findAbsoluteFilePath(Session& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(PlayListFileId playListFileId, const std::filesystem::path& absoluteFilePath)>& func)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession()->query<std::tuple<PlayListFileId, std::filesystem::path>>("SELECT pl_f.id, pl_f.absolute_file_path FROM playlist_file pl_f").orderBy("pl_f.id").where("pl_f.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
+
+        utils::forEachQueryResult(query, [&](const auto& res) {
+            func(std::get<0>(res), std::get<1>(res));
+            lastRetrievedId = std::get<0>(res);
+        });
+    }
+
     PlayListFile::pointer PlayListFile::find(Session& session, PlayListFileId id)
     {
         session.checkReadTransaction();

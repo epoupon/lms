@@ -49,6 +49,7 @@ namespace lms::db
         static pointer find(Session& session, PlayListFileId id);
         static pointer find(Session& session, const std::filesystem::path& path);
         static void find(Session& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(const pointer&)>& func);
+        static void findAbsoluteFilePath(Session& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(PlayListFileId playListFileId, const std::filesystem::path& absoluteFilePath)>& func);
 
         // getters
         const std::filesystem::path& getAbsoluteFilePath() const { return _absoluteFilePath; }

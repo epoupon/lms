@@ -427,4 +427,10 @@ namespace lms::db
         }
         LMS_LOG(DB, DEBUG, "Analyzing " << entry << ": done!");
     }
+
+    void Session::execute(std::string_view query, long long id)
+    {
+        utils::executeCommand(_session, query, id);
+    }
+
 } // namespace lms::db

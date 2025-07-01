@@ -109,7 +109,7 @@ namespace lms::scanner
     template<typename T>
     void ScanStepRemoveOrphanedDbEntries::removeOrphanedEntries(ScanContext& context)
     {
-        constexpr std::size_t batchSize = 100;
+        constexpr std::size_t batchSize = 200;
 
         using IdType = typename T::IdType;
 
@@ -130,14 +130,7 @@ namespace lms::scanner
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                for (const IdType objectId : entries.results)
-                {
-                    if (_abortScan)
-                        break;
-
-                    typename T::pointer entry{ T::find(session, objectId) };
-                    entry.remove();
-                }
+                session.destroy<T>(entries.results);
             }
 
             context.currentStepStats.processedElems += entries.results.size();

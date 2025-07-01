@@ -151,6 +151,30 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Track_findAbsoluteFilePath)
+    {
+        ScopedTrack track{ session };
+        const std::filesystem::path absoluteFilePath{ "/path/to/track.mp3" };
+        {
+            auto transaction{ session.createWriteTransaction() };
+            track.get().modify()->setAbsoluteFilePath(absoluteFilePath);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackId lastRetrievedTrackId;
+            std::vector<std::pair<TrackId, std::filesystem::path>> visitedTracks;
+            Track::findAbsoluteFilePath(session, lastRetrievedTrackId, 10, [&](TrackId trackId, const std::filesystem::path& filePath) {
+                visitedTracks.emplace_back(trackId, filePath);
+            });
+            ASSERT_EQ(visitedTracks.size(), 1);
+            EXPECT_EQ(visitedTracks[0].first, track.getId());
+            EXPECT_EQ(visitedTracks[0].second, absoluteFilePath);
+            EXPECT_EQ(lastRetrievedTrackId, track.getId());
+        }
+    }
+
     TEST_F(DatabaseFixture, Track_MediaLibrary)
     {
         ScopedTrack track{ session };

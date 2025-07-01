@@ -191,7 +191,9 @@ namespace lms::db
         static std::size_t getCount(Session& session);
         static pointer findByPath(Session& session, const std::filesystem::path& p);
         static pointer find(Session& session, TrackId id);
-        static void find(Session& session, TrackId& lastRetrievedTrack, std::size_t count, const std::function<void(const Track::pointer&)>& func, MediaLibraryId library = {});
+        static void find(Session& session, TrackId& lastRetrievedId, std::size_t count, const std::function<void(const Track::pointer&)>& func, MediaLibraryId library = {});
+        static void findAbsoluteFilePath(Session& session, TrackId& lastRetrievedId, std::size_t count, const std::function<void(TrackId trackId, const std::filesystem::path& absoluteFilePath)>& func);
+
         static bool exists(Session& session, TrackId id);
         static std::vector<pointer> findByRecordingMBID(Session& session, const core::UUID& MBID);
         static std::vector<pointer> findByMBID(Session& session, const core::UUID& MBID);

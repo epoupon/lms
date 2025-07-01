@@ -126,6 +126,18 @@ namespace lms::db
         return utils::execRangeQuery<TrackLyricsId>(query, range);
     }
 
+    void TrackLyrics::findAbsoluteFilePath(Session& session, TrackLyricsId& lastRetrievedId, std::size_t count, const std::function<void(TrackLyricsId trackLyricsId, const std::filesystem::path& absoluteFilePath)>& func)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession()->query<std::tuple<TrackLyricsId, std::filesystem::path>>("SELECT t_lrc.id,t_lrc.absolute_file_path from track_lyrics t_lrc").orderBy("t_lrc.id").where("t_lrc.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
+
+        utils::forEachQueryResult(query, [&](const auto& res) {
+            func(std::get<0>(res), std::get<1>(res));
+            lastRetrievedId = std::get<0>(res);
+        });
+    }
+
     TrackLyrics::SynchronizedLines TrackLyrics::getSynchronizedLines() const
     {
         SynchronizedLines synchronizedLines;

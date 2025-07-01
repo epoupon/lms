@@ -69,7 +69,8 @@ namespace lms::db
         static pointer find(Session& session, const std::filesystem::path& file);
         static RangeResults<pointer> find(Session& session, const FindParameters& params);
         static void find(Session& session, const FindParameters& parameters, const std::function<void(const Image::pointer&)>& func);
-        static void find(Session& session, ImageId& lastRetrievedImage, std::size_t count, const std::function<void(const Image::pointer&)>& func);
+        static void find(Session& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(const Image::pointer&)>& func);
+        static void findAbsoluteFilePath(Session& session, ImageId& lastRetrievedId, std::size_t count, const std::function<void(ImageId imageId, const std::filesystem::path& absoluteFilePath)>& func);
 
         // getters
         const std::filesystem::path& getAbsoluteFilePath() const { return _fileAbsolutePath; }

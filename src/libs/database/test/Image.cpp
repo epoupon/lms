@@ -98,4 +98,28 @@ namespace lms::db::tests
             EXPECT_EQ(results.front()->getId(), image.getId());
         }
     }
+
+    TEST_F(DatabaseFixture, Image_findAbsoluteFilePath)
+    {
+        ScopedImage image{ session, "/path/to/image" };
+
+        const std::filesystem::path absoluteFilePath{ "/path/to/image" };
+        {
+            auto transaction{ session.createWriteTransaction() };
+            image.get().modify()->setAbsoluteFilePath(absoluteFilePath);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            ImageId lastRetrievedImageId;
+            std::filesystem::path retrievedPath;
+            Image::findAbsoluteFilePath(session, lastRetrievedImageId, 1, [&](ImageId id, const std::filesystem::path& path) {
+                EXPECT_EQ(id, image.getId());
+                retrievedPath = path;
+            });
+
+            EXPECT_EQ(retrievedPath, absoluteFilePath);
+        }
+    }
+
 } // namespace lms::db::tests

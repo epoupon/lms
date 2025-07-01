@@ -124,6 +124,18 @@ namespace lms::db
         });
     }
 
+    void ArtistInfo::findAbsoluteFilePath(Session& session, ArtistInfoId& lastRetrievedId, std::size_t count, const std::function<void(ArtistInfoId artistInfoId, const std::filesystem::path& absoluteFilePath)>& func)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession()->query<std::tuple<ArtistInfoId, std::filesystem::path>>("SELECT a_i.id, a_i.absolute_file_path FROM artist_info a_i").orderBy("a_i.id").where("a_i.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
+
+        utils::forEachQueryResult(query, [&](const auto& res) {
+            func(std::get<0>(res), std::get<1>(res));
+            lastRetrievedId = std::get<0>(res);
+        });
+    }
+
     Artist::pointer ArtistInfo::getArtist() const
     {
         return _artist;

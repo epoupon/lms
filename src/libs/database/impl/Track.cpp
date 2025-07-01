@@ -265,18 +265,30 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Track>>("SELECT t from track t").where("t.id = ?").bind(id));
     }
 
-    void Track::find(Session& session, TrackId& lastRetrievedTrack, std::size_t count, const std::function<void(const Track::pointer&)>& func, MediaLibraryId library)
+    void Track::find(Session& session, TrackId& lastRetrievedId, std::size_t count, const std::function<void(const Track::pointer&)>& func, MediaLibraryId library)
     {
         session.checkReadTransaction();
 
-        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Track>>("SELECT t from track t").orderBy("t.id").where("t.id > ?").bind(lastRetrievedTrack).limit(static_cast<int>(count)) };
+        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Track>>("SELECT t from track t").orderBy("t.id").where("t.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
 
         if (library.isValid())
             query.where("media_library_id = ?").bind(library);
 
         utils::forEachQueryResult(query, [&](const Track::pointer& track) {
             func(track);
-            lastRetrievedTrack = track->getId();
+            lastRetrievedId = track->getId();
+        });
+    }
+
+    void Track::findAbsoluteFilePath(Session& session, TrackId& lastRetrievedId, std::size_t count, const std::function<void(TrackId trackId, const std::filesystem::path& absoluteFilePath)>& func)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession()->query<std::tuple<TrackId, std::filesystem::path>>("SELECT t.id,t.absolute_file_path from track t").orderBy("t.id").where("t.id > ?").bind(lastRetrievedId).limit(static_cast<int>(count)) };
+
+        utils::forEachQueryResult(query, [&](const auto& res) {
+            func(std::get<0>(res), std::get<1>(res));
+            lastRetrievedId = std::get<0>(res);
         });
     }
 

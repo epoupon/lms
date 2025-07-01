@@ -26,6 +26,32 @@ namespace lms::db::tests
 {
     using ScopedTrackLyrics = ScopedEntity<db::TrackLyrics>;
 
+    TEST_F(DatabaseFixture, TrackLyrics_findAbsoluteFilePath)
+    {
+        ScopedTrack track{ session };
+        ScopedTrackLyrics lyrics{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            TrackLyrics::pointer dbLyrics{ lyrics.get() };
+
+            dbLyrics.modify()->setAbsoluteFilePath("/tmp/test.lrc");
+            dbLyrics.modify()->setTrack(track.get());
+        }
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackLyricsId lastRetrievedId;
+            std::filesystem::path retrievedFilePath;
+            TrackLyrics::findAbsoluteFilePath(session, lastRetrievedId, 1, [&](TrackLyricsId trackLyricsId, const std::filesystem::path& absoluteFilePath) {
+                EXPECT_EQ(trackLyricsId, lyrics.getId());
+                retrievedFilePath = absoluteFilePath;
+            });
+            EXPECT_EQ(retrievedFilePath, "/tmp/test.lrc");
+        }
+    }
+
     TEST_F(DatabaseFixture, TrackLyrics_synchronized)
     {
         using namespace std::chrono_literals;
