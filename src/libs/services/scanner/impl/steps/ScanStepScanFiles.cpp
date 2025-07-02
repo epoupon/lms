@@ -19,9 +19,9 @@
 
 #include "ScanStepScanFiles.hpp"
 
-#include "FileScanQueue.hpp"
 #include "ScannerSettings.hpp"
-#include "core/IConfig.hpp"
+#include "core/IJob.hpp"
+#include "core/IJobScheduler.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/Path.hpp"
@@ -39,15 +39,32 @@ namespace lms::scanner
 
     namespace
     {
-        std::size_t getScanMetaDataThreadCount()
+        class FileScanJob : public core::IJob
         {
-            std::size_t threadCount{ core::Service<core::IConfig>::get()->getULong("scanner-metadata-thread-count", 0) };
+        public:
+            FileScanJob(std::unique_ptr<IFileScanOperation> scanOperation)
+                : _scanOperation{ std::move(scanOperation) }
+            {
+            }
 
-            if (threadCount == 0)
-                threadCount = std::max<std::size_t>(std::thread::hardware_concurrency() / 2, 1);
+            IFileScanOperation& getScanOperation()
+            {
+                return *_scanOperation;
+            }
 
-            return threadCount;
-        }
+        private:
+            core::LiteralString getName() const override
+            {
+                return _scanOperation->getName();
+            }
+
+            void run() override
+            {
+                _scanOperation->scan();
+            }
+
+            std::unique_ptr<IFileScanOperation> _scanOperation;
+        };
 
         FileToScan retrieveFileInfo(const std::filesystem::path& file, const MediaLibraryInfo& mediaLibrary, std::error_code& ec)
         {
@@ -71,7 +88,6 @@ namespace lms::scanner
 
     ScanStepScanFiles::ScanStepScanFiles(InitParams& initParams)
         : ScanStepBase{ initParams }
-        , _fileScanQueue{ getScanMetaDataThreadCount(), _abortScan }
     {
         visitFileScanners([](IFileScanner* scanner) {
             for (const std::filesystem::path& file : scanner->getSupportedFiles())
@@ -80,8 +96,6 @@ namespace lms::scanner
             for (const std::filesystem::path& extension : scanner->getSupportedExtensions())
                 LMS_LOG(DBUPDATER, INFO, scanner->getName() << ": supporting file extension " << extension);
         });
-
-        LMS_LOG(DBUPDATER, INFO, "Using " << _fileScanQueue.getThreadCount() << " thread(s) for scanning file metadata");
     }
 
     bool ScanStepScanFiles::needProcess([[maybe_unused]] const ScanContext& context) const
@@ -100,9 +114,13 @@ namespace lms::scanner
 
     void ScanStepScanFiles::process(ScanContext& context, const MediaLibraryInfo& mediaLibrary)
     {
-        const std::size_t scanQueueMaxScanRequestCount{ 100 * _fileScanQueue.getThreadCount() };
-        const std::size_t processFileResultsBatchSize{ 10 };
+        core::IJobScheduler& jobScheduler{ getJobScheduler() };
+        assert(jobScheduler.getJobsDoneCount() == 0);
 
+        const std::size_t scanQueueMaxScanRequestCount{ 100 * jobScheduler.getThreadCount() };
+        constexpr std::size_t processFileResultsBatchSize{ 10 };
+
+        std::vector<std::unique_ptr<core::IJob>> jobsDone;
         std::vector<std::unique_ptr<IFileScanOperation>> scanOperations;
 
         core::pathUtils::exploreFilesRecursive(
@@ -130,7 +148,7 @@ namespace lms::scanner
                         if (context.scanOptions.fullScan || scanner->needsScan(fileToScan))
                         {
                             auto scanOperation{ scanner->createScanOperation(std::move(fileToScan)) };
-                            _fileScanQueue.pushScanRequest(std::move(scanOperation));
+                            jobScheduler.scheduleJob(std::make_unique<FileScanJob>(std::move(scanOperation)));
                         }
                     }
 
@@ -138,38 +156,48 @@ namespace lms::scanner
                     _progressCallback(context.currentStepStats);
                 }
 
-                while (_fileScanQueue.getResultsCount() > (scanQueueMaxScanRequestCount / 2))
+                while (jobScheduler.getJobsDoneCount() > (scanQueueMaxScanRequestCount / 2))
                 {
-                    _fileScanQueue.popResults(scanOperations, processFileResultsBatchSize);
-                    processFileScanResults(context, scanOperations);
+                    jobScheduler.popJobsDone(jobsDone, processFileResultsBatchSize);
+                    processFileScanResults(context, jobsDone);
+                    jobsDone.clear();
                 }
 
-                _fileScanQueue.wait(scanQueueMaxScanRequestCount);
+                jobScheduler.waitUntilJobCountAtMost(scanQueueMaxScanRequestCount);
 
                 return true;
             },
             &excludeDirFileName);
 
-        _fileScanQueue.wait();
+        jobScheduler.wait();
 
-        while (!_abortScan && _fileScanQueue.popResults(scanOperations, processFileResultsBatchSize) > 0)
-            processFileScanResults(context, scanOperations);
+        while (jobScheduler.popJobsDone(jobsDone, processFileResultsBatchSize) > 0)
+        {
+            if (!_abortScan)
+                processFileScanResults(context, jobsDone);
+
+            jobsDone.clear();
+        }
+
+        assert(jobScheduler.getJobsDoneCount() == 0);
     }
 
-    void ScanStepScanFiles::processFileScanResults(ScanContext& context, std::span<std::unique_ptr<IFileScanOperation>> scanOperations)
+    void ScanStepScanFiles::processFileScanResults(ScanContext& context, std::span<std::unique_ptr<core::IJob>> scanJobs)
     {
         LMS_SCOPED_TRACE_OVERVIEW("Scanner", "ProcessScanResults");
 
         db::Session& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createWriteTransaction() };
 
-        for (auto& scanOperation : scanOperations)
+        for (auto& scanJob : scanJobs)
         {
             if (_abortScan)
                 return;
 
-            LMS_LOG(DBUPDATER, DEBUG, scanOperation->getName() << ": processing result for " << scanOperation->getFilePath());
-            const IFileScanOperation::OperationResult res{ scanOperation->processResult() };
+            IFileScanOperation& scanOperation{ static_cast<FileScanJob&>(*scanJob).getScanOperation() };
+
+            LMS_LOG(DBUPDATER, DEBUG, scanOperation.getName() << ": processing result for " << scanOperation.getFilePath());
+            const IFileScanOperation::OperationResult res{ scanOperation.processResult() };
             switch (res)
             {
             case IFileScanOperation::OperationResult::Added:
@@ -187,7 +215,7 @@ namespace lms::scanner
             }
             context.stats.scans++;
 
-            for (const auto& error : scanOperation->getErrors())
+            for (const auto& error : scanOperation.getErrors())
                 addError(context, error);
         }
     }

@@ -20,6 +20,7 @@
 #pragma once
 
 #include <chrono>
+#include <memory>
 #include <optional>
 #include <shared_mutex>
 #include <vector>
@@ -35,6 +36,11 @@
 #include "database/Session.hpp"
 #include "services/scanner/IScannerService.hpp"
 #include "steps/IScanStep.hpp"
+
+namespace lms::core
+{
+    class IJobScheduler;
+}
 
 namespace lms::scanner
 {
@@ -79,6 +85,9 @@ namespace lms::scanner
         void notifyInProgressIfNeeded(const ScanStepStats& stats);
         void notifyInProgress(const ScanStepStats& stats);
 
+        db::Db& _db;
+        std::unique_ptr<core::IJobScheduler> _jobScheduler;
+
         std::vector<std::unique_ptr<IFileScanner>> _fileScanners;
         std::vector<std::unique_ptr<IScanStep>> _scanSteps;
 
@@ -88,7 +97,6 @@ namespace lms::scanner
         boost::asio::system_timer _scheduleTimer{ _ioService };
         Events _events;
         std::chrono::system_clock::time_point _lastScanInProgressEmit;
-        db::Db& _db;
 
         mutable std::shared_mutex _statusMutex;
         State _curState{ State::NotScheduled };

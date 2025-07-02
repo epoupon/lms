@@ -107,8 +107,14 @@ namespace lms::db
         void refreshTracingLoggerStats();
 
         // returning a ptr here to ease further wrapping using operator->
-        Wt::Dbo::Session* getDboSession() { return &_session; }
-        Db& getDb() { return _db; }
+        Wt::Dbo::Session* getDboSession()
+        {
+            return &_session;
+        }
+        Db& getDb()
+        {
+            return _db;
+        }
 
         template<typename Object, typename... Args>
         typename Object::pointer create(Args&&... args)

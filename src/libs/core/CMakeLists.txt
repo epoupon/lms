@@ -10,6 +10,7 @@ add_library(lmscore STATIC
 	impl/ChildProcessManager.cpp
 	impl/Config.cpp
 	impl/FileResourceHandler.cpp
+	impl/JobScheduler.cpp
 	impl/IOContextRunner.cpp
 	impl/Logger.cpp
 	impl/MimeTypes.cpp

@@ -24,6 +24,7 @@
 #include <Wt/WDate.h>
 
 #include "core/IConfig.hpp"
+#include "core/IJobScheduler.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "database/MediaLibrary.hpp"
@@ -139,6 +140,17 @@ namespace lms::scanner
             scanSettings.modify()->setSkipSingleReleasePlayLists(settings.skipSingleReleasePlayLists);
             // TODO add more fields
         }
+
+        std::size_t getScannerThreadCount()
+        {
+            std::size_t threadCount{ core::Service<core::IConfig>::get()->getULong("scanner-thread-count", 0) };
+
+            if (threadCount == 0)
+                threadCount = std::max<std::size_t>(std::thread::hardware_concurrency() / 2, 1);
+
+            return threadCount;
+        }
+
     } // namespace
 
     std::unique_ptr<IScannerService> createScannerService(Db& db)
@@ -148,8 +160,12 @@ namespace lms::scanner
 
     ScannerService::ScannerService(Db& db)
         : _db{ db }
+        , _jobScheduler{ core::createJobScheduler("Scanner", getScannerThreadCount()) }
     {
         _ioService.setThreadCount(1);
+
+        LMS_LOG(DBUPDATER, INFO, "Using " << _jobScheduler->getThreadCount() << " thread(s) for jobs");
+        _jobScheduler->setShouldAbortCallback([this]() { return _abortScan; });
 
         refreshScanSettings();
 
@@ -447,6 +463,7 @@ namespace lms::scanner
         std::transform(std::cbegin(_fileScanners), std::cend(_fileScanners), std::back_inserter(fileScanners), [](const std::unique_ptr<IFileScanner>& scanner) { return scanner.get(); });
 
         ScanStepBase::InitParams params{
+            .jobScheduler = *_jobScheduler,
             .settings = _settings,
             .lastScanSettings = _lastScanSettings.has_value() ? &(_lastScanSettings.value()) : nullptr,
             .progressCallback = cbFunc,

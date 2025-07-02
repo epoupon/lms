@@ -31,6 +31,7 @@ namespace lms::scanner
         , _progressCallback{ initParams.progressCallback }
         , _abortScan{ initParams.abortScan }
         , _db{ initParams.db }
+        , _jobScheduler{ initParams.jobScheduler }
         , _fileScanners(std::cbegin(initParams.fileScanners), std::cend(initParams.fileScanners))
         , _lastScanSettings{ initParams.lastScanSettings }
     {

@@ -27,6 +27,11 @@
 #include "IScanStep.hpp"
 #include "ScanErrorLogger.hpp"
 
+namespace lms::core
+{
+    class IJobScheduler;
+}
+
 namespace lms::db
 {
     class Db;
@@ -46,6 +51,7 @@ namespace lms::scanner
 
         struct InitParams
         {
+            core::IJobScheduler& jobScheduler;
             const ScannerSettings& settings;
             const ScannerSettings* lastScanSettings{};
             ProgressCallback progressCallback;
@@ -59,6 +65,7 @@ namespace lms::scanner
         ScanStepBase& operator=(const ScanStepBase&) = delete;
 
     protected:
+        core::IJobScheduler& getJobScheduler() { return _jobScheduler; };
         const ScannerSettings* getLastScanSettings() const { return _lastScanSettings; }
         IFileScanner* selectFileScanner(const std::filesystem::path& filePath) const;
         void visitFileScanners(const std::function<void(IFileScanner*)>& visitor) const;
@@ -78,6 +85,7 @@ namespace lms::scanner
         db::Db& _db;
 
     private:
+        core::IJobScheduler& _jobScheduler;
         std::unordered_map<std::filesystem::path, IFileScanner*> _scannerByFile;
         std::unordered_map<std::filesystem::path, IFileScanner*> _scannerByExtension;
         std::vector<IFileScanner*> _fileScanners;

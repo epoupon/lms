@@ -19,11 +19,14 @@
 
 #pragma once
 
-#include <filesystem>
 #include <span>
 
-#include "FileScanQueue.hpp"
 #include "ScanStepBase.hpp"
+
+namespace lms::core
+{
+    class IJob;
+}
 
 namespace lms::scanner
 {
@@ -42,8 +45,6 @@ namespace lms::scanner
         void process(ScanContext& context) override;
 
         void process(ScanContext& context, const MediaLibraryInfo& mediaLibrary);
-        void processFileScanResults(ScanContext& context, std::span<std::unique_ptr<IFileScanOperation>> scanOperations);
-
-        FileScanQueue _fileScanQueue;
+        void processFileScanResults(ScanContext& context, std::span<std::unique_ptr<core::IJob>> scanJobs);
     };
 } // namespace lms::scanner

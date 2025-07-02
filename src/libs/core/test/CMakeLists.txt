@@ -2,6 +2,7 @@ include(GoogleTest)
 
 add_executable(test-core
 	EnumSet.cpp
+	JobScheduler.cpp
 	LiteralString.cpp
 	PartialDateTime.cpp
 	Path.cpp
