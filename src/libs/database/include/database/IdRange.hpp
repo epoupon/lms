@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,21 +19,15 @@
 
 #pragma once
 
-#include <filesystem>
-
-#include "database/ArtworkId.hpp"
-#include "database/ImageId.hpp"
-#include "database/Object.hpp"
-#include "database/TrackEmbeddedImageId.hpp"
-
 namespace lms::db
 {
-    class Artwork;
-    class Session;
-} // namespace lms::db
+    template<typename IdType>
+    struct IdRange
+    {
+    public:
+        IdType first;
+        IdType last;
 
-namespace lms::scanner::utils
-{
-    db::ObjectPtr<db::Artwork> getOrCreateArtworkFromTrackEmbeddedImage(db::Session& session, db::TrackEmbeddedImageId trackEmbeddedImageId);
-    db::ObjectPtr<db::Artwork> getOrCreateArtworkFromImage(db::Session& session, db::ImageId imageId);
-} // namespace lms::scanner::utils
+        bool isValid() const { return first.isValid() && last.isValid(); }
+    };
+} // namespace lms::db

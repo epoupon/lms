@@ -292,6 +292,27 @@ namespace lms::db
         });
     }
 
+    void Track::find(Session& session, const IdRange<TrackId>& idRange, const std::function<void(const Track::pointer&)>& func)
+    {
+        assert(idRange.isValid());
+
+        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Track>>("SELECT t from track t").orderBy("t.id").where("t.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
+
+        utils::forEachQueryResult(query, [&](const Track::pointer& track) {
+            func(track);
+        });
+    }
+
+    IdRange<TrackId> Track::findNextRange(Session& session, TrackId lastRetrievedId, std::size_t count)
+    {
+        auto query{ session.getDboSession()->query<std::tuple<TrackId, TrackId>>("SELECT MIN(sub.id) AS first_id, MAX(sub.id) AS last_id FROM (SELECT t.id FROM track t WHERE t.id > ? ORDER BY t.id LIMIT ?) sub") };
+        query.bind(lastRetrievedId);
+        query.bind(static_cast<int>(count));
+
+        auto res{ utils::fetchQuerySingleResult(query) };
+        return IdRange<TrackId>{ .first = std::get<0>(res), .last = std::get<1>(res) };
+    }
+
     bool Track::exists(Session& session, TrackId id)
     {
         session.checkReadTransaction();

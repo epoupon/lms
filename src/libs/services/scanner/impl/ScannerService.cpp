@@ -448,7 +448,7 @@ namespace lms::scanner
         if (!_lastScanSettings)
             _lastScanSettings = readScannerSettings(_db.getTLSSession(), lastScanSettingsName);
 
-        auto cbFunc{ [this](const ScanStepStats& stats) {
+        auto progressFunc{ [this](const ScanStepStats& stats) {
             notifyInProgressIfNeeded(stats);
         } };
 
@@ -466,7 +466,7 @@ namespace lms::scanner
             .jobScheduler = *_jobScheduler,
             .settings = _settings,
             .lastScanSettings = _lastScanSettings.has_value() ? &(_lastScanSettings.value()) : nullptr,
-            .progressCallback = cbFunc,
+            .progressCallback = progressFunc,
             .abortScan = _abortScan,
             .db = _db,
             .fileScanners = fileScanners,
@@ -500,14 +500,14 @@ namespace lms::scanner
             _currentScanStepStats = stepStats;
         }
 
-        const std::chrono::system_clock::time_point now{ std::chrono::system_clock::now() };
+        const auto now{ std::chrono::steady_clock::now() };
         _events.scanInProgress.emit(stepStats);
         _lastScanInProgressEmit = now;
     }
 
     void ScannerService::notifyInProgressIfNeeded(const ScanStepStats& stepStats)
     {
-        std::chrono::system_clock::time_point now{ std::chrono::system_clock::now() };
+        const auto now{ std::chrono::steady_clock::now() };
 
         if (now - _lastScanInProgressEmit >= std::chrono::seconds{ 1 })
             notifyInProgress(stepStats);

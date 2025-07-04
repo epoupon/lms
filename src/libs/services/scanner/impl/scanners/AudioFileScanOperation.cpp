@@ -25,6 +25,7 @@
 #include "core/Path.hpp"
 #include "core/XxHash3.hpp"
 #include "database/Artist.hpp"
+#include "database/Artwork.hpp"
 #include "database/Cluster.hpp"
 #include "database/Db.hpp"
 #include "database/Directory.hpp"
@@ -332,6 +333,8 @@ namespace lms::scanner
                 image.modify()->setWidth(imageInfo.properties.width);
                 image.modify()->setHeight(imageInfo.properties.height);
                 image.modify()->setMimeType(imageInfo.mimeType);
+
+                session.create<db::Artwork>(image);
             }
 
             return image;

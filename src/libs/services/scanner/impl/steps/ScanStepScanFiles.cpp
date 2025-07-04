@@ -31,6 +31,7 @@
 #include "scanners/IFileScanOperation.hpp"
 #include "scanners/IFileScanner.hpp"
 
+#include "JobQueue.hpp"
 #include "ScanContext.hpp"
 
 namespace lms::scanner
@@ -114,11 +115,16 @@ namespace lms::scanner
 
     void ScanStepScanFiles::process(ScanContext& context, const MediaLibraryInfo& mediaLibrary)
     {
-        core::IJobScheduler& jobScheduler{ getJobScheduler() };
-        assert(jobScheduler.getJobsDoneCount() == 0);
-
-        const std::size_t scanQueueMaxScanRequestCount{ 100 * jobScheduler.getThreadCount() };
+        const std::size_t scanQueueMaxScanRequestCount{ 50 * getJobScheduler().getThreadCount() };
         constexpr std::size_t processFileResultsBatchSize{ 10 };
+        constexpr float drainRatio{ 0.85 };
+
+        auto processDoneJobs = [&](std::span<std::unique_ptr<core::IJob>> jobsDone) {
+            if (!_abortScan)
+                processFileScanResults(context, jobsDone);
+        };
+
+        JobQueue queue{ getJobScheduler(), scanQueueMaxScanRequestCount, processDoneJobs, processFileResultsBatchSize, drainRatio };
 
         std::vector<std::unique_ptr<core::IJob>> jobsDone;
         std::vector<std::unique_ptr<IFileScanOperation>> scanOperations;
@@ -148,7 +154,7 @@ namespace lms::scanner
                         if (context.scanOptions.fullScan || scanner->needsScan(fileToScan))
                         {
                             auto scanOperation{ scanner->createScanOperation(std::move(fileToScan)) };
-                            jobScheduler.scheduleJob(std::make_unique<FileScanJob>(std::move(scanOperation)));
+                            queue.push(std::make_unique<FileScanJob>(std::move(scanOperation)));
                         }
                     }
 
@@ -156,30 +162,9 @@ namespace lms::scanner
                     _progressCallback(context.currentStepStats);
                 }
 
-                while (jobScheduler.getJobsDoneCount() > (scanQueueMaxScanRequestCount / 2))
-                {
-                    jobScheduler.popJobsDone(jobsDone, processFileResultsBatchSize);
-                    processFileScanResults(context, jobsDone);
-                    jobsDone.clear();
-                }
-
-                jobScheduler.waitUntilJobCountAtMost(scanQueueMaxScanRequestCount);
-
                 return true;
             },
             &excludeDirFileName);
-
-        jobScheduler.wait();
-
-        while (jobScheduler.popJobsDone(jobsDone, processFileResultsBatchSize) > 0)
-        {
-            if (!_abortScan)
-                processFileScanResults(context, jobsDone);
-
-            jobsDone.clear();
-        }
-
-        assert(jobScheduler.getJobsDoneCount() == 0);
     }
 
     void ScanStepScanFiles::processFileScanResults(ScanContext& context, std::span<std::unique_ptr<core::IJob>> scanJobs)
@@ -191,9 +176,6 @@ namespace lms::scanner
 
         for (auto& scanJob : scanJobs)
         {
-            if (_abortScan)
-                return;
-
             IFileScanOperation& scanOperation{ static_cast<FileScanJob&>(*scanJob).getScanOperation() };
 
             LMS_LOG(DBUPDATER, DEBUG, scanOperation.getName() << ": processing result for " << scanOperation.getFilePath());

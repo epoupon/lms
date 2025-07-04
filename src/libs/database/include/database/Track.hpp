@@ -39,6 +39,7 @@
 #include "database/ClusterId.hpp"
 #include "database/DirectoryId.hpp"
 #include "database/Filters.hpp"
+#include "database/IdRange.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
@@ -192,6 +193,8 @@ namespace lms::db
         static pointer findByPath(Session& session, const std::filesystem::path& p);
         static pointer find(Session& session, TrackId id);
         static void find(Session& session, TrackId& lastRetrievedId, std::size_t count, const std::function<void(const Track::pointer&)>& func, MediaLibraryId library = {});
+        static void find(Session& session, const IdRange<TrackId>& idRange, const std::function<void(const Track::pointer&)>& func);
+        static IdRange<TrackId> findNextRange(Session& session, TrackId lastRetrievedId, std::size_t count);
         static void findAbsoluteFilePath(Session& session, TrackId& lastRetrievedId, std::size_t count, const std::function<void(TrackId trackId, const std::filesystem::path& absoluteFilePath)>& func);
 
         static bool exists(Session& session, TrackId id);

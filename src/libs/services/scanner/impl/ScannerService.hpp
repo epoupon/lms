@@ -96,7 +96,7 @@ namespace lms::scanner
         Wt::WIOService _ioService;
         boost::asio::system_timer _scheduleTimer{ _ioService };
         Events _events;
-        std::chrono::system_clock::time_point _lastScanInProgressEmit;
+        std::chrono::steady_clock::time_point _lastScanInProgressEmit;
 
         mutable std::shared_mutex _statusMutex;
         State _curState{ State::NotScheduled };

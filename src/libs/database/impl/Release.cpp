@@ -504,6 +504,27 @@ namespace lms::db
         });
     }
 
+    void Release::find(Session& session, const IdRange<ReleaseId>& idRange, const std::function<void(const Release::pointer&)>& func)
+    {
+        assert(idRange.isValid());
+
+        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Release>>("SELECT r from release r").orderBy("r.id").where("r.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
+
+        utils::forEachQueryResult(query, [&](const Release::pointer& release) {
+            func(release);
+        });
+    }
+
+    IdRange<ReleaseId> Release::findNextRange(Session& session, ReleaseId lastRetrievedId, std::size_t count)
+    {
+        auto query{ session.getDboSession()->query<std::tuple<ReleaseId, ReleaseId>>("SELECT MIN(sub.id) AS first_id, MAX(sub.id) AS last_id FROM (SELECT r.id FROM release r WHERE r.id > ? ORDER BY r.id LIMIT ?) sub") };
+        query.bind(lastRetrievedId);
+        query.bind(static_cast<int>(count));
+
+        auto res{ utils::fetchQuerySingleResult(query) };
+        return IdRange<ReleaseId>{ .first = std::get<0>(res), .last = std::get<1>(res) };
+    }
+
     RangeResults<Release::pointer> Release::find(Session& session, const FindParameters& params)
     {
         session.checkReadTransaction();
@@ -526,6 +547,16 @@ namespace lms::db
 
         auto query{ createQuery<ReleaseId>(session, "DISTINCT r.id", params) };
         return utils::execRangeQuery<ReleaseId>(query, params.range);
+    }
+
+    void Release::updatePreferredArtwork(Session& session, ReleaseId releaseId, ArtworkId artworkId)
+    {
+        session.checkWriteTransaction();
+
+        if (artworkId.isValid())
+            utils::executeCommand(*session.getDboSession(), "UPDATE release SET preferred_artwork_id = ? WHERE id = ?", artworkId, releaseId);
+        else
+            utils::executeCommand(*session.getDboSession(), "UPDATE release SET preferred_artwork_id = NULL WHERE id = ?", releaseId);
     }
 
     std::size_t Release::getCount(Session& session, const FindParameters& params)

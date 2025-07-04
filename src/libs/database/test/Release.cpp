@@ -173,6 +173,93 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Release_findNextRange)
+    {
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto range{ Release::findNextRange(session, ReleaseId{}, 0) };
+            EXPECT_FALSE(range.isValid());
+            EXPECT_EQ(range.first, ReleaseId{});
+            EXPECT_EQ(range.last, ReleaseId{});
+
+            range = Release::findNextRange(session, ReleaseId{}, 100);
+            EXPECT_FALSE(range.isValid());
+            EXPECT_EQ(range.first, ReleaseId{});
+            EXPECT_EQ(range.last, ReleaseId{});
+        }
+
+        ScopedRelease release1{ session, "Artist1" };
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto range{ Release::findNextRange(session, ReleaseId{}, 0) };
+            EXPECT_FALSE(range.isValid());
+            EXPECT_EQ(range.first, ReleaseId{});
+            EXPECT_EQ(range.last, ReleaseId{});
+
+            range = Release::findNextRange(session, ReleaseId{}, 1);
+            EXPECT_TRUE(range.isValid());
+            EXPECT_EQ(range.first, release1.getId());
+            EXPECT_EQ(range.last, release1.getId());
+
+            range = Release::findNextRange(session, range.last, 1);
+            EXPECT_FALSE(range.isValid());
+            EXPECT_EQ(range.first, ReleaseId{});
+            EXPECT_EQ(range.last, ReleaseId{});
+
+            range = Release::findNextRange(session, ReleaseId{}, 100);
+            EXPECT_TRUE(range.isValid());
+            EXPECT_EQ(range.first, release1.getId());
+            EXPECT_EQ(range.last, release1.getId());
+        }
+
+        ScopedRelease release2{ session, "Artist2" };
+        ScopedRelease release3{ session, "Artist3" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto range{ Release::findNextRange(session, ReleaseId{}, 2) };
+            EXPECT_TRUE(range.isValid());
+            EXPECT_EQ(range.first, release1.getId());
+            EXPECT_EQ(range.last, release2.getId());
+
+            range = Release::findNextRange(session, release2.getId(), 2);
+            EXPECT_TRUE(range.isValid());
+            EXPECT_EQ(range.first, release3.getId());
+            EXPECT_EQ(range.last, release3.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Release_findByRange)
+    {
+        ScopedRelease release1{ session, "Artist1" };
+        ScopedRelease release2{ session, "Artist2" };
+        ScopedRelease release3{ session, "Artist3" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::size_t count{};
+            Release::find(session, IdRange<ReleaseId>{ .first = release1.getId(), .last = release1.getId() }, [&](const db::Release::pointer& release) {
+                count++;
+                EXPECT_EQ(release->getId(), release1.getId());
+            });
+            EXPECT_EQ(count, 1);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::size_t count{};
+            Release::find(session, IdRange<ReleaseId>{ .first = release1.getId(), .last = release3.getId() }, [&](const db::Release::pointer&) {
+                count++;
+            });
+            EXPECT_EQ(count, 3);
+        }
+    }
+
     TEST_F(DatabaseFixture, Release_singleTrack)
     {
         ScopedRelease release{ session, "MyRelease" };
@@ -1431,4 +1518,35 @@ namespace lms::db::tests
             EXPECT_EQ(releases.results[1]->getId(), release1->getId());
         }
     }
+
+    TEST_F(DatabaseFixture, Release_updateArtwork)
+    {
+        ScopedRelease release{ session, "MyRelease" };
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(release->getPreferredArtwork(), Artwork::pointer{});
+        }
+
+        ScopedImage image{ session, "/image1.jpg" };
+        ScopedArtwork artwork{ session, image.lockAndGet() };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            Release::updatePreferredArtwork(session, release->getId(), artwork.getId());
+        }
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(release->getPreferredArtwork()->getId(), artwork.getId());
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            Release::updatePreferredArtwork(session, release.getId(), ArtworkId{});
+        }
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(release->getPreferredArtwork(), Artwork::pointer{});
+        }
+    }
+
 } // namespace lms::db::tests

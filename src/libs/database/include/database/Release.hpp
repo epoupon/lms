@@ -35,6 +35,7 @@
 #include "database/CountryId.hpp"
 #include "database/DirectoryId.hpp"
 #include "database/Filters.hpp"
+#include "database/IdRange.hpp"
 #include "database/LabelId.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
@@ -249,11 +250,16 @@ namespace lms::db
         static pointer find(Session& session, const core::UUID& MBID);
         static pointer find(Session& session, ReleaseId id);
         static void find(Session& session, ReleaseId& lastRetrievedRelease, std::size_t count, const std::function<void(const Release::pointer&)>& func, MediaLibraryId library = {});
+        static void find(Session& session, const IdRange<ReleaseId>& idRange, const std::function<void(const Release::pointer&)>& func);
+        static IdRange<ReleaseId> findNextRange(Session& session, ReleaseId lastRetrievedId, std::size_t count);
         static RangeResults<pointer> find(Session& session, const FindParameters& parameters);
         static void find(Session& session, const FindParameters& parameters, const std::function<void(const pointer&)>& func);
         static RangeResults<ReleaseId> findIds(Session& session, const FindParameters& parameters);
         static std::size_t getCount(Session& session, const FindParameters& parameters);
         static RangeResults<ReleaseId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt); // not track related
+
+        // Updates
+        static void updatePreferredArtwork(Session& session, ReleaseId id, ArtworkId artworkId);
 
         // Get the cluster of the tracks that belong to this release
         // Each clusters are grouped by cluster type, sorted by the number of occurence (max to min)

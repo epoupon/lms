@@ -22,6 +22,7 @@
 #include <optional>
 
 #include "core/ILogger.hpp"
+#include "database/Artwork.hpp"
 #include "database/Db.hpp"
 #include "database/Image.hpp"
 #include "database/MediaLibrary.hpp"
@@ -84,7 +85,10 @@ namespace lms::scanner
 
             const bool added{ !image };
             if (!image)
+            {
                 image = dbSession.create<db::Image>(getFilePath());
+                dbSession.create<db::Artwork>(image);
+            }
 
             image.modify()->setLastWriteTime(getLastWriteTime());
             image.modify()->setFileSize(getFileSize());

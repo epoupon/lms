@@ -151,6 +151,93 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Track_findNextRange)
+    {
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto range{ Track::findNextRange(session, TrackId{}, 0) };
+            EXPECT_FALSE(range.isValid());
+            EXPECT_EQ(range.first, TrackId{});
+            EXPECT_EQ(range.last, TrackId{});
+
+            range = Track::findNextRange(session, TrackId{}, 100);
+            EXPECT_FALSE(range.isValid());
+            EXPECT_EQ(range.first, TrackId{});
+            EXPECT_EQ(range.last, TrackId{});
+        }
+
+        ScopedTrack track1{ session };
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto range{ Track::findNextRange(session, TrackId{}, 0) };
+            EXPECT_FALSE(range.isValid());
+            EXPECT_EQ(range.first, TrackId{});
+            EXPECT_EQ(range.last, TrackId{});
+
+            range = Track::findNextRange(session, TrackId{}, 1);
+            EXPECT_TRUE(range.isValid());
+            EXPECT_EQ(range.first, track1.getId());
+            EXPECT_EQ(range.last, track1.getId());
+
+            range = Track::findNextRange(session, range.last, 1);
+            EXPECT_FALSE(range.isValid());
+            EXPECT_EQ(range.first, TrackId{});
+            EXPECT_EQ(range.last, TrackId{});
+
+            range = Track::findNextRange(session, TrackId{}, 100);
+            EXPECT_TRUE(range.isValid());
+            EXPECT_EQ(range.first, track1.getId());
+            EXPECT_EQ(range.last, track1.getId());
+        }
+
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto range{ Track::findNextRange(session, TrackId{}, 2) };
+            EXPECT_TRUE(range.isValid());
+            EXPECT_EQ(range.first, track1.getId());
+            EXPECT_EQ(range.last, track2.getId());
+
+            range = Track::findNextRange(session, track2.getId(), 2);
+            EXPECT_TRUE(range.isValid());
+            EXPECT_EQ(range.first, track3.getId());
+            EXPECT_EQ(range.last, track3.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Track_findByRange)
+    {
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::size_t count{};
+            Track::find(session, IdRange<TrackId>{ .first = track1.getId(), .last = track1.getId() }, [&](const db::Track::pointer& track) {
+                count++;
+                EXPECT_EQ(track->getId(), track1.getId());
+            });
+            EXPECT_EQ(count, 1);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::size_t count{};
+            Track::find(session, IdRange<TrackId>{ .first = track1.getId(), .last = track3.getId() }, [&](const db::Track::pointer&) {
+                count++;
+            });
+            EXPECT_EQ(count, 3);
+        }
+    }
+
     TEST_F(DatabaseFixture, Track_findAbsoluteFilePath)
     {
         ScopedTrack track{ session };

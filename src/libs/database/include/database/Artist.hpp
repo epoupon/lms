@@ -34,6 +34,7 @@
 #include "database/ArtworkId.hpp"
 #include "database/ClusterId.hpp"
 #include "database/Filters.hpp"
+#include "database/IdRange.hpp"
 #include "database/MediaLibraryId.hpp"
 #include "database/Object.hpp"
 #include "database/ReleaseId.hpp"
@@ -125,11 +126,16 @@ namespace lms::db
         static pointer find(Session& session, ArtistId id);
         static std::vector<pointer> find(Session& session, std::string_view name); // exact match on name field
         static void find(Session& session, ArtistId& lastRetrievedArtist, std::size_t count, const std::function<void(const Artist::pointer&)>& func, MediaLibraryId library = {});
+        static void find(Session& session, const IdRange<ArtistId>& idRange, const std::function<void(const Artist::pointer&)>& func);
         static RangeResults<pointer> find(Session& session, const FindParameters& params);
         static void find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func);
+        static IdRange<ArtistId> findNextRange(Session& session, ArtistId lastRetrievedId, std::size_t count);
         static RangeResults<ArtistId> findIds(Session& session, const FindParameters& params);
         static RangeResults<ArtistId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt); // No track related
         static bool exists(Session& session, ArtistId id);
+
+        // Updates
+        static void updatePreferredArtwork(Session& session, ArtistId artistId, ArtworkId artworkId);
 
         // Accessors
         const std::string& getName() const { return _name; }

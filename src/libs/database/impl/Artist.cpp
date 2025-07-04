@@ -237,6 +237,17 @@ namespace lms::db
         });
     }
 
+    void Artist::find(Session& session, const IdRange<ArtistId>& idRange, const std::function<void(const Artist::pointer&)>& func)
+    {
+        assert(idRange.isValid());
+
+        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Artist>>("SELECT a from artist a").orderBy("a.id").where("a.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
+
+        utils::forEachQueryResult(query, [&](const Artist::pointer& artist) {
+            func(artist);
+        });
+    }
+
     std::vector<Artist::pointer> Artist::find(Session& session, std::string_view name)
     {
         session.checkReadTransaction();
@@ -280,6 +291,16 @@ namespace lms::db
         utils::forEachQueryRangeResult(query, params.range, func);
     }
 
+    IdRange<ArtistId> Artist::findNextRange(Session& session, ArtistId lastRetrievedId, std::size_t count)
+    {
+        auto query{ session.getDboSession()->query<std::tuple<ArtistId, ArtistId>>("SELECT MIN(sub.id) AS first_id, MAX(sub.id) AS last_id FROM (SELECT a.id FROM artist a WHERE a.id > ? ORDER BY a.id LIMIT ?) sub") };
+        query.bind(lastRetrievedId);
+        query.bind(static_cast<int>(count));
+
+        auto res{ utils::fetchQuerySingleResult(query) };
+        return IdRange<ArtistId>{ .first = std::get<0>(res), .last = std::get<1>(res) };
+    }
+
     RangeResults<ArtistId> Artist::findOrphanIds(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
@@ -302,6 +323,16 @@ AND NOT EXISTS (
     {
         session.checkReadTransaction();
         return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT 1 FROM artist").where("id = ?").bind(id)) == 1;
+    }
+
+    void Artist::updatePreferredArtwork(Session& session, ArtistId artistId, ArtworkId artworkId)
+    {
+        session.checkWriteTransaction();
+
+        if (artworkId.isValid())
+            utils::executeCommand(*session.getDboSession(), "UPDATE artist SET preferred_artwork_id = ? WHERE id = ?", artworkId, artistId);
+        else
+            utils::executeCommand(*session.getDboSession(), "UPDATE artist SET preferred_artwork_id = NULL WHERE id = ?", artistId);
     }
 
     std::optional<core::UUID> Artist::getMBID() const
