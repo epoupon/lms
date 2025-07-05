@@ -173,17 +173,17 @@ namespace lms::db::tests
         }
     }
 
-    TEST_F(DatabaseFixture, Release_findNextRange)
+    TEST_F(DatabaseFixture, Release_findNextIdRange)
     {
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto range{ Release::findNextRange(session, ReleaseId{}, 0) };
+            auto range{ Release::findNextIdRange(session, ReleaseId{}, 0) };
             EXPECT_FALSE(range.isValid());
             EXPECT_EQ(range.first, ReleaseId{});
             EXPECT_EQ(range.last, ReleaseId{});
 
-            range = Release::findNextRange(session, ReleaseId{}, 100);
+            range = Release::findNextIdRange(session, ReleaseId{}, 100);
             EXPECT_FALSE(range.isValid());
             EXPECT_EQ(range.first, ReleaseId{});
             EXPECT_EQ(range.last, ReleaseId{});
@@ -193,22 +193,22 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto range{ Release::findNextRange(session, ReleaseId{}, 0) };
+            auto range{ Release::findNextIdRange(session, ReleaseId{}, 0) };
             EXPECT_FALSE(range.isValid());
             EXPECT_EQ(range.first, ReleaseId{});
             EXPECT_EQ(range.last, ReleaseId{});
 
-            range = Release::findNextRange(session, ReleaseId{}, 1);
+            range = Release::findNextIdRange(session, ReleaseId{}, 1);
             EXPECT_TRUE(range.isValid());
             EXPECT_EQ(range.first, release1.getId());
             EXPECT_EQ(range.last, release1.getId());
 
-            range = Release::findNextRange(session, range.last, 1);
+            range = Release::findNextIdRange(session, range.last, 1);
             EXPECT_FALSE(range.isValid());
             EXPECT_EQ(range.first, ReleaseId{});
             EXPECT_EQ(range.last, ReleaseId{});
 
-            range = Release::findNextRange(session, ReleaseId{}, 100);
+            range = Release::findNextIdRange(session, ReleaseId{}, 100);
             EXPECT_TRUE(range.isValid());
             EXPECT_EQ(range.first, release1.getId());
             EXPECT_EQ(range.last, release1.getId());
@@ -220,12 +220,12 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto range{ Release::findNextRange(session, ReleaseId{}, 2) };
+            auto range{ Release::findNextIdRange(session, ReleaseId{}, 2) };
             EXPECT_TRUE(range.isValid());
             EXPECT_EQ(range.first, release1.getId());
             EXPECT_EQ(range.last, release2.getId());
 
-            range = Release::findNextRange(session, release2.getId(), 2);
+            range = Release::findNextIdRange(session, release2.getId(), 2);
             EXPECT_TRUE(range.isValid());
             EXPECT_EQ(range.first, release3.getId());
             EXPECT_EQ(range.last, release3.getId());

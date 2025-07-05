@@ -151,17 +151,17 @@ namespace lms::db::tests
         }
     }
 
-    TEST_F(DatabaseFixture, Track_findNextRange)
+    TEST_F(DatabaseFixture, Track_findNextIdRange)
     {
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto range{ Track::findNextRange(session, TrackId{}, 0) };
+            auto range{ Track::findNextIdRange(session, TrackId{}, 0) };
             EXPECT_FALSE(range.isValid());
             EXPECT_EQ(range.first, TrackId{});
             EXPECT_EQ(range.last, TrackId{});
 
-            range = Track::findNextRange(session, TrackId{}, 100);
+            range = Track::findNextIdRange(session, TrackId{}, 100);
             EXPECT_FALSE(range.isValid());
             EXPECT_EQ(range.first, TrackId{});
             EXPECT_EQ(range.last, TrackId{});
@@ -171,22 +171,22 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto range{ Track::findNextRange(session, TrackId{}, 0) };
+            auto range{ Track::findNextIdRange(session, TrackId{}, 0) };
             EXPECT_FALSE(range.isValid());
             EXPECT_EQ(range.first, TrackId{});
             EXPECT_EQ(range.last, TrackId{});
 
-            range = Track::findNextRange(session, TrackId{}, 1);
+            range = Track::findNextIdRange(session, TrackId{}, 1);
             EXPECT_TRUE(range.isValid());
             EXPECT_EQ(range.first, track1.getId());
             EXPECT_EQ(range.last, track1.getId());
 
-            range = Track::findNextRange(session, range.last, 1);
+            range = Track::findNextIdRange(session, range.last, 1);
             EXPECT_FALSE(range.isValid());
             EXPECT_EQ(range.first, TrackId{});
             EXPECT_EQ(range.last, TrackId{});
 
-            range = Track::findNextRange(session, TrackId{}, 100);
+            range = Track::findNextIdRange(session, TrackId{}, 100);
             EXPECT_TRUE(range.isValid());
             EXPECT_EQ(range.first, track1.getId());
             EXPECT_EQ(range.last, track1.getId());
@@ -198,12 +198,12 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto range{ Track::findNextRange(session, TrackId{}, 2) };
+            auto range{ Track::findNextIdRange(session, TrackId{}, 2) };
             EXPECT_TRUE(range.isValid());
             EXPECT_EQ(range.first, track1.getId());
             EXPECT_EQ(range.last, track2.getId());
 
-            range = Track::findNextRange(session, track2.getId(), 2);
+            range = Track::findNextIdRange(session, track2.getId(), 2);
             EXPECT_TRUE(range.isValid());
             EXPECT_EQ(range.first, track3.getId());
             EXPECT_EQ(range.last, track3.getId());

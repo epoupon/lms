@@ -83,6 +83,27 @@ namespace lms::db
         });
     }
 
+    void PlayListFile::find(Session& session, const IdRange<PlayListFileId>& idRange, const std::function<void(const PlayListFile::pointer&)>& func)
+    {
+        assert(idRange.isValid());
+
+        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<PlayListFile>>("SELECT pl_f from playlist_file pl_f").orderBy("pl_f.id").where("pl_f.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
+
+        utils::forEachQueryResult(query, [&](const PlayListFile::pointer& release) {
+            func(release);
+        });
+    }
+
+    IdRange<PlayListFileId> PlayListFile::findNextIdRange(Session& session, PlayListFileId lastRetrievedId, std::size_t count)
+    {
+        auto query{ session.getDboSession()->query<std::tuple<PlayListFileId, PlayListFileId>>("SELECT MIN(sub.id) AS first_id, MAX(sub.id) AS last_id FROM (SELECT pl_f.id FROM playlist_file pl_f WHERE pl_f.id > ? ORDER BY pl_f.id LIMIT ?) sub") };
+        query.bind(lastRetrievedId);
+        query.bind(static_cast<int>(count));
+
+        auto res{ utils::fetchQuerySingleResult(query) };
+        return IdRange<PlayListFileId>{ .first = std::get<0>(res), .last = std::get<1>(res) };
+    }
+
     PlayListFile::pointer PlayListFile::find(Session& session, PlayListFileId id)
     {
         session.checkReadTransaction();

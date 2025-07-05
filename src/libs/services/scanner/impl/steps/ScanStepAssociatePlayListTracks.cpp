@@ -21,7 +21,9 @@
 
 #include <deque>
 #include <filesystem>
+#include <span>
 
+#include "core/IJob.hpp"
 #include "core/ILogger.hpp"
 #include "database/Db.hpp"
 #include "database/Directory.hpp"
@@ -32,6 +34,7 @@
 #include "database/TrackList.hpp"
 #include "services/scanner/ScanErrors.hpp"
 
+#include "JobQueue.hpp"
 #include "ScanContext.hpp"
 #include "ScannerSettings.hpp"
 
@@ -52,15 +55,6 @@ namespace lms::scanner
             std::vector<TrackInfo> tracks;
         };
         using PlayListFileAssociationContainer = std::deque<PlayListFileAssociation>;
-
-        struct SearchPlayListFileContext
-        {
-            db::Session& session;
-            db::PlayListFileId lastRetrievedPlayListFileId;
-            std::size_t processedPlayListFileCount{};
-            const ScannerSettings& settings;
-            std::vector<std::shared_ptr<ScanError>> errors;
-        };
 
         db::Track::pointer getMatchingTrack(db::Session& session, const std::filesystem::path& filePath, const db::Directory::pointer& playListDirectory)
         {
@@ -110,64 +104,7 @@ namespace lms::scanner
             return needUpdate;
         }
 
-        bool fetchNextPlayListFilesToUpdate(SearchPlayListFileContext& searchContext, PlayListFileAssociationContainer& playListFileAssociations)
-        {
-            const db::PlayListFileId playListFileIdId{ searchContext.lastRetrievedPlayListFileId };
-
-            {
-                constexpr std::size_t readBatchSize{ 20 };
-
-                auto transaction{ searchContext.session.createReadTransaction() };
-
-                db::PlayListFile::find(searchContext.session, searchContext.lastRetrievedPlayListFileId, readBatchSize, [&](const db::PlayListFile::pointer& playListFile) {
-                    PlayListFileAssociation playListAssociation;
-
-                    playListAssociation.playListFileIdId = playListFile->getId();
-
-                    std::vector<std::shared_ptr<ScanError>> pendingErrors;
-
-                    const auto files{ playListFile->getFiles() };
-                    for (const std::filesystem::path& file : files)
-                    {
-                        // TODO optim: no need to fetch the whole track
-                        const db::Track::pointer track{ getMatchingTrack(searchContext.session, file, playListFile->getDirectory()) };
-                        if (track)
-                            playListAssociation.tracks.push_back(TrackInfo{ .trackId = track->getId(), .releaseId = track->getReleaseId() });
-                        else
-                            pendingErrors.emplace_back(std::make_shared<PlayListFilePathMissingError>(playListFile->getAbsoluteFilePath(), file));
-                    }
-
-                    if (pendingErrors.size() == files.size())
-                    {
-                        pendingErrors.clear();
-                        pendingErrors.emplace_back(std::make_shared<PlayListFileAllPathesMissingError>(playListFile->getAbsoluteFilePath()));
-                    }
-                    searchContext.errors.insert(std::end(searchContext.errors), std::begin(pendingErrors), std::end(pendingErrors));
-
-                    if (playListAssociation.tracks.empty()
-                        || (searchContext.settings.skipSingleReleasePlayLists && isSingleReleasePlayList(playListAssociation.tracks)))
-                    {
-                        playListAssociation.tracks.clear();
-                    }
-
-                    bool needUpdate{ true };
-                    if (const db::TrackList::pointer trackList{ playListFile->getTrackList() })
-                    {
-                        if (!playListAssociation.tracks.empty())
-                            needUpdate = trackListNeedsUpdate(searchContext.session, playListFile->getName(), playListAssociation.tracks, trackList);
-                    }
-
-                    if (needUpdate)
-                        playListFileAssociations.emplace_back(std::move(playListAssociation));
-
-                    searchContext.processedPlayListFileCount++;
-                });
-            }
-
-            return playListFileIdId != searchContext.lastRetrievedPlayListFileId;
-        }
-
-        void updatePlayListFile(db::Session& session, const PlayListFileAssociation& playListFileAssociation)
+        void updatePlayList(db::Session& session, const PlayListFileAssociation& playListFileAssociation)
         {
             db::PlayListFile::pointer playListFile{ db::PlayListFile::find(session, playListFileAssociation.playListFileIdId) };
             assert(playListFile);
@@ -198,6 +135,7 @@ namespace lms::scanner
             trackList.modify()->clear();
             for (const TrackInfo trackInfo : playListFileAssociation.tracks)
             {
+                // TODO no need to fetch the whole track for that
                 if (db::Track::pointer track{ db::Track::find(session, trackInfo.trackId) })
                     session.create<db::TrackListEntry>(track, trackList, playListFile->getLastWriteTime());
             }
@@ -205,21 +143,110 @@ namespace lms::scanner
             LMS_LOG(DBUPDATER, DEBUG, std::string_view{ createTrackList ? "Created" : "Updated" } << " associated tracklist for " << playListFile->getAbsoluteFilePath() << " (" << playListFileAssociation.tracks.size() << " tracks)");
         }
 
-        void updatePlayListFiles(db::Session& session, PlayListFileAssociationContainer& playListFileAssociations)
+        void updatePlayLists(db::Session& session, PlayListFileAssociationContainer& playListFileAssociations, bool forceFullBatch)
         {
             constexpr std::size_t writeBatchSize{ 5 };
 
-            while (!playListFileAssociations.empty())
+            while ((forceFullBatch && playListFileAssociations.size() >= writeBatchSize) || !playListFileAssociations.empty())
             {
                 auto transaction{ session.createWriteTransaction() };
 
                 for (std::size_t i{}; !playListFileAssociations.empty() && i < writeBatchSize; ++i)
                 {
-                    updatePlayListFile(session, playListFileAssociations.front());
+                    updatePlayList(session, playListFileAssociations.front());
                     playListFileAssociations.pop_front();
                 }
             }
         }
+
+        bool fetchNextPlayListFileIdRange(db::Session& session, db::PlayListFileId& lastPlayListFileId, db::IdRange<db::PlayListFileId>& idRange)
+        {
+            constexpr std::size_t readBatchSize{ 100 };
+
+            auto transaction{ session.createReadTransaction() };
+
+            idRange = db::PlayListFile::findNextIdRange(session, lastPlayListFileId, readBatchSize);
+            lastPlayListFileId = idRange.last;
+
+            return idRange.isValid();
+        }
+
+        class ComputePlayListFileAssociationsJob : public core::IJob
+        {
+        public:
+            ComputePlayListFileAssociationsJob(db::Db& db, const ScannerSettings& settings, db::IdRange<db::PlayListFileId> playListFileIdRange)
+                : _db{ db }
+                , _settings{ settings }
+                , _playListFileIdRange{ playListFileIdRange }
+            {
+            }
+
+            std::span<const PlayListFileAssociation> getAssociations() const { return _associations; }
+            std::size_t getProcessedCount() const { return _processedCount; }
+            std::span<const std::shared_ptr<ScanError>> getErrors() const { return _errors; }
+
+        private:
+            core::LiteralString getName() const override { return "Associate PlayList Tracks"; }
+            void run() override
+            {
+                auto& session{ _db.getTLSSession() };
+                auto transaction{ session.createReadTransaction() };
+
+                db::PlayListFile::find(session, _playListFileIdRange, [&](const db::PlayListFile::pointer& playListFile) {
+                    PlayListFileAssociation playListAssociation;
+
+                    playListAssociation.playListFileIdId = playListFile->getId();
+
+                    std::vector<std::shared_ptr<ScanError>> pendingErrors;
+
+                    const auto& files{ playListFile->getFiles() };
+                    for (const std::filesystem::path& file : files)
+                    {
+                        // TODO optim: no need to fetch the whole track
+                        const db::Track::pointer track{ getMatchingTrack(session, file, playListFile->getDirectory()) };
+                        if (track)
+                            playListAssociation.tracks.push_back(TrackInfo{ .trackId = track->getId(), .releaseId = track->getReleaseId() });
+                        else
+                            pendingErrors.emplace_back(std::make_shared<PlayListFilePathMissingError>(playListFile->getAbsoluteFilePath(), file));
+                    }
+
+                    if (pendingErrors.size() == files.size())
+                    {
+                        pendingErrors.clear();
+                        pendingErrors.emplace_back(std::make_shared<PlayListFileAllPathesMissingError>(playListFile->getAbsoluteFilePath()));
+                    }
+                    _errors.insert(std::end(_errors), std::begin(pendingErrors), std::end(pendingErrors));
+
+                    if (playListAssociation.tracks.empty()
+                        || (_settings.skipSingleReleasePlayLists && isSingleReleasePlayList(playListAssociation.tracks)))
+                    {
+                        playListAssociation.tracks.clear();
+                    }
+
+                    bool needUpdate{ true };
+                    if (const db::TrackList::pointer trackList{ playListFile->getTrackList() })
+                    {
+                        if (!playListAssociation.tracks.empty())
+                            needUpdate = trackListNeedsUpdate(session, playListFile->getName(), playListAssociation.tracks, trackList);
+                    }
+                    else if (playListAssociation.tracks.empty())
+                        needUpdate = false;
+
+                    if (needUpdate)
+                        _associations.emplace_back(std::move(playListAssociation));
+
+                    _processedCount++;
+                });
+            }
+
+            db::Db& _db;
+            const ScannerSettings& _settings;
+            db::IdRange<db::PlayListFileId> _playListFileIdRange;
+            std::vector<PlayListFileAssociation> _associations;
+            std::vector<std::shared_ptr<ScanError>> _errors;
+            std::size_t _processedCount{};
+        };
+
     } // namespace
 
     bool ScanStepAssociatePlayListTracks::needProcess(const ScanContext& context) const
@@ -242,27 +269,37 @@ namespace lms::scanner
             context.currentStepStats.totalElems = db::PlayListFile::getCount(session);
         }
 
-        SearchPlayListFileContext searchContext{
-            .session = session,
-            .lastRetrievedPlayListFileId = {},
-            .settings = _settings,
-            .errors = context.stats.errors
-        };
-
-        PlayListFileAssociationContainer playListFileAssociations;
-        while (fetchNextPlayListFilesToUpdate(searchContext, playListFileAssociations))
-        {
+        PlayListFileAssociationContainer playListTrackAssociations;
+        auto processJobsDone = [&](std::span<std::unique_ptr<core::IJob>> jobs) {
             if (_abortScan)
                 return;
 
-            updatePlayListFiles(session, playListFileAssociations);
+            for (const auto& job : jobs)
+            {
+                const auto& associationJob{ static_cast<const ComputePlayListFileAssociationsJob&>(*job) };
+                const auto& associations{ associationJob.getAssociations() };
 
-            context.currentStepStats.processedElems = searchContext.processedPlayListFileCount;
-            for (const std::shared_ptr<ScanError>& error : searchContext.errors)
-                addError(context, error);
-            searchContext.errors.clear();
+                playListTrackAssociations.insert(std::end(playListTrackAssociations), std::cbegin(associations), std::cend(associations));
+                for (const std::shared_ptr<ScanError>& error : associationJob.getErrors())
+                    addError(context, error);
 
+                context.currentStepStats.processedElems += associationJob.getProcessedCount();
+            }
+
+            updatePlayLists(session, playListTrackAssociations, true);
             _progressCallback(context.currentStepStats);
+        };
+
+        {
+            JobQueue queue{ getJobScheduler(), 20, processJobsDone, 1, 0.85F };
+
+            db::PlayListFileId lastPlayListFileId;
+            db::IdRange<db::PlayListFileId> playListFileIdRange;
+            while (fetchNextPlayListFileIdRange(session, lastPlayListFileId, playListFileIdRange))
+                queue.push(std::make_unique<ComputePlayListFileAssociationsJob>(_db, _settings, playListFileIdRange));
         }
+
+        // process all remaining associations
+        updatePlayLists(session, playListTrackAssociations, false);
     }
 } // namespace lms::scanner

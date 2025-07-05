@@ -204,7 +204,7 @@ namespace lms::scanner
 
             auto transaction{ session.createReadTransaction() };
 
-            idRange = db::Release::findNextRange(session, lastRetrievedId, readBatchSize);
+            idRange = db::Release::findNextIdRange(session, lastRetrievedId, readBatchSize);
             lastRetrievedId = idRange.last;
 
             return idRange.isValid();
@@ -224,7 +224,7 @@ namespace lms::scanner
             std::size_t getProcessedReleaseCount() const { return _processedReleaseCount; }
 
         private:
-            core::LiteralString getName() const override { return "Associate Track Artworks"; }
+            core::LiteralString getName() const override { return "Associate Release Artworks"; }
             void run() override
             {
                 auto& session{ _db.getTLSSession() };

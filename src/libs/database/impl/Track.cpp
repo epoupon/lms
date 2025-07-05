@@ -303,7 +303,7 @@ namespace lms::db
         });
     }
 
-    IdRange<TrackId> Track::findNextRange(Session& session, TrackId lastRetrievedId, std::size_t count)
+    IdRange<TrackId> Track::findNextIdRange(Session& session, TrackId lastRetrievedId, std::size_t count)
     {
         auto query{ session.getDboSession()->query<std::tuple<TrackId, TrackId>>("SELECT MIN(sub.id) AS first_id, MAX(sub.id) AS last_id FROM (SELECT t.id FROM track t WHERE t.id > ? ORDER BY t.id LIMIT ?) sub") };
         query.bind(lastRetrievedId);

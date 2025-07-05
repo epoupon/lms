@@ -515,7 +515,7 @@ namespace lms::db
         });
     }
 
-    IdRange<ReleaseId> Release::findNextRange(Session& session, ReleaseId lastRetrievedId, std::size_t count)
+    IdRange<ReleaseId> Release::findNextIdRange(Session& session, ReleaseId lastRetrievedId, std::size_t count)
     {
         auto query{ session.getDboSession()->query<std::tuple<ReleaseId, ReleaseId>>("SELECT MIN(sub.id) AS first_id, MAX(sub.id) AS last_id FROM (SELECT r.id FROM release r WHERE r.id > ? ORDER BY r.id LIMIT ?) sub") };
         query.bind(lastRetrievedId);

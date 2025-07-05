@@ -53,13 +53,6 @@ namespace lms::scanner
         };
         using TrackArtworksAssociationContainer = std::deque<TrackArtworksAssociation>;
 
-        struct SearchTrackArtworkContext
-        {
-            db::Session& session;
-            db::TrackId lastRetrievedTrackId;
-            std::size_t processedTrackCount{};
-        };
-
         db::Artwork::pointer computePreferredTrackArtwork(db::Session& session, const db::Track::pointer& track, const db::Artwork::pointer& preferredMediaArtwork)
         {
             db::Artwork::pointer res{ preferredMediaArtwork };
@@ -152,14 +145,14 @@ namespace lms::scanner
             }
         }
 
-        bool fetchNextTrackIdRange(SearchTrackArtworkContext& searchContext, db::IdRange<db::TrackId>& trackIdRange)
+        bool fetchNextTrackIdRange(db::Session& session, db::TrackId& lastRetrievedTrackId, db::IdRange<db::TrackId>& trackIdRange)
         {
             constexpr std::size_t readBatchSize{ 100 };
 
-            auto transaction{ searchContext.session.createReadTransaction() };
+            auto transaction{ session.createReadTransaction() };
 
-            trackIdRange = db::Track::findNextRange(searchContext.session, searchContext.lastRetrievedTrackId, readBatchSize);
-            searchContext.lastRetrievedTrackId = trackIdRange.last;
+            trackIdRange = db::Track::findNextIdRange(session, lastRetrievedTrackId, readBatchSize);
+            lastRetrievedTrackId = trackIdRange.last;
 
             return trackIdRange.isValid();
         }
@@ -242,11 +235,6 @@ namespace lms::scanner
             context.currentStepStats.totalElems = db::Track::getCount(session);
         }
 
-        SearchTrackArtworkContext searchContext{
-            .session = session,
-            .lastRetrievedTrackId = {},
-        };
-
         TrackArtworksAssociationContainer trackArtworksAssociations;
         auto processTracks = [&](std::span<std::unique_ptr<core::IJob>> jobs) {
             if (_abortScan)
@@ -266,13 +254,14 @@ namespace lms::scanner
             _progressCallback(context.currentStepStats);
         };
 
-        JobQueue queue{ getJobScheduler(), 20, processTracks, 1, 0.85F };
+        {
+            JobQueue queue{ getJobScheduler(), 20, processTracks, 1, 0.85F };
 
-        db::IdRange<db::TrackId> trackIdRange;
-        while (fetchNextTrackIdRange(searchContext, trackIdRange))
-            queue.push(std::make_unique<ComputeTrackArtworkAssociationsJob>(_db, trackIdRange));
-
-        queue.finish();
+            db::TrackId lastRetrievedTrackId;
+            db::IdRange<db::TrackId> trackIdRange;
+            while (fetchNextTrackIdRange(session, lastRetrievedTrackId, trackIdRange))
+                queue.push(std::make_unique<ComputeTrackArtworkAssociationsJob>(_db, trackIdRange));
+        }
 
         // process all remaining associations
         updateTrackPreferredArtworks(session, trackArtworksAssociations, false);

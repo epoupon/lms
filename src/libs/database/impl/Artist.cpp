@@ -291,7 +291,7 @@ namespace lms::db
         utils::forEachQueryRangeResult(query, params.range, func);
     }
 
-    IdRange<ArtistId> Artist::findNextRange(Session& session, ArtistId lastRetrievedId, std::size_t count)
+    IdRange<ArtistId> Artist::findNextIdRange(Session& session, ArtistId lastRetrievedId, std::size_t count)
     {
         auto query{ session.getDboSession()->query<std::tuple<ArtistId, ArtistId>>("SELECT MIN(sub.id) AS first_id, MAX(sub.id) AS last_id FROM (SELECT a.id FROM artist a WHERE a.id > ? ORDER BY a.id LIMIT ?) sub") };
         query.bind(lastRetrievedId);

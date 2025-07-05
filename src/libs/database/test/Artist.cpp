@@ -608,17 +608,17 @@ namespace lms::db::tests
         }
     }
 
-    TEST_F(DatabaseFixture, Artist_findNextRange)
+    TEST_F(DatabaseFixture, Artist_findNextIdRange)
     {
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto range{ Artist::findNextRange(session, ArtistId{}, 0) };
+            auto range{ Artist::findNextIdRange(session, ArtistId{}, 0) };
             EXPECT_FALSE(range.isValid());
             EXPECT_EQ(range.first, ArtistId{});
             EXPECT_EQ(range.last, ArtistId{});
 
-            range = Artist::findNextRange(session, ArtistId{}, 100);
+            range = Artist::findNextIdRange(session, ArtistId{}, 100);
             EXPECT_FALSE(range.isValid());
             EXPECT_EQ(range.first, ArtistId{});
             EXPECT_EQ(range.last, ArtistId{});
@@ -628,22 +628,22 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto range{ Artist::findNextRange(session, ArtistId{}, 0) };
+            auto range{ Artist::findNextIdRange(session, ArtistId{}, 0) };
             EXPECT_FALSE(range.isValid());
             EXPECT_EQ(range.first, ArtistId{});
             EXPECT_EQ(range.last, ArtistId{});
 
-            range = Artist::findNextRange(session, ArtistId{}, 1);
+            range = Artist::findNextIdRange(session, ArtistId{}, 1);
             EXPECT_TRUE(range.isValid());
             EXPECT_EQ(range.first, artist1.getId());
             EXPECT_EQ(range.last, artist1.getId());
 
-            range = Artist::findNextRange(session, range.last, 1);
+            range = Artist::findNextIdRange(session, range.last, 1);
             EXPECT_FALSE(range.isValid());
             EXPECT_EQ(range.first, ArtistId{});
             EXPECT_EQ(range.last, ArtistId{});
 
-            range = Artist::findNextRange(session, ArtistId{}, 100);
+            range = Artist::findNextIdRange(session, ArtistId{}, 100);
             EXPECT_TRUE(range.isValid());
             EXPECT_EQ(range.first, artist1.getId());
             EXPECT_EQ(range.last, artist1.getId());
@@ -655,12 +655,12 @@ namespace lms::db::tests
         {
             auto transaction{ session.createReadTransaction() };
 
-            auto range{ Artist::findNextRange(session, ArtistId{}, 2) };
+            auto range{ Artist::findNextIdRange(session, ArtistId{}, 2) };
             EXPECT_TRUE(range.isValid());
             EXPECT_EQ(range.first, artist1.getId());
             EXPECT_EQ(range.last, artist2.getId());
 
-            range = Artist::findNextRange(session, artist2.getId(), 2);
+            range = Artist::findNextIdRange(session, artist2.getId(), 2);
             EXPECT_TRUE(range.isValid());
             EXPECT_EQ(range.first, artist3.getId());
             EXPECT_EQ(range.last, artist3.getId());

@@ -28,6 +28,7 @@
 #include <Wt/WDateTime.h>
 
 #include "database/DirectoryId.hpp"
+#include "database/IdRange.hpp"
 #include "database/Object.hpp"
 
 LMS_DECLARE_IDTYPE(PlayListFileId)
@@ -50,6 +51,8 @@ namespace lms::db
         static pointer find(Session& session, const std::filesystem::path& path);
         static void find(Session& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(const pointer&)>& func);
         static void findAbsoluteFilePath(Session& session, PlayListFileId& lastRetrievedId, std::size_t count, const std::function<void(PlayListFileId playListFileId, const std::filesystem::path& absoluteFilePath)>& func);
+        static void find(Session& session, const IdRange<PlayListFileId>& idRange, const std::function<void(const PlayListFile::pointer&)>& func);
+        static IdRange<PlayListFileId> findNextIdRange(Session& session, PlayListFileId lastRetrievedId, std::size_t count);
 
         // getters
         const std::filesystem::path& getAbsoluteFilePath() const { return _absoluteFilePath; }

@@ -129,7 +129,7 @@ namespace lms::db
         static void find(Session& session, const IdRange<ArtistId>& idRange, const std::function<void(const Artist::pointer&)>& func);
         static RangeResults<pointer> find(Session& session, const FindParameters& params);
         static void find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func);
-        static IdRange<ArtistId> findNextRange(Session& session, ArtistId lastRetrievedId, std::size_t count);
+        static IdRange<ArtistId> findNextIdRange(Session& session, ArtistId lastRetrievedId, std::size_t count);
         static RangeResults<ArtistId> findIds(Session& session, const FindParameters& params);
         static RangeResults<ArtistId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt); // No track related
         static bool exists(Session& session, ArtistId id);
