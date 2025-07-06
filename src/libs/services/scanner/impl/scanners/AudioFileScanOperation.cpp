@@ -686,6 +686,7 @@ namespace lms::scanner
         createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Composer, _parsedTrack->composerArtists, allowFallback);
         createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Lyricist, _parsedTrack->lyricistArtists, allowFallback);
         createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Mixer, _parsedTrack->mixerArtists, allowFallback);
+        createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Producer, _parsedTrack->producerArtists, allowFallback);
         createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Remixer, _parsedTrack->remixerArtists, allowFallback);
 
         for (const auto& [role, performers] : _parsedTrack->performerArtists)
