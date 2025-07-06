@@ -114,6 +114,12 @@ namespace lms::db
         std::string name;
     };
 
+    struct FileInfo
+    {
+        Wt::WDateTime lastWrittenTime;
+        std::size_t scanVersion{};
+    };
+
     enum class ArtistSortMethod
     {
         None,

@@ -63,6 +63,7 @@ namespace lms::scanner
         }
 
     } // namespace
+
     AudioFileScanner::AudioFileScanner(db::Db& db, const ScannerSettings& settings)
         : _db{ db }
         , _settings{ settings }
@@ -92,10 +93,10 @@ namespace lms::scanner
         db::Session& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createReadTransaction() };
 
-        const db::Track::pointer track{ db::Track::findByPath(dbSession, file.filePath) };
-        return !track
-            || track->getLastWriteTime() != file.lastWriteTime
-            || track->getScanVersion() != _settings.audioScanVersion;
+        std::optional<db::FileInfo> fileInfo{ db::Track::findFileInfo(dbSession, file.filePath) };
+        return !fileInfo
+            || fileInfo->lastWrittenTime != file.lastWriteTime
+            || fileInfo->scanVersion != _settings.audioScanVersion;
     }
 
     std::unique_ptr<IFileScanOperation> AudioFileScanner::createScanOperation(FileToScan&& fileToScan) const

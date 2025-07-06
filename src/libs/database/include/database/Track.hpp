@@ -191,6 +191,7 @@ namespace lms::db
         // Find utility functions
         static std::size_t getCount(Session& session);
         static pointer findByPath(Session& session, const std::filesystem::path& p);
+        static std::optional<FileInfo> findFileInfo(Session& session, const std::filesystem::path& p);
         static pointer find(Session& session, TrackId id);
         static void find(Session& session, TrackId& lastRetrievedId, std::size_t count, const std::function<void(const Track::pointer&)>& func, MediaLibraryId library = {});
         static void find(Session& session, const IdRange<TrackId>& idRange, const std::function<void(const Track::pointer&)>& func);

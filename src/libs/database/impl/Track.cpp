@@ -258,6 +258,25 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Track>>("SELECT t from track t").where("t.absolute_file_path = ?").bind(p));
     }
 
+    std::optional<FileInfo> Track::findFileInfo(Session& session, const std::filesystem::path& p)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession()->query<std::tuple<int, Wt::WDateTime>>("SELECT t.scan_version, t.file_last_write FROM track t WHERE t.absolute_file_path = ?") };
+        query.bind(p);
+
+        std::optional<FileInfo> result;
+
+        utils::forEachQueryResult(query, [&](const auto& row) {
+            FileInfo info;
+            info.scanVersion = std::get<0>(row);
+            info.lastWrittenTime = std::get<1>(row);
+            result = info;
+        });
+
+        return result;
+    }
+
     Track::pointer Track::find(Session& session, TrackId id)
     {
         session.checkReadTransaction();
