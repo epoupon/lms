@@ -198,7 +198,7 @@ namespace lms::db::tests
 
             TrackEmbeddedImage::FindParameters params;
             params.setRelease(release.getId());
-            params.setImageTypes({ ImageType::Media });
+            params.setImageType(ImageType::Media);
             params.setSortMethod(TrackEmbeddedImageSortMethod::SizeDesc);
 
             std::vector<TrackEmbeddedImageId> visitedIds;
@@ -214,7 +214,7 @@ namespace lms::db::tests
 
             TrackEmbeddedImage::FindParameters params;
             params.setRelease(release.getId());
-            params.setImageTypes({ ImageType::Media });
+            params.setImageType(ImageType::Media);
             params.setSortMethod(TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc);
 
             std::vector<TrackEmbeddedImageId> visitedIds;
@@ -230,7 +230,7 @@ namespace lms::db::tests
 
             TrackEmbeddedImage::FindParameters params;
             params.setRelease(release.getId());
-            params.setImageTypes({ ImageType::Media });
+            params.setImageType(ImageType::Media);
             params.setSortMethod(TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc);
 
             std::vector<TrackEmbeddedImageId> visitedIds;
@@ -239,6 +239,19 @@ namespace lms::db::tests
             EXPECT_EQ(visitedIds[0], image4.getId());
             EXPECT_EQ(visitedIds[1], image3.getId());
             EXPECT_EQ(visitedIds[2], image2.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackEmbeddedImage::FindParameters params;
+            params.setRelease(release.getId());
+            params.setImageType(ImageType::BackCover);
+            params.setSortMethod(TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc);
+
+            std::vector<TrackEmbeddedImageId> visitedIds;
+            TrackEmbeddedImage::find(session, params, [&](const TrackEmbeddedImage::pointer& image) { visitedIds.push_back(image->getId()); });
+            ASSERT_EQ(visitedIds.size(), 0);
         }
     }
 

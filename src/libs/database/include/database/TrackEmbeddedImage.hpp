@@ -54,7 +54,7 @@ namespace lms::db
             ReleaseId release;
             std::optional<int> discNumber;
             TrackListId trackList;
-            core::EnumSet<ImageType> imageTypes;
+            std::optional<ImageType> imageType;
             TrackEmbeddedImageSortMethod sortMethod{ TrackEmbeddedImageSortMethod::None };
 
             FindParameters& setRange(std::optional<Range> _range)
@@ -89,9 +89,9 @@ namespace lms::db
                 trackList = _trackList;
                 return *this;
             }
-            FindParameters& setImageTypes(core::EnumSet<ImageType> _imageTypes)
+            FindParameters& setImageType(std::optional<ImageType> _imageType)
             {
-                imageTypes = _imageTypes;
+                imageType = _imageType;
                 return *this;
             }
             FindParameters& setSortMethod(TrackEmbeddedImageSortMethod _sortMethod)

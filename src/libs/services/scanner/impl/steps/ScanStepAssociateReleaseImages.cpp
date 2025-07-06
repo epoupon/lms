@@ -140,7 +140,7 @@ namespace lms::scanner
             {
                 db::TrackEmbeddedImage::FindParameters params;
                 params.setRelease(release->getId());
-                params.setImageTypes({ db::ImageType::FrontCover });
+                params.setImageType(db::ImageType::FrontCover);
                 params.setSortMethod(db::TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc);
                 params.setRange(db::Range{ .offset = 0, .size = 1 });
 
@@ -154,7 +154,7 @@ namespace lms::scanner
             {
                 db::TrackEmbeddedImage::FindParameters params;
                 params.setRelease(release->getId());
-                params.setImageTypes({ db::ImageType::Media });
+                params.setImageType(db::ImageType::Media);
                 params.setSortMethod(db::TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc);
                 params.setRange(db::Range{ .offset = 0, .size = 1 });
 

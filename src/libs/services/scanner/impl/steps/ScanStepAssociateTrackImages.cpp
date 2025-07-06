@@ -63,7 +63,7 @@ namespace lms::scanner
             {
                 db::TrackEmbeddedImage::FindParameters params;
                 params.setTrack(track->getId());
-                params.setImageTypes({ db::ImageType::FrontCover });
+                params.setImageType(db::ImageType::FrontCover);
                 params.setSortMethod(db::TrackEmbeddedImageSortMethod::SizeDesc);
                 params.setRange(db::Range{ .offset = 0, .size = 1 });
                 db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) { res = db::Artwork::find(session, image->getId()); });
@@ -90,7 +90,7 @@ namespace lms::scanner
             {
                 db::TrackEmbeddedImage::FindParameters params;
                 params.setTrack(track->getId());
-                params.setImageTypes({ db::ImageType::Media });
+                params.setImageType(db::ImageType::Media);
                 params.setSortMethod(db::TrackEmbeddedImageSortMethod::SizeDesc);
                 params.setRange(db::Range{ .offset = 0, .size = 1 });
                 db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) { res = db::Artwork::find(session, image->getId()); });
@@ -109,7 +109,7 @@ namespace lms::scanner
                 db::TrackEmbeddedImage::FindParameters params;
                 params.setRelease(releaseId);
                 params.setDiscNumber(discNumber);
-                params.setImageTypes({ db::ImageType::Media });
+                params.setImageType(db::ImageType::Media);
                 params.setSortMethod(db::TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc);
                 params.setRange(db::Range{ .offset = 0, .size = 1 });
                 db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) { res = db::Artwork::find(session, image->getId()); });
