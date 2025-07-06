@@ -107,8 +107,6 @@ namespace lms::scanner
 
     void ScanStepScanFiles::process(ScanContext& context)
     {
-        context.currentStepStats.totalElems = context.stats.totalFileCount;
-
         for (const MediaLibraryInfo& mediaLibrary : _settings.mediaLibraries)
             process(context, mediaLibrary);
     }
@@ -165,6 +163,8 @@ namespace lms::scanner
                 return true;
             },
             &excludeDirFileName);
+
+        context.stats.totalFileCount = context.currentStepStats.totalElems;
     }
 
     void ScanStepScanFiles::processFileScanResults(ScanContext& context, std::span<std::unique_ptr<core::IJob>> scanJobs)

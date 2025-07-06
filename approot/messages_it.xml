@@ -139,13 +139,12 @@
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Controllo file... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">Compattazione del database...</message>
 <message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Calcolo statistiche... {1}%</message>
-<message id="Lms.Admin.ScannerController.step-discovering-files">File trovati: {1} files</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Recupero metadati da AcousticBrainz: {1}/{2} tracce ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Ottimizzazione del database... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reconciliate-artists">Riconciliazione artisti: {1} voci...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Ricarica motore di tracce simili: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">Rimozione voci orfane: {1} voci...</message>
-<message id="Lms.Admin.ScannerController.step-scanning-files">Scansione dei file: {1}/{2} ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-scanning-files">Analisi delle librerie: {1} file...</message>
 <message id="Lms.Admin.ScannerController.step-status">Stato passo</message>
 <message id="Lms.Admin.ScannerController.step-updating-library-fields">Aggiornamento dei campi della libreria: {1} voci</message>
 

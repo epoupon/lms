@@ -47,7 +47,6 @@
 #include "steps/ScanStepCheckForRemovedFiles.hpp"
 #include "steps/ScanStepCompact.hpp"
 #include "steps/ScanStepComputeClusterStats.hpp"
-#include "steps/ScanStepDiscoverFiles.hpp"
 #include "steps/ScanStepOptimize.hpp"
 #include "steps/ScanStepRemoveOrphanedDbEntries.hpp"
 #include "steps/ScanStepScanFiles.hpp"
@@ -474,7 +473,6 @@ namespace lms::scanner
 
         // Order is important: steps are sequential
         _scanSteps.clear();
-        _scanSteps.emplace_back(std::make_unique<ScanStepDiscoverFiles>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepScanFiles>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepCheckForRemovedFiles>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepArtistReconciliation>(params));

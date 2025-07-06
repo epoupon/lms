@@ -139,13 +139,12 @@
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Comprobando ficheros eliminados... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">Compactando la base de datos...</message>
 <message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Calculando estadísticas... {1}%</message>
-<message id="Lms.Admin.ScannerController.step-discovering-files">Descubriendo ficheros: {1} ficheros</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Accediendo a las características de la pista desde AcousticBrainz : {1}/{2} ficheros ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Optimizando la base de datos... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reconciliate-artists">Reconciliando artistas: {1} entradas...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Recargando el motor de similitud: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">Borrando entradas huérfanas: {1} entradas...</message>
-<message id="Lms.Admin.ScannerController.step-scanning-files">Escaneando ficheros: {1} / {2} ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-scanning-files">Análisis de bibliotecas: {1} ficheros...</message>
 <message id="Lms.Admin.ScannerController.step-status">Estado de las etapas</message>
 <message id="Lms.Admin.ScannerController.step-updating-library-fields">Actualizando campos de la biblioteca: {1} entradas</message>
 

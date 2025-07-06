@@ -54,7 +54,6 @@ namespace lms::scanner
         CheckForRemovedFiles,
         ComputeClusterStats,
         Compact,
-        DiscoverFiles,
         FetchTrackFeatures,
         Optimize,
         ReconciliateArtists,
@@ -84,7 +83,7 @@ namespace lms::scanner
         Wt::WDateTime startTime;
         Wt::WDateTime stopTime;
 
-        std::size_t totalFileCount{}; // Total number of files (estimated)
+        std::size_t totalFileCount{}; // Total number of files (only valid after the file scan step)
 
         std::size_t skips{}; // no change since last scan
         std::size_t scans{}; // count of scanned files

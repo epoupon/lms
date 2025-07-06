@@ -152,17 +152,16 @@
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Sprawdzanie plików... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">Prasowanie bazy danych...</message>
 <message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Obliczanie statystyk... {1}%</message>
-<message id="Lms.Admin.ScannerController.step-discovering-files">
-	<plural case="0">Odkrywanie plików: {1} plik</plural>
-	<plural case="1">Odkrywanie plików: {1} pliki</plural>
-	<plural case="2">Odkrywanie plików: {1} plików</plural>
-</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Pobieranie danych o ścieżce z AcousticBrainz: {1}/{2} ścieżek ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Optymalizowanie bazy danych... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reconciliate-artists">Uzgodnianie artystów: {1} wpisów...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Przeładowywanie silnika podobieństw: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">Usuwanie osieroconych wpisów: {1} wpisów...</message>
-<message id="Lms.Admin.ScannerController.step-scanning-files">Skanowanie plików: {1}/{2} ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-scanning-files">
+	<plural case="0">Analiza bibliotek: {1} plik</plural>
+	<plural case="1">Analiza bibliotek: {1} pliki</plural>
+	<plural case="2">Analiza bibliotek: {1} plików</plural>
+</message>
 <message id="Lms.Admin.ScannerController.step-status">Obecny krok</message>
 <message id="Lms.Admin.ScannerController.step-updating-library-fields">Aktualizowanie pól biblioteki: {1} wpisów</message>
 
