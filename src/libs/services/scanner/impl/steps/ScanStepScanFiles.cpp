@@ -66,23 +66,6 @@ namespace lms::scanner
 
             std::unique_ptr<IFileScanOperation> _scanOperation;
         };
-
-        FileToScan retrieveFileInfo(const std::filesystem::path& file, const MediaLibraryInfo& mediaLibrary, std::error_code& ec)
-        {
-            FileToScan res;
-
-            const core::pathUtils::FileInfo fileInfo{ core::pathUtils::getFileInfo(file, ec) };
-            if (!ec)
-            {
-                res.filePath = file;
-                res.mediaLibrary = mediaLibrary;
-                res.relativePath = std::filesystem::relative(file, mediaLibrary.rootDirectory, ec);
-                res.lastWriteTime = fileInfo.lastWriteTime;
-                res.fileSize = fileInfo.fileSize;
-            }
-
-            return res;
-        }
     } // namespace
 
     ScanStepScanFiles::ScanStepScanFiles(InitParams& initParams)
@@ -126,8 +109,10 @@ namespace lms::scanner
         std::vector<std::unique_ptr<IFileScanOperation>> scanOperations;
 
         core::pathUtils::exploreFilesRecursive(
-            mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path) {
+            mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path, const core::pathUtils::FileInfo* fileInfo) {
                 LMS_SCOPED_TRACE_DETAILED("Scanner", "OnExploreFile");
+
+                assert((ec && !fileInfo) || (!ec && fileInfo));
 
                 if (_abortScan)
                     return false; // stop iterating
@@ -139,19 +124,17 @@ namespace lms::scanner
                 }
                 else if (IFileScanner * scanner{ selectFileScanner(path) })
                 {
-                    FileToScan fileToScan{ retrieveFileInfo(path, mediaLibrary, ec) };
-                    if (ec)
+                    FileToScan fileToScan;
+
+                    fileToScan.filePath = path;
+                    fileToScan.mediaLibrary = mediaLibrary;
+                    fileToScan.lastWriteTime.setTime_t(fileInfo->lastWriteTime.toTime_t()); // sec resolution, as stored in the database
+                    fileToScan.fileSize = fileInfo->fileSize;
+
+                    if (context.scanOptions.fullScan || scanner->needsScan(fileToScan))
                     {
-                        addError<IOScanError>(context, path, ec);
-                        context.stats.skips++;
-                    }
-                    else
-                    {
-                        if (context.scanOptions.fullScan || scanner->needsScan(fileToScan))
-                        {
-                            auto scanOperation{ scanner->createScanOperation(std::move(fileToScan)) };
-                            queue.push(std::make_unique<FileScanJob>(std::move(scanOperation)));
-                        }
+                        auto scanOperation{ scanner->createScanOperation(std::move(fileToScan)) };
+                        queue.push(std::make_unique<FileScanJob>(std::move(scanOperation)));
                     }
 
                     context.currentStepStats.processedElems++;

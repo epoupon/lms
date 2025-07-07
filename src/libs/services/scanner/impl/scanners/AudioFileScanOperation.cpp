@@ -379,7 +379,7 @@ namespace lms::scanner
             return db::Advisory::UnSet;
         }
 
-        db::Track::pointer findMovedTrackBySizeAndMetaData(db::Session& session, const metadata::Track& parsedTrack, size_t fileSize, const std::filesystem::path& relativePath)
+        db::Track::pointer findMovedTrackBySizeAndMetaData(db::Session& session, const metadata::Track& parsedTrack, const std::filesystem::path& trackPath, size_t fileSize)
         {
             db::Track::FindParameters params;
             // Add as many fields as possible to limit errors
@@ -405,7 +405,7 @@ namespace lms::scanner
 
                 if (res)
                 {
-                    LMS_LOG(DBUPDATER, DEBUG, "Found too many candidates for file move. New file = " << relativePath << ", candidate = " << track->getAbsoluteFilePath() << ", previous candidate = " << res->getAbsoluteFilePath());
+                    LMS_LOG(DBUPDATER, DEBUG, "Found too many candidates for file move. New file = " << trackPath << ", candidate = " << track->getAbsoluteFilePath() << ", previous candidate = " << res->getAbsoluteFilePath());
                     error = true;
                 }
                 res = track;
@@ -598,7 +598,7 @@ namespace lms::scanner
         if (!track)
         {
             // maybe the file just moved?
-            track = findMovedTrackBySizeAndMetaData(dbSession, *_parsedTrack, getFileSize(), getRelativeFilePath());
+            track = findMovedTrackBySizeAndMetaData(dbSession, *_parsedTrack, getFilePath(), getFileSize());
             if (track)
             {
                 LMS_LOG(DBUPDATER, DEBUG, "Considering track " << getFilePath() << " moved from " << track->getAbsoluteFilePath());

@@ -20,45 +20,13 @@
 #include "core/Path.hpp"
 
 #include <array>
-#include <fstream>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <system_error>
 #include <unistd.h>
 
-#include <boost/tokenizer.hpp>
-
-#include "core/Crc32Calculator.hpp"
-#include "core/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
 
 namespace lms::core::pathUtils
 {
-    std::uint32_t computeCrc32(const std::filesystem::path& p)
-    {
-        core::Crc32Calculator crc32;
-
-        std::ifstream ifs{ p, std::ios_base::binary };
-        if (ifs)
-        {
-            do
-            {
-                std::array<char, 1024> buffer;
-
-                ifs.read(buffer.data(), buffer.size());
-                crc32.processBytes(reinterpret_cast<const std::byte*>(buffer.data()), ifs.gcount());
-            } while (ifs);
-        }
-        else
-        {
-            LMS_LOG(DBUPDATER, ERROR, "Failed to open file " << p);
-            throw LmsException("Failed to open file '" + p.string() + "'");
-        }
-
-        return crc32.getResult();
-    }
-
     bool ensureDirectory(const std::filesystem::path& dir)
     {
         if (std::filesystem::exists(dir))
@@ -67,35 +35,14 @@ namespace lms::core::pathUtils
             return std::filesystem::create_directory(dir);
     }
 
-    FileInfo getFileInfo(const std::filesystem::path& file, std::error_code& ec)
-    {
-        FileInfo fileInfo;
-
-        struct stat sb
-        {
-        };
-        if (stat(file.c_str(), &sb) == -1)
-        {
-            ec = std::error_code{ errno, std::generic_category() };
-        }
-        else
-        {
-            ec = std::error_code{};
-            fileInfo.lastWriteTime = Wt::WDateTime::fromTime_t(sb.st_mtime);
-            fileInfo.fileSize = sb.st_size;
-        }
-
-        return fileInfo;
-    }
-
-    bool exploreFilesRecursive(const std::filesystem::path& directory, std::function<bool(std::error_code, const std::filesystem::path&)> cb, const std::filesystem::path* excludeDirFileName)
+    bool exploreFilesRecursive(const std::filesystem::path& directory, ExploreFileCallback cb, const std::filesystem::path* excludeDirFileName)
     {
         std::error_code ec;
         std::filesystem::directory_iterator itPath{ directory, std::filesystem::directory_options::follow_directory_symlink, ec };
 
         if (ec)
         {
-            cb(ec, directory);
+            cb(ec, directory, nullptr);
             return true; // try to continue exploring anyway
         }
 
@@ -105,6 +52,7 @@ namespace lms::core::pathUtils
 
             if (std::filesystem::exists(excludePath, ec))
             {
+                // TODO: handle exclude another way + remove this log
                 LMS_LOG(DBUPDATER, DEBUG, "Found " << excludePath << ": skipping directory");
                 return true;
             }
@@ -117,22 +65,22 @@ namespace lms::core::pathUtils
 
             if (ec)
             {
-                continueExploring = cb(ec, *itPath);
+                continueExploring = cb(ec, *itPath, nullptr);
             }
             else
             {
-                // TODO get status once and then test regular file/directory
-                if (std::filesystem::is_regular_file(*itPath, ec))
+                const std::filesystem::directory_entry& entry{ *itPath };
+
+                if (entry.is_regular_file())
                 {
-                    continueExploring = cb(ec, *itPath);
+                    FileInfo fileInfo;
+                    fileInfo.fileSize = entry.file_size();
+                    fileInfo.lastWriteTime = Wt::WDateTime{ std::chrono::file_clock::to_sys(entry.last_write_time()) };
+
+                    continueExploring = cb(ec, *itPath, &fileInfo);
                 }
-                else if (std::filesystem::is_directory(*itPath, ec))
-                {
-                    if (!ec)
-                        continueExploring = exploreFilesRecursive(*itPath, cb, excludeDirFileName);
-                    else
-                        continueExploring = cb(ec, *itPath);
-                }
+                else if (entry.is_directory())
+                    continueExploring = exploreFilesRecursive(*itPath, cb, excludeDirFileName);
             }
 
             if (!continueExploring)

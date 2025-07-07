@@ -50,7 +50,6 @@ namespace lms::scanner
         const ScannerSettings& getScannerSettings() const { return _settings; }
         Wt::WDateTime getLastWriteTime() const { return _file.lastWriteTime; }
         std::size_t getFileSize() const { return _file.fileSize; }
-        const std::filesystem::path& getRelativeFilePath() const { return _file.relativePath; }
 
         template<typename T, typename... CtrArgs>
         void addError(CtrArgs&&... args)

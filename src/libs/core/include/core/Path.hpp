@@ -28,8 +28,6 @@
 
 namespace lms::core::pathUtils
 {
-    std::uint32_t computeCrc32(const std::filesystem::path& p);
-
     // Make sure the given path is a directory
     // Create it if needed
     bool ensureDirectory(const std::filesystem::path& dir);
@@ -39,11 +37,9 @@ namespace lms::core::pathUtils
         Wt::WDateTime lastWriteTime; // Last write time of the file since Epoch
         std::uint64_t fileSize{};    // Size of the file in bytes
     };
-    // Get the last write time since Epoch
-    FileInfo getFileInfo(const std::filesystem::path& file, std::error_code& ec);
-
+    using ExploreFileCallback = std::function<bool(std::error_code, const std::filesystem::path&, const FileInfo* fileInfo)>;
     // returns false if aborted by user
-    bool exploreFilesRecursive(const std::filesystem::path& directory, std::function<bool(std::error_code, const std::filesystem::path&)> cb, const std::filesystem::path* excludeDirFileName = {});
+    bool exploreFilesRecursive(const std::filesystem::path& directory, ExploreFileCallback cb, const std::filesystem::path* excludeDirFileName = {});
 
     // Check if file's extension is one of provided extensions
     bool hasFileAnyExtension(const std::filesystem::path& file, std::span<const std::filesystem::path> extensions);
