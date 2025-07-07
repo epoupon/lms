@@ -34,8 +34,13 @@ namespace lms::core::pathUtils
     // Create it if needed
     bool ensureDirectory(const std::filesystem::path& dir);
 
+    struct FileInfo
+    {
+        Wt::WDateTime lastWriteTime; // Last write time of the file since Epoch
+        std::uint64_t fileSize{};    // Size of the file in bytes
+    };
     // Get the last write time since Epoch
-    Wt::WDateTime getLastWriteTime(const std::filesystem::path& file, std::error_code& ec);
+    FileInfo getFileInfo(const std::filesystem::path& file, std::error_code& ec);
 
     // returns false if aborted by user
     bool exploreFilesRecursive(const std::filesystem::path& directory, std::function<bool(std::error_code, const std::filesystem::path&)> cb, const std::filesystem::path* excludeDirFileName = {});

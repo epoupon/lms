@@ -71,16 +71,14 @@ namespace lms::scanner
         {
             FileToScan res;
 
-            res.lastWriteTime = core::pathUtils::getLastWriteTime(file, ec);
-            if (!ec)
-                res.relativePath = std::filesystem::relative(file, mediaLibrary.rootDirectory, ec);
-            if (!ec)
-                res.fileSize = std::filesystem::file_size(file, ec);
-
+            const core::pathUtils::FileInfo fileInfo{ core::pathUtils::getFileInfo(file, ec) };
             if (!ec)
             {
                 res.filePath = file;
                 res.mediaLibrary = mediaLibrary;
+                res.relativePath = std::filesystem::relative(file, mediaLibrary.rootDirectory, ec);
+                res.lastWriteTime = fileInfo.lastWriteTime;
+                res.fileSize = fileInfo.fileSize;
             }
 
             return res;

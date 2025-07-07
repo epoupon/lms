@@ -67,9 +67,9 @@ namespace lms::core::pathUtils
             return std::filesystem::create_directory(dir);
     }
 
-    Wt::WDateTime getLastWriteTime(const std::filesystem::path& file, std::error_code& ec)
+    FileInfo getFileInfo(const std::filesystem::path& file, std::error_code& ec)
     {
-        Wt::WDateTime res;
+        FileInfo fileInfo;
 
         struct stat sb
         {
@@ -81,10 +81,11 @@ namespace lms::core::pathUtils
         else
         {
             ec = std::error_code{};
-            res = Wt::WDateTime::fromTime_t(sb.st_mtime);
+            fileInfo.lastWriteTime = Wt::WDateTime::fromTime_t(sb.st_mtime);
+            fileInfo.fileSize = sb.st_size;
         }
 
-        return res;
+        return fileInfo;
     }
 
     bool exploreFilesRecursive(const std::filesystem::path& directory, std::function<bool(std::error_code, const std::filesystem::path&)> cb, const std::filesystem::path* excludeDirFileName)
@@ -120,6 +121,7 @@ namespace lms::core::pathUtils
             }
             else
             {
+                // TODO get status once and then test regular file/directory
                 if (std::filesystem::is_regular_file(*itPath, ec))
                 {
                     continueExploring = cb(ec, *itPath);
