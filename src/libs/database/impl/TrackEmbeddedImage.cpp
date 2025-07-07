@@ -91,7 +91,7 @@ namespace lms::db
                 }
 
                 if (params.imageType.has_value())
-                    query.where("t_e_i_l.type = ?").bind(params.imageType.value());
+                    query.where("+t_e_i_l.type = ?").bind(params.imageType.value()); // hack: type is a bad way to reduce the result space
             }
 
             switch (params.sortMethod)
