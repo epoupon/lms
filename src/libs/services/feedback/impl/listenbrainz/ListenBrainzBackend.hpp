@@ -28,7 +28,7 @@
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 }
 
 namespace lms::feedback::listenBrainz
@@ -36,7 +36,7 @@ namespace lms::feedback::listenBrainz
     class ListenBrainzBackend final : public IFeedbackBackend
     {
     public:
-        ListenBrainzBackend(boost::asio::io_context& ioContext, db::Db& db);
+        ListenBrainzBackend(boost::asio::io_context& ioContext, db::IDb& db);
         ~ListenBrainzBackend() override;
 
     private:
@@ -51,7 +51,7 @@ namespace lms::feedback::listenBrainz
         void onUnstarred(db::StarredTrackId starredTrackId) override;
 
         boost::asio::io_context& _ioContext;
-        db::Db& _db;
+        db::IDb& _db;
         std::string _baseAPIUrl;
         std::unique_ptr<core::http::IClient> _client;
         FeedbacksSynchronizer _feedbacksSynchronizer;

@@ -22,7 +22,7 @@
 #include <algorithm>
 
 #include "core/ILogger.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
@@ -35,12 +35,12 @@ namespace lms::recommendation
 {
     using namespace db;
 
-    std::unique_ptr<IPlaylistGeneratorService> createPlaylistGeneratorService(Db& db, IRecommendationService& recommendationService)
+    std::unique_ptr<IPlaylistGeneratorService> createPlaylistGeneratorService(db::IDb& db, IRecommendationService& recommendationService)
     {
         return std::make_unique<PlaylistGeneratorService>(db, recommendationService);
     }
 
-    PlaylistGeneratorService::PlaylistGeneratorService(Db& db, IRecommendationService& recommendationService)
+    PlaylistGeneratorService::PlaylistGeneratorService(db::IDb& db, IRecommendationService& recommendationService)
         : _db{ db }
         , _recommendationService{ recommendationService }
     {

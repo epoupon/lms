@@ -23,7 +23,7 @@
 #include <optional>
 
 #include "core/ILogger.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/PlayListFile.hpp"
 #include "database/Session.hpp"
@@ -121,7 +121,7 @@ namespace lms::scanner
         }
     } // namespace
 
-    PlayListFileScanner::PlayListFileScanner(db::Db& db, ScannerSettings& settings)
+    PlayListFileScanner::PlayListFileScanner(db::IDb& db, ScannerSettings& settings)
         : _db{ db }
         , _settings{ settings }
     {

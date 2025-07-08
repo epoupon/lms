@@ -26,7 +26,7 @@
 
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Listen.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/Release.hpp"
@@ -131,12 +131,12 @@ namespace lms::db::tests
     public:
         TmpDatabase();
 
-        db::Db& getDb();
+        IDb& getDb();
 
     private:
         const std::filesystem::path _tmpFile;
         ScopedFileDeleter _fileDeleter;
-        db::Db _db;
+        std::unique_ptr<IDb> _db;
     };
 
     class DatabaseFixture : public ::testing::Test

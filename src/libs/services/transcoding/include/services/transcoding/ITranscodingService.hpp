@@ -35,7 +35,7 @@ namespace lms
 
     namespace db
     {
-        class Db;
+        class IDb;
     }
 } // namespace lms
 
@@ -72,5 +72,5 @@ namespace lms::transcoding
         virtual std::unique_ptr<core::IResourceHandler> createResourceHandler(const InputParameters& inputParameters, const OutputParameters& outputParameters, bool estimateContentLength) = 0;
     };
 
-    std::unique_ptr<ITranscodingService> createTranscodingService(db::Db& db, core::IChildProcessManager& childProcessManager);
+    std::unique_ptr<ITranscodingService> createTranscodingService(db::IDb& db, core::IChildProcessManager& childProcessManager);
 } // namespace lms::transcoding

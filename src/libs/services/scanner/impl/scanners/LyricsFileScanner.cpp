@@ -25,7 +25,7 @@
 #include "FileScanOperationBase.hpp"
 #include "ScannerSettings.hpp"
 #include "core/ILogger.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
 #include "database/TrackLyrics.hpp"
@@ -122,7 +122,7 @@ namespace lms::scanner
         }
     } // namespace
 
-    LyricsFileScanner::LyricsFileScanner(db::Db& db, ScannerSettings& _settings)
+    LyricsFileScanner::LyricsFileScanner(db::IDb& db, ScannerSettings& _settings)
         : _db{ db }
         , _settings{ _settings }
     {

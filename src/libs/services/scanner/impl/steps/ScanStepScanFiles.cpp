@@ -25,7 +25,7 @@
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/Path.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "scanners/FileToScan.hpp"
 #include "scanners/IFileScanOperation.hpp"

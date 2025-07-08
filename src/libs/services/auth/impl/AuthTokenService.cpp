@@ -44,12 +44,12 @@ namespace lms::auth
         }
     } // namespace
 
-    std::unique_ptr<IAuthTokenService> createAuthTokenService(db::Db& db, std::size_t maxThrottlerEntryCount)
+    std::unique_ptr<IAuthTokenService> createAuthTokenService(db::IDb& db, std::size_t maxThrottlerEntryCount)
     {
         return std::make_unique<AuthTokenService>(db, maxThrottlerEntryCount);
     }
 
-    AuthTokenService::AuthTokenService(db::Db& db, std::size_t maxThrottlerEntryCount)
+    AuthTokenService::AuthTokenService(db::IDb& db, std::size_t maxThrottlerEntryCount)
         : AuthServiceBase{ db }
         , _loginThrottler{ maxThrottlerEntryCount }
     {

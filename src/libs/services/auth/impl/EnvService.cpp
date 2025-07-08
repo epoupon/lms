@@ -25,7 +25,7 @@
 
 namespace lms::auth
 {
-    std::unique_ptr<IEnvService> createEnvService(std::string_view backendName, db::Db& db)
+    std::unique_ptr<IEnvService> createEnvService(std::string_view backendName, db::IDb& db)
     {
         if (backendName == "http-headers")
             return std::make_unique<HttpHeadersEnvService>(db);

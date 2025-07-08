@@ -19,8 +19,8 @@
 
 #include "ScanStepUpdateLibraryFields.hpp"
 
-#include "database/Db.hpp"
 #include "database/Directory.hpp"
+#include "database/IDb.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
 

@@ -27,7 +27,7 @@
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 }
 
 namespace lms::scanner
@@ -61,5 +61,5 @@ namespace lms::scanner
         virtual Events& getEvents() = 0;
     };
 
-    std::unique_ptr<IScannerService> createScannerService(db::Db& db);
+    std::unique_ptr<IScannerService> createScannerService(db::IDb& db);
 } // namespace lms::scanner

@@ -21,7 +21,7 @@
 
 #include "core/IConfig.hpp"
 #include "core/Service.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
@@ -64,7 +64,7 @@ namespace lms::scanner
 
     } // namespace
 
-    AudioFileScanner::AudioFileScanner(db::Db& db, const ScannerSettings& settings)
+    AudioFileScanner::AudioFileScanner(db::IDb& db, const ScannerSettings& settings)
         : _db{ db }
         , _settings{ settings }
         , _metadataParser{ metadata::createAudioFileParser(createAudioFileParserParameters(settings)) } // For now, always use TagLib

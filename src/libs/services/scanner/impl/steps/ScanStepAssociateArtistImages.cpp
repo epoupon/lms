@@ -34,8 +34,8 @@
 #include "database/ArtistInfo.hpp"
 #include "database/Artwork.hpp"
 #include "database/ArtworkId.hpp"
-#include "database/Db.hpp"
 #include "database/Directory.hpp"
+#include "database/IDb.hpp"
 #include "database/Image.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
@@ -270,7 +270,7 @@ namespace lms::scanner
         class ComputeArtistArtworkAssociationsJob : public core::IJob
         {
         public:
-            ComputeArtistArtworkAssociationsJob(db::Db& db, const SearchArtistArtworkParams& searchParams, db::IdRange<db::ArtistId> artistIdRange)
+            ComputeArtistArtworkAssociationsJob(db::IDb& db, const SearchArtistArtworkParams& searchParams, db::IdRange<db::ArtistId> artistIdRange)
                 : _db{ db }
                 , _searchParams{ searchParams }
                 , _artistIdRange{ artistIdRange }
@@ -304,7 +304,7 @@ namespace lms::scanner
                 });
             }
 
-            db::Db& _db;
+            db::IDb& _db;
             const SearchArtistArtworkParams& _searchParams;
             db::IdRange<db::ArtistId> _artistIdRange;
             std::vector<ArtistArtworkAssociation> _associations;

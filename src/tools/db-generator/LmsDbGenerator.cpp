@@ -34,7 +34,7 @@
 #include "core/SystemPaths.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
@@ -226,8 +226,8 @@ int main(int argc, char* argv[])
             throw std::runtime_error{ "File '" + genParams.trackPath.string() + "' does not exist!" };
 
         core::Service<core::IConfig> config{ core::createConfig(vm["conf"].as<std::string>()) };
-        db::Db db{ config->getPath("working-dir", "/var/lms") / "lms.db" };
-        db::Session session{ db };
+        auto db{ db::createDb(config->getPath("working-dir", "/var/lms") / "lms.db") };
+        db::Session session{ *db };
         std::cout << "Starting generation..." << std::endl;
 
         GenerationContext genContext{ session };

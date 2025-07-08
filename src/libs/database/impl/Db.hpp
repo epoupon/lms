@@ -19,23 +19,25 @@
 
 #pragma once
 
-#include <filesystem>
+#include <mutex>
+#include <vector>
 
 #include <Wt/Dbo/SqlConnectionPool.h>
 
 #include "core/RecursiveSharedMutex.hpp"
 
+#include "database/IDb.hpp"
+
 namespace lms::db
 {
-    class Session;
-    class Db
+    class Db : public IDb
     {
     public:
-        Db(const std::filesystem::path& dbPath, std::size_t connectionCount = 10);
+        Db(const std::filesystem::path& dbPath, std::size_t connectionCount);
 
-        Session& getTLSSession();
+        Session& getTLSSession() override;
 
-        void executeSql(const std::string& sql);
+        void executeSql(const std::string& sql) override;
 
     private:
         Db(const Db&) = delete;

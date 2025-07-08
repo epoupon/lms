@@ -23,7 +23,7 @@
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 }
 
 namespace lms::recommendation::PlaylistGeneratorConstraint
@@ -31,7 +31,7 @@ namespace lms::recommendation::PlaylistGeneratorConstraint
     class ConsecutiveArtists : public IConstraint
     {
     public:
-        ConsecutiveArtists(db::Db& db);
+        ConsecutiveArtists(db::IDb& db);
         ~ConsecutiveArtists() override = default;
         ConsecutiveArtists(const ConsecutiveArtists&) = delete;
         ConsecutiveArtists& operator=(const ConsecutiveArtists&) = delete;
@@ -40,6 +40,6 @@ namespace lms::recommendation::PlaylistGeneratorConstraint
         float computeScore(const TrackContainer& trackIds, std::size_t trackIndex) override;
         ArtistContainer getArtists(db::TrackId trackId);
 
-        db::Db& _db;
+        db::IDb& _db;
     };
 } // namespace lms::recommendation::PlaylistGeneratorConstraint

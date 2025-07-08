@@ -27,7 +27,7 @@
 
 namespace lms::auth
 {
-    HttpHeadersEnvService::HttpHeadersEnvService(db::Db& db)
+    HttpHeadersEnvService::HttpHeadersEnvService(db::IDb& db)
         : AuthServiceBase{ db }
         , _fieldName{ core::Service<core::IConfig>::get()->getString("http-headers-login-field", "X-Forwarded-User") }
     {

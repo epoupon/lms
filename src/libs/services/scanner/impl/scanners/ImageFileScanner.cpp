@@ -23,7 +23,7 @@
 
 #include "core/ILogger.hpp"
 #include "database/Artwork.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Image.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
@@ -108,7 +108,7 @@ namespace lms::scanner
         }
     } // namespace
 
-    ImageFileScanner::ImageFileScanner(db::Db& db, ScannerSettings& settings)
+    ImageFileScanner::ImageFileScanner(db::IDb& db, ScannerSettings& settings)
         : _db{ db }
         , _settings{ settings }
     {

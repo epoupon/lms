@@ -22,7 +22,7 @@
 
 #include "core/ILogger.hpp"
 #include "database/Artist.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/RatedArtist.hpp"
 #include "database/RatedRelease.hpp"
 #include "database/RatedTrack.hpp"
@@ -39,12 +39,12 @@
 
 namespace lms::feedback
 {
-    std::unique_ptr<IFeedbackService> createFeedbackService(boost::asio::io_context& ioContext, Db& db)
+    std::unique_ptr<IFeedbackService> createFeedbackService(boost::asio::io_context& ioContext, db::IDb& db)
     {
         return std::make_unique<FeedbackService>(ioContext, db);
     }
 
-    FeedbackService::FeedbackService(boost::asio::io_context& ioContext, Db& db)
+    FeedbackService::FeedbackService(boost::asio::io_context& ioContext, db::IDb& db)
         : _db{ db }
     {
         LMS_LOG(SCROBBLING, INFO, "Starting service...");
@@ -58,7 +58,7 @@ namespace lms::feedback
         LMS_LOG(SCROBBLING, INFO, "Service stopped!");
     }
 
-    std::optional<db::FeedbackBackend> FeedbackService::getUserFeedbackBackend(UserId userId)
+    std::optional<db::FeedbackBackend> FeedbackService::getUserFeedbackBackend(db::UserId userId)
     {
         std::optional<db::FeedbackBackend> feedbackBackend;
 

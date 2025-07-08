@@ -25,8 +25,8 @@
 
 #include "core/IJob.hpp"
 #include "core/ILogger.hpp"
-#include "database/Db.hpp"
 #include "database/Directory.hpp"
+#include "database/IDb.hpp"
 #include "database/PlayListFile.hpp"
 #include "database/ReleaseId.hpp"
 #include "database/Session.hpp"
@@ -174,7 +174,7 @@ namespace lms::scanner
         class ComputePlayListFileAssociationsJob : public core::IJob
         {
         public:
-            ComputePlayListFileAssociationsJob(db::Db& db, const ScannerSettings& settings, db::IdRange<db::PlayListFileId> playListFileIdRange)
+            ComputePlayListFileAssociationsJob(db::IDb& db, const ScannerSettings& settings, db::IdRange<db::PlayListFileId> playListFileIdRange)
                 : _db{ db }
                 , _settings{ settings }
                 , _playListFileIdRange{ playListFileIdRange }
@@ -239,7 +239,7 @@ namespace lms::scanner
                 });
             }
 
-            db::Db& _db;
+            db::IDb& _db;
             const ScannerSettings& _settings;
             db::IdRange<db::PlayListFileId> _playListFileIdRange;
             std::vector<PlayListFileAssociation> _associations;

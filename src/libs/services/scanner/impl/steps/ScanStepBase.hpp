@@ -34,7 +34,7 @@ namespace lms::core
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 }
 
 namespace lms::scanner
@@ -56,7 +56,7 @@ namespace lms::scanner
             const ScannerSettings* lastScanSettings{};
             ProgressCallback progressCallback;
             bool& abortScan;
-            db::Db& db;
+            db::IDb& db;
             std::span<IFileScanner*> fileScanners;
         };
         ScanStepBase(InitParams& initParams);
@@ -82,7 +82,7 @@ namespace lms::scanner
         const ScannerSettings& _settings;
         ProgressCallback _progressCallback;
         bool& _abortScan;
-        db::Db& _db;
+        db::IDb& _db;
 
     private:
         core::IJobScheduler& _jobScheduler;

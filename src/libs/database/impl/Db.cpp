@@ -17,8 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/Db.hpp"
-
 #include <functional>
 #include <memory>
 
@@ -30,6 +28,8 @@
 #include "core/Service.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
+
+#include "Db.hpp"
 
 namespace lms::db
 {
@@ -133,6 +133,11 @@ namespace lms::db
             return foreignKeyConstraintsPassed;
         }
     } // namespace
+
+    std::unique_ptr<IDb> createDb(const std::filesystem::path& dbPath, std::size_t connectionCount)
+    {
+        return std::make_unique<Db>(dbPath, connectionCount);
+    }
 
     // Session living class handling the database and the login
     Db::Db(const std::filesystem::path& dbPath, std::size_t connectionCount)

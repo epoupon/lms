@@ -19,7 +19,7 @@
 
 #include "InternalBackend.hpp"
 
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/StarredArtist.hpp"
 #include "database/StarredRelease.hpp"
@@ -48,7 +48,7 @@ namespace lms::feedback
         }
     } // namespace details
 
-    InternalBackend::InternalBackend(db::Db& db)
+    InternalBackend::InternalBackend(db::IDb& db)
         : _db{ db }
     {
     }

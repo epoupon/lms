@@ -21,7 +21,7 @@
 
 #include <algorithm>
 
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
@@ -42,7 +42,7 @@ namespace lms::recommendation::PlaylistGeneratorConstraint
         }
     } // namespace
 
-    ConsecutiveArtists::ConsecutiveArtists(db::Db& db)
+    ConsecutiveArtists::ConsecutiveArtists(db::IDb& db)
         : _db{ db }
     {
     }

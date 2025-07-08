@@ -31,7 +31,7 @@
 #include "core/Service.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/TrackList.hpp"
@@ -183,7 +183,7 @@ namespace lms::ui
         }
     } // namespace
 
-    std::unique_ptr<Wt::WApplication> LmsApplication::create(const Wt::WEnvironment& env, db::Db& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend)
+    std::unique_ptr<Wt::WApplication> LmsApplication::create(const Wt::WEnvironment& env, db::IDb& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend)
     {
         return std::make_unique<LmsApplication>(env, db, appManager, authBackend);
     }
@@ -193,7 +193,7 @@ namespace lms::ui
         return static_cast<LmsApplication*>(Wt::WApplication::instance());
     }
 
-    db::Db& LmsApplication::getDb()
+    db::IDb& LmsApplication::getDb()
     {
         return _db;
     }
@@ -235,7 +235,7 @@ namespace lms::ui
         return _user->userLoginName;
     }
 
-    LmsApplication::LmsApplication(const Wt::WEnvironment& env, db::Db& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend)
+    LmsApplication::LmsApplication(const Wt::WEnvironment& env, db::IDb& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend)
         : Wt::WApplication{ env }
         , _db{ db }
         , _appManager{ appManager }

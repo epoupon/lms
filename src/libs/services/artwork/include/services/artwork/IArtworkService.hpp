@@ -29,7 +29,7 @@
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 }
 
 namespace lms::artwork
@@ -54,6 +54,6 @@ namespace lms::artwork
         virtual void setJpegQuality(unsigned quality) = 0; // from 1 to 100
     };
 
-    std::unique_ptr<IArtworkService> createArtworkService(db::Db& db, const std::filesystem::path& defaultReleaseCoverSvgPath, const std::filesystem::path& defaultArtistImageSvgPath);
+    std::unique_ptr<IArtworkService> createArtworkService(db::IDb& db, const std::filesystem::path& defaultReleaseCoverSvgPath, const std::filesystem::path& defaultArtistImageSvgPath);
 
 } // namespace lms::artwork

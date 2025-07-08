@@ -26,7 +26,7 @@
 #include "core/StreamLogger.hpp"
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Release.hpp"
 #include "database/SessionPool.hpp"
 #include "database/Track.hpp"

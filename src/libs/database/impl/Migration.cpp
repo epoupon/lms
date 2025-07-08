@@ -24,11 +24,11 @@
 #include "core/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
-#include "database/Db.hpp"
 #include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
 #include "database/User.hpp"
 
+#include "Db.hpp"
 #include "Utils.hpp"
 
 namespace lms::db
@@ -67,7 +67,7 @@ namespace lms::db::Migration
     class ScopedNoForeignKeys
     {
     public:
-        ScopedNoForeignKeys(Db& db)
+        ScopedNoForeignKeys(IDb& db)
             : _db{ db }
         {
             _db.executeSql("PRAGMA foreign_keys=OFF");
@@ -83,7 +83,7 @@ namespace lms::db::Migration
         ScopedNoForeignKeys& operator=(const ScopedNoForeignKeys&) = delete;
         ScopedNoForeignKeys& operator=(ScopedNoForeignKeys&&) = delete;
 
-        Db& _db;
+        IDb& _db;
     };
 
     namespace

@@ -26,7 +26,7 @@
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
     class Session;
 } // namespace lms::db
 
@@ -65,5 +65,5 @@ namespace lms::auth
         virtual CheckResult processRequest(const Wt::Http::Request& request) = 0;
     };
 
-    std::unique_ptr<IEnvService> createEnvService(std::string_view backend, db::Db& db);
+    std::unique_ptr<IEnvService> createEnvService(std::string_view backend, db::IDb& db);
 } // namespace lms::auth

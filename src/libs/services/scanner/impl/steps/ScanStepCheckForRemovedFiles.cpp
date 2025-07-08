@@ -24,7 +24,7 @@
 #include "core/ILogger.hpp"
 #include "core/Path.hpp"
 #include "database/ArtistInfo.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Image.hpp"
 #include "database/PlayListFile.hpp"
 #include "database/Session.hpp"

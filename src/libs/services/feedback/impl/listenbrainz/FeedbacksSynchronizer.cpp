@@ -29,7 +29,7 @@
 #include "core/IConfig.hpp"
 #include "core/Service.hpp"
 #include "core/http/IClient.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/StarredTrack.hpp"
 #include "database/Track.hpp"
@@ -60,7 +60,7 @@ namespace lms::feedback::listenBrainz
         }
     } // namespace
 
-    FeedbacksSynchronizer::FeedbacksSynchronizer(boost::asio::io_context& ioContext, db::Db& db, core::http::IClient& client)
+    FeedbacksSynchronizer::FeedbacksSynchronizer(boost::asio::io_context& ioContext, db::IDb& db, core::http::IClient& client)
         : _ioContext{ ioContext }
         , _db{ db }
         , _client{ client }

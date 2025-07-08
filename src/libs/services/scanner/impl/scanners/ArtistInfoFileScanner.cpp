@@ -26,7 +26,7 @@
 #include "core/String.hpp"
 #include "database/Artist.hpp"
 #include "database/ArtistInfo.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
 #include "metadata/ArtistInfo.hpp"
@@ -137,7 +137,7 @@ namespace lms::scanner
         }
     } // namespace
 
-    ArtistInfoFileScanner::ArtistInfoFileScanner(db::Db& db, const ScannerSettings& settings)
+    ArtistInfoFileScanner::ArtistInfoFileScanner(db::IDb& db, const ScannerSettings& settings)
         : _db{ db }
         , _settings{ settings }
     {

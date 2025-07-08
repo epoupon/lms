@@ -28,7 +28,7 @@
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 }
 
 namespace lms::feedback
@@ -36,7 +36,7 @@ namespace lms::feedback
     class FeedbackService : public IFeedbackService
     {
     public:
-        FeedbackService(boost::asio::io_context& ioContext, db::Db& db);
+        FeedbackService(boost::asio::io_context& ioContext, db::IDb& db);
         ~FeedbackService() override;
         FeedbackService(const FeedbackService&) = delete;
         FeedbackService& operator=(const FeedbackService&) = delete;
@@ -86,7 +86,7 @@ namespace lms::feedback
         template<typename ObjType, typename ObjIdType, typename RatedObjType>
         std::optional<db::Rating> getRating(db::UserId userId, ObjIdType objectId);
 
-        db::Db& _db;
+        db::IDb& _db;
         std::unordered_map<db::FeedbackBackend, std::unique_ptr<IFeedbackBackend>> _backends;
     };
 

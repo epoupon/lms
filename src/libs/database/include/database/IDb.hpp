@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2019 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,16 +19,21 @@
 
 #pragma once
 
+#include <filesystem>
 #include <memory>
-
-#include "IEngine.hpp"
 
 namespace lms::db
 {
-    class IDb;
-}
+    class Session;
+    class IDb
+    {
+    public:
+        virtual ~IDb() = default;
 
-namespace lms::recommendation
-{
-    std::unique_ptr<IEngine> createFeaturesEngine(db::IDb& db);
-}
+        virtual Session& getTLSSession() = 0;
+
+        virtual void executeSql(const std::string& sql) = 0; // TODO make this private
+    };
+
+    std::unique_ptr<IDb> createDb(const std::filesystem::path& dbPath, std::size_t connectionCount = 10);
+} // namespace lms::db

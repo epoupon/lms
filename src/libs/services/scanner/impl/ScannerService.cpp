@@ -152,12 +152,12 @@ namespace lms::scanner
 
     } // namespace
 
-    std::unique_ptr<IScannerService> createScannerService(Db& db)
+    std::unique_ptr<IScannerService> createScannerService(db::IDb& db)
     {
         return std::make_unique<ScannerService>(db);
     }
 
-    ScannerService::ScannerService(Db& db)
+    ScannerService::ScannerService(db::IDb& db)
         : _db{ db }
         , _jobScheduler{ core::createJobScheduler("Scanner", getScannerThreadCount()) }
     {

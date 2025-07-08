@@ -65,11 +65,11 @@ namespace lms::db
         Wt::Dbo::Transaction _transaction;
     };
 
-    class Db;
+    class IDb;
     class Session
     {
     public:
-        Session(Db& db);
+        Session(IDb& db);
         ~Session() = default;
         Session(const Session&) = delete;
         Session& operator=(const Session&) = delete;
@@ -111,7 +111,7 @@ namespace lms::db
         {
             return &_session;
         }
-        Db& getDb()
+        IDb& getDb()
         {
             return _db;
         }
@@ -146,7 +146,7 @@ namespace lms::db
     private:
         void execute(std::string_view query, long long id);
 
-        Db& _db;
+        IDb& _db;
         Wt::Dbo::Session _session;
     };
 } // namespace lms::db

@@ -32,7 +32,7 @@ namespace lms::auth
     class InternalPasswordService : public PasswordServiceBase
     {
     public:
-        InternalPasswordService(db::Db& db, std::size_t maxThrottlerEntries);
+        InternalPasswordService(db::IDb& db, std::size_t maxThrottlerEntries);
 
     private:
         bool checkUserPassword(std::string_view loginName, std::string_view password) override;

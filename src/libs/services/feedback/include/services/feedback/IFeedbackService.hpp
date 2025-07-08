@@ -34,7 +34,7 @@
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 }
 
 namespace lms::feedback
@@ -125,6 +125,6 @@ namespace lms::feedback
         virtual std::optional<db::Rating> getRating(db::UserId userId, db::TrackId trackId) = 0;
     };
 
-    std::unique_ptr<IFeedbackService> createFeedbackService(boost::asio::io_context& ioContext, db::Db& db);
+    std::unique_ptr<IFeedbackService> createFeedbackService(boost::asio::io_context& ioContext, db::IDb& db);
 
 } // namespace lms::feedback

@@ -26,7 +26,6 @@
 #include "database/Artwork.hpp"
 #include "database/AuthToken.hpp"
 #include "database/Cluster.hpp"
-#include "database/Db.hpp"
 #include "database/Directory.hpp"
 #include "database/Image.hpp"
 #include "database/Listen.hpp"
@@ -53,6 +52,7 @@
 #include "database/UIState.hpp"
 #include "database/User.hpp"
 
+#include "Db.hpp"
 #include "Migration.hpp"
 #include "Utils.hpp"
 #include "traits/EnumSetTraits.hpp"
@@ -96,10 +96,10 @@ namespace lms::db
 #endif
     }
 
-    Session::Session(Db& db)
+    Session::Session(IDb& db)
         : _db{ db }
     {
-        _session.setConnectionPool(_db.getConnectionPool());
+        _session.setConnectionPool(static_cast<Db&>(_db).getConnectionPool());
 
         _session.mapClass<Artist>("artist");
         _session.mapClass<ArtistInfo>("artist_info");
@@ -140,7 +140,7 @@ namespace lms::db
 
     WriteTransaction Session::createWriteTransaction()
     {
-        return WriteTransaction{ _db.getMutex(), _session };
+        return WriteTransaction{ static_cast<Db&>(_db).getMutex(), _session };
     }
 
     ReadTransaction Session::createReadTransaction()
@@ -359,7 +359,7 @@ namespace lms::db
 
         // We manually take a lock here since vacuum cannot be inside a transaction
         {
-            std::unique_lock lock{ _db.getMutex() };
+            std::unique_lock lock{ static_cast<Db&>(_db).getMutex() };
             _db.executeSql("VACUUM");
         }
 

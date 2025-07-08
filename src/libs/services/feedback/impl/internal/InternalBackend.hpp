@@ -23,7 +23,7 @@
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 }
 
 namespace lms::feedback
@@ -31,7 +31,7 @@ namespace lms::feedback
     class InternalBackend final : public IFeedbackBackend
     {
     public:
-        InternalBackend(db::Db& db);
+        InternalBackend(db::IDb& db);
         ~InternalBackend() override = default;
         InternalBackend(const InternalBackend&) = delete;
         InternalBackend& operator=(const InternalBackend&) = delete;
@@ -44,6 +44,6 @@ namespace lms::feedback
         void onStarred(db::StarredTrackId trackId) override;
         void onUnstarred(db::StarredTrackId trackId) override;
 
-        db::Db& _db;
+        db::IDb& _db;
     };
 } // namespace lms::feedback

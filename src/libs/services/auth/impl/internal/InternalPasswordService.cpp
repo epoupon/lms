@@ -29,7 +29,7 @@
 
 namespace lms::auth
 {
-    InternalPasswordService::InternalPasswordService(db::Db& db, std::size_t maxThrottlerEntries)
+    InternalPasswordService::InternalPasswordService(db::IDb& db, std::size_t maxThrottlerEntries)
         : PasswordServiceBase{ db, maxThrottlerEntries }
         , _bcryptRoundCount{ static_cast<unsigned>(core::Service<core::IConfig>::get()->getULong("internal-password-bcrypt-round", 12)) }
     {

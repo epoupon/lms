@@ -21,7 +21,7 @@
 
 #include "database/Artist.hpp"
 #include "database/Cluster.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
@@ -29,10 +29,9 @@
 
 namespace lms::recommendation
 {
-
     using namespace db;
 
-    std::unique_ptr<IEngine> createClustersEngine(Db& db)
+    std::unique_ptr<IEngine> createClustersEngine(db::IDb& db)
     {
         return std::make_unique<ClusterEngine>(db);
     }

@@ -25,7 +25,7 @@
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
     class Session;
 } // namespace lms::db
 
@@ -34,7 +34,7 @@ namespace lms::auth
     class AuthServiceBase
     {
     protected:
-        AuthServiceBase(db::Db& db);
+        AuthServiceBase(db::IDb& db);
         ~AuthServiceBase() = default;
         AuthServiceBase(const AuthServiceBase&) = delete;
         AuthServiceBase& operator=(const AuthServiceBase&) = delete;
@@ -45,6 +45,6 @@ namespace lms::auth
         db::Session& getDbSession();
 
     private:
-        db::Db& _db;
+        db::IDb& _db;
     };
 } // namespace lms::auth

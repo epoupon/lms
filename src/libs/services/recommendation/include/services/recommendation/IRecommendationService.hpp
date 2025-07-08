@@ -31,7 +31,7 @@
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 }
 
 namespace lms::recommendation
@@ -49,5 +49,5 @@ namespace lms::recommendation
         virtual ArtistContainer getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const = 0;
     };
 
-    std::unique_ptr<IRecommendationService> createRecommendationService(db::Db& db);
+    std::unique_ptr<IRecommendationService> createRecommendationService(db::IDb& db);
 } // namespace lms::recommendation

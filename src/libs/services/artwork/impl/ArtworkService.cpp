@@ -24,7 +24,7 @@
 #include "core/Utils.hpp"
 #include "database/Artist.hpp"
 #include "database/Artwork.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Image.hpp"
 #include "database/ImageId.hpp"
 #include "database/Release.hpp"
@@ -40,12 +40,12 @@
 
 namespace lms::artwork
 {
-    std::unique_ptr<IArtworkService> createArtworkService(db::Db& db, const std::filesystem::path& defaultReleaseCoverSvgPath, const std::filesystem::path& defaultArtistImageSvgPath)
+    std::unique_ptr<IArtworkService> createArtworkService(db::IDb& db, const std::filesystem::path& defaultReleaseCoverSvgPath, const std::filesystem::path& defaultArtistImageSvgPath)
     {
         return std::make_unique<ArtworkService>(db, defaultReleaseCoverSvgPath, defaultArtistImageSvgPath);
     }
 
-    ArtworkService::ArtworkService(db::Db& db,
+    ArtworkService::ArtworkService(db::IDb& db,
         const std::filesystem::path& defaultReleaseCoverSvgPath,
         const std::filesystem::path& defaultArtistImageSvgPath)
         : _db{ db }

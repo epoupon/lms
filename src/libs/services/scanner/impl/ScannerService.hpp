@@ -32,7 +32,7 @@
 #include <Wt/WSignal.h>
 
 #include "ScannerSettings.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "services/scanner/IScannerService.hpp"
 #include "steps/IScanStep.hpp"
@@ -52,7 +52,7 @@ namespace lms::scanner
     class ScannerService : public IScannerService
     {
     public:
-        ScannerService(db::Db& db);
+        ScannerService(db::IDb& db);
         ~ScannerService() override;
         ScannerService(const ScannerService&) = delete;
         ScannerService& operator=(const ScannerService&) = delete;
@@ -85,7 +85,7 @@ namespace lms::scanner
         void notifyInProgressIfNeeded(const ScanStepStats& stats);
         void notifyInProgress(const ScanStepStats& stats);
 
-        db::Db& _db;
+        db::IDb& _db;
         std::unique_ptr<core::IJobScheduler> _jobScheduler;
 
         std::vector<std::unique_ptr<IFileScanner>> _fileScanners;

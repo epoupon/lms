@@ -23,7 +23,6 @@
 #include "database/Artist.hpp"
 #include "database/ArtistInfo.hpp"
 #include "database/AuthToken.hpp"
-#include "database/Db.hpp"
 #include "database/Directory.hpp"
 #include "database/Image.hpp"
 #include "database/PlayListFile.hpp"

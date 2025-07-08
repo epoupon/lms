@@ -29,8 +29,8 @@
 #include "core/ILogger.hpp"
 #include "core/Path.hpp"
 #include "database/Artwork.hpp"
-#include "database/Db.hpp"
 #include "database/Directory.hpp"
+#include "database/IDb.hpp"
 #include "database/Image.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
@@ -213,7 +213,7 @@ namespace lms::scanner
         class ComputeReleaseArtworkAssociationsJob : public core::IJob
         {
         public:
-            ComputeReleaseArtworkAssociationsJob(db::Db& db, const SearchReleaseArtworkParams& searchParams, db::IdRange<db::ReleaseId> artistIdRange)
+            ComputeReleaseArtworkAssociationsJob(db::IDb& db, const SearchReleaseArtworkParams& searchParams, db::IdRange<db::ReleaseId> artistIdRange)
                 : _db{ db }
                 , _searchParams{ searchParams }
                 , _artistIdRange{ artistIdRange }
@@ -247,7 +247,7 @@ namespace lms::scanner
                 });
             }
 
-            db::Db& _db;
+            db::IDb& _db;
             const SearchReleaseArtworkParams& _searchParams;
             db::IdRange<db::ReleaseId> _artistIdRange;
             std::vector<ReleaseArtworkAssociation> _associations;

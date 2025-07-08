@@ -19,7 +19,6 @@
 
 #include "Common.hpp"
 
-#include "database/Db.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Types.hpp"
@@ -29,13 +28,13 @@ namespace lms::db::tests
     TmpDatabase::TmpDatabase()
         : _tmpFile{ std::tmpnam(nullptr) }
         , _fileDeleter{ _tmpFile }
-        , _db{ _tmpFile }
+        , _db{ createDb(_tmpFile) }
     {
     }
 
-    db::Db& TmpDatabase::getDb()
+    db::IDb& TmpDatabase::getDb()
     {
-        return _db;
+        return *_db;
     }
 
     DatabaseFixture::~DatabaseFixture()

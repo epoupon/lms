@@ -43,7 +43,7 @@ namespace lms::artwork
     class ArtworkService : public IArtworkService
     {
     public:
-        ArtworkService(db::Db& db, const std::filesystem::path& defaultReleaseCoverSvgPath, const std::filesystem::path& defaultArtistImageSvgPath);
+        ArtworkService(db::IDb& db, const std::filesystem::path& defaultReleaseCoverSvgPath, const std::filesystem::path& defaultArtistImageSvgPath);
         ~ArtworkService() override;
         ArtworkService(const ArtworkService&) = delete;
         ArtworkService& operator=(const ArtworkService&) = delete;
@@ -65,7 +65,7 @@ namespace lms::artwork
         std::unique_ptr<image::IEncodedImage> getFromImageFile(const std::filesystem::path& p, std::optional<image::ImageSize> width) const;
         std::unique_ptr<image::IEncodedImage> getTrackImage(const std::filesystem::path& path, std::size_t index, std::optional<image::ImageSize> width) const;
 
-        db::Db& _db;
+        db::IDb& _db;
 
         std::unique_ptr<metadata::IAudioFileParser> _audioFileParser;
         ImageCache _cache;

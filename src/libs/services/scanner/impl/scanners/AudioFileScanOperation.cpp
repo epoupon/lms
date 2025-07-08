@@ -27,8 +27,8 @@
 #include "database/Artist.hpp"
 #include "database/Artwork.hpp"
 #include "database/Cluster.hpp"
-#include "database/Db.hpp"
 #include "database/Directory.hpp"
+#include "database/IDb.hpp"
 #include "database/MediaLibrary.hpp"
 #include "database/Release.hpp"
 #include "database/Session.hpp"
@@ -466,7 +466,7 @@ namespace lms::scanner
         }
     } // namespace
 
-    AudioFileScanOperation::AudioFileScanOperation(FileToScan&& fileToScan, db::Db& db, const ScannerSettings& settings, metadata::IAudioFileParser& parser)
+    AudioFileScanOperation::AudioFileScanOperation(FileToScan&& fileToScan, db::IDb& db, const ScannerSettings& settings, metadata::IAudioFileParser& parser)
         : FileScanOperationBase{ std::move(fileToScan), db, settings }
         , _parser{ parser }
     {

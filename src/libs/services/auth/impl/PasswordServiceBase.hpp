@@ -27,7 +27,7 @@
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
     class Session;
 } // namespace lms::db
 
@@ -36,7 +36,7 @@ namespace lms::auth
     class PasswordServiceBase : public IPasswordService, public AuthServiceBase
     {
     public:
-        PasswordServiceBase(db::Db& db, std::size_t maxThrottlerEntries);
+        PasswordServiceBase(db::IDb& db, std::size_t maxThrottlerEntries);
 
         ~PasswordServiceBase() override = default;
         PasswordServiceBase(const PasswordServiceBase&) = delete;

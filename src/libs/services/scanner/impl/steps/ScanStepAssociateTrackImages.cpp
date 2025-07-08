@@ -28,8 +28,8 @@
 #include "core/ILogger.hpp"
 #include "core/LiteralString.hpp"
 #include "database/Artwork.hpp"
-#include "database/Db.hpp"
 #include "database/Directory.hpp"
+#include "database/IDb.hpp"
 #include "database/IdRange.hpp"
 #include "database/Image.hpp"
 #include "database/Release.hpp"
@@ -160,7 +160,7 @@ namespace lms::scanner
         class ComputeTrackArtworkAssociationsJob : public core::IJob
         {
         public:
-            ComputeTrackArtworkAssociationsJob(db::Db& db, db::IdRange<db::TrackId> trackIdRange)
+            ComputeTrackArtworkAssociationsJob(db::IDb& db, db::IdRange<db::TrackId> trackIdRange)
                 : _db{ db }
                 , _trackIdRange{ trackIdRange }
             {
@@ -209,7 +209,7 @@ namespace lms::scanner
                 });
             }
 
-            db::Db& _db;
+            db::IDb& _db;
             db::IdRange<db::TrackId> _trackIdRange;
             std::vector<TrackArtworksAssociation> _trackAssociations;
             std::size_t _processedTrackCount{};

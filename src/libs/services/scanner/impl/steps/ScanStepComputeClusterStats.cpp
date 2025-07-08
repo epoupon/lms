@@ -20,7 +20,7 @@
 #include "ScanStepComputeClusterStats.hpp"
 #include "core/ILogger.hpp"
 #include "database/Cluster.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
 
 #include "ScanContext.hpp"

@@ -32,7 +32,7 @@
 #include "core/String.hpp"
 #include "core/SystemPaths.hpp"
 #include "core/WtLogger.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "image/Image.hpp"
 #include "services/artwork/IArtworkService.hpp"
@@ -316,9 +316,9 @@ namespace lms
             core::IOContextRunner ioContextRunner{ ioContext, getThreadCount(), "Misc" };
 
             // Connection pool size must be twice the number of threads: we have at least 2 io pools with getThreadCount() each and they all may access the database
-            db::Db database{ config->getPath("working-dir", "/var/lms") / "lms.db", getThreadCount() * 2 };
+            auto database{ db::createDb(config->getPath("working-dir", "/var/lms") / "lms.db", getThreadCount() * 2) };
             {
-                db::Session session{ database };
+                db::Session session{ *database };
                 session.prepareTablesIfNeeded();
                 bool migrationPerformed{ session.migrateSchemaIfNeeded() };
                 session.createIndexesIfNeeded();
@@ -332,7 +332,7 @@ namespace lms
                 // force optimize in case scanner aborted during a large import:
                 // queries may be too slow to even be able to relaunch a scan using the web interface
                 session.fullAnalyze();
-                database.getTLSSession().refreshTracingLoggerStats();
+                database->getTLSSession().refreshTracingLoggerStats();
             }
 
             ui::LmsApplicationManager appManager;
@@ -342,7 +342,7 @@ namespace lms
             core::Service<core::IChildProcessManager> childProcessManagerService{ core::createChildProcessManager(ioContext) };
 
             const ui::AuthenticationBackend uiAuthenticationBackend{ getUIAuthenticationBackend() };
-            core::Service<auth::IAuthTokenService> authTokenService{ auth::createAuthTokenService(database, config->getULong("login-throttler-max-entriees", 10'000)) };
+            core::Service<auth::IAuthTokenService> authTokenService{ auth::createAuthTokenService(*database, config->getULong("login-throttler-max-entriees", 10'000)) };
             core::Service<auth::IPasswordService> authPasswordService;
             core::Service<auth::IEnvService> authEnvService;
 
@@ -359,32 +359,32 @@ namespace lms
             switch (uiAuthenticationBackend)
             {
             case ui::AuthenticationBackend::Internal:
-                authPasswordService.assign(auth::createPasswordService("internal", database, loginThrottlerMaxEntries));
+                authPasswordService.assign(auth::createPasswordService("internal", *database, loginThrottlerMaxEntries));
                 break;
             case ui::AuthenticationBackend::PAM:
-                authPasswordService.assign(auth::createPasswordService("PAM", database, loginThrottlerMaxEntries));
+                authPasswordService.assign(auth::createPasswordService("PAM", *database, loginThrottlerMaxEntries));
                 break;
             case ui::AuthenticationBackend::Env:
-                authEnvService.assign(auth::createEnvService("http-headers", database));
+                authEnvService.assign(auth::createEnvService("http-headers", *database));
                 break;
             }
 
             image::init(argv[0]);
-            core::Service<artwork::IArtworkService> artworkService{ artwork::createArtworkService(database, server.appRoot() + "/images/unknown-cover.svg", server.appRoot() + "/images/unknown-artist.svg") };
-            core::Service<recommendation::IRecommendationService> recommendationService{ recommendation::createRecommendationService(database) };
-            core::Service<recommendation::IPlaylistGeneratorService> playlistGeneratorService{ recommendation::createPlaylistGeneratorService(database, *recommendationService.get()) };
-            core::Service<scanner::IScannerService> scannerService{ scanner::createScannerService(database) };
-            core::Service<transcoding::ITranscodingService> transcodingService{ transcoding::createTranscodingService(database, *childProcessManagerService.get()) };
+            core::Service<artwork::IArtworkService> artworkService{ artwork::createArtworkService(*database, server.appRoot() + "/images/unknown-cover.svg", server.appRoot() + "/images/unknown-artist.svg") };
+            core::Service<recommendation::IRecommendationService> recommendationService{ recommendation::createRecommendationService(*database) };
+            core::Service<recommendation::IPlaylistGeneratorService> playlistGeneratorService{ recommendation::createPlaylistGeneratorService(*database, *recommendationService) };
+            core::Service<scanner::IScannerService> scannerService{ scanner::createScannerService(*database) };
+            core::Service<transcoding::ITranscodingService> transcodingService{ transcoding::createTranscodingService(*database, *childProcessManagerService) };
 
             scannerService->getEvents().scanComplete.connect([&] {
                 // Flush cover cache even if no changes:
                 // covers may be external files that changed and we don't keep track of them for now (but we should)
                 artworkService->flushCache();
-                database.getTLSSession().refreshTracingLoggerStats();
+                database->getTLSSession().refreshTracingLoggerStats();
             });
 
-            core::Service<feedback::IFeedbackService> feedbackService{ feedback::createFeedbackService(ioContext, database) };
-            core::Service<scrobbling::IScrobblingService> scrobblingService{ scrobbling::createScrobblingService(ioContext, database) };
+            core::Service<feedback::IFeedbackService> feedbackService{ feedback::createFeedbackService(ioContext, *database) };
+            core::Service<scrobbling::IScrobblingService> scrobblingService{ scrobbling::createScrobblingService(ioContext, *database) };
 
             LMS_LOG(MAIN, INFO, "Stopping init web server...");
             server.stop();
@@ -395,14 +395,14 @@ namespace lms
             // bind API resources
             if (config->getBool("api-subsonic", true))
             {
-                subsonicResource = api::subsonic::createSubsonicResource(database);
+                subsonicResource = api::subsonic::createSubsonicResource(*database);
                 server.addResource(subsonicResource.get(), "/rest");
             }
 
             // bind UI entry point
             server.addEntryPoint(Wt::EntryPointType::Application,
                 [&database, &appManager, uiAuthenticationBackend](const Wt::WEnvironment& env) {
-                    return ui::LmsApplication::create(env, database, appManager, uiAuthenticationBackend);
+                    return ui::LmsApplication::create(env, *database, appManager, uiAuthenticationBackend);
                 });
 
             proxyScannerEventsToApplication(*scannerService, server);

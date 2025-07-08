@@ -35,7 +35,7 @@
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
     class Session;
     class User;
 } // namespace lms::db
@@ -53,15 +53,15 @@ namespace lms::ui
     class LmsApplication : public Wt::WApplication
     {
     public:
-        LmsApplication(const Wt::WEnvironment& env, db::Db& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend);
+        LmsApplication(const Wt::WEnvironment& env, db::IDb& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend);
         ~LmsApplication();
 
-        static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env, db::Db& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend);
+        static std::unique_ptr<Wt::WApplication> create(const Wt::WEnvironment& env, db::IDb& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend);
         static LmsApplication* instance();
 
         // Session application data
         std::shared_ptr<ArtworkResource> getArtworkResource() { return _artworkResource; }
-        db::Db& getDb();
+        db::IDb& getDb();
         db::Session& getDbSession(); // always thread safe
 
         db::ObjectPtr<db::User> getUser();
@@ -105,7 +105,7 @@ namespace lms::ui
         void setUserInfo(db::UserId userId, bool strongAuth);
         void createHome();
 
-        db::Db& _db;
+        db::IDb& _db;
         Wt::Signal<> _preQuit;
         LmsApplicationManager& _appManager;
         const AuthenticationBackend _authBackend;

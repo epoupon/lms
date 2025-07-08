@@ -25,7 +25,7 @@
 #include "core/ILogger.hpp"
 #include "database/Artist.hpp"
 #include "database/ArtistInfo.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/Track.hpp"
 #include "database/TrackArtistLink.hpp"

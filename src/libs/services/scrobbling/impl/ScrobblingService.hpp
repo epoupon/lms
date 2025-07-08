@@ -32,7 +32,7 @@ namespace lms::scrobbling
     class ScrobblingService : public IScrobblingService
     {
     public:
-        ScrobblingService(boost::asio::io_context& ioContext, db::Db& db);
+        ScrobblingService(boost::asio::io_context& ioContext, db::IDb& db);
         ~ScrobblingService();
 
     private:
@@ -56,7 +56,7 @@ namespace lms::scrobbling
 
         std::optional<db::ScrobblingBackend> getUserBackend(db::UserId userId);
 
-        db::Db& _db;
+        db::IDb& _db;
         std::unordered_map<db::ScrobblingBackend, std::unique_ptr<IScrobblingBackend>> _scrobblingBackends;
     };
 
