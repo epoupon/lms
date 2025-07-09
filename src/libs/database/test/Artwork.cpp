@@ -17,10 +17,10 @@
 
 #include "Common.hpp"
 
-#include "database/Artwork.hpp"
-#include "database/Image.hpp"
-#include "database/TrackEmbeddedImage.hpp"
-#include "database/TrackEmbeddedImageLink.hpp"
+#include "database/objects/Artwork.hpp"
+#include "database/objects/Image.hpp"
+#include "database/objects/TrackEmbeddedImage.hpp"
+#include "database/objects/TrackEmbeddedImageLink.hpp"
 
 namespace lms::db::tests
 {

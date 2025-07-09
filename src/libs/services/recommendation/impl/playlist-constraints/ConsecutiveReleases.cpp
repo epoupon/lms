@@ -20,9 +20,9 @@
 #include "ConsecutiveReleases.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Release.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/Track.hpp"
 
 namespace lms::recommendation::PlaylistGeneratorConstraint
 {

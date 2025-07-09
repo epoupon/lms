@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include "database/ArtworkId.hpp"
 #include "database/Object.hpp"
-#include "database/ReleaseId.hpp"
+#include "database/objects/ArtworkId.hpp"
+#include "database/objects/ReleaseId.hpp"
 
 #include "common/Template.hpp"
 

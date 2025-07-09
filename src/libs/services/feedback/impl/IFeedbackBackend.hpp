@@ -21,9 +21,9 @@
 
 #include <memory>
 
-#include "database/StarredArtistId.hpp"
-#include "database/StarredReleaseId.hpp"
-#include "database/StarredTrackId.hpp"
+#include "database/objects/StarredArtistId.hpp"
+#include "database/objects/StarredReleaseId.hpp"
+#include "database/objects/StarredTrackId.hpp"
 
 namespace lms::feedback
 {

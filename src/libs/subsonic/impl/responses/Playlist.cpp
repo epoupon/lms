@@ -21,9 +21,9 @@
 
 #include "core/Service.hpp"
 #include "core/String.hpp"
-#include "database/Artwork.hpp"
-#include "database/TrackList.hpp"
-#include "database/User.hpp"
+#include "database/objects/Artwork.hpp"
+#include "database/objects/TrackList.hpp"
+#include "database/objects/User.hpp"
 #include "services/artwork/IArtworkService.hpp"
 
 #include "CoverArtId.hpp"

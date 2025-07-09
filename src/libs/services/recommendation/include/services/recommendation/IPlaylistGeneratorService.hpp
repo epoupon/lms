@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include "database/TrackListId.hpp"
+#include "database/objects/TrackListId.hpp"
 #include "services/recommendation/Types.hpp"
 
 namespace lms::db

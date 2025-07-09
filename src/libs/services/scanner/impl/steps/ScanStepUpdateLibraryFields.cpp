@@ -19,10 +19,10 @@
 
 #include "ScanStepUpdateLibraryFields.hpp"
 
-#include "database/Directory.hpp"
 #include "database/IDb.hpp"
-#include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
+#include "database/objects/Directory.hpp"
+#include "database/objects/MediaLibrary.hpp"
 
 #include "MediaLibraryInfo.hpp"
 #include "ScanContext.hpp"

@@ -20,7 +20,7 @@
 #pragma once
 
 #include "core/TaggedType.hpp"
-#include "database/Artist.hpp"
+#include "database/objects/Artist.hpp"
 
 namespace lms::metadata
 {

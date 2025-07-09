@@ -27,7 +27,7 @@
 
 #include "database/Object.hpp"
 #include "database/Types.hpp"
-#include "database/UserId.hpp"
+#include "database/objects/UserId.hpp"
 #include "services/scanner/ScannerEvents.hpp"
 
 #include "Auth.hpp"

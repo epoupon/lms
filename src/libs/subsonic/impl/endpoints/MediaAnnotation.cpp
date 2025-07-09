@@ -23,12 +23,12 @@
 #include <vector>
 
 #include "core/Service.hpp"
-#include "database/ArtistId.hpp"
-#include "database/Release.hpp"
-#include "database/ReleaseId.hpp"
 #include "database/Session.hpp"
-#include "database/TrackId.hpp"
-#include "database/User.hpp"
+#include "database/objects/ArtistId.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/ReleaseId.hpp"
+#include "database/objects/TrackId.hpp"
+#include "database/objects/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 

@@ -23,8 +23,8 @@
 #include <memory>
 #include <optional>
 
-#include "database/ArtworkId.hpp"
-#include "database/TrackListId.hpp"
+#include "database/objects/ArtworkId.hpp"
+#include "database/objects/TrackListId.hpp"
 #include "image/IEncodedImage.hpp"
 
 namespace lms::db

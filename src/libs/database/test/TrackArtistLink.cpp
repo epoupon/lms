@@ -20,7 +20,7 @@
 #include "Common.hpp"
 #include "database/Types.hpp"
 
-#include "database/TrackArtistLink.hpp"
+#include "database/objects/TrackArtistLink.hpp"
 
 namespace lms::db::tests
 {

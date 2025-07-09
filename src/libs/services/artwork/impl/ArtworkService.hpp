@@ -22,8 +22,8 @@
 #include <filesystem>
 #include <vector>
 
-#include "database/ImageId.hpp"
-#include "database/TrackEmbeddedImageId.hpp"
+#include "database/objects/ImageId.hpp"
+#include "database/objects/TrackEmbeddedImageId.hpp"
 #include "services/artwork/IArtworkService.hpp"
 
 #include "ImageCache.hpp"

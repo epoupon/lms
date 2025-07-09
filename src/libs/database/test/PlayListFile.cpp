@@ -19,8 +19,8 @@
 
 #include "Common.hpp"
 
-#include "database/PlayListFile.hpp"
-#include "database/TrackList.hpp"
+#include "database/objects/PlayListFile.hpp"
+#include "database/objects/TrackList.hpp"
 
 namespace lms::db::tests
 {

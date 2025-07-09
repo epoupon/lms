@@ -22,8 +22,8 @@
 #include <vector>
 
 #include "database/IDb.hpp"
-#include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
+#include "database/objects/ScanSettings.hpp"
 
 #include "ClustersEngineCreator.hpp"
 #include "FeaturesEngineCreator.hpp"

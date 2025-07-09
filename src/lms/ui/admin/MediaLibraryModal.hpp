@@ -22,7 +22,7 @@
 #include <Wt/WSignal.h>
 #include <Wt/WTemplateFormView.h>
 
-#include "database/MediaLibraryId.hpp"
+#include "database/objects/MediaLibraryId.hpp"
 
 namespace lms::ui
 {

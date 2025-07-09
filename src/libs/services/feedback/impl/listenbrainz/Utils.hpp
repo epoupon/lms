@@ -21,7 +21,7 @@
 
 #include "core/ILogger.hpp"
 #include "core/UUID.hpp"
-#include "database/UserId.hpp"
+#include "database/objects/UserId.hpp"
 
 #define LOG(sev, message) LMS_LOG(FEEDBACK, sev, "[listenbrainz] " << message)
 

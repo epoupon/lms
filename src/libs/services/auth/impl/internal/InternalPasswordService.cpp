@@ -24,7 +24,7 @@
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "database/Session.hpp"
-#include "database/User.hpp"
+#include "database/objects/User.hpp"
 #include "services/auth/Types.hpp"
 
 namespace lms::auth

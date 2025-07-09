@@ -26,8 +26,8 @@
 #include <boost/asio/io_context_strand.hpp>
 #include <boost/asio/steady_timer.hpp>
 
-#include "database/StarredTrackId.hpp"
-#include "database/UserId.hpp"
+#include "database/objects/StarredTrackId.hpp"
+#include "database/objects/UserId.hpp"
 
 #include "FeedbackTypes.hpp"
 

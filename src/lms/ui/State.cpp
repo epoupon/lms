@@ -20,8 +20,8 @@
 #include "State.hpp"
 
 #include "database/Session.hpp"
-#include "database/UIState.hpp"
-#include "database/User.hpp"
+#include "database/objects/UIState.hpp"
+#include "database/objects/User.hpp"
 
 #include "LmsApplication.hpp"
 

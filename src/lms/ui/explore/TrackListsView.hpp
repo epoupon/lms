@@ -24,7 +24,7 @@
 #include <Wt/WTemplate.h>
 
 #include "database/Object.hpp"
-#include "database/TrackListId.hpp"
+#include "database/objects/TrackListId.hpp"
 
 #include "common/Template.hpp"
 

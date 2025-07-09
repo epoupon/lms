@@ -22,8 +22,8 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
-#include "database/Release.hpp"
 #include "database/Session.hpp"
+#include "database/objects/Release.hpp"
 
 #include "LmsApplication.hpp"
 #include "SortModeSelector.hpp"

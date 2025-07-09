@@ -20,14 +20,14 @@
 #include "ScanStepRemoveOrphanedDbEntries.hpp"
 
 #include "core/ILogger.hpp"
-#include "database/Artist.hpp"
-#include "database/Cluster.hpp"
-#include "database/Directory.hpp"
 #include "database/IDb.hpp"
-#include "database/Release.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackEmbeddedImage.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/Cluster.hpp"
+#include "database/objects/Directory.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackEmbeddedImage.hpp"
 
 #include "ScanContext.hpp"
 

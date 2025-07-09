@@ -25,7 +25,7 @@
 
 #include <Wt/WDateTime.h>
 
-#include "database/ScanSettings.hpp"
+#include "database/objects/ScanSettings.hpp"
 
 #include "MediaLibraryInfo.hpp"
 

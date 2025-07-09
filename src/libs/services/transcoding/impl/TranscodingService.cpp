@@ -23,7 +23,7 @@
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "database/objects/Track.hpp"
 
 #include "TranscodingResourceHandler.hpp"
 

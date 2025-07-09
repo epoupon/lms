@@ -23,7 +23,7 @@
 #include <Wt/WSignal.h>
 #include <Wt/WTemplate.h>
 
-#include "database/Filters.hpp"
+#include "database/objects/Filters.hpp"
 
 namespace lms::ui
 {

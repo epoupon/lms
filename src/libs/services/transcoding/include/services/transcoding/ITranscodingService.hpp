@@ -23,7 +23,7 @@
 #include <memory>
 #include <optional>
 
-#include "database/TrackId.hpp"
+#include "database/objects/TrackId.hpp"
 
 namespace lms
 {

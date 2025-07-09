@@ -20,9 +20,9 @@
 #include "ReleaseCollector.hpp"
 
 #include "core/Service.hpp"
-#include "database/Release.hpp"
 #include "database/Session.hpp"
-#include "database/User.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 

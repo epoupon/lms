@@ -25,7 +25,7 @@
 #include <Wt/WDateTime.h>
 #include <boost/asio/ip/address.hpp>
 
-#include "database/UserId.hpp"
+#include "database/objects/UserId.hpp"
 #include "services/auth/Types.hpp"
 
 namespace lms::db

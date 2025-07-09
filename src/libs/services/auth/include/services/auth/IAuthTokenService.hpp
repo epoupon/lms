@@ -28,7 +28,7 @@
 #include <boost/asio/ip/address.hpp>
 
 #include "core/LiteralString.hpp"
-#include "database/UserId.hpp"
+#include "database/objects/UserId.hpp"
 
 namespace lms::db
 {

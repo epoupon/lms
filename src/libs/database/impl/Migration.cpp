@@ -24,9 +24,9 @@
 #include "core/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
-#include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
-#include "database/User.hpp"
+#include "database/objects/ScanSettings.hpp"
+#include "database/objects/User.hpp"
 
 #include "Db.hpp"
 #include "Utils.hpp"

@@ -19,8 +19,8 @@
 
 #include "Common.hpp"
 
-#include "database/Artwork.hpp"
-#include "database/Image.hpp"
+#include "database/objects/Artwork.hpp"
+#include "database/objects/Image.hpp"
 
 namespace lms::db::tests
 {

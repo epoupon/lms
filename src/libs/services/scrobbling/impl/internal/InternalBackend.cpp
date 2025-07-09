@@ -20,10 +20,10 @@
 #include "InternalBackend.hpp"
 
 #include "database/IDb.hpp"
-#include "database/Listen.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/User.hpp"
+#include "database/objects/Listen.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/User.hpp"
 
 namespace lms::scrobbling
 {

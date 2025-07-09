@@ -19,8 +19,8 @@
 
 #include "Common.hpp"
 
-#include "database/Track.hpp"
-#include "database/TrackLyrics.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackLyrics.hpp"
 
 namespace lms::db::tests
 {

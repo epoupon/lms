@@ -19,7 +19,7 @@
 
 #include "Common.hpp"
 
-#include "database/TrackFeatures.hpp"
+#include "database/objects/TrackFeatures.hpp"
 
 namespace lms::db::tests
 {

@@ -31,9 +31,9 @@
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/StarredTrack.hpp"
-#include "database/Track.hpp"
-#include "database/User.hpp"
+#include "database/objects/StarredTrack.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/User.hpp"
 
 #include "Exception.hpp"
 #include "FeedbacksParser.hpp"

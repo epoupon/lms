@@ -19,9 +19,9 @@
 
 #include "Common.hpp"
 
-#include "database/Artist.hpp"
-#include "database/ArtistInfo.hpp"
-#include "database/Directory.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/ArtistInfo.hpp"
+#include "database/objects/Directory.hpp"
 
 namespace lms::db::tests
 {

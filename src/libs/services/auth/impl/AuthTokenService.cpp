@@ -23,9 +23,9 @@
 #include <Wt/WRandom.h>
 
 #include "core/ILogger.hpp"
-#include "database/AuthToken.hpp"
 #include "database/Session.hpp"
-#include "database/User.hpp"
+#include "database/objects/AuthToken.hpp"
+#include "database/objects/User.hpp"
 #include "services/auth/Types.hpp"
 
 namespace lms::auth

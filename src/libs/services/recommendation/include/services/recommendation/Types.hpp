@@ -2,9 +2,9 @@
 
 #include <functional>
 
-#include "database/ArtistId.hpp"
-#include "database/ReleaseId.hpp"
-#include "database/TrackId.hpp"
+#include "database/objects/ArtistId.hpp"
+#include "database/objects/ReleaseId.hpp"
+#include "database/objects/TrackId.hpp"
 
 namespace lms::recommendation
 {

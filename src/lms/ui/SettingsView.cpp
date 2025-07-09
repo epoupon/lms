@@ -34,7 +34,7 @@
 #include "core/String.hpp"
 #include "database/Session.hpp"
 #include "database/Types.hpp"
-#include "database/User.hpp"
+#include "database/objects/User.hpp"
 #include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/IPasswordService.hpp"
 

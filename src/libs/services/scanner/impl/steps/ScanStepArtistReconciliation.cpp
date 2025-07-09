@@ -23,13 +23,13 @@
 #include <ostream>
 
 #include "core/ILogger.hpp"
-#include "database/Artist.hpp"
-#include "database/ArtistInfo.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackArtistLink.hpp"
-#include "database/TrackList.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/ArtistInfo.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackArtistLink.hpp"
+#include "database/objects/TrackList.hpp"
 #include "metadata/Types.hpp"
 
 #include "ScanContext.hpp"

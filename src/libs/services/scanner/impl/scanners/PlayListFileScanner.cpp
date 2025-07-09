@@ -24,9 +24,9 @@
 
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/MediaLibrary.hpp"
-#include "database/PlayListFile.hpp"
 #include "database/Session.hpp"
+#include "database/objects/MediaLibrary.hpp"
+#include "database/objects/PlayListFile.hpp"
 #include "metadata/Exception.hpp"
 #include "metadata/PlayList.hpp"
 

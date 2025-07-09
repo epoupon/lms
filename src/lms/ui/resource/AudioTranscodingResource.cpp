@@ -28,8 +28,8 @@
 #include "core/Service.hpp"
 #include "core/String.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/User.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/User.hpp"
 #include "services/transcoding/ITranscodingService.hpp"
 
 #include "LmsApplication.hpp"

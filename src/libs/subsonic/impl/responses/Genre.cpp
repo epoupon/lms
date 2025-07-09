@@ -19,7 +19,7 @@
 
 #include "responses/Genre.hpp"
 
-#include "database/Cluster.hpp"
+#include "database/objects/Cluster.hpp"
 
 #include "RequestContext.hpp"
 

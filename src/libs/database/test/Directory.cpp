@@ -19,7 +19,7 @@
 
 #include "Common.hpp"
 
-#include "database/Directory.hpp"
+#include "database/objects/Directory.hpp"
 
 namespace lms::db::tests
 {

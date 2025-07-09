@@ -21,7 +21,7 @@
 
 #include <filesystem>
 
-#include "database/MediaLibraryId.hpp"
+#include "database/objects/MediaLibraryId.hpp"
 
 namespace lms::scanner
 {

@@ -24,8 +24,8 @@
 #include <Wt/WText.h>
 
 #include "core/EnumSet.hpp"
-#include "database/Artist.hpp"
-#include "database/Release.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/Release.hpp"
 
 #include "Utils.hpp"
 

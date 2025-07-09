@@ -19,9 +19,9 @@
 
 #include "Common.hpp"
 
-#include "database/Release.hpp"
 #include "database/Session.hpp"
 #include "database/Types.hpp"
+#include "database/objects/Release.hpp"
 
 namespace lms::db::tests
 {

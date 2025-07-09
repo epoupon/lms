@@ -19,7 +19,7 @@
 
 #include "responses/Lyrics.hpp"
 
-#include "database/TrackLyrics.hpp"
+#include "database/objects/TrackLyrics.hpp"
 
 #include "RequestContext.hpp"
 

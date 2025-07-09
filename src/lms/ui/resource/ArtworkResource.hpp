@@ -23,7 +23,7 @@
 
 #include <Wt/WResource.h>
 
-#include "database/ArtworkId.hpp"
+#include "database/objects/ArtworkId.hpp"
 
 namespace lms::ui
 {

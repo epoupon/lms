@@ -21,10 +21,10 @@
 
 #include <map>
 
-#include "database/ArtistId.hpp"
-#include "database/ArtworkId.hpp"
 #include "database/Object.hpp"
-#include "database/ReleaseId.hpp"
+#include "database/objects/ArtistId.hpp"
+#include "database/objects/ArtworkId.hpp"
+#include "database/objects/ReleaseId.hpp"
 
 #include "ReleaseTypes.hpp"
 #include "common/Template.hpp"

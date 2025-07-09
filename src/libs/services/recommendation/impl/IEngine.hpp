@@ -22,8 +22,8 @@
 #include <memory>
 
 #include "core/EnumSet.hpp"
-#include "database/TrackListId.hpp"
 #include "database/Types.hpp"
+#include "database/objects/TrackListId.hpp"
 #include "services/recommendation/Types.hpp"
 
 namespace lms::db

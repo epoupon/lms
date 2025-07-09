@@ -22,11 +22,11 @@
 #include <deque>
 
 #include "core/ILogger.hpp"
-#include "database/Directory.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackLyrics.hpp"
+#include "database/objects/Directory.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackLyrics.hpp"
 
 #include "ScanContext.hpp"
 

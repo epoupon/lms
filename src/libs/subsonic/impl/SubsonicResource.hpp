@@ -25,7 +25,7 @@
 #include <Wt/Http/Response.h>
 #include <Wt/WResource.h>
 
-#include "database/UserId.hpp"
+#include "database/objects/UserId.hpp"
 
 #include "RequestContext.hpp"
 

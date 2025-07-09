@@ -27,13 +27,13 @@
 #include "core/Service.hpp"
 #include "core/StreamLogger.hpp"
 #include "core/SystemPaths.hpp"
-#include "database/Artist.hpp"
-#include "database/Cluster.hpp"
 #include "database/IDb.hpp"
-#include "database/Release.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
 #include "database/Types.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/Cluster.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/Track.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 
 namespace lms

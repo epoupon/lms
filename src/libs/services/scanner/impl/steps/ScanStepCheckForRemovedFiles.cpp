@@ -23,13 +23,13 @@
 
 #include "core/ILogger.hpp"
 #include "core/Path.hpp"
-#include "database/ArtistInfo.hpp"
 #include "database/IDb.hpp"
-#include "database/Image.hpp"
-#include "database/PlayListFile.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackLyrics.hpp"
+#include "database/objects/ArtistInfo.hpp"
+#include "database/objects/Image.hpp"
+#include "database/objects/PlayListFile.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackLyrics.hpp"
 
 #include "ScanContext.hpp"
 #include "ScannerSettings.hpp"

@@ -20,7 +20,7 @@
 
 #include <Wt/WAnchor.h>
 
-#include "database/Artist.hpp"
+#include "database/objects/Artist.hpp"
 
 #include "Utils.hpp"
 

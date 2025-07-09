@@ -19,11 +19,11 @@
 
 #include "Bookmarks.hpp"
 
-#include "database/PlayQueue.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackBookmark.hpp"
-#include "database/User.hpp"
+#include "database/objects/PlayQueue.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackBookmark.hpp"
+#include "database/objects/User.hpp"
 
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"

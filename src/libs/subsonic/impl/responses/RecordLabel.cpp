@@ -19,7 +19,7 @@
 
 #include "responses/RecordLabel.hpp"
 
-#include "database/Release.hpp"
+#include "database/objects/Release.hpp"
 
 namespace lms::api::subsonic
 {

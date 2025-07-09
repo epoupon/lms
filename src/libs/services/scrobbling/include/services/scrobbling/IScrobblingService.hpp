@@ -26,11 +26,11 @@
 #include <Wt/WDateTime.h>
 #include <boost/asio/io_context.hpp>
 
-#include "database/ArtistId.hpp"
-#include "database/Filters.hpp"
-#include "database/ReleaseId.hpp"
-#include "database/TrackId.hpp"
 #include "database/Types.hpp"
+#include "database/objects/ArtistId.hpp"
+#include "database/objects/Filters.hpp"
+#include "database/objects/ReleaseId.hpp"
+#include "database/objects/TrackId.hpp"
 #include "services/scrobbling/Listen.hpp"
 
 namespace lms::db

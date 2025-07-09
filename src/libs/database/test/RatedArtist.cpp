@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/RatedArtist.hpp"
+#include "database/objects/RatedArtist.hpp"
 
 #include "Common.hpp"
 

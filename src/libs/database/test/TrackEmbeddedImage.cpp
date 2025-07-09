@@ -19,10 +19,10 @@
 
 #include <limits>
 
-#include "database/TrackEmbeddedImage.hpp"
-#include "database/TrackEmbeddedImageLink.hpp"
-#include "database/TrackList.hpp"
 #include "database/Types.hpp"
+#include "database/objects/TrackEmbeddedImage.hpp"
+#include "database/objects/TrackEmbeddedImageLink.hpp"
+#include "database/objects/TrackList.hpp"
 
 #include "Common.hpp"
 

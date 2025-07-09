@@ -19,7 +19,7 @@
 
 #include "Common.hpp"
 
-#include "database/AuthToken.hpp"
+#include "database/objects/AuthToken.hpp"
 
 namespace lms::db::tests
 {

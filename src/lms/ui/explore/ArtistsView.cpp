@@ -22,9 +22,9 @@
 #include <Wt/WLineEdit.h>
 #include <Wt/WPushButton.h>
 
-#include "database/Artist.hpp"
 #include "database/Session.hpp"
-#include "database/TrackArtistLink.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/TrackArtistLink.hpp"
 
 #include "ArtistListHelpers.hpp"
 #include "Filters.hpp"

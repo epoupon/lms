@@ -23,7 +23,7 @@
 #include <Wt/WPushButton.h>
 
 #include "database/Session.hpp"
-#include "database/TrackList.hpp"
+#include "database/objects/TrackList.hpp"
 
 #include "DropDownMenuSelector.hpp"
 #include "Filters.hpp"

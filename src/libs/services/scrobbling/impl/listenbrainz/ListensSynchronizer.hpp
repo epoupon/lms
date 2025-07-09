@@ -27,7 +27,7 @@
 #include <boost/asio/steady_timer.hpp>
 
 #include "database/Types.hpp"
-#include "database/UserId.hpp"
+#include "database/objects/UserId.hpp"
 
 #include "services/scrobbling/Listen.hpp"
 

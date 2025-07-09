@@ -27,9 +27,9 @@
 #include "core/IJobScheduler.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
-#include "database/MediaLibrary.hpp"
-#include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
+#include "database/objects/MediaLibrary.hpp"
+#include "database/objects/ScanSettings.hpp"
 
 #include "scanners/ArtistInfoFileScanner.hpp"
 #include "scanners/AudioFileScanner.hpp"

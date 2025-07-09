@@ -21,9 +21,9 @@
 
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/StarredArtist.hpp"
-#include "database/StarredRelease.hpp"
-#include "database/StarredTrack.hpp"
+#include "database/objects/StarredArtist.hpp"
+#include "database/objects/StarredRelease.hpp"
+#include "database/objects/StarredTrack.hpp"
 
 namespace lms::feedback
 {

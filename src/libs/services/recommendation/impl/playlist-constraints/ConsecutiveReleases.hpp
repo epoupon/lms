@@ -21,7 +21,7 @@
 
 #include "IConstraint.hpp"
 
-#include "database/ReleaseId.hpp"
+#include "database/objects/ReleaseId.hpp"
 
 namespace lms::db
 {

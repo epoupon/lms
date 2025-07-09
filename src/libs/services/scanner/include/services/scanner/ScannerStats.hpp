@@ -24,7 +24,7 @@
 #include <memory>
 #include <vector>
 
-#include "database/TrackId.hpp"
+#include "database/objects/TrackId.hpp"
 
 #include "ScanErrors.hpp"
 

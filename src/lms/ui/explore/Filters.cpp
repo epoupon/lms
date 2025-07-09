@@ -26,12 +26,12 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
-#include "database/Cluster.hpp"
-#include "database/LabelId.hpp"
-#include "database/MediaLibrary.hpp"
-#include "database/Release.hpp"
-#include "database/ReleaseTypeId.hpp"
 #include "database/Session.hpp"
+#include "database/objects/Cluster.hpp"
+#include "database/objects/LabelId.hpp"
+#include "database/objects/MediaLibrary.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/ReleaseTypeId.hpp"
 
 #include "LmsApplication.hpp"
 #include "ModalManager.hpp"

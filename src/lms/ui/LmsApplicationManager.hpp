@@ -25,7 +25,7 @@
 
 #include <Wt/WSignal.h>
 
-#include "database/UserId.hpp"
+#include "database/objects/UserId.hpp"
 
 namespace lms::ui
 {

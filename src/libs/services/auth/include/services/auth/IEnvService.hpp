@@ -22,7 +22,7 @@
 #include <memory>
 #include <string_view>
 
-#include "database/UserId.hpp"
+#include "database/objects/UserId.hpp"
 
 namespace lms::db
 {

@@ -19,8 +19,8 @@
 
 #include "responses/User.hpp"
 
-#include "database/MediaLibrary.hpp"
-#include "database/User.hpp"
+#include "database/objects/MediaLibrary.hpp"
+#include "database/objects/User.hpp"
 
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"

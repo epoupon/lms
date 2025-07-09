@@ -22,11 +22,12 @@
 #include <optional>
 
 #include "core/ILogger.hpp"
-#include "database/Artwork.hpp"
+
 #include "database/IDb.hpp"
-#include "database/Image.hpp"
-#include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
+#include "database/objects/Artwork.hpp"
+#include "database/objects/Image.hpp"
+#include "database/objects/MediaLibrary.hpp"
 #include "image/Exception.hpp"
 #include "image/Image.hpp"
 #include "services/scanner/ScanErrors.hpp"

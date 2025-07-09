@@ -22,9 +22,9 @@
 #include <system_error>
 
 #include "core/Path.hpp"
-#include "database/Directory.hpp"
-#include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
+#include "database/objects/Directory.hpp"
+#include "database/objects/MediaLibrary.hpp"
 
 namespace lms::scanner::utils
 {

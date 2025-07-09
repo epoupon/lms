@@ -22,9 +22,9 @@
 #include "core/IConfig.hpp"
 #include "core/Service.hpp"
 #include "database/IDb.hpp"
-#include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "database/objects/MediaLibrary.hpp"
+#include "database/objects/Track.hpp"
 #include "metadata/IAudioFileParser.hpp"
 
 #include "AudioFileScanOperation.hpp"

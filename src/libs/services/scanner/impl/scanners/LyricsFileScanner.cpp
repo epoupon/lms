@@ -26,9 +26,9 @@
 #include "ScannerSettings.hpp"
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
-#include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
-#include "database/TrackLyrics.hpp"
+#include "database/objects/MediaLibrary.hpp"
+#include "database/objects/TrackLyrics.hpp"
 #include "metadata/Lyrics.hpp"
 #include "services/scanner/ScanErrors.hpp"
 

@@ -19,8 +19,8 @@
 
 #include "Common.hpp"
 
-#include "database/Directory.hpp"
-#include "database/Image.hpp"
+#include "database/objects/Directory.hpp"
+#include "database/objects/Image.hpp"
 
 namespace lms::db::tests
 {

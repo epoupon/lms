@@ -23,11 +23,11 @@
 #include <Wt/WDateTime.h>
 
 #include "core/ILogger.hpp"
-#include "database/Artist.hpp"
-#include "database/Release.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackList.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackList.hpp"
 
 #include "LmsApplication.hpp"
 

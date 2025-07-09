@@ -22,11 +22,11 @@
 #include <Wt/WPushButton.h>
 
 #include "core/String.hpp"
-#include "database/Cluster.hpp"
-#include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackList.hpp"
+#include "database/objects/Cluster.hpp"
+#include "database/objects/ScanSettings.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackList.hpp"
 
 #include "LmsApplication.hpp"
 #include "LmsApplicationException.hpp"

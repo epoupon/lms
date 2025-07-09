@@ -28,11 +28,11 @@
 #include <Wt/WInteractWidget.h>
 #include <Wt/WString.h>
 
-#include "database/ArtistId.hpp"
-#include "database/ClusterId.hpp"
 #include "database/Object.hpp"
-#include "database/ReleaseId.hpp"
-#include "database/TrackId.hpp"
+#include "database/objects/ArtistId.hpp"
+#include "database/objects/ClusterId.hpp"
+#include "database/objects/ReleaseId.hpp"
+#include "database/objects/TrackId.hpp"
 
 #include "database/Types.hpp"
 #include "resource/ArtworkResource.hpp"
