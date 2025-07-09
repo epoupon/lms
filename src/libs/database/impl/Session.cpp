@@ -48,12 +48,12 @@
 #include "database/TrackFeatures.hpp"
 #include "database/TrackList.hpp"
 #include "database/TrackLyrics.hpp"
-#include "database/TransactionChecker.hpp"
 #include "database/UIState.hpp"
 #include "database/User.hpp"
 
 #include "Db.hpp"
 #include "Migration.hpp"
+#include "TransactionChecker.hpp"
 #include "Utils.hpp"
 #include "traits/EnumSetTraits.hpp"
 #include "traits/ImageHashTypeTraits.hpp"
@@ -62,40 +62,6 @@
 
 namespace lms::db
 {
-    WriteTransaction::WriteTransaction(core::RecursiveSharedMutex& mutex, Wt::Dbo::Session& session)
-        : _lock{ mutex }
-        , _transaction{ session }
-    {
-#if LMS_CHECK_TRANSACTION_ACCESSES
-        TransactionChecker::pushWriteTransaction(_transaction.session());
-#endif
-    }
-
-    WriteTransaction::~WriteTransaction()
-    {
-#if LMS_CHECK_TRANSACTION_ACCESSES
-        TransactionChecker::popWriteTransaction(_transaction.session());
-#endif
-
-        core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "Commit" };
-        _transaction.commit();
-    }
-
-    ReadTransaction::ReadTransaction(Wt::Dbo::Session& session)
-        : _transaction{ session }
-    {
-#if LMS_CHECK_TRANSACTION_ACCESSES
-        TransactionChecker::pushReadTransaction(_transaction.session());
-#endif
-    }
-
-    ReadTransaction::~ReadTransaction()
-    {
-#if LMS_CHECK_TRANSACTION_ACCESSES
-        TransactionChecker::popReadTransaction(_transaction.session());
-#endif
-    }
-
     Session::Session(IDb& db)
         : _db{ db }
     {
@@ -146,6 +112,19 @@ namespace lms::db
     ReadTransaction Session::createReadTransaction()
     {
         return ReadTransaction{ _session };
+    }
+
+    void Session::checkWriteTransaction() const
+    {
+#if LMS_CHECK_TRANSACTION_ACCESSES
+        TransactionChecker::checkWriteTransaction(_session);
+#endif
+    }
+    void Session::checkReadTransaction() const
+    {
+#if LMS_CHECK_TRANSACTION_ACCESSES
+        TransactionChecker::checkReadTransaction(_session);
+#endif
     }
 
     void Session::execute(std::string_view statement)

@@ -11,6 +11,7 @@ add_library(lmsdatabase STATIC
 	impl/Listen.cpp
 	impl/MediaLibrary.cpp
 	impl/Migration.cpp
+	impl/Object.cpp
 	impl/PlayListFile.cpp
 	impl/PlayQueue.cpp
 	impl/TrackArtistLink.cpp
@@ -31,6 +32,7 @@ add_library(lmsdatabase STATIC
 	impl/TrackEmbeddedImage.cpp
 	impl/TrackEmbeddedImageLink.cpp
 	impl/TrackLyrics.cpp
+	impl/Transaction.cpp
 	impl/Types.cpp
 	impl/UIState.cpp
 	impl/User.cpp

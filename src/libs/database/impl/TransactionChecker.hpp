@@ -26,8 +26,11 @@
 #endif
 
 #if LMS_CHECK_TRANSACTION_ACCESSES
-    #include <Wt/Dbo/Session.h>
-    #include <vector>
+
+namespace Wt::Dbo
+{
+    class Session;
+}
 
 namespace lms::db
 {
@@ -42,20 +45,20 @@ namespace lms::db
             Write,
         };
 
-        static void pushWriteTransaction(Wt::Dbo::Session& session);
-        static void pushReadTransaction(Wt::Dbo::Session& session);
+        static void pushWriteTransaction(const Wt::Dbo::Session& session);
+        static void pushReadTransaction(const Wt::Dbo::Session& session);
 
-        static void popWriteTransaction(Wt::Dbo::Session& session);
-        static void popReadTransaction(Wt::Dbo::Session& session);
+        static void popWriteTransaction(const Wt::Dbo::Session& session);
+        static void popReadTransaction(const Wt::Dbo::Session& session);
 
-        static void checkWriteTransaction(Wt::Dbo::Session& session);
-        static void checkWriteTransaction(Session& session);
-        static void checkReadTransaction(Wt::Dbo::Session& session);
-        static void checkReadTransaction(Session& session);
+        static void checkWriteTransaction(const Wt::Dbo::Session& session);
+        static void checkWriteTransaction(const Session& session);
+        static void checkReadTransaction(const Wt::Dbo::Session& session);
+        static void checkReadTransaction(const Session& session);
 
     private:
-        static void pushTransaction(TransactionType type, Wt::Dbo::Session& session);
-        static void popTransaction(TransactionType type, Wt::Dbo::Session& session);
+        static void pushTransaction(TransactionType type, const Wt::Dbo::Session& session);
+        static void popTransaction(TransactionType type, const Wt::Dbo::Session& session);
     };
 } // namespace lms::db
 
