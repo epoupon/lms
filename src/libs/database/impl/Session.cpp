@@ -360,7 +360,7 @@ namespace lms::db
         // We manually take a lock here since vacuum cannot be inside a transaction
         {
             std::unique_lock lock{ static_cast<Db&>(_db).getMutex() };
-            _db.executeSql("VACUUM");
+            static_cast<Db&>(_db).executeSql("VACUUM");
         }
 
         LMS_LOG(DB, INFO, "Vacuum complete!");

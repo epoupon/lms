@@ -67,7 +67,7 @@ namespace lms::db::Migration
     class ScopedNoForeignKeys
     {
     public:
-        ScopedNoForeignKeys(IDb& db)
+        ScopedNoForeignKeys(Db& db)
             : _db{ db }
         {
             _db.executeSql("PRAGMA foreign_keys=OFF");
@@ -83,7 +83,7 @@ namespace lms::db::Migration
         ScopedNoForeignKeys& operator=(const ScopedNoForeignKeys&) = delete;
         ScopedNoForeignKeys& operator=(ScopedNoForeignKeys&&) = delete;
 
-        IDb& _db;
+        Db& _db;
     };
 
     namespace
@@ -1422,7 +1422,7 @@ WHERE art.image_id IS NULL)");
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
 
-        ScopedNoForeignKeys noPragmaKeys{ session.getDb() };
+        ScopedNoForeignKeys noPragmaKeys{ static_cast<Db&>(session.getDb()) };
 
         using MigrationFunction = std::function<void(Session&)>;
 

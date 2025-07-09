@@ -31,8 +31,6 @@ namespace lms::db
         virtual ~IDb() = default;
 
         virtual Session& getTLSSession() = 0;
-
-        virtual void executeSql(const std::string& sql) = 0; // TODO make this private
     };
 
     std::unique_ptr<IDb> createDb(const std::filesystem::path& dbPath, std::size_t connectionCount = 10);

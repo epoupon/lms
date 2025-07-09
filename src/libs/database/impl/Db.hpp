@@ -20,6 +20,7 @@
 #pragma once
 
 #include <mutex>
+#include <string>
 #include <vector>
 
 #include <Wt/Dbo/SqlConnectionPool.h>
@@ -37,7 +38,7 @@ namespace lms::db
 
         Session& getTLSSession() override;
 
-        void executeSql(const std::string& sql) override;
+        void executeSql(const std::string& sql);
 
     private:
         Db(const Db&) = delete;
