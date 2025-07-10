@@ -23,9 +23,9 @@
 
 namespace lms::ui
 {
-    class TracingView : public Wt::WTemplate
+    class Database : public Wt::WTemplate
     {
     public:
-        TracingView();
+        Database();
     };
 } // namespace lms::ui

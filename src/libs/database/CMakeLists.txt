@@ -32,6 +32,7 @@ add_library(lmsdatabase STATIC
 	impl/IdType.cpp
 	impl/Migration.cpp
 	impl/Object.cpp
+	impl/QueryPlanRecorder.cpp
 	impl/Session.cpp
 	impl/SqlQuery.cpp
 	impl/Transaction.cpp

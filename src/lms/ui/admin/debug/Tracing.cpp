@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "TracingView.hpp"
+#include "Tracing.hpp"
 
 #include <Wt/Http/Response.h>
 #include <Wt/Utils.h>
@@ -73,12 +73,12 @@ namespace lms::ui
         };
     } // namespace
 
-    TracingView::TracingView()
-        : Wt::WTemplate{ Wt::WString::tr("Lms.Admin.Tracing.template") }
+    Tracing::Tracing()
+        : Wt::WTemplate{ Wt::WString::tr("Lms.Admin.DebugTools.Tracing.template") }
     {
         addFunction("tr", &Wt::WTemplate::Functions::tr);
 
-        Wt::WPushButton* dumpBtn{ bindNew<Wt::WPushButton>("export-btn", Wt::WString::tr("Lms.Admin.Tracing.export-current-buffer")) };
+        Wt::WPushButton* dumpBtn{ bindNew<Wt::WPushButton>("export-btn", Wt::WString::tr("Lms.Admin.DebugTools.Tracing.export-current-buffer")) };
 
         if (auto traceLogger{ core::Service<core::tracing::ITraceLogger>::get() })
         {
@@ -89,4 +89,5 @@ namespace lms::ui
         else
             dumpBtn->setEnabled(false);
     }
+
 } // namespace lms::ui

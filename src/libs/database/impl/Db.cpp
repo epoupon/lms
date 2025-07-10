@@ -206,7 +206,7 @@ namespace lms::db
         LMS_LOG(DB, INFO, "Performing quick database check...");
 
         // Quick check is just a simple integrity check
-        bool quickCheckPassed{ checkDbIntegrity(*connection, IntegrityCheckType::Quick, [&](std::string_view error) {
+        const bool quickCheckPassed{ checkDbIntegrity(*connection, IntegrityCheckType::Quick, [&](std::string_view error) {
             LMS_LOG(DB, ERROR, "Quick check error: " << error);
         }) };
 
@@ -222,7 +222,7 @@ namespace lms::db
 
         LMS_LOG(DB, INFO, "Checking database integrity...");
 
-        bool integrityCheckPassed{ checkDbIntegrity(*connection, IntegrityCheckType::Full, [&](std::string_view error) {
+        const bool integrityCheckPassed{ checkDbIntegrity(*connection, IntegrityCheckType::Full, [&](std::string_view error) {
             LMS_LOG(DB, ERROR, "Integrity check error: " << error);
         }) };
 
@@ -238,7 +238,7 @@ namespace lms::db
 
         LMS_LOG(DB, INFO, "Checking foreign key constraints...");
 
-        bool foreignKeyConstraintsPassed{ checkDbForeignKeyConstraints(*connection, [&](std::string_view table, long long rowId, std::string_view referredTable) {
+        const bool foreignKeyConstraintsPassed{ checkDbForeignKeyConstraints(*connection, [&](std::string_view table, long long rowId, std::string_view referredTable) {
             LMS_LOG(DB, ERROR, "Foreign key constraint failed in table '" << table << "', rowid = " << rowId << ", referred table = '" << referredTable << "'");
         }) };
 

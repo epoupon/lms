@@ -30,6 +30,7 @@
 #include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"
 #include "database/IDb.hpp"
+#include "database/IQueryPlanRecorder.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
@@ -51,11 +52,11 @@
 #include "NotificationContainer.hpp"
 #include "PlayQueue.hpp"
 #include "SettingsView.hpp"
+#include "admin/DebugToolsView.hpp"
 #include "admin/InitWizardView.hpp"
 #include "admin/MediaLibrariesView.hpp"
 #include "admin/ScanSettingsView.hpp"
 #include "admin/ScannerController.hpp"
-#include "admin/TracingView.hpp"
 #include "admin/UserView.hpp"
 #include "admin/UsersView.hpp"
 #include "common/Template.hpp"
@@ -75,6 +76,8 @@ namespace lms::ui
             const std::string appRoot{ Wt::WApplication::appRoot() };
 
             auto res{ std::make_shared<Wt::WMessageResourceBundle>() };
+            res->use(appRoot + "admin-db");
+            res->use(appRoot + "admin-debugtools");
             res->use(appRoot + "admin-initwizard");
             res->use(appRoot + "admin-medialibraries");
             res->use(appRoot + "admin-medialibrary");
@@ -132,7 +135,7 @@ namespace lms::ui
             IdxAdminScanner,
             IdxAdminUsers,
             IdxAdminUser,
-            IdxAdminTracing,
+            IdxAdminDebugTools,
         };
 
         void handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
@@ -158,7 +161,7 @@ namespace lms::ui
                 { "/admin/scanner", IdxAdminScanner, true, Wt::WString::tr("Lms.Admin.ScannerController.scanner") },
                 { "/admin/users", IdxAdminUsers, true, Wt::WString::tr("Lms.Admin.Users.users") },
                 { "/admin/user", IdxAdminUser, true, std::nullopt },
-                { "/admin/tracing", IdxAdminTracing, true, Wt::WString::tr("Lms.Admin.Tracing.tracing") },
+                { "/admin/debug-tools", IdxAdminDebugTools, true, Wt::WString::tr("Lms.Admin.DebugTools.debug-tools") },
             };
 
             LMS_LOG(UI, DEBUG, "Internal path changed to '" << wApp->internalPath() << "'");
@@ -461,11 +464,13 @@ namespace lms::ui
             navbar->bindNew<Wt::WAnchor>("scan-settings", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/scan-settings" }, Wt::WString::tr("Lms.Admin.menu-scan-settings"));
             navbar->bindNew<Wt::WAnchor>("scanner", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/scanner" }, Wt::WString::tr("Lms.Admin.menu-scanner"));
             navbar->bindNew<Wt::WAnchor>("users", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/users" }, Wt::WString::tr("Lms.Admin.menu-users"));
-            // Hide the entry if the trace logger is not enabled
-            if (core::Service<core::tracing::ITraceLogger>::get())
-                navbar->bindNew<Wt::WAnchor>("tracing", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/tracing" }, Wt::WString::tr("Lms.Admin.menu-tracing"));
-            else
-                navbar->bindEmpty("tracing");
+            // Hide the entry if no debug service is enabled
+            if (core::Service<core::tracing::ITraceLogger>::get()
+                || core::Service<db::IQueryPlanRecorder>::get())
+            {
+                navbar->setCondition("if-debug-tools", true);
+                navbar->bindNew<Wt::WAnchor>("debug-tools", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/debug-tools" }, Wt::WString::tr("Lms.Admin.menu-debug-tools"));
+            }
         }
 
         // Contents
@@ -486,7 +491,7 @@ namespace lms::ui
             mainStack->addNew<ScannerController>();
             mainStack->addNew<UsersView>();
             mainStack->addNew<UserView>();
-            mainStack->addNew<TracingView>();
+            mainStack->addNew<DebugToolsView>();
         }
 
         explore->getPlayQueueController().setMaxTrackCountToEnqueue(_playQueue->getCapacity());

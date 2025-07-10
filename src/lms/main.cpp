@@ -33,6 +33,7 @@
 #include "core/SystemPaths.hpp"
 #include "core/WtLogger.hpp"
 #include "database/IDb.hpp"
+#include "database/IQueryPlanRecorder.hpp"
 #include "database/Session.hpp"
 #include "image/Image.hpp"
 #include "services/artwork/IArtworkService.hpp"
@@ -314,6 +315,10 @@ namespace lms
             server.start();
 
             core::IOContextRunner ioContextRunner{ ioContext, getThreadCount(), "Misc" };
+
+            core::Service<db::IQueryPlanRecorder> queryPlanRecorder;
+            if (config->getBool("db-record-query-plans", false))
+                queryPlanRecorder.assign(db::createQueryPlanRecorder());
 
             // Connection pool size must be twice the number of threads: we have at least 2 io pools with getThreadCount() each and they all may access the database
             auto database{ db::createDb(config->getPath("working-dir", "/var/lms") / "lms.db", getThreadCount() * 2) };

@@ -18,6 +18,7 @@
  */
 
 #include "database/objects/Artwork.hpp"
+
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "database/Session.hpp"

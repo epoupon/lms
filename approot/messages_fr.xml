@@ -52,10 +52,10 @@
 <message id="Lms.Error.user-not-found">L'utilisateur n'existe pas</message>
 
 <!--Administration-->
+<message id="Lms.Admin.menu-debug-tools"><i class="fa fa-fw fa-bug" aria-hidden="true"></i> Outils de débogage</message>
 <message id="Lms.Admin.menu-media-libraries"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Bibliothèques</message>
 <message id="Lms.Admin.menu-scan-settings"><i class="fa fa-fw fa-cogs" aria-hidden="true"></i> Paramètres du scan</message>
 <message id="Lms.Admin.menu-scanner"><i class="fa fa-fw fa-wrench" aria-hidden="true"></i> Scanner</message>
-<message id="Lms.Admin.menu-tracing"><i class="fa fa-fw fa-bar-chart" aria-hidden="true"></i> Traces</message>
 <message id="Lms.Admin.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Utilisateurs</message>
 
 <!--MediaLibraries-->
@@ -148,9 +148,16 @@
 <message id="Lms.Admin.ScannerController.step-status">Statut de l'étape</message>
 <message id="Lms.Admin.ScannerController.step-updating-library-fields">Mise à jour des champs des bibliothèques: {1} entrées</message>
 
+<!--Debug Tools-->
+<message id="Lms.Admin.DebugTools.debug-tools">Outils de débogage</message>
+
+<!--Db-->
+<message id="Lms.Admin.DebugTools.Db.export-query-plans">Exporter les plans de requête</message>
+<message id="Lms.Admin.DebugTools.Db.db">Base de données</message>
+
 <!--Tracing-->
-<message id="Lms.Admin.Tracing.export-current-buffer">Exporter les traces</message>
-<message id="Lms.Admin.Tracing.tracing">Traces</message>
+<message id="Lms.Admin.DebugTools.Tracing.export-current-buffer">Exporter les traces</message>
+<message id="Lms.Admin.DebugTools.Tracing.tracing">Traces</message>
 
 <!--Users-->
 <message id="Lms.Admin.Users.add">Ajouter</message>

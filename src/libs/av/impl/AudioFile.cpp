@@ -28,7 +28,6 @@ extern "C"
 }
 
 #include <array>
-#include <map>
 #include <unordered_map>
 
 #include "core/ILogger.hpp"

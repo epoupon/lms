@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Admin.DebugTools.template">
+	<form>
+		<legend>${tr:Lms.Admin.DebugTools.Tracing.tracing}</legend>
+        ${tracing}
+       	<hr/>
+        <legend>${tr:Lms.Admin.DebugTools.Db.db}</legend>
+        ${db}
+	</form>
+
+</message>
+
+</messages>

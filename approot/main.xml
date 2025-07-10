@@ -44,7 +44,10 @@
 							<li>${scan-settings class="dropdown-item"}</li>
 							<li>${scanner class="dropdown-item"}</li>
 							<li>${users class="dropdown-item"}</li>
-							<li>${tracing class="dropdown-item"}</li>
+							${<if-debug-tools>}
+							<li class="dropdown-divider"></li>
+							<li>${debug-tools class="dropdown-item"}</li>
+							${</if-debug-tools>}
 						</ul>
 					</li>
 				${</if-is-admin>}

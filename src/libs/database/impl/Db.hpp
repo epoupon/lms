@@ -36,8 +36,6 @@ namespace lms::db
     public:
         Db(const std::filesystem::path& dbPath, std::size_t connectionCount);
 
-        Session& getTLSSession() override;
-
         void executeSql(const std::string& sql);
 
     private:
@@ -45,6 +43,8 @@ namespace lms::db
         Db& operator=(const Db&) = delete;
 
         friend class Session;
+
+        Session& getTLSSession() override;
 
         core::RecursiveSharedMutex& getMutex() { return _sharedMutex; }
         Wt::Dbo::SqlConnectionPool& getConnectionPool() { return *_connectionPool; }
