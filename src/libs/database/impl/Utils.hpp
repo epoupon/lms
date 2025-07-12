@@ -58,7 +58,8 @@ namespace lms::db::utils
         if (range)
         {
             query.limit(static_cast<int>(range->size));
-            query.offset(static_cast<int>(range->offset));
+            if (range->offset != 0)
+                query.offset(static_cast<int>(range->offset));
         }
     }
 

@@ -142,9 +142,10 @@ namespace lms::scanner
                 params.setRelease(release->getId());
                 params.setImageType(db::ImageType::FrontCover);
                 params.setSortMethod(db::TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc);
-                params.setRange(db::Range{ .offset = 0, .size = 1 });
-
-                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) { artwork = db::Artwork::find(session, image->getId()); });
+                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
+                    if (!artwork)
+                        artwork = db::Artwork::find(session, image->getId());
+                });
             }
 
             if (artwork)
@@ -156,9 +157,10 @@ namespace lms::scanner
                 params.setRelease(release->getId());
                 params.setImageType(db::ImageType::Media);
                 params.setSortMethod(db::TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc);
-                params.setRange(db::Range{ .offset = 0, .size = 1 });
-
-                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) { artwork = db::Artwork::find(session, image->getId()); });
+                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
+                    if (!artwork)
+                        artwork = db::Artwork::find(session, image->getId());
+                });
             }
 
             return artwork;

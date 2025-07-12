@@ -114,7 +114,7 @@ namespace lms::db
 
             std::string table;
             std::string foreignTable;
-            // see https://www.sqlite.org/pragma.html#pragma_foreign_key_check for exepcted result
+            // see https://www.sqlite.org/pragma.html#pragma_foreign_key_check for expected result
             while (statement->nextRow())
             {
                 foreignKeyConstraintsPassed = false;
@@ -131,6 +131,57 @@ namespace lms::db
             }
 
             return foreignKeyConstraintsPassed;
+        }
+
+        std::optional<int> getPageSize(Wt::Dbo::SqlConnection& connection)
+        {
+            auto statement = connection.prepareStatement("PRAGMA page_size");
+            statement->execute();
+
+            std::optional<int> res;
+            while (statement->nextRow())
+            {
+                assert(!res);
+                int value{};
+                if (statement->getResult(0, &value))
+                    res = value;
+                break;
+            }
+
+            return res;
+        }
+
+        std::optional<int> getCacheSize(Wt::Dbo::SqlConnection& connection)
+        {
+            auto statement = connection.prepareStatement("PRAGMA cache_size");
+            statement->execute();
+
+            std::optional<int> res;
+            while (statement->nextRow())
+            {
+                assert(!res);
+                int value{};
+                if (statement->getResult(0, &value))
+                    res = value;
+                break;
+            }
+
+            return res;
+        }
+
+        void getCompileOptions(Wt::Dbo::SqlConnection& connection, std::function<void(std::string_view compileOption)> callback)
+        {
+            auto statement = connection.prepareStatement("PRAGMA compile_options");
+            statement->execute();
+
+            std::string res;
+            while (statement->nextRow())
+            {
+                res.clear();
+
+                if (statement->getResult(0, &res, static_cast<int>(res.capacity())))
+                    callback(res);
+            }
         }
     } // namespace
 
@@ -157,6 +208,13 @@ namespace lms::db
 
         _connectionPool = std::move(connectionPool);
 
+        executeSql("PRAGMA temp_store=MEMORY");
+        executeSql("PRAGMA cache_size=-8000");
+        executeSql("PRAGMA automatic_index=0");
+
+        logPageSize();
+        logCacheSize();
+        logCompileOptions();
         if (checkType == "quick")
         {
             performQuickCheck();
@@ -197,6 +255,34 @@ namespace lms::db
         assert(&tlsSession->getDb() == this);
 
         return *tlsSession;
+    }
+
+    void Db::logPageSize()
+    {
+        ScopedConnection connection{ *_connectionPool };
+        const std::optional<int> pageSize{ getPageSize(*connection) };
+
+        if (pageSize)
+            LMS_LOG(DB, INFO, "Page size set to " << *pageSize);
+    }
+
+    void Db::logCacheSize()
+    {
+        ScopedConnection connection{ *_connectionPool };
+        const std::optional<int> cacheSize{ getCacheSize(*connection) };
+
+        if (cacheSize)
+            LMS_LOG(DB, INFO, "Cache size set to " << *cacheSize);
+    }
+
+    void Db::logCompileOptions()
+    {
+        ScopedConnection connection{ *_connectionPool };
+
+        LMS_LOG(DB, INFO, "Sqlite3 compile options:");
+        getCompileOptions(*connection, [](std::string_view compileOption) {
+            LMS_LOG(DB, INFO, compileOption);
+        });
     }
 
     void Db::performQuickCheck()

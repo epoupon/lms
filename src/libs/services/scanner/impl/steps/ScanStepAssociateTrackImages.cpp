@@ -65,8 +65,11 @@ namespace lms::scanner
                 params.setTrack(track->getId());
                 params.setImageType(db::ImageType::FrontCover);
                 params.setSortMethod(db::TrackEmbeddedImageSortMethod::SizeDesc);
-                params.setRange(db::Range{ .offset = 0, .size = 1 });
-                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) { res = db::Artwork::find(session, image->getId()); });
+
+                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
+                    if (!res)
+                        res = db::Artwork::find(session, image->getId());
+                });
             }
 
             if (res)
@@ -92,8 +95,11 @@ namespace lms::scanner
                 params.setTrack(track->getId());
                 params.setImageType(db::ImageType::Media);
                 params.setSortMethod(db::TrackEmbeddedImageSortMethod::SizeDesc);
-                params.setRange(db::Range{ .offset = 0, .size = 1 });
-                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) { res = db::Artwork::find(session, image->getId()); });
+
+                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
+                    if (!res)
+                        res = db::Artwork::find(session, image->getId());
+                });
             }
 
             if (res)
@@ -111,8 +117,11 @@ namespace lms::scanner
                 params.setDiscNumber(discNumber);
                 params.setImageType(db::ImageType::Media);
                 params.setSortMethod(db::TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc);
-                params.setRange(db::Range{ .offset = 0, .size = 1 });
-                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) { res = db::Artwork::find(session, image->getId()); });
+
+                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
+                    if (!res)
+                        res = db::Artwork::find(session, image->getId());
+                });
             }
 
             return res;

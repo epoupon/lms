@@ -49,6 +49,9 @@ namespace lms::db
         core::RecursiveSharedMutex& getMutex() { return _sharedMutex; }
         Wt::Dbo::SqlConnectionPool& getConnectionPool() { return *_connectionPool; }
 
+        void logPageSize();
+        void logCacheSize();
+        void logCompileOptions();
         void performQuickCheck();
         void performIntegrityCheck();
         void performForeignKeyConstraintsCheck();
