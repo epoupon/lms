@@ -19,6 +19,7 @@
 
 #include "database/objects/Image.hpp"
 
+#include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "database/Session.hpp"
@@ -28,6 +29,8 @@
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::Image)
 
 namespace lms::db
 {

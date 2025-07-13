@@ -19,6 +19,9 @@
 
 #include "database/objects/TrackEmbeddedImageLink.hpp"
 
+#include <Wt/Dbo/Impl.h>
+#include <Wt/Dbo/WtSqlTraits.h>
+
 #include "database/Session.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Track.hpp"
@@ -26,6 +29,9 @@
 
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
+#include "traits/ImageHashTypeTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::TrackEmbeddedImageLink)
 
 namespace lms::db
 {

@@ -19,12 +19,16 @@
 
 #include "database/objects/TrackArtistLink.hpp"
 
+#include <Wt/Dbo/Impl.h>
+
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Track.hpp"
 
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::TrackArtistLink)
 
 namespace lms::db
 {

@@ -21,11 +21,12 @@
 
 #include <filesystem>
 #include <functional>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/Field.h>
 
 #include "core/EnumSet.hpp"
 #include "database/Object.hpp"

@@ -19,19 +19,26 @@
 
 #include "database/objects/Cluster.hpp"
 
+#include <Wt/Dbo/Impl.h>
+
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Release.hpp"
-#include "database/objects/ScanSettings.hpp"
 #include "database/objects/Track.hpp"
+#include "database/objects/TrackArtistLink.hpp"
+#include "database/objects/TrackEmbeddedImage.hpp"
+#include "database/objects/TrackEmbeddedImageLink.hpp"
+#include "database/objects/TrackLyrics.hpp"
 
-#include "SqlQuery.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::Cluster)
+DBO_INSTANTIATE_TEMPLATES(lms::db::ClusterType)
 
 namespace lms::db
 {

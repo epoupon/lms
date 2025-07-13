@@ -24,7 +24,7 @@
 #include <string_view>
 #include <vector>
 
-#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/Field.h>
 #include <Wt/WTime.h>
 
 #include "database/IdType.hpp"

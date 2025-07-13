@@ -19,12 +19,16 @@
 
 #include "database/objects/UIState.hpp"
 
+#include <Wt/Dbo/Impl.h>
+
 #include "database/Session.hpp"
 #include "database/objects/User.hpp"
 
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::UIState)
 
 namespace lms::db
 {

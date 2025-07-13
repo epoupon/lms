@@ -19,12 +19,14 @@
 
 #include "database/objects/PlayListFile.hpp"
 
+#include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "core/ILogger.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/MediaLibrary.hpp"
+#include "database/objects/Track.hpp"
 #include "database/objects/TrackList.hpp"
 #include "database/objects/User.hpp"
 
@@ -32,6 +34,8 @@
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
 #include "traits/StringViewTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::PlayListFile)
 
 namespace lms::db
 {

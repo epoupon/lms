@@ -22,7 +22,7 @@
 #include <chrono>
 #include <optional>
 
-#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/Field.h>
 
 #include "database/IdType.hpp"
 #include "database/Object.hpp"

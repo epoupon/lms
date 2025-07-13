@@ -19,12 +19,16 @@
 
 #include "database/objects/TrackBookmark.hpp"
 
+#include <Wt/Dbo/Impl.h>
+
 #include "database/Session.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
 
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::TrackBookmark)
 
 namespace lms::db
 {

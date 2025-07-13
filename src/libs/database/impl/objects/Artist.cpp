@@ -18,6 +18,7 @@
  */
 #include "database/objects/Artist.hpp"
 
+#include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "core/ILogger.hpp"
@@ -26,12 +27,16 @@
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/Release.hpp"
+#include "database/objects/StarredArtist.hpp"
 #include "database/objects/Track.hpp"
+#include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/User.hpp"
 
 #include "SqlQuery.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::Artist)
 
 namespace lms::db
 {

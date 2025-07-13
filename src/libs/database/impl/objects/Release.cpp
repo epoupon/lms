@@ -19,6 +19,7 @@
 
 #include "database/objects/Release.hpp"
 
+#include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "core/PartialDateTime.hpp"
@@ -28,7 +29,12 @@
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
+#include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Track.hpp"
+#include "database/objects/TrackArtistLink.hpp"
+#include "database/objects/TrackEmbeddedImage.hpp"
+#include "database/objects/TrackEmbeddedImageLink.hpp"
+#include "database/objects/TrackLyrics.hpp"
 #include "database/objects/User.hpp"
 
 #include "SqlQuery.hpp"
@@ -37,6 +43,11 @@
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PartialDateTimeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::Country)
+DBO_INSTANTIATE_TEMPLATES(lms::db::Label)
+DBO_INSTANTIATE_TEMPLATES(lms::db::Release)
+DBO_INSTANTIATE_TEMPLATES(lms::db::ReleaseType)
 
 namespace lms::db
 {

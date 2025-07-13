@@ -19,6 +19,7 @@
 
 #include "database/objects/AuthToken.hpp"
 
+#include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "database/Session.hpp"
@@ -27,6 +28,8 @@
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::AuthToken)
 
 namespace lms::db
 {

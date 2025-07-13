@@ -19,11 +19,12 @@
 
 #pragma once
 
-#include <Wt/Dbo/Dbo.h>
+#include <string>
+#include <string_view>
 
-#include "core/String.hpp"
+#include <Wt/Dbo/Field.h>
+
 #include "database/Object.hpp"
-#include "database/Types.hpp"
 #include "database/objects/UIStateId.hpp"
 #include "database/objects/UserId.hpp"
 

@@ -24,7 +24,7 @@
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/Field.h>
 #include <Wt/WDateTime.h>
 
 #include "database/Object.hpp"

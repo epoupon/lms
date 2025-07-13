@@ -20,6 +20,7 @@
 #include "MediaPlayer.hpp"
 
 #include <Wt/Json/Object.h>
+#include <Wt/Json/Parser.h>
 #include <Wt/Json/Serializer.h>
 #include <Wt/Json/Value.h>
 #include <Wt/WPushButton.h>

@@ -23,7 +23,7 @@
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/Field.h>
 
 #include "core/EnumSet.hpp"
 #include "database/IdType.hpp"

@@ -19,6 +19,7 @@
 
 #include "database/objects/StarredArtist.hpp"
 
+#include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "database/Session.hpp"
@@ -27,6 +28,8 @@
 
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::StarredArtist)
 
 namespace lms::db
 {

@@ -17,16 +17,21 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/objects/Directory.hpp"
+#include "database/objects/TrackEmbeddedImage.hpp"
+
+#include <Wt/Dbo/Impl.h>
 
 #include "database/Session.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Track.hpp"
-#include "database/objects/TrackEmbeddedImage.hpp"
+
+#include "database/objects/TrackEmbeddedImageLink.hpp"
 
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/ImageHashTypeTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::TrackEmbeddedImage)
 
 namespace lms::db
 {

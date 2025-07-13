@@ -19,6 +19,7 @@
 
 #include "database/objects/Track.hpp"
 
+#include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "core/ILogger.hpp"
@@ -42,6 +43,8 @@
 #include "traits/PartialDateTimeTraits.hpp"
 #include "traits/PathTraits.hpp"
 #include "traits/StringViewTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::Track)
 
 namespace lms::db
 {

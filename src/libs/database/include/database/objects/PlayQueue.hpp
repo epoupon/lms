@@ -20,15 +20,14 @@
 #pragma once
 
 #include <chrono>
-#include <span>
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/Field.h>
+#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
 #include "database/Object.hpp"
-#include "database/Types.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/UserId.hpp"
 

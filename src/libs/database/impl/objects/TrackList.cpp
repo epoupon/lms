@@ -20,6 +20,9 @@
 
 #include <cassert>
 
+#include <Wt/Dbo/Impl.h>
+#include <Wt/Dbo/WtSqlTraits.h>
+
 #include "database/Session.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/PlayListFile.hpp"
@@ -30,6 +33,9 @@
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::TrackList)
+DBO_INSTANTIATE_TEMPLATES(lms::db::TrackListEntry)
 
 namespace lms::db
 {

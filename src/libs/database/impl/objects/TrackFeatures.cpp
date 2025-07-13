@@ -19,6 +19,7 @@
 
 #include "database/objects/TrackFeatures.hpp"
 
+#include <Wt/Dbo/Impl.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
@@ -29,6 +30,8 @@
 
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::TrackFeatures)
 
 namespace lms::db
 {

@@ -21,8 +21,9 @@
 
 #include <filesystem>
 #include <functional>
+#include <optional>
 
-#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/Field.h>
 #include <Wt/WDateTime.h>
 
 #include "database/Object.hpp"

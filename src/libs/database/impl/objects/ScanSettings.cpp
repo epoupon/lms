@@ -19,6 +19,7 @@
 
 #include "database/objects/ScanSettings.hpp"
 
+#include <Wt/Dbo/Impl.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "core/String.hpp"
@@ -28,6 +29,8 @@
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::ScanSettings)
 
 namespace lms::db
 {

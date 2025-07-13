@@ -21,8 +21,12 @@
 
 #include <cassert>
 
+#include <Wt/Dbo/Impl.h>
+#include <Wt/Dbo/WtSqlTraits.h>
+
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
+#include "database/objects/AuthToken.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/UIState.hpp"
@@ -31,6 +35,8 @@
 #include "traits/EnumSetTraits.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/StringViewTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::User)
 
 namespace lms::db
 {

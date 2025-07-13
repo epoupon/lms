@@ -26,7 +26,6 @@
 #include "core/ITraceLogger.hpp"
 #include "database/Session.hpp"
 #include "database/objects/ScanSettings.hpp"
-#include "database/objects/User.hpp"
 
 #include "Db.hpp"
 #include "Utils.hpp"

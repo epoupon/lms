@@ -19,6 +19,8 @@
 
 #include "database/Session.hpp"
 
+#include <Wt/Dbo/WtSqlTraits.h>
+
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "database/objects/Artist.hpp"

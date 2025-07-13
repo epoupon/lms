@@ -19,14 +19,17 @@
 
 #include "database/objects/MediaLibrary.hpp"
 
+#include <Wt/Dbo/Impl.h>
+
 #include "database/Session.hpp"
-#include "database/objects/ScanSettings.hpp"
 #include "database/objects/Track.hpp"
 
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
 #include "traits/StringViewTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::MediaLibrary)
 
 namespace lms::db
 {

@@ -24,7 +24,9 @@
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/Field.h>
+#include <Wt/Dbo/collection.h>
+#include <Wt/Dbo/weak_ptr.h>
 #include <Wt/WDateTime.h>
 
 #include "database/IdRange.hpp"

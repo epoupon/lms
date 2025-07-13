@@ -22,7 +22,8 @@
 #include <optional>
 #include <string_view>
 
-#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/Field.h>
+#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
 #include "core/EnumSet.hpp"

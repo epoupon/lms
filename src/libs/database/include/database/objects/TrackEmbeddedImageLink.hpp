@@ -22,7 +22,7 @@
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/Field.h>
 
 #include "database/Object.hpp"
 #include "database/Types.hpp"

@@ -22,10 +22,10 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <tuple>
 #include <vector>
 
-#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/Field.h>
+#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
 #include "database/Object.hpp"

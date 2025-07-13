@@ -19,6 +19,8 @@
 
 #include "database/objects/Directory.hpp"
 
+#include <Wt/Dbo/Impl.h>
+
 #include "database/Session.hpp"
 #include "database/Types.hpp"
 #include "database/objects/MediaLibrary.hpp"
@@ -26,6 +28,8 @@
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
 #include "traits/PathTraits.hpp"
+
+DBO_INSTANTIATE_TEMPLATES(lms::db::Directory)
 
 namespace lms::db
 {

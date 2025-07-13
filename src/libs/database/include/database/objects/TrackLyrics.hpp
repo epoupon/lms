@@ -22,10 +22,11 @@
 #include <chrono>
 #include <filesystem>
 #include <map>
+#include <optional>
 #include <span>
 #include <string>
 
-#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/Field.h>
 
 #include "database/IdType.hpp"
 #include "database/Object.hpp"
