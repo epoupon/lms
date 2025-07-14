@@ -230,11 +230,11 @@ namespace lms::ui::TrackListHelpers
 
         std::unique_ptr<Wt::WImage> image;
         if (track->getPreferredMediaArtworkId().isValid())
-            image = utils::createArtworkImage(track->getPreferredMediaArtworkId(), ArtworkResource::Size::Small);
+            image = utils::createArtworkImage(track->getPreferredMediaArtworkId(), ArtworkResource::DefaultArtworkType::Track, ArtworkResource::Size::Small);
         else if (track->getPreferredArtworkId().isValid())
-            image = utils::createArtworkImage(track->getPreferredArtworkId(), ArtworkResource::Size::Small);
+            image = utils::createArtworkImage(track->getPreferredArtworkId(), ArtworkResource::DefaultArtworkType::Track, ArtworkResource::Size::Small);
         else
-            image = utils::createDefaultTrackArtworkImage();
+            image = utils::createDefaultArtworkImage(ArtworkResource::DefaultArtworkType::Track);
 
         image->addStyleClass("Lms-cover-track rounded"); // hack
         if (track->getRelease())

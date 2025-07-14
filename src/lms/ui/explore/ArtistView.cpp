@@ -197,17 +197,17 @@ namespace lms::ui
         std::unique_ptr<Wt::WImage> artworkImage;
         if (artworkId.isValid())
         {
-            artworkImage = utils::createArtworkImage(artworkId, ArtworkResource::Size::Large);
+            artworkImage = utils::createArtworkImage(artworkId, ArtworkResource::DefaultArtworkType::Artist, ArtworkResource::Size::Large);
             artworkImage->addStyleClass("Lms-cursor-pointer"); // HACK
         }
         else
-            artworkImage = utils::createDefaultArtistArtworkImage();
+            artworkImage = utils::createDefaultArtworkImage(ArtworkResource::DefaultArtworkType::Artist);
 
         auto* image{ bindWidget<Wt::WImage>("artwork", std::move(artworkImage)) };
         if (artworkId.isValid())
         {
             image->clicked().connect([artworkId] {
-                utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getArtworkUrl(artworkId) });
+                utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getArtworkUrl(artworkId, ArtworkResource::DefaultArtworkType::Artist) });
             });
         }
     }

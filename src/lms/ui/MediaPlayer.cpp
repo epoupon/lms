@@ -259,15 +259,17 @@ namespace lms::ui
                 artworkId = track->getPreferredArtworkId();
             if (artworkId.isValid())
             {
+                // Potential issue: If the image is really not here, we fall back on a default svg image: the provided type does not match, so we don't put type here
+                // Another solution would be to test the image presence and put type accordingly
                 oss << " artwork: ["
-                    << "   { src: \"" << LmsApp->getArtworkResource()->getArtworkUrl(artworkId, ArtworkResource::Size::Small) << "\", sizes: \"128x128\",	type: \"image/jpeg\" },"
-                    << "   { src: \"" << LmsApp->getArtworkResource()->getArtworkUrl(artworkId, ArtworkResource::Size::Large) << "\", sizes: \"512x512\",	type: \"image/jpeg\" },"
+                    << "   { src: \"" << LmsApp->getArtworkResource()->getArtworkUrl(artworkId, ArtworkResource::DefaultArtworkType::Track, ArtworkResource::Size::Small) << "\", sizes: \"128x128\" },"
+                    << "   { src: \"" << LmsApp->getArtworkResource()->getArtworkUrl(artworkId, ArtworkResource::DefaultArtworkType::Track, ArtworkResource::Size::Large) << "\", sizes: \"512x512\" },"
                     << " ]";
             }
             else
             {
                 oss << " artwork: ["
-                    << "   { src: \"" << LmsApp->getArtworkResource()->getDefaultTrackArtworkUrl() << "\", type: \"image/svg+xml\" },"
+                    << "   { src: \"" << LmsApp->getArtworkResource()->getDefaultArtworkUrl(ArtworkResource::DefaultArtworkType::Track) << "\", type: \"image/svg+xml\" },"
                     << " ]";
             }
             oss << "};";

@@ -88,31 +88,17 @@ namespace lms::ui::utils
         LmsApp->getModalManager().show(std::move(rawImage));
     }
 
-    std::unique_ptr<Wt::WImage> createArtworkImage(db::ArtworkId artworkId, ArtworkResource::Size size)
+    std::unique_ptr<Wt::WImage> createArtworkImage(db::ArtworkId artworkId, ArtworkResource::DefaultArtworkType type, ArtworkResource::Size size)
     {
         auto image{ createArtworkImage() };
-        image->setImageLink(LmsApp->getArtworkResource()->getArtworkUrl(artworkId, size));
+        image->setImageLink(LmsApp->getArtworkResource()->getArtworkUrl(artworkId, type, size));
         return image;
     }
 
-    std::unique_ptr<Wt::WImage> createDefaultArtistArtworkImage()
+    std::unique_ptr<Wt::WImage> createDefaultArtworkImage(ArtworkResource::DefaultArtworkType type)
     {
         auto image{ createArtworkImage() };
-        image->setImageLink(LmsApp->getArtworkResource()->getDefaultArtistArtworkUrl());
-        return image;
-    }
-
-    std::unique_ptr<Wt::WImage> createDefaultReleaseArtworkImage()
-    {
-        auto image{ createArtworkImage() };
-        image->setImageLink(LmsApp->getArtworkResource()->getDefaultReleaseArtworkUrl());
-        return image;
-    }
-
-    std::unique_ptr<Wt::WImage> createDefaultTrackArtworkImage()
-    {
-        auto image{ createArtworkImage() };
-        image->setImageLink(LmsApp->getArtworkResource()->getDefaultTrackArtworkUrl());
+        image->setImageLink(LmsApp->getArtworkResource()->getDefaultArtworkUrl(type));
         return image;
     }
 

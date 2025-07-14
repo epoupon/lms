@@ -34,6 +34,26 @@
 
 namespace lms::ui
 {
+    namespace
+    {
+        std::string_view getDefaultArtworkPart(ArtworkResource::DefaultArtworkType fallbackType)
+        {
+            std::string_view res;
+            switch (fallbackType)
+            {
+            case ArtworkResource::DefaultArtworkType::Release:
+            case ArtworkResource::DefaultArtworkType::Track:
+                res = "&fallback=defrelease";
+                break;
+
+            case ArtworkResource::DefaultArtworkType::Artist:
+                res = "&fallback=defartist";
+            }
+
+            return res;
+        }
+    } // namespace
+
     ArtworkResource::ArtworkResource()
     {
         LmsApp->getScannerEvents().scanComplete.connect(this, [this](const scanner::ScanStats& stats) {
@@ -47,28 +67,22 @@ namespace lms::ui
         beingDeleted();
     }
 
-    std::string ArtworkResource::getArtworkUrl(db::ArtworkId artworkId, std::optional<Size> size) const
+    std::string ArtworkResource::getArtworkUrl(db::ArtworkId artworkId, DefaultArtworkType fallbackType, std::optional<Size> size) const
     {
         std::string res{ url() + "&artworkid=" + artworkId.toString() };
         if (size)
             res += "&size=" + std::to_string(static_cast<std::size_t>(*size));
 
+        res += getDefaultArtworkPart(fallbackType);
+
         return res;
     }
 
-    std::string ArtworkResource::getDefaultArtistArtworkUrl() const
+    std::string ArtworkResource::getDefaultArtworkUrl(DefaultArtworkType type) const
     {
-        return url() + "&type=defartist";
-    }
-
-    std::string ArtworkResource::getDefaultReleaseArtworkUrl() const
-    {
-        return url() + "&type=defrelease";
-    }
-
-    std::string ArtworkResource::getDefaultTrackArtworkUrl() const
-    {
-        return url() + "&type=defrelease";
+        std::string res{ url() };
+        res += getDefaultArtworkPart(type);
+        return res;
     }
 
     void ArtworkResource::handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response)
@@ -78,20 +92,13 @@ namespace lms::ui
         // Retrieve parameters
         const std::string* artworkIdStr = request.getParameter("artworkid");
         const std::string* sizeStr = request.getParameter("size");
-        const std::string* typeStr = request.getParameter("type");
+        const std::string* fallbackStr = request.getParameter("fallback");
 
         std::shared_ptr<image::IEncodedImage> image;
 
-        if (artworkIdStr && typeStr)
+        if (!artworkIdStr && !fallbackStr)
         {
-            ARTWORK_RESOURCE_LOG(DEBUG, "both artwork ID and type provided, only one is allowed");
-            response.setStatus(400);
-            return;
-        }
-
-        if (!artworkIdStr && !typeStr)
-        {
-            ARTWORK_RESOURCE_LOG(DEBUG, "no artwork ID or type provided");
+            ARTWORK_RESOURCE_LOG(DEBUG, "no artwork ID or fallback provided");
             response.setStatus(400);
             return;
         }
@@ -118,22 +125,22 @@ namespace lms::ui
             if (!image)
                 ARTWORK_RESOURCE_LOG(DEBUG, "no image found for artwork ID: '" << *artworkIdStr << "'");
         }
-        else
+
+        if (!image && fallbackStr)
         {
-            assert(typeStr);
-            if (*typeStr == "defartist")
+            if (*fallbackStr == "defartist")
                 image = core::Service<artwork::IArtworkService>::get()->getDefaultArtistArtwork();
-            else if (*typeStr == "defrelease")
+            else if (*fallbackStr == "defrelease")
                 image = core::Service<artwork::IArtworkService>::get()->getDefaultReleaseArtwork();
             else
             {
-                ARTWORK_RESOURCE_LOG(DEBUG, "invalid type provided: '" << *typeStr << "'");
+                ARTWORK_RESOURCE_LOG(DEBUG, "invalid type provided: '" << *fallbackStr << "'");
                 response.setStatus(400);
                 return;
             }
 
             if (!image)
-                ARTWORK_RESOURCE_LOG(DEBUG, "no default image found for type: '" << *typeStr << "'");
+                ARTWORK_RESOURCE_LOG(DEBUG, "no default image found for type: '" << *fallbackStr << "'");
         }
 
         if (image)
