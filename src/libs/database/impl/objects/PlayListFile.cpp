@@ -167,8 +167,7 @@ namespace lms::db
     void PlayListFile::setName(std::string_view name)
     {
         _name = std::string{ name, 0, _maxNameLength };
-        if (name.size() > _maxNameLength)
-            LMS_LOG(DB, WARNING, "PlaylistFile name too long, truncated to '" << _name << "'");
+        LMS_LOG_IF(DB, WARNING, name.size() > _maxNameLength, "PlaylistFile name too long, truncated to '" << _name << "'");
     }
 
     void PlayListFile::setFiles(std::span<const std::filesystem::path> files)

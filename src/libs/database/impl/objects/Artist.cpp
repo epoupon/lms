@@ -445,16 +445,14 @@ AND NOT EXISTS (
     void Artist::setName(std::string_view name)
     {
         _name.assign(name, 0, _maxNameLength);
-        if (name.size() > _maxNameLength)
-            LMS_LOG(DB, WARNING, "Artist name too long, truncated to '" << _name << "'");
+        LMS_LOG_IF(DB, WARNING, name.size() > _maxNameLength, "Artist name too long, truncated to '" << _name << "'");
     }
 
     void Artist::setSortName(std::string_view sortName)
     {
         _sortName.assign(sortName, 0, _maxNameLength);
 
-        if (sortName.size() > _maxNameLength)
-            LMS_LOG(DB, WARNING, "Artist sort name too long, truncated to '" << _sortName << "'");
+        LMS_LOG_IF(DB, WARNING, sortName.size() > _maxNameLength, "Artist sort name too long, truncated to '" << _sortName << "'");
     }
 
     void Artist::setPreferredArtwork(ObjectPtr<Artwork> artwork)
