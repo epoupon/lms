@@ -476,7 +476,6 @@ namespace lms::scanner
 
     void AudioFileScanOperation::scan()
     {
-        LMS_SCOPED_TRACE_OVERVIEW("Scanner", "ScanAudioFile");
         std::unique_ptr<metadata::Track> track;
 
         try
