@@ -34,7 +34,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 97 };
+        static constexpr Version LMS_DATABASE_VERSION{ 98 };
     }
 
     VersionInfo::VersionInfo()
@@ -1417,6 +1417,12 @@ WHERE art.image_id IS NULL)");
         dropIndexes(session);
     }
 
+    void migrateFromV97(Session& session)
+    {
+        // Removed not that useful indexes
+        dropIndexes(session);
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1490,6 +1496,7 @@ WHERE art.image_id IS NULL)");
             { 94, migrateFromV94 },
             { 95, migrateFromV95 },
             { 96, migrateFromV96 },
+            { 97, migrateFromV97 },
         };
 
         bool migrationPerformed{};

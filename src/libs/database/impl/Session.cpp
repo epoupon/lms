@@ -289,10 +289,9 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_artist_idx ON track_artist_link(artist_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_artist_mbid_matched_artist_idx ON track_artist_link(artist_mbid_matched, artist_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_artist_track_idx ON track_artist_link(artist_id, track_id)");
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_artist_type_idx ON track_artist_link(artist_id, type)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_artist_type_track_idx ON track_artist_link(artist_id, type, track_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_track_artist_idx ON track_artist_link(track_id, artist_id)");
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_track_type_idx ON track_artist_link(track_id,type)");
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_type_track_artist_idx ON track_artist_link(type, track_id, artist_id)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_track_type_idx ON track_artist_link(track_id, type)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_features_track_idx ON track_features(track_id)");
 
@@ -384,6 +383,8 @@ namespace lms::db
 
     bool Session::areAllTablesEmpty()
     {
+        checkReadTransaction();
+
         const std::vector<std::string> entryList{ utils::fetchQueryResults(_session.query<std::string>("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")) };
 
         return std::all_of(entryList.cbegin(), entryList.cend(), [this](const std::string& entry) {
