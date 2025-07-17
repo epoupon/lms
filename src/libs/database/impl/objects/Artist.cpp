@@ -35,6 +35,7 @@
 #include "SqlQuery.hpp"
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
+#include "traits/StringViewTraits.hpp"
 
 DBO_INSTANTIATE_TEMPLATES(lms::db::Artist)
 
@@ -257,7 +258,10 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        return utils::fetchQueryResults<Artist::pointer>(session.getDboSession()->query<Wt::Dbo::ptr<Artist>>("SELECT a FROM artist a").where("a.name = ?").bind(std::string{ name, 0, _maxNameLength }).orderBy("LENGTH(a.mbid) DESC")); // put mbid entries first
+        if (name.size() > maxNameLength)
+            name = name.substr(0, maxNameLength);
+
+        return utils::fetchQueryResults<Artist::pointer>(session.getDboSession()->query<Wt::Dbo::ptr<Artist>>("SELECT a FROM artist a").where("a.name = ?").bind(name).orderBy("LENGTH(a.mbid) DESC")); // put mbid entries first
     }
 
     Artist::pointer Artist::find(Session& session, const core::UUID& mbid)
@@ -444,15 +448,14 @@ AND NOT EXISTS (
 
     void Artist::setName(std::string_view name)
     {
-        _name.assign(name, 0, _maxNameLength);
-        LMS_LOG_IF(DB, WARNING, name.size() > _maxNameLength, "Artist name too long, truncated to '" << _name << "'");
+        _name.assign(name, 0, maxNameLength);
+        LMS_LOG_IF(DB, WARNING, name.size() > maxNameLength, "Artist name too long, truncated to '" << _name << "'");
     }
 
     void Artist::setSortName(std::string_view sortName)
     {
-        _sortName.assign(sortName, 0, _maxNameLength);
-
-        LMS_LOG_IF(DB, WARNING, sortName.size() > _maxNameLength, "Artist sort name too long, truncated to '" << _sortName << "'");
+        _sortName.assign(sortName, 0, maxNameLength);
+        LMS_LOG_IF(DB, WARNING, sortName.size() > maxNameLength, "Artist sort name too long, truncated to '" << _sortName << "'");
     }
 
     void Artist::setPreferredArtwork(ObjectPtr<Artwork> artwork)

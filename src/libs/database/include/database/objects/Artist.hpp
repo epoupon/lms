@@ -58,6 +58,8 @@ namespace lms::db
     class Artist final : public Object<Artist, ArtistId>
     {
     public:
+        static constexpr std::size_t maxNameLength{ 512 };
+
         struct FindParameters
         {
             Filters filters;
@@ -173,8 +175,6 @@ namespace lms::db
         }
 
     private:
-        static constexpr std::size_t _maxNameLength{ 512 };
-
         friend class Session;
         // Create
         Artist(const std::string& name, const std::optional<core::UUID>& MBID = {});
