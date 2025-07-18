@@ -52,14 +52,14 @@ namespace lms::db
         void retrieveEntriesToAnalyze(std::vector<std::string>& entryList);
         void analyzeEntry(const std::string& entry);
 
-        bool areAllTablesEmpty(); // need to acquire a read transaction
+        bool areAllTablesEmpty();         // need to acquire a read transaction
+        std::size_t getTotalFilesCount(); // need to acquire a read transaction
 
         void prepareTablesIfNeeded(); // need to run only once at startup
         bool migrateSchemaIfNeeded(); // returns true if migration was performed
         void createIndexesIfNeeded();
         void vacuumIfNeeded();
         void vacuum();
-        void refreshTracingLoggerStats();
 
         // returning a ptr here to ease further wrapping using operator->
         Wt::Dbo::Session* getDboSession() { return &_session; }

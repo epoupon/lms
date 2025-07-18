@@ -194,12 +194,7 @@ namespace lms::scanner
 
         {
             auto transaction{ session.createReadTransaction() };
-            context.currentStepStats.totalElems = 0;
-            context.currentStepStats.totalElems += db::Track::getCount(session);
-            context.currentStepStats.totalElems += db::Image::getCount(session);
-            context.currentStepStats.totalElems += db::TrackLyrics::getExternalLyricsCount(session);
-            context.currentStepStats.totalElems += db::PlayListFile::getCount(session);
-            context.currentStepStats.totalElems += db::ArtistInfo::getCount(session);
+            context.currentStepStats.totalElems = session.getTotalFilesCount();
         }
         LMS_LOG(DBUPDATER, DEBUG, context.currentStepStats.totalElems << " files to be checked...");
 

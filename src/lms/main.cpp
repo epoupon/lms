@@ -333,11 +333,6 @@ namespace lms
                     session.vacuum();
                 else
                     session.vacuumIfNeeded();
-
-                // force optimize in case scanner aborted during a large import:
-                // queries may be too slow to even be able to relaunch a scan using the web interface
-                session.fullAnalyze();
-                database->getTLSSession().refreshTracingLoggerStats();
             }
 
             ui::LmsApplicationManager appManager;
@@ -385,7 +380,6 @@ namespace lms
                 // Flush cover cache even if no changes:
                 // covers may be external files that changed and we don't keep track of them for now (but we should)
                 artworkService->flushCache();
-                database->getTLSSession().refreshTracingLoggerStats();
             });
 
             core::Service<feedback::IFeedbackService> feedbackService{ feedback::createFeedbackService(ioContext, *database) };

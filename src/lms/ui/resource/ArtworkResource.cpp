@@ -57,7 +57,7 @@ namespace lms::ui
     ArtworkResource::ArtworkResource()
     {
         LmsApp->getScannerEvents().scanComplete.connect(this, [this](const scanner::ScanStats& stats) {
-            if (stats.nbChanges())
+            if (stats.getChangesCount())
                 setChanged();
         });
     }

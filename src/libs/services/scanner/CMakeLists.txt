@@ -27,6 +27,7 @@ add_library(lmsscanner STATIC
 	impl/steps/ScanStepUpdateLibraryFields.cpp
 	impl/FileScanners.cpp
 	impl/ScannerService.cpp
+	impl/ScannerServiceTraceLogger.cpp
 	impl/ScannerStats.cpp
 	)
 

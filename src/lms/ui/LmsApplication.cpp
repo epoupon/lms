@@ -542,7 +542,7 @@ namespace lms::ui
                 notifyMsg(Notification::Type::Info,
                     Wt::WString::tr("Lms.Admin.Database.database"),
                     Wt::WString::tr("Lms.Admin.Database.scan-complete")
-                        .arg(static_cast<unsigned>(stats.nbFiles()))
+                        .arg(static_cast<unsigned>(stats.getTotalFileCount()))
                         .arg(static_cast<unsigned>(stats.additions))
                         .arg(static_cast<unsigned>(stats.updates))
                         .arg(static_cast<unsigned>(stats.deletions))

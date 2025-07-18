@@ -321,7 +321,7 @@ namespace lms::scanner
 
     bool ScanStepAssociateArtistImages::needProcess(const ScanContext& context) const
     {
-        if (context.stats.nbChanges() > 0)
+        if (context.stats.getChangesCount() > 0)
             return true;
 
         if (getLastScanSettings() && getLastScanSettings()->artistImageFallbackToRelease != _settings.artistImageFallbackToRelease)

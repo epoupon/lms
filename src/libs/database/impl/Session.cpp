@@ -346,26 +346,6 @@ namespace lms::db
         LMS_LOG(DB, INFO, "Vacuum complete!");
     }
 
-    void Session::refreshTracingLoggerStats()
-    {
-        auto* traceLogger{ core::Service<core::tracing::ITraceLogger>::get() };
-        if (!traceLogger)
-            return;
-
-        auto transaction{ createReadTransaction() };
-
-        traceLogger->setMetadata("db_artist_count", std::to_string(db::Artist::getCount(*this)));
-        traceLogger->setMetadata("db_cluster_count", std::to_string(db::Cluster::getCount(*this)));
-        traceLogger->setMetadata("db_cluster_type_count", std::to_string(db::ClusterType::getCount(*this)));
-        traceLogger->setMetadata("db_starred_artist_count", std::to_string(db::StarredArtist::getCount(*this)));
-        traceLogger->setMetadata("db_starred_release_count", std::to_string(db::StarredRelease::getCount(*this)));
-        traceLogger->setMetadata("db_starred_track_count", std::to_string(db::StarredTrack::getCount(*this)));
-        traceLogger->setMetadata("db_track_bookmark_count", std::to_string(db::TrackBookmark::getCount(*this)));
-        traceLogger->setMetadata("db_listen_count", std::to_string(db::Listen::getCount(*this)));
-        traceLogger->setMetadata("db_release_count", std::to_string(db::Release::getCount(*this)));
-        traceLogger->setMetadata("db_track_count", std::to_string(db::Track::getCount(*this)));
-    }
-
     void Session::fullAnalyze()
     {
         LMS_SCOPED_TRACE_OVERVIEW("Database", "Analyze");
@@ -391,6 +371,19 @@ namespace lms::db
             const auto count{ utils::fetchQuerySingleResult(_session.query<long>("SELECT COUNT(*) FROM " + entry)) };
             return count == 0;
         });
+    }
+
+    std::size_t Session::getTotalFilesCount()
+    {
+        std::size_t res{};
+
+        res += db::Track::getCount(*this);
+        res += db::Image::getCount(*this);
+        res += db::TrackLyrics::getExternalLyricsCount(*this);
+        res += db::PlayListFile::getCount(*this);
+        res += db::ArtistInfo::getCount(*this);
+
+        return res;
     }
 
     void Session::retrieveEntriesToAnalyze(std::vector<std::string>& entryList)

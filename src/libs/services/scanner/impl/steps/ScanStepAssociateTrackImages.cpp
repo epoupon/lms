@@ -232,7 +232,7 @@ namespace lms::scanner
 
     bool ScanStepAssociateTrackImages::needProcess(const ScanContext& context) const
     {
-        return context.stats.nbChanges() > 0;
+        return context.stats.getChangesCount() > 0;
     }
 
     void ScanStepAssociateTrackImages::process(ScanContext& context)

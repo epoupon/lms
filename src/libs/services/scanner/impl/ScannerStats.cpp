@@ -21,12 +21,12 @@
 
 namespace lms::scanner
 {
-    std::size_t ScanStats::nbFiles() const
+    std::size_t ScanStats::getTotalFileCount() const
     {
         return skips + additions + updates + failures;
     }
 
-    std::size_t ScanStats::nbChanges() const
+    std::size_t ScanStats::getChangesCount() const
     {
         return additions + deletions + updates;
     }

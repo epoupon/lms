@@ -29,10 +29,7 @@ namespace lms::scanner
 {
     bool ScanStepComputeClusterStats::needProcess(const ScanContext& context) const
     {
-        if (context.stats.nbChanges() > 0)
-            return true;
-
-        return false;
+        return context.stats.getChangesCount() > 0;
     }
 
     void ScanStepComputeClusterStats::process(ScanContext& context)

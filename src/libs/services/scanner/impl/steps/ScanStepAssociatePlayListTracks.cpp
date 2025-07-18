@@ -251,7 +251,7 @@ namespace lms::scanner
 
     bool ScanStepAssociatePlayListTracks::needProcess(const ScanContext& context) const
     {
-        if (context.stats.nbChanges() > 0)
+        if (context.stats.getChangesCount() > 0)
             return true;
 
         if (getLastScanSettings() && getLastScanSettings()->skipSingleReleasePlayLists != _settings.skipSingleReleasePlayLists)

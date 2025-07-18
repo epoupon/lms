@@ -100,7 +100,7 @@ namespace lms::scanner
         std::size_t errorsCount{}; // maybe bigger than errors.size() if too many errors
         std::vector<ScanDuplicate> duplicates;
 
-        std::size_t nbFiles() const;
-        std::size_t nbChanges() const;
+        std::size_t getTotalFileCount() const;
+        std::size_t getChangesCount() const;
     };
 } // namespace lms::scanner

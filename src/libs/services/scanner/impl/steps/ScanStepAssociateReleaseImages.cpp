@@ -266,7 +266,7 @@ namespace lms::scanner
 
     bool ScanStepAssociateReleaseImages::needProcess(const ScanContext& context) const
     {
-        return context.stats.nbChanges() > 0;
+        return context.stats.getChangesCount() > 0;
     }
 
     void ScanStepAssociateReleaseImages::process(ScanContext& context)

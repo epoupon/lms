@@ -82,6 +82,7 @@ namespace lms::scanner
 
         // Helpers
         void refreshScanSettings();
+        void refreshTracingLoggerStats();
 
         void notifyInProgressIfNeeded(const ScanStepStats& stats);
         void notifyInProgress(const ScanStepStats& stats);

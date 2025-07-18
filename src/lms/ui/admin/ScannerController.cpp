@@ -115,7 +115,7 @@ namespace lms::ui
         if (status.lastCompleteScanStats)
         {
             _lastScanStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.last-scan-status")
-                                         .arg(status.lastCompleteScanStats->nbFiles())
+                                         .arg(status.lastCompleteScanStats->getTotalFileCount())
                                          .arg(durationToString(status.lastCompleteScanStats->startTime, status.lastCompleteScanStats->stopTime))
                                          .arg(status.lastCompleteScanStats->stopTime.date().toString(Wt::WLocale::currentLocale().dateFormat()))
                                          .arg(status.lastCompleteScanStats->stopTime.time().toString(Wt::WLocale::currentLocale().timeFormat()))
