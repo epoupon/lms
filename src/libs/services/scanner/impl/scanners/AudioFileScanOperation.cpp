@@ -384,6 +384,7 @@ namespace lms::scanner
             db::Track::FindParameters params;
             // Add as many fields as possible to limit errors
             params.setName(parsedTrack.title);
+            params.setFileSize(fileSize);
             if (parsedTrack.medium)
             {
                 if (parsedTrack.medium->position)
@@ -393,7 +394,6 @@ namespace lms::scanner
             }
             if (parsedTrack.position)
                 params.setTrackNumber(*parsedTrack.position);
-            params.setFileSize(fileSize);
 
             bool error{};
             db::Track::pointer res;

@@ -207,9 +207,9 @@ namespace lms::api::subsonic
         auto transaction{ context.dbSession.createReadTransaction() };
 
         db::Track::FindParameters params;
-        params.name = titleName;
-        params.artistName = artistName;
-        params.range = Range{ 0, 2 };
+        params.setName(titleName);
+        params.setArtistName(artistName);
+        params.setRange(db::Range{ .offset = 0, .size = 2 });
 
         // Choice: we return nothing if there are too many results
         const auto tracks{ db::Track::findIds(context.dbSession, params) };
