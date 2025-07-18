@@ -31,6 +31,7 @@
 #include "scanners/IFileScanOperation.hpp"
 #include "scanners/IFileScanner.hpp"
 
+#include "FileScanners.hpp"
 #include "JobQueue.hpp"
 #include "ScanContext.hpp"
 
@@ -67,18 +68,6 @@ namespace lms::scanner
             std::unique_ptr<IFileScanOperation> _scanOperation;
         };
     } // namespace
-
-    ScanStepScanFiles::ScanStepScanFiles(InitParams& initParams)
-        : ScanStepBase{ initParams }
-    {
-        visitFileScanners([](IFileScanner* scanner) {
-            for (const std::filesystem::path& file : scanner->getSupportedFiles())
-                LMS_LOG(DBUPDATER, INFO, scanner->getName() << ": supporting file " << file);
-
-            for (const std::filesystem::path& extension : scanner->getSupportedExtensions())
-                LMS_LOG(DBUPDATER, INFO, scanner->getName() << ": supporting file extension " << extension);
-        });
-    }
 
     bool ScanStepScanFiles::needProcess([[maybe_unused]] const ScanContext& context) const
     {
@@ -122,7 +111,7 @@ namespace lms::scanner
                     addError<IOScanError>(context, path, ec);
                     context.stats.skips++;
                 }
-                else if (IFileScanner * scanner{ selectFileScanner(path) })
+                else if (IFileScanner * scanner{ getFileScanners().select(path) })
                 {
                     FileToScan fileToScan;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,32 +19,27 @@
 
 #pragma once
 
-#include <span>
-
-#include "ScanStepBase.hpp"
-
-namespace lms::core
-{
-    class IJob;
-}
+#include <filesystem>
+#include <functional>
+#include <unordered_map>
+#include <vector>
 
 namespace lms::scanner
 {
     class IFileScanner;
-    struct MediaLibraryInfo;
 
-    class ScanStepScanFiles : public ScanStepBase
+    class FileScanners
     {
     public:
-        using ScanStepBase::ScanStepBase;
+        void add(std::unique_ptr<IFileScanner> scanner);
+        void clear();
+
+        IFileScanner* select(const std::filesystem::path& filePath) const;
+        void visit(const std::function<void(const IFileScanner&)>& visitor) const;
 
     private:
-        ScanStep getStep() const override { return ScanStep::ScanFiles; }
-        core::LiteralString getStepName() const override { return "Scan files"; }
-        bool needProcess(const ScanContext& context) const override;
-        void process(ScanContext& context) override;
-
-        void process(ScanContext& context, const MediaLibraryInfo& mediaLibrary);
-        void processFileScanResults(ScanContext& context, std::span<std::unique_ptr<core::IJob>> scanJobs);
+        std::unordered_map<std::filesystem::path, IFileScanner*> _scannerByFile;
+        std::unordered_map<std::filesystem::path, IFileScanner*> _scannerByExtension;
+        std::vector<std::unique_ptr<IFileScanner>> _fileScanners;
     };
 } // namespace lms::scanner

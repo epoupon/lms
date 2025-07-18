@@ -363,14 +363,14 @@ namespace lms::scanner
             _progressCallback(context.currentStepStats);
         };
 
-        JobQueue queue{ getJobScheduler(), 20, processJobsDone, 1, 0.85F };
+        {
+            JobQueue queue{ getJobScheduler(), 20, processJobsDone, 1, 0.85F };
 
-        db::ArtistId lastRetrievedArtistId{};
-        db::IdRange<db::ArtistId> artistIdRange;
-        while (fetchNextArtistIdRange(session, lastRetrievedArtistId, artistIdRange))
-            queue.push(std::make_unique<ComputeArtistArtworkAssociationsJob>(_db, searchParams, artistIdRange));
-
-        queue.finish();
+            db::ArtistId lastRetrievedArtistId{};
+            db::IdRange<db::ArtistId> artistIdRange;
+            while (fetchNextArtistIdRange(session, lastRetrievedArtistId, artistIdRange))
+                queue.push(std::make_unique<ComputeArtistArtworkAssociationsJob>(_db, searchParams, artistIdRange));
+        }
 
         // process all remaining associations
         updateArtistPreferredArtworks(session, artistArtworkAssociations, false);

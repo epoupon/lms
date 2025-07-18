@@ -37,7 +37,9 @@ namespace lms::scanner
     public:
         using ProcessFunction = std::function<void(std::span<std::unique_ptr<core::IJob>>)>;
 
-        JobQueue(core::IJobScheduler& scheduler, std::size_t maxQueueSize, ProcessFunction processJobsDoneFunc, std::size_t batchSize, float drainThreshold);
+        // processBatchSize -> how many jobs done to notify at once using processJobsDoneFunc
+        // drainThreshold: fraction of maxQueueSize at which completed jobs are processed
+        JobQueue(core::IJobScheduler& scheduler, std::size_t maxQueueSize, ProcessFunction processJobsDoneFunc, std::size_t processBatchSize, float drainThreshold);
         ~JobQueue();
         JobQueue(const JobQueue&) = delete;
         JobQueue& operator=(const JobQueue&) = delete;

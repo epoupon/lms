@@ -452,14 +452,19 @@ namespace lms::scanner
         } };
 
         _fileScanners.clear();
-        _fileScanners.emplace_back(std::make_unique<ArtistInfoFileScanner>(_db, _settings));
-        _fileScanners.emplace_back(std::make_unique<AudioFileScanner>(_db, _settings));
-        _fileScanners.emplace_back(std::make_unique<ImageFileScanner>(_db, _settings));
-        _fileScanners.emplace_back(std::make_unique<LyricsFileScanner>(_db, _settings));
-        _fileScanners.emplace_back(std::make_unique<PlayListFileScanner>(_db, _settings));
+        _fileScanners.add(std::make_unique<ArtistInfoFileScanner>(_db, _settings));
+        _fileScanners.add(std::make_unique<AudioFileScanner>(_db, _settings));
+        _fileScanners.add(std::make_unique<ImageFileScanner>(_db, _settings));
+        _fileScanners.add(std::make_unique<LyricsFileScanner>(_db, _settings));
+        _fileScanners.add(std::make_unique<PlayListFileScanner>(_db, _settings));
 
-        std::vector<IFileScanner*> fileScanners;
-        std::transform(std::cbegin(_fileScanners), std::cend(_fileScanners), std::back_inserter(fileScanners), [](const std::unique_ptr<IFileScanner>& scanner) { return scanner.get(); });
+        _fileScanners.visit([](const IFileScanner& scanner) {
+            for (const std::filesystem::path& file : scanner.getSupportedFiles())
+                LMS_LOG(DBUPDATER, INFO, scanner.getName() << ": supporting file " << file);
+
+            for (const std::filesystem::path& extension : scanner.getSupportedExtensions())
+                LMS_LOG(DBUPDATER, INFO, scanner.getName() << ": supporting file extension " << extension);
+        });
 
         ScanStepBase::InitParams params{
             .jobScheduler = *_jobScheduler,
@@ -468,7 +473,7 @@ namespace lms::scanner
             .progressCallback = progressFunc,
             .abortScan = _abortScan,
             .db = _db,
-            .fileScanners = fileScanners,
+            .fileScanners = _fileScanners,
         };
 
         // Order is important: steps are sequential

@@ -31,6 +31,7 @@
 #include <Wt/WIOService.h>
 #include <Wt/WSignal.h>
 
+#include "FileScanners.hpp"
 #include "ScannerSettings.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
@@ -88,7 +89,7 @@ namespace lms::scanner
         db::IDb& _db;
         std::unique_ptr<core::IJobScheduler> _jobScheduler;
 
-        std::vector<std::unique_ptr<IFileScanner>> _fileScanners;
+        FileScanners _fileScanners;
         std::vector<std::unique_ptr<IScanStep>> _scanSteps;
 
         std::mutex _controlMutex;
