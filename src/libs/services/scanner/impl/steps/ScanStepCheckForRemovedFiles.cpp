@@ -237,10 +237,8 @@ namespace lms::scanner
             }
 
             if (!objectIdsToRemove.empty())
-            {
-                removeObjects<Object>(session, objectIdsToRemove, true);
-                context.stats.deletions += objectIdsToRemove.size();
-            }
+                context.stats.deletions += removeObjects<Object>(session, objectIdsToRemove, true);
+
             _progressCallback(context.currentStepStats);
         };
 
@@ -254,7 +252,7 @@ namespace lms::scanner
         }
 
         // process all remaining objects
-        removeObjects<Object>(session, objectIdsToRemove, false);
+        context.stats.deletions += removeObjects<Object>(session, objectIdsToRemove, false);
     }
 
 } // namespace lms::scanner
