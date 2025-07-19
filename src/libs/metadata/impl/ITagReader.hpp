@@ -89,14 +89,22 @@ namespace lms::metadata
         Movement,
         MovementCount,
         MovementNumber,
+        MusicBrainzArrangerID, // non standard
         MusicBrainzArtistID,
+        MusicBrainzComposerID,  // non standard
+        MusicBrainzConductorID, // non standard
+        MusicBrainzDirectorID,  // non standard
         MusicBrainzDiscID,
+        MusicBrainzLyricistID, // non standard
         MusicBrainzOriginalArtistID,
         MusicBrainzOriginalReleaseID,
+        MusicBrainzMixerID, // non standard
+        MusicBrainzProducerID, // non standard
         MusicBrainzRecordingID,
         MusicBrainzReleaseArtistID,
         MusicBrainzReleaseGroupID,
         MusicBrainzReleaseID,
+        MusicBrainzRemixerID, // non standard
         MusicBrainzTrackID,
         MusicBrainzWorkID,
         MusicIPFingerprint,
