@@ -388,6 +388,12 @@ namespace lms::scanner
         refreshTracingLoggerStats();
         LMS_LOG(DBUPDATER, INFO, "Scan " << (_abortScan ? "aborted" : "complete") << ". Changes = " << stats.getChangesCount() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << ", failures = " << stats.failures << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errorsCount << "), features fetched = " << stats.featuresFetched << ",  duplicates = " << stats.duplicates.size());
 
+        {
+            auto transaction{ _db.getTLSSession().createReadTransaction() };
+            const db::FileStats stats{ _db.getTLSSession().getFileStats() };
+            LMS_LOG(DBUPDATER, INFO, stats.getTotalFileCount() << " total files: " << stats.artistInfoCount << " artist info, " << stats.imageCount << " images, " << stats.playListCount << " playlists, " << stats.trackCount << " tracks, " << stats.trackLyricsCount << " lyrics");
+        }
+
         if (!_abortScan)
         {
             stats.stopTime = Wt::WDateTime::currentDateTime();

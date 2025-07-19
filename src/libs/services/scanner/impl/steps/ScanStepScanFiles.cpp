@@ -98,11 +98,14 @@ namespace lms::scanner
                 : _fileScanners{ fileScanners }
                 , _mediaLibrary{ mediaLibrary }
                 , _fullScan{ fullScan }
+                , _processCount{}
+                , _skipCount{}
                 , _files{ std::cbegin(files), std::cend(files) }
             {
             }
 
-            std::size_t getFileCount() const { return _files.size(); };
+            std::size_t getFileCount() const { return _processCount; };
+            std::size_t getSkipCount() const { return _skipCount; }
 
             std::span<std::unique_ptr<IFileScanOperation>> getScanOperations()
             {
@@ -140,12 +143,18 @@ namespace lms::scanner
                         }
                         _scanOperations.push_back(std::move(scanOperation));
                     }
+                    else
+                        _skipCount++;
+
+                    _processCount++;
                 }
             }
 
             const FileScanners& _fileScanners;
             const MediaLibraryInfo& _mediaLibrary;
             const bool _fullScan;
+            std::size_t _processCount;
+            std::size_t _skipCount;
             std::vector<std::filesystem::directory_entry> _files;
             std::vector<std::unique_ptr<IFileScanOperation>> _scanOperations;
         };
@@ -182,6 +191,7 @@ namespace lms::scanner
                     operations.push_back(std::move(scanOperation));
 
                 context.currentStepStats.processedElems += fileScanJob.getFileCount();
+                context.stats.skips += fileScanJob.getSkipCount();
             }
 
             if (!_abortScan)
