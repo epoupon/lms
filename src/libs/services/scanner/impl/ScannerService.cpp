@@ -166,17 +166,17 @@ namespace lms::scanner
         LMS_LOG(DBUPDATER, INFO, "Using " << _jobScheduler->getThreadCount() << " thread(s) for jobs");
         _jobScheduler->setShouldAbortCallback([this]() { return _abortScan; });
 
-        std::size_t totalFilesCount{};
+        std::size_t totalFileCount{};
         {
             auto& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
-            totalFilesCount = session.getTotalFilesCount();
+            totalFileCount = session.getFileStats().getTotalFileCount();
         }
 
         // Force optimize in case scanner aborted during a large import, but do this only if there are enough elements in the database
         // Otherwise, indexes may be not used and queries may be slower and slower while adding more and more elements in the db
-        LMS_LOG(DBUPDATER, INFO, "Scanned file count = " << totalFilesCount);
-        if (totalFilesCount >= 1'000)
+        LMS_LOG(DBUPDATER, INFO, "Scanned file count = " << totalFileCount);
+        if (totalFileCount >= 1'000)
             _db.getTLSSession().fullAnalyze();
 
         refreshTracingLoggerStats();

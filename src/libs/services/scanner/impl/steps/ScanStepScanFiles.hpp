@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <span>
+#include <deque>
 
 #include "ScanStepBase.hpp"
 
@@ -30,7 +30,7 @@ namespace lms::core
 
 namespace lms::scanner
 {
-    class IFileScanner;
+    class IFileScanOperation;
     struct MediaLibraryInfo;
 
     class ScanStepScanFiles : public ScanStepBase
@@ -45,6 +45,7 @@ namespace lms::scanner
         void process(ScanContext& context) override;
 
         void process(ScanContext& context, const MediaLibraryInfo& mediaLibrary);
-        void processFileScanResults(ScanContext& context, std::span<std::unique_ptr<core::IJob>> scanJobs);
+        std::size_t processFileScanOperations(ScanContext& context, std::deque<std::unique_ptr<IFileScanOperation>>& scanOperations, bool forceBatch);
+        void processFileScanOperation(ScanContext& context, IFileScanOperation& operation);
     };
 } // namespace lms::scanner

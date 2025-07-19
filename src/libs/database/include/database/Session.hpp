@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "database/Transaction.hpp"
+#include "database/Types.hpp"
 
 namespace lms::db
 {
@@ -52,8 +53,8 @@ namespace lms::db
         void retrieveEntriesToAnalyze(std::vector<std::string>& entryList);
         void analyzeEntry(const std::string& entry);
 
-        bool areAllTablesEmpty();         // need to acquire a read transaction
-        std::size_t getTotalFilesCount(); // need to acquire a read transaction
+        bool areAllTablesEmpty(); // need to acquire a read transaction
+        FileStats getFileStats(); // need to acquire a read transaction
 
         void prepareTablesIfNeeded(); // need to run only once at startup
         bool migrateSchemaIfNeeded(); // returns true if migration was performed

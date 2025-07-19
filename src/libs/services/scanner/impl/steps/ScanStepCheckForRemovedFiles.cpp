@@ -194,7 +194,7 @@ namespace lms::scanner
 
         {
             auto transaction{ session.createReadTransaction() };
-            context.currentStepStats.totalElems = session.getTotalFilesCount();
+            context.currentStepStats.totalElems = session.getFileStats().getTotalFileCount();
         }
         LMS_LOG(DBUPDATER, DEBUG, context.currentStepStats.totalElems << " files to be checked...");
 

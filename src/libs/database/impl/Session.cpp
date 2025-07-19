@@ -23,6 +23,7 @@
 
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
+
 #include "database/objects/Artist.hpp"
 #include "database/objects/ArtistInfo.hpp"
 #include "database/objects/Artwork.hpp"
@@ -367,17 +368,17 @@ namespace lms::db
         });
     }
 
-    std::size_t Session::getTotalFilesCount()
+    FileStats Session::getFileStats()
     {
-        std::size_t res{};
+        FileStats stats{};
 
-        res += db::Track::getCount(*this);
-        res += db::Image::getCount(*this);
-        res += db::TrackLyrics::getExternalLyricsCount(*this);
-        res += db::PlayListFile::getCount(*this);
-        res += db::ArtistInfo::getCount(*this);
+        stats.trackCount = db::Track::getCount(*this);
+        stats.artistInfoCount = db::ArtistInfo::getCount(*this);
+        stats.imageCount = db::Image::getCount(*this);
+        stats.trackLyricsCount = db::TrackLyrics::getExternalLyricsCount(*this);
+        stats.playListCount = db::PlayListFile::getCount(*this);
 
-        return res;
+        return stats;
     }
 
     void Session::retrieveEntriesToAnalyze(std::vector<std::string>& entryList)
