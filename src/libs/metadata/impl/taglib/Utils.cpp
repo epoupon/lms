@@ -154,10 +154,7 @@ namespace lms::metadata::taglib::utils
 #endif
 
         if (file && !file->isValid())
-        {
-            LMS_LOG(METADATA, DEBUG, "File " << file << ": failed to parse by extension");
             file.reset();
-        }
 
         return file;
     }
@@ -208,10 +205,7 @@ namespace lms::metadata::taglib::utils
 #endif
 
         if (file && !file->isValid())
-        {
-            LMS_LOG(METADATA, DEBUG, "File " << file << ": failed to parse by content");
             file.reset();
-        }
 
         return file;
     }
@@ -223,7 +217,12 @@ namespace lms::metadata::taglib::utils
         TagLib::FileStream fileStream{ createFileStream(p) };
         std::unique_ptr<TagLib::File> file{ parseFileByExtension(&fileStream, p.extension(), readStyle, readAudioProperties.value()) };
         if (!file)
+        {
+            LMS_LOG(METADATA, DEBUG, "File " << p << ": failed to parse by extension");
             file = parseFileByContent(&fileStream, readStyle, readAudioProperties.value());
+            if (!file)
+                LMS_LOG(METADATA, DEBUG, "File " << p << ": failed to parse by content");
+        }
 
         return file;
     }

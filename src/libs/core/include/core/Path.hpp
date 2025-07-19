@@ -20,9 +20,7 @@
 #pragma once
 
 #include <filesystem>
-#include <functional>
 #include <span>
-#include <system_error>
 
 #include <Wt/WDateTime.h>
 
@@ -31,15 +29,6 @@ namespace lms::core::pathUtils
     // Make sure the given path is a directory
     // Create it if needed
     bool ensureDirectory(const std::filesystem::path& dir);
-
-    struct FileInfo
-    {
-        Wt::WDateTime lastWriteTime; // Last write time of the file since Epoch
-        std::uint64_t fileSize{};    // Size of the file in bytes
-    };
-    using ExploreFileCallback = std::function<bool(std::error_code, const std::filesystem::path&, const FileInfo* fileInfo)>;
-    // returns false if aborted by user
-    bool exploreFilesRecursive(const std::filesystem::path& directory, ExploreFileCallback cb, const std::filesystem::path* excludeDirFileName = {});
 
     // Check if file's extension is one of provided extensions
     bool hasFileAnyExtension(const std::filesystem::path& file, std::span<const std::filesystem::path> extensions);

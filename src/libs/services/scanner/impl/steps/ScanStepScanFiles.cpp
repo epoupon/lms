@@ -37,10 +37,59 @@
 
 namespace lms::scanner
 {
-    using namespace db;
-
     namespace
     {
+        using ExploreFileCallback = std::function<bool(std::error_code, const std::filesystem::path& path, const std::filesystem::directory_entry*)>;
+        bool exploreFilesRecursive(const std::filesystem::path& directory, ExploreFileCallback cb, const std::filesystem::path* excludeDirFileName)
+        {
+            std::error_code ec;
+            std::filesystem::directory_iterator itPath{ directory, std::filesystem::directory_options::follow_directory_symlink, ec };
+
+            if (ec)
+            {
+                cb(ec, directory, nullptr);
+                return true; // try to continue exploring anyway
+            }
+
+            if (excludeDirFileName && !excludeDirFileName->empty())
+            {
+                const std::filesystem::path excludePath{ directory / *excludeDirFileName };
+                if (std::filesystem::exists(excludePath, ec))
+                {
+                    LMS_LOG(DBUPDATER, DEBUG, "Found " << excludePath << ": skipping directory");
+                    return true;
+                }
+            }
+
+            std::filesystem::directory_iterator itEnd;
+            while (itPath != itEnd)
+            {
+                bool continueExploring{ true };
+
+                const std::filesystem::directory_entry& entry{ *itPath };
+                const std::filesystem::path& path{ entry.path() };
+
+                if (ec)
+                {
+                    continueExploring = cb(ec, path, nullptr);
+                }
+                else
+                {
+                    if (entry.is_regular_file())
+                        continueExploring = cb(ec, path, &entry);
+                    else if (entry.is_directory())
+                        continueExploring = exploreFilesRecursive(path, cb, excludeDirFileName);
+                }
+
+                if (!continueExploring)
+                    return false;
+
+                itPath.increment(ec);
+            }
+
+            return true;
+        }
+
         class FileScanJob : public core::IJob
         {
         public:
@@ -97,11 +146,11 @@ namespace lms::scanner
         std::vector<std::unique_ptr<core::IJob>> jobsDone;
         std::vector<std::unique_ptr<IFileScanOperation>> scanOperations;
 
-        core::pathUtils::exploreFilesRecursive(
-            mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path, const core::pathUtils::FileInfo* fileInfo) {
+        exploreFilesRecursive(
+            mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path, const std::filesystem::directory_entry* fileEntry) {
                 LMS_SCOPED_TRACE_DETAILED("Scanner", "OnExploreFile");
 
-                assert((ec && !fileInfo) || (!ec && fileInfo));
+                assert((ec && !fileEntry) || (!ec && fileEntry));
 
                 if (_abortScan)
                     return false; // stop iterating
@@ -117,8 +166,8 @@ namespace lms::scanner
 
                     fileToScan.filePath = path;
                     fileToScan.mediaLibrary = mediaLibrary;
-                    fileToScan.lastWriteTime.setTime_t(fileInfo->lastWriteTime.toTime_t()); // sec resolution, as stored in the database
-                    fileToScan.fileSize = fileInfo->fileSize;
+                    fileToScan.lastWriteTime.setTime_t(Wt::WDateTime{ std::chrono::file_clock::to_sys(fileEntry->last_write_time()) }.toTime_t()); // sec resolution, as stored in the database
+                    fileToScan.fileSize = fileEntry->file_size();
 
                     if (context.scanOptions.fullScan || scanner->needsScan(fileToScan))
                     {

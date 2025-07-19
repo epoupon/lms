@@ -35,63 +35,6 @@ namespace lms::core::pathUtils
             return std::filesystem::create_directory(dir);
     }
 
-    bool exploreFilesRecursive(const std::filesystem::path& directory, ExploreFileCallback cb, const std::filesystem::path* excludeDirFileName)
-    {
-        std::error_code ec;
-        std::filesystem::directory_iterator itPath{ directory, std::filesystem::directory_options::follow_directory_symlink, ec };
-
-        if (ec)
-        {
-            cb(ec, directory, nullptr);
-            return true; // try to continue exploring anyway
-        }
-
-        if (excludeDirFileName && !excludeDirFileName->empty())
-        {
-            const std::filesystem::path excludePath{ directory / *excludeDirFileName };
-
-            if (std::filesystem::exists(excludePath, ec))
-            {
-                // TODO: handle exclude another way + remove this log
-                LMS_LOG(DBUPDATER, DEBUG, "Found " << excludePath << ": skipping directory");
-                return true;
-            }
-        }
-
-        std::filesystem::directory_iterator itEnd;
-        while (itPath != itEnd)
-        {
-            bool continueExploring{ true };
-
-            if (ec)
-            {
-                continueExploring = cb(ec, *itPath, nullptr);
-            }
-            else
-            {
-                const std::filesystem::directory_entry& entry{ *itPath };
-
-                if (entry.is_regular_file())
-                {
-                    FileInfo fileInfo;
-                    fileInfo.fileSize = entry.file_size();
-                    fileInfo.lastWriteTime = Wt::WDateTime{ std::chrono::file_clock::to_sys(entry.last_write_time()) };
-
-                    continueExploring = cb(ec, *itPath, &fileInfo);
-                }
-                else if (entry.is_directory())
-                    continueExploring = exploreFilesRecursive(*itPath, cb, excludeDirFileName);
-            }
-
-            if (!continueExploring)
-                return false;
-
-            itPath.increment(ec);
-        }
-
-        return true;
-    }
-
     bool hasFileAnyExtension(const std::filesystem::path& file, std::span<const std::filesystem::path> supportedExtensions)
     {
         const std::filesystem::path extension{ stringUtils::stringToLower(file.extension().c_str()) };
