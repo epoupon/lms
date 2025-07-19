@@ -111,7 +111,7 @@ namespace lms::metadata::taglib::utils
             file = std::make_unique<TagLib::MPEG::File>(stream, TagLib::ID3v2::FrameFactory::instance(), readAudioProperties, audioPropertiesStyle);
         // VORBIS
         else if (ext == "OGG")
-            return std::make_unique<TagLib::Ogg::Vorbis::File>(stream, readAudioProperties, audioPropertiesStyle);
+            file = std::make_unique<TagLib::Ogg::Vorbis::File>(stream, readAudioProperties, audioPropertiesStyle);
         else if (ext == "OGA")
         {
             /* .oga can be any audio in the Ogg container. First try FLAC, then Vorbis. */
