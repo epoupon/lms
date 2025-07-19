@@ -37,7 +37,7 @@ namespace lms::auth
     class AuthTokenService : public IAuthTokenService, public AuthServiceBase
     {
     public:
-        AuthTokenService(db::Db& db, std::size_t maxThrottlerEntryCount);
+        AuthTokenService(db::IDb& db, std::size_t maxThrottlerEntryCount);
 
         ~AuthTokenService() override = default;
         AuthTokenService(const AuthTokenService&) = delete;

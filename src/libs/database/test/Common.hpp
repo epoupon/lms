@@ -24,21 +24,21 @@
 
 #include <gtest/gtest.h>
 
-#include "database/Artist.hpp"
-#include "database/Cluster.hpp"
-#include "database/Db.hpp"
-#include "database/Listen.hpp"
-#include "database/MediaLibrary.hpp"
-#include "database/Release.hpp"
-#include "database/ScanSettings.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackArtistLink.hpp"
-#include "database/TrackBookmark.hpp"
-#include "database/TrackFeatures.hpp"
-#include "database/TrackList.hpp"
 #include "database/Types.hpp"
-#include "database/User.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/Cluster.hpp"
+#include "database/objects/Listen.hpp"
+#include "database/objects/MediaLibrary.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/ScanSettings.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackArtistLink.hpp"
+#include "database/objects/TrackBookmark.hpp"
+#include "database/objects/TrackFeatures.hpp"
+#include "database/objects/TrackList.hpp"
+#include "database/objects/User.hpp"
 
 namespace lms::db::tests
 {
@@ -131,12 +131,12 @@ namespace lms::db::tests
     public:
         TmpDatabase();
 
-        db::Db& getDb();
+        IDb& getDb();
 
     private:
         const std::filesystem::path _tmpFile;
         ScopedFileDeleter _fileDeleter;
-        db::Db _db;
+        std::unique_ptr<IDb> _db;
     };
 
     class DatabaseFixture : public ::testing::Test

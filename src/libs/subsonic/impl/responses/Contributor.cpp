@@ -20,7 +20,7 @@
 #include "responses/Contributor.hpp"
 
 #include "database/Object.hpp"
-#include "database/TrackArtistLink.hpp"
+#include "database/objects/TrackArtistLink.hpp"
 
 #include "SubsonicResponse.hpp"
 #include "responses/Artist.hpp"

@@ -102,6 +102,17 @@ namespace lms::db
         }
     };
 
+    struct FileStats
+    {
+        std::size_t trackCount;
+        std::size_t imageCount;
+        std::size_t trackLyricsCount;
+        std::size_t playListCount;
+        std::size_t artistInfoCount;
+
+        std::size_t getTotalFileCount() const { return trackCount + imageCount + trackLyricsCount + playListCount + artistInfoCount; }
+    };
+
     struct YearRange
     {
         int begin{};
@@ -112,6 +123,12 @@ namespace lms::db
     {
         std::size_t position;
         std::string name;
+    };
+
+    struct FileInfo
+    {
+        Wt::WDateTime lastWrittenTime;
+        std::size_t scanVersion{};
     };
 
     enum class ArtistSortMethod
@@ -193,7 +210,7 @@ namespace lms::db
         LastWrittenDesc,
         AddedDesc,
         StarredDateDesc,
-        FileName,
+        AbsoluteFilePath,
         Name,
         DateDescAndRelease,
         Release,   // order by disc/track number

@@ -22,17 +22,17 @@
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/Utils.hpp"
-#include "database/Artist.hpp"
-#include "database/Artwork.hpp"
-#include "database/Db.hpp"
-#include "database/Image.hpp"
-#include "database/ImageId.hpp"
-#include "database/Release.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackEmbeddedImage.hpp"
-#include "database/TrackEmbeddedImageLink.hpp"
-#include "database/TrackList.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/Artwork.hpp"
+#include "database/objects/Image.hpp"
+#include "database/objects/ImageId.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackEmbeddedImage.hpp"
+#include "database/objects/TrackEmbeddedImageLink.hpp"
+#include "database/objects/TrackList.hpp"
 #include "image/Exception.hpp"
 #include "image/IEncodedImage.hpp"
 #include "image/Image.hpp"
@@ -40,12 +40,12 @@
 
 namespace lms::artwork
 {
-    std::unique_ptr<IArtworkService> createArtworkService(db::Db& db, const std::filesystem::path& defaultReleaseCoverSvgPath, const std::filesystem::path& defaultArtistImageSvgPath)
+    std::unique_ptr<IArtworkService> createArtworkService(db::IDb& db, const std::filesystem::path& defaultReleaseCoverSvgPath, const std::filesystem::path& defaultArtistImageSvgPath)
     {
         return std::make_unique<ArtworkService>(db, defaultReleaseCoverSvgPath, defaultArtistImageSvgPath);
     }
 
-    ArtworkService::ArtworkService(db::Db& db,
+    ArtworkService::ArtworkService(db::IDb& db,
         const std::filesystem::path& defaultReleaseCoverSvgPath,
         const std::filesystem::path& defaultArtistImageSvgPath)
         : _db{ db }

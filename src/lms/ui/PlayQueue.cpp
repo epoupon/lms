@@ -32,12 +32,12 @@
 #include "core/ILogger.hpp"
 #include "core/Random.hpp"
 #include "core/Service.hpp"
-#include "database/Artist.hpp"
-#include "database/Release.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackList.hpp"
-#include "database/User.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackList.hpp"
+#include "database/objects/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IPlaylistGeneratorService.hpp"
 
@@ -496,9 +496,9 @@ namespace lms::ui
 
         std::unique_ptr<Wt::WImage> image;
         if (artworkId.isValid())
-            image = utils::createArtworkImage(artworkId, ArtworkResource::Size::Small);
+            image = utils::createArtworkImage(artworkId, ArtworkResource::DefaultArtworkType::Track, ArtworkResource::Size::Small);
         else
-            image = utils::createDefaultTrackArtworkImage();
+            image = utils::createDefaultArtworkImage(ArtworkResource::DefaultArtworkType::Track);
 
         image->addStyleClass("Lms-cover-track rounded"); // HACK
 

@@ -20,12 +20,12 @@
 #pragma once
 
 #include "core/String.hpp"
-#include "database/ArtistId.hpp"
-#include "database/DirectoryId.hpp"
-#include "database/MediaLibraryId.hpp"
-#include "database/ReleaseId.hpp"
-#include "database/TrackId.hpp"
-#include "database/TrackListId.hpp"
+#include "database/objects/ArtistId.hpp"
+#include "database/objects/DirectoryId.hpp"
+#include "database/objects/MediaLibraryId.hpp"
+#include "database/objects/ReleaseId.hpp"
+#include "database/objects/TrackId.hpp"
+#include "database/objects/TrackListId.hpp"
 
 namespace lms::api::subsonic
 {

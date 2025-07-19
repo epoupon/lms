@@ -22,7 +22,7 @@
 #include <Wt/WContainerWidget.h>
 #include <Wt/WTemplate.h>
 
-#include "database/MediaLibraryId.hpp"
+#include "database/objects/MediaLibraryId.hpp"
 
 namespace lms::ui
 {

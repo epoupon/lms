@@ -20,13 +20,13 @@
 #include "ScrobblingService.hpp"
 
 #include "core/ILogger.hpp"
-#include "database/Artist.hpp"
-#include "database/Db.hpp"
-#include "database/Listen.hpp"
-#include "database/Release.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/User.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/Listen.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/User.hpp"
 
 #include "internal/InternalBackend.hpp"
 #include "listenbrainz/ListenBrainzBackend.hpp"
@@ -55,12 +55,12 @@ namespace lms::scrobbling
         }
     } // namespace
 
-    std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_context& ioContext, Db& db)
+    std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_context& ioContext, db::IDb& db)
     {
         return std::make_unique<ScrobblingService>(ioContext, db);
     }
 
-    ScrobblingService::ScrobblingService(boost::asio::io_context& ioContext, Db& db)
+    ScrobblingService::ScrobblingService(boost::asio::io_context& ioContext, db::IDb& db)
         : _db{ db }
     {
         LMS_LOG(SCROBBLING, INFO, "Starting service...");

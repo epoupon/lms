@@ -27,7 +27,7 @@
 #include <boost/asio/steady_timer.hpp>
 
 #include "database/Types.hpp"
-#include "database/UserId.hpp"
+#include "database/objects/UserId.hpp"
 
 #include "services/scrobbling/Listen.hpp"
 
@@ -39,7 +39,7 @@ namespace lms
     }
     namespace db
     {
-        class Db;
+        class IDb;
     }
 } // namespace lms
 
@@ -48,7 +48,7 @@ namespace lms::scrobbling::listenBrainz
     class ListensSynchronizer
     {
     public:
-        ListensSynchronizer(boost::asio::io_context& ioContext, db::Db& db, core::http::IClient& client);
+        ListensSynchronizer(boost::asio::io_context& ioContext, db::IDb& db, core::http::IClient& client);
 
         void enqueListen(const TimedListen& listen);
         void enqueListenNow(const Listen& listen);
@@ -94,7 +94,7 @@ namespace lms::scrobbling::listenBrainz
 
         boost::asio::io_context& _ioContext;
         boost::asio::io_context::strand _strand{ _ioContext };
-        db::Db& _db;
+        db::IDb& _db;
         boost::asio::steady_timer _syncTimer{ _ioContext };
         core::http::IClient& _client;
 

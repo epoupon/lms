@@ -26,7 +26,7 @@
 #include <shared_mutex>
 #include <unordered_map>
 
-#include "database/ArtworkId.hpp"
+#include "database/objects/ArtworkId.hpp"
 #include "image/IEncodedImage.hpp"
 
 namespace lms::artwork

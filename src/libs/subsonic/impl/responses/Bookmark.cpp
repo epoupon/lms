@@ -19,8 +19,8 @@
 
 #include "responses/Bookmark.hpp"
 
-#include "database/TrackBookmark.hpp"
-#include "database/User.hpp"
+#include "database/objects/TrackBookmark.hpp"
+#include "database/objects/User.hpp"
 
 namespace lms::api::subsonic
 {

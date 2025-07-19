@@ -28,11 +28,11 @@
 #include <boost/asio/ip/address.hpp>
 
 #include "core/LiteralString.hpp"
-#include "database/UserId.hpp"
+#include "database/objects/UserId.hpp"
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 } // namespace lms::db
 
 namespace lms::auth
@@ -81,5 +81,5 @@ namespace lms::auth
         virtual void clearAuthTokens(core::LiteralString domain, db::UserId userid) = 0;
     };
 
-    std::unique_ptr<IAuthTokenService> createAuthTokenService(db::Db& db, std::size_t maxThrottlerEntryCount);
+    std::unique_ptr<IAuthTokenService> createAuthTokenService(db::IDb& db, std::size_t maxThrottlerEntryCount);
 } // namespace lms::auth

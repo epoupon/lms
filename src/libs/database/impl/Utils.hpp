@@ -19,15 +19,20 @@
 
 #pragma once
 
-#include <functional>
 #include <string>
 #include <string_view>
 
-#include <Wt/Dbo/Dbo.h>
+#include <Wt/Dbo/Call.h>
+#include <Wt/Dbo/Query.h>
+#include <Wt/Dbo/Session.h>
+#include <Wt/Dbo/collection.h>
 #include <Wt/WDateTime.h>
 
 #include "core/ITraceLogger.hpp"
+#include "core/Service.hpp"
 #include "database/Types.hpp"
+
+#include "QueryPlanRecorder.hpp"
 
 namespace lms::db::utils
 {
@@ -35,13 +40,26 @@ namespace lms::db::utils
     static inline constexpr char escapeChar{ '\\' };
     std::string escapeLikeKeyword(std::string_view keywords);
 
+    Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime);
+
+    namespace details
+    {
+        template<typename Query>
+        void recordQueryPlanIfNeeded(const Query& query)
+        {
+            if (IQueryPlanRecorder * recorder{ core::Service<IQueryPlanRecorder>::get() })
+                static_cast<QueryPlanRecorder*>(recorder)->recordQueryPlanIfNeeded(query.session(), query.asString());
+        }
+    } // namespace details
+
     template<typename Query>
     void applyRange(Query& query, std::optional<Range> range)
     {
         if (range)
         {
             query.limit(static_cast<int>(range->size));
-            query.offset(static_cast<int>(range->offset));
+            if (range->offset != 0)
+                query.offset(static_cast<int>(range->offset));
         }
     }
 
@@ -82,13 +100,18 @@ namespace lms::db::utils
     template<typename Query, typename UnaryFunc>
     void forEachQueryResult(const Query& query, UnaryFunc&& func)
     {
+        details::recordQueryPlanIfNeeded(query);
+
         LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "ForEachQueryResult", "Query", query.asString());
+
         forEachResult(query.resultList(), std::forward<UnaryFunc>(func));
     }
 
     template<typename T, typename Query>
     std::vector<T> fetchQueryResults(const Query& query)
     {
+        details::recordQueryPlanIfNeeded(query);
+
         LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQueryResults", "Query", query.asString());
 
         auto collection{ query.resultList() };
@@ -98,6 +121,8 @@ namespace lms::db::utils
     template<typename Query>
     std::vector<typename QueryResultType<Query>::type> fetchQueryResults(const Query& query)
     {
+        details::recordQueryPlanIfNeeded(query);
+
         LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQueryResults", "Query", query.asString());
 
         auto collection{ query.resultList() };
@@ -107,6 +132,8 @@ namespace lms::db::utils
     template<typename Query>
     auto fetchQuerySingleResult(const Query& query)
     {
+        details::recordQueryPlanIfNeeded(query);
+
         LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "FetchQuerySingleResult", "Query", query.asString());
         return query.resultValue();
     }
@@ -175,11 +202,12 @@ namespace lms::db::utils
     template<typename... Args>
     void executeCommand(Wt::Dbo::Session& session, std::string_view command, const Args&... args)
     {
-        LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "ExecuteCommand", "Command", command);
-
         Wt::Dbo::Call call{ session.execute(std::string{ command }) };
         (call.bind(args), ...);
-    }
 
-    Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime);
+        {
+            LMS_SCOPED_TRACE_DETAILED_WITH_ARG("Database", "ExecuteCommand", "Command", command);
+            call.run();
+        }
+    }
 } // namespace lms::db::utils

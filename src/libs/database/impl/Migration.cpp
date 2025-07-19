@@ -24,18 +24,17 @@
 #include "core/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
-#include "database/Db.hpp"
-#include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
-#include "database/User.hpp"
+#include "database/objects/ScanSettings.hpp"
 
+#include "Db.hpp"
 #include "Utils.hpp"
 
 namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 94 };
+        static constexpr Version LMS_DATABASE_VERSION{ 98 };
     }
 
     VersionInfo::VersionInfo()
@@ -1386,11 +1385,49 @@ FROM artist)");
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings ADD COLUMN artist_image_fallback_to_release BOOLEAN NOT NULL DEFAULT(false)");
     }
 
+    void migrateFromV94(Session& session)
+    {
+        // Removed not that useful columns in track
+        dropIndexes(session);
+
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE track DROP COLUMN relative_file_path");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE track DROP COLUMN file_stem");
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE track DROP COLUMN file_name");
+    }
+
+    void migrateFromV95(Session& session)
+    {
+        // Make sure each image and each embessed image has an artwork object
+        utils::executeCommand(*session.getDboSession(), R"(INSERT INTO artwork (version, track_embedded_image_id)
+SELECT 1 AS version, tei.id
+FROM track_embedded_image tei
+LEFT JOIN artwork art ON tei.id = art.track_embedded_image_id
+WHERE art.track_embedded_image_id IS NULL)");
+
+        utils::executeCommand(*session.getDboSession(), R"(INSERT INTO artwork (version, image_id)
+SELECT 1 AS version, img.id
+FROM image img
+LEFT JOIN artwork art ON img.id = art.image_id
+WHERE art.image_id IS NULL)");
+    }
+
+    void migrateFromV96(Session& session)
+    {
+        // Removed not that useful indexes
+        dropIndexes(session);
+    }
+
+    void migrateFromV97(Session& session)
+    {
+        // Removed not that useful indexes
+        dropIndexes(session);
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
 
-        ScopedNoForeignKeys noPragmaKeys{ session.getDb() };
+        ScopedNoForeignKeys noPragmaKeys{ static_cast<Db&>(session.getDb()) };
 
         using MigrationFunction = std::function<void(Session&)>;
 
@@ -1456,6 +1493,10 @@ FROM artist)");
             { 91, migrateFromV91 },
             { 92, migrateFromV92 },
             { 93, migrateFromV93 },
+            { 94, migrateFromV94 },
+            { 95, migrateFromV95 },
+            { 96, migrateFromV96 },
+            { 97, migrateFromV97 },
         };
 
         bool migrationPerformed{};

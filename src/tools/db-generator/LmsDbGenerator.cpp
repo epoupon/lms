@@ -32,14 +32,16 @@
 #include "core/Service.hpp"
 #include "core/StreamLogger.hpp"
 #include "core/SystemPaths.hpp"
-#include "database/Artist.hpp"
-#include "database/Cluster.hpp"
-#include "database/Db.hpp"
-#include "database/MediaLibrary.hpp"
-#include "database/Release.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackArtistLink.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/Cluster.hpp"
+#include "database/objects/MediaLibrary.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackArtistLink.hpp"
+#include "database/objects/TrackEmbeddedImage.hpp"
+#include "database/objects/TrackEmbeddedImageLink.hpp"
 
 namespace lms
 {
@@ -52,6 +54,7 @@ namespace lms
         float compilationRatio{ 0.1 };
         std::size_t genreCountPerTrack{ 3 };
         std::size_t moodCountPerTrack{ 3 };
+        std::size_t trackEmbeddedImagePerRelease{ 1 }; // usual case: one same image saved on each track
         std::size_t genreCount{ 50 };
         std::size_t moodCount{ 25 };
         std::filesystem::path trackPath;
@@ -94,6 +97,10 @@ namespace lms
         if (!context.mediaLibraries.empty())
             mediaLibrary = *core::random::pickRandom(context.mediaLibraries);
 
+        std::vector<TrackEmbeddedImage::pointer> trackEmbeddedImages;
+        for (std::size_t i{}; i < params.trackEmbeddedImagePerRelease; ++i)
+            trackEmbeddedImages.push_back(context.session.create<TrackEmbeddedImage>());
+
         for (std::size_t i{}; i < params.trackCountPerRelease; ++i)
         {
             Track::pointer track{ context.session.create<Track>() };
@@ -111,6 +118,9 @@ namespace lms
 
             TrackArtistLink::create(context.session, track, artist, TrackArtistLinkType::Artist);
             TrackArtistLink::create(context.session, track, artist, TrackArtistLinkType::ReleaseArtist);
+
+            if (!trackEmbeddedImages.empty())
+                context.session.create<TrackEmbeddedImageLink>(track, *core::random::pickRandom(trackEmbeddedImages));
 
             std::vector<ObjectPtr<Cluster>> clusters;
             if (!context.genres.empty())
@@ -177,7 +187,19 @@ int main(int argc, char* argv[])
         const GeneratorParameters defaultParams;
 
         program_options::options_description options{ "Options" };
-        options.add_options()("conf,c", program_options::value<std::string>()->default_value(core::sysconfDirectory / "lms.conf"), "lms config file")("media-library-count", program_options::value<unsigned>()->default_value(defaultParams.mediaLibraryCount), "Number of media libraries to use")("release-count-per-batch", program_options::value<unsigned>()->default_value(defaultParams.releaseCountPerBatch), "Number of releases to generate before committing transaction")("release-count", program_options::value<unsigned>()->default_value(defaultParams.releaseCount), "Number of releases to generate")("track-count-per-release", program_options::value<unsigned>()->default_value(defaultParams.trackCountPerRelease), "Number of tracks per release")("compilation-ratio", program_options::value<float>()->default_value(defaultParams.compilationRatio), "Compilation ratio (compilation means all tracks have a different artist)")("track-path", program_options::value<std::string>()->required(), "Path of a valid track file, that will be used for all generated tracks")("genre-count", program_options::value<unsigned>()->default_value(defaultParams.genreCount), "Number of genres to generate")("genre-count-per-track", program_options::value<unsigned>()->default_value(defaultParams.genreCountPerTrack), "Number of genres to assign to each track")("mood-count", program_options::value<unsigned>()->default_value(defaultParams.moodCount), "Number of moods to generate")("mood-count-per-track", program_options::value<unsigned>()->default_value(defaultParams.moodCountPerTrack), "Number of moods to assign to each track")("help,h", "produce help message");
+
+        // clang-format off
+        options.add_options()
+        ("conf,c", program_options::value<std::string>()->default_value(core::sysconfDirectory / "lms.conf"), "lms config file")
+        ("media-library-count", program_options::value<unsigned>()->default_value(defaultParams.mediaLibraryCount), "Number of media libraries to use")
+        ("release-count-per-batch",program_options::value<unsigned>()->default_value(defaultParams.releaseCountPerBatch), "Number of releases to generate before committing transaction")
+        ("release-count",program_options::value<unsigned>()->default_value(defaultParams.releaseCount), "Number of releases to generate")
+        ("track-count-per-release", program_options::value<unsigned>()->default_value(defaultParams.trackCountPerRelease), "Number of tracks per release")
+        ("track-embedded-image-count",program_options::value<unsigned>()->default_value(defaultParams.trackEmbeddedImagePerRelease), "Number of different embedded track images for the whole release (each track has one different embedded image)")
+        ("compilation-ratio",program_options::value<float>()->default_value(defaultParams.compilationRatio), "Compilation ratio (compilation means all tracks have a different artist)")
+        ("track-path",program_options::value<std::string>()->required(), "Path of a valid track file, that will be used for all generated tracks")("genre-count", program_options::value<unsigned>()->default_value(defaultParams.genreCount), "Number of genres to generate")("genre-count-per-track", program_options::value<unsigned>()->default_value(defaultParams.genreCountPerTrack), "Number of genres to assign to each track")("mood-count", program_options::value<unsigned>()->default_value(defaultParams.moodCount), "Number of moods to generate")
+        ("mood-count-per-track", program_options::value<unsigned>()->default_value(defaultParams.moodCountPerTrack), "Number of moods to assign to each track")("help,h", "produce help message");
+        // clang-format on
 
         program_options::variables_map vm;
         program_options::store(program_options::parse_command_line(argc, argv, options), vm);
@@ -197,14 +219,15 @@ int main(int argc, char* argv[])
         genParams.releaseCount = vm["release-count"].as<unsigned>();
         genParams.trackCountPerRelease = vm["track-count-per-release"].as<unsigned>();
         genParams.compilationRatio = vm["compilation-ratio"].as<float>();
+        genParams.trackEmbeddedImagePerRelease = vm["track-embedded-image-count"].as<unsigned>();
         genParams.trackPath = std::filesystem::path{ vm["track-path"].as<std::string>() };
 
         if (!std::filesystem::exists(genParams.trackPath))
             throw std::runtime_error{ "File '" + genParams.trackPath.string() + "' does not exist!" };
 
         core::Service<core::IConfig> config{ core::createConfig(vm["conf"].as<std::string>()) };
-        db::Db db{ config->getPath("working-dir", "/var/lms") / "lms.db" };
-        db::Session session{ db };
+        auto db{ db::createDb(config->getPath("working-dir", "/var/lms") / "lms.db") };
+        db::Session session{ *db };
         std::cout << "Starting generation..." << std::endl;
 
         GenerationContext genContext{ session };

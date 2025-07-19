@@ -30,8 +30,8 @@
 
 #include "core/Service.hpp"
 #include "core/String.hpp"
-#include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
+#include "database/objects/ScanSettings.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scanner/IScannerService.hpp"
 

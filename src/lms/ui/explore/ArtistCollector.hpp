@@ -22,8 +22,8 @@
 #include <optional>
 
 #include "DatabaseCollectorBase.hpp"
-#include "database/ArtistId.hpp"
 #include "database/Types.hpp"
+#include "database/objects/ArtistId.hpp"
 
 namespace lms::db
 {

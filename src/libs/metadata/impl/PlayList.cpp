@@ -63,11 +63,21 @@ namespace lms::metadata
 
     PlayList parsePlayList(std::istream& is)
     {
+        bool firstLine{ true };
         PlayList playlist;
 
         std::string line;
         while (std::getline(is, line))
         {
+            // Remove potential UTF8 BOM
+            if (firstLine)
+            {
+                firstLine = false;
+                constexpr std::string_view utf8BOM{ "\xEF\xBB\xBF" };
+                if (line.starts_with(utf8BOM))
+                    line.erase(0, utf8BOM.size());
+            }
+
             const std::string_view trimmedLine{ core::stringUtils::stringTrim(line) };
             if (trimmedLine.empty())
                 continue;

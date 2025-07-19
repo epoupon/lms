@@ -22,7 +22,7 @@
 #include <Wt/Auth/HashFunction.h>
 #include <Wt/Auth/PasswordStrengthValidator.h>
 
-#include "database/User.hpp"
+#include "database/objects/User.hpp"
 
 #include "PasswordServiceBase.hpp"
 #include "services/auth/IPasswordService.hpp"
@@ -32,7 +32,7 @@ namespace lms::auth
     class InternalPasswordService : public PasswordServiceBase
     {
     public:
-        InternalPasswordService(db::Db& db, std::size_t maxThrottlerEntries);
+        InternalPasswordService(db::IDb& db, std::size_t maxThrottlerEntries);
 
     private:
         bool checkUserPassword(std::string_view loginName, std::string_view password) override;

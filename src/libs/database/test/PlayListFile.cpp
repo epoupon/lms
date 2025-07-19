@@ -19,8 +19,8 @@
 
 #include "Common.hpp"
 
-#include "database/PlayListFile.hpp"
-#include "database/TrackList.hpp"
+#include "database/objects/PlayListFile.hpp"
+#include "database/objects/TrackList.hpp"
 
 namespace lms::db::tests
 {
@@ -82,6 +82,24 @@ namespace lms::db::tests
             ASSERT_EQ(files.size(), 2);
             EXPECT_EQ(files[0], "/foo/foo.mp3");
             EXPECT_EQ(files[1], "/foo/bar.mp3");
+        }
+    }
+
+    TEST_F(DatabaseFixture, PlayListFile_findAbsoluteFilePath)
+    {
+        ScopedPlayListFile playlist{ session, "/tmp/foo.m3u" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            PlayListFileId lastRetrievedId;
+            std::filesystem::path retrievedFilePath;
+            PlayListFile::findAbsoluteFilePath(session, lastRetrievedId, 1, [&](PlayListFileId playListFileId, const std::filesystem::path& filePath) {
+                EXPECT_EQ(playListFileId, playlist.getId());
+                retrievedFilePath = filePath;
+            });
+
+            EXPECT_EQ(retrievedFilePath, "/tmp/foo.m3u");
         }
     }
 

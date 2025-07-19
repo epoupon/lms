@@ -27,7 +27,7 @@
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 } // namespace lms::db
 
 namespace lms::scanner
@@ -38,7 +38,7 @@ namespace lms::scanner
     class FileScanOperationBase : public IFileScanOperation
     {
     public:
-        FileScanOperationBase(FileToScan&& fileToScan, db::Db& db, const ScannerSettings& settings);
+        FileScanOperationBase(FileToScan&& fileToScan, db::IDb& db, const ScannerSettings& settings);
         ~FileScanOperationBase() override;
         FileScanOperationBase(const FileScanOperationBase&) = delete;
         FileScanOperationBase& operator=(const FileScanOperationBase&) = delete;
@@ -46,11 +46,10 @@ namespace lms::scanner
     protected:
         const std::filesystem::path& getFilePath() const override { return _file.filePath; }
         const MediaLibraryInfo& getMediaLibrary() const { return _file.mediaLibrary; }
-        db::Db& getDb() { return _db; }
+        db::IDb& getDb() { return _db; }
         const ScannerSettings& getScannerSettings() const { return _settings; }
         Wt::WDateTime getLastWriteTime() const { return _file.lastWriteTime; }
         std::size_t getFileSize() const { return _file.fileSize; }
-        const std::filesystem::path& getRelativeFilePath() const { return _file.relativePath; }
 
         template<typename T, typename... CtrArgs>
         void addError(CtrArgs&&... args)
@@ -62,7 +61,7 @@ namespace lms::scanner
 
     private:
         const FileToScan _file;
-        db::Db& _db;
+        db::IDb& _db;
         const ScannerSettings& _settings;
         ScanErrorVector _errors;
     };

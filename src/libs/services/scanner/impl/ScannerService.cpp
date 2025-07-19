@@ -24,11 +24,12 @@
 #include <Wt/WDate.h>
 
 #include "core/IConfig.hpp"
+#include "core/IJobScheduler.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
-#include "database/MediaLibrary.hpp"
-#include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
+#include "database/objects/MediaLibrary.hpp"
+#include "database/objects/ScanSettings.hpp"
 
 #include "scanners/ArtistInfoFileScanner.hpp"
 #include "scanners/AudioFileScanner.hpp"
@@ -46,7 +47,6 @@
 #include "steps/ScanStepCheckForRemovedFiles.hpp"
 #include "steps/ScanStepCompact.hpp"
 #include "steps/ScanStepComputeClusterStats.hpp"
-#include "steps/ScanStepDiscoverFiles.hpp"
 #include "steps/ScanStepOptimize.hpp"
 #include "steps/ScanStepRemoveOrphanedDbEntries.hpp"
 #include "steps/ScanStepScanFiles.hpp"
@@ -139,18 +139,47 @@ namespace lms::scanner
             scanSettings.modify()->setSkipSingleReleasePlayLists(settings.skipSingleReleasePlayLists);
             // TODO add more fields
         }
+
+        std::size_t getScannerThreadCount()
+        {
+            std::size_t threadCount{ core::Service<core::IConfig>::get()->getULong("scanner-thread-count", 0) };
+
+            if (threadCount == 0)
+                threadCount = std::max<std::size_t>(std::thread::hardware_concurrency() / 2, 1);
+
+            return threadCount;
+        }
+
     } // namespace
 
-    std::unique_ptr<IScannerService> createScannerService(Db& db)
+    std::unique_ptr<IScannerService> createScannerService(db::IDb& db)
     {
         return std::make_unique<ScannerService>(db);
     }
 
-    ScannerService::ScannerService(Db& db)
+    ScannerService::ScannerService(db::IDb& db)
         : _db{ db }
+        , _jobScheduler{ core::createJobScheduler("Scanner", getScannerThreadCount()) }
     {
         _ioService.setThreadCount(1);
 
+        LMS_LOG(DBUPDATER, INFO, "Using " << _jobScheduler->getThreadCount() << " thread(s) for jobs");
+        _jobScheduler->setShouldAbortCallback([this]() { return _abortScan; });
+
+        std::size_t totalFileCount{};
+        {
+            auto& session{ _db.getTLSSession() };
+            auto transaction{ session.createReadTransaction() };
+            totalFileCount = session.getFileStats().getTotalFileCount();
+        }
+
+        // Force optimize in case scanner aborted during a large import, but do this only if there are enough elements in the database
+        // Otherwise, indexes may be not used and queries may be slower and slower while adding more and more elements in the db
+        LMS_LOG(DBUPDATER, INFO, "Scanned file count = " << totalFileCount);
+        if (totalFileCount >= 1'000)
+            _db.getTLSSession().fullAnalyze();
+
+        refreshTracingLoggerStats();
         refreshScanSettings();
 
         start();
@@ -356,7 +385,14 @@ namespace lms::scanner
             _currentScanStepStats.reset(); // must be sync with _curState
         }
 
-        LMS_LOG(DBUPDATER, INFO, "Scan " << (_abortScan ? "aborted" : "complete") << ". Changes = " << stats.nbChanges() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << ", failures = " << stats.failures << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errorsCount << "), features fetched = " << stats.featuresFetched << ",  duplicates = " << stats.duplicates.size());
+        refreshTracingLoggerStats();
+        LMS_LOG(DBUPDATER, INFO, "Scan " << (_abortScan ? "aborted" : "complete") << ". Changes = " << stats.getChangesCount() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << ", failures = " << stats.failures << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errorsCount << "), features fetched = " << stats.featuresFetched << ",  duplicates = " << stats.duplicates.size());
+
+        {
+            auto transaction{ _db.getTLSSession().createReadTransaction() };
+            const db::FileStats stats{ _db.getTLSSession().getFileStats() };
+            LMS_LOG(DBUPDATER, INFO, stats.getTotalFileCount() << " total files: " << stats.artistInfoCount << " artist info, " << stats.imageCount << " images, " << stats.playListCount << " playlists, " << stats.trackCount << " tracks, " << stats.trackLyricsCount << " lyrics");
+        }
 
         if (!_abortScan)
         {
@@ -432,32 +468,37 @@ namespace lms::scanner
         if (!_lastScanSettings)
             _lastScanSettings = readScannerSettings(_db.getTLSSession(), lastScanSettingsName);
 
-        auto cbFunc{ [this](const ScanStepStats& stats) {
+        auto progressFunc{ [this](const ScanStepStats& stats) {
             notifyInProgressIfNeeded(stats);
         } };
 
         _fileScanners.clear();
-        _fileScanners.emplace_back(std::make_unique<ArtistInfoFileScanner>(_db, _settings));
-        _fileScanners.emplace_back(std::make_unique<AudioFileScanner>(_db, _settings));
-        _fileScanners.emplace_back(std::make_unique<ImageFileScanner>(_db, _settings));
-        _fileScanners.emplace_back(std::make_unique<LyricsFileScanner>(_db, _settings));
-        _fileScanners.emplace_back(std::make_unique<PlayListFileScanner>(_db, _settings));
+        _fileScanners.add(std::make_unique<ArtistInfoFileScanner>(_db, _settings));
+        _fileScanners.add(std::make_unique<AudioFileScanner>(_db, _settings));
+        _fileScanners.add(std::make_unique<ImageFileScanner>(_db, _settings));
+        _fileScanners.add(std::make_unique<LyricsFileScanner>(_db, _settings));
+        _fileScanners.add(std::make_unique<PlayListFileScanner>(_db, _settings));
 
-        std::vector<IFileScanner*> fileScanners;
-        std::transform(std::cbegin(_fileScanners), std::cend(_fileScanners), std::back_inserter(fileScanners), [](const std::unique_ptr<IFileScanner>& scanner) { return scanner.get(); });
+        _fileScanners.visit([](const IFileScanner& scanner) {
+            for (const std::filesystem::path& file : scanner.getSupportedFiles())
+                LMS_LOG(DBUPDATER, INFO, scanner.getName() << ": supporting file " << file);
+
+            for (const std::filesystem::path& extension : scanner.getSupportedExtensions())
+                LMS_LOG(DBUPDATER, INFO, scanner.getName() << ": supporting file extension " << extension);
+        });
 
         ScanStepBase::InitParams params{
+            .jobScheduler = *_jobScheduler,
             .settings = _settings,
             .lastScanSettings = _lastScanSettings.has_value() ? &(_lastScanSettings.value()) : nullptr,
-            .progressCallback = cbFunc,
+            .progressCallback = progressFunc,
             .abortScan = _abortScan,
             .db = _db,
-            .fileScanners = fileScanners,
+            .fileScanners = _fileScanners,
         };
 
         // Order is important: steps are sequential
         _scanSteps.clear();
-        _scanSteps.emplace_back(std::make_unique<ScanStepDiscoverFiles>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepScanFiles>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepCheckForRemovedFiles>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepArtistReconciliation>(params));
@@ -483,14 +524,14 @@ namespace lms::scanner
             _currentScanStepStats = stepStats;
         }
 
-        const std::chrono::system_clock::time_point now{ std::chrono::system_clock::now() };
+        const auto now{ std::chrono::steady_clock::now() };
         _events.scanInProgress.emit(stepStats);
         _lastScanInProgressEmit = now;
     }
 
     void ScannerService::notifyInProgressIfNeeded(const ScanStepStats& stepStats)
     {
-        std::chrono::system_clock::time_point now{ std::chrono::system_clock::now() };
+        const auto now{ std::chrono::steady_clock::now() };
 
         if (now - _lastScanInProgressEmit >= std::chrono::seconds{ 1 })
             notifyInProgress(stepStats);

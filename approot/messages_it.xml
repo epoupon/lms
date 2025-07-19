@@ -52,10 +52,10 @@
 <message id="Lms.Error.user-not-found">Utente non trovato</message>
 
 <!--Administration-->
+<message id="Lms.Admin.menu-debug-tools"><i class="fa fa-fw fa-bug" aria-hidden="true"></i> Strumenti di debug</message>
 <message id="Lms.Admin.menu-media-libraries"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Librerie</message>
 <message id="Lms.Admin.menu-scan-settings"><i class="fa fa-fw fa-cogs" aria-hidden="true"></i> Impostazioni di scansione</message>
 <message id="Lms.Admin.menu-scanner"><i class="fa fa-fw fa-wrench" aria-hidden="true"></i> Scanner</message>
-<message id="Lms.Admin.menu-tracing"><i class="fa fa-fw fa-bar-chart" aria-hidden="true"></i> Tracing</message>
 <message id="Lms.Admin.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Utenti</message>
 
 <!--MediaLibraries-->
@@ -74,7 +74,7 @@
 
 <!--Scan settings-->
 <message id="Lms.Admin.Database.allow-mbid-artist-merge">Consentire la fusione degli artisti senza MBID con quelli che ne hanno uno</message>
-<message id="Lms.Admin.Database.artist-image-fallback-to-release">Usa l'immagine dell'album se non è disponibile un'immagine dell'artista</message>
+<message id="Lms.Admin.Database.artist-image-fallback-to-release">Utilizza un'immagine dell'album se non è disponibile un'immagine dell'artista</message>
 <message id="Lms.Admin.Database.artist-tag-delimiters">Delimitatori da utilizzare per separare i tag degli artisti</message>
 <message id="Lms.Admin.Database.artists-to-not-split">Artisti da non suddividere utilizzando i delimitatori (un artista per riga)</message>
 <message id="Lms.Admin.Database.daily">Giornaliera</message>
@@ -139,19 +139,25 @@
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Controllo file... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">Compattazione del database...</message>
 <message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Calcolo statistiche... {1}%</message>
-<message id="Lms.Admin.ScannerController.step-discovering-files">File trovati: {1} files</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Recupero metadati da AcousticBrainz: {1}/{2} tracce ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Ottimizzazione del database... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reconciliate-artists">Riconciliazione artisti: {1} voci...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Ricarica motore di tracce simili: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">Rimozione voci orfane: {1} voci...</message>
-<message id="Lms.Admin.ScannerController.step-scanning-files">Scansione dei file: {1}/{2} ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-scanning-files">Analisi delle librerie: {1} file...</message>
 <message id="Lms.Admin.ScannerController.step-status">Stato passo</message>
 <message id="Lms.Admin.ScannerController.step-updating-library-fields">Aggiornamento dei campi della libreria: {1} voci</message>
 
+<!--Debug Tools-->
+<message id="Lms.Admin.DebugTools.debug-tools">Strumenti di debug</message>
+
+<!--Db-->
+<message id="Lms.Admin.DebugTools.Db.export-query-plans">Esporta i piani di query</message>
+<message id="Lms.Admin.DebugTools.Db.db">Database</message>
+
 <!--Tracing-->
-<message id="Lms.Admin.Tracing.export-current-buffer">Esporta tracce</message>
-<message id="Lms.Admin.Tracing.tracing">Tracing</message>
+<message id="Lms.Admin.DebugTools.Tracing.export-current-buffer">Esporta tracce</message>
+<message id="Lms.Admin.DebugTools.Tracing.tracing">Tracing</message>
 
 <!--Users-->
 <message id="Lms.Admin.Users.add">Nuovo utente</message>

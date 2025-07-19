@@ -111,7 +111,7 @@ namespace lms::metadata::taglib::utils
             file = std::make_unique<TagLib::MPEG::File>(stream, TagLib::ID3v2::FrameFactory::instance(), readAudioProperties, audioPropertiesStyle);
         // VORBIS
         else if (ext == "OGG")
-            return std::make_unique<TagLib::Ogg::Vorbis::File>(stream, readAudioProperties, audioPropertiesStyle);
+            file = std::make_unique<TagLib::Ogg::Vorbis::File>(stream, readAudioProperties, audioPropertiesStyle);
         else if (ext == "OGA")
         {
             /* .oga can be any audio in the Ogg container. First try FLAC, then Vorbis. */
@@ -154,10 +154,7 @@ namespace lms::metadata::taglib::utils
 #endif
 
         if (file && !file->isValid())
-        {
-            LMS_LOG(METADATA, DEBUG, "File " << file << ": failed to parse by extension");
             file.reset();
-        }
 
         return file;
     }
@@ -208,10 +205,7 @@ namespace lms::metadata::taglib::utils
 #endif
 
         if (file && !file->isValid())
-        {
-            LMS_LOG(METADATA, DEBUG, "File " << file << ": failed to parse by content");
             file.reset();
-        }
 
         return file;
     }
@@ -223,7 +217,12 @@ namespace lms::metadata::taglib::utils
         TagLib::FileStream fileStream{ createFileStream(p) };
         std::unique_ptr<TagLib::File> file{ parseFileByExtension(&fileStream, p.extension(), readStyle, readAudioProperties.value()) };
         if (!file)
+        {
+            LMS_LOG(METADATA, DEBUG, "File " << p << ": failed to parse by extension");
             file = parseFileByContent(&fileStream, readStyle, readAudioProperties.value());
+            if (!file)
+                LMS_LOG(METADATA, DEBUG, "File " << p << ": failed to parse by content");
+        }
 
         return file;
     }

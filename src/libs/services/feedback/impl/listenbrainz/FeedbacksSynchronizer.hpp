@@ -26,8 +26,8 @@
 #include <boost/asio/io_context_strand.hpp>
 #include <boost/asio/steady_timer.hpp>
 
-#include "database/StarredTrackId.hpp"
-#include "database/UserId.hpp"
+#include "database/objects/StarredTrackId.hpp"
+#include "database/objects/UserId.hpp"
 
 #include "FeedbackTypes.hpp"
 
@@ -39,7 +39,7 @@ namespace lms
     }
     namespace db
     {
-        class Db;
+        class IDb;
     }
 } // namespace lms
 
@@ -48,7 +48,7 @@ namespace lms::feedback::listenBrainz
     class FeedbacksSynchronizer
     {
     public:
-        FeedbacksSynchronizer(boost::asio::io_context& ioContext, db::Db& db, core::http::IClient& client);
+        FeedbacksSynchronizer(boost::asio::io_context& ioContext, db::IDb& db, core::http::IClient& client);
         ~FeedbacksSynchronizer() = default;
         FeedbacksSynchronizer(const FeedbacksSynchronizer&) = delete;
         FeedbacksSynchronizer& operator=(const FeedbacksSynchronizer&) = delete;
@@ -95,7 +95,7 @@ namespace lms::feedback::listenBrainz
 
         boost::asio::io_context& _ioContext;
         boost::asio::io_context::strand _strand{ _ioContext };
-        db::Db& _db;
+        db::IDb& _db;
         boost::asio::steady_timer _syncTimer{ _ioContext };
         core::http::IClient& _client;
 

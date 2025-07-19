@@ -19,6 +19,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <sstream>
 
 #include "metadata/PlayList.hpp"
 
@@ -51,4 +52,16 @@ one to be/../one to be/normalized/foo.mp3)" };
         EXPECT_EQ(playlist.files[4], "and another one/with relative path/foo.mp3");
         EXPECT_EQ(playlist.files[5], "one to be/normalized/foo.mp3");
     }
+
+    TEST(PlayList, UTF8_bom)
+    {
+        const unsigned char content[] = { 0xEF, 0xBB, 0xBF, '#', 'E', 'X', 'T', 'M', '3', 'U', '\r', '\n', '\r', '\n', '.', '.', '/', 't', 'e', 's', 't', '.', 'm', 'p', '3', '\r', '\n' };
+        std::istringstream is{ std::string(reinterpret_cast<const char*>(content), sizeof(content)) };
+
+        const PlayList playlist{ parsePlayList(is) };
+        EXPECT_EQ(playlist.name, "");
+        ASSERT_EQ(playlist.files.size(), 1);
+        EXPECT_EQ(playlist.files[0], "../test.mp3");
+    }
+
 } // namespace lms::metadata::tests

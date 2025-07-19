@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/RatedTrack.hpp"
+#include "database/objects/RatedTrack.hpp"
 
 #include "Common.hpp"
 

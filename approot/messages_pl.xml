@@ -53,10 +53,10 @@
 <message id="Lms.Error.user-not-found">Użytkownik nie odnaleziony</message>
 
 <!--Administration-->
+<message id="Lms.Admin.menu-debug-tools"><i class="fa fa-fw fa-bug" aria-hidden="true"></i> Narzędzia debugowania</message>
 <message id="Lms.Admin.menu-media-libraries"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Biblioteki</message>
 <message id="Lms.Admin.menu-scan-settings"><i class="fa fa-fw fa-cogs" aria-hidden="true"></i> Ustawienia skanowania</message>
 <message id="Lms.Admin.menu-scanner"><i class="fa fa-fw fa-wrench" aria-hidden="true"></i> Skaner</message>
-<message id="Lms.Admin.menu-tracing"><i class="fa fa-fw fa-bar-chart" aria-hidden="true"></i> Śledzenie</message>
 <message id="Lms.Admin.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Użytkownicy</message>
 
 <!--MediaLibraries-->
@@ -152,23 +152,29 @@
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Sprawdzanie plików... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">Prasowanie bazy danych...</message>
 <message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Obliczanie statystyk... {1}%</message>
-<message id="Lms.Admin.ScannerController.step-discovering-files">
-	<plural case="0">Odkrywanie plików: {1} plik</plural>
-	<plural case="1">Odkrywanie plików: {1} pliki</plural>
-	<plural case="2">Odkrywanie plików: {1} plików</plural>
-</message>
 <message id="Lms.Admin.ScannerController.step-fetching-track-features">Pobieranie danych o ścieżce z AcousticBrainz: {1}/{2} ścieżek ({3}%)...</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Optymalizowanie bazy danych... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reconciliate-artists">Uzgodnianie artystów: {1} wpisów...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Przeładowywanie silnika podobieństw: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">Usuwanie osieroconych wpisów: {1} wpisów...</message>
-<message id="Lms.Admin.ScannerController.step-scanning-files">Skanowanie plików: {1}/{2} ({3}%)...</message>
+<message id="Lms.Admin.ScannerController.step-scanning-files">
+	<plural case="0">Analiza bibliotek: {1} plik</plural>
+	<plural case="1">Analiza bibliotek: {1} pliki</plural>
+	<plural case="2">Analiza bibliotek: {1} plików</plural>
+</message>
 <message id="Lms.Admin.ScannerController.step-status">Obecny krok</message>
 <message id="Lms.Admin.ScannerController.step-updating-library-fields">Aktualizowanie pól biblioteki: {1} wpisów</message>
 
+<!--Debug Tools-->
+<message id="Lms.Admin.DebugTools.debug-tools">Narzędzia debugowania</message>
+
+<!--Db-->
+<message id="Lms.Admin.DebugTools.Db.export-query-plans">Eksportuj plany zapytań</message>
+<message id="Lms.Admin.DebugTools.Db.db">Baza danych</message>
+
 <!--Tracing-->
-<message id="Lms.Admin.Tracing.export-current-buffer">Eksportuj ślady</message>
-<message id="Lms.Admin.Tracing.tracing">Śledzenie</message>
+<message id="Lms.Admin.DebugTools.Tracing.export-current-buffer">Eksportuj ślady</message>
+<message id="Lms.Admin.DebugTools.Tracing.tracing">Śledzenie</message>
 
 <!--Users-->
 <message id="Lms.Admin.Users.add">Nowy użytkownik</message>

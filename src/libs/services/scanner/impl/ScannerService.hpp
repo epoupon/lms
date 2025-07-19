@@ -20,6 +20,7 @@
 #pragma once
 
 #include <chrono>
+#include <memory>
 #include <optional>
 #include <shared_mutex>
 #include <vector>
@@ -30,11 +31,17 @@
 #include <Wt/WIOService.h>
 #include <Wt/WSignal.h>
 
+#include "FileScanners.hpp"
 #include "ScannerSettings.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "services/scanner/IScannerService.hpp"
 #include "steps/IScanStep.hpp"
+
+namespace lms::core
+{
+    class IJobScheduler;
+}
 
 namespace lms::scanner
 {
@@ -46,7 +53,7 @@ namespace lms::scanner
     class ScannerService : public IScannerService
     {
     public:
-        ScannerService(db::Db& db);
+        ScannerService(db::IDb& db);
         ~ScannerService() override;
         ScannerService(const ScannerService&) = delete;
         ScannerService& operator=(const ScannerService&) = delete;
@@ -75,11 +82,15 @@ namespace lms::scanner
 
         // Helpers
         void refreshScanSettings();
+        void refreshTracingLoggerStats();
 
         void notifyInProgressIfNeeded(const ScanStepStats& stats);
         void notifyInProgress(const ScanStepStats& stats);
 
-        std::vector<std::unique_ptr<IFileScanner>> _fileScanners;
+        db::IDb& _db;
+        std::unique_ptr<core::IJobScheduler> _jobScheduler;
+
+        FileScanners _fileScanners;
         std::vector<std::unique_ptr<IScanStep>> _scanSteps;
 
         std::mutex _controlMutex;
@@ -87,8 +98,7 @@ namespace lms::scanner
         Wt::WIOService _ioService;
         boost::asio::system_timer _scheduleTimer{ _ioService };
         Events _events;
-        std::chrono::system_clock::time_point _lastScanInProgressEmit;
-        db::Db& _db;
+        std::chrono::steady_clock::time_point _lastScanInProgressEmit;
 
         mutable std::shared_mutex _statusMutex;
         State _curState{ State::NotScheduled };

@@ -35,7 +35,7 @@ namespace lms::auth
 {
     static const Wt::Auth::SHA1HashFunction sha1Function;
 
-    std::unique_ptr<IPasswordService> createPasswordService(std::string_view backend, db::Db& db, std::size_t maxThrottlerEntryCount)
+    std::unique_ptr<IPasswordService> createPasswordService(std::string_view backend, db::IDb& db, std::size_t maxThrottlerEntryCount)
     {
         if (backend == "internal")
             return std::make_unique<InternalPasswordService>(db, maxThrottlerEntryCount);
@@ -46,7 +46,7 @@ namespace lms::auth
         throw Exception{ "Authentication backend '" + std::string{ backend } + "' not supported!" };
     }
 
-    PasswordServiceBase::PasswordServiceBase(db::Db& db, std::size_t maxThrottlerEntries)
+    PasswordServiceBase::PasswordServiceBase(db::IDb& db, std::size_t maxThrottlerEntries)
         : AuthServiceBase{ db }
         , _loginThrottler{ maxThrottlerEntries }
     {

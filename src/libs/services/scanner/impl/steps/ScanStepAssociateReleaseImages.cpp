@@ -23,105 +23,86 @@
 #include <cassert>
 #include <deque>
 #include <set>
-#include <variant>
 
 #include "core/IConfig.hpp"
+#include "core/IJob.hpp"
 #include "core/ILogger.hpp"
 #include "core/Path.hpp"
-#include "database/Artwork.hpp"
-#include "database/Db.hpp"
-#include "database/Directory.hpp"
-#include "database/Image.hpp"
-#include "database/Release.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackEmbeddedImage.hpp"
-#include "database/TrackEmbeddedImageId.hpp"
+#include "database/objects/Artwork.hpp"
+#include "database/objects/Directory.hpp"
+#include "database/objects/Image.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackEmbeddedImage.hpp"
 
-#include "ArtworkUtils.hpp"
+#include "JobQueue.hpp"
 #include "ScanContext.hpp"
 
 namespace lms::scanner
 {
     namespace
     {
-        using ReleaseArtwork = std::variant<std::monostate, db::TrackEmbeddedImageId, db::ImageId>;
-        bool isSameArtwork(ReleaseArtwork preferredArtwork, const db::ObjectPtr<db::Artwork>& artwork)
-        {
-            if (std::holds_alternative<std::monostate>(preferredArtwork))
-                return !artwork;
-
-            if (const db::TrackEmbeddedImageId* trackEmbeddedImageId = std::get_if<db::TrackEmbeddedImageId>(&preferredArtwork))
-                return artwork && *trackEmbeddedImageId == artwork->getTrackEmbeddedImageId();
-
-            if (const db::ImageId* imageId = std::get_if<db::ImageId>(&preferredArtwork))
-                return artwork && *imageId == artwork->getImageId();
-
-            return false;
-        }
-
         struct ReleaseArtworkAssociation
         {
-            db::Release::pointer release;
-            ReleaseArtwork preferredArtwork;
+            db::ReleaseId releaseId;
+            db::ArtworkId preferredArtworkId;
         };
         using ReleaseArtworkAssociationContainer = std::deque<ReleaseArtworkAssociation>;
 
-        struct SearchReleaseArtworkContext
+        struct SearchReleaseArtworkParams
         {
-            db::Session& session;
-            db::ReleaseId lastRetrievedReleaseId;
-            std::size_t processedReleaseCount{};
             const std::vector<std::string>& releaseImageFileNames;
         };
 
-        db::Image::pointer findImageInDirectory(SearchReleaseArtworkContext& searchContext, const std::filesystem::path& directoryPath)
+        db::Artwork::pointer findImageInDirectory(db::Session& session, const SearchReleaseArtworkParams& searchParams, const std::filesystem::path& directoryPath)
         {
-            db::Image::pointer image;
+            db::Artwork::pointer artwork;
 
-            const db::Directory::pointer directory{ db::Directory::find(searchContext.session, directoryPath) };
+            const db::Directory::pointer directory{ db::Directory::find(session, directoryPath) };
             if (directory) // may not exist for releases that are split on different media libraries
             {
-                for (std::string_view fileStem : searchContext.releaseImageFileNames)
+                for (std::string_view fileStem : searchParams.releaseImageFileNames)
                 {
                     db::Image::FindParameters params;
                     params.setDirectory(directory->getId());
                     params.setFileStem(fileStem);
 
-                    db::Image::find(searchContext.session, params, [&](const db::Image::pointer foundImg) {
-                        if (!image)
-                            image = foundImg;
+                    db::Image::find(session, params, [&](const db::Image::pointer& image) {
+                        if (!artwork)
+                            artwork = db::Artwork::find(session, image->getId());
                     });
 
-                    if (image)
+                    if (artwork)
                         break;
                 }
             }
 
-            return image;
+            return artwork;
         }
 
-        db::Image::pointer computePreferredReleaseImage(SearchReleaseArtworkContext& searchContext, const db::Release::pointer& release)
+        db::Artwork::pointer computePreferredReleaseImage(db::Session& session, const SearchReleaseArtworkParams& searchParams, const db::Release::pointer& release)
         {
-            db::Image::pointer image;
+            db::Artwork::pointer artwork;
 
             const auto mbid{ release->getMBID() };
             if (mbid)
             {
                 // Find anywhere, since it is suppoed to be unique!
-                db::Image::find(searchContext.session, db::Image::FindParameters{}.setFileStem(mbid->getAsString()), [&](const db::Image::pointer foundImg) {
-                    if (!image)
-                        image = foundImg;
+                db::Image::find(session, db::Image::FindParameters{}.setFileStem(mbid->getAsString()), [&](const db::Image::pointer& image) {
+                    if (!artwork)
+                        artwork = db::Artwork::find(session, image->getId());
                 });
             }
 
-            if (!image)
+            if (!artwork)
             {
                 std::set<std::filesystem::path> releasePaths;
                 db::Directory::FindParameters params;
                 params.setRelease(release->getId());
 
-                db::Directory::find(searchContext.session, params, [&](const db::Directory::pointer& directory) {
+                db::Directory::find(session, params, [&](const db::Directory::pointer& directory) {
                     releasePaths.insert(directory->getAbsolutePath());
                 });
 
@@ -132,112 +113,75 @@ namespace lms::scanner
                 if (releasePaths.size() > 1)
                 {
                     const std::filesystem::path releasePath{ core::pathUtils::getLongestCommonPath(std::cbegin(releasePaths), std::cend(releasePaths)) };
-                    image = findImageInDirectory(searchContext, releasePath);
+                    artwork = findImageInDirectory(session, searchParams, releasePath);
                 }
 
-                if (!image)
+                if (!artwork)
                 {
                     for (const std::filesystem::path& releasePath : releasePaths)
                     {
-                        image = findImageInDirectory(searchContext, releasePath);
-                        if (image)
+                        artwork = findImageInDirectory(session, searchParams, releasePath);
+                        if (artwork)
                             break;
                     }
                 }
             }
 
-            return image;
+            return artwork;
         }
 
-        ReleaseArtwork computePreferredReleaseArtwork(SearchReleaseArtworkContext& searchContext, const db::Release::pointer& release)
+        db::Artwork::pointer computePreferredReleaseArtwork(db::Session& session, const SearchReleaseArtworkParams& searchParams, const db::Release::pointer& release)
         {
-            const db::Image::pointer image{ computePreferredReleaseImage(searchContext, release) };
-            if (image)
-                return ReleaseArtwork{ image->getId() };
+            db::Artwork::pointer artwork{ computePreferredReleaseImage(session, searchParams, release) };
+            if (artwork)
+                return artwork;
 
             // Fallback on embedded Front image
-            db::TrackEmbeddedImageId trackEmbeddedImageId;
             {
                 db::TrackEmbeddedImage::FindParameters params;
                 params.setRelease(release->getId());
-                params.setImageTypes({ db::ImageType::FrontCover });
+                params.setImageType(db::ImageType::FrontCover);
                 params.setSortMethod(db::TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc);
-                params.setRange(db::Range{ .offset = 0, .size = 1 });
-
-                db::TrackEmbeddedImage::find(searchContext.session, params, [&](const db::TrackEmbeddedImage::pointer& image) { trackEmbeddedImageId = image->getId(); });
+                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
+                    if (!artwork)
+                        artwork = db::Artwork::find(session, image->getId());
+                });
             }
 
-            if (trackEmbeddedImageId.isValid())
-                return ReleaseArtwork{ trackEmbeddedImageId };
+            if (artwork)
+                return artwork;
 
             // Fallback on embedded media image
             {
                 db::TrackEmbeddedImage::FindParameters params;
                 params.setRelease(release->getId());
-                params.setImageTypes({ db::ImageType::Media });
+                params.setImageType(db::ImageType::Media);
                 params.setSortMethod(db::TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc);
-                params.setRange(db::Range{ .offset = 0, .size = 1 });
-
-                db::TrackEmbeddedImage::find(searchContext.session, params, [&](const db::TrackEmbeddedImage::pointer& image) { trackEmbeddedImageId = image->getId(); });
-            }
-
-            if (trackEmbeddedImageId.isValid())
-                return ReleaseArtwork{ trackEmbeddedImageId };
-
-            return ReleaseArtwork{};
-        }
-
-        bool fetchNextReleaseArtworksToUpdate(SearchReleaseArtworkContext& searchContext, ReleaseArtworkAssociationContainer& ReleaseArtworkAssociations)
-        {
-            const db::ReleaseId releaseId{ searchContext.lastRetrievedReleaseId };
-
-            {
-                constexpr std::size_t readBatchSize{ 100 };
-
-                auto transaction{ searchContext.session.createReadTransaction() };
-
-                db::Release::find(searchContext.session, searchContext.lastRetrievedReleaseId, readBatchSize, [&](const db::Release::pointer& release) {
-                    const ReleaseArtwork preferredArtwork{ computePreferredReleaseArtwork(searchContext, release) };
-                    const db::Artwork::pointer currentPreferredArtwork{ release->getPreferredArtwork() };
-
-                    if (!isSameArtwork(preferredArtwork, currentPreferredArtwork))
-                        ReleaseArtworkAssociations.push_back(ReleaseArtworkAssociation{ release, preferredArtwork });
-                    searchContext.processedReleaseCount++;
+                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
+                    if (!artwork)
+                        artwork = db::Artwork::find(session, image->getId());
                 });
             }
 
-            return releaseId != searchContext.lastRetrievedReleaseId;
+            return artwork;
         }
 
-        void updateReleaseArtwork(db::Session& session, const ReleaseArtworkAssociation& ReleaseArtworkAssociation)
+        void updateReleasePreferredArtwork(db::Session& session, const ReleaseArtworkAssociation& releaseArtworkAssociation)
         {
-            db::Release::pointer release{ ReleaseArtworkAssociation.release };
-
-            db::Artwork::pointer artwork;
-            if (const db::TrackEmbeddedImageId * trackEmbeddedImageId{ std::get_if<db::TrackEmbeddedImageId>(&ReleaseArtworkAssociation.preferredArtwork) })
-                artwork = utils::getOrCreateArtworkFromTrackEmbeddedImage(session, *trackEmbeddedImageId);
-            else if (const db::ImageId * imageId{ std::get_if<db::ImageId>(&ReleaseArtworkAssociation.preferredArtwork) })
-                artwork = utils::getOrCreateArtworkFromImage(session, *imageId);
-
-            release.modify()->setPreferredArtwork(artwork);
-
-            if (artwork)
-                LMS_LOG(DBUPDATER, DEBUG, "Updated preferred artwork in release '" << release->getName() << "' with image in " << utils::toPath(session, artwork->getId()));
-            else
-                LMS_LOG(DBUPDATER, DEBUG, "Removed preferred artwork from release '" << release->getName() << "'");
+            db::Release::updatePreferredArtwork(session, releaseArtworkAssociation.releaseId, releaseArtworkAssociation.preferredArtworkId);
         }
 
-        void updateReleaseArtworks(db::Session& session, ReleaseArtworkAssociationContainer& imageAssociations)
+        void updateReleasePreferredArtworks(db::Session& session, ReleaseArtworkAssociationContainer& imageAssociations, bool forceFullBatch)
         {
             constexpr std::size_t writeBatchSize{ 50 };
 
-            while (!imageAssociations.empty())
+            while ((forceFullBatch && imageAssociations.size() >= writeBatchSize) || !imageAssociations.empty())
             {
                 auto transaction{ session.createWriteTransaction() };
 
                 for (std::size_t i{}; !imageAssociations.empty() && i < writeBatchSize; ++i)
                 {
-                    updateReleaseArtwork(session, imageAssociations.front());
+                    updateReleasePreferredArtwork(session, imageAssociations.front());
                     imageAssociations.pop_front();
                 }
             }
@@ -256,6 +200,62 @@ namespace lms::scanner
             return res;
         }
 
+        bool fetchNextReleaseIdRange(db::Session& session, db::ReleaseId& lastRetrievedId, db::IdRange<db::ReleaseId>& idRange)
+        {
+            constexpr std::size_t readBatchSize{ 100 };
+
+            auto transaction{ session.createReadTransaction() };
+
+            idRange = db::Release::findNextIdRange(session, lastRetrievedId, readBatchSize);
+            lastRetrievedId = idRange.last;
+
+            return idRange.isValid();
+        }
+
+        class ComputeReleaseArtworkAssociationsJob : public core::IJob
+        {
+        public:
+            ComputeReleaseArtworkAssociationsJob(db::IDb& db, const SearchReleaseArtworkParams& searchParams, db::IdRange<db::ReleaseId> artistIdRange)
+                : _db{ db }
+                , _searchParams{ searchParams }
+                , _artistIdRange{ artistIdRange }
+            {
+            }
+
+            std::span<const ReleaseArtworkAssociation> getAssociations() const { return _associations; }
+            std::size_t getProcessedReleaseCount() const { return _processedReleaseCount; }
+
+        private:
+            core::LiteralString getName() const override { return "Associate Release Artworks"; }
+            void run() override
+            {
+                auto& session{ _db.getTLSSession() };
+                auto transaction{ session.createReadTransaction() };
+
+                db::Release::find(session, _artistIdRange, [this, &session](const db::Release::pointer& release) {
+                    const db::Artwork::pointer preferredArtwork{ computePreferredReleaseArtwork(session, _searchParams, release) };
+
+                    if (release->getPreferredArtwork() != preferredArtwork)
+                    {
+                        _associations.push_back(ReleaseArtworkAssociation{ release->getId(), preferredArtwork ? preferredArtwork->getId() : db::ArtworkId{} });
+
+                        if (preferredArtwork)
+                            LMS_LOG(DBUPDATER, DEBUG, "Updating preferred artwork for release '" << release->getName() << "' with image in " << preferredArtwork->getAbsoluteFilePath());
+                        else
+                            LMS_LOG(DBUPDATER, DEBUG, "Removing preferred artwork from release '" << release->getName() << "'");
+                    }
+
+                    _processedReleaseCount++;
+                });
+            }
+
+            db::IDb& _db;
+            const SearchReleaseArtworkParams& _searchParams;
+            db::IdRange<db::ReleaseId> _artistIdRange;
+            std::vector<ReleaseArtworkAssociation> _associations;
+            std::size_t _processedReleaseCount{};
+        };
+
     } // namespace
 
     ScanStepAssociateReleaseImages::ScanStepAssociateReleaseImages(InitParams& initParams)
@@ -266,7 +266,7 @@ namespace lms::scanner
 
     bool ScanStepAssociateReleaseImages::needProcess(const ScanContext& context) const
     {
-        return context.stats.nbChanges() > 0;
+        return context.stats.getChangesCount() > 0;
     }
 
     void ScanStepAssociateReleaseImages::process(ScanContext& context)
@@ -278,21 +278,39 @@ namespace lms::scanner
             context.currentStepStats.totalElems = db::Release::getCount(session);
         }
 
-        SearchReleaseArtworkContext searchContext{
-            .session = session,
-            .lastRetrievedReleaseId = {},
+        const SearchReleaseArtworkParams searchParams{
             .releaseImageFileNames = _releaseImageFileNames,
         };
 
-        ReleaseArtworkAssociationContainer ReleaseArtworkAssociations;
-        while (fetchNextReleaseArtworksToUpdate(searchContext, ReleaseArtworkAssociations))
-        {
+        ReleaseArtworkAssociationContainer artistArtworkAssociations;
+        auto processJobsDone = [&](std::span<std::unique_ptr<core::IJob>> jobs) {
             if (_abortScan)
                 return;
 
-            updateReleaseArtworks(session, ReleaseArtworkAssociations);
-            context.currentStepStats.processedElems = searchContext.processedReleaseCount;
+            for (const auto& job : jobs)
+            {
+                const auto& associationJob{ static_cast<const ComputeReleaseArtworkAssociationsJob&>(*job) };
+                const auto& artistAssociations{ associationJob.getAssociations() };
+
+                artistArtworkAssociations.insert(std::end(artistArtworkAssociations), std::cbegin(artistAssociations), std::cend(artistAssociations));
+
+                context.currentStepStats.processedElems += associationJob.getProcessedReleaseCount();
+            }
+
+            updateReleasePreferredArtworks(session, artistArtworkAssociations, true);
             _progressCallback(context.currentStepStats);
-        }
+        };
+
+        JobQueue queue{ getJobScheduler(), 20, processJobsDone, 1, 0.85F };
+
+        db::ReleaseId lastRetrievedReleaseId{};
+        db::IdRange<db::ReleaseId> artistIdRange;
+        while (fetchNextReleaseIdRange(session, lastRetrievedReleaseId, artistIdRange))
+            queue.push(std::make_unique<ComputeReleaseArtworkAssociationsJob>(_db, searchParams, artistIdRange));
+
+        queue.finish();
+
+        // process all remaining associations
+        updateReleasePreferredArtworks(session, artistArtworkAssociations, false);
     }
 } // namespace lms::scanner

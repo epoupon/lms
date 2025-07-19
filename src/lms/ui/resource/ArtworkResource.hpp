@@ -23,7 +23,7 @@
 
 #include <Wt/WResource.h>
 
-#include "database/ArtworkId.hpp"
+#include "database/objects/ArtworkId.hpp"
 
 namespace lms::ui
 {
@@ -41,11 +41,15 @@ namespace lms::ui
             Large = 512,
         };
 
-        std::string getArtworkUrl(db::ArtworkId artworkId, std::optional<Size> size = std::nullopt) const;
+        enum class DefaultArtworkType
+        {
+            Artist,
+            Release,
+            Track,
+        };
 
-        std::string getDefaultArtistArtworkUrl() const;
-        std::string getDefaultReleaseArtworkUrl() const;
-        std::string getDefaultTrackArtworkUrl() const;
+        std::string getArtworkUrl(db::ArtworkId artworkId, DefaultArtworkType fallbackType, std::optional<Size> size = std::nullopt) const;
+        std::string getDefaultArtworkUrl(DefaultArtworkType type) const;
 
     private:
         void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;

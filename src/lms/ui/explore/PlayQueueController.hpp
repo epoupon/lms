@@ -21,10 +21,10 @@
 
 #include <vector>
 
-#include "database/ArtistId.hpp"
-#include "database/ReleaseId.hpp"
-#include "database/TrackId.hpp"
-#include "database/TrackListId.hpp"
+#include "database/objects/ArtistId.hpp"
+#include "database/objects/ReleaseId.hpp"
+#include "database/objects/TrackId.hpp"
+#include "database/objects/TrackListId.hpp"
 
 namespace lms::ui
 {

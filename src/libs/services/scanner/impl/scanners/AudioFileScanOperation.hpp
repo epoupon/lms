@@ -32,7 +32,7 @@
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 } // namespace lms::db
 
 namespace lms::metadata
@@ -56,7 +56,7 @@ namespace lms::scanner
     class AudioFileScanOperation : public FileScanOperationBase
     {
     public:
-        AudioFileScanOperation(FileToScan&& fileToScan, db::Db& db, const ScannerSettings& settings, metadata::IAudioFileParser& parser);
+        AudioFileScanOperation(FileToScan&& fileToScan, db::IDb& db, const ScannerSettings& settings, metadata::IAudioFileParser& parser);
         ~AudioFileScanOperation() override;
         AudioFileScanOperation(const AudioFileScanOperation&) = delete;
         AudioFileScanOperation& operator=(const AudioFileScanOperation&) = delete;

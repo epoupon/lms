@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Admin.DebugTools.Db.template">
+	<form>
+		<div class="row g-3">
+			<div class="col-12">
+				${export-query-plans-btn class="btn btn-primary"}
+			</div>
+		</div>
+	</form>
+</message>
+
+</messages>

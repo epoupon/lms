@@ -30,7 +30,6 @@ namespace lms::scanner
     struct FileToScan
     {
         std::filesystem::path filePath;
-        std::filesystem::path relativePath;
         MediaLibraryInfo mediaLibrary;
         Wt::WDateTime lastWriteTime;
         std::size_t fileSize{};

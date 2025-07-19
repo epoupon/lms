@@ -20,7 +20,7 @@
 #include "ScanStepOptimize.hpp"
 
 #include "core/ILogger.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
 
 #include "ScanContext.hpp"
@@ -32,8 +32,13 @@ namespace lms::scanner
         if (context.scanOptions.forceOptimize)
             return true;
 
-        if (context.stats.nbChanges() > (context.stats.nbFiles() / 10))
+        // Don't optimize if there are too few files: it may lead to some indexes not being used
+        // and will drastically slow down the scan process when adding more files later
+        if (context.stats.getChangesCount() > (context.stats.getTotalFileCount() / 5)
+            && context.stats.getTotalFileCount() >= 1'000)
+        {
             return true;
+        }
 
         return false;
     }

@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <messages xmlns:if="Wt.WTemplate.conditions">
 
-<message id="Lms.Admin.Tracing.template">
+<message id="Lms.Admin.DebugTools.Tracing.template">
 	<form>
-		<legend>${tr:Lms.Admin.Tracing.tracing}</legend>
 		<div class="row g-3">
 			<div class="col-12">
 				${export-btn class="btn btn-primary"}

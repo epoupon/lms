@@ -20,7 +20,7 @@
 
 #include <Wt/WAnchor.h>
 
-#include "database/Artist.hpp"
+#include "database/objects/Artist.hpp"
 
 #include "Utils.hpp"
 
@@ -35,9 +35,9 @@ namespace lms::ui::ArtistListHelpers
 
         std::unique_ptr<Wt::WImage> image;
         if (artist->getPreferredArtworkId().isValid())
-            image = utils::createArtworkImage(artist->getPreferredArtworkId(), ArtworkResource::Size::Large);
+            image = utils::createArtworkImage(artist->getPreferredArtworkId(), ArtworkResource::DefaultArtworkType::Artist, ArtworkResource::Size::Large);
         else
-            image = utils::createDefaultArtistArtworkImage();
+            image = utils::createDefaultArtworkImage(ArtworkResource::DefaultArtworkType::Artist);
 
         image->addStyleClass("Lms-image-artist Lms-cover-anchor"); // hack
         anchor->setImage(std::move(image));

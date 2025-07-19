@@ -20,9 +20,9 @@
 #include "Playlists.hpp"
 
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackList.hpp"
-#include "database/User.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackList.hpp"
+#include "database/objects/User.hpp"
 
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"

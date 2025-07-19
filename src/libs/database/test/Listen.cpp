@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/Listen.hpp"
+#include "database/objects/Listen.hpp"
 
 #include "Common.hpp"
 

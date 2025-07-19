@@ -25,16 +25,16 @@
 #include <Wt/WDateTime.h>
 #include <boost/asio/io_context.hpp>
 
-#include "database/ArtistId.hpp"
-#include "database/Filters.hpp"
-#include "database/ReleaseId.hpp"
-#include "database/TrackId.hpp"
 #include "database/Types.hpp"
-#include "database/UserId.hpp"
+#include "database/objects/ArtistId.hpp"
+#include "database/objects/Filters.hpp"
+#include "database/objects/ReleaseId.hpp"
+#include "database/objects/TrackId.hpp"
+#include "database/objects/UserId.hpp"
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 }
 
 namespace lms::feedback
@@ -125,6 +125,6 @@ namespace lms::feedback
         virtual std::optional<db::Rating> getRating(db::UserId userId, db::TrackId trackId) = 0;
     };
 
-    std::unique_ptr<IFeedbackService> createFeedbackService(boost::asio::io_context& ioContext, db::Db& db);
+    std::unique_ptr<IFeedbackService> createFeedbackService(boost::asio::io_context& ioContext, db::IDb& db);
 
 } // namespace lms::feedback

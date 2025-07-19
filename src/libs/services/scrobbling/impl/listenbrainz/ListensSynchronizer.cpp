@@ -21,6 +21,7 @@
 
 #include <Wt/Json/Array.h>
 #include <Wt/Json/Object.h>
+#include <Wt/Json/Parser.h>
 #include <Wt/Json/Serializer.h>
 #include <Wt/Json/Value.h>
 #include <boost/asio/bind_executor.hpp>
@@ -30,13 +31,13 @@
 #include "core/IConfig.hpp"
 #include "core/Service.hpp"
 #include "core/http/IClient.hpp"
-#include "database/Artist.hpp"
-#include "database/Db.hpp"
-#include "database/Listen.hpp"
-#include "database/Release.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/User.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/Listen.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/User.hpp"
 #include "services/scrobbling/Exception.hpp"
 
 #include "Utils.hpp"
@@ -210,7 +211,7 @@ namespace lms::scrobbling::listenBrainz
         }
     } // namespace
 
-    ListensSynchronizer::ListensSynchronizer(boost::asio::io_context& ioContext, db::Db& db, core::http::IClient& client)
+    ListensSynchronizer::ListensSynchronizer(boost::asio::io_context& ioContext, db::IDb& db, core::http::IClient& client)
         : _ioContext{ ioContext }
         , _db{ db }
         , _client{ client }

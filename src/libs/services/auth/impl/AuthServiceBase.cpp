@@ -20,15 +20,15 @@
 #include "AuthServiceBase.hpp"
 
 #include "core/ILogger.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/User.hpp"
+#include "database/objects/User.hpp"
 
 namespace lms::auth
 {
     using namespace db;
 
-    AuthServiceBase::AuthServiceBase(Db& db)
+    AuthServiceBase::AuthServiceBase(db::IDb& db)
         : _db{ db }
     {
     }

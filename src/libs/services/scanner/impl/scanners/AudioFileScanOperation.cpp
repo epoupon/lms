@@ -24,20 +24,21 @@
 #include "core/PartialDateTime.hpp"
 #include "core/Path.hpp"
 #include "core/XxHash3.hpp"
-#include "database/Artist.hpp"
-#include "database/Cluster.hpp"
-#include "database/Db.hpp"
-#include "database/Directory.hpp"
-#include "database/MediaLibrary.hpp"
-#include "database/Release.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackArtistLink.hpp"
-#include "database/TrackEmbeddedImage.hpp"
-#include "database/TrackEmbeddedImageLink.hpp"
-#include "database/TrackFeatures.hpp"
-#include "database/TrackLyrics.hpp"
 #include "database/Types.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/Artwork.hpp"
+#include "database/objects/Cluster.hpp"
+#include "database/objects/Directory.hpp"
+#include "database/objects/MediaLibrary.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackArtistLink.hpp"
+#include "database/objects/TrackEmbeddedImage.hpp"
+#include "database/objects/TrackEmbeddedImageLink.hpp"
+#include "database/objects/TrackFeatures.hpp"
+#include "database/objects/TrackLyrics.hpp"
 #include "image/Exception.hpp"
 #include "image/Image.hpp"
 #include "metadata/Exception.hpp"
@@ -332,6 +333,8 @@ namespace lms::scanner
                 image.modify()->setWidth(imageInfo.properties.width);
                 image.modify()->setHeight(imageInfo.properties.height);
                 image.modify()->setMimeType(imageInfo.mimeType);
+
+                session.create<db::Artwork>(image);
             }
 
             return image;
@@ -376,11 +379,12 @@ namespace lms::scanner
             return db::Advisory::UnSet;
         }
 
-        db::Track::pointer findMovedTrackBySizeAndMetaData(db::Session& session, const metadata::Track& parsedTrack, size_t fileSize, const std::filesystem::path& relativePath)
+        db::Track::pointer findMovedTrackBySizeAndMetaData(db::Session& session, const metadata::Track& parsedTrack, const std::filesystem::path& trackPath, size_t fileSize)
         {
             db::Track::FindParameters params;
             // Add as many fields as possible to limit errors
             params.setName(parsedTrack.title);
+            params.setFileSize(fileSize);
             if (parsedTrack.medium)
             {
                 if (parsedTrack.medium->position)
@@ -390,7 +394,6 @@ namespace lms::scanner
             }
             if (parsedTrack.position)
                 params.setTrackNumber(*parsedTrack.position);
-            params.setFileSize(fileSize);
 
             bool error{};
             db::Track::pointer res;
@@ -402,7 +405,7 @@ namespace lms::scanner
 
                 if (res)
                 {
-                    LMS_LOG(DBUPDATER, DEBUG, "Found too many candidates for file move. New file = " << relativePath << ", candidate = " << track->getAbsoluteFilePath() << ", previous candidate = " << res->getAbsoluteFilePath());
+                    LMS_LOG(DBUPDATER, DEBUG, "Found too many candidates for file move. New file = " << trackPath << ", candidate = " << track->getAbsoluteFilePath() << ", previous candidate = " << res->getAbsoluteFilePath());
                     error = true;
                 }
                 res = track;
@@ -463,7 +466,7 @@ namespace lms::scanner
         }
     } // namespace
 
-    AudioFileScanOperation::AudioFileScanOperation(FileToScan&& fileToScan, db::Db& db, const ScannerSettings& settings, metadata::IAudioFileParser& parser)
+    AudioFileScanOperation::AudioFileScanOperation(FileToScan&& fileToScan, db::IDb& db, const ScannerSettings& settings, metadata::IAudioFileParser& parser)
         : FileScanOperationBase{ std::move(fileToScan), db, settings }
         , _parser{ parser }
     {
@@ -473,7 +476,6 @@ namespace lms::scanner
 
     void AudioFileScanOperation::scan()
     {
-        LMS_SCOPED_TRACE_OVERVIEW("Scanner", "ScanAudioFile");
         std::unique_ptr<metadata::Track> track;
 
         try
@@ -595,7 +597,7 @@ namespace lms::scanner
         if (!track)
         {
             // maybe the file just moved?
-            track = findMovedTrackBySizeAndMetaData(dbSession, *_parsedTrack, getFileSize(), getRelativeFilePath());
+            track = findMovedTrackBySizeAndMetaData(dbSession, *_parsedTrack, getFilePath(), getFileSize());
             if (track)
             {
                 LMS_LOG(DBUPDATER, DEBUG, "Considering track " << getFilePath() << " moved from " << track->getAbsoluteFilePath());
@@ -650,7 +652,6 @@ namespace lms::scanner
         track.modify()->setDuration(_parsedTrack->audioProperties.duration);
         track.modify()->setSampleRate(_parsedTrack->audioProperties.sampleRate);
 
-        track.modify()->setRelativeFilePath(getRelativeFilePath());
         track.modify()->setFileSize(getFileSize());
         track.modify()->setLastWriteTime(getLastWriteTime());
 
@@ -684,6 +685,7 @@ namespace lms::scanner
         createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Composer, _parsedTrack->composerArtists, allowFallback);
         createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Lyricist, _parsedTrack->lyricistArtists, allowFallback);
         createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Mixer, _parsedTrack->mixerArtists, allowFallback);
+        createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Producer, _parsedTrack->producerArtists, allowFallback);
         createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Remixer, _parsedTrack->remixerArtists, allowFallback);
 
         for (const auto& [role, performers] : _parsedTrack->performerArtists)

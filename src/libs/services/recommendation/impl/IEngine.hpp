@@ -22,13 +22,13 @@
 #include <memory>
 
 #include "core/EnumSet.hpp"
-#include "database/TrackListId.hpp"
 #include "database/Types.hpp"
+#include "database/objects/TrackListId.hpp"
 #include "services/recommendation/Types.hpp"
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 }
 
 namespace lms::recommendation
@@ -47,6 +47,6 @@ namespace lms::recommendation
         virtual ArtistContainer getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const = 0;
     };
 
-    std::unique_ptr<IEngine> createEngine(db::Db& db);
+    std::unique_ptr<IEngine> createEngine(db::IDb& db);
 
 } // namespace lms::recommendation

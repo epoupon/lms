@@ -46,7 +46,7 @@ namespace lms::recommendation
     class FeaturesEngine : public IEngine
     {
     public:
-        FeaturesEngine(db::Db& db)
+        FeaturesEngine(db::IDb& db)
             : _db{ db } {}
 
         FeaturesEngine(const FeaturesEngine&) = delete;
@@ -105,7 +105,7 @@ namespace lms::recommendation
             const ObjectPositions<IdType>& objectPositions,
             std::size_t maxCount) const;
 
-        db::Db& _db;
+        db::IDb& _db;
         bool _loadCancelled{};
         std::unique_ptr<som::Network> _network;
         double _networkRefVectorsDistanceMedian{};

@@ -1,4 +1,4 @@
-FROM	alpine:3.21.3 AS build
+FROM	alpine:3.22 AS build
 
 WORKDIR	/tmp/workdir
 
@@ -79,7 +79,7 @@ RUN \
 	make -j$(nproc) install 
 
 # WT
-ARG	WT_VERSION=4.11.3
+ARG	WT_VERSION=4.11.4
 ARG WT_DEBUG=OFF
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
@@ -101,7 +101,7 @@ RUN \
 	cp ./*.h ${PREFIX}/include/stb
 
 # TAGLIB
-ARG TAGLIB_VERSION=v2.0.2
+ARG TAGLIB_VERSION=v2.1.1
 RUN \
 	DIR=/tmp/taglib && mkdir -p ${DIR} && cd ${DIR} && \
 	curl -sLO https://github.com/taglib/taglib/archive/${TAGLIB_VERSION}.tar.gz && \
@@ -145,7 +145,7 @@ RUN \
 	rm -rf /tmp/fakeroot/share/Wt/resources/themes
 
 ## Release Stage
-FROM		alpine:3.21.3 AS release
+FROM		alpine:3.22 AS release
 LABEL		maintainer="Emeric Poupon <itmfr@yahoo.fr>"
 
 ARG	RUNTIME_PACKAGES=" \

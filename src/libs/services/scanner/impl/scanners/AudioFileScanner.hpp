@@ -25,7 +25,7 @@ namespace lms
 {
     namespace db
     {
-        class Db;
+        class IDb;
     }
 
     namespace metadata
@@ -41,7 +41,7 @@ namespace lms::scanner
     class AudioFileScanner : public IFileScanner
     {
     public:
-        AudioFileScanner(db::Db& db, const ScannerSettings& settings);
+        AudioFileScanner(db::IDb& db, const ScannerSettings& settings);
         ~AudioFileScanner() override;
         AudioFileScanner(const AudioFileScanner&) = delete;
         AudioFileScanner& operator=(const AudioFileScanner&) = delete;
@@ -53,7 +53,7 @@ namespace lms::scanner
         bool needsScan(const FileToScan& file) const override;
         std::unique_ptr<IFileScanOperation> createScanOperation(FileToScan&& fileToScan) const override;
 
-        db::Db& _db;
+        db::IDb& _db;
         const ScannerSettings& _settings;
         std::unique_ptr<metadata::IAudioFileParser> _metadataParser;
     };

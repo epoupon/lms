@@ -25,13 +25,13 @@
 #include <Wt/Http/Response.h>
 #include <Wt/WResource.h>
 
-#include "database/UserId.hpp"
+#include "database/objects/UserId.hpp"
 
 #include "RequestContext.hpp"
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 }
 
 namespace lms::api::subsonic
@@ -39,7 +39,7 @@ namespace lms::api::subsonic
     class SubsonicResource final : public Wt::WResource
     {
     public:
-        SubsonicResource(db::Db& db);
+        SubsonicResource(db::IDb& db);
 
     private:
         void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
@@ -53,6 +53,6 @@ namespace lms::api::subsonic
         const std::unordered_set<std::string> _openSubsonicDisabledClients;
         const bool _supportUserPasswordAuthentication;
 
-        db::Db& _db;
+        db::IDb& _db;
     };
 } // namespace lms::api::subsonic

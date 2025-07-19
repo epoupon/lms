@@ -19,56 +19,23 @@
 
 #pragma once
 
-#include <Wt/Dbo/Dbo.h>
-#include <Wt/Dbo/SqlConnectionPool.h>
+#include <Wt/Dbo/Session.h>
 
+#include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
-#include "core/ITraceLogger.hpp"
-#include "core/RecursiveSharedMutex.hpp"
-#include "database/TransactionChecker.hpp"
+#include "database/Transaction.hpp"
+#include "database/Types.hpp"
 
 namespace lms::db
 {
-    class WriteTransaction
-    {
-    public:
-        ~WriteTransaction();
-
-    private:
-        friend class Session;
-        WriteTransaction(core::RecursiveSharedMutex& mutex, Wt::Dbo::Session& session);
-
-        WriteTransaction(const WriteTransaction&) = delete;
-        WriteTransaction& operator=(const WriteTransaction&) = delete;
-
-        const std::unique_lock<core::RecursiveSharedMutex> _lock;
-        const core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "WriteTransaction" }; // before actual transaction
-        Wt::Dbo::Transaction _transaction;
-    };
-
-    class ReadTransaction
-    {
-    public:
-        ~ReadTransaction();
-
-    private:
-        friend class Session;
-        ReadTransaction(Wt::Dbo::Session& session);
-
-        ReadTransaction(const ReadTransaction&) = delete;
-        ReadTransaction& operator=(const ReadTransaction&) = delete;
-
-        const core::tracing::ScopedTrace _trace{ "Database", core::tracing::Level::Detailed, "ReadTransaction" }; // before actual transaction
-        Wt::Dbo::Transaction _transaction;
-    };
-
-    class Db;
+    class IDb;
     class Session
     {
     public:
-        Session(Db& db);
+        Session(IDb& db);
         ~Session() = default;
         Session(const Session&) = delete;
         Session& operator=(const Session&) = delete;
@@ -76,18 +43,8 @@ namespace lms::db
         [[nodiscard]] WriteTransaction createWriteTransaction();
         [[nodiscard]] ReadTransaction createReadTransaction();
 
-        void checkWriteTransaction()
-        {
-#if LMS_CHECK_TRANSACTION_ACCESSES
-            TransactionChecker::checkWriteTransaction(_session);
-#endif
-        }
-        void checkReadTransaction()
-        {
-#if LMS_CHECK_TRANSACTION_ACCESSES
-            TransactionChecker::checkReadTransaction(_session);
-#endif
-        }
+        void checkWriteTransaction() const;
+        void checkReadTransaction() const;
 
         void execute(std::string_view statement);
 
@@ -97,23 +54,19 @@ namespace lms::db
         void analyzeEntry(const std::string& entry);
 
         bool areAllTablesEmpty(); // need to acquire a read transaction
+        FileStats getFileStats(); // need to acquire a read transaction
 
         void prepareTablesIfNeeded(); // need to run only once at startup
         bool migrateSchemaIfNeeded(); // returns true if migration was performed
         void createIndexesIfNeeded();
         void vacuumIfNeeded();
         void vacuum();
-        void refreshTracingLoggerStats();
 
         // returning a ptr here to ease further wrapping using operator->
-        Wt::Dbo::Session* getDboSession()
-        {
-            return &_session;
-        }
-        Db& getDb()
-        {
-            return _db;
-        }
+        Wt::Dbo::Session* getDboSession() { return &_session; }
+        const Wt::Dbo::Session* getDboSession() const { return &_session; }
+
+        IDb& getDb() { return _db; }
 
         template<typename Object, typename... Args>
         typename Object::pointer create(Args&&... args)
@@ -126,8 +79,26 @@ namespace lms::db
             return res;
         }
 
+        template<typename Object>
+        void destroy(typename Object::IdType id)
+        {
+            destroy(std::span{ &id, 1 });
+        }
+
+        template<typename Object>
+        void destroy(std::span<const typename Object::IdType> ids)
+        {
+            checkWriteTransaction();
+
+            const std::string query{ std::string{ "DELETE FROM " } + _session.tableName<Object>() + " WHERE id = ?" };
+            for (typename Object::IdType id : ids)
+                execute(query, id.getValue());
+        }
+
     private:
-        Db& _db;
+        void execute(std::string_view query, long long id);
+
+        IDb& _db;
         Wt::Dbo::Session _session;
     };
 } // namespace lms::db

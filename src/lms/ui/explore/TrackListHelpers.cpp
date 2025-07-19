@@ -25,14 +25,14 @@
 
 #include "av/IAudioFile.hpp"
 #include "core/Service.hpp"
-#include "database/Artist.hpp"
-#include "database/Release.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackArtistLink.hpp"
-#include "database/TrackLyrics.hpp"
 #include "database/Types.hpp"
-#include "database/User.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackArtistLink.hpp"
+#include "database/objects/TrackLyrics.hpp"
+#include "database/objects/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
 
@@ -230,11 +230,11 @@ namespace lms::ui::TrackListHelpers
 
         std::unique_ptr<Wt::WImage> image;
         if (track->getPreferredMediaArtworkId().isValid())
-            image = utils::createArtworkImage(track->getPreferredMediaArtworkId(), ArtworkResource::Size::Small);
+            image = utils::createArtworkImage(track->getPreferredMediaArtworkId(), ArtworkResource::DefaultArtworkType::Track, ArtworkResource::Size::Small);
         else if (track->getPreferredArtworkId().isValid())
-            image = utils::createArtworkImage(track->getPreferredArtworkId(), ArtworkResource::Size::Small);
+            image = utils::createArtworkImage(track->getPreferredArtworkId(), ArtworkResource::DefaultArtworkType::Track, ArtworkResource::Size::Small);
         else
-            image = utils::createDefaultTrackArtworkImage();
+            image = utils::createDefaultArtworkImage(ArtworkResource::DefaultArtworkType::Track);
 
         image->addStyleClass("Lms-cover-track rounded"); // hack
         if (track->getRelease())

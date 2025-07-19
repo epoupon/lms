@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/StarredTrack.hpp"
+#include "database/objects/StarredTrack.hpp"
 
 #include "Common.hpp"
 

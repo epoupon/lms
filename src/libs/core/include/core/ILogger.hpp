@@ -101,3 +101,10 @@ namespace lms::core::logging
         if (auto* logger_{ ::lms::core::Service<::lms::core::logging::ILogger>::get() }; logger_ && logger_->isSeverityActive(::lms::core::logging::Severity::severity)) \
             ::lms::core::logging::Log{ *logger_, ::lms::core::logging::Module::module, ::lms::core::logging::Severity::severity }.getOstream() << message;               \
     } while (0)
+
+#define LMS_LOG_IF(module, severity, cond, message)                                                                                                                              \
+    do                                                                                                                                                                           \
+    {                                                                                                                                                                            \
+        if (auto* logger_{ ::lms::core::Service<::lms::core::logging::ILogger>::get() }; logger_ && logger_->isSeverityActive(::lms::core::logging::Severity::severity) && cond) \
+            ::lms::core::logging::Log{ *logger_, ::lms::core::logging::Module::module, ::lms::core::logging::Severity::severity }.getOstream() << message;                       \
+    } while (0)

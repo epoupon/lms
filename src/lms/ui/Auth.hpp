@@ -21,7 +21,7 @@
 
 #include <Wt/WTemplateFormView.h>
 
-#include "database/UserId.hpp"
+#include "database/objects/UserId.hpp"
 
 namespace lms::auth
 {

@@ -21,13 +21,10 @@
 
 #include "IFileScanner.hpp"
 
-namespace lms
+namespace lms::db
 {
-    namespace db
-    {
-        class Db;
-    }
-} // namespace lms
+    class IDb;
+}
 
 namespace lms::scanner
 {
@@ -36,7 +33,7 @@ namespace lms::scanner
     class PlayListFileScanner : public IFileScanner
     {
     public:
-        PlayListFileScanner(db::Db& db, ScannerSettings& settings);
+        PlayListFileScanner(db::IDb& db, ScannerSettings& settings);
         ~PlayListFileScanner() override = default;
         PlayListFileScanner(const PlayListFileScanner&) = delete;
         PlayListFileScanner& operator=(const PlayListFileScanner&) = delete;
@@ -48,7 +45,7 @@ namespace lms::scanner
         bool needsScan(const FileToScan& file) const override;
         std::unique_ptr<IFileScanOperation> createScanOperation(FileToScan&& fileToScan) const override;
 
-        db::Db& _db;
+        db::IDb& _db;
         ScannerSettings& _settings;
     };
 } // namespace lms::scanner

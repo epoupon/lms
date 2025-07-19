@@ -22,7 +22,7 @@
 #include <Wt/Dbo/ptr.h>
 #include <Wt/WResource.h>
 
-#include "database/TrackId.hpp"
+#include "database/objects/TrackId.hpp"
 
 namespace lms::db
 {

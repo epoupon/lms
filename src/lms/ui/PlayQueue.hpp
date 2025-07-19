@@ -27,8 +27,8 @@
 #include <Wt/WText.h>
 
 #include "database/Object.hpp"
-#include "database/TrackId.hpp"
-#include "database/TrackListId.hpp"
+#include "database/objects/TrackId.hpp"
+#include "database/objects/TrackListId.hpp"
 
 #include "common/Template.hpp"
 

@@ -19,70 +19,146 @@
 
 #include "ScanStepScanFiles.hpp"
 
-#include "FileScanQueue.hpp"
+#include <deque>
+
 #include "ScannerSettings.hpp"
-#include "core/IConfig.hpp"
+#include "core/IJob.hpp"
+#include "core/IJobScheduler.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
-#include "core/Path.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "scanners/FileToScan.hpp"
 #include "scanners/IFileScanOperation.hpp"
 #include "scanners/IFileScanner.hpp"
 
+#include "FileScanners.hpp"
+#include "JobQueue.hpp"
 #include "ScanContext.hpp"
 
 namespace lms::scanner
 {
-    using namespace db;
-
     namespace
     {
-        std::size_t getScanMetaDataThreadCount()
+        using ExploreFileCallback = std::function<bool(std::error_code, const std::filesystem::path& path, const std::filesystem::directory_entry*)>;
+        bool exploreFilesRecursive(const std::filesystem::path& directory, ExploreFileCallback cb, const std::filesystem::path* excludeDirFileName)
         {
-            std::size_t threadCount{ core::Service<core::IConfig>::get()->getULong("scanner-metadata-thread-count", 0) };
+            std::error_code ec;
+            std::filesystem::directory_iterator itPath{ directory, std::filesystem::directory_options::follow_directory_symlink, ec };
 
-            if (threadCount == 0)
-                threadCount = std::max<std::size_t>(std::thread::hardware_concurrency() / 2, 1);
-
-            return threadCount;
-        }
-
-        FileToScan retrieveFileInfo(const std::filesystem::path& file, const MediaLibraryInfo& mediaLibrary, std::error_code& ec)
-        {
-            FileToScan res;
-
-            res.lastWriteTime = core::pathUtils::getLastWriteTime(file, ec);
-            if (!ec)
-                res.relativePath = std::filesystem::relative(file, mediaLibrary.rootDirectory, ec);
-            if (!ec)
-                res.fileSize = std::filesystem::file_size(file, ec);
-
-            if (!ec)
+            if (ec)
             {
-                res.filePath = file;
-                res.mediaLibrary = mediaLibrary;
+                cb(ec, directory, nullptr);
+                return true; // try to continue exploring anyway
             }
 
-            return res;
+            if (excludeDirFileName && !excludeDirFileName->empty())
+            {
+                const std::filesystem::path excludePath{ directory / *excludeDirFileName };
+                if (std::filesystem::exists(excludePath, ec))
+                {
+                    LMS_LOG(DBUPDATER, DEBUG, "Found " << excludePath << ": skipping directory");
+                    return true;
+                }
+            }
+
+            std::filesystem::directory_iterator itEnd;
+            while (itPath != itEnd)
+            {
+                bool continueExploring{ true };
+
+                const std::filesystem::directory_entry& entry{ *itPath };
+                const std::filesystem::path& path{ entry.path() };
+
+                if (ec)
+                {
+                    continueExploring = cb(ec, path, nullptr);
+                }
+                else
+                {
+                    if (entry.is_regular_file())
+                        continueExploring = cb(ec, path, &entry);
+                    else if (entry.is_directory())
+                        continueExploring = exploreFilesRecursive(path, cb, excludeDirFileName);
+                }
+
+                if (!continueExploring)
+                    return false;
+
+                itPath.increment(ec);
+            }
+
+            return true;
         }
+
+        class FileScanJob : public core::IJob
+        {
+        public:
+            FileScanJob(const FileScanners& fileScanners, const MediaLibraryInfo& mediaLibrary, bool fullScan, std::span<const std::filesystem::directory_entry> files)
+                : _fileScanners{ fileScanners }
+                , _mediaLibrary{ mediaLibrary }
+                , _fullScan{ fullScan }
+                , _processCount{}
+                , _skipCount{}
+                , _files{ std::cbegin(files), std::cend(files) }
+            {
+            }
+
+            std::size_t getFileCount() const { return _processCount; };
+            std::size_t getSkipCount() const { return _skipCount; }
+
+            std::span<std::unique_ptr<IFileScanOperation>> getScanOperations()
+            {
+                return _scanOperations;
+            }
+
+        private:
+            core::LiteralString getName() const override
+            {
+                return "Scan Files";
+            }
+
+            void run() override
+            {
+                for (const auto& file : _files)
+                {
+                    IFileScanner* scanner{ _fileScanners.select(file.path()) };
+                    if (!scanner)
+                        continue;
+
+                    FileToScan fileToScan;
+
+                    fileToScan.filePath = file.path();
+                    fileToScan.mediaLibrary = _mediaLibrary;
+                    fileToScan.lastWriteTime.setTime_t(Wt::WDateTime{ std::chrono::file_clock::to_sys(file.last_write_time()) }.toTime_t()); // sec resolution, as stored in the database
+                    fileToScan.fileSize = file.file_size();
+
+                    if (_fullScan || scanner->needsScan(fileToScan))
+                    {
+                        auto scanOperation{ scanner->createScanOperation(std::move(fileToScan)) };
+
+                        {
+                            LMS_SCOPED_TRACE_DETAILED("Scanner", scanOperation->getName());
+                            scanOperation->scan();
+                        }
+                        _scanOperations.push_back(std::move(scanOperation));
+                    }
+                    else
+                        _skipCount++;
+
+                    _processCount++;
+                }
+            }
+
+            const FileScanners& _fileScanners;
+            const MediaLibraryInfo& _mediaLibrary;
+            const bool _fullScan;
+            std::size_t _processCount;
+            std::size_t _skipCount;
+            std::vector<std::filesystem::directory_entry> _files;
+            std::vector<std::unique_ptr<IFileScanOperation>> _scanOperations;
+        };
     } // namespace
-
-    ScanStepScanFiles::ScanStepScanFiles(InitParams& initParams)
-        : ScanStepBase{ initParams }
-        , _fileScanQueue{ getScanMetaDataThreadCount(), _abortScan }
-    {
-        visitFileScanners([](IFileScanner* scanner) {
-            for (const std::filesystem::path& file : scanner->getSupportedFiles())
-                LMS_LOG(DBUPDATER, INFO, scanner->getName() << ": supporting file " << file);
-
-            for (const std::filesystem::path& extension : scanner->getSupportedExtensions())
-                LMS_LOG(DBUPDATER, INFO, scanner->getName() << ": supporting file extension " << extension);
-        });
-
-        LMS_LOG(DBUPDATER, INFO, "Using " << _fileScanQueue.getThreadCount() << " thread(s) for scanning file metadata");
-    }
 
     bool ScanStepScanFiles::needProcess([[maybe_unused]] const ScanContext& context) const
     {
@@ -92,34 +168,52 @@ namespace lms::scanner
 
     void ScanStepScanFiles::process(ScanContext& context)
     {
-        context.currentStepStats.totalElems = context.stats.totalFileCount;
-
         for (const MediaLibraryInfo& mediaLibrary : _settings.mediaLibraries)
             process(context, mediaLibrary);
+
+        context.stats.totalFileCount = context.currentStepStats.processedElems;
     }
 
     void ScanStepScanFiles::process(ScanContext& context, const MediaLibraryInfo& mediaLibrary)
     {
-        const std::size_t scanQueueMaxScanRequestCount{ 100 * _fileScanQueue.getThreadCount() };
-        const std::size_t processFileResultsBatchSize{ 10 };
+        constexpr std::size_t filesPerScanJob{ 10 };
+        constexpr std::size_t scanQueueMaxSize{ 50 };
+        constexpr std::size_t processFileResultsBatchSize{ 1 };
+        constexpr float drainRatio{ 0.85 };
 
-        std::vector<std::unique_ptr<IFileScanOperation>> scanOperations;
+        std::deque<std::unique_ptr<IFileScanOperation>> operations;
 
-        core::pathUtils::exploreFilesRecursive(
-            mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path) {
-                LMS_SCOPED_TRACE_DETAILED("Scanner", "OnExploreFile");
+        auto processDoneJobs = [&](std::span<std::unique_ptr<core::IJob>> jobsDone) {
+            for (const auto& jobDone : jobsDone)
+            {
+                auto& fileScanJob{ static_cast<FileScanJob&>(*jobDone) };
+                for (std::unique_ptr<IFileScanOperation>& scanOperation : fileScanJob.getScanOperations())
+                    operations.push_back(std::move(scanOperation));
 
-                if (_abortScan)
-                    return false; // stop iterating
+                context.currentStepStats.processedElems += fileScanJob.getFileCount();
+                context.stats.skips += fileScanJob.getSkipCount();
+            }
 
-                if (ec)
-                {
-                    addError<IOScanError>(context, path, ec);
-                    context.stats.skips++;
-                }
-                else if (IFileScanner * scanner{ selectFileScanner(path) })
-                {
-                    FileToScan fileToScan{ retrieveFileInfo(path, mediaLibrary, ec) };
+            if (!_abortScan)
+                processFileScanOperations(context, operations, true /* force batch */);
+
+            _progressCallback(context.currentStepStats);
+        };
+
+        {
+            JobQueue queue{ getJobScheduler(), scanQueueMaxSize, processDoneJobs, processFileResultsBatchSize, drainRatio };
+
+            std::vector<std::filesystem::directory_entry> filesToScan;
+
+            exploreFilesRecursive(
+                mediaLibrary.rootDirectory, [&](std::error_code ec, const std::filesystem::path& path, const std::filesystem::directory_entry* fileEntry) {
+                    LMS_SCOPED_TRACE_DETAILED("Scanner", "OnExploreFile");
+
+                    assert((ec && !fileEntry) || (!ec && fileEntry));
+
+                    if (_abortScan)
+                        return false; // stop iterating
+
                     if (ec)
                     {
                         addError<IOScanError>(context, path, ec);
@@ -127,68 +221,74 @@ namespace lms::scanner
                     }
                     else
                     {
-                        if (context.scanOptions.fullScan || scanner->needsScan(fileToScan))
+                        filesToScan.push_back(*fileEntry);
+
+                        if (filesToScan.size() >= filesPerScanJob)
                         {
-                            auto scanOperation{ scanner->createScanOperation(std::move(fileToScan)) };
-                            _fileScanQueue.pushScanRequest(std::move(scanOperation));
+                            queue.push(std::make_unique<FileScanJob>(getFileScanners(), mediaLibrary, context.scanOptions.fullScan, filesToScan));
+                            filesToScan.clear();
                         }
                     }
 
-                    context.currentStepStats.processedElems++;
-                    _progressCallback(context.currentStepStats);
-                }
+                    return true;
+                },
+                &excludeDirFileName);
 
-                while (_fileScanQueue.getResultsCount() > (scanQueueMaxScanRequestCount / 2))
-                {
-                    _fileScanQueue.popResults(scanOperations, processFileResultsBatchSize);
-                    processFileScanResults(context, scanOperations);
-                }
+            if (!filesToScan.empty())
+                queue.push(std::make_unique<FileScanJob>(getFileScanners(), mediaLibrary, context.scanOptions.fullScan, filesToScan));
 
-                _fileScanQueue.wait(scanQueueMaxScanRequestCount);
+            _progressCallback(context.currentStepStats);
+        }
 
-                return true;
-            },
-            &excludeDirFileName);
-
-        _fileScanQueue.wait();
-
-        while (!_abortScan && _fileScanQueue.popResults(scanOperations, processFileResultsBatchSize) > 0)
-            processFileScanResults(context, scanOperations);
+        // Process remaining objects
+        processFileScanOperations(context, operations, false /* force batch */);
     }
 
-    void ScanStepScanFiles::processFileScanResults(ScanContext& context, std::span<std::unique_ptr<IFileScanOperation>> scanOperations)
+    std::size_t ScanStepScanFiles::processFileScanOperations(ScanContext& context, std::deque<std::unique_ptr<IFileScanOperation>>& scanOperations, bool forceBatch)
     {
+        std::size_t count{};
+        constexpr std::size_t writeBatchSize{ 10 };
+
         LMS_SCOPED_TRACE_OVERVIEW("Scanner", "ProcessScanResults");
 
-        db::Session& dbSession{ _db.getTLSSession() };
-        auto transaction{ dbSession.createWriteTransaction() };
-
-        for (auto& scanOperation : scanOperations)
+        while ((forceBatch && scanOperations.size() >= writeBatchSize) || !scanOperations.empty())
         {
-            if (_abortScan)
-                return;
+            db::Session& dbSession{ _db.getTLSSession() };
+            auto transaction{ dbSession.createWriteTransaction() };
 
-            LMS_LOG(DBUPDATER, DEBUG, scanOperation->getName() << ": processing result for " << scanOperation->getFilePath());
-            const IFileScanOperation::OperationResult res{ scanOperation->processResult() };
-            switch (res)
+            for (std::size_t i{}; !scanOperations.empty() && i < writeBatchSize; ++i)
             {
-            case IFileScanOperation::OperationResult::Added:
-                context.stats.additions++;
-                break;
-            case IFileScanOperation::OperationResult::Removed:
-                context.stats.deletions++;
-                break;
-            case IFileScanOperation::OperationResult::Skipped:
-                context.stats.failures++;
-                break;
-            case IFileScanOperation::OperationResult::Updated:
-                context.stats.updates++;
-                break;
+                processFileScanOperation(context, *scanOperations.front());
+                scanOperations.pop_front();
+                count++;
             }
-            context.stats.scans++;
-
-            for (const auto& error : scanOperation->getErrors())
-                addError(context, error);
         }
+
+        return count;
+    }
+
+    void ScanStepScanFiles::processFileScanOperation(ScanContext& context, IFileScanOperation& scanOperation)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, scanOperation.getName() << ": processing result for " << scanOperation.getFilePath());
+        const IFileScanOperation::OperationResult res{ scanOperation.processResult() };
+        switch (res)
+        {
+        case IFileScanOperation::OperationResult::Added:
+            context.stats.additions++;
+            break;
+        case IFileScanOperation::OperationResult::Removed:
+            context.stats.deletions++;
+            break;
+        case IFileScanOperation::OperationResult::Skipped:
+            context.stats.failures++;
+            break;
+        case IFileScanOperation::OperationResult::Updated:
+            context.stats.updates++;
+            break;
+        }
+        context.stats.scans++;
+
+        for (const auto& error : scanOperation.getErrors())
+            addError(context, error);
     }
 } // namespace lms::scanner

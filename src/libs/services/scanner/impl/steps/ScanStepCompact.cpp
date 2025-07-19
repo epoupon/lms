@@ -19,7 +19,7 @@
 
 #include "ScanStepCompact.hpp"
 
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
 
 #include "ScanContext.hpp"

@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/RatedRelease.hpp"
+#include "database/objects/RatedRelease.hpp"
 
 #include "Common.hpp"
 

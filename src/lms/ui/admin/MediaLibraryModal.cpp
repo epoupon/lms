@@ -26,8 +26,8 @@
 
 #include "core/Path.hpp"
 #include "core/String.hpp"
-#include "database/MediaLibrary.hpp"
 #include "database/Session.hpp"
+#include "database/objects/MediaLibrary.hpp"
 
 #include "LmsApplication.hpp"
 

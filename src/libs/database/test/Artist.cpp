@@ -19,8 +19,8 @@
 
 #include "Common.hpp"
 
-#include "database/Artwork.hpp"
-#include "database/Image.hpp"
+#include "database/objects/Artwork.hpp"
+#include "database/objects/Image.hpp"
 
 namespace lms::db::tests
 {
@@ -608,6 +608,93 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Artist_findNextIdRange)
+    {
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto range{ Artist::findNextIdRange(session, ArtistId{}, 0) };
+            EXPECT_FALSE(range.isValid());
+            EXPECT_EQ(range.first, ArtistId{});
+            EXPECT_EQ(range.last, ArtistId{});
+
+            range = Artist::findNextIdRange(session, ArtistId{}, 100);
+            EXPECT_FALSE(range.isValid());
+            EXPECT_EQ(range.first, ArtistId{});
+            EXPECT_EQ(range.last, ArtistId{});
+        }
+
+        ScopedArtist artist1{ session, "Artist1" };
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto range{ Artist::findNextIdRange(session, ArtistId{}, 0) };
+            EXPECT_FALSE(range.isValid());
+            EXPECT_EQ(range.first, ArtistId{});
+            EXPECT_EQ(range.last, ArtistId{});
+
+            range = Artist::findNextIdRange(session, ArtistId{}, 1);
+            EXPECT_TRUE(range.isValid());
+            EXPECT_EQ(range.first, artist1.getId());
+            EXPECT_EQ(range.last, artist1.getId());
+
+            range = Artist::findNextIdRange(session, range.last, 1);
+            EXPECT_FALSE(range.isValid());
+            EXPECT_EQ(range.first, ArtistId{});
+            EXPECT_EQ(range.last, ArtistId{});
+
+            range = Artist::findNextIdRange(session, ArtistId{}, 100);
+            EXPECT_TRUE(range.isValid());
+            EXPECT_EQ(range.first, artist1.getId());
+            EXPECT_EQ(range.last, artist1.getId());
+        }
+
+        ScopedArtist artist2{ session, "Artist2" };
+        ScopedArtist artist3{ session, "Artist3" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            auto range{ Artist::findNextIdRange(session, ArtistId{}, 2) };
+            EXPECT_TRUE(range.isValid());
+            EXPECT_EQ(range.first, artist1.getId());
+            EXPECT_EQ(range.last, artist2.getId());
+
+            range = Artist::findNextIdRange(session, artist2.getId(), 2);
+            EXPECT_TRUE(range.isValid());
+            EXPECT_EQ(range.first, artist3.getId());
+            EXPECT_EQ(range.last, artist3.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_findByRange)
+    {
+        ScopedArtist artist1{ session, "Artist1" };
+        ScopedArtist artist2{ session, "Artist2" };
+        ScopedArtist artist3{ session, "Artist3" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::size_t count{};
+            Artist::find(session, IdRange<ArtistId>{ .first = artist1.getId(), .last = artist1.getId() }, [&](const db::Artist::pointer& artist) {
+                count++;
+                EXPECT_EQ(artist->getId(), artist1.getId());
+            });
+            EXPECT_EQ(count, 1);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            std::size_t count{};
+            Artist::find(session, IdRange<ArtistId>{ .first = artist1.getId(), .last = artist3.getId() }, [&](const db::Artist::pointer&) {
+                count++;
+            });
+            EXPECT_EQ(count, 3);
+        }
+    }
+
     TEST_F(DatabaseFixture, Artist_sortMethod)
     {
         ScopedArtist artistA{ session, "artistA" };
@@ -815,6 +902,36 @@ namespace lms::db::tests
             EXPECT_EQ(artists.results[1], artistD.getId());
             EXPECT_EQ(artists.results[2], artistB.getId());
             EXPECT_EQ(artists.results[3], artistC.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Artist_updateArtwork)
+    {
+        ScopedArtist artist{ session, "MyArtist" };
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(artist->getPreferredArtwork(), Artwork::pointer{});
+        }
+
+        ScopedImage image{ session, "/image1.jpg" };
+        ScopedArtwork artwork{ session, image.lockAndGet() };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            Artist::updatePreferredArtwork(session, artist->getId(), artwork.getId());
+        }
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(artist->getPreferredArtwork()->getId(), artwork.getId());
+        }
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+            Artist::updatePreferredArtwork(session, artist.getId(), ArtworkId{});
+        }
+        {
+            auto transaction{ session.createReadTransaction() };
+            EXPECT_EQ(artist->getPreferredArtwork(), Artwork::pointer{});
         }
     }
 } // namespace lms::db::tests

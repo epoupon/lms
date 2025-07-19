@@ -27,7 +27,7 @@ namespace lms::recommendation
     class ClusterEngine : public IEngine
     {
     public:
-        ClusterEngine(db::Db& db)
+        ClusterEngine(db::IDb& db)
             : _db{ db } {}
 
         ~ClusterEngine() override = default;
@@ -45,7 +45,7 @@ namespace lms::recommendation
         ReleaseContainer getSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const override;
         ArtistContainer getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
 
-        db::Db& _db;
+        db::IDb& _db;
     };
 
 } // namespace lms::recommendation

@@ -24,12 +24,12 @@
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "database/Session.hpp"
-#include "database/User.hpp"
+#include "database/objects/User.hpp"
 #include "services/auth/Types.hpp"
 
 namespace lms::auth
 {
-    InternalPasswordService::InternalPasswordService(db::Db& db, std::size_t maxThrottlerEntries)
+    InternalPasswordService::InternalPasswordService(db::IDb& db, std::size_t maxThrottlerEntries)
         : PasswordServiceBase{ db, maxThrottlerEntries }
         , _bcryptRoundCount{ static_cast<unsigned>(core::Service<core::IConfig>::get()->getULong("internal-password-bcrypt-round", 12)) }
     {

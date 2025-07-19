@@ -28,15 +28,15 @@
 
 #include "av/IAudioFile.hpp"
 #include "core/String.hpp"
-#include "database/Artist.hpp"
-#include "database/Cluster.hpp"
-#include "database/Release.hpp"
-#include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackArtistLink.hpp"
 #include "database/Types.hpp"
-#include "database/User.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/Cluster.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/ScanSettings.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackArtistLink.hpp"
+#include "database/objects/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scrobbling/IScrobblingService.hpp"
@@ -396,13 +396,13 @@ namespace lms::ui
 
             if (mediaArtworkId.isValid())
             {
-                auto image{ utils::createArtworkImage(mediaArtworkId, ArtworkResource::Size::Small) };
+                auto image{ utils::createArtworkImage(mediaArtworkId, ArtworkResource::DefaultArtworkType::Release, ArtworkResource::Size::Small) };
 
                 disc->setCondition("if-has-artwork", true);
 
                 image->addStyleClass("Lms-cover-track rounded"); // HACK
                 image->clicked().connect([=] {
-                    utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getArtworkUrl(mediaArtworkId) });
+                    utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getArtworkUrl(mediaArtworkId, ArtworkResource::DefaultArtworkType::Release) });
                 });
                 disc->bindWidget<Wt::WImage>("artwork", std::move(image));
             }
@@ -570,17 +570,17 @@ namespace lms::ui
         std::unique_ptr<Wt::WImage> artworkImage;
         if (artworkId.isValid())
         {
-            artworkImage = utils::createArtworkImage(artworkId, ArtworkResource::Size::Large);
+            artworkImage = utils::createArtworkImage(artworkId, ArtworkResource::DefaultArtworkType::Release, ArtworkResource::Size::Large);
             artworkImage->addStyleClass("Lms-cursor-pointer"); // HACK
         }
         else
-            artworkImage = utils::createDefaultReleaseArtworkImage();
+            artworkImage = utils::createDefaultArtworkImage(ArtworkResource::DefaultArtworkType::Release);
 
         auto* image{ bindWidget<Wt::WImage>("artwork", std::move(artworkImage)) };
         if (artworkId.isValid())
         {
             image->clicked().connect([artworkId] {
-                utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getArtworkUrl(artworkId) });
+                utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getArtworkUrl(artworkId, ArtworkResource::DefaultArtworkType::Release) });
             });
         }
     }

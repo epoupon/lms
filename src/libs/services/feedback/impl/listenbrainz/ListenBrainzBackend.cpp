@@ -22,11 +22,11 @@
 #include "core/IConfig.hpp"
 #include "core/Service.hpp"
 #include "core/http/IClient.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/StarredArtist.hpp"
-#include "database/StarredRelease.hpp"
-#include "database/Track.hpp"
+#include "database/objects/StarredArtist.hpp"
+#include "database/objects/StarredRelease.hpp"
+#include "database/objects/Track.hpp"
 
 #include "Utils.hpp"
 
@@ -56,7 +56,7 @@ namespace lms::feedback::listenBrainz
         }
     } // namespace details
 
-    ListenBrainzBackend::ListenBrainzBackend(boost::asio::io_context& ioContext, db::Db& db)
+    ListenBrainzBackend::ListenBrainzBackend(boost::asio::io_context& ioContext, db::IDb& db)
         : _ioContext{ ioContext }
         , _db{ db }
         , _baseAPIUrl{ core::Service<core::IConfig>::get()->getString("listenbrainz-api-base-url", "https://api.listenbrainz.org") }

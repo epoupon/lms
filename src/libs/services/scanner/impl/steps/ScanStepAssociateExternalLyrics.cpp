@@ -22,11 +22,11 @@
 #include <deque>
 
 #include "core/ILogger.hpp"
-#include "database/Db.hpp"
-#include "database/Directory.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackLyrics.hpp"
+#include "database/objects/Directory.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackLyrics.hpp"
 
 #include "ScanContext.hpp"
 
@@ -58,9 +58,11 @@ namespace lms::scanner
                 assert(!lyrics->getFileStem().empty());
 
                 params.setDirectory(lyrics->getDirectory()->getId());
-                params.setFileStem(stem);
 
                 db::Track::find(session, params, [&](const db::Track::pointer& track) {
+                    if (track->getAbsoluteFilePath().filename().stem() != stem)
+                        return;
+
                     if (matchingTrack)
                         LMS_LOG(DBUPDATER, DEBUG, "External lyrics '" << lyrics->getAbsoluteFilePath() << "' already matched with '" << matchingTrack->getAbsoluteFilePath() << "', replaced by '" << track->getAbsoluteFilePath() << "'");
 
@@ -68,7 +70,7 @@ namespace lms::scanner
                 });
             };
 
-            // First try with the stem. If it does not match, try again with the parent steam, if it exists, to handle the file.laguagecode.lrc case
+            // First try with the stem. If it does not match, try again with the parent steam, if it exists, to handle the file.languagecode.lrc case
             tryMatch(lyrics->getFileStem());
             if (!matchingTrack)
             {
@@ -143,7 +145,7 @@ namespace lms::scanner
 
     bool ScanStepAssociateExternalLyrics::needProcess(const ScanContext& context) const
     {
-        if (context.stats.nbChanges() > 0)
+        if (context.stats.getChangesCount() > 0)
             return true;
 
         return false;

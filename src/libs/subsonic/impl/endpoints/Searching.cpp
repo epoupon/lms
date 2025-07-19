@@ -24,12 +24,12 @@
 #include <mutex>
 
 #include "core/Random.hpp"
-#include "database/Artist.hpp"
-#include "database/Directory.hpp"
-#include "database/Release.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/User.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/Directory.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/User.hpp"
 
 #include "ParameterParsing.hpp"
 #include "SubsonicId.hpp"

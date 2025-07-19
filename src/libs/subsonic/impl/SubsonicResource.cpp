@@ -29,9 +29,9 @@
 #include "core/LiteralString.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/User.hpp"
+#include "database/objects/User.hpp"
 #include "services/auth/IAuthTokenService.hpp"
 #include "services/auth/IPasswordService.hpp"
 
@@ -52,7 +52,7 @@
 
 namespace lms::api::subsonic
 {
-    std::unique_ptr<Wt::WResource> createSubsonicResource(db::Db& db)
+    std::unique_ptr<Wt::WResource> createSubsonicResource(db::IDb& db)
     {
         return std::make_unique<SubsonicResource>(db);
     }
@@ -295,7 +295,7 @@ namespace lms::api::subsonic
         }
     } // namespace
 
-    SubsonicResource::SubsonicResource(db::Db& db)
+    SubsonicResource::SubsonicResource(db::IDb& db)
         : _serverProtocolVersionsByClient{ readConfigProtocolVersions() }
         , _openSubsonicDisabledClients{ readOpenSubsonicDisabledClients() }
         , _supportUserPasswordAuthentication{ core::Service<core::IConfig>::get()->getBool("api-subsonic-support-user-password-auth", true) }

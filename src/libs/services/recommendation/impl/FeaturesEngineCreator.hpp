@@ -25,10 +25,10 @@
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 }
 
 namespace lms::recommendation
 {
-    std::unique_ptr<IEngine> createFeaturesEngine(db::Db& db);
+    std::unique_ptr<IEngine> createFeaturesEngine(db::IDb& db);
 }

@@ -19,9 +19,9 @@
 
 #include "Common.hpp"
 
-#include "database/Artist.hpp"
-#include "database/ArtistInfo.hpp"
-#include "database/Directory.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/ArtistInfo.hpp"
+#include "database/objects/Directory.hpp"
 
 namespace lms::db::tests
 {
@@ -206,6 +206,31 @@ namespace lms::db::tests
                 visited = true;
             });
             ASSERT_TRUE(visited);
+        }
+    }
+
+    TEST_F(DatabaseFixture, ArtistInfo_findAbsoluteFilePath)
+    {
+        ScopedArtistInfo artistInfo{ session };
+
+        const std::filesystem::path absoluteFilePath{ "/path/to/artist.nfo" };
+        {
+            auto transaction{ session.createWriteTransaction() };
+            artistInfo.get().modify()->setAbsoluteFilePath(absoluteFilePath);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ArtistInfoId lastRetrievedId;
+
+            std::filesystem::path retrievedFilePath;
+            ArtistInfo::findAbsoluteFilePath(session, lastRetrievedId, 1, [&](ArtistInfoId artistInfoId, const std::filesystem::path& filePath) {
+                EXPECT_EQ(artistInfoId, artistInfo.getId());
+                retrievedFilePath = filePath;
+            });
+
+            EXPECT_EQ(retrievedFilePath, absoluteFilePath);
         }
     }
 } // namespace lms::db::tests

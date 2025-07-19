@@ -23,15 +23,15 @@
 #include <vector>
 
 #include "core/EnumSet.hpp"
-#include "database/ArtistId.hpp"
-#include "database/ReleaseId.hpp"
-#include "database/TrackListId.hpp"
 #include "database/Types.hpp"
+#include "database/objects/ArtistId.hpp"
+#include "database/objects/ReleaseId.hpp"
+#include "database/objects/TrackListId.hpp"
 #include "services/recommendation/Types.hpp"
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 }
 
 namespace lms::recommendation
@@ -49,5 +49,5 @@ namespace lms::recommendation
         virtual ArtistContainer getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const = 0;
     };
 
-    std::unique_ptr<IRecommendationService> createRecommendationService(db::Db& db);
+    std::unique_ptr<IRecommendationService> createRecommendationService(db::IDb& db);
 } // namespace lms::recommendation

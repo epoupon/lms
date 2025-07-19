@@ -19,7 +19,7 @@
 
 #include "Common.hpp"
 
-#include "database/TrackBookmark.hpp"
+#include "database/objects/TrackBookmark.hpp"
 
 namespace lms::db::tests
 {

@@ -17,10 +17,10 @@
 
 #include "Common.hpp"
 
-#include "database/Artwork.hpp"
-#include "database/Image.hpp"
-#include "database/TrackEmbeddedImage.hpp"
-#include "database/TrackEmbeddedImageLink.hpp"
+#include "database/objects/Artwork.hpp"
+#include "database/objects/Image.hpp"
+#include "database/objects/TrackEmbeddedImage.hpp"
+#include "database/objects/TrackEmbeddedImageLink.hpp"
 
 namespace lms::db::tests
 {
@@ -48,11 +48,13 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
             image.get().modify()->setLastWriteTime(dateTime);
+            image.get().modify()->setAbsoluteFilePath("/tmp/foo");
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(artwork.get()->getLastWrittenTime(), dateTime);
+            EXPECT_EQ(artwork.get()->getAbsoluteFilePath(), "/tmp/foo");
         }
     }
 
@@ -73,11 +75,13 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
             session.create<db::TrackEmbeddedImageLink>(track.get(), image.get());
             track.get().modify()->setLastWriteTime(dateTime);
+            track.get().modify()->setAbsoluteFilePath("/tmp/foo");
         }
 
         {
             auto transaction{ session.createReadTransaction() };
             EXPECT_EQ(artwork.get()->getLastWrittenTime(), dateTime);
+            EXPECT_EQ(artwork.get()->getAbsoluteFilePath(), "/tmp/foo");
         }
     }
 } // namespace lms::db::tests

@@ -17,8 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/Db.hpp"
-
 #include <functional>
 #include <memory>
 
@@ -29,7 +27,9 @@
 #include "core/ILogger.hpp"
 #include "core/Service.hpp"
 #include "database/Session.hpp"
-#include "database/User.hpp"
+#include "database/objects/User.hpp"
+
+#include "Db.hpp"
 
 namespace lms::db
 {
@@ -114,7 +114,7 @@ namespace lms::db
 
             std::string table;
             std::string foreignTable;
-            // see https://www.sqlite.org/pragma.html#pragma_foreign_key_check for exepcted result
+            // see https://www.sqlite.org/pragma.html#pragma_foreign_key_check for expected result
             while (statement->nextRow())
             {
                 foreignKeyConstraintsPassed = false;
@@ -132,7 +132,63 @@ namespace lms::db
 
             return foreignKeyConstraintsPassed;
         }
+
+        std::optional<int> getPageSize(Wt::Dbo::SqlConnection& connection)
+        {
+            auto statement = connection.prepareStatement("PRAGMA page_size");
+            statement->execute();
+
+            std::optional<int> res;
+            while (statement->nextRow())
+            {
+                assert(!res);
+                int value{};
+                if (statement->getResult(0, &value))
+                    res = value;
+                break;
+            }
+
+            return res;
+        }
+
+        std::optional<int> getCacheSize(Wt::Dbo::SqlConnection& connection)
+        {
+            auto statement = connection.prepareStatement("PRAGMA cache_size");
+            statement->execute();
+
+            std::optional<int> res;
+            while (statement->nextRow())
+            {
+                assert(!res);
+                int value{};
+                if (statement->getResult(0, &value))
+                    res = value;
+                break;
+            }
+
+            return res;
+        }
+
+        void getCompileOptions(Wt::Dbo::SqlConnection& connection, std::function<void(std::string_view compileOption)> callback)
+        {
+            auto statement = connection.prepareStatement("PRAGMA compile_options");
+            statement->execute();
+
+            std::string res;
+            while (statement->nextRow())
+            {
+                res.clear();
+
+                if (statement->getResult(0, &res, static_cast<int>(res.capacity())))
+                    callback(res);
+            }
+        }
     } // namespace
+
+    std::unique_ptr<IDb> createDb(const std::filesystem::path& dbPath, std::size_t connectionCount)
+    {
+        return std::make_unique<Db>(dbPath, connectionCount);
+    }
 
     // Session living class handling the database and the login
     Db::Db(const std::filesystem::path& dbPath, std::size_t connectionCount)
@@ -152,6 +208,13 @@ namespace lms::db
 
         _connectionPool = std::move(connectionPool);
 
+        executeSql("PRAGMA temp_store=MEMORY");
+        executeSql("PRAGMA cache_size=-8000");
+        executeSql("PRAGMA automatic_index=0");
+
+        logPageSize();
+        logCacheSize();
+        logCompileOptions();
         if (checkType == "quick")
         {
             performQuickCheck();
@@ -194,6 +257,34 @@ namespace lms::db
         return *tlsSession;
     }
 
+    void Db::logPageSize()
+    {
+        ScopedConnection connection{ *_connectionPool };
+        const std::optional<int> pageSize{ getPageSize(*connection) };
+
+        if (pageSize)
+            LMS_LOG(DB, INFO, "Page size set to " << *pageSize);
+    }
+
+    void Db::logCacheSize()
+    {
+        ScopedConnection connection{ *_connectionPool };
+        const std::optional<int> cacheSize{ getCacheSize(*connection) };
+
+        if (cacheSize)
+            LMS_LOG(DB, INFO, "Cache size set to " << *cacheSize);
+    }
+
+    void Db::logCompileOptions()
+    {
+        ScopedConnection connection{ *_connectionPool };
+
+        LMS_LOG(DB, INFO, "Sqlite3 compile options:");
+        getCompileOptions(*connection, [](std::string_view compileOption) {
+            LMS_LOG(DB, INFO, compileOption);
+        });
+    }
+
     void Db::performQuickCheck()
     {
         ScopedConnection connection{ *_connectionPool };
@@ -201,7 +292,7 @@ namespace lms::db
         LMS_LOG(DB, INFO, "Performing quick database check...");
 
         // Quick check is just a simple integrity check
-        bool quickCheckPassed{ checkDbIntegrity(*connection, IntegrityCheckType::Quick, [&](std::string_view error) {
+        const bool quickCheckPassed{ checkDbIntegrity(*connection, IntegrityCheckType::Quick, [&](std::string_view error) {
             LMS_LOG(DB, ERROR, "Quick check error: " << error);
         }) };
 
@@ -217,7 +308,7 @@ namespace lms::db
 
         LMS_LOG(DB, INFO, "Checking database integrity...");
 
-        bool integrityCheckPassed{ checkDbIntegrity(*connection, IntegrityCheckType::Full, [&](std::string_view error) {
+        const bool integrityCheckPassed{ checkDbIntegrity(*connection, IntegrityCheckType::Full, [&](std::string_view error) {
             LMS_LOG(DB, ERROR, "Integrity check error: " << error);
         }) };
 
@@ -233,7 +324,7 @@ namespace lms::db
 
         LMS_LOG(DB, INFO, "Checking foreign key constraints...");
 
-        bool foreignKeyConstraintsPassed{ checkDbForeignKeyConstraints(*connection, [&](std::string_view table, long long rowId, std::string_view referredTable) {
+        const bool foreignKeyConstraintsPassed{ checkDbForeignKeyConstraints(*connection, [&](std::string_view table, long long rowId, std::string_view referredTable) {
             LMS_LOG(DB, ERROR, "Foreign key constraint failed in table '" << table << "', rowid = " << rowId << ", referred table = '" << referredTable << "'");
         }) };
 

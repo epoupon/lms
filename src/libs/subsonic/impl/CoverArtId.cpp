@@ -22,7 +22,7 @@
 #include <cassert>
 
 #include "core/String.hpp"
-#include "database/ArtworkId.hpp"
+#include "database/objects/ArtworkId.hpp"
 
 namespace lms::api::subsonic
 {

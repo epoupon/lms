@@ -22,15 +22,15 @@
 #include <Wt/WPushButton.h>
 
 #include "core/String.hpp"
-#include "database/Artist.hpp"
-#include "database/ArtistInfo.hpp"
-#include "database/ArtworkId.hpp"
-#include "database/Cluster.hpp"
-#include "database/Release.hpp"
-#include "database/ScanSettings.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/User.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/ArtistInfo.hpp"
+#include "database/objects/ArtworkId.hpp"
+#include "database/objects/Cluster.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/ScanSettings.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 
@@ -197,17 +197,17 @@ namespace lms::ui
         std::unique_ptr<Wt::WImage> artworkImage;
         if (artworkId.isValid())
         {
-            artworkImage = utils::createArtworkImage(artworkId, ArtworkResource::Size::Large);
+            artworkImage = utils::createArtworkImage(artworkId, ArtworkResource::DefaultArtworkType::Artist, ArtworkResource::Size::Large);
             artworkImage->addStyleClass("Lms-cursor-pointer"); // HACK
         }
         else
-            artworkImage = utils::createDefaultArtistArtworkImage();
+            artworkImage = utils::createDefaultArtworkImage(ArtworkResource::DefaultArtworkType::Artist);
 
         auto* image{ bindWidget<Wt::WImage>("artwork", std::move(artworkImage)) };
         if (artworkId.isValid())
         {
             image->clicked().connect([artworkId] {
-                utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getArtworkUrl(artworkId) });
+                utils::showArtworkModal(Wt::WLink{ LmsApp->getArtworkResource()->getArtworkUrl(artworkId, ArtworkResource::DefaultArtworkType::Artist) });
             });
         }
     }

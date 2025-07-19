@@ -19,9 +19,9 @@
 
 #include "ScanStepComputeClusterStats.hpp"
 #include "core/ILogger.hpp"
-#include "database/Cluster.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
+#include "database/objects/Cluster.hpp"
 
 #include "ScanContext.hpp"
 
@@ -29,10 +29,7 @@ namespace lms::scanner
 {
     bool ScanStepComputeClusterStats::needProcess(const ScanContext& context) const
     {
-        if (context.stats.nbChanges() > 0)
-            return true;
-
-        return false;
+        return context.stats.getChangesCount() > 0;
     }
 
     void ScanStepComputeClusterStats::process(ScanContext& context)

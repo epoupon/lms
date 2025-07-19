@@ -20,21 +20,23 @@
 #pragma once
 
 #include <functional>
-#include <span>
-#include <unordered_map>
-#include <vector>
 
 #include "IScanStep.hpp"
 #include "ScanErrorLogger.hpp"
 
+namespace lms::core
+{
+    class IJobScheduler;
+}
+
 namespace lms::db
 {
-    class Db;
+    class IDb;
 }
 
 namespace lms::scanner
 {
-    class IFileScanner;
+    class FileScanners;
     struct ScannerSettings;
     struct ScanStepStats;
     struct ScanContext;
@@ -46,12 +48,13 @@ namespace lms::scanner
 
         struct InitParams
         {
+            core::IJobScheduler& jobScheduler;
             const ScannerSettings& settings;
             const ScannerSettings* lastScanSettings{};
             ProgressCallback progressCallback;
             bool& abortScan;
-            db::Db& db;
-            std::span<IFileScanner*> fileScanners;
+            db::IDb& db;
+            const FileScanners& fileScanners;
         };
         ScanStepBase(InitParams& initParams);
         ~ScanStepBase() override;
@@ -59,9 +62,9 @@ namespace lms::scanner
         ScanStepBase& operator=(const ScanStepBase&) = delete;
 
     protected:
+        core::IJobScheduler& getJobScheduler() { return _jobScheduler; };
         const ScannerSettings* getLastScanSettings() const { return _lastScanSettings; }
-        IFileScanner* selectFileScanner(const std::filesystem::path& filePath) const;
-        void visitFileScanners(const std::function<void(IFileScanner*)>& visitor) const;
+        const FileScanners& getFileScanners() const { return _fileScanners; }
 
         void addError(ScanContext& context, std::shared_ptr<ScanError> error);
 
@@ -75,12 +78,11 @@ namespace lms::scanner
         const ScannerSettings& _settings;
         ProgressCallback _progressCallback;
         bool& _abortScan;
-        db::Db& _db;
+        db::IDb& _db;
 
     private:
-        std::unordered_map<std::filesystem::path, IFileScanner*> _scannerByFile;
-        std::unordered_map<std::filesystem::path, IFileScanner*> _scannerByExtension;
-        std::vector<IFileScanner*> _fileScanners;
+        core::IJobScheduler& _jobScheduler;
+        const FileScanners& _fileScanners;
 
         const ScannerSettings* _lastScanSettings{};
         ScanErrorLogger _scanErrorLogger;

@@ -17,7 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "database/ScanSettings.hpp"
+#include "database/objects/ScanSettings.hpp"
 
 #include <initializer_list>
 

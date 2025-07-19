@@ -21,9 +21,9 @@
 
 #include <vector>
 
-#include "database/Db.hpp"
-#include "database/ScanSettings.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
+#include "database/objects/ScanSettings.hpp"
 
 #include "ClustersEngineCreator.hpp"
 #include "FeaturesEngineCreator.hpp"
@@ -40,12 +40,12 @@ namespace lms::recommendation
         }
     } // namespace
 
-    std::unique_ptr<IRecommendationService> createRecommendationService(db::Db& db)
+    std::unique_ptr<IRecommendationService> createRecommendationService(db::IDb& db)
     {
         return std::make_unique<RecommendationService>(db);
     }
 
-    RecommendationService::RecommendationService(db::Db& db)
+    RecommendationService::RecommendationService(db::IDb& db)
         : _db{ db }
     {
         load();

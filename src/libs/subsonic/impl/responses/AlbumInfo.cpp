@@ -19,7 +19,7 @@
 
 #include "AlbumInfo.hpp"
 
-#include "database/Release.hpp"
+#include "database/objects/Release.hpp"
 
 #include "RequestContext.hpp"
 

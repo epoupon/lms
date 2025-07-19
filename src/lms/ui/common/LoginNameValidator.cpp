@@ -21,7 +21,7 @@
 
 #include <Wt/WLengthValidator.h>
 
-#include "database/User.hpp"
+#include "database/objects/User.hpp"
 
 namespace lms::ui
 {

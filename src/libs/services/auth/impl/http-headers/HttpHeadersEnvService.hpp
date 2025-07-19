@@ -28,7 +28,7 @@ namespace lms::auth
     class HttpHeadersEnvService : public IEnvService, public AuthServiceBase
     {
     public:
-        HttpHeadersEnvService(db::Db& db);
+        HttpHeadersEnvService(db::IDb& db);
 
     private:
         CheckResult processEnv(const Wt::WEnvironment& env) override;

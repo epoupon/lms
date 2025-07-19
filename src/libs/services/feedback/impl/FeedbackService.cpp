@@ -21,30 +21,30 @@
 #include "FeedbackService.impl.hpp"
 
 #include "core/ILogger.hpp"
-#include "database/Artist.hpp"
-#include "database/Db.hpp"
-#include "database/RatedArtist.hpp"
-#include "database/RatedRelease.hpp"
-#include "database/RatedTrack.hpp"
-#include "database/Release.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/StarredArtist.hpp"
-#include "database/StarredRelease.hpp"
-#include "database/StarredTrack.hpp"
-#include "database/Track.hpp"
-#include "database/User.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/RatedArtist.hpp"
+#include "database/objects/RatedRelease.hpp"
+#include "database/objects/RatedTrack.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/StarredArtist.hpp"
+#include "database/objects/StarredRelease.hpp"
+#include "database/objects/StarredTrack.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/User.hpp"
 
 #include "internal/InternalBackend.hpp"
 #include "listenbrainz/ListenBrainzBackend.hpp"
 
 namespace lms::feedback
 {
-    std::unique_ptr<IFeedbackService> createFeedbackService(boost::asio::io_context& ioContext, Db& db)
+    std::unique_ptr<IFeedbackService> createFeedbackService(boost::asio::io_context& ioContext, db::IDb& db)
     {
         return std::make_unique<FeedbackService>(ioContext, db);
     }
 
-    FeedbackService::FeedbackService(boost::asio::io_context& ioContext, Db& db)
+    FeedbackService::FeedbackService(boost::asio::io_context& ioContext, db::IDb& db)
         : _db{ db }
     {
         LMS_LOG(SCROBBLING, INFO, "Starting service...");
@@ -58,7 +58,7 @@ namespace lms::feedback
         LMS_LOG(SCROBBLING, INFO, "Service stopped!");
     }
 
-    std::optional<db::FeedbackBackend> FeedbackService::getUserFeedbackBackend(UserId userId)
+    std::optional<db::FeedbackBackend> FeedbackService::getUserFeedbackBackend(db::UserId userId)
     {
         std::optional<db::FeedbackBackend> feedbackBackend;
 

@@ -24,7 +24,7 @@
 
 #include "core/String.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "database/objects/Track.hpp"
 
 #include "LmsApplication.hpp"
 #include "services/scanner/ScanErrors.hpp"

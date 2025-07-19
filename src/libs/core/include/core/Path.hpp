@@ -20,25 +20,15 @@
 #pragma once
 
 #include <filesystem>
-#include <functional>
 #include <span>
-#include <system_error>
 
 #include <Wt/WDateTime.h>
 
 namespace lms::core::pathUtils
 {
-    std::uint32_t computeCrc32(const std::filesystem::path& p);
-
     // Make sure the given path is a directory
     // Create it if needed
     bool ensureDirectory(const std::filesystem::path& dir);
-
-    // Get the last write time since Epoch
-    Wt::WDateTime getLastWriteTime(const std::filesystem::path& file, std::error_code& ec);
-
-    // returns false if aborted by user
-    bool exploreFilesRecursive(const std::filesystem::path& directory, std::function<bool(std::error_code, const std::filesystem::path&)> cb, const std::filesystem::path* excludeDirFileName = {});
 
     // Check if file's extension is one of provided extensions
     bool hasFileAnyExtension(const std::filesystem::path& file, std::span<const std::filesystem::path> extensions);

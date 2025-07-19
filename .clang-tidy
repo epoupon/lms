@@ -17,4 +17,6 @@ CheckOptions:
     value:           '1'
   - key:             cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor 
     value:           '1'
+  - key:             readability-function-cognitive-complexity.IgnoreMacros
+    value:           '1'
 ...

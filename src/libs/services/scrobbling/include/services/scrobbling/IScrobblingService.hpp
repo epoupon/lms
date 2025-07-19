@@ -26,16 +26,16 @@
 #include <Wt/WDateTime.h>
 #include <boost/asio/io_context.hpp>
 
-#include "database/ArtistId.hpp"
-#include "database/Filters.hpp"
-#include "database/ReleaseId.hpp"
-#include "database/TrackId.hpp"
 #include "database/Types.hpp"
+#include "database/objects/ArtistId.hpp"
+#include "database/objects/Filters.hpp"
+#include "database/objects/ReleaseId.hpp"
+#include "database/objects/TrackId.hpp"
 #include "services/scrobbling/Listen.hpp"
 
 namespace lms::db
 {
-    class Db;
+    class IDb;
 }
 
 namespace lms::scrobbling
@@ -126,5 +126,5 @@ namespace lms::scrobbling
         virtual TrackContainer getTopTracks(const FindParameters& params) = 0;
     };
 
-    std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_context& ioContext, db::Db& db);
+    std::unique_ptr<IScrobblingService> createScrobblingService(boost::asio::io_context& ioContext, db::IDb& db);
 } // namespace lms::scrobbling

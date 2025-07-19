@@ -21,6 +21,7 @@
 
 #include <Wt/Json/Array.h>
 #include <Wt/Json/Object.h>
+#include <Wt/Json/Parser.h>
 #include <Wt/Json/Serializer.h>
 #include <Wt/Json/Value.h>
 #include <boost/asio/bind_executor.hpp>
@@ -29,11 +30,11 @@
 #include "core/IConfig.hpp"
 #include "core/Service.hpp"
 #include "core/http/IClient.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/StarredTrack.hpp"
-#include "database/Track.hpp"
-#include "database/User.hpp"
+#include "database/objects/StarredTrack.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/User.hpp"
 
 #include "Exception.hpp"
 #include "FeedbacksParser.hpp"
@@ -60,7 +61,7 @@ namespace lms::feedback::listenBrainz
         }
     } // namespace
 
-    FeedbacksSynchronizer::FeedbacksSynchronizer(boost::asio::io_context& ioContext, db::Db& db, core::http::IClient& client)
+    FeedbacksSynchronizer::FeedbacksSynchronizer(boost::asio::io_context& ioContext, db::IDb& db, core::http::IClient& client)
         : _ioContext{ ioContext }
         , _db{ db }
         , _client{ client }

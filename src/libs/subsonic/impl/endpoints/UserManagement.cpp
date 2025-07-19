@@ -2,7 +2,7 @@
 
 #include "core/Service.hpp"
 #include "database/Session.hpp"
-#include "database/User.hpp"
+#include "database/objects/User.hpp"
 #include "services/auth/IPasswordService.hpp"
 
 #include "ParameterParsing.hpp"

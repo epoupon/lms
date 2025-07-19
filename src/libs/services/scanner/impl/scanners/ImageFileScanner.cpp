@@ -22,10 +22,12 @@
 #include <optional>
 
 #include "core/ILogger.hpp"
-#include "database/Db.hpp"
-#include "database/Image.hpp"
-#include "database/MediaLibrary.hpp"
+
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
+#include "database/objects/Artwork.hpp"
+#include "database/objects/Image.hpp"
+#include "database/objects/MediaLibrary.hpp"
 #include "image/Exception.hpp"
 #include "image/Image.hpp"
 #include "services/scanner/ScanErrors.hpp"
@@ -84,7 +86,10 @@ namespace lms::scanner
 
             const bool added{ !image };
             if (!image)
+            {
                 image = dbSession.create<db::Image>(getFilePath());
+                dbSession.create<db::Artwork>(image);
+            }
 
             image.modify()->setLastWriteTime(getLastWriteTime());
             image.modify()->setFileSize(getFileSize());
@@ -104,7 +109,7 @@ namespace lms::scanner
         }
     } // namespace
 
-    ImageFileScanner::ImageFileScanner(db::Db& db, ScannerSettings& settings)
+    ImageFileScanner::ImageFileScanner(db::IDb& db, ScannerSettings& settings)
         : _db{ db }
         , _settings{ settings }
     {

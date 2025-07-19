@@ -23,7 +23,7 @@
 #include <Wt/Json/Parser.h>
 
 #include "database/Session.hpp"
-#include "database/User.hpp"
+#include "database/objects/User.hpp"
 
 namespace lms::feedback::listenBrainz::utils
 {

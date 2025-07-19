@@ -20,14 +20,14 @@
 #include "ScanStepRemoveOrphanedDbEntries.hpp"
 
 #include "core/ILogger.hpp"
-#include "database/Artist.hpp"
-#include "database/Cluster.hpp"
-#include "database/Db.hpp"
-#include "database/Directory.hpp"
-#include "database/Release.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
-#include "database/TrackEmbeddedImage.hpp"
+#include "database/objects/Artist.hpp"
+#include "database/objects/Cluster.hpp"
+#include "database/objects/Directory.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/Track.hpp"
+#include "database/objects/TrackEmbeddedImage.hpp"
 
 #include "ScanContext.hpp"
 
@@ -109,7 +109,7 @@ namespace lms::scanner
     template<typename T>
     void ScanStepRemoveOrphanedDbEntries::removeOrphanedEntries(ScanContext& context)
     {
-        constexpr std::size_t batchSize = 100;
+        constexpr std::size_t batchSize = 200;
 
         using IdType = typename T::IdType;
 
@@ -130,14 +130,7 @@ namespace lms::scanner
             {
                 auto transaction{ session.createWriteTransaction() };
 
-                for (const IdType objectId : entries.results)
-                {
-                    if (_abortScan)
-                        break;
-
-                    typename T::pointer entry{ T::find(session, objectId) };
-                    entry.remove();
-                }
+                session.destroy<T>(entries.results);
             }
 
             context.currentStepStats.processedElems += entries.results.size();

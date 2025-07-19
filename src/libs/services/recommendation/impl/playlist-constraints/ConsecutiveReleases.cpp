@@ -19,14 +19,14 @@
 
 #include "ConsecutiveReleases.hpp"
 
-#include "database/Db.hpp"
-#include "database/Release.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/Track.hpp"
 
 namespace lms::recommendation::PlaylistGeneratorConstraint
 {
-    ConsecutiveReleases::ConsecutiveReleases(db::Db& db)
+    ConsecutiveReleases::ConsecutiveReleases(db::IDb& db)
         : _db{ db }
     {
     }

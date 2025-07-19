@@ -21,9 +21,9 @@
 
 #include "av/ITranscoder.hpp"
 #include "core/ILogger.hpp"
-#include "database/Db.hpp"
+#include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/Track.hpp"
+#include "database/objects/Track.hpp"
 
 #include "TranscodingResourceHandler.hpp"
 
@@ -43,12 +43,12 @@ namespace lms::transcoding
         }
     } // namespace
 
-    std::unique_ptr<ITranscodingService> createTranscodingService(db::Db& db, core::IChildProcessManager& childProcessManager)
+    std::unique_ptr<ITranscodingService> createTranscodingService(db::IDb& db, core::IChildProcessManager& childProcessManager)
     {
         return std::make_unique<TranscodingService>(db, childProcessManager);
     }
 
-    TranscodingService::TranscodingService(db::Db& db, core::IChildProcessManager& childProcessManager)
+    TranscodingService::TranscodingService(db::IDb& db, core::IChildProcessManager& childProcessManager)
         : _db{ db }
         , _childProcessManager(childProcessManager)
     {
