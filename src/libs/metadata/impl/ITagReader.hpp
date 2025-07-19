@@ -98,7 +98,7 @@ namespace lms::metadata
         MusicBrainzLyricistID, // non standard
         MusicBrainzOriginalArtistID,
         MusicBrainzOriginalReleaseID,
-        MusicBrainzMixerID, // non standard
+        MusicBrainzMixerID,    // non standard
         MusicBrainzProducerID, // non standard
         MusicBrainzRecordingID,
         MusicBrainzReleaseArtistID,
