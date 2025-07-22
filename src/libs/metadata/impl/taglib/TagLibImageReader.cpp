@@ -46,7 +46,7 @@ namespace lms::metadata::taglib
 {
     namespace
     {
-        Image::Type imageTypeFromfromIDv2(TagLib::ID3v2::AttachedPictureFrame::Type type)
+        Image::Type imageTypeFromfromID3v2(TagLib::ID3v2::AttachedPictureFrame::Type type)
         {
             switch (type)
             {
@@ -244,7 +244,7 @@ namespace lms::metadata::taglib
                 std::span<const std::byte> pictureData{ reinterpret_cast<const std::byte*>(picture.data()), picture.size() };
 
                 Image image;
-                image.type = imageTypeFromfromIDv2(attachedPictureFrame->type());
+                image.type = imageTypeFromfromID3v2(attachedPictureFrame->type());
                 image.description = attachedPictureFrame->description().to8Bit(true);
                 image.mimeType = attachedPictureFrame->mimeType().to8Bit(true);
                 image.data = pictureData;
@@ -284,6 +284,8 @@ namespace lms::metadata::taglib
                 return;
 #endif
             TagLib::MP4::CoverArtList coverArtList{ coverItem.toCoverArtList() };
+
+            bool firstCover{ true };
             for (TagLib::MP4::CoverArt& coverArt : coverArtList)
             {
                 TagLib::ByteVector picture{ coverArt.data() };
@@ -292,6 +294,10 @@ namespace lms::metadata::taglib
                 Image image;
                 image.mimeType = mp4ImageFormatToMimeType(coverArt.format());
                 image.data = pictureData;
+
+                // By convention, consider the first cover art as the front cover
+                image.type = firstCover ? Image::Type::FrontCover : Image::Type::Unknown;
+                firstCover = false;
 
                 visitor(image);
             }
