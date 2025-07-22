@@ -127,10 +127,12 @@ namespace lms::scanner
                         continue;
 
                     FileToScan fileToScan;
-
                     fileToScan.filePath = file.path();
                     fileToScan.mediaLibrary = _mediaLibrary;
-                    fileToScan.lastWriteTime.setTime_t(Wt::WDateTime{ std::chrono::file_clock::to_sys(file.last_write_time()) }.toTime_t()); // sec resolution, as stored in the database
+                    {
+                        const std::chrono::system_clock::time_point lastWriteTime{ std::chrono::time_point_cast<std::chrono::system_clock::duration>(std::chrono::file_clock::to_sys(file.last_write_time())) };
+                        fileToScan.lastWriteTime.setTime_t(std::chrono::system_clock::to_time_t(lastWriteTime)); // sec resolution, as stored in the database
+                    }
                     fileToScan.fileSize = file.file_size();
 
                     if (_fullScan || scanner->needsScan(fileToScan))

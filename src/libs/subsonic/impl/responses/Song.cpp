@@ -93,8 +93,10 @@ namespace lms::api::subsonic
             trackResponse.setAttribute("track", *track->getTrackNumber());
         if (track->getDiscNumber())
             trackResponse.setAttribute("discNumber", *track->getDiscNumber());
-        if (track->getYear())
-            trackResponse.setAttribute("year", *track->getYear());
+        if (const auto originalYear{ track->getOriginalYear() })
+            trackResponse.setAttribute("year", *originalYear);
+        else if (const auto year{ track->getYear() })
+            trackResponse.setAttribute("year", *year);
         trackResponse.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(context.user->getId(), track->getId()));
 
         // maybe not available if user just removed the library without rescanning

@@ -1,0 +1,20 @@
+name: Basic Build (FreeBSD)
+on: [pull_request]
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      uses: vmactions/freebsd-vm@v1.2.1
+      with:
+        usesh: true
+        prepare: |
+          pkg install -y cmake pkgconf boost-libs ffmpeg stb libconfig taglib libarchive xxhash wt googletest
+
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_UNITY_BUILD=ON -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DBUILD_BENCHMARKS=OFF
+          make -j$(nproc)
+          make test
