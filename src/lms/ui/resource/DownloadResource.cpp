@@ -25,6 +25,7 @@
 #include "core/ILogger.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
+#include "database/objects/Medium.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackList.hpp"
@@ -116,12 +117,13 @@ namespace lms::ui
 
     namespace details
     {
-        std::string getTrackPathName(db::Track::pointer track)
+        std::string getTrackPathName(const db::Track::pointer& track)
         {
             std::ostringstream fileName;
 
-            if (auto discNumber{ track->getDiscNumber() })
-                fileName << *discNumber << ".";
+            const db::Medium::pointer medium{ track->getMedium() };
+            if (medium && medium->getPosition())
+                fileName << *medium->getPosition() << ".";
             if (auto trackNumber{ track->getTrackNumber() })
                 fileName << std::setw(2) << std::setfill('0') << *trackNumber << " - ";
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,17 +19,6 @@
 
 #pragma once
 
-#include "database/Object.hpp"
+#include "database/IdType.hpp"
 
-#include "SubsonicResponse.hpp"
-
-namespace lms::db
-{
-    class Medium;
-    class Track;
-} // namespace lms::db
-
-namespace lms::api::subsonic
-{
-    Response::Node createReplayGainNode(const db::ObjectPtr<db::Track>& track, const db::ObjectPtr<db::Medium>& medium);
-}
+LMS_DECLARE_IDTYPE(MediumId)

@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "database/objects/ArtistId.hpp"
+#include "database/objects/MediumId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 #include "database/objects/TrackListId.hpp"
@@ -49,12 +50,7 @@ namespace lms::ui
         void processCommand(Command command, const std::vector<db::ReleaseId>& releases);
         void processCommand(Command command, const std::vector<db::TrackId>& tracks);
 
-        struct Disc
-        {
-            db::ReleaseId releaseId;
-            size_t discNumber;
-        };
-        void processCommand(Command command, const std::vector<Disc>& discs);
+        void processCommand(Command command, db::MediumId medium);
         void processCommand(Command command, db::TrackListId trackList);
         void playTrackInRelease(db::TrackId track);
 

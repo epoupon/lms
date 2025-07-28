@@ -106,15 +106,13 @@ namespace lms::scanner
                 return res;
 
             // fallback on another track of the same disc
-            const db::ReleaseId releaseId{ track->getReleaseId() };
-            if (!releaseId.isValid())
+            const db::MediumId mediumId{ track->getMediumId() };
+            if (!mediumId.isValid())
                 return res;
 
-            if (const auto discNumber{ track->getDiscNumber() })
             {
                 db::TrackEmbeddedImage::FindParameters params;
-                params.setRelease(releaseId);
-                params.setDiscNumber(discNumber);
+                params.setMedium(track->getMediumId());
                 params.setImageType(db::ImageType::Media);
                 params.setSortMethod(db::TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc);
 

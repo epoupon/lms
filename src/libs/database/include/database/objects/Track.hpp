@@ -43,6 +43,7 @@
 #include "database/objects/DirectoryId.hpp"
 #include "database/objects/Filters.hpp"
 #include "database/objects/MediaLibraryId.hpp"
+#include "database/objects/MediumId.hpp"
 #include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackEmbeddedImageId.hpp"
 #include "database/objects/TrackId.hpp"
@@ -58,6 +59,7 @@ namespace lms::db
     class Directory;
     class TrackEmbeddedImageLink;
     class MediaLibrary;
+    class Medium;
     class Release;
     class Session;
     class TrackArtistLink;
@@ -82,11 +84,11 @@ namespace lms::db
             std::string artistName;                                  // only tracks that involve this artist name
             core::EnumSet<TrackArtistLinkType> trackArtistLinkTypes; //    and for these link types
             bool nonRelease{};                                       // only tracks that do not belong to a release
+            MediumId medium;                                         // matching this medium
             ReleaseId release;                                       // matching this release
             std::string releaseName;                                 // matching this release name
             TrackListId trackList;                                   // matching this trackList
             std::optional<int> trackNumber;                          // matching this track number
-            std::optional<int> discNumber;                           // matching this disc number
             DirectoryId directory;                                   // if set, tracks in this directory
             std::optional<std::size_t> fileSize;                     // if set, tracks that match this file size
             TrackEmbeddedImageId embeddedImageId;                    // if set, tracks that have this embedded image
@@ -144,6 +146,11 @@ namespace lms::db
                 nonRelease = _nonRelease;
                 return *this;
             }
+            FindParameters& setMedium(MediumId _medium)
+            {
+                medium = _medium;
+                return *this;
+            }
             FindParameters& setRelease(ReleaseId _release)
             {
                 release = _release;
@@ -162,11 +169,6 @@ namespace lms::db
             FindParameters& setTrackNumber(int _trackNumber)
             {
                 trackNumber = _trackNumber;
-                return *this;
-            }
-            FindParameters& setDiscNumber(int _discNumber)
-            {
-                discNumber = _discNumber;
                 return *this;
             }
             FindParameters& setDirectory(DirectoryId _directory)
@@ -217,9 +219,6 @@ namespace lms::db
         // Accessors
         void setScanVersion(std::size_t version) { _scanVersion = version; }
         void setTrackNumber(std::optional<int> num) { _trackNumber = num; }
-        void setDiscNumber(std::optional<int> num) { _discNumber = num; }
-        void setTotalTrack(std::optional<int> totalTrack) { _totalTrack = totalTrack; }
-        void setDiscSubtitle(std::string_view name) { _discSubtitle = name; }
         void setName(std::string_view name);
         void setAbsoluteFilePath(const std::filesystem::path& filePath);
         void setFileSize(std::size_t fileSize) { _fileSize = fileSize; }
@@ -237,13 +236,13 @@ namespace lms::db
         void setCopyright(std::string_view copyright);
         void setCopyrightURL(std::string_view copyrightURL);
         void setAdvisory(Advisory advisory) { _advisory = advisory; }
-        void setTrackReplayGain(std::optional<float> replayGain) { _trackReplayGain = replayGain; }
-        void setReleaseReplayGain(std::optional<float> replayGain) { _releaseReplayGain = replayGain; } // may be by disc!
+        void setReplayGain(std::optional<float> replayGain) { _replayGain = replayGain; }
         void setArtistDisplayName(std::string_view name) { _artistDisplayName = name; }
         void setComment(std::string_view comment) { _comment = comment; }
         void clearArtistLinks();
         void addArtistLink(const ObjectPtr<TrackArtistLink>& artistLink);
         void setRelease(ObjectPtr<Release> release) { _release = getDboPtr(release); }
+        void setMedium(ObjectPtr<Medium> medium) { _medium = getDboPtr(medium); }
         void setClusters(const std::vector<ObjectPtr<Cluster>>& clusters);
         void clearLyrics();
         void clearEmbeddedLyrics();
@@ -257,9 +256,6 @@ namespace lms::db
 
         std::size_t getScanVersion() const { return _scanVersion; }
         std::optional<std::size_t> getTrackNumber() const { return _trackNumber; }
-        std::optional<std::size_t> getTotalTrack() const { return _totalTrack; }
-        std::optional<std::size_t> getDiscNumber() const { return _discNumber; }
-        const std::string& getDiscSubtitle() const { return _discSubtitle; }
         std::string getName() const { return _name; }
         const std::filesystem::path& getAbsoluteFilePath() const { return _absoluteFilePath; }
         long long getFileSize() const { return _fileSize; }
@@ -281,8 +277,7 @@ namespace lms::db
         std::optional<std::string> getCopyright() const;
         std::optional<std::string> getCopyrightURL() const;
         Advisory getAdvisory() const { return _advisory; }
-        std::optional<float> getTrackReplayGain() const { return _trackReplayGain; }
-        std::optional<float> getReleaseReplayGain() const { return _releaseReplayGain; }
+        std::optional<float> getReplayGain() const { return _replayGain; }
         std::string_view getArtistDisplayName() const { return _artistDisplayName; }
         std::string_view getComment() const { return _comment; }
 
@@ -292,6 +287,8 @@ namespace lms::db
         std::vector<ObjectPtr<TrackArtistLink>> getArtistLinks() const;
         ReleaseId getReleaseId() const { return _release.id(); }
         ObjectPtr<Release> getRelease() const { return _release; }
+        MediumId getMediumId() const { return _medium.id(); }
+        ObjectPtr<Medium> getMedium() const { return _medium; }
         std::vector<ObjectPtr<Cluster>> getClusters() const;
         std::vector<ClusterId> getClusterIds() const;
         ObjectPtr<MediaLibrary> getMediaLibrary() const;
@@ -308,9 +305,6 @@ namespace lms::db
         {
             Wt::Dbo::field(a, _scanVersion, "scan_version");
             Wt::Dbo::field(a, _trackNumber, "track_number");
-            Wt::Dbo::field(a, _discNumber, "disc_number");
-            Wt::Dbo::field(a, _totalTrack, "total_track");     // here in Track since Release does not have concept of "disc" (yet?)
-            Wt::Dbo::field(a, _discSubtitle, "disc_subtitle"); // here in Track since Release does not have concept of "disc" (yet?)
             Wt::Dbo::field(a, _name, "name");
             Wt::Dbo::field(a, _duration, "duration");
             Wt::Dbo::field(a, _bitrate, "bitrate");
@@ -328,11 +322,11 @@ namespace lms::db
             Wt::Dbo::field(a, _copyright, "copyright");
             Wt::Dbo::field(a, _copyrightURL, "copyright_url");
             Wt::Dbo::field(a, _advisory, "advisory");
-            Wt::Dbo::field(a, _trackReplayGain, "track_replay_gain");
-            Wt::Dbo::field(a, _releaseReplayGain, "release_replay_gain"); // here in Track since Release does not have concept of "disc" (yet?)
+            Wt::Dbo::field(a, _replayGain, "replay_gain");
             Wt::Dbo::field(a, _artistDisplayName, "artist_display_name");
             Wt::Dbo::field(a, _comment, "comment"); // TODO: move in a dedicated table
 
+            Wt::Dbo::belongsTo(a, _medium, "medium", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::belongsTo(a, _release, "release", Wt::Dbo::OnDeleteCascade);
             Wt::Dbo::belongsTo(a, _mediaLibrary, "media_library", Wt::Dbo::OnDeleteSetNull); // don't delete track on media library removal, we want to wait for the next scan to have a chance to migrate files
             Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
@@ -353,10 +347,7 @@ namespace lms::db
         static constexpr std::size_t _maxCopyrightURLLength{ 512 };
 
         int _scanVersion{};
-        std::optional<int> _trackNumber{};
-        std::optional<int> _discNumber{};
-        std::optional<int> _totalTrack{};
-        std::string _discSubtitle;
+        std::optional<int> _trackNumber;
         std::string _name;
         int _bitrate{}; // in bps
         int _bitsPerSample{};
@@ -374,10 +365,10 @@ namespace lms::db
         std::string _copyright;
         std::string _copyrightURL;
         Advisory _advisory{ Advisory::UnSet };
-        std::optional<float> _trackReplayGain;
-        std::optional<float> _releaseReplayGain;
+        std::optional<float> _replayGain;
         std::string _artistDisplayName;
         std::string _comment;
+        Wt::Dbo::ptr<Medium> _medium;
         Wt::Dbo::ptr<Release> _release;
         Wt::Dbo::ptr<MediaLibrary> _mediaLibrary;
         Wt::Dbo::ptr<Directory> _directory;

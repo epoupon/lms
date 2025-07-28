@@ -119,12 +119,6 @@ namespace lms::db
         int end{};
     };
 
-    struct DiscInfo
-    {
-        std::size_t position;
-        std::string name;
-    };
-
     struct FileInfo
     {
         Wt::WDateTime lastWrittenTime;
@@ -161,6 +155,12 @@ namespace lms::db
     {
         None,
         Name,
+    };
+
+    enum class MediumSortMethod
+    {
+        None,
+        PositionAsc,
     };
 
     enum class ReleaseSortMethod
@@ -215,6 +215,7 @@ namespace lms::db
         DateDescAndRelease,
         Release,   // order by disc/track number
         TrackList, // order by asc order in tracklist
+        TrackNumber,
     };
 
     enum class TrackLyricsSortMethod

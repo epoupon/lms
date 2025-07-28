@@ -25,6 +25,7 @@
 #include "database/objects/AuthToken.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/Image.hpp"
+#include "database/objects/Medium.hpp"
 #include "database/objects/PlayListFile.hpp"
 #include "database/objects/PlayQueue.hpp"
 #include "database/objects/RatedArtist.hpp"
@@ -353,6 +354,7 @@ VALUES
             EXPECT_FALSE(TrackEmbeddedImage::find(session, TrackEmbeddedImageId{}));
             EXPECT_FALSE(TrackEmbeddedImageLink::find(session, TrackEmbeddedImageLinkId{}));
             EXPECT_FALSE(Image::find(session, ImageId{}));
+            EXPECT_FALSE(Medium::find(session, MediumId{}));
             EXPECT_FALSE(Label::find(session, LabelId{}));
             EXPECT_FALSE(Listen::find(session, ListenId{}));
             EXPECT_FALSE(PlayListFile::find(session, PlayListFileId{}));

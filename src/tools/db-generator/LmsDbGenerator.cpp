@@ -37,6 +37,7 @@
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/MediaLibrary.hpp"
+#include "database/objects/Medium.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
@@ -90,6 +91,8 @@ namespace lms
         const core::UUID releaseMBID{ core::UUID::generate() };
         const std::string releaseName{ "Release-" + std::string{ core::UUID::generate().getAsString() } };
         Release::pointer release{ context.session.create<Release>(releaseName, releaseMBID) };
+        Medium::pointer medium{ context.session.create<Medium>(release) };
+        medium.modify()->setTrackCount(params.trackCountPerRelease);
 
         Artist::pointer artist{ generateArtist(context.session) };
 
@@ -106,13 +109,12 @@ namespace lms
             Track::pointer track{ context.session.create<Track>() };
 
             track.modify()->setName("Track-" + std::string{ core::UUID::generate().getAsString() });
-            track.modify()->setDiscNumber(1);
+            track.modify()->setMedium(medium);
             track.modify()->setTrackNumber(i);
             track.modify()->setDuration(std::chrono::seconds{ core::random::getRandom(30, 300) });
             track.modify()->setRelease(release);
             track.modify()->setTrackMBID(core::UUID::generate());
             track.modify()->setRecordingMBID(core::UUID::generate());
-            track.modify()->setTotalTrack(params.trackCountPerRelease);
             if (mediaLibrary)
                 track.modify()->setMediaLibrary(mediaLibrary);
 

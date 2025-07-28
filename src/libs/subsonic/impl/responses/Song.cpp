@@ -33,6 +33,7 @@
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/MediaLibrary.hpp"
+#include "database/objects/Medium.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
@@ -78,6 +79,8 @@ namespace lms::api::subsonic
     {
         LMS_SCOPED_TRACE_DETAILED("Subsonic", "CreateSong");
 
+        const auto medium{ track->getMedium() };
+
         Response::Node trackResponse;
 
         if (!id3)
@@ -91,8 +94,8 @@ namespace lms::api::subsonic
         trackResponse.setAttribute("title", track->getName());
         if (track->getTrackNumber())
             trackResponse.setAttribute("track", *track->getTrackNumber());
-        if (track->getDiscNumber())
-            trackResponse.setAttribute("discNumber", *track->getDiscNumber());
+        if (medium && medium->getPosition())
+            trackResponse.setAttribute("discNumber", *medium->getPosition());
         if (const auto originalYear{ track->getOriginalYear() })
             trackResponse.setAttribute("year", *originalYear);
         else if (const auto year{ track->getYear() })
@@ -254,7 +257,7 @@ namespace lms::api::subsonic
         };
         trackResponse.setAttribute("explicitStatus", advisoryToExplicitStatus(track->getAdvisory()));
 
-        trackResponse.addChild("replayGain", createReplayGainNode(track));
+        trackResponse.addChild("replayGain", createReplayGainNode(track, medium));
 
         return trackResponse;
     }

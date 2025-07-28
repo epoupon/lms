@@ -20,6 +20,7 @@
 #include <limits>
 
 #include "database/Types.hpp"
+#include "database/objects/Medium.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
 #include "database/objects/TrackEmbeddedImageLink.hpp"
 #include "database/objects/TrackList.hpp"
@@ -28,6 +29,7 @@
 
 namespace lms::db::tests
 {
+    using ScopedMedium = ScopedEntity<db::Medium>;
     using ScopedTrackEmbeddedImage = ScopedEntity<db::TrackEmbeddedImage>;
     using ScopedTrackEmbeddedImageLink = ScopedEntity<db::TrackEmbeddedImageLink>;
 
@@ -113,6 +115,7 @@ namespace lms::db::tests
         ScopedTrackEmbeddedImage image{ session };
         ScopedTrack track{ session };
         ScopedRelease release{ session, "MyRelease" };
+        ScopedMedium medium{ session, release.lockAndGet() };
         ScopedTrackEmbeddedImageLink link{ session, track.lockAndGet(), image.lockAndGet() };
 
         {
@@ -133,6 +136,7 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
             track.get().modify()->setRelease(release.get());
+            track.get().modify()->setMedium(medium.get());
         }
 
         {
@@ -151,8 +155,19 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             TrackEmbeddedImage::FindParameters params;
-            params.setTrack(track.getId());
+            params.setMedium(medium.getId());
             params.setSortMethod(TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc);
+
+            bool visited{};
+            TrackEmbeddedImage::find(session, params, [&](const auto&) { visited = true; });
+            EXPECT_TRUE(visited);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackEmbeddedImage::FindParameters params;
+            params.setTrack(track.getId());
 
             bool visited{};
             TrackEmbeddedImage::find(session, params, [&](const auto&) { visited = true; });
@@ -169,6 +184,8 @@ namespace lms::db::tests
         ScopedTrack track1{ session };
         ScopedTrack track2{ session };
         ScopedRelease release{ session, "MyRelease" };
+        ScopedMedium medium1{ session, release.lockAndGet() };
+        ScopedMedium medium2{ session, release.lockAndGet() };
         ScopedTrackEmbeddedImageLink link1{ session, track1.lockAndGet(), image1.lockAndGet() };
         ScopedTrackEmbeddedImageLink link2{ session, track1.lockAndGet(), image2.lockAndGet() };
         ScopedTrackEmbeddedImageLink link3{ session, track1.lockAndGet(), image3.lockAndGet() };
@@ -176,7 +193,11 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createWriteTransaction() };
+            medium1.get().modify()->setPosition(1);
+            medium2.get().modify()->setPosition(2);
+
             track1.get().modify()->setRelease(release.get());
+            track1.get().modify()->setMedium(medium1.get());
             track1.get().modify()->setTrackNumber(2);
 
             link1.get().modify()->setType(ImageType::FrontCover);
@@ -187,6 +208,7 @@ namespace lms::db::tests
             image3.get().modify()->setSize(2000);
 
             track2.get().modify()->setRelease(release.get());
+            track2.get().modify()->setMedium(medium2.get());
             track2.get().modify()->setTrackNumber(1);
 
             link4.get().modify()->setType(ImageType::Media);
@@ -213,16 +235,15 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             TrackEmbeddedImage::FindParameters params;
-            params.setRelease(release.getId());
+            params.setMedium(medium1.getId());
             params.setImageType(ImageType::Media);
             params.setSortMethod(TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc);
 
             std::vector<TrackEmbeddedImageId> visitedIds;
             TrackEmbeddedImage::find(session, params, [&](const TrackEmbeddedImage::pointer& image) { visitedIds.push_back(image->getId()); });
-            ASSERT_EQ(visitedIds.size(), 3);
-            EXPECT_EQ(visitedIds[0], image4.getId());
-            EXPECT_EQ(visitedIds[1], image3.getId());
-            EXPECT_EQ(visitedIds[2], image2.getId());
+            ASSERT_EQ(visitedIds.size(), 2);
+            EXPECT_EQ(visitedIds[0], image3.getId());
+            EXPECT_EQ(visitedIds[1], image2.getId());
         }
 
         {
@@ -236,9 +257,9 @@ namespace lms::db::tests
             std::vector<TrackEmbeddedImageId> visitedIds;
             TrackEmbeddedImage::find(session, params, [&](const TrackEmbeddedImage::pointer& image) { visitedIds.push_back(image->getId()); });
             ASSERT_EQ(visitedIds.size(), 3);
-            EXPECT_EQ(visitedIds[0], image4.getId());
-            EXPECT_EQ(visitedIds[1], image3.getId());
-            EXPECT_EQ(visitedIds[2], image2.getId());
+            EXPECT_EQ(visitedIds[0], image3.getId());
+            EXPECT_EQ(visitedIds[1], image2.getId());
+            EXPECT_EQ(visitedIds[2], image4.getId());
         }
 
         {
@@ -255,59 +276,26 @@ namespace lms::db::tests
         }
     }
 
-    TEST_F(DatabaseFixture, TrackEmbeddedImage_findByParams_artist)
-    {
-        ScopedTrackEmbeddedImage image{ session };
-        ScopedTrack track{ session };
-        ScopedArtist artist{ session, "MyArtist" };
-        ScopedTrackEmbeddedImageLink link{ session, track.lockAndGet(), image.lockAndGet() };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-            TrackArtistLink::create(session, track.get(), artist.get(), TrackArtistLinkType::Artist);
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            TrackEmbeddedImage::FindParameters params;
-            params.setArtist(artist.getId());
-
-            bool visited{};
-            TrackEmbeddedImage::find(session, params, [&](const TrackEmbeddedImage::pointer&) { visited = true; });
-            ASSERT_TRUE(visited);
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            TrackEmbeddedImage::FindParameters params;
-            params.setArtist(artist.getId(), { TrackArtistLinkType::ReleaseArtist });
-
-            bool visited{};
-            TrackEmbeddedImage::find(session, params, [&](const TrackEmbeddedImage::pointer&) { visited = true; });
-            ASSERT_FALSE(visited);
-        }
-    }
-
-    TEST_F(DatabaseFixture, TrackEmbeddedImage_findByParams_discNumber)
+    TEST_F(DatabaseFixture, TrackEmbeddedImage_findByParams_medium)
     {
         ScopedTrackEmbeddedImage image{ session };
         ScopedTrack track{ session };
         ScopedRelease release{ session, "MyRelease" };
+        ScopedMedium medium{ session, release.lockAndGet() };
+        ScopedMedium otherMedium{ session, release.lockAndGet() };
         ScopedTrackEmbeddedImageLink link{ session, track.lockAndGet(), image.lockAndGet() };
 
         {
             auto transaction{ session.createWriteTransaction() };
             track.get().modify()->setRelease(release.get());
-            track.get().modify()->setDiscNumber(1);
+            track.get().modify()->setMedium(medium.get());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
             TrackEmbeddedImage::FindParameters params;
-            params.setDiscNumber(1);
+            params.setMedium(medium.getId());
 
             bool visited{};
             TrackEmbeddedImage::find(session, params, [&](const TrackEmbeddedImage::pointer&) { visited = true; });
@@ -318,7 +306,7 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             TrackEmbeddedImage::FindParameters params;
-            params.setDiscNumber(2);
+            params.setMedium(2);
 
             bool visited{};
             TrackEmbeddedImage::find(session, params, [&](const TrackEmbeddedImage::pointer&) { visited = true; });

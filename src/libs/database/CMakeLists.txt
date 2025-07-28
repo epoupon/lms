@@ -8,6 +8,7 @@ add_library(lmsdatabase STATIC
 	impl/objects/Image.cpp
 	impl/objects/Listen.cpp
 	impl/objects/MediaLibrary.cpp
+	impl/objects/Medium.cpp
 	impl/objects/PlayListFile.cpp
 	impl/objects/PlayQueue.cpp
 	impl/objects/TrackArtistLink.cpp

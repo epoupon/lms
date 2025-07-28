@@ -51,6 +51,7 @@ namespace lms::db
     class Artwork;
     class Cluster;
     class ClusterType;
+    class Medium;
     class Release;
     class Session;
     class Track;
@@ -282,9 +283,7 @@ namespace lms::db
         std::string_view getSortName() const { return _sortName; }
         std::optional<core::UUID> getMBID() const { return core::UUID::fromString(_MBID); }
         std::optional<core::UUID> getGroupMBID() const { return core::UUID::fromString(_groupMBID); }
-        std::optional<std::size_t> getTotalDisc() const { return _totalDisc; }
-        std::size_t getDiscCount() const; // may not be total disc (if incomplete for example)
-        std::vector<DiscInfo> getDiscs() const;
+        std::optional<std::size_t> getTotalDisc() const { return _totalDisc; } // the number of discs this release should have if complete
         std::chrono::milliseconds getDuration() const;
         Wt::WDateTime getAddedTime() const;
         Wt::WDateTime getLastWrittenTime() const;
@@ -301,6 +300,7 @@ namespace lms::db
         std::string_view getComment() const { return _comment; }
         ObjectPtr<Artwork> getPreferredArtwork() const;
         ArtworkId getPreferredArtworkId() const;
+        std::vector<ObjectPtr<Medium>> getMediums() const;
 
         // Setters
         void setName(std::string_view name) { _name = name; }
@@ -326,7 +326,6 @@ namespace lms::db
         std::vector<ObjectPtr<Artist>> getReleaseArtists() const { return getArtists(TrackArtistLinkType::ReleaseArtist); }
         bool hasVariousArtists() const;
         std::vector<pointer> getSimilarReleases(std::optional<std::size_t> offset = {}, std::optional<std::size_t> count = {}) const;
-        bool hasDiscSubtitle() const;
 
         template<class Action>
         void persist(Action& a)
