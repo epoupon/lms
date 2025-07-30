@@ -166,7 +166,7 @@ namespace lms::scanner
             }
         }
 
-        std::vector<std::string> constructArtistFileNames()
+        std::vector<std::string> constructMediumFileNames()
         {
             std::vector<std::string> res;
 
@@ -243,7 +243,7 @@ namespace lms::scanner
 
     ScanStepAssociateMediumImages::ScanStepAssociateMediumImages(InitParams& initParams)
         : ScanStepBase{ initParams }
-        , _mediumFileNames{ constructArtistFileNames() }
+        , _mediumFileNames{ constructMediumFileNames() }
     {
     }
 
