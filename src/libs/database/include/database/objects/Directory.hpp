@@ -34,6 +34,7 @@
 #include "database/objects/ArtistId.hpp"
 #include "database/objects/DirectoryId.hpp"
 #include "database/objects/MediaLibraryId.hpp"
+#include "database/objects/MediumId.hpp"
 #include "database/objects/ReleaseId.hpp"
 
 namespace lms::db
@@ -50,8 +51,9 @@ namespace lms::db
         {
             std::optional<Range> range;
             std::vector<std::string_view> keywords;                  // if non empty, name must match all of these keywords
-            ArtistId artist;                                         // only directory that involve this artist
-            ReleaseId release;                                       // only releases that involve this artist
+            ArtistId artist;                                         // only directoies that involve this artist
+            MediumId medium;                                         // only directories that involve this medium
+            ReleaseId release;                                       // only directories that involve this release
             core::EnumSet<TrackArtistLinkType> trackArtistLinkTypes; // and for these link types
             DirectoryId parentDirectory;                             // If set, directories that have this parent
             bool withNoTrack{};                                      // If set, directories that do not contain any track
@@ -72,6 +74,11 @@ namespace lms::db
             {
                 artist = _artist;
                 trackArtistLinkTypes = _trackArtistLinkTypes;
+                return *this;
+            }
+            FindParameters& setMedium(MediumId _medium)
+            {
+                medium = _medium;
                 return *this;
             }
             FindParameters& setRelease(ReleaseId _release)

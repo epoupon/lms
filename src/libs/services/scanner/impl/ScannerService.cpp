@@ -40,6 +40,7 @@
 #include "steps/ScanStepArtistReconciliation.hpp"
 #include "steps/ScanStepAssociateArtistImages.hpp"
 #include "steps/ScanStepAssociateExternalLyrics.hpp"
+#include "steps/ScanStepAssociateMediumImages.hpp"
 #include "steps/ScanStepAssociatePlayListTracks.hpp"
 #include "steps/ScanStepAssociateReleaseImages.hpp"
 #include "steps/ScanStepAssociateTrackImages.hpp"
@@ -506,7 +507,8 @@ namespace lms::scanner
         _scanSteps.emplace_back(std::make_unique<ScanStepUpdateLibraryFields>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociateReleaseImages>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociateArtistImages>(params)); // must come after ScanStepAssociateReleaseImages
-        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateTrackImages>(params));  // must come after ScanStepAssociateReleaseImages
+        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateMediumImages>(params)); // must come after ScanStepAssociateReleaseImages
+        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateTrackImages>(params));  // must come after ScanStepAssociateMediumImages and ScanStepAssociateReleaseImages
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociateExternalLyrics>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepRemoveOrphanedDbEntries>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepCompact>(params));

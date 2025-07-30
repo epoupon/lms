@@ -27,6 +27,7 @@
 #include <Wt/Dbo/Field.h>
 #include <Wt/Dbo/collection.h>
 
+#include "database/IdRange.hpp"
 #include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/ArtworkId.hpp"
@@ -74,7 +75,12 @@ namespace lms::db
         static std::size_t getCount(Session& session);
         static pointer find(Session& session, MediumId id);
         static pointer find(Session& session, ReleaseId id, std::optional<std::size_t> position);
-        static void find(Session& session, const FindParameters& params, std::function<void(const pointer&)> func);
+        static void find(Session& session, const IdRange<MediumId>& idRange, const std::function<void(const Medium::pointer&)>& func);
+        static IdRange<MediumId> findNextIdRange(Session& session, MediumId lastRetrievedId, std::size_t count);
+        static RangeResults<MediumId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
+
+        // Updates
+        static void updatePreferredArtwork(Session& session, MediumId mediumId, ArtworkId artworkId);
 
         // getters
         std::string_view getName() const { return _name; }

@@ -83,4 +83,46 @@ namespace lms::db
         return utils::fetchQuerySingleResult(query);
     }
 
+    void Medium::find(Session& session, const IdRange<MediumId>& idRange, const std::function<void(const Medium::pointer&)>& func)
+    {
+        assert(idRange.isValid());
+
+        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Medium>>("SELECT m from medium m").orderBy("m.id").where("m.id BETWEEN ? AND ?").bind(idRange.first).bind(idRange.last) };
+
+        utils::forEachQueryResult(query, [&](const Medium::pointer& medium) {
+            func(medium);
+        });
+    }
+
+    IdRange<MediumId> Medium::findNextIdRange(Session& session, MediumId lastRetrievedId, std::size_t count)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession()->query<std::tuple<MediumId, MediumId>>("SELECT MIN(sub.id) AS first_id, MAX(sub.id) AS last_id FROM (SELECT m.id FROM medium m WHERE m.id > ? ORDER BY m.id LIMIT ?) sub") };
+        query.bind(lastRetrievedId);
+        query.bind(static_cast<int>(count));
+
+        auto res{ utils::fetchQuerySingleResult(query) };
+        return IdRange<MediumId>{ .first = std::get<0>(res), .last = std::get<1>(res) };
+    }
+
+    RangeResults<MediumId> Medium::findOrphanIds(Session& session, std::optional<Range> range)
+    {
+        session.checkReadTransaction();
+
+        // select the mediums that have no track
+        auto query{ session.getDboSession()->query<MediumId>("select m.id from medium m LEFT OUTER JOIN track t ON m.id = t.medium_id WHERE t.id IS NULL") };
+        return utils::execRangeQuery<MediumId>(query, range);
+    }
+
+    void Medium::updatePreferredArtwork(Session& session, MediumId mediumId, ArtworkId artworkId)
+    {
+        session.checkWriteTransaction();
+
+        if (artworkId.isValid())
+            utils::executeCommand(*session.getDboSession(), "UPDATE medium SET preferred_artwork_id = ? WHERE id = ?", artworkId, mediumId);
+        else
+            utils::executeCommand(*session.getDboSession(), "UPDATE medium SET preferred_artwork_id = NULL WHERE id = ?", mediumId);
+    }
+
 } // namespace lms::db
