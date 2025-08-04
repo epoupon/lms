@@ -86,4 +86,24 @@ namespace lms::core::pathUtils
 
         return longestCommonPath;
     }
+
+    std::string sanitizeFileStem(const std::string_view fileStem)
+    {
+        // Keep UTF8-encoded characters, but skip illegal ASCII characters
+        constexpr std::array<unsigned char, 9> illegalChars{ '/', '\\', ':', '*', '?', '"', '<', '>', '|' };
+        static_assert(std::all_of(std::begin(illegalChars), std::end(illegalChars), [](unsigned char c) { return c < 128; }), "Illegal characters must be ASCII");
+
+        std::string sanitized;
+        sanitized.reserve(fileStem.size());
+
+        for (const char c : fileStem)
+        {
+            if (std::any_of(std::begin(illegalChars), std::end(illegalChars), [c](char illegalChar) { return c == illegalChar; }))
+                continue;
+
+            sanitized.push_back(c);
+        }
+
+        return sanitized;
+    }
 } // namespace lms::core::pathUtils

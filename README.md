@@ -90,6 +90,9 @@ If neither exists, it will then search for a file named `artist` (or another nam
 2. Scan for the image: the directory is scanned starting from this common path, moving upwards if needed, until the artist image file is found.
 3. Fallback search: if no image is found, _LMS_ will then search within each individual album folder.
 
+## Disc image lookup
+_LMS_ automatically associates images with each disc in your collection. Name the image file after the disc's subtitle or another identifier configured in `lms.conf` (see the `medium-image-file-names` setting), and place it in the same directory as the disc's tracks. If no suitable image is found, LMS will also look for embedded images within the tracks of the disc.
+
 ## Playlist support
 _LMS_ supports playlist files in `m3u` and `m3u8` formats. These playlists are synced during the scan process and are available as public shared playlists.
 

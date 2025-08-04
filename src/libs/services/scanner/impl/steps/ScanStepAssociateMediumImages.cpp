@@ -28,6 +28,7 @@
 #include "core/IConfig.hpp"
 #include "core/IJob.hpp"
 #include "core/ILogger.hpp"
+#include "core/Path.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/Types.hpp"
@@ -105,8 +106,11 @@ namespace lms::scanner
                 if (image)
                     return;
 
-                if (const std::string_view mediumName{ medium->getName() }; !mediumName.empty())
-                    image = findImageInDirectory(session, directory, std::span{ &mediumName, 1 });
+                if (const std::string mediumName{ core::pathUtils::sanitizeFileStem(medium->getName()) }; !mediumName.empty())
+                {
+                    std::string_view mediumNameView{ mediumName };
+                    image = findImageInDirectory(session, directory, std::span{ &mediumNameView, 1 });
+                }
 
                 if (!image)
                     image = findImageInDirectory(session, directory, searchParams.mediumFileNames);

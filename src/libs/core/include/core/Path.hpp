@@ -21,6 +21,8 @@
 
 #include <filesystem>
 #include <span>
+#include <string>
+#include <string_view>
 
 #include <Wt/WDateTime.h>
 
@@ -54,4 +56,7 @@ namespace lms::core::pathUtils
 
         return longestCommonPath;
     }
+
+    // A method that sanitize a file stem, removing any illegal chars
+    std::string sanitizeFileStem(std::string_view fileStem);
 } // namespace lms::core::pathUtils
