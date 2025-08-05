@@ -101,11 +101,11 @@
 
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Cannot get track duration</message>
-<message id="Lms.Admin.ScannerController.bad-embedded-image">Unable to read the image at index {1}</message>
+<message id="Lms.Admin.ScannerController.bad-embedded-image">Unable to read the image at index {1}: {2}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-artist-info-file">Cannot parse artist info file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">Cannot parse audio file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">Cannot read file ({1})</message>
-<message id="Lms.Admin.ScannerController.cannot-read-image-file">Cannot parse image file</message>
+<message id="Lms.Admin.ScannerController.cannot-read-image-file">Cannot parse image file: {1}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-lyrics-file">Cannot parse lyrics file</message>
 <message id="Lms.Admin.ScannerController.cannot-read-playlist-file">Cannot parse playlist file</message>
 <message id="Lms.Admin.ScannerController.compact">Compact the database. <strong>Caution:</strong> this may take a while and will block the whole application during the compact step!</message>

@@ -101,11 +101,11 @@
 
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">No ha sido posible obtener la duración de la pista</message>
-<message id="Lms.Admin.ScannerController.bad-embedded-image">No se puede leer la imagen en el índice {1}</message>
+<message id="Lms.Admin.ScannerController.bad-embedded-image">No se puede leer la imagen en el índice {1} : {2}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-artist-info-file">No ha sido posible analizar el fichero de información sobre el artista</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">No ha sido posible analizar el fichero de audio</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">No ha sido posible leer el fichero ({1})</message>
-<message id="Lms.Admin.ScannerController.cannot-read-image-file">No ha sido posible analizar del fichero de imagen</message>
+<message id="Lms.Admin.ScannerController.cannot-read-image-file">No ha sido posible analizar del fichero de imagen : {1}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-lyrics-file">No ha sido posible analizar el fichero de letras</message>
 <message id="Lms.Admin.ScannerController.cannot-read-playlist-file">No ha sido posible analizar el fichero de la lista de distribución</message>
 <message id="Lms.Admin.ScannerController.compact">Compactar la base de datos. <strong>¡Atención!:</strong> esta operación puede tardar bastante tiempo y la aplicación se bloqueará mientras dura la operación de compactación</message>

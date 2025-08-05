@@ -95,9 +95,12 @@ namespace lms::scanner
 
     struct EmbeddedImageScanError : public AudioFileScanError
     {
-        EmbeddedImageScanError(const std::filesystem::path& p, unsigned i)
+        EmbeddedImageScanError(const std::filesystem::path& p, unsigned i, std::string_view e)
             : AudioFileScanError{ p }
-            , index{ i } {}
+            , index{ i }
+            , errorMsg{ e }
+        {
+        }
 
         void accept(ScanErrorVisitor& visitor) const override
         {
@@ -105,6 +108,7 @@ namespace lms::scanner
         }
 
         unsigned index;
+        std::string errorMsg;
     };
 
     struct NoAudioTrackFoundError : public AudioFileScanError
@@ -149,12 +153,16 @@ namespace lms::scanner
 
     struct ImageFileScanError : public ScanError
     {
-        using ScanError::ScanError;
+        ImageFileScanError(const std::filesystem::path& p, std::string_view e)
+            : ScanError{ p }
+            , errorMsg{ e } {}
 
         void accept(ScanErrorVisitor& visitor) const override
         {
             visitor.visit(*this);
         }
+
+        std::string errorMsg;
     };
 
     struct LyricsFileScanError : public ScanError

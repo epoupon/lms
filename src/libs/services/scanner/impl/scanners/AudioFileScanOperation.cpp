@@ -526,7 +526,7 @@ namespace lms::scanner
                 }
                 catch (const image::Exception& e)
                 {
-                    addError<EmbeddedImageScanError>(getFilePath(), index);
+                    addError<EmbeddedImageScanError>(getFilePath(), index, e.what());
                 }
 
                 index++;

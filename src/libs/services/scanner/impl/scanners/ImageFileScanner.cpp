@@ -62,7 +62,7 @@ namespace lms::scanner
             catch (const image::Exception& e)
             {
                 _parsedImageProperties.reset();
-                addError<ImageFileScanError>(getFilePath());
+                addError<ImageFileScanError>(getFilePath(), e.what());
             }
         }
 

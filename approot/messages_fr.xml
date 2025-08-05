@@ -101,11 +101,11 @@
 
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Impossible de récupérer la durée de la piste</message>
-<message id="Lms.Admin.ScannerController.bad-embedded-image">Impossible de lire l'image à l'indice {1}</message>
+<message id="Lms.Admin.ScannerController.bad-embedded-image">Impossible de lire l'image à l'indice {1} : {2}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-artist-info-file">Impossible d'analyser le fichier d'informations sur l'artiste</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">Impossible d'analyser le fichier audio</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">Impossible de lire le fichier ({1})</message>
-<message id="Lms.Admin.ScannerController.cannot-read-image-file">Impossible d'analyser le fichier image</message>
+<message id="Lms.Admin.ScannerController.cannot-read-image-file">Impossible d'analyser le fichier image : {1}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-lyrics-file">Impossible d'analyser le fichier de paroles</message>
 <message id="Lms.Admin.ScannerController.cannot-read-playlist-file">Impossible d'analyser le fichier de liste de lecture</message>
 <message id="Lms.Admin.ScannerController.compact">Compacter la base de données. <strong>Attention :</strong> cette opération peut prendre du temps et va vérouiller l'application pendant toute l'étape de compactage!</message>

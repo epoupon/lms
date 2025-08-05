@@ -43,7 +43,7 @@ namespace lms::scanner
 
     void ScanErrorLogger::visit(const scanner::EmbeddedImageScanError& error)
     {
-        LMS_LOG(DBUPDATER, ERROR, "Failed to parse image in track file " << error.path << " at index " << error.index);
+        LMS_LOG(DBUPDATER, ERROR, "Failed to parse image in track file " << error.path << " at index " << error.index << ": " << error.errorMsg);
     }
 
     void ScanErrorLogger::visit(const scanner::NoAudioTrackFoundError& error)
@@ -68,7 +68,7 @@ namespace lms::scanner
 
     void ScanErrorLogger::visit(const scanner::ImageFileScanError& error)
     {
-        LMS_LOG(DBUPDATER, ERROR, "Failed to read image file " << error.path);
+        LMS_LOG(DBUPDATER, ERROR, "Failed to read image file " << error.path << ": " << error.errorMsg);
     }
 
     void ScanErrorLogger::visit(const scanner::LyricsFileScanError& error)

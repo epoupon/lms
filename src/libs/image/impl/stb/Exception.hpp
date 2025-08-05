@@ -29,8 +29,5 @@ namespace lms::image
     {
     public:
         StbiException(std::string_view desc);
-
-    private:
-        static std::string getLastFailureReason();
     };
 } // namespace lms::image
