@@ -61,7 +61,7 @@ namespace lms::db
 
             assert(params.keywords.empty() || params.name.empty());
             for (std::string_view keyword : params.keywords)
-                query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
+                query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
 
             if (!params.name.empty())
                 query.where("t.name = ?").bind(params.name);

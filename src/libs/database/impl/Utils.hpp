@@ -38,7 +38,7 @@ namespace lms::db::utils
 {
 #define ESCAPE_CHAR_STR "\\"
     static inline constexpr char escapeChar{ '\\' };
-    std::string escapeLikeKeyword(std::string_view keywords);
+    std::string escapeForLikeKeyword(std::string_view keywords);
 
     Wt::WDateTime normalizeDateTime(const Wt::WDateTime& dateTime);
 

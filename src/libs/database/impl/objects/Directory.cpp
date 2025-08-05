@@ -40,7 +40,7 @@ namespace lms::db
             auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Directory>>("SELECT d FROM directory d") };
 
             for (std::string_view keyword : params.keywords)
-                query.where("d.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
+                query.where("d.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
 
             if (params.artist.isValid()
                 || params.release.isValid()

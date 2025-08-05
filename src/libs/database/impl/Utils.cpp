@@ -23,7 +23,7 @@
 
 namespace lms::db::utils
 {
-    std::string escapeLikeKeyword(std::string_view keyword)
+    std::string escapeForLikeKeyword(std::string_view keyword)
     {
         return core::stringUtils::escapeString(keyword, "%_", escapeChar);
     }

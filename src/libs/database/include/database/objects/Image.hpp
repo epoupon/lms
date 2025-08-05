@@ -26,6 +26,7 @@
 #include <Wt/Dbo/Field.h>
 #include <Wt/WDateTime.h>
 
+#include "core/TaggedType.hpp"
 #include "database/Object.hpp"
 #include "database/Types.hpp"
 #include "database/objects/DirectoryId.hpp"
@@ -43,18 +44,22 @@ namespace lms::db
 
         struct FindParameters
         {
+            using ProcessWildcards = core::TaggedBool<class FindParametersProcessWildcardsTag>;
+
             std::optional<Range> range;
-            std::string fileStem;  // if set, images with this file stem
-            DirectoryId directory; // if set, images in this directory
+            std::string fileStem;                                 // if set, images with this file stem
+            ProcessWildcards processWildcardsInFileStem{ false }; // if true, replace '*' by '%' for SQL LIKE
+            DirectoryId directory;                                // if set, images in this directory
 
             FindParameters& setRange(std::optional<Range> _range)
             {
                 range = _range;
                 return *this;
             }
-            FindParameters& setFileStem(std::string_view _fileStem)
+            FindParameters& setFileStem(std::string_view _fileStem, ProcessWildcards processWildcards = ProcessWildcards{ false })
             {
                 fileStem = _fileStem;
+                processWildcardsInFileStem = processWildcards;
                 return *this;
             }
             FindParameters& setDirectory(DirectoryId _directory)

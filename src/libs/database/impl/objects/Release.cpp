@@ -125,7 +125,7 @@ namespace lms::db
                 query.where("r.name = ?").bind(params.name);
 
             for (std::string_view keyword : params.keywords)
-                query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
+                query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
 
             if (params.starringUser.isValid())
             {

@@ -57,7 +57,7 @@ namespace lms::db
             }
 
             for (std::string_view keyword : params.keywords)
-                query.where("t_l.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
+                query.where("t_l.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
 
             if (params.filters.mediaLibrary.isValid()
                 || params.filters.label.isValid()

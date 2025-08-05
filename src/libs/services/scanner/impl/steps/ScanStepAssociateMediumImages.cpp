@@ -62,7 +62,7 @@ namespace lms::scanner
             std::span<const std::string_view> mediumFileNames;
         };
 
-        db::Image::pointer findImageInDirectory(db::Session& session, const db::Directory::pointer& directory, std::span<const std::string_view> fileStemsToSearch)
+        db::Image::pointer findImageInDirectory(db::Session& session, const db::Directory::pointer& directory, std::span<const std::string_view> fileStemsToSearch, db::Image::FindParameters::ProcessWildcards processWildcards)
         {
             db::Image::pointer image;
 
@@ -70,7 +70,7 @@ namespace lms::scanner
             {
                 db::Image::FindParameters params;
                 params.setDirectory(directory->getId());
-                params.setFileStem(fileStem);
+                params.setFileStem(fileStem, processWildcards);
 
                 db::Image::find(session, params, [&](const db::Image::pointer foundImg) {
                     if (!image)
@@ -109,11 +109,11 @@ namespace lms::scanner
                 if (const std::string mediumName{ core::pathUtils::sanitizeFileStem(medium->getName()) }; !mediumName.empty())
                 {
                     std::string_view mediumNameView{ mediumName };
-                    image = findImageInDirectory(session, directory, std::span{ &mediumNameView, 1 });
+                    image = findImageInDirectory(session, directory, std::span{ &mediumNameView, 1 }, db::Image::FindParameters::ProcessWildcards{ false });
                 }
 
                 if (!image)
-                    image = findImageInDirectory(session, directory, searchParams.mediumFileNames);
+                    image = findImageInDirectory(session, directory, searchParams.mediumFileNames, db::Image::FindParameters::ProcessWildcards{ true });
             });
 
             return image;

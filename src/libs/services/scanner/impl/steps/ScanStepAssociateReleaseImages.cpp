@@ -67,7 +67,7 @@ namespace lms::scanner
                 {
                     db::Image::FindParameters params;
                     params.setDirectory(directory->getId());
-                    params.setFileStem(fileStem);
+                    params.setFileStem(fileStem, db::Image::FindParameters::ProcessWildcards{ true }); // no need to sanitize here, user is responsible for providing sanitized file stems in conf file
 
                     db::Image::find(session, params, [&](const db::Image::pointer& image) {
                         if (!artwork)
