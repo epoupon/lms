@@ -2,6 +2,14 @@ pkg_check_modules(Config++ REQUIRED IMPORTED_TARGET libconfig++)
 pkg_check_modules(Archive REQUIRED IMPORTED_TARGET libarchive)
 pkg_check_modules(XXHASH REQUIRED IMPORTED_TARGET libxxhash)
 
+set(LMS_VERSION ${PROJECT_VERSION})
+
+configure_file(
+	impl/Version.cpp.in
+	impl/Version.cpp
+	@ONLY
+	)
+
 add_library(lmscore STATIC
 	impl/http/Client.cpp
 	impl/http/SendQueue.cpp
@@ -25,6 +33,7 @@ add_library(lmscore STATIC
 	impl/UUID.cpp
 	impl/WtLogger.cpp
 	impl/XxHash3.cpp
+	${CMAKE_CURRENT_BINARY_DIR}/impl/Version.cpp
 	)
 
 target_include_directories(lmscore INTERFACE

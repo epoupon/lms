@@ -29,6 +29,7 @@
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"
+#include "core/Version.hpp"
 #include "database/IDb.hpp"
 #include "database/IQueryPlanRecorder.hpp"
 #include "database/Session.hpp"
@@ -460,6 +461,7 @@ namespace lms::ui
         if (LmsApp->getUserType() == db::UserType::ADMIN)
         {
             navbar->setCondition("if-is-admin", true);
+            navbar->bindString("version", std::string{ core::getVersion() }, Wt::TextFormat::Plain);
             navbar->bindNew<Wt::WAnchor>("media-libraries", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/libraries" }, Wt::WString::tr("Lms.Admin.menu-media-libraries"));
             navbar->bindNew<Wt::WAnchor>("scan-settings", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/scan-settings" }, Wt::WString::tr("Lms.Admin.menu-scan-settings"));
             navbar->bindNew<Wt::WAnchor>("scanner", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/scanner" }, Wt::WString::tr("Lms.Admin.menu-scanner"));

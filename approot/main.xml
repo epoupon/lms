@@ -40,6 +40,7 @@
 							<i class="fa fa-cogs" aria-hidden="true"></i>
 						</a>
 						<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+							<li class="dropdown-header">LMS ${version}</li>
 							<li>${media-libraries class="dropdown-item"}</li>
 							<li>${scan-settings class="dropdown-item"}</li>
 							<li>${scanner class="dropdown-item"}</li>
@@ -57,7 +58,6 @@
 						</a>
 						<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
 							<li class="dropdown-header">${username}</li>
-							<li class="dropdown-divider"></li>
 							<li>${settings class="dropdown-item"}</li>
 							<li>${logout class="dropdown-item"}</li>
 						</ul>
