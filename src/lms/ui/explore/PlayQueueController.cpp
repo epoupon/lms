@@ -108,7 +108,6 @@ namespace lms::ui
 
         std::vector<db::TrackId> getTrackListTracks(db::Session& session, db::TrackListId trackListId, const Filters& filters, std::size_t maxTrackCount)
         {
-            using namespace db;
             assert(maxTrackCount);
 
             auto transaction{ session.createReadTransaction() };
@@ -117,7 +116,7 @@ namespace lms::ui
             params.setTrackList(trackListId);
             params.setFilters(filters.getDbFilters());
             params.setRange(db::Range{ 0, maxTrackCount });
-            params.setSortMethod(TrackSortMethod::TrackList);
+            params.setSortMethod(db::TrackSortMethod::TrackList);
 
             return db::Track::findIds(session, params).results;
         }

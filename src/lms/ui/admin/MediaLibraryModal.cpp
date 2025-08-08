@@ -33,14 +33,12 @@
 
 namespace lms::ui
 {
-    using namespace db;
-
     namespace
     {
         class LibraryNameValidator : public Wt::WValidator
         {
         public:
-            LibraryNameValidator(MediaLibraryId libraryId)
+            LibraryNameValidator(db::MediaLibraryId libraryId)
                 : _libraryId{ libraryId } {}
 
         private:
@@ -66,13 +64,13 @@ namespace lms::ui
                 return result;
             }
 
-            const MediaLibraryId _libraryId;
+            const db::MediaLibraryId _libraryId;
         };
 
         class LibraryRootPathValidator : public Wt::WValidator
         {
         public:
-            LibraryRootPathValidator(MediaLibraryId libraryId)
+            LibraryRootPathValidator(db::MediaLibraryId libraryId)
                 : _libraryId{ libraryId } {}
 
         private:
@@ -115,7 +113,7 @@ namespace lms::ui
                 return result;
             }
 
-            const MediaLibraryId _libraryId;
+            const db::MediaLibraryId _libraryId;
         };
 
         class MediaLibraryModel : public Wt::WFormModel
@@ -124,7 +122,7 @@ namespace lms::ui
             static inline constexpr Field NameField{ "name" };
             static inline constexpr Field DirectoryField{ "directory" };
 
-            MediaLibraryModel(MediaLibraryId libraryId)
+            MediaLibraryModel(db::MediaLibraryId libraryId)
                 : _libraryId{ libraryId }
             {
                 addField(NameField);
@@ -146,7 +144,7 @@ namespace lms::ui
                     loadData();
             }
 
-            MediaLibraryId saveData()
+            db::MediaLibraryId saveData()
             {
                 auto& session{ LmsApp->getDbSession() };
                 auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
@@ -154,10 +152,10 @@ namespace lms::ui
                 std::string name{ valueText(NameField).toUTF8() };
                 std::string path{ valueText(DirectoryField).toUTF8() };
 
-                MediaLibrary::pointer library;
+                db::MediaLibrary::pointer library;
                 if (_libraryId.isValid())
                 {
-                    library = MediaLibrary::find(session, _libraryId);
+                    library = db::MediaLibrary::find(session, _libraryId);
                     if (library)
                     {
                         library.modify()->setName(name);
@@ -166,7 +164,7 @@ namespace lms::ui
                 }
                 else
                 {
-                    library = session.create<MediaLibrary>(name, path);
+                    library = session.create<db::MediaLibrary>(name, path);
                 }
 
                 return library->getId();
@@ -178,17 +176,17 @@ namespace lms::ui
                 auto& session{ LmsApp->getDbSession() };
                 auto transaction{ session.createReadTransaction() };
 
-                const MediaLibrary::pointer library{ MediaLibrary::find(session, _libraryId) };
+                const db::MediaLibrary::pointer library{ db::MediaLibrary::find(session, _libraryId) };
 
                 setValue(NameField, std::string{ library->getName() });
                 setValue(DirectoryField, library->getPath().string());
             }
 
-            const MediaLibraryId _libraryId;
+            const db::MediaLibraryId _libraryId;
         };
     } // namespace
 
-    MediaLibraryModal::MediaLibraryModal(MediaLibraryId mediaLibraryId)
+    MediaLibraryModal::MediaLibraryModal(db::MediaLibraryId mediaLibraryId)
         : Wt::WTemplateFormView{ Wt::WString::tr("Lms.Admin.MediaLibrary.template") }
     {
         auto model{ std::make_shared<MediaLibraryModel>(mediaLibraryId) };

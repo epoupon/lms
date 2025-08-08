@@ -23,19 +23,14 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
-#include "core/ILogger.hpp"
-#include "core/Service.hpp"
 #include "database/Session.hpp"
 #include "database/objects/User.hpp"
-#include "services/auth/IPasswordService.hpp"
 
 #include "LmsApplication.hpp"
 #include "ModalManager.hpp"
 
 namespace lms::ui
 {
-    using namespace db;
-
     UsersView::UsersView()
         : Wt::WTemplate{ Wt::WString::tr("Lms.Admin.Users.template") }
     {
@@ -69,9 +64,9 @@ namespace lms::ui
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const UserId currentUserId{ LmsApp->getUserId() };
-        User::find(LmsApp->getDbSession(), User::FindParameters{}, [&](const User::pointer& user) {
-            const UserId userId{ user->getId() };
+        const db::UserId currentUserId{ LmsApp->getUserId() };
+        db::User::find(LmsApp->getDbSession(), db::User::FindParameters{}, [&](const db::User::pointer& user) {
+            const db::UserId userId{ user->getId() };
 
             Wt::WTemplate* entry{ _container->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Admin.Users.template.entry")) };
 
@@ -107,7 +102,7 @@ namespace lms::ui
                     {
                         auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-                        User::pointer user{ User::find(LmsApp->getDbSession(), userId) };
+                        db::User::pointer user{ db::User::find(LmsApp->getDbSession(), userId) };
                         if (user)
                             user.remove();
                     }

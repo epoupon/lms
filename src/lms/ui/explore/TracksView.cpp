@@ -35,8 +35,6 @@
 
 namespace lms::ui
 {
-    using namespace db;
-
     Tracks::Tracks(Filters& filters, PlayQueueController& playQueueController)
         : Template{ Wt::WString::tr("Lms.Explore.Tracks.template") }
         , _filters{ filters }
@@ -119,11 +117,11 @@ namespace lms::ui
     {
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const auto trackIds{ _trackCollector.get(Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }) };
+        const auto trackIds{ _trackCollector.get(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }) };
 
-        for (const TrackId trackId : trackIds.results)
+        for (const db::TrackId trackId : trackIds.results)
         {
-            if (const Track::pointer track{ Track::find(LmsApp->getDbSession(), trackId) })
+            if (const db::Track::pointer track{ db::Track::find(LmsApp->getDbSession(), trackId) })
                 _container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
         }
 
@@ -132,7 +130,7 @@ namespace lms::ui
 
     std::vector<db::TrackId> Tracks::getAllTracks()
     {
-        RangeResults<TrackId> trackIds{ _trackCollector.get() };
+        db::RangeResults<db::TrackId> trackIds{ _trackCollector.get() };
         return std::move(trackIds.results);
     }
 } // namespace lms::ui

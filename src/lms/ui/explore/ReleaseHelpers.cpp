@@ -31,8 +31,6 @@
 
 namespace lms::ui::releaseListHelpers
 {
-    using namespace db;
-
     namespace
     {
         enum class ReleaseOptions
@@ -42,7 +40,7 @@ namespace lms::ui::releaseListHelpers
             ShowYear,
         };
 
-        std::unique_ptr<Wt::WTemplate> createEntryInternal(const Release::pointer& release, const Artist::pointer& artist, core::EnumSet<ReleaseOptions> options)
+        std::unique_ptr<Wt::WTemplate> createEntryInternal(const db::Release::pointer& release, const db::Artist::pointer& artist, core::EnumSet<ReleaseOptions> options)
         {
             auto entry{ std::make_unique<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Releases.template.entry-grid")) };
 
@@ -64,7 +62,7 @@ namespace lms::ui::releaseListHelpers
 
             if (options.contains(ReleaseOptions::ShowArtist))
             {
-                auto artistAnchors{ utils::createArtistsAnchorsForRelease(release, artist ? artist->getId() : ArtistId{}, "link-secondary") };
+                auto artistAnchors{ utils::createArtistsAnchorsForRelease(release, artist ? artist->getId() : db::ArtistId{}, "link-secondary") };
                 if (artistAnchors)
                 {
                     entry->setCondition("if-has-artist", true);
@@ -94,9 +92,9 @@ namespace lms::ui::releaseListHelpers
         }
     } // namespace
 
-    std::unique_ptr<Wt::WTemplate> createEntry(const Release::pointer& release)
+    std::unique_ptr<Wt::WTemplate> createEntry(const db::Release::pointer& release)
     {
-        return createEntryInternal(release, Artist::pointer{}, core::EnumSet<ReleaseOptions>{ ReleaseOptions::ShowArtist });
+        return createEntryInternal(release, db::Artist::pointer{}, core::EnumSet<ReleaseOptions>{ ReleaseOptions::ShowArtist });
     }
 
     std::unique_ptr<Wt::WTemplate> createEntryForArtist(const db::Release::pointer& release, const db::Artist::pointer& artist)
@@ -106,7 +104,7 @@ namespace lms::ui::releaseListHelpers
 
     std::unique_ptr<Wt::WTemplate> createEntryForOtherVersions(const db::ObjectPtr<db::Release>& release)
     {
-        return createEntryInternal(release, Artist::pointer{}, core::EnumSet<ReleaseOptions>{ ReleaseOptions::ShowYear });
+        return createEntryInternal(release, db::Artist::pointer{}, core::EnumSet<ReleaseOptions>{ ReleaseOptions::ShowYear });
     }
 } // namespace lms::ui::releaseListHelpers
 

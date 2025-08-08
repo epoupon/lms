@@ -36,8 +36,6 @@
 
 namespace lms::ui
 {
-    using namespace db;
-
     Releases::Releases(Filters& filters, PlayQueueController& playQueueController)
         : Template{ Wt::WString::tr("Lms.Explore.Releases.template") }
         , _playQueueController{ playQueueController }
@@ -116,14 +114,14 @@ namespace lms::ui
 
     void Releases::addSome()
     {
-        const auto releaseIds{ _releaseCollector.get(Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }) };
+        const auto releaseIds{ _releaseCollector.get(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize }) };
 
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-            for (const ReleaseId releaseId : releaseIds.results)
+            for (const db::ReleaseId releaseId : releaseIds.results)
             {
-                if (const Release::pointer release{ Release::find(LmsApp->getDbSession(), releaseId) })
+                if (const db::Release::pointer release{ db::Release::find(LmsApp->getDbSession(), releaseId) })
                     _container->add(releaseListHelpers::createEntry(release));
             }
         }
@@ -131,9 +129,9 @@ namespace lms::ui
         _container->setHasMore(releaseIds.moreResults);
     }
 
-    std::vector<ReleaseId> Releases::getAllReleases()
+    std::vector<db::ReleaseId> Releases::getAllReleases()
     {
-        RangeResults<ReleaseId> releaseIds{ _releaseCollector.get() };
+        db::RangeResults<db::ReleaseId> releaseIds{ _releaseCollector.get() };
         return std::move(releaseIds.results);
     }
 

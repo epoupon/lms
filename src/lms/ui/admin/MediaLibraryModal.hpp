@@ -29,7 +29,7 @@ namespace lms::ui
     class MediaLibraryModal : public Wt::WTemplateFormView
     {
     public:
-        MediaLibraryModal(db::MediaLibraryId mediaLibaryId);
+        MediaLibraryModal(db::MediaLibraryId mediaLibraryId);
 
         Wt::Signal<db::MediaLibraryId>& saved() { return _saved; };
         Wt::Signal<>& cancelled() { return _cancelled; }

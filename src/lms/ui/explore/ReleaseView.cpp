@@ -57,8 +57,6 @@
 
 namespace lms::ui
 {
-    using namespace db;
-
     namespace
     {
         void showReleaseInfoModal(db::ReleaseId releaseId)
@@ -79,36 +77,36 @@ namespace lms::ui
                 releaseInfo->bindString("release-type", releaseHelpers::buildReleaseTypeString(parseReleaseType(releaseTypeNames)));
             }
 
-            std::map<Wt::WString, std::set<ArtistId>> artistMap;
+            std::map<Wt::WString, std::set<db::ArtistId>> artistMap;
 
-            auto addArtists = [&](TrackArtistLinkType linkType, const char* type) {
-                Artist::FindParameters params;
+            auto addArtists = [&](db::TrackArtistLinkType linkType, const char* type) {
+                db::Artist::FindParameters params;
                 params.setRelease(releaseId);
                 params.setLinkType(linkType);
-                const auto artistIds{ Artist::findIds(LmsApp->getDbSession(), params) };
+                const auto artistIds{ db::Artist::findIds(LmsApp->getDbSession(), params) };
                 if (artistIds.results.empty())
                     return;
 
                 Wt::WString typeStr{ Wt::WString::trn(type, artistIds.results.size()) };
-                for (ArtistId artistId : artistIds.results)
+                for (db::ArtistId artistId : artistIds.results)
                     artistMap[typeStr].insert(artistId);
             };
 
             auto addPerformerArtists = [&] {
-                TrackArtistLink::FindParameters params;
+                db::TrackArtistLink::FindParameters params;
                 params.setRelease(releaseId);
-                params.setLinkType(TrackArtistLinkType::Performer);
-                TrackArtistLink::find(LmsApp->getDbSession(), params, [&](const TrackArtistLink::pointer& link) {
+                params.setLinkType(db::TrackArtistLinkType::Performer);
+                db::TrackArtistLink::find(LmsApp->getDbSession(), params, [&](const db::TrackArtistLink::pointer& link) {
                     artistMap[std::string{ link->getSubType() }].insert(link->getArtist()->getId());
                 });
             };
 
-            addArtists(TrackArtistLinkType::Composer, "Lms.Explore.Artists.linktype-composer");
-            addArtists(TrackArtistLinkType::Conductor, "Lms.Explore.Artists.linktype-conductor");
-            addArtists(TrackArtistLinkType::Lyricist, "Lms.Explore.Artists.linktype-lyricist");
-            addArtists(TrackArtistLinkType::Mixer, "Lms.Explore.Artists.linktype-mixer");
-            addArtists(TrackArtistLinkType::Remixer, "Lms.Explore.Artists.linktype-remixer");
-            addArtists(TrackArtistLinkType::Producer, "Lms.Explore.Artists.linktype-producer");
+            addArtists(db::TrackArtistLinkType::Composer, "Lms.Explore.Artists.linktype-composer");
+            addArtists(db::TrackArtistLinkType::Conductor, "Lms.Explore.Artists.linktype-conductor");
+            addArtists(db::TrackArtistLinkType::Lyricist, "Lms.Explore.Artists.linktype-lyricist");
+            addArtists(db::TrackArtistLinkType::Mixer, "Lms.Explore.Artists.linktype-mixer");
+            addArtists(db::TrackArtistLinkType::Remixer, "Lms.Explore.Artists.linktype-remixer");
+            addArtists(db::TrackArtistLinkType::Producer, "Lms.Explore.Artists.linktype-producer");
             addPerformerArtists();
 
             if (auto itRolelessPerformers{ artistMap.find("") }; itRolelessPerformers != std::cend(artistMap))
@@ -141,7 +139,7 @@ namespace lms::ui
             }
 
             // TODO: save in DB and aggregate all this
-            for (const Track::pointer& track : Track::find(LmsApp->getDbSession(), Track::FindParameters{}.setRelease(releaseId).setRange(Range{ 0, 1 })).results)
+            for (const db::Track::pointer& track : db::Track::find(LmsApp->getDbSession(), db::Track::FindParameters{}.setRelease(releaseId).setRange(db::Range{ 0, 1 })).results)
             {
                 if (const auto audioFile{ av::parseAudioFile(track->getAbsoluteFilePath()) })
                 {
@@ -171,7 +169,7 @@ namespace lms::ui
             LmsApp->getModalManager().show(std::move(releaseInfo));
         }
 
-        std::optional<ReleaseId> extractReleaseIdFromInternalPath()
+        std::optional<db::ReleaseId> extractReleaseIdFromInternalPath()
         {
             if (wApp->internalPathMatches("/release/mbid/"))
             {
@@ -186,12 +184,12 @@ namespace lms::ui
                 return std::nullopt;
             }
 
-            return core::stringUtils::readAs<ReleaseId::ValueType>(wApp->internalPathNextPart("/release/"));
+            return core::stringUtils::readAs<db::ReleaseId::ValueType>(wApp->internalPathNextPart("/release/"));
         }
 
         void fillTrackArtistLinks(Wt::WTemplate* trackEntry, db::TrackId trackId)
         {
-            const User::pointer user{ LmsApp->getUser() };
+            const db::User::pointer user{ LmsApp->getUser() };
             if (!user->getUIEnableInlineArtistRelationships())
                 return;
 
@@ -199,7 +197,7 @@ namespace lms::ui
             if (inlineArtistRelationships.empty())
                 return;
 
-            const std::map<Wt::WString, std::set<ArtistId>> artistsByRole{ TrackListHelpers::getArtistsByRole(trackId, inlineArtistRelationships) };
+            const std::map<Wt::WString, std::set<db::ArtistId>> artistsByRole{ TrackListHelpers::getArtistsByRole(trackId, inlineArtistRelationships) };
             if (artistsByRole.empty())
                 return;
 
@@ -318,14 +316,14 @@ namespace lms::ui
 
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
         {
-            const auto clusterTypeIds{ ClusterType::findIds(session).results };
+            const auto clusterTypeIds{ db::ClusterType::findIds(session).results };
             const auto clusterGroups{ release->getClusterGroups(clusterTypeIds, 3) };
 
             for (const auto& clusters : clusterGroups)
             {
                 for (const db::Cluster::pointer& cluster : clusters)
                 {
-                    const ClusterId clusterId{ cluster->getId() };
+                    const db::ClusterId clusterId{ cluster->getId() };
                     Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterCluster(clusterId)) };
                     entry->clicked().connect([this, clusterId] {
                         _filters.add(clusterId);
@@ -458,7 +456,7 @@ namespace lms::ui
 
             if (displayTrackArtists)
             {
-                const auto artists{ track->getArtistIds({ TrackArtistLinkType::Artist }) };
+                const auto artists{ track->getArtistIds({ db::TrackArtistLinkType::Artist }) };
                 if (!artists.empty())
                 {
                     entry->setCondition("if-has-artists", true);
@@ -533,7 +531,7 @@ namespace lms::ui
 
             entry->bindString("duration", utils::durationToString(track->getDuration()), Wt::TextFormat::Plain);
 
-            LmsApp->getMediaPlayer().trackLoaded.connect(entry, [=](TrackId loadedTrackId) {
+            LmsApp->getMediaPlayer().trackLoaded.connect(entry, [=](db::TrackId loadedTrackId) {
                 entry->toggleStyleClass("Lms-entry-playing", loadedTrackId == trackId);
             });
 
@@ -600,7 +598,7 @@ namespace lms::ui
         setCondition("if-has-other-versions", true);
         auto* container{ bindNew<Wt::WContainerWidget>("other-versions") };
 
-        for (const ReleaseId id : releaseIds.results)
+        for (const db::ReleaseId id : releaseIds.results)
         {
             if (id == _releaseId)
                 continue;
@@ -613,7 +611,7 @@ namespace lms::ui
         }
     }
 
-    void Release::refreshSimilarReleases(const std::vector<ReleaseId>& similarReleaseIds)
+    void Release::refreshSimilarReleases(const std::vector<db::ReleaseId>& similarReleaseIds)
     {
         if (similarReleaseIds.empty())
             return;
@@ -621,7 +619,7 @@ namespace lms::ui
         setCondition("if-has-similar-releases", true);
         auto* similarReleasesContainer{ bindNew<Wt::WContainerWidget>("similar-releases") };
 
-        for (const ReleaseId id : similarReleaseIds)
+        for (const db::ReleaseId id : similarReleaseIds)
         {
             const db::Release::pointer similarRelease{ db::Release::find(LmsApp->getDbSession(), id) };
             if (!similarRelease)
