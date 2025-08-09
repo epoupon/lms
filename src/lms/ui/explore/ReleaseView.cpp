@@ -497,21 +497,32 @@ namespace lms::ui
                         _playQueueController.processCommand(PlayQueueController::Command::PlayOrAddLast, { trackId });
                     });
 
-                auto isStarred{ [=] { return core::Service<feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), trackId); } };
+                {
+                    auto isStarred{ [=] { return core::Service<feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), trackId); } };
 
-                Wt::WPushButton* starBtn{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
-                starBtn->clicked().connect([=] {
-                    if (isStarred())
-                    {
-                        core::Service<feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), trackId);
-                        starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
-                    }
-                    else
-                    {
-                        core::Service<feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), trackId);
-                        starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
-                    }
-                });
+                    Wt::WPushButton* starBtn{ entry->bindNew<Wt::WPushButton>("star-btn", Wt::WString::tr(isStarred() ? "Lms.template.unstar-btn" : "Lms.template.star-btn"), Wt::TextFormat::XHTML) };
+                    Wt::WPushButton* starMenuEntry{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
+
+                    auto toggle{ [=] {
+                        auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
+
+                        if (isStarred())
+                        {
+                            core::Service<feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), trackId);
+                            starMenuEntry->setText(Wt::WString::tr("Lms.Explore.star"));
+                            starBtn->setText(Wt::WString::tr("Lms.template.star-btn"));
+                        }
+                        else
+                        {
+                            core::Service<feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), trackId);
+                            starMenuEntry->setText(Wt::WString::tr("Lms.Explore.unstar"));
+                            starBtn->setText(Wt::WString::tr("Lms.template.unstar-btn"));
+                        }
+                    } };
+
+                    starMenuEntry->clicked().connect([=] { toggle(); });
+                    starBtn->clicked().connect([=] { toggle(); });
+                }
 
                 entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
                     ->setLink(Wt::WLink{ std::make_unique<DownloadTrackResource>(trackId) });

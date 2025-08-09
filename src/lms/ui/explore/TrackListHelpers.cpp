@@ -259,6 +259,7 @@ namespace lms::ui::TrackListHelpers
         });
 
         entry->bindNew<Wt::WPushButton>("more-btn", Wt::WString::tr("Lms.template.more-btn"), Wt::TextFormat::XHTML);
+
         entry->bindNew<Wt::WPushButton>("play", Wt::WString::tr("Lms.Explore.play"))
             ->clicked()
             .connect([trackId, &playQueueController] {
@@ -278,21 +279,28 @@ namespace lms::ui::TrackListHelpers
         {
             auto isStarred{ [=] { return core::Service<feedback::IFeedbackService>::get()->isStarred(LmsApp->getUserId(), trackId); } };
 
-            Wt::WPushButton* starBtn{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
-            starBtn->clicked().connect([=] {
+            Wt::WPushButton* starBtn{ entry->bindNew<Wt::WPushButton>("star-btn", Wt::WString::tr(isStarred() ? "Lms.template.unstar-btn" : "Lms.template.star-btn"), Wt::TextFormat::XHTML) };
+            Wt::WPushButton* starMenuEntry{ entry->bindNew<Wt::WPushButton>("star", Wt::WString::tr(isStarred() ? "Lms.Explore.unstar" : "Lms.Explore.star")) };
+
+            auto toggle{ [=] {
                 auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
                 if (isStarred())
                 {
                     core::Service<feedback::IFeedbackService>::get()->unstar(LmsApp->getUserId(), trackId);
-                    starBtn->setText(Wt::WString::tr("Lms.Explore.star"));
+                    starMenuEntry->setText(Wt::WString::tr("Lms.Explore.star"));
+                    starBtn->setText(Wt::WString::tr("Lms.template.star-btn"));
                 }
                 else
                 {
                     core::Service<feedback::IFeedbackService>::get()->star(LmsApp->getUserId(), trackId);
-                    starBtn->setText(Wt::WString::tr("Lms.Explore.unstar"));
+                    starMenuEntry->setText(Wt::WString::tr("Lms.Explore.unstar"));
+                    starBtn->setText(Wt::WString::tr("Lms.template.unstar-btn"));
                 }
-            });
+            } };
+
+            starMenuEntry->clicked().connect([=] { toggle(); });
+            starBtn->clicked().connect([=] { toggle(); });
         }
 
         entry->bindNew<Wt::WPushButton>("download", Wt::WString::tr("Lms.Explore.download"))
