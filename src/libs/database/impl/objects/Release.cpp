@@ -30,6 +30,7 @@
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/MediaLibrary.hpp"
+#include "database/objects/Medium.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
@@ -124,7 +125,7 @@ namespace lms::db
                 query.where("r.name = ?").bind(params.name);
 
             for (std::string_view keyword : params.keywords)
-                query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
+                query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
 
             if (params.starringUser.isValid())
             {
@@ -577,28 +578,6 @@ namespace lms::db
         return utils::fetchQuerySingleResult(createQuery<int>(session, "COUNT(DISTINCT r.id)", params));
     }
 
-    std::size_t Release::getDiscCount() const
-    {
-        assert(session());
-        int res{ utils::fetchQuerySingleResult(session()->query<int>("SELECT COUNT(DISTINCT disc_number) FROM track t").where("t.release_id = ?").bind(getId())) };
-        return res;
-    }
-
-    std::vector<DiscInfo> Release::getDiscs() const
-    {
-        assert(session());
-
-        using ResultType = std::tuple<int, std::string>;
-        const auto query{ session()->query<ResultType>("SELECT DISTINCT disc_number, disc_subtitle FROM track t").where("t.release_id = ?").bind(getId()).orderBy("disc_number") };
-
-        std::vector<DiscInfo> discs;
-        utils::forEachQueryResult(query, [&](ResultType&& res) {
-            discs.emplace_back(DiscInfo{ static_cast<std::size_t>(std::get<int>(res)), std::move(std::get<std::string>(res)) });
-        });
-
-        return discs;
-    }
-
     core::PartialDateTime Release::getDate() const
     {
         return getDate(false);
@@ -753,6 +732,18 @@ namespace lms::db
         return _preferredArtwork.id();
     }
 
+    std::vector<ObjectPtr<Medium>> Release::getMediums() const
+    {
+        assert(session());
+
+        // Select the similar releases using the 5 most used clusters of the release
+        auto query{ session()->query<Wt::Dbo::ptr<Medium>>("SELECT m from medium m") };
+        query.where("m.release_id = ?").bind(getId());
+        query.orderBy("m.position");
+
+        return utils::fetchQueryResults<Medium::pointer>(query);
+    }
+
     void Release::clearLabels()
     {
         _labels.clear();
@@ -792,11 +783,6 @@ namespace lms::db
     {
         // TODO optimize
         return getArtists().size() > 1;
-    }
-
-    bool Release::hasDiscSubtitle() const
-    {
-        return utils::fetchQuerySingleResult(session()->query<int>("SELECT EXISTS (SELECT 1 FROM track WHERE disc_subtitle IS NOT NULL AND disc_subtitle <> '' AND release_id = ?)").bind(getId()));
     }
 
     std::size_t Release::getTrackCount() const

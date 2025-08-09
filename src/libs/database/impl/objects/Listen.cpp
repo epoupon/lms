@@ -100,13 +100,13 @@ namespace lms::db
                 for (const std::string_view keyword : params.keywords)
                 {
                     clauses.push_back("a.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
-                    query.bind("%" + utils::escapeLikeKeyword(keyword) + "%");
+                    query.bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
                 }
 
                 for (const std::string_view keyword : params.keywords)
                 {
                     sortClauses.push_back("a.sort_name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'");
-                    query.bind("%" + utils::escapeLikeKeyword(keyword) + "%");
+                    query.bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
                 }
 
                 query.where("(" + core::stringUtils::joinStrings(clauses, " AND ") + ") OR (" + core::stringUtils::joinStrings(sortClauses, " AND ") + ")");
@@ -169,7 +169,7 @@ namespace lms::db
             }
 
             for (std::string_view keyword : params.keywords)
-                query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
+                query.where("r.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
 
             return query;
         }
@@ -227,7 +227,7 @@ namespace lms::db
             }
 
             for (std::string_view keyword : params.keywords)
-                query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
+                query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
 
             return query;
         }

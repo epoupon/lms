@@ -10,6 +10,7 @@ add_executable(test-database
 	Directory.cpp
 	Image.cpp
 	Listen.cpp
+	Medium.cpp
 	Migration.cpp
 	PlayListFile.cpp
 	RatedArtist.cpp

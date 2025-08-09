@@ -46,7 +46,7 @@ namespace lms::auth
 
     void LoginThrottler::removeOutdatedEntries()
     {
-        const Wt::WDateTime now{ Wt::WDateTime::currentDateTime() };
+        const Clock::time_point now{ Clock::now() };
 
         for (auto it{ std::begin(_attemptsInfo) }; it != std::end(_attemptsInfo);)
         {
@@ -60,7 +60,7 @@ namespace lms::auth
     void LoginThrottler::onBadClientAttempt(const boost::asio::ip::address& address)
     {
         const boost::asio::ip::address clientAddress{ getAddressToThrottle(address) };
-        const Wt::WDateTime now{ Wt::WDateTime::currentDateTime() };
+        const Clock::time_point now{ Clock::now() };
 
         if (_attemptsInfo.size() >= _maxEntries)
             removeOutdatedEntries();
@@ -68,7 +68,7 @@ namespace lms::auth
             _attemptsInfo.erase(core::random::pickRandom(_attemptsInfo));
 
         AttemptInfo& attemptInfo{ _attemptsInfo[address] };
-        if (attemptInfo.nextAttempt.isValid())
+        if (attemptInfo.nextAttempt != Clock::time_point{})
         {
             assert(attemptInfo.nextAttempt <= now); // should not be called if throttled
             attemptInfo = {};
@@ -79,12 +79,12 @@ namespace lms::auth
         LMS_LOG(AUTH, DEBUG, "Registering bad attempt for '" << clientAddress.to_string() << "', consecutive bad attempts count = " << attemptInfo.badConsecutiveAttemptCount);
         if (attemptInfo.badConsecutiveAttemptCount >= _maxBadConsecutiveAttemptCount)
         {
-            LMS_LOG(AUTH, DEBUG, "Throttling '" << clientAddress.to_string() << "'");
-            attemptInfo.nextAttempt = now.addMSecs(std::chrono::duration_cast<std::chrono::milliseconds>(_throttlingDuration).count());
+            LMS_LOG(AUTH, INFO, "Throttling '" << clientAddress.to_string() << "' for " << std::chrono::duration_cast<std::chrono::seconds>(_throttlingDuration).count() << " seconds");
+            attemptInfo.nextAttempt = now + _throttlingDuration;
         }
         else
         {
-            attemptInfo.nextAttempt = {};
+            attemptInfo.nextAttempt = Clock::time_point{};
         }
     }
 
@@ -103,9 +103,9 @@ namespace lms::auth
         if (it == _attemptsInfo.end())
             return false;
 
-        if (!it->second.nextAttempt.isValid())
+        if (it->second.nextAttempt == Clock::time_point{})
             return false;
 
-        return it->second.nextAttempt > Wt::WDateTime::currentDateTime();
+        return it->second.nextAttempt > Clock::now();
     }
 } // namespace lms::auth

@@ -61,14 +61,13 @@ namespace lms::ui
 
         std::vector<db::TrackId> getReleasesTracks(db::Session& session, const std::vector<db::ReleaseId>& releasesId, const Filters& filters, std::size_t maxTrackCount)
         {
-            using namespace db;
             assert(maxTrackCount);
 
-            std::vector<TrackId> res;
+            std::vector<db::TrackId> res;
 
             auto transaction{ session.createReadTransaction() };
 
-            for (const ReleaseId releaseId : releasesId)
+            for (const db::ReleaseId releaseId : releasesId)
             {
                 db::Track::FindParameters params;
                 params.setRelease(releaseId);
@@ -88,39 +87,27 @@ namespace lms::ui
             return res;
         }
 
-        std::vector<db::TrackId> getDiscTracks(db::Session& session, const std::vector<PlayQueueController::Disc>& discs, const Filters& filters, std::size_t maxTrackCount)
+        std::vector<db::TrackId> getMediumTracks(db::Session& session, db::MediumId medium, const Filters& filters, std::size_t maxTrackCount)
         {
-            using namespace db;
             assert(maxTrackCount);
 
-            std::vector<TrackId> res;
+            std::vector<db::TrackId> res;
 
             auto transaction{ session.createReadTransaction() };
 
-            for (const PlayQueueController::Disc& disc : discs)
-            {
-                db::Track::FindParameters params;
-                params.setRelease(disc.releaseId);
-                params.setSortMethod(db::TrackSortMethod::Release);
-                params.setDiscNumber(disc.discNumber);
-                params.setFilters(filters.getDbFilters());
-                params.setRange(db::Range{ 0, maxTrackCount - res.size() });
+            db::Track::FindParameters params;
+            params.setMedium(medium);
+            params.setSortMethod(db::TrackSortMethod::TrackNumber);
+            params.setFilters(filters.getDbFilters());
+            params.setRange(db::Range{ .offset = 0, .size = maxTrackCount });
 
-                const auto tracks{ db::Track::findIds(session, params) };
+            const auto tracks{ db::Track::findIds(session, params) };
 
-                res.reserve(res.size() + tracks.results.size());
-                res.insert(std::end(res), std::cbegin(tracks.results), std::cend(tracks.results));
-
-                if (res.size() == maxTrackCount)
-                    break;
-            }
-
-            return res;
+            return tracks.results;
         }
 
         std::vector<db::TrackId> getTrackListTracks(db::Session& session, db::TrackListId trackListId, const Filters& filters, std::size_t maxTrackCount)
         {
-            using namespace db;
             assert(maxTrackCount);
 
             auto transaction{ session.createReadTransaction() };
@@ -129,7 +116,7 @@ namespace lms::ui
             params.setTrackList(trackListId);
             params.setFilters(filters.getDbFilters());
             params.setRange(db::Range{ 0, maxTrackCount });
-            params.setSortMethod(TrackSortMethod::TrackList);
+            params.setSortMethod(db::TrackSortMethod::TrackList);
 
             return db::Track::findIds(session, params).results;
         }
@@ -179,9 +166,9 @@ namespace lms::ui
         processCommand(command, tracks);
     }
 
-    void PlayQueueController::processCommand(Command command, const std::vector<Disc>& discs)
+    void PlayQueueController::processCommand(Command command, db::MediumId medium)
     {
-        const std::vector<db::TrackId> tracks{ getDiscTracks(LmsApp->getDbSession(), discs, _filters, _maxTrackCountToEnqueue) };
+        const std::vector<db::TrackId> tracks{ getMediumTracks(LmsApp->getDbSession(), medium, _filters, _maxTrackCountToEnqueue) };
         processCommand(command, tracks);
     }
 

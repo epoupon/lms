@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,22 +19,9 @@
 
 #pragma once
 
-#include <string>
+#include <string_view>
 
-#include "core/ILogger.hpp"
-
-namespace lms::core::logging
+namespace lms::core
 {
-    class WtLogger final : public ILogger
-    {
-    public:
-        WtLogger(Severity minSeverity);
-
-        static std::string computeLogConfig(Severity minSeverity);
-
-    private:
-        bool isSeverityActive(Severity severity) const override;
-        void processLog(const Log& log) override;
-        const Severity _minSeverity;
-    };
-} // namespace lms::core::logging
+    std::string_view getVersion();
+} // namespace lms::core

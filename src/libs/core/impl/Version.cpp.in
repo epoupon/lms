@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,17 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "core/Version.hpp"
 
-#include <string_view>
-
-#include "image/Exception.hpp"
-
-namespace lms::image
+namespace lms::core
 {
-    class StbiException : public Exception
+    std::string_view getVersion()
     {
-    public:
-        StbiException(std::string_view desc);
-    };
-} // namespace lms::image
+        return "v" "@LMS_VERSION@";
+    }
+} // namespace lms::core

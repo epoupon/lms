@@ -42,8 +42,6 @@
 
 namespace lms::ui
 {
-    using namespace db;
-
     class UserModel : public Wt::WFormModel
     {
     public:
@@ -51,7 +49,7 @@ namespace lms::ui
         static inline const Field PasswordField{ "password" };
         static inline const Field DemoField{ "demo" };
 
-        UserModel(std::optional<UserId> userId, auth::IPasswordService* authPasswordService, auth::IAuthTokenService& authTokenService)
+        UserModel(std::optional<db::UserId> userId, auth::IPasswordService* authPasswordService, auth::IAuthTokenService& authTokenService)
             : _userId{ userId }
             , _authPasswordService{ authPasswordService }
             , _authTokenService{ authTokenService }
@@ -81,7 +79,7 @@ namespace lms::ui
             if (_userId)
             {
                 // Update user
-                User::pointer user{ User::find(LmsApp->getDbSession(), *_userId) };
+                db::User::pointer user{ db::User::find(LmsApp->getDbSession(), *_userId) };
                 if (!user)
                     throw UserNotFoundException{};
 
@@ -94,16 +92,16 @@ namespace lms::ui
             else
             {
                 // Check races with other endpoints (subsonic API...)
-                User::pointer user{ User::find(LmsApp->getDbSession(), valueText(LoginField).toUTF8()) };
+                db::User::pointer user{ db::User::find(LmsApp->getDbSession(), valueText(LoginField).toUTF8()) };
                 if (user)
                     throw UserNotAllowedException{};
 
                 // Create user
-                user = LmsApp->getDbSession().create<User>(valueText(LoginField).toUTF8());
+                user = LmsApp->getDbSession().create<db::User>(valueText(LoginField).toUTF8());
 
                 if (Wt::asNumber(value(DemoField)))
                 {
-                    user.modify()->setType(UserType::DEMO);
+                    user.modify()->setType(db::UserType::DEMO);
 
                     // For demo user, we create the subsonic API auth token now as we have no other mean to create it later
                     core::Service<auth::IAuthTokenService>::get()->createAuthToken("subsonic", user->getId(), core::UUID::generate().getAsString());
@@ -122,24 +120,24 @@ namespace lms::ui
 
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-            const User::pointer user{ User::find(LmsApp->getDbSession(), *_userId) };
+            const db::User::pointer user{ db::User::find(LmsApp->getDbSession(), *_userId) };
             if (!user)
                 throw UserNotFoundException{};
             if (user == LmsApp->getUser())
                 throw UserNotAllowedException{};
         }
 
-        UserType getUserType() const
+        db::UserType getUserType() const
         {
             if (_userId)
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-                const User::pointer user{ User::find(LmsApp->getDbSession(), *_userId) };
+                const db::User::pointer user{ db::User::find(LmsApp->getDbSession(), *_userId) };
                 return user->getType();
             }
 
-            return Wt::asNumber(value(DemoField)) ? UserType::DEMO : UserType::REGULAR;
+            return Wt::asNumber(value(DemoField)) ? db::UserType::DEMO : db::UserType::REGULAR;
         }
 
         std::string getLoginName() const
@@ -148,7 +146,7 @@ namespace lms::ui
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-                const User::pointer user{ User::find(LmsApp->getDbSession(), *_userId) };
+                const db::User::pointer user{ db::User::find(LmsApp->getDbSession(), *_userId) };
                 return user->getLoginName();
             }
 
@@ -163,7 +161,7 @@ namespace lms::ui
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-                const User::pointer user{ User::find(LmsApp->getDbSession(), valueText(LoginField).toUTF8()) };
+                const db::User::pointer user{ db::User::find(LmsApp->getDbSession(), valueText(LoginField).toUTF8()) };
                 if (user)
                     error = Wt::WString::tr("Lms.Admin.User.user-already-exists");
             }
@@ -171,7 +169,7 @@ namespace lms::ui
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-                if (Wt::asNumber(value(DemoField)) && User::findDemoUser(LmsApp->getDbSession()))
+                if (Wt::asNumber(value(DemoField)) && db::User::findDemoUser(LmsApp->getDbSession()))
                     error = Wt::WString::tr("Lms.Admin.User.demo-account-already-exists");
             }
 
@@ -183,7 +181,7 @@ namespace lms::ui
             return false;
         }
 
-        std::optional<UserId> _userId;
+        std::optional<db::UserId> _userId;
         auth::IPasswordService* _authPasswordService{};
         auth::IAuthTokenService& _authTokenService;
     };
@@ -202,7 +200,7 @@ namespace lms::ui
         if (!wApp->internalPathMatches("/admin/user"))
             return;
 
-        const std::optional<UserId> userId{ core::stringUtils::readAs<UserId::ValueType>(wApp->internalPathNextPart("/admin/user/")) };
+        const std::optional<db::UserId> userId{ core::stringUtils::readAs<db::UserId::ValueType>(wApp->internalPathNextPart("/admin/user/")) };
 
         clear();
 
@@ -220,7 +218,7 @@ namespace lms::ui
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-            const User::pointer user{ User::find(LmsApp->getDbSession(), *userId) };
+            const db::User::pointer user{ db::User::find(LmsApp->getDbSession(), *userId) };
             if (!user)
                 throw UserNotFoundException{};
 

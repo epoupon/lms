@@ -23,14 +23,17 @@
 
 namespace lms::image
 {
-    StbiException::StbiException(std::string_view desc)
-        : Exception{ std::string{ desc } + ": " + getLastFailureReason() }
+    namespace
     {
-    }
+        std::string getLastStbiFailureReason()
+        {
+            const char* failureReason{ ::stbi_failure_reason() };
+            return failureReason ? failureReason : "unknown reason";
+        }
+    } // namespace
 
-    std::string StbiException::getLastFailureReason()
+    StbiException::StbiException(std::string_view desc)
+        : Exception{ std::string{ desc } + ": " + getLastStbiFailureReason() }
     {
-        const char* failureReason{ ::stbi_failure_reason() };
-        return failureReason ? failureReason : "unknown reason";
     }
 } // namespace lms::image

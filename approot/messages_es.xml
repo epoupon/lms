@@ -52,11 +52,17 @@
 <message id="Lms.Error.user-not-found">No existe el usuario</message>
 
 <!--Administration-->
+<message id="Lms.Admin.menu-about"><i class="fa fa-fw fa-question-circle" aria-hidden="true"></i> Acerca de</message>
 <message id="Lms.Admin.menu-debug-tools"><i class="fa fa-fw fa-bug" aria-hidden="true"></i> Herramientas de depuración</message>
 <message id="Lms.Admin.menu-media-libraries"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Bibliotecas</message>
 <message id="Lms.Admin.menu-scan-settings"><i class="fa fa-fw fa-cogs" aria-hidden="true"></i> Opciones de escaneo</message>
 <message id="Lms.Admin.menu-scanner"><i class="fa fa-fw fa-wrench" aria-hidden="true"></i> Escanear</message>
 <message id="Lms.Admin.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Usuarios</message>
+
+<!--About-->
+<message id="Lms.Admin.About.about">Acerca de</message>
+<message id="Lms.Admin.About.homepage">Página principal</message>
+<message id="Lms.Admin.About.version">Versión</message>
 
 <!--MediaLibraries-->
 <message id="Lms.Admin.MediaLibraries.media-libraries">Bibliotecas musicales</message>
@@ -101,11 +107,11 @@
 
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">No ha sido posible obtener la duración de la pista</message>
-<message id="Lms.Admin.ScannerController.bad-embedded-image">No se puede leer la imagen en el índice {1}</message>
+<message id="Lms.Admin.ScannerController.bad-embedded-image">No se puede leer la imagen en el índice {1} : {2}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-artist-info-file">No ha sido posible analizar el fichero de información sobre el artista</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">No ha sido posible analizar el fichero de audio</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">No ha sido posible leer el fichero ({1})</message>
-<message id="Lms.Admin.ScannerController.cannot-read-image-file">No ha sido posible analizar del fichero de imagen</message>
+<message id="Lms.Admin.ScannerController.cannot-read-image-file">No ha sido posible analizar del fichero de imagen : {1}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-lyrics-file">No ha sido posible analizar el fichero de letras</message>
 <message id="Lms.Admin.ScannerController.cannot-read-playlist-file">No ha sido posible analizar el fichero de la lista de distribución</message>
 <message id="Lms.Admin.ScannerController.compact">Compactar la base de datos. <strong>¡Atención!:</strong> esta operación puede tardar bastante tiempo y la aplicación se bloqueará mientras dura la operación de compactación</message>

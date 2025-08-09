@@ -17,19 +17,17 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
 #include <thread>
 
 #include <benchmark/benchmark.h>
 
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
-#include "core/StreamLogger.hpp"
 
 namespace lms::core
 {
     // The trace logger is meant to built/destroyed once
-    const Service<logging::ILogger> logger{ std::make_unique<logging::StreamLogger>(std::cout, logging::StreamLogger::allSeverities) };
+    const Service<logging::ILogger> logger{ logging::createLogger() };
     const Service<tracing::ITraceLogger> traceLogger{ tracing::createTraceLogger(tracing::Level::Overview) };
 
     static void BM_TraceLogger_Overview(benchmark::State& state)

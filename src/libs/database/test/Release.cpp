@@ -22,13 +22,15 @@
 #include "core/PartialDateTime.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Image.hpp"
+#include "database/objects/Medium.hpp"
 
 namespace lms::db::tests
 {
     using ScopedArtwork = ScopedEntity<db::Artwork>;
+    using ScopedCountry = ScopedEntity<db::Country>;
     using ScopedImage = ScopedEntity<db::Image>;
     using ScopedLabel = ScopedEntity<db::Label>;
-    using ScopedCountry = ScopedEntity<db::Country>;
+    using ScopedMedium = ScopedEntity<db::Medium>;
     using ScopedReleaseType = ScopedEntity<db::ReleaseType>;
 
     TEST_F(DatabaseFixture, Release)
@@ -438,15 +440,12 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            track1.get().modify()->setTotalTrack(36);
             release1.get().modify()->setTotalDisc(6);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            ASSERT_TRUE(track1->getTotalTrack());
-            EXPECT_EQ(*track1->getTotalTrack(), 36);
             ASSERT_TRUE(release1->getTotalDisc());
             EXPECT_EQ(*release1->getTotalDisc(), 6);
         }
@@ -456,15 +455,12 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
 
             track2.get().modify()->setRelease(release1.get());
-            track2.get().modify()->setTotalTrack(37);
             release1.get().modify()->setTotalDisc(67);
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            ASSERT_TRUE(track1->getTotalTrack());
-            EXPECT_EQ(*track1->getTotalTrack(), 36);
             ASSERT_TRUE(release1->getTotalDisc());
             EXPECT_EQ(*release1->getTotalDisc(), 67);
         }
@@ -481,18 +477,13 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
 
             track3.get().modify()->setRelease(release2.get());
-            track3.get().modify()->setTotalTrack(7);
             release2.get().modify()->setTotalDisc(5);
         }
         {
             auto transaction{ session.createReadTransaction() };
 
-            ASSERT_TRUE(track1->getTotalTrack());
-            EXPECT_EQ(*track1->getTotalTrack(), 36);
             ASSERT_TRUE(release1->getTotalDisc());
             EXPECT_EQ(*release2->getTotalDisc(), 5);
-            ASSERT_TRUE(track3->getTotalTrack());
-            EXPECT_EQ(*track3->getTotalTrack(), 7);
             ASSERT_TRUE(release2->getTotalDisc());
             EXPECT_EQ(*release2->getTotalDisc(), 5);
         }
@@ -501,7 +492,11 @@ namespace lms::db::tests
     TEST_F(DatabaseFixture, MultiTracksSingleReleaseFirstTrack)
     {
         ScopedRelease release1{ session, "MyRelease1" };
+        ScopedMedium medium1A{ session, release1.lockAndGet() };
+        ScopedMedium medium1B{ session, release1.lockAndGet() };
         ScopedRelease release2{ session, "MyRelease2" };
+        ScopedMedium medium2A{ session, release2.lockAndGet() };
+        ScopedMedium medium2B{ session, release2.lockAndGet() };
 
         ScopedTrack track1A{ session };
         ScopedTrack track1B{ session };
@@ -519,17 +514,21 @@ namespace lms::db::tests
             auto transaction{ session.createWriteTransaction() };
 
             track1A.get().modify()->setRelease(release1.get());
+            track1A.get().modify()->setMedium(medium1A.get());
+
             track1B.get().modify()->setRelease(release1.get());
+            track1B.get().modify()->setMedium(medium1B.get());
+
             track2A.get().modify()->setRelease(release2.get());
+            track2A.get().modify()->setMedium(medium2A.get());
             track2B.get().modify()->setRelease(release2.get());
+            track2B.get().modify()->setMedium(medium2B.get());
 
             track1A.get().modify()->setTrackNumber(1);
             track1B.get().modify()->setTrackNumber(2);
 
-            track2A.get().modify()->setDiscNumber(2);
             track2A.get().modify()->setTrackNumber(1);
             track2B.get().modify()->setTrackNumber(2);
-            track2B.get().modify()->setDiscNumber(1);
         }
 
         {
@@ -537,14 +536,16 @@ namespace lms::db::tests
 
             {
                 const auto tracks{ Track::findIds(session, Track::FindParameters{}.setRelease(release1.getId()).setSortMethod(TrackSortMethod::Release)) };
-                EXPECT_EQ(tracks.results.size(), 2);
-                EXPECT_EQ(tracks.results.front(), track1A.getId());
+                ASSERT_EQ(tracks.results.size(), 2);
+                EXPECT_EQ(tracks.results[0], track1A.getId());
+                EXPECT_EQ(tracks.results[1], track1B.getId());
             }
 
             {
                 const auto tracks{ Track::findIds(session, Track::FindParameters{}.setRelease(release2.getId()).setSortMethod(TrackSortMethod::Release)) };
-                EXPECT_EQ(tracks.results.size(), 2);
-                EXPECT_EQ(tracks.results.front(), track2B.getId());
+                ASSERT_EQ(tracks.results.size(), 2);
+                EXPECT_EQ(tracks.results[0], track2A.getId());
+                EXPECT_EQ(tracks.results[1], track2B.getId());
             }
         }
     }
@@ -815,52 +816,6 @@ namespace lms::db::tests
             EXPECT_EQ(Release::getCount(session, Release::FindParameters{}.setArtist(artist.getId())), 1);
         }
     }
-
-    TEST_F(DatabaseFixture, Release_getDiscCount)
-    {
-        ScopedRelease release{ session, "MyRelease" };
-        ScopedTrack track{ session };
-        ScopedTrack track2{ session };
-
-        {
-            auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(release.get()->getDiscCount(), 0);
-        }
-        {
-            auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setRelease(release.get());
-        }
-        {
-            auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(release.get()->getDiscCount(), 0);
-        }
-        {
-            auto transaction{ session.createWriteTransaction() };
-            track.get().modify()->setDiscNumber(5);
-        }
-        {
-            auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(release.get()->getDiscCount(), 1);
-        }
-        {
-            auto transaction{ session.createWriteTransaction() };
-            track2.get().modify()->setRelease(release.get());
-            track2.get().modify()->setDiscNumber(5);
-        }
-        {
-            auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(release.get()->getDiscCount(), 1);
-        }
-        {
-            auto transaction{ session.createWriteTransaction() };
-            track2.get().modify()->setDiscNumber(6);
-        }
-        {
-            auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(release.get()->getDiscCount(), 2);
-        }
-    }
-
     TEST_F(DatabaseFixture, Release_isCompilation)
     {
         ScopedRelease release{ session, "MyRelease" };
@@ -1549,4 +1504,43 @@ namespace lms::db::tests
         }
     }
 
+    TEST_F(DatabaseFixture, Release_mediums)
+    {
+        ScopedRelease release{ session, "MyRelease" };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto mediums{ release->getMediums() };
+            EXPECT_EQ(mediums.size(), 0);
+        }
+
+        ScopedMedium medium2{ session, release.lockAndGet() };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto mediums{ release->getMediums() };
+            ASSERT_EQ(mediums.size(), 1);
+            EXPECT_EQ(mediums[0]->getId(), medium2.getId());
+        }
+
+        ScopedMedium medium1{ session, release.lockAndGet() };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            medium1.get().modify()->setPosition(1);
+            medium2.get().modify()->setPosition(2);
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto mediums{ release->getMediums() };
+            ASSERT_EQ(mediums.size(), 2);
+            EXPECT_EQ(mediums[0]->getId(), medium1.getId());
+            EXPECT_EQ(mediums[1]->getId(), medium2.getId());
+        }
+    }
 } // namespace lms::db::tests

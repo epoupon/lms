@@ -41,12 +41,12 @@ namespace lms::image::GraphicsMagick
         catch (Magick::Warning& e)
         {
             LMS_LOG(COVER, WARNING, "Caught Magick warning: " << e.what());
-            throw Exception{ std::string{ "Magick read warning: " } + e.what() };
+            throw Exception{ std::string{ "Read warning: " } + e.what() };
         }
         catch (Magick::Exception& e)
         {
             LMS_LOG(COVER, ERROR, "Caught Magick exception: " << e.what());
-            throw Exception{ std::string{ "Magick read error: " } + e.what() };
+            throw Exception{ std::string{ "Read error: " } + e.what() };
         }
     }
 
@@ -63,12 +63,12 @@ namespace lms::image::GraphicsMagick
         catch (Magick::Warning& e)
         {
             LMS_LOG(COVER, WARNING, "Caught Magick warning: " << e.what());
-            throw Exception{ std::string{ "Magick read warning: " } + e.what() };
+            throw Exception{ std::string{ "Read warning: " } + e.what() };
         }
         catch (Magick::Exception& e)
         {
             LMS_LOG(COVER, ERROR, "Caught Magick exception: " << e.what());
-            throw Exception{ std::string{ "Magick read error: " } + e.what() };
+            throw Exception{ std::string{ "Read error: " } + e.what() };
         }
     }
 
@@ -93,7 +93,7 @@ namespace lms::image::GraphicsMagick
         catch (Magick::Exception& e)
         {
             LMS_LOG(COVER, ERROR, "Caught Magick exception while resizing: " << e.what());
-            throw Exception{ std::string{ "Magick resize error: " } + e.what() };
+            throw Exception{ std::string{ "Resize error: " } + e.what() };
         }
     }
 

@@ -44,6 +44,7 @@
 							<li>${scan-settings class="dropdown-item"}</li>
 							<li>${scanner class="dropdown-item"}</li>
 							<li>${users class="dropdown-item"}</li>
+							<li>${about class="dropdown-item"}</li>
 							${<if-debug-tools>}
 							<li class="dropdown-divider"></li>
 							<li>${debug-tools class="dropdown-item"}</li>
@@ -57,7 +58,6 @@
 						</a>
 						<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
 							<li class="dropdown-header">${username}</li>
-							<li class="dropdown-divider"></li>
 							<li>${settings class="dropdown-item"}</li>
 							<li>${logout class="dropdown-item"}</li>
 						</ul>

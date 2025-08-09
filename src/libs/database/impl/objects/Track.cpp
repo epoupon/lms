@@ -24,11 +24,13 @@
 
 #include "core/ILogger.hpp"
 #include "database/Session.hpp"
+#include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/MediaLibrary.hpp"
+#include "database/objects/Medium.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
@@ -59,7 +61,7 @@ namespace lms::db
 
             assert(params.keywords.empty() || params.name.empty());
             for (std::string_view keyword : params.keywords)
-                query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
+                query.where("t.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
 
             if (!params.name.empty())
                 query.where("t.name = ?").bind(params.name);
@@ -146,6 +148,9 @@ namespace lms::db
                 query.where("r.name = ?").bind(params.releaseName);
             }
 
+            if (params.medium.isValid())
+                query.where("t.medium_id = ?").bind(params.medium);
+
             if (params.trackList.isValid() || params.sortMethod == TrackSortMethod::TrackList)
             {
                 query.join("tracklist t_l ON t_l_e.tracklist_id = t_l.id");
@@ -156,8 +161,11 @@ namespace lms::db
             if (params.trackNumber)
                 query.where("t.track_number = ?").bind(*params.trackNumber);
 
-            if (params.discNumber)
-                query.where("t.disc_number = ?").bind(*params.discNumber);
+            if (params.sortMethod == TrackSortMethod::DateDescAndRelease
+                || params.sortMethod == TrackSortMethod::Release)
+            {
+                query.join("medium m ON t.medium_id = m.id");
+            }
 
             if (params.filters.mediaLibrary.isValid())
                 query.where("t.media_library_id = ?").bind(params.filters.mediaLibrary);
@@ -213,16 +221,19 @@ namespace lms::db
                 query.orderBy("t.absolute_file_path COLLATE NOCASE");
                 break;
             case TrackSortMethod::DateDescAndRelease:
-                query.orderBy("t.date DESC,t.release_id,t.disc_number,t.track_number");
+                query.orderBy("t.date DESC,t.release_id,m.position,t.track_number");
                 break;
             case TrackSortMethod::Release:
-                query.orderBy("t.disc_number,t.track_number");
+                query.orderBy("m.position,t.track_number");
                 break;
             case TrackSortMethod::TrackList:
                 assert(params.trackList.isValid());
                 query.orderBy("t_l_e.id");
+                break;
+            case TrackSortMethod::TrackNumber:
+                query.orderBy("t.track_number");
+                break;
             }
-
             return query;
         }
 
@@ -360,7 +371,7 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        auto query{ session.getDboSession()->query<TrackId>("SELECT track.id FROM track WHERE mbid in (SELECT mbid FROM track WHERE mbid <> '' GROUP BY mbid HAVING COUNT (*) > 1)").orderBy("track.release_id,track.disc_number,track.track_number,track.mbid") };
+        auto query{ session.getDboSession()->query<TrackId>("SELECT track.id FROM track WHERE mbid in (SELECT mbid FROM track WHERE mbid <> '' GROUP BY mbid HAVING COUNT (*) > 1)").orderBy("track.release_id,track.mbid") };
 
         return utils::execRangeQuery<TrackId>(query, range);
     }

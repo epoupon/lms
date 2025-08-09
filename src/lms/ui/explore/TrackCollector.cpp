@@ -32,16 +32,14 @@
 
 namespace lms::ui
 {
-    using namespace db;
-
-    RangeResults<TrackId> TrackCollector::get(std::optional<Range> requestedRange)
+    db::RangeResults<db::TrackId> TrackCollector::get(std::optional<db::Range> requestedRange)
     {
         feedback::IFeedbackService& feedbackService{ *core::Service<feedback::IFeedbackService>::get() };
         scrobbling::IScrobblingService& scrobblingService{ *core::Service<scrobbling::IScrobblingService>::get() };
 
-        const Range range{ getActualRange(requestedRange) };
+        const db::Range range{ getActualRange(requestedRange) };
 
-        RangeResults<TrackId> tracks;
+        db::RangeResults<db::TrackId> tracks;
 
         switch (getMode())
         {
@@ -86,44 +84,44 @@ namespace lms::ui
 
         case Mode::RecentlyAdded:
             {
-                Track::FindParameters params;
+                db::Track::FindParameters params;
                 params.setFilters(getDbFilters());
                 params.setKeywords(getSearchKeywords());
-                params.setSortMethod(TrackSortMethod::AddedDesc);
+                params.setSortMethod(db::TrackSortMethod::AddedDesc);
                 params.setRange(range);
 
                 {
                     auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    tracks = Track::findIds(LmsApp->getDbSession(), params);
+                    tracks = db::Track::findIds(LmsApp->getDbSession(), params);
                 }
                 break;
             }
 
         case Mode::RecentlyModified:
             {
-                Track::FindParameters params;
+                db::Track::FindParameters params;
                 params.setFilters(getDbFilters());
                 params.setKeywords(getSearchKeywords());
-                params.setSortMethod(TrackSortMethod::LastWrittenDesc);
+                params.setSortMethod(db::TrackSortMethod::LastWrittenDesc);
                 params.setRange(range);
 
                 {
                     auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    tracks = Track::findIds(LmsApp->getDbSession(), params);
+                    tracks = db::Track::findIds(LmsApp->getDbSession(), params);
                 }
                 break;
             }
 
         case Mode::All:
             {
-                Track::FindParameters params;
+                db::Track::FindParameters params;
                 params.setFilters(getDbFilters());
                 params.setKeywords(getSearchKeywords());
                 params.setRange(range);
 
                 {
                     auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    tracks = Track::findIds(LmsApp->getDbSession(), params);
+                    tracks = db::Track::findIds(LmsApp->getDbSession(), params);
                 }
                 break;
             }
@@ -135,21 +133,21 @@ namespace lms::ui
         return tracks;
     }
 
-    RangeResults<TrackId> TrackCollector::getRandomTracks(Range range)
+    db::RangeResults<db::TrackId> TrackCollector::getRandomTracks(Range range)
     {
         assert(getMode() == Mode::Random);
 
         if (!_randomTracks)
         {
-            Track::FindParameters params;
+            db::Track::FindParameters params;
             params.setFilters(getDbFilters());
             params.setKeywords(getSearchKeywords());
-            params.setSortMethod(TrackSortMethod::Random);
-            params.setRange(Range{ 0, getMaxCount() });
+            params.setSortMethod(db::TrackSortMethod::Random);
+            params.setRange(db::Range{ 0, getMaxCount() });
 
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                _randomTracks = Track::findIds(LmsApp->getDbSession(), params);
+                _randomTracks = db::Track::findIds(LmsApp->getDbSession(), params);
             }
         }
 

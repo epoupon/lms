@@ -32,16 +32,14 @@
 
 namespace lms::ui
 {
-    using namespace db;
-
-    RangeResults<ArtistId> ArtistCollector::get(std::optional<db::Range> requestedRange)
+    db::RangeResults<db::ArtistId> ArtistCollector::get(std::optional<db::Range> requestedRange)
     {
         feedback::IFeedbackService& feedbackService{ *core::Service<feedback::IFeedbackService>::get() };
         scrobbling::IScrobblingService& scrobblingService{ *core::Service<scrobbling::IScrobblingService>::get() };
 
         const Range range{ getActualRange(requestedRange) };
 
-        RangeResults<ArtistId> artists;
+        db::RangeResults<db::ArtistId> artists;
 
         switch (getMode())
         {
@@ -56,7 +54,7 @@ namespace lms::ui
                 params.setUser(LmsApp->getUserId());
                 params.setKeywords(getSearchKeywords());
                 params.setLinkType(_linkType);
-                params.setSortMethod(ArtistSortMethod::StarredDateDesc);
+                params.setSortMethod(db::ArtistSortMethod::StarredDateDesc);
                 params.setRange(range);
                 artists = feedbackService.findStarredArtists(params);
                 break;
@@ -90,48 +88,48 @@ namespace lms::ui
 
         case Mode::RecentlyAdded:
             {
-                Artist::FindParameters params;
+                db::Artist::FindParameters params;
                 params.setFilters(getDbFilters());
                 params.setKeywords(getSearchKeywords());
                 params.setLinkType(_linkType);
-                params.setSortMethod(ArtistSortMethod::AddedDesc);
+                params.setSortMethod(db::ArtistSortMethod::AddedDesc);
                 params.setRange(range);
 
                 {
                     auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    artists = Artist::findIds(LmsApp->getDbSession(), params);
+                    artists = db::Artist::findIds(LmsApp->getDbSession(), params);
                 }
                 break;
             }
 
         case Mode::RecentlyModified:
             {
-                Artist::FindParameters params;
+                db::Artist::FindParameters params;
                 params.setFilters(getDbFilters());
                 params.setKeywords(getSearchKeywords());
                 params.setLinkType(_linkType);
-                params.setSortMethod(ArtistSortMethod::LastWrittenDesc);
+                params.setSortMethod(db::ArtistSortMethod::LastWrittenDesc);
                 params.setRange(range);
 
                 {
                     auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    artists = Artist::findIds(LmsApp->getDbSession(), params);
+                    artists = db::Artist::findIds(LmsApp->getDbSession(), params);
                 }
                 break;
             }
 
         case Mode::All:
             {
-                Artist::FindParameters params;
+                db::Artist::FindParameters params;
                 params.setFilters(getDbFilters());
                 params.setKeywords(getSearchKeywords());
                 params.setLinkType(_linkType);
-                params.setSortMethod(ArtistSortMethod::SortName);
+                params.setSortMethod(db::ArtistSortMethod::SortName);
                 params.setRange(range);
 
                 {
                     auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                    artists = Artist::findIds(LmsApp->getDbSession(), params);
+                    artists = db::Artist::findIds(LmsApp->getDbSession(), params);
                 }
                 break;
             }
@@ -143,22 +141,22 @@ namespace lms::ui
         return artists;
     }
 
-    RangeResults<db::ArtistId> ArtistCollector::getRandomArtists(Range range)
+    db::RangeResults<db::ArtistId> ArtistCollector::getRandomArtists(Range range)
     {
         assert(getMode() == Mode::Random);
 
         if (!_randomArtists)
         {
-            Artist::FindParameters params;
+            db::Artist::FindParameters params;
             params.setFilters(getDbFilters());
             params.setKeywords(getSearchKeywords());
             params.setLinkType(_linkType);
-            params.setSortMethod(ArtistSortMethod::Random);
-            params.setRange(Range{ 0, getMaxCount() });
+            params.setSortMethod(db::ArtistSortMethod::Random);
+            params.setRange(db::Range{ 0, getMaxCount() });
 
             {
                 auto transaction{ LmsApp->getDbSession().createReadTransaction() };
-                _randomArtists = Artist::findIds(LmsApp->getDbSession(), params);
+                _randomArtists = db::Artist::findIds(LmsApp->getDbSession(), params);
             }
         }
 

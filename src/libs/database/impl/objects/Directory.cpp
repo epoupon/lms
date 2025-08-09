@@ -40,10 +40,11 @@ namespace lms::db
             auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Directory>>("SELECT d FROM directory d") };
 
             for (std::string_view keyword : params.keywords)
-                query.where("d.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeLikeKeyword(keyword) + "%");
+                query.where("d.name LIKE ? ESCAPE '" ESCAPE_CHAR_STR "'").bind("%" + utils::escapeForLikeKeyword(keyword) + "%");
 
             if (params.artist.isValid()
-                || params.release.isValid())
+                || params.release.isValid()
+                || params.medium.isValid())
             {
                 query.join("track t ON t.directory_id = d.id");
                 query.groupBy("d.id");
@@ -54,6 +55,9 @@ namespace lms::db
 
             if (params.parentDirectory.isValid())
                 query.where("d.parent_directory_id = ?").bind(params.parentDirectory);
+
+            if (params.medium.isValid())
+                query.where("t.medium_id = ?").bind(params.medium);
 
             if (params.release.isValid())
                 query.where("t.release_id = ?").bind(params.release);
@@ -91,7 +95,7 @@ namespace lms::db
             case DirectorySortMethod::None:
                 break;
             case DirectorySortMethod::Name:
-                query.orderBy("name COLLATE NOCASE");
+                query.orderBy("d.name COLLATE NOCASE");
                 break;
             }
 

@@ -33,7 +33,7 @@
 			</div>
 		</div>
 		<div class="col-12">
-			${container class="d-grid gap-3"}
+			${disc-container class="d-grid gap-3"}
 			${<if-has-copyright>}
 			<div class="pt-1 mt-1 border-top border-dark small text-muted fw-lighter fst-italic">${copyright class="text-reset"}</div>
 			${</if-has-copyright>}
@@ -101,6 +101,7 @@
 		</div>
 		<div class="p-2 d-flex">
 			${play-btn class="d-none d-sm-block btn btn-sm btn-outline-secondary border-0"}
+			${star-btn class="d-none d-sm-block btn btn-sm btn-outline-secondary border-0"}
 			<div class="dropdown d-inline-block">
 				${more-btn data-bs-toggle="dropdown" aria-expanded="false" class="btn btn-sm btn-outline-secondary border-0"}
 				<ul class="dropdown-menu" aria-labelledby="${id:more-btn}">

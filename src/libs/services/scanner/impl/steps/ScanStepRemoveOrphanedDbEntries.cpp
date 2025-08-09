@@ -25,6 +25,7 @@
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
+#include "database/objects/Medium.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
@@ -45,6 +46,7 @@ namespace lms::scanner
         removeOrphanedClusterTypes(context);
         removeOrphanedArtists(context);
         removeOrphanedReleases(context);
+        removeOrphanedMediums(context); // after release so that most entries are removed using the medium foreign key
         removeOrphanedReleaseTypes(context);
         removeOrphanedLabels(context);
         removeOrphanedCountries(context);
@@ -68,6 +70,12 @@ namespace lms::scanner
     {
         LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned artists...");
         removeOrphanedEntries<db::Artist>(context);
+    }
+
+    void ScanStepRemoveOrphanedDbEntries::removeOrphanedMediums(ScanContext& context)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking orphaned mediums...");
+        removeOrphanedEntries<db::Medium>(context);
     }
 
     void ScanStepRemoveOrphanedDbEntries::removeOrphanedReleases(ScanContext& context)

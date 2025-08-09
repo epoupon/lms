@@ -17,7 +17,17 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/ILogger.hpp"
+#include "Logger.hpp"
+
+#include <Wt/WDateTime.h>
+
+#include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <thread>
+
+#include "core/Exception.hpp"
+#include "core/String.hpp"
 
 namespace lms::core::logging
 {
@@ -63,6 +73,8 @@ namespace lms::core::logging
             return "UI";
         case Module::UTILS:
             return "UTILS";
+        case Module::WT:
+            return "WT";
         }
         return "";
     }
@@ -103,4 +115,94 @@ namespace lms::core::logging
     {
         return _oss.str();
     }
+
+    std::unique_ptr<ILogger> createLogger(Severity minSeverity, const std::filesystem::path& logFilePath)
+    {
+        return std::make_unique<Logger>(minSeverity, logFilePath);
+    }
+
+    Logger::OutputStream::OutputStream(std::ostream& os)
+        : stream{ os }
+    {
+    }
+
+    Logger::Logger(Severity minSeverity, const std::filesystem::path& logFilePath)
+    {
+        if (!logFilePath.empty())
+        {
+            _logFileStream = std::make_unique<std::ofstream>(logFilePath, std::ios::out | std::ios::app);
+            if (!_logFileStream->is_open())
+            {
+                const std::error_code ec{ errno, std::generic_category() };
+                throw LmsException{ "Cannot open log file '" + logFilePath.string() + "' for writing: " + ec.message() };
+            }
+        }
+
+        switch (minSeverity)
+        {
+        case core::logging::Severity::DEBUG:
+            if (_logFileStream)
+                addOutputStream(*_logFileStream, { core::logging::Severity::DEBUG });
+            else
+                addOutputStream(std::cout, { core::logging::Severity::DEBUG });
+            [[fallthrough]];
+        case core::logging::Severity::INFO:
+            if (_logFileStream)
+                addOutputStream(*_logFileStream, { core::logging::Severity::INFO });
+            else
+                addOutputStream(std::cout, { core::logging::Severity::INFO });
+            [[fallthrough]];
+        case core::logging::Severity::WARNING:
+            if (_logFileStream)
+                addOutputStream(*_logFileStream, { core::logging::Severity::WARNING });
+            else
+                addOutputStream(std::cerr, { core::logging::Severity::WARNING });
+            [[fallthrough]];
+        case core::logging::Severity::ERROR:
+            if (_logFileStream)
+                addOutputStream(*_logFileStream, { core::logging::Severity::ERROR });
+            else
+                addOutputStream(std::cerr, { core::logging::Severity::ERROR });
+            [[fallthrough]];
+        case core::logging::Severity::FATAL:
+            if (_logFileStream)
+                addOutputStream(*_logFileStream, { core::logging::Severity::FATAL });
+            else
+                addOutputStream(std::cerr, { core::logging::Severity::FATAL });
+            break;
+        }
+    }
+
+    Logger::~Logger() = default;
+
+    void Logger::addOutputStream(std::ostream& os, Severity severity)
+    {
+        auto it{ std::find_if(_outputStreams.begin(), _outputStreams.end(), [&os](const OutputStream& outputStream) { return &outputStream.stream == &os; }) };
+        if (it == _outputStreams.end())
+            it = _outputStreams.emplace(_outputStreams.end(), os);
+
+        assert(!_severityToOutputStreamMap.contains(severity));
+        _severityToOutputStreamMap.emplace(severity, &(*it));
+    }
+
+    bool Logger::isSeverityActive(Severity severity) const
+    {
+        return _severityToOutputStreamMap.contains(severity);
+    }
+
+    void Logger::processLog(const Log& log)
+    {
+        processLog(log.getModule(), log.getSeverity(), log.getMessage());
+    }
+
+    void Logger::processLog(Module module, Severity severity, std::string_view message)
+    {
+        assert(isSeverityActive(severity)); // should have been filtered out by a isSeverityActive call
+        OutputStream* outputStream{ _severityToOutputStreamMap.at(severity) };
+        const Wt::WDateTime now{ Wt::WDateTime::currentDateTime() };
+
+        std::unique_lock lock{ outputStream->mutex };
+        outputStream->stream << stringUtils::toISO8601String(now) << " " << std::this_thread::get_id() << " [" << getSeverityName(severity) << "] [" << getModuleName(module) << "] " << message << std::endl;
+    }
+
 } // namespace lms::core::logging

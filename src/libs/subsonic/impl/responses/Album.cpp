@@ -27,6 +27,7 @@
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
+#include "database/objects/Medium.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
@@ -207,10 +208,12 @@ namespace lms::api::subsonic
             albumNode.addArrayValue("releaseTypes", releaseType);
 
         albumNode.createEmptyArrayChild("discTitles");
-        for (const DiscInfo& discInfo : release->getDiscs())
+        for (const auto& medium : release->getMediums())
         {
-            if (!discInfo.name.empty())
-                albumNode.addArrayChild("discTitles", createDiscTitle(discInfo));
+            if (medium->getName().empty())
+                continue;
+
+            albumNode.addArrayChild("discTitles", createDiscTitle(medium));
         }
 
         albumNode.createEmptyArrayChild("recordLabels");

@@ -87,8 +87,6 @@ namespace lms::ui
         };
     } // namespace
 
-    using namespace db;
-
     class SettingsModel : public Wt::WFormModel
     {
     public:
@@ -192,7 +190,7 @@ namespace lms::ui
         {
             auto transaction{ LmsApp->getDbSession().createWriteTransaction() };
 
-            User::pointer user{ LmsApp->getUser() };
+            db::User::pointer user{ LmsApp->getUser() };
 
             {
                 const auto artistReleaseSortMethodRow{ _artistReleaseSortMethodModel->getRowFromString(valueText(ArtistReleaseSortMethodField)) };
@@ -307,7 +305,7 @@ namespace lms::ui
         {
             auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-            const User::pointer user{ LmsApp->getUser() };
+            const db::User::pointer user{ LmsApp->getUser() };
 
             // UI
             {
@@ -396,7 +394,7 @@ namespace lms::ui
                     setValue(ListenBrainzTokenField, Wt::WString::fromUTF8(std::string{ listenBrainzToken->getAsString() }));
 
                 {
-                    const bool usesListenBrainz{ user->getScrobblingBackend() == ScrobblingBackend::ListenBrainz || user->getFeedbackBackend() == FeedbackBackend::ListenBrainz };
+                    const bool usesListenBrainz{ user->getScrobblingBackend() == db::ScrobblingBackend::ListenBrainz || user->getFeedbackBackend() == db::FeedbackBackend::ListenBrainz };
                     setReadOnly(SettingsModel::ListenBrainzTokenField, !usesListenBrainz);
                     validator(SettingsModel::ListenBrainzTokenField)->setMandatory(usesListenBrainz);
                 }
@@ -472,17 +470,17 @@ namespace lms::ui
             _transcodingModeModeModel->add(Wt::WString::tr("Lms.Settings.transcoding-mode.never"), MediaPlayer::Settings::Transcoding::Mode::Never);
             _transcodingModeModeModel->add(Wt::WString::tr("Lms.Settings.transcoding-mode.if-format-not-supported"), MediaPlayer::Settings::Transcoding::Mode::IfFormatNotSupported);
 
-            _transcodingOutputBitrateModel = std::make_shared<ValueStringModel<Bitrate>>();
-            visitAllowedAudioBitrates([&](const Bitrate bitrate) {
+            _transcodingOutputBitrateModel = std::make_shared<ValueStringModel<db::Bitrate>>();
+            db::visitAllowedAudioBitrates([&](const db::Bitrate bitrate) {
                 _transcodingOutputBitrateModel->add(Wt::WString::fromUTF8(std::to_string(bitrate / 1000)), bitrate);
             });
 
-            _transcodingOutputFormatModel = std::make_shared<ValueStringModel<TranscodingOutputFormat>>();
-            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.mp3"), TranscodingOutputFormat::MP3);
-            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.ogg_opus"), TranscodingOutputFormat::OGG_OPUS);
-            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.matroska_opus"), TranscodingOutputFormat::MATROSKA_OPUS);
-            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.ogg_vorbis"), TranscodingOutputFormat::OGG_VORBIS);
-            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.webm_vorbis"), TranscodingOutputFormat::WEBM_VORBIS);
+            _transcodingOutputFormatModel = std::make_shared<ValueStringModel<db::TranscodingOutputFormat>>();
+            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.mp3"), db::TranscodingOutputFormat::MP3);
+            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.ogg_opus"), db::TranscodingOutputFormat::OGG_OPUS);
+            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.matroska_opus"), db::TranscodingOutputFormat::MATROSKA_OPUS);
+            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.ogg_vorbis"), db::TranscodingOutputFormat::OGG_VORBIS);
+            _transcodingOutputFormatModel->add(Wt::WString::tr("Lms.Settings.transcoding-output-format.webm_vorbis"), db::TranscodingOutputFormat::WEBM_VORBIS);
 
             _replayGainModeModel = std::make_shared<ReplayGainModeModel>();
             _replayGainModeModel->add(Wt::WString::tr("Lms.Settings.replaygain-mode.none"), MediaPlayer::Settings::ReplayGain::Mode::None);
@@ -490,18 +488,18 @@ namespace lms::ui
             _replayGainModeModel->add(Wt::WString::tr("Lms.Settings.replaygain-mode.track"), MediaPlayer::Settings::ReplayGain::Mode::Track);
             _replayGainModeModel->add(Wt::WString::tr("Lms.Settings.replaygain-mode.release"), MediaPlayer::Settings::ReplayGain::Mode::Release);
 
-            _subsonicArtistListModeModel = std::make_shared<ValueStringModel<SubsonicArtistListMode>>();
-            _subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.all-artists"), SubsonicArtistListMode::AllArtists);
-            _subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.release-artists"), SubsonicArtistListMode::ReleaseArtists);
-            _subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.track-artists"), SubsonicArtistListMode::TrackArtists);
+            _subsonicArtistListModeModel = std::make_shared<ValueStringModel<db::SubsonicArtistListMode>>();
+            _subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.all-artists"), db::SubsonicArtistListMode::AllArtists);
+            _subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.release-artists"), db::SubsonicArtistListMode::ReleaseArtists);
+            _subsonicArtistListModeModel->add(Wt::WString::tr("Lms.Settings.subsonic-artist-list-mode.track-artists"), db::SubsonicArtistListMode::TrackArtists);
 
-            _feedbackBackendModel = std::make_shared<ValueStringModel<FeedbackBackend>>();
-            _feedbackBackendModel->add(Wt::WString::tr("Lms.Settings.backend.internal"), FeedbackBackend::Internal);
-            _feedbackBackendModel->add(Wt::WString::tr("Lms.Settings.backend.listenbrainz"), FeedbackBackend::ListenBrainz);
+            _feedbackBackendModel = std::make_shared<ValueStringModel<db::FeedbackBackend>>();
+            _feedbackBackendModel->add(Wt::WString::tr("Lms.Settings.backend.internal"), db::FeedbackBackend::Internal);
+            _feedbackBackendModel->add(Wt::WString::tr("Lms.Settings.backend.listenbrainz"), db::FeedbackBackend::ListenBrainz);
 
-            _scrobblingBackendModel = std::make_shared<ValueStringModel<ScrobblingBackend>>();
-            _scrobblingBackendModel->add(Wt::WString::tr("Lms.Settings.backend.internal"), ScrobblingBackend::Internal);
-            _scrobblingBackendModel->add(Wt::WString::tr("Lms.Settings.backend.listenbrainz"), ScrobblingBackend::ListenBrainz);
+            _scrobblingBackendModel = std::make_shared<ValueStringModel<db::ScrobblingBackend>>();
+            _scrobblingBackendModel->add(Wt::WString::tr("Lms.Settings.backend.internal"), db::ScrobblingBackend::Internal);
+            _scrobblingBackendModel->add(Wt::WString::tr("Lms.Settings.backend.listenbrainz"), db::ScrobblingBackend::ListenBrainz);
         }
 
         auth::IPasswordService* _authPasswordService{};
@@ -512,10 +510,10 @@ namespace lms::ui
         std::shared_ptr<ArtistReleaseSortMethodModel> _artistReleaseSortMethodModel;
         std::shared_ptr<ArtistRelationshipsModel> _artistRelationshipsModel;
         std::shared_ptr<TranscodingModeModel> _transcodingModeModeModel;
-        std::shared_ptr<ValueStringModel<Bitrate>> _transcodingOutputBitrateModel;
-        std::shared_ptr<ValueStringModel<TranscodingOutputFormat>> _transcodingOutputFormatModel;
+        std::shared_ptr<ValueStringModel<db::Bitrate>> _transcodingOutputBitrateModel;
+        std::shared_ptr<ValueStringModel<db::TranscodingOutputFormat>> _transcodingOutputFormatModel;
         std::shared_ptr<ReplayGainModeModel> _replayGainModeModel;
-        std::shared_ptr<ValueStringModel<SubsonicArtistListMode>> _subsonicArtistListModeModel;
+        std::shared_ptr<ValueStringModel<db::SubsonicArtistListMode>> _subsonicArtistListModeModel;
         std::shared_ptr<FeedbackBackendModel> _feedbackBackendModel;
         std::shared_ptr<ScrobblingBackendModel> _scrobblingBackendModel;
     };
@@ -740,8 +738,8 @@ namespace lms::ui
         }
 
         auto updateListenBrainzTokenField{ [=] {
-            const bool enable{ model->getFeedbackBackendModel()->getValue(feedbackBackendRaw->currentIndex()) == FeedbackBackend::ListenBrainz
-                               || model->getScrobblingBackendModel()->getValue(scrobblingBackendRaw->currentIndex()) == ScrobblingBackend::ListenBrainz };
+            const bool enable{ model->getFeedbackBackendModel()->getValue(feedbackBackendRaw->currentIndex()) == db::FeedbackBackend::ListenBrainz
+                               || model->getScrobblingBackendModel()->getValue(scrobblingBackendRaw->currentIndex()) == db::ScrobblingBackend::ListenBrainz };
 
             model->setReadOnly(SettingsModel::ListenBrainzTokenField, !enable);
             model->validator(SettingsModel::ListenBrainzTokenField)->setMandatory(enable);

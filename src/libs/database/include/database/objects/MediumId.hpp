@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2024 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,15 +19,6 @@
 
 #pragma once
 
-#include <string_view>
+#include "database/IdType.hpp"
 
-#include "image/Exception.hpp"
-
-namespace lms::image
-{
-    class StbiException : public Exception
-    {
-    public:
-        StbiException(std::string_view desc);
-    };
-} // namespace lms::image
+LMS_DECLARE_IDTYPE(MediumId)

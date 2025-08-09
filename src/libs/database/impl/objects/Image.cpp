@@ -43,7 +43,20 @@ namespace lms::db
             if (params.directory.isValid())
                 query.where("i.directory_id = ?").bind(params.directory);
             if (!params.fileStem.empty())
-                query.where("i.stem = ? COLLATE NOCASE").bind(params.fileStem);
+            {
+                // if contains a wildcard, replace by % for LIKE
+                if (params.processWildcardsInFileStem.value() && params.fileStem.find('*') != std::string::npos)
+                {
+                    std::string fileStem{ params.fileStem };
+                    utils::escapeForLikeKeyword(fileStem);
+                    std::replace(std::begin(fileStem), std::end(fileStem), '*', '%');
+                    query.where("i.stem LIKE ? COLLATE NOCASE ESCAPE '" ESCAPE_CHAR_STR "'").bind(fileStem);
+                }
+                else
+                {
+                    query.where("i.stem = ? COLLATE NOCASE").bind(params.fileStem);
+                }
+            }
 
             return query;
         }

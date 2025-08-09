@@ -33,6 +33,7 @@
 #include "database/objects/Artwork.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/Image.hpp"
+#include "database/objects/Medium.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
@@ -105,24 +106,9 @@ namespace lms::scanner
             if (res)
                 return res;
 
-            // fallback on another track of the same disc
-            const db::ReleaseId releaseId{ track->getReleaseId() };
-            if (!releaseId.isValid())
-                return res;
-
-            if (const auto discNumber{ track->getDiscNumber() })
-            {
-                db::TrackEmbeddedImage::FindParameters params;
-                params.setRelease(releaseId);
-                params.setDiscNumber(discNumber);
-                params.setImageType(db::ImageType::Media);
-                params.setSortMethod(db::TrackEmbeddedImageSortMethod::TrackNumberThenSizeDesc);
-
-                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
-                    if (!res)
-                        res = db::Artwork::find(session, image->getId());
-                });
-            }
+            // fallback on the medium's preferred artwork
+            if (const auto medium{ track->getMedium() })
+                res = medium->getPreferredArtwork();
 
             return res;
         }

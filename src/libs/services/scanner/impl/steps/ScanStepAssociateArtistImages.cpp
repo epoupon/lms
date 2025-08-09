@@ -73,7 +73,7 @@ namespace lms::scanner
                 {
                     db::Image::FindParameters params;
                     params.setDirectory(directory->getId());
-                    params.setFileStem(fileStem);
+                    params.setFileStem(fileStem, db::Image::FindParameters::ProcessWildcards{ true }); // no need to sanitize here, user is responsible for providing sanitized file stems in conf file
 
                     db::Image::find(session, params, [&](const db::Image::pointer foundImg) {
                         if (!image)
@@ -135,13 +135,11 @@ namespace lms::scanner
             {
                 // Expect layout like this:
                 // ReleaseArtist/Release/Tracks'
-                //              /artist.jpg
-                //              /someOtherUserConfiguredArtistFile.jpg
+                //              /someUserConfiguredArtistFile.jpg
                 //
                 // Or:
                 // ReleaseArtist/SomeGrouping/Release/Tracks'
-                //              /artist.jpg
-                //              /someOtherUserConfiguredArtistFile.jpg
+                //              /someUserConfiguredArtistFile.jpg
                 //
                 std::filesystem::path directoryToInspect{ core::pathUtils::getLongestCommonPath(std::cbegin(releasePaths), std::cend(releasePaths)) };
                 while (true)

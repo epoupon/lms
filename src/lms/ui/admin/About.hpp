@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Emeric Poupon
+ * Copyright (C) 2025 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,22 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cassert>
-#include <thread>
+#pragma once
 
-#include "core/StreamLogger.hpp"
-
-namespace lms::core::logging
+namespace lms::ui
 {
-    StreamLogger::StreamLogger(std::ostream& os, EnumSet<Severity> severities)
-        : _os{ os }
-        , _severities{ severities }
-    {
-    }
-
-    void StreamLogger::processLog(const Log& log)
-    {
-        assert(isSeverityActive(log.getSeverity()));
-        _os << std::this_thread::get_id() << " [" << getSeverityName(log.getSeverity()) << "] [" << getModuleName(log.getModule()) << "] " << log.getMessage() << std::endl;
-    }
-} // namespace lms::core::logging
+    void showAboutModal();
+} // namespace lms::ui

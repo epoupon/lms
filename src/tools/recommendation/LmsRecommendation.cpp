@@ -24,8 +24,8 @@
 #include <boost/program_options.hpp>
 
 #include "core/IConfig.hpp"
+#include "core/ILogger.hpp"
 #include "core/Service.hpp"
-#include "core/StreamLogger.hpp"
 #include "core/SystemPaths.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
         namespace po = boost::program_options;
 
         // log to stdout
-        core::Service<core::logging::ILogger> logger{ std::make_unique<core::logging::StreamLogger>(std::cout) };
+        core::Service<core::logging::ILogger> logger{ core::logging::createLogger() };
 
         po::options_description desc{ "Allowed options" };
         desc.add_options()("help,h", "print usage message")("conf,c", po::value<std::string>()->default_value(core::sysconfDirectory / "lms.conf"), "LMS config file")("artists,a", "Display recommendation for artists")("releases,r", "Display recommendation for releases")("tracks,t", "Display recommendation for tracks")("max,m", po::value<unsigned>()->default_value(3), "Max similarity result count");

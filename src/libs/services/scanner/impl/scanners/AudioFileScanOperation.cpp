@@ -32,6 +32,7 @@
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
 #include "database/objects/MediaLibrary.hpp"
+#include "database/objects/Medium.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
@@ -222,6 +223,26 @@ namespace lms::scanner
             return release;
         }
 
+        db::Medium::pointer getOrCreateMedium(db::Session& session, const metadata::Medium& medium, const db::Release::pointer& release)
+        {
+            db::Medium::pointer dbMedium{ db::Medium::find(session, release->getId(), medium.position) };
+            if (!dbMedium)
+                dbMedium = session.create<db::Medium>(release);
+
+            if (dbMedium->getPosition() != medium.position)
+                dbMedium.modify()->setPosition(medium.position);
+            if (dbMedium->getMedia() != medium.media)
+                dbMedium.modify()->setMedia(medium.media);
+            if (dbMedium->getName() != medium.name)
+                dbMedium.modify()->setName(medium.name);
+            if (dbMedium->getTrackCount() != medium.trackCount)
+                dbMedium.modify()->setTrackCount(medium.trackCount);
+            if (dbMedium->getReplayGain() != medium.replayGain)
+                dbMedium.modify()->setReplayGain(medium.replayGain);
+
+            return dbMedium;
+        }
+
         std::vector<db::Cluster::pointer> getOrCreateClusters(db::Session& session, const metadata::Track& track)
         {
             std::vector<db::Cluster::pointer> clusters;
@@ -387,8 +408,6 @@ namespace lms::scanner
             params.setFileSize(fileSize);
             if (parsedTrack.medium)
             {
-                if (parsedTrack.medium->position)
-                    params.setDiscNumber(*parsedTrack.medium->position);
                 if (parsedTrack.medium->release)
                     params.setReleaseName(parsedTrack.medium->release->name);
             }
@@ -507,7 +526,7 @@ namespace lms::scanner
                 }
                 catch (const image::Exception& e)
                 {
-                    addError<EmbeddedImageScanError>(getFilePath(), index);
+                    addError<EmbeddedImageScanError>(getFilePath(), index, e.what());
                 }
 
                 index++;
@@ -691,17 +710,22 @@ namespace lms::scanner
         for (const auto& [role, performers] : _parsedTrack->performerArtists)
             createTrackArtistLinks(dbSession, track, db::TrackArtistLinkType::Performer, role, performers, allowFallback);
 
+        // For now, alway tie a medium to a release, and a release mst have at least one medium, even if no disc number is set
         if (_parsedTrack->medium && _parsedTrack->medium->release)
-            track.modify()->setRelease(getOrCreateRelease(dbSession, *_parsedTrack->medium->release, directory));
+        {
+            db::Release::pointer release{ getOrCreateRelease(dbSession, *_parsedTrack->medium->release, directory) };
+            assert(release);
+            track.modify()->setRelease(release);
+            track.modify()->setMedium(getOrCreateMedium(dbSession, *_parsedTrack->medium, release));
+        }
         else
+        {
             track.modify()->setRelease({});
-        track.modify()->setTotalTrack(_parsedTrack->medium ? _parsedTrack->medium->trackCount : std::nullopt);
-        track.modify()->setReleaseReplayGain(_parsedTrack->medium ? _parsedTrack->medium->replayGain : std::nullopt);
-        track.modify()->setDiscSubtitle(_parsedTrack->medium ? _parsedTrack->medium->name : "");
+            track.modify()->setMedium({});
+        }
         track.modify()->setClusters(getOrCreateClusters(dbSession, *_parsedTrack));
         track.modify()->setName(title);
         track.modify()->setTrackNumber(_parsedTrack->position);
-        track.modify()->setDiscNumber(_parsedTrack->medium ? _parsedTrack->medium->position : std::nullopt);
         track.modify()->setDate(_parsedTrack->date);
         track.modify()->setOriginalDate(_parsedTrack->originalDate);
         if (!track->getOriginalDate().isValid() && _parsedTrack->originalYear)
@@ -719,7 +743,7 @@ namespace lms::scanner
         track.modify()->setCopyrightURL(_parsedTrack->copyrightURL);
         track.modify()->setAdvisory(getAdvisory(_parsedTrack->advisory));
         track.modify()->setComment(!_parsedTrack->comments.empty() ? _parsedTrack->comments.front() : ""); // only take the first one for now
-        track.modify()->setTrackReplayGain(_parsedTrack->replayGain);
+        track.modify()->setReplayGain(_parsedTrack->replayGain);
         track.modify()->setArtistDisplayName(_parsedTrack->artistDisplayName);
 
         track.modify()->clearEmbeddedLyrics();

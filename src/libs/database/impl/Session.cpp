@@ -33,6 +33,7 @@
 #include "database/objects/Image.hpp"
 #include "database/objects/Listen.hpp"
 #include "database/objects/MediaLibrary.hpp"
+#include "database/objects/Medium.hpp"
 #include "database/objects/PlayListFile.hpp"
 #include "database/objects/PlayQueue.hpp"
 #include "database/objects/RatedArtist.hpp"
@@ -82,6 +83,7 @@ namespace lms::db
         _session.mapClass<Label>("label");
         _session.mapClass<Listen>("listen");
         _session.mapClass<MediaLibrary>("media_library");
+        _session.mapClass<Medium>("medium");
         _session.mapClass<PlayListFile>("playlist_file");
         _session.mapClass<PlayQueue>("playqueue");
         _session.mapClass<RatedArtist>("rated_artist");
@@ -235,6 +237,8 @@ namespace lms::db
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS media_library_id_idx ON media_library(id)");
 
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS medium_release_position_idx ON medium(release_id, position)");
+
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS playlist_file_id_idx ON playlist_file(id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS playlist_file_directory_idx ON playlist_file(directory_id);");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS playlist_file_absolute_file_path_idx ON playlist_file(absolute_file_path)");
@@ -262,12 +266,12 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_file_last_write_idx ON track(file_last_write)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_media_library_idx ON track(media_library_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_media_library_release_idx ON track(media_library_id, release_id)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_medium_idx ON track(medium_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_mbid_idx ON track(mbid)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_name_file_size_idx ON track(name, file_size)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_name_nocase_idx ON track(name COLLATE NOCASE)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_original_date_idx ON track(original_date)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_recording_mbid_idx ON track(recording_mbid)");
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_disc_idx ON track(release_id, disc_number)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_date_idx ON track(release_id, date)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_file_last_write_idx ON track(release_id, file_last_write)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_release_file_added_idx ON track(release_id, file_added)");

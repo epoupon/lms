@@ -20,18 +20,19 @@
 #include <thread>
 
 #include <Wt/WApplication.h>
+#include <Wt/WLogSink.h>
 #include <Wt/WServer.h>
 #include <boost/asio/io_context.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
 #include "core/IChildProcessManager.hpp"
 #include "core/IConfig.hpp"
+#include "core/ILogger.hpp"
 #include "core/IOContextRunner.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
 #include "core/SystemPaths.hpp"
-#include "core/WtLogger.hpp"
 #include "database/IDb.hpp"
 #include "database/IQueryPlanRecorder.hpp"
 #include "database/Session.hpp"
@@ -64,24 +65,6 @@ namespace lms
             return configHttpServerThreadCount ? configHttpServerThreadCount : std::max<unsigned long>(2, std::thread::hardware_concurrency());
         }
 
-        core::logging::Severity getLogMinSeverity()
-        {
-            std::string_view minSeverity{ core::Service<core::IConfig>::get()->getString("log-min-severity", "info") };
-
-            if (minSeverity == "debug")
-                return core::logging::Severity::DEBUG;
-            else if (minSeverity == "info")
-                return core::logging::Severity::INFO;
-            else if (minSeverity == "warning")
-                return core::logging::Severity::WARNING;
-            else if (minSeverity == "error")
-                return core::logging::Severity::ERROR;
-            else if (minSeverity == "fatal")
-                return core::logging::Severity::FATAL;
-
-            throw core::LmsException{ "Invalid config value for 'log-min-severity'" };
-        }
-
         ui::AuthenticationBackend getUIAuthenticationBackend()
         {
             const std::string backend{ core::stringUtils::stringToLower(core::Service<core::IConfig>::get()->getString("authentication-backend", "internal")) };
@@ -109,15 +92,13 @@ namespace lms
             throw core::LmsException{ "Invalid config value for 'tracing-level'" };
         }
 
-        std::vector<std::string> generateWtConfig(std::string execPath, core::logging::Severity minSeverity)
+        std::vector<std::string> generateWtConfig(std::string execPath)
         {
             core::IConfig& config{ *core::Service<core::IConfig>::get() };
 
             std::vector<std::string> args;
 
             const std::filesystem::path wtConfigPath{ config.getPath("working-dir", "/var/lms") / "wt_config.xml" };
-            const std::filesystem::path wtLogFilePath{ config.getPath("log-file", "") };
-            const std::filesystem::path wtAccessLogFilePath{ config.getPath("access-log-file", "") };
             const std::filesystem::path wtResourcesPath{ config.getPath("wt-resources", "/usr/share/Wt/resources") };
 
             args.push_back(execPath);
@@ -142,19 +123,12 @@ namespace lms
                 args.push_back("--http-address=" + std::string{ config.getString("listen-addr", "0.0.0.0") });
             }
 
-            if (!wtAccessLogFilePath.empty())
-                args.push_back("--accesslog=" + wtAccessLogFilePath.string());
-
             args.push_back("--threads=" + std::to_string(getThreadCount()));
 
             // Generate the wt_config.xml file
             boost::property_tree::ptree pt;
 
             pt.put("server.application-settings.<xmlattr>.location", "*");
-            pt.put("server.application-settings.log-file", wtLogFilePath.string());
-
-            // log-config
-            pt.put("server.application-settings.log-config", core::logging::WtLogger::computeLogConfig(minSeverity));
 
             // Reverse proxy
             if (config.getBool("behind-reverse-proxy", false))
@@ -238,6 +212,82 @@ namespace lms
                 });
             });
         }
+
+        core::logging::Severity getLogMinSeverity()
+        {
+            std::string_view minSeverity{ core::Service<core::IConfig>::get()->getString("log-min-severity", "info") };
+
+            if (minSeverity == "debug")
+                return core::logging::Severity::DEBUG;
+            else if (minSeverity == "info")
+                return core::logging::Severity::INFO;
+            else if (minSeverity == "warning")
+                return core::logging::Severity::WARNING;
+            else if (minSeverity == "error")
+                return core::logging::Severity::ERROR;
+            else if (minSeverity == "fatal")
+                return core::logging::Severity::FATAL;
+
+            throw core::LmsException{ "Invalid config value for 'log-min-severity'" };
+        }
+
+        class LmsLogSink : public Wt::WLogSink
+        {
+        public:
+            LmsLogSink(core::logging::ILogger& logger)
+                : _logger{ logger }
+            {
+            }
+
+        private:
+            void log(const std::string& type, const std::string& scope, const std::string& message) const noexcept override
+            {
+                // Some wt code path may go here without testing logging()
+                if (logging(type, scope))
+                {
+                    const core::logging::Severity severity{ getSeverity(type, scope) };
+                    _logger.processLog(core::logging::Module::WT, severity, message);
+                }
+            }
+
+            bool logging(const std::string& type, const std::string& scope) const noexcept override
+            {
+                const core::logging::Severity severity{ getSeverity(type, scope) };
+                return _logger.isSeverityActive(severity);
+            }
+
+            static core::logging::Severity getSeverity(const std::string& type, const std::string& scope)
+            {
+                return adjustSeverity(getSeverityFromString(type), scope);
+            }
+
+            static core::logging::Severity adjustSeverity(core::logging::Severity initialSeverity, std::string_view scope)
+            {
+                if (initialSeverity == core::logging::Severity::INFO && (scope == "WebRequest" || scope == "wthttp"))
+                    return core::logging::Severity::DEBUG;
+
+                return initialSeverity;
+            }
+
+            static core::logging::Severity getSeverityFromString(std::string_view type)
+            {
+                if (type == "debug")
+                    return core::logging::Severity::DEBUG;
+                if (type == "info")
+                    return core::logging::Severity::INFO;
+                if (type == "warning")
+                    return core::logging::Severity::WARNING;
+                if (type == "error")
+                    return core::logging::Severity::ERROR;
+                if (type == "fatal")
+                    return core::logging::Severity::FATAL;
+
+                return core::logging::Severity::INFO;
+            }
+
+            core::logging::ILogger& _logger;
+        };
+
     } // namespace
 
     int main(int argc, char* argv[])
@@ -275,8 +325,7 @@ namespace lms
             close(STDIN_FILENO);
 
             core::Service<core::IConfig> config{ core::createConfig(configFilePath) };
-            const core::logging::Severity minLogSeverity{ getLogMinSeverity() };
-            core::Service<core::logging::ILogger> logger{ std::make_unique<core::logging::WtLogger>(minLogSeverity) };
+            core::Service<core::logging::ILogger> logger{ createLogger(getLogMinSeverity(), config->getPath("log-file", "")) };
             core::Service<core::tracing::ITraceLogger> traceLogger;
             if (const auto level{ getTracingLevel() })
                 traceLogger.assign(core::tracing::createTraceLogger(level.value(), config->getULong("tracing-buffer-size", core::tracing::MinBufferSizeInMBytes)));
@@ -292,7 +341,7 @@ namespace lms
             std::filesystem::create_directories(config->getPath("working-dir", "/var/lms") / "cache");
 
             // Construct WT configuration and get the argc/argv back
-            const std::vector<std::string> wtServerArgs{ generateWtConfig(argv[0], minLogSeverity) };
+            const std::vector<std::string> wtServerArgs{ generateWtConfig(argv[0]) };
 
             std::vector<const char*> wtArgv(wtServerArgs.size());
             for (std::size_t i = 0; i < wtServerArgs.size(); ++i)
@@ -301,8 +350,9 @@ namespace lms
                 wtArgv[i] = wtServerArgs[i].c_str();
             }
 
-            boost::asio::io_context ioContext; // ioContext used to dispatch all the services that are out of the Wt event loop
+            LmsLogSink lmsLogSink{ *logger };
             Wt::WServer server{ argv[0] };
+            server.setCustomLogger(lmsLogSink);
             server.setServerConfiguration(wtServerArgs.size(), const_cast<char**>(&wtArgv[0]));
 
             // As initialization can take a while (db migration, analyze, etc.), we bind a temporary init entry point to warn the user
@@ -314,6 +364,7 @@ namespace lms
             LMS_LOG(MAIN, INFO, "Starting init web server...");
             server.start();
 
+            boost::asio::io_context ioContext; // ioContext used to dispatch all the services that are out of the Wt event loop
             core::IOContextRunner ioContextRunner{ ioContext, getThreadCount(), "Misc" };
 
             core::Service<db::IQueryPlanRecorder> queryPlanRecorder;

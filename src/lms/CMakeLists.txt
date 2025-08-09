@@ -16,6 +16,7 @@ add_executable(lms
 	ui/Utils.cpp
 	ui/admin/debug/Database.cpp
 	ui/admin/debug/Tracing.cpp
+	ui/admin/About.cpp
 	ui/admin/DebugToolsView.cpp
 	ui/admin/InitWizardView.cpp
 	ui/admin/MediaLibrariesView.cpp

@@ -53,11 +53,17 @@
 <message id="Lms.Error.user-not-found">Użytkownik nie odnaleziony</message>
 
 <!--Administration-->
+<message id="Lms.Admin.menu-about"><i class="fa fa-fw fa-question-circle" aria-hidden="true"></i> O programie</message>
 <message id="Lms.Admin.menu-debug-tools"><i class="fa fa-fw fa-bug" aria-hidden="true"></i> Narzędzia debugowania</message>
 <message id="Lms.Admin.menu-media-libraries"><i class="fa fa-fw fa-database" aria-hidden="true"></i> Biblioteki</message>
 <message id="Lms.Admin.menu-scan-settings"><i class="fa fa-fw fa-cogs" aria-hidden="true"></i> Ustawienia skanowania</message>
 <message id="Lms.Admin.menu-scanner"><i class="fa fa-fw fa-wrench" aria-hidden="true"></i> Skaner</message>
 <message id="Lms.Admin.menu-users"><i class="fa fa-fw fa-users" aria-hidden="true"></i> Użytkownicy</message>
+
+<!--About-->
+<message id="Lms.Admin.About.about">O programie</message>
+<message id="Lms.Admin.About.homepage">Strona główna</message>
+<message id="Lms.Admin.About.version">Wersja</message>
 
 <!--MediaLibraries-->
 <message id="Lms.Admin.MediaLibraries.media-libraries">Biblioteki muzyczne</message>
@@ -102,11 +108,11 @@
 
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">Nie udało się ustalić długości ścieżki</message>
-<message id="Lms.Admin.ScannerController.bad-embedded-image">Nie można odczytać obrazu pod indeksem {1}</message>
+<message id="Lms.Admin.ScannerController.bad-embedded-image">Nie można odczytać obrazu pod indeksem {1} : {2}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-artist-info-file">Nie można przetworzyć pliku z informacjami o artyście"</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">Nie można przeanalizować pliku audio</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">Nie udało się odczytać pliku ({1})</message>
-<message id="Lms.Admin.ScannerController.cannot-read-image-file">Nie można przeanalizować pliku obrazu</message>
+<message id="Lms.Admin.ScannerController.cannot-read-image-file">Nie można przeanalizować pliku obrazu : {1}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-lyrics-file">Nie można przetworzyć pliku z tekstem</message>
 <message id="Lms.Admin.ScannerController.cannot-read-playlist-file">Nie można przeanalizować pliku playlisty</message>
 <message id="Lms.Admin.ScannerController.compact">Sprasuj bazę danych. <strong>Uwaga:</strong> może to trochę zająć, a cała aplikacja będzie w tym czasie zablokowana!</message>

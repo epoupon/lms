@@ -47,11 +47,9 @@
 
 namespace lms::ui
 {
-    using namespace db;
-
     namespace
     {
-        std::optional<ArtistId> extractArtistIdFromInternalPath()
+        std::optional<db::ArtistId> extractArtistIdFromInternalPath()
         {
             if (wApp->internalPathMatches("/artist/mbid/"))
             {
@@ -66,7 +64,7 @@ namespace lms::ui
                 return std::nullopt;
             }
 
-            return core::stringUtils::readAs<ArtistId::ValueType>(wApp->internalPathNextPart("/artist/"));
+            return core::stringUtils::readAs<db::ArtistId::ValueType>(wApp->internalPathNextPart("/artist/"));
         }
     } // namespace
 
@@ -109,7 +107,7 @@ namespace lms::ui
         if (!artistId)
             throw ArtistNotFoundException{};
 
-        const auto similarArtistIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(*artistId, { TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist }, 6) };
+        const auto similarArtistIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(*artistId, { db::TrackArtistLinkType::Artist, db::TrackArtistLinkType::ReleaseArtist }, 6) };
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
@@ -131,7 +129,7 @@ namespace lms::ui
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
 
         {
-            auto clusterTypes{ ClusterType::findIds(LmsApp->getDbSession()).results };
+            auto clusterTypes{ db::ClusterType::findIds(LmsApp->getDbSession()).results };
             auto clusterGroups{ artist->getClusterGroups(clusterTypes, 3) };
 
             for (const auto& clusters : clusterGroups)
@@ -232,16 +230,16 @@ namespace lms::ui
     {
         _releaseContainers.clear();
 
-        Release::FindParameters params;
+        db::Release::FindParameters params;
         params.setFilters(_filters.getDbFilters());
-        params.setArtist(_artistId, { TrackArtistLinkType::ReleaseArtist }, {});
+        params.setArtist(_artistId, { db::TrackArtistLinkType::ReleaseArtist }, {});
         params.setSortMethod(LmsApp->getUser()->getUIArtistReleaseSortMethod());
 
-        const auto releases{ Release::findIds(LmsApp->getDbSession(), params) };
+        const auto releases{ db::Release::findIds(LmsApp->getDbSession(), params) };
         if (!releases.results.empty())
         {
             // first pass: gather all ids and sort by release type
-            for (const ReleaseId releaseId : releases.results)
+            for (const db::ReleaseId releaseId : releases.results)
             {
                 const db::Release::pointer release{ db::Release::find(LmsApp->getDbSession(), releaseId) };
 
@@ -274,27 +272,27 @@ namespace lms::ui
 
     void Artist::refreshAppearsOnReleases()
     {
-        constexpr core::EnumSet<TrackArtistLinkType> types{
-            TrackArtistLinkType::Artist,
-            TrackArtistLinkType::Arranger,
-            TrackArtistLinkType::Composer,
-            TrackArtistLinkType::Conductor,
-            TrackArtistLinkType::Lyricist,
-            TrackArtistLinkType::Mixer,
-            TrackArtistLinkType::Performer,
-            TrackArtistLinkType::Producer,
-            TrackArtistLinkType::Remixer,
-            TrackArtistLinkType::Writer,
+        constexpr core::EnumSet<db::TrackArtistLinkType> types{
+            db::TrackArtistLinkType::Artist,
+            db::TrackArtistLinkType::Arranger,
+            db::TrackArtistLinkType::Composer,
+            db::TrackArtistLinkType::Conductor,
+            db::TrackArtistLinkType::Lyricist,
+            db::TrackArtistLinkType::Mixer,
+            db::TrackArtistLinkType::Performer,
+            db::TrackArtistLinkType::Producer,
+            db::TrackArtistLinkType::Remixer,
+            db::TrackArtistLinkType::Writer,
         };
 
         _appearsOnReleaseContainer = {};
 
-        Release::FindParameters params;
+        db::Release::FindParameters params;
         params.setFilters(_filters.getDbFilters());
-        params.setArtist(_artistId, types, { TrackArtistLinkType::ReleaseArtist });
-        params.setSortMethod(ReleaseSortMethod::OriginalDateDesc);
+        params.setArtist(_artistId, types, { db::TrackArtistLinkType::ReleaseArtist });
+        params.setSortMethod(db::ReleaseSortMethod::OriginalDateDesc);
 
-        const auto releases{ Release::findIds(LmsApp->getDbSession(), params) };
+        const auto releases{ db::Release::findIds(LmsApp->getDbSession(), params) };
         if (!releases.results.empty())
         {
             Wt::WTemplate* releaseContainer{ bindNew<Wt::WTemplate>("appears-on-releases", Wt::WString::tr("Lms.Explore.Artist.template.release-container")) };
@@ -323,7 +321,7 @@ namespace lms::ui
         setCondition("if-has-non-release-tracks", added);
     }
 
-    void Artist::refreshSimilarArtists(const std::vector<ArtistId>& similarArtistsId)
+    void Artist::refreshSimilarArtists(const std::vector<db::ArtistId>& similarArtistsId)
     {
         if (similarArtistsId.empty())
             return;
@@ -331,7 +329,7 @@ namespace lms::ui
         setCondition("if-has-similar-artists", true);
         Wt::WContainerWidget* similarArtistsContainer{ bindNew<Wt::WContainerWidget>("similar-artists") };
 
-        for (const ArtistId artistId : similarArtistsId)
+        for (const db::ArtistId artistId : similarArtistsId)
         {
             const db::Artist::pointer similarArtist{ db::Artist::find(LmsApp->getDbSession(), artistId) };
             if (!similarArtist)
@@ -371,19 +369,19 @@ namespace lms::ui
     {
         bool areTracksAdded{};
 
-        const Range range{ static_cast<std::size_t>(_trackContainer->getCount()), _tracksBatchSize };
+        const db::Range range{ static_cast<std::size_t>(_trackContainer->getCount()), _tracksBatchSize };
 
-        Track::FindParameters params;
+        db::Track::FindParameters params;
         params.setFilters(_filters.getDbFilters());
         params.setArtist(_artistId);
         params.setRange(range);
-        params.setSortMethod(TrackSortMethod::Name);
+        params.setSortMethod(db::TrackSortMethod::Name);
         params.setNonRelease(true);
 
         auto transaction{ LmsApp->getDbSession().createReadTransaction() };
 
-        const auto tracks{ Track::find(LmsApp->getDbSession(), params) };
-        for (const Track::pointer& track : tracks.results)
+        const auto tracks{ db::Track::find(LmsApp->getDbSession(), params) };
+        for (const db::Track::pointer& track : tracks.results)
         {
             // TODO handle this with range
             if (_trackContainer->getCount() == _tracksMaxCount)

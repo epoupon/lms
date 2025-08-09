@@ -40,13 +40,11 @@
 
 namespace lms::ui
 {
-    using namespace db;
-
     namespace
     {
-        std::optional<TrackListId> extractTrackListIdFromInternalPath()
+        std::optional<db::TrackListId> extractTrackListIdFromInternalPath()
         {
-            return core::stringUtils::readAs<TrackListId::ValueType>(wApp->internalPathNextPart("/tracklist/"));
+            return core::stringUtils::readAs<db::TrackListId::ValueType>(wApp->internalPathNextPart("/tracklist/"));
         }
     } // namespace
 
@@ -74,7 +72,7 @@ namespace lms::ui
         if (!wApp->internalPathMatches("/tracklist/"))
             return;
 
-        const std::optional<TrackListId> trackListId{ extractTrackListIdFromInternalPath() };
+        const std::optional<db::TrackListId> trackListId{ extractTrackListIdFromInternalPath() };
         if (!trackListId)
             throw TrackListNotFoundException{};
 
@@ -103,14 +101,14 @@ namespace lms::ui
 
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
         {
-            const auto clusterTypeIds{ ClusterType::findIds(LmsApp->getDbSession()).results };
+            const auto clusterTypeIds{ db::ClusterType::findIds(LmsApp->getDbSession()).results };
             const auto clusterGroups{ trackList->getClusterGroups(clusterTypeIds, 3) };
 
             for (const auto& clusters : clusterGroups)
             {
                 for (const db::Cluster::pointer& cluster : clusters)
                 {
-                    const ClusterId clusterId{ cluster->getId() };
+                    const db::ClusterId clusterId{ cluster->getId() };
                     Wt::WInteractWidget* entry{ clusterContainers->addWidget(utils::createFilterCluster(clusterId)) };
                     entry->clicked().connect([this, clusterId] {
                         _filters.add(clusterId);
@@ -193,7 +191,7 @@ namespace lms::ui
         params.setRange(db::Range{ static_cast<std::size_t>(_container->getCount()), _batchSize });
 
         bool moreResults{};
-        db::Track::find(LmsApp->getDbSession(), params, moreResults, [this](const Track::pointer& track) {
+        db::Track::find(LmsApp->getDbSession(), params, moreResults, [this](const db::Track::pointer& track) {
             _container->add(TrackListHelpers::createEntry(track, _playQueueController, _filters));
         });
 

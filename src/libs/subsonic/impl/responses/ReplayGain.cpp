@@ -19,19 +19,23 @@
 
 #include "responses/ReplayGain.hpp"
 
+#include "database/objects/Medium.hpp"
 #include "database/objects/Track.hpp"
 
 namespace lms::api::subsonic
 {
-    Response::Node createReplayGainNode(const db::ObjectPtr<db::Track>& track)
+    Response::Node createReplayGainNode(const db::Track::pointer& track, const db::Medium::pointer& medium)
     {
         Response::Node replayGainNode;
 
-        if (const auto trackReplayGain{ track->getTrackReplayGain() })
+        if (const auto trackReplayGain{ track->getReplayGain() })
             replayGainNode.setAttribute("trackGain", *trackReplayGain);
 
-        if (const auto releaseReplayGain{ track->getReleaseReplayGain() })
-            replayGainNode.setAttribute("albumGain", *releaseReplayGain);
+        if (medium)
+        {
+            if (const auto releaseReplayGain{ medium->getReplayGain() })
+                replayGainNode.setAttribute("albumGain", *releaseReplayGain);
+        }
 
         return replayGainNode;
     }

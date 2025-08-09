@@ -22,15 +22,15 @@
 #include <chrono>
 #include <unordered_map>
 
-#include <Wt/WDateTime.h>
-
-#include "core/NetAddress.hpp"
+#include "core/NetAddress.hpp" // for unordered_map of boost::asio::ip::address
 
 namespace lms::auth
 {
     class LoginThrottler
     {
     public:
+        using Clock = std::chrono::steady_clock;
+
         LoginThrottler(std::size_t maxEntries)
             : _maxEntries{ maxEntries } {}
 
@@ -52,7 +52,7 @@ namespace lms::auth
 
         struct AttemptInfo
         {
-            Wt::WDateTime nextAttempt;
+            Clock::time_point nextAttempt{};
             std::size_t badConsecutiveAttemptCount{};
         };
         std::unordered_map<boost::asio::ip::address, AttemptInfo> _attemptsInfo;

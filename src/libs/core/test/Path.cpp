@@ -103,4 +103,34 @@ namespace lms::core::pathUtils::tests
             EXPECT_EQ(core::pathUtils::isPathInRootPath(test.path, test.rootPath), test.expectedResult) << "Failed: path = " << test.path << ", rootPath = " << test.rootPath;
         }
     }
+
+    TEST(Path, sanitizeFileStem)
+    {
+        struct TestCase
+        {
+            std::string input;
+            std::string_view expectedOutput;
+        };
+
+        TestCase tests[]{
+            { "", "" }, // empty input
+            { "valid_file_name", "valid_file_name" },
+            { "invalid:file*name?", "invalidfilename" },
+            { "another|invalid<name>", "anotherinvalidname" },
+            { "/leading/slash", "leadingslash" },
+            { "\\backslash\\file", "backslashfile" },
+            { "file_with_äöüß", "file_with_äöüß" },                // keep German umlauts
+            { "file_with_éèêë", "file_with_éèêë" },                // keep French accents
+            { "héllo 漢字", "héllo 漢字" },                        // keep UTF8 characters
+            { "file_with_üñîçødë", "file_with_üñîçødë" },          // keep special characters
+            { "file_with_!@#$%^&*()_+", "file_with_!@#$%^&()_+" }, // remove special characters
+            { "file_with_", "file_with_" },                        // handle double dots
+            { "file.with.extension", "file.with.extension" },      // keep extensions
+        };
+
+        for (const TestCase& test : tests)
+        {
+            EXPECT_EQ(core::pathUtils::sanitizeFileStem(test.input), test.expectedOutput) << "Failed: input = " << test.input;
+        }
+    }
 } // namespace lms::core::pathUtils::tests

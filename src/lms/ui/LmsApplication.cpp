@@ -52,6 +52,7 @@
 #include "NotificationContainer.hpp"
 #include "PlayQueue.hpp"
 #include "SettingsView.hpp"
+#include "admin/About.hpp"
 #include "admin/DebugToolsView.hpp"
 #include "admin/InitWizardView.hpp"
 #include "admin/MediaLibrariesView.hpp"
@@ -76,6 +77,7 @@ namespace lms::ui
             const std::string appRoot{ Wt::WApplication::appRoot() };
 
             auto res{ std::make_shared<Wt::WMessageResourceBundle>() };
+            res->use(appRoot + "admin-about");
             res->use(appRoot + "admin-db");
             res->use(appRoot + "admin-debugtools");
             res->use(appRoot + "admin-initwizard");
@@ -460,6 +462,10 @@ namespace lms::ui
         if (LmsApp->getUserType() == db::UserType::ADMIN)
         {
             navbar->setCondition("if-is-admin", true);
+            auto* about{ navbar->bindNew<Wt::WPushButton>("about", Wt::WString::tr("Lms.Admin.menu-about"), Wt::TextFormat::XHTML) };
+            about->clicked().connect([] {
+                showAboutModal();
+            });
             navbar->bindNew<Wt::WAnchor>("media-libraries", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/libraries" }, Wt::WString::tr("Lms.Admin.menu-media-libraries"));
             navbar->bindNew<Wt::WAnchor>("scan-settings", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/scan-settings" }, Wt::WString::tr("Lms.Admin.menu-scan-settings"));
             navbar->bindNew<Wt::WAnchor>("scanner", Wt::WLink{ Wt::LinkType::InternalPath, "/admin/scanner" }, Wt::WString::tr("Lms.Admin.menu-scanner"));
