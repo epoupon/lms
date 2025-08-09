@@ -27,11 +27,9 @@ add_library(lmscore STATIC
 	impl/Path.cpp
 	impl/Random.cpp
 	impl/RecursiveSharedMutex.cpp
-	impl/StreamLogger.cpp
 	impl/String.cpp
 	impl/TraceLogger.cpp
 	impl/UUID.cpp
-	impl/WtLogger.cpp
 	impl/XxHash3.cpp
 	${CMAKE_CURRENT_BINARY_DIR}/impl/Version.cpp
 	)

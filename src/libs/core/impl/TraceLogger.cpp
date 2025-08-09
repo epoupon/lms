@@ -25,6 +25,7 @@
 
 #include "core/Exception.hpp"
 #include "core/ILogger.hpp"
+#include "core/String.hpp"
 
 namespace lms::core::tracing
 {

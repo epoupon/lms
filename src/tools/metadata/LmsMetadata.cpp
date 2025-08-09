@@ -28,7 +28,7 @@
 #include <boost/program_options.hpp>
 
 #include "core/EnumSet.hpp"
-#include "core/StreamLogger.hpp"
+#include "core/ILogger.hpp"
 #include "core/String.hpp"
 #include "metadata/Exception.hpp"
 #include "metadata/IAudioFileParser.hpp"
@@ -456,7 +456,7 @@ int main(int argc, char* argv[])
         }
 
         // log to stdout
-        core::Service<core::logging::ILogger> logger{ std::make_unique<core::logging::StreamLogger>(std::cout, core::logging::StreamLogger::allSeverities) };
+        core::Service<core::logging::ILogger> logger{ core::logging::createLogger(core::logging::Severity::DEBUG) };
 
         for (const std::string& inputFile : inputFiles)
         {

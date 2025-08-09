@@ -19,11 +19,12 @@
 
 #pragma once
 
+#include <filesystem>
+#include <memory>
 #include <sstream>
 #include <string>
 
 #include "core/Service.hpp"
-#include "core/String.hpp"
 
 namespace lms::core::logging
 {
@@ -57,6 +58,7 @@ namespace lms::core::logging
         TRANSCODING,
         UI,
         UTILS,
+        WT,
     };
 
     const char* getModuleName(Module mod);
@@ -92,7 +94,11 @@ namespace lms::core::logging
 
         virtual bool isSeverityActive(Severity severity) const = 0;
         virtual void processLog(const Log& log) = 0;
+        virtual void processLog(Module module, Severity severity, std::string_view message) = 0;
     };
+
+    static constexpr Severity defaultMinSeverity{ Severity::INFO };
+    std::unique_ptr<ILogger> createLogger(Severity minSeverity = defaultMinSeverity, const std::filesystem::path& logFilePath = {});
 } // namespace lms::core::logging
 
 #define LMS_LOG(module, severity, message)                                                                                                                               \

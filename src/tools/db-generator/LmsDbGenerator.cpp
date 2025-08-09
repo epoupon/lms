@@ -28,9 +28,9 @@
 #include <boost/program_options.hpp>
 
 #include "core/IConfig.hpp"
+#include "core/ILogger.hpp"
 #include "core/Random.hpp"
 #include "core/Service.hpp"
-#include "core/StreamLogger.hpp"
 #include "core/SystemPaths.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
         namespace program_options = boost::program_options;
 
         // log to stdout
-        core::Service<core::logging::ILogger> logger{ std::make_unique<core::logging::StreamLogger>(std::cout) };
+        core::Service<core::logging::ILogger> logger{ core::logging::createLogger() };
 
         const GeneratorParameters defaultParams;
 
