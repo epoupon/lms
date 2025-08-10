@@ -1525,7 +1525,7 @@ FROM track)");
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE track_backup RENAME TO track");
 
         // Just increment the scan version of the settings to make the next scan rescan all audio files
-        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET artist_info_scan_version = artist_info_scan_version + 1");
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET audio_scan_version = audio_scan_version + 1");
     }
 
     bool doDbMigration(Session& session)
