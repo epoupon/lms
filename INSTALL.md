@@ -31,7 +31,7 @@ apt install lms
 The _lms_ service is started just after the package installation, run by a dedicated _lms_ system user.</br>
 Please refer to [Deployment](#deployment) for further configuration options.
 ## From source
-__Note__: this installation process and the default values of the configuration files have been written for _Debian Bookworm_. Therefore, you may have to adapt commands and/or paths in order to fit to your distribution.
+__Note__: this installation process and the default values of the configuration files have been written for _Debian Bookworm_ and _Debian Trixie_. Therefore, you may have to adapt commands and/or paths in order to fit to your distribution.
 ### Build dependencies
 __Notes__:
 * a C++20 compiler is needed
