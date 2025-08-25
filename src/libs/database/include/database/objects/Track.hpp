@@ -210,6 +210,7 @@ namespace lms::db
         static void find(Session& session, const FindParameters& parameters, const std::function<void(const Track::pointer&)>& func);
         static void find(Session& session, const FindParameters& parameters, bool& moreResults, const std::function<void(const Track::pointer&)>& func);
         static RangeResults<TrackId> findIdsTrackMBIDDuplicates(Session& session, std::optional<Range> range = std::nullopt);
+        static RangeResults<TrackId> findIdsOldTrackParts(Session& session, std::optional<Range> range = std::nullopt);
         static RangeResults<TrackId> findIdsWithRecordingMBIDAndMissingFeatures(Session& session, std::optional<Range> range = std::nullopt);
 
         // Update utility functions

@@ -19,38 +19,18 @@
 
 #pragma once
 
-#include "IFileScanner.hpp"
-
-namespace lms
-{
-    namespace db
-    {
-        class IDb;
-    }
-
-    namespace metadata
-    {
-        class IAudioFileParser;
-    }
-} // namespace lms
+#include "AudioFileScanner.hpp"
 
 namespace lms::scanner
 {
-    struct ScannerSettings;
-
-    class AudioFileScanner : public IFileScanner
+    class CueFileScanner : public AudioFileScanner
     {
     public:
-        AudioFileScanner(db::IDb& db, const ScannerSettings& settings);
-        ~AudioFileScanner() override;
-        AudioFileScanner(const AudioFileScanner&) = delete;
-        AudioFileScanner& operator=(const AudioFileScanner&) = delete;
+        using AudioFileScanner::AudioFileScanner;
+        ~CueFileScanner() override;
 
-    protected:
-        db::IDb& getDb() const { return _db; }
-        const ScannerSettings& getScannerSettings() const { return _settings; }
-        metadata::IAudioFileParser& getMetadataParser() const
-        { return *_metadataParser; }
+        CueFileScanner(const CueFileScanner&) = delete;
+        CueFileScanner& operator=(const CueFileScanner&) = delete;
 
     private:
         core::LiteralString getName() const override;
@@ -58,9 +38,5 @@ namespace lms::scanner
         std::span<const std::filesystem::path> getSupportedExtensions() const override;
         bool needsScan(const FileToScan& file) const override;
         std::unique_ptr<IFileScanOperation> createScanOperation(FileToScan&& fileToScan) const override;
-
-        db::IDb& _db;
-        const ScannerSettings& _settings;
-        std::unique_ptr<metadata::IAudioFileParser> _metadataParser;
     };
 } // namespace lms::scanner

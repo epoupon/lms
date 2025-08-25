@@ -34,6 +34,7 @@ namespace lms::scanner
     {
         SameHash,
         SameTrackMBID,
+        OldCueTrack,
     };
 
     struct ScanDuplicate

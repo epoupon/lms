@@ -52,6 +52,7 @@ namespace lms::scanner
         removeOrphanedCountries(context);
         removeOrphanedDirectories(context);
         removeOrphanedTrackEmbeddedImages(context);
+        removeOldTrackParts(context);
     }
 
     void ScanStepRemoveOrphanedDbEntries::removeOrphanedClusters(ScanContext& context)
@@ -139,6 +140,35 @@ namespace lms::scanner
                 auto transaction{ session.createWriteTransaction() };
 
                 session.destroy<T>(entries.results);
+            }
+
+            context.currentStepStats.processedElems += entries.results.size();
+            _progressCallback(context.currentStepStats);
+        }
+    }
+
+    void ScanStepRemoveOrphanedDbEntries::removeOldTrackParts(ScanContext& context)
+    {
+        LMS_LOG(DBUPDATER, DEBUG, "Checking outdated `track_on:/` tracks...");
+        using IdType = db::Track::IdType;
+
+        db::Session& session{ _db.getTLSSession() };
+
+        db::RangeResults<IdType> entries;
+        while (!_abortScan) {
+            {
+                auto transaction{ session.createReadTransaction() };
+
+                entries = db::Track::findIdsOldTrackParts(session);
+            };
+
+            if (entries.results.empty())
+                break;
+
+            {
+                auto transaction{ session.createWriteTransaction() };
+
+                session.destroy<db::Track>(entries.results);
             }
 
             context.currentStepStats.processedElems += entries.results.size();
