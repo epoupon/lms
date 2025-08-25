@@ -39,5 +39,6 @@ namespace lms::scanner
         void visit(const scanner::PlayListFileScanError& error) override;
         void visit(const scanner::PlayListFilePathMissingError& error) override;
         void visit(const scanner::PlayListFileAllPathesMissingError& error) override;
+        void visit(const scanner::CueFileError& error) override;
     };
 } // namespace lms::scanner

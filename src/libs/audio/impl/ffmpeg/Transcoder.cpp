@@ -25,6 +25,7 @@
 #include "core/IChildProcessManager.hpp"
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
+#include "core/PseudoProtocols.hpp"
 #include "core/Service.hpp"
 #include "core/media/MimeType.hpp"
 
@@ -78,19 +79,37 @@ namespace lms::audio::ffmpeg
     {
         static FFmpegPath ffmpegPath;
 
+        auto inputFile = _inputParams.filePath;
+        std::chrono::milliseconds offset   = std::chrono::milliseconds::zero();
+        std::chrono::milliseconds duration = std::chrono::milliseconds::zero();
+        if (core::track_on.matches(inputFile)) {
+            auto parsed = core::track_on.parseUri(inputFile);
+
+            if (const auto* err = std::get_if<std::string>(&parsed); err) {
+                throw Exception{ "Path claims to be a track but: " + *err };
+            }
+
+            auto&& res = std::get<core::TrackOn::DecipheredURI>(std::move(parsed));
+
+            inputFile = std::move(res.path);
+            offset    = res.start;
+            duration  = res.duration;
+            LOG(DEBUG, "Resolved track path " << _inputParams.filePath << " to file path " << inputFile);
+        }
+
         try
         {
-            if (!std::filesystem::exists(_inputParams.filePath))
-                throw Exception{ "File " + _inputParams.filePath.string() + " does not exist!" };
-            if (!std::filesystem::is_regular_file(_inputParams.filePath))
-                throw Exception{ "File " + _inputParams.filePath.string() + " is not regular!" };
+            if (!std::filesystem::exists(inputFile))
+                throw Exception{ "File " + inputFile.string() + " does not exist!" };
+            if (!std::filesystem::is_regular_file(inputFile))
+                throw Exception{ "File " + inputFile.string() + " is not regular!" };
         }
         catch (const std::filesystem::filesystem_error& e)
         {
-            throw IOFileException{ _inputParams.filePath, "Failed to check if file exists", e.code() };
+            throw IOFileException{ inputFile, "Failed to check if file exists", e.code() };
         }
 
-        LOG(INFO, "Transcoding file " << _inputParams.filePath);
+        LOG(INFO, "Transcoding file " << inputFile);
 
         std::vector<std::string> args;
 
@@ -106,18 +125,25 @@ namespace lms::audio::ffmpeg
         args.emplace_back("quiet");
         args.emplace_back("-nostdin");
 
-        // input Offset
+        // input Offset and duration
         {
             args.emplace_back("-ss");
 
             std::ostringstream oss;
-            oss << std::fixed << std::showpoint << std::setprecision(3) << (_inputParams.offset.count() / float{ 1'000 });
+            oss << std::fixed << std::showpoint << std::setprecision(3) << ((offset + _inputParams.offset).count() / float{ 1'000 });
             args.emplace_back(oss.str());
+
+            if (duration != std::chrono::milliseconds::zero()) {
+                args.emplace_back("-t");
+                oss.str(""); oss.clear();
+                oss << std::fixed << std::showpoint << std::setprecision(3) << ((duration - _inputParams.offset).count() / float{ 1'000 });;
+                args.emplace_back(oss.str());
+            }
         }
 
         // Input file
         args.emplace_back("-i");
-        args.emplace_back(_inputParams.filePath.string());
+        args.emplace_back(inputFile);
 
         if (_outputParams.stripMetadata)
         {

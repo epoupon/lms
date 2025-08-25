@@ -93,6 +93,10 @@ namespace lms::ui
             {
                 _os << error.path << ": " << Wt::WString::tr("Lms.Admin.ScannerController.playlist-all-pathes-missing").toUTF8() << '\n';
             }
+            void visit(const scanner::CueFileError& error) override
+            {
+                _os << error.path << ": " << error.whatWentWrong << '\n';
+            }
 
             std::ostream& _os;
         };
@@ -161,6 +165,8 @@ namespace lms::ui
             return Wt::WString::tr("Lms.Admin.ScannerController.same-hash");
         case scanner::DuplicateReason::SameTrackMBID:
             return Wt::WString::tr("Lms.Admin.ScannerController.same-mbid");
+        case scanner::DuplicateReason::OldCueTrack:
+            return "OLD CUE TRACK";
         }
         return "?";
     }
