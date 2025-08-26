@@ -24,6 +24,7 @@
 #include "core/FileResourceHandlerCreator.hpp"
 #include "core/ILogger.hpp"
 #include "core/IResourceHandler.hpp"
+#include "core/PseudoProtocols.hpp"
 #include "core/String.hpp"
 #include "core/Utils.hpp"
 #include "database/Session.hpp"
@@ -149,10 +150,13 @@ namespace lms::api::subsonic
             parameters.estimateContentLength = estimateContentLength;
             parameters.trackPath = track->getAbsoluteFilePath();
 
+            std::optional<transcoding::OutputFormat> requestedFormat{ subsonicStreamFormatToAvOutputFormat(format) };
+            std::size_t bitrate{};
+            if (!core::track_on.matches(track->getAbsoluteFilePath())) {
+
             if (format == "raw") // raw => no transcoding
                 return parameters;
 
-            std::optional<transcoding::OutputFormat> requestedFormat{ subsonicStreamFormatToAvOutputFormat(format) };
             if (!requestedFormat)
             {
                 if (context.user->getSubsonicEnableTranscodingByDefault())
@@ -168,7 +172,6 @@ namespace lms::api::subsonic
             // scan the file to check if its format is compatible with the actual requested format
             //  same codec => apply max bitrate
             //  otherwise => apply default bitrate (because we can't really compare bitrates between formats) + max bitrate)
-            std::size_t bitrate{};
             if (requestedFormat && isOutputFormatCompatible(track->getAbsoluteFilePath(), *requestedFormat))
             {
                 if (maxBitRate == 0 || track->getBitrate() <= maxBitRate)
@@ -177,6 +180,8 @@ namespace lms::api::subsonic
                     return parameters; // no transcoding needed
                 }
                 bitrate = maxBitRate;
+            }
+
             }
 
             // Need to transcode here
