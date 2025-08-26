@@ -165,8 +165,6 @@ namespace lms::ui
             return Wt::WString::tr("Lms.Admin.ScannerController.same-hash");
         case scanner::DuplicateReason::SameTrackMBID:
             return Wt::WString::tr("Lms.Admin.ScannerController.same-mbid");
-        case scanner::DuplicateReason::OldCueTrack:
-            return "OLD CUE TRACK";
         }
         return "?";
     }
