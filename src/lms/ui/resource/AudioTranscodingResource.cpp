@@ -27,6 +27,7 @@
 #include "core/IResourceHandler.hpp"
 #include "core/Service.hpp"
 #include "core/String.hpp"
+#include "core/PseudoProtocols.hpp"
 
 #include "audio/AudioProperties.hpp"
 #include "audio/Exception.hpp"
@@ -83,7 +84,23 @@ namespace lms::ui
                 parseOptions.audioPropertiesReadStyle = audio::AudioFileInfoParseOptions::AudioPropertiesReadStyle::Average;
                 parseOptions.readImages = false;
                 parseOptions.readTags = false;
-                const auto audioFile{ parser->parse(trackPath, parseOptions) };
+
+                const auto filePath = [&trackPath] () {
+                    if (!core::track_on.matches(trackPath)) {
+                        return trackPath;
+                    }
+
+                    const auto parsed = core::track_on.parseUri(trackPath);
+                    if (const auto* err = std::get_if<std::string>(&parsed); err) {
+                        LMS_LOG(UI, ERROR, "Cannot decode path " << trackPath);
+                        return trackPath;
+                    }
+
+                    const auto& res = std::get<core::TrackOn::DecipheredURI>(parsed);
+                    return res.path;
+                } ();
+
+                const auto audioFile{ parser->parse(filePath, parseOptions) };
 
                 if (const audio::AudioProperties * properties{ audioFile->getAudioProperties() })
                     res = *properties;
