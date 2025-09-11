@@ -10,7 +10,7 @@ jobs:
       with:
         usesh: true
         prepare: |
-          pkg install -y cmake pkgconf boost-libs ffmpeg stb libconfig taglib libarchive xxhash wt googletest
+          pkg install -y cmake pkgconf boost-libs ffmpeg stb libconfig taglib libarchive xxhash wt googletest pugixml
 
         run: |
           mkdir build
