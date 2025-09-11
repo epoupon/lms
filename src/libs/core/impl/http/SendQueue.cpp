@@ -19,16 +19,19 @@
 
 #include "SendQueue.hpp"
 
+#include <latch>
+
 #include <boost/asio/bind_executor.hpp>
 #include <boost/asio/dispatch.hpp>
 #include <boost/asio/post.hpp>
+#include <boost/asio/ssl/error.hpp>
 
 #include "core/Exception.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 #include "core/String.hpp"
 
-#define LOG(sev, message) LMS_LOG(SCROBBLING, sev, "[Http SendQueue] - " << message)
+#define LOG(sev, message) LMS_LOG(HTTP, sev, "[Http SendQueue] - " << message)
 
 namespace lms::core::stringUtils
 {
@@ -63,7 +66,21 @@ namespace lms::core::http
     SendQueue::SendQueue(boost::asio::io_context& ioContext, std::string_view baseUrl)
         : _ioContext{ ioContext }
         , _baseUrl{ baseUrl }
+        , _abortAllRequests{ false }
+        , _state{ State::Idle }
+        , _client{ _ioContext }
     {
+        _client.setFollowRedirect(true);
+        _client.setTimeout(std::chrono::seconds{ 5 });
+
+        // not very efficient (response bodies are copied for each callback), but Wt's code already makes copies anyway
+
+        _client.bodyDataReceived().connect([this](const std::string& data) {
+            boost::asio::post(boost::asio::bind_executor(_strand, [this, data] {
+                onClientBodyDataReceived(data);
+            }));
+        });
+
         _client.done().connect([this](Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg) {
             boost::asio::post(boost::asio::bind_executor(_strand, [this, ec, msg = std::move(msg)] {
                 onClientDone(ec, msg);
@@ -73,12 +90,60 @@ namespace lms::core::http
 
     SendQueue::~SendQueue()
     {
-        _client.abort();
+        abortAllRequests();
+    }
+
+    void SendQueue::abortAllRequests()
+    {
+        LOG(DEBUG, "Aborting all requests...");
+
+        assert(!_abortAllRequests);
+        _abortAllRequests = true;
+
+        std::latch abortLatch{ 1 };
+
+        boost::asio::post(boost::asio::bind_executor(_strand, [this, &abortLatch] {
+            for (auto& [prio, requests] : _sendQueue)
+            {
+                while (!requests.empty())
+                {
+                    std::unique_ptr<ClientRequest> request{ std::move(requests.front()) };
+                    requests.pop_front();
+                    if (request->getParameters().onAbortFunc)
+                        request->getParameters().onAbortFunc();
+                }
+            }
+
+            if (_state == State::Throttled)
+                _throttleTimer.cancel();
+            else if (_state == State::Sending)
+                _client.abort();
+
+            abortLatch.count_down();
+        }));
+
+        abortLatch.wait();
+
+        while (_state != State::Idle)
+            std::this_thread::yield();
+
+        _abortAllRequests = false;
+
+        LOG(DEBUG, "All requests aborted!");
     }
 
     void SendQueue::sendRequest(std::unique_ptr<ClientRequest> request)
     {
-        boost::asio::dispatch(_strand, [this, request = std::move(request)]() mutable {
+        boost::asio::post(_strand, [this, request = std::move(request)]() mutable {
+            if (_abortAllRequests)
+            {
+                LOG(DEBUG, "Not posting request because abortAllRequests() in progress");
+                if (request->getParameters().onAbortFunc)
+                    request->getParameters().onAbortFunc();
+
+                return;
+            }
+
             _sendQueue[request->getParameters().priority].emplace_back(std::move(request));
 
             if (_state == State::Idle)
@@ -88,7 +153,7 @@ namespace lms::core::http
 
     void SendQueue::sendNextQueuedRequest()
     {
-        assert(_state == State::Idle);
+        assert(_strand.running_in_this_thread());
         assert(!_currentRequest);
 
         for (auto& [prio, requests] : _sendQueue)
@@ -100,21 +165,33 @@ namespace lms::core::http
                 requests.pop_front();
 
                 if (!sendRequest(*request))
+                {
+                    if (request->getParameters().onFailureFunc)
+                        request->getParameters().onFailureFunc();
                     continue;
+                }
 
-                _state = State::Sending;
+                setState(State::Sending);
                 _currentRequest = std::move(request);
                 return;
             }
         }
+
+        setState(State::Idle);
     }
 
     bool SendQueue::sendRequest(const ClientRequest& request)
     {
+        assert(_strand.running_in_this_thread());
+
+        constexpr std::size_t bufferedResponseMaxSize{ std::size_t{ 256 } * 1024 };
+
         LMS_SCOPED_TRACE_DETAILED("SendQueue", "SendRequest");
 
-        std::string url{ _baseUrl + request.getParameters().relativeUrl };
-        LOG(DEBUG, "Sending request to url '" << url << "'");
+        const std::string url{ _baseUrl + request.getParameters().relativeUrl };
+        LOG(DEBUG, "Sending " << (request.getType() == ClientRequest::Type::GET ? "GET" : "POST") << " request to url '" << url << "'");
+
+        _client.setMaximumResponseSize(request.getParameters().onChunkReceived ? 0 : bufferedResponseMaxSize);
 
         bool res{};
         switch (request.getType())
@@ -134,29 +211,50 @@ namespace lms::core::http
         return res;
     }
 
+    void SendQueue::onClientBodyDataReceived(const std::string& data)
+    {
+        assert(_strand.running_in_this_thread());
+        assert(_currentRequest);
+
+        if (_currentRequest->getParameters().onChunkReceived)
+        {
+            const auto byteSpan{ std::as_bytes(std::span{ data.data(), data.size() }) };
+            if (_currentRequest->getParameters().onChunkReceived(byteSpan) == ClientRequestParameters::ChunckReceivedResult::Abort)
+                _client.abort();
+        }
+    }
+
     void SendQueue::onClientDone(Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg)
     {
         LMS_SCOPED_TRACE_DETAILED("SendQueue", "OnClientDone");
 
-        if (ec == boost::asio::error::operation_aborted)
-        {
-            LOG(DEBUG, "Client aborted");
-            return;
-        }
-
         assert(_currentRequest);
-        _state = State::Idle;
 
-        LOG(DEBUG, "Client done. status = " << msg.status());
-        if (ec)
+        LOG(DEBUG, "Client done. ec = " << ec.category().name() << " - " << ec.message() << " (" << ec.value() << "), status = " << msg.status());
+
+        if (_abortAllRequests || ec == boost::asio::error::operation_aborted)
+            onClientAborted(std::move(_currentRequest));
+        else if (ec && (ec != boost::asio::ssl::error::stream_truncated))
             onClientDoneError(std::move(_currentRequest), ec);
         else
             onClientDoneSuccess(std::move(_currentRequest), msg);
     }
 
+    void SendQueue::onClientAborted(std::unique_ptr<ClientRequest> request)
+    {
+        assert(_strand.running_in_this_thread());
+
+        if (request->getParameters().onAbortFunc)
+            request->getParameters().onAbortFunc();
+
+        sendNextQueuedRequest();
+    }
+
     void SendQueue::onClientDoneError(std::unique_ptr<ClientRequest> request, Wt::AsioWrapper::error_code ec)
     {
-        LOG(ERROR, "Retry " << request->retryCount << ", client error: '" << ec.message() << "'");
+        assert(_strand.running_in_this_thread());
+
+        LOG(WARNING, "Retry " << request->retryCount << ", client error: '" << ec.message() << "'");
 
         // may be a network error, try again later
         throttle(_defaultRetryWaitDuration);
@@ -196,42 +294,48 @@ namespace lms::core::http
             if (msg.status() == 200)
             {
                 if (requestParameters.onSuccessFunc)
-                    requestParameters.onSuccessFunc(msg.body());
+                    requestParameters.onSuccessFunc(msg);
             }
             else
             {
-                LOG(ERROR, "Send error: '" << msg.body() << "'");
+                LOG(ERROR, "Send error, status = " << msg.status() << ", body = '" << msg.body() << "'");
                 if (requestParameters.onFailureFunc)
                     requestParameters.onFailureFunc();
             }
         }
 
-        if (_state == State::Idle)
+        if (_state != State::Throttled)
             sendNextQueuedRequest();
     }
 
     void SendQueue::throttle(std::chrono::seconds requestedDuration)
     {
-        assert(_state == State::Idle);
-
         const std::chrono::seconds duration{ clamp(requestedDuration, _minRetryWaitDuration, _maxRetryWaitDuration) };
         LOG(DEBUG, "Throttling for " << duration.count() << " seconds");
 
         _throttleTimer.expires_after(duration);
         _throttleTimer.async_wait([this](const boost::system::error_code& ec) {
             if (ec == boost::asio::error::operation_aborted)
-            {
                 LOG(DEBUG, "Throttle aborted");
-                return;
-            }
             else if (ec)
-            {
                 throw LmsException{ "Throttle timer failure: " + std::string{ ec.message() } };
-            }
 
-            _state = State::Idle;
-            sendNextQueuedRequest();
+            setState(State::Idle);
+            if (!ec)
+                sendNextQueuedRequest();
         });
-        _state = State::Throttled;
+
+        setState(State::Throttled);
+    }
+
+    void SendQueue::setState(State state)
+    {
+        assert(_strand.running_in_this_thread());
+        if (_state != state)
+        {
+            LOG(DEBUG, "Changing state to " << (state == State::Idle ? "Idle" : state == State::Sending ? "Sending" :
+                                                                                                          "Throttled"));
+            _state = state;
+        }
     }
 } // namespace lms::core::http

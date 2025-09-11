@@ -59,6 +59,8 @@ namespace lms::core::logging
             return "MAIN";
         case Module::METADATA:
             return "METADATA";
+        case Module::PODCAST:
+            return "PODCAST";
         case Module::REMOTE:
             return "REMOTE";
         case Module::SCROBBLING:

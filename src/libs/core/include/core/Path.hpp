@@ -24,14 +24,8 @@
 #include <string>
 #include <string_view>
 
-#include <Wt/WDateTime.h>
-
 namespace lms::core::pathUtils
 {
-    // Make sure the given path is a directory
-    // Create it if needed
-    bool ensureDirectory(const std::filesystem::path& dir);
-
     // Check if file's extension is one of provided extensions
     bool hasFileAnyExtension(const std::filesystem::path& file, std::span<const std::filesystem::path> extensions);
 

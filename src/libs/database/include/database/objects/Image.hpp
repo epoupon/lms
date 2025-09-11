@@ -85,6 +85,7 @@ namespace lms::db
         std::size_t getFileSize() const { return _fileSize; }
         std::size_t getWidth() const { return _width; }
         std::size_t getHeight() const { return _height; }
+        std::string_view getMimeType() const { return _mimeType; }
 
         // setters
         void setAbsoluteFilePath(const std::filesystem::path& p);
@@ -92,6 +93,7 @@ namespace lms::db
         void setFileSize(std::size_t fileSize) { _fileSize = fileSize; }
         void setWidth(std::size_t width) { _width = width; }
         void setHeight(std::size_t height) { _height = height; }
+        void setMimeType(std::string_view mimeType) { _mimeType = mimeType; }
         void setDirectory(const ObjectPtr<Directory>& directory) { _directory = getDboPtr(directory); }
 
         template<class Action>
@@ -104,6 +106,7 @@ namespace lms::db
 
             Wt::Dbo::field(a, _width, "width");
             Wt::Dbo::field(a, _height, "height");
+            Wt::Dbo::field(a, _mimeType, "mime_type");
 
             Wt::Dbo::belongsTo(a, _directory, "directory", Wt::Dbo::OnDeleteCascade);
         }
@@ -119,6 +122,7 @@ namespace lms::db
         int _fileSize{};
         int _width{};
         int _height{};
+        std::string _mimeType;
 
         Wt::Dbo::ptr<Directory> _directory;
     };

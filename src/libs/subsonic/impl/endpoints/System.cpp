@@ -47,6 +47,12 @@ namespace lms::api::subsonic
             apiKeyAuthentication.addArrayValue("versions", 1);
         }
 
+        {
+            Response::Node& apiKeyAuthentication{ response.createArrayNode("openSubsonicExtensions") };
+            apiKeyAuthentication.setAttribute("name", "getPodcastEpisode");
+            apiKeyAuthentication.addArrayValue("versions", 1);
+        }
+
         return response;
     };
 } // namespace lms::api::subsonic

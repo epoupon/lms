@@ -27,6 +27,8 @@
 
 namespace lms::core::http
 {
+    // Very simple http client, will handle all requests sequentially.
+    // User callbacks are dispatched within a strand.
     class IClient
     {
     public:
@@ -34,6 +36,8 @@ namespace lms::core::http
 
         virtual void sendGETRequest(ClientGETRequestParameters&& request) = 0;
         virtual void sendPOSTRequest(ClientPOSTRequestParameters&& request) = 0;
+
+        virtual void abortAllRequests() = 0;
     };
 
     std::unique_ptr<IClient> createClient(boost::asio::io_context& ioContext, std::string_view baseUrl);

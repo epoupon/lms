@@ -62,6 +62,7 @@ The following extra fields are implemented:
 
 ## Supported extensions
 * [API Key Authentication](https://opensubsonic.netlify.app/docs/extensions/apikeyauth/)
+* [getPodcastEpisode](https://opensubsonic.netlify.app/docs/extensions/getpodcastepisode/)
 * [HTTP form POST](https://opensubsonic.netlify.app/docs/extensions/formpost/)
 * [Transcode offset](https://opensubsonic.netlify.app/docs/extensions/transcodeoffset/)
 * [Song Lyrics](https://opensubsonic.netlify.app/docs/extensions/songlyrics/)

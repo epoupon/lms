@@ -30,6 +30,7 @@ namespace lms::scanner
         , _db{ initParams.db }
         , _jobScheduler{ initParams.jobScheduler }
         , _fileScanners(initParams.fileScanners)
+        , _cachePath{ initParams.cachePath }
         , _lastScanSettings{ initParams.lastScanSettings }
     {
     }

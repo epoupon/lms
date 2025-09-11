@@ -74,6 +74,7 @@ target_link_libraries(lms PRIVATE
 	lmsrecommendation
 	lmsscanner
 	lmsscrobbling
+	lmspodcast
 	lmsartwork
 	lmssubsonic
 	lmstranscoding

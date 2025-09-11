@@ -21,6 +21,7 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
 * ReplayGain support
 * Audio transcoding for compatibility and reduced bandwidth
 * User management, with several [authentication backends](INSTALL.md#authentication-backend)
+* Podcasts support
 * Playlists support
 * Lyrics support
 

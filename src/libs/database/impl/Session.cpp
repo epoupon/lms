@@ -36,6 +36,8 @@
 #include "database/objects/Medium.hpp"
 #include "database/objects/PlayListFile.hpp"
 #include "database/objects/PlayQueue.hpp"
+#include "database/objects/Podcast.hpp"
+#include "database/objects/PodcastEpisode.hpp"
 #include "database/objects/RatedArtist.hpp"
 #include "database/objects/RatedRelease.hpp"
 #include "database/objects/RatedTrack.hpp"
@@ -86,6 +88,8 @@ namespace lms::db
         _session.mapClass<Medium>("medium");
         _session.mapClass<PlayListFile>("playlist_file");
         _session.mapClass<PlayQueue>("playqueue");
+        _session.mapClass<Podcast>("podcast");
+        _session.mapClass<PodcastEpisode>("podcast_episode");
         _session.mapClass<RatedArtist>("rated_artist");
         _session.mapClass<RatedRelease>("rated_release");
         _session.mapClass<RatedTrack>("rated_track");

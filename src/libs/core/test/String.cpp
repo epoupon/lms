@@ -338,6 +338,20 @@ namespace lms::core::stringUtils::tests
         EXPECT_EQ(fromISO8601String(""), Wt::WDateTime{});
     }
 
+    TEST(Stringutils, DateTimeFromRFC822String)
+    {
+        EXPECT_EQ(fromRFC822String(""), Wt::WDateTime{});
+        EXPECT_EQ(fromRFC822String("Mon, 3 Jan 2020 09:08:11 UT"), (Wt::WDateTime{ Wt::WDate{ 2020, 01, 03 }, Wt::WTime{ 9, 8, 11, 0 } }));
+        EXPECT_EQ(fromRFC822String("3 Jan 2020 09:08:11 UT"), (Wt::WDateTime{ Wt::WDate{ 2020, 01, 03 }, Wt::WTime{ 9, 8, 11, 0 } }));
+        EXPECT_EQ(fromRFC822String("3 Jan 2020 09:08:11 +0200"), (Wt::WDateTime{ Wt::WDate{ 2020, 01, 03 }, Wt::WTime{ 11, 8, 11, 0 } }));
+        EXPECT_EQ(fromRFC822String("3 Jan 2020 09:08 +0200"), (Wt::WDateTime{ Wt::WDate{ 2020, 01, 03 }, Wt::WTime{ 11, 8, 00, 0 } }));
+        EXPECT_EQ(fromRFC822String("3 Jan 2020 09:08:11 -0200"), (Wt::WDateTime{ Wt::WDate{ 2020, 01, 03 }, Wt::WTime{ 7, 8, 11, 0 } }));
+        EXPECT_EQ(fromRFC822String("3 Jan 2020 01:08:11 -0200"), (Wt::WDateTime{ Wt::WDate{ 2020, 01, 02 }, Wt::WTime{ 23, 8, 11, 0 } }));
+        EXPECT_EQ(fromRFC822String("3 Jan 2020 01:08:11 -0230"), (Wt::WDateTime{ Wt::WDate{ 2020, 01, 02 }, Wt::WTime{ 22, 38, 11, 0 } }));
+        EXPECT_EQ(fromRFC822String("3 Jan 2020 10:08:11 CST"), (Wt::WDateTime{ Wt::WDate{ 2020, 01, 03 }, Wt::WTime{ 04, 8, 11, 0 } }));
+        EXPECT_EQ(fromRFC822String("Sat, 09 Aug 2025 21:34:32 +0200"), (Wt::WDateTime{ Wt::WDate{ 2025, 8, 9 }, Wt::WTime{ 23, 34, 32 } }));
+    }
+
     TEST(StringUtils, stringEndsWith)
     {
         EXPECT_TRUE(stringEndsWith("FooBar", "Bar"));
@@ -360,5 +374,21 @@ namespace lms::core::stringUtils::tests
         EXPECT_TRUE(stringCaseInsensitiveContains("FooBar", ""));
         EXPECT_TRUE(stringCaseInsensitiveContains("", ""));
         EXPECT_FALSE(stringCaseInsensitiveContains("", "Foo"));
+    }
+
+    TEST(StringUtils, toHexString)
+    {
+        EXPECT_EQ(toHexString(""), "");
+        EXPECT_EQ(toHexString("123"), "313233");
+        EXPECT_EQ(toHexString("1234"), "31323334");
+        EXPECT_EQ(toHexString("12345"), "3132333435");
+        EXPECT_EQ(toHexString("Test"), "54657374");
+
+        // test back stringFromHex
+        EXPECT_EQ(stringFromHex(""), "");
+        EXPECT_EQ(stringFromHex("313233"), "123");
+        EXPECT_EQ(stringFromHex("31323334"), "1234");
+        EXPECT_EQ(stringFromHex("3132333435"), "12345");
+        EXPECT_EQ(stringFromHex("54657374"), "Test");
     }
 } // namespace lms::core::stringUtils::tests

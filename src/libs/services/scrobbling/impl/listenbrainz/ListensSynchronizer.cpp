@@ -27,7 +27,6 @@
 #include <boost/asio/bind_executor.hpp>
 #include <boost/asio/post.hpp>
 
-#include "ListensParser.hpp"
 #include "core/IConfig.hpp"
 #include "core/Service.hpp"
 #include "core/http/IClient.hpp"
@@ -40,6 +39,7 @@
 #include "database/objects/User.hpp"
 #include "services/scrobbling/Exception.hpp"
 
+#include "ListensParser.hpp"
 #include "Utils.hpp"
 
 namespace lms::scrobbling::listenBrainz
@@ -246,7 +246,7 @@ namespace lms::scrobbling::listenBrainz
             saveListen(timedListen, db::SyncState::PendingAdd);
 
             request.priority = core::http::ClientRequestParameters::Priority::Normal;
-            request.onSuccessFunc = [this, timedListen](std::string_view) {
+            request.onSuccessFunc = [this, timedListen](const Wt::Http::Message&) {
                 boost::asio::post(boost::asio::bind_executor(_strand, [this, timedListen] {
                     if (saveListen(timedListen, db::SyncState::Synchronized))
                     {
@@ -456,8 +456,8 @@ namespace lms::scrobbling::listenBrainz
         request.priority = core::http::ClientRequestParameters::Priority::Low;
         request.relativeUrl = "/1/validate-token";
         request.headers = { { "Authorization", "Token " + std::string{ listenBrainzToken->getAsString() } } };
-        request.onSuccessFunc = [this, &context](std::string_view msgBody) {
-            context.listenBrainzUserName = utils::parseValidateToken(msgBody);
+        request.onSuccessFunc = [this, &context](const Wt::Http::Message& msg) {
+            context.listenBrainzUserName = utils::parseValidateToken(msg.body());
             if (context.listenBrainzUserName.empty())
             {
                 onSyncEnded(context);
@@ -479,8 +479,8 @@ namespace lms::scrobbling::listenBrainz
         core::http::ClientGETRequestParameters request;
         request.relativeUrl = "/1/user/" + std::string{ context.listenBrainzUserName } + "/listen-count";
         request.priority = core::http::ClientRequestParameters::Priority::Low;
-        request.onSuccessFunc = [this, &context](std::string_view msgBody) {
-            const auto listenCount{ parseListenCount(msgBody) };
+        request.onSuccessFunc = [this, &context](const Wt::Http::Message& msg) {
+            const auto listenCount{ parseListenCount(msg.body()) };
             boost::asio::post(boost::asio::bind_executor(_strand, [this, listenCount, &context] {
                 if (listenCount)
                     LOG(DEBUG, "Listen count for listenbrainz user '" << context.listenBrainzUserName << "' = " << *listenCount);
@@ -512,8 +512,8 @@ namespace lms::scrobbling::listenBrainz
         core::http::ClientGETRequestParameters request;
         request.relativeUrl = "/1/user/" + context.listenBrainzUserName + "/listens?max_ts=" + std::to_string(context.maxDateTime.toTime_t());
         request.priority = core::http::ClientRequestParameters::Priority::Low;
-        request.onSuccessFunc = [this, &context](std::string_view msgBody) {
-            processGetListensResponse(msgBody, context);
+        request.onSuccessFunc = [this, &context](const Wt::Http::Message& msg) {
+            processGetListensResponse(msg.body(), context);
             if (context.fetchedListenCount >= _maxSyncListenCount || !context.maxDateTime.isValid())
             {
                 onSyncEnded(context);

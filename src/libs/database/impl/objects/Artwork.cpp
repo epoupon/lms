@@ -80,6 +80,18 @@ namespace lms::db
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Artwork>>("SELECT a FROM artwork a").where("a.image_id = ?").bind(id));
     }
 
+    Artwork::UnderlyingId Artwork::getUnderlyingId() const
+    {
+        Artwork::UnderlyingId res;
+
+        if (const TrackEmbeddedImageId id{ _trackEmbeddedImage.id() }; id.isValid())
+            res = id;
+        else if (const ImageId id{ _image.id() }; id.isValid())
+            res = id;
+
+        return res;
+    }
+
     Wt::WDateTime Artwork::getLastWrittenTime() const
     {
         auto query{ session()->query<Wt::WDateTime>("SELECT MAX(COALESCE(image.file_last_write, track.file_last_write)) AS last_written_datetime FROM artwork") };
@@ -103,5 +115,10 @@ namespace lms::db
         query.where("artwork.id = ?").bind(getId());
 
         return utils::fetchQuerySingleResult(query);
+    }
+
+    ObjectPtr<Image> Artwork::getImage() const
+    {
+        return _image;
     }
 } // namespace lms::db

@@ -42,6 +42,7 @@
 #include "services/auth/IEnvService.hpp"
 #include "services/auth/IPasswordService.hpp"
 #include "services/feedback/IFeedbackService.hpp"
+#include "services/podcast/IPodcastService.hpp"
 #include "services/recommendation/IPlaylistGeneratorService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 #include "services/scanner/IScannerService.hpp"
@@ -337,8 +338,10 @@ namespace lms
                 LMS_LOG(MAIN, WARNING, "Cannot set locale from system");
 
             // Make sure the working directory exists
-            std::filesystem::create_directories(config->getPath("working-dir", "/var/lms"));
-            std::filesystem::create_directories(config->getPath("working-dir", "/var/lms") / "cache");
+            const std::filesystem::path workingDirectoryPath{ config->getPath("working-dir", "/var/lms") };
+            const std::filesystem::path cachePath{ workingDirectoryPath / "cache" };
+            std::filesystem::create_directories(workingDirectoryPath);
+            std::filesystem::create_directories(cachePath);
 
             // Construct WT configuration and get the argc/argv back
             const std::vector<std::string> wtServerArgs{ generateWtConfig(argv[0]) };
@@ -424,8 +427,9 @@ namespace lms
             core::Service<artwork::IArtworkService> artworkService{ artwork::createArtworkService(*database, server.appRoot() + "/images/unknown-cover.svg", server.appRoot() + "/images/unknown-artist.svg") };
             core::Service<recommendation::IRecommendationService> recommendationService{ recommendation::createRecommendationService(*database) };
             core::Service<recommendation::IPlaylistGeneratorService> playlistGeneratorService{ recommendation::createPlaylistGeneratorService(*database, *recommendationService) };
-            core::Service<scanner::IScannerService> scannerService{ scanner::createScannerService(*database) };
+            core::Service<scanner::IScannerService> scannerService{ scanner::createScannerService(*database, cachePath) };
             core::Service<transcoding::ITranscodingService> transcodingService{ transcoding::createTranscodingService(*database, *childProcessManagerService) };
+            core::Service<podcast::IPodcastService> podcastService{ podcast::createPodcastService(ioContext, *database, cachePath / "podcasts") };
 
             scannerService->getEvents().scanComplete.connect([&] {
                 // Flush cover cache even if no changes:

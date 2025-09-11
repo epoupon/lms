@@ -23,7 +23,6 @@
 #include "core/ILogger.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
-#include "database/objects/Track.hpp"
 
 #include "TranscodingResourceHandler.hpp"
 
@@ -64,20 +63,17 @@ namespace lms::transcoding
     {
         av::InputParameters avInputParams;
         std::optional<std::size_t> estimatedContentLength;
+
+        avInputParams.file = inputParameters.filePath;
+        avInputParams.offset = inputParameters.offset;
+        avInputParams.streamIndex = inputParameters.streamIndex;
+
+        if (estimateContentLength)
         {
-            auto& session{ _db.getTLSSession() };
-            auto transaction{ session.createReadTransaction() };
-
-            db::Track::pointer track{ db::Track::find(session, inputParameters.trackId) };
-            if (!track)
-                return nullptr;
-
-            avInputParams.file = track->getAbsoluteFilePath();
-            avInputParams.offset = inputParameters.offset;
-            avInputParams.streamIndex = inputParameters.streamIndex;
-
-            if (estimateContentLength)
-                estimatedContentLength = doEstimateContentLength(outputParameters.bitrate, track->getDuration());
+            if (inputParameters.offset < inputParameters.duration)
+                estimatedContentLength = doEstimateContentLength(outputParameters.bitrate, inputParameters.duration - inputParameters.offset);
+            else
+                LMS_LOG(TRANSCODING, WARNING, "Offset " << inputParameters.offset << " is greater than audio file duration " << inputParameters.duration << ": not estimating content length");
         }
 
         return std::make_unique<TranscodingResourceHandler>(avInputParams, toAv(outputParameters), estimatedContentLength);

@@ -20,6 +20,7 @@
 #pragma once
 
 #include <filesystem>
+#include <variant>
 
 #include <Wt/Dbo/Field.h>
 #include <Wt/WDateTime.h>
@@ -47,10 +48,11 @@ namespace lms::db
         static pointer find(Session& session, ImageId id);
 
         // getters
-        TrackEmbeddedImageId getTrackEmbeddedImageId() const { return _trackEmbeddedImage.id(); }
-        ImageId getImageId() const { return _image.id(); }
+        using UnderlyingId = std::variant<std::monostate, TrackEmbeddedImageId, ImageId>;
+        UnderlyingId getUnderlyingId() const;
         Wt::WDateTime getLastWrittenTime() const;
         std::filesystem::path getAbsoluteFilePath() const;
+        ObjectPtr<Image> getImage() const;
 
         template<class Action>
         void persist(Action& a)

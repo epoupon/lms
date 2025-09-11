@@ -141,7 +141,19 @@ namespace lms::ui
             // optional parameter
             std::size_t offset{ readParameterAs<std::size_t>(request, "offset").value_or(0) };
 
-            parameters.inputParameters.trackId = *trackId;
+            {
+                db::Session& session{ LmsApp->getDbSession() };
+
+                const auto transaction{ session.createReadTransaction() };
+
+                const db::Track::pointer track{ db::Track::find(session, *trackId) };
+                if (!track)
+                    return std::nullopt;
+
+                parameters.inputParameters.filePath = track->getAbsoluteFilePath();
+                parameters.inputParameters.duration = track->getDuration();
+            }
+
             parameters.inputParameters.offset = std::chrono::seconds{ offset };
             parameters.outputParameters.stripMetadata = true;
             parameters.outputParameters.format = *avFormat;

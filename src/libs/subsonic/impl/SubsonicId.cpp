@@ -19,8 +19,6 @@
 
 #include "SubsonicId.hpp"
 
-#include "core/String.hpp"
-
 namespace lms::api::subsonic
 {
     std::string idToString(db::ArtistId id)
@@ -31,6 +29,16 @@ namespace lms::api::subsonic
     std::string idToString(db::DirectoryId id)
     {
         return "dir-" + id.toString();
+    }
+
+    std::string idToString(db::PodcastEpisodeId id)
+    {
+        return "podep-" + id.toString();
+    }
+
+    std::string idToString(db::PodcastId id)
+    {
+        return "pod-" + id.toString();
     }
 
     std::string idToString(db::ReleaseId id)
@@ -88,6 +96,38 @@ namespace lms::core::stringUtils
     {
         if (const auto value{ core::stringUtils::readAs<db::MediaLibraryId::ValueType>(str) })
             return db::MediaLibraryId{ *value };
+
+        return std::nullopt;
+    }
+
+    template<>
+    std::optional<db::PodcastEpisodeId> readAs(std::string_view str)
+    {
+        std::vector<std::string_view> values{ core::stringUtils::splitString(str, '-') };
+        if (values.size() != 2)
+            return std::nullopt;
+
+        if (values[0] != "podep")
+            return std::nullopt;
+
+        if (const auto value{ core::stringUtils::readAs<db::PodcastEpisodeId::ValueType>(values[1]) })
+            return db::PodcastEpisodeId{ *value };
+
+        return std::nullopt;
+    }
+
+    template<>
+    std::optional<db::PodcastId> readAs(std::string_view str)
+    {
+        std::vector<std::string_view> values{ core::stringUtils::splitString(str, '-') };
+        if (values.size() != 2)
+            return std::nullopt;
+
+        if (values[0] != "pod")
+            return std::nullopt;
+
+        if (const auto value{ core::stringUtils::readAs<db::PodcastId::ValueType>(values[1]) })
+            return db::PodcastId{ *value };
 
         return std::nullopt;
     }

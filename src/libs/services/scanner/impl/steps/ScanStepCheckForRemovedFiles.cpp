@@ -63,6 +63,9 @@ namespace lms::scanner
             {
             }
 
+            CheckForRemovedFilesJob(const CheckForRemovedFilesJob&) = delete;
+            CheckForRemovedFilesJob& operator=(const CheckForRemovedFilesJob&) = delete;
+
             std::size_t getProcessedCount() const { return _processedCount; }
             std::span<const IdType> getObjectsToRemove() const { return _objectsToRemove; }
 
@@ -90,8 +93,7 @@ namespace lms::scanner
                     return false;
                 }
 
-                // For each track, make sure the the file still exists
-                // and still belongs to a media directory
+                // For file, make sure the the file still exists, is a regular file, is in a media directory and is of a supported format
                 if (!fileEntry.exists() || !fileEntry.is_regular_file())
                 {
                     LMS_LOG(DBUPDATER, DEBUG, "Removing " << p << ": missing");
@@ -151,7 +153,7 @@ namespace lms::scanner
         }
 
         template<typename Object>
-        bool fetchNextFilesToCheck(db::Session& session, typename Object::IdType& lastCheckedId, std::vector<FileToCheck<typename Object::IdType>>& filesToCheck)
+        bool fetchNextFilesToCheck(db::Session& session, typename Object::IdType& lastCheckedId, const std::filesystem::path& cachepath, std::vector<FileToCheck<typename Object::IdType>>& filesToCheck)
         {
             constexpr std::size_t batchSize{ 200 };
 
@@ -164,6 +166,10 @@ namespace lms::scanner
             {
                 const typename Object::IdType previousLastCheckedId{ lastCheckedId };
                 Object::findAbsoluteFilePath(session, lastCheckedId, batchSize, [&](Object::IdType objectId, const std::filesystem::path& filePath) {
+                    // Do not consider files in the cache directory as they are not managed by the scanner itself
+                    if (core::pathUtils::isPathInRootPath(filePath, cachepath))
+                        return;
+
                     // special case for track lyrics, only check external lyrics
                     if constexpr (std::is_same_v<Object, db::TrackLyrics>)
                     {
@@ -242,12 +248,11 @@ namespace lms::scanner
 
             ObjectIdType lastCheckedId;
             std::vector<FileToCheck<ObjectIdType>> filesToCheck;
-            while (fetchNextFilesToCheck<Object>(session, lastCheckedId, filesToCheck))
+            while (fetchNextFilesToCheck<Object>(session, lastCheckedId, getCachePath(), filesToCheck))
                 queue.push(std::make_unique<CheckForRemovedFilesJob<ObjectIdType>>(_settings, getFileScanners(), filesToCheck));
         }
 
         // process all remaining objects
         context.stats.deletions += removeObjects<Object>(session, objectIdsToRemove, false);
     }
-
 } // namespace lms::scanner

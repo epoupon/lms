@@ -46,6 +46,7 @@ target_include_directories(lmscore PRIVATE
 target_link_libraries(lmscore PRIVATE
 	PkgConfig::Config++
 	PkgConfig::Archive
+	OpenSSL::Crypto
 	)
 
 target_link_libraries(lmscore PUBLIC
