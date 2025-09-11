@@ -23,7 +23,7 @@
 
 namespace lms::db
 {
-    void ObjectPtrBase::checkWriteTransaction(Wt::Dbo::Session& session)
+    void ObjectPtrBase::checkWriteTransaction([[maybe_unused]] Wt::Dbo::Session& session)
     {
 #if LMS_CHECK_TRANSACTION_ACCESSES
         TransactionChecker::checkWriteTransaction(session);
