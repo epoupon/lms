@@ -56,7 +56,7 @@ namespace lms::podcast::utils
     db::Artwork::pointer createArtworkFromImage(db::Session& session, const std::filesystem::path& filePath, std::string_view mimeType)
     {
         std::error_code ec;
-        const std::size_t fileSize{ std::filesystem::file_size(filePath, ec) };
+        const auto fileSize{ std::filesystem::file_size(filePath, ec) };
         if (ec)
         {
             LMS_LOG(PODCAST, ERROR, "Failed to get file size of " << filePath << ": " << ec.message());
@@ -64,7 +64,7 @@ namespace lms::podcast::utils
         }
 
         db::Image::pointer image{ session.create<db::Image>(filePath) };
-        image.modify()->setFileSize(fileSize);
+        image.modify()->setFileSize(static_cast<std::size_t>(fileSize));
         if (const std::optional<image::ImageProperties> imageProperties{ probeImage(filePath) })
         {
             image.modify()->setWidth(imageProperties->width);
