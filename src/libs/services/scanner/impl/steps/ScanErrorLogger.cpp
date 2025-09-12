@@ -90,4 +90,9 @@ namespace lms::scanner
     {
         LMS_LOG(DBUPDATER, ERROR, "Failed to parse playlist " << error.path << ": all entries are missing");
     }
+
+    void ScanErrorLogger::visit(const CueFileError& error)
+    {
+        LMS_LOG(DBUPDATER, ERROR, "Failed to parse CUE file " << error.path << ": " << error.whatWentWrong);
+    }
 } // namespace lms::scanner

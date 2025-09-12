@@ -23,6 +23,7 @@
 #include <Wt/Dbo/WtSqlTraits.h>
 
 #include "core/ILogger.hpp"
+#include "core/PseudoProtocols.hpp"
 #include "database/Session.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
@@ -376,6 +377,49 @@ namespace lms::db
         return utils::execRangeQuery<TrackId>(query, range);
     }
 
+    RangeResults<TrackId> Track::findIdsOldTrackParts(Session& session, std::optional<Range> range)
+    {
+        session.checkReadTransaction();
+        // The horrible recursive clause is responsible for only removing the
+        // part after the _last_ '#' because no reverse-string in sqlite
+        // Also remove from the library bare files that have tracks that
+        // reference them
+        auto query{
+            session.getDboSession()->query<TrackId>(
+                R"sql(
+                SELECT track_base.id
+                FROM track track_base
+                WHERE (
+                    absolute_file_path LIKE 'track_on:/%'
+                    AND file_last_write < (
+                      SELECT MAX(file_last_write)
+                      FROM track
+                      WHERE absolute_file_path LIKE (
+                          WITH RECURSIVE parse(p) AS (
+                              SELECT track_base.absolute_file_path
+                              UNION ALL
+                              SELECT SUBSTR(p, INSTR(p, '#') + 1)
+                              FROM parse
+                              WHERE INSTR(p, '#')
+                          )
+                          SELECT SUBSTR(track_base.absolute_file_path, 0, length(track_base.absolute_file_path) - max(min(length(p)), 3) + 1) || '%'
+                          FROM parse
+                      )
+                    )
+                ) OR (
+                    track_base.absolute_file_path NOT LIKE 'track_on:/%'
+                    AND EXISTS (
+                        SELECT 1
+                        FROM track
+                        WHERE absolute_file_path LIKE ('track_on:' || track_base.absolute_file_path || '#%')
+                    )
+                )
+                )sql"
+            )
+        };
+        return utils::execRangeQuery<TrackId>(query, range);
+    }
+
     RangeResults<TrackId> Track::findIdsWithRecordingMBIDAndMissingFeatures(Session& session, std::optional<Range> range)
     {
         session.checkReadTransaction();
@@ -515,7 +559,7 @@ namespace lms::db
 
     void Track::setAbsoluteFilePath(const std::filesystem::path& filePath)
     {
-        assert(filePath.is_absolute());
+        assert(filePath.is_absolute() || core::track_on.matches(filePath));
         _absoluteFilePath = filePath;
     }
 

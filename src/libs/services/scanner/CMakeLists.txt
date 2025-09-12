@@ -2,8 +2,10 @@ add_library(lmsscanner STATIC
 	impl/helpers/ArtistHelpers.cpp
 	impl/scanners/ArtistInfoFileScanner.cpp
 	impl/scanners/AudioFileScanOperation.cpp
+    impl/scanners/CueFileScanOperation.cpp
 	impl/scanners/FileScanOperationBase.cpp
 	impl/scanners/AudioFileScanner.cpp
+    impl/scanners/CueFileScanner.cpp
 	impl/scanners/ImageFileScanner.cpp
 	impl/scanners/LyricsFileScanner.cpp
 	impl/scanners/PlayListFileScanner.cpp

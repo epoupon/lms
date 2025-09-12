@@ -38,6 +38,7 @@ namespace lms::scanner
     struct PlayListFileScanError;
     struct PlayListFilePathMissingError;
     struct PlayListFileAllPathesMissingError;
+    struct CueFileError;
 
     // Visitor interface
     struct ScanErrorVisitor
@@ -57,6 +58,7 @@ namespace lms::scanner
         virtual void visit(const PlayListFileScanError&) = 0;
         virtual void visit(const scanner::PlayListFilePathMissingError& error) = 0;
         virtual void visit(const scanner::PlayListFileAllPathesMissingError& error) = 0;
+        virtual void visit(const CueFileError& error) = 0;
     };
 
     struct ScanError
@@ -209,5 +211,21 @@ namespace lms::scanner
         {
             visitor.visit(*this);
         }
+    };
+
+    struct CueFileError : public ScanError
+    {
+        CueFileError(const std::filesystem::path& p, auto&&... args)
+            : ScanError{ p }
+            , whatWentWrong{ (std::stringstream{} << ... << std::forward<decltype(args)>(args)).str() }
+        {
+        }
+
+        void accept(ScanErrorVisitor& visitor) const override
+        {
+            visitor.visit(*this);
+        }
+
+        std::string whatWentWrong;
     };
 } // namespace lms::scanner

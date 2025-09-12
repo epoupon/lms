@@ -27,6 +27,7 @@
 #include "core/IJob.hpp"
 #include "core/ILogger.hpp"
 #include "core/Path.hpp"
+#include "core/PseudoProtocols.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/ArtistInfo.hpp"
@@ -79,8 +80,20 @@ namespace lms::scanner
                 _processedCount += _filesToCheck.size();
             }
 
-            bool checkFile(const std::filesystem::path& p)
+            bool checkFile(const std::filesystem::path& p_)
             {
+                auto p = p_;
+                if (core::track_on.matches(p)) {
+                    auto parsed = core::track_on.parseUri(p);
+
+                    if (const auto* err = std::get_if<std::string>(&parsed); err) {
+                        LMS_LOG(DBUPDATER, ERROR, "Path claims to be a track but: " << *err);
+                        return false;
+                    }
+
+                    p = std::move(std::get<core::TrackOn::DecipheredURI>(parsed).path);
+                }
+
                 std::error_code ec;
                 const std::filesystem::directory_entry fileEntry{ p, ec };
                 if (ec)
