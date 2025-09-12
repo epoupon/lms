@@ -79,6 +79,7 @@ namespace lms::metadata::taglib
             { TagType::Artist, { "ARTIST" } },
             { TagType::ArtistSortOrder, { "ARTISTSORT" } },
             { TagType::Artists, { "ARTISTS" } },
+            { TagType::ArtistsSortOrder, { "ARTISTSSORT" } },
             { TagType::ASIN, { "ASIN" } },
             { TagType::Barcode, { "BARCODE" } },
             { TagType::BPM, { "BPM" } },

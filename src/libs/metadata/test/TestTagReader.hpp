@@ -117,6 +117,7 @@ namespace lms::metadata::tests
                 { TagType::Artist, { "MyArtist1 & MyArtist2" } },
                 { TagType::Artists, { "MyArtist1", "MyArtist2" } },
                 { TagType::ArtistSortOrder, { "MyArtist1SortName", "MyArtist2SortName" } },
+                { TagType::ArtistsSortOrder, { "MyArtists1SortName", "MyArtists2SortName" } },
                 { TagType::AlbumArtist, { "MyAlbumArtist1 & MyAlbumArtist2" } },
                 { TagType::AlbumArtists, { "MyAlbumArtist1", "MyAlbumArtist2" } },
                 { TagType::AlbumArtistsSortOrder, { "MyAlbumArtist1SortName", "MyAlbumArtist2SortName" } },

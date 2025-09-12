@@ -61,10 +61,10 @@ namespace lms::metadata::tests
         EXPECT_EQ(track->artistDisplayName, "MyArtist1 & MyArtist2");
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "MyArtist1");
-        EXPECT_EQ(track->artists[0].sortName, "MyArtist1SortName");
+        EXPECT_EQ(track->artists[0].sortName, "MyArtists1SortName");
         EXPECT_EQ(track->artists[0].mbid, core::UUID::fromString("9d2e0c8c-8c5e-4372-a061-590955eaeaae"));
         EXPECT_EQ(track->artists[1].name, "MyArtist2");
-        EXPECT_EQ(track->artists[1].sortName, "MyArtist2SortName");
+        EXPECT_EQ(track->artists[1].sortName, "MyArtists2SortName");
         EXPECT_EQ(track->artists[1].mbid, core::UUID::fromString("5e2cf87f-c8d7-4504-8a86-954dc0840229"));
         ASSERT_EQ(track->comments.size(), 2);
         EXPECT_EQ(track->comments[0], "Comment1");
@@ -749,6 +749,52 @@ namespace lms::metadata::tests
         ASSERT_TRUE(track->medium.has_value());
         ASSERT_TRUE(track->medium->release.has_value());
         EXPECT_EQ(track->medium->release->sortName, "MyAlbum");
+    }
+
+    TEST(AudioFileParser, artist_sortNameFallback)
+    {
+        {
+            const TestTagReader testTags{
+                {
+                    { TagType::Artist, { "MyArtist" } },
+                    { TagType::ArtistSortOrder, { "MyArtistSortName" } },
+                    // No ArtistSortOrder
+                }
+            };
+            std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
+
+            ASSERT_EQ(track->artists.size(), 1);
+            EXPECT_EQ(track->artists[0].sortName, "MyArtistSortName");
+        }
+
+        {
+            const TestTagReader testTags{
+                {
+                    { TagType::Artist, { "MyArtist" } },
+                    { TagType::ArtistsSortOrder, { "MyArtistSortName" } },
+                    // No ArtistSortOrder
+                }
+            };
+            std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
+
+            ASSERT_EQ(track->artists.size(), 1);
+            EXPECT_EQ(track->artists[0].sortName, "MyArtistSortName");
+        }
+
+        {
+            const TestTagReader testTags{
+                {
+                    { TagType::Artist, { "MyArtist" } },
+                    { TagType::ArtistSortOrder, { "MyArtistSortNameNotUsed" } },
+                    { TagType::ArtistsSortOrder, { "MyArtistSortName" } },
+                    // No ArtistSortOrder
+                }
+            };
+            std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
+
+            ASSERT_EQ(track->artists.size(), 1);
+            EXPECT_EQ(track->artists[0].sortName, "MyArtistSortName");
+        }
     }
 
     TEST(AudioFileParser, advisory)

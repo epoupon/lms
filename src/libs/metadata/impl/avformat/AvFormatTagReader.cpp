@@ -44,6 +44,7 @@ namespace lms::metadata::avformat
             { TagType::Artist, { "ARTIST" } },
             { TagType::ArtistSortOrder, { "ARTISTSORT", "ARTIST-SORT", "WM/ARTISTSORTORDER" } },
             { TagType::Artists, { "ARTISTS", "WM/ARTISTS" } },
+            { TagType::ArtistsSortOrder, { "ARTISTSSORT", "ARTISTS-SORT", "WM/ARTISTSSORTORDER" } },
             { TagType::ASIN, { "ASIN" } },
             { TagType::Barcode, { "BARCODE", "WM/BARCODE" } },
             { TagType::BPM, { "BPM" } },

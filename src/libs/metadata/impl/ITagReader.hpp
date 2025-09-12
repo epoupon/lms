@@ -43,6 +43,7 @@ namespace lms::metadata
         Artist,
         ArtistSortOrder,
         Artists,
+        ArtistsSortOrder, // non standard
         ASIN,
         Barcode,
         BPM,
