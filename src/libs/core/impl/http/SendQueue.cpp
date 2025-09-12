@@ -184,14 +184,12 @@ namespace lms::core::http
     {
         assert(_strand.running_in_this_thread());
 
-        constexpr std::size_t bufferedResponseMaxSize{ std::size_t{ 256 } * 1024 };
-
         LMS_SCOPED_TRACE_DETAILED("SendQueue", "SendRequest");
 
         const std::string url{ _baseUrl + request.getParameters().relativeUrl };
         LOG(DEBUG, "Sending " << (request.getType() == ClientRequest::Type::GET ? "GET" : "POST") << " request to url '" << url << "'");
 
-        _client.setMaximumResponseSize(request.getParameters().onChunkReceived ? 0 : bufferedResponseMaxSize);
+        _client.setMaximumResponseSize(request.getParameters().onChunkReceived ? 0 : request.getParameters().responseBufferSize);
 
         bool res{};
         switch (request.getType())

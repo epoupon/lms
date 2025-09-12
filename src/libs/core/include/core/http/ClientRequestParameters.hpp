@@ -38,7 +38,8 @@ namespace lms::core::http
         };
 
         Priority priority{ Priority::Normal };
-        std::string relativeUrl; // relative to baseUrl used by the client
+        std::string relativeUrl;                            // relative to baseUrl used by the client
+        std::size_t responseBufferSize{ 10 * 1024 * 1024 }; // only used if onChunkReceived is not set
 
         // If `onChunkReceived` is set, the response will be streamed in chunks.
         // In that case, `onSuccessFunc` is still called at the end (with an empty msgBody).

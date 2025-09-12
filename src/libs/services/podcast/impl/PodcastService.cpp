@@ -269,7 +269,8 @@ namespace lms::podcast
 
     void PodcastService::onCurrentStepDone(bool success)
     {
-        LMS_LOG(PODCAST, DEBUG, "Step '" << _refreshSteps[_refreshStepIndex]->getName() << "' done: " << (success ? "success" : "failure"));
+        LMS_LOG(PODCAST, DEBUG, "Step '" << _refreshSteps[_refreshStepIndex]->getName() << "' done: " << (success ? "success" : _abortRequested ? "aborted" :
+                                                                                                                                                  "failure"));
 
         if (success && !_abortRequested)
             runNextStep();

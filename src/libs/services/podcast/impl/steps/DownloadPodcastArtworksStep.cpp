@@ -109,51 +109,37 @@ namespace lms::podcast
         }
 
         const std::string url{ podcast->getImageUrl() };
-        const std::string randomName{ utils::generateRandomFileName() };
-        const std::filesystem::path tmpFilePath{ getTmpCachePath() / randomName };
-        const std::filesystem::path finalFilePath{ getCachePath() / randomName };
+        const std::filesystem::path finalFilePath{ getCachePath() / utils::generateRandomFileName() };
 
         core::http::ClientGETRequestParameters params;
         params.relativeUrl = podcast->getImageUrl();
-        params.onChunkReceived = [url, tmpFilePath, this](std::span<const std::byte> chunk) {
-            if (abortRequested())
-                return core::http::ClientGETRequestParameters::ChunckReceivedResult::Abort;
-
-            std::ofstream file{ tmpFilePath, std::ios::binary | std::ios::app };
-            if (!file)
-            {
-                std::error_code ec{ errno, std::generic_category() };
-                LMS_LOG(PODCAST, ERROR, "Failed to open file " << tmpFilePath << " for writing: " << ec.message());
-                return core::http::ClientGETRequestParameters::ChunckReceivedResult::Abort;
-            }
-
-            file.write(reinterpret_cast<const char*>(chunk.data()), chunk.size());
-            if (!file)
-            {
-                std::error_code ec{ errno, std::generic_category() };
-                LMS_LOG(PODCAST, ERROR, "Failed to write to file " << tmpFilePath << ": " << ec.message());
-                return core::http::ClientGETRequestParameters::ChunckReceivedResult::Abort;
-            }
-
-            return core::http::ClientGETRequestParameters::ChunckReceivedResult::Continue;
-        };
         params.onFailureFunc = [this, podcast] {
             LMS_LOG(PODCAST, ERROR, "Failed to download podcast image from '" << podcast->getImageUrl() << "'");
             processNext();
         };
         params.onSuccessFunc = [=, this](const Wt::Http::Message& msg) {
-            std::error_code ec;
-            std::filesystem::rename(tmpFilePath, finalFilePath, ec);
-            if (ec)
+            const std::string body{ msg.body() }; // API enforces a copy here
+
+            std::ofstream file{ finalFilePath, std::ios::binary | std::ios::app };
+            if (!file)
             {
-                LMS_LOG(PODCAST, ERROR, "Failed to rename tmp podcast artwork file " << tmpFilePath << " to final location " << finalFilePath << ": " << ec.message());
+                std::error_code ec{ errno, std::generic_category() };
+                LMS_LOG(PODCAST, ERROR, "Failed to open file " << finalFilePath << " for writing: " << ec.message());
+                processNext();
+                return;
+            }
+
+            file.write(body.data(), body.size());
+            if (!file)
+            {
+                std::error_code ec{ errno, std::generic_category() };
+                LMS_LOG(PODCAST, ERROR, "Failed to write to file " << finalFilePath << ": " << ec.message());
                 processNext();
                 return;
             }
 
             const std::string* contentType{ msg.getHeader("Content-Type") };
-
-            LMS_LOG(PODCAST, INFO, "Downloaded podcast artwork for podcast '" << podcast->getTitle() << "' to " << finalFilePath << " with content type '" << (contentType ? *contentType : "unknown") << "'");
+            LMS_LOG(PODCAST, INFO, "Downloaded podcast artwork for podcast '" << podcast->getTitle() << "' to " << finalFilePath << " with content type '" << (contentType ? *contentType : "unknown") << "', size = " << body.size());
             createPodcastArtwork(getDb().getTLSSession(), podcastId, finalFilePath, contentType ? *contentType : "application/octet-stream");
 
             processNext();
