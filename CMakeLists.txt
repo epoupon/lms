@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(lms VERSION 3.69.0)
+project(lms VERSION 3.70.0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/modules/)
 
@@ -18,6 +18,7 @@ if(ENABLE_TESTS)
 endif()
 
 # Common dependencies
+find_package(OpenSSL REQUIRED)
 find_package(PkgConfig REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Filesystem REQUIRED)

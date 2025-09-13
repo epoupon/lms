@@ -546,7 +546,6 @@ namespace lms::ui
         {
             _scannerEvents.scanComplete.connect([this](const scanner::ScanStats& stats) {
                 notifyMsg(Notification::Type::Info,
-                    Wt::WString::tr("Lms.Admin.Database.database"),
                     Wt::WString::tr("Lms.Admin.Database.scan-complete")
                         .arg(static_cast<unsigned>(stats.getTotalFileCount()))
                         .arg(static_cast<unsigned>(stats.additions))
@@ -596,9 +595,9 @@ namespace lms::ui
             WApplication::setTitle(title);
     }
 
-    void LmsApplication::notifyMsg(Notification::Type type, const Wt::WString& category, const Wt::WString& message, std::chrono::milliseconds duration)
+    void LmsApplication::notifyMsg(Notification::Type type, const Wt::WString& message, std::chrono::milliseconds duration)
     {
-        LMS_LOG(UI, INFO, "Notifying message '" << message.toUTF8() << "' for category '" << category.toUTF8() << "'");
-        _notificationContainer->add(type, category, message, duration);
+        LMS_LOG(UI, INFO, "Notifying message '" << message.toUTF8() << "'");
+        _notificationContainer->add(type, message, duration);
     }
 } // namespace lms::ui

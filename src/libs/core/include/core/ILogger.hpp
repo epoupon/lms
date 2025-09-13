@@ -51,6 +51,7 @@ namespace lms::core::logging
         HTTP,
         MAIN,
         METADATA,
+        PODCAST,
         REMOTE,
         SCROBBLING,
         SERVICE,

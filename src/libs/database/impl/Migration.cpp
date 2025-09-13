@@ -34,7 +34,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 99 };
+        static constexpr Version LMS_DATABASE_VERSION{ 100 };
     }
 
     VersionInfo::VersionInfo()
@@ -1525,7 +1525,60 @@ FROM track)");
         utils::executeCommand(*session.getDboSession(), "ALTER TABLE track_backup RENAME TO track");
 
         // Just increment the scan version of the settings to make the next scan rescan all audio files
-        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET artist_info_scan_version = artist_info_scan_version + 1");
+        utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET audio_scan_version = audio_scan_version + 1");
+    }
+
+    void migrateFromV99(Session& session)
+    {
+        // Podcast support
+
+        utils::executeCommand(*session.getDboSession(), "ALTER TABLE image ADD COLUMN mime_type TEXT NOT NULL DEFAULT ''");
+
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "podcast" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "url" text not null,
+  "delete_requested" boolean not null,
+  "title" text not null,
+  "link" text not null,
+  "description" text not null,
+  "language" text not null,
+  "copyright" text not null,
+  "last_build_date" text,
+  "author" text not null,
+  "category" text not null,
+  "explicit" boolean not null,
+  "image_url" text not null,
+  "owner_email" text not null,
+  "owner_name" text not null,
+  "subtitle" text not null,
+  "summary" text not null,
+  "artwork_id" bigint,
+  constraint "fk_podcast_artwork" foreign key ("artwork_id") references "artwork" ("id") on delete set null deferrable initially deferred))");
+
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "podcast_episode" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "manual_download_state" integer not null,
+  "audio_relative_file_path" text not null,
+  "title" text not null,
+  "link" text not null,
+  "description" text not null,
+  "author" text not null,
+  "category" text not null,
+  "enclosure_url" text not null,
+  "enclosure_content_type" text not null,
+  "enclosure_size" integer not null,
+  "pub_date" text,
+  "image_url" text not null,
+  "subtitle" text not null,
+  "summary" text not null,
+  "explicit" boolean not null,
+  "duration" integer,
+  "artwork_id" bigint,
+  "podcast_id" bigint,
+  constraint "fk_podcast_episode_artwork" foreign key ("artwork_id") references "artwork" ("id") on delete set null deferrable initially deferred,
+  constraint "fk_podcast_episode_podcast" foreign key ("podcast_id") references "podcast" ("id") on delete cascade deferrable initially deferred))");
     }
 
     bool doDbMigration(Session& session)
@@ -1603,6 +1656,7 @@ FROM track)");
             { 96, migrateFromV96 },
             { 97, migrateFromV97 },
             { 98, migrateFromV98 },
+            { 99, migrateFromV99 },
         };
 
         bool migrationPerformed{};

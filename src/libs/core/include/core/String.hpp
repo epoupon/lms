@@ -110,12 +110,14 @@ namespace lms::core::stringUtils
 
     [[nodiscard]] bool stringEndsWith(std::string_view str, std::string_view ending);
 
-    [[nodiscard]] std::optional<std::string> stringFromHex(const std::string& str);
+    [[nodiscard]] std::optional<std::string> stringFromHex(std::string_view str);
+    [[nodiscard]] std::string toHexString(std::string_view str);
 
     [[nodiscard]] std::string toISO8601String(const Wt::WDateTime& dateTime);
     [[nodiscard]] std::string toISO8601String(const Wt::WDate& date);
 
     [[nodiscard]] Wt::WDateTime fromISO8601String(std::string_view dateTime);
+    [[nodiscard]] Wt::WDateTime fromRFC822String(std::string_view dateTime);
 
     // to "[minutes:seconds.milliseconds]"
     std::string formatTimestamp(std::chrono::milliseconds timestamp);

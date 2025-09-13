@@ -82,7 +82,7 @@ namespace lms::db
         template<typename Object>
         void destroy(typename Object::IdType id)
         {
-            destroy(std::span{ &id, 1 });
+            destroy<Object>(std::span{ &id, 1 });
         }
 
         template<typename Object>

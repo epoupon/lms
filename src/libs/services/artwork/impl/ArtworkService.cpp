@@ -19,9 +19,10 @@
 
 #include "ArtworkService.hpp"
 
+#include <algorithm>
+
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
-#include "core/Utils.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
@@ -63,7 +64,7 @@ namespace lms::artwork
 
     ArtworkService::~ArtworkService() = default;
 
-    std::unique_ptr<image::IEncodedImage> ArtworkService::getFromImageFile(const std::filesystem::path& p, std::optional<image::ImageSize> width) const
+    std::unique_ptr<image::IEncodedImage> ArtworkService::getFromImageFile(const std::filesystem::path& p, std::string_view mimeType, std::optional<image::ImageSize> width) const
     {
         std::unique_ptr<image::IEncodedImage> image;
 
@@ -71,7 +72,7 @@ namespace lms::artwork
         {
             if (!width)
             {
-                image = image::readImage(p);
+                image = image::readImage(p, mimeType);
             }
             else
             {
@@ -177,8 +178,7 @@ namespace lms::artwork
         if (image)
             return image;
 
-        db::TrackEmbeddedImageId trackEmbeddedImageId;
-        db::ImageId imageId;
+        db::Artwork::UnderlyingId underlyingArtworkId;
 
         {
             db::Session& session{ _db.getTLSSession() };
@@ -186,16 +186,13 @@ namespace lms::artwork
 
             db::Artwork::pointer artwork{ db::Artwork::find(session, artworkId) };
             if (artwork)
-            {
-                trackEmbeddedImageId = artwork->getTrackEmbeddedImageId();
-                imageId = artwork->getImageId();
-            }
+                underlyingArtworkId = artwork->getUnderlyingId();
         }
 
-        if (trackEmbeddedImageId.isValid())
-            image = getTrackEmbeddedImage(trackEmbeddedImageId, width);
-        else if (imageId.isValid())
-            image = getImage(imageId, width);
+        if (const auto* trackEmbeddedImageId = std::get_if<db::TrackEmbeddedImageId>(&underlyingArtworkId))
+            image = getTrackEmbeddedImage(*trackEmbeddedImageId, width);
+        else if (const auto* imageId = std::get_if<db::ImageId>(&underlyingArtworkId))
+            image = getImage(*imageId, width);
 
         if (image)
             _cache.addImage(cacheEntryDesc, image);
@@ -206,6 +203,7 @@ namespace lms::artwork
     std::shared_ptr<image::IEncodedImage> ArtworkService::getImage(db::ImageId imageId, std::optional<image::ImageSize> width)
     {
         std::filesystem::path imageFile;
+        std::string mimeType;
         {
             db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
@@ -215,9 +213,10 @@ namespace lms::artwork
                 return nullptr;
 
             imageFile = image->getAbsoluteFilePath();
+            mimeType = image->getMimeType();
         }
 
-        return getFromImageFile(imageFile, width);
+        return getFromImageFile(imageFile, mimeType, width);
     }
 
     std::shared_ptr<image::IEncodedImage> ArtworkService::getTrackEmbeddedImage(db::TrackEmbeddedImageId trackEmbeddedImageId, std::optional<image::ImageSize> width)
@@ -245,7 +244,7 @@ namespace lms::artwork
 
     void ArtworkService::setJpegQuality(unsigned quality)
     {
-        _jpegQuality = core::utils::clamp<unsigned>(quality, 1, 100);
+        _jpegQuality = std::clamp<unsigned>(quality, 1, 100);
 
         LMS_LOG(COVER, INFO, "JPEG export quality = " << _jpegQuality);
     }

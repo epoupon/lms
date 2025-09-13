@@ -247,7 +247,7 @@ namespace lms::api::subsonic
             case db::Advisory::Clean:
                 return "clean";
             case db::Advisory::Explicit:
-                return "expicit";
+                return "explicit";
             case db::Advisory::Unknown:
             case db::Advisory::UnSet:
                 break;

@@ -19,22 +19,15 @@
 
 #include "core/Path.hpp"
 
+#include <algorithm>
 #include <array>
+#include <cassert>
 #include <unistd.h>
 
-#include "core/ILogger.hpp"
 #include "core/String.hpp"
 
 namespace lms::core::pathUtils
 {
-    bool ensureDirectory(const std::filesystem::path& dir)
-    {
-        if (std::filesystem::exists(dir))
-            return std::filesystem::is_directory(dir);
-        else
-            return std::filesystem::create_directory(dir);
-    }
-
     bool hasFileAnyExtension(const std::filesystem::path& file, std::span<const std::filesystem::path> supportedExtensions)
     {
         const std::filesystem::path extension{ stringUtils::stringToLower(file.extension().c_str()) };

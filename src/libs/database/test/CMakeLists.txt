@@ -13,6 +13,7 @@ add_executable(test-database
 	Medium.cpp
 	Migration.cpp
 	PlayListFile.cpp
+	Podcast.cpp
 	RatedArtist.cpp
 	RatedRelease.cpp
 	RatedTrack.cpp

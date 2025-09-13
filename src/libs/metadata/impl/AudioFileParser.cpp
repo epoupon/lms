@@ -453,7 +453,7 @@ namespace lms::metadata
         std::vector<std::string_view> artistDelimiters{};
 
         track.medium = getMedium(tagReader);
-        track.artists = getArtists(tagReader, { TagType::Artists, TagType::Artist }, { TagType::ArtistSortOrder }, { TagType::MusicBrainzArtistID }, _params);
+        track.artists = getArtists(tagReader, { TagType::Artists, TagType::Artist }, { TagType::ArtistsSortOrder, TagType::ArtistSortOrder }, { TagType::MusicBrainzArtistID }, _params);
         track.artistDisplayName = computeArtistDisplayName(track.artists, getTagValueAs<std::string>(tagReader, TagType::Artist), _params.artistTagDelimiters);
 
         track.conductorArtists = getArtists(tagReader, { TagType::Conductors, TagType::Conductor }, { TagType::ConductorsSortOrder, TagType::ConductorSortOrder }, { TagType::MusicBrainzConductorID }, _params);

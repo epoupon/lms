@@ -19,6 +19,8 @@
 
 #include "MediaPlayer.hpp"
 
+#include <algorithm>
+
 #include <Wt/Json/Object.h>
 #include <Wt/Json/Parser.h>
 #include <Wt/Json/Serializer.h>
@@ -27,7 +29,6 @@
 
 #include "core/ILogger.hpp"
 #include "core/String.hpp"
-#include "core/Utils.hpp"
 #include "database/Session.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
@@ -142,7 +143,7 @@ namespace lms::ui
             if (!value)
                 return std::nullopt;
 
-            return core::utils::clamp(*value, (double)MediaPlayer::Settings::ReplayGain::minPreAmpGain, (double)MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
+            return std::clamp(*value, (double)MediaPlayer::Settings::ReplayGain::minPreAmpGain, (double)MediaPlayer::Settings::ReplayGain::maxPreAmpGain);
         }
 
         MediaPlayer::Settings settingsfromJSString(const std::string& strSettings)

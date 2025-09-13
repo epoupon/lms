@@ -19,11 +19,10 @@
 
 #pragma once
 
+#include <chrono>
 #include <filesystem>
 #include <memory>
 #include <optional>
-
-#include "database/objects/TrackId.hpp"
 
 namespace lms
 {
@@ -43,9 +42,10 @@ namespace lms::transcoding
 {
     struct InputParameters
     {
-        db::TrackId trackId;
-        std::chrono::milliseconds offset{};     // Offset in the track file to start transcoding from
-        std::optional<std::size_t> streamIndex; // Index of the stream to be transcoded (select "best" audio stream if not set)
+        std::filesystem::path filePath;
+        std::chrono::milliseconds duration{};   // Duration of the audio file
+        std::chrono::milliseconds offset{};     // Offset in the audio file to start transcoding from
+        std::optional<std::size_t> streamIndex; // Index of the stream to be transcoded (select the "best" audio stream if not set)
     };
 
     enum class OutputFormat

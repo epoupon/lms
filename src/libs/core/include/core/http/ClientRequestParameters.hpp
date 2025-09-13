@@ -19,8 +19,9 @@
 
 #pragma once
 
+#include <cstddef>
 #include <functional>
-#include <string_view>
+#include <span>
 #include <vector>
 
 #include <Wt/Http/Message.h>
@@ -37,13 +38,28 @@ namespace lms::core::http
         };
 
         Priority priority{ Priority::Normal };
-        std::string relativeUrl; // relative to baseUrl used by the client
+        std::string relativeUrl;                            // relative to baseUrl used by the client
+        std::size_t responseBufferSize{ 10 * 1024 * 1024 }; // only used if onChunkReceived is not set
 
-        using OnSuccessFunc = std::function<void(std::string_view msgBody)>;
+        // If `onChunkReceived` is set, the response will be streamed in chunks.
+        // In that case, `onSuccessFunc` is still called at the end (with an empty msgBody).
+        // If `onChunkReceived` is not set, the response will be fully buffered and passed to `onSuccessFunc`.
+        enum class ChunckReceivedResult
+        {
+            Continue,
+            Abort,
+        };
+        using OnChunkReceived = std::function<ChunckReceivedResult(std::span<const std::byte> chunk)>; // return false to stop (onFailureFunc callback will be called)
+        OnChunkReceived onChunkReceived;
+
+        using OnSuccessFunc = std::function<void(const Wt::Http::Message& msg)>;
         OnSuccessFunc onSuccessFunc;
 
         using OnFailureFunc = std::function<void()>;
         OnFailureFunc onFailureFunc;
+
+        using OnAbortFunc = std::function<void()>;
+        OnAbortFunc onAbortFunc;
     };
 
     struct ClientGETRequestParameters final : public ClientRequestParameters

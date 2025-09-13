@@ -29,7 +29,7 @@ namespace lms::image
     class EncodedImage : public IEncodedImage
     {
     public:
-        EncodedImage(const std::filesystem::path& path);
+        EncodedImage(const std::filesystem::path& path, std::string_view mimeType = "");
         EncodedImage(std::vector<std::byte>&& data, std::string_view mimeType);
         EncodedImage(std::span<const std::byte> data, std::string_view mimeType);
         ~EncodedImage() override = default;

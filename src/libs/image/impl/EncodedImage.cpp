@@ -74,9 +74,9 @@ namespace lms::image
 
     } // namespace
 
-    std::unique_ptr<IEncodedImage> readImage(const std::filesystem::path& path)
+    std::unique_ptr<IEncodedImage> readImage(const std::filesystem::path& path, std::string_view mimeType)
     {
-        return std::make_unique<EncodedImage>(path);
+        return std::make_unique<EncodedImage>(path, mimeType);
     }
 
     std::unique_ptr<IEncodedImage> readImage(std::span<const std::byte> encodedData, std::string_view mimeType)
@@ -96,8 +96,8 @@ namespace lms::image
     {
     }
 
-    EncodedImage::EncodedImage(const std::filesystem::path& p)
-        : EncodedImage::EncodedImage{ fileToBuffer(p), extensionToMimeType(p.extension()) }
+    EncodedImage::EncodedImage(const std::filesystem::path& p, std::string_view mimeType)
+        : EncodedImage::EncodedImage{ fileToBuffer(p), mimeType.empty() ? extensionToMimeType(p.extension()) : mimeType }
     {
     }
 } // namespace lms::image

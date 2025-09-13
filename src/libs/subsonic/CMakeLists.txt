@@ -7,6 +7,7 @@ add_library(lmssubsonic STATIC
 	impl/endpoints/MediaLibraryScanning.cpp
 	impl/endpoints/MediaRetrieval.cpp
 	impl/endpoints/Playlists.cpp
+	impl/endpoints/Podcast.cpp
 	impl/endpoints/Searching.cpp
 	impl/endpoints/System.cpp
 	impl/endpoints/UserManagement.cpp
@@ -21,6 +22,7 @@ add_library(lmssubsonic STATIC
 	impl/responses/Genre.cpp
 	impl/responses/Lyrics.cpp
 	impl/responses/Playlist.cpp
+	impl/responses/Podcast.cpp
 	impl/responses/RecordLabel.cpp
 	impl/responses/ReplayGain.cpp
 	impl/responses/Song.cpp
@@ -49,6 +51,7 @@ target_link_libraries(lmssubsonic PRIVATE
 	lmsav
 	lmsdatabase
 	lmsfeedback
+	lmspodcast
 	lmsrecommendation
 	lmsscanner
 	lmsscrobbling

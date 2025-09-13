@@ -34,12 +34,12 @@ namespace lms::ui
         class NotificationWidget : public Wt::WTemplate
         {
         public:
-            NotificationWidget(Notification::Type type, const Wt::WString& category, const Wt::WString& message, std::chrono::milliseconds duration);
+            NotificationWidget(Notification::Type type, const Wt::WString& message, std::chrono::milliseconds duration);
             Wt::JSignal<> closed{ this, "closed" };
         };
     } // namespace
 
-    NotificationWidget::NotificationWidget(Notification::Type type, const Wt::WString& category, const Wt::WString& message, std::chrono::milliseconds duration)
+    NotificationWidget::NotificationWidget(Notification::Type type, const Wt::WString& message, std::chrono::milliseconds duration)
         : Wt::WTemplate{ Wt::WString::tr("Lms.notifications.template.entry") }
     {
         switch (type)
@@ -58,7 +58,6 @@ namespace lms::ui
             break;
         }
 
-        bindString("category", category);
         bindString("message", message);
         bindInt("duration", duration.count());
 
@@ -78,9 +77,9 @@ namespace lms::ui
         doJavaScript(oss.str());
     }
 
-    void NotificationContainer::add(Notification::Type type, const Wt::WString& category, const Wt::WString& message, std::chrono::milliseconds duration)
+    void NotificationContainer::add(Notification::Type type, const Wt::WString& message, std::chrono::milliseconds duration)
     {
-        NotificationWidget* notification{ addNew<NotificationWidget>(type, category, message, duration) };
+        NotificationWidget* notification{ addNew<NotificationWidget>(type, message, duration) };
 
         notification->closed.connect([this, notification] {
             removeWidget(notification);

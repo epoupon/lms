@@ -151,11 +151,23 @@ namespace lms::scanner
             if (artwork)
                 return artwork;
 
-            // Fallback on embedded media image
+            // Fallback on embedded Media image
             {
                 db::TrackEmbeddedImage::FindParameters params;
                 params.setRelease(release->getId());
                 params.setImageType(db::ImageType::Media);
+                params.setSortMethod(db::TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc);
+                db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
+                    if (!artwork)
+                        artwork = db::Artwork::find(session, image->getId());
+                });
+            }
+
+            // Fallback on embedded Other image, as some tracks may be badly tagged
+            {
+                db::TrackEmbeddedImage::FindParameters params;
+                params.setRelease(release->getId());
+                params.setImageType(db::ImageType::Other);
                 params.setSortMethod(db::TrackEmbeddedImageSortMethod::DiscNumberThenTrackNumberThenSizeDesc);
                 db::TrackEmbeddedImage::find(session, params, [&](const db::TrackEmbeddedImage::pointer& image) {
                     if (!artwork)
@@ -282,7 +294,7 @@ namespace lms::scanner
             .releaseImageFileNames = _releaseImageFileNames,
         };
 
-        ReleaseArtworkAssociationContainer artistArtworkAssociations;
+        ReleaseArtworkAssociationContainer releaseArtworkAssociations;
         auto processJobsDone = [&](std::span<std::unique_ptr<core::IJob>> jobs) {
             if (_abortScan)
                 return;
@@ -292,12 +304,12 @@ namespace lms::scanner
                 const auto& associationJob{ static_cast<const ComputeReleaseArtworkAssociationsJob&>(*job) };
                 const auto& artistAssociations{ associationJob.getAssociations() };
 
-                artistArtworkAssociations.insert(std::end(artistArtworkAssociations), std::cbegin(artistAssociations), std::cend(artistAssociations));
+                releaseArtworkAssociations.insert(std::end(releaseArtworkAssociations), std::cbegin(artistAssociations), std::cend(artistAssociations));
 
                 context.currentStepStats.processedElems += associationJob.getProcessedReleaseCount();
             }
 
-            updateReleasePreferredArtworks(session, artistArtworkAssociations, true);
+            updateReleasePreferredArtworks(session, releaseArtworkAssociations, true);
             _progressCallback(context.currentStepStats);
         };
 
@@ -311,6 +323,6 @@ namespace lms::scanner
         queue.finish();
 
         // process all remaining associations
-        updateReleasePreferredArtworks(session, artistArtworkAssociations, false);
+        updateReleasePreferredArtworks(session, releaseArtworkAssociations, false);
     }
 } // namespace lms::scanner

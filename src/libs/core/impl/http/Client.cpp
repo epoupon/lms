@@ -36,4 +36,9 @@ namespace lms::core::http
     {
         _sendQueue.sendRequest(std::make_unique<ClientRequest>(std::move(POSTParams)));
     }
+
+    void Client::abortAllRequests()
+    {
+        _sendQueue.abortAllRequests();
+    }
 } // namespace lms::core::http

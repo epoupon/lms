@@ -22,6 +22,7 @@ ARG	BUILD_PACKAGES=" \
 	curl \
 	libogg-dev \
 	opus-dev \
+	pugixml-dev \
 	libvorbis-dev \
 	lame-dev \
 	cmake \
@@ -164,6 +165,7 @@ ARG	RUNTIME_PACKAGES=" \
 	boost-thread \
 	libarchive \
 	libconfig++ \
+	pugixml \
 	sqlite-libs"
 
 ARG	LMS_USER=lms

@@ -80,7 +80,7 @@ namespace lms::ui
         void setTitle(const Wt::WString& title = "");
 
         // Used to classify the message sent to the user
-        void notifyMsg(Notification::Type type, const Wt::WString& category, const Wt::WString& message, std::chrono::milliseconds duration = std::chrono::milliseconds{ 5000 });
+        void notifyMsg(Notification::Type type, const Wt::WString& message, std::chrono::milliseconds duration = std::chrono::milliseconds{ 5000 });
 
         MediaPlayer& getMediaPlayer() const { return *_mediaPlayer; }
         PlayQueue& getPlayQueue() const { return *_playQueue; }

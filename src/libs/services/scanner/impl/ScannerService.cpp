@@ -153,14 +153,15 @@ namespace lms::scanner
 
     } // namespace
 
-    std::unique_ptr<IScannerService> createScannerService(db::IDb& db)
+    std::unique_ptr<IScannerService> createScannerService(db::IDb& db, const std::filesystem::path& cachePath)
     {
-        return std::make_unique<ScannerService>(db);
+        return std::make_unique<ScannerService>(db, cachePath);
     }
 
-    ScannerService::ScannerService(db::IDb& db)
+    ScannerService::ScannerService(db::IDb& db, const std::filesystem::path& cachePath)
         : _db{ db }
         , _jobScheduler{ core::createJobScheduler("Scanner", getScannerThreadCount()) }
+        , _cachePath{ cachePath }
     {
         _ioService.setThreadCount(1);
 
@@ -496,6 +497,7 @@ namespace lms::scanner
             .abortScan = _abortScan,
             .db = _db,
             .fileScanners = _fileScanners,
+            .cachePath = _cachePath
         };
 
         // Order is important: steps are sequential
@@ -506,9 +508,9 @@ namespace lms::scanner
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociatePlayListTracks>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepUpdateLibraryFields>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociateReleaseImages>(params));
-        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateArtistImages>(params)); // must come after ScanStepAssociateReleaseImages
-        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateMediumImages>(params)); // must come after ScanStepAssociateReleaseImages
-        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateTrackImages>(params));  // must come after ScanStepAssociateMediumImages and ScanStepAssociateReleaseImages
+        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateArtistImages>(params)); // must come after ScanStepAssociateReleaseImages (because and artist image can fallback on a release image)
+        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateMediumImages>(params)); // must come after ScanStepAssociateReleaseImages (because and medium image can fallback on a release image)
+        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateTrackImages>(params));  // must come after ScanStepAssociateMediumImages and ScanStepAssociateReleaseImages (because and track image can fallback on a medium or release image)
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociateExternalLyrics>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepRemoveOrphanedDbEntries>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepCompact>(params));

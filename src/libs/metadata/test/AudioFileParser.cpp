@@ -61,10 +61,10 @@ namespace lms::metadata::tests
         EXPECT_EQ(track->artistDisplayName, "MyArtist1 & MyArtist2");
         ASSERT_EQ(track->artists.size(), 2);
         EXPECT_EQ(track->artists[0].name, "MyArtist1");
-        EXPECT_EQ(track->artists[0].sortName, "MyArtist1SortName");
+        EXPECT_EQ(track->artists[0].sortName, "MyArtists1SortName");
         EXPECT_EQ(track->artists[0].mbid, core::UUID::fromString("9d2e0c8c-8c5e-4372-a061-590955eaeaae"));
         EXPECT_EQ(track->artists[1].name, "MyArtist2");
-        EXPECT_EQ(track->artists[1].sortName, "MyArtist2SortName");
+        EXPECT_EQ(track->artists[1].sortName, "MyArtists2SortName");
         EXPECT_EQ(track->artists[1].mbid, core::UUID::fromString("5e2cf87f-c8d7-4504-8a86-954dc0840229"));
         ASSERT_EQ(track->comments.size(), 2);
         EXPECT_EQ(track->comments[0], "Comment1");
@@ -160,10 +160,10 @@ namespace lms::metadata::tests
         EXPECT_EQ(release.artistDisplayName, "MyAlbumArtist1 & MyAlbumArtist2");
         ASSERT_EQ(release.artists.size(), 2);
         EXPECT_EQ(release.artists[0].name, "MyAlbumArtist1");
-        EXPECT_EQ(release.artists[0].sortName, "MyAlbumArtist1SortName");
+        EXPECT_EQ(release.artists[0].sortName, "MyAlbumArtists1SortName");
         EXPECT_EQ(release.artists[0].mbid, core::UUID::fromString("6fbf097c-1487-43e8-874b-50dd074398a7"));
         EXPECT_EQ(release.artists[1].name, "MyAlbumArtist2");
-        EXPECT_EQ(release.artists[1].sortName, "MyAlbumArtist2SortName");
+        EXPECT_EQ(release.artists[1].sortName, "MyAlbumArtists2SortName");
         EXPECT_EQ(release.artists[1].mbid, core::UUID::fromString("5ed3d6b3-2aed-4a03-828c-3c4d4f7406e1"));
         EXPECT_TRUE(release.isCompilation);
         EXPECT_EQ(release.barcode, "MyBarcode");
@@ -749,6 +749,114 @@ namespace lms::metadata::tests
         ASSERT_TRUE(track->medium.has_value());
         ASSERT_TRUE(track->medium->release.has_value());
         EXPECT_EQ(track->medium->release->sortName, "MyAlbum");
+    }
+
+    TEST(AudioFileParser, artist_sortNameFallback)
+    {
+        {
+            const TestTagReader testTags{
+                {
+                    { TagType::Artist, { "MyArtist" } },
+                    { TagType::ArtistSortOrder, { "MyArtistSortName" } },
+                    // No ArtistSortOrder
+                }
+            };
+            std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
+
+            ASSERT_EQ(track->artists.size(), 1);
+            EXPECT_EQ(track->artists[0].sortName, "MyArtistSortName");
+        }
+
+        {
+            const TestTagReader testTags{
+                {
+                    { TagType::Artist, { "MyArtist" } },
+                    { TagType::ArtistsSortOrder, { "MyArtistSortName" } },
+                    // No ArtistSortOrder
+                }
+            };
+            std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
+
+            ASSERT_EQ(track->artists.size(), 1);
+            EXPECT_EQ(track->artists[0].sortName, "MyArtistSortName");
+        }
+
+        {
+            const TestTagReader testTags{
+                {
+                    { TagType::Artist, { "MyArtist" } },
+                    { TagType::ArtistSortOrder, { "MyArtistSortNameNotUsed" } },
+                    { TagType::ArtistsSortOrder, { "MyArtistSortName" } },
+                    // No ArtistSortOrder
+                }
+            };
+            std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
+
+            ASSERT_EQ(track->artists.size(), 1);
+            EXPECT_EQ(track->artists[0].sortName, "MyArtistSortName");
+        }
+    }
+
+    TEST(AudioFileParser, albumartist_sortNameFallback)
+    {
+        {
+            const TestTagReader testTags{
+                {
+                    { TagType::Album, { "MyAlbum" } },
+                    { TagType::AlbumArtist, { "MyArtist" } },
+                    { TagType::AlbumArtistSortOrder, { "MyArtistSortName" } },
+                    // No ArtistSortOrder
+                }
+            };
+            std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
+
+            ASSERT_TRUE(track->medium.has_value());
+            ASSERT_TRUE(track->medium->release.has_value());
+
+            const auto& artists{ track->medium->release->artists };
+            ASSERT_EQ(artists.size(), 1);
+            EXPECT_EQ(artists[0].sortName, "MyArtistSortName");
+        }
+
+        {
+            const TestTagReader testTags{
+                {
+                    { TagType::Album, { "MyAlbum" } },
+                    { TagType::AlbumArtist, { "MyArtist" } },
+                    { TagType::AlbumArtistsSortOrder, { "MyArtistSortName" } },
+                    // No ArtistSortOrder
+                }
+            };
+            std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
+
+            ASSERT_TRUE(track->medium.has_value());
+            ASSERT_TRUE(track->medium->release.has_value());
+
+            const auto& artists{ track->medium->release->artists };
+            ASSERT_EQ(artists.size(), 1);
+            EXPECT_EQ(artists[0].sortName, "MyArtistSortName");
+        }
+
+        {
+            const TestTagReader testTags{
+                {
+                    { TagType::Album, { "MyAlbum" } },
+
+                    { TagType::AlbumArtist, { "MyArtist" } },
+                    { TagType::AlbumArtistSortOrder, { "MyArtistSortNameNotUsed" } },
+                    { TagType::AlbumArtistsSortOrder, { "MyArtistSortName" } },
+                    // No ArtistSortOrder
+                }
+            };
+            std::unique_ptr<Track> track{ TestAudioFileParser{}.parseMetaData(testTags) };
+
+            ASSERT_TRUE(track->medium.has_value());
+            ASSERT_TRUE(track->medium->release.has_value());
+
+            const auto& artists{ track->medium->release->artists };
+            ASSERT_EQ(artists.size(), 1);
+            EXPECT_EQ(artists[0].sortName, "MyArtistSortName");
+        }
     }
 
     TEST(AudioFileParser, advisory)
