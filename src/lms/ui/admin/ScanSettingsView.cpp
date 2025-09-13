@@ -493,7 +493,7 @@ namespace lms::ui
                 core::Service<recommendation::IRecommendationService>::get()->load();
                 // Don't want the scanner to go on with wrong settings
                 core::Service<scanner::IScannerService>::get()->requestReload();
-                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.Database.database"), Wt::WString::tr("Lms.settings-saved"));
+                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.settings-saved"));
             }
 
             // Udate the view: Delete any validation message in the view, etc.

@@ -47,7 +47,7 @@ namespace lms::ui
                 Wt::WTemplate* entry{ addEntry() };
                 updateEntry(newMediaLibraryId, entry);
                 // No need to stop the current scan if we add stuff
-                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries"), Wt::WString::tr("Lms.Admin.MediaLibrary.library-created"));
+                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.MediaLibrary.library-created"));
                 LmsApp->getModalManager().dispose(mediaLibraryModalPtr);
             });
 
@@ -99,7 +99,7 @@ namespace lms::ui
 
             // Don't want the scanner to go on with wrong settings
             core::Service<scanner::IScannerService>::get()->requestReload();
-            LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries"), Wt::WString::tr("Lms.Admin.MediaLibrary.library-deleted"));
+            LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.MediaLibrary.library-deleted"));
 
             _libraries->removeWidget(libraryEntry);
 
@@ -138,7 +138,7 @@ namespace lms::ui
 
                 // Don't want the scanner to go on with wrong settings
                 core::Service<scanner::IScannerService>::get()->requestReload();
-                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries"), Wt::WString::tr("Lms.settings-saved"));
+                LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.settings-saved"));
 
                 LmsApp->getModalManager().dispose(mediaLibraryModalPtr);
             });
