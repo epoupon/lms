@@ -196,6 +196,14 @@ namespace lms::podcast
         return res;
     }
 
+    bool PodcastService::hasPodcasts() const
+    {
+        db::Session& session{ _refreshContext.db.getTLSSession() };
+        auto transaction{ session.createReadTransaction() };
+
+        return db::Podcast::getCount(session) > 0;
+    }
+
     void PodcastService::abortCurrentRefresh(std::unique_lock<std::mutex>& lock)
     {
         LMS_LOG(PODCAST, DEBUG, "Aborting current refresh...");
@@ -226,6 +234,12 @@ namespace lms::podcast
 
     void PodcastService::scheduleRefresh(std::chrono::seconds fromNow)
     {
+        if (!hasPodcasts())
+        {
+            LMS_LOG(PODCAST, DEBUG, "No podcast: not scheduling refresh");
+            return;
+        }
+
         LMS_LOG(PODCAST, DEBUG, "Scheduled podcast refresh in " << fromNow.count() << " seconds...");
 
         _refreshTimer.expires_after(fromNow);

@@ -61,6 +61,7 @@ namespace lms::podcast
         bool downloadPodcastEpisode(db::PodcastEpisodeId episode) override;
         bool deletePodcastEpisode(db::PodcastEpisodeId episode) override;
 
+        bool hasPodcasts() const;
         void abortCurrentRefresh(std::unique_lock<std::mutex>& lock);
         void allowRefresh();
         void scheduleRefresh(std::chrono::seconds fromNow = std::chrono::seconds::zero());

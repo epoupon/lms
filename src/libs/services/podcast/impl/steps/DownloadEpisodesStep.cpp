@@ -187,10 +187,7 @@ namespace lms::podcast
             });
         };
         params.onAbortFunc = [this] {
-            if (abortRequested())
-                onAbort();
-            else
-                processNext();
+            onAbort();
         };
 
         LMS_LOG(PODCAST, DEBUG, "Downloading episode from '" << url << "'...");

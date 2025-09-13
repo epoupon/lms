@@ -145,10 +145,7 @@ namespace lms::podcast
             processNext();
         };
         params.onAbortFunc = [this] {
-            if (abortRequested())
-                onAbort();
-            else
-                processNext();
+            onAbort();
         };
 
         getClient().sendGETRequest(std::move(params));

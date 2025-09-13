@@ -195,6 +195,9 @@ namespace lms::podcast
                 refreshNextPodcast();
             });
         };
+        params.onAbortFunc = [this] {
+            onAbort();
+        };
 
         getClient().sendGETRequest(std::move(params));
     }

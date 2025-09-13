@@ -48,9 +48,7 @@ namespace lms::podcast
 
         bool checkArtworkFile(const db::Artwork::pointer& artwork)
         {
-            const auto underlyingImageId{ artwork->getUnderlyingId() };
-            const db::ImageId* imageId{ std::get_if<db::ImageId>(&underlyingImageId) };
-            assert(imageId); // these artworks can only be an image
+            assert(std::holds_alternative<db::ImageId>(artwork->getUnderlyingId())); // these artworks can only be an image
 
             const std::filesystem::path filePath{ artwork->getAbsoluteFilePath() };
             if (!fileExists(filePath.string()))
@@ -143,5 +141,4 @@ namespace lms::podcast
             }
         }
     }
-
 } // namespace lms::podcast
