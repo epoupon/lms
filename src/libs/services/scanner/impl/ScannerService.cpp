@@ -508,9 +508,9 @@ namespace lms::scanner
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociatePlayListTracks>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepUpdateLibraryFields>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociateReleaseImages>(params));
-        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateArtistImages>(params)); // must come after ScanStepAssociateReleaseImages
-        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateMediumImages>(params)); // must come after ScanStepAssociateReleaseImages
-        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateTrackImages>(params));  // must come after ScanStepAssociateMediumImages and ScanStepAssociateReleaseImages
+        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateArtistImages>(params)); // must come after ScanStepAssociateReleaseImages (because and artist image can fallback on a release image)
+        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateMediumImages>(params)); // must come after ScanStepAssociateReleaseImages (because and medium image can fallback on a release image)
+        _scanSteps.emplace_back(std::make_unique<ScanStepAssociateTrackImages>(params));  // must come after ScanStepAssociateMediumImages and ScanStepAssociateReleaseImages (because and track image can fallback on a medium or release image)
         _scanSteps.emplace_back(std::make_unique<ScanStepAssociateExternalLyrics>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepRemoveOrphanedDbEntries>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepCompact>(params));
