@@ -102,9 +102,12 @@ namespace lms::metadata::taglib::utils
 
     std::unique_ptr<TagLib::File> parseFileByExtension(TagLib::FileStream* stream, const std::filesystem::path& extension, TagLib::AudioProperties::ReadStyle audioPropertiesStyle, bool readAudioProperties)
     {
-        const std::string ext{ core::stringUtils::stringToUpper(extension.string().substr(1)) };
-
         std::unique_ptr<TagLib::File> file;
+
+        if (extension.empty())
+            return file;
+
+        const std::string ext{ core::stringUtils::stringToUpper(extension.string().substr(1)) };
 
         // MP3
         if (ext == "MP3" || ext == "MP2" || ext == "AAC")
