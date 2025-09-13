@@ -163,6 +163,13 @@ namespace lms::db
         PositionAsc,
     };
 
+    enum class PodcastEpisodeSortMode
+    {
+        None,
+        PubDateAsc,
+        PubDateDesc,
+    };
+
     enum class ReleaseSortMethod
     {
         None,

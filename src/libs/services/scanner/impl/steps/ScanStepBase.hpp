@@ -55,6 +55,7 @@ namespace lms::scanner
             bool& abortScan;
             db::IDb& db;
             const FileScanners& fileScanners;
+            const std::filesystem::path& cachePath;
         };
         ScanStepBase(InitParams& initParams);
         ~ScanStepBase() override;
@@ -65,6 +66,7 @@ namespace lms::scanner
         core::IJobScheduler& getJobScheduler() { return _jobScheduler; };
         const ScannerSettings* getLastScanSettings() const { return _lastScanSettings; }
         const FileScanners& getFileScanners() const { return _fileScanners; }
+        const std::filesystem::path& getCachePath() const { return _cachePath; }
 
         void addError(ScanContext& context, std::shared_ptr<ScanError> error);
 
@@ -83,6 +85,7 @@ namespace lms::scanner
     private:
         core::IJobScheduler& _jobScheduler;
         const FileScanners& _fileScanners;
+        const std::filesystem::path& _cachePath;
 
         const ScannerSettings* _lastScanSettings{};
         ScanErrorLogger _scanErrorLogger;

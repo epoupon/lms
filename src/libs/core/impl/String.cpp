@@ -20,6 +20,8 @@
 #include "core/String.hpp"
 
 #include <algorithm>
+#include <charconv>
+#include <chrono>
 #include <cstring>
 #include <iomanip>
 #include <utility>
@@ -132,6 +134,64 @@ namespace lms::core::stringUtils
 
             res.push_back(str.substr(currentPos));
             return res;
+        }
+
+        static std::optional<std::chrono::minutes> getRFC822ZoneOffset(std::string_view zoneStr)
+        {
+            if (zoneStr == "UT" || zoneStr == "GMT" || zoneStr == "Z") return std::chrono::hours{ 0 };
+            if (zoneStr == "EST") return -std::chrono::hours{ 5 };
+            if (zoneStr == "EDT") return -std::chrono::hours{ 4 };
+            if (zoneStr == "CST") return -std::chrono::hours{ 6 };
+            if (zoneStr == "CDT") return -std::chrono::hours{ 5 };
+            if (zoneStr == "MST") return -std::chrono::hours{ 7 };
+            if (zoneStr == "MDT") return -std::chrono::hours{ 6 };
+            if (zoneStr == "PST") return -std::chrono::hours{ 8 };
+            if (zoneStr == "PDT") return -std::chrono::hours{ 7 };
+            if (zoneStr.size() == 1)
+            {
+                const char c{ zoneStr[0] };
+                if (c == 'A') return -std::chrono::hours{ 1 };
+                if (c == 'M') return -std::chrono::hours{ 12 };
+                if (c == 'N') return std::chrono::hours{ 1 };
+                if (c == 'Y') return std::chrono::hours{ 12 };
+
+                return std::nullopt;
+            }
+
+            // (+/-)HHMM
+            if (zoneStr[0] != '+' && zoneStr[0] != '-')
+                return std::nullopt;
+
+            if (zoneStr.size() != 5)
+                return std::nullopt;
+
+            if (!std::all_of(std::cbegin(zoneStr) + 1, std::cend(zoneStr), [](char c) { return std::isdigit(c); }))
+                return std::nullopt;
+
+            int hours{};
+            const auto [p, ec]{ std::from_chars(zoneStr.data() + 1, zoneStr.data() + 3, hours) };
+            if (ec != std::errc())
+                return std::nullopt;
+
+            int minutes{};
+            const auto [p2, ec2] = std::from_chars(zoneStr.data() + 3, zoneStr.data() + 5, minutes);
+            if (ec2 != std::errc())
+                return std::nullopt;
+
+            std::chrono::minutes res{ std::chrono::hours{ hours } + std::chrono::minutes{ minutes } };
+            if (zoneStr[0] == '-')
+                res = -res;
+            return res;
+        }
+
+        std::optional<unsigned> getRFC822Month(std::string_view monthStr)
+        {
+            static const std::array<std::string_view, 12> months{ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+            const std::string_view* str{ std::find(std::cbegin(months), std::cend(months), monthStr) };
+            if (str == std::cend(months))
+                return {};
+
+            return std::distance(std::cbegin(months), str) + 1;
         }
     } // namespace details
 
@@ -435,9 +495,9 @@ namespace lms::core::stringUtils
         return str.substr(str.length() - ending.length()) == ending;
     }
 
-    std::optional<std::string> stringFromHex(const std::string& str)
+    std::optional<std::string> stringFromHex(std::string_view str)
     {
-        static const char lut[]{ "0123456789ABCDEF" };
+        constexpr char lut[]{ "0123456789ABCDEF" };
 
         if (str.length() % 2 != 0)
             return std::nullopt;
@@ -445,13 +505,13 @@ namespace lms::core::stringUtils
         std::string res;
         res.reserve(str.length() / 2);
 
-        auto it{ std::cbegin(str) };
+        const char* it{ std::cbegin(str) };
         while (it != std::cend(str))
         {
             unsigned val{};
 
-            auto itHigh{ std::lower_bound(std::cbegin(lut), std::cend(lut), std::toupper(*(it++))) };
-            auto itLow{ std::lower_bound(std::cbegin(lut), std::cend(lut), std::toupper(*(it++))) };
+            const char* itHigh{ std::lower_bound(std::cbegin(lut), std::cend(lut), std::toupper(*(it++))) };
+            const char* itLow{ std::lower_bound(std::cbegin(lut), std::cend(lut), std::toupper(*(it++))) };
 
             if (itHigh == std::cend(lut) || itLow == std::cend(lut))
                 return {};
@@ -460,6 +520,21 @@ namespace lms::core::stringUtils
             val += std::distance(std::cbegin(lut), itLow);
 
             res.push_back(static_cast<char>(val));
+        }
+
+        return res;
+    }
+
+    std::string toHexString(std::string_view str)
+    {
+        constexpr char lut[]{ "0123456789ABCDEF" };
+
+        std::string res;
+
+        for (char c : str)
+        {
+            res.push_back(lut[(c >> 4) & 0xF]);
+            res.push_back(lut[c & 0xF]);
         }
 
         return res;
@@ -494,6 +569,47 @@ namespace lms::core::stringUtils
             dateTime.remove_suffix(1);
 
         return Wt::WDateTime::fromString(Wt::WString{ std::string{ dateTime } }, "yyyy-MM-ddThh:mm:ss.zzz");
+    }
+
+    Wt::WDateTime fromRFC822String(std::string_view dateTime)
+    {
+        // Expect something like "[Sun,] 6 Nov 1994 08:49[:37] GMT"
+        if (dateTime.size() > 4 && dateTime[3] == ',')
+            dateTime.remove_prefix(5);
+
+        // Extract parts
+        const std::vector<std::string_view> subParts{ splitString(dateTime, ' ') };
+        if (subParts.size() != 5)
+            return {};
+
+        const std::string_view dayStr{ subParts[0] };
+        const std::string_view monthStr{ subParts[1] };
+        const std::string_view yearStr{ subParts[2] };
+        std::string timeStr{ subParts[3] };
+        const std::string_view zoneStr{ subParts[4] };
+        if (std::count(std::cbegin(timeStr), std::cend(timeStr), ':') == 1)
+            timeStr += ":00";
+
+        // Normalize zone
+        const std::optional<std::chrono::minutes> offset{ details::getRFC822ZoneOffset(zoneStr) };
+        if (!offset)
+            return {};
+
+        std::optional<unsigned> month{ details::getRFC822Month(monthStr) };
+        if (!month)
+            return {};
+
+        std::string datetimeStr;
+        datetimeStr = dayStr;
+        datetimeStr += " ";
+        datetimeStr += std::to_string(month.value());
+        datetimeStr += " ";
+        datetimeStr += yearStr;
+        datetimeStr += " ";
+        datetimeStr += timeStr;
+
+        const Wt::WDateTime res{ Wt::WDateTime::fromString(Wt::WString{ datetimeStr }, "d M yyyy HH:mm:ss") };
+        return res.addSecs(static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(offset.value()).count()));
     }
 
     std::string formatTimestamp(std::chrono::milliseconds timestamp)

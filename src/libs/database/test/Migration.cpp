@@ -28,6 +28,8 @@
 #include "database/objects/Medium.hpp"
 #include "database/objects/PlayListFile.hpp"
 #include "database/objects/PlayQueue.hpp"
+#include "database/objects/Podcast.hpp"
+#include "database/objects/PodcastEpisode.hpp"
 #include "database/objects/RatedArtist.hpp"
 #include "database/objects/RatedRelease.hpp"
 #include "database/objects/RatedTrack.hpp"
@@ -359,6 +361,8 @@ VALUES
             EXPECT_FALSE(Listen::find(session, ListenId{}));
             EXPECT_FALSE(PlayListFile::find(session, PlayListFileId{}));
             EXPECT_FALSE(PlayQueue::find(session, PlayQueueId{}));
+            EXPECT_FALSE(Podcast::find(session, PodcastId{}));
+            EXPECT_FALSE(PodcastEpisode::find(session, PodcastEpisodeId{}));
             EXPECT_FALSE(RatedArtist::find(session, RatedArtistId{}));
             EXPECT_FALSE(RatedRelease::find(session, RatedReleaseId{}));
             EXPECT_FALSE(RatedTrack::find(session, RatedTrackId{}));

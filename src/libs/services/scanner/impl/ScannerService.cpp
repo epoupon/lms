@@ -153,14 +153,15 @@ namespace lms::scanner
 
     } // namespace
 
-    std::unique_ptr<IScannerService> createScannerService(db::IDb& db)
+    std::unique_ptr<IScannerService> createScannerService(db::IDb& db, const std::filesystem::path& cachePath)
     {
-        return std::make_unique<ScannerService>(db);
+        return std::make_unique<ScannerService>(db, cachePath);
     }
 
-    ScannerService::ScannerService(db::IDb& db)
+    ScannerService::ScannerService(db::IDb& db, const std::filesystem::path& cachePath)
         : _db{ db }
         , _jobScheduler{ core::createJobScheduler("Scanner", getScannerThreadCount()) }
+        , _cachePath{ cachePath }
     {
         _ioService.setThreadCount(1);
 
@@ -496,6 +497,7 @@ namespace lms::scanner
             .abortScan = _abortScan,
             .db = _db,
             .fileScanners = _fileScanners,
+            .cachePath = _cachePath
         };
 
         // Order is important: steps are sequential

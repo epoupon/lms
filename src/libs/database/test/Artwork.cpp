@@ -84,4 +84,27 @@ namespace lms::db::tests
             EXPECT_EQ(artwork.get()->getAbsoluteFilePath(), "/tmp/foo");
         }
     }
+
+    TEST_F(DatabaseFixture, Artwork_underlyingId)
+    {
+        ScopedImage image1{ session, "/MyImage" };
+        ScopedArtwork artwork1{ session, image1.lockAndGet() };
+
+        ScopedTrackEmbeddedImage image2{ session };
+        ScopedArtwork artwork2{ session, image2.lockAndGet() };
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto underlyingId{ artwork1.get()->getUnderlyingId() };
+            ASSERT_TRUE(std::holds_alternative<db::ImageId>(underlyingId));
+            EXPECT_EQ(std::get<db::ImageId>(underlyingId), image1.getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            const auto underlyingId{ artwork2.get()->getUnderlyingId() };
+            ASSERT_TRUE(std::holds_alternative<db::TrackEmbeddedImageId>(underlyingId));
+            EXPECT_EQ(std::get<db::TrackEmbeddedImageId>(underlyingId), image2.getId());
+        }
+    }
 } // namespace lms::db::tests

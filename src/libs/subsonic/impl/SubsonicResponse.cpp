@@ -26,6 +26,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 
 #include "core/String.hpp"
+#include "core/Version.hpp"
 
 #include "ProtocolVersion.hpp"
 
@@ -140,7 +141,7 @@ namespace lms::api::subsonic
         // OpenSubsonic mandatory fields
         // No big deal to send them even for legacy clients
         responseNode.setAttribute("type", "lms");
-        responseNode.setAttribute("serverVersion", serverVersion);
+        responseNode.setAttribute("serverVersion", core::getVersion());
         responseNode.setAttribute("openSubsonic", true);
 
         return response;
@@ -362,5 +363,4 @@ namespace lms::api::subsonic
         JsonSerializer serializer;
         serializer.serializeNode(os, _root);
     }
-
 } // namespace lms::api::subsonic

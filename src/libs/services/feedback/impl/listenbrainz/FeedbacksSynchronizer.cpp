@@ -133,7 +133,7 @@ namespace lms::feedback::listenBrainz
             request.message.addBodyText(Wt::Json::serialize(root));
             request.message.addHeader("Content-Type", "application/json");
 
-            request.onSuccessFunc = [this, type, starredTrackId](std::string_view /*msgBody*/) {
+            request.onSuccessFunc = [this, type, starredTrackId](const Wt::Http::Message&) {
                 boost::asio::post(boost::asio::bind_executor(_strand, [this, type, starredTrackId] {
                     onFeedbackSent(type, starredTrackId);
                 }));
@@ -321,8 +321,8 @@ namespace lms::feedback::listenBrainz
         request.priority = core::http::ClientRequestParameters::Priority::Low;
         request.relativeUrl = "/1/validate-token";
         request.headers = { { "Authorization", "Token " + std::string{ listenBrainzToken->getAsString() } } };
-        request.onSuccessFunc = [this, &context](std::string_view msgBody) {
-            context.listenBrainzUserName = utils::parseValidateToken(msgBody);
+        request.onSuccessFunc = [this, &context](const Wt::Http::Message& msg) {
+            context.listenBrainzUserName = utils::parseValidateToken(msg.body());
             if (context.listenBrainzUserName.empty())
             {
                 onSyncEnded(context);
@@ -344,8 +344,8 @@ namespace lms::feedback::listenBrainz
         core::http::ClientGETRequestParameters request;
         request.relativeUrl = "/1/feedback/user/" + std::string{ context.listenBrainzUserName } + "/get-feedback?score=1&count=0";
         request.priority = core::http::ClientRequestParameters::Priority::Low;
-        request.onSuccessFunc = [this, &context](std::string_view msgBody) {
-            std::string msgBodyCopy{ msgBody };
+        request.onSuccessFunc = [this, &context](const Wt::Http::Message& msg) {
+            std::string msgBodyCopy{ msg.body() };
             boost::asio::post(boost::asio::bind_executor(_strand, [this, msgBodyCopy, &context] {
                 LOG(DEBUG, "Current feedback count = " << (context.feedbackCount ? *context.feedbackCount : 0) << " for user '" << context.listenBrainzUserName << "'");
 
@@ -376,8 +376,8 @@ namespace lms::feedback::listenBrainz
         core::http::ClientGETRequestParameters request;
         request.relativeUrl = "/1/feedback/user/" + context.listenBrainzUserName + "/get-feedback?offset=" + std::to_string(context.fetchedFeedbackCount);
         request.priority = core::http::ClientRequestParameters::Priority::Low;
-        request.onSuccessFunc = [this, &context](std::string_view msgBody) {
-            std::string msgBodyCopy{ msgBody };
+        request.onSuccessFunc = [this, &context](const Wt::Http::Message& msg) {
+            std::string msgBodyCopy{ msg.body() };
             boost::asio::post(boost::asio::bind_executor(_strand, [this, msgBodyCopy, &context] {
                 const std::size_t fetchedFeedbackCount{ processGetFeedbacks(msgBodyCopy, context) };
                 if (fetchedFeedbackCount == 0                                // no more thing available on server

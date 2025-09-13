@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <filesystem>
 #include <optional>
 
 #include "ScannerEvents.hpp"
@@ -61,5 +62,5 @@ namespace lms::scanner
         virtual Events& getEvents() = 0;
     };
 
-    std::unique_ptr<IScannerService> createScannerService(db::IDb& db);
+    std::unique_ptr<IScannerService> createScannerService(db::IDb& db, const std::filesystem::path& cachePath);
 } // namespace lms::scanner

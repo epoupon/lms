@@ -19,31 +19,37 @@
 
 #include "MediaRetrieval.hpp"
 
-#include "av/Exception.hpp"
-#include "av/IAudioFile.hpp"
+#include <chrono>
+
 #include "core/FileResourceHandlerCreator.hpp"
 #include "core/ILogger.hpp"
 #include "core/IResourceHandler.hpp"
 #include "core/String.hpp"
 #include "core/Utils.hpp"
+
+#include "av/Exception.hpp"
+#include "av/IAudioFile.hpp"
+
 #include "database/Session.hpp"
+#include "database/objects/PodcastEpisode.hpp"
+#include "database/objects/PodcastEpisodeId.hpp"
 #include "database/objects/Track.hpp"
-#include "database/objects/TrackEmbeddedImageId.hpp"
 #include "database/objects/TrackLyrics.hpp"
 #include "database/objects/User.hpp"
+
 #include "services/artwork/IArtworkService.hpp"
+#include "services/podcast/IPodcastService.hpp"
 #include "services/transcoding/ITranscodingService.hpp"
 
 #include "CoverArtId.hpp"
 #include "ParameterParsing.hpp"
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"
+#include "SubsonicResponse.hpp"
 #include "responses/Lyrics.hpp"
 
 namespace lms::api::subsonic
 {
-    using namespace db;
-
     namespace
     {
         std::optional<transcoding::OutputFormat> subsonicStreamFormatToAvOutputFormat(std::string_view format)
@@ -100,8 +106,8 @@ namespace lms::api::subsonic
         struct StreamParameters
         {
             transcoding::InputParameters inputParameters;
+            std::string inputMimeType; // set if known
             std::optional<transcoding::OutputParameters> outputParameters;
-            std::filesystem::path trackPath;
             bool estimateContentLength{};
         };
 
@@ -125,10 +131,57 @@ namespace lms::api::subsonic
             }
         }
 
+        using AudioFileId = std::variant<db::TrackId, db::PodcastEpisodeId>;
+        struct AudioFileInfo
+        {
+            std::filesystem::path path;
+            std::chrono::milliseconds duration{};
+            std::size_t bitrate{};
+            std::string mimeType; // set if known
+        };
+
+        AudioFileInfo getAudioFileInfo(db::Session& session, AudioFileId audioFileId)
+        {
+            AudioFileInfo res;
+
+            auto transaction{ session.createReadTransaction() };
+
+            if (const db::TrackId * trackId{ std::get_if<db::TrackId>(&audioFileId) })
+            {
+                const db::Track::pointer track{ db::Track::find(session, *trackId) };
+                if (!track)
+                    throw RequestedDataNotFoundError{};
+
+                res.path = track->getAbsoluteFilePath();
+                res.duration = track->getDuration();
+                res.bitrate = track->getBitrate();
+            }
+            else if (const db::PodcastEpisodeId * episodeId{ std::get_if<db::PodcastEpisodeId>(&audioFileId) })
+            {
+                const db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(session, *episodeId) };
+                if (!episode)
+                    throw RequestedDataNotFoundError{};
+
+                std::filesystem::path podcastCachePath{ core::Service<podcast::IPodcastService>::get()->getCachePath() };
+
+                res.path = podcastCachePath / episode->getAudioRelativeFilePath();
+                res.duration = episode->getDuration();
+                res.bitrate = episode->getEnclosureLength() / std::chrono::duration_cast<std::chrono::seconds>(episode->getDuration()).count() * 8;
+                res.mimeType = episode->getEnclosureContentType();
+            }
+
+            return res;
+        }
+
         StreamParameters getStreamParameters(RequestContext& context)
         {
             // Mandatory params
-            const TrackId id{ getMandatoryParameterAs<TrackId>(context.parameters, "id") };
+            const auto trackId{ getParameterAs<db::TrackId>(context.parameters, "id") };
+            const auto podcastEpisodeId{ getParameterAs<db::PodcastEpisodeId>(context.parameters, "id") };
+            if (!trackId && !podcastEpisodeId)
+                throw RequiredParameterMissingError{ "id" };
+
+            const AudioFileId audioId{ trackId ? AudioFileId{ *trackId } : AudioFileId{ *podcastEpisodeId } };
 
             // Optional params
             std::size_t maxBitRate{ getParameterAs<std::size_t>(context.parameters, "maxBitRate").value_or(0) * 1000 }; // "If set to zero, no limit is imposed", given in kpbs
@@ -136,21 +189,18 @@ namespace lms::api::subsonic
             std::size_t timeOffset{ getParameterAs<std::size_t>(context.parameters, "timeOffset").value_or(0) };
             bool estimateContentLength{ getParameterAs<bool>(context.parameters, "estimateContentLength").value_or(false) };
 
+            const AudioFileInfo audioFileInfo{ getAudioFileInfo(context.dbSession, audioId) };
+
             StreamParameters parameters;
 
-            auto transaction{ context.dbSession.createReadTransaction() };
-
-            const auto track{ Track::find(context.dbSession, id) };
-            if (!track)
-                throw RequestedDataNotFoundError{};
-
-            parameters.inputParameters.trackId = id;
+            parameters.inputParameters.filePath = audioFileInfo.path;
+            parameters.inputParameters.duration = audioFileInfo.duration;
             parameters.inputParameters.offset = std::chrono::seconds{ timeOffset };
+            parameters.inputMimeType = audioFileInfo.mimeType;
             parameters.estimateContentLength = estimateContentLength;
-            parameters.trackPath = track->getAbsoluteFilePath();
 
-            if (format == "raw") // raw => no transcoding
-                return parameters;
+            if (format == "raw")   // raw => no transcoding
+                return parameters; // TODO: what if offset is not 0?
 
             std::optional<transcoding::OutputFormat> requestedFormat{ subsonicStreamFormatToAvOutputFormat(format) };
             if (!requestedFormat)
@@ -159,7 +209,7 @@ namespace lms::api::subsonic
                     requestedFormat = userTranscodeFormatToAvFormat(context.user->getSubsonicDefaultTranscodingOutputFormat());
             }
 
-            if (!requestedFormat && (maxBitRate == 0 || track->getBitrate() <= maxBitRate))
+            if (!requestedFormat && (maxBitRate == 0 || audioFileInfo.bitrate <= maxBitRate))
             {
                 LMS_LOG(API_SUBSONIC, DEBUG, "File's bitrate is compatible with parameters => no transcoding");
                 return parameters; // no transcoding needed
@@ -169,9 +219,9 @@ namespace lms::api::subsonic
             //  same codec => apply max bitrate
             //  otherwise => apply default bitrate (because we can't really compare bitrates between formats) + max bitrate)
             std::size_t bitrate{};
-            if (requestedFormat && isOutputFormatCompatible(track->getAbsoluteFilePath(), *requestedFormat))
+            if (requestedFormat && isOutputFormatCompatible(audioFileInfo.path, *requestedFormat))
             {
-                if (maxBitRate == 0 || track->getBitrate() <= maxBitRate)
+                if (maxBitRate == 0 || audioFileInfo.bitrate <= maxBitRate)
                 {
                     LMS_LOG(API_SUBSONIC, DEBUG, "File's bitrate and format are compatible with parameters => no transcoding");
                     return parameters; // no transcoding needed
@@ -218,7 +268,7 @@ namespace lms::api::subsonic
             // Choice: we return only the first lyrics if the track has many lyrics
             db::TrackLyrics::FindParameters lyricsParams;
             lyricsParams.setTrack(tracks.results[0]);
-            lyricsParams.setSortMethod(TrackLyricsSortMethod::ExternalFirst);
+            lyricsParams.setSortMethod(db::TrackLyricsSortMethod::ExternalFirst);
             lyricsParams.setRange(db::Range{ 0, 1 });
 
             db::TrackLyrics::find(context.dbSession, lyricsParams, [&](const db::TrackLyrics::pointer& lyrics) {
@@ -278,7 +328,7 @@ namespace lms::api::subsonic
             {
                 auto transaction{ context.dbSession.createReadTransaction() };
 
-                auto track{ Track::find(context.dbSession, id) };
+                auto track{ db::Track::find(context.dbSession, id) };
                 if (!track)
                     throw RequestedDataNotFoundError{};
 
@@ -310,7 +360,7 @@ namespace lms::api::subsonic
                 if (streamParameters.outputParameters)
                     resourceHandler = core::Service<transcoding::ITranscodingService>::get()->createResourceHandler(streamParameters.inputParameters, *streamParameters.outputParameters, streamParameters.estimateContentLength);
                 else
-                    resourceHandler = core::createFileResourceHandler(streamParameters.trackPath);
+                    resourceHandler = core::createFileResourceHandler(streamParameters.inputParameters.filePath, streamParameters.inputMimeType);
             }
             else
             {
@@ -323,6 +373,7 @@ namespace lms::api::subsonic
         }
         catch (const av::Exception& e)
         {
+            response.setStatus(404); // report not found if something wrong happened
             LMS_LOG(API_SUBSONIC, ERROR, "Caught Av exception: " << e.what());
         }
     }

@@ -11,6 +11,8 @@ add_library(lmsdatabase STATIC
 	impl/objects/Medium.cpp
 	impl/objects/PlayListFile.cpp
 	impl/objects/PlayQueue.cpp
+	impl/objects/Podcast.cpp
+	impl/objects/PodcastEpisode.cpp
 	impl/objects/TrackArtistLink.cpp
 	impl/objects/TrackFeatures.cpp
 	impl/objects/TrackList.cpp

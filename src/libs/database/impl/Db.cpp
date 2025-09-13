@@ -21,6 +21,7 @@
 #include <memory>
 
 #include <Wt/Dbo/FixedSqlConnectionPool.h>
+#include <Wt/Dbo/Logger.h>
 #include <Wt/Dbo/backend/Sqlite3.h>
 
 #include "core/IConfig.hpp"
@@ -193,6 +194,8 @@ namespace lms::db
     // Session living class handling the database and the login
     Db::Db(const std::filesystem::path& dbPath, std::size_t connectionCount)
     {
+        Wt::Dbo::logToWt();
+
         std::string checkType{ "quick" };
         LMS_LOG(DB, INFO, "Creating connection pool on file " << dbPath);
 

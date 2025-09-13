@@ -20,6 +20,7 @@ ARG	LMS_BUILD_PACKAGES=" \
 	ffmpeg-dev \
 	libarchive-dev \
 	libconfig-dev \
+	pugixml-dev \
 	taglib-dev \
 	stb \
 	wt-dev \

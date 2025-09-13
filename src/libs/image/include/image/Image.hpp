@@ -39,7 +39,7 @@ namespace lms::image
     std::unique_ptr<IRawImage> decodeImage(const std::filesystem::path& path);
 
     std::unique_ptr<IEncodedImage> readImage(std::span<const std::byte> encodedData, std::string_view mimeType);
-    std::unique_ptr<IEncodedImage> readImage(const std::filesystem::path& path);
+    std::unique_ptr<IEncodedImage> readImage(const std::filesystem::path& path, std::string_view mimeType = ""); // mimeType may already been known, otherwise, it is guessed based on the file extension
 
     std::unique_ptr<IEncodedImage> encodeToJPEG(const IRawImage& rawImage, unsigned quality);
 } // namespace lms::image

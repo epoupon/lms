@@ -12,6 +12,7 @@ ARG BUILD_PACKAGES="\
 	libconfig \
 	make \
 	pkgconfig \
+	pugixml \
 	stb \
 	taglib \
 	wt \

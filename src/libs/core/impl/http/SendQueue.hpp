@@ -19,9 +19,9 @@
 
 #pragma once
 
+#include <atomic>
 #include <deque>
 #include <string_view>
-#include <vector>
 
 #include <Wt/Http/Client.h>
 #include <boost/asio/io_context.hpp>
@@ -44,10 +44,13 @@ namespace lms::core::http
         SendQueue& operator=(const SendQueue&&) = delete;
 
         void sendRequest(std::unique_ptr<ClientRequest> request);
+        void abortAllRequests();
 
     private:
         void sendNextQueuedRequest();
         bool sendRequest(const ClientRequest& request);
+        void onClientBodyDataReceived(const std::string& data);
+        void onClientAborted(std::unique_ptr<ClientRequest> request);
         void onClientDone(Wt::AsioWrapper::error_code ec, const Wt::Http::Message& msg);
         void onClientDoneError(std::unique_ptr<ClientRequest> request, Wt::AsioWrapper::error_code ec);
         void onClientDoneSuccess(std::unique_ptr<ClientRequest> request, const Wt::Http::Message& msg);
@@ -59,9 +62,9 @@ namespace lms::core::http
         const std::chrono::seconds _maxRetryWaitDuration{ 300 };
 
         boost::asio::io_context& _ioContext;
-        boost::asio::io_context::strand _strand{ _ioContext };
+        boost::asio::io_context::strand _strand{ _ioContext }; // protect _state, _sendQueue and _currentRequest
         boost::asio::steady_timer _throttleTimer{ _ioContext };
-        std::string _baseUrl;
+        const std::string _baseUrl;
 
         enum class State
         {
@@ -69,10 +72,11 @@ namespace lms::core::http
             Throttled,
             Sending,
         };
-        State _state{ State::Idle };
-        Wt::Http::Client _client{ _ioContext };
+        void setState(State state);
+        std::atomic<bool> _abortAllRequests;
+        State _state;
+        Wt::Http::Client _client;
         std::map<ClientRequestParameters::Priority, std::deque<std::unique_ptr<ClientRequest>>> _sendQueue;
         std::unique_ptr<ClientRequest> _currentRequest;
     };
-
 } // namespace lms::core::http

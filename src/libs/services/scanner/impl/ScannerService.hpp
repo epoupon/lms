@@ -31,11 +31,12 @@
 #include <Wt/WIOService.h>
 #include <Wt/WSignal.h>
 
-#include "FileScanners.hpp"
-#include "ScannerSettings.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "services/scanner/IScannerService.hpp"
+
+#include "FileScanners.hpp"
+#include "ScannerSettings.hpp"
 #include "steps/IScanStep.hpp"
 
 namespace lms::core
@@ -53,7 +54,7 @@ namespace lms::scanner
     class ScannerService : public IScannerService
     {
     public:
-        ScannerService(db::IDb& db);
+        ScannerService(db::IDb& db, const std::filesystem::path& cachePath);
         ~ScannerService() override;
         ScannerService(const ScannerService&) = delete;
         ScannerService& operator=(const ScannerService&) = delete;
@@ -89,6 +90,7 @@ namespace lms::scanner
 
         db::IDb& _db;
         std::unique_ptr<core::IJobScheduler> _jobScheduler;
+        const std::filesystem::path _cachePath;
 
         FileScanners _fileScanners;
         std::vector<std::unique_ptr<IScanStep>> _scanSteps;

@@ -33,17 +33,17 @@ namespace lms::api::subsonic
 
         userNode.setAttribute("username", user->getLoginName());
         userNode.setAttribute("scrobblingEnabled", true);
-        userNode.setAttribute("adminRole", user->isAdmin());
-        userNode.setAttribute("settingsRole", true);
-        userNode.setAttribute("downloadRole", true);
-        userNode.setAttribute("uploadRole", false);
-        userNode.setAttribute("playlistRole", true);
-        userNode.setAttribute("coverArtRole", false);
-        userNode.setAttribute("commentRole", false);
-        userNode.setAttribute("podcastRole", false); // not supported
-        userNode.setAttribute("streamRole", true);
-        userNode.setAttribute("jukeboxRole", false); // not supported
-        userNode.setAttribute("shareRole", false);   // not supported
+        userNode.setAttribute("adminRole", user->isAdmin());   // Whether the user is administrator
+        userNode.setAttribute("settingsRole", true);           // Whether the user is allowed to change personal settings and password
+        userNode.setAttribute("downloadRole", true);           // Whether the user is allowed to download files
+        userNode.setAttribute("uploadRole", false);            // Whether the user is allowed to upload files
+        userNode.setAttribute("playlistRole", true);           // Whether the user is allowed to create and delete playlists
+        userNode.setAttribute("coverArtRole", false);          // Whether the user is allowed to change cover art and tags.
+        userNode.setAttribute("commentRole", false);           // Whether the user is allowed to create and edit comments and ratings
+        userNode.setAttribute("podcastRole", user->isAdmin()); // Whether the user is allowed to administrate Podcasts
+        userNode.setAttribute("streamRole", true);             // Whether the user is allowed to play files
+        userNode.setAttribute("jukeboxRole", false);           // not supported
+        userNode.setAttribute("shareRole", false);             // not supported
 
         // users can access all libraries
         db::MediaLibrary::find(context.dbSession, [&](const db::MediaLibrary::pointer& library) {

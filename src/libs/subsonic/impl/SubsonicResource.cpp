@@ -46,6 +46,7 @@
 #include "endpoints/MediaLibraryScanning.hpp"
 #include "endpoints/MediaRetrieval.hpp"
 #include "endpoints/Playlists.hpp"
+#include "endpoints/Podcast.hpp"
 #include "endpoints/Searching.hpp"
 #include "endpoints/System.hpp"
 #include "endpoints/UserManagement.hpp"
@@ -97,8 +98,13 @@ namespace lms::api::subsonic
 
             std::string res;
 
+            bool firstParameter{ true };
             for (const auto& [type, values] : parameterMap)
             {
+                if (!firstParameter)
+                    res += ", ";
+                firstParameter = false;
+
                 res += "{" + type + "=";
                 if (values.size() == 1)
                 {
@@ -107,14 +113,18 @@ namespace lms::api::subsonic
                 else
                 {
                     res += "{";
+                    bool firstValue{ true };
                     for (const std::string& value : values)
                     {
+                        if (!firstValue)
+                            res += ',';
+                        firstValue = false;
+
                         res += redactValueIfNeeded(type, value);
-                        res += ',';
                     }
                     res += "}";
                 }
-                res += "}, ";
+                res += "}";
             }
 
             return res;
@@ -210,13 +220,14 @@ namespace lms::api::subsonic
             { "/deleteShare", { handleNotImplemented } },
 
             // Podcast
-            { "/getPodcasts", { handleNotImplemented } },
-            { "/getNewestPodcasts", { handleNotImplemented } },
-            { "/refreshPodcasts", { handleNotImplemented } },
-            { "/createPodcastChannel", { handleNotImplemented } },
-            { "/deletePodcastChannel", { handleNotImplemented } },
-            { "/deletePodcastEpisode", { handleNotImplemented } },
-            { "/downloadPodcastEpisode", { handleNotImplemented } },
+            { "/getPodcasts", { handleGetPodcasts } },
+            { "/getNewestPodcasts", { handleGetNewestPodcasts } },
+            { "/refreshPodcasts", { handleRefreshPodcasts, AuthenticationMode::Authenticated, { db::UserType::ADMIN } } },
+            { "/createPodcastChannel", { handleCreatePodcastChannel, AuthenticationMode::Authenticated, { db::UserType::ADMIN } } },
+            { "/deletePodcastChannel", { handleDeletePodcastChannel, AuthenticationMode::Authenticated, { db::UserType::ADMIN } } },
+            { "/deletePodcastEpisode", { handleDeletePodcastEpisode, AuthenticationMode::Authenticated, { db::UserType::ADMIN } } },
+            { "/downloadPodcastEpisode", { handleDownloadPodcastEpisode, AuthenticationMode::Authenticated, { db::UserType::ADMIN } } },
+            { "/getPodcastEpisode", { handleGetPodcastEpisode } },
 
             // Jukebox
             { "/jukeboxControl", { handleNotImplemented } },
