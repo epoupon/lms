@@ -84,10 +84,10 @@ namespace lms::db
     {
         Artwork::UnderlyingId res;
 
-        if (const TrackEmbeddedImageId id{ _trackEmbeddedImage.id() }; id.isValid())
-            res = id;
-        else if (const ImageId id{ _image.id() }; id.isValid())
-            res = id;
+        if (const TrackEmbeddedImageId embeddedImageId{ _trackEmbeddedImage.id() }; embeddedImageId.isValid())
+            res = embeddedImageId;
+        else if (const ImageId imageId{ _image.id() }; imageId.isValid())
+            res = imageId;
 
         return res;
     }
@@ -120,5 +120,10 @@ namespace lms::db
     ObjectPtr<Image> Artwork::getImage() const
     {
         return _image;
+    }
+
+    ImageId Artwork::getImageId() const
+    {
+        return _image.id();
     }
 } // namespace lms::db

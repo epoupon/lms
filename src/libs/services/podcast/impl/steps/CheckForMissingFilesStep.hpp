@@ -19,16 +19,7 @@
 
 #pragma once
 
-#include <vector>
-
-#include "database/objects/ImageId.hpp"
-
 #include "RefreshStep.hpp"
-
-namespace lms::db
-{
-    class Artwork;
-}
 
 namespace lms::podcast
 {
@@ -40,10 +31,7 @@ namespace lms::podcast
         core::LiteralString getName() const override;
         void run() override;
 
-        void collectMissingImages();
-        void deleteMissingImages();
+        void checkMissingImages();
         void checkMissingEpisodes();
-
-        std::vector<db::ImageId> _missingImages;
     };
 } // namespace lms::podcast

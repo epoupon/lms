@@ -23,6 +23,7 @@
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
 #include "core/Service.hpp"
 #include "core/http/IClient.hpp"
 #include "database/IDb.hpp"
@@ -290,8 +291,13 @@ namespace lms::podcast
     {
         _refreshContext.executor.post([stepIndex, this] {
             assert(stepIndex < _refreshSteps.size());
-            LMS_LOG(PODCAST, DEBUG, "Running step '" << _refreshSteps[stepIndex]->getName() << "'");
-            _refreshSteps[stepIndex]->run();
+            RefreshStep& step{ *_refreshSteps[stepIndex] };
+
+            LMS_LOG(PODCAST, DEBUG, "Running step '" << step.getName() << "'");
+            {
+                LMS_SCOPED_TRACE_OVERVIEW("Podcast", step.getName());
+                step.run();
+            }
         });
     }
 

@@ -53,6 +53,7 @@ namespace lms::db
         Wt::WDateTime getLastWrittenTime() const;
         std::filesystem::path getAbsoluteFilePath() const;
         ObjectPtr<Image> getImage() const;
+        ImageId getImageId() const;
 
         template<class Action>
         void persist(Action& a)
