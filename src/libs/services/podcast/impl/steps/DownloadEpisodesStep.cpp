@@ -182,7 +182,7 @@ namespace lms::podcast
 
                 // TODO: now the file is complete, should we attempt to read it and get the real information like duration and size?
 
-                LMS_LOG(PODCAST, INFO, "Successfully downloaded episode '" << episode->getTitle() << "'");
+                LMS_LOG(PODCAST, INFO, "Downloaded episode '" << episode->getTitle() << "'");
                 processNext();
             });
         };

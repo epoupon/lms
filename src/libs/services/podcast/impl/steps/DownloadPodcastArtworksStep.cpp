@@ -111,6 +111,8 @@ namespace lms::podcast
         const std::string url{ podcast->getImageUrl() };
         const std::filesystem::path finalFilePath{ getCachePath() / utils::generateRandomFileName() };
 
+        LMS_LOG(PODCAST, DEBUG, "Downloading podcast artwork '" << podcast->getTitle() << "' from '" << url << "' in file '" << finalFilePath << "'");
+
         core::http::ClientGETRequestParameters params;
         params.relativeUrl = podcast->getImageUrl();
         params.onFailureFunc = [this, podcast] {
@@ -118,31 +120,33 @@ namespace lms::podcast
             processNext();
         };
         params.onSuccessFunc = [=, this](const Wt::Http::Message& msg) {
-            const std::string body{ msg.body() }; // API enforces a copy here
+            getExecutor().post([=, this] {
+                const std::string body{ msg.body() }; // API enforces a copy here
 
-            std::ofstream file{ finalFilePath, std::ios::binary | std::ios::app };
-            if (!file)
-            {
-                std::error_code ec{ errno, std::generic_category() };
-                LMS_LOG(PODCAST, ERROR, "Failed to open file " << finalFilePath << " for writing: " << ec.message());
+                std::ofstream file{ finalFilePath, std::ios::binary | std::ios::app };
+                if (!file)
+                {
+                    std::error_code ec{ errno, std::generic_category() };
+                    LMS_LOG(PODCAST, ERROR, "Failed to open file " << finalFilePath << " for writing: " << ec.message());
+                    processNext();
+                    return;
+                }
+
+                file.write(body.data(), body.size());
+                if (!file)
+                {
+                    std::error_code ec{ errno, std::generic_category() };
+                    LMS_LOG(PODCAST, ERROR, "Failed to write to file " << finalFilePath << ": " << ec.message());
+                    processNext();
+                    return;
+                }
+
+                LMS_LOG(PODCAST, INFO, "Downloaded podcast artwork for podcast '" << podcast->getTitle());
+                const std::string* contentType{ msg.getHeader("Content-Type") };
+                createPodcastArtwork(getDb().getTLSSession(), podcastId, finalFilePath, contentType ? *contentType : "application/octet-stream");
+
                 processNext();
-                return;
-            }
-
-            file.write(body.data(), body.size());
-            if (!file)
-            {
-                std::error_code ec{ errno, std::generic_category() };
-                LMS_LOG(PODCAST, ERROR, "Failed to write to file " << finalFilePath << ": " << ec.message());
-                processNext();
-                return;
-            }
-
-            const std::string* contentType{ msg.getHeader("Content-Type") };
-            LMS_LOG(PODCAST, INFO, "Downloaded podcast artwork for podcast '" << podcast->getTitle() << "' to " << finalFilePath << " with content type '" << (contentType ? *contentType : "unknown") << "', size = " << body.size());
-            createPodcastArtwork(getDb().getTLSSession(), podcastId, finalFilePath, contentType ? *contentType : "application/octet-stream");
-
-            processNext();
+            });
         };
         params.onAbortFunc = [this] {
             onAbort();
