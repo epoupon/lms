@@ -19,13 +19,13 @@
 
 #include "MediaRetrieval.hpp"
 
+#include <algorithm>
 #include <chrono>
 
 #include "core/FileResourceHandlerCreator.hpp"
 #include "core/ILogger.hpp"
 #include "core/IResourceHandler.hpp"
 #include "core/String.hpp"
-#include "core/Utils.hpp"
 
 #include "av/Exception.hpp"
 #include "av/IAudioFile.hpp"
@@ -385,7 +385,7 @@ namespace lms::api::subsonic
 
         std::optional<std::size_t> size{ getParameterAs<std::size_t>(context.parameters, "size") };
         if (size)
-            *size = core::utils::clamp(*size, std::size_t{ 32 }, std::size_t{ 2048 });
+            *size = std::clamp(*size, std::size_t{ 32 }, std::size_t{ 2048 });
 
         std::shared_ptr<image::IEncodedImage> image{ core::Service<artwork::IArtworkService>::get()->getImage(coverArtId.id, size) };
         if (!image)

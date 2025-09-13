@@ -19,9 +19,10 @@
 
 #include "ArtworkService.hpp"
 
+#include <algorithm>
+
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
-#include "core/Utils.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
@@ -243,7 +244,7 @@ namespace lms::artwork
 
     void ArtworkService::setJpegQuality(unsigned quality)
     {
-        _jpegQuality = core::utils::clamp<unsigned>(quality, 1, 100);
+        _jpegQuality = std::clamp<unsigned>(quality, 1, 100);
 
         LMS_LOG(COVER, INFO, "JPEG export quality = " << _jpegQuality);
     }

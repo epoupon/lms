@@ -19,6 +19,7 @@
 
 #include "SendQueue.hpp"
 
+#include <algorithm>
 #include <latch>
 
 #include <boost/asio/bind_executor.hpp>
@@ -308,7 +309,7 @@ namespace lms::core::http
 
     void SendQueue::throttle(std::chrono::seconds requestedDuration)
     {
-        const std::chrono::seconds duration{ clamp(requestedDuration, _minRetryWaitDuration, _maxRetryWaitDuration) };
+        const std::chrono::seconds duration{ std::clamp(requestedDuration, _minRetryWaitDuration, _maxRetryWaitDuration) };
         LOG(DEBUG, "Throttling for " << duration.count() << " seconds");
 
         _throttleTimer.expires_after(duration);
