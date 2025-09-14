@@ -79,9 +79,9 @@ namespace lms::podcast
             dbPodcast.modify()->setSubtitle(podcast.subtitle);
             dbPodcast.modify()->setSummary(podcast.summary);
             dbPodcast.modify()->setTitle(podcast.title);
-            if (dbPodcast->getImageUrl() != podcast.imageUrl)
+            if (std::string previousUrl{ dbPodcast->getImageUrl() }; !previousUrl.empty() && previousUrl != podcast.imageUrl)
             {
-                LMS_LOG(PODCAST, INFO, "Podcast '" << podcast.title << "' : image url changed from '" << dbPodcast->getImageUrl() << "' to '" << podcast.imageUrl << "'");
+                LMS_LOG(PODCAST, INFO, "Podcast '" << podcast.title << "' : image url changed from '" << previousUrl << "' to '" << podcast.imageUrl << "'");
                 if (db::Artwork::pointer currentArtwork{ dbPodcast->getArtwork() })
                     removeArtwork(session, currentArtwork);
 
