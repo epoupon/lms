@@ -274,8 +274,8 @@ namespace lms::podcast
         // order is important, each step is done only when the previous one is done
         _refreshSteps.emplace_back(std::make_unique<ClearTmpDirectoryStep>(_refreshContext, onDoneCallback));
         _refreshSteps.emplace_back(std::make_unique<CheckForMissingFilesStep>(_refreshContext, onDoneCallback));
-        _refreshSteps.emplace_back(std::make_unique<RefreshPodcastsStep>(_refreshContext, onDoneCallback));
         _refreshSteps.emplace_back(std::make_unique<RemovePodcastsStep>(_refreshContext, onDoneCallback));
+        _refreshSteps.emplace_back(std::make_unique<RefreshPodcastsStep>(_refreshContext, onDoneCallback));
         _refreshSteps.emplace_back(std::make_unique<RemoveEpisodesStep>(_refreshContext, onDoneCallback));
         _refreshSteps.emplace_back(std::make_unique<DownloadPodcastArtworksStep>(_refreshContext, onDoneCallback));
         _refreshSteps.emplace_back(std::make_unique<DownloadEpisodeArtworksStep>(_refreshContext, onDoneCallback));
