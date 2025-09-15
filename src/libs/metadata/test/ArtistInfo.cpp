@@ -77,6 +77,24 @@ He moved from the UK to Montreal in 1984 to become resident DJ at a number of cl
         ASSERT_EQ(artistInfo.biography, "DJ and producer based in London, UK. Founder of Missile Records and Planet Of Drums.\r\n\r\nHe moved from the UK to Montreal in 1984 to become resident DJ at a number of clubs. In 1987, he began working as an A&R for JSE Agency & Management in New York, managing the likes of Tommy Musto, Frankie Bones, and The KLF. He also arranged and was tour manager for artists such as Womack & Womack, Jungle Brothers, Ice-T, and Guru Josh.");
     }
 
+    TEST(ArtistInfo, basic_musicbrainzartistid)
+    {
+        std::istringstream is{ R"(<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
+<artist>
+  <name>Tim Taylor</name>
+  <musicbrainzartistid>38811c52-85e3-4e2e-3319-ab7d9f2cfa5b</musicbrainzartistid>
+  <sortname>Taylor, Tim</sortname>
+  <disambiguation>Timothy Taylor</disambiguation>
+</artist>)" };
+
+        const ArtistInfo artistInfo{ parseArtistInfo(is) };
+
+        EXPECT_EQ(artistInfo.mbid, core::UUID::fromString("38811c52-85e3-4e2e-3319-ab7d9f2cfa5b"));
+        EXPECT_EQ(artistInfo.name, "Tim Taylor");
+        ASSERT_EQ(artistInfo.sortName, "Taylor, Tim");
+        ASSERT_EQ(artistInfo.disambiguation, "Timothy Taylor");
+    }
+
     TEST(ArtistInfo, trim)
     {
         std::istringstream is{ R"(<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
