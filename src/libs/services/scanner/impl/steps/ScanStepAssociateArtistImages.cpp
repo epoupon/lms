@@ -59,6 +59,7 @@ namespace lms::scanner
         struct SearchArtistArtworkParams
         {
             std::span<const std::string> artistFileNames;
+            std::span<const std::string> artistInfoFileNames;
             const ScannerSettings& settings;
         };
 
@@ -101,7 +102,7 @@ namespace lms::scanner
             return image;
         }
 
-        db::Image::pointer searchImageInArtistInfoDirectory(db::Session& session, db::ArtistId artistId)
+        db::Image::pointer searchImageInArtistInfoDirectory(db::Session& session, const SearchArtistArtworkParams& searchParams, db::ArtistId artistId)
         {
             db::Image::pointer image;
 
@@ -109,9 +110,8 @@ namespace lms::scanner
             db::ArtistInfo::find(session, artistId, [&](const db::ArtistInfo::pointer& artistInfo) {
                 fileInfoPaths.push_back(artistInfo->getAbsoluteFilePath());
 
-                // TODO make these names configurable
                 if (!image)
-                    image = findImageInDirectory(session, artistInfo->getDirectory()->getAbsolutePath(), std::array<std::string, 3>{ "thumb", "folder", "fanart" });
+                    image = findImageInDirectory(session, artistInfo->getDirectory()->getAbsolutePath(), searchParams.artistInfoFileNames);
             });
 
             if (fileInfoPaths.size() > 1)
@@ -199,7 +199,7 @@ namespace lms::scanner
             }
 
             {
-                const db::Image::pointer image{ searchImageInArtistInfoDirectory(session, artist->getId()) };
+                const db::Image::pointer image{ searchImageInArtistInfoDirectory(session, searchParams, artist->getId()) };
                 if (image)
                     return db::Artwork::find(session, image->getId());
             }
@@ -254,6 +254,19 @@ namespace lms::scanner
             return res;
         }
 
+        std::vector<std::string> constructArtistInfoFileNames()
+        {
+            std::vector<std::string> res;
+
+            core::Service<core::IConfig>::get()->visitStrings("artist-info-image-file-names",
+                [&res](std::string_view fileName) {
+                    res.emplace_back(fileName);
+                },
+                { "thumb", "folder", "fanart" });
+
+            return res;
+        }
+
         bool fetchNextArtistIdRange(db::Session& session, db::ArtistId& lastRetrievedId, db::IdRange<db::ArtistId>& idRange)
         {
             constexpr std::size_t readBatchSize{ 100 };
@@ -275,6 +288,9 @@ namespace lms::scanner
                 , _artistIdRange{ artistIdRange }
             {
             }
+            ~ComputeArtistArtworkAssociationsJob() override = default;
+            ComputeArtistArtworkAssociationsJob(const ComputeArtistArtworkAssociationsJob&) = delete;
+            ComputeArtistArtworkAssociationsJob& operator=(const ComputeArtistArtworkAssociationsJob&) = delete;
 
             std::span<const ArtistArtworkAssociation> getAssociations() const { return _associations; }
             std::size_t getProcessedArtistCount() const { return _processedArtistCount; }
@@ -315,6 +331,7 @@ namespace lms::scanner
     ScanStepAssociateArtistImages::ScanStepAssociateArtistImages(InitParams& initParams)
         : ScanStepBase{ initParams }
         , _artistFileNames{ constructArtistFileNames() }
+        , _artistInfoFileNames{ constructArtistInfoFileNames() }
     {
     }
 
@@ -340,6 +357,7 @@ namespace lms::scanner
 
         const SearchArtistArtworkParams searchParams{
             .artistFileNames = _artistFileNames,
+            .artistInfoFileNames = _artistInfoFileNames,
             .settings = _settings,
         };
 

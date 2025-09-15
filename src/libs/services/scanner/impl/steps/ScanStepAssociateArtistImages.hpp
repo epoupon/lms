@@ -41,5 +41,6 @@ namespace lms::scanner
         void process(ScanContext& context) override;
 
         const std::vector<std::string> _artistFileNames;
+        const std::vector<std::string> _artistInfoFileNames;
     };
 } // namespace lms::scanner
