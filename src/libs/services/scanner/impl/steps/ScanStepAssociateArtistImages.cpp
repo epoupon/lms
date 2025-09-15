@@ -109,8 +109,9 @@ namespace lms::scanner
             db::ArtistInfo::find(session, artistId, [&](const db::ArtistInfo::pointer& artistInfo) {
                 fileInfoPaths.push_back(artistInfo->getAbsoluteFilePath());
 
+                // TODO make these names configurable
                 if (!image)
-                    image = findImageInDirectory(session, artistInfo->getDirectory()->getAbsolutePath(), std::array<std::string, 2>{ "thumb", "folder" });
+                    image = findImageInDirectory(session, artistInfo->getDirectory()->getAbsolutePath(), std::array<std::string, 3>{ "thumb", "folder", "fanart" });
             });
 
             if (fileInfoPaths.size() > 1)
