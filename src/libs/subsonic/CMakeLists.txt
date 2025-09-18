@@ -64,6 +64,10 @@ target_link_libraries(lmssubsonic PUBLIC
 	Wt::Wt
 	)
 
+if(BUILD_TESTING)
+	add_subdirectory(test)
+endif()
+
 if (BUILD_BENCHMARKS)
        add_subdirectory(bench)
 endif()

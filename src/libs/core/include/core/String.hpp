@@ -105,6 +105,9 @@ namespace lms::core::stringUtils
     void writeJSEscapedString(std::ostream& os, std::string_view str);
     void writeJsonEscapedString(std::ostream& os, std::string_view str);
 
+    [[nodiscard]] std::string xmlEscape(std::string_view str);
+    void writeXmlEscapedString(std::ostream& os, std::string_view str);
+
     [[nodiscard]] std::string escapeString(std::string_view str, std::string_view charsToEscape, char escapeChar);
     [[nodiscard]] std::string unescapeString(std::string_view str, char escapeChar);
 
