@@ -187,6 +187,7 @@
 <message id="Lms.Admin.InitWizard.header">Crea un account amministratore</message>
 
 <!--Auth-->
+<message id="Lms.Auth.login">Login</message>
 <message id="Lms.Auth.remember-me">Ricordami</message>
 <message id="Lms.Auth.welcome">Benvenuto!</message>
 

@@ -219,7 +219,7 @@ namespace lms::ui
             }
         }
 
-        Wt::WPushButton* loginBtn{ bindNew<Wt::WPushButton>("login-btn", Wt::WString::tr("Lms.login")) };
+        Wt::WPushButton* loginBtn{ bindNew<Wt::WPushButton>("login-btn", Wt::WString::tr("Lms.Auth.login")) };
         loginBtn->clicked().connect(this, processAuth);
 
         updateView(model.get());

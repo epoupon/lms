@@ -187,6 +187,7 @@
 <message id="Lms.Admin.InitWizard.header">Creation du compte administrateur</message>
 
 <!--Auth-->
+<message id="Lms.Auth.login">Login</message>
 <message id="Lms.Auth.remember-me">Se souvenir de moi</message>
 <message id="Lms.Auth.welcome">Bienvenue !</message>
 
