@@ -176,7 +176,7 @@ namespace lms::api::subsonic
                        [&](bool value) { os << (value ? "true" : "false"); },
                        [&](float value) { os << value; },
                        [&](long long value) { os << value; } },
-            value);
+                   value);
     }
 
     void Response::XmlSerializer::serializeEscapedString(std::ostream& os, std::string_view str)

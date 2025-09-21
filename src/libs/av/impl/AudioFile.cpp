@@ -204,11 +204,11 @@ namespace lms::av
     std::optional<std::size_t> AudioFile::getBestStreamIndex() const
     {
         int res = ::av_find_best_stream(_context,
-            AVMEDIA_TYPE_AUDIO,
-            -1, // Auto
-            -1, // Auto
-            NULL,
-            0);
+                                        AVMEDIA_TYPE_AUDIO,
+                                        -1, // Auto
+                                        -1, // Auto
+                                        NULL,
+                                        0);
 
         if (res < 0)
             return std::nullopt;

@@ -45,6 +45,7 @@
 #include <taglib/wavfile.h>
 #include <taglib/wavpackfile.h>
 #if TAGLIB_HAS_DSF
+    #include <taglib/dsdifffile.h>
     #include <taglib/dsffile.h>
 #endif
 
@@ -451,6 +452,8 @@ namespace lms::metadata::taglib
             _audioProperties.bitsPerSample = wavProperties->bitsPerSample();
 #if TAGLIB_HAS_DSF
         else if (const auto* dsfProperties{ dynamic_cast<const TagLib::DSF::Properties*>(properties) })
+            _audioProperties.bitsPerSample = dsfProperties->bitsPerSample();
+        else if (const auto* dsfProperties{ dynamic_cast<const TagLib::DSDIFF::Properties*>(properties) })
             _audioProperties.bitsPerSample = dsfProperties->bitsPerSample();
 #endif
     }

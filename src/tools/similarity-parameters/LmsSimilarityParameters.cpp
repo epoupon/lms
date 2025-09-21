@@ -166,7 +166,7 @@ constructFeaturesCache(db::Session& session, const FeatureSettingsMap& featureSe
 
     std::unordered_set<FeatureName> names;
     std::transform(std::cbegin(featureSettings), std::cend(featureSettings), std::inserter(names, std::begin(names)),
-        [](const auto& itFeature) { return itFeature.first; });
+                   [](const auto& itFeature) { return itFeature.first; });
 
     auto transaction{ session.createReadTransaction() };
 
@@ -254,8 +254,8 @@ computeTrackScore(db::Session& session, db::IdType track1Id, db::IdType track2Id
 
         std::vector<db::IdType> commonArtistIds;
         std::set_intersection(std::cbegin(track1ArtistIds), std::cend(track1ArtistIds),
-            std::cbegin(track2ArtistIds), std::cend(track2ArtistIds),
-            std::back_inserter(commonArtistIds));
+                              std::cbegin(track2ArtistIds), std::cend(track2ArtistIds),
+                              std::back_inserter(commonArtistIds));
 
         score += commonArtistIds.size();
     }
@@ -267,8 +267,8 @@ computeTrackScore(db::Session& session, db::IdType track1Id, db::IdType track2Id
 
         std::vector<db::IdType> commonClusterIds;
         std::set_intersection(std::cbegin(track1ClusterIds), std::cend(track1ClusterIds),
-            std::cbegin(track2ClusterIds), std::cend(track2ClusterIds),
-            std::back_inserter(commonClusterIds));
+                              std::cbegin(track2ClusterIds), std::cend(track2ClusterIds),
+                              std::back_inserter(commonClusterIds));
 
         score += commonClusterIds.size();
     }

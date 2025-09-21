@@ -204,10 +204,10 @@ namespace lms::scanner
             std::vector<std::string> res;
 
             core::Service<core::IConfig>::get()->visitStrings("cover-preferred-file-names",
-                [&res](std::string_view fileName) {
-                    res.emplace_back(fileName);
-                },
-                { "cover", "front", "folder", "default" });
+                                                              [&res](std::string_view fileName) {
+                                                                  res.emplace_back(fileName);
+                                                              },
+                                                              { "cover", "front", "folder", "default" });
 
             return res;
         }

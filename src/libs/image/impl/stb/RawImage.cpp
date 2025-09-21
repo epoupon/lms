@@ -74,13 +74,13 @@ namespace lms::image::STB
 
 #if STB_IMAGE_RESIZE_VERSION == 1
         if (::stbir_resize_uint8_srgb(reinterpret_cast<const unsigned char*>(_data.get()), _width, _height, 0,
-                reinterpret_cast<unsigned char*>(resizedData.get()), width, height, 0,
-                3, STBIR_ALPHA_CHANNEL_NONE, 0)
+                                      reinterpret_cast<unsigned char*>(resizedData.get()), width, height, 0,
+                                      3, STBIR_ALPHA_CHANNEL_NONE, 0)
             == 0)
 #elif STB_IMAGE_RESIZE_VERSION == 2
         if (::stbir_resize_uint8_srgb(reinterpret_cast<const unsigned char*>(_data.get()), _width, _height, 0,
-                reinterpret_cast<unsigned char*>(resizedData.get()), width, height, 0,
-                STBIR_RGB)
+                                      reinterpret_cast<unsigned char*>(resizedData.get()), width, height, 0,
+                                      STBIR_RGB)
             == 0)
 #else
     #error "Unhandled STB image resize version"!

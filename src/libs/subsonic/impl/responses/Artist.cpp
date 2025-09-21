@@ -48,9 +48,9 @@ namespace lms::api::subsonic
             names.resize(artists.size());
 
             std::transform(std::cbegin(artists), std::cend(artists), std::begin(names),
-                [](const Artist::pointer& artist) {
-                    return artist->getName();
-                });
+                           [](const Artist::pointer& artist) {
+                               return artist->getName();
+                           });
 
             return core::stringUtils::joinStrings(names, ", ");
         }

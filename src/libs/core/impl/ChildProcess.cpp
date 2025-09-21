@@ -202,24 +202,24 @@ namespace lms::core
         LMS_LOG(CHILDPROCESS, DEBUG, "Async read, bufferSize = " << bufferSize);
 
         boost::asio::async_read(_childStdout, boost::asio::buffer(data, bufferSize),
-            [this, callback{ std::move(callback) }](const boost::system::error_code& error, std::size_t bytesTransferred) {
-                LMS_LOG(CHILDPROCESS, DEBUG, "Async read cb - ec = '" << error.message() << "' (" << error.value() << "), bytesTransferred = " << bytesTransferred);
+                                [this, callback{ std::move(callback) }](const boost::system::error_code& error, std::size_t bytesTransferred) {
+                                    LMS_LOG(CHILDPROCESS, DEBUG, "Async read cb - ec = '" << error.message() << "' (" << error.value() << "), bytesTransferred = " << bytesTransferred);
 
-                ReadResult readResult{ ReadResult::Success };
-                if (error)
-                {
-                    if (error != boost::asio::error::eof)
-                    {
-                        // forbidden to read any captured param here as the ChildProcess instance may already have been killed
-                        return;
-                    }
+                                    ReadResult readResult{ ReadResult::Success };
+                                    if (error)
+                                    {
+                                        if (error != boost::asio::error::eof)
+                                        {
+                                            // forbidden to read any captured param here as the ChildProcess instance may already have been killed
+                                            return;
+                                        }
 
-                    readResult = ReadResult::EndOfFile;
-                    _finished = true;
-                }
+                                        readResult = ReadResult::EndOfFile;
+                                        _finished = true;
+                                    }
 
-                callback(readResult, bytesTransferred);
-            });
+                                    callback(readResult, bytesTransferred);
+                                });
     }
 
     std::size_t ChildProcess::readSome(std::byte* data, std::size_t bufferSize)

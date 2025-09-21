@@ -212,9 +212,9 @@ namespace lms::som
         for (const Position& neighbourPosition : neighboursPosition)
         {
             auto min = std::min_element(refVectorsPosition.begin(), refVectorsPosition.end(),
-                [this, neighbourPosition](const auto& a, const auto& b) {
-                    return (this->getRefVectorsDistance(a, neighbourPosition) < this->getRefVectorsDistance(b, neighbourPosition));
-                });
+                                        [this, neighbourPosition](const auto& a, const auto& b) {
+                                            return (this->getRefVectorsDistance(a, neighbourPosition) < this->getRefVectorsDistance(b, neighbourPosition));
+                                        });
 
             InputVector::Distance distance{ getRefVectorsDistance(neighbourPosition, *min) };
             if (distance > maxDistance)
@@ -227,9 +227,9 @@ namespace lms::som
             return std::nullopt;
 
         auto min{ std::min_element(std::cbegin(neighboursInfo), std::cend(neighboursInfo),
-            [&](const auto& a, const auto& b) {
-                return a.distance < b.distance;
-            }) };
+                                   [&](const auto& a, const auto& b) {
+                                       return a.distance < b.distance;
+                                   }) };
 
         return min->position;
     }

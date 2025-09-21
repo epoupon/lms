@@ -35,7 +35,7 @@ namespace lms::core
 
     private:
         Wt::Http::ResponseContinuation* processRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
-        void abort() override{};
+        void abort() override {};
 
         static constexpr std::size_t _chunkSize{ 262'144 };
 

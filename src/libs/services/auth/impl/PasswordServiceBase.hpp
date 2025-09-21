@@ -48,8 +48,8 @@ namespace lms::auth
         virtual bool checkUserPassword(std::string_view loginName, std::string_view password) = 0;
 
         CheckResult checkUserPassword(const boost::asio::ip::address& clientAddress,
-            std::string_view loginName,
-            std::string_view password) override;
+                                      std::string_view loginName,
+                                      std::string_view password) override;
 
         std::shared_mutex _mutex;
         LoginThrottler _loginThrottler;

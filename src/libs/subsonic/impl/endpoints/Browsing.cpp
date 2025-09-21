@@ -128,8 +128,8 @@ namespace lms::api::subsonic
 
                 const auto artistTracks{ Track::findIds(context.dbSession, params) };
                 tracks.insert(std::end(tracks),
-                    std::begin(artistTracks.results),
-                    std::end(artistTracks.results));
+                              std::begin(artistTracks.results),
+                              std::end(artistTracks.results));
             }
 
             return tracks;
@@ -159,8 +159,8 @@ namespace lms::api::subsonic
 
                 const auto releaseTracks{ Track::findIds(context.dbSession, params) };
                 tracks.insert(std::end(tracks),
-                    std::begin(releaseTracks.results),
-                    std::end(releaseTracks.results));
+                              std::begin(releaseTracks.results),
+                              std::end(releaseTracks.results));
             }
 
             return tracks;

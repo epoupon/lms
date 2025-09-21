@@ -175,10 +175,10 @@ namespace lms::scanner
             std::vector<std::string> res;
 
             core::Service<core::IConfig>::get()->visitStrings("medium-image-file-names",
-                [&res](std::string_view fileName) {
-                    res.emplace_back(fileName);
-                },
-                { "discsubtitle" });
+                                                              [&res](std::string_view fileName) {
+                                                                  res.emplace_back(fileName);
+                                                              },
+                                                              { "discsubtitle" });
 
             return res;
         }

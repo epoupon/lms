@@ -54,11 +54,11 @@ namespace lms::ui
             core::Service<auth::IAuthTokenService>::get()->createAuthToken(authTokenDomain, userId, hashedAuthCookie);
 
             LmsApp->setCookie(authCookieName,
-                authCookie,
-                expiry.toTime_t() - Wt::WDateTime::currentDateTime().toTime_t(),
-                "",
-                "",
-                LmsApp->environment().urlScheme() == "https");
+                              authCookie,
+                              expiry.toTime_t() - Wt::WDateTime::currentDateTime().toTime_t(),
+                              "",
+                              "",
+                              LmsApp->environment().urlScheme() == "https");
         }
 
         class AuthModel : public Wt::WFormModel

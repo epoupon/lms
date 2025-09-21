@@ -35,8 +35,8 @@ namespace lms::recommendation::PlaylistGeneratorConstraint
             ArtistContainer intersection;
 
             std::set_intersection(std::cbegin(artists1), std::cend(artists1),
-                std::cbegin(artists2), std::cend(artists2),
-                std::back_inserter(intersection));
+                                  std::cbegin(artists2), std::cend(artists2),
+                                  std::back_inserter(intersection));
 
             return intersection.size();
         }

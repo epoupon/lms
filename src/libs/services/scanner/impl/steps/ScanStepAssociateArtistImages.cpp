@@ -246,10 +246,10 @@ namespace lms::scanner
             std::vector<std::string> res;
 
             core::Service<core::IConfig>::get()->visitStrings("artist-image-file-names",
-                [&res](std::string_view fileName) {
-                    res.emplace_back(fileName);
-                },
-                { "artist" });
+                                                              [&res](std::string_view fileName) {
+                                                                  res.emplace_back(fileName);
+                                                              },
+                                                              { "artist" });
 
             return res;
         }
@@ -259,10 +259,10 @@ namespace lms::scanner
             std::vector<std::string> res;
 
             core::Service<core::IConfig>::get()->visitStrings("artist-info-image-file-names",
-                [&res](std::string_view fileName) {
-                    res.emplace_back(fileName);
-                },
-                { "thumb", "folder", "fanart" });
+                                                              [&res](std::string_view fileName) {
+                                                                  res.emplace_back(fileName);
+                                                              },
+                                                              { "thumb", "folder", "fanart" });
 
             return res;
         }

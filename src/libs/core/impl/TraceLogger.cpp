@@ -78,9 +78,9 @@ namespace lms::core::tracing
         setMetadata("cpu_count", std::to_string(std::thread::hardware_concurrency()));
         setMetadata("build_type",
 #ifndef NDEBUG
-            "debug"
+                    "debug"
 #else
-            "release"
+                    "release"
 #endif
         );
     }

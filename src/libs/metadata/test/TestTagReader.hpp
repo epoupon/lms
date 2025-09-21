@@ -161,9 +161,9 @@ namespace lms::metadata::tests
                 { TagType::TotalDiscs, { "3" } },
             }) };
         testTags->setExtraUserTags({ { "MY_AWESOME_TAG_A", { "MyTagValue1ForTagA", "MyTagValue2ForTagA" } },
-            { "MY_AWESOME_TAG_B", { "MyTagValue1ForTagB", "MyTagValue2ForTagB" } } });
+                                     { "MY_AWESOME_TAG_B", { "MyTagValue1ForTagB", "MyTagValue2ForTagB" } } });
         testTags->setPerformersTags({ { "RoleA", { "MyPerformer1ForRoleA", "MyPerformer2ForRoleA" } },
-            { "RoleB", { "MyPerformer1ForRoleB", "MyPerformer2ForRoleB" } } });
+                                      { "RoleB", { "MyPerformer1ForRoleB", "MyPerformer2ForRoleB" } } });
         testTags->setLyricsTags({ { "eng", "[00:00.00]First line\n[00:01.00]Second line" } });
 
         return testTags;

@@ -101,10 +101,10 @@ namespace lms::recommendation
 
         std::unordered_set<FeatureName> featureNames;
         std::transform(std::cbegin(trainSettings.featureSettingsMap), std::cend(trainSettings.featureSettingsMap), std::inserter(featureNames, std::begin(featureNames)),
-            [](const auto& itFeatureSetting) { return itFeatureSetting.first; });
+                       [](const auto& itFeatureSetting) { return itFeatureSetting.first; });
 
         const std::size_t nbDimensions{ std::accumulate(std::cbegin(featureNames), std::cend(featureNames), std::size_t{ 0 },
-            [](std::size_t sum, const FeatureName& featureName) { return sum + getFeatureDef(featureName).nbDimensions; }) };
+                                                        [](std::size_t sum, const FeatureName& featureName) { return sum + getFeatureDef(featureName).nbDimensions; }) };
 
         LMS_LOG(RECOMMENDATION, DEBUG, "Features dimension = " << nbDimensions);
 
@@ -184,8 +184,8 @@ namespace lms::recommendation
 
         LMS_LOG(RECOMMENDATION, DEBUG, "Training network...");
         network.train(samples, trainSettings.iterationCount,
-            progressCallback ? somProgressCallback : som::Network::ProgressCallback{},
-            [this] { return _loadCancelled; });
+                      progressCallback ? somProgressCallback : som::Network::ProgressCallback{},
+                      [this] { return _loadCancelled; });
         LMS_LOG(RECOMMENDATION, DEBUG, "Training network DONE");
 
         LMS_LOG(RECOMMENDATION, DEBUG, "Classifying tracks...");
@@ -242,10 +242,10 @@ namespace lms::recommendation
             auto transaction{ session.createReadTransaction() };
 
             similarTrackIds.erase(std::remove_if(std::begin(similarTrackIds), std::end(similarTrackIds),
-                                      [&](TrackId trackId) {
-                                          return !Track::exists(session, trackId);
-                                      }),
-                std::end(similarTrackIds));
+                                                 [&](TrackId trackId) {
+                                                     return !Track::exists(session, trackId);
+                                                 }),
+                                  std::end(similarTrackIds));
         }
 
         return similarTrackIds;
@@ -263,10 +263,10 @@ namespace lms::recommendation
             auto transaction{ session.createReadTransaction() };
 
             similarReleaseIds.erase(std::remove_if(std::begin(similarReleaseIds), std::end(similarReleaseIds),
-                                        [&](ReleaseId releaseId) {
-                                            return !Release::exists(session, releaseId);
-                                        }),
-                std::end(similarReleaseIds));
+                                                   [&](ReleaseId releaseId) {
+                                                       return !Release::exists(session, releaseId);
+                                                   }),
+                                    std::end(similarReleaseIds));
         }
 
         return similarReleaseIds;
@@ -302,10 +302,10 @@ namespace lms::recommendation
             auto transaction{ session.createReadTransaction() };
 
             res.erase(std::remove_if(std::begin(res), std::end(res),
-                          [&](ArtistId artistId) {
-                              return !Artist::exists(session, artistId);
-                          }),
-                std::end(res));
+                                     [&](ArtistId artistId) {
+                                         return !Artist::exists(session, artistId);
+                                     }),
+                      std::end(res));
         }
 
         while (res.size() > maxCount)
