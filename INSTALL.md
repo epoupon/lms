@@ -17,11 +17,11 @@
 ## Docker
 _Docker_ images are available, please see detailed instructions on https://hub.docker.com/r/epoupon/lms.
 ## Debian packages
-_Bookworm_ packages are provided for _amd64_ architectures.
+_Trixie_ packages are provided for _amd64_ architectures.
 As root, trust the following debian package provider and add it in your list of repositories:
 ```sh
 wget --backups=1 https://debian.poupon.dev/apt/debian/epoupon.gpg -P /usr/share/keyrings
-echo "deb [signed-by=/usr/share/keyrings/epoupon.gpg] https://debian.poupon.dev/apt/debian bookworm main" > /etc/apt/sources.list.d/epoupon.list
+echo "deb [signed-by=/usr/share/keyrings/epoupon.gpg] https://debian.poupon.dev/apt/debian trixie main" > /etc/apt/sources.list.d/epoupon.list
 ```
 To install or upgrade _LMS_:
 ```sh
@@ -31,13 +31,13 @@ apt install lms
 The _lms_ service is started just after the package installation, run by a dedicated _lms_ system user.</br>
 Please refer to [Deployment](#deployment) for further configuration options.
 ## From source
-__Note__: this installation process and the default values of the configuration files have been written for _Debian Bookworm_ and _Debian Trixie_. Therefore, you may have to adapt commands and/or paths in order to fit to your distribution.
+__Note__: this installation process and the default values of the configuration files have been written for _Debian Trixie_. Therefore, you may have to adapt commands and/or paths in order to fit to your distribution.
 ### Build dependencies
 __Notes__:
 * a C++20 compiler is needed
 * ffmpeg version 4 minimum is required
 ```sh
-apt-get install g++ cmake libboost-program-options-dev libboost-system-dev libavutil-dev libavformat-dev libstb-dev libconfig++-dev ffmpeg libtag1-dev libpam0g-dev libpugixml-dev libgtest-dev libarchive-dev libxxhash-dev libssl-dev
+apt-get install build-essential cmake libboost-program-options-dev libboost-system-dev libavutil-dev libavformat-dev libstb-dev libconfig++-dev ffmpeg libtag-dev libpam0g-dev libpugixml-dev libgtest-dev libarchive-dev libxxhash-dev libssl-dev
 ```
 __Notes__:
 * libpam0g-dev is optional (only for using PAM authentication)
