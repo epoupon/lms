@@ -184,6 +184,7 @@
 <message id="Lms.Admin.InitWizard.header">新建管理员账号</message>
 
 <!--Auth-->
+<message id="Lms.Auth.login">登陆</message>
 <message id="Lms.Auth.remember-me">记住我</message>
 <message id="Lms.Auth.welcome">欢迎！</message>
 
