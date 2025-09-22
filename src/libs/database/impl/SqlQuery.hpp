@@ -74,7 +74,7 @@ namespace lms::db
     class SelectStatement
     {
     public:
-        SelectStatement(){};
+        SelectStatement() {};
         SelectStatement(const std::string& item);
 
         SelectStatement& And(const std::string& item);

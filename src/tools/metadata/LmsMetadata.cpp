@@ -390,7 +390,7 @@ int main(int argc, char* argv[])
                                    .options(allOptions)
                                    .positional(positional)
                                    .run(),
-            vm);
+                               vm);
 
         program_options::notify(vm);
 

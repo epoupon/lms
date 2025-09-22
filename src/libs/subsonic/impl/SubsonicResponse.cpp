@@ -23,9 +23,8 @@
 #include <climits>
 #include <cmath>
 
-#include <boost/property_tree/xml_parser.hpp>
-
 #include "core/String.hpp"
+#include "core/Utils.hpp"
 #include "core/Version.hpp"
 
 #include "ProtocolVersion.hpp"
@@ -113,133 +112,90 @@ namespace lms::api::subsonic
         setAttribute("version", std::to_string(protocolVersion.major) + "." + std::to_string(protocolVersion.minor) + "." + std::to_string(protocolVersion.patch));
     }
 
-    Response Response::createOkResponse(ProtocolVersion protocolVersion)
+    void Response::XmlSerializer::serializeNode(std::ostream& os, const Node& node, std::string_view tagName)
     {
-        return createResponseCommon(protocolVersion);
-    }
+        // Opening tag
+        os << '<' << tagName;
 
-    Response Response::createFailedResponse(ProtocolVersion protocolVersion, const Error& error)
-    {
-        return createResponseCommon(protocolVersion, &error);
-    }
-
-    Response Response::createResponseCommon(ProtocolVersion protocolVersion, const Error* error)
-    {
-        Response response;
-        Node& responseNode{ response._root.createChild("subsonic-response") };
-
-        responseNode.setAttribute("status", error ? "failed" : "ok");
-        responseNode.setVersionAttribute(protocolVersion);
-
-        if (error)
+        // Attributes
+        for (const auto& [key, value] : node._attributes)
         {
-            Node& errorNode{ responseNode.createChild("error") };
-            errorNode.setAttribute("code", static_cast<int>(error->getCode()));
-            errorNode.setAttribute("message", error->getMessage());
+            os << ' ' << key.str() << '=';
+            os << '"';
+            serializeValue(os, value);
+            os << '"';
         }
 
-        // OpenSubsonic mandatory fields
-        // No big deal to send them even for legacy clients
-        responseNode.setAttribute("type", "lms");
-        responseNode.setAttribute("serverVersion", core::getVersion());
-        responseNode.setAttribute("openSubsonic", true);
+        // Hack
+        if (tagName == "subsonic-response")
+            os << " xmlns=\"http://subsonic.org/restapi\"";
 
-        return response;
-    }
+        bool hasChildren = !node._children.empty() || !node._childrenArrays.empty() || !node._childrenValues.empty();
+        bool hasValue = node._value.has_value();
 
-    void Response::addNode(Node::Key key, Node&& node)
-    {
-        return _root._children["subsonic-response"].addChild(key, std::move(node));
-    }
-
-    Response::Node& Response::createNode(Node::Key key)
-    {
-        return _root._children["subsonic-response"].createChild(key);
-    }
-
-    Response::Node& Response::createArrayNode(Node::Key key)
-    {
-        return _root._children["subsonic-response"].createArrayChild(key);
-    }
-
-    void Response::write(std::ostream& os, ResponseFormat format) const
-    {
-        switch (format)
+        if (!hasChildren && !hasValue)
         {
-        case ResponseFormat::xml:
-            writeXML(os);
-            break;
-        case ResponseFormat::json:
-            writeJSON(os);
-            break;
+            os << "/>"; // Self-closing tag
+            return;
         }
+
+        os << '>'; // End opening tag
+
+        // Node value (text content)
+        if (hasValue)
+            serializeValue(os, *node._value);
+
+        // Child nodes
+        for (const auto& [key, childNode] : node._children)
+            serializeNode(os, childNode, key.str());
+
+        // Child arrays
+        for (const auto& [key, childArrayNodes] : node._childrenArrays)
+            for (const Node& childNode : childArrayNodes)
+                serializeNode(os, childNode, key.str());
+
+        // Array values
+        for (const auto& [key, childValues] : node._childrenValues)
+        {
+            for (const Node::ValueType& value : childValues)
+            {
+                os << '<' << key.str() << '>';
+                serializeValue(os, value);
+                os << "</" << key.str() << '>';
+            }
+        }
+
+        // Closing tag
+        os << "</" << tagName << '>';
+    }
+
+    void Response::XmlSerializer::serializeValue(std::ostream& os, const Node::ValueType& value)
+    {
+        std::visit(core::utils::overloads{
+                       [&](const Node::string& str) { core::stringUtils::writeXmlEscapedString(os, str); },
+                       [&](bool value) { os << (value ? "true" : "false"); },
+                       [&](float value) { os << value; },
+                       [&](long long value) { os << value; } },
+                   value);
+    }
+
+    void Response::XmlSerializer::serializeEscapedString(std::ostream& os, std::string_view str)
+    {
+        core::stringUtils::writeXmlEscapedString(os, str);
     }
 
     void Response::writeXML(std::ostream& os) const
     {
-        std::function<boost::property_tree::ptree(const Node&)> nodeToPropertyTree = [&](const Node& node) {
-            boost::property_tree::ptree res;
+        os << R"(<?xml version="1.0" encoding="utf-8"?>)" << '\n';
 
-            auto valueToPropertyTree = [](const Node::ValueType& value) {
-                boost::property_tree::ptree res;
-                std::visit([&](const auto& rawValue) {
-                    using RawValueType = std::decay_t<decltype(rawValue)>;
-                    if constexpr (std::is_same_v<RawValueType, Node::string>)
-                        res.put_value(core::stringUtils::replaceInString(rawValue, "\n", "\\n"));
-                    else
-                        res.put_value(rawValue);
-                },
-                    value);
+        XmlSerializer serializer;
 
-                return res;
-            };
-
-            if (node._value)
-            {
-                res = valueToPropertyTree(*node._value);
-            }
-            else
-            {
-                for (const auto& [key, childNode] : node._children)
-                {
-                    boost::property_tree::ptree& tree{ res.add_child(std::string{ key.str() }, nodeToPropertyTree(childNode)) };
-                    // Hardcoded attribute to simplify createOkResponse calls
-                    if (key == "subsonic-response")
-                        tree.put("<xmlattr>.xmlns", "http://subsonic.org/restapi");
-                }
-
-                for (const auto& [key, childArrayNodes] : node._childrenArrays)
-                {
-                    for (const Node& childNode : childArrayNodes)
-                        res.add_child(std::string{ key.str() }, nodeToPropertyTree(childNode));
-                }
-
-                for (const auto& [key, childArrayValues] : node._childrenValues)
-                {
-                    for (const Response::Node::ValueType& value : childArrayValues)
-                        res.add_child(std::string{ key.str() }, valueToPropertyTree(value));
-                }
-            }
-
-            for (const auto& [key, value] : node._attributes)
-            {
-                if (std::holds_alternative<Node::string>(value))
-                    res.put("<xmlattr>." + std::string{ key.str() }, std::get<Node::string>(value));
-                else if (std::holds_alternative<bool>(value))
-                    res.put("<xmlattr>." + std::string{ key.str() }, std::get<bool>(value));
-                else if (std::holds_alternative<float>(value))
-                    res.put("<xmlattr>." + std::string{ key.str() }, std::get<float>(value));
-                else if (std::holds_alternative<long long>(value))
-                    res.put("<xmlattr>." + std::string{ key.str() }, std::get<long long>(value));
-                else
-                    assert(false);
-            }
-
-            return res;
-        };
-
-        const boost::property_tree::ptree root{ nodeToPropertyTree(_root) };
-        boost::property_tree::write_xml(os, root);
+        assert(_root._children.size() == 1);
+        if (_root._children.size() == 1)
+        {
+            const auto& [tagName, node] = *_root._children.begin();
+            serializer.serializeNode(os, node, tagName.str());
+        }
     }
 
     void Response::JsonSerializer::serializeNode(std::ostream& os, const Response::Node& node)
@@ -325,30 +281,18 @@ namespace lms::api::subsonic
 
     void Response::JsonSerializer::serializeValue(std::ostream& os, const Node::ValueType& value)
     {
-        if (std::holds_alternative<Node::string>(value))
-        {
-            serializeEscapedString(os, std::get<Node::string>(value));
-        }
-        else if (std::holds_alternative<bool>(value))
-        {
-            os << (std::get<bool>(value) ? "true" : "false");
-        }
-        else if (std::holds_alternative<float>(value))
-        {
-            const float d{ std::get<float>(value) };
-            if (std::isnan(d) || std::fabs(d) == std::numeric_limits<float>::infinity())
-                os << "null";
-            else
-                os << d;
-        }
-        else if (std::holds_alternative<long long>(value))
-        {
-            os << std::get<long long>(value);
-        }
-        else
-        {
-            assert(false);
-        }
+        std::visit(
+            core::utils::overloads{
+                [&](const Node::string& str) { serializeEscapedString(os, str); },
+                [&](bool value) { os << (value ? "true" : "false"); },
+                [&](float value) {
+                    if (std::isnan(value) || std::fabs(value) == std::numeric_limits<float>::infinity())
+                        os << "null";
+                    else
+                        os << value;
+                },
+                [&](long long value) { os << value; } },
+            value);
     }
 
     void Response::JsonSerializer::serializeEscapedString(std::ostream& os, std::string_view str)
@@ -356,6 +300,68 @@ namespace lms::api::subsonic
         os << '\"';
         core::stringUtils::writeJsonEscapedString(os, str);
         os << '\"';
+    }
+
+    Response Response::createOkResponse(ProtocolVersion protocolVersion)
+    {
+        return createResponseCommon(protocolVersion);
+    }
+
+    Response Response::createFailedResponse(ProtocolVersion protocolVersion, const Error& error)
+    {
+        return createResponseCommon(protocolVersion, &error);
+    }
+
+    Response Response::createResponseCommon(ProtocolVersion protocolVersion, const Error* error)
+    {
+        Response response;
+        Node& responseNode{ response._root.createChild("subsonic-response") };
+
+        responseNode.setAttribute("status", error ? "failed" : "ok");
+        responseNode.setVersionAttribute(protocolVersion);
+
+        if (error)
+        {
+            Node& errorNode{ responseNode.createChild("error") };
+            errorNode.setAttribute("code", static_cast<int>(error->getCode()));
+            errorNode.setAttribute("message", error->getMessage());
+        }
+
+        // OpenSubsonic mandatory fields
+        // No big deal to send them even for legacy clients
+        responseNode.setAttribute("type", "lms");
+        responseNode.setAttribute("serverVersion", core::getVersion());
+        responseNode.setAttribute("openSubsonic", true);
+
+        return response;
+    }
+
+    void Response::addNode(Node::Key key, Node&& node)
+    {
+        return _root._children["subsonic-response"].addChild(key, std::move(node));
+    }
+
+    Response::Node& Response::createNode(Node::Key key)
+    {
+        return _root._children["subsonic-response"].createChild(key);
+    }
+
+    Response::Node& Response::createArrayNode(Node::Key key)
+    {
+        return _root._children["subsonic-response"].createArrayChild(key);
+    }
+
+    void Response::write(std::ostream& os, ResponseFormat format) const
+    {
+        switch (format)
+        {
+        case ResponseFormat::xml:
+            writeXML(os);
+            break;
+        case ResponseFormat::json:
+            writeJSON(os);
+            break;
+        }
     }
 
     void Response::writeJSON(std::ostream& os) const

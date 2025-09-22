@@ -36,9 +36,9 @@ namespace lms::som
         const T mean{ std::accumulate(vec.begin(), vec.end(), T{}) / size };
 
         return std::accumulate(vec.begin(), vec.end(), T{},
-            [mean, size](T accumulator, const T& val) {
-                return accumulator + ((val - mean) * (val - mean) / (size - 1));
-            });
+                               [mean, size](T accumulator, const T& val) {
+                                   return accumulator + ((val - mean) * (val - mean) / (size - 1));
+                               });
     }
 
     DataNormalizer::DataNormalizer(std::size_t inputDimCount)

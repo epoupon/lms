@@ -34,6 +34,7 @@ target_include_directories(lmsmetadata PRIVATE
 target_link_libraries(lmsmetadata PRIVATE
 	lmsav
 	PkgConfig::Taglib
+	pugixml::pugixml
 	)
 
 target_link_libraries(lmsmetadata PUBLIC

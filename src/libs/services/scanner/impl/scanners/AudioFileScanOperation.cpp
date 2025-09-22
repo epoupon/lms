@@ -591,9 +591,9 @@ namespace lms::scanner
                     // Skip if duplicate files no longer in media root: as it will be removed later, we will end up with no file
                     auto& mediaLibraries{ getScannerSettings().mediaLibraries };
                     if (std::none_of(std::cbegin(mediaLibraries), std::cend(mediaLibraries),
-                            [&](const MediaLibraryInfo& libraryInfo) {
-                                return core::pathUtils::isPathInRootPath(getFilePath(), libraryInfo.rootDirectory, &excludeDirFileName);
-                            }))
+                                     [&](const MediaLibraryInfo& libraryInfo) {
+                                         return core::pathUtils::isPathInRootPath(getFilePath(), libraryInfo.rootDirectory, &excludeDirFileName);
+                                     }))
                     {
                         continue;
                     }

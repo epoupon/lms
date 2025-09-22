@@ -65,10 +65,10 @@ namespace lms::api::subsonic
             std::unordered_map<std::string, ProtocolVersion> res;
 
             core::Service<core::IConfig>::get()->visitStrings("api-subsonic-old-server-protocol-clients",
-                [&](std::string_view client) {
-                    res.emplace(std::string{ client }, ProtocolVersion{ .major = 1, .minor = 12, .patch = 0 });
-                },
-                { "DSub" });
+                                                              [&](std::string_view client) {
+                                                                  res.emplace(std::string{ client }, ProtocolVersion{ .major = 1, .minor = 12, .patch = 0 });
+                                                              },
+                                                              { "DSub" });
 
             return res;
         }
@@ -78,10 +78,10 @@ namespace lms::api::subsonic
             std::unordered_set<std::string> res;
 
             core::Service<core::IConfig>::get()->visitStrings("api-open-subsonic-disabled-clients",
-                [&](std::string_view client) {
-                    res.emplace(std::string{ client });
-                },
-                { "DSub" });
+                                                              [&](std::string_view client) {
+                                                                  res.emplace(std::string{ client });
+                                                              },
+                                                              { "DSub" });
 
             return res;
         }

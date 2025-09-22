@@ -47,8 +47,8 @@ namespace lms::artwork
     }
 
     ArtworkService::ArtworkService(db::IDb& db,
-        const std::filesystem::path& defaultReleaseCoverSvgPath,
-        const std::filesystem::path& defaultArtistImageSvgPath)
+                                   const std::filesystem::path& defaultReleaseCoverSvgPath,
+                                   const std::filesystem::path& defaultArtistImageSvgPath)
         : _db{ db }
         , _audioFileParser{ metadata::createAudioFileParser(metadata::AudioFileParserParameters{}) }
         , _cache{ core::Service<core::IConfig>::get()->getULong("cover-max-cache-size", 30) * 1000 * 1000 }

@@ -44,10 +44,20 @@ namespace lms::core::stringUtils
 
         constexpr std::pair<char, std::string_view> jsonEscapeChars[]{
             { '\\', "\\\\" },
+            { '"', "\\\"" },
+            { '\b', "\\b" },
+            { '\f', "\\f" },
             { '\n', "\\n" },
             { '\r', "\\r" },
             { '\t', "\\t" },
-            { '"', "\\\"" },
+        };
+
+        constexpr std::pair<char, std::string_view> xmlEscapeChars[]{
+            { '&', "&amp;" },
+            { '<', "&lt;" },
+            { '>', "&gt;" },
+            { '\'', "&apos;" },
+            { '"', "&quot;" },
         };
 
         template<std::size_t N>
@@ -440,6 +450,16 @@ namespace lms::core::stringUtils
     void writeJsonEscapedString(std::ostream& os, std::string_view str)
     {
         details::writeEscapedString(os, str, details::jsonEscapeChars);
+    }
+
+    std::string xmlEscape(std::string_view str)
+    {
+        return details::escape(str, details::xmlEscapeChars);
+    }
+
+    void writeXmlEscapedString(std::ostream& os, std::string_view str)
+    {
+        details::writeEscapedString(os, str, details::xmlEscapeChars);
     }
 
     std::string escapeString(std::string_view str, std::string_view charsToEscape, char escapeChar)

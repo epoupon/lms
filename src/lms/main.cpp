@@ -138,7 +138,7 @@ namespace lms
                 config.visitStrings("trusted-proxies", [&](std::string_view trustedProxy) {
                     pt.add("server.application-settings.trusted-proxy-config.trusted-proxies.proxy", std::string{ trustedProxy });
                 },
-                    { "127.0.0.1", "::1" });
+                                    { "127.0.0.1", "::1" });
             }
 
             {
@@ -360,9 +360,9 @@ namespace lms
 
             // As initialization can take a while (db migration, analyze, etc.), we bind a temporary init entry point to warn the user
             server.addEntryPoint(Wt::EntryPointType::Application,
-                [&](const Wt::WEnvironment& env) {
-                    return ui::LmsInitApplication::create(env);
-                });
+                                 [&](const Wt::WEnvironment& env) {
+                                     return ui::LmsInitApplication::create(env);
+                                 });
 
             LMS_LOG(MAIN, INFO, "Starting init web server...");
             server.start();
@@ -455,9 +455,9 @@ namespace lms
 
             // bind UI entry point
             server.addEntryPoint(Wt::EntryPointType::Application,
-                [&database, &appManager, uiAuthenticationBackend](const Wt::WEnvironment& env) {
-                    return ui::LmsApplication::create(env, *database, appManager, uiAuthenticationBackend);
-                });
+                                 [&database, &appManager, uiAuthenticationBackend](const Wt::WEnvironment& env) {
+                                     return ui::LmsApplication::create(env, *database, appManager, uiAuthenticationBackend);
+                                 });
 
             proxyScannerEventsToApplication(*scannerService, server);
 

@@ -313,7 +313,7 @@ namespace lms::core::http
         LOG(DEBUG, "Throttling for " << duration.count() << " seconds");
 
         _throttleTimer.expires_after(duration);
-        _throttleTimer.async_wait([this](const boost::system::error_code& ec) {
+        _throttleTimer.async_wait(boost::asio::bind_executor(_strand, [this](const boost::system::error_code& ec) {
             if (ec == boost::asio::error::operation_aborted)
                 LOG(DEBUG, "Throttle aborted");
             else if (ec)
@@ -322,7 +322,7 @@ namespace lms::core::http
             setState(State::Idle);
             if (!ec)
                 sendNextQueuedRequest();
-        });
+        }));
 
         setState(State::Throttled);
     }

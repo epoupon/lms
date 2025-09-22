@@ -344,7 +344,7 @@ CREATE TABLE IF NOT EXISTS "track_backup" (
 SELECT 1, 0, s_s.media_directory, "Main"
 FROM scan_settings s_s
 WHERE id = ?)",
-                scanSettingsId);
+                                  scanSettingsId);
 
             // Remove the outdated column in scan_settings
             utils::executeCommand(*session.getDboSession(), "ALTER TABLE scan_settings DROP media_directory");

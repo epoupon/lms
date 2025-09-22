@@ -43,7 +43,7 @@ namespace lms::core::http
             std::visit([&](const auto& parameters) {
                 res = &static_cast<const ClientRequestParameters&>(parameters);
             },
-                _parameters);
+                       _parameters);
 
             return *res;
         }

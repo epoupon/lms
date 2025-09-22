@@ -81,7 +81,7 @@ GeneticAlgorithm<Individual>::simulate(const std::vector<Individual>& initialPop
     scoredPopulation.reserve(initialPopulation.size());
 
     std::transform(std::cbegin(initialPopulation), std::cend(initialPopulation), std::back_inserter(scoredPopulation),
-        [](const Individual& individual) { return ScoredIndividual{ individual }; });
+                   [](const Individual& individual) { return ScoredIndividual{ individual }; });
 
     scoreAndSortPopulation(scoredPopulation);
 
@@ -133,10 +133,10 @@ template<typename Individual>
 void GeneticAlgorithm<Individual>::scoreAndSortPopulation(std::vector<ScoredIndividual>& scoredPopulation)
 {
     parallel_foreach(_params.nbWorkers, std::begin(scoredPopulation), std::end(scoredPopulation),
-        [&](ScoredIndividual& scoredIndividual) {
-            if (!scoredIndividual.score)
-                scoredIndividual.score = _params.scoreFunction(scoredIndividual.individual);
-        });
+                     [&](ScoredIndividual& scoredIndividual) {
+                         if (!scoredIndividual.score)
+                             scoredIndividual.score = _params.scoreFunction(scoredIndividual.individual);
+                     });
 
     std::sort(std::begin(scoredPopulation), std::end(scoredPopulation), [](const ScoredIndividual& a, const ScoredIndividual& b) { return a.score > b.score; });
 }

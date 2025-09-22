@@ -101,9 +101,9 @@ namespace lms::recommendation
 
         template<typename IdType>
         std::vector<IdType> getSimilarObjects(const std::vector<IdType>& ids,
-            const ObjectMatrix<IdType>& objectMatrix,
-            const ObjectPositions<IdType>& objectPositions,
-            std::size_t maxCount) const;
+                                              const ObjectMatrix<IdType>& objectMatrix,
+                                              const ObjectPositions<IdType>& objectPositions,
+                                              std::size_t maxCount) const;
 
         db::IDb& _db;
         bool _loadCancelled{};
@@ -157,9 +157,9 @@ namespace lms::recommendation
 
     template<typename IdType>
     std::vector<IdType> FeaturesEngine::getSimilarObjects(const std::vector<IdType>& ids,
-        const ObjectMatrix<IdType>& objectMatrix,
-        const ObjectPositions<IdType>& objectPositions,
-        std::size_t maxCount) const
+                                                          const ObjectMatrix<IdType>& objectMatrix,
+                                                          const ObjectPositions<IdType>& objectPositions,
+                                                          std::size_t maxCount) const
     {
         std::vector<IdType> res;
 
@@ -173,10 +173,10 @@ namespace lms::recommendation
 
             // Remove objects that are already in input or already reported
             closestObjectIds.erase(std::remove_if(std::begin(closestObjectIds), std::end(closestObjectIds),
-                                       [&](IdType id) {
-                                           return std::find(std::cbegin(ids), std::cend(ids), id) != std::cend(ids);
-                                       }),
-                std::end(closestObjectIds));
+                                                  [&](IdType id) {
+                                                      return std::find(std::cbegin(ids), std::cend(ids), id) != std::cend(ids);
+                                                  }),
+                                   std::end(closestObjectIds));
 
             for (IdType id : closestObjectIds)
             {

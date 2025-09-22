@@ -1,5 +1,3 @@
-pkg_check_modules(PUGIXML REQUIRED IMPORTED_TARGET pugixml)
-
 add_library(lmspodcast STATIC
 	impl/steps/CheckForMissingFilesStep.cpp
 	impl/steps/ClearTmpDirectoryStep.cpp
@@ -22,13 +20,12 @@ target_include_directories(lmspodcast INTERFACE
 target_include_directories(lmspodcast PRIVATE
 	include
 	impl
-	${PUGIXML_INCLUDE_DIRS}
 	)
 
 target_link_libraries(lmspodcast PRIVATE
 	lmscore
 	lmsimage
-	PkgConfig::PUGIXML
+	pugixml::pugixml
 	)
 
 target_link_libraries(lmspodcast PUBLIC

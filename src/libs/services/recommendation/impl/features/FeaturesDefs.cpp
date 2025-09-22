@@ -382,7 +382,7 @@ namespace lms::recommendation
         FeatureNames res;
 
         std::transform(std::cbegin(featureDefinitions), std::cend(featureDefinitions),
-            std::inserter(res, std::begin(res)), [](auto itFeature) { return itFeature.first; });
+                       std::inserter(res, std::begin(res)), [](auto itFeature) { return itFeature.first; });
 
         return res;
     }

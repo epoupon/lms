@@ -221,6 +221,27 @@ namespace lms::core::stringUtils::tests
         EXPECT_EQ(jsonEscape(R"(Test'.mp3)"), R"(Test'.mp3)");
         EXPECT_EQ(jsonEscape(R"(Test"".mp3)"), R"(Test\"\".mp3)");
         EXPECT_EQ(jsonEscape(R"(\Test\.mp3)"), R"(\\Test\\.mp3)");
+        EXPECT_EQ(jsonEscape("Line1\nLine2"), R"(Line1\nLine2)");
+        EXPECT_EQ(jsonEscape("Line1\rLine2"), R"(Line1\rLine2)");
+        EXPECT_EQ(jsonEscape("Col1\tCol2"), R"(Col1\tCol2)");
+        EXPECT_EQ(jsonEscape("Hello\bWorld"), R"(Hello\bWorld)");
+        EXPECT_EQ(jsonEscape("Hello\fWorld"), R"(Hello\fWorld)");
+        EXPECT_EQ(jsonEscape("Hello\nWorld"), R"(Hello\nWorld)");
+    }
+
+    TEST(StringUtils, escapeXmlString)
+    {
+        EXPECT_EQ(xmlEscape(""), "");
+        EXPECT_EQ(xmlEscape("Test.mp3"), "Test.mp3");
+        EXPECT_EQ(xmlEscape("A & B"), "A &amp; B");
+        EXPECT_EQ(xmlEscape("<tag>"), "&lt;tag&gt;");
+        EXPECT_EQ(xmlEscape(R"(He said "Hello")"), "He said &quot;Hello&quot;");
+        EXPECT_EQ(xmlEscape("It's fine"), "It&apos;s fine");
+        EXPECT_EQ(xmlEscape(R"(<tag attr="val & val2">O'Hara</tag>)"), "&lt;tag attr=&quot;val &amp; val2&quot;&gt;O&apos;Hara&lt;/tag&gt;");
+        EXPECT_EQ(xmlEscape(R"(\Test\.mp3)"), R"(\Test\.mp3)");
+        EXPECT_EQ(xmlEscape("Café & Tea"), "Café &amp; Tea");
+        EXPECT_EQ(xmlEscape(R"(&<>'")"), "&amp;&lt;&gt;&apos;&quot;");
+        EXPECT_EQ(xmlEscape("Line1\nLine2"), "Line1\nLine2");
     }
 
     TEST(StringUtils, escapeString)

@@ -53,8 +53,8 @@ namespace lms::auth
             db::UserId userId{};
         };
         virtual CheckResult checkUserPassword(const boost::asio::ip::address& clientAddress,
-            std::string_view loginName,
-            std::string_view password)
+                                              std::string_view loginName,
+                                              std::string_view password)
             = 0;
 
         virtual bool canSetPasswords() const = 0;

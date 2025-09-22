@@ -40,6 +40,7 @@
 #include <taglib/wavfile.h>
 #include <taglib/wavpackfile.h>
 #if TAGLIB_HAS_DSF
+    #include <taglib/dsdifffile.h>
     #include <taglib/dsffile.h>
 #endif
 
@@ -50,14 +51,13 @@ namespace lms::metadata::taglib::utils
 {
     std::span<const std::filesystem::path> getSupportedExtensions()
     {
-        static const std::vector<std::filesystem::path> supportedExtensions
-        {
+        static const std::vector<std::filesystem::path> supportedExtensions{
             ".mp3", ".mp2", ".aac", ".ogg", ".oga", ".flac", ".spx", ".opus",
-                ".mpc", ".wv", ".ape", ".tta", ".m4a", ".m4r", ".m4b", ".m4p",
-                ".3g2", ".m4v", ".wma", ".asf", ".aif", ".aiff", ".afc", ".aifc",
-                ".wav",
+            ".mpc", ".wv", ".ape", ".tta", ".m4a", ".m4r", ".m4b", ".m4p",
+            ".3g2", ".m4v", ".wma", ".asf", ".aif", ".aiff", ".afc", ".aifc",
+            ".wav",
 #if TAGLIB_HAS_DSF
-                ".dsf", ".dff", ".dsdiff"
+            ".dsf", ".dff", ".dsdiff"
 #endif
         };
 
@@ -201,9 +201,9 @@ namespace lms::metadata::taglib::utils
         else if (TagLib::RIFF::WAV::File::isSupported(stream))
             file = std::make_unique<TagLib::RIFF::WAV::File>(stream, readAudioProperties, audioPropertiesStyle);
 #if TAGLIB_HAS_DSF
-        else if (DSF::File::isSupported(stream))
+        else if (TagLib::DSF::File::isSupported(stream))
             file = std::make_unique<TagLib::DSF::File>(stream, readAudioProperties, audioPropertiesStyle);
-        else if (DSDIFF::File::isSupported(stream))
+        else if (TagLib::DSDIFF::File::isSupported(stream))
             file = std::make_unique<TagLib::DSDIFF::File>(stream, readAudioProperties, audioPropertiesStyle);
 #endif
 

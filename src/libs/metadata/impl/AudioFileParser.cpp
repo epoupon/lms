@@ -196,10 +196,10 @@ namespace lms::metadata
         }
 
         std::vector<Artist> getArtists(const ITagReader& tagReader,
-            std::initializer_list<TagType> artistTagNames,
-            std::initializer_list<TagType> artistSortTagNames,
-            std::initializer_list<TagType> artistMBIDTagNames,
-            const AudioFileParserParameters& params)
+                                       std::initializer_list<TagType> artistTagNames,
+                                       std::initializer_list<TagType> artistSortTagNames,
+                                       std::initializer_list<TagType> artistMBIDTagNames,
+                                       const AudioFileParserParameters& params)
         {
             std::vector<std::string> artistNames{ getTagValuesFirstMatchAs<std::string>(tagReader, artistTagNames, params.artistTagDelimiters, &params.artistsToNotSplit) };
             if (artistNames.empty())

@@ -418,7 +418,7 @@ namespace lms::ui
 
         declareJavaScriptFunction("onLoadCover", "function(id) { id.className += \" Lms-cover-loaded\"}");
         declareJavaScriptFunction("updateActiveNav",
-            R"(function(current) {
+                                  R"(function(current) {
     const menuItems = document.querySelectorAll('.nav-item a[href]:not([href=""])');
     for (const menuItem of menuItems) {
         if (menuItem.getAttribute("href") === current) {
@@ -546,13 +546,13 @@ namespace lms::ui
         {
             _scannerEvents.scanComplete.connect([this](const scanner::ScanStats& stats) {
                 notifyMsg(Notification::Type::Info,
-                    Wt::WString::tr("Lms.Admin.Database.scan-complete")
-                        .arg(static_cast<unsigned>(stats.getTotalFileCount()))
-                        .arg(static_cast<unsigned>(stats.additions))
-                        .arg(static_cast<unsigned>(stats.updates))
-                        .arg(static_cast<unsigned>(stats.deletions))
-                        .arg(static_cast<unsigned>(stats.duplicates.size()))
-                        .arg(static_cast<unsigned>(stats.errorsCount)));
+                          Wt::WString::tr("Lms.Admin.Database.scan-complete")
+                              .arg(static_cast<unsigned>(stats.getTotalFileCount()))
+                              .arg(static_cast<unsigned>(stats.additions))
+                              .arg(static_cast<unsigned>(stats.updates))
+                              .arg(static_cast<unsigned>(stats.deletions))
+                              .arg(static_cast<unsigned>(stats.duplicates.size()))
+                              .arg(static_cast<unsigned>(stats.errorsCount)));
             });
         }
 

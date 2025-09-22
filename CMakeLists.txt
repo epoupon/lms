@@ -24,6 +24,7 @@ find_package(Threads REQUIRED)
 find_package(Filesystem REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system program_options iostreams)
 find_package(Wt REQUIRED COMPONENTS Wt Dbo DboSqlite3 HTTP)
+find_package(Pugixml CONFIG REQUIRED)
 
 # WT
 if (NOT Wt_FOUND)

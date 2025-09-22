@@ -54,11 +54,11 @@ namespace lms::ui
             core::Service<auth::IAuthTokenService>::get()->createAuthToken(authTokenDomain, userId, hashedAuthCookie);
 
             LmsApp->setCookie(authCookieName,
-                authCookie,
-                expiry.toTime_t() - Wt::WDateTime::currentDateTime().toTime_t(),
-                "",
-                "",
-                LmsApp->environment().urlScheme() == "https");
+                              authCookie,
+                              expiry.toTime_t() - Wt::WDateTime::currentDateTime().toTime_t(),
+                              "",
+                              "",
+                              LmsApp->environment().urlScheme() == "https");
         }
 
         class AuthModel : public Wt::WFormModel
@@ -219,7 +219,7 @@ namespace lms::ui
             }
         }
 
-        Wt::WPushButton* loginBtn{ bindNew<Wt::WPushButton>("login-btn", Wt::WString::tr("Lms.login")) };
+        Wt::WPushButton* loginBtn{ bindNew<Wt::WPushButton>("login-btn", Wt::WString::tr("Lms.Auth.login")) };
         loginBtn->clicked().connect(this, processAuth);
 
         updateView(model.get());

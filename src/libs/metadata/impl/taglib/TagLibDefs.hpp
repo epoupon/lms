@@ -21,7 +21,7 @@
 
 #include <taglib/taglib.h>
 
-#if (TAGLIB_MAJOR_VERSION > 2)
+#if (TAGLIB_MAJOR_VERSION >= 2)
     #define TAGLIB_HAS_DSF 1
 #endif
 

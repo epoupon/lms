@@ -101,9 +101,9 @@ namespace lms::scanner
                 }
 
                 if (std::none_of(std::cbegin(_settings.mediaLibraries), std::cend(_settings.mediaLibraries),
-                        [&](const MediaLibraryInfo& libraryInfo) {
-                            return core::pathUtils::isPathInRootPath(p, libraryInfo.rootDirectory, &excludeDirFileName);
-                        }))
+                                 [&](const MediaLibraryInfo& libraryInfo) {
+                                     return core::pathUtils::isPathInRootPath(p, libraryInfo.rootDirectory, &excludeDirFileName);
+                                 }))
                 {
                     LMS_LOG(DBUPDATER, DEBUG, "Removing " << p << ": out of media directory");
                     return false;
