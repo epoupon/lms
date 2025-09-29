@@ -87,9 +87,9 @@ namespace lms::api::subsonic
         {
             if (const auto directory{ track->getDirectory() })
                 trackResponse.setAttribute("parent", idToString(directory->getId()));
-            trackResponse.setAttribute("isDir", false);
         }
 
+        trackResponse.setAttribute("isDir", false);
         trackResponse.setAttribute("id", idToString(track->getId()));
         trackResponse.setAttribute("title", track->getName());
         if (track->getTrackNumber())
