@@ -48,7 +48,7 @@ namespace lms::api::subsonic
 
         if (const db::ArtworkId artworkId{ core::Service<artwork::IArtworkService>::get()->findTrackListImage(tracklist->getId()) }; artworkId.isValid())
         {
-            if (const auto artwork{ db::Artwork::find(context.dbSession, artworkId) })
+            if (const auto artwork{ db::Artwork::find(context.getDbSession(), artworkId) })
             {
                 CoverArtId coverArtId{ artwork->getId(), artwork->getLastWrittenTime().toTime_t() };
                 playlistNode.setAttribute("coverArt", idToString(coverArtId));

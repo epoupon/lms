@@ -16,24 +16,24 @@ namespace lms::api::subsonic
     {
         void checkUserIsMySelfOrAdmin(RequestContext& context, const std::string& username)
         {
-            if (context.user->getLoginName() != username && !context.user->isAdmin())
+            if (context.getUser()->getLoginName() != username && !context.getUser()->isAdmin())
                 throw UserNotAuthorizedError{};
         }
     } // namespace
 
     Response handleGetUserRequest(RequestContext& context)
     {
-        std::string username{ getMandatoryParameterAs<std::string>(context.parameters, "username") };
+        std::string username{ getMandatoryParameterAs<std::string>(context.getParameters(), "username") };
 
-        auto transaction{ context.dbSession.createReadTransaction() };
+        auto transaction{ context.getDbSession().createReadTransaction() };
 
         checkUserIsMySelfOrAdmin(context, username);
 
-        const User::pointer user{ User::find(context.dbSession, username) };
+        const User::pointer user{ User::find(context.getDbSession(), username) };
         if (!user)
             throw RequestedDataNotFoundError{};
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         response.addNode("user", createUserNode(context, user));
 
         return response;
@@ -41,11 +41,11 @@ namespace lms::api::subsonic
 
     Response handleGetUsersRequest(RequestContext& context)
     {
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node& usersNode{ response.createNode("users") };
 
-        auto transaction{ context.dbSession.createReadTransaction() };
-        User::find(context.dbSession, User::FindParameters{}, [&](const User::pointer& user) {
+        auto transaction{ context.getDbSession().createReadTransaction() };
+        User::find(context.getDbSession(), User::FindParameters{}, [&](const User::pointer& user) {
             usersNode.addArrayChild("user", createUserNode(context, user));
         });
 

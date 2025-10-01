@@ -53,9 +53,9 @@ namespace lms::api::subsonic
 
     Response handleGetPlaylistsRequest(RequestContext& context)
     {
-        auto transaction{ context.dbSession.createReadTransaction() };
+        auto transaction{ context.getDbSession().createReadTransaction() };
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node& playlistsNode{ response.createNode("playlists") };
 
         auto addTrackList{ [&](const db::TrackList::pointer& trackList) {
@@ -65,10 +65,10 @@ namespace lms::api::subsonic
         // First add user's playlists
         {
             TrackList::FindParameters params;
-            params.setUser(context.user->getId());
+            params.setUser(context.getUser()->getId());
             params.setType(TrackListType::PlayList);
 
-            db::TrackList::find(context.dbSession, params, [&](const db::TrackList::pointer& trackList) {
+            db::TrackList::find(context.getDbSession(), params, [&](const db::TrackList::pointer& trackList) {
                 addTrackList(trackList);
             });
         }
@@ -78,10 +78,10 @@ namespace lms::api::subsonic
             TrackList::FindParameters params;
             params.setVisibility(TrackList::Visibility::Public);
             params.setType(TrackListType::PlayList);
-            params.setExcludedUser(context.user->getId());
+            params.setExcludedUser(context.getUser()->getId());
 
-            db::TrackList::find(context.dbSession, params, [&](const db::TrackList::pointer& trackList) {
-                assert(trackList->getUserId() != context.user->getId());
+            db::TrackList::find(context.getDbSession(), params, [&](const db::TrackList::pointer& trackList) {
+                assert(trackList->getUserId() != context.getUser()->getId());
                 addTrackList(trackList);
             });
         }
@@ -92,23 +92,23 @@ namespace lms::api::subsonic
     Response handleGetPlaylistRequest(RequestContext& context)
     {
         // Mandatory params
-        TrackListId trackListId{ getMandatoryParameterAs<TrackListId>(context.parameters, "id") };
+        TrackListId trackListId{ getMandatoryParameterAs<TrackListId>(context.getParameters(), "id") };
 
-        auto transaction{ context.dbSession.createReadTransaction() };
+        auto transaction{ context.getDbSession().createReadTransaction() };
 
-        TrackList::pointer trackList{ TrackList::find(context.dbSession, trackListId) };
+        TrackList::pointer trackList{ TrackList::find(context.getDbSession(), trackListId) };
         if (!trackList || trackList->getType() != TrackListType::PlayList)
             throw RequestedDataNotFoundError{};
 
-        if (trackList->getUserId() != context.user->getId() && trackList->getVisibility() != TrackList::Visibility::Public)
+        if (trackList->getUserId() != context.getUser()->getId() && trackList->getVisibility() != TrackList::Visibility::Public)
             throw RequestedDataNotFoundError{};
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node playlistNode{ createPlaylistNode(context, trackList) };
 
         auto entries{ trackList->getEntries() };
         for (const TrackListEntry::pointer& entry : entries.results)
-            playlistNode.addArrayChild("entry", createSongNode(context, entry->getTrack(), context.user));
+            playlistNode.addArrayChild("entry", createSongNode(context, entry->getTrack(), context.getUser()));
 
         response.addNode("playlist", std::move(playlistNode));
 
@@ -118,21 +118,21 @@ namespace lms::api::subsonic
     Response handleCreatePlaylistRequest(RequestContext& context)
     {
         // Optional params
-        const auto id{ getParameterAs<TrackListId>(context.parameters, "playlistId") };
-        auto name{ getParameterAs<std::string>(context.parameters, "name") };
+        const auto id{ getParameterAs<TrackListId>(context.getParameters(), "playlistId") };
+        auto name{ getParameterAs<std::string>(context.getParameters(), "name") };
 
-        std::vector<TrackId> trackIds{ getMultiParametersAs<TrackId>(context.parameters, "songId") };
+        std::vector<TrackId> trackIds{ getMultiParametersAs<TrackId>(context.getParameters(), "songId") };
 
         if (!name && !id)
             throw RequiredParameterMissingError{ "name or playlistId" };
 
-        auto transaction{ context.dbSession.createWriteTransaction() };
+        auto transaction{ context.getDbSession().createWriteTransaction() };
 
         TrackList::pointer trackList;
         if (id)
         {
-            trackList = TrackList::find(context.dbSession, *id);
-            checkTrackListModificationAccess(trackList, context.user->getId());
+            trackList = TrackList::find(context.getDbSession(), *id);
+            checkTrackListModificationAccess(trackList, context.getUser()->getId());
 
             if (name)
                 trackList.modify()->setName(*name);
@@ -142,26 +142,26 @@ namespace lms::api::subsonic
         }
         else
         {
-            trackList = context.dbSession.create<TrackList>(*name, TrackListType::PlayList);
-            trackList.modify()->setUser(context.user);
+            trackList = context.getDbSession().create<TrackList>(*name, TrackListType::PlayList);
+            trackList.modify()->setUser(context.getUser());
             trackList.modify()->setVisibility(TrackList::Visibility::Private);
         }
 
         for (const TrackId trackId : trackIds)
         {
-            Track::pointer track{ Track::find(context.dbSession, trackId) };
+            Track::pointer track{ Track::find(context.getDbSession(), trackId) };
             if (!track)
                 continue;
 
-            context.dbSession.create<TrackListEntry>(track, trackList);
+            context.getDbSession().create<TrackListEntry>(track, trackList);
         }
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node playlistNode{ createPlaylistNode(context, trackList) };
 
         auto entries{ trackList->getEntries() };
         for (const TrackListEntry::pointer& entry : entries.results)
-            playlistNode.addArrayChild("entry", createSongNode(context, entry->getTrack(), context.user));
+            playlistNode.addArrayChild("entry", createSongNode(context, entry->getTrack(), context.getUser()));
 
         response.addNode("playlist", std::move(playlistNode));
 
@@ -171,19 +171,19 @@ namespace lms::api::subsonic
     Response handleUpdatePlaylistRequest(RequestContext& context)
     {
         // Mandatory params
-        TrackListId id{ getMandatoryParameterAs<TrackListId>(context.parameters, "playlistId") };
+        TrackListId id{ getMandatoryParameterAs<TrackListId>(context.getParameters(), "playlistId") };
 
         // Optional parameters
-        auto name{ getParameterAs<std::string>(context.parameters, "name") };
-        auto isPublic{ getParameterAs<bool>(context.parameters, "public") };
+        auto name{ getParameterAs<std::string>(context.getParameters(), "name") };
+        auto isPublic{ getParameterAs<bool>(context.getParameters(), "public") };
 
-        std::vector<TrackId> trackIdsToAdd{ getMultiParametersAs<TrackId>(context.parameters, "songIdToAdd") };
-        std::vector<std::size_t> trackPositionsToRemove{ getMultiParametersAs<std::size_t>(context.parameters, "songIndexToRemove") };
+        std::vector<TrackId> trackIdsToAdd{ getMultiParametersAs<TrackId>(context.getParameters(), "songIdToAdd") };
+        std::vector<std::size_t> trackPositionsToRemove{ getMultiParametersAs<std::size_t>(context.getParameters(), "songIndexToRemove") };
 
-        auto transaction{ context.dbSession.createWriteTransaction() };
+        auto transaction{ context.getDbSession().createWriteTransaction() };
 
-        TrackList::pointer trackList{ TrackList::find(context.dbSession, id) };
-        checkTrackListModificationAccess(trackList, context.user->getId());
+        TrackList::pointer trackList{ TrackList::find(context.getDbSession(), id) };
+        checkTrackListModificationAccess(trackList, context.getUser()->getId());
 
         if (name)
             trackList.modify()->setName(*name);
@@ -206,27 +206,27 @@ namespace lms::api::subsonic
         // Add tracks
         for (const TrackId trackIdToAdd : trackIdsToAdd)
         {
-            Track::pointer track{ Track::find(context.dbSession, trackIdToAdd) };
+            Track::pointer track{ Track::find(context.getDbSession(), trackIdToAdd) };
             if (!track)
                 continue;
 
-            context.dbSession.create<TrackListEntry>(track, trackList);
+            context.getDbSession().create<TrackListEntry>(track, trackList);
         }
 
-        return Response::createOkResponse(context.serverProtocolVersion);
+        return Response::createOkResponse(context.getServerProtocolVersion());
     }
 
     Response handleDeletePlaylistRequest(RequestContext& context)
     {
-        TrackListId id{ getMandatoryParameterAs<TrackListId>(context.parameters, "id") };
+        TrackListId id{ getMandatoryParameterAs<TrackListId>(context.getParameters(), "id") };
 
-        auto transaction{ context.dbSession.createWriteTransaction() };
+        auto transaction{ context.getDbSession().createWriteTransaction() };
 
-        TrackList::pointer trackList{ TrackList::find(context.dbSession, id) };
-        checkTrackListModificationAccess(trackList, context.user->getId());
+        TrackList::pointer trackList{ TrackList::find(context.getDbSession(), id) };
+        checkTrackListModificationAccess(trackList, context.getUser()->getId());
 
         trackList.remove();
 
-        return Response::createOkResponse(context.serverProtocolVersion);
+        return Response::createOkResponse(context.getServerProtocolVersion());
     }
 } // namespace lms::api::subsonic

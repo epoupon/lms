@@ -91,7 +91,7 @@ namespace lms::api::subsonic
             params.setParentDirectory(parentDirectory->getId());
             params.setSortMethod(DirectorySortMethod::Name);
 
-            Directory::find(context.dbSession, params, [&](const Directory::pointer& directory) {
+            Directory::find(context.getDbSession(), params, [&](const Directory::pointer& directory) {
                 const std::string_view name{ directory->getName() };
                 assert(!name.empty());
 
@@ -114,7 +114,7 @@ namespace lms::api::subsonic
 
             const std::size_t meanTrackCountPerArtist{ (count / artistIds.size()) + 1 };
 
-            auto transaction{ context.dbSession.createReadTransaction() };
+            auto transaction{ context.getDbSession().createReadTransaction() };
 
             std::vector<TrackId> tracks;
             tracks.reserve(count);
@@ -126,7 +126,7 @@ namespace lms::api::subsonic
                 params.setRange(Range{ 0, meanTrackCountPerArtist });
                 params.setSortMethod(TrackSortMethod::Random);
 
-                const auto artistTracks{ Track::findIds(context.dbSession, params) };
+                const auto artistTracks{ Track::findIds(context.getDbSession(), params) };
                 tracks.insert(std::end(tracks),
                               std::begin(artistTracks.results),
                               std::end(artistTracks.results));
@@ -145,7 +145,7 @@ namespace lms::api::subsonic
 
             const std::size_t meanTrackCountPerRelease{ (count / releaseIds.size()) + 1 };
 
-            auto transaction{ context.dbSession.createReadTransaction() };
+            auto transaction{ context.getDbSession().createReadTransaction() };
 
             std::vector<TrackId> tracks;
             tracks.reserve(count);
@@ -157,7 +157,7 @@ namespace lms::api::subsonic
                 params.setRange(Range{ 0, meanTrackCountPerRelease });
                 params.setSortMethod(TrackSortMethod::Random);
 
-                const auto releaseTracks{ Track::findIds(context.dbSession, params) };
+                const auto releaseTracks{ Track::findIds(context.getDbSession(), params) };
                 tracks.insert(std::end(tracks),
                               std::begin(releaseTracks.results),
                               std::end(releaseTracks.results));
@@ -174,31 +174,31 @@ namespace lms::api::subsonic
         Response handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
         {
             // Optional params
-            std::size_t count{ getParameterAs<std::size_t>(context.parameters, "count").value_or(50) };
+            std::size_t count{ getParameterAs<std::size_t>(context.getParameters(), "count").value_or(50) };
             if (count > defaultMaxCountSize)
                 throw ParameterValueTooHighGenericError{ "count", defaultMaxCountSize };
 
             std::vector<TrackId> tracks;
 
-            if (const auto artistId{ getParameterAs<ArtistId>(context.parameters, "id") })
+            if (const auto artistId{ getParameterAs<ArtistId>(context.getParameters(), "id") })
                 tracks = findSimilarSongs(context, *artistId, count);
-            else if (const auto releaseId{ getParameterAs<ReleaseId>(context.parameters, "id") })
+            else if (const auto releaseId{ getParameterAs<ReleaseId>(context.getParameters(), "id") })
                 tracks = findSimilarSongs(context, *releaseId, count);
-            else if (const auto trackId{ getParameterAs<TrackId>(context.parameters, "id") })
+            else if (const auto trackId{ getParameterAs<TrackId>(context.getParameters(), "id") })
                 tracks = findSimilarSongs(context, *trackId, count);
             else
                 throw BadParameterGenericError{ "id" };
 
             core::random::shuffleContainer(tracks);
 
-            auto transaction{ context.dbSession.createReadTransaction() };
+            auto transaction{ context.getDbSession().createReadTransaction() };
 
-            Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
             Response::Node& similarSongsNode{ response.createNode(id3 ? Response::Node::Key{ "similarSongs2" } : Response::Node::Key{ "similarSongs" }) };
             for (const TrackId trackId : tracks)
             {
-                const Track::pointer track{ Track::find(context.dbSession, trackId) };
-                similarSongsNode.addArrayChild("song", createSongNode(context, track, context.user));
+                const Track::pointer track{ Track::find(context.getDbSession(), trackId) };
+                similarSongsNode.addArrayChild("song", createSongNode(context, track, context.getUser()));
             }
 
             return response;
@@ -223,11 +223,11 @@ namespace lms::api::subsonic
 
     Response handleGetMusicFoldersRequest(RequestContext& context)
     {
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node& musicFoldersNode{ response.createNode("musicFolders") };
 
-        auto transaction{ context.dbSession.createReadTransaction() };
-        MediaLibrary::find(context.dbSession, [&](const MediaLibrary::pointer& library) {
+        auto transaction{ context.getDbSession().createReadTransaction() };
+        MediaLibrary::find(context.getDbSession(), [&](const MediaLibrary::pointer& library) {
             Response::Node& musicFolderNode{ musicFoldersNode.createArrayChild("musicFolder") };
 
             musicFolderNode.setAttribute("id", library->getId().getValue());
@@ -240,16 +240,16 @@ namespace lms::api::subsonic
     Response handleGetIndexesRequest(RequestContext& context)
     {
         // Optional params
-        const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.parameters, "musicFolderId").value_or(MediaLibraryId{}) };
+        const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.getParameters(), "musicFolderId").value_or(MediaLibraryId{}) };
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node& indexesNode{ response.createNode("indexes") };
         indexesNode.setAttribute("ignoredArticles", "");
         indexesNode.setAttribute("lastModified", reportedDummyDateULong); // TODO report last file write?
 
-        auto transaction{ context.dbSession.createReadTransaction() };
+        auto transaction{ context.getDbSession().createReadTransaction() };
 
-        const std::vector<Directory::pointer> rootDirectories{ getRootDirectories(context.dbSession, mediaLibrary) };
+        const std::vector<Directory::pointer> rootDirectories{ getRootDirectories(context.getDbSession(), mediaLibrary) };
 
         IndexMap indexedDirectories;
         for (const Directory::pointer& rootdirectory : rootDirectories)
@@ -257,8 +257,8 @@ namespace lms::api::subsonic
             Track::FindParameters params;
             params.setDirectory(rootdirectory->getId());
 
-            Track::find(context.dbSession, params, [&](const Track::pointer& track) {
-                indexesNode.addArrayChild("child", createSongNode(context, track, context.user));
+            Track::find(context.getDbSession(), params, [&](const Track::pointer& track) {
+                indexesNode.addArrayChild("child", createSongNode(context, track, context.getUser()));
             });
 
             getIndexedChildDirectories(context, rootdirectory, indexedDirectories);
@@ -287,21 +287,21 @@ namespace lms::api::subsonic
     Response handleGetMusicDirectoryRequest(RequestContext& context)
     {
         // Mandatory params
-        const auto directoryId{ getMandatoryParameterAs<DirectoryId>(context.parameters, "id") };
+        const auto directoryId{ getMandatoryParameterAs<DirectoryId>(context.getParameters(), "id") };
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node& directoryNode{ response.createNode("directory") };
 
-        auto transaction{ context.dbSession.createReadTransaction() };
+        auto transaction{ context.getDbSession().createReadTransaction() };
 
-        const Directory::pointer directory{ Directory::find(context.dbSession, directoryId) };
+        const Directory::pointer directory{ Directory::find(context.getDbSession(), directoryId) };
         if (!directory)
             throw RequestedDataNotFoundError{};
 
-        if (const Release::pointer release{ getReleaseFromDirectory(context.dbSession, directoryId) })
+        if (const Release::pointer release{ getReleaseFromDirectory(context.getDbSession(), directoryId) })
         {
-            directoryNode.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(context.user->getId(), release->getId()));
-            if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.user->getId(), release->getId()) }; dateTime.isValid())
+            directoryNode.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(context.getUser()->getId(), release->getId()));
+            if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.getUser()->getId(), release->getId()) }; dateTime.isValid())
                 directoryNode.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
         }
 
@@ -317,8 +317,8 @@ namespace lms::api::subsonic
             params.setParentDirectory(directory->getId());
             params.setSortMethod(DirectorySortMethod::Name);
 
-            Directory::find(context.dbSession, params, [&](const Directory::pointer& subDirectory) {
-                const Release::pointer release{ getReleaseFromDirectory(context.dbSession, subDirectory->getId()) };
+            Directory::find(context.getDbSession(), params, [&](const Directory::pointer& subDirectory) {
+                const Release::pointer release{ getReleaseFromDirectory(context.getDbSession(), subDirectory->getId()) };
 
                 if (release)
                 {
@@ -343,8 +343,8 @@ namespace lms::api::subsonic
             params.setDirectory(directory->getId());
             params.setSortMethod(TrackSortMethod::AbsoluteFilePath);
 
-            Track::find(context.dbSession, params, [&](const Track::pointer& track) {
-                directoryNode.addArrayChild("child", createSongNode(context, track, context.user));
+            Track::find(context.getDbSession(), params, [&](const Track::pointer& track) {
+                directoryNode.addArrayChild("child", createSongNode(context, track, context.getUser()));
             });
         }
 
@@ -353,13 +353,13 @@ namespace lms::api::subsonic
 
     Response handleGetGenresRequest(RequestContext& context)
     {
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
 
         Response::Node& genresNode{ response.createNode("genres") };
 
-        auto transaction{ context.dbSession.createReadTransaction() };
+        auto transaction{ context.getDbSession().createReadTransaction() };
 
-        const ClusterType::pointer clusterType{ ClusterType::find(context.dbSession, "GENRE") };
+        const ClusterType::pointer clusterType{ ClusterType::find(context.getDbSession(), "GENRE") };
         if (clusterType)
         {
             const auto clusters{ clusterType->getClusters() };
@@ -374,9 +374,9 @@ namespace lms::api::subsonic
     Response handleGetArtistsRequest(RequestContext& context)
     {
         // Optional params
-        const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.parameters, "musicFolderId").value_or(MediaLibraryId{}) };
+        const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.getParameters(), "musicFolderId").value_or(MediaLibraryId{}) };
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
 
         Response::Node& artistsNode{ response.createNode("artists") };
         artistsNode.setAttribute("ignoredArticles", "");
@@ -384,10 +384,10 @@ namespace lms::api::subsonic
 
         Artist::FindParameters parameters;
         {
-            auto transaction{ context.dbSession.createReadTransaction() };
+            auto transaction{ context.getDbSession().createReadTransaction() };
 
             parameters.setSortMethod(ArtistSortMethod::SortName);
-            switch (context.user->getSubsonicArtistListMode())
+            switch (context.getUser()->getSubsonicArtistListMode())
             {
             case SubsonicArtistListMode::AllArtists:
                 break;
@@ -411,10 +411,10 @@ namespace lms::api::subsonic
         bool hasMoreArtists{ true };
         while (hasMoreArtists)
         {
-            auto transaction{ context.dbSession.createReadTransaction() };
+            auto transaction{ context.getDbSession().createReadTransaction() };
 
             parameters.setRange(Range{ currentArtistOffset, batchSize });
-            const auto artists{ Artist::find(context.dbSession, parameters) };
+            const auto artists{ Artist::find(context.getDbSession(), parameters) };
             for (const Artist::pointer& artist : artists.results)
             {
                 std::string_view sortName{ artist->getSortName() };
@@ -441,9 +441,9 @@ namespace lms::api::subsonic
 
             for (const ArtistId artistId : artistIds)
             {
-                auto transaction{ context.dbSession.createReadTransaction() };
+                auto transaction{ context.getDbSession().createReadTransaction() };
 
-                if (const Artist::pointer artist{ Artist::find(context.dbSession, artistId) })
+                if (const Artist::pointer artist{ Artist::find(context.getDbSession(), artistId) })
                     indexNode.addArrayChild("artist", createArtistNode(context, artist));
             }
         }
@@ -454,18 +454,18 @@ namespace lms::api::subsonic
     Response handleGetArtistRequest(RequestContext& context)
     {
         // Mandatory params
-        ArtistId id{ getMandatoryParameterAs<ArtistId>(context.parameters, "id") };
+        ArtistId id{ getMandatoryParameterAs<ArtistId>(context.getParameters(), "id") };
 
-        auto transaction{ context.dbSession.createReadTransaction() };
+        auto transaction{ context.getDbSession().createReadTransaction() };
 
-        const Artist::pointer artist{ Artist::find(context.dbSession, id) };
+        const Artist::pointer artist{ Artist::find(context.getDbSession(), id) };
         if (!artist)
             throw RequestedDataNotFoundError{};
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node artistNode{ createArtistNode(context, artist) };
 
-        const auto releases{ Release::find(context.dbSession, Release::FindParameters{}.setArtist(artist->getId())) };
+        const auto releases{ Release::find(context.getDbSession(), Release::FindParameters{}.setArtist(artist->getId())) };
         for (const Release::pointer& release : releases.results)
             artistNode.addArrayChild("album", createAlbumNode(context, release, true /* id3 */));
 
@@ -477,18 +477,18 @@ namespace lms::api::subsonic
     Response handleGetAlbumRequest(RequestContext& context)
     {
         // Mandatory params
-        ReleaseId id{ getMandatoryParameterAs<ReleaseId>(context.parameters, "id") };
+        ReleaseId id{ getMandatoryParameterAs<ReleaseId>(context.getParameters(), "id") };
 
-        auto transaction{ context.dbSession.createReadTransaction() };
+        auto transaction{ context.getDbSession().createReadTransaction() };
 
-        Release::pointer release{ Release::find(context.dbSession, id) };
+        Release::pointer release{ Release::find(context.getDbSession(), id) };
         if (!release)
             throw RequestedDataNotFoundError{};
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node albumNode{ createAlbumNode(context, release, true /* id3 */) };
 
-        const auto tracks{ Track::find(context.dbSession, Track::FindParameters{}.setRelease(id).setSortMethod(TrackSortMethod::Release)) };
+        const auto tracks{ Track::find(context.getDbSession(), Track::FindParameters{}.setRelease(id).setSortMethod(TrackSortMethod::Release)) };
         for (const Track::pointer& track : tracks.results)
             albumNode.addArrayChild("song", createSongNode(context, track, true /* id3 */));
 
@@ -500,16 +500,16 @@ namespace lms::api::subsonic
     Response handleGetSongRequest(RequestContext& context)
     {
         // Mandatory params
-        TrackId id{ getMandatoryParameterAs<TrackId>(context.parameters, "id") };
+        TrackId id{ getMandatoryParameterAs<TrackId>(context.getParameters(), "id") };
 
-        auto transaction{ context.dbSession.createReadTransaction() };
+        auto transaction{ context.getDbSession().createReadTransaction() };
 
-        const Track::pointer track{ Track::find(context.dbSession, id) };
+        const Track::pointer track{ Track::find(context.getDbSession(), id) };
         if (!track)
             throw RequestedDataNotFoundError{};
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
-        response.addNode("song", createSongNode(context, track, context.user));
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        response.addNode("song", createSongNode(context, track, context.getUser()));
 
         return response;
     }
@@ -517,24 +517,24 @@ namespace lms::api::subsonic
     Response handleGetArtistInfo2Request(RequestContext& context)
     {
         // Mandatory params
-        ArtistId id{ getMandatoryParameterAs<ArtistId>(context.parameters, "id") };
+        ArtistId id{ getMandatoryParameterAs<ArtistId>(context.getParameters(), "id") };
 
         // Optional params
-        std::size_t count{ getParameterAs<std::size_t>(context.parameters, "count").value_or(20) };
+        std::size_t count{ getParameterAs<std::size_t>(context.getParameters(), "count").value_or(20) };
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node& artistInfoNode{ response.createNode(Response::Node::Key{ "artistInfo2" }) };
 
         {
-            auto transaction{ context.dbSession.createReadTransaction() };
+            auto transaction{ context.getDbSession().createReadTransaction() };
 
-            const Artist::pointer artist{ Artist::find(context.dbSession, id) };
+            const Artist::pointer artist{ Artist::find(context.getDbSession(), id) };
             if (!artist)
                 throw RequestedDataNotFoundError{};
 
             if (const std::optional<core::UUID> artistMBID{ artist->getMBID() })
             {
-                switch (context.responseFormat)
+                switch (context.getResponseFormat())
                 {
                 case ResponseFormat::json:
                     artistInfoNode.setAttribute("musicBrainzId", artistMBID->getAsString());
@@ -545,10 +545,10 @@ namespace lms::api::subsonic
                 }
             }
 
-            ArtistInfo::find(context.dbSession, id, Range{ .offset = 0, .size = 1 }, [&](const ArtistInfo::pointer& artistInfo) {
+            ArtistInfo::find(context.getDbSession(), id, Range{ .offset = 0, .size = 1 }, [&](const ArtistInfo::pointer& artistInfo) {
                 if (!artistInfo->getBiography().empty())
                 {
-                    switch (context.responseFormat)
+                    switch (context.getResponseFormat())
                     {
                     case ResponseFormat::json:
                         artistInfoNode.setAttribute("biography", artistInfo->getBiography());
@@ -564,11 +564,11 @@ namespace lms::api::subsonic
         auto similarArtistsId{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(id, { TrackArtistLinkType::Artist, TrackArtistLinkType::ReleaseArtist }, count) };
 
         {
-            auto transaction{ context.dbSession.createReadTransaction() };
+            auto transaction{ context.getDbSession().createReadTransaction() };
 
             for (const ArtistId similarArtistId : similarArtistsId)
             {
-                const Artist::pointer similarArtist{ Artist::find(context.dbSession, similarArtistId) };
+                const Artist::pointer similarArtist{ Artist::find(context.getDbSession(), similarArtistId) };
                 if (similarArtist)
                     artistInfoNode.addArrayChild("similarArtist", createArtistNode(context, similarArtist));
             }
@@ -579,14 +579,14 @@ namespace lms::api::subsonic
 
     Response handleGetAlbumInfo(RequestContext& context)
     {
-        const db::DirectoryId directoryId{ getMandatoryParameterAs<db::DirectoryId>(context.parameters, "id") };
+        const db::DirectoryId directoryId{ getMandatoryParameterAs<db::DirectoryId>(context.getParameters(), "id") };
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
 
         {
-            auto transaction{ context.dbSession.createReadTransaction() };
+            auto transaction{ context.getDbSession().createReadTransaction() };
 
-            if (db::Release::pointer release{ getReleaseFromDirectory(context.dbSession, directoryId) })
+            if (db::Release::pointer release{ getReleaseFromDirectory(context.getDbSession(), directoryId) })
                 response.addNode("albumInfo", createAlbumInfoNode(context, release));
         }
         return response;
@@ -594,14 +594,14 @@ namespace lms::api::subsonic
 
     Response handleGetAlbumInfo2(RequestContext& context)
     {
-        const db::ReleaseId releaseId{ getMandatoryParameterAs<db::ReleaseId>(context.parameters, "id") };
+        const db::ReleaseId releaseId{ getMandatoryParameterAs<db::ReleaseId>(context.getParameters(), "id") };
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
 
         {
-            auto transaction{ context.dbSession.createReadTransaction() };
+            auto transaction{ context.getDbSession().createReadTransaction() };
 
-            if (db::Release::pointer release{ db::Release::find(context.dbSession, releaseId) })
+            if (db::Release::pointer release{ db::Release::find(context.getDbSession(), releaseId) })
                 response.addNode("albumInfo", createAlbumInfoNode(context, release));
         }
 
@@ -621,29 +621,29 @@ namespace lms::api::subsonic
     Response handleGetTopSongs(RequestContext& context)
     {
         // Mandatory params
-        std::string_view artistName{ getMandatoryParameterAs<std::string_view>(context.parameters, "artist") };
-        std::size_t count{ getParameterAs<std::size_t>(context.parameters, "count").value_or(50) };
+        std::string_view artistName{ getMandatoryParameterAs<std::string_view>(context.getParameters(), "artist") };
+        std::size_t count{ getParameterAs<std::size_t>(context.getParameters(), "count").value_or(50) };
         if (count > defaultMaxCountSize)
             throw ParameterValueTooHighGenericError{ "count", defaultMaxCountSize };
 
-        auto transaction{ context.dbSession.createReadTransaction() };
+        auto transaction{ context.getDbSession().createReadTransaction() };
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node& topSongs{ response.createNode("topSongs") };
 
-        const auto artists{ Artist::find(context.dbSession, artistName) };
+        const auto artists{ Artist::find(context.getDbSession(), artistName) };
         if (artists.size() == 1)
         {
             scrobbling::IScrobblingService::FindParameters params;
-            params.setUser(context.user->getId());
+            params.setUser(context.getUser()->getId());
             params.setRange(db::Range{ 0, count });
             params.setArtist(artists.front()->getId());
 
             const auto trackIds{ core::Service<scrobbling::IScrobblingService>::get()->getTopTracks(params) };
             for (const TrackId trackId : trackIds.results)
             {
-                if (Track::pointer track{ Track::find(context.dbSession, trackId) })
-                    topSongs.addArrayChild("song", createSongNode(context, track, context.user));
+                if (Track::pointer track{ Track::find(context.getDbSession(), trackId) })
+                    topSongs.addArrayChild("song", createSongNode(context, track, context.getUser()));
             }
         }
 

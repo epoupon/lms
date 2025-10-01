@@ -46,7 +46,7 @@ namespace lms::api::subsonic
         userNode.setAttribute("shareRole", false);             // not supported
 
         // users can access all libraries
-        db::MediaLibrary::find(context.dbSession, [&](const db::MediaLibrary::pointer& library) {
+        db::MediaLibrary::find(context.getDbSession(), [&](const db::MediaLibrary::pointer& library) {
             userNode.addArrayValue("folder", library->getId().getValue());
         });
 
