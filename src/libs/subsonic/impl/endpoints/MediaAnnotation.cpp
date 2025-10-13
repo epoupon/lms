@@ -101,7 +101,7 @@ namespace lms::api::subsonic
 
             const int rating = getMandatoryParameterAs<int>(parameters, "rating"); // The rating between 1 and 5 (inclusive), or 0 to remove the rating
             if (rating < 0 || rating > 5)
-                throw BadParameterGenericError{ "rating must be 0 or in range 1-5" };
+                throw BadParameterGenericError{ "rating", "must be 0 or in range 1-5" };
 
             if (rating > 0)
                 res.rating = rating;

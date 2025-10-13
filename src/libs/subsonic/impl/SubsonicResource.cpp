@@ -49,6 +49,7 @@
 #include "endpoints/Podcast.hpp"
 #include "endpoints/Searching.hpp"
 #include "endpoints/System.hpp"
+#include "endpoints/Transcoding.hpp"
 #include "endpoints/UserManagement.hpp"
 
 namespace lms::api::subsonic
@@ -181,6 +182,9 @@ namespace lms::api::subsonic
             { "/getLyricsBySongId", { handleGetLyricsBySongId } },
             { "/getAvatar", { handleNotImplemented } },
 
+            // Transcoding extensions
+            { "/getTranscodeDecision", { handleGetTranscodeDecision } },
+
             // Media annotation
             { "/star", { handleStarRequest } },
             { "/unstar", { handleUnstarRequest } },
@@ -244,6 +248,9 @@ namespace lms::api::subsonic
             { "/download", handleDownload },
             { "/stream", handleStream },
             { "/getCoverArt", handleGetCoverArt },
+
+            // Transcoding extension
+            { "/getTranscodeStream", handleGetTranscodeStream },
         };
 
         struct TLSMonotonicMemoryResourceCleaner
@@ -352,9 +359,7 @@ namespace lms::api::subsonic
         }
         catch (const Error& e)
         {
-            LMS_LOG(API_SUBSONIC, ERROR, "Error while processing request '" << requestPath << "'"
-                                                                            << ", params = [" << parameterMapToDebugString(request.getParameterMap()) << "]"
-                                                                            << ", code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'");
+            LMS_LOG(API_SUBSONIC, ERROR, "Error while processing request '" << requestPath << "'" << ", params = [" << parameterMapToDebugString(request.getParameterMap()) << "]" << ", code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'");
             Response resp{ Response::createFailedResponse(protocolVersion, e) };
             resp.write(response.out(), format);
             response.setMimeType(std::string{ ResponseFormatToMimeType(format) });

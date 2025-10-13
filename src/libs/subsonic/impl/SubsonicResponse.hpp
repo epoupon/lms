@@ -219,13 +219,22 @@ namespace lms::api::subsonic
     class BadParameterGenericError : public GenericError
     {
     public:
-        BadParameterGenericError(const std::string& parameterName)
-            : _parameterName{ parameterName } {}
+        BadParameterGenericError(std::string_view parameterName, std::string_view details = {})
+            : _parameterName{ parameterName }
+            , _details{ details }
+        {
+        }
 
     private:
-        std::string getMessage() const override { return "Parameter '" + _parameterName + "': bad value"; }
+        std::string getMessage() const override
+        {
+            std::string res{ "Parameter '" + _parameterName + "': " };
+            res += _details.empty() ? "bad value" : _details;
+            return res;
+        }
 
         const std::string _parameterName;
+        const std::string _details;
     };
 
     class ParameterValueTooHighGenericError : public GenericError

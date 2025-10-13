@@ -97,7 +97,7 @@ namespace lms::api::subsonic
         const std::string url{ getMandatoryParameterAs<std::string>(context.getParameters(), "url") };
 
         if (url.empty() || !(url.starts_with("http://") || url.starts_with("https://")))
-            throw BadParameterGenericError{ "Invalid url" };
+            throw BadParameterGenericError{ "url", "must start by http:// or https://" };
 
         // no effect if podcast already exists
         core::Service<podcast::IPodcastService>::get()->addPodcast(url);
