@@ -1,7 +1,10 @@
 include(GoogleTest)
 
 add_executable(test-subsonic
-	SubsonicResponseTest.cpp
+	ClientInfo.cpp
+	Subsonic.cpp
+	SubsonicResponse.cpp
+	TranscodeDecision.cpp
 	)
 
 target_include_directories(test-subsonic PRIVATE
@@ -10,6 +13,7 @@ target_include_directories(test-subsonic PRIVATE
 
 target_link_libraries(test-subsonic PRIVATE
 	lmscore
+	lmsaudio
 	lmssubsonic
 	GTest::GTest
 	)

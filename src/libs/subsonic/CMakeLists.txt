@@ -1,5 +1,6 @@
 
 add_library(lmssubsonic STATIC
+	impl/endpoints/transcoding/TranscodeDecision.cpp
 	impl/endpoints/AlbumSongLists.cpp
 	impl/endpoints/Bookmarks.cpp
 	impl/endpoints/Browsing.cpp
@@ -10,11 +11,13 @@ add_library(lmssubsonic STATIC
 	impl/endpoints/Podcast.cpp
 	impl/endpoints/Searching.cpp
 	impl/endpoints/System.cpp
+	impl/endpoints/Transcoding.cpp
 	impl/endpoints/UserManagement.cpp
 	impl/responses/Album.cpp
 	impl/responses/AlbumInfo.cpp
 	impl/responses/Artist.cpp
 	impl/responses/Bookmark.cpp
+	impl/responses/ClientInfo.cpp
 	impl/responses/Contributor.cpp
 	impl/responses/DiscTitle.cpp
 	impl/responses/ItemDate.cpp
@@ -26,6 +29,7 @@ add_library(lmssubsonic STATIC
 	impl/responses/RecordLabel.cpp
 	impl/responses/ReplayGain.cpp
 	impl/responses/Song.cpp
+	impl/responses/StreamDetails.cpp
 	impl/responses/User.cpp
 	impl/CoverArtId.cpp
 	impl/RequestContext.cpp

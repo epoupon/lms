@@ -124,6 +124,18 @@ namespace lms::audio::ffmpeg
             args.emplace_back(std::to_string(*_outputParams.bitrate));
         }
 
+        if (_outputParams.channelCount)
+        {
+            args.emplace_back("-ac");
+            args.emplace_back(std::to_string(*_outputParams.channelCount));
+        }
+
+        if (_outputParams.sampleRate)
+        {
+            args.emplace_back("-ar");
+            args.emplace_back(std::to_string(*_outputParams.sampleRate));
+        }
+
         // Codecs and formats
         if (_outputParams.format)
         {
