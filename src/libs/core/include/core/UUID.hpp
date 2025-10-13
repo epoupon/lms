@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -49,3 +50,15 @@ namespace lms::core::stringUtils
     std::optional<UUID>
     readAs(std::string_view str);
 }
+
+namespace std
+{
+    template<>
+    struct hash<lms::core::UUID>
+    {
+        size_t operator()(const lms::core::UUID& str) const
+        {
+            return hash<std::string_view>{}(str.getAsString());
+        }
+    };
+} // namespace std

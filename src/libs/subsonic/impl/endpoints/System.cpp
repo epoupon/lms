@@ -23,34 +23,26 @@ namespace lms::api::subsonic
     {
         Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
 
+        struct Extension
         {
-            Response::Node& transcodeOffsetNode{ response.createArrayNode("openSubsonicExtensions") };
-            transcodeOffsetNode.setAttribute("name", "transcodeOffset");
-            transcodeOffsetNode.addArrayValue("versions", 1);
-        }
+            core::LiteralString name;
+            int version;
+        };
 
-        {
-            Response::Node& formPostNode{ response.createArrayNode("openSubsonicExtensions") };
-            formPostNode.setAttribute("name", "formPost");
-            formPostNode.addArrayValue("versions", 1);
-        }
+        constexpr Extension extensions[] = {
+            { "transcodeOffset", 1 },
+            { "formPost", 1 },
+            { "songLyrics", 1 },
+            { "apiKeyAuthentication", 1 },
+            { "getPodcastEpisode", 1 },
+            { "transcoding", 1 },
+        };
 
+        for (const Extension& extension : extensions)
         {
-            Response::Node& songLyricsNode{ response.createArrayNode("openSubsonicExtensions") };
-            songLyricsNode.setAttribute("name", "songLyrics");
-            songLyricsNode.addArrayValue("versions", 1);
-        }
-
-        {
-            Response::Node& apiKeyAuthentication{ response.createArrayNode("openSubsonicExtensions") };
-            apiKeyAuthentication.setAttribute("name", "apiKeyAuthentication");
-            apiKeyAuthentication.addArrayValue("versions", 1);
-        }
-
-        {
-            Response::Node& apiKeyAuthentication{ response.createArrayNode("openSubsonicExtensions") };
-            apiKeyAuthentication.setAttribute("name", "getPodcastEpisode");
-            apiKeyAuthentication.addArrayValue("versions", 1);
+            Response::Node& extensionNode{ response.createArrayNode("openSubsonicExtensions") };
+            extensionNode.setAttribute("name", extension.name.str());
+            extensionNode.addArrayValue("versions", extension.version);
         }
 
         return response;

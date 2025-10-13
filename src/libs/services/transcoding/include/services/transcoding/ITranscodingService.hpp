@@ -61,6 +61,8 @@ namespace lms::transcoding
     {
         OutputFormat format;
         std::size_t bitrate{ 128'000 };
+        std::optional<std::size_t> audioChannels;
+        std::optional<std::size_t> sampleRate;
         bool stripMetadata{ true };
     };
 

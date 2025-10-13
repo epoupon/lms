@@ -32,7 +32,7 @@ namespace lms::transcoding
     {
         av::OutputParameters toAv(const OutputParameters& out)
         {
-            return { .format = static_cast<lms::av::OutputFormat>(out.format), .bitrate = out.bitrate, .stripMetadata = out.stripMetadata };
+            return { .format = static_cast<lms::av::OutputFormat>(out.format), .bitrate = out.bitrate, .audioChannels = out.audioChannels, .sampleRate = out.sampleRate, .stripMetadata = out.stripMetadata };
         }
 
         std::size_t doEstimateContentLength(std::size_t bitrate, std::chrono::milliseconds duration)

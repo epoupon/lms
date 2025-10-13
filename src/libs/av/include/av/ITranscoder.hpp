@@ -47,7 +47,9 @@ namespace lms::av
     struct OutputParameters
     {
         OutputFormat format;
-        std::size_t bitrate{ 128'000 };
+        std::size_t bitrate{ 128'000 };           // TODO remove this default value to make sure it is always provided
+        std::optional<std::size_t> audioChannels; // If set, the output audio stream will be downmixed to this number of channels
+        std::optional<std::size_t> sampleRate;    // If set, the output audio stream will be resampled to this sample rate
         bool stripMetadata{ true };
     };
 

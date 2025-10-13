@@ -124,6 +124,18 @@ namespace lms::av
         args.emplace_back("-b:a");
         args.emplace_back(std::to_string(_outputParams.bitrate));
 
+        if (_outputParams.audioChannels)
+        {
+            args.emplace_back("-ac");
+            args.emplace_back(std::to_string(*_outputParams.audioChannels));
+        }
+
+        if (_outputParams.sampleRate)
+        {
+            args.emplace_back("-ar");
+            args.emplace_back(std::to_string(*_outputParams.sampleRate));
+        }
+
         // Codecs and formats
         switch (_outputParams.format)
         {
