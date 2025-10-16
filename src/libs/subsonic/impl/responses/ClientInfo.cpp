@@ -19,6 +19,8 @@
 
 #include "ClientInfo.hpp"
 
+#include <type_traits>
+
 #include <Wt/Json/Array.h>
 #include <Wt/Json/Object.h>
 #include <Wt/Json/Parser.h>
@@ -31,6 +33,55 @@ namespace lms::api::subsonic
 {
     namespace
     {
+        template<typename T>
+        std::optional<T> parseValue(const Wt::Json::Object& object, const std::string& entry)
+        {
+            try
+            {
+                std::optional<T> res;
+
+                const Wt::Json::Value& value{ object.get(entry) };
+                if (value.isNull())
+                    return res;
+
+                if constexpr (std::is_same_v<T, bool>)
+                {
+                    if (value.type() != Wt::Json::Type::Bool)
+                        throw BadParameterGenericError{ entry, "field must be a boolean" };
+                }
+                else if constexpr (std::is_same_v<T, std::string>)
+                {
+                    if (value.type() != Wt::Json::Type::String)
+                        throw BadParameterGenericError{ entry, "field must be a string" };
+                }
+                else if constexpr (std::is_integral_v<T>)
+                {
+                    if (value.type() != Wt::Json::Type::Number)
+                        throw BadParameterGenericError{ entry, "field must be a number" };
+                }
+                else
+                {
+                    static_assert(false, "Unhandled type");
+                }
+
+                return static_cast<T>(value);
+            }
+            catch (const Wt::WException& e)
+            {
+                throw BadParameterGenericError{ entry, "failed to read value" };
+            }
+        }
+
+        template<typename T>
+        T parseMandatoryValue(const Wt::Json::Object& object, const std::string& entry)
+        {
+            std::optional<T> res{ parseValue<T>(object, entry) };
+            if (!res)
+                throw BadParameterGenericError{ entry, "field is mandatory" };
+
+            return *res;
+        }
+
         Limitation::Type parseLimitationType(std::string_view str)
         {
             if (str == "audioChannels")
@@ -66,10 +117,10 @@ namespace lms::api::subsonic
             throw BadParameterGenericError{ "ClientInfo::CodecProfile::comparison", "unexpected value '" + std::string{ str } + "'" };
         }
 
-        std::vector<std::string> parseValues(std::string_view str)
+        std::vector<std::string> parseValues(std::string_view str, char delimiter)
         {
             std::vector<std::string> res;
-            for (std::string_view v : core::stringUtils::splitString(str, '|'))
+            for (std::string_view v : core::stringUtils::splitString(str, delimiter))
                 res.emplace_back(v);
             return res;
         }
@@ -114,34 +165,59 @@ namespace lms::api::subsonic
             Wt::Json::Object root;
             Wt::Json::parse(msgBody, root);
 
-            res.name = static_cast<std::string>(root.get("name"));
-            res.platform = static_cast<std::string>(root.get("platform"));
-            if (const Wt::Json::Value & maxAudioBitRate{ root.get("maxAudioBitrate") }; maxAudioBitRate.type() != Wt::Json::Type::Null)
-                res.maxAudioBitrate = static_cast<long>(maxAudioBitRate);
-            if (const Wt::Json::Value & maxTranscodingAudioBitrate{ root.get("maxTranscodingAudioBitrate") }; maxTranscodingAudioBitrate.type() != Wt::Json::Type::Null)
-                res.maxTranscodingAudioBitrate = static_cast<long>(maxTranscodingAudioBitrate);
+            res.name = parseMandatoryValue<std::string>(root, "name");
+            res.platform = parseMandatoryValue<std::string>(root, "platform");
+            {
+                const auto maxAudioBitrate = parseValue<long>(root, "maxAudioBitrate");
+                if (maxAudioBitrate && *maxAudioBitrate > 0)
+                    res.maxAudioBitrate = *maxAudioBitrate;
+            }
+
+            {
+                const auto maxTranscodingAudioBitrate = parseValue<long>(root, "maxTranscodingAudioBitrate");
+                if (maxTranscodingAudioBitrate && *maxTranscodingAudioBitrate > 0)
+                    res.maxTranscodingAudioBitrate = *maxTranscodingAudioBitrate;
+            }
 
             if (const Wt::Json::Value & directPlayProfiles{ root.get("directPlayProfiles") }; directPlayProfiles.type() != Wt::Json::Type::Null)
             {
                 for (const Wt::Json::Object& profile : static_cast<const Wt::Json::Array&>(directPlayProfiles))
                 {
                     DirectPlayProfile directPlayProfile;
-                    directPlayProfile.container = static_cast<std::string>(profile.get("container"));
-                    if (directPlayProfile.container.empty())
-                        throw BadParameterGenericError{ "ClientInfo::DirectPlayProfile::container", "cannot be empty" };
 
-                    for (std::string_view codec : core::stringUtils::splitString(static_cast<std::string>(profile.get("audioCodec")), ','))
-                        directPlayProfile.audioCodecs.push_back(std::string{ codec });
+                    // containers
+                    {
+                        const auto container{ parseMandatoryValue<std::string>(profile, "container") };
+                        for (std::string_view container : core::stringUtils::splitString(container, ','))
+                            directPlayProfile.containers.push_back(std::string{ container });
 
-                    if (directPlayProfile.audioCodecs.empty())
-                        throw BadParameterGenericError{ "ClientInfo::DirectPlayProfile::audioCodec", "cannot be empty" };
+                        if (directPlayProfile.containers.empty())
+                            throw BadParameterGenericError{ "ClientInfo::DirectPlayProfile::container", "cannot be empty" };
+                        if (directPlayProfile.containers.size() > 1 && std::any_of(std::cbegin(directPlayProfile.containers), std::cend(directPlayProfile.containers), [](const std::string& container) { return container == "*"; }))
+                            throw BadParameterGenericError{ "ClientInfo::DirectPlayProfile::container", "cannot have * when multiple containers are specified" };
+                    }
 
-                    directPlayProfile.protocol = static_cast<std::string>(profile.get("protocol"));
+                    // audio codecs
+                    {
+                        const auto audioCodec{ parseMandatoryValue<std::string>(profile, "audioCodec") };
+                        for (std::string_view codec : core::stringUtils::splitString(audioCodec, ','))
+                            directPlayProfile.audioCodecs.push_back(std::string{ codec });
+
+                        if (directPlayProfile.audioCodecs.empty())
+                            throw BadParameterGenericError{ "ClientInfo::DirectPlayProfile::audioCodec", "cannot be empty" };
+                        if (directPlayProfile.audioCodecs.size() > 1 && std::any_of(std::cbegin(directPlayProfile.audioCodecs), std::cend(directPlayProfile.audioCodecs), [](const std::string& codec) { return codec == "*"; }))
+                            throw BadParameterGenericError{ "ClientInfo::DirectPlayProfile::audioCodec", "cannot have * when multiple codecs are specified" };
+                    }
+
+                    directPlayProfile.protocol = parseMandatoryValue<std::string>(profile, "protocol");
                     if (directPlayProfile.protocol.empty())
                         throw BadParameterGenericError{ "ClientInfo::DirectPlayProfile::protocol", "cannot be empty" };
 
-                    if (const Wt::Json::Value maxAudioChannels{ profile.get("maxAudioChannels") }; maxAudioChannels.type() != Wt::Json::Type::Null)
-                        directPlayProfile.maxAudioChannels = static_cast<long>(maxAudioChannels);
+                    {
+                        const auto maxAudioChannels = parseValue<long>(profile, "maxAudioChannels");
+                        if (maxAudioChannels && *maxAudioChannels > 0)
+                            directPlayProfile.maxAudioChannels = *maxAudioChannels;
+                    }
 
                     res.directPlayProfiles.push_back(directPlayProfile);
                 }
@@ -152,20 +228,32 @@ namespace lms::api::subsonic
                 for (const Wt::Json::Object& profile : static_cast<const Wt::Json::Array&>(transcodingProfiles))
                 {
                     TranscodingProfile transcodingProfile;
-                    transcodingProfile.container = static_cast<std::string>(profile.get("container"));
+                    transcodingProfile.container = parseMandatoryValue<std::string>(profile, "container");
                     if (transcodingProfile.container.empty())
                         throw BadParameterGenericError{ "ClientInfo::TranscodingProfile::container", "cannot be empty" };
 
-                    transcodingProfile.audioCodec = static_cast<std::string>(profile.get("audioCodec"));
+                    if (transcodingProfile.container.find('*') != std::string::npos)
+                        throw BadParameterGenericError{ "ClientInfo::TranscodingProfile::container", "cannot have *" };
+                    if (transcodingProfile.container.find(',') != std::string::npos)
+                        throw BadParameterGenericError{ "ClientInfo::TranscodingProfile::container", "cannot have ," };
+
+                    transcodingProfile.audioCodec = parseMandatoryValue<std::string>(profile, "audioCodec");
                     if (transcodingProfile.audioCodec.empty())
                         throw BadParameterGenericError{ "ClientInfo::TranscodingProfile::audioCodec", "cannot be empty" };
+                    if (transcodingProfile.audioCodec.find('*') != std::string::npos)
+                        throw BadParameterGenericError{ "ClientInfo::TranscodingProfile::audioCodec", "cannot have *" };
+                    if (transcodingProfile.audioCodec.find(',') != std::string::npos)
+                        throw BadParameterGenericError{ "ClientInfo::TranscodingProfile::audioCodec", "cannot have ," };
 
-                    transcodingProfile.protocol = static_cast<std::string>(profile.get("protocol"));
+                    transcodingProfile.protocol = parseMandatoryValue<std::string>(profile, "protocol");
                     if (transcodingProfile.protocol.empty())
                         throw BadParameterGenericError{ "ClientInfo::TranscodingProfile::protocol", "cannot be empty" };
 
-                    if (const Wt::Json::Value maxAudioChannels{ profile.get("maxAudioChannels") }; maxAudioChannels.type() != Wt::Json::Type::Null)
-                        transcodingProfile.maxAudioChannels = static_cast<long>(maxAudioChannels);
+                    {
+                        const auto maxAudioChannels{ parseValue<long>(profile, "maxAudioChannels") };
+                        if (maxAudioChannels && *maxAudioChannels > 0)
+                            transcodingProfile.maxAudioChannels = *maxAudioChannels;
+                    }
 
                     res.transcodingProfiles.push_back(transcodingProfile);
                 }
@@ -177,11 +265,11 @@ namespace lms::api::subsonic
                 for (const Wt::Json::Object& profile : static_cast<const Wt::Json::Array&>(codecProfiles))
                 {
                     CodecProfile codecProfile;
-                    codecProfile.type = static_cast<std::string>(profile.get("type"));
+                    codecProfile.type = parseMandatoryValue<std::string>(profile, "type");
                     if (codecProfile.type != "AudioCodec" && codecProfile.type != "VideoCodec")
-                        throw BadParameterGenericError{ "ClientInfo::CodecProfile::type", "unexpected value '" + codecProfile.type + "'" };
+                        throw BadParameterGenericError{ "ClientInfo::CodecProfile::type", "unexpected value" };
 
-                    codecProfile.name = static_cast<std::string>(profile.get("name"));
+                    codecProfile.name = parseMandatoryValue<std::string>(profile, "name");
                     if (codecProfile.name.empty())
                         throw BadParameterGenericError{ "ClientInfo::CodecProfile::name", "name must not be empty" };
 
@@ -190,10 +278,10 @@ namespace lms::api::subsonic
                         for (const Wt::Json::Object& limitation : static_cast<const Wt::Json::Array&>(limitations))
                         {
                             Limitation lim;
-                            lim.name = parseLimitationType(static_cast<std::string>(limitation.get("name")));
-                            lim.comparison = parseComparisonOperator(static_cast<std::string>(limitation.get("comparison")));
-                            lim.values = parseValues(static_cast<std::string>(limitation.get("value")));
-                            lim.required = static_cast<bool>(limitation.get("required"));
+                            lim.name = parseLimitationType(parseMandatoryValue<std::string>(limitation, "name"));
+                            lim.comparison = parseComparisonOperator(parseMandatoryValue<std::string>(limitation, "comparison"));
+                            lim.values = parseValues(parseMandatoryValue<std::string>(limitation, "value"), '|');
+                            lim.required = parseMandatoryValue<bool>(limitation, "required");
 
                             checkLimitationValidity(lim);
                             codecProfile.limitations.push_back(lim);
