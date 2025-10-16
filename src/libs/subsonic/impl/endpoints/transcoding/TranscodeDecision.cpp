@@ -198,12 +198,12 @@ namespace lms::api::subsonic::details
 
         std::optional<TranscodeReason> needsTranscode(const DirectPlayProfile& profile, std::span<const CodecProfile> codecProfiles, const av::ContainerInfo& containerInfo, const av::StreamInfo& audioStreamInfo)
         {
-            if (profile.container != "*" && profile.container != containerInfo.name)
+            assert(!profile.containers.empty());
+            if (profile.containers.front() != "*" && std::none_of(std::cbegin(profile.containers), std::cend(profile.containers), [&](const std::string& container) { return container == containerInfo.name; }))
                 return TranscodeReason::ContainerNotSupported;
 
             assert(!profile.audioCodecs.empty());
-            if (profile.audioCodecs.front() != "*"
-                && std::none_of(std::cbegin(profile.audioCodecs), std::cend(profile.audioCodecs), [&](const std::string& audioCodec) { return audioCodec == audioStreamInfo.codecName; }))
+            if (profile.audioCodecs.front() != "*" && std::none_of(std::cbegin(profile.audioCodecs), std::cend(profile.audioCodecs), [&](const std::string& audioCodec) { return audioCodec == audioStreamInfo.codecName; }))
                 return TranscodeReason::AudioCodecNotSupported;
 
             if (profile.maxAudioChannels && audioStreamInfo.channelCount > *profile.maxAudioChannels)

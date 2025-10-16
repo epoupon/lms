@@ -57,7 +57,7 @@ namespace lms::api::subsonic
         {
             std::visit(core::utils::overloads{
                            [&](const details::DirectPlayResult&) { os << "direct play"; },
-                           [&](const details::FailureResult& res) { os << "failure: " << res; },
+                           [&](const details::FailureResult& res) { os << "failure: " << res.reason; },
                            [&](const details::TranscodeResult& res) {
                                os << "transcode: reasons = {";
 
@@ -88,8 +88,9 @@ namespace lms::api::subsonic
         } // namespace
     }; // namespace details
 
-    TEST(TranscodeDecision, basic)
+    namespace
     {
+
         struct TestCase
         {
             ClientInfo clientInfo;
@@ -99,7 +100,21 @@ namespace lms::api::subsonic
             details::TranscodeDecisionResult expected;
         };
 
-        const TestCase testCases[] = {
+        void processTests(std::span<const TestCase> testCases)
+        {
+            for (std::size_t testCaseIndex{ 0 }; testCaseIndex < std::size(testCases); ++testCaseIndex)
+            {
+                const auto& testCase{ testCases[testCaseIndex] };
+                const details::TranscodeDecisionResult decision{ details::computeTranscodeDecision(testCase.clientInfo, testCase.containerInfo, testCase.audioStreamInfo) };
+
+                EXPECT_EQ(testCase.expected, decision) << "testCaseIndex: " << testCaseIndex;
+            }
+        }
+    } // namespace
+
+    TEST(TranscodeDecision, directPlay)
+    {
+        const TestCase testCases[]{
             // Direct play
             {
                 .clientInfo = {
@@ -108,10 +123,10 @@ namespace lms::api::subsonic
                     .maxAudioBitrate = 512'000,
                     .maxTranscodingAudioBitrate = 256'000,
                     .directPlayProfiles = { {
-                        { "mp3", { "mp3" }, "http", 2 },
+                        { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocol = "http", .maxAudioChannels = 2 },
                     } },
                     .transcodingProfiles = {
-                        { "mp3", "mp3", "http", 2 },
+                        { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
                     },
                     .codecProfiles = { { .type = "AudioCodec", .name = "mp3", .limitations = {
                                                                                   { .name = Limitation::Type::AudioBitrate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "256000" }, .required = true },
@@ -139,10 +154,10 @@ namespace lms::api::subsonic
                     .maxAudioBitrate = 512'000,
                     .maxTranscodingAudioBitrate = 96'000,
                     .directPlayProfiles = { {
-                        { "mp3", { "mp3" }, "http", 2 },
+                        { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocol = "http", .maxAudioChannels = 2 },
                     } },
                     .transcodingProfiles = {
-                        { "mp3", "mp3", "http", 2 },
+                        { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
                     },
                     .codecProfiles = { { .type = "AudioCodec", .name = "mp3", .limitations = {
                                                                                   { .name = Limitation::Type::AudioBitrate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "96000" }, .required = true },
@@ -170,10 +185,10 @@ namespace lms::api::subsonic
                     .maxAudioBitrate = 96'000,
                     .maxTranscodingAudioBitrate = 96'000,
                     .directPlayProfiles = { {
-                        { "mp3", { "mp3" }, "http", 2 },
+                        { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocol = "http", .maxAudioChannels = 2 },
                     } },
                     .transcodingProfiles = {
-                        { "mp3", "mp3", "http", 2 },
+                        { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
                     },
                     .codecProfiles = { { .type = "AudioCodec", .name = "mp3", .limitations = {
                                                                                   { .name = Limitation::Type::AudioBitrate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "256000" }, .required = true },
@@ -201,7 +216,7 @@ namespace lms::api::subsonic
                     .maxAudioBitrate = 96'000,
                     .maxTranscodingAudioBitrate = 96'000,
                     .directPlayProfiles = { {
-                        { "mp3", { "mp3" }, "http", 2 },
+                        { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocol = "http", .maxAudioChannels = 2 },
                     } },
                     .transcodingProfiles = {
                         { "mp3", "mp3", "http", 2 },
@@ -232,7 +247,7 @@ namespace lms::api::subsonic
                     .maxAudioBitrate = 320'000,
                     .maxTranscodingAudioBitrate = 320'000,
                     .directPlayProfiles = { {
-                        { "mp3", { "mp3" }, "http", 2 },
+                        { { "mp3" }, { "mp3" }, "http", 2 },
                     } },
                     .transcodingProfiles = {
                         { "mp3", "mp3", "http", 2 },
@@ -257,13 +272,15 @@ namespace lms::api::subsonic
 
             // Needs transcode due to max nb channels not handle by profile
             {
-                .clientInfo = { .name = "TestClient", .platform = "TestPlatform", .maxAudioBitrate = 320000, .maxTranscodingAudioBitrate = 320000, .directPlayProfiles = { {
-                                                                                                                                                       { "mp3", { "mp3" }, "http", 2 },
-                                                                                                                                                   } },
-                                .transcodingProfiles = {
-                                    { "mp3", "mp3", "http", 2 },
-                                },
-                                .codecProfiles = { { .type = "AudioCodec", .name = "mp3", .limitations = {} } } },
+                .clientInfo = {
+                    .name = "TestClient",
+                    .platform = "TestPlatform",
+                    .maxAudioBitrate = 320'000,
+                    .maxTranscodingAudioBitrate = 320'000,
+                    .directPlayProfiles = { { { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocol = "http", .maxAudioChannels = 2 } } },
+                    .transcodingProfiles = { { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 } },
+                    .codecProfiles = { { .type = "AudioCodec", .name = "mp3", .limitations = {} } },
+                },
                 .containerInfo = { .bitrate = 128'000, .name = "mp3" },
                 .audioStreamInfo = {
                     .index = 0,
@@ -286,7 +303,7 @@ namespace lms::api::subsonic
                     .maxAudioBitrate = 320'000,
                     .maxTranscodingAudioBitrate = 320'000,
                     .directPlayProfiles = { {
-                        { "mp3", { "mp3" }, "http", std::nullopt },
+                        { { "mp3" }, { "mp3" }, "http", std::nullopt },
                     } },
                     .transcodingProfiles = {
                         { "mp3", "mp3", "http", std::nullopt },
@@ -315,7 +332,7 @@ namespace lms::api::subsonic
                     .maxAudioBitrate = 320'000,
                     .maxTranscodingAudioBitrate = 320'000,
                     .directPlayProfiles = { {
-                        { "mp3", { "mp3" }, "http", std::nullopt },
+                        { { "mp3" }, { "mp3" }, "http", std::nullopt },
                     } },
                     .transcodingProfiles = {
                         { "mp3", "mp3", "http", std::nullopt },
@@ -344,7 +361,7 @@ namespace lms::api::subsonic
                     .maxAudioBitrate = 1'000'000,
                     .maxTranscodingAudioBitrate = 320'000,
                     .directPlayProfiles = { {
-                        { "mp3", { "mp3" }, "http", std::nullopt },
+                        { { "mp3" }, { "mp3" }, "http", std::nullopt },
                     } },
                     .transcodingProfiles = {
                         { "mp3", "mp3", "http", std::nullopt },
@@ -368,7 +385,7 @@ namespace lms::api::subsonic
             // needs transcode because codec not handled (lossless source => using a default good bitrate)
             {
                 .clientInfo = { .name = "TestClient", .platform = "TestPlatform", .maxAudioBitrate = std::nullopt, .maxTranscodingAudioBitrate = std::nullopt, .directPlayProfiles = { {
-                                                                                                                                                                   { "mp3", { "mp3" }, "http", std::nullopt },
+                                                                                                                                                                   { { "mp3" }, { "mp3" }, "http", std::nullopt },
                                                                                                                                                                } },
                                 .transcodingProfiles = {
                                     { "mp3", "mp3", "http", std::nullopt },
@@ -387,15 +404,63 @@ namespace lms::api::subsonic
 
                 .expected = { details::TranscodeResult{ .reasons = { details::TranscodeReason::AudioCodecNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "mp3", .codec = "mp3", .audioChannels = std::nullopt, .audioBitrate = 256000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
             },
+
+            // check protocol * and codec * are properly handled
+            {
+                .clientInfo = {
+                    .name = "TestClient",
+                    .platform = "TestPlatform",
+                    .maxAudioBitrate = 1'000'000,
+                    .maxTranscodingAudioBitrate = 320'000,
+                    .directPlayProfiles = { {
+                        { { "mp4", "flac", "mp3" }, { "*" }, "*", std::nullopt },
+                    } },
+                    .transcodingProfiles = {},
+                    .codecProfiles = {},
+                },
+                .containerInfo = { .bitrate = 128'000, .name = "mp3" },
+                .audioStreamInfo = {
+                    .index = 0,
+                    .bitrate = 128'000,
+                    .bitsPerSample = 16,
+                    .channelCount = 2,
+                    .sampleRate = 48'000,
+                    .codec = av::DecodingCodec::MP3,
+                    .codecName = "mp3",
+                },
+
+                .expected = { details::DirectPlayResult{} },
+            },
+
+            // check container * is properly handled
+            {
+                .clientInfo = {
+                    .name = "TestClient",
+                    .platform = "TestPlatform",
+                    .maxAudioBitrate = 1'000'000,
+                    .maxTranscodingAudioBitrate = 320'000,
+                    .directPlayProfiles = { {
+                        { { "*" }, { "mp3" }, "*", std::nullopt },
+                    } },
+                    .transcodingProfiles = {},
+                    .codecProfiles = {},
+                },
+                .containerInfo = { .bitrate = 128'000, .name = "mp3" },
+                .audioStreamInfo = {
+                    .index = 0,
+                    .bitrate = 128'000,
+                    .bitsPerSample = 16,
+                    .channelCount = 2,
+                    .sampleRate = 48'000,
+                    .codec = av::DecodingCodec::MP3,
+                    .codecName = "mp3",
+                },
+
+                .expected = { details::DirectPlayResult{} },
+            },
         };
 
-        for (std::size_t testCaseIndex{ 0 }; testCaseIndex < std::size(testCases); ++testCaseIndex)
-        {
-            const auto& testCase{ testCases[testCaseIndex] };
-            const details::TranscodeDecisionResult decision{ details::computeTranscodeDecision(testCase.clientInfo, testCase.containerInfo, testCase.audioStreamInfo) };
-
-            EXPECT_EQ(testCase.expected, decision) << "testCaseIndex: " << testCaseIndex;
-        }
+        processTests(testCases);
     }
 
 } // namespace lms::api::subsonic
