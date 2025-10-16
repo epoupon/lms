@@ -28,7 +28,7 @@ namespace lms::api::subsonic
 {
     struct DirectPlayProfile
     {
-        std::string container;                       // The container format (e.g., mp3, flac).
+        std::vector<std::string> containers;         // The container format (e.g., mp3, flac).
         std::vector<std::string> audioCodecs;        // Comma-separated list of supported audio codecs.
         std::string protocol;                        // The streaming protocol. Can be http or hls.
         std::optional<std::size_t> maxAudioChannels; // The maximum number of audio channels supported.
@@ -78,13 +78,13 @@ namespace lms::api::subsonic
 
     struct ClientInfo
     {
-        std::string name;                                      // The name of the client device
-        std::string platform;                                  // The platform of the client (e.g., Android, iOS).
-        std::optional<std::size_t> maxAudioBitrate;            // The maximum audio bitrate the client can handle.
-        std::optional<std::size_t> maxTranscodingAudioBitrate; // The maximum audio bitrate for transcoded content.
-        std::vector<DirectPlayProfile> directPlayProfiles;     // A list of profiles for direct playback.
-        std::vector<TranscodingProfile> transcodingProfiles;   // A list of profiles for transcoding. The server should evaluate these in the order they are listed, as a priority list.
-        std::vector<CodecProfile> codecProfiles;               // A list of codec-specific profiles.
+        std::string name;                                    // The name of the client device
+        std::string platform;                                // The platform of the client (e.g., Android, iOS).
+        std::optional<unsigned> maxAudioBitrate;             // The maximum audio bitrate the client can handle.
+        std::optional<unsigned> maxTranscodingAudioBitrate;  // The maximum audio bitrate for transcoded content.
+        std::vector<DirectPlayProfile> directPlayProfiles;   // A list of profiles for direct playback.
+        std::vector<TranscodingProfile> transcodingProfiles; // A list of profiles for transcoding. The server should evaluate these in the order they are listed, as a priority list.
+        std::vector<CodecProfile> codecProfiles;             // A list of codec-specific profiles.
     };
 
     [[nodiscard]] ClientInfo parseClientInfoFromJson(std::istream& is);

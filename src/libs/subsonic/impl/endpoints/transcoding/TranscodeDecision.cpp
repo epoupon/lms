@@ -203,12 +203,12 @@ namespace lms::api::subsonic::details
 
         std::optional<TranscodeReason> needsTranscode(const DirectPlayProfile& profile, std::span<const CodecProfile> codecProfiles, const StreamDetails& sourceStream)
         {
-            if (profile.container != "*" && !core::stringUtils::stringCaseInsensitiveEqual(profile.container, sourceStream.container))
+            assert(!profile.containers.empty());
+            if (profile.containers.front() != "*" && std::none_of(std::cbegin(profile.containers), std::cend(profile.containers), [&](const std::string& container) { return core::stringUtils::stringCaseInsensitiveEqual(container, sourceStream.container); }))
                 return TranscodeReason::ContainerNotSupported;
 
             assert(!profile.audioCodecs.empty());
-            if (profile.audioCodecs.front() != "*"
-                && std::none_of(std::cbegin(profile.audioCodecs), std::cend(profile.audioCodecs), [&](const std::string& audioCodec) { return core::stringUtils::stringCaseInsensitiveEqual(audioCodec, sourceStream.codec); }))
+            if (profile.audioCodecs.front() != "*" && std::none_of(std::cbegin(profile.audioCodecs), std::cend(profile.audioCodecs), [&](const std::string& audioCodec) { return core::stringUtils::stringCaseInsensitiveEqual(audioCodec, sourceStream.codec); }))
                 return TranscodeReason::AudioCodecNotSupported;
 
             if (profile.maxAudioChannels && *sourceStream.audioChannels > *profile.maxAudioChannels)

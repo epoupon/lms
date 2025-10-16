@@ -225,6 +225,8 @@ namespace lms::api::subsonic
         {
         }
 
+        std::string_view getParameterName() const { return _parameterName; }
+
     private:
         std::string getMessage() const override
         {
