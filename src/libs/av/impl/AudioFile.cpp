@@ -307,7 +307,13 @@ namespace lms::av
         res.emplace();
         res->index = streamIndex;
         res->bitrate = static_cast<std::size_t>(avstream->codecpar->bit_rate);
-        res->bitsPerSample = static_cast<std::size_t>(avstream->codecpar->bits_per_coded_sample);
+        // if the bitrate is not set, let's estimate from the container (we could also read all packets to get the size of the stream)
+        if (res->bitrate == 0)
+            res->bitrate = static_cast<std::size_t>(_context->bit_rate);
+
+        res->bitsPerSample = static_cast<std::size_t>(avstream->codecpar->bits_per_raw_sample);
+        if (res->bitsPerSample == 0)
+            res->bitsPerSample = static_cast<std::size_t>(avstream->codecpar->bits_per_coded_sample);
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
         res->channelCount = static_cast<std::size_t>(avstream->codecpar->channels);
 #else
