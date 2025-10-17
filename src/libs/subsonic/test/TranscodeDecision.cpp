@@ -289,7 +289,7 @@ namespace lms::api::subsonic
                     .audioProfile = "",
                     .audioSamplerate = 48'000,
                     .audioBitdepth = 16,
-                    
+
                 },
 
                 .expected = { details::TranscodeResult{ .reasons = { details::TranscodeReason::AudioChannelsNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "mp3", .codec = "mp3", .audioChannels = 2, .audioBitrate = 192'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
@@ -418,7 +418,7 @@ namespace lms::api::subsonic
                     .transcodingProfiles = {},
                     .codecProfiles = {},
                 },
-                .source {
+                .source = {
                     .protocol = "http",
                     .container = "MP3",
                     .codec = "MP3",
@@ -434,7 +434,7 @@ namespace lms::api::subsonic
 
             // check container * is properly handled
             {
-                .clientInfo {
+                .clientInfo = {
                     .name = "TestClient",
                     .platform = "TestPlatform",
                     .maxAudioBitrate = 1'000'000,
@@ -445,7 +445,7 @@ namespace lms::api::subsonic
                     .transcodingProfiles = {},
                     .codecProfiles = {},
                 },
-                .source {
+                .source = {
                     .protocol = "http",
                     .container = "MP3",
                     .codec = "MP3",
@@ -477,15 +477,15 @@ namespace lms::api::subsonic
                                                                                    { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true },
                                                                                } } },
                 },
-                .containerInfo = { .bitrate = 128'000, .name = "flac" },
-                .audioStreamInfo = {
-                    .index = 0,
-                    .bitrate = 1'000'000,
-                    .bitsPerSample = 0,
-                    .channelCount = 2,
-                    .sampleRate = 48'000,
-                    .codec = av::DecodingCodec::FLAC,
-                    .codecName = "flac",
+                .source = {
+                    .protocol = "http",
+                    .container = "FLAC",
+                    .codec = "FLAC",
+                    .audioChannels = 2,
+                    .audioBitrate = 1'000'000,
+                    .audioProfile = "",
+                    .audioSamplerate = 48'000,
+                    .audioBitdepth = 16,
                 },
 
                 .expected = { details::TranscodeResult{ .reasons = { details::TranscodeReason::AudioBitrateNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "ogg", .codec = "opus", .audioChannels = std::nullopt, .audioBitrate = 320'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
@@ -494,5 +494,4 @@ namespace lms::api::subsonic
 
         processTests(testCases);
     }
-
 } // namespace lms::api::subsonic
