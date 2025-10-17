@@ -42,4 +42,24 @@ namespace lms::api::subsonic
 
         return streamDetailsNode;
     }
+
+    Response::Node createStreamDetails(const StreamDetails& streamDetails)
+    {
+        Response::Node streamDetailsNode{};
+
+        streamDetailsNode.setAttribute("protocol", "http");
+        streamDetailsNode.setAttribute("container", streamDetails.container);
+        streamDetailsNode.setAttribute("codec", streamDetails.codec);
+        if (streamDetails.audioChannels)
+            streamDetailsNode.setAttribute("audioChannels", *streamDetails.audioChannels);
+        if (streamDetails.audioBitrate)
+            streamDetailsNode.setAttribute("audioBitrate", *streamDetails.audioBitrate);
+        // TODO audioProfile
+        if (streamDetails.audioSamplerate)
+            streamDetailsNode.setAttribute("audioSamplerate", *streamDetails.audioSamplerate);
+        if (streamDetails.audioBitdepth)
+            streamDetailsNode.setAttribute("audioBitdepth", *streamDetails.audioBitdepth);
+
+        return streamDetailsNode;
+    }
 } // namespace lms::api::subsonic

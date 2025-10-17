@@ -44,4 +44,5 @@ namespace lms::api::subsonic
     };
 
     Response::Node createStreamDetails(const av::ContainerInfo& containerInfo, const av::StreamInfo& streamInfo);
+    Response::Node createStreamDetails(const StreamDetails& streamDetails);
 } // namespace lms::api::subsonic
