@@ -175,6 +175,7 @@ namespace lms::api::subsonic
                                transcodeNode.setAttribute("canTranscode", true);
 
                                const core::UUID uuid{ getTranscodeDecisionManager().add(trackId, transcodeRes.targetStreamInfo) };
+                               transcodeNode.addChild("transcodeStream", createStreamDetails(transcodeRes.targetStreamInfo));
                                transcodeNode.setAttribute("transcodeParams", uuid.getAsString());
                            },
                            [&](const details::FailureResult& failureRes) {
