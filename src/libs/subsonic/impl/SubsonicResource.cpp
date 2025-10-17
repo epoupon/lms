@@ -287,6 +287,24 @@ namespace lms::api::subsonic
         if (core::stringUtils::stringEndsWith(requestPath, ".view"))
             requestPath.resize(requestPath.length() - 5);
 
+        // First check for media retrieval endpoints
+        auto itStreamHandler{ mediaRetrievalHandlers.find(requestPath) };
+        if (itStreamHandler != mediaRetrievalHandlers.end())
+        {
+            try
+            {
+                LMS_SCOPED_TRACE_OVERVIEW("Subsonic", itStreamHandler->first);
+                handleMediaRetrievalRequest(itStreamHandler->second, request, response);
+                LMS_LOG(API_SUBSONIC, DEBUG, "Request " << requestId << " '" << requestPath << "' handled!");
+            }
+            catch (const Error& e)
+            {
+                LMS_LOG(API_SUBSONIC, ERROR, "Error while processing request '" << requestId << "', code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'");
+            }
+
+            return;
+        }
+
         // Optional parameters
         const ResponseFormat format{ getParameterAs<std::string>(request.getParameterMap(), "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml };
 
@@ -324,25 +342,6 @@ namespace lms::api::subsonic
                 return;
             }
 
-            auto itStreamHandler{ mediaRetrievalHandlers.find(requestPath) };
-            if (itStreamHandler != mediaRetrievalHandlers.end())
-            {
-                LMS_SCOPED_TRACE_OVERVIEW("Subsonic", itStreamHandler->first);
-
-                // Media retrieval endpoints are always authenticated
-                // Optim: no need to reauth user for each continuation
-                db::User::pointer user;
-                if (!request.continuation())
-                    user = getUserFromUserId(_db.getTLSSession(), authenticateUser(request));
-
-                RequestContext requestContext{ request, _db.getTLSSession(), user, _config };
-                protocolVersion = requestContext.getServerProtocolVersion();
-
-                itStreamHandler->second(requestContext, request, response);
-                LMS_LOG(API_SUBSONIC, DEBUG, "Request " << requestId << " '" << requestPath << "' handled!");
-                return;
-            }
-
             // do not disclose unhandled commands for unauthenticated users
             authenticateUser(request);
 
@@ -357,6 +356,52 @@ namespace lms::api::subsonic
             Response resp{ Response::createFailedResponse(protocolVersion, e) };
             resp.write(response.out(), format);
             response.setMimeType(std::string{ ResponseFormatToMimeType(format) });
+        }
+    }
+
+    void SubsonicResource::handleMediaRetrievalRequest(MediaRetrievalHandlerFunc handler, const Wt::Http::Request& request, Wt::Http::Response& response)
+    {
+        try
+        {
+            // Media retrieval endpoints are always authenticated
+            // Optimization: no need to reauth user for each continuation
+            db::User::pointer user;
+            if (!request.continuation())
+                user = getUserFromUserId(_db.getTLSSession(), authenticateUser(request));
+
+            RequestContext requestContext{ request, _db.getTLSSession(), user, _config };
+
+            handler(requestContext, request, response);
+        }
+        catch (const UserNotAuthorizedError&)
+        {
+            response.setStatus(401); // Unauthorized
+            throw;
+        }
+        catch (const RequiredParameterMissingError&)
+        {
+            response.setStatus(400); // Bad Request
+            throw;
+        }
+        catch (const BadParameterGenericError&)
+        {
+            response.setStatus(400); // Bad Request
+            throw;
+        }
+        catch (const RequestedDataNotFoundError&)
+        {
+            response.setStatus(404); // Not Found
+            throw;
+        }
+        catch (const InternalErrorGenericError&)
+        {
+            response.setStatus(500); // Internal Server Error
+            throw;
+        }
+        catch (const Error&)
+        {
+            response.setStatus(400); // Assume bad request
+            throw;
         }
     }
 
