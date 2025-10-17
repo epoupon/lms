@@ -314,16 +314,16 @@ namespace lms::api::subsonic::details
                 return std::nullopt;
 
             // Find a supported output format
-            const SupportedOutputFormat* outputFormat{ std::find_if(std::cbegin(supportedOutputFormats), std::cend(supportedOutputFormats), [&](const SupportedOutputFormat& format) {
+            const auto itOutputFormat{ std::find_if(std::cbegin(supportedOutputFormats), std::cend(supportedOutputFormats), [&](const SupportedOutputFormat& format) {
                 return format.container == profile.container && format.audioCodec == profile.audioCodec;
             }) };
-            if (!outputFormat)
+            if (itOutputFormat == std::cend(supportedOutputFormats))
                 return std::nullopt;
 
             StreamDetails transcodedStream;
             transcodedStream.protocol = "http";
-            transcodedStream.container = outputFormat->container;
-            transcodedStream.codec = outputFormat->audioCodec;
+            transcodedStream.container = itOutputFormat->container;
+            transcodedStream.codec = itOutputFormat->audioCodec;
 
             if (isLossless(sourceStream.codec) && !isLossless(transcodedStream.codec))
             {
@@ -346,7 +346,7 @@ namespace lms::api::subsonic::details
             if (profile.maxAudioChannels && *sourceStream.audioChannels > *profile.maxAudioChannels)
                 transcodedStream.audioChannels = *profile.maxAudioChannels;
 
-            if (const CodecProfile * codecProfile{ getAudioCodecProfile(codecProfiles, outputFormat->audioCodec) })
+            if (const CodecProfile * codecProfile{ getAudioCodecProfile(codecProfiles, itOutputFormat->audioCodec) })
             {
                 for (const Limitation& limitation : codecProfile->limitations)
                 {
