@@ -69,7 +69,7 @@ namespace lms::api::subsonic
                                    os << transcodeReasonToString(reason);
                                    firstReason = false;
                                }
-                               os << "}, stream = {";
+                               os << "}, target stream = {";
                                os << "protocol = " << res.targetStreamInfo.protocol << ", container = " << res.targetStreamInfo.container << ", codec = " << res.targetStreamInfo.codec;
                                if (res.targetStreamInfo.audioChannels)
                                    os << ", audioChannels = " << *res.targetStreamInfo.audioChannels;
@@ -457,6 +457,38 @@ namespace lms::api::subsonic
                 },
 
                 .expected = { details::DirectPlayResult{} },
+            },
+
+            // want flac but bitrate too high
+            {
+                .clientInfo = {
+                    .name = "LocalDevice",
+                    .platform = "Android",
+                    .maxAudioBitrate = 320'000,
+                    .maxTranscodingAudioBitrate = 320'000,
+                    .directPlayProfiles = { {
+                        { .containers = { "mp4", "mka", "m4a", "mp3", "mp2", "wav", "flac", "ogg", "alac", "opus", "vorbis" }, .audioCodecs = { "mp3" }, .protocol = "*", .maxAudioChannels = 32 },
+                    } },
+                    .transcodingProfiles = { { { .container = "flac", .audioCodec = "flac", .protocol = "http", .maxAudioChannels = std::nullopt }, { .container = "ogg", .audioCodec = "opus", .protocol = "http", .maxAudioChannels = 6 }, { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 } } },
+                    .codecProfiles = { { .type = "AudioCodec", .name = "vorbis", .limitations = {
+                                                                                     { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true },
+                                                                                 } },
+                                       { .type = "AudioCodec", .name = "opus", .limitations = {
+                                                                                   { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true },
+                                                                               } } },
+                },
+                .containerInfo = { .bitrate = 128'000, .name = "flac" },
+                .audioStreamInfo = {
+                    .index = 0,
+                    .bitrate = 1'000'000,
+                    .bitsPerSample = 0,
+                    .channelCount = 2,
+                    .sampleRate = 48'000,
+                    .codec = av::DecodingCodec::FLAC,
+                    .codecName = "flac",
+                },
+
+                .expected = { details::TranscodeResult{ .reasons = { details::TranscodeReason::AudioBitrateNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "ogg", .codec = "opus", .audioChannels = std::nullopt, .audioBitrate = 320'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
             },
         };
 
