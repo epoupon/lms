@@ -30,11 +30,11 @@
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/TrackList.hpp"
-#include "metadata/Types.hpp"
 
 #include "ScanContext.hpp"
 #include "ScannerSettings.hpp"
 #include "helpers/ArtistHelpers.hpp"
+#include "types/TrackMetadata.hpp"
 
 namespace lms::scanner
 {
@@ -53,7 +53,7 @@ namespace lms::scanner
         {
             assert(!link->isArtistMBIDMatched());
 
-            metadata::Artist artistInfo{ std::nullopt, link->getArtistName(), link->getArtistSortName().empty() ? std::nullopt : std::make_optional<std::string>(link->getArtistSortName()) };
+            Artist artistInfo{ std::nullopt, link->getArtistName(), link->getArtistSortName().empty() ? std::nullopt : std::make_optional<std::string>(link->getArtistSortName()) };
 
             db::Artist::pointer newArtist{ helpers::getOrCreateArtistByName(session, artistInfo, helpers::AllowFallbackOnMBIDEntry{ allowArtistMBIDFallback }) };
             LMS_LOG(DB, DEBUG, "Reconcile artist link for track " << link->getTrack()->getAbsoluteFilePath() << ", type " << static_cast<int>(link->getType()) << " from " << link->getArtist() << " to " << newArtist);
@@ -66,7 +66,7 @@ namespace lms::scanner
         {
             assert(!artistInfo->isMBIDMatched());
 
-            const metadata::Artist artistMetadata{ std::nullopt, artistInfo->getName(), artistInfo->getSortName().empty() ? std::nullopt : std::make_optional<std::string>(artistInfo->getSortName()) };
+            Artist artistMetadata{ std::nullopt, artistInfo->getName(), artistInfo->getSortName().empty() ? std::nullopt : std::make_optional<std::string>(artistInfo->getSortName()) };
             db::Artist::pointer newArtist{ helpers::getOrCreateArtistByName(session, artistMetadata, helpers::AllowFallbackOnMBIDEntry{ allowArtistMBIDFallback }) };
             LMS_LOG(DB, DEBUG, "Reconcile artist link for artist info " << artistInfo->getAbsoluteFilePath() << " from " << artistInfo->getArtist() << " to " << newArtist);
 

@@ -27,15 +27,16 @@
 #include "core/IJobScheduler.hpp"
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
+
 #include "database/Session.hpp"
 #include "database/objects/MediaLibrary.hpp"
 #include "database/objects/ScanSettings.hpp"
 
-#include "scanners/ArtistInfoFileScanner.hpp"
-#include "scanners/AudioFileScanner.hpp"
 #include "scanners/ImageFileScanner.hpp"
-#include "scanners/LyricsFileScanner.hpp"
-#include "scanners/PlayListFileScanner.hpp"
+#include "scanners/artistinfo/ArtistInfoFileScanner.hpp"
+#include "scanners/audiofile/AudioFileScanner.hpp"
+#include "scanners/lyrics/LyricsFileScanner.hpp"
+#include "scanners/playlist/PlayListFileScanner.hpp"
 
 #include "steps/ScanStepArtistReconciliation.hpp"
 #include "steps/ScanStepAssociateArtistImages.hpp"

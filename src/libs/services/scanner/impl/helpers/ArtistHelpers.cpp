@@ -21,13 +21,14 @@
 
 #include "core/ILogger.hpp"
 #include "database/Session.hpp"
-#include "metadata/Types.hpp"
+
+#include "types/TrackMetadata.hpp"
 
 namespace lms::scanner::helpers
 {
     namespace
     {
-        db::Artist::pointer createArtist(db::Session& session, const metadata::Artist& artistInfo)
+        db::Artist::pointer createArtist(db::Session& session, const Artist& artistInfo)
         {
             db::Artist::pointer artist{ session.create<db::Artist>(artistInfo.name) };
 
@@ -44,7 +45,7 @@ namespace lms::scanner::helpers
             return uuid ? std::string{ uuid->getAsString() } : "<no MBID>";
         }
 
-        void updateArtistIfNeeded(db::Artist::pointer artist, const metadata::Artist& artistInfo)
+        void updateArtistIfNeeded(db::Artist::pointer artist, const Artist& artistInfo)
         {
             // MBID may be set
             if (artist->getMBID() != artistInfo.mbid)
@@ -68,7 +69,7 @@ namespace lms::scanner::helpers
 
     } // namespace
 
-    db::Artist::pointer getOrCreateArtistByMBID(db::Session& session, const metadata::Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
+    db::Artist::pointer getOrCreateArtistByMBID(db::Session& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
     {
         assert(artistInfo.mbid.has_value());
         db::Artist::pointer artist{ db::Artist::find(session, *artistInfo.mbid) };
@@ -99,7 +100,7 @@ namespace lms::scanner::helpers
         return artist;
     }
 
-    db::Artist::pointer getOrCreateArtistByName(db::Session& session, const metadata::Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
+    db::Artist::pointer getOrCreateArtistByName(db::Session& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
     {
         db::Artist::pointer artist;
 
@@ -139,7 +140,7 @@ namespace lms::scanner::helpers
         return artist;
     }
 
-    db::Artist::pointer getOrCreateArtist(db::Session& session, const metadata::Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
+    db::Artist::pointer getOrCreateArtist(db::Session& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
     {
         // First try to get by MBID
         if (artistInfo.mbid)

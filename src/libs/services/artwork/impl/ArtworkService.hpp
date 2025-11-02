@@ -33,11 +33,6 @@ namespace lms::db
     class Session;
 }
 
-namespace lms::metadata
-{
-    class IAudioFileParser;
-}
-
 namespace lms::artwork
 {
     class ArtworkService : public IArtworkService
@@ -67,7 +62,6 @@ namespace lms::artwork
 
         db::IDb& _db;
 
-        std::unique_ptr<metadata::IAudioFileParser> _audioFileParser;
         ImageCache _cache;
         std::shared_ptr<image::IEncodedImage> _defaultReleaseCover;
         std::shared_ptr<image::IEncodedImage> _defaultArtistImage;
