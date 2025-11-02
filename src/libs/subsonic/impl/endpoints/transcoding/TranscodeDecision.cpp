@@ -361,7 +361,7 @@ namespace lms::api::subsonic::details
         bool canDirectPlay(const ClientInfo& clientInfo, const StreamDetails& sourceStream, std::vector<TranscodeReason>& transcodeReasons)
         {
             assert(sourceStream.audioBitrate);
-            
+
             // Check global constraints
             if (clientInfo.maxAudioBitrate && *clientInfo.maxAudioBitrate < *sourceStream.audioBitrate)
             {
