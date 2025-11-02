@@ -80,7 +80,7 @@ RUN \
 	make -j$(nproc) install 
 
 # WT
-ARG	WT_VERSION=4.11.4
+ARG	WT_VERSION=4.12.1
 ARG WT_DEBUG=OFF
 RUN \
 	DIR=/tmp/wt && mkdir -p ${DIR} && cd ${DIR} && \
