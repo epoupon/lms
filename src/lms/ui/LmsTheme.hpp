@@ -43,7 +43,7 @@ namespace lms::ui
                                   Wt::WFlags<Wt::ValidationStyleFlag> flags) const override;
         bool canBorderBoxElement(const Wt::DomElement&) const override { return true; }
 
-#if WT_VERSION >= 0x04120100
+#if WT_VERSION >= 0x040C0100 // >= 4.12.1
         void applyFunctionalStyling(Wt::WWidget* widget, Wt::WWidget* child, int widgetRole) const override {}
         void applyOptionalStyling(Wt::WWidget* widget, Wt::WWidget* child, int widgetRole) const override {}
 #endif // WT_VERSION
