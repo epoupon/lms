@@ -411,7 +411,7 @@ namespace lms::api::subsonic::details
 
         std::optional<StreamDetails> computeTranscodedStream(std::optional<std::size_t> maxAudioBitrate, const TranscodingProfile& profile, std::span<const CodecProfile> codecProfiles, const audio::AudioProperties& source)
         {
-            if (profile.protocol != "http")
+            if (profile.protocol != "*" && profile.protocol != "http")
                 return std::nullopt;
 
             const TranscodeFormat* transcodeFormat{ selectTranscodeFormat(profile.container, profile.audioCodec) };

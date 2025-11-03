@@ -569,6 +569,36 @@ namespace lms::api::subsonic
 
                 .expected = { details::TranscodeResult{ .reasons = { details::TranscodeReason::ContainerNotSupported, details::TranscodeReason::ContainerNotSupported, details::TranscodeReason::ContainerNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "flac", .codec = "flac", .audioChannels = std::nullopt, .audioBitrate = std::nullopt, .audioProfile = "", .audioSamplerate = 48'000, .audioBitdepth = std::nullopt } } },
             },
+
+            // * in protocol
+            {
+                .clientInfo = {
+                    .name = "TestClient",
+                    .platform = "TestPlatform",
+                    .maxAudioBitrate = 512'000,
+                    .maxTranscodingAudioBitrate = 96'000,
+                    .directPlayProfiles = { {
+                        { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocol = "*", .maxAudioChannels = 2 },
+                    } },
+                    .transcodingProfiles = {
+                        { .container = "mp3", .audioCodec = "mp3", .protocol = "*", .maxAudioChannels = 2 },
+                    },
+                    .codecProfiles = { { .type = "AudioCodec", .name = "mp3", .limitations = {
+                                                                                  { .name = Limitation::Type::AudioBitrate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "96000" }, .required = true },
+                                                                              } } },
+                },
+                .source = {
+                    .container = audio::ContainerType::MPEG,
+                    .codec = audio::CodecType::MP3,
+                    .duration = std::chrono::seconds{ 60 },
+                    .bitrate = 128'000,
+                    .channelCount = 2,
+                    .sampleRate = 44'100,
+                    .bitsPerSample = std::nullopt,
+                },
+
+                .expected = { details::TranscodeResult{ .reasons = { details::TranscodeReason::AudioBitrateNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "mp3", .codec = "mp3", .audioChannels = std::nullopt, .audioBitrate = 96000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
+            },
         };
 
         processTests(testCases);
