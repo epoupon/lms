@@ -100,6 +100,9 @@ namespace lms::api::subsonic
             case audio::OutputFormat::OGG_VORBIS:
             case audio::OutputFormat::WEBM_VORBIS:
                 return codec == audio::CodecType::Vorbis;
+
+            case audio::OutputFormat::FLAC:
+                return codec == audio::CodecType::FLAC;
             }
 
             return true;
