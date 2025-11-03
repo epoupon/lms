@@ -32,28 +32,6 @@ namespace lms::api::subsonic
 {
     namespace details
     {
-        std::string_view transcodeReasonToString(TranscodeReason reason)
-        {
-            switch (reason)
-            {
-            case TranscodeReason::AudioCodecNotSupported:
-                return "audio codec not supported";
-            case TranscodeReason::AudioBitrateNotSupported:
-                return "audio bitrate not supported";
-            case TranscodeReason::AudioChannelsNotSupported:
-                return "audio channels not supported";
-            case TranscodeReason::AudioSampleRateNotSupported:
-                return "audio samplerate not supported";
-            case TranscodeReason::AudioBitdepthNotSupported:
-                return "audio bitdepth not supported";
-            case TranscodeReason::ContainerNotSupported:
-                return "container not supported";
-            case TranscodeReason::ProtocolNotSupported:
-                return "protocol not supported";
-            }
-
-            return "unknown";
-        }
 
         std::ostream& operator<<(std::ostream& os, const details::TranscodeDecisionResult& result)
         {
@@ -77,7 +55,8 @@ namespace lms::api::subsonic
                                    os << ", audioChannels = " << *res.targetStreamInfo.audioChannels;
                                if (res.targetStreamInfo.audioBitrate)
                                    os << ", audioBitrate = " << *res.targetStreamInfo.audioBitrate;
-                               os << ", audioProfile = " << res.targetStreamInfo.audioProfile;
+                               if (!res.targetStreamInfo.audioProfile.empty())
+                                   os << ", audioProfile = " << res.targetStreamInfo.audioProfile;
                                if (res.targetStreamInfo.audioSamplerate)
                                    os << ", audioSamplerate = " << *res.targetStreamInfo.audioSamplerate;
                                if (res.targetStreamInfo.audioBitdepth)
@@ -472,6 +451,123 @@ namespace lms::api::subsonic
                 },
 
                 .expected = { details::TranscodeResult{ .reasons = { details::TranscodeReason::AudioBitrateNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "ogg", .codec = "opus", .audioChannels = std::nullopt, .audioBitrate = 320'000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
+            },
+
+            // want flac but source sample rate is too high
+            {
+                .clientInfo = {
+                    .name = "SONOS",
+                    .platform = "UPnP",
+                    .maxAudioBitrate = 1'000'000,
+                    .maxTranscodingAudioBitrate = 1'000'000,
+                    .directPlayProfiles = { {
+                        { .containers = { "flac" }, .audioCodecs = { "*" }, .protocol = "*", .maxAudioChannels = std::nullopt },
+                        { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocol = "*", .maxAudioChannels = std::nullopt },
+                        { .containers = { "m4a", "mp4" }, .audioCodecs = { "aac" }, .protocol = "*", .maxAudioChannels = std::nullopt },
+                    } },
+                    .transcodingProfiles = { {
+                        { .container = "flac", .audioCodec = "flac", .protocol = "http", .maxAudioChannels = 6 },
+                        { .container = "aac", .audioCodec = "aac", .protocol = "http", .maxAudioChannels = 6 },
+                        { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
+
+                    } },
+                    .codecProfiles = {
+                        {
+                            { .type = "AudioCodec", .name = "flac", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
+                            { .type = "AudioCodec", .name = "vorbis", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
+                            { .type = "AudioCodec", .name = "opus", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
+                        },
+                    },
+                },
+                .source = {
+                    .container = audio::ContainerType::FLAC,
+                    .codec = audio::CodecType::FLAC,
+                    .duration = std::chrono::seconds{ 60 },
+                    .bitrate = 950'000,
+                    .channelCount = 2,
+                    .sampleRate = 96'000,
+                    .bitsPerSample = 24,
+                },
+
+                .expected = { details::TranscodeResult{ .reasons = { details::TranscodeReason::AudioSampleRateNotSupported, details::TranscodeReason::ContainerNotSupported, details::TranscodeReason::ContainerNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "flac", .codec = "flac", .audioChannels = std::nullopt, .audioBitrate = std::nullopt, .audioProfile = "", .audioSamplerate = 48'000, .audioBitdepth = std::nullopt } } },
+            },
+
+            // wants a lossy codec not handled -> transcode to lossy
+            {
+                .clientInfo = {
+                    .name = "SONOS",
+                    .platform = "UPnP",
+                    .maxAudioBitrate = 1'000'000,
+                    .maxTranscodingAudioBitrate = 1'000'000,
+                    .directPlayProfiles = { {
+                        { .containers = { "flac" }, .audioCodecs = { "*" }, .protocol = "*", .maxAudioChannels = std::nullopt },
+                        { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocol = "*", .maxAudioChannels = std::nullopt },
+                        { .containers = { "m4a", "mp4" }, .audioCodecs = { "aac" }, .protocol = "*", .maxAudioChannels = std::nullopt },
+                    } },
+                    .transcodingProfiles = { {
+                        { .container = "flac", .audioCodec = "flac", .protocol = "http", .maxAudioChannels = 6 },
+                        { .container = "aac", .audioCodec = "aac", .protocol = "http", .maxAudioChannels = 6 },
+                        { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
+
+                    } },
+                    .codecProfiles = {
+                        {
+                            { .type = "AudioCodec", .name = "flac", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
+                            { .type = "AudioCodec", .name = "vorbis", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
+                            { .type = "AudioCodec", .name = "opus", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
+                        },
+                    },
+                },
+                .source = {
+                    .container = audio::ContainerType::Ogg,
+                    .codec = audio::CodecType::Vorbis,
+                    .duration = std::chrono::seconds{ 60 },
+                    .bitrate = 128'000,
+                    .channelCount = 2,
+                    .sampleRate = 48'000,
+                    .bitsPerSample = 16,
+                },
+
+                .expected = { details::TranscodeResult{ .reasons = { details::TranscodeReason::ContainerNotSupported, details::TranscodeReason::ContainerNotSupported, details::TranscodeReason::ContainerNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "mp3", .codec = "mp3", .audioChannels = std::nullopt, .audioBitrate = 128000, .audioProfile = "", .audioSamplerate = std::nullopt, .audioBitdepth = std::nullopt } } },
+            },
+
+            // wants a lossless codec not handled -> transcode to lossless
+            {
+                .clientInfo = {
+                    .name = "SONOS",
+                    .platform = "UPnP",
+                    .maxAudioBitrate = 1'000'000,
+                    .maxTranscodingAudioBitrate = 1'000'000,
+                    .directPlayProfiles = { {
+                        { .containers = { "flac" }, .audioCodecs = { "*" }, .protocol = "*", .maxAudioChannels = std::nullopt },
+                        { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocol = "*", .maxAudioChannels = std::nullopt },
+                        { .containers = { "m4a", "mp4" }, .audioCodecs = { "aac" }, .protocol = "*", .maxAudioChannels = std::nullopt },
+                    } },
+                    .transcodingProfiles = { {
+                        { .container = "flac", .audioCodec = "flac", .protocol = "http", .maxAudioChannels = 6 },
+                        { .container = "aac", .audioCodec = "aac", .protocol = "http", .maxAudioChannels = 6 },
+                        { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
+
+                    } },
+                    .codecProfiles = {
+                        {
+                            { .type = "AudioCodec", .name = "flac", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
+                            { .type = "AudioCodec", .name = "vorbis", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
+                            { .type = "AudioCodec", .name = "opus", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
+                        },
+                    },
+                },
+                .source = {
+                    .container = audio::ContainerType::DSF,
+                    .codec = audio::CodecType::DSD,
+                    .duration = std::chrono::seconds{ 60 },
+                    .bitrate = 950'000,
+                    .channelCount = 2,
+                    .sampleRate = 96'000,
+                    .bitsPerSample = 24,
+                },
+
+                .expected = { details::TranscodeResult{ .reasons = { details::TranscodeReason::ContainerNotSupported, details::TranscodeReason::ContainerNotSupported, details::TranscodeReason::ContainerNotSupported }, .targetStreamInfo = { .protocol = "http", .container = "flac", .codec = "flac", .audioChannels = std::nullopt, .audioBitrate = std::nullopt, .audioProfile = "", .audioSamplerate = 48'000, .audioBitdepth = std::nullopt } } },
             },
         };
 

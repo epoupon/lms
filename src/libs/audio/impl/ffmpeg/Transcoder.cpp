@@ -148,6 +148,12 @@ namespace lms::audio::ffmpeg
             args.emplace_back(std::to_string(*_outputParams.sampleRate));
         }
 
+        if (_outputParams.bitsPerSample)
+        {
+            args.emplace_back("-sample_fmt");
+            args.emplace_back("s" + std::to_string(*_outputParams.bitsPerSample));
+        }
+
         // Codecs and formats
         if (_outputParams.format)
         {
