@@ -44,48 +44,64 @@ namespace lms::api::subsonic::details
 
         bool isMatchingContainerName(audio::ContainerType container, std::string_view containerStr)
         {
+            using namespace std::literals; // for "..."sv
+
+            constexpr std::array aiffNames{ "aif"sv, "aiff"sv };
+            constexpr std::array apeNames{ "ape"sv };
+            constexpr std::array asfNames{ "asf"sv, "wma"sv };
+            constexpr std::array dsfNames{ "dsf"sv };
+            constexpr std::array mpcNames{ "mpc"sv, "mpp"sv, "mp"sv };
+            constexpr std::array mpegNames{ "mp3"sv, "mp2"sv, "mpeg"sv };
+            constexpr std::array oggNames{ "ogg"sv, "oga"sv };
+            constexpr std::array flacNames{ "flac"sv };
+            constexpr std::array mp4Names{ "aac"sv, "adts"sv, "m4a"sv, "mp4"sv, "m4b"sv, "m4p"sv };
+            constexpr std::array shortenNames{ "shn"sv };
+            constexpr std::array trueAudioNames{ "tta"sv };
+            constexpr std::array wavNames{ "wav"sv };
+            constexpr std::array wavPackNames{ "wv"sv };
+
             std::span<const std::string_view> containerNames;
 
             switch (container)
             {
             case audio::ContainerType::AIFF:
-                containerNames = { { "aif", "aiff" } };
+                containerNames = aiffNames;
                 break;
             case audio::ContainerType::APE:
-                containerNames = { { "ape" } };
+                containerNames = apeNames;
                 break;
             case audio::ContainerType::ASF:
-                containerNames = { { "asf", "wma" } };
+                containerNames = asfNames;
                 break;
             case audio::ContainerType::DSF:
-                containerNames = { { "dsf" } };
+                containerNames = dsfNames;
                 break;
             case audio::ContainerType::MPC:
-                containerNames = { { "mpc", "mpp", "mp" } };
+                containerNames = mpcNames;
                 break;
             case audio::ContainerType::MPEG:
-                containerNames = { { "mp3", "mp2", "mpeg" } };
+                containerNames = mpegNames;
                 break;
             case audio::ContainerType::Ogg:
-                containerNames = { { "ogg", "oga" } };
+                containerNames = oggNames;
                 break;
             case audio::ContainerType::FLAC:
-                containerNames = { { "flac" } };
+                containerNames = flacNames;
                 break;
             case audio::ContainerType::MP4:
-                containerNames = { { "aac", "adts", "m4a", "mp4", "m4b", "m4p" } };
+                containerNames = mp4Names;
                 break;
             case audio::ContainerType::Shorten:
-                containerNames = { { "shn" } };
+                containerNames = shortenNames;
                 break;
             case audio::ContainerType::TrueAudio:
-                containerNames = { { "tta" } };
+                containerNames = trueAudioNames;
                 break;
             case audio::ContainerType::WAV:
-                containerNames = { { "wav" } };
+                containerNames = wavNames;
                 break;
             case audio::ContainerType::WavPack:
-                containerNames = { { "wv" } };
+                containerNames = wavPackNames;
                 break;
             }
 
@@ -94,66 +110,87 @@ namespace lms::api::subsonic::details
 
         bool isMatchingCodecName(audio::CodecType codec, std::string_view codecStr)
         {
-            std::span<const std::string_view> codecNames;
+            using namespace std::literals; // for "..."sv
 
+            constexpr std::array aacCodecNames{ "aac"sv, "adts"sv };
+            constexpr std::array alacCodecNames{ "alac"sv };
+            constexpr std::array apeCodecNames{ "ape"sv };
+            constexpr std::array dsdCodecNames{ "dsd"sv };
+            constexpr std::array flacCodecNames{ "flac"sv };
+            constexpr std::array mp3CodecNames{ "mp3"sv };
+            constexpr std::array mp4alsCodecNames{ "mp4als"sv, "als"sv };
+            constexpr std::array mpc7CodecNames{ "mpc7"sv, "musepack7"sv };
+            constexpr std::array mpc8CodecNames{ "mpc8"sv, "musepack8"sv };
+            constexpr std::array opusCodecNames{ "opus"sv };
+            constexpr std::array pcmCodecNames{ "pcm"sv };
+            constexpr std::array shortenCodecNames{ "shn"sv, "shorten"sv };
+            constexpr std::array trueAudioCodecNames{ "tta"sv };
+            constexpr std::array vorbisCodecNames{ "vorbis"sv };
+            constexpr std::array wavPackCodecNames{ "wv"sv };
+            constexpr std::array wma1CodecNames{ "wma1"sv, "wmav1"sv };
+            constexpr std::array wma2CodecNames{ "wma2"sv, "wmav2"sv };
+            constexpr std::array wma9LosslessCodecNames{ "wmalossless"sv, "wma9lossless"sv };
+            constexpr std::array wma9ProCodecNames{ "wmapro"sv, "wma9pro"sv };
+
+            std::span<const std::string_view> codecNames;
             switch (codec)
             {
             case audio::CodecType::AAC:
-                codecNames = { { "aac", "adts" } };
+                codecNames = aacCodecNames;
                 break;
             case audio::CodecType::ALAC:
-                codecNames = { { "alac" } };
+                codecNames = alacCodecNames;
                 break;
             case audio::CodecType::APE:
-                codecNames = { { "ape" } };
+                codecNames = apeCodecNames;
                 break;
             case audio::CodecType::DSD:
-                codecNames = { { "dsd" } };
+                codecNames = dsdCodecNames;
                 break;
             case audio::CodecType::FLAC:
-                codecNames = { { "flac" } };
+                codecNames = flacCodecNames;
                 break;
             case audio::CodecType::MP3:
-                codecNames = { { "mp3" } };
+                codecNames = mp3CodecNames;
                 break;
             case audio::CodecType::MP4ALS:
-                codecNames = { { "mp4als", "als" } };
+                codecNames = mp4alsCodecNames;
                 break;
             case audio::CodecType::MPC7:
-                codecNames = { { "mpc7", "musepack7" } };
+                codecNames = mpc7CodecNames;
                 break;
             case audio::CodecType::MPC8:
-                codecNames = { { "mpc8", "musepack8" } };
+                codecNames = mpc8CodecNames;
                 break;
             case audio::CodecType::Opus:
-                codecNames = { { "opus" } };
+                codecNames = opusCodecNames;
                 break;
             case audio::CodecType::PCM:
-                codecNames = { { "pcm" } };
+                codecNames = pcmCodecNames;
                 break;
             case audio::CodecType::Shorten:
-                codecNames = { { "shn", "shorten" } };
+                codecNames = shortenCodecNames;
                 break;
             case audio::CodecType::TrueAudio:
-                codecNames = { { "tta" } };
+                codecNames = trueAudioCodecNames;
                 break;
             case audio::CodecType::Vorbis:
-                codecNames = { { "vorbis" } };
+                codecNames = vorbisCodecNames;
                 break;
             case audio::CodecType::WavPack:
-                codecNames = { { "wv" } };
+                codecNames = wavPackCodecNames;
                 break;
             case audio::CodecType::WMA1:
-                codecNames = { { "wma1", "wmav1" } };
+                codecNames = wma1CodecNames;
                 break;
             case audio::CodecType::WMA2:
-                codecNames = { { "wma2", "wmav2" } };
+                codecNames = wma2CodecNames;
                 break;
             case audio::CodecType::WMA9Lossless:
-                codecNames = { { "wmalossless", "wma9lossless" } };
+                codecNames = wma9LosslessCodecNames;
                 break;
             case audio::CodecType::WMA9Pro:
-                codecNames = { { "wmapro", "wma9pro" } };
+                codecNames = wma9ProCodecNames;
                 break;
             }
 
