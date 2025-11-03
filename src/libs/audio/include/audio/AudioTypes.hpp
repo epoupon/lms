@@ -69,6 +69,7 @@ namespace lms::audio
     };
 
     core::LiteralString codecTypeToString(CodecType type);
+    bool isCodecLossless(CodecType type);
 
     struct AudioProperties
     {

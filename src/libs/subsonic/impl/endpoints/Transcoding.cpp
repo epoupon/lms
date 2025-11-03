@@ -120,16 +120,10 @@ namespace lms::api::subsonic
 
         StreamDetails createStreamDetailsFromAudioProperties(const audio::AudioProperties& audioProperties)
         {
-            // Assume source always have these elements set
-            assert(audioProperties.container);
-            assert(audioProperties.codec);
-            assert(audioProperties.bitrate);
-            assert(audioProperties.channelCount);
-
             StreamDetails res;
             res.protocol = "http";
-            res.container = audio::containerTypeToString(*audioProperties.container).str();
-            res.codec = audio::codecTypeToString(*audioProperties.codec).str();
+            res.container = audio::containerTypeToString(audioProperties.container).str();
+            res.codec = audio::codecTypeToString(audioProperties.codec).str();
             res.audioChannels = audioProperties.channelCount;
             res.audioBitrate = audioProperties.bitrate;
             res.audioProfile = ""; // TODO
@@ -159,11 +153,12 @@ namespace lms::api::subsonic
             Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
             Response::Node& transcodeNode{ response.createNode("transcodeDecision") };
 
-            const StreamDetails sourceStream{ createStreamDetailsFromAudioProperties(audioFile->getAudioProperties()) };
+            {
+                const StreamDetails sourceStream{ createStreamDetailsFromAudioProperties(audioFile->getAudioProperties()) };
+                transcodeNode.addChild("sourceStream", createStreamDetails(sourceStream));
+            }
 
-            transcodeNode.addChild("sourceStream", createStreamDetails(sourceStream));
-
-            const details::TranscodeDecisionResult transcodeDecision{ details::computeTranscodeDecision(clientInfo, sourceStream) };
+            const details::TranscodeDecisionResult transcodeDecision{ details::computeTranscodeDecision(clientInfo, audioFile->getAudioProperties()) };
 
             std::visit(core::utils::overloads{
                            [&](const details::DirectPlayResult&) {

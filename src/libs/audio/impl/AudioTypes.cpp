@@ -102,4 +102,35 @@ namespace lms::audio
 
         return "";
     }
+
+    bool isCodecLossless(CodecType type)
+    {
+        switch (type)
+        {
+        case CodecType::ALAC:
+        case CodecType::APE:
+        case CodecType::DSD:
+        case CodecType::FLAC:
+        case CodecType::MP4ALS:
+        case CodecType::PCM:
+        case CodecType::Shorten:
+        case CodecType::TrueAudio:
+        case CodecType::WavPack:
+        case CodecType::WMA9Lossless:
+            return true;
+
+        case CodecType::AAC:
+        case CodecType::MP3:
+        case CodecType::MPC7:
+        case CodecType::MPC8:
+        case CodecType::Opus:
+        case CodecType::Vorbis:
+        case CodecType::WMA1:
+        case CodecType::WMA2:
+        case CodecType::WMA9Pro:
+            return false;
+        }
+
+        return false;
+    }
 } // namespace lms::audio
