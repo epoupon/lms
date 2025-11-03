@@ -44,8 +44,8 @@ namespace lms::ui
         bool canBorderBoxElement(const Wt::DomElement&) const override { return true; }
 
 #if WT_VERSION >= 0x040C0100 // >= 4.12.1
-        void applyFunctionalStyling(Wt::WWidget* widget, Wt::WWidget* child, int widgetRole) const override {}
-        void applyOptionalStyling(Wt::WWidget* widget, Wt::WWidget* child, int widgetRole) const override {}
+        void applyFunctionalStyling(Wt::WWidget*, Wt::WWidget*, int) const override {}
+        void applyOptionalStyling(Wt::WWidget*, Wt::WWidget*, int) const override {}
 #endif // WT_VERSION
     };
 } // namespace lms::ui
