@@ -31,21 +31,148 @@ namespace lms::api::subsonic::details
 {
     namespace
     {
-        struct SupportedOutputFormat
+        struct TranscodeFormat
         {
-            std::string_view container;
-            std::string_view audioCodec;
-            bool isLossLess;
+            audio::ContainerType container;
+            audio::CodecType codec;
         };
-        constexpr std::array<SupportedOutputFormat, 5> supportedOutputFormats{
+        constexpr std::array<TranscodeFormat, 4> supportedTranscodeFormats{
             {
-                { "mp3", "mp3", false },
-                { "ogg", "opus", false },
-                { "matroska", "opus", false },
-                { "ogg", "vorbis", false },
-                { "webm", "vorbis", false },
+                { .container = audio::ContainerType::MPEG, .codec = audio::CodecType::MP3 },
+                { .container = audio::ContainerType::Ogg, .codec = audio::CodecType::Vorbis },
+                { .container = audio::ContainerType::Ogg, .codec = audio::CodecType::Opus },
             }
         };
+
+        bool isMatchingContainerName(audio::ContainerType container, std::string_view containerStr)
+        {
+            std::span<const std::string_view> containerNames;
+
+            switch (container)
+            {
+            case audio::ContainerType::AIFF:
+                containerNames = { { "aif", "aiff" } };
+                break;
+            case audio::ContainerType::APE:
+                containerNames = { { "ape" } };
+                break;
+            case audio::ContainerType::ASF:
+                containerNames = { { "asf", "wma" } };
+                break;
+            case audio::ContainerType::DSF:
+                containerNames = { { "dsf" } };
+                break;
+            case audio::ContainerType::MPC:
+                containerNames = { { "mpc", "mpp", "mp" } };
+                break;
+            case audio::ContainerType::MPEG:
+                containerNames = { { "mp3", "mp2", "mpeg" } };
+                break;
+            case audio::ContainerType::Ogg:
+                containerNames = { { "ogg", "oga" } };
+                break;
+            case audio::ContainerType::FLAC:
+                containerNames = { { "flac" } };
+                break;
+            case audio::ContainerType::MP4:
+                containerNames = { { "aac", "adts", "m4a", "mp4", "m4b", "m4p" } };
+                break;
+            case audio::ContainerType::Shorten:
+                containerNames = { { "shn" } };
+                break;
+            case audio::ContainerType::TrueAudio:
+                containerNames = { { "tta" } };
+                break;
+            case audio::ContainerType::WAV:
+                containerNames = { { "wav" } };
+                break;
+            case audio::ContainerType::WavPack:
+                containerNames = { { "wv" } };
+                break;
+            }
+
+            return std::any_of(std::cbegin(containerNames), std::cend(containerNames), [&](std::string_view containerName) { return core::stringUtils::stringCaseInsensitiveEqual(containerName, containerStr); });
+        }
+
+        bool isMatchingCodecName(audio::CodecType codec, std::string_view codecStr)
+        {
+            std::span<const std::string_view> codecNames;
+
+            switch (codec)
+            {
+            case audio::CodecType::AAC:
+                codecNames = { { "aac", "adts" } };
+                break;
+            case audio::CodecType::ALAC:
+                codecNames = { { "alac" } };
+                break;
+            case audio::CodecType::APE:
+                codecNames = { { "ape" } };
+                break;
+            case audio::CodecType::DSD:
+                codecNames = { { "dsd" } };
+                break;
+            case audio::CodecType::FLAC:
+                codecNames = { { "flac" } };
+                break;
+            case audio::CodecType::MP3:
+                codecNames = { { "mp3" } };
+                break;
+            case audio::CodecType::MP4ALS:
+                codecNames = { { "mp4als", "als" } };
+                break;
+            case audio::CodecType::MPC7:
+                codecNames = { { "mpc7", "musepack7" } };
+                break;
+            case audio::CodecType::MPC8:
+                codecNames = { { "mpc8", "musepack8" } };
+                break;
+            case audio::CodecType::Opus:
+                codecNames = { { "opus" } };
+                break;
+            case audio::CodecType::PCM:
+                codecNames = { { "pcm" } };
+                break;
+            case audio::CodecType::Shorten:
+                codecNames = { { "shn", "shorten" } };
+                break;
+            case audio::CodecType::TrueAudio:
+                codecNames = { { "tta" } };
+                break;
+            case audio::CodecType::Vorbis:
+                codecNames = { { "vorbis" } };
+                break;
+            case audio::CodecType::WavPack:
+                codecNames = { { "wv" } };
+                break;
+            case audio::CodecType::WMA1:
+                codecNames = { { "wma1", "wmav1" } };
+                break;
+            case audio::CodecType::WMA2:
+                codecNames = { { "wma2", "wmav2" } };
+                break;
+            case audio::CodecType::WMA9Lossless:
+                codecNames = { { "wmalossless", "wma9lossless" } };
+                break;
+            case audio::CodecType::WMA9Pro:
+                codecNames = { { "wmapro", "wma9pro" } };
+                break;
+            }
+
+            return std::any_of(std::cbegin(codecNames), std::cend(codecNames), [&](std::string_view codecName) { return core::stringUtils::stringCaseInsensitiveEqual(codecName, codecStr); });
+        }
+
+        const TranscodeFormat* selectTranscodeFormat(std::string_view containerName, std::string_view codecName)
+        {
+            // Find a supported output format
+            const auto it{ std::find_if(std::cbegin(supportedTranscodeFormats), std::cend(supportedTranscodeFormats), [&](const TranscodeFormat& format) {
+                return isMatchingCodecName(format.codec, codecName) && isMatchingContainerName(format.container, containerName);
+            }) };
+            if (it == std::cend(supportedTranscodeFormats))
+                return nullptr;
+
+            return &(*it);
+        }
 
         struct AdjustResult
         {
@@ -153,7 +280,7 @@ namespace lms::api::subsonic::details
             throw InternalErrorGenericError{ "Unhandled limitation comparison operator" };
         }
 
-        static bool isStreamCompatibleWithLimitation(const StreamDetails& streamDetails, const Limitation& limitation)
+        static bool isStreamCompatibleWithLimitation(const audio::AudioProperties& source, const Limitation& limitation)
         {
             if (!limitation.required)
                 return true;
@@ -163,21 +290,21 @@ namespace lms::api::subsonic::details
             switch (limitation.name)
             {
             case Limitation::Type::AudioBitrate:
-                valueToCheck = static_cast<unsigned>(*streamDetails.audioBitrate);
+                valueToCheck = static_cast<unsigned>(source.bitrate);
                 break;
             case Limitation::Type::AudioChannels:
-                valueToCheck = static_cast<unsigned>(*streamDetails.audioChannels);
+                valueToCheck = static_cast<unsigned>(source.channelCount);
                 break;
                 break;
             case Limitation::Type::AudioSamplerate:
-                valueToCheck = static_cast<unsigned>(*streamDetails.audioSamplerate);
+                valueToCheck = static_cast<unsigned>(source.sampleRate);
                 break;
             case Limitation::Type::AudioProfile:
                 // TODO;
                 break;
             case Limitation::Type::AudioBitdepth:
-                if (streamDetails.audioBitdepth)
-                    valueToCheck = static_cast<unsigned>(*streamDetails.audioBitdepth);
+                if (source.bitsPerSample)
+                    valueToCheck = static_cast<unsigned>(*source.bitsPerSample);
                 break;
             }
 
@@ -188,41 +315,41 @@ namespace lms::api::subsonic::details
             return adjustResult.type == AdjustResult::Type::None;
         }
 
-        const CodecProfile* getAudioCodecProfile(std::span<const CodecProfile> codecProfiles, std::string_view codecName)
+        const CodecProfile* getAudioCodecProfile(std::span<const CodecProfile> codecProfiles, audio::CodecType codec)
         {
             for (const CodecProfile& profile : codecProfiles)
             {
                 if (profile.type != "AudioCodec")
                     continue;
 
-                if (profile.name == "*" || core::stringUtils::stringCaseInsensitiveEqual(profile.name, codecName))
+                if (profile.name == "*" || isMatchingCodecName(codec, profile.name))
                     return &profile;
             }
             return nullptr;
         }
 
-        std::optional<TranscodeReason> needsTranscode(const DirectPlayProfile& profile, std::span<const CodecProfile> codecProfiles, const StreamDetails& sourceStream)
+        std::optional<TranscodeReason> needsTranscode(const DirectPlayProfile& profile, std::span<const CodecProfile> codecProfiles, const audio::AudioProperties& source)
         {
             assert(!profile.containers.empty());
-            if (profile.containers.front() != "*" && std::none_of(std::cbegin(profile.containers), std::cend(profile.containers), [&](const std::string& container) { return core::stringUtils::stringCaseInsensitiveEqual(container, sourceStream.container); }))
+            if (profile.containers.front() != "*" && std::none_of(std::cbegin(profile.containers), std::cend(profile.containers), [&](const std::string& container) { return isMatchingContainerName(source.container, container); }))
                 return TranscodeReason::ContainerNotSupported;
 
             assert(!profile.audioCodecs.empty());
-            if (profile.audioCodecs.front() != "*" && std::none_of(std::cbegin(profile.audioCodecs), std::cend(profile.audioCodecs), [&](const std::string& audioCodec) { return core::stringUtils::stringCaseInsensitiveEqual(audioCodec, sourceStream.codec); }))
+            if (profile.audioCodecs.front() != "*" && std::none_of(std::cbegin(profile.audioCodecs), std::cend(profile.audioCodecs), [&](const std::string& audioCodec) { return isMatchingCodecName(source.codec, audioCodec); }))
                 return TranscodeReason::AudioCodecNotSupported;
 
-            if (profile.maxAudioChannels && *sourceStream.audioChannels > *profile.maxAudioChannels)
+            if (profile.maxAudioChannels && source.channelCount > *profile.maxAudioChannels)
                 return TranscodeReason::AudioChannelsNotSupported;
 
             if (profile.protocol != "*" && profile.protocol != "http")
                 return TranscodeReason::ProtocolNotSupported;
 
             // check potential codec profiles limitations
-            if (const CodecProfile * codecProfile{ getAudioCodecProfile(codecProfiles, sourceStream.codec) })
+            if (const CodecProfile * codecProfile{ getAudioCodecProfile(codecProfiles, source.codec) })
             {
                 for (const Limitation& limitation : codecProfile->limitations)
                 {
-                    if (!isStreamCompatibleWithLimitation(sourceStream, limitation))
+                    if (!isStreamCompatibleWithLimitation(source, limitation))
                     {
                         switch (limitation.name)
                         {
@@ -244,14 +371,14 @@ namespace lms::api::subsonic::details
             return std::nullopt;
         }
 
-        bool applyLimitation(const StreamDetails& sourceStream, const Limitation& limitation, StreamDetails& transcodedStream)
+        bool applyLimitation(const audio::AudioProperties& source, const Limitation& limitation, StreamDetails& transcodedStream)
         {
             switch (limitation.name)
             {
             case Limitation::Type::AudioChannels:
                 {
                     // transcodedStream.audioChannels may already be set by the transcoding profile maxAudioChannels
-                    const AdjustResult adjustResult{ adjustUsingLimitation(limitation.comparison, limitation.values, transcodedStream.audioChannels ? *transcodedStream.audioChannels : *sourceStream.audioChannels) };
+                    const AdjustResult adjustResult{ adjustUsingLimitation(limitation.comparison, limitation.values, transcodedStream.audioChannels ? *transcodedStream.audioChannels : source.channelCount) };
                     if (adjustResult.type == AdjustResult::Type::CannotAdjust)
                         return false;
                     if (adjustResult.type == AdjustResult::Type::Adjusted)
@@ -262,7 +389,7 @@ namespace lms::api::subsonic::details
             case Limitation::Type::AudioBitrate:
                 {
                     // TODO handle lossless output formats (cannot handle max bitrate limitation)
-                    const AdjustResult adjustResult{ adjustUsingLimitation(limitation.comparison, limitation.values, transcodedStream.audioBitrate ? *transcodedStream.audioBitrate : *sourceStream.audioBitrate) };
+                    const AdjustResult adjustResult{ adjustUsingLimitation(limitation.comparison, limitation.values, transcodedStream.audioBitrate ? *transcodedStream.audioBitrate : source.bitrate) };
                     if (adjustResult.type == AdjustResult::Type::CannotAdjust)
                         return false;
                     if (adjustResult.type == AdjustResult::Type::Adjusted)
@@ -276,7 +403,7 @@ namespace lms::api::subsonic::details
 
             case Limitation::Type::AudioSamplerate:
                 {
-                    const AdjustResult adjustResult{ adjustUsingLimitation(limitation.comparison, limitation.values, *sourceStream.audioSamplerate) };
+                    const AdjustResult adjustResult{ adjustUsingLimitation(limitation.comparison, limitation.values, source.sampleRate) };
                     if (adjustResult.type == AdjustResult::Type::CannotAdjust)
                         return false;
                     if (adjustResult.type == AdjustResult::Type::Adjusted)
@@ -286,10 +413,10 @@ namespace lms::api::subsonic::details
 
             case Limitation::Type::AudioBitdepth:
                 {
-                    if (!sourceStream.audioBitdepth)
+                    if (!source.bitsPerSample)
                         return false;
 
-                    const AdjustResult adjustResult{ adjustUsingLimitation(limitation.comparison, limitation.values, *sourceStream.audioBitdepth) };
+                    const AdjustResult adjustResult{ adjustUsingLimitation(limitation.comparison, limitation.values, *source.bitsPerSample) };
                     if (adjustResult.type == AdjustResult::Type::CannotAdjust)
                         return false;
                     if (adjustResult.type == AdjustResult::Type::Adjusted)
@@ -302,30 +429,21 @@ namespace lms::api::subsonic::details
             return false;
         }
 
-        bool isLossless(std::string_view codecName)
-        {
-            static const std::array<std::string_view, 2> losslessAudioCodecs{ "alac", "flac" };
-            return std::any_of(std::cbegin(losslessAudioCodecs), std::cend(losslessAudioCodecs), [&](std::string_view losslessCodec) { return core::stringUtils::stringCaseInsensitiveEqual(losslessCodec, codecName); });
-        }
-
-        std::optional<StreamDetails> computeTranscodedStream(std::optional<std::size_t> maxAudioBitrate, const TranscodingProfile& profile, std::span<const CodecProfile> codecProfiles, const StreamDetails& sourceStream)
+        std::optional<StreamDetails> computeTranscodedStream(std::optional<std::size_t> maxAudioBitrate, const TranscodingProfile& profile, std::span<const CodecProfile> codecProfiles, const audio::AudioProperties& source)
         {
             if (profile.protocol != "http")
                 return std::nullopt;
 
-            // Find a supported output format
-            const auto itOutputFormat{ std::find_if(std::cbegin(supportedOutputFormats), std::cend(supportedOutputFormats), [&](const SupportedOutputFormat& format) {
-                return format.container == profile.container && format.audioCodec == profile.audioCodec;
-            }) };
-            if (itOutputFormat == std::cend(supportedOutputFormats))
+            const TranscodeFormat* transcodeFormat{ selectTranscodeFormat(profile.container, profile.audioCodec) };
+            if (!transcodeFormat)
                 return std::nullopt;
 
             StreamDetails transcodedStream;
             transcodedStream.protocol = "http";
-            transcodedStream.container = itOutputFormat->container;
-            transcodedStream.codec = itOutputFormat->audioCodec;
+            transcodedStream.container = profile.container; // put back what was requested instead of our internal names
+            transcodedStream.codec = profile.audioCodec;    // put back what was requested instead of our internal names
 
-            if (isLossless(sourceStream.codec) && !isLossless(transcodedStream.codec))
+            if (audio::isCodecLossless(source.codec) && !audio::isCodecLossless(transcodeFormat->codec))
             {
                 // If coming from lossless source, maximize the bitrate if going to a non lossless source
                 // otherwise, pick a good enough value as we don't want to keep the original bitrate which does not make sense for lossy codecs
@@ -337,20 +455,20 @@ namespace lms::api::subsonic::details
             else
             {
                 // let's pick the same bitrate as the lossless source
-                transcodedStream.audioBitrate = *sourceStream.audioBitrate;
+                transcodedStream.audioBitrate = source.bitrate;
             }
 
-            if (maxAudioBitrate && *sourceStream.audioBitrate > *maxAudioBitrate)
+            if (maxAudioBitrate && source.bitrate > *maxAudioBitrate)
                 transcodedStream.audioBitrate = *maxAudioBitrate;
 
-            if (profile.maxAudioChannels && *sourceStream.audioChannels > *profile.maxAudioChannels)
+            if (profile.maxAudioChannels && source.channelCount > *profile.maxAudioChannels)
                 transcodedStream.audioChannels = *profile.maxAudioChannels;
 
-            if (const CodecProfile * codecProfile{ getAudioCodecProfile(codecProfiles, itOutputFormat->audioCodec) })
+            if (const CodecProfile * codecProfile{ getAudioCodecProfile(codecProfiles, transcodeFormat->codec) })
             {
                 for (const Limitation& limitation : codecProfile->limitations)
                 {
-                    if (!applyLimitation(sourceStream, limitation, transcodedStream))
+                    if (!applyLimitation(source, limitation, transcodedStream))
                         return std::nullopt;
                 }
             }
@@ -358,12 +476,10 @@ namespace lms::api::subsonic::details
             return transcodedStream;
         }
 
-        bool canDirectPlay(const ClientInfo& clientInfo, const StreamDetails& sourceStream, std::vector<TranscodeReason>& transcodeReasons)
+        bool canDirectPlay(const ClientInfo& clientInfo, const audio::AudioProperties& source, std::vector<TranscodeReason>& transcodeReasons)
         {
-            assert(sourceStream.audioBitrate);
-
             // Check global constraints
-            if (clientInfo.maxAudioBitrate && *clientInfo.maxAudioBitrate < *sourceStream.audioBitrate)
+            if (clientInfo.maxAudioBitrate && *clientInfo.maxAudioBitrate < source.bitrate)
             {
                 transcodeReasons.push_back(TranscodeReason::AudioBitrateNotSupported);
                 return false;
@@ -372,7 +488,7 @@ namespace lms::api::subsonic::details
             // Check direct play profiles
             for (const DirectPlayProfile& profile : clientInfo.directPlayProfiles)
             {
-                const std::optional<TranscodeReason> transcodeReason{ needsTranscode(profile, clientInfo.codecProfiles, sourceStream) };
+                const std::optional<TranscodeReason> transcodeReason{ needsTranscode(profile, clientInfo.codecProfiles, source) };
                 if (!transcodeReason)
                     return true;
 
@@ -383,11 +499,11 @@ namespace lms::api::subsonic::details
         }
     } // namespace
 
-    TranscodeDecisionResult computeTranscodeDecision(const ClientInfo& clientInfo, const StreamDetails& sourceStream)
+    TranscodeDecisionResult computeTranscodeDecision(const ClientInfo& clientInfo, const audio::AudioProperties& source)
     {
         std::vector<TranscodeReason> transcodeReasons;
 
-        if (canDirectPlay(clientInfo, sourceStream, transcodeReasons))
+        if (canDirectPlay(clientInfo, source, transcodeReasons))
             return DirectPlayResult{};
 
         LMS_LOG(API_SUBSONIC, DEBUG, "Direct play not possible: no compatible direct play profile found");
@@ -395,7 +511,7 @@ namespace lms::api::subsonic::details
         // Check transcoding profiles, we have to select the first one we can handle, order is important
         for (const TranscodingProfile& profile : clientInfo.transcodingProfiles)
         {
-            std::optional<StreamDetails> targetStream{ computeTranscodedStream(clientInfo.maxTranscodingAudioBitrate, profile, clientInfo.codecProfiles, sourceStream) };
+            std::optional<StreamDetails> targetStream{ computeTranscodedStream(clientInfo.maxTranscodingAudioBitrate, profile, clientInfo.codecProfiles, source) };
             if (targetStream)
                 return TranscodeResult{ .reasons = transcodeReasons, .targetStreamInfo = *targetStream };
         }

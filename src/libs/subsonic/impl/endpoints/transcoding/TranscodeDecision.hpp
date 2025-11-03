@@ -23,6 +23,11 @@
 
 #include "responses/StreamDetails.hpp"
 
+namespace lms::audio
+{
+    struct AudioProperties;
+}
+
 namespace lms::api::subsonic
 {
     class ClientInfo;
@@ -61,6 +66,6 @@ namespace lms::api::subsonic
         };
 
         using TranscodeDecisionResult = std::variant<DirectPlayResult, TranscodeResult, FailureResult>;
-        TranscodeDecisionResult computeTranscodeDecision(const ClientInfo& clientInfo, const StreamDetails& sourceStream);
+        TranscodeDecisionResult computeTranscodeDecision(const ClientInfo& clientInfo, const audio::AudioProperties& source);
     } // namespace details
 } // namespace lms::api::subsonic

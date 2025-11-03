@@ -49,4 +49,6 @@ namespace lms::core::media
     };
 
     core::LiteralString codecTypeToString(CodecType type);
+
+    bool isCodecLossless(CodecType type);
 } // namespace lms::core::media
