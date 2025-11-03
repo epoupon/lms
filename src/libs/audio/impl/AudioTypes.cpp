@@ -62,14 +62,10 @@ namespace lms::audio
         {
         case CodecType::AAC:
             return "AAC";
-        case CodecType::AC3:
-            return "AC3";
         case CodecType::ALAC:
             return "ALAC";
         case CodecType::APE:
             return "APE";
-        case CodecType::EAC3:
-            return "EAC3";
         case CodecType::DSD:
             return "DSD";
         case CodecType::FLAC:

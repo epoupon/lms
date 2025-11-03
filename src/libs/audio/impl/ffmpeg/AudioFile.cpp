@@ -111,8 +111,6 @@ namespace lms::audio::ffmpeg
                 return CodecType::MP3;
             case AV_CODEC_ID_AAC:
                 return CodecType::AAC;
-            case AV_CODEC_ID_AC3:
-                return CodecType::AC3;
             case AV_CODEC_ID_VORBIS:
                 return CodecType::Vorbis;
             case AV_CODEC_ID_WMAV1:
@@ -135,8 +133,6 @@ namespace lms::audio::ffmpeg
                 return CodecType::MPC8;
             case AV_CODEC_ID_APE:
                 return CodecType::APE;
-            case AV_CODEC_ID_EAC3:
-                return CodecType::EAC3;
             case AV_CODEC_ID_MP4ALS:
                 return CodecType::MP4ALS;
             case AV_CODEC_ID_OPUS:
