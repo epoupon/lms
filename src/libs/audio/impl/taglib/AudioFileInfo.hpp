@@ -19,22 +19,29 @@
 
 #pragma once
 
-#include <taglib/tfile.h>
-
 #include "audio/AudioTypes.hpp"
 #include "audio/IAudioFileInfo.hpp"
 #include "audio/IImageReader.hpp"
 #include "audio/ITagReader.hpp"
 
-#include "ImageReader.hpp"
-#include "TagReader.hpp"
+namespace TagLib
+{
+    class File;
+}
 
 namespace lms::audio::taglib
 {
+    class ImageReader;
+    class TagReader;
+
     class AudioFileInfo final : public IAudioFileInfo
     {
     public:
         AudioFileInfo(const std::filesystem::path& filePath, ParserOptions::AudioPropertiesReadStyle readStyle, bool enableExtraDebugLogs);
+        ~AudioFileInfo() override;
+
+        AudioFileInfo(const AudioFileInfo&) = delete;
+        AudioFileInfo& operator=(const AudioFileInfo&) = delete;
 
     private:
         const AudioProperties& getAudioProperties() const override;
@@ -43,8 +50,8 @@ namespace lms::audio::taglib
 
         const std::filesystem::path _filePath;
         std::unique_ptr<::TagLib::File> _file;
-        const AudioProperties _audioProperties;
-        const TagReader _tagReader;
-        const ImageReader _imageReader;
+        std::unique_ptr<AudioProperties> _audioProperties;
+        std::unique_ptr<TagReader> _tagReader;
+        std::unique_ptr<ImageReader> _imageReader;
     };
 } // namespace lms::audio::taglib

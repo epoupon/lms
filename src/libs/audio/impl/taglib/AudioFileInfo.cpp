@@ -43,8 +43,11 @@
     #include <taglib/shortenfile.h>
 #endif
 
+#include "audio/AudioTypes.hpp"
 #include "audio/IAudioFileInfo.hpp"
 
+#include "ImageReader.hpp"
+#include "TagReader.hpp"
 #include "Utils.hpp"
 
 namespace lms::audio::taglib
@@ -219,25 +222,27 @@ namespace lms::audio::taglib
     AudioFileInfo::AudioFileInfo(const std::filesystem::path& filePath, ParserOptions::AudioPropertiesReadStyle readStyle, bool enableExtraDebugLogs)
         : _filePath{ filePath }
         , _file{ utils::parseFile(filePath, readStyle) }
-        , _audioProperties{ computeAudioProperties(*_file) }
-        , _tagReader{ *_file, enableExtraDebugLogs }
-        , _imageReader{ *_file }
+        , _audioProperties{ std::make_unique<AudioProperties>(computeAudioProperties(*_file)) }
+        , _tagReader{ std::make_unique<TagReader>(*_file, enableExtraDebugLogs) }
+        , _imageReader{ std::make_unique<ImageReader>(*_file) }
     {
     }
 
+    AudioFileInfo::~AudioFileInfo() = default;
+
     const AudioProperties& AudioFileInfo::getAudioProperties() const
     {
-        return _audioProperties;
+        return *_audioProperties;
     }
 
     const IImageReader& AudioFileInfo::getImageReader() const
     {
-        return _imageReader;
+        return *_imageReader;
     }
 
     const ITagReader& AudioFileInfo::getTagReader() const
     {
-        return _tagReader;
+        return *_tagReader;
     }
 
 } // namespace lms::audio::taglib
