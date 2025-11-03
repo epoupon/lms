@@ -19,14 +19,15 @@
 
 #pragma once
 
+#include <string_view>
 #include <vector>
 
-#include "responses/StreamDetails.hpp"
+#include "core/LiteralString.hpp"
 
-namespace lms::audio
-{
-    struct AudioProperties;
-}
+#include "audio/AudioTypes.hpp"
+#include "audio/TranscodeTypes.hpp"
+
+#include "responses/StreamDetails.hpp"
 
 namespace lms::api::subsonic
 {
@@ -44,6 +45,8 @@ namespace lms::api::subsonic
             ContainerNotSupported,
             ProtocolNotSupported
         };
+
+        core::LiteralString transcodeReasonToString(TranscodeReason reason);
 
         struct DirectPlayResult
         {
@@ -67,5 +70,13 @@ namespace lms::api::subsonic
 
         using TranscodeDecisionResult = std::variant<DirectPlayResult, TranscodeResult, FailureResult>;
         TranscodeDecisionResult computeTranscodeDecision(const ClientInfo& clientInfo, const audio::AudioProperties& source);
+
+        struct TranscodeFormat
+        {
+            audio::ContainerType container;
+            audio::CodecType codec;
+            audio::OutputFormat outputFormat;
+        };
+        const TranscodeFormat* selectTranscodeFormat(std::string_view containerName, std::string_view codecName);
     } // namespace details
 } // namespace lms::api::subsonic

@@ -136,6 +136,12 @@ namespace lms::audio::ffmpeg
             args.emplace_back(std::to_string(*_outputParams.sampleRate));
         }
 
+        if (_outputParams.bitsPerSample)
+        {
+            args.emplace_back("-sample_fmt");
+            args.emplace_back("s" + std::to_string(*_outputParams.bitsPerSample));
+        }
+
         // Codecs and formats
         if (_outputParams.format)
         {
@@ -174,8 +180,12 @@ namespace lms::audio::ffmpeg
                 args.emplace_back("webm");
                 break;
 
-            default:
-                throw Exception{ "Unhandled format (" + std::to_string(static_cast<int>(*_outputParams.format)) + ")" };
+            case OutputFormat::FLAC:
+                args.emplace_back("-acodec");
+                args.emplace_back("flac");
+                args.emplace_back("-f");
+                args.emplace_back("flac");
+                break;
             }
         }
 
@@ -214,7 +224,7 @@ namespace lms::audio::ffmpeg
 
     std::string_view Transcoder::getOutputMimeType() const
     {
-        // TODO: use input mime type
+        // TODO: use core::getMimeType
         if (_outputParams.format)
         {
             switch (*_outputParams.format)
@@ -229,6 +239,8 @@ namespace lms::audio::ffmpeg
                 return "audio/ogg";
             case OutputFormat::WEBM_VORBIS:
                 return "audio/webm";
+            case OutputFormat::FLAC:
+                return "audio/flac";
             }
         }
 

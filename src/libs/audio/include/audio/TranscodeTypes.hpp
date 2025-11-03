@@ -35,6 +35,7 @@ namespace lms::audio
         MATROSKA_OPUS,
         OGG_VORBIS,
         WEBM_VORBIS,
+        FLAC,
     };
 
     struct TranscodeInputParameters

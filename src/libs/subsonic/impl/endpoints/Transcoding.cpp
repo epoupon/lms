@@ -24,6 +24,7 @@
 #include <mutex>
 
 #include "audio/AudioTypes.hpp"
+#include "audio/TranscodeTypes.hpp"
 #include "core/ILogger.hpp"
 #include "core/IResourceHandler.hpp"
 #include "core/Random.hpp"
@@ -34,7 +35,7 @@
 #include "audio/IAudioFileInfo.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Track.hpp"
-#include "services/transcoding/ITranscodingService.hpp"
+#include "services/transcoding/ITranscodeService.hpp"
 
 #include "ParameterParsing.hpp"
 #include "RequestContext.hpp"
@@ -132,6 +133,7 @@ namespace lms::api::subsonic
 
             return res;
         }
+
     } // namespace
 
     Response handleGetTranscodeDecision(RequestContext& context)
@@ -145,9 +147,9 @@ namespace lms::api::subsonic
         if (!track)
             throw RequestedDataNotFoundError{};
 
-        // For now, we need to analyze the media to be able to decide if transcoding is needed or not (info not cached in DB)
         try
         {
+            // For now, we need to analyze the media (info not yet cached in DB)
             const auto audioFile{ audio::parseAudioFile(track->getAbsoluteFilePath()) };
 
             Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
@@ -169,6 +171,9 @@ namespace lms::api::subsonic
                                transcodeNode.setAttribute("canDirectPlay", false);
                                transcodeNode.setAttribute("canTranscode", true);
 
+                               for (details::TranscodeReason reason : transcodeRes.reasons)
+                                   transcodeNode.addArrayValue("transcodeReason", transcodeReasonToString(reason).str());
+
                                const core::UUID uuid{ getTranscodeDecisionManager().add(trackId, transcodeRes.targetStreamInfo) };
                                transcodeNode.addChild("transcodeStream", createStreamDetails(transcodeRes.targetStreamInfo));
                                transcodeNode.setAttribute("transcodeParams", uuid.getAsString());
@@ -189,19 +194,13 @@ namespace lms::api::subsonic
         }
     }
 
-    struct TranscodingParameters
-    {
-        transcoding::InputParameters inputParameters;
-        transcoding::OutputParameters outputParameters;
-    };
-
-    TranscodingParameters getTranscodingParameters(RequestContext& context)
+    audio::TranscodeParameters getTranscodingParameters(RequestContext& context)
     {
         const db::TrackId trackId{ getMandatoryParameterAs<db::TrackId>(context.getParameters(), "trackID") };
         const core::UUID uuid{ getMandatoryParameterAs<core::UUID>(context.getParameters(), "transcodeParams") };
         const std::chrono::seconds offset{ getParameterAs<std::size_t>(context.getParameters(), "offset").value_or(0) };
 
-        const auto entry{ getTranscodeDecisionManager().get(uuid) };
+        const std::shared_ptr<TranscodeDecisionManager::Entry> entry{ getTranscodeDecisionManager().get(uuid) };
         if (!entry || entry->track != trackId)
             throw RequestedDataNotFoundError{};
 
@@ -210,31 +209,24 @@ namespace lms::api::subsonic
         if (!track)
             throw RequestedDataNotFoundError{};
 
-        TranscodingParameters params;
+        audio::TranscodeParameters params;
         params.inputParameters.filePath = track->getAbsoluteFilePath();
         params.inputParameters.duration = track->getDuration();
         params.inputParameters.offset = offset;
 
         if (entry->targetStreamInfo.audioChannels)
-            params.outputParameters.audioChannels = *entry->targetStreamInfo.audioChannels;
+            params.outputParameters.channelCount = *entry->targetStreamInfo.audioChannels;
         if (entry->targetStreamInfo.audioSamplerate)
             params.outputParameters.sampleRate = *entry->targetStreamInfo.audioSamplerate;
-        assert(entry->targetStreamInfo.audioBitrate);
-        params.outputParameters.bitrate = *entry->targetStreamInfo.audioBitrate;
+        if (entry->targetStreamInfo.audioBitrate)
+            params.outputParameters.bitrate = *entry->targetStreamInfo.audioBitrate;
         params.outputParameters.stripMetadata = false;
 
-        if (entry->targetStreamInfo.container == "mp3" && entry->targetStreamInfo.codec == "mp3")
-            params.outputParameters.format = transcoding::OutputFormat::MP3;
-        else if (entry->targetStreamInfo.container == "ogg" && entry->targetStreamInfo.codec == "opus")
-            params.outputParameters.format = transcoding::OutputFormat::OGG_OPUS;
-        else if (entry->targetStreamInfo.container == "ogg" && entry->targetStreamInfo.codec == "vorbis")
-            params.outputParameters.format = transcoding::OutputFormat::OGG_VORBIS;
-        else if (entry->targetStreamInfo.container == "webm" && entry->targetStreamInfo.codec == "vorbis")
-            params.outputParameters.format = transcoding::OutputFormat::WEBM_VORBIS;
-        else if (entry->targetStreamInfo.container == "matroska" && entry->targetStreamInfo.codec == "opus")
-            params.outputParameters.format = transcoding::OutputFormat::MATROSKA_OPUS;
-        else
+        const details::TranscodeFormat* transcodeFormat{ details::selectTranscodeFormat(entry->targetStreamInfo.container, entry->targetStreamInfo.codec) };
+        if (!transcodeFormat)
             throw InternalErrorGenericError{ "Unsupported output format" };
+
+        params.outputParameters.format = transcodeFormat->outputFormat;
 
         return params;
     }
@@ -246,8 +238,8 @@ namespace lms::api::subsonic
         Wt::Http::ResponseContinuation* continuation = request.continuation();
         if (!continuation)
         {
-            const TranscodingParameters streamParameters{ getTranscodingParameters(context) };
-            resourceHandler = core::Service<transcoding::ITranscodingService>::get()->createResourceHandler(streamParameters.inputParameters, streamParameters.outputParameters, false /* estimate content length */);
+            const audio::TranscodeParameters params{ getTranscodingParameters(context) };
+            resourceHandler = core::Service<transcoding::ITranscodeService>::get()->createTranscodeResourceHandler(params, false /* estimate content length */);
         }
         else
         {
