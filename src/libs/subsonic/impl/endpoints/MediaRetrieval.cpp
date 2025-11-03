@@ -120,10 +120,7 @@ namespace lms::api::subsonic
             {
                 const auto audioFile{ audio::parseAudioFile(trackPath) };
 
-                if (!audioFile->getAudioProperties().codec)
-                    throw RequestedDataNotFoundError{}; // TODO 404?
-
-                return isCodecCompatibleWithOutputFormat(*audioFile->getAudioProperties().codec, outputFormat);
+                return isCodecCompatibleWithOutputFormat(audioFile->getAudioProperties().codec, outputFormat);
             }
             catch (const audio::Exception& e)
             {

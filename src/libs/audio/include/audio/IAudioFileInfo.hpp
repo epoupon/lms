@@ -43,19 +43,7 @@ namespace lms::audio
     class AudioFileParsingException : public Exception
     {
     public:
-        AudioFileParsingException(const std::filesystem::path& path, std::string_view error = "")
-            : Exception{ error }, _path{ path } {}
-
-        const std::filesystem::path& getPath() const { return _path; }
-
-    private:
-        std::filesystem::path _path;
-    };
-
-    class AudioFileNoAudioPropertiesException : public AudioFileParsingException
-    {
-    public:
-        using AudioFileParsingException::AudioFileParsingException;
+        using Exception::Exception;
     };
 
     class IOException : public Exception

@@ -74,12 +74,12 @@ namespace lms::audio
 
     struct AudioProperties
     {
-        std::optional<ContainerType> container;
-        std::optional<CodecType> codec;
-        std::chrono::milliseconds duration{};
-        std::optional<unsigned> bitrate;
+        ContainerType container;
+        CodecType codec;
+        std::chrono::milliseconds duration;
+        unsigned bitrate;
+        unsigned channelCount;
+        unsigned sampleRate;
         std::optional<unsigned> bitsPerSample;
-        std::optional<unsigned> channelCount;
-        std::optional<unsigned> sampleRate;
     };
 } // namespace lms::audio

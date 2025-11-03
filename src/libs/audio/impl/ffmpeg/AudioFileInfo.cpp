@@ -37,18 +37,30 @@ namespace lms::audio::ffmpeg
             const auto containerInfo{ audioFile.getContainerInfo() };
             const auto bestStreamInfo{ audioFile.getBestStreamInfo() };
             if (!bestStreamInfo)
-                throw AudioFileParsingException{ audioFile.getPath(), "Cannot find best audio stream" };
+                throw AudioFileParsingException{ "Cannot find best audio stream" };
 
             if (!containerInfo.container)
-                throw AudioFileParsingException{ audioFile.getPath(), "Unhandled container type '" + containerInfo.containerName + "'" };
+                throw AudioFileParsingException{ "Unhandled container type '" + containerInfo.containerName + "'" };
+
+            if (!bestStreamInfo->codec)
+                throw AudioFileParsingException{ "Unhandled codec type '" + bestStreamInfo->codecName + "'" };
+
+            if (!bestStreamInfo->bitrate || *bestStreamInfo->bitrate == 0)
+                throw AudioFileParsingException{ "Cannot determine bitrate" };
+
+            if (!bestStreamInfo->channelCount || *bestStreamInfo->channelCount == 0)
+                throw AudioFileParsingException{ "Cannot determine channel count" };
+
+            if (!bestStreamInfo->sampleRate || *bestStreamInfo->sampleRate == 0)
+                throw AudioFileParsingException{ "Cannot determine sample rate" };
 
             audioProperties.container = *containerInfo.container;
             audioProperties.duration = containerInfo.duration;
-            audioProperties.codec = bestStreamInfo->codec;
-            audioProperties.bitrate = bestStreamInfo->bitrate;
+            audioProperties.codec = *bestStreamInfo->codec;
+            audioProperties.bitrate = *bestStreamInfo->bitrate;
+            audioProperties.channelCount = *bestStreamInfo->channelCount;
+            audioProperties.sampleRate = *bestStreamInfo->sampleRate;
             audioProperties.bitsPerSample = bestStreamInfo->bitsPerSample;
-            audioProperties.channelCount = bestStreamInfo->channelCount;
-            audioProperties.sampleRate = bestStreamInfo->sampleRate;
 
             return audioProperties;
         }

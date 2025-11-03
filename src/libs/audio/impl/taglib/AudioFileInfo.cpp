@@ -60,9 +60,20 @@ namespace lms::audio::taglib
 
             // Common properties
             audioProperties.bitrate = static_cast<std::size_t>(properties.bitrate() * 1000);
+            if (audioProperties.bitrate == 0)
+                throw AudioFileParsingException{ "Cannot determine bitrate" };
+
             audioProperties.channelCount = static_cast<std::size_t>(properties.channels());
+            if (audioProperties.channelCount == 0)
+                throw AudioFileParsingException{ "Cannot determine channel count" };
+
             audioProperties.duration = std::chrono::milliseconds{ properties.lengthInMilliseconds() };
+            if (audioProperties.duration == decltype(audioProperties.duration)::zero())
+                throw AudioFileParsingException{ "Cannot determine duration" };
+
             audioProperties.sampleRate = static_cast<std::size_t>(properties.sampleRate());
+            if (audioProperties.sampleRate == 0)
+                throw AudioFileParsingException{ "Cannot determine sample rate" };
 
             // Guess container from the file type
             if (const auto* apeFile{ dynamic_cast<const ::TagLib::APE::File*>(&file) })
@@ -90,8 +101,7 @@ namespace lms::audio::taglib
                     audioProperties.codec = CodecType::WMA9Pro;
                     break;
                 case ::TagLib::ASF::Properties::Codec::Unknown:
-                    audioProperties.codec = std::nullopt;
-                    break;
+                    throw AudioFileParsingException{ "Unhandled ASF codec type" };
                 }
 
                 audioProperties.bitsPerSample = asfFile->audioProperties()->bitsPerSample();
@@ -122,8 +132,7 @@ namespace lms::audio::taglib
                     audioProperties.codec = CodecType::ALAC;
                     break;
                 case ::TagLib::MP4::Properties::Codec::Unknown:
-                    audioProperties.codec = std::nullopt;
-                    break;
+                    throw AudioFileParsingException{ "Unhandled MP4 codec type" };
                 }
 
                 audioProperties.bitsPerSample = mp4File->audioProperties()->bitsPerSample();
@@ -195,6 +204,13 @@ namespace lms::audio::taglib
                 audioProperties.codec = CodecType::WavPack;
                 audioProperties.bitsPerSample = wavPackFile->audioProperties()->bitsPerSample();
             }
+            else
+            {
+                throw AudioFileParsingException{ "Unhandled file type" };
+            }
+
+            if (audioProperties.bitsPerSample && *audioProperties.bitsPerSample == 0)
+                audioProperties.bitsPerSample.reset();
 
             return audioProperties;
         }

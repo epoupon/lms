@@ -229,16 +229,10 @@ namespace lms::audio::taglib::utils
         }
 
         if (!file)
-        {
-            LMS_LOG(METADATA, ERROR, "File " << p << ": parsing failed");
-            throw AudioFileParsingException{ p, "Parsing failed" };
-        }
+            throw AudioFileParsingException{ "Parsing failed" };
 
         if (!file->audioProperties())
-        {
-            LMS_LOG(METADATA, ERROR, "File " << p << ": no audio properties");
-            throw AudioFileNoAudioPropertiesException{ p };
-        }
+            throw AudioFileParsingException{ "No audio properties" };
 
         return file;
     }

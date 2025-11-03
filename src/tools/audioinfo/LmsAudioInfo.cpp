@@ -39,19 +39,13 @@ namespace lms::audio
     std::ostream& operator<<(std::ostream& os, const AudioProperties& audioProperties)
     {
         os << "\tDuration: " << std::fixed << std::setprecision(2) << std::chrono::duration_cast<std::chrono::duration<float>>(audioProperties.duration) << std::endl;
-
-        if (audioProperties.container)
-            os << "\tContainer: " << containerTypeToString(*audioProperties.container) << std::endl;
-        if (audioProperties.codec)
-            os << "\tCodec: " << codecTypeToString(*audioProperties.codec) << std::endl;
-        if (audioProperties.bitrate)
-            os << "\tBitrate: " << *audioProperties.bitrate << " bps" << std::endl;
+        os << "\tContainer: " << containerTypeToString(audioProperties.container) << std::endl;
+        os << "\tCodec: " << codecTypeToString(audioProperties.codec) << std::endl;
+        os << "\tBitrate: " << audioProperties.bitrate << " bps" << std::endl;
         if (audioProperties.bitsPerSample)
             os << "\tBitsPerSample: " << *audioProperties.bitsPerSample << std::endl;
-        if (audioProperties.channelCount)
-            os << "\tChannelCount: " << *audioProperties.channelCount << std::endl;
-        if (audioProperties.sampleRate)
-            os << "\tSampleRate: " << *audioProperties.sampleRate << std::endl;
+        os << "\tChannelCount: " << audioProperties.channelCount << std::endl;
+        os << "\tSampleRate: " << audioProperties.sampleRate << std::endl;
 
         return os;
     }

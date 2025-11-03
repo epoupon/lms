@@ -133,11 +133,8 @@ namespace lms::ui::TrackListHelpers
         {
             if (const auto audioFile{ audio::parseAudioFile(track->getAbsoluteFilePath()) })
             {
-                if (audioFile->getAudioProperties().codec)
-                {
-                    trackInfo->setCondition("if-has-codec", true);
-                    trackInfo->bindString("codec", audio::codecTypeToString(*audioFile->getAudioProperties().codec).c_str(), Wt::TextFormat::Plain);
-                }
+                trackInfo->setCondition("if-has-codec", true);
+                trackInfo->bindString("codec", audio::codecTypeToString(audioFile->getAudioProperties().codec).c_str(), Wt::TextFormat::Plain);
             }
         }
         catch (const audio::Exception& e)

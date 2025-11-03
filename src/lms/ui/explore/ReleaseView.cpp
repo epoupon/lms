@@ -147,12 +147,9 @@ namespace lms::ui
                 {
                     if (const auto audioFile{ audio::parseAudioFile(track->getAbsoluteFilePath()) })
                     {
-                        if (audioFile->getAudioProperties().codec)
-                        {
-                            releaseInfo->setCondition("if-has-codec", true);
-                            releaseInfo->bindString("codec", audio::codecTypeToString(*audioFile->getAudioProperties().codec).c_str(), Wt::TextFormat::Plain);
-                            break;
-                        }
+                        releaseInfo->setCondition("if-has-codec", true);
+                        releaseInfo->bindString("codec", audio::codecTypeToString(audioFile->getAudioProperties().codec).c_str(), Wt::TextFormat::Plain);
+                        break;
                     }
                 }
                 catch (const audio::Exception& e)

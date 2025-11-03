@@ -539,10 +539,6 @@ namespace lms::scanner
                 index++;
             });
         }
-        catch (const audio::AudioFileNoAudioPropertiesException&)
-        {
-            addError<NoAudioTrackFoundError>(getFilePath());
-        }
         catch (const audio::IOException& e)
         {
             addError<IOScanError>(getFilePath(), e.getErrorCode());
@@ -672,11 +668,11 @@ namespace lms::scanner
         track.modify()->setScanVersion(getScannerSettings().audioScanVersion);
 
         // Audio properties
-        track.modify()->setBitrate(_file->audioProperties.bitrate ? *_file->audioProperties.bitrate : 0);
+        track.modify()->setBitrate(_file->audioProperties.bitrate);
         track.modify()->setBitsPerSample(_file->audioProperties.bitsPerSample ? *_file->audioProperties.bitsPerSample : 0);
-        track.modify()->setChannelCount(_file->audioProperties.channelCount ? *_file->audioProperties.channelCount : 0);
+        track.modify()->setChannelCount(_file->audioProperties.channelCount);
         track.modify()->setDuration(_file->audioProperties.duration);
-        track.modify()->setSampleRate(_file->audioProperties.sampleRate ? *_file->audioProperties.sampleRate : 0);
+        track.modify()->setSampleRate(_file->audioProperties.sampleRate);
 
         track.modify()->setFileSize(getFileSize());
         track.modify()->setLastWriteTime(getLastWriteTime());
