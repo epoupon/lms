@@ -220,6 +220,9 @@ namespace lms::api::subsonic
             params.outputParameters.sampleRate = *entry->targetStreamInfo.audioSamplerate;
         if (entry->targetStreamInfo.audioBitrate)
             params.outputParameters.bitrate = *entry->targetStreamInfo.audioBitrate;
+        if (entry->targetStreamInfo.audioBitdepth)
+            params.outputParameters.bitsPerSample = *entry->targetStreamInfo.audioBitdepth;
+
         params.outputParameters.stripMetadata = false;
 
         const details::TranscodeFormat* transcodeFormat{ details::selectTranscodeFormat(entry->targetStreamInfo.container, entry->targetStreamInfo.codec) };
