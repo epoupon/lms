@@ -221,6 +221,81 @@ namespace lms::api::subsonic
         }
     }
 
+    TEST(ClientInfo, multi2)
+    {
+        std::istringstream iss{ R"({"name":"Upnp/192.168.1.1/Foo","platform":"UPnP","maxAudioBitrate":0,"maxTranscodingAudioBitrate":0,"directPlayProfiles":[{"container":"opus,ogg,oga,aac,webma,webm,wav,flac,mka","audioCodec":"*","protocol":"*","maxAudioChannels":0},{"container":"mp3","audioCodec":"mp3","protocol":"*","maxAudioChannels":0},{"container":"m4a,mp4","audioCodec":"aac","protocol":"*","maxAudioChannels":0}],"transcodingProfiles":[{"container":"flac","audioCodec":"flac","protocol":"http","maxAudioChannels":6},{"container":"mp4","audioCodec":"aac","protocol":"http","maxAudioChannels":6},{"container":"aac","audioCodec":"aac","protocol":"http","maxAudioChannels":6},{"container":"mp3","audioCodec":"mp3","protocol":"http","maxAudioChannels":2}],"codecProfiles":[{"type":"AudioCodec","name":"flac","limitations":[{"name":"audioSamplerate","comparison":"LessThanEqual","value":"48000","required":true}]},{"type":"AudioCodec","name":"vorbis","limitations":[{"name":"audioSamplerate","comparison":"LessThanEqual","value":"48000","required":true}]},{"type":"AudioCodec","name":"opus","limitations":[{"name":"audioSamplerate","comparison":"LessThanEqual","value":"48000","required":true}]}]})" };
+        try
+        {
+            const ClientInfo clientInfo{ parseClientInfoFromJson(iss) };
+
+            EXPECT_EQ(clientInfo.name, "Upnp/192.168.1.1/Foo");
+            EXPECT_EQ(clientInfo.platform, "UPnP");
+            EXPECT_EQ(clientInfo.maxAudioBitrate, std::nullopt);
+            EXPECT_EQ(clientInfo.maxTranscodingAudioBitrate, std::nullopt);
+            ASSERT_EQ(clientInfo.directPlayProfiles.size(), 3);
+            ASSERT_EQ(clientInfo.directPlayProfiles[0].containers.size(), 9);
+            EXPECT_EQ(clientInfo.directPlayProfiles[0].containers[0], "opus");
+            EXPECT_EQ(clientInfo.directPlayProfiles[0].containers[1], "ogg");
+            EXPECT_EQ(clientInfo.directPlayProfiles[0].containers[2], "oga");
+            EXPECT_EQ(clientInfo.directPlayProfiles[0].containers[3], "aac");
+            EXPECT_EQ(clientInfo.directPlayProfiles[0].containers[4], "webma");
+            EXPECT_EQ(clientInfo.directPlayProfiles[0].containers[5], "webm");
+            EXPECT_EQ(clientInfo.directPlayProfiles[0].containers[6], "wav");
+            EXPECT_EQ(clientInfo.directPlayProfiles[0].containers[7], "flac");
+            EXPECT_EQ(clientInfo.directPlayProfiles[0].containers[8], "mka");
+            ASSERT_EQ(clientInfo.directPlayProfiles[0].audioCodecs.size(), 1);
+            EXPECT_EQ(clientInfo.directPlayProfiles[0].audioCodecs[0], "*");
+            EXPECT_EQ(clientInfo.directPlayProfiles[0].protocol, "*");
+            EXPECT_EQ(clientInfo.directPlayProfiles[0].maxAudioChannels, std::nullopt);
+            ASSERT_EQ(clientInfo.transcodingProfiles.size(), 4);
+            EXPECT_EQ(clientInfo.transcodingProfiles[0].container, "flac");
+            EXPECT_EQ(clientInfo.transcodingProfiles[0].audioCodec, "flac");
+            EXPECT_EQ(clientInfo.transcodingProfiles[0].protocol, "http");
+            EXPECT_EQ(clientInfo.transcodingProfiles[0].maxAudioChannels, 6);
+            EXPECT_EQ(clientInfo.transcodingProfiles[1].container, "mp4");
+            EXPECT_EQ(clientInfo.transcodingProfiles[1].audioCodec, "aac");
+            EXPECT_EQ(clientInfo.transcodingProfiles[1].protocol, "http");
+            EXPECT_EQ(clientInfo.transcodingProfiles[1].maxAudioChannels, 6);
+            EXPECT_EQ(clientInfo.transcodingProfiles[2].container, "aac");
+            EXPECT_EQ(clientInfo.transcodingProfiles[2].audioCodec, "aac");
+            EXPECT_EQ(clientInfo.transcodingProfiles[2].protocol, "http");
+            EXPECT_EQ(clientInfo.transcodingProfiles[2].maxAudioChannels, 6);
+            EXPECT_EQ(clientInfo.transcodingProfiles[3].container, "mp3");
+            EXPECT_EQ(clientInfo.transcodingProfiles[3].audioCodec, "mp3");
+            EXPECT_EQ(clientInfo.transcodingProfiles[3].protocol, "http");
+            EXPECT_EQ(clientInfo.transcodingProfiles[3].maxAudioChannels, 2);
+            ASSERT_EQ(clientInfo.codecProfiles.size(), 3);
+            EXPECT_EQ(clientInfo.codecProfiles[0].type, "AudioCodec");
+            EXPECT_EQ(clientInfo.codecProfiles[0].name, "flac");
+            ASSERT_EQ(clientInfo.codecProfiles[0].limitations.size(), 1);
+            EXPECT_EQ(clientInfo.codecProfiles[0].limitations[0].name, Limitation::Type::AudioSamplerate);
+            EXPECT_EQ(clientInfo.codecProfiles[0].limitations[0].comparison, Limitation::ComparisonOperator::LessThanEqual);
+            EXPECT_EQ(clientInfo.codecProfiles[0].limitations[0].values.size(), 1);
+            EXPECT_EQ(clientInfo.codecProfiles[0].limitations[0].values[0], "48000");
+            EXPECT_EQ(clientInfo.codecProfiles[0].limitations[0].required, true);
+            EXPECT_EQ(clientInfo.codecProfiles[1].type, "AudioCodec");
+            EXPECT_EQ(clientInfo.codecProfiles[1].name, "vorbis");
+            ASSERT_EQ(clientInfo.codecProfiles[1].limitations.size(), 1);
+            EXPECT_EQ(clientInfo.codecProfiles[1].limitations[0].name, Limitation::Type::AudioSamplerate);
+            EXPECT_EQ(clientInfo.codecProfiles[1].limitations[0].comparison, Limitation::ComparisonOperator::LessThanEqual);
+            EXPECT_EQ(clientInfo.codecProfiles[1].limitations[0].values.size(), 1);
+            EXPECT_EQ(clientInfo.codecProfiles[1].limitations[0].values[0], "48000");
+            EXPECT_EQ(clientInfo.codecProfiles[1].limitations[0].required, true);
+            EXPECT_EQ(clientInfo.codecProfiles[2].type, "AudioCodec");
+            EXPECT_EQ(clientInfo.codecProfiles[2].name, "opus");
+            ASSERT_EQ(clientInfo.codecProfiles[2].limitations.size(), 1);
+            EXPECT_EQ(clientInfo.codecProfiles[2].limitations[0].name, Limitation::Type::AudioSamplerate);
+            EXPECT_EQ(clientInfo.codecProfiles[2].limitations[0].comparison, Limitation::ComparisonOperator::LessThanEqual);
+            EXPECT_EQ(clientInfo.codecProfiles[2].limitations[0].values.size(), 1);
+            EXPECT_EQ(clientInfo.codecProfiles[2].limitations[0].values[0], "48000");
+            EXPECT_EQ(clientInfo.codecProfiles[2].limitations[0].required, true);
+        }
+        catch (const Error& e)
+        {
+            GTEST_FAIL() << e.getMessage();
+        }
+    }
+
     TEST(ClientInfo, badfield)
     {
         std::istringstream iss{ R"({"name":"LocalDevice","platform":"Android","maxAudioBitrate":"320000","maxTranscodingAudioBitrate":320000,"directPlayProfiles":[{"container":"mp4,mka,m4a,mp3,mp2,wav,flac,ogg,alac,opus,vorbis","audioCodec":"*","protocol":"*","maxAudioChannels":32}],"transcodingProfiles":[{"container":"flac","audioCodec":"flac","protocol":"http","maxAudioChannels":0},{"container":"ogg","audioCodec":"opus","protocol":"http","maxAudioChannels":6},{"container":"mp3","audioCodec":"mp3","protocol":"http","maxAudioChannels":2}],"codecProfiles":[{"type":"AudioCodec","name":"vorbis","limitations":[{"name":"audioSamplerate","comparison":"LessThanEqual","value":"48000","required":true}]},{"type":"AudioCodec","name":"opus","limitations":[{"name":"audioSamplerate","comparison":"LessThanEqual","value":"48000","required":true}]}]})" };
