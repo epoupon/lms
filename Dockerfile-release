@@ -70,9 +70,9 @@ RUN \
 	--enable-zlib \
 	--disable-everything \
 	--enable-decoder=aac*,ac3*,alac,als,ape,asf,dsd*,flac,libopus,pcm*,libvorbis,mp3*,mpc7,mpc8,shorten,tta,wavpack,wma*,libopenjpg,png \
-	--enable-encoder=libmp3lame,libopus,libvorbis \
+	--enable-encoder=flac,libmp3lame,libopus,libvorbis \
 	--enable-demuxer=aac,aiff,ape,asf,dsf,flac,m4a,mp3,mov,mpc,mpc8,ogg,shn,tta,wav,wv \
-	--enable-muxer=ogg,mp3 \
+	--enable-muxer=flac,mp3,ogg \
 	--enable-protocol=file,pipe \
 	--enable-filter=aresample \
 	--enable-lto \
