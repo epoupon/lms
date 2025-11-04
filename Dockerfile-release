@@ -70,9 +70,9 @@ RUN \
 	--enable-libvorbis \
 	--disable-everything \
 	--enable-decoder=aac*,ac3*,alac,als,dsd*,flac,mp3*,libopus,pcm*,libvorbis,wavpack,wma*,libopenjpg,png \
-	--enable-encoder=libmp3lame,libopus,libvorbis \
+	--enable-encoder=flac,libmp3lame,libopus,libvorbis \
 	--enable-demuxer=aac,aiff,asf,dsf,flac,ipod,ogg,matroska,mov,mp3,mp4,wav,wv,webm \
-	--enable-muxer=ogg,matroska,mp3,webm \
+	--enable-muxer=flac,ogg,matroska,mp3,webm \
 	--enable-protocol=file,pipe \
 	--enable-filter=aresample \
 	--enable-lto \
