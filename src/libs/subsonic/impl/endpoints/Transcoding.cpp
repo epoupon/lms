@@ -196,7 +196,7 @@ namespace lms::api::subsonic
 
     audio::TranscodeParameters getTranscodingParameters(RequestContext& context)
     {
-        const db::TrackId trackId{ getMandatoryParameterAs<db::TrackId>(context.getParameters(), "trackID") };
+        const db::TrackId trackId{ getMandatoryParameterAs<db::TrackId>(context.getParameters(), "songId") };
         const core::UUID uuid{ getMandatoryParameterAs<core::UUID>(context.getParameters(), "transcodeParams") };
         const std::chrono::seconds offset{ getParameterAs<std::size_t>(context.getParameters(), "offset").value_or(0) };
 
