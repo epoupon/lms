@@ -78,7 +78,7 @@ namespace lms::db
         }
 
     private:
-        static constexpr std::size_t _maxNameLength{ 32 };
+        static constexpr std::size_t _maxNameLength{ 1024 };
 
         friend class Session;
         Country(std::string_view name);
@@ -110,7 +110,7 @@ namespace lms::db
         }
 
     private:
-        static constexpr std::size_t _maxNameLength{ 512 };
+        static constexpr std::size_t _maxNameLength{ 1024 };
 
         friend class Session;
         Label(std::string_view name);
@@ -142,7 +142,7 @@ namespace lms::db
         }
 
     private:
-        static constexpr std::size_t _maxNameLength{ 512 };
+        static constexpr std::size_t _maxNameLength{ 1024 };
 
         friend class Session;
         ReleaseType(std::string_view name);
