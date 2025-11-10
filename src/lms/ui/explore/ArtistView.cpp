@@ -253,11 +253,7 @@ namespace lms::ui
             {
                 Wt::WTemplate* releaseContainer{ releaseContainers->addNew<Wt::WTemplate>(Wt::WString::tr("Lms.Explore.Artist.template.release-container")) };
 
-                if (releaseType.primaryType || !releaseType.customTypes.empty())
-                    releaseContainer->bindString("release-type", releaseHelpers::buildReleaseTypeString(releaseType));
-                else
-                    releaseContainer->bindString("release-type", Wt::WString::tr("Lms.Explore.releases")); // fallback when not tagged with MB or custom type
-
+                releaseContainer->bindString("release-type", releaseHelpers::buildReleaseTypeString(releaseType));
                 releases.container = releaseContainer->bindNew<InfiniteScrollingContainer>("releases", Wt::WString::tr("Lms.Explore.Releases.template.container"));
                 releases.container->onRequestElements.connect(this, [this, &releases = releases] {
                     addSomeReleases(releases);
