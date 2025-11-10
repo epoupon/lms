@@ -19,10 +19,15 @@
 
 #include <list>
 
+#include "database/objects/Release.hpp"
+#include "database/objects/TrackList.hpp"
+
 #include "Common.hpp"
 
 namespace lms::db::tests
 {
+    using ScopedReleaseType = ScopedEntity<db::ReleaseType>;
+
     TEST_F(DatabaseFixture, SingleTrackList)
     {
         {
@@ -177,6 +182,50 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             std::vector<TrackListId> visitedTrackLists;
             TrackList::find(session, TrackList::FindParameters{}.setFilters(Filters{}.setMediaLibrary(library->getId())), [&](const TrackList::pointer& trackList) {
+                visitedTrackLists.push_back(trackList->getId());
+            });
+            ASSERT_EQ(visitedTrackLists.size(), 1);
+            EXPECT_EQ(visitedTrackLists[0], trackList2->getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, TrackList_ReleaseType)
+    {
+        ScopedTrackList trackList1{ session, "MytrackList1", TrackListType::PlayList };
+        ScopedTrackList trackList2{ session, "MytrackList2", TrackListType::PlayList };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedReleaseType releaseType1{ session, "MyReleaseType1" };
+        ScopedReleaseType releaseType2{ session, "MyReleaseType2" };
+        ScopedRelease release1{ session, "MyRelease1" };
+        ScopedRelease release2{ session, "MyRelease2" };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            session.create<TrackListEntry>(track1.get(), trackList1.get());
+            release1.get().modify()->addReleaseType(releaseType1.get());
+            track1.get().modify()->setRelease(release1.get());
+
+            session.create<TrackListEntry>(track2.get(), trackList2.get());
+            release2.get().modify()->addReleaseType(releaseType2.get());
+            track2.get().modify()->setRelease(release2.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            std::vector<TrackListId> visitedTrackLists;
+            TrackList::find(session, TrackList::FindParameters{}.setFilters(Filters{}.setReleaseType(releaseType1->getId())), [&](const TrackList::pointer& trackList) {
+                visitedTrackLists.push_back(trackList->getId());
+            });
+            ASSERT_EQ(visitedTrackLists.size(), 1);
+            EXPECT_EQ(visitedTrackLists[0], trackList1->getId());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+            std::vector<TrackListId> visitedTrackLists;
+            TrackList::find(session, TrackList::FindParameters{}.setFilters(Filters{}.setReleaseType(releaseType2->getId())), [&](const TrackList::pointer& trackList) {
                 visitedTrackLists.push_back(trackList->getId());
             });
             ASSERT_EQ(visitedTrackLists.size(), 1);
