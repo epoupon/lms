@@ -63,7 +63,7 @@ namespace lms::api::subsonic::tests
         std::ostringstream oss;
         response.write(oss, ResponseFormat::json);
 
-        EXPECT_EQ(oss.str(), R"({"subsonic-response":{"openSubsonic":true,"serverVersion":"v3.70.0","status":"ok","type":"lms","version":"1.16.0"}})");
+        EXPECT_EQ(oss.str(), R"({"subsonic-response":{"openSubsonic":true,"serverVersion":"v3.72.0","status":"ok","type":"lms","version":"1.16.0"}})");
     }
 
     TEST(SubsonicResponse, json)
@@ -73,7 +73,7 @@ namespace lms::api::subsonic::tests
         std::ostringstream oss;
         response.write(oss, ResponseFormat::json);
 
-        EXPECT_EQ(oss.str(), R"({"subsonic-response":{"openSubsonic":true,"serverVersion":"v3.70.0","status":"ok","type":"lms","version":"1.16.0","MyNode":{"Attr1":"value1","Attr2":"value2","attr3":"<value3=\"foo\">","attr4":true,"attr5":false,"attr6":3.14159,"attr7":333666,"MyArrayChild":[{"Attr42":0},{"Attr42":1}],"MyArray1":["value1","value2","value1","value2"],"MyArray2":[0]}}})");
+        EXPECT_EQ(oss.str(), R"({"subsonic-response":{"openSubsonic":true,"serverVersion":"v3.72.0","status":"ok","type":"lms","version":"1.16.0","MyNode":{"Attr1":"value1","Attr2":"value2","attr3":"<value3=\"foo\">","attr4":true,"attr5":false,"attr6":3.14159,"attr7":333666,"MyArrayChild":[{"Attr42":0},{"Attr42":1}],"MyArray1":["value1","value2","value1","value2"],"MyArray2":[0]}}})");
     }
 
     TEST(SubsonicResponse, emptyXml)
@@ -84,7 +84,7 @@ namespace lms::api::subsonic::tests
         response.write(oss, ResponseFormat::xml);
 
         EXPECT_EQ(oss.str(), R"(<?xml version="1.0" encoding="utf-8"?>
-<subsonic-response openSubsonic="true" serverVersion="v3.70.0" status="ok" type="lms" version="1.16.0" xmlns="http://subsonic.org/restapi"/>)");
+<subsonic-response openSubsonic="true" serverVersion="v3.72.0" status="ok" type="lms" version="1.16.0" xmlns="http://subsonic.org/restapi"/>)");
     }
 
     TEST(SubsonicResponse, xml)
@@ -95,7 +95,7 @@ namespace lms::api::subsonic::tests
         response.write(oss, ResponseFormat::xml);
 
         EXPECT_EQ(oss.str(), R"(<?xml version="1.0" encoding="utf-8"?>
-<subsonic-response openSubsonic="true" serverVersion="v3.70.0" status="ok" type="lms" version="1.16.0" xmlns="http://subsonic.org/restapi"><MyNode Attr1="value1" Attr2="value2" attr3="&lt;value3=&quot;foo&quot;&gt;" attr4="true" attr5="false" attr6="3.14159" attr7="333666"><MyArrayChild Attr42="0"/><MyArrayChild Attr42="1"/><MyArray1>value1</MyArray1><MyArray1>value2</MyArray1><MyArray1>value1</MyArray1><MyArray1>value2</MyArray1><MyArray2>0</MyArray2></MyNode></subsonic-response>)");
+<subsonic-response openSubsonic="true" serverVersion="v3.72.0" status="ok" type="lms" version="1.16.0" xmlns="http://subsonic.org/restapi"><MyNode Attr1="value1" Attr2="value2" attr3="&lt;value3=&quot;foo&quot;&gt;" attr4="true" attr5="false" attr6="3.14159" attr7="333666"><MyArrayChild Attr42="0"/><MyArrayChild Attr42="1"/><MyArray1>value1</MyArray1><MyArray1>value2</MyArray1><MyArray1>value1</MyArray1><MyArray1>value2</MyArray1><MyArray2>0</MyArray2></MyNode></subsonic-response>)");
     }
 
 } // namespace lms::api::subsonic::tests
