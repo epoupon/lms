@@ -162,6 +162,7 @@ namespace lms::db
                 query.where("t.track_number = ?").bind(*params.trackNumber);
 
             if (params.sortMethod == TrackSortMethod::DateDescAndRelease
+                || params.sortMethod == TrackSortMethod::OriginalDateDescAndRelease
                 || params.sortMethod == TrackSortMethod::Release)
             {
                 query.join("medium m ON t.medium_id = m.id");
@@ -222,6 +223,9 @@ namespace lms::db
                 break;
             case TrackSortMethod::DateDescAndRelease:
                 query.orderBy("t.date DESC,t.release_id,m.position,t.track_number");
+                break;
+            case TrackSortMethod::OriginalDateDescAndRelease:
+                query.orderBy("COALESCE(t.original_date, t.date) DESC,t.release_id,m.position,t.track_number");
                 break;
             case TrackSortMethod::Release:
                 query.orderBy("m.position,t.track_number");

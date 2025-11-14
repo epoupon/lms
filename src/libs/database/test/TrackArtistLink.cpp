@@ -18,8 +18,8 @@
  */
 
 #include "Common.hpp"
-#include "database/Types.hpp"
 
+#include "database/Types.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 
 namespace lms::db::tests
@@ -181,6 +181,45 @@ namespace lms::db::tests
                 });
                 ASSERT_FALSE(visited);
             }
+        }
+    }
+
+    TEST_F(DatabaseFixture, TrackArtistLink_findWithOriginalDateDesc)
+    {
+        ScopedArtist artist{ session, "MyArtist" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            {
+                auto link1{ session.create<TrackArtistLink>(track1.get(), artist.get(), TrackArtistLinkType::Artist, false) };
+                link1.modify()->setArtistName("MyArtistOldName");
+                track1.get().modify()->setOriginalDate(core::PartialDateTime{ 1990, 1 });
+            }
+
+            {
+                auto link2{ session.create<TrackArtistLink>(track2.get(), artist.get(), TrackArtistLinkType::Artist, false) };
+                link2.modify()->setArtistName("MyArtistNewName");
+                track2.get().modify()->setOriginalDate(core::PartialDateTime{ 1995, 1 });
+            }
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            TrackArtistLink::FindParameters params;
+            params.setSortMethod(TrackArtistLinkSortMethod::OriginalDateDesc);
+            params.setArtist(artist->getId());
+
+            std::vector<TrackArtistLink::pointer> links;
+            TrackArtistLink::find(session, params, [&](const TrackArtistLink::pointer& link) {
+                links.push_back(link);
+            });
+            ASSERT_EQ(links.size(), 2);
+            EXPECT_EQ(links[0]->getArtistName(), "MyArtistNewName");
+            EXPECT_EQ(links[1]->getArtistName(), "MyArtistOldName");
         }
     }
 } // namespace lms::db::tests

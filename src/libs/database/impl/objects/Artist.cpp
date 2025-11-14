@@ -334,6 +334,31 @@ AND NOT EXISTS (
         return utils::fetchQuerySingleResult(session.getDboSession()->query<int>("SELECT 1 FROM artist").where("id = ?").bind(id)) == 1;
     }
 
+    RangeResults<Artist::pointer> Artist::findWithMBIDNameVariants(Session& session, ArtistId& lastRetrievedArtist, std::optional<Range> range)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Artist>>(R"(
+        SELECT a FROM artist a 
+        WHERE a.id IN (
+            SELECT t_a_l.artist_id 
+            FROM track_artist_link t_a_l 
+            WHERE t_a_l.artist_mbid_matched = 1 
+            GROUP BY t_a_l.artist_id 
+            HAVING COUNT(DISTINCT t_a_l.artist_name) > 1
+        )
+        AND a.id > ?
+    )")
+                        .bind(lastRetrievedArtist) };
+
+        auto results{ utils::execRangeQuery<Artist::pointer>(query, range) };
+
+        if (!results.results.empty())
+            lastRetrievedArtist = results.results.back()->getId();
+
+        return results;
+    }
+
     void Artist::updatePreferredArtwork(Session& session, ArtistId artistId, ArtworkId artworkId)
     {
         session.checkWriteTransaction();

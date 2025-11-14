@@ -39,55 +39,25 @@ namespace lms::scanner::helpers
 
             return artist;
         }
-
-        std::string optionalMBIDAsString(const std::optional<core::UUID>& uuid)
-        {
-            return uuid ? std::string{ uuid->getAsString() } : "<no MBID>";
-        }
-
-        void updateArtistIfNeeded(db::Artist::pointer artist, const Artist& artistInfo)
-        {
-            // MBID may be set
-            if (artist->getMBID() != artistInfo.mbid)
-                artist.modify()->setMBID(artistInfo.mbid);
-
-            // Name may have been updated
-            if (artist->getName() != artistInfo.name)
-            {
-                LMS_LOG(DBUPDATER, DEBUG, "Artist [" << optionalMBIDAsString(artist->getMBID()) << "], updated name from '" << artist->getName() << "' to '" << artistInfo.name << "'");
-                artist.modify()->setName(artistInfo.name);
-            }
-
-            // Sortname may have been updated
-            // As the sort name is quite often not filled in, we update it only if already set (for now?)
-            if (artistInfo.sortName && *artistInfo.sortName != artist->getSortName())
-            {
-                LMS_LOG(DBUPDATER, DEBUG, "Artist [" << optionalMBIDAsString(artist->getMBID()) << "], updated sort name from '" << artist->getSortName() << "' to '" << *artistInfo.sortName << "'");
-                artist.modify()->setSortName(*artistInfo.sortName);
-            }
-        }
-
     } // namespace
 
     db::Artist::pointer getOrCreateArtistByMBID(db::Session& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
     {
         assert(artistInfo.mbid.has_value());
+
         db::Artist::pointer artist{ db::Artist::find(session, *artistInfo.mbid) };
-        if (artist)
-        {
-            updateArtistIfNeeded(artist, artistInfo);
-        }
-        else
+        if (!artist)
         {
             if (allowFallbackOnMBIDEntries.value())
             {
                 // an artist with the same name may already exist, let's recycle it
                 for (const db::Artist::pointer& artistWithSameName : db::Artist::find(session, artistInfo.name))
                 {
+                    assert(artistWithSameName->getMBID() != artistInfo.mbid);
                     if (!artistWithSameName->hasMBID())
                     {
                         artist = artistWithSameName;
-                        updateArtistIfNeeded(artist, artistInfo);
+                        artist.modify()->setMBID(artistInfo.mbid);
                         break;
                     }
                 }
@@ -102,6 +72,8 @@ namespace lms::scanner::helpers
 
     db::Artist::pointer getOrCreateArtistByName(db::Session& session, const Artist& artistInfo, AllowFallbackOnMBIDEntry allowFallbackOnMBIDEntries)
     {
+        assert(artistInfo.mbid == std::nullopt);
+
         db::Artist::pointer artist;
 
         // Here we can have only one artist with no MBID, others all have mbids
@@ -112,10 +84,7 @@ namespace lms::scanner::helpers
         if (!allowFallbackOnMBIDEntries.value() || artistCountWithMBID > 1)
         {
             if (itArtistWithoutMBID != std::end(artistsWithSameName))
-            {
                 artist = *itArtistWithoutMBID;
-                updateArtistIfNeeded(artist, artistInfo);
-            }
             else
                 artist = createArtist(session, artistInfo);
         }
@@ -124,15 +93,9 @@ namespace lms::scanner::helpers
             const auto itArtistWithMBID{ std::find_if(std::begin(artistsWithSameName), std::end(artistsWithSameName), [](const db::Artist::pointer& artist) { return artist->hasMBID(); }) };
 
             if (itArtistWithMBID != std::end(artistsWithSameName))
-            {
                 artist = *itArtistWithMBID;
-                // not updating artist here: consider metadata quality is less good
-            }
             else if (itArtistWithoutMBID != std::end(artistsWithSameName))
-            {
                 artist = *itArtistWithoutMBID;
-                updateArtistIfNeeded(artist, artistInfo);
-            }
             else
                 artist = createArtist(session, artistInfo);
         }

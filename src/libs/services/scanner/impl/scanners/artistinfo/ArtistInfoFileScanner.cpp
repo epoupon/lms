@@ -125,7 +125,21 @@ namespace lms::scanner
             artistInfo.modify()->setDirectory(utils::getOrCreateDirectory(dbSession, getFilePath().parent_path(), mediaLibrary));
 
             const Artist artistMetadata{ _parsedArtistInfo->mbid, _parsedArtistInfo->name, _parsedArtistInfo->sortName.empty() ? std::nullopt : std::make_optional<std::string>(_parsedArtistInfo->sortName) };
+
             db::Artist::pointer artist{ helpers::getOrCreateArtist(dbSession, artistMetadata, helpers::AllowFallbackOnMBIDEntry{ getScannerSettings().allowArtistMBIDFallback }) };
+            // Artist info is the highest priority source for artist name/sort name, so update it as needed
+            if (artist->getName() != artistMetadata.name)
+            {
+                LMS_LOG(DBUPDATER, DEBUG, "Updated artist name from '" << artist->getName() << "' to '" << artistMetadata.name << "' using artist info file");
+                artist.modify()->setName(artistMetadata.name);
+            }
+
+            if (artist->getSortName() != artistMetadata.sortName)
+            {
+                LMS_LOG(DBUPDATER, DEBUG, "Updated artist sort name from '" << artist->getSortName() << "' to '" << (artistMetadata.sortName ? *artistMetadata.sortName : "") << "' using artist info file");
+                artist.modify()->setSortName(artistMetadata.sortName ? *artistMetadata.sortName : "");
+            }
+
             artistInfo.modify()->setArtist(artist);
             artistInfo.modify()->setMBIDMatched(_parsedArtistInfo->mbid.has_value() && _parsedArtistInfo->mbid == artist->getMBID());
 

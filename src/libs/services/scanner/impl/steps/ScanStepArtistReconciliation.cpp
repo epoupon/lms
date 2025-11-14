@@ -83,19 +83,113 @@ namespace lms::scanner
 
     void ScanStepArtistReconciliation::process(ScanContext& context)
     {
-        // Reconcile artist links
+        // Reconcile artist name differences when MBID was used to match
+        updateArtistPreferredName(context);
+
+        // Reconcile artist links when MBID not used to match
         {
             // Order is important
             updateLinksForArtistNameNoLongerMatch(context);
             updateLinksWithArtistNameAmbiguity(context);
         }
 
-        // Reconcile artist info
+        // Reconcile artist info when MBID not used to match
         {
             // Order is important
             updateArtistInfoForArtistNameNoLongerMatch(context);
             updateArtistInfoWithArtistNameAmbiguity(context);
         }
+    }
+
+    void ScanStepArtistReconciliation::updateArtistPreferredName(ScanContext& context)
+    {
+        static constexpr std::size_t batchSize{ 50 };
+
+        db::Session& session{ _db.getTLSSession() };
+
+        // List artists that have different names when mbid matched.
+        // Possible reasons:
+        // - artist name changed over time (ex: Rhapsody then Rhapsody of Fire), legit use case
+        // - user renamed the artist
+        // Name to pick in order of priority:
+        // - name specified in artist info (if present)
+        // - name as referenced in the latest release
+
+        struct ArtistToUpdate
+        {
+            db::Artist::pointer artist;
+            std::string newName;
+            std::string newSortName;
+        };
+        std::vector<ArtistToUpdate> artistsToUpdate;
+        auto updateArtists{ [&] {
+            auto transaction{ session.createWriteTransaction() };
+
+            for (auto& artistToUpdate : artistsToUpdate)
+            {
+                artistToUpdate.artist.modify()->setName(artistToUpdate.newName);
+                artistToUpdate.artist.modify()->setSortName(artistToUpdate.newSortName);
+            }
+        } };
+
+        db::ArtistId lastRetrievedArtist;
+        while (!_abortScan)
+        {
+            {
+                auto transaction{ session.createReadTransaction() };
+
+                const auto artists{ db::Artist::findWithMBIDNameVariants(session, lastRetrievedArtist, db::Range{ .offset = 0, .size = batchSize }) };
+                if (artists.results.empty())
+                    break;
+
+                for (const db::Artist::pointer& artist : artists.results)
+                {
+                    bool hasArtistInfo{};
+                    db::ArtistInfo::find(session, artist->getId(), db::Range{ .offset = 0, .size = 1 }, [&](const db::ArtistInfo::pointer&) {
+                        hasArtistInfo = true;
+                    });
+
+                    // Scanning artist info should have updated the name of the artist
+                    if (hasArtistInfo)
+                        continue;
+
+                    std::optional<ArtistToUpdate> artistToUpdate;
+
+                    db::TrackArtistLink::FindParameters params;
+                    params.setArtist(artist->getId());
+                    params.setSortMethod(db::TrackArtistLinkSortMethod::OriginalDateDesc);
+                    params.setRange(db::Range{ .offset = 0, .size = 1 });
+                    db::TrackArtistLink::find(session, params, [&](const db::TrackArtistLink::pointer& link) {
+                        if (link->getArtistName() != artist->getName())
+                        {
+                            artistToUpdate.emplace();
+                            artistToUpdate->artist = artist;
+                            artistToUpdate->newName = link->getArtistName();
+                            artistToUpdate->newSortName = link->getArtistSortName();
+                        }
+                    });
+
+                    if (artistToUpdate)
+                    {
+                        LMS_LOG(DBUPDATER, DEBUG, "Updating artist " << artist << " name to '" << artistToUpdate->newName << "' using most recent release reference");
+                        artistsToUpdate.emplace_back(std::move(*artistToUpdate));
+                    }
+                }
+
+                if (!artists.moreResults)
+                    break;
+            }
+
+            if (artistsToUpdate.size() > batchSize)
+            {
+                updateArtists();
+                artistsToUpdate.clear();
+            }
+        }
+
+        updateArtists();
+
+        _progressCallback(context.currentStepStats);
     }
 
     void ScanStepArtistReconciliation::updateArtistInfoForArtistNameNoLongerMatch(ScanContext& context)
