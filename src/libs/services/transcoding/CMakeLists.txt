@@ -1,6 +1,6 @@
 add_library(lmstranscoding STATIC
-	impl/TranscodingResourceHandler.cpp
-	impl/TranscodingService.cpp
+	impl/TranscodeResourceHandler.cpp
+	impl/TranscodeService.cpp
 	)
 
 target_include_directories(lmstranscoding INTERFACE
@@ -13,7 +13,7 @@ target_include_directories(lmstranscoding PRIVATE
 	)
 
 target_link_libraries(lmstranscoding PRIVATE
-	lmsav
+	lmsaudio
 	)
 
 target_link_libraries(lmstranscoding PUBLIC

@@ -14,8 +14,8 @@ target_include_directories(lmsartwork PRIVATE
 	)
 
 target_link_libraries(lmsartwork PRIVATE
+	lmsaudio
 	lmsimage
-	lmsmetadata
 	)
 
 target_link_libraries(lmsartwork PUBLIC

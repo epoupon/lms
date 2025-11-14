@@ -51,7 +51,7 @@ namespace lms::api::subsonic::Scan
 
     Response handleGetScanStatus(RequestContext& context)
     {
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         response.addNode("scanStatus", createStatusResponseNode());
 
         return response;
@@ -61,7 +61,7 @@ namespace lms::api::subsonic::Scan
     {
         core::Service<IScannerService>::get()->requestImmediateScan();
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         response.addNode("scanStatus", createStatusResponseNode());
 
         return response;

@@ -27,8 +27,10 @@
 #include <Wt/WPushButton.h>
 #include <Wt/WTemplate.h>
 
-#include "av/IAudioFile.hpp"
 #include "core/String.hpp"
+
+#include "audio/AudioTypes.hpp"
+#include "audio/IAudioFileInfo.hpp"
 #include "database/Session.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
@@ -141,15 +143,17 @@ namespace lms::ui
             // TODO: save in DB and aggregate all this
             for (const db::Track::pointer& track : db::Track::find(LmsApp->getDbSession(), db::Track::FindParameters{}.setRelease(releaseId).setRange(db::Range{ 0, 1 })).results)
             {
-                if (const auto audioFile{ av::parseAudioFile(track->getAbsoluteFilePath()) })
+                try
                 {
-                    const std::optional<av::StreamInfo> audioStream{ audioFile->getBestStreamInfo() };
-                    if (audioStream)
+                    if (const auto audioFile{ audio::parseAudioFile(track->getAbsoluteFilePath()) })
                     {
                         releaseInfo->setCondition("if-has-codec", true);
-                        releaseInfo->bindString("codec", audioStream->codecName);
+                        releaseInfo->bindString("codec", audio::codecTypeToString(audioFile->getAudioProperties().codec).c_str(), Wt::TextFormat::Plain);
                         break;
                     }
+                }
+                catch (const audio::Exception& e)
+                {
                 }
             }
 

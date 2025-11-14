@@ -27,8 +27,9 @@
 #include "core/IResourceHandler.hpp"
 #include "core/String.hpp"
 
-#include "av/Exception.hpp"
-#include "av/IAudioFile.hpp"
+#include "audio/AudioTypes.hpp"
+#include "audio/Exception.hpp"
+#include "audio/IAudioFileInfo.hpp"
 
 #include "database/Session.hpp"
 #include "database/objects/PodcastEpisode.hpp"
@@ -39,7 +40,7 @@
 
 #include "services/artwork/IArtworkService.hpp"
 #include "services/podcast/IPodcastService.hpp"
-#include "services/transcoding/ITranscodingService.hpp"
+#include "services/transcoding/ITranscodeService.hpp"
 
 #include "CoverArtId.hpp"
 #include "ParameterParsing.hpp"
@@ -52,12 +53,12 @@ namespace lms::api::subsonic
 {
     namespace
     {
-        std::optional<transcoding::OutputFormat> subsonicStreamFormatToAvOutputFormat(std::string_view format)
+        std::optional<audio::OutputFormat> subsonicStreamFormatToTranscodingOutputFormat(std::string_view format)
         {
-            for (const auto& [str, avFormat] : std::initializer_list<std::pair<std::string_view, transcoding::OutputFormat>>{
-                     { "mp3", transcoding::OutputFormat::MP3 },
-                     { "opus", transcoding::OutputFormat::OGG_OPUS },
-                     { "vorbis", transcoding::OutputFormat::OGG_VORBIS },
+            for (const auto& [str, avFormat] : std::initializer_list<std::pair<std::string_view, audio::OutputFormat>>{
+                     { "mp3", audio::OutputFormat::MP3 },
+                     { "opus", audio::OutputFormat::OGG_OPUS },
+                     { "vorbis", audio::OutputFormat::OGG_VORBIS },
                  })
             {
                 if (core::stringUtils::stringCaseInsensitiveEqual(str, format))
@@ -66,38 +67,39 @@ namespace lms::api::subsonic
             return std::nullopt;
         }
 
-        transcoding::OutputFormat userTranscodeFormatToAvFormat(db::TranscodingOutputFormat format)
+        audio::OutputFormat userTranscodeFormatToTranscodingFormat(db::TranscodingOutputFormat format)
         {
             switch (format)
             {
             case db::TranscodingOutputFormat::MP3:
-                return transcoding::OutputFormat::MP3;
+                return audio::OutputFormat::MP3;
             case db::TranscodingOutputFormat::OGG_OPUS:
-                return transcoding::OutputFormat::OGG_OPUS;
+                return audio::OutputFormat::OGG_OPUS;
             case db::TranscodingOutputFormat::MATROSKA_OPUS:
-                return transcoding::OutputFormat::MATROSKA_OPUS;
+                return audio::OutputFormat::MATROSKA_OPUS;
             case db::TranscodingOutputFormat::OGG_VORBIS:
-                return transcoding::OutputFormat::OGG_VORBIS;
+                return audio::OutputFormat::OGG_VORBIS;
             case db::TranscodingOutputFormat::WEBM_VORBIS:
-                return transcoding::OutputFormat::WEBM_VORBIS;
+                return audio::OutputFormat::WEBM_VORBIS;
             }
-            return transcoding::OutputFormat::OGG_OPUS;
+
+            return audio::OutputFormat::OGG_OPUS;
         }
 
-        bool isCodecCompatibleWithOutputFormat(av::DecodingCodec codec, transcoding::OutputFormat outputFormat)
+        bool isCodecCompatibleWithOutputFormat(audio::CodecType codec, audio::OutputFormat outputFormat)
         {
             switch (outputFormat)
             {
-            case transcoding::OutputFormat::MP3:
-                return codec == av::DecodingCodec::MP3;
+            case audio::OutputFormat::MP3:
+                return codec == audio::CodecType::MP3;
 
-            case transcoding::OutputFormat::OGG_OPUS:
-            case transcoding::OutputFormat::MATROSKA_OPUS:
-                return codec == av::DecodingCodec::OPUS;
+            case audio::OutputFormat::OGG_OPUS:
+            case audio::OutputFormat::MATROSKA_OPUS:
+                return codec == audio::CodecType::Opus;
 
-            case transcoding::OutputFormat::OGG_VORBIS:
-            case transcoding::OutputFormat::WEBM_VORBIS:
-                return codec == av::DecodingCodec::VORBIS;
+            case audio::OutputFormat::OGG_VORBIS:
+            case audio::OutputFormat::WEBM_VORBIS:
+                return codec == audio::CodecType::Vorbis;
             }
 
             return true;
@@ -105,26 +107,22 @@ namespace lms::api::subsonic
 
         struct StreamParameters
         {
-            transcoding::InputParameters inputParameters;
-            std::string inputMimeType; // set if known
-            std::optional<transcoding::OutputParameters> outputParameters;
+            std::filesystem::path filePath;
+            std::string fileMimeType; // set if known
+            std::optional<audio::TranscodeParameters> transcodeParameters;
             bool estimateContentLength{};
         };
 
-        bool isOutputFormatCompatible(const std::filesystem::path& trackPath, transcoding::OutputFormat outputFormat)
+        bool isOutputFormatCompatible(const std::filesystem::path& trackPath, audio::OutputFormat outputFormat)
         {
             // TODO: put this information in db during scan
             try
             {
-                const auto audioFile{ av::parseAudioFile(trackPath) };
+                const auto audioFile{ audio::parseAudioFile(trackPath) };
 
-                const auto streamInfo{ audioFile->getBestStreamInfo() };
-                if (!streamInfo)
-                    throw RequestedDataNotFoundError{}; // TODO 404?
-
-                return isCodecCompatibleWithOutputFormat(streamInfo->codec, outputFormat);
+                return isCodecCompatibleWithOutputFormat(audioFile->getAudioProperties().codec, outputFormat);
             }
-            catch (const av::Exception& e)
+            catch (const audio::Exception& e)
             {
                 // TODO 404?
                 throw RequestedDataNotFoundError{};
@@ -176,37 +174,34 @@ namespace lms::api::subsonic
         StreamParameters getStreamParameters(RequestContext& context)
         {
             // Mandatory params
-            const auto trackId{ getParameterAs<db::TrackId>(context.parameters, "id") };
-            const auto podcastEpisodeId{ getParameterAs<db::PodcastEpisodeId>(context.parameters, "id") };
+            const auto trackId{ getParameterAs<db::TrackId>(context.getParameters(), "id") };
+            const auto podcastEpisodeId{ getParameterAs<db::PodcastEpisodeId>(context.getParameters(), "id") };
             if (!trackId && !podcastEpisodeId)
                 throw RequiredParameterMissingError{ "id" };
 
             const AudioFileId audioId{ trackId ? AudioFileId{ *trackId } : AudioFileId{ *podcastEpisodeId } };
 
             // Optional params
-            std::size_t maxBitRate{ getParameterAs<std::size_t>(context.parameters, "maxBitRate").value_or(0) * 1000 }; // "If set to zero, no limit is imposed", given in kpbs
-            const std::string format{ getParameterAs<std::string>(context.parameters, "format").value_or("") };
-            std::size_t timeOffset{ getParameterAs<std::size_t>(context.parameters, "timeOffset").value_or(0) };
-            bool estimateContentLength{ getParameterAs<bool>(context.parameters, "estimateContentLength").value_or(false) };
+            std::size_t maxBitRate{ getParameterAs<std::size_t>(context.getParameters(), "maxBitRate").value_or(0) * 1000 }; // "If set to zero, no limit is imposed", given in kpbs
+            const std::string format{ getParameterAs<std::string>(context.getParameters(), "format").value_or("") };
+            std::size_t timeOffset{ getParameterAs<std::size_t>(context.getParameters(), "timeOffset").value_or(0) };
+            bool estimateContentLength{ getParameterAs<bool>(context.getParameters(), "estimateContentLength").value_or(false) };
 
-            const AudioFileInfo audioFileInfo{ getAudioFileInfo(context.dbSession, audioId) };
+            const AudioFileInfo audioFileInfo{ getAudioFileInfo(context.getDbSession(), audioId) };
 
             StreamParameters parameters;
-
-            parameters.inputParameters.filePath = audioFileInfo.path;
-            parameters.inputParameters.duration = audioFileInfo.duration;
-            parameters.inputParameters.offset = std::chrono::seconds{ timeOffset };
-            parameters.inputMimeType = audioFileInfo.mimeType;
+            parameters.filePath = audioFileInfo.path;
+            parameters.fileMimeType = audioFileInfo.mimeType;
             parameters.estimateContentLength = estimateContentLength;
 
             if (format == "raw")   // raw => no transcoding
                 return parameters; // TODO: what if offset is not 0?
 
-            std::optional<transcoding::OutputFormat> requestedFormat{ subsonicStreamFormatToAvOutputFormat(format) };
+            std::optional<audio::OutputFormat> requestedFormat{ subsonicStreamFormatToTranscodingOutputFormat(format) };
             if (!requestedFormat)
             {
-                if (context.user->getSubsonicEnableTranscodingByDefault())
-                    requestedFormat = userTranscodeFormatToAvFormat(context.user->getSubsonicDefaultTranscodingOutputFormat());
+                if (context.getUser()->getSubsonicEnableTranscodingByDefault())
+                    requestedFormat = userTranscodeFormatToTranscodingFormat(context.getUser()->getSubsonicDefaultTranscodingOutputFormat());
             }
 
             if (!requestedFormat && (maxBitRate == 0 || audioFileInfo.bitrate <= maxBitRate))
@@ -231,16 +226,22 @@ namespace lms::api::subsonic
 
             // Need to transcode here
             if (!requestedFormat)
-                requestedFormat = userTranscodeFormatToAvFormat(context.user->getSubsonicDefaultTranscodingOutputFormat());
+                requestedFormat = userTranscodeFormatToTranscodingFormat(context.getUser()->getSubsonicDefaultTranscodingOutputFormat());
             if (!bitrate)
-                bitrate = context.user->getSubsonicDefaultTranscodingOutputBitrate();
+                bitrate = context.getUser()->getSubsonicDefaultTranscodingOutputBitrate();
             if (maxBitRate)
                 bitrate = std::min<std::size_t>(bitrate, maxBitRate);
 
-            transcoding::OutputParameters& outputParameters{ parameters.outputParameters.emplace() };
-            outputParameters.stripMetadata = false; // We want clients to use metadata (offline use, replay gain, etc.)
-            outputParameters.format = *requestedFormat;
-            outputParameters.bitrate = bitrate;
+            audio::TranscodeParameters& transcodeParameters{ parameters.transcodeParameters.emplace() };
+
+            transcodeParameters.inputParameters.filePath = audioFileInfo.path;
+            transcodeParameters.inputParameters.duration = audioFileInfo.duration;
+            transcodeParameters.inputParameters.offset = std::chrono::seconds{ timeOffset };
+            ;
+
+            transcodeParameters.outputParameters.bitrate = bitrate;
+            transcodeParameters.outputParameters.format = *requestedFormat;
+            transcodeParameters.outputParameters.stripMetadata = false; // We want clients to use metadata (offline use, replay gain, etc.)
 
             return parameters;
         }
@@ -248,13 +249,13 @@ namespace lms::api::subsonic
 
     Response handleGetLyrics(RequestContext& context)
     {
-        std::string artistName{ getParameterAs<std::string>(context.parameters, "artist").value_or("") };
-        std::string titleName{ getParameterAs<std::string>(context.parameters, "title").value_or("") };
+        std::string artistName{ getParameterAs<std::string>(context.getParameters(), "artist").value_or("") };
+        std::string titleName{ getParameterAs<std::string>(context.getParameters(), "title").value_or("") };
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
 
         // best effort search, as this API is really limited
-        auto transaction{ context.dbSession.createReadTransaction() };
+        auto transaction{ context.getDbSession().createReadTransaction() };
 
         db::Track::FindParameters params;
         params.setName(titleName);
@@ -262,7 +263,7 @@ namespace lms::api::subsonic
         params.setRange(db::Range{ .offset = 0, .size = 2 });
 
         // Choice: we return nothing if there are too many results
-        const auto tracks{ db::Track::findIds(context.dbSession, params) };
+        const auto tracks{ db::Track::findIds(context.getDbSession(), params) };
         if (tracks.results.size() == 1)
         {
             // Choice: we return only the first lyrics if the track has many lyrics
@@ -271,7 +272,7 @@ namespace lms::api::subsonic
             lyricsParams.setSortMethod(db::TrackLyricsSortMethod::ExternalFirst);
             lyricsParams.setRange(db::Range{ 0, 1 });
 
-            db::TrackLyrics::find(context.dbSession, lyricsParams, [&](const db::TrackLyrics::pointer& lyrics) {
+            db::TrackLyrics::find(context.getDbSession(), lyricsParams, [&](const db::TrackLyrics::pointer& lyrics) {
                 response.addNode("lyrics", createLyricsNode(context, lyrics));
             });
         }
@@ -282,14 +283,14 @@ namespace lms::api::subsonic
     Response handleGetLyricsBySongId(RequestContext& context)
     {
         // mandatory params
-        db::TrackId id{ getMandatoryParameterAs<db::TrackId>(context.parameters, "id") };
+        db::TrackId id{ getMandatoryParameterAs<db::TrackId>(context.getParameters(), "id") };
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node& lyricsList{ response.createNode("lyricsList") };
         lyricsList.createEmptyArrayChild("structuredLyrics");
 
-        auto transaction{ context.dbSession.createReadTransaction() };
-        const db::Track::pointer track{ db::Track::find(context.dbSession, id) };
+        auto transaction{ context.getDbSession().createReadTransaction() };
+        const db::Track::pointer track{ db::Track::find(context.getDbSession(), id) };
         if (track)
         {
             db::TrackLyrics::FindParameters params;
@@ -297,7 +298,7 @@ namespace lms::api::subsonic
             params.setExternal(true); // First try to only report external lyrics as they are often duplicate of embedded lyrics and support more features
 
             bool hasExternalLyrics{};
-            db::TrackLyrics::find(context.dbSession, params, [&](const db::TrackLyrics::pointer& lyrics) {
+            db::TrackLyrics::find(context.getDbSession(), params, [&](const db::TrackLyrics::pointer& lyrics) {
                 lyricsList.addArrayChild("structuredLyrics", createStructuredLyricsNode(context, lyrics));
                 hasExternalLyrics = true;
             });
@@ -305,7 +306,7 @@ namespace lms::api::subsonic
             if (!hasExternalLyrics)
             {
                 params.setExternal(false);
-                db::TrackLyrics::find(context.dbSession, params, [&](const db::TrackLyrics::pointer& lyrics) {
+                db::TrackLyrics::find(context.getDbSession(), params, [&](const db::TrackLyrics::pointer& lyrics) {
                     lyricsList.addArrayChild("structuredLyrics", createStructuredLyricsNode(context, lyrics));
                 });
             }
@@ -322,13 +323,13 @@ namespace lms::api::subsonic
         if (!continuation)
         {
             // Mandatory params
-            db::TrackId id{ getMandatoryParameterAs<db::TrackId>(context.parameters, "id") };
+            db::TrackId id{ getMandatoryParameterAs<db::TrackId>(context.getParameters(), "id") };
 
             std::filesystem::path trackPath;
             {
-                auto transaction{ context.dbSession.createReadTransaction() };
+                auto transaction{ context.getDbSession().createReadTransaction() };
 
-                auto track{ db::Track::find(context.dbSession, id) };
+                auto track{ db::Track::find(context.getDbSession(), id) };
                 if (!track)
                     throw RequestedDataNotFoundError{};
 
@@ -357,10 +358,10 @@ namespace lms::api::subsonic
             if (!continuation)
             {
                 StreamParameters streamParameters{ getStreamParameters(context) };
-                if (streamParameters.outputParameters)
-                    resourceHandler = core::Service<transcoding::ITranscodingService>::get()->createResourceHandler(streamParameters.inputParameters, *streamParameters.outputParameters, streamParameters.estimateContentLength);
+                if (streamParameters.transcodeParameters)
+                    resourceHandler = core::Service<transcoding::ITranscodeService>::get()->createTranscodeResourceHandler(*streamParameters.transcodeParameters, streamParameters.estimateContentLength);
                 else
-                    resourceHandler = core::createFileResourceHandler(streamParameters.inputParameters.filePath, streamParameters.inputMimeType);
+                    resourceHandler = core::createFileResourceHandler(streamParameters.filePath, streamParameters.fileMimeType);
             }
             else
             {
@@ -371,7 +372,7 @@ namespace lms::api::subsonic
             if (continuation)
                 continuation->setData(resourceHandler);
         }
-        catch (const av::Exception& e)
+        catch (const audio::Exception& e)
         {
             response.setStatus(404); // report not found if something wrong happened
             LMS_LOG(API_SUBSONIC, ERROR, "Caught Av exception: " << e.what());
@@ -381,9 +382,9 @@ namespace lms::api::subsonic
     void handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/, Wt::Http::Response& response)
     {
         // Mandatory params
-        const CoverArtId coverArtId{ getMandatoryParameterAs<CoverArtId>(context.parameters, "id") };
+        const CoverArtId coverArtId{ getMandatoryParameterAs<CoverArtId>(context.getParameters(), "id") };
 
-        std::optional<std::size_t> size{ getParameterAs<std::size_t>(context.parameters, "size") };
+        std::optional<std::size_t> size{ getParameterAs<std::size_t>(context.getParameters(), "size") };
         if (size)
             *size = std::clamp(*size, std::size_t{ 32 }, std::size_t{ 2048 });
 

@@ -23,8 +23,10 @@
 #include <Wt/WImage.h>
 #include <Wt/WPushButton.h>
 
-#include "av/IAudioFile.hpp"
 #include "core/Service.hpp"
+
+#include "audio/AudioTypes.hpp"
+#include "audio/IAudioFileInfo.hpp"
 #include "database/Session.hpp"
 #include "database/Types.hpp"
 #include "database/objects/Artist.hpp"
@@ -127,14 +129,16 @@ namespace lms::ui::TrackListHelpers
             }
         }
 
-        if (const auto audioFile{ av::parseAudioFile(track->getAbsoluteFilePath()) })
+        try
         {
-            const std::optional<av::StreamInfo> audioStream{ audioFile->getBestStreamInfo() };
-            if (audioStream)
+            if (const auto audioFile{ audio::parseAudioFile(track->getAbsoluteFilePath()) })
             {
                 trackInfo->setCondition("if-has-codec", true);
-                trackInfo->bindString("codec", audioStream->codecName, Wt::TextFormat::Plain);
+                trackInfo->bindString("codec", audio::codecTypeToString(audioFile->getAudioProperties().codec).c_str(), Wt::TextFormat::Plain);
             }
+        }
+        catch (const audio::Exception& e)
+        {
         }
 
         trackInfo->bindString("duration", utils::durationToString(track->getDuration()));

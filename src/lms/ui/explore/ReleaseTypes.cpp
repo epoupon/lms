@@ -17,24 +17,24 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "ReleaseTypes.hpp"
+
 #include <tuple>
 #include <unordered_map>
 
 #include "core/String.hpp"
 
-#include "ReleaseTypes.hpp"
-
 namespace lms::core::stringUtils
 {
     template<>
-    std::optional<ui::PrimaryReleaseType> readAs(std::string_view str)
+    std::optional<ui::PicardReleaseType::PrimaryType> readAs(std::string_view str)
     {
-        static const std::unordered_map<std::string, ui::PrimaryReleaseType> entries{
-            { "album", ui::PrimaryReleaseType::Album },
-            { "single", ui::PrimaryReleaseType::Single },
-            { "ep", ui::PrimaryReleaseType::EP },
-            { "broadcast", ui::PrimaryReleaseType::Broadcast },
-            { "other", ui::PrimaryReleaseType::Other },
+        static const std::unordered_map<std::string, ui::PicardReleaseType::PrimaryType> entries{
+            { "album", ui::PicardReleaseType::PrimaryType::Album },
+            { "single", ui::PicardReleaseType::PrimaryType::Single },
+            { "ep", ui::PicardReleaseType::PrimaryType::EP },
+            { "broadcast", ui::PicardReleaseType::PrimaryType::Broadcast },
+            { "other", ui::PicardReleaseType::PrimaryType::Other },
         };
 
         const auto it{ entries.find(stringToLower(stringTrim(str))) };
@@ -45,21 +45,21 @@ namespace lms::core::stringUtils
     }
 
     template<>
-    std::optional<ui::SecondaryReleaseType> readAs(std::string_view str)
+    std::optional<ui::PicardReleaseType::SecondaryType> readAs(std::string_view str)
     {
-        static const std::unordered_map<std::string, ui::SecondaryReleaseType> entries{
-            { "compilation", ui::SecondaryReleaseType::Compilation },
-            { "soundtrack", ui::SecondaryReleaseType::Soundtrack },
-            { "spokenword", ui::SecondaryReleaseType::Spokenword },
-            { "interview", ui::SecondaryReleaseType::Interview },
-            { "audiobook", ui::SecondaryReleaseType::Audiobook },
-            { "audio drama", ui::SecondaryReleaseType::AudioDrama },
-            { "live", ui::SecondaryReleaseType::Live },
-            { "remix", ui::SecondaryReleaseType::Remix },
-            { "dj-mix", ui::SecondaryReleaseType::DJMix },
-            { "mixtape/street", ui::SecondaryReleaseType::Mixtape_Street },
-            { "demo", ui::SecondaryReleaseType::Demo },
-            { "field recording", ui::SecondaryReleaseType::FieldRecording },
+        static const std::unordered_map<std::string, ui::PicardReleaseType::SecondaryType> entries{
+            { "compilation", ui::PicardReleaseType::SecondaryType::Compilation },
+            { "soundtrack", ui::PicardReleaseType::SecondaryType::Soundtrack },
+            { "spokenword", ui::PicardReleaseType::SecondaryType::Spokenword },
+            { "interview", ui::PicardReleaseType::SecondaryType::Interview },
+            { "audiobook", ui::PicardReleaseType::SecondaryType::Audiobook },
+            { "audio drama", ui::PicardReleaseType::SecondaryType::AudioDrama },
+            { "live", ui::PicardReleaseType::SecondaryType::Live },
+            { "remix", ui::PicardReleaseType::SecondaryType::Remix },
+            { "dj-mix", ui::PicardReleaseType::SecondaryType::DJMix },
+            { "mixtape/street", ui::PicardReleaseType::SecondaryType::Mixtape_Street },
+            { "demo", ui::PicardReleaseType::SecondaryType::Demo },
+            { "field recording", ui::PicardReleaseType::SecondaryType::FieldRecording },
         };
 
         const auto it{ entries.find(stringToLower(stringTrim(str))) };
@@ -72,48 +72,48 @@ namespace lms::core::stringUtils
 
 namespace lms::ui
 {
-    ReleaseType parseReleaseType(const std::vector<std::string>& releaseTypeNames)
+    std::optional<PicardReleaseType> parsePicardReleaseType(const std::vector<std::string>& releaseTypeNames)
     {
-        ReleaseType res;
+        if (releaseTypeNames.empty())
+            return std::nullopt;
 
-        for (std::string_view releaseTypeName : releaseTypeNames)
+        const auto primaryType{ core::stringUtils::readAs<PicardReleaseType::PrimaryType>(releaseTypeNames[0]) };
+        if (!primaryType)
+            return std::nullopt;
+
+        PicardReleaseType res{ .primaryType = *primaryType, .secondaryTypes = {} };
+        for (std::size_t i{ 1 }; i < releaseTypeNames.size(); ++i)
         {
-            if (auto primaryType{ core::stringUtils::readAs<PrimaryReleaseType>(releaseTypeName) })
-            {
-                if (!res.primaryType)
-                    res.primaryType = primaryType;
-                else
-                    res.customTypes.push_back(std::string{ releaseTypeName });
-            }
-            else if (auto secondaryType{ core::stringUtils::readAs<SecondaryReleaseType>(releaseTypeName) })
-            {
-                res.secondaryTypes.insert(*secondaryType);
-            }
-            else
-                res.customTypes.push_back(std::string{ releaseTypeName });
+            const auto secondaryType{ core::stringUtils::readAs<PicardReleaseType::SecondaryType>(releaseTypeNames[i]) };
+            if (!secondaryType)
+                return std::nullopt;
+
+            res.secondaryTypes.insert(*secondaryType);
         }
 
         return res;
     }
 
-    bool operator<(std::optional<PrimaryReleaseType> typeA, std::optional<PrimaryReleaseType> typeB)
+    ReleaseType parseReleaseType(const std::vector<std::string>& releaseTypeNames)
     {
-        if (!typeA && typeB)
-            return false;
-        else if (typeA && !typeB)
-            return true;
-        else
-            return static_cast<int>(*typeA) < static_cast<int>(*typeB);
+        if (const auto picardReleaseType{ parsePicardReleaseType(releaseTypeNames) })
+            return *picardReleaseType;
+
+        return CustomReleaseType{ .types = releaseTypeNames };
     }
 
-    bool operator<(core::EnumSet<SecondaryReleaseType> typesA, core::EnumSet<SecondaryReleaseType> typesB)
+    bool operator<(core::EnumSet<PicardReleaseType::SecondaryType> lhs, core::EnumSet<PicardReleaseType::SecondaryType> rhs)
     {
-        return typesA.getBitfield() < typesB.getBitfield();
+        return lhs.getBitfield() < rhs.getBitfield();
     }
 
-    bool ReleaseType::operator<(const ReleaseType& other) const
+    bool PicardReleaseType::operator<(const PicardReleaseType& other) const
     {
-        // TODO : order custom types and compare for each element (size is not to be compared first)
-        return std::tie(primaryType, secondaryTypes, customTypes) < std::tie(other.primaryType, other.secondaryTypes, other.customTypes);
+        return std::tie(primaryType, secondaryTypes) < std::tie(other.primaryType, other.secondaryTypes);
+    }
+
+    bool CustomReleaseType::operator<(const CustomReleaseType& other) const
+    {
+        return types < other.types;
     }
 } // namespace lms::ui

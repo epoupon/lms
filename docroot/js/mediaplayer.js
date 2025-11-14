@@ -184,7 +184,6 @@ class LMSMediaPlayer {
 		let source = this.#audioCtx.createMediaElementSource(this.#elems.audio);
 		source.connect(this.#gainNode);
 		this.#gainNode.connect(this.#audioCtx.destination);
-		this.#audioCtx.resume(); // not sure of this
 
 		if ("mediaSession" in navigator) {
 			navigator.mediaSession.setActionHandler("play", () => {
@@ -267,6 +266,10 @@ class LMSMediaPlayer {
 
 	#playPause() {
 		this.#initAudioCtx();
+
+		if (this.#audioCtx.state === "suspended") {
+			this.#audioCtx.resume().catch(err => console.warn(err));
+		}
 
 		if (this.#elems.audio.paused && this.#elems.audio.children.length > 0) {
 			this.#playTrack();
@@ -355,6 +358,8 @@ class LMSMediaPlayer {
 		if (!mode)
 			return;
 
+		let wasPlaying = !this.#elems.audio.paused;
+
 		switch (mode) {
 			case LMSMediaPlayer.#Mode.Transcoding:
 				this.#offset = seekTime;
@@ -362,14 +367,15 @@ class LMSMediaPlayer {
 				this.#addAudioSource(this.#audioTranscodingSrc + "&offset=" + this.#offset);
 				this.#elems.audio.load();
 				this.#elems.audio.currentTime = 0;
-				this.#playTrack();
 				break;
 
 			case LMSMediaPlayer.#Mode.File:
 				this.#elems.audio.currentTime = seekTime;
-				this.#playTrack();
 				break;
 		}
+
+		if (wasPlaying)
+			this.#playTrack();
 
 		this.#updateMediaSessionState();
 	}

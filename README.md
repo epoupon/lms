@@ -54,7 +54,7 @@ __Note__: If no name is provided in the `artist.nfo` file, the name of the conta
 ### Filtering
 It is possible to apply global filters on your collection using `genre`, `mood`, `grouping`, `language`, and by music library. More tags, including custom ones, can be added in the database administration settings.
 
-__Note__: You can use the `lms-metadata` tool to get an idea of the tags parsed by _LMS_.
+__Note__: You can use the `lms-audioinfo` tool to get an idea of the tags parsed by _LMS_.
 
 ### Multiple artists
 _LMS_ works best when using the default [Picard](https://picard.musicbrainz.org/) settings, where the `artist` tag contains a single display-friendly value, and the `artists` tag holds the actual artist names. This ensures a cleaner, more organized representation of artist names, when multiple artists are involved.

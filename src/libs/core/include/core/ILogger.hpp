@@ -40,8 +40,8 @@ namespace lms::core::logging
     enum class Module
     {
         API_SUBSONIC,
+        AUDIO,
         AUTH,
-        AV,
         CHILDPROCESS,
         COVER,
         DB,

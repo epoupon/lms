@@ -31,7 +31,7 @@ namespace lms::api::subsonic
 
         if (const auto releaseMBID{ release->getMBID() })
         {
-            switch (context.responseFormat)
+            switch (context.getResponseFormat())
             {
             case ResponseFormat::json:
                 albumInfo.setAttribute("musicBrainzId", releaseMBID->getAsString());

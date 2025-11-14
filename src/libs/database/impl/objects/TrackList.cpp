@@ -50,7 +50,8 @@ namespace lms::db
 
             if (!params.filters.clusters.empty()
                 || params.filters.mediaLibrary.isValid()
-                || params.filters.label.isValid())
+                || params.filters.label.isValid()
+                || params.filters.releaseType.isValid())
             {
                 query.join("tracklist_entry t_l_e ON t_l_e.tracklist_id = t_l.id");
                 query.groupBy("t_l.id");

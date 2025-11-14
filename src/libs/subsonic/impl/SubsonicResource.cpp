@@ -60,32 +60,6 @@ namespace lms::api::subsonic
 
     namespace
     {
-        std::unordered_map<std::string, ProtocolVersion> readConfigProtocolVersions()
-        {
-            std::unordered_map<std::string, ProtocolVersion> res;
-
-            core::Service<core::IConfig>::get()->visitStrings("api-subsonic-old-server-protocol-clients",
-                                                              [&](std::string_view client) {
-                                                                  res.emplace(std::string{ client }, ProtocolVersion{ .major = 1, .minor = 12, .patch = 0 });
-                                                              },
-                                                              { "DSub" });
-
-            return res;
-        }
-
-        std::unordered_set<std::string> readOpenSubsonicDisabledClients()
-        {
-            std::unordered_set<std::string> res;
-
-            core::Service<core::IConfig>::get()->visitStrings("api-open-subsonic-disabled-clients",
-                                                              [&](std::string_view client) {
-                                                                  res.emplace(std::string{ client });
-                                                              },
-                                                              { "DSub" });
-
-            return res;
-        }
-
         std::string parameterMapToDebugString(const Wt::Http::ParameterMap& parameterMap)
         {
             constexpr std::string_view redactedStr{ "*REDACTED*" };
@@ -292,24 +266,10 @@ namespace lms::api::subsonic
 
             throw UserNotAuthorizedError{};
         }
-
-        ClientInfo getClientInfo(const Wt::Http::Request& request)
-        {
-            const auto& parameters{ request.getParameterMap() };
-            ClientInfo res;
-
-            // Mandatory parameters
-            res.name = getMandatoryParameterAs<std::string>(parameters, "c");
-            res.version = getMandatoryParameterAs<ProtocolVersion>(parameters, "v");
-
-            return res;
-        }
     } // namespace
 
     SubsonicResource::SubsonicResource(db::IDb& db)
-        : _serverProtocolVersionsByClient{ readConfigProtocolVersions() }
-        , _openSubsonicDisabledClients{ readOpenSubsonicDisabledClients() }
-        , _supportUserPasswordAuthentication{ core::Service<core::IConfig>::get()->getBool("api-subsonic-support-user-password-auth", true) }
+        : _config{ readSubsonicResourceConfig(*core::Service<core::IConfig>::get()) }
         , _db{ db }
     {
     }
@@ -327,6 +287,24 @@ namespace lms::api::subsonic
         if (core::stringUtils::stringEndsWith(requestPath, ".view"))
             requestPath.resize(requestPath.length() - 5);
 
+        // First check for media retrieval endpoints
+        auto itStreamHandler{ mediaRetrievalHandlers.find(requestPath) };
+        if (itStreamHandler != mediaRetrievalHandlers.end())
+        {
+            try
+            {
+                LMS_SCOPED_TRACE_OVERVIEW("Subsonic", itStreamHandler->first);
+                handleMediaRetrievalRequest(itStreamHandler->second, request, response);
+                LMS_LOG(API_SUBSONIC, DEBUG, "Request " << requestId << " '" << requestPath << "' handled!");
+            }
+            catch (const Error& e)
+            {
+                LMS_LOG(API_SUBSONIC, ERROR, "Error while processing request '" << requestId << "', code = " << static_cast<int>(e.getCode()) << ", msg = '" << e.getMessage() << "'");
+            }
+
+            return;
+        }
+
         // Optional parameters
         const ResponseFormat format{ getParameterAs<std::string>(request.getParameterMap(), "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml };
 
@@ -334,20 +312,19 @@ namespace lms::api::subsonic
 
         try
         {
-            // We need to parse client a soon as possible to make sure to answer with the right protocol version
-            protocolVersion = getServerProtocolVersion(getMandatoryParameterAs<std::string>(request.getParameterMap(), "c"));
-            RequestContext requestContext{ buildRequestContext(request) };
-
-            auto itEntryPoint{ requestEntryPoints.find(requestPath) };
-            if (itEntryPoint != requestEntryPoints.end())
+            if (auto itEntryPoint{ requestEntryPoints.find(requestPath) }; itEntryPoint != requestEntryPoints.end())
             {
                 LMS_SCOPED_TRACE_OVERVIEW("Subsonic", itEntryPoint->first);
 
+                db::User::pointer user;
                 if (itEntryPoint->second.authMode == AuthenticationMode::Authenticated)
                 {
-                    requestContext.user = getUserFromUserId(_db.getTLSSession(), authenticateUser(request));
-                    checkUserTypeIsAllowed(requestContext.user, itEntryPoint->second.allowedUserTypes);
+                    user = getUserFromUserId(_db.getTLSSession(), authenticateUser(request));
+                    checkUserTypeIsAllowed(user, itEntryPoint->second.allowedUserTypes);
                 }
+
+                RequestContext requestContext{ request, _db.getTLSSession(), user, _config };
+                protocolVersion = requestContext.getServerProtocolVersion();
 
                 const Response resp{ [&] {
                     LMS_SCOPED_TRACE_DETAILED("Subsonic", "HandleRequest");
@@ -361,21 +338,6 @@ namespace lms::api::subsonic
                     response.setMimeType(std::string{ ResponseFormatToMimeType(format) });
                 }
 
-                LMS_LOG(API_SUBSONIC, DEBUG, "Request " << requestId << " '" << requestPath << "' handled!");
-                return;
-            }
-
-            auto itStreamHandler{ mediaRetrievalHandlers.find(requestPath) };
-            if (itStreamHandler != mediaRetrievalHandlers.end())
-            {
-                LMS_SCOPED_TRACE_OVERVIEW("Subsonic", itStreamHandler->first);
-
-                // Media retrieval endpoints are always authenticated
-                // Optim: no need to reauth user for each continuation
-                if (!request.continuation())
-                    requestContext.user = getUserFromUserId(_db.getTLSSession(), authenticateUser(request));
-
-                itStreamHandler->second(requestContext, request, response);
                 LMS_LOG(API_SUBSONIC, DEBUG, "Request " << requestId << " '" << requestPath << "' handled!");
                 return;
             }
@@ -397,47 +359,50 @@ namespace lms::api::subsonic
         }
     }
 
-    ProtocolVersion SubsonicResource::getServerProtocolVersion(const std::string& clientName) const
+    void SubsonicResource::handleMediaRetrievalRequest(MediaRetrievalHandlerFunc handler, const Wt::Http::Request& request, Wt::Http::Response& response)
     {
-        auto it{ _serverProtocolVersionsByClient.find(clientName) };
-        if (it == std::cend(_serverProtocolVersionsByClient))
-            return defaultServerProtocolVersion;
-
-        return it->second;
-    }
-
-    void SubsonicResource::checkProtocolVersion(ProtocolVersion client, ProtocolVersion server)
-    {
-        if (client.major > server.major)
-            throw ServerMustUpgradeError{};
-        if (client.major < server.major)
-            throw ClientMustUpgradeError{};
-        if (client.minor > server.minor)
-            throw ServerMustUpgradeError{};
-        if (client.minor == server.minor)
+        try
         {
-            if (client.patch > server.patch)
-                throw ServerMustUpgradeError{};
+            // Media retrieval endpoints are always authenticated
+            // Optimization: no need to reauth user for each continuation
+            db::User::pointer user;
+            if (!request.continuation())
+                user = getUserFromUserId(_db.getTLSSession(), authenticateUser(request));
+
+            RequestContext requestContext{ request, _db.getTLSSession(), user, _config };
+
+            handler(requestContext, request, response);
         }
-    }
-
-    RequestContext SubsonicResource::buildRequestContext(const Wt::Http::Request& request)
-    {
-        const Wt::Http::ParameterMap& parameters{ request.getParameterMap() };
-        const ClientInfo clientInfo{ getClientInfo(request) };
-        bool enableOpenSubsonic{ !_openSubsonicDisabledClients.contains(clientInfo.name) };
-        const ResponseFormat format{ getParameterAs<std::string>(request.getParameterMap(), "f").value_or("xml") == "json" ? ResponseFormat::json : ResponseFormat::xml };
-
-        return RequestContext{
-            .parameters = parameters,
-            .dbSession = _db.getTLSSession(),
-            .user = db::User::pointer{},
-            .clientIpAddr = request.clientAddress(),
-            .clientInfo = clientInfo,
-            .serverProtocolVersion = getServerProtocolVersion(clientInfo.name),
-            .responseFormat = format,
-            .enableOpenSubsonic = enableOpenSubsonic,
-        };
+        catch (const UserNotAuthorizedError&)
+        {
+            response.setStatus(401); // Unauthorized
+            throw;
+        }
+        catch (const RequiredParameterMissingError&)
+        {
+            response.setStatus(400); // Bad Request
+            throw;
+        }
+        catch (const BadParameterGenericError&)
+        {
+            response.setStatus(400); // Bad Request
+            throw;
+        }
+        catch (const RequestedDataNotFoundError&)
+        {
+            response.setStatus(404); // Not Found
+            throw;
+        }
+        catch (const InternalErrorGenericError&)
+        {
+            response.setStatus(500); // Internal Server Error
+            throw;
+        }
+        catch (const Error&)
+        {
+            response.setStatus(400); // Assume bad request
+            throw;
+        }
     }
 
     db::UserId SubsonicResource::authenticateUser(const Wt::Http::Request& request)
@@ -449,7 +414,7 @@ namespace lms::api::subsonic
 
         const auto user{ getParameterAs<std::string>(parameters, "u") };
         const auto password{ getParameterAs<std::string>(parameters, "p") };
-        if (!_supportUserPasswordAuthentication && (password || user))
+        if (!_config.supportUserPasswordAuthentication && (password || user))
             throw ProvidedAuthenticationMechanismNotSupportedError{};
 
         const auto apiKey{ getParameterAs<std::string>(parameters, "apiKey") };

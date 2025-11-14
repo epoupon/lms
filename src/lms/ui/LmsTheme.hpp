@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <Wt/WConfig.h>
 #include <Wt/WTheme.h>
 
 namespace lms::ui
@@ -41,5 +42,10 @@ namespace lms::ui
                                   const Wt::WValidator::Result& validation,
                                   Wt::WFlags<Wt::ValidationStyleFlag> flags) const override;
         bool canBorderBoxElement(const Wt::DomElement&) const override { return true; }
+
+#if WT_VERSION >= 0x040C0100 // >= 4.12.1
+        void applyFunctionalStyling(Wt::WWidget*, Wt::WWidget*, int) const override {}
+        void applyOptionalStyling(Wt::WWidget*, Wt::WWidget*, int) const override {}
+#endif // WT_VERSION
     };
 } // namespace lms::ui

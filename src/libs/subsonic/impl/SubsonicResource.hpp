@@ -18,16 +18,13 @@
  */
 #pragma once
 
-#include <string>
-#include <unordered_map>
-#include <unordered_set>
-
+#include <Wt/Http/Request.h>
 #include <Wt/Http/Response.h>
 #include <Wt/WResource.h>
 
 #include "database/objects/UserId.hpp"
 
-#include "RequestContext.hpp"
+#include "SubsonicResourceConfig.hpp"
 
 namespace lms::db
 {
@@ -36,6 +33,8 @@ namespace lms::db
 
 namespace lms::api::subsonic
 {
+    class RequestContext;
+
     class SubsonicResource final : public Wt::WResource
     {
     public:
@@ -43,16 +42,13 @@ namespace lms::api::subsonic
 
     private:
         void handleRequest(const Wt::Http::Request& request, Wt::Http::Response& response) override;
-        ProtocolVersion getServerProtocolVersion(const std::string& clientName) const;
 
-        static void checkProtocolVersion(ProtocolVersion client, ProtocolVersion server);
-        RequestContext buildRequestContext(const Wt::Http::Request& request);
+        using MediaRetrievalHandlerFunc = std::function<void(RequestContext&, const Wt::Http::Request&, Wt::Http::Response&)>;
+        void handleMediaRetrievalRequest(MediaRetrievalHandlerFunc handler, const Wt::Http::Request& request, Wt::Http::Response& response);
+
         db::UserId authenticateUser(const Wt::Http::Request& request);
 
-        const std::unordered_map<std::string, ProtocolVersion> _serverProtocolVersionsByClient;
-        const std::unordered_set<std::string> _openSubsonicDisabledClients;
-        const bool _supportUserPasswordAuthentication;
-
+        const SubsonicResourceConfig _config;
         db::IDb& _db;
     };
 } // namespace lms::api::subsonic
