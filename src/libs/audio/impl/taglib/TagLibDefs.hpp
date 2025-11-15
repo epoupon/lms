@@ -23,6 +23,7 @@
 
 #if (TAGLIB_MAJOR_VERSION >= 2)
     #define LMS_TAGLIB_HAS_DSF 1
+    #define LMS_TAGLIB_HAS_ADTS 1
 #endif
 
 // LMS_TAGLIB_HAS_MP4_ITEM_TYPE if version >= 2.0.1

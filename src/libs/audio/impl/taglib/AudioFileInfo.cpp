@@ -161,9 +161,11 @@ namespace lms::audio::taglib
                 audioProperties.container = ContainerType::MPEG;
                 if ((properties.version() == TagLib::MPEG::Header::Version::Version1 || properties.version() == TagLib::MPEG::Header::Version::Version2 || properties.version() == TagLib::MPEG::Header::Version::Version2_5)
                     && mpegFile->audioProperties()->layer() == 3)
-                    audioProperties.codec = CodecType::MP3;     // could be MPEG-1 layer 3 or MPEG-2(.5) layer 3
+                    audioProperties.codec = CodecType::MP3; // could be MPEG-1 layer 3 or MPEG-2(.5) layer 3
+#if LMS_TAGLIB_HAS_ADTS
                 else if (mpegFile->audioProperties()->isADTS()) // likely AAC
                     audioProperties.codec = CodecType::AAC;
+#endif
             }
             else if (dynamic_cast<const ::TagLib::Ogg::Opus::File*>(&file))
             {
