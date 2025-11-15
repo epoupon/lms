@@ -50,7 +50,6 @@ target_link_libraries(lmscore PRIVATE
 	)
 
 target_link_libraries(lmscore PUBLIC
-	Boost::system
 	std::filesystem
 	Wt::Wt
 	)

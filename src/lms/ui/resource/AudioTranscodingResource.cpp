@@ -30,7 +30,7 @@
 #include "database/Session.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/User.hpp"
-#include "services/transcoding/ITranscodingService.hpp"
+#include "services/transcoding/ITranscodeService.hpp"
 
 #include "LmsApplication.hpp"
 
@@ -72,23 +72,23 @@ namespace lms::ui
 {
     namespace
     {
-        std::optional<transcoding::OutputFormat> AudioFormatToAvFormat(db::TranscodingOutputFormat format)
+        std::optional<audio::OutputFormat> AudioFormatToTranscodingFormat(db::TranscodingOutputFormat format)
         {
             switch (format)
             {
             case db::TranscodingOutputFormat::MP3:
-                return transcoding::OutputFormat::MP3;
+                return audio::OutputFormat::MP3;
             case db::TranscodingOutputFormat::OGG_OPUS:
-                return transcoding::OutputFormat::OGG_OPUS;
+                return audio::OutputFormat::OGG_OPUS;
             case db::TranscodingOutputFormat::MATROSKA_OPUS:
-                return transcoding::OutputFormat::MATROSKA_OPUS;
+                return audio::OutputFormat::MATROSKA_OPUS;
             case db::TranscodingOutputFormat::OGG_VORBIS:
-                return transcoding::OutputFormat::OGG_VORBIS;
+                return audio::OutputFormat::OGG_VORBIS;
             case db::TranscodingOutputFormat::WEBM_VORBIS:
-                return transcoding::OutputFormat::WEBM_VORBIS;
+                return audio::OutputFormat::WEBM_VORBIS;
             }
 
-            TRANSCODE_LOG(ERROR, "Cannot convert from audio format to AV format");
+            TRANSCODE_LOG(ERROR, "Cannot convert from db audio format to transcoding format");
 
             return std::nullopt;
         }
@@ -110,15 +110,9 @@ namespace lms::ui
             return res;
         }
 
-        struct TranscodingParameters
+        std::optional<audio::TranscodeParameters> readTranscodingParameters(const Wt::Http::Request& request)
         {
-            transcoding::InputParameters inputParameters;
-            transcoding::OutputParameters outputParameters;
-        };
-
-        std::optional<TranscodingParameters> readTranscodingParameters(const Wt::Http::Request& request)
-        {
-            TranscodingParameters parameters;
+            audio::TranscodeParameters parameters;
 
             // mandatory parameters
             const std::optional<db::TrackId> trackId{ readParameterAs<db::TrackId::ValueType>(request, "trackid") };
@@ -134,7 +128,7 @@ namespace lms::ui
                 return std::nullopt;
             }
 
-            const std::optional<transcoding::OutputFormat> avFormat{ AudioFormatToAvFormat(*format) };
+            const std::optional<audio::OutputFormat> avFormat{ AudioFormatToTranscodingFormat(*format) };
             if (!avFormat)
                 return std::nullopt;
 
@@ -181,7 +175,7 @@ namespace lms::ui
         if (!continuation)
         {
             if (const auto& parameters{ readTranscodingParameters(request) })
-                resourceHandler = core::Service<transcoding::ITranscodingService>::get()->createResourceHandler(parameters->inputParameters, parameters->outputParameters, false /* estimate content length */);
+                resourceHandler = core::Service<transcoding::ITranscodeService>::get()->createTranscodeResourceHandler(*parameters);
         }
         else
         {

@@ -37,10 +37,10 @@ namespace lms::core::logging
         {
         case Module::API_SUBSONIC:
             return "API_SUBSONIC";
+        case Module::AUDIO:
+            return "AUDIO";
         case Module::AUTH:
             return "AUTH";
-        case Module::AV:
-            return "AV";
         case Module::CHILDPROCESS:
             return "CHILDPROC";
         case Module::COVER:

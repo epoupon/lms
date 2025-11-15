@@ -118,14 +118,14 @@ namespace lms::api::subsonic
         {
             // For now, no need to optimize all this
             // Find all the directories that match the name and that do not contain any track (considered by the legacy API as artists)
-            const std::size_t artistCount{ getParameterAs<std::size_t>(context.parameters, "artistCount").value_or(20) };
+            const std::size_t artistCount{ getParameterAs<std::size_t>(context.getParameters(), "artistCount").value_or(20) };
             if (artistCount == 0)
                 return;
 
             if (artistCount > defaultMaxCountSize)
                 throw ParameterValueTooHighGenericError{ "artistCount", defaultMaxCountSize };
 
-            const std::size_t artistOffset{ getParameterAs<std::size_t>(context.parameters, "artistOffset").value_or(0) };
+            const std::size_t artistOffset{ getParameterAs<std::size_t>(context.getParameters(), "artistOffset").value_or(0) };
 
             Directory::FindParameters params;
             params.setKeywords(keywords);
@@ -133,7 +133,7 @@ namespace lms::api::subsonic
             params.setWithNoTrack(true);
             params.setMediaLibrary(mediaLibrary);
 
-            Directory::find(context.dbSession, params, [&](const Directory::pointer& directory) {
+            Directory::find(context.getDbSession(), params, [&](const Directory::pointer& directory) {
                 Response::Node childNode;
                 childNode.setAttribute("id", idToString(directory->getId()));
                 childNode.setAttribute("name", directory->getName());
@@ -147,14 +147,14 @@ namespace lms::api::subsonic
         {
             static ScanTracker<ArtistId> currentScansInProgress;
 
-            const std::size_t artistCount{ getParameterAs<std::size_t>(context.parameters, "artistCount").value_or(20) };
+            const std::size_t artistCount{ getParameterAs<std::size_t>(context.getParameters(), "artistCount").value_or(20) };
             if (artistCount == 0)
                 return;
 
             if (artistCount > defaultMaxCountSize)
                 throw ParameterValueTooHighGenericError{ "artistCount", defaultMaxCountSize };
 
-            const std::size_t artistOffset{ getParameterAs<std::size_t>(context.parameters, "artistOffset").value_or(0) };
+            const std::size_t artistOffset{ getParameterAs<std::size_t>(context.getParameters(), "artistOffset").value_or(0) };
 
             ArtistId lastRetrievedId;
             auto findArtists{ [&] {
@@ -164,7 +164,7 @@ namespace lms::api::subsonic
                 params.setRange(Range{ artistOffset, artistCount });
                 params.setSortMethod(ArtistSortMethod::Id); // must be consistent with both methods
 
-                Artist::find(context.dbSession, params, [&](const Artist::pointer& artist) {
+                Artist::find(context.getDbSession(), params, [&](const Artist::pointer& artist) {
                     searchResultNode.addArrayChild("artist", createArtistNode(context, artist));
                     lastRetrievedId = artist->getId();
                 });
@@ -177,9 +177,9 @@ namespace lms::api::subsonic
             else
             {
                 ScanTracker<ArtistId>::ScanInfo scanInfo{
-                    .clientAddress = context.clientIpAddr,
-                    .clientName = context.clientInfo.name,
-                    .user = context.user->getId(),
+                    .clientAddress = context.getClientIpAddr(),
+                    .clientName = std::string{ context.getClientName() },
+                    .user = context.getUser()->getId(),
                     .library = mediaLibrary,
                     .offset = artistOffset
                 };
@@ -187,7 +187,7 @@ namespace lms::api::subsonic
                 if (ArtistId cachedLastRetrievedId{ currentScansInProgress.extractLastRetrievedObjectId(scanInfo) }; cachedLastRetrievedId.isValid())
                 {
                     Artist::find(
-                        context.dbSession, cachedLastRetrievedId, artistCount, [&](const Artist::pointer& artist) {
+                        context.getDbSession(), cachedLastRetrievedId, artistCount, [&](const Artist::pointer& artist) {
                             searchResultNode.addArrayChild("artist", createArtistNode(context, artist));
                         },
                         mediaLibrary);
@@ -210,14 +210,14 @@ namespace lms::api::subsonic
         {
             static ScanTracker<ReleaseId> currentScansInProgress;
 
-            const std::size_t albumCount{ getParameterAs<std::size_t>(context.parameters, "albumCount").value_or(20) };
+            const std::size_t albumCount{ getParameterAs<std::size_t>(context.getParameters(), "albumCount").value_or(20) };
             if (albumCount == 0)
                 return;
 
             if (albumCount > defaultMaxCountSize)
                 throw ParameterValueTooHighGenericError{ "albumCount", defaultMaxCountSize };
 
-            const std::size_t albumOffset{ getParameterAs<std::size_t>(context.parameters, "albumOffset").value_or(0) };
+            const std::size_t albumOffset{ getParameterAs<std::size_t>(context.getParameters(), "albumOffset").value_or(0) };
 
             ReleaseId lastRetrievedId;
 
@@ -228,7 +228,7 @@ namespace lms::api::subsonic
                 params.filters.setMediaLibrary(mediaLibrary);
                 params.setSortMethod(ReleaseSortMethod::Id); // must be consistent with both methods
 
-                Release::find(context.dbSession, params, [&](const Release::pointer& release) {
+                Release::find(context.getDbSession(), params, [&](const Release::pointer& release) {
                     searchResultNode.addArrayChild("album", createAlbumNode(context, release, id3));
                     lastRetrievedId = release->getId();
                 });
@@ -241,9 +241,9 @@ namespace lms::api::subsonic
             else
             {
                 ScanTracker<ReleaseId>::ScanInfo scanInfo{
-                    .clientAddress = context.clientIpAddr,
-                    .clientName = context.clientInfo.name,
-                    .user = context.user->getId(),
+                    .clientAddress = context.getClientIpAddr(),
+                    .clientName = std::string{ context.getClientName() },
+                    .user = context.getUser()->getId(),
                     .library = mediaLibrary,
                     .offset = albumOffset
                 };
@@ -251,7 +251,7 @@ namespace lms::api::subsonic
                 if (ReleaseId cachedLastRetrievedId{ currentScansInProgress.extractLastRetrievedObjectId(scanInfo) }; cachedLastRetrievedId.isValid())
                 {
                     Release::find(
-                        context.dbSession, cachedLastRetrievedId, albumCount, [&](const Release::pointer& release) {
+                        context.getDbSession(), cachedLastRetrievedId, albumCount, [&](const Release::pointer& release) {
                             searchResultNode.addArrayChild("album", createAlbumNode(context, release, id3));
                         },
                         mediaLibrary);
@@ -274,14 +274,14 @@ namespace lms::api::subsonic
         {
             static ScanTracker<TrackId> currentScansInProgress;
 
-            const std::size_t songCount{ getParameterAs<std::size_t>(context.parameters, "songCount").value_or(20) };
+            const std::size_t songCount{ getParameterAs<std::size_t>(context.getParameters(), "songCount").value_or(20) };
             if (songCount == 0)
                 return;
 
             if (songCount > defaultMaxCountSize)
                 throw ParameterValueTooHighGenericError{ "songCount", defaultMaxCountSize };
 
-            const std::size_t songOffset{ getParameterAs<std::size_t>(context.parameters, "songOffset").value_or(0) };
+            const std::size_t songOffset{ getParameterAs<std::size_t>(context.getParameters(), "songOffset").value_or(0) };
 
             TrackId lastRetrievedId;
 
@@ -292,7 +292,7 @@ namespace lms::api::subsonic
                 params.filters.setMediaLibrary(mediaLibrary);
                 params.setSortMethod(TrackSortMethod::Id); // must be consistent with both methods
 
-                Track::find(context.dbSession, params, [&](const Track::pointer& track) {
+                Track::find(context.getDbSession(), params, [&](const Track::pointer& track) {
                     searchResultNode.addArrayChild("song", createSongNode(context, track, id3));
                     lastRetrievedId = track->getId();
                 });
@@ -305,9 +305,9 @@ namespace lms::api::subsonic
             else
             {
                 ScanTracker<TrackId>::ScanInfo scanInfo{
-                    .clientAddress = context.clientIpAddr,
-                    .clientName = context.clientInfo.name,
-                    .user = context.user->getId(),
+                    .clientAddress = context.getClientIpAddr(),
+                    .clientName = std::string{ context.getClientName() },
+                    .user = context.getUser()->getId(),
                     .library = mediaLibrary,
                     .offset = songOffset
                 };
@@ -315,7 +315,7 @@ namespace lms::api::subsonic
                 if (TrackId cachedLastRetrievedId{ currentScansInProgress.extractLastRetrievedObjectId(scanInfo) }; cachedLastRetrievedId.isValid())
                 {
                     Track::find(
-                        context.dbSession, cachedLastRetrievedId, songCount, [&](const Track::pointer& track) {
+                        context.getDbSession(), cachedLastRetrievedId, songCount, [&](const Track::pointer& track) {
                             searchResultNode.addArrayChild("song", createSongNode(context, track, id3));
                         },
                         mediaLibrary);
@@ -337,24 +337,24 @@ namespace lms::api::subsonic
         Response handleSearchRequestCommon(RequestContext& context, bool id3)
         {
             // Mandatory params
-            const std::string queryString{ getMandatoryParameterAs<std::string>(context.parameters, "query") };
+            const std::string queryString{ getMandatoryParameterAs<std::string>(context.getParameters(), "query") };
             std::string_view query{ queryString };
 
             // Optional params
-            const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.parameters, "musicFolderId").value_or(MediaLibraryId{}) };
+            const MediaLibraryId mediaLibrary{ getParameterAs<MediaLibraryId>(context.getParameters(), "musicFolderId").value_or(MediaLibraryId{}) };
 
             // Symfonium adds extra ""
-            if (context.clientInfo.name == "Symfonium")
+            if (context.getClientName() == "Symfonium")
                 query = core::stringUtils::stringTrim(query, "\"");
 
             std::vector<std::string_view> keywords;
             if (!query.empty())
                 keywords = core::stringUtils::splitString(query, ' ');
 
-            Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
             Response::Node& searchResultNode{ response.createNode(id3 ? "searchResult3" : "searchResult2") };
 
-            auto transaction{ context.dbSession.createReadTransaction() };
+            auto transaction{ context.getDbSession().createReadTransaction() };
 
             if (id3)
                 findRequestedArtists(context, keywords, mediaLibrary, searchResultNode);

@@ -23,6 +23,9 @@
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
+
+#include "audio/IAudioFileInfo.hpp"
+#include "audio/IImageReader.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
@@ -37,7 +40,6 @@
 #include "image/Exception.hpp"
 #include "image/IEncodedImage.hpp"
 #include "image/Image.hpp"
-#include "metadata/IAudioFileParser.hpp"
 
 namespace lms::artwork
 {
@@ -50,7 +52,6 @@ namespace lms::artwork
                                    const std::filesystem::path& defaultReleaseCoverSvgPath,
                                    const std::filesystem::path& defaultArtistImageSvgPath)
         : _db{ db }
-        , _audioFileParser{ metadata::createAudioFileParser(metadata::AudioFileParserParameters{}) }
         , _cache{ core::Service<core::IConfig>::get()->getULong("cover-max-cache-size", 30) * 1000 * 1000 }
     {
         setJpegQuality(core::Service<core::IConfig>::get()->getULong("cover-jpeg-quality", 75));
@@ -107,7 +108,11 @@ namespace lms::artwork
         {
             std::size_t currentIndex{};
 
-            _audioFileParser->parseImages(p, [&](const metadata::Image& parsedImage) {
+            audio::ParserOptions options;
+            options.readStyle = audio::ParserOptions::AudioPropertiesReadStyle::Fast; // only for images
+
+            auto audioFile{ audio::parseAudioFile(p) };
+            audioFile->getImageReader().visitImages([&](const audio::Image& parsedImage) {
                 if (currentIndex++ != index)
                     return;
 
@@ -130,7 +135,7 @@ namespace lms::artwork
                 }
             });
         }
-        catch (const metadata::Exception& e)
+        catch (const audio::Exception& e)
         {
             LMS_LOG(COVER, ERROR, "Cannot parse images from track " << p << ": " << e.what());
         }

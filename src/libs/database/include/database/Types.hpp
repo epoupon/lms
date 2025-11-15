@@ -193,6 +193,12 @@ namespace lms::db
         Name,
     };
 
+    enum class TrackArtistLinkSortMethod
+    {
+        None,
+        OriginalDateDesc,
+    };
+
     enum class TrackEmbeddedImageSortMethod
     {
         None,
@@ -220,6 +226,7 @@ namespace lms::db
         AbsoluteFilePath,
         Name,
         DateDescAndRelease,
+        OriginalDateDescAndRelease,
         Release,   // order by disc/track number
         TrackList, // order by asc order in tracklist
         TrackNumber,

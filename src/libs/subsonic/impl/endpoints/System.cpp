@@ -4,12 +4,12 @@ namespace lms::api::subsonic
 {
     Response handlePingRequest(RequestContext& context)
     {
-        return Response::createOkResponse(context.serverProtocolVersion);
+        return Response::createOkResponse(context.getServerProtocolVersion());
     }
 
     Response handleGetLicenseRequest(RequestContext& context)
     {
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
 
         Response::Node& licenseNode{ response.createNode("license") };
         licenseNode.setAttribute("licenseExpires", "2035-09-03T14:46:43");
@@ -21,7 +21,7 @@ namespace lms::api::subsonic
 
     Response handleGetOpenSubsonicExtensions(RequestContext& context)
     {
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
 
         {
             Response::Node& transcodeOffsetNode{ response.createArrayNode("openSubsonicExtensions") };

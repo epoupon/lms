@@ -69,7 +69,7 @@ namespace lms::api::subsonic
                 Directory::FindParameters params;
                 params.setRelease(release->getId());
                 params.setRange(Range{ 0, 1 }); // only support 1 directory <-> 1 release
-                Directory::find(context.dbSession, params, [&](const Directory::pointer& foundDirectory) {
+                Directory::find(context.getDbSession(), params, [&](const Directory::pointer& foundDirectory) {
                     directoryToReport = foundDirectory;
                 });
             }
@@ -116,10 +116,10 @@ namespace lms::api::subsonic
             }
         }
 
-        albumNode.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(context.user->getId(), release->getId()));
+        albumNode.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(context.getUser()->getId(), release->getId()));
 
         // Report the first GENRE for this track
-        const ClusterType::pointer genreClusterType{ ClusterType::find(context.dbSession, "GENRE") };
+        const ClusterType::pointer genreClusterType{ ClusterType::find(context.getDbSession(), "GENRE") };
         if (genreClusterType)
         {
             const auto clusters{ release->getClusters(genreClusterType->getId(), 1) };
@@ -127,14 +127,14 @@ namespace lms::api::subsonic
                 albumNode.setAttribute("genre", clusters.front()->getName());
         }
 
-        if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.user->getId(), release->getId()) }; dateTime.isValid())
+        if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.getUser()->getId(), release->getId()) }; dateTime.isValid())
             albumNode.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
 
         // Always report user rating, even if legacy API only specified it for directories
-        if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.user->getId(), release->getId()) })
+        if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.getUser()->getId(), release->getId()) })
             albumNode.setAttribute("userRating", *rating);
 
-        if (!context.enableOpenSubsonic)
+        if (!context.isOpenSubsonicEnabled())
             return albumNode;
 
         // OpenSubsonic specific fields (must always be set)
@@ -143,7 +143,7 @@ namespace lms::api::subsonic
         albumNode.setAttribute("mediaType", "album");
 
         {
-            const Wt::WDateTime dateTime{ core::Service<scrobbling::IScrobblingService>::get()->getLastListenDateTime(context.user->getId(), release->getId()) };
+            const Wt::WDateTime dateTime{ core::Service<scrobbling::IScrobblingService>::get()->getLastListenDateTime(context.getUser()->getId(), release->getId()) };
             albumNode.setAttribute("played", dateTime.isValid() ? core::stringUtils::toISO8601String(dateTime) : std::string{ "" });
         }
 
@@ -159,7 +159,7 @@ namespace lms::api::subsonic
             params.setRelease(release->getId());
             params.setClusterTypeName(clusterTypeName);
 
-            Cluster::find(context.dbSession, params, [&](const Cluster::pointer& cluster) {
+            Cluster::find(context.getDbSession(), params, [&](const Cluster::pointer& cluster) {
                 albumNode.addArrayValue(field, cluster->getName());
             });
         } };
@@ -174,7 +174,7 @@ namespace lms::api::subsonic
             params.setRelease(release->getId());
             params.setClusterType(genreClusterType->getId());
 
-            Cluster::find(context.dbSession, params, [&](const Cluster::pointer& cluster) {
+            Cluster::find(context.getDbSession(), params, [&](const Cluster::pointer& cluster) {
                 albumNode.addArrayChild("genres", createItemGenreNode(cluster->getName()));
             });
         }

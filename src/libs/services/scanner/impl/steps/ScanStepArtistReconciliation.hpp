@@ -34,6 +34,8 @@ namespace lms::scanner
         bool needProcess(const ScanContext& context) const override;
         void process(ScanContext& context) override;
 
+        void updateArtistPreferredName(ScanContext& context);
+
         void updateLinksForArtistNameNoLongerMatch(ScanContext& context);
         void updateLinksWithArtistNameAmbiguity(ScanContext& context);
         void updateArtistInfoForArtistNameNoLongerMatch(ScanContext& context);

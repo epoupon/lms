@@ -50,10 +50,22 @@ namespace lms::db
             if (params.artist.isValid())
                 query.where("t_a_l.artist_id = ?").bind(params.artist);
 
-            if (params.release.isValid())
+            if (params.release.isValid()
+                || params.sortMethod == TrackArtistLinkSortMethod::OriginalDateDesc)
             {
                 query.join("track t ON t.id = t_a_l.track_id");
-                query.where("t.release_id = ?").bind(params.release);
+
+                if (params.release.isValid())
+                    query.where("t.release_id = ?").bind(params.release);
+            }
+
+            switch (params.sortMethod)
+            {
+            case TrackArtistLinkSortMethod::None:
+                break;
+            case TrackArtistLinkSortMethod::OriginalDateDesc:
+                query.orderBy("COALESCE(t.original_date, t.date) DESC");
+                break;
             }
 
             return query;
@@ -112,11 +124,8 @@ namespace lms::db
 
     void TrackArtistLink::find(Session& session, const FindParameters& parameters, const std::function<void(const TrackArtistLink::pointer&)>& func)
     {
-        const auto query{ createQuery(session, parameters) };
-
-        utils::forEachQueryResult(query, [&](const TrackArtistLink::pointer& link) {
-            func(link);
-        });
+        auto query{ createQuery(session, parameters) };
+        utils::forEachQueryRangeResult(query, parameters.range, func);
     }
 
     core::EnumSet<TrackArtistLinkType> TrackArtistLink::findUsedTypes(Session& session, ArtistId artistId)

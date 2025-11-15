@@ -55,7 +55,7 @@ namespace lms::api::subsonic
                 addLine(std::move(line));
         }
 
-        switch (context.responseFormat)
+        switch (context.getResponseFormat())
         {
         case ResponseFormat::json:
             lyricsNode.setAttribute("value", lyricsText);
@@ -89,7 +89,7 @@ namespace lms::api::subsonic
             if (timestamp)
                 lineNode.setAttribute("start", std::chrono::duration_cast<std::chrono::milliseconds>(*timestamp).count());
 
-            switch (context.responseFormat)
+            switch (context.getResponseFormat())
             {
             case ResponseFormat::json:
                 lineNode.setAttribute("value", std::move(line));

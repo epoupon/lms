@@ -289,7 +289,7 @@ namespace lms::db
     {
         // As we use the name to uniquely identoify release type, we must throw (and not truncate)
         if (name.size() > _maxNameLength)
-            throw Exception{ "Country name is too long: " + std::string{ name } + "'" };
+            throw Exception{ "Country name is too long: '" + std::string{ name } + "'" };
     }
 
     Country::pointer Country::create(Session& session, std::string_view name)
@@ -314,7 +314,7 @@ namespace lms::db
         session.checkReadTransaction();
 
         if (name.size() > _maxNameLength)
-            throw Exception{ "Requeted Country name is too long: " + std::string{ name } + "'" };
+            throw Exception{ "Country name is too long: '" + std::string{ name } + "'" };
 
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Country>>("SELECT c from country c").where("c.name = ?").bind(name));
     }
@@ -331,9 +331,9 @@ namespace lms::db
     Label::Label(std::string_view name)
         : _name{ name }
     {
-        // As we use the name to uniquely identoify release type, we must throw (and not truncate)
+        // As we use the name to uniquely identify this label, we must throw (and not truncate)
         if (name.size() > _maxNameLength)
-            throw Exception{ "Label name is too long: " + std::string{ name } + "'" };
+            throw Exception{ "Label name is too long: '" + std::string{ name } + "'" };
     }
 
     Label::pointer Label::create(Session& session, std::string_view name)
@@ -358,7 +358,7 @@ namespace lms::db
         session.checkReadTransaction();
 
         if (name.size() > _maxNameLength)
-            throw Exception{ "Requeted Label name is too long: " + std::string{ name } + "'" };
+            throw Exception{ "Label name is too long: '" + std::string{ name } + "'" };
 
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<Label>>("SELECT l from label l").where("l.name = ?").bind(name));
     }
@@ -393,9 +393,9 @@ namespace lms::db
     ReleaseType::ReleaseType(std::string_view name)
         : _name{ name }
     {
-        // As we use the name to uniquely identoify release type, we must throw (and not truncate)
+        // As we use the name to uniquely identify release types, we must throw (and not truncate)
         if (name.size() > _maxNameLength)
-            throw Exception{ "ReleaseType name is too long: " + std::string{ name } + "'" };
+            throw Exception{ "ReleaseType is too long: '" + std::string{ name } + "'" };
     }
 
     ReleaseType::pointer ReleaseType::create(Session& session, std::string_view name)
@@ -420,7 +420,7 @@ namespace lms::db
         session.checkReadTransaction();
 
         if (name.size() > _maxNameLength)
-            throw Exception{ "Requeted ReleaseType name is too long: " + std::string{ name } + "'" };
+            throw Exception{ "ReleaseType is too long: '" + std::string{ name } + "'" };
 
         return utils::fetchQuerySingleResult(session.getDboSession()->query<Wt::Dbo::ptr<ReleaseType>>("SELECT r_t from release_type r_t").where("r_t.name = ?").bind(name));
     }

@@ -55,6 +55,7 @@ namespace lms::core
             { ".opus", "audio/opus" },
             { ".pls", "audio/x-scpls" },
             { ".shn", "audio/x-shn" },
+            { ".tta", "audio/x-tta" },
             { ".wav", "audio/x-wav" },
             { ".webm", "audio/webm" },
             { ".wma", "audio/x-ms-wma" },

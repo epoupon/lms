@@ -1,12 +1,17 @@
 add_library(lmsscanner STATIC
 	impl/helpers/ArtistHelpers.cpp
-	impl/scanners/ArtistInfoFileScanner.cpp
-	impl/scanners/AudioFileScanOperation.cpp
+	impl/scanners/artistinfo/ArtistInfoParser.cpp
+	impl/scanners/artistinfo/ArtistInfoFileScanner.cpp
+	impl/scanners/audiofile/AudioFileScanOperation.cpp
+	impl/scanners/audiofile/AudioFileScanner.cpp
+	impl/scanners/audiofile/TrackMetadataParser.cpp
+	impl/scanners/audiofile/Utils.cpp
+	impl/scanners/lyrics/LyricsFileScanner.cpp
+	impl/scanners/lyrics/LyricsParser.cpp
+	impl/scanners/playlist/PlayListFileScanner.cpp
+	impl/scanners/playlist/PlayListParser.cpp
 	impl/scanners/FileScanOperationBase.cpp
-	impl/scanners/AudioFileScanner.cpp
 	impl/scanners/ImageFileScanner.cpp
-	impl/scanners/LyricsFileScanner.cpp
-	impl/scanners/PlayListFileScanner.cpp
 	impl/scanners/Utils.cpp
 	impl/steps/JobQueue.cpp
 	impl/steps/ScanErrorLogger.cpp
@@ -43,13 +48,22 @@ target_include_directories(lmsscanner PRIVATE
 
 target_link_libraries(lmsscanner PRIVATE
 	lmscore
-	lmsdatabase
+	lmsaudio
 	lmsimage
-	lmsmetadata
 	lmsrecommendation
+	pugixml::pugixml
 	)
 
 target_link_libraries(lmsscanner PUBLIC
+	lmsdatabase
 	std::filesystem
 	Wt::Wt
 	)
+
+if(BUILD_TESTING)
+	add_subdirectory(test)
+endif()
+
+if (BUILD_BENCHMARKS)
+	add_subdirectory(bench)
+endif()

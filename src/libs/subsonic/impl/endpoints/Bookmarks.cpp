@@ -38,18 +38,18 @@ namespace lms::api::subsonic
 
     Response handleGetBookmarks(RequestContext& context)
     {
-        auto transaction{ context.dbSession.createReadTransaction() };
+        auto transaction{ context.getDbSession().createReadTransaction() };
 
-        const auto bookmarkIds{ TrackBookmark::find(context.dbSession, context.user->getId()) };
+        const auto bookmarkIds{ TrackBookmark::find(context.getDbSession(), context.getUser()->getId()) };
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node& bookmarksNode{ response.createNode("bookmarks") };
 
         for (const TrackBookmarkId bookmarkId : bookmarkIds.results)
         {
-            const TrackBookmark::pointer bookmark{ TrackBookmark::find(context.dbSession, bookmarkId) };
+            const TrackBookmark::pointer bookmark{ TrackBookmark::find(context.getDbSession(), bookmarkId) };
             Response::Node bookmarkNode{ createBookmarkNode(bookmark) };
-            bookmarkNode.addChild("entry", createSongNode(context, bookmark->getTrack(), context.user));
+            bookmarkNode.addChild("entry", createSongNode(context, bookmark->getTrack(), context.getUser()));
             bookmarksNode.addArrayChild("bookmark", std::move(bookmarkNode));
         }
 
@@ -59,51 +59,51 @@ namespace lms::api::subsonic
     Response handleCreateBookmark(RequestContext& context)
     {
         // Mandatory params
-        TrackId trackId{ getMandatoryParameterAs<TrackId>(context.parameters, "id") };
-        unsigned long position{ getMandatoryParameterAs<unsigned long>(context.parameters, "position") };
-        const std::optional<std::string> comment{ getParameterAs<std::string>(context.parameters, "comment") };
+        TrackId trackId{ getMandatoryParameterAs<TrackId>(context.getParameters(), "id") };
+        unsigned long position{ getMandatoryParameterAs<unsigned long>(context.getParameters(), "position") };
+        const std::optional<std::string> comment{ getParameterAs<std::string>(context.getParameters(), "comment") };
 
-        auto transaction{ context.dbSession.createWriteTransaction() };
+        auto transaction{ context.getDbSession().createWriteTransaction() };
 
-        const Track::pointer track{ Track::find(context.dbSession, trackId) };
+        const Track::pointer track{ Track::find(context.getDbSession(), trackId) };
         if (!track)
             throw RequestedDataNotFoundError{};
 
         // Replace any existing bookmark
-        auto bookmark{ TrackBookmark::find(context.dbSession, context.user->getId(), trackId) };
+        auto bookmark{ TrackBookmark::find(context.getDbSession(), context.getUser()->getId(), trackId) };
         if (!bookmark)
-            bookmark = context.dbSession.create<TrackBookmark>(context.user, track);
+            bookmark = context.getDbSession().create<TrackBookmark>(context.getUser(), track);
 
         bookmark.modify()->setOffset(std::chrono::milliseconds{ position });
         if (comment)
             bookmark.modify()->setComment(*comment);
 
-        return Response::createOkResponse(context.serverProtocolVersion);
+        return Response::createOkResponse(context.getServerProtocolVersion());
     }
 
     Response handleDeleteBookmark(RequestContext& context)
     {
         // Mandatory params
-        TrackId trackId{ getMandatoryParameterAs<TrackId>(context.parameters, "id") };
+        TrackId trackId{ getMandatoryParameterAs<TrackId>(context.getParameters(), "id") };
 
-        auto transaction{ context.dbSession.createWriteTransaction() };
+        auto transaction{ context.getDbSession().createWriteTransaction() };
 
-        auto bookmark{ TrackBookmark::find(context.dbSession, context.user->getId(), trackId) };
+        auto bookmark{ TrackBookmark::find(context.getDbSession(), context.getUser()->getId(), trackId) };
         if (!bookmark)
             throw RequestedDataNotFoundError{};
 
         bookmark.remove();
 
-        return Response::createOkResponse(context.serverProtocolVersion);
+        return Response::createOkResponse(context.getServerProtocolVersion());
     }
 
     // Use a dedicated internal playlist
     Response handleGetPlayQueue(RequestContext& context)
     {
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
 
-        auto transaction{ context.dbSession.createReadTransaction() };
-        const db::PlayQueue::pointer playQueue{ db::PlayQueue::find(context.dbSession, context.user->getId(), "subsonic") };
+        auto transaction{ context.getDbSession().createReadTransaction() };
+        const db::PlayQueue::pointer playQueue{ db::PlayQueue::find(context.getDbSession(), context.getUser()->getId(), "subsonic") };
         if (playQueue)
         {
             Response::Node& playQueueNode{ response.createNode("playQueue") };
@@ -115,7 +115,7 @@ namespace lms::api::subsonic
             }
 
             // mandatory fields
-            playQueueNode.setAttribute("username", context.user->getLoginName());
+            playQueueNode.setAttribute("username", context.getUser()->getLoginName());
             playQueueNode.setAttribute("changed", core::stringUtils::toISO8601String(playQueue->getLastModifiedDateTime()));
             playQueueNode.setAttribute("changedBy", "unknown"); // we don't store the client name (could be several same clients on several devices...)
 
@@ -130,9 +130,9 @@ namespace lms::api::subsonic
     Response handleSavePlayQueue(RequestContext& context)
     {
         // optional params
-        std::vector<db::TrackId> trackIds{ getMultiParametersAs<TrackId>(context.parameters, "id") };
-        const std::optional<db::TrackId> currentTrackId{ getParameterAs<db::TrackId>(context.parameters, "current") };
-        const std::chrono::milliseconds currentPositionInTrack{ getParameterAs<std::size_t>(context.parameters, "current").value_or(0) };
+        std::vector<db::TrackId> trackIds{ getMultiParametersAs<TrackId>(context.getParameters(), "id") };
+        const std::optional<db::TrackId> currentTrackId{ getParameterAs<db::TrackId>(context.getParameters(), "current") };
+        const std::chrono::milliseconds currentPositionInTrack{ getParameterAs<std::size_t>(context.getParameters(), "current").value_or(0) };
 
         std::vector<db::Track::pointer> tracks;
         tracks.reserve(trackIds.size());
@@ -140,20 +140,20 @@ namespace lms::api::subsonic
         // no id means we clear the play queue (see https://github.com/opensubsonic/open-subsonic-api/pull/106)
         if (!trackIds.empty())
         {
-            auto transaction{ context.dbSession.createReadTransaction() };
+            auto transaction{ context.getDbSession().createReadTransaction() };
             for (db::TrackId trackId : trackIds)
             {
-                if (db::Track::pointer track{ db::Track::find(context.dbSession, trackId) })
+                if (db::Track::pointer track{ db::Track::find(context.getDbSession(), trackId) })
                     tracks.push_back(track);
             }
         }
 
         {
-            auto transaction{ context.dbSession.createWriteTransaction() };
+            auto transaction{ context.getDbSession().createWriteTransaction() };
 
-            db::PlayQueue::pointer playQueue{ db::PlayQueue::find(context.dbSession, context.user->getId(), "subsonic") };
+            db::PlayQueue::pointer playQueue{ db::PlayQueue::find(context.getDbSession(), context.getUser()->getId(), "subsonic") };
             if (!playQueue)
-                playQueue = context.dbSession.create<db::PlayQueue>(context.user, "subsonic");
+                playQueue = context.getDbSession().create<db::PlayQueue>(context.getUser(), "subsonic");
 
             playQueue.modify()->clear();
             std::size_t index{};
@@ -171,6 +171,6 @@ namespace lms::api::subsonic
             playQueue.modify()->setLastModifiedDateTime(Wt::WDateTime::currentDateTime());
         }
 
-        return Response::createOkResponse(context.serverProtocolVersion);
+        return Response::createOkResponse(context.getServerProtocolVersion());
     }
 } // namespace lms::api::subsonic

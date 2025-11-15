@@ -24,10 +24,13 @@
 #include <Wt/WText.h>
 
 #include "core/EnumSet.hpp"
+#include "core/Utils.hpp"
+
 #include "database/objects/Artist.hpp"
 #include "database/objects/Release.hpp"
 
 #include "Utils.hpp"
+#include "explore/ReleaseTypes.hpp"
 
 namespace lms::ui::releaseListHelpers
 {
@@ -110,85 +113,106 @@ namespace lms::ui::releaseListHelpers
 
 namespace lms::ui::releaseHelpers
 {
+    namespace
+    {
+        static const Wt::WString releaseTypeSeparator{ " · " };
+
+        Wt::WString buildPicardReleaseTypeString(const PicardReleaseType& releaseType)
+        {
+            Wt::WString res;
+
+            switch (releaseType.primaryType)
+            {
+            case PicardReleaseType::PrimaryType::Album:
+                res = Wt::WString::tr("Lms.Explore.Release.type-primary-album");
+                break;
+            case PicardReleaseType::PrimaryType::Broadcast:
+                res = Wt::WString::tr("Lms.Explore.Release.type-primary-broadcast");
+                break;
+            case PicardReleaseType::PrimaryType::EP:
+                res = Wt::WString::tr("Lms.Explore.Release.type-primary-ep");
+                break;
+            case PicardReleaseType::PrimaryType::Single:
+                res = Wt::WString::tr("Lms.Explore.Release.type-primary-single");
+                break;
+            case PicardReleaseType::PrimaryType::Other:
+                res = Wt::WString::tr("Lms.Explore.Release.type-primary-other");
+                break;
+            }
+
+            for (PicardReleaseType::SecondaryType secondaryType : releaseType.secondaryTypes)
+            {
+                if (!res.empty())
+                    res += releaseTypeSeparator;
+
+                switch (secondaryType)
+                {
+                case PicardReleaseType::SecondaryType::Compilation:
+                    res += Wt::WString::tr("Lms.Explore.Release.type-secondary-compilation");
+                    break;
+                case PicardReleaseType::SecondaryType::Spokenword:
+                    res += Wt::WString::tr("Lms.Explore.Release.type-secondary-spokenword");
+                    break;
+                case PicardReleaseType::SecondaryType::Soundtrack:
+                    res += Wt::WString::tr("Lms.Explore.Release.type-secondary-soundtrack");
+                    break;
+                case PicardReleaseType::SecondaryType::Interview:
+                    res += Wt::WString::tr("Lms.Explore.Release.type-secondary-interview");
+                    break;
+                case PicardReleaseType::SecondaryType::Audiobook:
+                    res += Wt::WString::tr("Lms.Explore.Release.type-secondary-audiobook");
+                    break;
+                case PicardReleaseType::SecondaryType::AudioDrama:
+                    res += Wt::WString::tr("Lms.Explore.Release.type-secondary-audiodrama");
+                    break;
+                case PicardReleaseType::SecondaryType::Live:
+                    res += Wt::WString::tr("Lms.Explore.Release.type-secondary-live");
+                    break;
+                case PicardReleaseType::SecondaryType::Remix:
+                    res += Wt::WString::tr("Lms.Explore.Release.type-secondary-remix");
+                    break;
+                case PicardReleaseType::SecondaryType::DJMix:
+                    res += Wt::WString::tr("Lms.Explore.Release.type-secondary-djmix");
+                    break;
+                case PicardReleaseType::SecondaryType::Mixtape_Street:
+                    res += Wt::WString::tr("Lms.Explore.Release.type-secondary-mixtape-street");
+                    break;
+                case PicardReleaseType::SecondaryType::Demo:
+                    res += Wt::WString::tr("Lms.Explore.Release.type-secondary-demo");
+                    break;
+                case PicardReleaseType::SecondaryType::FieldRecording:
+                    res += Wt::WString::tr("Lms.Explore.Release.type-secondary-field-recording");
+                    break;
+                }
+            }
+
+            return res;
+        }
+
+        Wt::WString buildCustomReleaseTypeString(const CustomReleaseType& releaseType)
+        {
+            Wt::WString res;
+
+            for (const std::string& customType : releaseType.types)
+            {
+                if (!res.empty())
+                    res += releaseTypeSeparator;
+
+                res += customType;
+            }
+
+            return res;
+        }
+    } // namespace
+
     Wt::WString buildReleaseTypeString(const ReleaseType& releaseType)
     {
         Wt::WString res;
 
-        if (releaseType.primaryType)
-        {
-            switch (*releaseType.primaryType)
-            {
-            case PrimaryReleaseType::Album:
-                res = Wt::WString::tr("Lms.Explore.Release.type-primary-album");
-                break;
-            case PrimaryReleaseType::Broadcast:
-                res = Wt::WString::tr("Lms.Explore.Release.type-primary-broadcast");
-                break;
-            case PrimaryReleaseType::EP:
-                res = Wt::WString::tr("Lms.Explore.Release.type-primary-ep");
-                break;
-            case PrimaryReleaseType::Single:
-                res = Wt::WString::tr("Lms.Explore.Release.type-primary-single");
-                break;
-            case PrimaryReleaseType::Other:
-                res = Wt::WString::tr("Lms.Explore.Release.type-primary-other");
-                break;
-            }
-        }
-
-        for (SecondaryReleaseType secondaryType : releaseType.secondaryTypes)
-        {
-            if (!res.empty())
-                res += Wt::WString{ " · " };
-
-            switch (secondaryType)
-            {
-            case SecondaryReleaseType::Compilation:
-                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-compilation");
-                break;
-            case SecondaryReleaseType::Spokenword:
-                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-spokenword");
-                break;
-            case SecondaryReleaseType::Soundtrack:
-                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-soundtrack");
-                break;
-            case SecondaryReleaseType::Interview:
-                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-interview");
-                break;
-            case SecondaryReleaseType::Audiobook:
-                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-audiobook");
-                break;
-            case SecondaryReleaseType::AudioDrama:
-                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-audiodrama");
-                break;
-            case SecondaryReleaseType::Live:
-                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-live");
-                break;
-            case SecondaryReleaseType::Remix:
-                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-remix");
-                break;
-            case SecondaryReleaseType::DJMix:
-                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-djmix");
-                break;
-            case SecondaryReleaseType::Mixtape_Street:
-                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-mixtape-street");
-                break;
-            case SecondaryReleaseType::Demo:
-                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-demo");
-                break;
-            case SecondaryReleaseType::FieldRecording:
-                res += Wt::WString::tr("Lms.Explore.Release.type-secondary-field-recording");
-                break;
-            }
-        }
-
-        for (const std::string& customType : releaseType.customTypes)
-        {
-            if (!res.empty())
-                res += Wt::WString{ " · " };
-
-            res += customType;
-        }
+        std::visit(core::utils::overloads{
+                       [&](const PicardReleaseType& picardReleaseType) { res = buildPicardReleaseTypeString(picardReleaseType); },
+                       [&](const CustomReleaseType& customReleaseType) { res = buildCustomReleaseTypeString(customReleaseType); } },
+                   releaseType);
 
         return res;
     }

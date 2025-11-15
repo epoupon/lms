@@ -934,4 +934,43 @@ namespace lms::db::tests
             EXPECT_EQ(artist->getPreferredArtwork(), Artwork::pointer{});
         }
     }
+
+    TEST_F(DatabaseFixture, Artist_findWithMBIDNameVariants)
+    {
+        ScopedArtist artistA{ session, "ArtistA" };
+        ScopedArtist artistB{ session, "ArtistB" };
+
+        ScopedTrack trackA1{ session };
+        ScopedTrack trackA2{ session };
+        ScopedTrack trackB1{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            {
+                auto link{ TrackArtistLink::create(session, trackA1.get(), artistA.get(), TrackArtistLinkType::Artist, true) };
+                link.modify()->setArtistName("ArtistA");
+            }
+            {
+                auto link{ TrackArtistLink::create(session, trackA2.get(), artistA.get(), TrackArtistLinkType::Artist, true) };
+                link.modify()->setArtistName("AlternateArtistA");
+            }
+
+            {
+                auto link{ TrackArtistLink::create(session, trackB1.get(), artistB.get(), TrackArtistLinkType::Artist, true) };
+                link.modify()->setArtistName("ArtistB");
+            }
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            ArtistId lastRetrievedArtist;
+            const auto results{ Artist::findWithMBIDNameVariants(session, lastRetrievedArtist) };
+
+            ASSERT_EQ(results.results.size(), 1);
+            EXPECT_EQ(results.results[0]->getId(), artistA.getId());
+            EXPECT_EQ(lastRetrievedArtist, artistA.getId());
+        }
+    }
 } // namespace lms::db::tests

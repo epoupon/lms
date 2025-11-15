@@ -19,7 +19,6 @@ target_include_directories(lmsauth PRIVATE
 	)
 
 target_link_libraries(lmsauth PUBLIC
-	Boost::system
 	Wt::Wt
 	lmscore
 	lmsdatabase

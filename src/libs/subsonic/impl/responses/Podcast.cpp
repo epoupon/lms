@@ -125,7 +125,7 @@ namespace lms::api::subsonic
             params.setPodcast(podcast->getId());
             params.setSortMode(db::PodcastEpisodeSortMode::PubDateDesc);
 
-            db::PodcastEpisode::find(context.dbSession, params, [&](const db::PodcastEpisode::pointer& episode) {
+            db::PodcastEpisode::find(context.getDbSession(), params, [&](const db::PodcastEpisode::pointer& episode) {
                 podcastNode.addArrayChild("episode", createPodcastEpisodeNode(episode));
             });
         }

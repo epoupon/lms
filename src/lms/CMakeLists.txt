@@ -67,7 +67,7 @@ target_link_libraries(lms PRIVATE
 	Boost::iostreams
 	Wt::Wt
 	Wt::HTTP
-	lmsav
+	lmsaudio
 	lmsauth
 	lmsdatabase
 	lmsfeedback

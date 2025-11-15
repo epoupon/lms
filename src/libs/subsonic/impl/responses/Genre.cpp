@@ -29,7 +29,7 @@ namespace lms::api::subsonic
     {
         Response::Node clusterNode;
 
-        switch (context.responseFormat)
+        switch (context.getResponseFormat())
         {
         case ResponseFormat::json:
             clusterNode.setAttribute("value", cluster->getName());

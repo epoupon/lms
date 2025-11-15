@@ -34,14 +34,14 @@ namespace lms::api::subsonic
 {
     Response handleGetPodcasts(RequestContext& context)
     {
-        const bool includeEpisodes{ getParameterAs<bool>(context.parameters, "includeEpisodes").value_or(true) };
-        const std::optional<db::PodcastId> podcastId{ getParameterAs<db::PodcastId>(context.parameters, "id") };
+        const bool includeEpisodes{ getParameterAs<bool>(context.getParameters(), "includeEpisodes").value_or(true) };
+        const std::optional<db::PodcastId> podcastId{ getParameterAs<db::PodcastId>(context.getParameters(), "id") };
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node& podcastsNode{ response.createNode("podcasts") };
         podcastsNode.createEmptyArrayChild("channel");
 
-        auto transaction{ context.dbSession.createReadTransaction() };
+        auto transaction{ context.getDbSession().createReadTransaction() };
 
         auto processPodcast{ [&](const db::Podcast::pointer& podcast) {
             podcastsNode.addArrayChild("channel", createPodcastNode(context, podcast, includeEpisodes));
@@ -49,34 +49,34 @@ namespace lms::api::subsonic
 
         if (podcastId.has_value())
         {
-            db::Podcast::pointer podcast{ db::Podcast::find(context.dbSession, podcastId.value()) };
+            db::Podcast::pointer podcast{ db::Podcast::find(context.getDbSession(), podcastId.value()) };
             if (!podcast)
                 throw RequestedDataNotFoundError{};
 
             processPodcast(podcast);
         }
         else
-            db::Podcast::find(context.dbSession, processPodcast);
+            db::Podcast::find(context.getDbSession(), processPodcast);
 
         return response;
     }
 
     Response handleGetNewestPodcasts(RequestContext& context)
     {
-        std::size_t count{ getParameterAs<std::size_t>(context.parameters, "count").value_or(20) };
+        std::size_t count{ getParameterAs<std::size_t>(context.getParameters(), "count").value_or(20) };
         count = std::min<std::size_t>(count, 100);
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node& newestPodcastsNode{ response.createNode("newestPodcasts") };
         newestPodcastsNode.createEmptyArrayChild("episode");
 
         {
-            auto transaction{ context.dbSession.createReadTransaction() };
+            auto transaction{ context.getDbSession().createReadTransaction() };
 
             db::PodcastEpisode::FindParameters findParameters;
             findParameters.setRange(db::Range{ .offset = 0, .size = count });
 
-            db::PodcastEpisode::find(context.dbSession, findParameters, [&](const db::PodcastEpisode::pointer& episode) {
+            db::PodcastEpisode::find(context.getDbSession(), findParameters, [&](const db::PodcastEpisode::pointer& episode) {
                 newestPodcastsNode.addArrayChild("episode", createPodcastEpisodeNode(episode));
             });
         }
@@ -88,13 +88,13 @@ namespace lms::api::subsonic
     {
         core::Service<podcast::IPodcastService>::get()->refreshPodcasts();
 
-        return Response::createOkResponse(context.serverProtocolVersion);
+        return Response::createOkResponse(context.getServerProtocolVersion());
     }
 
     Response handleCreatePodcastChannel(RequestContext& context)
     {
         // Mandatory parameters
-        const std::string url{ getMandatoryParameterAs<std::string>(context.parameters, "url") };
+        const std::string url{ getMandatoryParameterAs<std::string>(context.getParameters(), "url") };
 
         if (url.empty() || !(url.starts_with("http://") || url.starts_with("https://")))
             throw BadParameterGenericError{ "Invalid url" };
@@ -102,52 +102,52 @@ namespace lms::api::subsonic
         // no effect if podcast already exists
         core::Service<podcast::IPodcastService>::get()->addPodcast(url);
 
-        return Response::createOkResponse(context.serverProtocolVersion);
+        return Response::createOkResponse(context.getServerProtocolVersion());
     }
 
     Response handleDeletePodcastChannel(RequestContext& context)
     {
         // Mandatory parameters
-        const db::PodcastId podcastId{ getMandatoryParameterAs<db::PodcastId>(context.parameters, "id") };
+        const db::PodcastId podcastId{ getMandatoryParameterAs<db::PodcastId>(context.getParameters(), "id") };
 
         if (!core::Service<podcast::IPodcastService>::get()->removePodcast(podcastId))
             throw RequestedDataNotFoundError{};
 
-        return Response::createOkResponse(context.serverProtocolVersion);
+        return Response::createOkResponse(context.getServerProtocolVersion());
     }
 
     Response handleDeletePodcastEpisode(RequestContext& context)
     {
         // Mandatory parameters
-        const db::PodcastEpisodeId episodeId{ getMandatoryParameterAs<db::PodcastEpisodeId>(context.parameters, "id") };
+        const db::PodcastEpisodeId episodeId{ getMandatoryParameterAs<db::PodcastEpisodeId>(context.getParameters(), "id") };
 
         if (!core::Service<podcast::IPodcastService>::get()->deletePodcastEpisode(episodeId))
             throw RequestedDataNotFoundError{};
 
-        return Response::createOkResponse(context.serverProtocolVersion);
+        return Response::createOkResponse(context.getServerProtocolVersion());
     }
 
     Response handleDownloadPodcastEpisode(RequestContext& context)
     {
         // Mandatory parameters
-        const db::PodcastEpisodeId episodeId{ getMandatoryParameterAs<db::PodcastEpisodeId>(context.parameters, "id") };
+        const db::PodcastEpisodeId episodeId{ getMandatoryParameterAs<db::PodcastEpisodeId>(context.getParameters(), "id") };
 
         if (!core::Service<podcast::IPodcastService>::get()->downloadPodcastEpisode(episodeId))
             throw RequestedDataNotFoundError{};
 
-        return Response::createOkResponse(context.serverProtocolVersion);
+        return Response::createOkResponse(context.getServerProtocolVersion());
     }
 
     Response handleGetPodcastEpisode(RequestContext& context)
     {
         // Mandatory parameters
-        const db::PodcastEpisodeId episodeId{ getMandatoryParameterAs<db::PodcastEpisodeId>(context.parameters, "id") };
+        const db::PodcastEpisodeId episodeId{ getMandatoryParameterAs<db::PodcastEpisodeId>(context.getParameters(), "id") };
 
-        Response response{ Response::createOkResponse(context.serverProtocolVersion) };
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
 
-        auto transaction{ context.dbSession.createReadTransaction() };
+        auto transaction{ context.getDbSession().createReadTransaction() };
 
-        const db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(context.dbSession, episodeId) };
+        const db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(context.getDbSession(), episodeId) };
         if (!episode)
             throw RequestedDataNotFoundError{};
 

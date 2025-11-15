@@ -87,9 +87,9 @@ namespace lms::api::subsonic
         {
             if (const auto directory{ track->getDirectory() })
                 trackResponse.setAttribute("parent", idToString(directory->getId()));
-            trackResponse.setAttribute("isDir", false);
         }
 
+        trackResponse.setAttribute("isDir", false);
         trackResponse.setAttribute("id", idToString(track->getId()));
         trackResponse.setAttribute("title", track->getName());
         if (track->getTrackNumber())
@@ -100,7 +100,7 @@ namespace lms::api::subsonic
             trackResponse.setAttribute("year", *originalYear);
         else if (const auto year{ track->getYear() })
             trackResponse.setAttribute("year", *year);
-        trackResponse.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(context.user->getId(), track->getId()));
+        trackResponse.setAttribute("playCount", core::Service<scrobbling::IScrobblingService>::get()->getCount(context.getUser()->getId(), track->getId()));
 
         // maybe not available if user just removed the library without rescanning
         if (const db::MediaLibrary::pointer library{ track->getMediaLibrary() })
@@ -119,9 +119,9 @@ namespace lms::api::subsonic
             trackResponse.setAttribute("suffix", extension.string().substr(1) /* skip leading .*/);
         }
 
-        if (context.user->getSubsonicEnableTranscodingByDefault())
+        if (context.getUser()->getSubsonicEnableTranscodingByDefault())
         {
-            const std::string fileSuffix{ formatToSuffix(context.user->getSubsonicDefaultTranscodingOutputFormat()) };
+            const std::string fileSuffix{ formatToSuffix(context.getUser()->getSubsonicDefaultTranscodingOutputFormat()) };
             trackResponse.setAttribute("transcodedSuffix", fileSuffix);
             trackResponse.setAttribute("transcodedContentType", core::getMimeType(std::filesystem::path{ "." + fileSuffix }));
         }
@@ -160,10 +160,10 @@ namespace lms::api::subsonic
         trackResponse.setAttribute("type", "music");
         trackResponse.setAttribute("created", core::stringUtils::toISO8601String(track->getAddedTime()));
         trackResponse.setAttribute("contentType", core::getMimeType(track->getAbsoluteFilePath().extension()));
-        if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.user->getId(), track->getId()) })
+        if (const auto rating{ core::Service<feedback::IFeedbackService>::get()->getRating(context.getUser()->getId(), track->getId()) })
             trackResponse.setAttribute("userRating", *rating);
 
-        if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.user->getId(), track->getId()) }; dateTime.isValid())
+        if (const Wt::WDateTime dateTime{ core::Service<feedback::IFeedbackService>::get()->getStarredDateTime(context.getUser()->getId(), track->getId()) }; dateTime.isValid())
             trackResponse.setAttribute("starred", core::stringUtils::toISO8601String(dateTime));
 
         // Report the first GENRE for this track
@@ -173,13 +173,13 @@ namespace lms::api::subsonic
             params.setTrack(track->getId());
             params.setClusterTypeName("GENRE");
 
-            genres = Cluster::find(context.dbSession, params).results;
+            genres = Cluster::find(context.getDbSession(), params).results;
             if (!genres.empty())
                 trackResponse.setAttribute("genre", genres.front()->getName());
         }
 
         // OpenSubsonic specific fields (must always be set)
-        if (!context.enableOpenSubsonic)
+        if (!context.isOpenSubsonicEnabled())
             return trackResponse;
 
         trackResponse.setAttribute("comment", track->getComment());
@@ -190,7 +190,7 @@ namespace lms::api::subsonic
         trackResponse.setAttribute("mediaType", "song");
 
         {
-            const Wt::WDateTime dateTime{ core::Service<scrobbling::IScrobblingService>::get()->getLastListenDateTime(context.user->getId(), track->getId()) };
+            const Wt::WDateTime dateTime{ core::Service<scrobbling::IScrobblingService>::get()->getLastListenDateTime(context.getUser()->getId(), track->getId()) };
             trackResponse.setAttribute("played", dateTime.isValid() ? core::stringUtils::toISO8601String(dateTime) : "");
         }
 
@@ -204,7 +204,7 @@ namespace lms::api::subsonic
             trackResponse.createEmptyArrayChild("artists");
             trackResponse.createEmptyArrayChild("contributors");
 
-            TrackArtistLink::find(context.dbSession, track->getId(), [&](const TrackArtistLink::pointer& link, const Artist::pointer& artist) {
+            TrackArtistLink::find(context.getDbSession(), track->getId(), [&](const TrackArtistLink::pointer& link, const Artist::pointer& artist) {
                 switch (link->getType())
                 {
                 case TrackArtistLinkType::Artist:
@@ -230,7 +230,7 @@ namespace lms::api::subsonic
             params.setTrack(track->getId());
             params.setClusterTypeName(clusterTypeName);
 
-            for (const auto& cluster : Cluster::find(context.dbSession, params).results)
+            for (const auto& cluster : Cluster::find(context.getDbSession(), params).results)
                 trackResponse.addArrayValue(field, cluster->getName());
         } };
 

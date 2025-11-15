@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(lms VERSION 3.70.0)
+project(lms VERSION 3.72.0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/modules/)
 
@@ -22,7 +22,7 @@ find_package(OpenSSL REQUIRED)
 find_package(PkgConfig REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Filesystem REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system program_options iostreams)
+find_package(Boost REQUIRED COMPONENTS program_options iostreams)
 find_package(Wt REQUIRED COMPONENTS Wt Dbo DboSqlite3 HTTP)
 find_package(Pugixml CONFIG REQUIRED)
 

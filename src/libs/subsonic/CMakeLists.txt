@@ -28,11 +28,13 @@ add_library(lmssubsonic STATIC
 	impl/responses/Song.cpp
 	impl/responses/User.cpp
 	impl/CoverArtId.cpp
+	impl/RequestContext.cpp
 	impl/ResponseFormat.cpp
 	impl/ProtocolVersion.cpp
 	impl/ParameterParsing.cpp
 	impl/SubsonicId.cpp
 	impl/SubsonicResource.cpp
+	impl/SubsonicResourceConfig.cpp
 	impl/SubsonicResponse.cpp
 	)
 
@@ -48,7 +50,7 @@ target_include_directories(lmssubsonic PRIVATE
 target_link_libraries(lmssubsonic PRIVATE
 	lmsartwork
 	lmsauth
-	lmsav
+	lmsaudio
 	lmsdatabase
 	lmsfeedback
 	lmspodcast
