@@ -57,26 +57,29 @@ namespace lms::audio::taglib
         AudioProperties computeAudioProperties(const ::TagLib::File& file)
         {
             assert(file.audioProperties());
-            const ::TagLib::AudioProperties& properties{ *file.audioProperties() };
 
             AudioProperties audioProperties;
 
-            // Common properties
-            audioProperties.bitrate = static_cast<std::size_t>(properties.bitrate() * 1000);
-            if (audioProperties.bitrate == 0)
-                throw AudioFileParsingException{ "Cannot determine bitrate" };
+            {
+                const ::TagLib::AudioProperties& properties{ *file.audioProperties() };
 
-            audioProperties.channelCount = static_cast<std::size_t>(properties.channels());
-            if (audioProperties.channelCount == 0)
-                throw AudioFileParsingException{ "Cannot determine channel count" };
+                // Common properties
+                audioProperties.bitrate = static_cast<std::size_t>(properties.bitrate() * 1000);
+                if (audioProperties.bitrate == 0)
+                    throw AudioFileParsingException{ "Cannot determine bitrate" };
 
-            audioProperties.duration = std::chrono::milliseconds{ properties.lengthInMilliseconds() };
-            if (audioProperties.duration == decltype(audioProperties.duration)::zero())
-                throw AudioFileParsingException{ "Cannot determine duration" };
+                audioProperties.channelCount = static_cast<std::size_t>(properties.channels());
+                if (audioProperties.channelCount == 0)
+                    throw AudioFileParsingException{ "Cannot determine channel count" };
 
-            audioProperties.sampleRate = static_cast<std::size_t>(properties.sampleRate());
-            if (audioProperties.sampleRate == 0)
-                throw AudioFileParsingException{ "Cannot determine sample rate" };
+                audioProperties.duration = std::chrono::milliseconds{ properties.lengthInMilliseconds() };
+                if (audioProperties.duration == decltype(audioProperties.duration)::zero())
+                    throw AudioFileParsingException{ "Cannot determine duration" };
+
+                audioProperties.sampleRate = static_cast<std::size_t>(properties.sampleRate());
+                if (audioProperties.sampleRate == 0)
+                    throw AudioFileParsingException{ "Cannot determine sample rate" };
+            }
 
             // Guess container from the file type
             if (const auto* apeFile{ dynamic_cast<const ::TagLib::APE::File*>(&file) })
@@ -104,7 +107,7 @@ namespace lms::audio::taglib
                     audioProperties.codec = CodecType::WMA9Pro;
                     break;
                 case ::TagLib::ASF::Properties::Codec::Unknown:
-                    throw AudioFileParsingException{ "Unhandled ASF codec type" };
+                    throw AudioFileParsingException{ "Unhandled ASF codec" };
                 }
 
                 audioProperties.bitsPerSample = asfFile->audioProperties()->bitsPerSample();
@@ -135,7 +138,7 @@ namespace lms::audio::taglib
                     audioProperties.codec = CodecType::ALAC;
                     break;
                 case ::TagLib::MP4::Properties::Codec::Unknown:
-                    throw AudioFileParsingException{ "Unhandled MP4 codec type" };
+                    throw AudioFileParsingException{ "Unhandled MP4 codec" };
                 }
 
                 audioProperties.bitsPerSample = mp4File->audioProperties()->bitsPerSample();
@@ -152,6 +155,8 @@ namespace lms::audio::taglib
                 case 8:
                     audioProperties.codec = CodecType::MPC8;
                     break;
+                default:
+                    throw AudioFileParsingException{ "Unhandled MPC codec" };
                 }
             }
             else if (const auto* mpegFile{ dynamic_cast<const ::TagLib::MPEG::File*>(&file) })
@@ -166,6 +171,8 @@ namespace lms::audio::taglib
                 else if (mpegFile->audioProperties()->isADTS()) // likely AAC
                     audioProperties.codec = CodecType::AAC;
 #endif
+                else
+                    throw AudioFileParsingException{ "Unhandled MPEG codec" };
             }
             else if (dynamic_cast<const ::TagLib::Ogg::Opus::File*>(&file))
             {

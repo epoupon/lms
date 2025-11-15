@@ -23,11 +23,9 @@
 #include <filesystem>
 #include <optional>
 
-// #include "AudioTypes.hpp"
-
 namespace lms::audio
 {
-    // TODO deprecated
+    // TODO deprecate?
     enum class OutputFormat
     {
         MP3,
