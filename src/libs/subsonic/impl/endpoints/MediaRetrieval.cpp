@@ -28,13 +28,7 @@
 #include "core/String.hpp"
 #include "core/media/MimeType.hpp"
 
-#include "audio/AudioProperties.hpp"
-#include "audio/Exception.hpp"
-#include "audio/IAudioFileInfo.hpp"
-#include "audio/IAudioFileInfoParser.hpp"
-
 #include "database/Session.hpp"
-#include "database/objects/PodcastEpisode.hpp"
 #include "database/objects/PodcastEpisodeId.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackLyrics.hpp"
@@ -42,7 +36,6 @@
 #include "database/objects/User.hpp"
 
 #include "services/artwork/IArtworkService.hpp"
-#include "services/podcast/IPodcastService.hpp"
 #include "services/transcoding/ITranscodeService.hpp"
 
 #include "CoverArtId.hpp"
@@ -51,6 +44,7 @@
 #include "SubsonicId.hpp"
 #include "SubsonicResponse.hpp"
 #include "responses/Lyrics.hpp"
+#include "transcoding/AudioFileInfo.hpp"
 
 namespace lms::api::subsonic
 {
@@ -101,93 +95,6 @@ namespace lms::api::subsonic
             case db::TranscodingOutputFormat::OGG_VORBIS:
                 res = getOutputFormatByName("vorbis");
                 break;
-            }
-
-            return res;
-        }
-
-        audio::AudioProperties getAudioProperties(const std::filesystem::path& trackPath)
-        {
-            try
-            {
-                const auto parser{ audio::createAudioFileInfoParser(audio::AudioFileInfoParserBackend::FFmpeg) };
-
-                audio::AudioFileInfoParseOptions parseOptions;
-                parseOptions.audioPropertiesReadStyle = audio::AudioFileInfoParseOptions::AudioPropertiesReadStyle::Average;
-                parseOptions.readImages = false;
-                parseOptions.readTags = false;
-                const auto audioFile{ parser->parse(trackPath, parseOptions) };
-
-                const audio::AudioProperties* properties{ audioFile->getAudioProperties() };
-                if (!properties)
-                    throw RequestedDataNotFoundError{};
-
-                return *properties;
-            }
-            catch (const audio::Exception& e)
-            {
-                throw RequestedDataNotFoundError{};
-            }
-        }
-
-        using AudioFileId = std::variant<db::TrackId, db::PodcastEpisodeId>;
-        struct AudioFileInfo
-        {
-            std::filesystem::path path;
-            audio::AudioProperties audioProperties;
-        };
-
-        AudioFileInfo getAudioFileInfo(db::Session& session, AudioFileId audioFileId)
-        {
-            AudioFileInfo res;
-
-            auto transaction{ session.createReadTransaction() };
-
-            if (const db::TrackId * trackId{ std::get_if<db::TrackId>(&audioFileId) })
-            {
-                const db::Track::pointer track{ db::Track::find(session, *trackId) };
-                if (!track)
-                    throw RequestedDataNotFoundError{};
-
-                res.path = track->getAbsoluteFilePath();
-                if (track->getContainer() && track->getCodec())
-                {
-                    res.audioProperties.container = *track->getContainer();
-                    res.audioProperties.codec = *track->getCodec();
-                    res.audioProperties.duration = track->getDuration();
-                    res.audioProperties.bitrate = track->getBitrate();
-                    res.audioProperties.channelCount = track->getChannelCount();
-                    res.audioProperties.sampleRate = track->getSampleRate();
-                    res.audioProperties.bitsPerSample = track->getBitsPerSample();
-                }
-                else
-                {
-                    res.audioProperties = getAudioProperties(res.path);
-                }
-            }
-            else if (const db::PodcastEpisodeId * episodeId{ std::get_if<db::PodcastEpisodeId>(&audioFileId) })
-            {
-                const db::PodcastEpisode::pointer episode{ db::PodcastEpisode::find(session, *episodeId) };
-                if (!episode)
-                    throw RequestedDataNotFoundError{};
-
-                std::filesystem::path podcastCachePath{ core::Service<podcast::IPodcastService>::get()->getCachePath() };
-
-                res.path = podcastCachePath / episode->getAudioRelativeFilePath();
-                if (episode->getContainer() && episode->getCodec())
-                {
-                    res.audioProperties.container = *episode->getContainer();
-                    res.audioProperties.codec = *episode->getCodec();
-                    res.audioProperties.duration = episode->getDuration();
-                    res.audioProperties.bitrate = episode->getBitrate();
-                    res.audioProperties.channelCount = episode->getChannelCount();
-                    res.audioProperties.sampleRate = episode->getSampleRate();
-                    res.audioProperties.bitsPerSample = episode->getBitsPerSample();
-                }
-                else
-                {
-                    res.audioProperties = getAudioProperties(res.path);
-                }
             }
 
             return res;
@@ -383,31 +290,23 @@ namespace lms::api::subsonic
     {
         std::shared_ptr<core::IResourceHandler> resourceHandler;
 
-        try
+        Wt::Http::ResponseContinuation* continuation = request.continuation();
+        if (!continuation)
         {
-            Wt::Http::ResponseContinuation* continuation = request.continuation();
-            if (!continuation)
-            {
-                StreamParameters streamParameters{ getStreamParameters(context) };
-                if (streamParameters.transcodeParameters)
-                    resourceHandler = core::Service<transcoding::ITranscodeService>::get()->createTranscodeResourceHandler(*streamParameters.transcodeParameters, streamParameters.estimateContentLength);
-                else
-                    resourceHandler = core::createFileResourceHandler(streamParameters.filePath, core::media::getMimeType(streamParameters.audioProperties.container, streamParameters.audioProperties.codec).str());
-            }
+            StreamParameters streamParameters{ getStreamParameters(context) };
+            if (streamParameters.transcodeParameters)
+                resourceHandler = core::Service<transcoding::ITranscodeService>::get()->createTranscodeResourceHandler(*streamParameters.transcodeParameters, streamParameters.estimateContentLength);
             else
-            {
-                resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<core::IResourceHandler>>(continuation->data());
-            }
-
-            continuation = resourceHandler->processRequest(request, response);
-            if (continuation)
-                continuation->setData(resourceHandler);
+                resourceHandler = core::createFileResourceHandler(streamParameters.filePath, core::media::getMimeType(streamParameters.audioProperties.container, streamParameters.audioProperties.codec).str());
         }
-        catch (const audio::Exception& e)
+        else
         {
-            response.setStatus(404); // report not found if something wrong happened
-            LMS_LOG(API_SUBSONIC, ERROR, "Caught Av exception: " << e.what());
+            resourceHandler = Wt::cpp17::any_cast<std::shared_ptr<core::IResourceHandler>>(continuation->data());
         }
+
+        continuation = resourceHandler->processRequest(request, response);
+        if (continuation)
+            continuation->setData(resourceHandler);
     }
 
     void handleGetCoverArt(RequestContext& context, const Wt::Http::Request& /*request*/, Wt::Http::Response& response)

@@ -22,8 +22,8 @@
 #include <gtest/gtest.h>
 
 #include "core/Utils.hpp"
-
-#include "audio/AudioTypes.hpp"
+#include "core/media/CodecType.hpp"
+#include "core/media/ContainerType.hpp"
 
 #include "endpoints/transcoding/TranscodeDecision.hpp"
 #include "responses/ClientInfo.hpp"
@@ -113,8 +113,8 @@ namespace lms::api::subsonic
                                                                               } } },
                 },
                 .source = {
-                    .container = audio::ContainerType::MPEG,
-                    .codec = audio::CodecType::MP3,
+                    .container = core::media::ContainerType::MPEG,
+                    .codec = core::media::CodecType::MP3,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 128'000,
                     .channelCount = 2,
@@ -143,8 +143,8 @@ namespace lms::api::subsonic
                                                                               } } },
                 },
                 .source = {
-                    .container = audio::ContainerType::MPEG,
-                    .codec = audio::CodecType::MP3,
+                    .container = core::media::ContainerType::MPEG,
+                    .codec = core::media::CodecType::MP3,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 128'000,
                     .channelCount = 2,
@@ -173,8 +173,8 @@ namespace lms::api::subsonic
                                                                               } } },
                 },
                 .source = {
-                    .container = audio::ContainerType::MPEG,
-                    .codec = audio::CodecType::MP3,
+                    .container = core::media::ContainerType::MPEG,
+                    .codec = core::media::CodecType::MP3,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 128'000,
                     .channelCount = 2,
@@ -203,8 +203,8 @@ namespace lms::api::subsonic
                                                                               } } },
                 },
                 .source = {
-                    .container = audio::ContainerType::MPEG,
-                    .codec = audio::CodecType::MP3,
+                    .container = core::media::ContainerType::MPEG,
+                    .codec = core::media::CodecType::MP3,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 192'000,
                     .channelCount = 2,
@@ -233,8 +233,8 @@ namespace lms::api::subsonic
                                                                               } } },
                 },
                 .source = {
-                    .container = audio::ContainerType::MPEG,
-                    .codec = audio::CodecType::MP3,
+                    .container = core::media::ContainerType::MPEG,
+                    .codec = core::media::CodecType::MP3,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 192'000,
                     .channelCount = 2,
@@ -257,8 +257,8 @@ namespace lms::api::subsonic
                     .codecProfiles = { { .type = "AudioCodec", .name = "mp3", .limitations = {} } },
                 },
                 .source = {
-                    .container = audio::ContainerType::MPEG,
-                    .codec = audio::CodecType::MP3,
+                    .container = core::media::ContainerType::MPEG,
+                    .codec = core::media::CodecType::MP3,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 192'000,
                     .channelCount = 5,
@@ -285,8 +285,8 @@ namespace lms::api::subsonic
                     .codecProfiles = { { .type = "AudioCodec", .name = "mp3", .limitations = { { .name = Limitation::Type::AudioChannels, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "2" }, .required = true } } } },
                 },
                 .source = {
-                    .container = audio::ContainerType::MPEG,
-                    .codec = audio::CodecType::MP3,
+                    .container = core::media::ContainerType::MPEG,
+                    .codec = core::media::CodecType::MP3,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 192'000,
                     .channelCount = 5,
@@ -313,8 +313,8 @@ namespace lms::api::subsonic
                     .codecProfiles = { { .type = "AudioCodec", .name = "mp3", .limitations = { { .name = Limitation::Type::AudioChannels, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "2" }, .required = true } } } },
                 },
                 .source = {
-                    .container = audio::ContainerType::Ogg,
-                    .codec = audio::CodecType::Opus,
+                    .container = core::media::ContainerType::Ogg,
+                    .codec = core::media::CodecType::Opus,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 128'000,
                     .channelCount = 2,
@@ -341,8 +341,8 @@ namespace lms::api::subsonic
                     .codecProfiles = { { .type = "AudioCodec", .name = "mp3", .limitations = {} } },
                 },
                 .source = {
-                    .container = audio::ContainerType::FLAC,
-                    .codec = audio::CodecType::FLAC,
+                    .container = core::media::ContainerType::FLAC,
+                    .codec = core::media::CodecType::FLAC,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 750'000,
                     .channelCount = 2,
@@ -363,8 +363,8 @@ namespace lms::api::subsonic
                                 },
                                 .codecProfiles = {} },
                 .source = {
-                    .container = audio::ContainerType::FLAC,
-                    .codec = audio::CodecType::FLAC,
+                    .container = core::media::ContainerType::FLAC,
+                    .codec = core::media::CodecType::FLAC,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 750'000,
                     .channelCount = 2,
@@ -389,8 +389,8 @@ namespace lms::api::subsonic
                     .codecProfiles = {},
                 },
                 .source = {
-                    .container = audio::ContainerType::MPEG,
-                    .codec = audio::CodecType::MP3,
+                    .container = core::media::ContainerType::MPEG,
+                    .codec = core::media::CodecType::MP3,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 128'000,
                     .channelCount = 2,
@@ -415,8 +415,8 @@ namespace lms::api::subsonic
                     .codecProfiles = {},
                 },
                 .source = {
-                    .container = audio::ContainerType::MPEG,
-                    .codec = audio::CodecType::MP3,
+                    .container = core::media::ContainerType::MPEG,
+                    .codec = core::media::CodecType::MP3,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 128'000,
                     .channelCount = 2,
@@ -441,8 +441,8 @@ namespace lms::api::subsonic
                     .codecProfiles = {},
                 },
                 .source = {
-                    .container = audio::ContainerType::FLAC,
-                    .codec = audio::CodecType::FLAC,
+                    .container = core::media::ContainerType::FLAC,
+                    .codec = core::media::CodecType::FLAC,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 1'000'000,
                     .channelCount = 2,
@@ -480,8 +480,8 @@ namespace lms::api::subsonic
                     },
                 },
                 .source = {
-                    .container = audio::ContainerType::FLAC,
-                    .codec = audio::CodecType::FLAC,
+                    .container = core::media::ContainerType::FLAC,
+                    .codec = core::media::CodecType::FLAC,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 950'000,
                     .channelCount = 2,
@@ -520,8 +520,8 @@ namespace lms::api::subsonic
                     },
                 },
                 .source = {
-                    .container = audio::ContainerType::FLAC,
-                    .codec = audio::CodecType::FLAC,
+                    .container = core::media::ContainerType::FLAC,
+                    .codec = core::media::CodecType::FLAC,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 950'000,
                     .channelCount = 2,
@@ -559,8 +559,8 @@ namespace lms::api::subsonic
                     },
                 },
                 .source = {
-                    .container = audio::ContainerType::Ogg,
-                    .codec = audio::CodecType::Vorbis,
+                    .container = core::media::ContainerType::Ogg,
+                    .codec = core::media::CodecType::Vorbis,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 128'000,
                     .channelCount = 2,
@@ -598,8 +598,8 @@ namespace lms::api::subsonic
                     },
                 },
                 .source = {
-                    .container = audio::ContainerType::DSF,
-                    .codec = audio::CodecType::DSD,
+                    .container = core::media::ContainerType::DSF,
+                    .codec = core::media::CodecType::DSD,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 950'000,
                     .channelCount = 2,
@@ -628,8 +628,8 @@ namespace lms::api::subsonic
                                                                               } } },
                 },
                 .source = {
-                    .container = audio::ContainerType::MPEG,
-                    .codec = audio::CodecType::MP3,
+                    .container = core::media::ContainerType::MPEG,
+                    .codec = core::media::CodecType::MP3,
                     .duration = std::chrono::seconds{ 60 },
                     .bitrate = 128'000,
                     .channelCount = 2,

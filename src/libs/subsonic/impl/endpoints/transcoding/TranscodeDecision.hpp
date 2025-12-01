@@ -24,7 +24,7 @@
 
 #include "core/LiteralString.hpp"
 
-#include "audio/AudioTypes.hpp"
+#include "audio/AudioProperties.hpp"
 #include "audio/TranscodeTypes.hpp"
 
 #include "responses/StreamDetails.hpp"
@@ -71,12 +71,6 @@ namespace lms::api::subsonic
         using TranscodeDecisionResult = std::variant<DirectPlayResult, TranscodeResult, FailureResult>;
         TranscodeDecisionResult computeTranscodeDecision(const ClientInfo& clientInfo, const audio::AudioProperties& source);
 
-        struct TranscodeFormat
-        {
-            audio::ContainerType container;
-            audio::CodecType codec;
-            audio::OutputFormat outputFormat;
-        };
-        const TranscodeFormat* selectTranscodeFormat(std::string_view containerName, std::string_view codecName);
+        const audio::TranscodeOutputFormat* selectTranscodeOutputFormat(std::string_view containerName, std::string_view codecName);
     } // namespace details
 } // namespace lms::api::subsonic

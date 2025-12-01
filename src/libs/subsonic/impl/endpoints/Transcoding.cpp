@@ -23,8 +23,6 @@
 #include <memory>
 #include <mutex>
 
-#include "audio/AudioTypes.hpp"
-#include "audio/TranscodeTypes.hpp"
 #include "core/ILogger.hpp"
 #include "core/IResourceHandler.hpp"
 #include "core/Random.hpp"
@@ -33,7 +31,9 @@
 
 #include "audio/Exception.hpp"
 #include "audio/IAudioFileInfo.hpp"
+#include "audio/TranscodeTypes.hpp"
 #include "database/Session.hpp"
+#include "database/objects/PodcastEpisodeId.hpp"
 #include "database/objects/Track.hpp"
 #include "services/transcoding/ITranscodeService.hpp"
 
@@ -43,6 +43,7 @@
 #include "SubsonicResponse.hpp"
 #include "responses/ClientInfo.hpp"
 #include "responses/StreamDetails.hpp"
+#include "transcoding/AudioFileInfo.hpp"
 #include "transcoding/TranscodeDecision.hpp"
 
 namespace lms::api::subsonic
@@ -57,16 +58,16 @@ namespace lms::api::subsonic
             struct Entry
             {
                 Clock::time_point addedTimePoint;
-                db::TrackId track;
+                AudioFileId audioFileId;
                 StreamDetails targetStreamInfo;
             };
 
-            core::UUID add(db::TrackId trackId, const StreamDetails& targetStreamInfo)
+            core::UUID add(AudioFileId audioFileId, const StreamDetails& targetStreamInfo)
             {
                 const core::UUID uuid{ core::UUID::generate() };
                 const Clock::time_point now{ Clock::now() };
 
-                auto entry{ std::make_shared<Entry>(now, trackId, targetStreamInfo) };
+                auto entry{ std::make_shared<Entry>(now, audioFileId, targetStreamInfo) };
 
                 {
                     std::scoped_lock lock{ mutex };
@@ -113,7 +114,7 @@ namespace lms::api::subsonic
             static constexpr std::chrono::hours maxEntryDuration{ 12 };
         };
 
-        static TranscodeDecisionManager& getTranscodeDecisionManager()
+        TranscodeDecisionManager& getTranscodeDecisionManager()
         {
             static TranscodeDecisionManager manager;
             return manager;
@@ -123,8 +124,8 @@ namespace lms::api::subsonic
         {
             StreamDetails res;
             res.protocol = "http";
-            res.container = audio::containerTypeToString(audioProperties.container).str();
-            res.codec = audio::codecTypeToString(audioProperties.codec).str();
+            res.container = core::media::containerTypeToString(audioProperties.container).str();
+            res.codec = core::media::codecTypeToString(audioProperties.codec).str();
             res.audioChannels = audioProperties.channelCount;
             res.audioBitrate = audioProperties.bitrate;
             res.audioProfile = ""; // TODO
@@ -134,84 +135,83 @@ namespace lms::api::subsonic
             return res;
         }
 
+        AudioFileId getMandatoryMediaIdParameter(RequestContext& context)
+        {
+            const std::string mediaType{ getMandatoryParameterAs<std::string>(context.getParameters(), "mediaType") };
+
+            AudioFileId audioFileId;
+            if (mediaType == "song")
+                audioFileId = getMandatoryParameterAs<db::TrackId>(context.getParameters(), "mediaId");
+            else if (mediaType == "podcast")
+                audioFileId = getMandatoryParameterAs<db::PodcastEpisodeId>(context.getParameters(), "mediaId");
+            else
+                throw BadParameterGenericError{ "id", "must be 'song' or 'podcast'" };
+
+            return audioFileId;
+        }
+
     } // namespace
 
     Response handleGetTranscodeDecision(RequestContext& context)
     {
         // Parameters
-        const db::TrackId trackId{ getMandatoryParameterAs<db::TrackId>(context.getParameters(), "songId") };
+        const AudioFileId audioFileId{ getMandatoryMediaIdParameter(context) };
+
         const ClientInfo clientInfo{ parseClientInfoFromJson(context.getBody()) };
+        const AudioFileInfo audioFileInfo{ getAudioFileInfo(context.getDbSession(), audioFileId) };
 
-        auto transaction{ context.getDbSession().createReadTransaction() };
-        const db::Track::pointer track{ db::Track::find(context.getDbSession(), trackId) };
-        if (!track)
-            throw RequestedDataNotFoundError{};
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response::Node& transcodeNode{ response.createNode("transcodeDecision") };
 
-        try
         {
-            // For now, we need to analyze the media (info not yet cached in DB)
-            const auto audioFile{ audio::parseAudioFile(track->getAbsoluteFilePath()) };
-
-            Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
-            Response::Node& transcodeNode{ response.createNode("transcodeDecision") };
-
-            {
-                const StreamDetails sourceStream{ createStreamDetailsFromAudioProperties(audioFile->getAudioProperties()) };
-                transcodeNode.addChild("sourceStream", createStreamDetails(sourceStream));
-            }
-
-            const details::TranscodeDecisionResult transcodeDecision{ details::computeTranscodeDecision(clientInfo, audioFile->getAudioProperties()) };
-
-            std::visit(core::utils::overloads{
-                           [&](const details::DirectPlayResult&) {
-                               transcodeNode.setAttribute("canDirectPlay", true);
-                               transcodeNode.setAttribute("canTranscode", false);
-                           },
-                           [&](const details::TranscodeResult& transcodeRes) {
-                               transcodeNode.setAttribute("canDirectPlay", false);
-                               transcodeNode.setAttribute("canTranscode", true);
-
-                               for (details::TranscodeReason reason : transcodeRes.reasons)
-                                   transcodeNode.addArrayValue("transcodeReason", transcodeReasonToString(reason).str());
-
-                               const core::UUID uuid{ getTranscodeDecisionManager().add(trackId, transcodeRes.targetStreamInfo) };
-                               transcodeNode.addChild("transcodeStream", createStreamDetails(transcodeRes.targetStreamInfo));
-                               transcodeNode.setAttribute("transcodeParams", uuid.getAsString());
-                           },
-                           [&](const details::FailureResult& failureRes) {
-                               transcodeNode.setAttribute("canDirectPlay", false);
-                               transcodeNode.setAttribute("canTranscode", false);
-                               transcodeNode.setAttribute("errorReason", failureRes.reason);
-                           } },
-                       transcodeDecision);
-
-            return response;
+            const StreamDetails sourceStream{ createStreamDetailsFromAudioProperties(audioFileInfo.audioProperties) };
+            transcodeNode.addChild("sourceStream", createStreamDetails(sourceStream));
         }
-        catch (const audio::Exception& e)
-        {
-            LMS_LOG(API_SUBSONIC, ERROR, "Cannot analyze audio file: " << e.what());
-            throw InternalErrorGenericError{ "Cannot analyze audio file" };
-        }
+
+        const details::TranscodeDecisionResult transcodeDecision{ details::computeTranscodeDecision(clientInfo, audioFileInfo.audioProperties) };
+
+        std::visit(core::utils::overloads{
+                       [&](const details::DirectPlayResult&) {
+                           transcodeNode.setAttribute("canDirectPlay", true);
+                           transcodeNode.setAttribute("canTranscode", false);
+                       },
+                       [&](const details::TranscodeResult& transcodeRes) {
+                           transcodeNode.setAttribute("canDirectPlay", false);
+                           transcodeNode.setAttribute("canTranscode", true);
+
+                           for (details::TranscodeReason reason : transcodeRes.reasons)
+                               transcodeNode.addArrayValue("transcodeReason", transcodeReasonToString(reason).str());
+
+                           const core::UUID uuid{ getTranscodeDecisionManager().add(audioFileId, transcodeRes.targetStreamInfo) };
+                           transcodeNode.addChild("transcodeStream", createStreamDetails(transcodeRes.targetStreamInfo));
+                           transcodeNode.setAttribute("transcodeParams", uuid.getAsString());
+                       },
+                       [&](const details::FailureResult& failureRes) {
+                           transcodeNode.setAttribute("canDirectPlay", false);
+                           transcodeNode.setAttribute("canTranscode", false);
+                           transcodeNode.setAttribute("errorReason", failureRes.reason);
+                       } },
+                   transcodeDecision);
+
+        return response;
     }
 
     audio::TranscodeParameters getTranscodingParameters(RequestContext& context)
     {
-        const db::TrackId trackId{ getMandatoryParameterAs<db::TrackId>(context.getParameters(), "songId") };
+        // Parameters
+        const AudioFileId audioFileId{ getMandatoryMediaIdParameter(context) };
         const core::UUID uuid{ getMandatoryParameterAs<core::UUID>(context.getParameters(), "transcodeParams") };
         const std::chrono::seconds offset{ getParameterAs<std::size_t>(context.getParameters(), "offset").value_or(0) };
 
         const std::shared_ptr<TranscodeDecisionManager::Entry> entry{ getTranscodeDecisionManager().get(uuid) };
-        if (!entry || entry->track != trackId)
+        if (!entry || entry->audioFileId != audioFileId)
             throw RequestedDataNotFoundError{};
 
-        auto transaction{ context.getDbSession().createReadTransaction() };
-        const db::Track::pointer track{ db::Track::find(context.getDbSession(), trackId) };
-        if (!track)
-            throw RequestedDataNotFoundError{};
+        const AudioFileInfo audioFileInfo{ getAudioFileInfo(context.getDbSession(), audioFileId) };
 
         audio::TranscodeParameters params;
-        params.inputParameters.filePath = track->getAbsoluteFilePath();
-        params.inputParameters.duration = track->getDuration();
+        params.inputParameters.filePath = audioFileInfo.path;
+        params.inputParameters.audioProperties = audioFileInfo.audioProperties;
         params.inputParameters.offset = offset;
 
         if (entry->targetStreamInfo.audioChannels)
@@ -225,11 +225,11 @@ namespace lms::api::subsonic
 
         params.outputParameters.stripMetadata = false;
 
-        const details::TranscodeFormat* transcodeFormat{ details::selectTranscodeFormat(entry->targetStreamInfo.container, entry->targetStreamInfo.codec) };
-        if (!transcodeFormat)
+        const audio::TranscodeOutputFormat* transcodeOutputFormat{ details::selectTranscodeOutputFormat(entry->targetStreamInfo.container, entry->targetStreamInfo.codec) };
+        if (!transcodeOutputFormat)
             throw InternalErrorGenericError{ "Unsupported output format" };
 
-        params.outputParameters.format = transcodeFormat->outputFormat;
+        params.outputParameters.format = *transcodeOutputFormat;
 
         return params;
     }
