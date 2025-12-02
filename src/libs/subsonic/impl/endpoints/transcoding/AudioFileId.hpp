@@ -19,24 +19,12 @@
 
 #pragma once
 
-#include <filesystem>
+#include <variant>
 
-#include "audio/AudioProperties.hpp"
-
-#include "AudioFileId.hpp"
-
-namespace lms::db
-{
-    class Session;
-}
+#include "database/objects/PodcastEpisodeId.hpp"
+#include "database/objects/TrackId.hpp"
 
 namespace lms::api::subsonic
 {
-    struct AudioFileInfo
-    {
-        std::filesystem::path path;
-        audio::AudioProperties audioProperties;
-    };
-
-    AudioFileInfo getAudioFileInfo(db::Session& session, AudioFileId audioFileId); // throw RequestedDataNotFoundError on failure
-} // namespace lms::api::subsonic
+    using AudioFileId = std::variant<db::TrackId, db::PodcastEpisodeId>;
+}

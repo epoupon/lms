@@ -19,24 +19,35 @@
 
 #pragma once
 
-#include <filesystem>
+#include <chrono>
+#include <memory>
 
-#include "audio/AudioProperties.hpp"
+#include "core/UUID.hpp"
+
+#include "payloads/StreamDetails.hpp"
 
 #include "AudioFileId.hpp"
 
-namespace lms::db
-{
-    class Session;
-}
-
 namespace lms::api::subsonic
 {
-    struct AudioFileInfo
+    // Keeps track of decisions using UUIDs
+    class ITranscodeDecisionTracker
     {
-        std::filesystem::path path;
-        audio::AudioProperties audioProperties;
+    public:
+        virtual ~ITranscodeDecisionTracker() = default;
+
+        using Clock = std::chrono::steady_clock;
+
+        struct Entry
+        {
+            Clock::time_point addedTimePoint;
+            AudioFileId audioFileId;
+            StreamDetails targetStreamInfo;
+        };
+
+        virtual core::UUID add(AudioFileId audioFileId, const StreamDetails& targetStreamInfo) = 0;
+        virtual std::shared_ptr<Entry> get(const core::UUID& uuid) = 0;
     };
 
-    AudioFileInfo getAudioFileInfo(db::Session& session, AudioFileId audioFileId); // throw RequestedDataNotFoundError on failure
+    ITranscodeDecisionTracker& getTranscodeDecisionTracker();
 } // namespace lms::api::subsonic

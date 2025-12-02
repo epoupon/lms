@@ -32,7 +32,6 @@ namespace lms::api::subsonic
 {
     namespace details
     {
-
         std::ostream& operator<<(std::ostream& os, const details::TranscodeDecisionResult& result)
         {
             std::visit(core::utils::overloads{
@@ -71,7 +70,6 @@ namespace lms::api::subsonic
 
     namespace
     {
-
         struct TestCase
         {
             ClientInfo clientInfo;

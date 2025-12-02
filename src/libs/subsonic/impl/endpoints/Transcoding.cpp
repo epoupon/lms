@@ -21,11 +21,9 @@
 
 #include <chrono>
 #include <memory>
-#include <mutex>
 
-#include "core/ILogger.hpp"
 #include "core/IResourceHandler.hpp"
-#include "core/Random.hpp"
+#include "core/Service.hpp"
 #include "core/UUID.hpp"
 #include "core/Utils.hpp"
 
@@ -40,81 +38,12 @@
 #include "payloads/StreamDetails.hpp"
 #include "transcoding/AudioFileInfo.hpp"
 #include "transcoding/TranscodeDecision.hpp"
+#include "transcoding/TranscodeDecisionTracker.hpp"
 
 namespace lms::api::subsonic
 {
     namespace
     {
-        class TranscodeDecisionManager
-        {
-        public:
-            using Clock = std::chrono::steady_clock;
-
-            struct Entry
-            {
-                Clock::time_point addedTimePoint;
-                AudioFileId audioFileId;
-                StreamDetails targetStreamInfo;
-            };
-
-            core::UUID add(AudioFileId audioFileId, const StreamDetails& targetStreamInfo)
-            {
-                const core::UUID uuid{ core::UUID::generate() };
-                const Clock::time_point now{ Clock::now() };
-
-                auto entry{ std::make_shared<Entry>(now, audioFileId, targetStreamInfo) };
-
-                {
-                    std::scoped_lock lock{ mutex };
-
-                    purgeOutdatedEntries(now);
-
-                    entries.emplace(uuid, entry);
-                }
-
-                return uuid;
-            }
-
-            std::shared_ptr<Entry> get(const core::UUID& uuid)
-            {
-                const Clock::time_point now{ Clock::now() };
-                std::shared_ptr<Entry> res;
-
-                std::scoped_lock lock{ mutex };
-
-                auto it{ entries.find(uuid) };
-                if (it != entries.end())
-                {
-                    if (now > it->second->addedTimePoint + maxEntryDuration)
-                        entries.erase(it);
-                    else
-                        res = it->second;
-                }
-
-                return res;
-            }
-
-        private:
-            void purgeOutdatedEntries(Clock::time_point now)
-            {
-                std::erase_if(entries, [&](const auto& entry) { return now > entry.second->addedTimePoint + maxEntryDuration; });
-                while (entries.size() > maxEntryCount)
-                    entries.erase(core::random::pickRandom(entries)); // TODO kill oldest one?
-            }
-
-            std::mutex mutex;
-            std::unordered_map<core::UUID, std::shared_ptr<Entry>> entries;
-
-            static constexpr std::size_t maxEntryCount{ 1'000 };
-            static constexpr std::chrono::hours maxEntryDuration{ 12 };
-        };
-
-        TranscodeDecisionManager& getTranscodeDecisionManager()
-        {
-            static TranscodeDecisionManager manager;
-            return manager;
-        }
-
         StreamDetails createStreamDetailsFromAudioProperties(const audio::AudioProperties& audioProperties)
         {
             StreamDetails res;
@@ -177,7 +106,7 @@ namespace lms::api::subsonic
                            for (details::TranscodeReason reason : transcodeRes.reasons)
                                transcodeNode.addArrayValue("transcodeReason", transcodeReasonToString(reason).str());
 
-                           const core::UUID uuid{ getTranscodeDecisionManager().add(audioFileId, transcodeRes.targetStreamInfo) };
+                           const core::UUID uuid{ getTranscodeDecisionTracker().add(audioFileId, transcodeRes.targetStreamInfo) };
                            transcodeNode.addChild("transcodeStream", createStreamDetails(transcodeRes.targetStreamInfo));
                            transcodeNode.setAttribute("transcodeParams", uuid.getAsString());
                        },
@@ -198,7 +127,7 @@ namespace lms::api::subsonic
         const core::UUID uuid{ getMandatoryParameterAs<core::UUID>(context.getParameters(), "transcodeParams") };
         const std::chrono::seconds offset{ getParameterAs<std::size_t>(context.getParameters(), "offset").value_or(0) };
 
-        const std::shared_ptr<TranscodeDecisionManager::Entry> entry{ getTranscodeDecisionManager().get(uuid) };
+        const std::shared_ptr<ITranscodeDecisionTracker::Entry> entry{ getTranscodeDecisionTracker().get(uuid) };
         if (!entry || entry->audioFileId != audioFileId)
             throw RequestedDataNotFoundError{};
 
