@@ -468,7 +468,6 @@ namespace lms::api::subsonic
                         { .container = "flac", .audioCodec = "flac", .protocol = "http", .maxAudioChannels = 6 },
                         { .container = "aac", .audioCodec = "aac", .protocol = "http", .maxAudioChannels = 6 },
                         { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
-
                     } },
                     .codecProfiles = {
                         {
@@ -508,7 +507,6 @@ namespace lms::api::subsonic
                         { .container = "mp4", .audioCodec = "aac", .protocol = "http", .maxAudioChannels = 6 },
                         { .container = "aac", .audioCodec = "aac", .protocol = "http", .maxAudioChannels = 6 },
                         { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
-
                     } },
                     .codecProfiles = {
                         {
@@ -547,7 +545,6 @@ namespace lms::api::subsonic
                         { .container = "flac", .audioCodec = "flac", .protocol = "http", .maxAudioChannels = 6 },
                         { .container = "aac", .audioCodec = "aac", .protocol = "http", .maxAudioChannels = 6 },
                         { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
-
                     } },
                     .codecProfiles = {
                         {
@@ -586,7 +583,6 @@ namespace lms::api::subsonic
                         { .container = "flac", .audioCodec = "flac", .protocol = "http", .maxAudioChannels = 6 },
                         { .container = "aac", .audioCodec = "aac", .protocol = "http", .maxAudioChannels = 6 },
                         { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
-
                     } },
                     .codecProfiles = {
                         {

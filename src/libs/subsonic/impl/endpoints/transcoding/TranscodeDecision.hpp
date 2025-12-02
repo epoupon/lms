@@ -31,7 +31,7 @@
 
 namespace lms::api::subsonic
 {
-    class ClientInfo;
+    struct ClientInfo;
 
     namespace details
     {
