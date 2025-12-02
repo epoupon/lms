@@ -28,9 +28,9 @@ namespace lms::api::subsonic
 {
     struct DirectPlayProfile
     {
-        std::vector<std::string> containers;         // The container format (e.g., mp3, flac).
-        std::vector<std::string> audioCodecs;        // Comma-separated list of supported audio codecs.
-        std::string protocol;                        // The streaming protocol. Can be http or hls.
+        std::vector<std::string> containers;         // Supported containers (e.g., mp3, flac).
+        std::vector<std::string> audioCodecs;        // Supported audio codecs.
+        std::vector<std::string> protocols;          // The streaming protocols. Can be http or hls.
         std::optional<std::size_t> maxAudioChannels; // The maximum number of audio channels supported.
     };
 
@@ -59,13 +59,11 @@ namespace lms::api::subsonic
             NotEquals,
             LessThanEqual,
             GreaterThanEqual,
-            EqualsAny,
-            NotEqualsAny,
         };
 
         Type name;                       // The name of the limitation. Can be audioChannels, audioBitrate, audioProfile, audioSamplerate, or audioBitdepth.
-        ComparisonOperator comparison;   // The comparison operator. Can be Equals, NotEquals, LessThanEqual, GreaterThanEqual, EqualsAny, or NotEqualsAny.
-        std::vector<std::string> values; // The value to compare against. For EqualsAny and NotEqualsAny, this should be a pipe-separated (|) list of values (e.g., 44100|48000).
+        ComparisonOperator comparison;   // The comparison operator. Can be Equals, NotEquals, LessThanEqual, GreaterThanEqual
+        std::vector<std::string> values; // The values to compare against. For LessThanEqual and GreaterThanEqual, only the first value will be used.
         bool required;                   // Whether this limitation must be met.
     };
 

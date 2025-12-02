@@ -73,6 +73,53 @@ namespace lms::api::subsonic
         }
 
         template<typename T>
+        std::vector<T> parseMandatoryArrayValues(const Wt::Json::Object& object, const std::string& entry)
+        {
+            std::vector<T> res;
+
+            try
+            {
+                const Wt::Json::Value& value{ object.get(entry) };
+                if (value.isNull())
+                    throw BadParameterGenericError{ entry, "missing field" };
+
+                if (value.type() != Wt::Json::Type::Array)
+                    throw BadParameterGenericError{ entry, "field must be an array" };
+
+                for (const Wt::Json::Value& item : static_cast<const Wt::Json::Array&>(value))
+                {
+                    if constexpr (std::is_same_v<T, bool>)
+                    {
+                        if (item.type() != Wt::Json::Type::Bool)
+                            throw BadParameterGenericError{ entry, "array item must be a boolean" };
+                    }
+                    else if constexpr (std::is_same_v<T, std::string>)
+                    {
+                        if (item.type() != Wt::Json::Type::String)
+                            throw BadParameterGenericError{ entry, "array item must be a string" };
+                    }
+                    else if constexpr (std::is_integral_v<T>)
+                    {
+                        if (item.type() != Wt::Json::Type::Number)
+                            throw BadParameterGenericError{ entry, "array item must be a number" };
+                    }
+                    else
+                    {
+                        static_assert(false, "Unhandled type");
+                    }
+
+                    res.emplace_back(static_cast<T>(item));
+                }
+            }
+            catch (const Wt::WException& e)
+            {
+                throw BadParameterGenericError{ entry, "failed to read value" };
+            }
+
+            return res;
+        }
+
+        template<typename T>
         T parseMandatoryValue(const Wt::Json::Object& object, const std::string& entry)
         {
             std::optional<T> res{ parseValue<T>(object, entry) };
@@ -95,12 +142,12 @@ namespace lms::api::subsonic
             if (str == "audioBitdepth")
                 return Limitation::Type::AudioBitdepth;
 
-            throw BadParameterGenericError{ "ClientInfo::CodecProfile::name", "unexpected value '" + std::string{ str } + "'" };
+            throw BadParameterGenericError{ "ClientInfo::CodecProfile::Limitation::name", "unexpected value '" + std::string{ str } + "'" };
         }
 
         Limitation::ComparisonOperator parseComparisonOperator(std::string_view str)
         {
-            // Equals, NotEquals, LessThanEqual, GreaterThanEqual, EqualsAny, or NotEqualsAny
+            // Equals, NotEquals, LessThanEqual, GreaterThanEqual
             if (str == "Equals")
                 return Limitation::ComparisonOperator::Equals;
             if (str == "NotEquals")
@@ -109,28 +156,14 @@ namespace lms::api::subsonic
                 return Limitation::ComparisonOperator::LessThanEqual;
             if (str == "GreaterThanEqual")
                 return Limitation::ComparisonOperator::GreaterThanEqual;
-            if (str == "EqualsAny")
-                return Limitation::ComparisonOperator::EqualsAny;
-            if (str == "NotEqualsAny")
-                return Limitation::ComparisonOperator::NotEqualsAny;
 
-            throw BadParameterGenericError{ "ClientInfo::CodecProfile::comparison", "unexpected value '" + std::string{ str } + "'" };
-        }
-
-        std::vector<std::string> parseValues(std::string_view str, char delimiter)
-        {
-            std::vector<std::string> res;
-            for (std::string_view v : core::stringUtils::splitString(str, delimiter))
-                res.emplace_back(v);
-            return res;
+            throw BadParameterGenericError{ "ClientInfo::CodecProfile::Limitation::comparison", "unexpected value '" + std::string{ str } + "'" };
         }
 
         void checkLimitationValidity(const Limitation& limitation)
         {
             if (limitation.values.empty())
-                throw BadParameterGenericError{ "ClientInfo::CodecProfile::value", "must have at least one value" };
-            if (limitation.values.size() > 1 && (limitation.comparison != Limitation::ComparisonOperator::EqualsAny && limitation.comparison != Limitation::ComparisonOperator::NotEqualsAny))
-                throw BadParameterGenericError{ "ClientInfo::CodecProfile::value", "multiple values must use EqualsAny or NotEqualsAny comparison operator" };
+                throw BadParameterGenericError{ "ClientInfo::CodecProfile::Limitation::values", "must have at least one value" };
 
             // only numeric values are allowed for some limitation types
             switch (limitation.name)
@@ -143,7 +176,7 @@ namespace lms::api::subsonic
                     // must be a numeric value
                     std::string_view value{ limitation.values.front() };
                     if (!core::stringUtils::readAs<unsigned>(value))
-                        throw BadParameterGenericError{ "ClientInfo::CodecProfile::value", "value'" + std::string{ value } + "' is not a number" };
+                        throw BadParameterGenericError{ "ClientInfo::CodecProfile::Limitation::values", "'" + std::string{ value } + "' is not a valid number" };
                 }
                 break;
 
@@ -185,33 +218,22 @@ namespace lms::api::subsonic
                 {
                     DirectPlayProfile directPlayProfile;
 
-                    // containers
-                    {
-                        const auto container{ parseMandatoryValue<std::string>(profile, "container") };
-                        for (std::string_view container : core::stringUtils::splitString(container, ','))
-                            directPlayProfile.containers.push_back(std::string{ container });
+                    auto checkValues{ [](std::span<const std::string> values) {
+                        return std::none_of(std::cbegin(values), std::cend(values), [](const std::string& value) { return value.empty() || value == "*"; });
+                    } };
 
-                        if (directPlayProfile.containers.empty())
-                            throw BadParameterGenericError{ "ClientInfo::DirectPlayProfile::container", "cannot be empty" };
-                        if (directPlayProfile.containers.size() > 1 && std::any_of(std::cbegin(directPlayProfile.containers), std::cend(directPlayProfile.containers), [](const std::string& container) { return container == "*"; }))
-                            throw BadParameterGenericError{ "ClientInfo::DirectPlayProfile::container", "cannot have * when multiple containers are specified" };
-                    }
+                    // containers is stored in an array of string
+                    directPlayProfile.containers = parseMandatoryArrayValues<std::string>(profile, "containers");
+                    if (!checkValues(directPlayProfile.containers))
+                        throw BadParameterGenericError{ "ClientInfo::DirectPlayProfile::containers", "Invalid value" };
 
-                    // audio codecs
-                    {
-                        const auto audioCodec{ parseMandatoryValue<std::string>(profile, "audioCodec") };
-                        for (std::string_view codec : core::stringUtils::splitString(audioCodec, ','))
-                            directPlayProfile.audioCodecs.push_back(std::string{ codec });
+                    directPlayProfile.audioCodecs = parseMandatoryArrayValues<std::string>(profile, "audioCodecs");
+                    if (!checkValues(directPlayProfile.audioCodecs))
+                        throw BadParameterGenericError{ "ClientInfo::DirectPlayProfile::containers", "Invalid value" };
 
-                        if (directPlayProfile.audioCodecs.empty())
-                            throw BadParameterGenericError{ "ClientInfo::DirectPlayProfile::audioCodec", "cannot be empty" };
-                        if (directPlayProfile.audioCodecs.size() > 1 && std::any_of(std::cbegin(directPlayProfile.audioCodecs), std::cend(directPlayProfile.audioCodecs), [](const std::string& codec) { return codec == "*"; }))
-                            throw BadParameterGenericError{ "ClientInfo::DirectPlayProfile::audioCodec", "cannot have * when multiple codecs are specified" };
-                    }
-
-                    directPlayProfile.protocol = parseMandatoryValue<std::string>(profile, "protocol");
-                    if (directPlayProfile.protocol.empty())
-                        throw BadParameterGenericError{ "ClientInfo::DirectPlayProfile::protocol", "cannot be empty" };
+                    directPlayProfile.protocols = parseMandatoryArrayValues<std::string>(profile, "protocols");
+                    if (!checkValues(directPlayProfile.protocols))
+                        throw BadParameterGenericError{ "ClientInfo::DirectPlayProfile::protocols", "Invalid value" };
 
                     {
                         const auto maxAudioChannels = parseValue<long>(profile, "maxAudioChannels");
@@ -280,7 +302,7 @@ namespace lms::api::subsonic
                             Limitation lim;
                             lim.name = parseLimitationType(parseMandatoryValue<std::string>(limitation, "name"));
                             lim.comparison = parseComparisonOperator(parseMandatoryValue<std::string>(limitation, "comparison"));
-                            lim.values = parseValues(parseMandatoryValue<std::string>(limitation, "value"), '|');
+                            lim.values = parseMandatoryArrayValues<std::string>(limitation, "values");
                             lim.required = parseMandatoryValue<bool>(limitation, "required");
 
                             checkLimitationValidity(lim);

@@ -27,7 +27,7 @@
 #include "audio/TranscodeTypes.hpp"
 
 #include "SubsonicResponse.hpp"
-#include "responses/ClientInfo.hpp"
+#include "payloads/ClientInfo.hpp"
 
 namespace lms::api::subsonic::details
 {
@@ -214,83 +214,45 @@ namespace lms::api::subsonic::details
             Type type{ Type::None };
             std::optional<unsigned> newValue;
         };
-        static AdjustResult adjustUsingLimitation(Limitation::ComparisonOperator comparisonOp, std::span<const std::string> values, unsigned originalValue)
+        AdjustResult adjustUsingLimitation(Limitation::ComparisonOperator comparisonOp, std::span<const std::string> values, unsigned originalValue)
         {
+            assert(values.size() >= 1);
+
             switch (comparisonOp)
             {
             case Limitation::ComparisonOperator::Equals:
                 {
-                    assert(values.size() == 1);
+                    if (values.size() == 1)
+                    {
+                        const auto value{ core::stringUtils::readAs<unsigned>(values.front()) };
+                        assert(value);
+                        if (originalValue == *value)
+                            return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
+                    }
+                    else
+                    {
+                        // Get the closest allowed value *below* originalValue (we don't want to upscale)
+                        // Not sure if this worth doing this?
 
-                    const auto value{ core::stringUtils::readAs<unsigned>(values.front()) };
-                    assert(value);
-                    if (originalValue == *value)
-                        return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
+                        std::optional<unsigned> closestValue;
+                        for (std::string_view valueStr : values)
+                        {
+                            const auto value{ core::stringUtils::readAs<unsigned>(valueStr) };
+                            assert(value);
+                            if (*value == originalValue)
+                                return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
+                            if (*value < originalValue && (!closestValue || *value > *closestValue))
+                                closestValue = *value;
+                        }
+                        if (closestValue)
+                            return AdjustResult{ .type = AdjustResult::Type::Adjusted, .newValue = *closestValue };
+                    }
 
-                    // don't really know what to do here
+                    // Don't really know what to do here
                     return AdjustResult{ .type = AdjustResult::Type::CannotAdjust, .newValue = std::nullopt };
                 }
 
             case Limitation::ComparisonOperator::NotEquals:
-                {
-                    assert(values.size() == 1);
-
-                    const auto value{ core::stringUtils::readAs<unsigned>(values.front()) };
-                    assert(value);
-                    if (originalValue != *value)
-                        return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
-
-                    // don't really know what to do here
-                    return AdjustResult{ .type = AdjustResult::Type::CannotAdjust, .newValue = std::nullopt };
-                }
-
-            case Limitation::ComparisonOperator::LessThanEqual:
-                {
-                    assert(values.size() == 1);
-                    const auto value{ core::stringUtils::readAs<unsigned>(values.front()) };
-                    assert(value);
-                    if (originalValue <= *value)
-                        return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
-
-                    return AdjustResult{ .type = AdjustResult::Type::Adjusted, .newValue = *value };
-                }
-
-            case Limitation::ComparisonOperator::GreaterThanEqual:
-                {
-                    assert(values.size() == 1);
-                    const auto value{ core::stringUtils::readAs<unsigned>(values.front()) };
-                    assert(value);
-
-                    if (originalValue >= *value)
-                        return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
-
-                    // We don't want to use a higher value than the original one (we don't want to upscale)
-                    return AdjustResult{ .type = AdjustResult::Type::CannotAdjust, .newValue = *value };
-                }
-
-            case Limitation::ComparisonOperator::EqualsAny:
-                assert(!values.empty());
-                // get the closest allowed value *below* originalValue (we don't want to upscale)
-                {
-                    std::optional<unsigned> closestValue;
-                    for (std::string_view valueStr : values)
-                    {
-                        const auto value{ core::stringUtils::readAs<unsigned>(valueStr) };
-                        assert(value);
-                        if (*value == originalValue)
-                            return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
-                        if (*value < originalValue && (!closestValue || *value > *closestValue))
-                            closestValue = *value;
-                    }
-                    if (closestValue)
-                        return AdjustResult{ .type = AdjustResult::Type::Adjusted, .newValue = *closestValue };
-
-                    // don't really know what to do here
-                    return AdjustResult{ .type = AdjustResult::Type::CannotAdjust, .newValue = std::nullopt };
-                }
-
-            case Limitation::ComparisonOperator::NotEqualsAny:
-                assert(!values.empty());
                 {
                     if (std::none_of(std::cbegin(values), std::cend(values), [&](std::string_view valueStr) {
                             const auto value{ core::stringUtils::readAs<unsigned>(valueStr) };
@@ -304,12 +266,36 @@ namespace lms::api::subsonic::details
                     // don't really know what to do here
                     return AdjustResult{ .type = AdjustResult::Type::CannotAdjust, .newValue = std::nullopt };
                 }
+
+            case Limitation::ComparisonOperator::LessThanEqual:
+                {
+                    // Take only the first value into account
+                    const auto value{ core::stringUtils::readAs<unsigned>(values.front()) };
+                    assert(value);
+                    if (originalValue <= *value)
+                        return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
+
+                    return AdjustResult{ .type = AdjustResult::Type::Adjusted, .newValue = *value };
+                }
+
+            case Limitation::ComparisonOperator::GreaterThanEqual:
+                {
+                    // Take only the first value into account
+                    const auto value{ core::stringUtils::readAs<unsigned>(values.front()) };
+                    assert(value);
+
+                    if (originalValue >= *value)
+                        return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
+
+                    // We don't want to use a higher value than the original one (we don't want to upscale)
+                    return AdjustResult{ .type = AdjustResult::Type::CannotAdjust, .newValue = *value };
+                }
             }
 
             throw InternalErrorGenericError{ "Unhandled limitation comparison operator" };
         }
 
-        static bool isStreamCompatibleWithLimitation(const audio::AudioProperties& source, const Limitation& limitation)
+        bool isStreamCompatibleWithLimitation(const audio::AudioProperties& source, const Limitation& limitation)
         {
             if (!limitation.required)
                 return true;
@@ -359,19 +345,17 @@ namespace lms::api::subsonic::details
 
         std::optional<TranscodeReason> needsTranscode(const DirectPlayProfile& profile, std::span<const CodecProfile> codecProfiles, const audio::AudioProperties& source)
         {
-            assert(!profile.containers.empty());
-            if (profile.containers.front() != "*" && std::none_of(std::cbegin(profile.containers), std::cend(profile.containers), [&](const std::string& container) { return isMatchingContainerName(source.container, container); }))
+            if (!profile.containers.empty() && std::none_of(std::cbegin(profile.containers), std::cend(profile.containers), [&](const std::string& container) { return isMatchingContainerName(source.container, container); }))
                 return TranscodeReason::ContainerNotSupported;
 
-            assert(!profile.audioCodecs.empty());
-            if (profile.audioCodecs.front() != "*" && std::none_of(std::cbegin(profile.audioCodecs), std::cend(profile.audioCodecs), [&](const std::string& audioCodec) { return isMatchingCodecName(source.codec, audioCodec); }))
+            if (!profile.audioCodecs.empty() && std::none_of(std::cbegin(profile.audioCodecs), std::cend(profile.audioCodecs), [&](const std::string& audioCodec) { return isMatchingCodecName(source.codec, audioCodec); }))
                 return TranscodeReason::AudioCodecNotSupported;
+
+            if (!profile.protocols.empty() && std::find(std::cbegin(profile.protocols), std::cend(profile.protocols), "http") == std::cend(profile.protocols))
+                return TranscodeReason::ProtocolNotSupported;
 
             if (profile.maxAudioChannels && source.channelCount > *profile.maxAudioChannels)
                 return TranscodeReason::AudioChannelsNotSupported;
-
-            if (profile.protocol != "*" && profile.protocol != "http")
-                return TranscodeReason::ProtocolNotSupported;
 
             // check potential codec profiles limitations
             if (const CodecProfile * codecProfile{ getAudioCodecProfile(codecProfiles, source.codec) })
@@ -454,7 +438,7 @@ namespace lms::api::subsonic::details
 
         std::optional<StreamDetails> computeTranscodedStream(std::optional<std::size_t> maxAudioBitrate, const TranscodingProfile& profile, std::span<const CodecProfile> codecProfiles, const audio::AudioProperties& source)
         {
-            if (profile.protocol != "*" && profile.protocol != "http")
+            if (profile.protocol != "http")
                 return std::nullopt;
 
             const audio::TranscodeOutputFormat* transcodeFormat{ selectTranscodeOutputFormat(profile.container, profile.audioCodec) };

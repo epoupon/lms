@@ -27,7 +27,7 @@
 #include "audio/AudioProperties.hpp"
 #include "audio/TranscodeTypes.hpp"
 
-#include "responses/StreamDetails.hpp"
+#include "payloads/StreamDetails.hpp"
 
 namespace lms::api::subsonic
 {

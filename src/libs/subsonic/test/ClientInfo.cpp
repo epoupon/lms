@@ -21,70 +21,72 @@
 #include <gtest/gtest.h>
 
 #include "SubsonicResponse.hpp"
-#include "responses/ClientInfo.hpp"
+#include "payloads/ClientInfo.hpp"
 
 namespace lms::api::subsonic
 {
     TEST(ClientInfo, basic)
     {
+        // Example as in https://opensubsonic.netlify.app/docs/payloads/clientinfo/
         std::istringstream iss{ R"({
   "name": "Play:1",
   "platform": "Sonos",
   "maxAudioBitrate": 512000,
   "maxTranscodingAudioBitrate": 256000,
   "directPlayProfiles": [
-  {
-"container": "mp3",
-"audioCodec": "mp3",
-"protocol": "http",
-"maxAudioChannels": 2
-  },
-  {
-"container": "flac",
-"audioCodec": "flac",
-"protocol": "*",
-"maxAudioChannels": 2
-  }
-  ,
-  {
-"container": "mp4",
-"audioCodec": "flac,aac,alac",
-"protocol": "*",
-"maxAudioChannels": 2
-  }
-  ],
-  "transcodingProfiles": [
-  {
-"container": "mp3",
-"audioCodec": "mp3",
-"protocol": "http",
-"maxAudioChannels": 2
-  },
-  {
-"container": "flac",
-"audioCodec": "flac",
-"protocol": "*",
-"maxAudioChannels": 2
-  }
+    {
+      "containers": [ "mp3" ],
+      "audioCodecs": [ "mp3" ],
+      "protocols": [ "http" ],
+      "maxAudioChannels": 2
+    },
+    {
+      "containers": [ "flac" ],
+      "audioCodecs": [ "flac" ],
+      "protocols": [],
+      "maxAudioChannels": 2
+    }
+    ,
+    {
+      "containers": [ "mp4" ],
+      "audioCodecs": [ "flac", "aac", "alac" ],
+      "protocols": [],
+      "maxAudioChannels": 2
+    }
+    ],
+    "transcodingProfiles": [
+    {
+      "container": "mp3",
+      "audioCodec": "mp3",
+      "protocol": "http",
+      "maxAudioChannels": 2
+    },
+    {
+      "container": "flac",
+      "audioCodec": "flac",
+      "protocol": "http",
+      "maxAudioChannels": 2
+    }
   ],
   "codecProfiles": [
     {
       "type": "AudioCodec",
       "name": "mp3",
       "limitations": [
-        { "name": "audioBitrate", "comparison": "LessThanEqual", "value": "320000", "required": true }
+        { "name": "audioBitrate", "comparison": "LessThanEqual", "values": [ "320000" ], "required": true }
       ]
     },
     {
       "type": "AudioCodec",
       "name": "flac",
       "limitations": [
-        { "name": "audioSamplerate", "comparison": "LessThanEqual", "value": "192000", "required": false },
-        { "name": "audioChannels",  "comparison": "LessThanEqual", "value": "2",      "required": false }
+        { "name": "audioSamplerate", "comparison": "LessThanEqual", "values":  [ "192000" ], "required": false },
+        { "name": "audioChannels",  "comparison": "Equals", "values": ["1", "2" ],      "required": false }
       ]
     }
   ]
-})" };
+}
+)" };
         try
         {
             const ClientInfo clientInfo{ parseClientInfoFromJson(iss) };
@@ -101,13 +103,13 @@ namespace lms::api::subsonic
             EXPECT_EQ(clientInfo.directPlayProfiles[0].containers[0], "mp3");
             ASSERT_EQ(clientInfo.directPlayProfiles[0].audioCodecs.size(), 1);
             EXPECT_EQ(clientInfo.directPlayProfiles[0].audioCodecs[0], "mp3");
-            EXPECT_EQ(clientInfo.directPlayProfiles[0].protocol, "http");
+            EXPECT_EQ(clientInfo.directPlayProfiles[0].protocols, std::vector<std::string>{ "http" });
             EXPECT_EQ(clientInfo.directPlayProfiles[0].maxAudioChannels, 2);
             ASSERT_EQ(clientInfo.directPlayProfiles[1].containers.size(), 1);
             EXPECT_EQ(clientInfo.directPlayProfiles[1].containers[0], "flac");
             EXPECT_EQ(clientInfo.directPlayProfiles[1].audioCodecs.size(), 1);
             EXPECT_EQ(clientInfo.directPlayProfiles[1].audioCodecs[0], "flac");
-            EXPECT_EQ(clientInfo.directPlayProfiles[1].protocol, "*");
+            EXPECT_TRUE(clientInfo.directPlayProfiles[1].protocols.empty());
             EXPECT_EQ(clientInfo.directPlayProfiles[1].maxAudioChannels, 2);
             ASSERT_EQ(clientInfo.directPlayProfiles[2].containers.size(), 1);
             EXPECT_EQ(clientInfo.directPlayProfiles[2].containers[0], "mp4");
@@ -115,7 +117,7 @@ namespace lms::api::subsonic
             EXPECT_EQ(clientInfo.directPlayProfiles[2].audioCodecs[0], "flac");
             EXPECT_EQ(clientInfo.directPlayProfiles[2].audioCodecs[1], "aac");
             EXPECT_EQ(clientInfo.directPlayProfiles[2].audioCodecs[2], "alac");
-            EXPECT_EQ(clientInfo.directPlayProfiles[2].protocol, "*");
+            EXPECT_TRUE(clientInfo.directPlayProfiles[2].protocols.empty());
             EXPECT_EQ(clientInfo.directPlayProfiles[2].maxAudioChannels, 2);
             ASSERT_EQ(clientInfo.transcodingProfiles.size(), 2);
             EXPECT_EQ(clientInfo.transcodingProfiles[0].container, "mp3");
@@ -124,7 +126,7 @@ namespace lms::api::subsonic
             EXPECT_EQ(clientInfo.transcodingProfiles[0].maxAudioChannels, 2);
             EXPECT_EQ(clientInfo.transcodingProfiles[1].container, "flac");
             EXPECT_EQ(clientInfo.transcodingProfiles[1].audioCodec, "flac");
-            EXPECT_EQ(clientInfo.transcodingProfiles[1].protocol, "*");
+            EXPECT_EQ(clientInfo.transcodingProfiles[1].protocol, "http");
             EXPECT_EQ(clientInfo.transcodingProfiles[1].maxAudioChannels, 2);
             ASSERT_EQ(clientInfo.codecProfiles.size(), 2);
             EXPECT_EQ(clientInfo.codecProfiles[0].type, "AudioCodec");
@@ -144,9 +146,10 @@ namespace lms::api::subsonic
             EXPECT_EQ(clientInfo.codecProfiles[1].limitations[0].values[0], "192000");
             EXPECT_FALSE(clientInfo.codecProfiles[1].limitations[0].required);
             EXPECT_EQ(clientInfo.codecProfiles[1].limitations[1].name, Limitation::Type::AudioChannels);
-            EXPECT_EQ(clientInfo.codecProfiles[1].limitations[1].comparison, Limitation::ComparisonOperator::LessThanEqual);
-            EXPECT_EQ(clientInfo.codecProfiles[1].limitations[1].values.size(), 1);
-            EXPECT_EQ(clientInfo.codecProfiles[1].limitations[1].values[0], "2");
+            EXPECT_EQ(clientInfo.codecProfiles[1].limitations[1].comparison, Limitation::ComparisonOperator::Equals);
+            EXPECT_EQ(clientInfo.codecProfiles[1].limitations[1].values.size(), 2);
+            EXPECT_EQ(clientInfo.codecProfiles[1].limitations[1].values[0], "1");
+            EXPECT_EQ(clientInfo.codecProfiles[1].limitations[1].values[1], "2");
             EXPECT_FALSE(clientInfo.codecProfiles[1].limitations[1].required);
         }
         catch (const Error& e)
@@ -157,7 +160,7 @@ namespace lms::api::subsonic
 
     TEST(ClientInfo, multi)
     {
-        std::istringstream iss{ R"({"name":"LocalDevice","platform":"Android","maxAudioBitrate":320000,"maxTranscodingAudioBitrate":320000,"directPlayProfiles":[{"container":"mp4,mka,m4a,mp3,mp2,wav,flac,ogg,alac,opus,vorbis","audioCodec":"*","protocol":"*","maxAudioChannels":32}],"transcodingProfiles":[{"container":"flac","audioCodec":"flac","protocol":"http","maxAudioChannels":0},{"container":"ogg","audioCodec":"opus","protocol":"http","maxAudioChannels":6},{"container":"mp3","audioCodec":"mp3","protocol":"http","maxAudioChannels":2}],"codecProfiles":[{"type":"AudioCodec","name":"vorbis","limitations":[{"name":"audioSamplerate","comparison":"LessThanEqual","value":"48000","required":true}]},{"type":"AudioCodec","name":"opus","limitations":[{"name":"audioSamplerate","comparison":"LessThanEqual","value":"48000","required":true}]}]})" };
+        std::istringstream iss{ R"({"name":"LocalDevice","platform":"Android","maxAudioBitrate":320000,"maxTranscodingAudioBitrate":320000,"directPlayProfiles":[{"containers":["mp4","mka","m4a","mp3","mp2","wav","flac","ogg","alac","opus","vorbis"],"audioCodecs":[],"protocols":[],"maxAudioChannels":32}],"transcodingProfiles":[{"container":"flac","audioCodec":"flac","protocol":"http","maxAudioChannels":0},{"container":"ogg","audioCodec":"opus","protocol":"http","maxAudioChannels":6},{"container":"mp3","audioCodec":"mp3","protocol":"http","maxAudioChannels":2}],"codecProfiles":[{"type":"AudioCodec","name":"vorbis","limitations":[{"name":"audioSamplerate","comparison":"LessThanEqual","values":["48000"],"required":true}]},{"type":"AudioCodec","name":"opus","limitations":[{"name":"audioSamplerate","comparison":"LessThanEqual","values":["48000"],"required":true}]}]})" };
 
         try
         {
@@ -180,9 +183,8 @@ namespace lms::api::subsonic
             EXPECT_EQ(clientInfo.directPlayProfiles[0].containers[8], "alac");
             EXPECT_EQ(clientInfo.directPlayProfiles[0].containers[9], "opus");
             EXPECT_EQ(clientInfo.directPlayProfiles[0].containers[10], "vorbis");
-            ASSERT_EQ(clientInfo.directPlayProfiles[0].audioCodecs.size(), 1);
-            EXPECT_EQ(clientInfo.directPlayProfiles[0].audioCodecs[0], "*");
-            EXPECT_EQ(clientInfo.directPlayProfiles[0].protocol, "*");
+            ASSERT_EQ(clientInfo.directPlayProfiles[0].audioCodecs.size(), 0);
+            EXPECT_TRUE(clientInfo.directPlayProfiles[0].protocols.empty());
             EXPECT_EQ(clientInfo.directPlayProfiles[0].maxAudioChannels, 32);
             ASSERT_EQ(clientInfo.transcodingProfiles.size(), 3);
             EXPECT_EQ(clientInfo.transcodingProfiles[0].container, "flac");
@@ -223,7 +225,7 @@ namespace lms::api::subsonic
 
     TEST(ClientInfo, multi2)
     {
-        std::istringstream iss{ R"({"name":"Upnp/192.168.1.1/Foo","platform":"UPnP","maxAudioBitrate":0,"maxTranscodingAudioBitrate":0,"directPlayProfiles":[{"container":"opus,ogg,oga,aac,webma,webm,wav,flac,mka","audioCodec":"*","protocol":"*","maxAudioChannels":0},{"container":"mp3","audioCodec":"mp3","protocol":"*","maxAudioChannels":0},{"container":"m4a,mp4","audioCodec":"aac","protocol":"*","maxAudioChannels":0}],"transcodingProfiles":[{"container":"flac","audioCodec":"flac","protocol":"http","maxAudioChannels":6},{"container":"mp4","audioCodec":"aac","protocol":"http","maxAudioChannels":6},{"container":"aac","audioCodec":"aac","protocol":"http","maxAudioChannels":6},{"container":"mp3","audioCodec":"mp3","protocol":"http","maxAudioChannels":2}],"codecProfiles":[{"type":"AudioCodec","name":"flac","limitations":[{"name":"audioSamplerate","comparison":"LessThanEqual","value":"48000","required":true}]},{"type":"AudioCodec","name":"vorbis","limitations":[{"name":"audioSamplerate","comparison":"LessThanEqual","value":"48000","required":true}]},{"type":"AudioCodec","name":"opus","limitations":[{"name":"audioSamplerate","comparison":"LessThanEqual","value":"48000","required":true}]}]})" };
+        std::istringstream iss{ R"({"name":"Upnp/192.168.1.1/Foo","platform":"UPnP","maxAudioBitrate":0,"maxTranscodingAudioBitrate":0,"directPlayProfiles":[{"containers":["opus","ogg","oga","aac","webma","webm","wav","flac","mka"],"audioCodecs":[],"protocols":[],"maxAudioChannels":0},{"containers":["mp3"],"audioCodecs":["mp3"],"protocols":[],"maxAudioChannels":0},{"containers":["m4a","mp4"],"audioCodecs":["aac"],"protocols":[],"maxAudioChannels":0}],"transcodingProfiles":[{"container":"flac","audioCodec":"flac","protocol":"http","maxAudioChannels":6},{"container":"mp4","audioCodec":"aac","protocol":"http","maxAudioChannels":6},{"container":"aac","audioCodec":"aac","protocol":"http","maxAudioChannels":6},{"container":"mp3","audioCodec":"mp3","protocol":"http","maxAudioChannels":2}],"codecProfiles":[{"type":"AudioCodec","name":"flac","limitations":[{"name":"audioSamplerate","comparison":"LessThanEqual","values":["48000"],"required":true}]},{"type":"AudioCodec","name":"vorbis","limitations":[{"name":"audioSamplerate","comparison":"LessThanEqual","values":["48000"],"required":true}]},{"type":"AudioCodec","name":"opus","limitations":[{"name":"audioSamplerate","comparison":"LessThanEqual","values":["48000"],"required":true}]}]})" };
         try
         {
             const ClientInfo clientInfo{ parseClientInfoFromJson(iss) };
@@ -243,9 +245,8 @@ namespace lms::api::subsonic
             EXPECT_EQ(clientInfo.directPlayProfiles[0].containers[6], "wav");
             EXPECT_EQ(clientInfo.directPlayProfiles[0].containers[7], "flac");
             EXPECT_EQ(clientInfo.directPlayProfiles[0].containers[8], "mka");
-            ASSERT_EQ(clientInfo.directPlayProfiles[0].audioCodecs.size(), 1);
-            EXPECT_EQ(clientInfo.directPlayProfiles[0].audioCodecs[0], "*");
-            EXPECT_EQ(clientInfo.directPlayProfiles[0].protocol, "*");
+            ASSERT_EQ(clientInfo.directPlayProfiles[0].audioCodecs.size(), 0);
+            EXPECT_TRUE(clientInfo.directPlayProfiles[0].protocols.empty());
             EXPECT_EQ(clientInfo.directPlayProfiles[0].maxAudioChannels, std::nullopt);
             ASSERT_EQ(clientInfo.transcodingProfiles.size(), 4);
             EXPECT_EQ(clientInfo.transcodingProfiles[0].container, "flac");

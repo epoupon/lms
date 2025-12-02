@@ -19,12 +19,10 @@
 
 #pragma once
 
-#include "SubsonicResponse.hpp"
+#include <optional>
+#include <string>
 
-namespace lms::audio
-{
-    struct AudioProperties;
-}
+#include "SubsonicResponse.hpp"
 
 namespace lms::api::subsonic
 {

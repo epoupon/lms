@@ -29,20 +29,15 @@
 #include "core/UUID.hpp"
 #include "core/Utils.hpp"
 
-#include "audio/Exception.hpp"
-#include "audio/IAudioFileInfo.hpp"
-#include "audio/TranscodeTypes.hpp"
-#include "database/Session.hpp"
 #include "database/objects/PodcastEpisodeId.hpp"
-#include "database/objects/Track.hpp"
 #include "services/transcoding/ITranscodeService.hpp"
 
 #include "ParameterParsing.hpp"
 #include "RequestContext.hpp"
 #include "SubsonicId.hpp"
 #include "SubsonicResponse.hpp"
-#include "responses/ClientInfo.hpp"
-#include "responses/StreamDetails.hpp"
+#include "payloads/ClientInfo.hpp"
+#include "payloads/StreamDetails.hpp"
 #include "transcoding/AudioFileInfo.hpp"
 #include "transcoding/TranscodeDecision.hpp"
 
