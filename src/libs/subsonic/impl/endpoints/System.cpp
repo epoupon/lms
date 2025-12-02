@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <array>
+
 #include "endpoints/System.hpp"
 
 namespace lms::api::subsonic
@@ -48,13 +50,15 @@ namespace lms::api::subsonic
             int version;
         };
 
-        constexpr Extension extensions[] = {
-            { "transcodeOffset", 1 },
-            { "formPost", 1 },
-            { "songLyrics", 1 },
-            { "apiKeyAuthentication", 1 },
-            { "getPodcastEpisode", 1 },
-            { "transcoding", 1 },
+        constexpr std::array extensions{
+            Extension{ "apiKeyAuthentication", 1 },
+            Extension{ "getPodcastEpisode", 1 },
+            Extension{ "formPost", 1 },
+            Extension{ "indexBasedQueue", 1 },
+            Extension{ "songLyrics", 1 },
+            Extension{ "transcodeOffset", 1 },
+            Extension{ "transcoding", 1 },
+
         };
 
         for (const Extension& extension : extensions)
@@ -62,12 +66,6 @@ namespace lms::api::subsonic
             Response::Node& extensionNode{ response.createArrayNode("openSubsonicExtensions") };
             extensionNode.setAttribute("name", extension.name.str());
             extensionNode.addArrayValue("versions", extension.version);
-        }
-
-        {
-            Response::Node& apiKeyAuthentication{ response.createArrayNode("openSubsonicExtensions") };
-            apiKeyAuthentication.setAttribute("name", "indexBasedQueue");
-            apiKeyAuthentication.addArrayValue("versions", 1);
         }
 
         return response;
