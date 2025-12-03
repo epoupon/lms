@@ -214,6 +214,78 @@ namespace lms::api::subsonic::details
             Type type{ Type::None };
             std::optional<unsigned> newValue;
         };
+
+        AdjustResult adjustUsingEqualsLimitation(std::span<const std::string> values, unsigned originalValue)
+        {
+            if (values.size() == 1)
+            {
+                const auto value{ core::stringUtils::readAs<unsigned>(values.front()) };
+                assert(value);
+                if (originalValue == *value)
+                    return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
+            }
+            else
+            {
+                // Get the closest allowed value *below* originalValue (we don't want to upscale)
+                // Not sure if this worth doing this?
+
+                std::optional<unsigned> closestValue;
+                for (std::string_view valueStr : values)
+                {
+                    const auto value{ core::stringUtils::readAs<unsigned>(valueStr) };
+                    assert(value);
+                    if (*value == originalValue)
+                        return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
+                    if (*value < originalValue && (!closestValue || *value > *closestValue))
+                        closestValue = *value;
+                }
+                if (closestValue)
+                    return AdjustResult{ .type = AdjustResult::Type::Adjusted, .newValue = *closestValue };
+            }
+
+            // Don't really know what to do here
+            return AdjustResult{ .type = AdjustResult::Type::CannotAdjust, .newValue = std::nullopt };
+        }
+
+        AdjustResult adjustUsingNotEqualsLimitation(std::span<const std::string> values, unsigned originalValue)
+        {
+            if (std::none_of(std::cbegin(values), std::cend(values), [&](std::string_view valueStr) {
+                    const auto value{ core::stringUtils::readAs<unsigned>(valueStr) };
+                    assert(value);
+                    return *value == originalValue;
+                }))
+            {
+                return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
+            }
+
+            // don't really know what to do here
+            return AdjustResult{ .type = AdjustResult::Type::CannotAdjust, .newValue = std::nullopt };
+        }
+
+        AdjustResult adjustUsingLessThanEqualLimitation(std::span<const std::string> values, unsigned originalValue)
+        {
+            // Take only the first value into account
+            const auto value{ core::stringUtils::readAs<unsigned>(values.front()) };
+            assert(value);
+            if (originalValue <= *value)
+                return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
+
+            return AdjustResult{ .type = AdjustResult::Type::Adjusted, .newValue = *value };
+        }
+
+        AdjustResult adjustUsingGreaterThanEqualLimitation(std::span<const std::string> values, unsigned originalValue)
+        {
+            // Take only the first value into account
+            const auto value{ core::stringUtils::readAs<unsigned>(values.front()) };
+            assert(value);
+
+            if (originalValue >= *value)
+                return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
+
+            // We don't want to use a higher value than the original one (we don't want to upscale)
+            return AdjustResult{ .type = AdjustResult::Type::CannotAdjust, .newValue = *value };
+        }
+
         AdjustResult adjustUsingLimitation(Limitation::ComparisonOperator comparisonOp, std::span<const std::string> values, unsigned originalValue)
         {
             assert(values.size() >= 1);
@@ -221,75 +293,16 @@ namespace lms::api::subsonic::details
             switch (comparisonOp)
             {
             case Limitation::ComparisonOperator::Equals:
-                {
-                    if (values.size() == 1)
-                    {
-                        const auto value{ core::stringUtils::readAs<unsigned>(values.front()) };
-                        assert(value);
-                        if (originalValue == *value)
-                            return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
-                    }
-                    else
-                    {
-                        // Get the closest allowed value *below* originalValue (we don't want to upscale)
-                        // Not sure if this worth doing this?
-
-                        std::optional<unsigned> closestValue;
-                        for (std::string_view valueStr : values)
-                        {
-                            const auto value{ core::stringUtils::readAs<unsigned>(valueStr) };
-                            assert(value);
-                            if (*value == originalValue)
-                                return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
-                            if (*value < originalValue && (!closestValue || *value > *closestValue))
-                                closestValue = *value;
-                        }
-                        if (closestValue)
-                            return AdjustResult{ .type = AdjustResult::Type::Adjusted, .newValue = *closestValue };
-                    }
-
-                    // Don't really know what to do here
-                    return AdjustResult{ .type = AdjustResult::Type::CannotAdjust, .newValue = std::nullopt };
-                }
+                return adjustUsingEqualsLimitation(values, originalValue);
 
             case Limitation::ComparisonOperator::NotEquals:
-                {
-                    if (std::none_of(std::cbegin(values), std::cend(values), [&](std::string_view valueStr) {
-                            const auto value{ core::stringUtils::readAs<unsigned>(valueStr) };
-                            assert(value);
-                            return *value == originalValue;
-                        }))
-                    {
-                        return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
-                    }
-
-                    // don't really know what to do here
-                    return AdjustResult{ .type = AdjustResult::Type::CannotAdjust, .newValue = std::nullopt };
-                }
+                return adjustUsingNotEqualsLimitation(values, originalValue);
 
             case Limitation::ComparisonOperator::LessThanEqual:
-                {
-                    // Take only the first value into account
-                    const auto value{ core::stringUtils::readAs<unsigned>(values.front()) };
-                    assert(value);
-                    if (originalValue <= *value)
-                        return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
-
-                    return AdjustResult{ .type = AdjustResult::Type::Adjusted, .newValue = *value };
-                }
+                return adjustUsingLessThanEqualLimitation(values, originalValue);
 
             case Limitation::ComparisonOperator::GreaterThanEqual:
-                {
-                    // Take only the first value into account
-                    const auto value{ core::stringUtils::readAs<unsigned>(values.front()) };
-                    assert(value);
-
-                    if (originalValue >= *value)
-                        return AdjustResult{ .type = AdjustResult::Type::None, .newValue = std::nullopt };
-
-                    // We don't want to use a higher value than the original one (we don't want to upscale)
-                    return AdjustResult{ .type = AdjustResult::Type::CannotAdjust, .newValue = *value };
-                }
+                return adjustUsingGreaterThanEqualLimitation(values, originalValue);
             }
 
             throw InternalErrorGenericError{ "Unhandled limitation comparison operator" };
