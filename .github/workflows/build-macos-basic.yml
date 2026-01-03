@@ -1,0 +1,35 @@
+name: Basic Build (macOS)
+
+on: [pull_request]
+
+jobs:
+  build-macos:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew update
+          brew install cmake boost ffmpeg libconfig taglib libarchive xxhash pugixml googletest
+
+      - name: Configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_UNITY_BUILD=ON \
+            -DBUILD_TESTING=ON \
+            -DBUILD_BENCHMARKS=OFF
+
+      - name: Build
+        run: |
+          cd build
+          cmake --build . --parallel
+
+      - name: Test
+        run: |
+          cd build
+          ctest --output-on-failure
