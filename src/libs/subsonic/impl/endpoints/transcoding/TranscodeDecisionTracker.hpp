@@ -43,6 +43,13 @@ namespace lms::api::subsonic
             Clock::time_point addedTimePoint;
             AudioFileId audioFileId;
             StreamDetails targetStreamInfo;
+
+            Entry(Clock::time_point _addedTimePoint, AudioFileId _audioFileId, const StreamDetails& _targetStreamInfo)
+                : addedTimePoint{ _addedTimePoint }
+                , audioFileId{ _audioFileId }
+                , targetStreamInfo{ _targetStreamInfo }
+            {
+            }
         };
 
         virtual core::UUID add(AudioFileId audioFileId, const StreamDetails& targetStreamInfo) = 0;

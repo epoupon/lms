@@ -26,7 +26,7 @@
 
 namespace lms::api::subsonic
 {
-    struct RequestContext;
+    class RequestContext;
 
     Response handleGetTranscodeDecision(RequestContext& context);
     void handleGetTranscodeStream(RequestContext& context, const Wt::Http::Request& request, Wt::Http::Response& response);
