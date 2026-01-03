@@ -5,6 +5,10 @@ on: [pull_request]
 jobs:
   build-macos:
     runs-on: macos-14
+    env:
+      # Make sure pkg-config can find libarchive and other Homebrew .pc files
+      PKG_CONFIG_PATH: /opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig
+
     steps:
       - uses: actions/checkout@v4
 
@@ -28,16 +32,14 @@ jobs:
           cmake --build build --parallel 2
           sudo cmake --install build
 
-      - name: Configure
-        run: |
-          PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig" \
-          cmake -S . -B build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_UNITY_BUILD=ON \
-            -DBUILD_TESTING=ON
+      - name: Configure LMS
+        run: cmake -S . -B build \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_UNITY_BUILD=ON \
+              -DBUILD_TESTING=ON
 
-      - name: Build
+      - name: Build LMS
         run: cmake --build build --parallel 2
 
-      - name: Test
+      - name: Test LMS
         run: ctest --test-dir build --output-on-failure
