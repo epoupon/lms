@@ -13,16 +13,6 @@ jobs:
           brew update
           brew install pkg-config cmake boost ffmpeg libconfig taglib libarchive xxhash pugixml googletest openssl
 
-      - name: Setup environment for pkg-config
-        run: |
-          # Ensure pkg-config finds Homebrew .pc files
-          echo "Setting PKG_CONFIG_PATH"
-          export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig:$PKG_CONFIG_PATH"
-          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
-          # Optional: CMake can also look in Homebrew prefix
-          export CMAKE_PREFIX_PATH="/opt/homebrew:$CMAKE_PREFIX_PATH"
-          echo "CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH"
-
       - name: Build and install Wt from source
         run: |
           WT_VERSION=4.12.1
@@ -40,8 +30,7 @@ jobs:
 
       - name: Configure
         run: |
-          export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig:$PKG_CONFIG_PATH"
-          export CMAKE_PREFIX_PATH="/opt/homebrew:$CMAKE_PREFIX_PATH"
+          PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig" \
           cmake -S . -B build \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_UNITY_BUILD=ON \
