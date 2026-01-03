@@ -6,9 +6,9 @@ jobs:
   build-macos:
     runs-on: macos-14
     env:
-      # Make sure pkg-config can find libarchive and other Homebrew .pc files
+      # Make sure pkg-config can find Homebrew .pc files
       PKG_CONFIG_PATH: /opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig
-      CMAKE_PREFIX_PATH: /opt/homebrew
+      CMAKE_PREFIX_PATH: /opt/homebrew/lib/cmake/wt
 
     steps:
       - uses: actions/checkout@v4
@@ -16,33 +16,13 @@ jobs:
       - name: Install dependencies
         run: |
           brew update
-          brew install pkg-config cmake boost ffmpeg libconfig taglib libarchive xxhash pugixml googletest openssl
-
-      - name: Build and install Wt from source
-        run: |
-          WT_VERSION=4.12.1
-          git clone https://github.com/emweb/wt.git /tmp/wt
-          cd /tmp/wt
-          git checkout ${WT_VERSION}
-          cmake -B build -S . \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX=/usr/local \
-            -DBUILD_EXAMPLES=OFF \
-            -DENABLE_LIBWTTEST=OFF \
-            -DCONNECTOR_FCGI=OFF
-          cmake --build build --parallel 2
-          sudo cmake --install build
-
-      - name: Check pkg-config
-        run: pkg-config --cflags --libs libarchive
+          brew install pkg-config cmake boost ffmpeg libconfig taglib libarchive xxhash pugixml googletest openssl wt
 
       - name: Configure LMS
         run: cmake -S . -B build \
               -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_UNITY_BUILD=ON \
-              -DBUILD_TESTING=ON \
-              -DCMAKE_INCLUDE_PATH=/opt/homebrew/include \
-              -DCMAKE_LIBRARY_PATH=/opt/homebrew/lib
+              -DBUILD_TESTING=ON
 
       - name: Build LMS
         run: cmake --build build --parallel 2
