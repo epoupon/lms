@@ -8,6 +8,7 @@ jobs:
     env:
       # Make sure pkg-config can find libarchive and other Homebrew .pc files
       PKG_CONFIG_PATH: /opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig
+      CMAKE_PREFIX_PATH: /opt/homebrew
 
     steps:
       - uses: actions/checkout@v4
@@ -32,11 +33,16 @@ jobs:
           cmake --build build --parallel 2
           sudo cmake --install build
 
+      - name: Check pkg-config
+        run: pkg-config --cflags --libs libarchive
+
       - name: Configure LMS
         run: cmake -S . -B build \
               -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_UNITY_BUILD=ON \
-              -DBUILD_TESTING=ON
+              -DBUILD_TESTING=ON \
+              -DCMAKE_INCLUDE_PATH=/opt/homebrew/include \
+              -DCMAKE_LIBRARY_PATH=/opt/homebrew/lib
 
       - name: Build LMS
         run: cmake --build build --parallel 2
