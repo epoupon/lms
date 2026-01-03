@@ -100,9 +100,9 @@ namespace lms::api::subsonic
                     .platform = "TestPlatform",
                     .maxAudioBitrate = 512'000,
                     .maxTranscodingAudioBitrate = 256'000,
-                    .directPlayProfiles = { {
+                    .directPlayProfiles = {
                         { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = { "http" }, .maxAudioChannels = 2 },
-                    } },
+                    },
                     .transcodingProfiles = {
                         { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
                     },
@@ -130,9 +130,9 @@ namespace lms::api::subsonic
                     .platform = "TestPlatform",
                     .maxAudioBitrate = 512'000,
                     .maxTranscodingAudioBitrate = 96'000,
-                    .directPlayProfiles = { {
+                    .directPlayProfiles = {
                         { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = { "http" }, .maxAudioChannels = 2 },
-                    } },
+                    },
                     .transcodingProfiles = {
                         { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
                     },
@@ -160,9 +160,9 @@ namespace lms::api::subsonic
                     .platform = "TestPlatform",
                     .maxAudioBitrate = 96'000,
                     .maxTranscodingAudioBitrate = 96'000,
-                    .directPlayProfiles = { {
+                    .directPlayProfiles = {
                         { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = { "http" }, .maxAudioChannels = 2 },
-                    } },
+                    },
                     .transcodingProfiles = {
                         { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
                     },
@@ -190,9 +190,9 @@ namespace lms::api::subsonic
                     .platform = "TestPlatform",
                     .maxAudioBitrate = 96'000,
                     .maxTranscodingAudioBitrate = 96'000,
-                    .directPlayProfiles = { {
+                    .directPlayProfiles = {
                         { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = { "http" }, .maxAudioChannels = 2 },
-                    } },
+                    },
                     .transcodingProfiles = {
                         { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
                     },
@@ -220,9 +220,9 @@ namespace lms::api::subsonic
                     .platform = "TestPlatform",
                     .maxAudioBitrate = 320'000,
                     .maxTranscodingAudioBitrate = 320'000,
-                    .directPlayProfiles = { {
+                    .directPlayProfiles = {
                         { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = { "http" }, .maxAudioChannels = 2 },
-                    } },
+                    },
                     .transcodingProfiles = {
                         { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
                     },
@@ -250,7 +250,7 @@ namespace lms::api::subsonic
                     .platform = "TestPlatform",
                     .maxAudioBitrate = 320'000,
                     .maxTranscodingAudioBitrate = 320'000,
-                    .directPlayProfiles = { { { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = { "http" }, .maxAudioChannels = 2 } } },
+                    .directPlayProfiles = { { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = { "http" }, .maxAudioChannels = 2 } },
                     .transcodingProfiles = { { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 } },
                     .codecProfiles = { { .type = "AudioCodec", .name = "mp3", .limitations = {} } },
                 },
@@ -274,9 +274,9 @@ namespace lms::api::subsonic
                     .platform = "TestPlatform",
                     .maxAudioBitrate = 320'000,
                     .maxTranscodingAudioBitrate = 320'000,
-                    .directPlayProfiles = { {
+                    .directPlayProfiles = {
                         { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = { "http" }, .maxAudioChannels = std::nullopt },
-                    } },
+                    },
                     .transcodingProfiles = {
                         { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = std::nullopt },
                     },
@@ -302,9 +302,9 @@ namespace lms::api::subsonic
                     .platform = "TestPlatform",
                     .maxAudioBitrate = 320'000,
                     .maxTranscodingAudioBitrate = 320'000,
-                    .directPlayProfiles = { {
+                    .directPlayProfiles = {
                         { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = { "http" }, .maxAudioChannels = std::nullopt },
-                    } },
+                    },
                     .transcodingProfiles = {
                         { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = std::nullopt },
                     },
@@ -330,9 +330,9 @@ namespace lms::api::subsonic
                     .platform = "TestPlatform",
                     .maxAudioBitrate = 1'000'000,
                     .maxTranscodingAudioBitrate = 320'000,
-                    .directPlayProfiles = { {
+                    .directPlayProfiles = {
                         { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = { "http" }, .maxAudioChannels = std::nullopt },
-                    } },
+                    },
                     .transcodingProfiles = {
                         { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = std::nullopt },
                     },
@@ -356,7 +356,6 @@ namespace lms::api::subsonic
                 .clientInfo = { .name = "TestClient", .platform = "TestPlatform", .maxAudioBitrate = std::nullopt, .maxTranscodingAudioBitrate = std::nullopt, .directPlayProfiles = { {
                                                                                                                                                                    { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = { "http" }, .maxAudioChannels = std::nullopt },
                                                                                                                                                                } },
-
                                 .transcodingProfiles = {
                                     { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = std::nullopt },
                                 },
@@ -381,9 +380,9 @@ namespace lms::api::subsonic
                     .platform = "TestPlatform",
                     .maxAudioBitrate = 1'000'000,
                     .maxTranscodingAudioBitrate = 320'000,
-                    .directPlayProfiles = { {
+                    .directPlayProfiles = {
                         { .containers = { "mp4", "flac", "mp3" }, .audioCodecs = {}, .protocols = {}, .maxAudioChannels = std::nullopt },
-                    } },
+                    },
                     .transcodingProfiles = {},
                     .codecProfiles = {},
                 },
@@ -407,9 +406,9 @@ namespace lms::api::subsonic
                     .platform = "TestPlatform",
                     .maxAudioBitrate = 1'000'000,
                     .maxTranscodingAudioBitrate = 320'000,
-                    .directPlayProfiles = { {
+                    .directPlayProfiles = {
                         { .containers = {}, .audioCodecs = { "mp3" }, .protocols = {}, .maxAudioChannels = std::nullopt },
-                    } },
+                    },
                     .transcodingProfiles = {},
                     .codecProfiles = {},
                 },
@@ -433,10 +432,10 @@ namespace lms::api::subsonic
                     .platform = "Android",
                     .maxAudioBitrate = 320'000,
                     .maxTranscodingAudioBitrate = 320'000,
-                    .directPlayProfiles = { {
+                    .directPlayProfiles = {
                         { .containers = { "flac" }, .audioCodecs = { "flac" }, .protocols = {}, .maxAudioChannels = 32 },
-                    } },
-                    .transcodingProfiles = { { { .container = "ogg", .audioCodec = "opus", .protocol = "http", .maxAudioChannels = std::nullopt }, { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 } } },
+                    },
+                    .transcodingProfiles = { { .container = "ogg", .audioCodec = "opus", .protocol = "http", .maxAudioChannels = std::nullopt }, { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 } },
                     .codecProfiles = {},
                 },
                 .source = {
@@ -459,22 +458,20 @@ namespace lms::api::subsonic
                     .platform = "UPnP",
                     .maxAudioBitrate = 1'000'000,
                     .maxTranscodingAudioBitrate = 1'000'000,
-                    .directPlayProfiles = { {
+                    .directPlayProfiles = {
                         { .containers = { "flac" }, .audioCodecs = {}, .protocols = {}, .maxAudioChannels = std::nullopt },
                         { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = {}, .maxAudioChannels = std::nullopt },
                         { .containers = { "m4a", "mp4" }, .audioCodecs = { "aac" }, .protocols = {}, .maxAudioChannels = std::nullopt },
-                    } },
-                    .transcodingProfiles = { {
+                    },
+                    .transcodingProfiles = {
                         { .container = "flac", .audioCodec = "flac", .protocol = "http", .maxAudioChannels = 6 },
                         { .container = "aac", .audioCodec = "aac", .protocol = "http", .maxAudioChannels = 6 },
                         { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
-                    } },
+                    },
                     .codecProfiles = {
-                        {
-                            { .type = "AudioCodec", .name = "flac", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
-                            { .type = "AudioCodec", .name = "vorbis", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
-                            { .type = "AudioCodec", .name = "opus", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
-                        },
+                        { .type = "AudioCodec", .name = "flac", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
+                        { .type = "AudioCodec", .name = "vorbis", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
+                        { .type = "AudioCodec", .name = "opus", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
                     },
                 },
                 .source = {
@@ -497,23 +494,21 @@ namespace lms::api::subsonic
                     .platform = "UPnP",
                     .maxAudioBitrate = std::nullopt,
                     .maxTranscodingAudioBitrate = std::nullopt,
-                    .directPlayProfiles = { {
+                    .directPlayProfiles = {
                         { .containers = { "opus", "ogg", "oga", "aac", "webma", "webm", "wav", "flac", "mka" }, .audioCodecs = {}, .protocols = {}, .maxAudioChannels = std::nullopt },
                         { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = {}, .maxAudioChannels = std::nullopt },
                         { .containers = { "m4a", "mp4" }, .audioCodecs = { "aac" }, .protocols = {}, .maxAudioChannels = std::nullopt },
-                    } },
-                    .transcodingProfiles = { {
+                    },
+                    .transcodingProfiles = {
                         { .container = "flac", .audioCodec = "flac", .protocol = "http", .maxAudioChannels = 6 },
                         { .container = "mp4", .audioCodec = "aac", .protocol = "http", .maxAudioChannels = 6 },
                         { .container = "aac", .audioCodec = "aac", .protocol = "http", .maxAudioChannels = 6 },
                         { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
-                    } },
+                    },
                     .codecProfiles = {
-                        {
-                            { .type = "AudioCodec", .name = "flac", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
-                            { .type = "AudioCodec", .name = "vorbis", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
-                            { .type = "AudioCodec", .name = "opus", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
-                        },
+                        { .type = "AudioCodec", .name = "flac", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
+                        { .type = "AudioCodec", .name = "vorbis", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
+                        { .type = "AudioCodec", .name = "opus", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
                     },
                 },
                 .source = {
@@ -536,22 +531,20 @@ namespace lms::api::subsonic
                     .platform = "UPnP",
                     .maxAudioBitrate = 1'000'000,
                     .maxTranscodingAudioBitrate = 1'000'000,
-                    .directPlayProfiles = { {
+                    .directPlayProfiles = {
                         { .containers = { "flac" }, .audioCodecs = {}, .protocols = {}, .maxAudioChannels = std::nullopt },
                         { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = {}, .maxAudioChannels = std::nullopt },
                         { .containers = { "m4a", "mp4" }, .audioCodecs = { "aac" }, .protocols = {}, .maxAudioChannels = std::nullopt },
-                    } },
-                    .transcodingProfiles = { {
+                    },
+                    .transcodingProfiles = {
                         { .container = "flac", .audioCodec = "flac", .protocol = "http", .maxAudioChannels = 6 },
                         { .container = "aac", .audioCodec = "aac", .protocol = "http", .maxAudioChannels = 6 },
                         { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
-                    } },
+                    },
                     .codecProfiles = {
-                        {
-                            { .type = "AudioCodec", .name = "flac", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
-                            { .type = "AudioCodec", .name = "vorbis", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
-                            { .type = "AudioCodec", .name = "opus", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
-                        },
+                        { .type = "AudioCodec", .name = "flac", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
+                        { .type = "AudioCodec", .name = "vorbis", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
+                        { .type = "AudioCodec", .name = "opus", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
                     },
                 },
                 .source = {
@@ -574,22 +567,20 @@ namespace lms::api::subsonic
                     .platform = "UPnP",
                     .maxAudioBitrate = 1'000'000,
                     .maxTranscodingAudioBitrate = 1'000'000,
-                    .directPlayProfiles = { {
+                    .directPlayProfiles = {
                         { .containers = { "flac" }, .audioCodecs = {}, .protocols = {}, .maxAudioChannels = std::nullopt },
                         { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = {}, .maxAudioChannels = std::nullopt },
                         { .containers = { "m4a", "mp4" }, .audioCodecs = { "aac" }, .protocols = {}, .maxAudioChannels = std::nullopt },
-                    } },
-                    .transcodingProfiles = { {
+                    },
+                    .transcodingProfiles = {
                         { .container = "flac", .audioCodec = "flac", .protocol = "http", .maxAudioChannels = 6 },
                         { .container = "aac", .audioCodec = "aac", .protocol = "http", .maxAudioChannels = 6 },
                         { .container = "mp3", .audioCodec = "mp3", .protocol = "http", .maxAudioChannels = 2 },
-                    } },
+                    },
                     .codecProfiles = {
-                        {
-                            { .type = "AudioCodec", .name = "flac", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
-                            { .type = "AudioCodec", .name = "vorbis", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
-                            { .type = "AudioCodec", .name = "opus", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
-                        },
+                        { .type = "AudioCodec", .name = "flac", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
+                        { .type = "AudioCodec", .name = "vorbis", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
+                        { .type = "AudioCodec", .name = "opus", .limitations = { { .name = Limitation::Type::AudioSamplerate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "48000" }, .required = true } } },
                     },
                 },
                 .source = {
@@ -612,11 +603,11 @@ namespace lms::api::subsonic
                     .platform = "TestPlatform",
                     .maxAudioBitrate = 512'000,
                     .maxTranscodingAudioBitrate = 96'000,
-                    .directPlayProfiles = { {
+                    .directPlayProfiles = {
                         { .containers = { "mp3" }, .audioCodecs = { "mp3" }, .protocols = {}, .maxAudioChannels = 2 },
-                    } },
+                    },
                     .transcodingProfiles = {
-                        { { .container = "mp3", .audioCodec = "mp3", .protocol = { "http" }, .maxAudioChannels = 2 } },
+                        { .container = "mp3", .audioCodec = "mp3", .protocol = { "http" }, .maxAudioChannels = 2 },
                     },
                     .codecProfiles = { { .type = "AudioCodec", .name = "mp3", .limitations = {
                                                                                   { .name = Limitation::Type::AudioBitrate, .comparison = Limitation::ComparisonOperator::LessThanEqual, .values = { "96000" }, .required = true },
