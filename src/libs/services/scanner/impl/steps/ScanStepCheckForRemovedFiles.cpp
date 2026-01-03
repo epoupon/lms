@@ -50,6 +50,9 @@ namespace lms::scanner
         {
             IdType objectId;
             std::filesystem::path file;
+
+            FileToCheck(IdType _objectId, const std::filesystem::path& _file)
+                : objectId{ _objectId }, file{ _file } {}
         };
 
         template<typename IdType>
