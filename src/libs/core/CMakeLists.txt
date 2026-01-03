@@ -1,6 +1,6 @@
 pkg_check_modules(Config++ REQUIRED IMPORTED_TARGET libconfig++)
-pkg_check_modules(Archive REQUIRED IMPORTED_TARGET libarchive)
 pkg_check_modules(XXHASH REQUIRED IMPORTED_TARGET libxxhash)
+find_package(LibArchive REQUIRED)
 
 set(LMS_VERSION ${PROJECT_VERSION})
 
@@ -49,7 +49,7 @@ target_include_directories(lmscore PRIVATE
 
 target_link_libraries(lmscore PRIVATE
 	PkgConfig::Config++
-	PkgConfig::Archive
+	LibArchive::LibArchive
 	OpenSSL::Crypto
 	)
 

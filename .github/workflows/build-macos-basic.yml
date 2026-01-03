@@ -11,7 +11,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew update
-          brew install cmake boost ffmpeg libconfig taglib libarchive xxhash pugixml googletest openssl
+          brew install pkg-config cmake boost ffmpeg libconfig taglib libarchive xxhash pugixml googletest openssl
 
       - name: Build and install Wt from source
         run: |
