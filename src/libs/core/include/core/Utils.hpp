@@ -36,4 +36,7 @@ namespace lms::core::utils
     {
         using Ts::operator()...;
     };
+
+    template<class... Ts>
+    overloads(Ts...) -> overloads<Ts...>;
 } // namespace lms::core::utils
