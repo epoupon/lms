@@ -25,7 +25,7 @@ jobs:
             -DBUILD_EXAMPLES=OFF \
             -DENABLE_LIBWTTEST=OFF \
             -DCONNECTOR_FCGI=OFF
-          cmake --build build --parallel
+          cmake --build build --parallel 2
           sudo cmake --install build
 
       - name: Configure
@@ -36,7 +36,7 @@ jobs:
             -DBUILD_TESTING=ON
 
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build build --parallel 2
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
