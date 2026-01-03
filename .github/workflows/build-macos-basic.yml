@@ -5,9 +5,6 @@ on: [pull_request]
 jobs:
   build-macos:
     runs-on: macos-14
-    env:
-      # Make sure pkg-config can find Homebrew .pc files
-      PKG_CONFIG_PATH: /opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig
 
     steps:
       - uses: actions/checkout@v4
@@ -32,16 +29,26 @@ jobs:
           cmake --build build --parallel 2
           sudo cmake --install build
 
+      - name: Sanity check pkg-config
+        run: |
+          export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig"
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+          pkg-config --modversion libarchive
+          pkg-config --cflags libarchive
+          pkg-config --libs libarchive
+
       - name: Configure LMS
         run: |
-            export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig"
-            cmake -S . -B build \
+          export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig"
+          cmake -S . -B build \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_UNITY_BUILD=ON \
             -DBUILD_TESTING=ON
 
       - name: Build LMS
-        run: cmake --build build --parallel 2
+        run: |
+          cmake --build build --parallel 2
 
       - name: Test LMS
-        run: ctest --test-dir build --output-on-failure
+        run: |
+          ctest --test-dir build --output-on-failure
