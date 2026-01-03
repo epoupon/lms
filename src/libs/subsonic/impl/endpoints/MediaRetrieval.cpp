@@ -52,7 +52,7 @@ namespace lms::api::subsonic
     {
         struct OutputFormat
         {
-            std::string name;
+            std::string_view name;
             core::media::Container container;
             core::media::Codec codec;
         };
