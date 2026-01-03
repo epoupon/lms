@@ -29,18 +29,12 @@ jobs:
           cmake --build build --parallel 2
           sudo cmake --install build
 
-      - name: Sanity check pkg-config
-        run: |
-          export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig"
-          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
-          pkg-config --modversion libarchive
-          pkg-config --cflags libarchive
-          pkg-config --libs libarchive
-
       - name: Configure LMS
         run: |
-          export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig"
-          cmake -S . -B build \
+            export PKG_CONFIG_PATH="$(brew --prefix libarchive)/lib/pkgconfig:/opt/homebrew/lib/pkgconfig:/opt/homebrew/share/pkgconfig"
+            echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+            pkg-config --modversion libarchive
+            cmake -S . -B build \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_UNITY_BUILD=ON \
             -DBUILD_TESTING=ON
