@@ -6,30 +6,37 @@ jobs:
   build-macos:
     runs-on: macos-14
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
           brew update
-          brew install cmake boost ffmpeg libconfig taglib libarchive xxhash pugixml googletest
+          brew install cmake boost ffmpeg libconfig taglib libarchive xxhash pugixml googletest openssl
+
+      - name: Build and install Wt from source
+        run: |
+          WT_VERSION=4.12.1
+          git clone https://github.com/emweb/wt.git /tmp/wt
+          cd /tmp/wt
+          git checkout ${WT_VERSION}
+          cmake -B build -S . \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DBUILD_EXAMPLES=OFF \
+            -DENABLE_LIBWTTEST=OFF \
+            -DCONNECTOR_FCGI=OFF
+          cmake --build build --parallel
+          sudo cmake --install build
 
       - name: Configure
         run: |
-          mkdir build
-          cd build
-          cmake .. \
+          cmake -S . -B build \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_UNITY_BUILD=ON \
-            -DBUILD_TESTING=ON \
-            -DBUILD_BENCHMARKS=OFF
+            -DBUILD_TESTING=ON
 
       - name: Build
-        run: |
-          cd build
-          cmake --build . --parallel
+        run: cmake --build build --parallel
 
       - name: Test
-        run: |
-          cd build
-          ctest --output-on-failure
+        run: ctest --test-dir build --output-on-failure
