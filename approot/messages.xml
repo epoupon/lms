@@ -238,6 +238,7 @@
 	<plural case="0">Grouping</plural>
 	<plural case="1">Groupings</plural>
 </message>
+<message id="Lms.Explore.folders">Folders</message>
 <message id="Lms.Explore.label">Label</message>
 <message id="Lms.Explore.language">
 	<plural case="0">Language</plural>
@@ -304,6 +305,7 @@
 <message id="Lms.Explore.value">Value</message>
 <message id="Lms.Explore.various-artists">Various artists</message>
 <message id="Lms.Explore.various-copyrights">Some rights reserved. Please refer to individual tracks for copyright info</message>
+<message id="Lms.Explore.Folders.empty">No folders or releases found</message>
 
 <!--Explore:Artist-->
 <message id="Lms.Explore.Artist.appears-on">Appears on</message>

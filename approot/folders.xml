@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<messages xmlns:if="Wt.WTemplate.conditions">
+
+<message id="Lms.Explore.Folders.template">
+	<div class="d-flex justify-content-between align-items-start mb-3">
+		${breadcrumbs class="d-flex align-items-center gap-2 flex-wrap"}
+		<div class="btn-group ms-2">
+			${<if-has-playable>}
+			${play-btn class="btn btn-primary btn-sm"}
+			<button type="button" class="btn btn-primary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" aria-label="${tr:Lms.more}"/>
+			<ul class="dropdown-menu dropdown-menu-end">
+				<li>${play-next class="dropdown-item"}</li>
+				<li>${play-last class="dropdown-item"}</li>
+				<li>${play-shuffled class="dropdown-item"}</li>
+			</ul>
+			${</if-has-playable>}
+		</div>
+	</div>
+	${<if-has-subfolders>}
+	<div class="d-grid gap-2 mb-3">
+		${directories}
+	</div>
+	${</if-has-subfolders>}
+	${<if-has-releases>}
+	${releases class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 gx-2 gy-4"}
+	${</if-has-releases>}
+	${<if-empty>}
+	<div class="text-muted">${tr:Lms.Explore.Folders.empty}</div>
+	${</if-empty>}
+</message>
+
+<message id="Lms.Explore.Folders.template.folder-entry">
+	<div class="d-flex align-items-center Lms-bg-dark-hover rounded p-2">
+		<i class="fa fa-folder-open-o me-2" aria-hidden="true"></i>
+		${directory class="text-decoration-none link-secondary text-truncate"}
+	</div>
+</message>
+
+</messages>

@@ -37,6 +37,8 @@
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
+#include "database/objects/Directory.hpp"
+#include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/TrackList.hpp"
 #include "database/objects/User.hpp"
@@ -105,6 +107,8 @@ namespace lms::ui
             res->use(appRoot + "settings-services");
             res->use(appRoot + "settings-subsonic");
             res->use(appRoot + "settings-ui");
+            res->use(appRoot + "folders");
+            res->use(appRoot + "settings");
             res->use(appRoot + "tracklist");
             res->use(appRoot + "tracklists");
             res->use(appRoot + "tracks");
@@ -143,6 +147,92 @@ namespace lms::ui
             return locale;
         }
 
+            return locale;
+        }
+
+        enum IdxRoot
+        {
+            IdxExplore = 0,
+            IdxPlayQueue,
+            IdxSettings,
+            IdxAdminLibraries,
+            IdxAdminScanSettings,
+            IdxAdminScanner,
+            IdxAdminUsers,
+            IdxAdminUser,
+            IdxAdminDebugTools,
+        };
+
+        void handlePathChange(Wt::WStackedWidget& stack, bool isAdmin)
+        {
+            static const struct
+            {
+                std::string path;
+                int index;
+                bool admin;
+                std::optional<Wt::WString> title;
+                std::string activeNavPath;
+            } views[] = {
+                { "/artists", IdxExplore, false, Wt::WString::tr("Lms.Explore.artists"), "/artists" },
+                { "/artist", IdxExplore, false, std::nullopt, "/artists" },
+                { "/releases", IdxExplore, false, Wt::WString::tr("Lms.Explore.releases"), "/releases" },
+                { "/release", IdxExplore, false, std::nullopt, "/releases" },
+                { "/tracks", IdxExplore, false, Wt::WString::tr("Lms.Explore.tracks"), "/tracks" },
+                { "/tracklists", IdxExplore, false, Wt::WString::tr("Lms.Explore.tracklists"), "/tracklists" },
+                { "/tracklist", IdxExplore, false, std::nullopt, "/tracklists" },
+                { "/folders", IdxExplore, false, Wt::WString::tr("Lms.Explore.folders"), "/folders" },
+                { "/folder", IdxExplore, false, std::nullopt, "/folders" },
+                { "/playqueue", IdxPlayQueue, false, Wt::WString::tr("Lms.PlayQueue.playqueue"), "/playqueue" },
+                { "/settings", IdxSettings, false, Wt::WString::tr("Lms.Settings.settings"), "/settings" },
+                { "/admin/libraries", IdxAdminLibraries, true, Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries"), "/admin/libraries" },
+                { "/admin/scan-settings", IdxAdminScanSettings, true, Wt::WString::tr("Lms.Admin.Database.scan-settings"), "/admin/scan-settings" },
+                { "/admin/scanner", IdxAdminScanner, true, Wt::WString::tr("Lms.Admin.ScannerController.scanner"), "/admin/scanner" },
+                { "/admin/users", IdxAdminUsers, true, Wt::WString::tr("Lms.Admin.Users.users"), "/admin/users" },
+                { "/admin/user", IdxAdminUser, true, std::nullopt, "/admin/users" },
+                { "/admin/debug-tools", IdxAdminDebugTools, true, Wt::WString::tr("Lms.Admin.DebugTools.debug-tools"), "/admin/debug-tools" },
+            };
+
+            LMS_LOG(UI, DEBUG, "Internal path changed to '" << wApp->internalPath() << "'");
+
+            for (const auto& view : views)
+            {
+                if (wApp->internalPathMatches(view.path))
+                {
+                    if (view.admin && !isAdmin)
+                        break;
+
+                    stack.setCurrentIndex(view.index);
+                    if (view.title)
+                        LmsApp->setTitle(*view.title);
+
+                    LmsApp->doJavaScript(LmsApp->javaScriptClass() + ".updateActiveNav('" + view.activeNavPath + "')");
+                    return;
+                }
+            }
+
+            wApp->setInternalPath(defaultPath, true);
+        }
+
+        std::string getFoldersNavPath(db::Session& session)
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            if (db::MediaLibrary::getCount(session) != 1)
+                return "/folders";
+
+            db::MediaLibrary::pointer mediaLibrary;
+            db::MediaLibrary::find(session, [&mediaLibrary](const db::MediaLibrary::pointer& currentMediaLibrary) {
+                mediaLibrary = currentMediaLibrary;
+            });
+
+            if (!mediaLibrary)
+                return "/folders";
+
+            if (const auto rootDirectory{ db::Directory::find(session, mediaLibrary->getPath()) })
+                return "/folder/" + rootDirectory->getId().toString();
+
+            return "/folders";
+        }
     } // namespace
 
     std::unique_ptr<Wt::WApplication> LmsApplication::create(const Wt::WEnvironment& env, db::IDb& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend)
@@ -411,6 +501,7 @@ namespace lms::ui
         navbar->bindNew<Wt::WAnchor>("releases", Wt::WLink{ Wt::LinkType::InternalPath, "/releases" }, Wt::WString::tr("Lms.Explore.releases"));
         navbar->bindNew<Wt::WAnchor>("tracks", Wt::WLink{ Wt::LinkType::InternalPath, "/tracks" }, Wt::WString::tr("Lms.Explore.tracks"));
         navbar->bindNew<Wt::WAnchor>("tracklists", Wt::WLink{ Wt::LinkType::InternalPath, "/tracklists" }, Wt::WString::tr("Lms.Explore.tracklists"));
+        navbar->bindNew<Wt::WAnchor>("folders", Wt::WLink{ Wt::LinkType::InternalPath, getFoldersNavPath(getDbSession()) }, Wt::WString::tr("Lms.Explore.folders"));
 
         Filters* filters{ navbar->bindNew<Filters>("filters") };
         navbar->bindString("username", std::string{ getUserLoginName() }, Wt::TextFormat::Plain);

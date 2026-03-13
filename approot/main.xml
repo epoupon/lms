@@ -31,6 +31,9 @@
 					<li class="nav-item">
 						${tracklists class="nav-link"}
 					</li>
+					<li class="nav-item">
+						${folders class="nav-link"}
+					</li>
 				</ul>
 				${filters class="d-flex align-items-center me-auto mb-2 mb-md-0"}
 				<div class="navbar-nav align-items-md-center">
