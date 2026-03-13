@@ -18,6 +18,7 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
   * Synchronizing 'love' feedbacks
 * [Last.fm](https://www.last.fm) support for scrobbling listens
 * Recommendation engine
+* Folder browsing
 * Multi-library support
 * ReplayGain support
 * Audio transcoding for compatibility and reduced bandwidth
