@@ -37,7 +37,6 @@
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Directory.hpp"
-#include "database/objects/MediaLibrary.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/TrackList.hpp"
 #include "database/objects/User.hpp"
@@ -153,25 +152,25 @@ namespace lms::ui
                 int index;
                 bool admin;
                 std::optional<Wt::WString> title;
-                std::string activeNavPath;
+                std::optional<std::string> activeNavPath;
             } views[] = {
-                { "/artists", IdxExplore, false, Wt::WString::tr("Lms.Explore.artists"), "/artists" },
-                { "/artist", IdxExplore, false, std::nullopt, "/artists" },
-                { "/releases", IdxExplore, false, Wt::WString::tr("Lms.Explore.releases"), "/releases" },
-                { "/release", IdxExplore, false, std::nullopt, "/releases" },
-                { "/tracks", IdxExplore, false, Wt::WString::tr("Lms.Explore.tracks"), "/tracks" },
-                { "/tracklists", IdxExplore, false, Wt::WString::tr("Lms.Explore.tracklists"), "/tracklists" },
-                { "/tracklist", IdxExplore, false, std::nullopt, "/tracklists" },
-                { "/folders", IdxExplore, false, Wt::WString::tr("Lms.Explore.folders"), "/folders" },
+                { "/artists", IdxExplore, false, Wt::WString::tr("Lms.Explore.artists") },
+                { "/artist", IdxExplore, false, std::nullopt },
+                { "/releases", IdxExplore, false, Wt::WString::tr("Lms.Explore.releases") },
+                { "/release", IdxExplore, false, std::nullopt },
+                { "/tracks", IdxExplore, false, Wt::WString::tr("Lms.Explore.tracks") },
+                { "/tracklists", IdxExplore, false, Wt::WString::tr("Lms.Explore.tracklists") },
+                { "/tracklist", IdxExplore, false, std::nullopt },
+                { "/folders", IdxExplore, false, Wt::WString::tr("Lms.Explore.folders") },
                 { "/folder", IdxExplore, false, std::nullopt, "/folders" },
-                { "/playqueue", IdxPlayQueue, false, Wt::WString::tr("Lms.PlayQueue.playqueue"), "/playqueue" },
-                { "/settings", IdxSettings, false, Wt::WString::tr("Lms.Settings.settings"), "/settings" },
-                { "/admin/libraries", IdxAdminLibraries, true, Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries"), "/admin/libraries" },
-                { "/admin/scan-settings", IdxAdminScanSettings, true, Wt::WString::tr("Lms.Admin.Database.scan-settings"), "/admin/scan-settings" },
-                { "/admin/scanner", IdxAdminScanner, true, Wt::WString::tr("Lms.Admin.ScannerController.scanner"), "/admin/scanner" },
-                { "/admin/users", IdxAdminUsers, true, Wt::WString::tr("Lms.Admin.Users.users"), "/admin/users" },
-                { "/admin/user", IdxAdminUser, true, std::nullopt, "/admin/users" },
-                { "/admin/debug-tools", IdxAdminDebugTools, true, Wt::WString::tr("Lms.Admin.DebugTools.debug-tools"), "/admin/debug-tools" },
+                { "/playqueue", IdxPlayQueue, false, Wt::WString::tr("Lms.PlayQueue.playqueue") },
+                { "/settings", IdxSettings, false, Wt::WString::tr("Lms.Settings.settings") },
+                { "/admin/libraries", IdxAdminLibraries, true, Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries") },
+                { "/admin/scan-settings", IdxAdminScanSettings, true, Wt::WString::tr("Lms.Admin.Database.scan-settings") },
+                { "/admin/scanner", IdxAdminScanner, true, Wt::WString::tr("Lms.Admin.ScannerController.scanner") },
+                { "/admin/users", IdxAdminUsers, true, Wt::WString::tr("Lms.Admin.Users.users") },
+                { "/admin/user", IdxAdminUser, true, std::nullopt },
+                { "/admin/debug-tools", IdxAdminDebugTools, true, Wt::WString::tr("Lms.Admin.DebugTools.debug-tools") },
             };
 
             LMS_LOG(UI, DEBUG, "Internal path changed to '" << wApp->internalPath() << "'");
@@ -187,7 +186,7 @@ namespace lms::ui
                     if (view.title)
                         LmsApp->setTitle(*view.title);
 
-                    LmsApp->doJavaScript(LmsApp->javaScriptClass() + ".updateActiveNav('" + view.activeNavPath + "')");
+                    LmsApp->doJavaScript(LmsApp->javaScriptClass() + ".updateActiveNav('" + view.activeNavPath.value_or(view.path) + "')");
                     return;
                 }
             }
@@ -199,19 +198,9 @@ namespace lms::ui
         {
             auto transaction{ session.createReadTransaction() };
 
-            if (db::MediaLibrary::getCount(session) != 1)
-                return "/folders";
-
-            db::MediaLibrary::pointer mediaLibrary;
-            db::MediaLibrary::find(session, [&mediaLibrary](const db::MediaLibrary::pointer& currentMediaLibrary) {
-                mediaLibrary = currentMediaLibrary;
-            });
-
-            if (!mediaLibrary)
-                return "/folders";
-
-            if (const auto rootDirectory{ db::Directory::find(session, mediaLibrary->getPath()) })
-                return "/folder/" + rootDirectory->getId().toString();
+            const auto roots{ db::Directory::findRootDirectories(session) };
+            if (roots.results.size() == 1)
+                return "/folder/" + roots.results.front()->getId().toString();
 
             return "/folders";
         }
