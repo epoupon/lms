@@ -233,36 +233,27 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        std::ostringstream queryStr;
-        queryStr << "SELECT d, COUNT(DISTINCT t.release_id),"
-                    " CASE WHEN COUNT(DISTINCT t.release_id) = 1"
-                    "  AND NOT EXISTS (SELECT 1 FROM directory d_c"
-                    "   INNER JOIN track t2 ON t2.directory_id = d_c.id"
-                    "   WHERE d_c.parent_directory_id = d.id)"
-                    "  THEN MIN(t.release_id) ELSE NULL END"
-                    " FROM directory d"
-                    " LEFT JOIN track t ON t.directory_id = d.id"
-                    " WHERE ";
+        auto query{ session.getDboSession()->query<std::tuple<Wt::Dbo::ptr<Directory>, long long, ReleaseId>>(
+            "SELECT d, COUNT(DISTINCT t.release_id),"
+            " CASE WHEN COUNT(DISTINCT t.release_id) = 1"
+            "  AND NOT EXISTS (SELECT 1 FROM directory d_c"
+            "   INNER JOIN track t2 ON t2.directory_id = d_c.id"
+            "   WHERE d_c.parent_directory_id = d.id)"
+            "  THEN MIN(t.release_id) ELSE NULL END"
+            " FROM directory d"
+            " LEFT JOIN track t ON t.directory_id = d.id") };
 
         if (parentDirectory)
-            queryStr << "d.parent_directory_id = ?";
+            query.where("d.parent_directory_id = ?").bind(*parentDirectory);
         else
-            queryStr << "d.parent_directory_id IS NULL";
+            query.where("d.parent_directory_id IS NULL");
 
         if (mediaLibrary)
-            queryStr << " AND d.media_library_id = ?";
+            query.where("d.media_library_id = ?").bind(*mediaLibrary);
 
-        queryStr << " GROUP BY d.id"
-                    " HAVING COUNT(DISTINCT t.release_id) > 0"
-                    "  OR EXISTS (SELECT 1 FROM directory d_child WHERE d_child.parent_directory_id = d.id)"
-                    " ORDER BY d.name COLLATE NOCASE";
-
-        auto query{ session.getDboSession()->query<std::tuple<Wt::Dbo::ptr<Directory>, long long, ReleaseId>>(queryStr.str()) };
-
-        if (parentDirectory)
-            query.bind(*parentDirectory);
-        if (mediaLibrary)
-            query.bind(*mediaLibrary);
+        query.groupBy("d.id")
+            .having("COUNT(DISTINCT t.release_id) > 0 OR EXISTS (SELECT 1 FROM directory d_child WHERE d_child.parent_directory_id = d.id)")
+            .orderBy("d.name COLLATE NOCASE");
 
         std::vector<std::tuple<Directory::pointer, std::size_t, ReleaseId>> result;
         for (const auto& [dir, releaseCount, singleReleaseId] : utils::fetchQueryResults<std::tuple<Wt::Dbo::ptr<Directory>, long long, ReleaseId>>(query))
@@ -275,103 +266,58 @@ namespace lms::db
     {
         session.checkReadTransaction();
 
-        std::ostringstream queryStr;
-        queryStr << "WITH RECURSIVE filtered_tracks AS ("
-                    " SELECT t.directory_id, t.release_id"
-                    " FROM track t";
+        auto filteredTracksQuery{ session.getDboSession()->query<std::tuple<DirectoryId, ReleaseId>>(
+            "SELECT t.directory_id, t.release_id FROM track t") };
 
         if (filters.label.isValid())
-            queryStr << " INNER JOIN release_label r_l ON r_l.release_id = t.release_id";
-
+            filteredTracksQuery.join("release_label r_l ON r_l.release_id = t.release_id");
         if (filters.releaseType.isValid())
-            queryStr << " INNER JOIN release_release_type r_r_t ON r_r_t.release_id = t.release_id";
-
+            filteredTracksQuery.join("release_release_type r_r_t ON r_r_t.release_id = t.release_id");
         if (filters.clusters.size() == 1)
-            queryStr << " INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
-
-        queryStr << " WHERE 1 = 1";
+            filteredTracksQuery.join("track_cluster t_c ON t_c.track_id = t.id");
 
         if (filters.mediaLibrary.isValid())
-            queryStr << " AND t.media_library_id = ?";
-
+            filteredTracksQuery.where("t.media_library_id = ?").bind(filters.mediaLibrary);
         if (filters.label.isValid())
-            queryStr << " AND r_l.label_id = ?";
-
+            filteredTracksQuery.where("r_l.label_id = ?").bind(filters.label);
         if (filters.releaseType.isValid())
-            queryStr << " AND r_r_t.release_type_id = ?";
-
+            filteredTracksQuery.where("r_r_t.release_type_id = ?").bind(filters.releaseType);
         if (filters.codec)
-            queryStr << " AND t.codec = ?";
-
+            filteredTracksQuery.where("t.codec = ?").bind(detail::getDbCodec(*filters.codec));
         if (filters.clusters.size() == 1)
-        {
-            queryStr << " AND t_c.cluster_id = ?";
-        }
+            filteredTracksQuery.where("t_c.cluster_id = ?").bind(filters.clusters.front());
         else if (filters.clusters.size() > 1)
-        {
             for (std::size_t i{}; i < filters.clusters.size(); ++i)
-                queryStr << " AND EXISTS (SELECT 1 FROM track_cluster t_c" << i << " WHERE t_c" << i << ".track_id = t.id AND t_c" << i << ".cluster_id = ?)";
-        }
+                filteredTracksQuery.where("EXISTS (SELECT 1 FROM track_cluster t_c" + std::to_string(i) + " WHERE t_c" + std::to_string(i) + ".track_id = t.id AND t_c" + std::to_string(i) + ".cluster_id = ?)").bind(filters.clusters[i]);
 
-        queryStr << " GROUP BY t.directory_id, t.release_id"
-                    "),"
-                    " ancestor_walk(directory_id, release_id) AS ("
-                    " SELECT f_t.directory_id, f_t.release_id FROM filtered_tracks f_t"
-                    " UNION ALL"
-                    " SELECT d.parent_directory_id, a_w.release_id"
-                    " FROM ancestor_walk a_w"
-                    " INNER JOIN directory d ON d.id = a_w.directory_id"
-                    " WHERE d.parent_directory_id IS NOT NULL"
-                    "),"
-                    " child_releases AS ("
-                    " SELECT d.id, a_w.release_id"
-                    " FROM ancestor_walk a_w"
-                    " INNER JOIN directory d ON d.id = a_w.directory_id";
+        filteredTracksQuery.groupBy("t.directory_id, t.release_id");
+
+        const std::string sql{
+            "WITH RECURSIVE ancestor_walk(directory_id, release_id) AS ("
+            " "
+            + filteredTracksQuery.asString() + " UNION ALL"
+                                               " SELECT d.parent_directory_id, a_w.release_id"
+                                               " FROM ancestor_walk a_w"
+                                               " INNER JOIN directory d ON d.id = a_w.directory_id"
+                                               " WHERE d.parent_directory_id IS NOT NULL"
+                                               ")"
+                                               " SELECT d, COUNT(DISTINCT a_w.release_id),"
+                                               " CASE WHEN COUNT(DISTINCT a_w.release_id) = 1 THEN MIN(a_w.release_id) ELSE NULL END"
+                                               " FROM ancestor_walk a_w"
+                                               " INNER JOIN directory d ON d.id = a_w.directory_id"
+        };
+
+        auto query{ session.getDboSession()->query<std::tuple<Wt::Dbo::ptr<Directory>, long long, ReleaseId>>(sql).bindSubqueryValues(filteredTracksQuery) };
 
         if (parentDirectory)
-            queryStr << " WHERE d.parent_directory_id = ?";
+            query.where("d.parent_directory_id = ?").bind(*parentDirectory);
         else
-            queryStr << " WHERE d.parent_directory_id IS NULL";
+            query.where("d.parent_directory_id IS NULL");
 
         if (filters.mediaLibrary.isValid())
-            queryStr << " AND d.media_library_id = ?";
+            query.where("d.media_library_id = ?").bind(filters.mediaLibrary);
 
-        queryStr << " GROUP BY d.id, a_w.release_id"
-                    ")"
-                    " SELECT d, COUNT(*), CASE WHEN COUNT(*) = 1 THEN MIN(c_r.release_id) ELSE NULL END"
-                    " FROM child_releases c_r"
-                    " INNER JOIN directory d ON d.id = c_r.id"
-                    " GROUP BY d.id ORDER BY d.name COLLATE NOCASE";
-
-        auto query{ session.getDboSession()->query<std::tuple<Wt::Dbo::ptr<Directory>, long long, ReleaseId>>(queryStr.str()) };
-
-        if (filters.mediaLibrary.isValid())
-            query.bind(filters.mediaLibrary);
-
-        if (filters.label.isValid())
-            query.bind(filters.label);
-
-        if (filters.releaseType.isValid())
-            query.bind(filters.releaseType);
-
-        if (filters.codec)
-            query.bind(detail::getDbCodec(*filters.codec));
-
-        if (filters.clusters.size() == 1)
-        {
-            query.bind(filters.clusters.front());
-        }
-        else if (filters.clusters.size() > 1)
-        {
-            for (ClusterId clusterId : filters.clusters)
-                query.bind(clusterId);
-        }
-
-        if (parentDirectory)
-            query.bind(*parentDirectory);
-
-        if (filters.mediaLibrary.isValid())
-            query.bind(filters.mediaLibrary);
+        query.groupBy("d.id").orderBy("d.name COLLATE NOCASE");
 
         std::vector<std::tuple<Directory::pointer, std::size_t, ReleaseId>> result;
         for (const auto& [dir, releaseCount, singleReleaseId] : utils::fetchQueryResults<std::tuple<Wt::Dbo::ptr<Directory>, long long, ReleaseId>>(query))
