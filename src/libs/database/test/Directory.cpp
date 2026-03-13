@@ -19,7 +19,6 @@
 
 #include "Common.hpp"
 
-#include <array>
 #include <unordered_map>
 
 #include "database/objects/Directory.hpp"
@@ -346,18 +345,42 @@ namespace lms::db::tests
         }
     }
 
-    TEST_F(DatabaseFixture, Directory_findFilteredFolderListing)
+    TEST_F(DatabaseFixture, Directory_findFolderListing_excludesEmptyDirs)
     {
         ScopedDirectory root{ session, "/root" };
-        ScopedDirectory childA{ session, "/root/child-a" };
-        ScopedDirectory childAGrandChild{ session, "/root/child-a/grand-child" };
-        ScopedDirectory childB{ session, "/root/child-b" };
-        ScopedDirectory childWithoutRelease{ session, "/root/child-without-release" };
+        ScopedDirectory withTracks{ session, "/root/with-tracks" };
+        ScopedDirectory withoutTracks{ session, "/root/without-tracks" };
+        ScopedRelease release{ session, "Release" };
+        ScopedTrack track{ session };
 
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            withTracks.get().modify()->setParent(root.get());
+            withoutTracks.get().modify()->setParent(root.get());
+            track.get().modify()->setDirectory(withTracks.get());
+            track.get().modify()->setRelease(release.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto results{ Directory::findFolderListing(session, root.getId()) };
+            ASSERT_EQ(results.size(), 1);
+            EXPECT_EQ(std::get<0>(results.front())->getId(), withTracks.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Directory_findFolderListing_singleReleaseLeafDirectLink)
+    {
+        ScopedDirectory root{ session, "/root" };
+        ScopedDirectory singleRelease{ session, "/root/single-release" };
+        ScopedDirectory multiRelease{ session, "/root/multi-release" };
+        ScopedDirectory nonLeaf{ session, "/root/non-leaf" };
+        ScopedDirectory nonLeafChild{ session, "/root/non-leaf/child" };
         ScopedRelease release1{ session, "Release1" };
         ScopedRelease release2{ session, "Release2" };
         ScopedRelease release3{ session, "Release3" };
-
         ScopedTrack track1{ session };
         ScopedTrack track2{ session };
         ScopedTrack track3{ session };
@@ -366,65 +389,57 @@ namespace lms::db::tests
         {
             auto transaction{ session.createWriteTransaction() };
 
-            childA.get().modify()->setParent(root.get());
-            childAGrandChild.get().modify()->setParent(childA.get());
-            childB.get().modify()->setParent(root.get());
-            childWithoutRelease.get().modify()->setParent(root.get());
+            singleRelease.get().modify()->setParent(root.get());
+            multiRelease.get().modify()->setParent(root.get());
+            nonLeaf.get().modify()->setParent(root.get());
+            nonLeafChild.get().modify()->setParent(nonLeaf.get());
 
-            track1.get().modify()->setDirectory(childAGrandChild.get());
+            track1.get().modify()->setDirectory(singleRelease.get());
             track1.get().modify()->setRelease(release1.get());
-            track2.get().modify()->setDirectory(childAGrandChild.get());
+            track2.get().modify()->setDirectory(multiRelease.get());
             track2.get().modify()->setRelease(release1.get());
-            track3.get().modify()->setDirectory(childAGrandChild.get());
+            track3.get().modify()->setDirectory(multiRelease.get());
             track3.get().modify()->setRelease(release2.get());
-            track4.get().modify()->setDirectory(childB.get());
+            track4.get().modify()->setDirectory(nonLeafChild.get());
             track4.get().modify()->setRelease(release3.get());
         }
 
         {
             auto transaction{ session.createReadTransaction() };
 
-            const auto results{ Directory::findFilteredFolderListing(session, root.getId(), Filters{}) };
+            const auto results{ Directory::findFolderListing(session, root.getId()) };
+            ASSERT_EQ(results.size(), 3);
 
-            ASSERT_EQ(results.size(), 2);
-
-            std::unordered_map<DirectoryId::ValueType, std::tuple<std::size_t, ReleaseId>> statsByDirectoryId;
+            std::unordered_map<DirectoryId::ValueType, ReleaseId> directLinkById;
             for (const auto& [dir, releaseCount, singleReleaseId] : results)
-                statsByDirectoryId.emplace(dir->getId().getValue(), std::make_tuple(releaseCount, singleReleaseId));
+                directLinkById.emplace(dir->getId().getValue(), singleReleaseId);
 
-            EXPECT_EQ(std::get<0>(statsByDirectoryId.at(childA.getId().getValue())), 2);
-            EXPECT_EQ(std::get<0>(statsByDirectoryId.at(childB.getId().getValue())), 1);
-            EXPECT_EQ(std::get<1>(statsByDirectoryId.at(childB.getId().getValue())), release3.getId());
+            EXPECT_EQ(directLinkById.at(singleRelease.getId().getValue()), release1.getId());
+            EXPECT_FALSE(directLinkById.at(multiRelease.getId().getValue()).isValid());
+            EXPECT_FALSE(directLinkById.at(nonLeaf.getId().getValue()).isValid());
         }
     }
 
-    TEST_F(DatabaseFixture, Directory_findFilteredFolderListing_labelFilter)
+    TEST_F(DatabaseFixture, Directory_findFilteredFolderListing_excludesNonMatchingDirs)
     {
         ScopedDirectory root{ session, "/root" };
-        ScopedDirectory childA{ session, "/root/child-a" };
-        ScopedDirectory childAGrandChild{ session, "/root/child-a/grand-child" };
-        ScopedDirectory childB{ session, "/root/child-b" };
-
+        ScopedDirectory matching{ session, "/root/matching" };
+        ScopedDirectory nonMatching{ session, "/root/non-matching" };
         ScopedRelease matchingRelease{ session, "MatchingRelease" };
         ScopedRelease nonMatchingRelease{ session, "NonMatchingRelease" };
-        ScopedLabel label{ session, "MatchingLabel" };
-
+        ScopedLabel label{ session, "Label" };
         ScopedTrack matchingTrack{ session };
         ScopedTrack nonMatchingTrack{ session };
 
         {
             auto transaction{ session.createWriteTransaction() };
 
-            childA.get().modify()->setParent(root.get());
-            childAGrandChild.get().modify()->setParent(childA.get());
-            childB.get().modify()->setParent(root.get());
-
+            matching.get().modify()->setParent(root.get());
+            nonMatching.get().modify()->setParent(root.get());
             matchingRelease.get().modify()->addLabel(label.get());
-
-            matchingTrack.get().modify()->setDirectory(childAGrandChild.get());
+            matchingTrack.get().modify()->setDirectory(matching.get());
             matchingTrack.get().modify()->setRelease(matchingRelease.get());
-
-            nonMatchingTrack.get().modify()->setDirectory(childB.get());
+            nonMatchingTrack.get().modify()->setDirectory(nonMatching.get());
             nonMatchingTrack.get().modify()->setRelease(nonMatchingRelease.get());
         }
 
@@ -436,10 +451,54 @@ namespace lms::db::tests
 
             const auto results{ Directory::findFilteredFolderListing(session, root.getId(), filters) };
             ASSERT_EQ(results.size(), 1);
+            EXPECT_EQ(std::get<0>(results.front())->getId(), matching.getId());
+        }
+    }
 
-            EXPECT_EQ(std::get<0>(results.front())->getId(), childA.getId());
-            EXPECT_EQ(std::get<1>(results.front()), 1);
-            EXPECT_EQ(std::get<2>(results.front()), matchingRelease.getId());
+    TEST_F(DatabaseFixture, Directory_findFilteredFolderListing_singleReleaseLeafDirectLink)
+    {
+        ScopedDirectory root{ session, "/root" };
+        ScopedDirectory singleRelease{ session, "/root/single-release" };
+        ScopedDirectory multiRelease{ session, "/root/multi-release" };
+        ScopedRelease release1{ session, "Release1" };
+        ScopedRelease release2{ session, "Release2" };
+        ScopedRelease release3{ session, "Release3" };
+        ScopedLabel label{ session, "Label" };
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            singleRelease.get().modify()->setParent(root.get());
+            multiRelease.get().modify()->setParent(root.get());
+            release1.get().modify()->addLabel(label.get());
+            release2.get().modify()->addLabel(label.get());
+            release3.get().modify()->addLabel(label.get());
+            track1.get().modify()->setDirectory(singleRelease.get());
+            track1.get().modify()->setRelease(release1.get());
+            track2.get().modify()->setDirectory(multiRelease.get());
+            track2.get().modify()->setRelease(release2.get());
+            track3.get().modify()->setDirectory(multiRelease.get());
+            track3.get().modify()->setRelease(release3.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            Filters filters;
+            filters.setLabel(label.getId());
+
+            const auto results{ Directory::findFilteredFolderListing(session, root.getId(), filters) };
+            ASSERT_EQ(results.size(), 2);
+
+            std::unordered_map<DirectoryId::ValueType, ReleaseId> directLinkById;
+            for (const auto& [dir, releaseCount, singleReleaseId] : results)
+                directLinkById.emplace(dir->getId().getValue(), singleReleaseId);
+
+            EXPECT_EQ(directLinkById.at(singleRelease.getId().getValue()), release1.getId());
+            EXPECT_FALSE(directLinkById.at(multiRelease.getId().getValue()).isValid());
         }
     }
 } // namespace lms::db::tests
