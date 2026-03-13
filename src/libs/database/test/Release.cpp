@@ -30,7 +30,7 @@ namespace lms::db::tests
 {
     using ScopedArtwork = ScopedEntity<db::Artwork>;
     using ScopedCountry = ScopedEntity<db::Country>;
-using ScopedImage = ScopedEntity<db::Image>;
+    using ScopedImage = ScopedEntity<db::Image>;
     using ScopedLabel = ScopedEntity<db::Label>;
     using ScopedMedium = ScopedEntity<db::Medium>;
     using ScopedReleaseType = ScopedEntity<db::ReleaseType>;
