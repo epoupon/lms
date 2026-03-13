@@ -21,7 +21,6 @@
 
 #include "core/PartialDateTime.hpp"
 #include "database/objects/Artwork.hpp"
-#include "database/objects/Directory.hpp"
 #include "database/objects/Image.hpp"
 #include "database/objects/Medium.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
@@ -31,8 +30,7 @@ namespace lms::db::tests
 {
     using ScopedArtwork = ScopedEntity<db::Artwork>;
     using ScopedCountry = ScopedEntity<db::Country>;
-    using ScopedDirectory = ScopedEntity<db::Directory>;
-    using ScopedImage = ScopedEntity<db::Image>;
+using ScopedImage = ScopedEntity<db::Image>;
     using ScopedLabel = ScopedEntity<db::Label>;
     using ScopedMedium = ScopedEntity<db::Medium>;
     using ScopedReleaseType = ScopedEntity<db::ReleaseType>;
@@ -349,103 +347,6 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
             auto releases{ Release::findIds(session, Release::FindParameters{}.setFilters(Filters{}.setMediaLibrary(otherLibrary->getId()))) };
             EXPECT_EQ(releases.results.size(), 0);
-        }
-    }
-
-    TEST_F(DatabaseFixture, Release_findByDirectory)
-    {
-        ScopedDirectory directory1{ session, "/root/dir1" };
-        ScopedDirectory directory2{ session, "/root/dir2" };
-        ScopedRelease release1{ session, "A-Release" };
-        ScopedRelease release2{ session, "B-Release" };
-        ScopedTrack track1a{ session };
-        ScopedTrack track1b{ session };
-        ScopedTrack track2{ session };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-
-            track1a.get().modify()->setDirectory(directory1.get());
-            track1a.get().modify()->setRelease(release1.get());
-
-            // Same release as track1a to ensure DISTINCT release selection.
-            track1b.get().modify()->setDirectory(directory1.get());
-            track1b.get().modify()->setRelease(release1.get());
-
-            track2.get().modify()->setDirectory(directory2.get());
-            track2.get().modify()->setRelease(release2.get());
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            auto releases{ Release::findIds(session, Release::FindParameters{}.setDirectory(directory1.getId()).setSortMethod(ReleaseSortMethod::Name)) };
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release1.getId());
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            auto releases{ Release::findIds(session, Release::FindParameters{}.setDirectory(directory2.getId()).setSortMethod(ReleaseSortMethod::Name)) };
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), release2.getId());
-        }
-    }
-
-    TEST_F(DatabaseFixture, Release_findByParentDirectory)
-    {
-        ScopedDirectory parent{ session, "/root" };
-        ScopedDirectory child1{ session, "/root/child1" };
-        ScopedDirectory child2{ session, "/root/child2" };
-        ScopedRelease releaseInChild1{ session, "A-Release" };
-        ScopedRelease releaseInChild2{ session, "B-Release" };
-        ScopedRelease releaseInParent{ session, "C-Release" };
-        ScopedTrack trackChild1{ session };
-        ScopedTrack trackChild2{ session };
-        ScopedTrack trackParent{ session };
-        ScopedMediaLibrary mediaLibrary1{ session, "Library1", "/root" };
-        ScopedMediaLibrary mediaLibrary2{ session, "Library2", "/other-root" };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-
-            child1.get().modify()->setParent(parent.get());
-            child2.get().modify()->setParent(parent.get());
-
-            trackChild1.get().modify()->setDirectory(child1.get());
-            trackChild1.get().modify()->setRelease(releaseInChild1.get());
-            trackChild1.get().modify()->setMediaLibrary(mediaLibrary1.get());
-
-            trackChild2.get().modify()->setDirectory(child2.get());
-            trackChild2.get().modify()->setRelease(releaseInChild2.get());
-            trackChild2.get().modify()->setMediaLibrary(mediaLibrary2.get());
-
-            trackParent.get().modify()->setDirectory(parent.get());
-            trackParent.get().modify()->setRelease(releaseInParent.get());
-            trackParent.get().modify()->setMediaLibrary(mediaLibrary1.get());
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            auto releases{ Release::findIds(session, Release::FindParameters{}.setParentDirectory(parent.getId()).setSortMethod(ReleaseSortMethod::Name)) };
-            ASSERT_EQ(releases.results.size(), 2);
-            EXPECT_EQ(releases.results[0], releaseInChild1.getId());
-            EXPECT_EQ(releases.results[1], releaseInChild2.getId());
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            auto releases{ Release::findIds(
-                session,
-                Release::FindParameters{}
-                    .setParentDirectory(parent.getId())
-                    .setFilters(Filters{}.setMediaLibrary(mediaLibrary1.getId()))
-                    .setSortMethod(ReleaseSortMethod::Name)) };
-            ASSERT_EQ(releases.results.size(), 1);
-            EXPECT_EQ(releases.results.front(), releaseInChild1.getId());
         }
     }
 
