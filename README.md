@@ -17,6 +17,7 @@ A [demo instance](http://lms-demo.poupon.dev) is available. Note the administrat
   * Scrobbling and synchronizing listens
   * Synchronizing 'love' feedbacks
 * Recommendation engine
+* Folder browsing
 * Multi-library support
 * ReplayGain support
 * Audio transcoding for compatibility and reduced bandwidth
