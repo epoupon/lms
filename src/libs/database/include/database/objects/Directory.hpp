@@ -22,8 +22,10 @@
 #include <filesystem>
 #include <functional>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <vector>
 
 #include <Wt/Dbo/Field.h>
@@ -41,6 +43,7 @@
 
 namespace lms::db
 {
+    struct Filters;
     class Session;
     class MediaLibrary;
 
@@ -127,6 +130,9 @@ namespace lms::db
         static RangeResults<DirectoryId> findOrphanIds(Session& session, std::optional<Range> range = std::nullopt);
         static RangeResults<DirectoryId> findMismatchedLibrary(Session& session, std::optional<Range> range, const std::filesystem::path& rootPath, MediaLibraryId expectedLibraryId);
         static RangeResults<pointer> findRootDirectories(Session& session, std::optional<Range> range = std::nullopt);
+        static std::vector<std::tuple<Directory::pointer, std::size_t, ReleaseId>> findFilteredFolderListing(Session& session, std::optional<DirectoryId> parentDirectory, const Filters& filters);
+        static std::vector<std::tuple<Directory::pointer, std::size_t, ReleaseId>> findFolderListing(Session& session, std::optional<DirectoryId> parentDirectory, std::optional<MediaLibraryId> mediaLibrary = std::nullopt);
+        static std::vector<std::pair<DirectoryId, std::string>> findBreadcrumbs(Session& session, DirectoryId directoryId);
 
         // getters
         const std::filesystem::path& getAbsolutePath() const { return _absolutePath; }

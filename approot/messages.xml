@@ -215,6 +215,7 @@
 <message id="Lms.Explore.duration">Duration</message>
 <message id="Lms.Explore.filter-added">Filter added</message>
 <message id="Lms.Explore.filters">Filters</message>
+<message id="Lms.Explore.folders">Folders</message>
 <message id="Lms.Explore.label">Label</message>
 <message id="Lms.Explore.lyricist">
 	<plural case="0">Lyricist</plural>
@@ -273,6 +274,7 @@
 <message id="Lms.Explore.value">Value</message>
 <message id="Lms.Explore.various-artists">Various artists</message>
 <message id="Lms.Explore.various-copyrights">Some rights reserved. Please refer to individual tracks for copyright info</message>
+<message id="Lms.Explore.Folders.empty">No folders or releases found</message>
 
 <!--Explore:Artist-->
 <message id="Lms.Explore.Artist.appears-on">Appears on</message>

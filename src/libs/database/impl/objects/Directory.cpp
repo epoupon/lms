@@ -19,11 +19,15 @@
 
 #include "database/objects/Directory.hpp"
 
+#include <sstream>
+
 #include <Wt/Dbo/Impl.h>
 
 #include "database/Session.hpp"
 #include "database/Types.hpp"
+#include "database/objects/Filters.hpp"
 #include "database/objects/MediaLibrary.hpp"
+#include "database/objects/detail/Types.hpp"
 
 #include "Utils.hpp"
 #include "traits/IdTypeTraits.hpp"
@@ -223,6 +227,178 @@ namespace lms::db
     {
         auto query{ session.getDboSession()->query<Wt::Dbo::ptr<Directory>>("SELECT d from directory d").where("d.parent_directory_id IS NULL") };
         return utils::execRangeQuery<Directory::pointer>(query, range);
+    }
+
+    std::vector<std::tuple<Directory::pointer, std::size_t, ReleaseId>> Directory::findFolderListing(Session& session, std::optional<DirectoryId> parentDirectory, std::optional<MediaLibraryId> mediaLibrary)
+    {
+        session.checkReadTransaction();
+
+        std::ostringstream queryStr;
+        queryStr << "SELECT d, COUNT(DISTINCT t.release_id),"
+                    " CASE WHEN COUNT(DISTINCT t.release_id) = 1"
+                    "  AND NOT EXISTS (SELECT 1 FROM directory d_c"
+                    "   INNER JOIN track t2 ON t2.directory_id = d_c.id"
+                    "   WHERE d_c.parent_directory_id = d.id)"
+                    "  THEN MIN(t.release_id) ELSE NULL END"
+                    " FROM directory d"
+                    " LEFT JOIN track t ON t.directory_id = d.id"
+                    " WHERE ";
+
+        if (parentDirectory)
+            queryStr << "d.parent_directory_id = ?";
+        else
+            queryStr << "d.parent_directory_id IS NULL";
+
+        if (mediaLibrary)
+            queryStr << " AND d.media_library_id = ?";
+
+        queryStr << " GROUP BY d.id"
+                    " HAVING COUNT(DISTINCT t.release_id) > 0"
+                    "  OR EXISTS (SELECT 1 FROM directory d_child WHERE d_child.parent_directory_id = d.id)"
+                    " ORDER BY d.name COLLATE NOCASE";
+
+        auto query{ session.getDboSession()->query<std::tuple<Wt::Dbo::ptr<Directory>, long long, ReleaseId>>(queryStr.str()) };
+
+        if (parentDirectory)
+            query.bind(*parentDirectory);
+        if (mediaLibrary)
+            query.bind(*mediaLibrary);
+
+        std::vector<std::tuple<Directory::pointer, std::size_t, ReleaseId>> result;
+        for (const auto& [dir, releaseCount, singleReleaseId] : utils::fetchQueryResults<std::tuple<Wt::Dbo::ptr<Directory>, long long, ReleaseId>>(query))
+            result.emplace_back(dir, static_cast<std::size_t>(releaseCount), singleReleaseId);
+
+        return result;
+    }
+
+    std::vector<std::tuple<Directory::pointer, std::size_t, ReleaseId>> Directory::findFilteredFolderListing(Session& session, std::optional<DirectoryId> parentDirectory, const Filters& filters)
+    {
+        session.checkReadTransaction();
+
+        std::ostringstream queryStr;
+        queryStr << "WITH RECURSIVE filtered_tracks AS ("
+                    " SELECT t.directory_id, t.release_id"
+                    " FROM track t";
+
+        if (filters.label.isValid())
+            queryStr << " INNER JOIN release_label r_l ON r_l.release_id = t.release_id";
+
+        if (filters.releaseType.isValid())
+            queryStr << " INNER JOIN release_release_type r_r_t ON r_r_t.release_id = t.release_id";
+
+        if (filters.clusters.size() == 1)
+            queryStr << " INNER JOIN track_cluster t_c ON t_c.track_id = t.id";
+
+        queryStr << " WHERE 1 = 1";
+
+        if (filters.mediaLibrary.isValid())
+            queryStr << " AND t.media_library_id = ?";
+
+        if (filters.label.isValid())
+            queryStr << " AND r_l.label_id = ?";
+
+        if (filters.releaseType.isValid())
+            queryStr << " AND r_r_t.release_type_id = ?";
+
+        if (filters.codec)
+            queryStr << " AND t.codec = ?";
+
+        if (filters.clusters.size() == 1)
+        {
+            queryStr << " AND t_c.cluster_id = ?";
+        }
+        else if (filters.clusters.size() > 1)
+        {
+            for (std::size_t i{}; i < filters.clusters.size(); ++i)
+                queryStr << " AND EXISTS (SELECT 1 FROM track_cluster t_c" << i << " WHERE t_c" << i << ".track_id = t.id AND t_c" << i << ".cluster_id = ?)";
+        }
+
+        queryStr << " GROUP BY t.directory_id, t.release_id"
+                    "),"
+                    " ancestor_walk(directory_id, release_id) AS ("
+                    " SELECT f_t.directory_id, f_t.release_id FROM filtered_tracks f_t"
+                    " UNION ALL"
+                    " SELECT d.parent_directory_id, a_w.release_id"
+                    " FROM ancestor_walk a_w"
+                    " INNER JOIN directory d ON d.id = a_w.directory_id"
+                    " WHERE d.parent_directory_id IS NOT NULL"
+                    "),"
+                    " child_releases AS ("
+                    " SELECT d.id, a_w.release_id"
+                    " FROM ancestor_walk a_w"
+                    " INNER JOIN directory d ON d.id = a_w.directory_id";
+
+        if (parentDirectory)
+            queryStr << " WHERE d.parent_directory_id = ?";
+        else
+            queryStr << " WHERE d.parent_directory_id IS NULL";
+
+        if (filters.mediaLibrary.isValid())
+            queryStr << " AND d.media_library_id = ?";
+
+        queryStr << " GROUP BY d.id, a_w.release_id"
+                    ")"
+                    " SELECT d, COUNT(*), CASE WHEN COUNT(*) = 1 THEN MIN(c_r.release_id) ELSE NULL END"
+                    " FROM child_releases c_r"
+                    " INNER JOIN directory d ON d.id = c_r.id"
+                    " GROUP BY d.id ORDER BY d.name COLLATE NOCASE";
+
+        auto query{ session.getDboSession()->query<std::tuple<Wt::Dbo::ptr<Directory>, long long, ReleaseId>>(queryStr.str()) };
+
+        if (filters.mediaLibrary.isValid())
+            query.bind(filters.mediaLibrary);
+
+        if (filters.label.isValid())
+            query.bind(filters.label);
+
+        if (filters.releaseType.isValid())
+            query.bind(filters.releaseType);
+
+        if (filters.codec)
+            query.bind(detail::getDbCodec(*filters.codec));
+
+        if (filters.clusters.size() == 1)
+        {
+            query.bind(filters.clusters.front());
+        }
+        else if (filters.clusters.size() > 1)
+        {
+            for (ClusterId clusterId : filters.clusters)
+                query.bind(clusterId);
+        }
+
+        if (parentDirectory)
+            query.bind(*parentDirectory);
+
+        if (filters.mediaLibrary.isValid())
+            query.bind(filters.mediaLibrary);
+
+        std::vector<std::tuple<Directory::pointer, std::size_t, ReleaseId>> result;
+        for (const auto& [dir, releaseCount, singleReleaseId] : utils::fetchQueryResults<std::tuple<Wt::Dbo::ptr<Directory>, long long, ReleaseId>>(query))
+            result.emplace_back(dir, static_cast<std::size_t>(releaseCount), singleReleaseId);
+
+        return result;
+    }
+
+    std::vector<std::pair<DirectoryId, std::string>> Directory::findBreadcrumbs(Session& session, DirectoryId directoryId)
+    {
+        session.checkReadTransaction();
+
+        auto query{ session.getDboSession()->query<std::tuple<DirectoryId, std::string>>(
+            "WITH RECURSIVE ancestors(id, display_name, parent_directory_id, depth) AS ("
+            " SELECT d.id, COALESCE(NULLIF(d.name, ''), d.absolute_path, '/'), d.parent_directory_id, 0"
+            " FROM directory d WHERE d.id = ?"
+            " UNION ALL"
+            " SELECT d.id, COALESCE(NULLIF(d.name, ''), d.absolute_path, '/'), d.parent_directory_id, a.depth + 1"
+            " FROM directory d INNER JOIN ancestors a ON d.id = a.parent_directory_id"
+            ")"
+            " SELECT id, display_name FROM ancestors ORDER BY depth DESC") };
+        query.bind(directoryId);
+
+        std::vector<std::pair<DirectoryId, std::string>> result;
+        for (auto& [id, name] : utils::fetchQueryResults<std::tuple<DirectoryId, std::string>>(query))
+            result.emplace_back(id, std::move(name));
+        return result;
     }
 
     void Directory::setAbsolutePath(const std::filesystem::path& p)

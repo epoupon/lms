@@ -25,6 +25,7 @@
 #include "ArtistView.hpp"
 #include "ArtistsView.hpp"
 #include "Filters.hpp"
+#include "FoldersView.hpp"
 #include "ReleaseView.hpp"
 #include "ReleasesView.hpp"
 #include "TrackListView.hpp"
@@ -46,6 +47,7 @@ namespace lms::ui
                 IdxReleases,
                 IdxRelease,
                 IdxTracks,
+                IdxFolders,
             };
 
             static const std::map<std::string, int> indexes = {
@@ -56,6 +58,8 @@ namespace lms::ui
                 { "/releases", IdxReleases },
                 { "/release", IdxRelease },
                 { "/tracks", IdxTracks },
+                { "/folders", IdxFolders },
+                { "/folder", IdxFolders },
             };
 
             for (const auto& index : indexes)
@@ -101,6 +105,9 @@ namespace lms::ui
 
         auto tracks = std::make_unique<Tracks>(filters, _playQueueController);
         contentsStack->addWidget(std::move(tracks));
+
+        auto folders = std::make_unique<Folders>(filters, _playQueueController);
+        contentsStack->addWidget(std::move(folders));
 
         wApp->internalPathChanged().connect(this, [contentsStack] {
             handleContentsPathChange(contentsStack);

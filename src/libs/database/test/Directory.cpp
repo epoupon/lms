@@ -19,12 +19,17 @@
 
 #include "Common.hpp"
 
+#include <array>
+#include <unordered_map>
+
 #include "database/objects/Directory.hpp"
+#include "database/objects/Filters.hpp"
 #include "database/objects/Medium.hpp"
 
 namespace lms::db::tests
 {
     using ScopedDirectory = ScopedEntity<db::Directory>;
+    using ScopedLabel = ScopedEntity<db::Label>;
     using ScopedMedium = ScopedEntity<db::Medium>;
 
     TEST_F(DatabaseFixture, Directory)
@@ -338,6 +343,103 @@ namespace lms::db::tests
             });
             ASSERT_EQ(visitedDirectories.size(), 1);
             EXPECT_EQ(visitedDirectories[0], dir1.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Directory_findFilteredFolderListing)
+    {
+        ScopedDirectory root{ session, "/root" };
+        ScopedDirectory childA{ session, "/root/child-a" };
+        ScopedDirectory childAGrandChild{ session, "/root/child-a/grand-child" };
+        ScopedDirectory childB{ session, "/root/child-b" };
+        ScopedDirectory childWithoutRelease{ session, "/root/child-without-release" };
+
+        ScopedRelease release1{ session, "Release1" };
+        ScopedRelease release2{ session, "Release2" };
+        ScopedRelease release3{ session, "Release3" };
+
+        ScopedTrack track1{ session };
+        ScopedTrack track2{ session };
+        ScopedTrack track3{ session };
+        ScopedTrack track4{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            childA.get().modify()->setParent(root.get());
+            childAGrandChild.get().modify()->setParent(childA.get());
+            childB.get().modify()->setParent(root.get());
+            childWithoutRelease.get().modify()->setParent(root.get());
+
+            track1.get().modify()->setDirectory(childAGrandChild.get());
+            track1.get().modify()->setRelease(release1.get());
+            track2.get().modify()->setDirectory(childAGrandChild.get());
+            track2.get().modify()->setRelease(release1.get());
+            track3.get().modify()->setDirectory(childAGrandChild.get());
+            track3.get().modify()->setRelease(release2.get());
+            track4.get().modify()->setDirectory(childB.get());
+            track4.get().modify()->setRelease(release3.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            const auto results{ Directory::findFilteredFolderListing(session, root.getId(), Filters{}) };
+
+            ASSERT_EQ(results.size(), 2);
+
+            std::unordered_map<DirectoryId::ValueType, std::tuple<std::size_t, ReleaseId>> statsByDirectoryId;
+            for (const auto& [dir, releaseCount, singleReleaseId] : results)
+                statsByDirectoryId.emplace(dir->getId().getValue(), std::make_tuple(releaseCount, singleReleaseId));
+
+            EXPECT_EQ(std::get<0>(statsByDirectoryId.at(childA.getId().getValue())), 2);
+            EXPECT_EQ(std::get<0>(statsByDirectoryId.at(childB.getId().getValue())), 1);
+            EXPECT_EQ(std::get<1>(statsByDirectoryId.at(childB.getId().getValue())), release3.getId());
+        }
+    }
+
+    TEST_F(DatabaseFixture, Directory_findFilteredFolderListing_labelFilter)
+    {
+        ScopedDirectory root{ session, "/root" };
+        ScopedDirectory childA{ session, "/root/child-a" };
+        ScopedDirectory childAGrandChild{ session, "/root/child-a/grand-child" };
+        ScopedDirectory childB{ session, "/root/child-b" };
+
+        ScopedRelease matchingRelease{ session, "MatchingRelease" };
+        ScopedRelease nonMatchingRelease{ session, "NonMatchingRelease" };
+        ScopedLabel label{ session, "MatchingLabel" };
+
+        ScopedTrack matchingTrack{ session };
+        ScopedTrack nonMatchingTrack{ session };
+
+        {
+            auto transaction{ session.createWriteTransaction() };
+
+            childA.get().modify()->setParent(root.get());
+            childAGrandChild.get().modify()->setParent(childA.get());
+            childB.get().modify()->setParent(root.get());
+
+            matchingRelease.get().modify()->addLabel(label.get());
+
+            matchingTrack.get().modify()->setDirectory(childAGrandChild.get());
+            matchingTrack.get().modify()->setRelease(matchingRelease.get());
+
+            nonMatchingTrack.get().modify()->setDirectory(childB.get());
+            nonMatchingTrack.get().modify()->setRelease(nonMatchingRelease.get());
+        }
+
+        {
+            auto transaction{ session.createReadTransaction() };
+
+            Filters filters;
+            filters.setLabel(label.getId());
+
+            const auto results{ Directory::findFilteredFolderListing(session, root.getId(), filters) };
+            ASSERT_EQ(results.size(), 1);
+
+            EXPECT_EQ(std::get<0>(results.front())->getId(), childA.getId());
+            EXPECT_EQ(std::get<1>(results.front()), 1);
+            EXPECT_EQ(std::get<2>(results.front()), matchingRelease.getId());
         }
     }
 } // namespace lms::db::tests
