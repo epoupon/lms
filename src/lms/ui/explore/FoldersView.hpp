@@ -57,9 +57,7 @@ namespace lms::ui
         void renderBreadcrumbs(std::optional<db::DirectoryId> currentDirectoryId);
         void renderDirectories(const std::vector<db::ObjectPtr<db::Directory>>& directories, const std::unordered_map<db::DirectoryId::ValueType, db::ReleaseId>& directReleaseTargets);
         void renderReleases(const std::vector<db::ObjectPtr<db::Release>>& releases);
-        bool hasContentFilters() const;
-
-        std::optional<db::DirectoryId> getDirectoryFromPath() const;
+std::optional<db::DirectoryId> getDirectoryFromPath() const;
         std::vector<db::ObjectPtr<db::Release>> getReleasesInDirectory(db::DirectoryId directoryId) const;
 
         bool isOnFoldersPath() const;

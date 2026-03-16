@@ -19,7 +19,6 @@
 
 #include "FoldersView.hpp"
 
-#include <algorithm>
 #include <unordered_map>
 
 #include <Wt/WAnchor.h>
@@ -105,13 +104,7 @@ namespace lms::ui
         return wApp->internalPathMatches("/folders") || wApp->internalPathMatches("/folder");
     }
 
-    bool Folders::hasContentFilters() const
-    {
-        const db::Filters& filters{ _filters.getDbFilters() };
-        return !filters.clusters.empty() || filters.label.isValid() || filters.releaseType.isValid() || filters.codec.has_value();
-    }
-
-    void Folders::onPathOrFilterChanged()
+void Folders::onPathOrFilterChanged()
     {
         if (!isOnFoldersPath())
             return;
@@ -241,19 +234,12 @@ namespace lms::ui
         std::unordered_map<db::DirectoryId::ValueType, db::ReleaseId> directReleaseTargets;
 
         const db::MediaLibraryId mediaLibraryId{ _filters.getDbFilters().mediaLibrary };
-        const auto processResults{ [&](const auto& results) {
-            for (const auto& [dir, releaseCount, singleReleaseId] : results)
-            {
-                directories.push_back(dir);
-                if (singleReleaseId.isValid())
-                    directReleaseTargets.emplace(dir->getId().getValue(), singleReleaseId);
-            }
-        } };
-
-        if (hasContentFilters())
-            processResults(db::Directory::findFilteredFolderListing(LmsApp->getDbSession(), std::nullopt, _filters.getDbFilters()));
-        else
-            processResults(db::Directory::findFolderListing(LmsApp->getDbSession(), std::nullopt, mediaLibraryId.isValid() ? std::optional{ mediaLibraryId } : std::nullopt));
+        for (const auto& [dir, releaseCount, singleReleaseId] : db::Directory::findFolderListing(LmsApp->getDbSession(), std::nullopt, mediaLibraryId.isValid() ? std::optional{ mediaLibraryId } : std::nullopt))
+        {
+            directories.push_back(dir);
+            if (singleReleaseId.isValid())
+                directReleaseTargets.emplace(dir->getId().getValue(), singleReleaseId);
+        }
 
         renderBreadcrumbs({});
         renderDirectories(directories, directReleaseTargets);
@@ -278,19 +264,12 @@ namespace lms::ui
         std::unordered_map<db::DirectoryId::ValueType, db::ReleaseId> directReleaseTargets;
 
         const db::MediaLibraryId mediaLibraryId{ _filters.getDbFilters().mediaLibrary };
-        const auto processResults{ [&](const auto& results) {
-            for (const auto& [dir, releaseCount, singleReleaseId] : results)
-            {
-                subDirectories.push_back(dir);
-                if (singleReleaseId.isValid())
-                    directReleaseTargets.emplace(dir->getId().getValue(), singleReleaseId);
-            }
-        } };
-
-        if (hasContentFilters())
-            processResults(db::Directory::findFilteredFolderListing(LmsApp->getDbSession(), directory->getId(), _filters.getDbFilters()));
-        else
-            processResults(db::Directory::findFolderListing(LmsApp->getDbSession(), directory->getId(), mediaLibraryId.isValid() ? std::optional{ mediaLibraryId } : std::nullopt));
+        for (const auto& [dir, releaseCount, singleReleaseId] : db::Directory::findFolderListing(LmsApp->getDbSession(), directory->getId(), mediaLibraryId.isValid() ? std::optional{ mediaLibraryId } : std::nullopt))
+        {
+            subDirectories.push_back(dir);
+            if (singleReleaseId.isValid())
+                directReleaseTargets.emplace(dir->getId().getValue(), singleReleaseId);
+        }
 
         const auto releases{ getReleasesInDirectory(directory->getId()) };
 
