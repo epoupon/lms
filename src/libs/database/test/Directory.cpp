@@ -22,14 +22,12 @@
 #include <unordered_map>
 
 #include "database/objects/Directory.hpp"
-#include "database/objects/Filters.hpp"
 #include "database/objects/Medium.hpp"
 
 namespace lms::db::tests
 {
     using ScopedDirectory = ScopedEntity<db::Directory>;
-    using ScopedLabel = ScopedEntity<db::Label>;
-    using ScopedMedium = ScopedEntity<db::Medium>;
+using ScopedMedium = ScopedEntity<db::Medium>;
 
     TEST_F(DatabaseFixture, Directory)
     {
@@ -420,85 +418,4 @@ namespace lms::db::tests
         }
     }
 
-    TEST_F(DatabaseFixture, Directory_findFilteredFolderListing_excludesNonMatchingDirs)
-    {
-        ScopedDirectory root{ session, "/root" };
-        ScopedDirectory matching{ session, "/root/matching" };
-        ScopedDirectory nonMatching{ session, "/root/non-matching" };
-        ScopedRelease matchingRelease{ session, "MatchingRelease" };
-        ScopedRelease nonMatchingRelease{ session, "NonMatchingRelease" };
-        ScopedLabel label{ session, "Label" };
-        ScopedTrack matchingTrack{ session };
-        ScopedTrack nonMatchingTrack{ session };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-
-            matching.get().modify()->setParent(root.get());
-            nonMatching.get().modify()->setParent(root.get());
-            matchingRelease.get().modify()->addLabel(label.get());
-            matchingTrack.get().modify()->setDirectory(matching.get());
-            matchingTrack.get().modify()->setRelease(matchingRelease.get());
-            nonMatchingTrack.get().modify()->setDirectory(nonMatching.get());
-            nonMatchingTrack.get().modify()->setRelease(nonMatchingRelease.get());
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            Filters filters;
-            filters.setLabel(label.getId());
-
-            const auto results{ Directory::findFilteredFolderListing(session, root.getId(), filters) };
-            ASSERT_EQ(results.size(), 1);
-            EXPECT_EQ(std::get<0>(results.front())->getId(), matching.getId());
-        }
-    }
-
-    TEST_F(DatabaseFixture, Directory_findFilteredFolderListing_singleReleaseLeafDirectLink)
-    {
-        ScopedDirectory root{ session, "/root" };
-        ScopedDirectory singleRelease{ session, "/root/single-release" };
-        ScopedDirectory multiRelease{ session, "/root/multi-release" };
-        ScopedRelease release1{ session, "Release1" };
-        ScopedRelease release2{ session, "Release2" };
-        ScopedRelease release3{ session, "Release3" };
-        ScopedLabel label{ session, "Label" };
-        ScopedTrack track1{ session };
-        ScopedTrack track2{ session };
-        ScopedTrack track3{ session };
-
-        {
-            auto transaction{ session.createWriteTransaction() };
-
-            singleRelease.get().modify()->setParent(root.get());
-            multiRelease.get().modify()->setParent(root.get());
-            release1.get().modify()->addLabel(label.get());
-            release2.get().modify()->addLabel(label.get());
-            release3.get().modify()->addLabel(label.get());
-            track1.get().modify()->setDirectory(singleRelease.get());
-            track1.get().modify()->setRelease(release1.get());
-            track2.get().modify()->setDirectory(multiRelease.get());
-            track2.get().modify()->setRelease(release2.get());
-            track3.get().modify()->setDirectory(multiRelease.get());
-            track3.get().modify()->setRelease(release3.get());
-        }
-
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            Filters filters;
-            filters.setLabel(label.getId());
-
-            const auto results{ Directory::findFilteredFolderListing(session, root.getId(), filters) };
-            ASSERT_EQ(results.size(), 2);
-
-            std::unordered_map<DirectoryId::ValueType, ReleaseId> directLinkById;
-            for (const auto& [dir, releaseCount, singleReleaseId] : results)
-                directLinkById.emplace(dir->getId().getValue(), singleReleaseId);
-
-            EXPECT_EQ(directLinkById.at(singleRelease.getId().getValue()), release1.getId());
-            EXPECT_FALSE(directLinkById.at(multiRelease.getId().getValue()).isValid());
-        }
-    }
 } // namespace lms::db::tests
