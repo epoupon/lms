@@ -37,7 +37,6 @@
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
 #include "database/objects/Cluster.hpp"
-#include "database/objects/Directory.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/TrackList.hpp"
 #include "database/objects/User.hpp"
@@ -170,7 +169,6 @@ namespace lms::ui
                 int index;
                 bool admin;
                 std::optional<Wt::WString> title;
-                std::optional<std::string> activeNavPath;
             } views[] = {
                 { "/artists", IdxExplore, false, Wt::WString::tr("Lms.Explore.artists") },
                 { "/artist", IdxExplore, false, std::nullopt },
@@ -180,7 +178,7 @@ namespace lms::ui
                 { "/tracklists", IdxExplore, false, Wt::WString::tr("Lms.Explore.tracklists") },
                 { "/tracklist", IdxExplore, false, std::nullopt },
                 { "/folders", IdxExplore, false, Wt::WString::tr("Lms.Explore.folders") },
-                { "/folder", IdxExplore, false, std::nullopt, "/folders" },
+                { "/folder", IdxExplore, false, std::nullopt },
                 { "/playqueue", IdxPlayQueue, false, Wt::WString::tr("Lms.PlayQueue.playqueue") },
                 { "/settings", IdxSettings, false, Wt::WString::tr("Lms.Settings.settings") },
                 { "/admin/libraries", IdxAdminLibraries, true, Wt::WString::tr("Lms.Admin.MediaLibraries.media-libraries") },
@@ -204,7 +202,7 @@ namespace lms::ui
                     if (view.title)
                         LmsApp->setTitle(*view.title);
 
-                    LmsApp->doJavaScript(LmsApp->javaScriptClass() + ".updateActiveNav('" + view.activeNavPath.value_or(view.path) + "')");
+                    LmsApp->doJavaScript(LmsApp->javaScriptClass() + ".updateActiveNav('" + view.path + "')");
                     return;
                 }
             }
@@ -212,16 +210,6 @@ namespace lms::ui
             wApp->setInternalPath(defaultPath, true);
         }
 
-        std::string getFoldersNavPath(db::Session& session)
-        {
-            auto transaction{ session.createReadTransaction() };
-
-            const auto roots{ db::Directory::findRootDirectories(session) };
-            if (roots.results.size() == 1)
-                return "/folder/" + roots.results.front()->getId().toString();
-
-            return "/folders";
-        }
     } // namespace
 
     std::unique_ptr<Wt::WApplication> LmsApplication::create(const Wt::WEnvironment& env, db::IDb& db, LmsApplicationManager& appManager, AuthenticationBackend authBackend)
@@ -490,7 +478,7 @@ namespace lms::ui
         navbar->bindNew<Wt::WAnchor>("releases", Wt::WLink{ Wt::LinkType::InternalPath, "/releases" }, Wt::WString::tr("Lms.Explore.releases"));
         navbar->bindNew<Wt::WAnchor>("tracks", Wt::WLink{ Wt::LinkType::InternalPath, "/tracks" }, Wt::WString::tr("Lms.Explore.tracks"));
         navbar->bindNew<Wt::WAnchor>("tracklists", Wt::WLink{ Wt::LinkType::InternalPath, "/tracklists" }, Wt::WString::tr("Lms.Explore.tracklists"));
-        navbar->bindNew<Wt::WAnchor>("folders", Wt::WLink{ Wt::LinkType::InternalPath, getFoldersNavPath(getDbSession()) }, Wt::WString::tr("Lms.Explore.folders"));
+        navbar->bindNew<Wt::WAnchor>("folders", Wt::WLink{ Wt::LinkType::InternalPath, "/folders" }, Wt::WString::tr("Lms.Explore.folders"));
 
         Filters* filters{ navbar->bindNew<Filters>("filters") };
         navbar->bindString("username", std::string{ getUserLoginName() }, Wt::TextFormat::Plain);
