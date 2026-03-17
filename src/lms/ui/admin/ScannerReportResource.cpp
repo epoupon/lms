@@ -93,6 +93,10 @@ namespace lms::ui
             {
                 _os << error.path << ": " << Wt::WString::tr("Lms.Admin.ScannerController.playlist-all-pathes-missing").toUTF8() << '\n';
             }
+            void visit(const scanner::CueFileError& error) override
+            {
+                _os << error.path << ": " << error.whatWentWrong << '\n';
+            }
 
             std::ostream& _os;
         };

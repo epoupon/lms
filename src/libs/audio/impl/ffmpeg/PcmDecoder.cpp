@@ -33,6 +33,7 @@ extern "C"
 }
 
 #include "core/ILogger.hpp"
+#include "core/PseudoProtocols.hpp"
 
 #include "audio/Exception.hpp"
 #include "audio/IPcmDecoder.hpp"
@@ -69,13 +70,29 @@ namespace lms::audio::ffmpeg
         }
     } // namespace
 
-    PcmDecoder::PcmDecoder(const std::filesystem::path& filePath, std::chrono::microseconds offset, const PcmParameters& parameters)
+    PcmDecoder::PcmDecoder(const std::filesystem::path& filePath_, std::chrono::microseconds offset, const PcmParameters& parameters)
         : _parameters{ parameters }
     {
         if (_parameters.channelCount > AV_NUM_DATA_POINTERS)
             throw Exception("Channel count exceeds maximum supported channels");
 
         utils::init();
+
+        const auto filePath = [&] () {
+            if (!core::track_on.matches(filePath_)) {
+                return filePath_;
+            }
+
+            const auto parsed = core::track_on.parseUri(filePath_);
+
+            if (const auto* err = std::get_if<std::string>(&parsed)) {
+                LMS_LOG(AUDIO, WARNING, "Cannot parse track_on: path " << filePath_ << ": " << err);
+                return filePath_;
+            }
+
+            const auto& track = std::get<core::TrackOn::DecipheredURI>(parsed);
+            return track.path;
+        } ();
 
         // TODO: use AudioFile wrapper?
         {

@@ -30,6 +30,7 @@ extern "C"
 
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
+#include "core/PseudoProtocols.hpp"
 #include "core/String.hpp"
 
 #include "Exception.hpp"
@@ -175,7 +176,23 @@ namespace lms::audio::ffmpeg
     } // namespace
 
     AudioFile::AudioFile(const std::filesystem::path& p)
-        : _p{ p }
+        : _p{
+            [_p=p] () {
+                if (!core::track_on.matches(_p)) {
+                    return _p;
+                }
+
+                const auto parsed = core::track_on.parseUri(_p);
+
+                if (const auto* err = std::get_if<std::string>(&parsed)) {
+                    LMS_LOG(AUDIO, WARNING, "Cannot parse track_on: path " << _p << ": " << err);
+                    return _p;
+                }
+
+                const auto& track = std::get<core::TrackOn::DecipheredURI>(parsed);
+                return track.path;
+            } ()
+        }
     {
         LMS_SCOPED_TRACE_DETAILED("MetaData", "FFmpegParseFile");
 

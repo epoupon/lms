@@ -25,6 +25,7 @@
 #include "core/FileResourceHandlerCreator.hpp"
 #include "core/ILogger.hpp"
 #include "core/IResourceHandler.hpp"
+#include "core/PseudoProtocols.hpp"
 #include "core/String.hpp"
 #include "core/media/Codec.hpp"
 #include "core/media/MimeType.hpp"
@@ -137,10 +138,13 @@ namespace lms::api::subsonic
             parameters.filePath = audioFileInfo.path;
             parameters.estimateContentLength = estimateContentLength;
 
+            std::optional<OutputFormat> requestedFormat;
+            std::optional<std::size_t> bitrate{};
+            if (!core::track_on.matches(parameters.filePath)) {
+
             if (format == "raw")   // raw => no transcoding
                 return parameters; // TODO: what if offset is not 0?
 
-            std::optional<OutputFormat> requestedFormat;
 
             if (!format.empty())
             {
@@ -174,7 +178,6 @@ namespace lms::api::subsonic
             }
 
             // Check if the input file is compatible with the requested format
-            std::optional<std::size_t> bitrate;
             if (requestedFormat && requestedFormat->container == audioFileInfo.audioProperties.container && requestedFormat->codec == audioFileInfo.audioProperties.codec)
             {
                 //  same codec => check if compatible with max bitrate
@@ -187,6 +190,10 @@ namespace lms::api::subsonic
                 // otherwise => apply requested bitrate
                 assert(maxBitRate > 0);
                 bitrate = maxBitRate;
+            }
+
+            } else {
+                requestedFormat = userTranscodeFormatToOutputFormat(context.getUser()->getSubsonicDefaultTranscodingOutputFormat());
             }
 
             // Need to transcode here
