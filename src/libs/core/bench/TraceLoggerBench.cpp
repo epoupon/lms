@@ -24,7 +24,7 @@
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 
-namespace lms::core
+namespace lms::core::benchs
 {
     // The trace logger is meant to built/destroyed once
     const Service<logging::ILogger> logger{ logging::createLogger() };
@@ -73,7 +73,4 @@ namespace lms::core
     BENCHMARK(BM_TraceLogger_Overview_withArg)->Threads(1)->Threads(std::thread::hardware_concurrency());
     BENCHMARK(BM_TraceLogger_Detailed)->Threads(1)->Threads(std::thread::hardware_concurrency());
     BENCHMARK(BM_TraceLogger_Detailed_withArg)->Threads(1)->Threads(std::thread::hardware_concurrency());
-
-} // namespace lms::core
-
-BENCHMARK_MAIN();
+} // namespace lms::core::benchs

@@ -20,6 +20,7 @@
 #pragma once
 
 #include <bit>
+#include <chrono>
 
 namespace lms::audio
 {
@@ -41,4 +42,21 @@ namespace lms::audio
         std::endian byteOrder;
         bool planar;
     };
+
+    namespace helpers
+    {
+        template<typename Rep, typename Period>
+        std::size_t durationToSampleCount(std::chrono::duration<Rep, Period> duration, unsigned sampleRate)
+        {
+            return static_cast<std::size_t>(duration.count() * sampleRate * Period::num / Period::den);
+        }
+
+        template<typename Duration>
+        Duration sampleCountToDuration(std::size_t sampleCount, unsigned sampleRate)
+        {
+            return std::chrono::duration_cast<Duration>(std::chrono::duration<double>(sampleCount) / sampleRate);
+        }
+
+        std::size_t sampleCountToByteCount(std::size_t sampleCount, PcmSampleType sampleType, unsigned channelCount);
+    } // namespace helpers
 } // namespace lms::audio

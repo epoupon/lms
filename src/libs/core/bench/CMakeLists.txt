@@ -1,5 +1,6 @@
 
 add_executable(bench-core
+	Core.cpp
 	TraceLoggerBench.cpp
 	)
 

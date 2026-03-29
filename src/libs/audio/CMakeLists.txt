@@ -2,6 +2,7 @@ pkg_check_modules(LIBAV IMPORTED_TARGET libavcodec libavutil libavformat libswre
 pkg_check_modules(Taglib REQUIRED IMPORTED_TARGET taglib)
 pkg_check_modules(PulseAudio IMPORTED_TARGET libpulse)
 pkg_check_modules(ALSA IMPORTED_TARGET alsa)
+pkg_check_modules(FFTW3f REQUIRED IMPORTED_TARGET fftw3f)
 
 if (PulseAudio_FOUND OR ALSA_FOUND)
     message(STATUS "Audio output available (PulseAudio=${PulseAudio_FOUND}, ALSA=${ALSA_FOUND})")
@@ -10,6 +11,12 @@ else()
 endif()
 
 add_library(lmsaudio STATIC
+	impl/features/AudioFeaturesExtractor.cpp
+	impl/features/DeltaCalculator.cpp
+	impl/features/FFT.cpp
+	impl/features/MelFilterBank.cpp
+	impl/features/StatsAccumulator.cpp
+	impl/features/Window.cpp
 	impl/ffmpeg/AudioFile.cpp
 	impl/ffmpeg/AudioFileInfo.cpp
 	impl/ffmpeg/AudioFileInfoParser.cpp
@@ -49,6 +56,7 @@ target_link_libraries(lmsaudio PUBLIC
 target_link_libraries(lmsaudio PRIVATE
 	PkgConfig::LIBAV
 	PkgConfig::Taglib
+	PkgConfig::FFTW3f
 	)
 
 target_compile_definitions(lmsaudio PRIVATE
@@ -80,3 +88,10 @@ if (ALSA_FOUND)
     )
 endif()
 
+if(BUILD_TESTING)
+	add_subdirectory(test)
+endif()
+
+if (BUILD_BENCHMARKS)
+	add_subdirectory(bench)
+endif()

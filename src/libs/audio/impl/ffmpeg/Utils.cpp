@@ -62,7 +62,7 @@ namespace lms::audio::ffmpeg::utils
 
         void avLogCallback(void*, int level, const char* fmt, va_list vl)
         {
-            if (!core::Service<core::logging::ILogger>::get()->isSeverityActive(core::logging::Severity::DEBUG))
+            if (!core::Service<core::logging::ILogger>::get() || core::Service<core::logging::ILogger>::get()->isSeverityActive(core::logging::Severity::DEBUG))
                 return;
 
             if (level > AV_LOG_WARNING)

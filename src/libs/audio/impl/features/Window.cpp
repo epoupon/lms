@@ -17,32 +17,21 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "audio/PcmTypes.hpp"
+#include "Window.hpp"
+
+#include <cmath>
+
 #include "audio/Exception.hpp"
 
-namespace lms::audio
+namespace lms::audio::features
 {
-    std::size_t getSampleSize(PcmSampleType type)
+    void computeHannWindow(std::span<float> window)
     {
-        switch (type)
-        {
-        case PcmSampleType::Signed16:
-            return 2;
-        case PcmSampleType::Signed32:
-        case PcmSampleType::Float32:
-            return 4;
-        case PcmSampleType::Float64:
-            return 8;
-        };
+        const std::size_t frameSize{ window.size() };
+        if (frameSize == 0)
+            throw Exception{ "Invalid frame size" };
 
-        throw Exception{ "Unhandled sample type" };
+        for (size_t i{}; i < frameSize; ++i)
+            window[i] = 0.5F * (1.0F - std::cos(2.F * M_PI * i / (static_cast<double>(frameSize) - 1)));
     }
-
-    namespace helpers
-    {
-        std::size_t sampleCountToByteCount(std::size_t sampleCount, PcmSampleType sampleType, unsigned channelCount)
-        {
-            return sampleCount * audio::getSampleSize(sampleType) * channelCount;
-        }
-    } // namespace helpers
-} // namespace lms::audio
+} // namespace lms::audio::features

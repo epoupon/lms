@@ -1,6 +1,7 @@
 include(GoogleTest)
 
 add_executable(test-core
+	Core.cpp
 	EnumSet.cpp
 	JobScheduler.cpp
 	LiteralString.cpp
@@ -10,7 +11,6 @@ add_executable(test-core
 	Service.cpp
 	String.cpp
 	TraceLogger.cpp
-	Utils.cpp
 	UUID.cpp
 	XxHash3.cpp
 	)
