@@ -22,12 +22,13 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstdint>
+#include <mutex>
 
 #include "audio/Exception.hpp"
 
 namespace lms::audio::features
 {
-
     namespace
     {
         constexpr bool isPowerOfTwo(std::size_t n)
@@ -55,48 +56,54 @@ namespace lms::audio::features
     RealFFTPlan::RealFFTPlan(std::size_t n)
         : _n{ validateFFTSize(n) }
     {
-        _input = static_cast<float*>(::fftwf_malloc(sizeof(float) * _n));
-        if (!_input)
+        float* input{ static_cast<float*>(::fftwf_malloc(sizeof(float) * _n)) };
+        if (!input)
             throw Exception{ "Cannot allocate input buffer for FFT" };
 
-        _output = static_cast<std::complex<float>*>(::fftwf_malloc(sizeof(fftwf_complex) * (_n / 2 + 1)));
-        if (!_output)
+        fftwf_complex* output{ static_cast<fftwf_complex*>(::fftwf_malloc(sizeof(fftwf_complex) * (_n / 2 + 1))) };
+        if (!output)
         {
-            fftwf_free(_input);
+            fftwf_free(input);
             throw Exception{ "Cannot allocate output buffer for FFT" };
         }
 
-        std::fill(_input, _input + _n, 0.F);
+        std::fill(input, input + _n, 0.F);
 
-        _plan = ::fftwf_plan_dft_r2c_1d(
-            static_cast<int>(_n), // size of FFT
-            _input,               // input
-            reinterpret_cast<fftwf_complex*>(_output),
-            FFTW_MEASURE);
+        {
+            // Unfortunately, fftwf_plan funcs are not thread safe
+            static std::mutex mutex;
+            std::scoped_lock lock{ mutex };
+
+            _plan = ::fftwf_plan_dft_r2c_1d(
+                static_cast<int>(_n), // size of FFT
+                input,                // input
+                output,
+                FFTW_MEASURE);
+        }
 
         if (!_plan)
-            throw std::runtime_error("Failed to create FFTW plan");
+            throw Exception("Failed to create FFTW plan");
     }
 
     RealFFTPlan::~RealFFTPlan()
     {
         ::fftwf_destroy_plan(_plan);
-        ::fftwf_free(_input);
-        ::fftwf_free(_output);
     }
 
-    std::span<float> RealFFTPlan::getInputBuffer()
+    std::size_t RealFFTPlan::getInputSize() const
     {
-        return std::span<float>{ _input, _n };
+        return _n;
     }
 
-    std::span<std::complex<float>> RealFFTPlan::getOutputBuffer()
+    std::size_t RealFFTPlan::getOutputSize() const
     {
-        return std::span<std::complex<float>>{ _output, _n / 2 + 1 };
+        return _n / 2 + 1;
     }
 
-    void RealFFTPlan::apply()
+    void RealFFTPlan::apply(std::span<const float> input, std::span<std::complex<float>> output)
     {
-        ::fftwf_execute_dft_r2c(_plan, _input, reinterpret_cast<fftwf_complex*>(_output));
+        assert(reinterpret_cast<std::uintptr_t>(input.data()) % minBufferAlignment == 0);
+        assert(reinterpret_cast<std::uintptr_t>(output.data()) % minBufferAlignment == 0);
+        ::fftwf_execute_dft_r2c(_plan, const_cast<float*>(input.data()), reinterpret_cast<::fftwf_complex*>(output.data()));
     }
 } // namespace lms::audio::features

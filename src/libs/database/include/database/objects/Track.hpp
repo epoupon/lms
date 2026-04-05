@@ -97,6 +97,8 @@ namespace lms::db
             DirectoryId directory;                                   // if set, tracks in this directory
             std::optional<std::size_t> fileSize;                     // if set, tracks that match this file size
             TrackEmbeddedImageId embeddedImageId;                    // if set, tracks that have this embedded image
+            std::optional<bool> hasAudioFeatures;                    // If set, tracks that have (or not) audio features
+            TrackId lastTrackId;                                     // If set, tracks that are after this one, must be used with sort by id
 
             FindParameters& setFilters(const Filters& _filters)
             {
@@ -191,6 +193,16 @@ namespace lms::db
                 embeddedImageId = _embeddedImageId;
                 return *this;
             }
+            FindParameters& setHasAudioFeatures(std::optional<bool> _hasAudioFeatures)
+            {
+                hasAudioFeatures = _hasAudioFeatures;
+                return *this;
+            }
+            FindParameters& setLastTrackId(TrackId _lastTrackId)
+            {
+                lastTrackId = _lastTrackId;
+                return *this;
+            }
         };
 
         Track() = default;
@@ -210,12 +222,12 @@ namespace lms::db
         static std::vector<pointer> findByMBID(Session& session, const core::UUID& MBID);
         static RangeResults<TrackId> findSimilarTrackIds(Session& session, const std::vector<TrackId>& trackIds, std::optional<Range> range = std::nullopt);
 
-        static RangeResults<TrackId> findIds(Session& session, const FindParameters& parameters);
-        static RangeResults<pointer> find(Session& session, const FindParameters& parameters);
-        static void find(Session& session, const FindParameters& parameters, const std::function<void(const Track::pointer&)>& func);
-        static void find(Session& session, const FindParameters& parameters, bool& moreResults, const std::function<void(const Track::pointer&)>& func);
+        static RangeResults<TrackId> findIds(Session& session, const FindParameters& params);
+        static RangeResults<pointer> find(Session& session, const FindParameters& params);
+        static void find(Session& session, const FindParameters& params, const std::function<void(const Track::pointer&)>& func);
+        static void find(Session& session, const FindParameters& params, bool& moreResults, const std::function<void(const Track::pointer&)>& func);
+        static std::size_t getCount(Session& session, const FindParameters& params);
         static RangeResults<TrackId> findIdsTrackMBIDDuplicates(Session& session, std::optional<Range> range = std::nullopt);
-        static RangeResults<TrackId> findIdsWithRecordingMBIDAndMissingFeatures(Session& session, std::optional<Range> range = std::nullopt);
 
         // Update utility functions
         static void updatePreferredArtwork(Session& session, TrackId trackId, ArtworkId artworkId);

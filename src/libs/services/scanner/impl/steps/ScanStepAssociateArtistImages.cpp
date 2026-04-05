@@ -229,7 +229,7 @@ namespace lms::scanner
         {
             constexpr std::size_t writeBatchSize{ 50 };
 
-            while ((forceFullBatch && imageAssociations.size() >= writeBatchSize) || !imageAssociations.empty())
+            while ((forceFullBatch && imageAssociations.size() >= writeBatchSize) || (!forceFullBatch && !imageAssociations.empty()))
             {
                 auto transaction{ session.createWriteTransaction() };
 

@@ -34,9 +34,9 @@
 #include "database/objects/Medium.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/TrackArtistLink.hpp"
+#include "database/objects/TrackAudioFeatures.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
 #include "database/objects/TrackEmbeddedImageLink.hpp"
-#include "database/objects/TrackFeatures.hpp"
 #include "database/objects/TrackLyrics.hpp"
 #include "database/objects/User.hpp"
 
@@ -190,6 +190,20 @@ namespace lms::db
 
             if (params.fileSize.has_value())
                 query.where("t.file_size = ?").bind(static_cast<long long>(params.fileSize.value()));
+
+            if (params.hasAudioFeatures.has_value())
+            {
+                if (*params.hasAudioFeatures)
+                    query.where("EXISTS (SELECT t_a_f.track_id FROM track_audio_features t_a_f WHERE t_a_f.track_id = t.id)");
+                else
+                    query.where("NOT EXISTS (SELECT t_a_f.track_id FROM track_audio_features t_a_f WHERE t_a_f.track_id = t.id)");
+            }
+
+            if (params.lastTrackId.isValid())
+            {
+                assert(params.sortMethod == TrackSortMethod::Id);
+                query.where("t.id > ?").bind(params.lastTrackId);
+            }
 
             if (params.embeddedImageId.isValid())
             {
@@ -385,15 +399,6 @@ namespace lms::db
         return utils::execRangeQuery<TrackId>(query, range);
     }
 
-    RangeResults<TrackId> Track::findIdsWithRecordingMBIDAndMissingFeatures(Session& session, std::optional<Range> range)
-    {
-        session.checkReadTransaction();
-
-        auto query{ session.getDboSession()->query<TrackId>("SELECT t.id FROM track t").where("LENGTH(t.recording_mbid) > 0").where("NOT EXISTS (SELECT * FROM track_features t_f WHERE t_f.track_id = t.id)") };
-
-        return utils::execRangeQuery<TrackId>(query, range);
-    }
-
     void Track::updatePreferredArtwork(Session& session, TrackId trackId, ArtworkId artworkId)
     {
         session.checkWriteTransaction();
@@ -488,6 +493,13 @@ namespace lms::db
 
         auto query{ createQuery<Wt::Dbo::ptr<Track>>(session, params) };
         utils::forEachQueryRangeResult(query, params.range, moreResults, func);
+    }
+
+    std::size_t Track::getCount(Session& session, const FindParameters& params)
+    {
+        session.checkReadTransaction();
+
+        return utils::fetchQuerySingleResult(createQuery<int>(session, "COUNT(*)", params));
     }
 
     RangeResults<TrackId> Track::findSimilarTrackIds(Session& session, const std::vector<TrackId>& tracks, std::optional<Range> range)

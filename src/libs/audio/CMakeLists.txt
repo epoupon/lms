@@ -11,6 +11,7 @@ else()
 endif()
 
 add_library(lmsaudio STATIC
+	impl/features/AudioFeatures.cpp
 	impl/features/AudioFeaturesExtractor.cpp
 	impl/features/DeltaCalculator.cpp
 	impl/features/FFT.cpp

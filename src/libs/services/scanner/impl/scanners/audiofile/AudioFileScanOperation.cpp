@@ -41,9 +41,9 @@
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
+#include "database/objects/TrackAudioFeatures.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
 #include "database/objects/TrackEmbeddedImageLink.hpp"
-#include "database/objects/TrackFeatures.hpp"
 #include "database/objects/TrackLyrics.hpp"
 #include "image/Exception.hpp"
 #include "image/Image.hpp"
@@ -772,7 +772,7 @@ namespace lms::scanner
 
         track.modify()->setRecordingMBID(_file->track.recordingMBID);
         track.modify()->setTrackMBID(_file->track.mbid);
-        if (auto trackFeatures{ db::TrackFeatures::find(dbSession, track->getId()) })
+        if (auto trackFeatures{ db::TrackAudioFeatures::find(dbSession, track->getId()) })
             trackFeatures.remove(); // TODO: only if MBID changed?
         track.modify()->setCopyright(_file->track.copyright);
         track.modify()->setCopyrightURL(_file->track.copyrightURL);

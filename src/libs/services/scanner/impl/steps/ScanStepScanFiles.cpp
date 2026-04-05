@@ -181,7 +181,7 @@ namespace lms::scanner
         constexpr std::size_t filesPerScanJob{ 10 };
         constexpr std::size_t scanQueueMaxSize{ 50 };
         constexpr std::size_t processFileResultsBatchSize{ 1 };
-        constexpr float drainRatio{ 0.85 };
+        constexpr float drainRatio{ 0.85F };
 
         std::deque<std::unique_ptr<IFileScanOperation>> operations;
 

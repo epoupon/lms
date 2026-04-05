@@ -30,7 +30,7 @@
 #include "database/objects/Cluster.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/Track.hpp"
-#include "database/objects/TrackFeatures.hpp"
+#include "database/objects/TrackAudioFeatures.hpp"
 #include "similarity/features/SimilarityFeaturesSearcher.hpp"
 
 #include "GeneticAlgorithm.hpp"
@@ -173,7 +173,7 @@ constructFeaturesCache(db::Session& session, const FeatureSettingsMap& featureSe
     for (auto trackId : db::Track::getAllIdsWithFeatures(session))
     {
         const db::Track::pointer track{ db::Track::getById(session, trackId) };
-        const db::TrackFeatures::pointer trackFeatures{ track->getTrackFeatures() };
+        const db::TrackAudioFeatures::pointer trackFeatures{ track->getTrackAudioFeatures() };
 
         cache[trackId] = trackFeatures->getFeatureValuesMap(names);
     }

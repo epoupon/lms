@@ -24,7 +24,6 @@
 
 namespace lms::ui
 {
-
     class ScannerReportResource : public Wt::WResource
     {
     public:
@@ -41,5 +40,4 @@ namespace lms::ui
         static Wt::WString duplicateReasonToWString(scanner::DuplicateReason reason);
         std::unique_ptr<scanner::ScanStats> _stats;
     };
-
 } // namespace lms::ui

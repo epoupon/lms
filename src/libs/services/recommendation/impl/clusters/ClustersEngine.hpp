@@ -23,7 +23,6 @@
 
 namespace lms::recommendation
 {
-
     class ClusterEngine : public IEngine
     {
     public:
@@ -47,5 +46,4 @@ namespace lms::recommendation
 
         db::IDb& _db;
     };
-
 } // namespace lms::recommendation

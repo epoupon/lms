@@ -23,11 +23,11 @@
 #include <cmath>
 #include <numeric>
 
-#include "audio/IAudioFeaturesExtractor.hpp"
 #include "core/ILogger.hpp"
 
 #include "audio/IPcmDecoder.hpp"
 
+#include "AlignedHeapArray.hpp"
 #include "DeltaCalculator.hpp"
 #include "IFFT.hpp"
 #include "StatsAccumulator.hpp"
@@ -60,16 +60,17 @@ namespace lms::audio::features
         , _window{ detail::computeWindow(_frameSize) }
         , _windowEnergy{ static_cast<float>(std::accumulate(_window.begin(), _window.end(), double{}, [](double sum, double w) { return sum + w * w; })) }
         , _melFilterBank{ computeMelFilterBank(_frameSize, _pcmParams.sampleRate, AudioFeatures::melBandCount) }
+        , _realFFTPlan{ createRealFFTPlan(_frameSize) }
     {
         assert(_window.size() == _frameSize);
-        assert(getSampleSize(_pcmParams.sampleType) == sizeof(FeatureValueType));
+        assert(getSampleSize(_pcmParams.sampleType) == sizeof(FeatureValue));
 
         LMS_LOG(AUDIO, DEBUG, "Frame size = " << _frameSize << " samples (" << helpers::sampleCountToDuration<std::chrono::milliseconds>(static_cast<std::size_t>(_frameSize), _pcmParams.sampleRate).count() << " ms)");
     }
 
     AudioFeaturesExtractor::~AudioFeaturesExtractor() = default;
 
-    AudioFeatures AudioFeaturesExtractor::process(const std::filesystem::path& audioFile) const
+    AudioFeaturesExtractor::FeatureExtractionResult AudioFeaturesExtractor::extractFeatures(const std::filesystem::path& audioFile) const
     {
         auto pcmDecoder{ createPcmDecoder(audioFile, {}, _pcmParams) };
 
@@ -77,14 +78,14 @@ namespace lms::audio::features
         constexpr std::size_t samplesBufferFrameCount{ 10 };
         samplesBuffer.resize(samplesBufferFrameCount * _frameSize);
 
-        AudioFeatures features;
-        features.frameSize = _frameSize;
-        features.frameHopSize = _frameSize / 2;
-        features.pcmSampleRate = _pcmParams.sampleRate;
+        FeatureExtractionResult res;
+        res.metadata.frameSize = _frameSize;
+        res.metadata.frameHopSize = _frameSize / 2;
+        res.metadata.pcmSampleRate = _pcmParams.sampleRate;
 
-        auto fft{ createRealFFTPlan(_frameSize) };
-        std::span<FloatType> windowedFrame{ fft->getInputBuffer() };
-        std::vector<FloatType> powerSpectrum(fft->getOutputBuffer().size());
+        AlignedHeapArray<FloatType, IRealFFTPlan::minBufferAlignment> windowedFrame{ _realFFTPlan->getInputSize() };
+        AlignedHeapArray<std::complex<FloatType>, IRealFFTPlan::minBufferAlignment> fftOutput{ _realFFTPlan->getOutputSize() };
+        std::vector<FloatType> powerSpectrum(_realFFTPlan->getOutputSize());
         const FloatType powerScale{ 1.F / (_windowEnergy * _frameSize) };
         std::vector<StatsAccumulator> logMelEnergyAccumulators(_melFilterBank.getFilterCount());
         std::vector<StatsAccumulator> logMelEnergyDeltaAccumulators(_melFilterBank.getFilterCount());
@@ -100,7 +101,7 @@ namespace lms::audio::features
                 break; // ignore what is left in the buffer, as it is not a full frame
             }
 
-            features.pcmSampleCount += decodedSampleCount;
+            res.metadata.pcmSampleCount += decodedSampleCount;
 
             const std::size_t availableSampleCount{ currentSampleOffset + decodedSampleCount };
             std::span<FloatType> availableSamples{ samplesBuffer.data(), availableSampleCount };
@@ -115,10 +116,10 @@ namespace lms::audio::features
                 for (std::size_t i{}; i < _frameSize; ++i)
                     windowedFrame[i] = samples[i] * _window[i];
 
-                fft->apply();
+                _realFFTPlan->apply(windowedFrame, fftOutput);
 
                 // compute power spectrum
-                std::transform(fft->getOutputBuffer().begin(), fft->getOutputBuffer().end(), powerSpectrum.begin(), [powerScale](const std::complex<FloatType>& bin) {
+                std::transform(fftOutput.cbegin(), fftOutput.cend(), powerSpectrum.begin(), [powerScale](const std::complex<FloatType>& bin) {
                     return (bin.real() * bin.real() + bin.imag() * bin.imag()) * powerScale;
                 });
 
@@ -133,7 +134,7 @@ namespace lms::audio::features
                         logMelEnergyDeltaAccumulators[m].add(*melEnergyDelta);
                 }
 
-                features.frameCount++;
+                res.metadata.frameCount++;
 
                 currentSampleOffset += _frameSize / 2;
             }
@@ -147,16 +148,13 @@ namespace lms::audio::features
 
         for (std::size_t m{}; m < _melFilterBank.getFilterCount(); ++m)
         {
-            features.logMelEnergies[m].mean = logMelEnergyAccumulators[m].getMean();
-            features.logMelEnergies[m].stddev = logMelEnergyAccumulators[m].getStdDev();
-            features.logMelEnergies[m].skewness = logMelEnergyAccumulators[m].getSkewness();
-
-            features.logMelDeltaEnergies[m].mean = logMelEnergyDeltaAccumulators[m].getMean();
-            features.logMelDeltaEnergies[m].stddev = logMelEnergyDeltaAccumulators[m].getStdDev();
-            features.logMelDeltaEnergies[m].skewness = logMelEnergyDeltaAccumulators[m].getSkewness();
+            res.features.logMelEnergyMean[m] = logMelEnergyAccumulators[m].getMean();
+            res.features.logMelEnergyStdDev[m] = logMelEnergyAccumulators[m].getStdDev();
+            res.features.logMelEnergySkewness[m] = logMelEnergyAccumulators[m].getSkewness();
+            res.features.logMelEnergyDeltaStdDev[m] = logMelEnergyDeltaAccumulators[m].getStdDev();
         }
 
-        return features;
+        return res;
     }
 
     std::size_t AudioFeaturesExtractor::readSamples(IPcmDecoder& pcmDecoder, std::span<FloatType> buffer) const

@@ -135,7 +135,7 @@ namespace lms::scanner
             constexpr std::size_t writeBatchSize{ 50 };
 
             std::vector<typename Object::IdType> ids;
-            while ((forceFullBatch && objectIdsToRemove.size() >= writeBatchSize) || !objectIdsToRemove.empty())
+            while ((forceFullBatch && objectIdsToRemove.size() >= writeBatchSize) || (!forceFullBatch && !objectIdsToRemove.empty()))
             {
                 for (std::size_t i{}; !objectIdsToRemove.empty() && i < writeBatchSize; ++i)
                 {

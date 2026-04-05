@@ -49,10 +49,10 @@
 #include "database/objects/StarredTrack.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
+#include "database/objects/TrackAudioFeatures.hpp"
 #include "database/objects/TrackBookmark.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
 #include "database/objects/TrackEmbeddedImageLink.hpp"
-#include "database/objects/TrackFeatures.hpp"
 #include "database/objects/TrackList.hpp"
 #include "database/objects/TrackLyrics.hpp"
 #include "database/objects/UIState.hpp"
@@ -106,7 +106,7 @@ namespace lms::db
         _session.mapClass<TrackArtistLink>("track_artist_link");
         _session.mapClass<TrackEmbeddedImage>("track_embedded_image");
         _session.mapClass<TrackEmbeddedImageLink>("track_embedded_image_link");
-        _session.mapClass<TrackFeatures>("track_features");
+        _session.mapClass<TrackAudioFeatures>("track_audio_features");
         _session.mapClass<TrackList>("tracklist");
         _session.mapClass<TrackListEntry>("tracklist_entry");
         _session.mapClass<TrackLyrics>("track_lyrics");
@@ -302,7 +302,7 @@ namespace lms::db
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_track_artist_idx ON track_artist_link(track_id, artist_id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_artist_link_track_type_idx ON track_artist_link(track_id, type)");
 
-            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_features_track_idx ON track_features(track_id)");
+            utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_audio_features_track_idx ON track_audio_features(track_id)");
 
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_lyrics_id_idx ON track_lyrics(id)");
             utils::executeCommand(_session, "CREATE INDEX IF NOT EXISTS track_lyrics_absolute_file_path_idx ON track_lyrics(absolute_file_path)");

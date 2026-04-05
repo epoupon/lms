@@ -212,6 +212,13 @@ namespace lms::ui
                                      .arg(stepStats.progress()));
             break;
 
+        case ScanStep::ExtractAudioFeatures:
+            _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-extract-audio-features")
+                                     .arg(stepStats.processedElems)
+                                     .arg(stepStats.totalElems)
+                                     .arg(stepStats.progress()));
+            break;
+
         case ScanStep::Optimize:
             _stepStatus->setText(Wt::WString::tr("Lms.Admin.ScannerController.step-optimize")
                                      .arg(stepStats.progress()));

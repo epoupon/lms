@@ -17,9 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #include "audio/IAudioFeaturesExtractor.hpp"
 #include "audio/PcmTypes.hpp"
 
+#include "IFFT.hpp"
 #include "MelFilterBank.hpp"
 
 namespace lms::audio
@@ -37,10 +40,10 @@ namespace lms::audio::features
         AudioFeaturesExtractor(const AudioFeaturesExtractor&) = delete;
         AudioFeaturesExtractor& operator=(const AudioFeaturesExtractor&) = delete;
 
-        using FloatType = FeatureValueType;
+        using FloatType = FeatureValue;
 
     private:
-        AudioFeatures process(const std::filesystem::path& audioFile) const override;
+        FeatureExtractionResult extractFeatures(const std::filesystem::path& audioFile) const override;
 
         std::size_t readSamples(IPcmDecoder& pcmDecoder, std::span<FloatType> buffer) const;
 
@@ -49,5 +52,6 @@ namespace lms::audio::features
         const std::vector<FloatType> _window;
         const float _windowEnergy;
         const MelFilterBank _melFilterBank;
+        std::unique_ptr<IRealFFTPlan> _realFFTPlan;
     };
 } // namespace lms::audio::features

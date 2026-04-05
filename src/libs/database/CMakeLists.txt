@@ -28,7 +28,7 @@ add_library(lmsdatabase STATIC
 	impl/objects/TrackBookmark.cpp
 	impl/objects/TrackEmbeddedImage.cpp
 	impl/objects/TrackEmbeddedImageLink.cpp
-	impl/objects/TrackFeatures.cpp
+	impl/objects/TrackAudioFeatures.cpp
 	impl/objects/TrackList.cpp
 	impl/objects/TrackLyrics.cpp
 	impl/objects/Types.cpp

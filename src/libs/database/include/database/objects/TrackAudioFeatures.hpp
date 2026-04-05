@@ -20,10 +20,7 @@
 #pragma once
 
 #include <optional>
-#include <string>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
+#include <span>
 
 #include <Wt/Dbo/Field.h>
 
@@ -32,33 +29,29 @@
 #include "database/Types.hpp"
 #include "database/objects/TrackId.hpp"
 
-LMS_DECLARE_IDTYPE(TrackFeaturesId)
+LMS_DECLARE_IDTYPE(TrackAudioFeaturesId)
 
 namespace lms::db
 {
     class Session;
     class Track;
 
-    using FeatureName = std::string;
-    using FeatureValues = std::vector<double>;
-    using FeatureValuesMap = std::unordered_map<FeatureName, FeatureValues>;
-
-    class TrackFeatures final : public Object<TrackFeatures, TrackFeaturesId>
+    class TrackAudioFeatures final : public Object<TrackAudioFeatures, TrackAudioFeaturesId>
     {
     public:
-        TrackFeatures() = default;
+        TrackAudioFeatures() = default;
 
         // Find utilities
         static std::size_t getCount(Session& session);
-        static pointer find(Session& session, TrackFeaturesId id);
+        static pointer find(Session& session, TrackAudioFeaturesId id);
         static pointer find(Session& session, TrackId trackId);
-        static RangeResults<TrackFeaturesId> find(Session& session, std::optional<Range> range = std::nullopt);
-
-        FeatureValues getFeatureValues(const FeatureName& feature) const;
-        FeatureValuesMap getFeatureValuesMap(const std::unordered_set<FeatureName>& featureNames) const;
+        static RangeResults<TrackAudioFeaturesId> find(Session& session, std::optional<Range> range = std::nullopt);
 
         // Accessors
+        std::span<const std::byte> getData() const;
         Wt::Dbo::ptr<Track> getTrack() const { return _track; }
+
+        void setData(std::span<const std::byte> data);
 
         template<class Action>
         void persist(Action& a)
@@ -69,11 +62,10 @@ namespace lms::db
 
     private:
         friend class Session;
-        TrackFeatures(ObjectPtr<Track> track, const std::string& jsonEncodedFeatures);
-        static pointer create(Session& session, ObjectPtr<Track> track, const std::string& jsonEncodedFeatures);
+        TrackAudioFeatures(ObjectPtr<Track> track);
+        static pointer create(Session& session, ObjectPtr<Track> track);
 
-        std::string _data;
+        std::vector<unsigned char> _data; // stored as blob
         Wt::Dbo::ptr<Track> _track;
     };
-
 } // namespace lms::db

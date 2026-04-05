@@ -1,9 +1,7 @@
 
 add_library(lmsrecommendation STATIC
 	impl/clusters/ClustersEngine.cpp
-	impl/features/FeaturesEngineCache.cpp
 	impl/features/FeaturesEngine.cpp
-	impl/features/FeaturesDefs.cpp
 	impl/playlist-constraints/ConsecutiveArtists.cpp
 	impl/playlist-constraints/ConsecutiveReleases.cpp
 	impl/playlist-constraints/DuplicateTracks.cpp

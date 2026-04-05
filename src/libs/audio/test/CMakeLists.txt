@@ -2,6 +2,7 @@ include(GoogleTest)
 
 add_executable(test-audio
 	Audio.cpp
+	AudioFeatures.cpp
 	DeltaCalculator.cpp
 	FFT.cpp
 	MelFilterBank.cpp

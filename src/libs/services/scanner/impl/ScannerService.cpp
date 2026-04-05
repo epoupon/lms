@@ -49,6 +49,7 @@
 #include "steps/ScanStepCheckForRemovedFiles.hpp"
 #include "steps/ScanStepCompact.hpp"
 #include "steps/ScanStepComputeClusterStats.hpp"
+#include "steps/ScanStepExtractAudioFeatures.hpp"
 #include "steps/ScanStepOptimize.hpp"
 #include "steps/ScanStepRemoveOrphanedDbEntries.hpp"
 #include "steps/ScanStepScanFiles.hpp"
@@ -518,6 +519,8 @@ namespace lms::scanner
         _scanSteps.emplace_back(std::make_unique<ScanStepOptimize>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepComputeClusterStats>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepCheckForDuplicatedFiles>(params));
+        // Audio similarity scan step must be the last one because it is the most long running and we want the user be able to browse the library and play music as soon as possible, even if audio similarity is not up to date yet
+        _scanSteps.emplace_back(std::make_unique<ScanStepExtractAudioFeatures>(params));
     }
 
     void ScannerService::notifyInProgress(const ScanStepStats& stepStats)

@@ -19,6 +19,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "features/AlignedHeapArray.hpp"
 #include "features/IFFT.hpp"
 
 namespace lms::audio::features::benchs
@@ -39,16 +40,17 @@ namespace lms::audio::features::benchs
     void BM_FFT(benchmark::State& state)
     {
         const std::size_t n{ static_cast<std::size_t>(state.range(0)) };
-        const std::vector<float> input{ generateTestSignal(n) };
+        const std::vector<float> inputSignal{ generateTestSignal(n) };
 
         auto fft{ createRealFFTPlan(n) };
-        auto inputBuffer{ fft->getInputBuffer() };
+        lms::audio::features::AlignedHeapArray<float, IRealFFTPlan::minBufferAlignment> input{ n };
+        lms::audio::features::AlignedHeapArray<std::complex<float>, IRealFFTPlan::minBufferAlignment> output{ fft->getOutputSize() };
 
         // Fill input buffer with test signal (simulate real use case where input changes every frame)
-        std::copy(input.begin(), input.end(), inputBuffer.begin());
+        std::copy(inputSignal.begin(), inputSignal.end(), input.begin());
 
         for (auto _ : state)
-            fft->apply();
+            fft->apply(input, output);
 
         state.counters["Samples/s"] = benchmark::Counter{ static_cast<double>(n), benchmark::Counter::kIsIterationInvariantRate };
         state.counters["FFT/s"] = benchmark::Counter{ 1.0, benchmark::Counter::kIsIterationInvariantRate };

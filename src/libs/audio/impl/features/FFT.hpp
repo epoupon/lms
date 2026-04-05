@@ -34,19 +34,14 @@ namespace lms::audio::features
         RealFFTPlan(const RealFFTPlan&) = delete;
         RealFFTPlan& operator=(const RealFFTPlan&) = delete;
 
-        std::size_t getSize() const override { return _n; }
-
-        std::span<float> getInputBuffer() override;
-        std::span<std::complex<float>> getOutputBuffer() override;
+        std::size_t getInputSize() const override;
+        std::size_t getOutputSize() const override;
 
         // Forward transform, from real input to complex output, not normalized
-        void apply() override;
+        void apply(std::span<const float> input, std::span<std::complex<float>> output) override;
 
     private:
         const std::size_t _n;
-
-        float* _input{};
-        std::complex<float>* _output{};
         fftwf_plan _plan{};
     };
 } // namespace lms::audio::features

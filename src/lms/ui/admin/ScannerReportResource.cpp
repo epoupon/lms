@@ -93,6 +93,10 @@ namespace lms::ui
             {
                 _os << error.path << ": " << Wt::WString::tr("Lms.Admin.ScannerController.playlist-all-pathes-missing").toUTF8() << '\n';
             }
+            void visit(const scanner::AudioFeaturesExtractError& error) override
+            {
+                _os << error.path << ": " << Wt::WString::tr("Lms.Admin.ScannerController.cannot-extract-audio-features").arg(Wt::WString::fromUTF8(error.errorMsg)).toUTF8() << '\n';
+            }
 
             std::ostream& _os;
         };

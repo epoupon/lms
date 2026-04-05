@@ -109,6 +109,7 @@
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">无法获得音轨时间</message>
 <message id="Lms.Admin.ScannerController.bad-embedded-image">无法读取索引 {1} 处的图片：{2}</message>
+<message id="Lms.Admin.ScannerController.cannot-extract-audio-features">无法提取音频特征：{1}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-artist-info-file">无法解析艺术家信息文件</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">无法解析文件</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">无法读取文件（{1}）</message>
@@ -146,6 +147,7 @@
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">检查文件中... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">正在压缩数据库...</message>
 <message id="Lms.Admin.ScannerController.step-compute-cluster-stats">正在计算统计信息... {1}%</message>
+<message id="Lms.Admin.ScannerController.step-extract-audio-features">正在提取音频特征：{1} / {2} 个文件 ({3}%)</message>
 <message id="Lms.Admin.ScannerController.step-optimize">正在优化数据库... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reconciliate-artists">整理艺术家：{1} 条记录...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">重载相似引擎中 {1}%...</message>

@@ -19,42 +19,33 @@
 
 #pragma once
 
-#include <array>
 #include <filesystem>
 #include <memory>
 
+#include "audio/AudioFeatures.hpp"
+
 namespace lms::audio
 {
-    using FeatureValueType = float;
-    static_assert(sizeof(FeatureValueType) == 4);
-
-    struct FeatureStats
-    {
-        FeatureValueType mean{};
-        FeatureValueType stddev{};
-        FeatureValueType skewness{};
-    };
-
-    struct AudioFeatures
-    {
-        static inline constexpr size_t melBandCount{ 40 };
-        std::array<FeatureStats, melBandCount> logMelEnergies;
-        std::array<FeatureStats, melBandCount> logMelDeltaEnergies;
-
-        // stats
-        std::size_t frameSize{};
-        std::size_t frameHopSize{};
-        std::size_t pcmSampleRate{};
-        std::size_t pcmSampleCount{}; // total number of processed PCM samples
-        std::size_t frameCount{};     // total number of processed frames (with overlapping)
-    };
-
     class IAudioFeaturesExtractor
     {
     public:
         virtual ~IAudioFeaturesExtractor() = default;
 
-        [[nodiscard]] virtual AudioFeatures process(const std::filesystem::path& audioFile) const = 0;
+        struct AnalysisMetadata
+        {
+            std::size_t frameSize{};
+            std::size_t frameHopSize{};
+            std::size_t pcmSampleRate{};
+            std::size_t pcmSampleCount{}; // total number of processed PCM samples
+            std::size_t frameCount{};     // total number of processed frames (with overlapping)
+        };
+
+        struct FeatureExtractionResult
+        {
+            AudioFeatures features;
+            AnalysisMetadata metadata;
+        };
+        [[nodiscard]] virtual FeatureExtractionResult extractFeatures(const std::filesystem::path& audioFile) const = 0;
     };
 
     std::unique_ptr<IAudioFeaturesExtractor> createAudioFeaturesExtractor();

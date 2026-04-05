@@ -35,7 +35,7 @@ namespace lms::db
 {
     namespace
     {
-        static constexpr Version LMS_DATABASE_VERSION{ 103 };
+        static constexpr Version LMS_DATABASE_VERSION{ 104 };
     }
 
     VersionInfo::VersionInfo()
@@ -1706,6 +1706,20 @@ FROM track)");
         utils::executeCommand(*session.getDboSession(), "UPDATE scan_settings SET audio_scan_version = audio_scan_version + 1");
     }
 
+    void migrateFromV103(Session& session)
+    {
+        // Replace previous track_audio_features with a brand new table
+        utils::executeCommand(*session.getDboSession(), R"(DROP TABLE track_features)");
+
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "track_audio_features" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "data" blob not null,
+  "track_id" bigint,
+  constraint "fk_track_audio_features_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred
+))");
+    }
+
     bool doDbMigration(Session& session)
     {
         constexpr std::string_view outdatedMsg{ "Outdated database, please rebuild it (delete the .db file and restart)" };
@@ -1785,6 +1799,7 @@ FROM track)");
             { 100, migrateFromV100 },
             { 101, migrateFromV101 },
             { 102, migrateFromV102 },
+            { 103, migrateFromV103 },
         };
 
         bool migrationPerformed{};

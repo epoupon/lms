@@ -17,6 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#pragma once
+
 #include <complex>
 #include <memory>
 #include <span>
@@ -26,15 +28,17 @@ namespace lms::audio::features
     class IRealFFTPlan
     {
     public:
+        static inline constexpr std::size_t minBufferAlignment{ 32 };
+
         virtual ~IRealFFTPlan() = default;
 
-        virtual std::size_t getSize() const = 0;
+        virtual std::size_t getInputSize() const = 0;  // n
+        virtual std::size_t getOutputSize() const = 0; // n/2 + 1
 
-        virtual std::span<float> getInputBuffer() = 0;                // size = getSize()
-        virtual std::span<std::complex<float>> getOutputBuffer() = 0; // size = (getSize()/2 + 1)
-
-        // Apply FFT in-place from inputBuffer -> outputBuffer
-        virtual void apply() = 0;
+        // Apply FFT
+        // input must be size n, aligned to minBufferAlignment bytes
+        // output must be size n/2 + 1, aligned to minBufferAlignment bytes
+        virtual void apply(std::span<const float> input, std::span<std::complex<float>> output) = 0;
     };
 
     // size must be a power of 2 and >= 2 (throw if not)

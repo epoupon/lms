@@ -111,6 +111,7 @@
 <!--Scanner Controller-->
 <message id="Lms.Admin.ScannerController.bad-duration">No ha sido posible obtener la duración de la pista</message>
 <message id="Lms.Admin.ScannerController.bad-embedded-image">No se puede leer la imagen en el índice {1} : {2}</message>
+<message id="Lms.Admin.ScannerController.cannot-extract-audio-features">No se pueden extraer las características de audio: {1}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-artist-info-file">No ha sido posible analizar el fichero de información sobre el artista</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">No ha sido posible analizar el fichero de audio</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">No ha sido posible leer el fichero ({1})</message>
@@ -148,6 +149,7 @@
 <message id="Lms.Admin.ScannerController.step-checking-for-removed-files">Comprobando ficheros eliminados... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-compact">Compactando la base de datos...</message>
 <message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Calculando estadísticas... {1}%</message>
+<message id="Lms.Admin.ScannerController.step-extract-audio-features">Extrayendo características de audio: {1} de {2} archivos ({3}%)</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Optimizando la base de datos... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reconciliate-artists">Reconciliando artistas: {1} entradas...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Recargando el motor de similitud: {1}%...</message>

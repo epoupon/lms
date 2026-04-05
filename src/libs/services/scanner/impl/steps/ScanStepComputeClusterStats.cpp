@@ -18,7 +18,9 @@
  */
 
 #include "ScanStepComputeClusterStats.hpp"
+
 #include "core/ILogger.hpp"
+
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Cluster.hpp"

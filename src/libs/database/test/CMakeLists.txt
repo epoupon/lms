@@ -27,7 +27,7 @@ add_executable(test-database
 	TrackArtistLink.cpp
 	TrackBookmark.cpp
 	TrackEmbeddedImage.cpp
-	TrackFeatures.cpp
+	TrackAudioFeatures.cpp
 	TrackList.cpp
 	TrackLyrics.cpp
 	User.cpp

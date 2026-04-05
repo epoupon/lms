@@ -40,6 +40,7 @@
 #include "database/objects/StarredRelease.hpp"
 #include "database/objects/StarredTrack.hpp"
 #include "database/objects/TrackArtistLink.hpp"
+#include "database/objects/TrackAudioFeatures.hpp"
 #include "database/objects/TrackEmbeddedImage.hpp"
 #include "database/objects/TrackEmbeddedImageLink.hpp"
 #include "database/objects/TrackLyrics.hpp"
@@ -377,6 +378,7 @@ VALUES
             EXPECT_FALSE(StarredTrack::find(session, StarredTrackId{}));
             EXPECT_FALSE(Track::find(session, TrackId{}));
             EXPECT_FALSE(TrackArtistLink::find(session, TrackArtistLinkId{}));
+            EXPECT_FALSE(TrackAudioFeatures::find(session, TrackAudioFeaturesId{}));
             EXPECT_FALSE(TrackList::find(session, TrackListId{}));
             EXPECT_FALSE(TrackLyrics::find(session, TrackLyricsId{}));
             EXPECT_FALSE(UIState::find(session, UIStateId{}));

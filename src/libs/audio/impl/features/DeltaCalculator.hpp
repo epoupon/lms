@@ -39,7 +39,7 @@ namespace lms::audio::features
         std::size_t _halfWindowSize;
         float _invDenominator;
 
-        std::vector<float> _buffer;  // size = 2 * windowSize
+        std::vector<float> _buffer; // size = 2 * windowSize
         std::size_t _index{};
         std::size_t _count{};
     };

@@ -147,7 +147,7 @@ namespace lms::scanner
         {
             constexpr std::size_t writeBatchSize{ 5 };
 
-            while ((forceFullBatch && playListFileAssociations.size() >= writeBatchSize) || !playListFileAssociations.empty())
+            while ((forceFullBatch && playListFileAssociations.size() >= writeBatchSize) || (!forceFullBatch && !playListFileAssociations.empty()))
             {
                 auto transaction{ session.createWriteTransaction() };
 

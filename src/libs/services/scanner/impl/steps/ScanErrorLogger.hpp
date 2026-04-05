@@ -23,21 +23,22 @@
 
 namespace lms::scanner
 {
-    class ScanErrorLogger : public scanner::ScanErrorVisitor
+    class ScanErrorLogger : public ScanErrorVisitor
     {
     private:
-        void visit(const scanner::ScanError&) override;
-        void visit(const scanner::IOScanError& error) override;
-        void visit(const scanner::AudioFileScanError& error) override;
-        void visit(const scanner::EmbeddedImageScanError& error) override;
-        void visit(const scanner::NoAudioTrackFoundError& error) override;
-        void visit(const scanner::BadAudioDurationError& error) override;
-        void visit(const scanner::ArtistInfoFileScanError& error) override;
-        void visit(const scanner::MissingArtistNameError& error) override;
-        void visit(const scanner::ImageFileScanError& error) override;
-        void visit(const scanner::LyricsFileScanError& error) override;
-        void visit(const scanner::PlayListFileScanError& error) override;
-        void visit(const scanner::PlayListFilePathMissingError& error) override;
-        void visit(const scanner::PlayListFileAllPathesMissingError& error) override;
+        void visit(const ScanError& error) override;
+        void visit(const IOScanError& error) override;
+        void visit(const AudioFileScanError& error) override;
+        void visit(const EmbeddedImageScanError& error) override;
+        void visit(const NoAudioTrackFoundError& error) override;
+        void visit(const BadAudioDurationError& error) override;
+        void visit(const ArtistInfoFileScanError& error) override;
+        void visit(const MissingArtistNameError& error) override;
+        void visit(const ImageFileScanError& error) override;
+        void visit(const LyricsFileScanError& error) override;
+        void visit(const PlayListFileScanError& error) override;
+        void visit(const PlayListFilePathMissingError& error) override;
+        void visit(const PlayListFileAllPathesMissingError& error) override;
+        void visit(const AudioFeaturesExtractError& error) override;
     };
 } // namespace lms::scanner

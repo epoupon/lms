@@ -26,7 +26,6 @@
 #include "audio/Exception.hpp"
 #include "audio/IAudioFeaturesExtractor.hpp"
 
-
 int main(int argc, char* argv[])
 {
     try
@@ -63,17 +62,15 @@ int main(int argc, char* argv[])
         {
             auto extractor{ audio::createAudioFeaturesExtractor() };
 
-            const auto features{ extractor->process(inputPath) };
-            std::cout << "Processed " << features.pcmSampleCount << " PCM samples in " << features.frameCount << " frames (" << features.pcmSampleRate << " Hz), frame size = " << features.frameSize << " samples (" << features.frameHopSize << " hop size)" << std::endl;
+            const auto res{ extractor->extractFeatures(inputPath) };
+            std::cout << "Processed " << res.metadata.pcmSampleCount << " PCM samples in " << res.metadata.frameCount << " frames (" << res.metadata.pcmSampleRate << " Hz), frame size = " << res.metadata.frameSize << " samples (" << res.metadata.frameHopSize << " hop size)" << std::endl;
 
-            for (std::size_t m{}; m < features.logMelEnergies.size(); ++m)
+            for (std::size_t m{}; m < audio::AudioFeatures::melBandCount; ++m)
             {
-                const auto& stats{ features.logMelEnergies[m] };
                 std::cout << "Mel filter " << m << std::endl;
-                std::cout << "\tmean = " << stats.mean << ", stddev = " << stats.stddev << ", skewness = " << stats.skewness << std::endl;
+                std::cout << "\tmean = " << res.features.logMelEnergyMean[m] << ", stddev = " << res.features.logMelEnergyStdDev[m] << ", skewness = " << res.features.logMelEnergySkewness[m] << std::endl;
 
-                const auto& deltaStats{ features.logMelDeltaEnergies[m] };
-                std::cout << "\tDelta. mean = " << deltaStats.mean << ", stddev = " << deltaStats.stddev << ", skewness = " << deltaStats.skewness << std::endl;
+                std::cout << "\tDelta. stddev = " << res.features.logMelEnergyDeltaStdDev[m] << std::endl;
             }
         }
         catch (audio::Exception& e)
