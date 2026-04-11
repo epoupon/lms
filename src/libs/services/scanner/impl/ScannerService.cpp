@@ -124,6 +124,8 @@ namespace lms::scanner
             settings->allowArtistMBIDFallback = scanSettings->getAllowMBIDArtistMerge();
             settings->artistImageFallbackToRelease = scanSettings->getArtistImageFallbackToReleaseField();
 
+            settings->extractAudioSimilarities = scanSettings->getSimilarityEngineType() == db::ScanSettings::SimilarityEngineType::Features;
+
             // TODO, store this in DB + expose in UI
             settings->skipDuplicateTrackMBID = core::Service<core::IConfig>::get()->getBool("scanner-skip-duplicate-mbid", false);
 
@@ -390,7 +392,7 @@ namespace lms::scanner
         }
 
         refreshTracingLoggerStats();
-        LMS_LOG(DBUPDATER, INFO, "Scan " << (_abortScan ? "aborted" : "complete") << ". Changes = " << stats.getChangesCount() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << ", failures = " << stats.failures << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errorsCount << "), features fetched = " << stats.featuresFetched << ",  duplicates = " << stats.duplicates.size());
+        LMS_LOG(DBUPDATER, INFO, "Scan " << (_abortScan ? "aborted" : "complete") << ". Changes = " << stats.getChangesCount() << " (added = " << stats.additions << ", removed = " << stats.deletions << ", updated = " << stats.updates << ", failures = " << stats.failures << "), Not changed = " << stats.skips << ", Scanned = " << stats.scans << " (errors = " << stats.errorsCount << "), audio features extracted = " << stats.featureExtractions << ",  duplicates = " << stats.duplicates.size());
 
         {
             auto transaction{ _db.getTLSSession().createReadTransaction() };
@@ -519,8 +521,10 @@ namespace lms::scanner
         _scanSteps.emplace_back(std::make_unique<ScanStepOptimize>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepComputeClusterStats>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepCheckForDuplicatedFiles>(params));
-        // Audio similarity scan step must be the last one because it is the most long running and we want the user be able to browse the library and play music as soon as possible, even if audio similarity is not up to date yet
-        _scanSteps.emplace_back(std::make_unique<ScanStepExtractAudioFeatures>(params));
+
+        // Audio similarity scan step must be the last one because it is the most long running and we want the user be able to browse the library and play music as soon as possible
+        if (_settings.extractAudioSimilarities)
+            _scanSteps.emplace_back(std::make_unique<ScanStepExtractAudioFeatures>(params));
     }
 
     void ScannerService::notifyInProgress(const ScanStepStats& stepStats)

@@ -48,7 +48,7 @@ namespace lms::recommendation
     RecommendationService::RecommendationService(db::IDb& db)
         : _db{ db }
     {
-        load();
+        requestReload();
     }
 
     TrackContainer RecommendationService::findSimilarTracks(db::TrackListId trackListId, std::size_t maxCount) const
@@ -94,28 +94,29 @@ namespace lms::recommendation
         return res;
     }
 
-    void RecommendationService::load()
+    void RecommendationService::requestReload()
     {
-        using namespace db;
+        _engine.reset(); // may block
 
         switch (getSimilarityEngineType(_db.getTLSSession()))
         {
-        case ScanSettings::SimilarityEngineType::Clusters:
-            if (_engineType != EngineType::Clusters)
-            {
-                _engineType = EngineType::Clusters;
-                _engine = createClustersEngine(_db);
-            }
+        case db::ScanSettings::SimilarityEngineType::Clusters:
+            _engineType = EngineType::Clusters;
+            _engine = createClustersEngine(_db);
             break;
 
-        case ScanSettings::SimilarityEngineType::Features:
-        case ScanSettings::SimilarityEngineType::None:
+        case db::ScanSettings::SimilarityEngineType::Features:
+            _engineType = EngineType::Features;
+            _engine = createFeaturesEngine(_db);
+            break;
+
+        case db::ScanSettings::SimilarityEngineType::None:
             _engineType.reset();
             _engine.reset();
             break;
         }
 
         if (_engine)
-            _engine->load(false);
+            _engine->requestReload();
     }
 } // namespace lms::recommendation

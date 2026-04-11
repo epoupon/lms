@@ -491,10 +491,12 @@ namespace lms
             const auto jukeboxAudioBackend{ getJukeboxAudioOutputBackend() };
             core::Service<jukebox::IJukeboxService> jukeboxService{ jukeboxAudioBackend ? jukebox::createJukeboxService(*database, *jukeboxAudioBackend) : nullptr };
 
-            scannerService->getEvents().scanComplete.connect([&] {
-                // Flush cover cache even if no changes:
-                // covers may be external files that changed and we don't keep track of them for now (but we should)
-                artworkService->flushCache();
+            scannerService->getEvents().scanComplete.connect([&](const scanner::ScanStats& stats) {
+                if (stats.getChangesCount() > 0)
+                    artworkService->flushCache();
+
+                if (stats.featureExtractions > 0)
+                    recommendationService->requestReload();
             });
 
             core::Service<feedback::IFeedbackService> feedbackService{ feedback::createFeedbackService(ioContext, *database) };

@@ -19,22 +19,22 @@
 
 #include <gtest/gtest.h>
 
-#include "features/StatsAccumulator.hpp"
+#include "core/math/StatsAccumulator.hpp"
 
-namespace lms::audio::features::statsAccumulatorTests
+namespace lms::core::math::statsAccumulatorTests
 {
-    constexpr float epsilon{ 1e-4F };
+    constexpr double epsilon{ 1e-4 };
 
     TEST(StatsAccumulator, initialState)
     {
         StatsAccumulator stats;
 
         EXPECT_EQ(stats.getCount(), 0);
-        EXPECT_FLOAT_EQ(stats.getMean(), 0.F);
-        EXPECT_FLOAT_EQ(stats.getVariance(StatsAccumulator::Sample{ false }), 0.F);
-        EXPECT_FLOAT_EQ(stats.getVariance(StatsAccumulator::Sample{ true }), 0.F);
-        EXPECT_FLOAT_EQ(stats.getStdDev(StatsAccumulator::Sample{ false }), 0.F);
-        EXPECT_FLOAT_EQ(stats.getSkewness(), 0.F);
+        EXPECT_DOUBLE_EQ(stats.getMean(), 0.0);
+        EXPECT_DOUBLE_EQ(stats.getPopulationVariance(), 0.0);
+        EXPECT_DOUBLE_EQ(stats.getSampleVariance(), 0.0);
+        EXPECT_DOUBLE_EQ(stats.getPopulationStdDev(), 0.0);
+        EXPECT_DOUBLE_EQ(stats.getSampleSkewness(), 0.0);
     }
 
     TEST(StatsAccumulator, singleValue)
@@ -43,11 +43,11 @@ namespace lms::audio::features::statsAccumulatorTests
         stats.add(5.0);
 
         EXPECT_EQ(stats.getCount(), 1);
-        EXPECT_FLOAT_EQ(stats.getMean(), 5.F);
+        EXPECT_DOUBLE_EQ(stats.getMean(), 5.0);
 
         // Variance should be 0 for a single value
-        EXPECT_FLOAT_EQ(stats.getVariance(StatsAccumulator::Sample{ false }), 0.F);
-        EXPECT_FLOAT_EQ(stats.getVariance(StatsAccumulator::Sample{ true }), 0.F);
+        EXPECT_DOUBLE_EQ(stats.getPopulationVariance(), 0.0);
+        EXPECT_DOUBLE_EQ(stats.getSampleVariance(), 0.0);
     }
 
     TEST(StatsAccumulator, multipleValuesMean)
@@ -69,7 +69,7 @@ namespace lms::audio::features::statsAccumulatorTests
         stats.add(6.0);
 
         // Population variance = 8 / 3 ≈ 2.6667
-        EXPECT_NEAR(stats.getVariance(), 2.6667F, epsilon);
+        EXPECT_NEAR(stats.getPopulationVariance(), 2.6667, epsilon);
     }
 
     TEST(StatsAccumulator, sampleVariance)
@@ -80,7 +80,7 @@ namespace lms::audio::features::statsAccumulatorTests
         stats.add(6.0);
 
         // Sample variance = 8 / 2 = 4
-        EXPECT_NEAR(stats.getVariance(StatsAccumulator::Sample{ true }), 4.F, epsilon);
+        EXPECT_NEAR(stats.getSampleVariance(), 4.0, epsilon);
     }
 
     TEST(StatsAccumulator, standardDeviation)
@@ -91,7 +91,7 @@ namespace lms::audio::features::statsAccumulatorTests
         stats.add(6.0);
 
         // sqrt(4) = 2 (sample stddev)
-        EXPECT_NEAR(stats.getStdDev(StatsAccumulator::Sample{ true }), 2.F, epsilon);
+        EXPECT_NEAR(stats.getSampleStdDev(), 2.0, epsilon);
     }
 
     TEST(StatsAccumulator, skewnessSymmetricData)
@@ -104,7 +104,7 @@ namespace lms::audio::features::statsAccumulatorTests
         stats.add(5.0);
 
         // Symmetric distribution → skewness ≈ 0
-        EXPECT_NEAR(stats.getSkewness(), 0.F, 0.5F);
+        EXPECT_NEAR(stats.getSampleSkewness(), 0.0, 0.5);
     }
 
     TEST(StatsAccumulator, skewnessAsymmetricData)
@@ -117,6 +117,6 @@ namespace lms::audio::features::statsAccumulatorTests
         stats.add(10.0);
 
         // Should be positively skewed
-        EXPECT_GT(stats.getSkewness(), epsilon);
+        EXPECT_GT(stats.getSampleSkewness(), epsilon);
     }
-} // namespace lms::audio::features::statsAccumulatorTests
+} // namespace lms::core::math::statsAccumulatorTests

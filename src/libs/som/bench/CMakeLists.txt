@@ -1,5 +1,7 @@
 
 add_executable(bench-som
+	Matrix.cpp
+	Network.cpp
 	SomBench.cpp
 	)
 

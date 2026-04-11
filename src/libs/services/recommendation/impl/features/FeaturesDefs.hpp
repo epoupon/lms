@@ -19,28 +19,16 @@
 
 #pragma once
 
-#include <cstddef>
+#include "som/Network.hpp"
+#include "som/Vector.hpp"
 
-#include "core/TaggedType.hpp"
+#include "audio/AudioFeatures.hpp"
 
-namespace lms::audio::features
+namespace lms::recommendation
 {
-    class StatsAccumulator
-    {
-    public:
-        using Sample = core::TaggedBool<StatsAccumulator>;
+    inline constexpr std::size_t featureCount{ 4 * audio::AudioFeatures::melBandCount };
+    using FloatType = audio::FeatureValue;
 
-        void add(double x);
-        std::size_t getCount() const;
-        float getMean() const;
-        float getVariance(Sample sample = Sample{ false }) const;
-        float getStdDev(Sample sample = Sample{ false }) const;
-        float getSkewness() const;
-
-    private:
-        std::size_t n{};
-        double mean{};
-        double M2{};
-        double M3{};
-    };
-} // namespace lms::audio::features
+    using AudioSomInput = som::Vector<featureCount, FloatType>;
+    using SOM = som::Network<featureCount, FloatType>;
+} // namespace lms::recommendation

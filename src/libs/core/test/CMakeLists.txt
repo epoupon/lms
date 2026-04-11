@@ -9,6 +9,7 @@ add_executable(test-core
 	Path.cpp
 	RecursiveSharedMutex.cpp
 	Service.cpp
+	StatsAccumulator.cpp
 	String.cpp
 	TraceLogger.cpp
 	UUID.cpp

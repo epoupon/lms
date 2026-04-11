@@ -17,17 +17,18 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "som/Network.hpp"
+#if 0
+    #include "som/Network.hpp"
 
-#include <algorithm>
-#include <chrono>
-#include <cmath>
-#include <random>
-#include <sstream>
-#include <unordered_set>
+    #include <algorithm>
+    #include <chrono>
+    #include <cmath>
+    #include <random>
+    #include <sstream>
+    #include <unordered_set>
 
-#include "core/ILogger.hpp"
-#include "core/Random.hpp"
+    #include "core/ILogger.hpp"
+    #include "core/Random.hpp"
 
 namespace lms::som
 {
@@ -298,3 +299,5 @@ namespace lms::som
         return _refVectors[position];
     }
 } // namespace lms::som
+
+#endif

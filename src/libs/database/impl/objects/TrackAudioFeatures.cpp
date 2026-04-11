@@ -74,6 +74,15 @@ namespace lms::db
         return utils::execRangeQuery<TrackAudioFeaturesId>(query, range);
     }
 
+    void TrackAudioFeatures::find(Session& session, std::function<void(const pointer&)> func)
+    {
+        auto query{ session.getDboSession()->find<TrackAudioFeatures>() };
+
+        utils::forEachQueryResult(query, [&](const TrackAudioFeatures::pointer& features) {
+            func(features);
+        });
+    }
+
     std::span<const std::byte> TrackAudioFeatures::getData() const
     {
         return std::span<const std::byte>{ reinterpret_cast<const std::byte*>(_data.data()), _data.size() };

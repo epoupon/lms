@@ -490,7 +490,7 @@ namespace lms::ui
 
                 model->saveData(extraTagViews, artistDelimiterViews, defaultDelimiterViews);
 
-                core::Service<recommendation::IRecommendationService>::get()->load();
+                core::Service<recommendation::IRecommendationService>::get()->requestReload();
                 // Don't want the scanner to go on with wrong settings
                 core::Service<scanner::IScannerService>::get()->requestReload();
                 LmsApp->notifyMsg(Notification::Type::Info, Wt::WString::tr("Lms.settings-saved"));

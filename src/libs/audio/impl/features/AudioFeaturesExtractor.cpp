@@ -24,13 +24,13 @@
 #include <numeric>
 
 #include "core/ILogger.hpp"
+#include "core/math/StatsAccumulator.hpp"
 
 #include "audio/IPcmDecoder.hpp"
 
 #include "AlignedHeapArray.hpp"
 #include "DeltaCalculator.hpp"
 #include "IFFT.hpp"
-#include "StatsAccumulator.hpp"
 #include "Window.hpp"
 
 namespace lms::audio
@@ -87,8 +87,8 @@ namespace lms::audio::features
         AlignedHeapArray<std::complex<FloatType>, IRealFFTPlan::minBufferAlignment> fftOutput{ _realFFTPlan->getOutputSize() };
         std::vector<FloatType> powerSpectrum(_realFFTPlan->getOutputSize());
         const FloatType powerScale{ 1.F / (_windowEnergy * _frameSize) };
-        std::vector<StatsAccumulator> logMelEnergyAccumulators(_melFilterBank.getFilterCount());
-        std::vector<StatsAccumulator> logMelEnergyDeltaAccumulators(_melFilterBank.getFilterCount());
+        std::vector<core::math::StatsAccumulator> logMelEnergyAccumulators(_melFilterBank.getFilterCount());
+        std::vector<core::math::StatsAccumulator> logMelEnergyDeltaAccumulators(_melFilterBank.getFilterCount());
         std::vector<DeltaCalculator> logMelEnergyDeltaCalculators(_melFilterBank.getFilterCount(), DeltaCalculator{ 5 });
 
         std::size_t currentSampleOffset{}; // in samples
@@ -149,9 +149,9 @@ namespace lms::audio::features
         for (std::size_t m{}; m < _melFilterBank.getFilterCount(); ++m)
         {
             res.features.logMelEnergyMean[m] = logMelEnergyAccumulators[m].getMean();
-            res.features.logMelEnergyStdDev[m] = logMelEnergyAccumulators[m].getStdDev();
-            res.features.logMelEnergySkewness[m] = logMelEnergyAccumulators[m].getSkewness();
-            res.features.logMelEnergyDeltaStdDev[m] = logMelEnergyDeltaAccumulators[m].getStdDev();
+            res.features.logMelEnergyStdDev[m] = logMelEnergyAccumulators[m].getSampleStdDev();
+            res.features.logMelEnergySkewness[m] = logMelEnergyAccumulators[m].getSampleSkewness();
+            res.features.logMelEnergyDeltaStdDev[m] = logMelEnergyDeltaAccumulators[m].getSampleStdDev();
         }
 
         return res;

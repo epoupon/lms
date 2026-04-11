@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <algorithm>
 #include <cassert>
 #include <functional>
 #include <vector>
@@ -28,32 +27,22 @@ namespace lms::som
 {
     using Coordinate = unsigned;
 
-    struct Position
+    struct MatrixPosition
     {
         Coordinate x;
         Coordinate y;
 
-        bool operator<(const Position& other) const
-        {
-            if (x == other.x)
-                return y < other.y;
-            else
-                return x < other.x;
-        }
-
-        bool operator==(const Position& other) const
-        {
-            return x == other.x && y == other.y;
-        }
+        constexpr auto operator<=>(const MatrixPosition& other) const = default;
     };
 
+    // Internally using Row-major order
     template<typename T>
     class Matrix
     {
     public:
         Matrix() = default;
 
-        Matrix(Coordinate width, Coordinate height)
+        constexpr Matrix(Coordinate width, Coordinate height)
             : _width{ width }
             , _height{ height }
         {
@@ -61,47 +50,70 @@ namespace lms::som
         }
 
         template<typename... CtrArgs>
-        Matrix(Coordinate width, Coordinate height, CtrArgs&&... args)
+        constexpr Matrix(Coordinate width, Coordinate height, CtrArgs&&... args)
             : _width{ width }
             , _height{ height }
         {
             _values.resize(static_cast<std::size_t>(_width) * static_cast<std::size_t>(_height), T{ std::forward<CtrArgs>(args)... });
         }
 
-        void clear()
+        constexpr void clear()
         {
-            _values.clear();
+            for (auto& value : _values)
+                value = T{};
         }
 
-        Coordinate getHeight() const { return _height; }
-        Coordinate getWidth() const { return _width; }
+        constexpr Coordinate getHeight() const { return _height; }
+        constexpr Coordinate getWidth() const { return _width; }
 
-        T& get(const Position& position)
+        constexpr T& get(Coordinate x, Coordinate y)
         {
-            assert(position.x < _width);
-            assert(position.y < _height);
-            return _values[position.x + _width * position.y];
+            assert(x < _width);
+            assert(y < _height);
+            return _values[x + _width * y];
         }
 
-        const T& get(const Position& position) const
+        constexpr T& get(const MatrixPosition& position)
         {
-            assert(position.x < _width);
-            assert(position.y < _height);
-            return _values[position.x + _width * position.y];
+            return get(position.x, position.y);
         }
 
-        T& operator[](const Position& position) { return get(position); }
-        const T& operator[](const Position& position) const { return get(position); }
+        constexpr const T& get(Coordinate x, Coordinate y) const
+        {
+            assert(x < _width);
+            assert(y < _height);
+            return _values[x + _width * y];
+        }
 
-        template<typename Func>
-        Position getPositionMinElement(Func func) const
+        constexpr const T& get(const MatrixPosition& position) const
+        {
+            return get(position.x, position.y);
+        }
+
+        constexpr T& operator[](const MatrixPosition& position) { return get(position); }
+        constexpr const T& operator[](const MatrixPosition& position) const { return get(position); }
+
+        // Best score means closest to 0
+        template<typename Distance>
+        MatrixPosition getPositionMinDistance(Distance distFunc) const
         {
             assert(!_values.empty());
+            std::size_t bestIndex{};
 
-            const auto it{ std::min_element(_values.begin(), _values.end(), std::move(func)) };
-            const auto index{ static_cast<Coordinate>(std::distance(_values.begin(), it)) };
+            float minDist{ distFunc(_values[0]) };
 
-            return Position{ index % _height, index / _height };
+            const std::size_t size = _values.size();
+
+            for (std::size_t i{ 1 }; i < size; ++i)
+            {
+                float s{ distFunc(_values[i]) };
+                if (s < minDist)
+                {
+                    minDist = s;
+                    bestIndex = i;
+                }
+            }
+            return MatrixPosition{ static_cast<Coordinate>(bestIndex % _width), static_cast<Coordinate>(bestIndex / _width) };
         }
 
     private:
@@ -109,16 +121,15 @@ namespace lms::som
         Coordinate _height{};
         std::vector<T> _values;
     };
-
 } // namespace lms::som
 
 namespace std
 {
     template<>
-    class hash<lms::som::Position>
+    class hash<lms::som::MatrixPosition>
     {
     public:
-        size_t operator()(const lms::som::Position& s) const
+        size_t operator()(const lms::som::MatrixPosition& s) const
         {
             size_t h1 = std::hash<lms::som::Coordinate>()(s.x);
             size_t h2 = std::hash<lms::som::Coordinate>()(s.y);

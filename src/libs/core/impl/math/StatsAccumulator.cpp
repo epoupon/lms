@@ -17,11 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "StatsAccumulator.hpp"
+#include "core/math/StatsAccumulator.hpp"
 
 #include <cmath>
 
-namespace lms::audio::features
+namespace lms::core::math
 {
     void StatsAccumulator::add(double x)
     {
@@ -34,7 +34,7 @@ namespace lms::audio::features
 
         mean += delta_n;
 
-        M3 += term1 * delta_n * (nn - 2) - 3.F * delta_n * M2;
+        M3 += term1 * delta_n * (nn - 2) - 3.0 * delta_n * M2;
         M2 += term1;
     }
 
@@ -43,30 +43,43 @@ namespace lms::audio::features
         return n;
     }
 
-    float StatsAccumulator::getMean() const
+    double StatsAccumulator::getMean() const
     {
-        return static_cast<float>(mean);
+        return mean;
     }
 
-    float StatsAccumulator::getVariance(Sample sample) const
+    double StatsAccumulator::getSampleVariance() const
     {
-        if (n < (sample.value() ? 2 : 1))
-            return 0.F;
+        if (n < 2)
+            return 0.0;
 
-        return static_cast<float>(M2 / (sample.value() ? (n - 1) : n));
+        return M2 / (n - 1);
     }
 
-    float StatsAccumulator::getStdDev(Sample sample) const
+    double StatsAccumulator::getPopulationVariance() const
     {
-        return std::sqrtf(getVariance(sample));
+        if (n < 1)
+            return 0.0;
+
+        return M2 / n;
     }
 
-    float StatsAccumulator::getSkewness() const
+    double StatsAccumulator::getSampleStdDev() const
     {
-        if (n < 3 || M2 == 0.F)
-            return 0.F;
+        return std::sqrt(getSampleVariance());
+    }
+
+    double StatsAccumulator::getPopulationStdDev() const
+    {
+        return std::sqrt(getPopulationVariance());
+    }
+
+    double StatsAccumulator::getSampleSkewness() const
+    {
+        if (n < 3 || M2 == 0.0)
+            return 0.0;
 
         const double nn{ static_cast<double>(n) };
-        return static_cast<float>((std::sqrt(nn * (nn - 1)) / (nn - 2)) * (M3 / std::pow(M2, 1.5)));
+        return (std::sqrt(nn * (nn - 1)) / (nn - 2)) * (M3 / (M2 * std::sqrt(M2)));
     }
-} // namespace lms::audio::features
+} // namespace lms::core::math

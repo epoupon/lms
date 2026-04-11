@@ -19,9 +19,11 @@ target_include_directories(lmsrecommendation PRIVATE
 	)
 
 target_link_libraries(lmsrecommendation PRIVATE
+	lmsaudio
 	lmssom
 	)
 
 target_link_libraries(lmsrecommendation PUBLIC
+	lmscore
 	lmsdatabase
 	)

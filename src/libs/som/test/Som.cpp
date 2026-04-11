@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Emeric Poupon
+ * Copyright (C) 2019 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,20 +17,10 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <gtest/gtest.h>
 
-#include <vector>
-
-#include "database/objects/ArtistId.hpp"
-#include "database/objects/ReleaseId.hpp"
-#include "database/objects/TrackId.hpp"
-
-namespace lms::recommendation
+int main(int argc, char** argv)
 {
-    template<typename IdType>
-    using ResultContainer = std::vector<IdType>;
-
-    using ArtistContainer = ResultContainer<db::ArtistId>;
-    using ReleaseContainer = ResultContainer<db::ReleaseId>;
-    using TrackContainer = ResultContainer<db::TrackId>;
-} // namespace lms::recommendation
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}

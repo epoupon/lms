@@ -36,6 +36,18 @@ namespace lms::recommendation
         return std::make_unique<ClusterEngine>(db);
     }
 
+    ClusterEngine::ClusterEngine(db::IDb& db)
+        : _db{ db }
+    {
+    }
+
+    ClusterEngine::~ClusterEngine() = default;
+
+    void ClusterEngine::requestReload()
+    {
+        // nothing to do
+    }
+
     TrackContainer ClusterEngine::findSimilarTracks(const std::vector<TrackId>& trackIds, std::size_t maxCount) const
     {
         if (maxCount == 0)

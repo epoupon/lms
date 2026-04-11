@@ -46,9 +46,11 @@ namespace lms::db
         static pointer find(Session& session, TrackAudioFeaturesId id);
         static pointer find(Session& session, TrackId trackId);
         static RangeResults<TrackAudioFeaturesId> find(Session& session, std::optional<Range> range = std::nullopt);
+        static void find(Session& session, std::function<void(const pointer&)> func);
 
         // Accessors
         std::span<const std::byte> getData() const;
+        TrackId getTrackId() const { return _track.id(); }
         Wt::Dbo::ptr<Track> getTrack() const { return _track; }
 
         void setData(std::span<const std::byte> data);

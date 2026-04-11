@@ -42,7 +42,7 @@ namespace lms::recommendation
     public:
         virtual ~IRecommendationService() = default;
 
-        virtual void load() = 0;
+        virtual void requestReload() = 0;
 
         virtual TrackContainer findSimilarTracks(db::TrackListId tracklistId, std::size_t maxCount) const = 0;
         virtual TrackContainer findSimilarTracks(const std::vector<db::TrackId>& tracksId, std::size_t maxCount) const = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,18 +19,28 @@
 
 #pragma once
 
-#include <vector>
+#include <cstddef>
 
-#include "database/objects/ArtistId.hpp"
-#include "database/objects/ReleaseId.hpp"
-#include "database/objects/TrackId.hpp"
-
-namespace lms::recommendation
+namespace lms::core::math
 {
-    template<typename IdType>
-    using ResultContainer = std::vector<IdType>;
+    class StatsAccumulator
+    {
+    public:
+        void add(double x);
+        std::size_t getCount() const;
+        double getMean() const;
 
-    using ArtistContainer = ResultContainer<db::ArtistId>;
-    using ReleaseContainer = ResultContainer<db::ReleaseId>;
-    using TrackContainer = ResultContainer<db::TrackId>;
-} // namespace lms::recommendation
+        double getSampleStdDev() const;
+        double getSampleVariance() const;
+        double getSampleSkewness() const;
+
+        double getPopulationVariance() const;
+        double getPopulationStdDev() const;
+
+    private:
+        std::size_t n{};
+        double mean{};
+        double M2{};
+        double M3{};
+    };
+} // namespace lms::core::math

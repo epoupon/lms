@@ -39,8 +39,7 @@ namespace lms::recommendation
     public:
         virtual ~IEngine() = default;
 
-        virtual void load(bool forceReload, const ProgressCallback& progressCallback = {}) = 0;
-        virtual void requestCancelLoad() = 0;
+        virtual void requestReload() = 0;
 
         virtual TrackContainer findSimilarTracksFromTrackList(db::TrackListId tracklistId, std::size_t maxCount) const = 0;
         virtual TrackContainer findSimilarTracks(const std::vector<db::TrackId>& tracksId, std::size_t maxCount) const = 0;
@@ -49,5 +48,4 @@ namespace lms::recommendation
     };
 
     std::unique_ptr<IEngine> createEngine(db::IDb& db);
-
 } // namespace lms::recommendation

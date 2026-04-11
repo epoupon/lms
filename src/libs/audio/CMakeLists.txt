@@ -16,7 +16,6 @@ add_library(lmsaudio STATIC
 	impl/features/DeltaCalculator.cpp
 	impl/features/FFT.cpp
 	impl/features/MelFilterBank.cpp
-	impl/features/StatsAccumulator.cpp
 	impl/features/Window.cpp
 	impl/ffmpeg/AudioFile.cpp
 	impl/ffmpeg/AudioFileInfo.cpp

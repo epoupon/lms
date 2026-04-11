@@ -124,16 +124,16 @@ namespace lms::scanner
 
         void updateTrackAudioFeatures(db::Session& session, const TrackAudioFeatureAssociation& trackAudioFeatureAssociation)
         {
-            if (db::Track::pointer track{ db::Track::find(session, trackAudioFeatureAssociation.trackId) })
-            {
-                std::vector<std::byte> blob(sizeof(audio::AudioFeatures));
-                audio::audioFeaturesToBlob(*trackAudioFeatureAssociation.audioFeatures, blob);
-                db::TrackAudioFeatures::pointer trackFeatures{ session.create<db::TrackAudioFeatures>(track) };
-                trackFeatures.modify()->setData(blob);
-            }
+            db::Track::pointer track{ db::Track::find(session, trackAudioFeatureAssociation.trackId) };
+            assert(track);
+
+            std::vector<std::byte> blob(sizeof(audio::AudioFeatures));
+            audio::audioFeaturesToBlob(*trackAudioFeatureAssociation.audioFeatures, blob);
+            db::TrackAudioFeatures::pointer trackFeatures{ session.create<db::TrackAudioFeatures>(track) };
+            trackFeatures.modify()->setData(blob);
         }
 
-        void updateTrackAudioFeatures(db::Session& session, TrackAudioFeatureAssociationContainer& trackAudioFeatureAssociations, bool forceFullBatch)
+        void updateTrackAudioFeatures(ScanContext& context, db::Session& session, TrackAudioFeatureAssociationContainer& trackAudioFeatureAssociations, bool forceFullBatch)
         {
             constexpr std::size_t writeBatchSize{ 20 };
 
@@ -145,6 +145,9 @@ namespace lms::scanner
                 {
                     updateTrackAudioFeatures(session, trackAudioFeatureAssociations.front());
                     trackAudioFeatureAssociations.pop_front();
+
+                    context.currentStepStats.processedElems += 1;
+                    context.stats.featureExtractions += 1;
                 }
             }
         }
@@ -176,7 +179,7 @@ namespace lms::scanner
 
         TrackAudioFeatureAssociationContainer trackAudioFeatureAssociations;
 
-        auto processResults = [&](std::span<std::unique_ptr<core::IJob>> jobs) {
+        auto processResults{ [&](std::span<std::unique_ptr<core::IJob>> jobs) {
             if (_abortScan)
                 return;
 
@@ -190,11 +193,9 @@ namespace lms::scanner
                     addError<AudioFeaturesExtractError>(context, extractAudioFeaturesJob.getTrackInfo().trackPath, extractAudioFeaturesJob.getErrorMessage());
             }
 
-            updateTrackAudioFeatures(dbSession, trackAudioFeatureAssociations, true);
-
-            context.currentStepStats.processedElems += jobs.size();
+            updateTrackAudioFeatures(context, dbSession, trackAudioFeatureAssociations, true);
             _progressCallback(context.currentStepStats);
-        };
+        } };
 
         {
             JobQueue queue{ getJobScheduler(), 20, processResults, 10, 0.85F };
@@ -204,6 +205,7 @@ namespace lms::scanner
             while (!_abortScan && fetchNextTrackWithoutFeatures(dbSession, lastRetrievedTrackId, trackInfo))
                 queue.push(std::make_unique<ExtractAudioFeaturesJob>(*_featuresExtractor, trackInfo));
         }
-        updateTrackAudioFeatures(dbSession, trackAudioFeatureAssociations, false);
+
+        updateTrackAudioFeatures(context, dbSession, trackAudioFeatureAssociations, false);
     }
 } // namespace lms::scanner

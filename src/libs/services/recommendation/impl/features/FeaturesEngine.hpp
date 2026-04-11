@@ -19,6 +19,11 @@
 
 #pragma once
 
+#include <boost/asio/io_context.hpp>
+
+#include "core/IOContextRunner.hpp"
+
+#include "FeaturesDefs.hpp"
 #include "IEngine.hpp"
 
 namespace lms::db
@@ -38,14 +43,25 @@ namespace lms::recommendation
         FeaturesEngine& operator=(const FeaturesEngine&) = delete;
 
     private:
-        void load(bool forceReload, const ProgressCallback& progressCallback) override;
-        void requestCancelLoad() override;
+        void requestReload() override;
 
         TrackContainer findSimilarTracksFromTrackList(db::TrackListId tracklistId, std::size_t maxCount) const override;
         TrackContainer findSimilarTracks(const std::vector<db::TrackId>& tracksId, std::size_t maxCount) const override;
         ReleaseContainer getSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const override;
         ArtistContainer getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
 
+        void abort();
+        void train();
+
+        struct SomTrainingContext
+        {
+            AudioSomInput featureMeans;
+            AudioSomInput featureStdDevs;
+        };
+
         db::IDb& _db;
+        bool _abortRequested{};
+        boost::asio::io_context _ioContext;
+        core::IOContextRunner _ioContextRunner;
     };
 } // namespace lms::recommendation

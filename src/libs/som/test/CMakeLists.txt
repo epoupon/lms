@@ -1,7 +1,10 @@
 include(GoogleTest)
 
 add_executable(test-som
-	SomTest.cpp
+	Matrix.cpp
+	Network.cpp
+	Vector.cpp
+	Som.cpp
 	)
 
 target_link_libraries(test-som PRIVATE

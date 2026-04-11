@@ -43,7 +43,7 @@ namespace lms::audio::features
         {
             std::free(_values);
         }
-        
+
         AlignedHeapArray(const AlignedHeapArray&) = delete;
         AlignedHeapArray& operator=(const AlignedHeapArray&) = delete;
 

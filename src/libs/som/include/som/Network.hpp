@@ -19,86 +19,55 @@
 
 #pragma once
 
-#include <functional>
-#include <optional>
-#include <ostream>
-#include <vector>
-
-#include "InputVector.hpp"
 #include "Matrix.hpp"
+#include "Vector.hpp"
 
 namespace lms::som
 {
-    using LearningFactor = InputVector::value_type;
-    using Norm = InputVector::value_type;
-
-    void checkSameDimensions(const InputVector& a, const InputVector& b);
-    void checkSameDimensions(const InputVector& a, std::size_t inputDimCount);
-    std::ostream& operator<<(std::ostream& os, const InputVector& a);
-
+    template<std::size_t DimensionCount, typename FloatType = float>
     class Network
     {
     public:
-        // Init a network with random values
-        Network(Coordinate width, Coordinate height, std::size_t inputDimCount);
+        using Vector = som::Vector<DimensionCount, FloatType>;
 
-        Coordinate getWidth() const { return _refVectors.getWidth(); }
-        Coordinate getHeight() const { return _refVectors.getHeight(); }
-        std::size_t getInputDimCount() const { return _inputDimCount; }
-        const InputVector& getDataWeights() const { return _weights; }
+        // Init a network with default values, default values
+        Network(Coordinate width, Coordinate height);
+
+        // Init a network with random values
+        template<typename RandomEngine>
+        Network(Coordinate width, Coordinate height, RandomEngine& randomEngine, FloatType min, FloatType max);
+
+        Coordinate getWidth() const { return _neurons.getWidth(); }
+        Coordinate getHeight() const { return _neurons.getHeight(); }
 
         // Set weight for each dimension (default is 1 for each weight)
-        void setDataWeights(const InputVector& weights);
+        void setWeights(const Vector& weights) { _weights = weights; }
+        const Vector& getWeights() const { return _weights; }
 
         // use this to manually construct a network without training
-        void setRefVector(const Position& position, const InputVector& data);
+        void setNeuron(const MatrixPosition& position, const Vector& neuron);
+        const Vector& getNeuron(const MatrixPosition& position) const;
 
-        // <!> data must be normalized
-        struct CurrentIteration
-        {
-            std::size_t idIteration;
-            std::size_t iterationCount;
-        };
-        using ProgressCallback = std::function<void(const CurrentIteration&)>;
-        using RequestStopCallback = std::function<bool()>;
-        void train(const std::vector<InputVector>& dataSamples, std::size_t nbIterations, ProgressCallback = ProgressCallback{}, RequestStopCallback = RequestStopCallback{});
+        MatrixPosition getBestMatchingNeuron(const Vector& input) const;
 
-        const InputVector& getRefVector(const Position& position) const;
-        Position getClosestRefVectorPosition(const InputVector& data) const;
-        std::optional<Position> getClosestRefVectorPosition(const InputVector& data, InputVector::Distance maxDistance) const;
-
-        std::optional<Position> getClosestRefVectorPosition(const std::vector<Position>& refVectorsPosition, InputVector::Distance maxDistance) const;
-
-        InputVector::Distance getRefVectorsDistance(const Position& position1, const Position& position2) const;
-
-        InputVector::Distance computeRefVectorsDistanceMean() const;
-        InputVector::Distance computeRefVectorsDistanceMedian() const;
-
-        void dump(std::ostream& os) const;
-
-        // For each ref vector, update formula is:
-        // i is the current iteration
-        // refVector(i+1) = refVector(i) + LearningFactor(i) * NeighbourhoodFunc(i) * (MatchingRefVector - refVector)
-
-        using DistanceFunc = std::function<InputVector::Distance(const InputVector& /* a */, const InputVector& /* b */, const InputVector& /* weights */)>;
-        void setDistanceFunc(DistanceFunc distanceFunc);
-        DistanceFunc getDistanceFunc() { return _distanceFunc; }
-
-        using LearningFactorFunc = std::function<LearningFactor(const CurrentIteration&)>;
-        void setLearningFactorFunc(LearningFactorFunc learningFactorFunc);
-
-        using NeighbourhoodFunc = std::function<InputVector::value_type(Norm /* norm(Position - CoordMatchingRefVector) */, const CurrentIteration&)>;
-        void setNeighbourhoodFunc(NeighbourhoodFunc neighbourhoodFunc);
+        // Training interface
+        void beginTraining(std::size_t epochCount);
+        void beginNextEpoch();
+        void train(const Vector& input);
 
     private:
-        void updateRefVectors(const Position& closestRefVectorPosition, const InputVector& input, LearningFactor learningFactor, const CurrentIteration& iteration);
+        Matrix<Vector> _neurons;
+        FloatType _initialRadius{};
+        FloatType _initialLearningRate{};
+        Vector _weights;
 
-        std::size_t _inputDimCount{};
-        InputVector _weights; // weight for each dimension
-        Matrix<InputVector> _refVectors;
-
-        DistanceFunc _distanceFunc;
-        LearningFactorFunc _learningFactorFunc;
-        NeighbourhoodFunc _neighbourhoodFunc;
+        // training data
+        std::size_t _epochCount{};
+        std::size_t _epoch{};
+        FloatType _learningRate{};
+        FloatType _sigma{};
+        std::vector<FloatType> _influenceLUT;
     };
 } // namespace lms::som
+
+#include "private/NetworkImpl.hpp"

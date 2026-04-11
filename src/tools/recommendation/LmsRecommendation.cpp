@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
         namespace po = boost::program_options;
 
         // log to stdout
-        core::Service<core::logging::ILogger> logger{ core::logging::createLogger() };
+        core::Service<core::logging::ILogger> logger{ core::logging::createLogger(core::logging::Severity::DEBUG) };
 
         po::options_description desc{ "Allowed options" };
         desc.add_options()("help,h", "print usage message")("conf,c", po::value<std::string>()->default_value(core::sysconfDirectory / "lms.conf"), "LMS config file")("artists,a", "Display recommendation for artists")("releases,r", "Display recommendation for releases")("tracks,t", "Display recommendation for tracks")("max,m", po::value<unsigned>()->default_value(3), "Max similarity result count");
@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
         std::cout << "Recommendation service created!" << std::endl;
 
         std::cout << "Loading recommendation service..." << std::endl;
-        recommendationService->load();
+        recommendationService->requestReload();
 
         unsigned maxSimilarityCount{ vm["max"].as<unsigned>() };
 

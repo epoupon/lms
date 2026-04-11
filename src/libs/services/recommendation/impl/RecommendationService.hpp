@@ -47,16 +47,12 @@ namespace lms::recommendation
         RecommendationService& operator=(const RecommendationService&) = delete;
 
     private:
-        void load() override;
+        void requestReload() override;
 
         TrackContainer findSimilarTracks(db::TrackListId tracklistId, std::size_t maxCount) const override;
         TrackContainer findSimilarTracks(const std::vector<db::TrackId>& trackIds, std::size_t maxCount) const override;
         ReleaseContainer getSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const override;
         ArtistContainer getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
-
-        void setEnginePriorities(const std::vector<EngineType>& engineTypes);
-        void clearEngines();
-        void loadPendingEngine(EngineType engineType, std::unique_ptr<IEngine> engine, bool forceReload, const ProgressCallback& progressCallback);
 
         db::IDb& _db;
         std::optional<EngineType> _engineType;

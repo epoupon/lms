@@ -17,40 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <random>
-
 #include <benchmark/benchmark.h>
-
-#include "som/Network.hpp"
-
-namespace lms::som
-{
-    // Benchmark function
-    static void BM_Matrix(benchmark::State& state)
-    {
-        std::minstd_rand randomEngine{ 42 };
-        std::uniform_int_distribution distrib{ 0, 1000 };
-
-        Matrix<int> matrix{ static_cast<Coordinate>(state.range(0)), static_cast<Coordinate>(state.range(0)) };
-
-        for (Coordinate x{}; x < matrix.getWidth(); ++x)
-        {
-            for (Coordinate y{}; y < matrix.getHeight(); ++y)
-                matrix.get({ x, y }) = distrib(randomEngine);
-        }
-
-        for (auto _ : state)
-        {
-            // Code inside this loop is measured repeatedly
-            const Position pos{ matrix.getPositionMinElement([](int a, int b) { return a < b; }) };
-            benchmark::DoNotOptimize(pos);
-        }
-
-        // Perform cleanup here if needed
-    }
-
-    // Register the benchmark with custom range
-    BENCHMARK(BM_Matrix)->Arg(3)->Arg(6)->Arg(12)->Arg(24);
-} // namespace lms::som
 
 BENCHMARK_MAIN();

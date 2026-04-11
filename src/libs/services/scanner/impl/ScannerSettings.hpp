@@ -47,6 +47,7 @@ namespace lms::scanner
         bool skipSingleReleasePlayLists{};
         bool allowArtistMBIDFallback{ true };
         bool artistImageFallbackToRelease{};
+        bool extractAudioSimilarities{};
 
         std::vector<MediaLibraryInfo> mediaLibraries;
 
