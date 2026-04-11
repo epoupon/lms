@@ -26,9 +26,9 @@
 
 namespace lms::recommendation
 {
-    inline constexpr std::size_t featureCount{ 4 * audio::AudioFeatures::melBandCount };
+    inline constexpr std::size_t audioFeatureCount{ 4 * audio::AudioFeatures::melBandCount };
     using FloatType = audio::FeatureValue;
 
-    using AudioSomInput = som::Vector<featureCount, FloatType>;
-    using SOM = som::Network<featureCount, FloatType>;
+    using AudioFeatureVector = som::Vector<audioFeatureCount, FloatType>;
+    using AudioSom = som::Network<audioFeatureCount, FloatType>;
 } // namespace lms::recommendation

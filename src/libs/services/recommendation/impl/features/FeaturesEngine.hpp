@@ -53,15 +53,13 @@ namespace lms::recommendation
         void abort();
         void train();
 
-        struct SomTrainingContext
-        {
-            AudioSomInput featureMeans;
-            AudioSomInput featureStdDevs;
-        };
-
         db::IDb& _db;
         bool _abortRequested{};
         boost::asio::io_context _ioContext;
         core::IOContextRunner _ioContextRunner;
+
+        // Used to normalize input data
+        AudioFeatureVector _featureMeans;
+        AudioFeatureVector _featureStdDevs;
     };
 } // namespace lms::recommendation

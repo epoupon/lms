@@ -47,7 +47,7 @@ namespace lms::som
         {
         }
 
-        constexpr std::size_t getSize() const { return Size; }
+        constexpr static std::size_t getSize() { return Size; }
 
         constexpr value_type& operator[](std::size_t index) { return _values[index]; }
         constexpr value_type operator[](std::size_t index) const { return _values[index]; }

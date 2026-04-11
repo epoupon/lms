@@ -148,16 +148,9 @@ int main(int argc, char* argv[])
         auto db{ db::createDb(config->getPath("working-dir", "/var/lms") / "lms.db") };
         Session session{ *db };
 
-        std::cout << "Creating recommendation service..." << std::endl;
         const auto recommendationService{ recommendation::createRecommendationService(*db) };
-        std::cout << "Recommendation service created!" << std::endl;
-
-        std::cout << "Loading recommendation service..." << std::endl;
-        recommendationService->requestReload();
 
         unsigned maxSimilarityCount{ vm["max"].as<unsigned>() };
-
-        std::cout << "Recommendation service loaded!" << std::endl;
 
         if (vm.count("tracks"))
             dumpTracksRecommendation(*db, *recommendationService, maxSimilarityCount);

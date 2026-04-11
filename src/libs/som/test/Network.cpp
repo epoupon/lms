@@ -21,6 +21,7 @@
 #include <random>
 
 #include "som/Network.hpp"
+#include "som/Trainer.hpp"
 
 namespace lms::som
 {
@@ -95,11 +96,14 @@ namespace lms::som
 
         network.setNeuron({ 0, 0 }, initialNeuron);
 
-        network.beginTraining(epochCount);
-        for (std::size_t epoch = 0; epoch < epochCount; ++epoch)
         {
-            network.beginNextEpoch();
-            network.train(input);
+            Trainer trainer{ network, TrainerParams{ .epochCount = epochCount } };
+
+            for (std::size_t epoch = 0; epoch < epochCount; ++epoch)
+            {
+                trainer.beginEpoch();
+                trainer.train(input);
+            }
         }
 
         const Vector trainedNeuron{ network.getNeuron({ 0, 0 }) };
@@ -131,13 +135,15 @@ namespace lms::som
 
         EXPECT_GT(inputA.computeEuclideanSquareDistance(inputB), 1.0F);
 
-        network.beginTraining(epochCount);
-        for (std::size_t epoch{}; epoch < epochCount; ++epoch)
         {
-            network.beginNextEpoch();
+            Trainer trainer{ network, TrainerParams{ .epochCount = epochCount } };
 
-            network.train(inputA);
-            network.train(inputB);
+            for (std::size_t epoch = 0; epoch < epochCount; ++epoch)
+            {
+                trainer.beginEpoch();
+                trainer.train(inputA);
+                trainer.train(inputB);
+            }
         }
 
         const MatrixPosition bestMatchingNeuronAPos{ network.getBestMatchingNeuron(inputA) };

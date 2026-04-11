@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <random>
+
 #include "Matrix.hpp"
 #include "Vector.hpp"
 
@@ -47,27 +49,61 @@ namespace lms::som
         // use this to manually construct a network without training
         void setNeuron(const MatrixPosition& position, const Vector& neuron);
         const Vector& getNeuron(const MatrixPosition& position) const;
+        Vector& getNeuron(const MatrixPosition& position);
 
         MatrixPosition getBestMatchingNeuron(const Vector& input) const;
 
-        // Training interface
-        void beginTraining(std::size_t epochCount);
-        void beginNextEpoch();
-        void train(const Vector& input);
-
     private:
         Matrix<Vector> _neurons;
-        FloatType _initialRadius{};
-        FloatType _initialLearningRate{};
         Vector _weights;
-
-        // training data
-        std::size_t _epochCount{};
-        std::size_t _epoch{};
-        FloatType _learningRate{};
-        FloatType _sigma{};
-        std::vector<FloatType> _influenceLUT;
     };
-} // namespace lms::som
 
-#include "private/NetworkImpl.hpp"
+    template<std::size_t DimensionCount, typename FloatType>
+    Network<DimensionCount, FloatType>::Network(Coordinate width, Coordinate height)
+        : _neurons{ width, height }
+        , _weights{ 1.F }
+    {
+    }
+
+    template<std::size_t DimensionCount, typename FloatType>
+    template<typename RandomEngine>
+    Network<DimensionCount, FloatType>::Network(Coordinate width, Coordinate height, RandomEngine& randomEngine, FloatType min, FloatType max)
+        : Network{ width, height }
+    {
+        std::uniform_real_distribution<FloatType> distrib{ min, max };
+
+        for (Coordinate y{}; y < height; ++y)
+        {
+            for (Coordinate x{}; x < width; ++x)
+            {
+                for (auto& v : _neurons.get({ x, y }))
+                    v = distrib(randomEngine);
+            }
+        }
+    }
+
+    template<std::size_t DimensionCount, typename FloatType>
+    void Network<DimensionCount, FloatType>::setNeuron(const MatrixPosition& position, const Vector& neuron)
+    {
+        _neurons.get(position) = neuron;
+    }
+
+    template<std::size_t DimensionCount, typename FloatType>
+    const typename Network<DimensionCount, FloatType>::Vector& Network<DimensionCount, FloatType>::getNeuron(const MatrixPosition& position) const
+    {
+        return _neurons.get(position);
+    }
+
+    template<std::size_t DimensionCount, typename FloatType>
+    typename Network<DimensionCount, FloatType>::Vector& Network<DimensionCount, FloatType>::getNeuron(const MatrixPosition& position)
+    {
+        return _neurons.get(position);
+    }
+
+    template<std::size_t DimensionCount, typename FloatType>
+    MatrixPosition Network<DimensionCount, FloatType>::getBestMatchingNeuron(const Vector& input) const
+    {
+        return _neurons.getPositionMinDistance(SquaredEuclideanDistanceWithWeights{ input, _weights });
+    }
+
+} // namespace lms::som

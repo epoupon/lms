@@ -17,12 +17,12 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
-
-#include <benchmark/benchmark.h>
 #include <random>
 
+#include <benchmark/benchmark.h>
+
 #include "som/Network.hpp"
+#include "som/Trainer.hpp"
 #include "som/Vector.hpp"
 
 namespace lms::som::benchs
@@ -58,12 +58,13 @@ namespace lms::som::benchs
         {
             state.PauseTiming();
             network = initialNetwork; // determinism
-            network.beginTraining(epochCount);
-            network.beginNextEpoch();
+
+            Trainer trainer{ network, TrainerParams{ .epochCount = epochCount } };
+            trainer.beginEpoch();
             state.ResumeTiming();
 
             for (const auto& input : dataset)
-                network.train(input);
+                trainer.train(input);
         }
 
         state.SetItemsProcessed(state.iterations() * dataset.size());
