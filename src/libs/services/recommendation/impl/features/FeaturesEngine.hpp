@@ -61,6 +61,8 @@ namespace lms::recommendation
         static void getAudioFeatureVector(const db::ObjectPtr<db::TrackAudioFeatures>& features, AudioFeatureVector& inputVector);
         void getNormalizedAudioFeatureVector(const db::ObjectPtr<db::TrackAudioFeatures>& features, AudioFeatureVector& inputVector) const;
         void trainSom();
+        void computeTrackMap();
+        float computeQuantizationError(); // for debugging purpose only (slow, uses the whole dataset)
 
         db::IDb& _db;
         bool _abortRequested{};

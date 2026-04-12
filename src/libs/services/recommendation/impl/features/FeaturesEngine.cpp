@@ -119,22 +119,13 @@ namespace lms::recommendation
     {
         LMS_SCOPED_TRACE_OVERVIEW("FeaturesEngine", "Training");
 
+        LMS_LOG(RECOMMENDATION, INFO, "Starting training...");
+
         AudioFeatureVector inputVector; // cache values
 
         computeDatasetStats();
         trainSom();
-
-        som::Matrix<std::vector<db::TrackId>> trackMap{ _som.getWidth(), _som.getHeight() };
-
-        // TODO put this in a dedicated function
-        db::Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-
-        db::TrackAudioFeatures::find(session, [&](const db::TrackAudioFeatures::pointer& features) {
-            getNormalizedAudioFeatureVector(features, inputVector);
-            const som::MatrixPosition pos{ _som.getBestMatchingNeuron(inputVector) };
-            trackMap.get(pos).push_back(features->getTrackId());
-        });
+        computeTrackMap();
 
         LMS_LOG(RECOMMENDATION, INFO, "Training complete!");
     }
@@ -203,6 +194,11 @@ namespace lms::recommendation
         AudioFeatureVector inputVector;
 
         som::Trainer trainer{ _som, som::TrainerParams{ .epochCount = epochCount } };
+
+        constexpr bool logQuantizationError{ false };
+        if constexpr (logQuantizationError)
+            LMS_LOG(RECOMMENDATION, DEBUG, "Initial QE = " << computeQuantizationError());
+
         for (std::size_t i{}; i < epochCount; ++i)
         {
             LMS_SCOPED_TRACE_DETAILED("FeaturesEngine", "Train som epoch");
@@ -218,6 +214,43 @@ namespace lms::recommendation
             }
 
             LMS_LOG(RECOMMENDATION, DEBUG, "Epoch " << i + 1 << "/" << epochCount << " done");
+            if constexpr (logQuantizationError)
+                LMS_LOG(RECOMMENDATION, DEBUG, "Epoch " << i + 1 << "/" << epochCount << ", LR = " << trainer.getLearningRate() << ", Sigma = " << trainer.getSigma() << ", QE = " << computeQuantizationError());
         }
+    }
+
+    void FeaturesEngine::computeTrackMap()
+    {
+        _neuronTrackMap.resize(_som.getWidth(), _som.getHeight());
+
+        db::Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createReadTransaction() };
+
+        AudioFeatureVector inputVector;
+        db::TrackAudioFeatures::find(session, [&](const db::TrackAudioFeatures::pointer& features) {
+            getNormalizedAudioFeatureVector(features, inputVector);
+            const som::MatrixPosition pos{ _som.getBestMatchingNeuron(inputVector) };
+            _neuronTrackMap.get(pos).push_back(features->getTrackId());
+        });
+    }
+
+    float FeaturesEngine::computeQuantizationError()
+    {
+        float quantizationError{};
+
+        db::Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createReadTransaction() };
+
+        AudioFeatureVector inputVector;
+        db::TrackAudioFeatures::find(session, [&](const db::TrackAudioFeatures::pointer& features) {
+            getNormalizedAudioFeatureVector(features, inputVector);
+
+            const som::MatrixPosition bestMatchingNeuronPos{ _som.getBestMatchingNeuron(inputVector) };
+            const AudioFeatureVector& bestMatchingNeuron{ _som.getNeuron(bestMatchingNeuronPos) };
+
+            quantizationError += inputVector.computeEuclideanSquareDistance(bestMatchingNeuron);
+        });
+
+        return quantizationError;
     }
 } // namespace lms::recommendation
