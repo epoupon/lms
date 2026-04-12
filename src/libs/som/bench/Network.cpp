@@ -18,6 +18,7 @@
  */
 
 #include <random>
+#include <span>
 
 #include <benchmark/benchmark.h>
 
@@ -27,48 +28,80 @@
 
 namespace lms::som::benchs
 {
-    static void BM_SOM_Train(benchmark::State& state)
+    constexpr std::size_t dimensionCount{ 10 };
+    using Network = Network<dimensionCount>;
+    using Vector = Vector<dimensionCount>;
+
+    constexpr Vector::value_type minValue{ 0.F };
+    constexpr Vector::value_type maxValue{ 1.F };
+
+    constexpr std::size_t epochCount{ 10 };
+    constexpr std::size_t datasetSize{ 100 };
+
+    Network createRandomNetwork(Coordinate width, Coordinate height)
     {
-        constexpr std::size_t dimensionCount{ 80 };
-        using Network = Network<dimensionCount>;
-        using Vector = Vector<dimensionCount>;
+        std::minstd_rand randomEngine{ 42 };
 
-        const Coordinate size{ static_cast<Coordinate>(state.range(0)) };
-        constexpr std::size_t epochCount{ 40 };
-        constexpr std::size_t datasetSize{ 50 };
+        Network network{ width, height };
+        network.randomize(randomEngine, minValue, maxValue);
 
-        std::minstd_rand networkRandomEngine{ 42 };
-        Network initialNetwork{ size, size };
-        initialNetwork.randomize(networkRandomEngine, 0.F, 1.F);
+        return network;
+    }
 
+    std::vector<Vector> createRandomDataset()
+    {
         std::vector<Vector> dataset;
         dataset.resize(datasetSize);
 
+        std::minstd_rand datasetRandomEngine{ 0 };
+        std::uniform_real_distribution<float> distrib{ minValue, maxValue };
+        for (Vector& data : dataset)
         {
-            std::minstd_rand datasetRandomEngine{ 0 };
-            std::uniform_real_distribution<float> distrib{ 0.F, 1.F };
-            for (Vector& data : dataset)
-            {
-                for (auto& value : data)
-                    value = distrib(datasetRandomEngine);
-            }
+            for (auto& value : data)
+                value = distrib(datasetRandomEngine);
         }
+
+        return dataset;
+    }
+
+    float computeQuantizationError(const Network& network, std::span<const Vector> dataset)
+    {
+        float quantizationError{};
+        for (const Vector& inputVector : dataset)
+        {
+            const Vector& bestMatchingNeuron{ network.getNeuron(network.getBestMatchingNeuron(inputVector)) };
+            quantizationError += inputVector.computeEuclideanSquareDistance(bestMatchingNeuron);
+        }
+        return quantizationError;
+    }
+
+    void BM_SOM_Train(benchmark::State& state)
+    {
+        const Coordinate size{ static_cast<Coordinate>(state.range(0)) };
+
+        const Network initialNetwork{ createRandomNetwork(size, size) };
+        const std::vector<Vector> dataset{ createRandomDataset() };
 
         Network network{ dimensionCount, dimensionCount };
         for (auto _ : state)
         {
             state.PauseTiming();
             network = initialNetwork; // determinism
-
-            Trainer trainer{ network, TrainerParams{ .epochCount = epochCount } };
-            trainer.beginEpoch();
             state.ResumeTiming();
 
-            for (const auto& input : dataset)
-                trainer.train(input);
+            Trainer trainer{ network, TrainerParams{ .epochCount = epochCount } };
+
+            for (std::size_t epoch{}; epoch < epochCount; ++epoch)
+            {
+                trainer.beginEpoch();
+
+                for (const Vector& input : dataset)
+                    trainer.train(input);
+            }
         }
 
-        state.SetItemsProcessed(state.iterations() * dataset.size());
+        state.counters["QE"] = computeQuantizationError(network, dataset);
+        state.SetItemsProcessed(state.iterations() * dataset.size() * epochCount);
     }
 
     // Benchmark different SOM sizes

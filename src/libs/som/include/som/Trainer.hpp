@@ -19,10 +19,10 @@
 
 #pragma once
 
+#include <cmath>
 #include <vector>
 
 #include "Matrix.hpp"
-#include "Vector.hpp"
 
 namespace lms::som
 {
@@ -62,11 +62,10 @@ namespace lms::som
 
     namespace detail
     {
-        template<typename FloatType>
-        FloatType computeSquaredDist(const MatrixPosition& a, const MatrixPosition& b)
+        std::size_t computeSquaredDist(const MatrixPosition& a, const MatrixPosition& b)
         {
-            const FloatType dx{ static_cast<FloatType>(b.x) - static_cast<FloatType>(a.x) };
-            const FloatType dy{ static_cast<FloatType>(b.y) - static_cast<FloatType>(a.y) };
+            const int dx{ static_cast<int>(b.x) - static_cast<int>(a.x) };
+            const int dy{ static_cast<int>(b.y) - static_cast<int>(a.y) };
             return dx * dx + dy * dy;
         }
     } // namespace detail
@@ -87,8 +86,8 @@ namespace lms::som
         assert(_epoch < _epochCount);
 
         {
-            constexpr FloatType learninRateFinal{ 0.01 };
-            _learningRate = _initialLearningRate * std::pow(learninRateFinal / _initialLearningRate, static_cast<FloatType>(_epoch) / static_cast<FloatType>(_epochCount));
+            constexpr FloatType learningRateFinal{ 0.01 };
+            _learningRate = _initialLearningRate * std::pow(learningRateFinal / _initialLearningRate, static_cast<FloatType>(_epoch) / static_cast<FloatType>(_epochCount));
         }
         {
             constexpr FloatType sigmaFinal{ 1 };
@@ -96,9 +95,9 @@ namespace lms::som
         }
 
         {
-            const FloatType squaredSigma{ _sigma * _sigma };
-            const std::size_t maxSquaredDist{ static_cast<std::size_t>(std::ceil(3 * squaredSigma)) };
-            const FloatType invTwoSquaredSigma{ FloatType{ 1 } / (FloatType{ 2 } * squaredSigma) };
+            const FloatType maxDist{ 3 * _sigma };
+            const std::size_t maxSquaredDist{ static_cast<std::size_t>(std::ceil(maxDist * maxDist)) };
+            const FloatType invTwoSquaredSigma{ FloatType{ 1 } / (FloatType{ 2 } * _sigma * _sigma) };
 
             _influenceLUT.resize(maxSquaredDist + 1);
             for (std::size_t squaredDist{}; squaredDist <= maxSquaredDist; ++squaredDist)
@@ -117,7 +116,7 @@ namespace lms::som
             for (Coordinate x{}; x < _network.getWidth(); ++x) // row major
             {
                 const MatrixPosition neuronPos{ x, y };
-                const FloatType squaredGridDist{ detail::computeSquaredDist<FloatType>(neuronPos, bestMatchingNeuronPos) };
+                const std::size_t squaredGridDist{ detail::computeSquaredDist(neuronPos, bestMatchingNeuronPos) };
 
                 if (squaredGridDist >= _influenceLUT.size())
                     continue;
