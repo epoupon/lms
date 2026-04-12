@@ -32,36 +32,60 @@ namespace lms::som::benchs
         using Value = Vector<dimensionCount, float>;
         using randomEngine = std::minstd_rand;
 
-        void fillWithRandom(randomEngine& engine, Value& value)
+        void fillWithRandom(randomEngine& randomEngine, Value& value)
         {
             std::uniform_real_distribution<float> distrib{ 0.F, 1.F };
             for (auto& v : value)
-                v = distrib(engine);
+                v = distrib(randomEngine);
+        }
+
+        void fillWithRandom(randomEngine& randomEngine, Matrix<Value>& matrix)
+        {
+            for (std::size_t x{}; x < matrix.getWidth(); ++x)
+            {
+                for (std::size_t y{}; y < matrix.getHeight(); ++y)
+                    fillWithRandom(randomEngine, matrix.get(x, y));
+            }
         }
     } // namespace
 
-    static void BM_Matrix(benchmark::State& state)
+    static void BM_Matrix_GetMinDistance_SquaredEuclideanDistance(benchmark::State& state)
     {
         const auto matrixSize{ static_cast<Coordinate>(state.range(0)) };
         Matrix<Value> matrix{ matrixSize, matrixSize };
 
         std::minstd_rand randomEngine{ 0 };
+        fillWithRandom(randomEngine, matrix);
 
-        for (std::size_t x{}; x < matrix.getWidth(); ++x)
-        {
-            for (std::size_t y{}; y < matrix.getHeight(); ++y)
-                fillWithRandom(randomEngine, matrix.get(x, y));
-        }
+        const Value ref{ 0.5F };
 
-        Value ref;
-        std::fill(ref.begin(), ref.end(), 0.5F);
         for (auto _ : state)
         {
-            benchmark::DoNotOptimize(matrix.getPositionMinDistance(SquaredEuclideanDistance<dimensionCount, float>{ ref }));
+            benchmark::DoNotOptimize(matrix.getPositionMinDistance(SquaredEuclideanDistance{ ref }));
         }
 
         state.SetItemsProcessed(state.iterations() * matrixSize * matrixSize);
     }
 
-    BENCHMARK(BM_Matrix)->RangeMultiplier(2)->Range(4, 32);
+    static void BM_Matrix_GetMinDistance_SquaredEuclideanDistanceWithWeights(benchmark::State& state)
+    {
+        const auto matrixSize{ static_cast<Coordinate>(state.range(0)) };
+        Matrix<Value> matrix{ matrixSize, matrixSize };
+        Value weights{ 1.F };
+
+        std::minstd_rand randomEngine{ 0 };
+        fillWithRandom(randomEngine, matrix);
+
+        const Value ref{ 0.5F };
+
+        for (auto _ : state)
+        {
+            benchmark::DoNotOptimize(matrix.getPositionMinDistance(SquaredEuclideanDistanceWithWeights{ ref, weights }));
+        }
+
+        state.SetItemsProcessed(state.iterations() * matrixSize * matrixSize);
+    }
+
+    BENCHMARK(BM_Matrix_GetMinDistance_SquaredEuclideanDistance)->RangeMultiplier(2)->Range(4, 32);
+    BENCHMARK(BM_Matrix_GetMinDistance_SquaredEuclideanDistanceWithWeights)->RangeMultiplier(2)->Range(4, 32);
 } // namespace lms::som::benchs

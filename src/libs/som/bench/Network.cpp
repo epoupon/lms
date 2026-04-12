@@ -75,7 +75,7 @@ namespace lms::som::benchs
         return quantizationError;
     }
 
-    void BM_SOM_Train(benchmark::State& state)
+    void BM_SOM_Trainer(benchmark::State& state)
     {
         const Coordinate size{ static_cast<Coordinate>(state.range(0)) };
 
@@ -105,5 +105,5 @@ namespace lms::som::benchs
     }
 
     // Benchmark different SOM sizes
-    BENCHMARK(BM_SOM_Train)->RangeMultiplier(2)->Range(4, 128);
+    BENCHMARK(BM_SOM_Trainer)->RangeMultiplier(2)->Range(4, 128);
 } // namespace lms::som::benchs

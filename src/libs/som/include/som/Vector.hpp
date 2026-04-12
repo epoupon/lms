@@ -23,6 +23,8 @@
 #include <array>
 #include <cmath>
 
+#include "core/math/EuclideanDistance.hpp"
+
 namespace lms::som
 {
     template<std::size_t Size, typename FloatType = float>
@@ -48,6 +50,9 @@ namespace lms::som
         }
 
         constexpr static std::size_t getSize() { return Size; }
+
+        constexpr value_type* data() { return _values.data(); }
+        constexpr const value_type* data() const { return _values.data(); }
 
         constexpr value_type& operator[](std::size_t index) { return _values[index]; }
         constexpr value_type operator[](std::size_t index) const { return _values[index]; }
@@ -86,28 +91,12 @@ namespace lms::som
 
         Distance computeEuclideanSquaredDistance(const Vector& other) const
         {
-            Distance res{};
-
-            for (std::size_t i{}; i < Size; ++i)
-            {
-                const Vector::value_type diff{ _values[i] - other._values[i] };
-                res += diff * diff;
-            }
-
-            return res;
+            return core::math::computeEuclideanSquaredDistance(_values.data(), other.data(), Size);
         }
 
         Distance computeEuclideanSquaredDistance(const Vector& other, const Vector& weights) const
         {
-            Distance res{};
-
-            for (std::size_t i{}; i < Size; ++i)
-            {
-                const Vector::value_type diff{ _values[i] - other._values[i] };
-                res += diff * diff * weights._values[i];
-            }
-
-            return res;
+            return core::math::computeEuclideanSquaredDistance(_values.data(), other.data(), weights.data(), Size);
         }
 
         void normalizeL2()
@@ -149,7 +138,7 @@ namespace lms::som
         SquaredEuclideanDistance(const Vector<Size, FloatType>& ref)
             : _ref{ ref } {}
 
-        float operator()(const Vector<Size, FloatType>& a)
+        FloatType operator()(const Vector<Size, FloatType>& a)
         {
             return _ref.computeEuclideanSquaredDistance(a);
         }
@@ -166,7 +155,7 @@ namespace lms::som
         {
         }
 
-        float operator()(const Vector<Size, FloatType>& a)
+        FloatType operator()(const Vector<Size, FloatType>& a)
         {
             return _ref.computeEuclideanSquaredDistance(a, _weights);
         }

@@ -1,6 +1,8 @@
 include(GoogleTest)
 
 add_executable(test-core
+	math/EuclideanDistance.cpp
+	math/StatsAccumulator.cpp
 	Core.cpp
 	EnumSet.cpp
 	JobScheduler.cpp
@@ -9,7 +11,6 @@ add_executable(test-core
 	Path.cpp
 	RecursiveSharedMutex.cpp
 	Service.cpp
-	StatsAccumulator.cpp
 	String.cpp
 	TraceLogger.cpp
 	UUID.cpp
