@@ -84,7 +84,7 @@ namespace lms::som
             return std::sqrt(res);
         }
 
-        Distance computeEuclideanSquareDistance(const Vector& other) const
+        Distance computeEuclideanSquaredDistance(const Vector& other) const
         {
             Distance res{};
 
@@ -97,7 +97,7 @@ namespace lms::som
             return res;
         }
 
-        Distance computeEuclideanSquareDistance(const Vector& other, const Vector& weights) const
+        Distance computeEuclideanSquaredDistance(const Vector& other, const Vector& weights) const
         {
             Distance res{};
 
@@ -151,7 +151,7 @@ namespace lms::som
 
         float operator()(const Vector<Size, FloatType>& a)
         {
-            return _ref.computeEuclideanSquareDistance(a);
+            return _ref.computeEuclideanSquaredDistance(a);
         }
 
         const Vector<Size, FloatType>& _ref;
@@ -168,7 +168,7 @@ namespace lms::som
 
         float operator()(const Vector<Size, FloatType>& a)
         {
-            return _ref.computeEuclideanSquareDistance(a, _weights);
+            return _ref.computeEuclideanSquaredDistance(a, _weights);
         }
 
         const Vector<Size, FloatType>& _ref;

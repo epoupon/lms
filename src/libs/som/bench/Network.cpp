@@ -70,7 +70,7 @@ namespace lms::som::benchs
         for (const Vector& inputVector : dataset)
         {
             const Vector& bestMatchingNeuron{ network.getNeuron(network.getBestMatchingNeuron(inputVector)) };
-            quantizationError += inputVector.computeEuclideanSquareDistance(bestMatchingNeuron);
+            quantizationError += inputVector.computeEuclideanSquaredDistance(bestMatchingNeuron);
         }
         return quantizationError;
     }

@@ -159,15 +159,15 @@ namespace lms::som
         EXPECT_FLOAT_EQ(vec.computeNorm(), expectedNorm);
     }
 
-    TEST_F(VectorTest, ComputeEuclideanSquareDistanceIdentical)
+    TEST_F(VectorTest, computeEuclideanSquaredDistanceIdentical)
     {
         TestVector vec1{ 1.F };
         TestVector vec2{ 1.F };
 
-        EXPECT_FLOAT_EQ(vec1.computeEuclideanSquareDistance(vec2), 0.F);
+        EXPECT_FLOAT_EQ(vec1.computeEuclideanSquaredDistance(vec2), 0.F);
     }
 
-    TEST_F(VectorTest, ComputeEuclideanSquareDistanceSimple)
+    TEST_F(VectorTest, computeEuclideanSquaredDistanceSimple)
     {
         TestVector vec1;
         vec1[0] = 0.F;
@@ -180,11 +180,11 @@ namespace lms::som
         vec2[2] = 0.F;
 
         const float expectedDistance{ 25.F }; // (3-0)^2 + (4-0)^2 + (0-0)^2
-        EXPECT_FLOAT_EQ(vec1.computeEuclideanSquareDistance(vec2), expectedDistance);
+        EXPECT_FLOAT_EQ(vec1.computeEuclideanSquaredDistance(vec2), expectedDistance);
         EXPECT_FLOAT_EQ(SquaredEuclideanDistance{ vec1 }(vec2), expectedDistance);
     }
 
-    TEST_F(VectorTest, ComputeEuclideanSquareDistanceWithWeights)
+    TEST_F(VectorTest, computeEuclideanSquaredDistanceWithWeights)
     {
         TestVector vec1{ 0.F };
         TestVector vec2{ 2.F };
@@ -196,11 +196,11 @@ namespace lms::som
 
         // (2-0)^2*1 + (2-0)^2*2 + (2-0)^2*3 = 4 + 8 + 12 = 24
         const float expectedDistance{ 24.F };
-        EXPECT_FLOAT_EQ(vec1.computeEuclideanSquareDistance(vec2, weights), expectedDistance);
+        EXPECT_FLOAT_EQ(vec1.computeEuclideanSquaredDistance(vec2, weights), expectedDistance);
         EXPECT_FLOAT_EQ((SquaredEuclideanDistanceWithWeights{ vec1, weights }(vec2)), expectedDistance);
     }
 
-    TEST_F(VectorTest, ComputeEuclideanSquareDistanceSymmetric)
+    TEST_F(VectorTest, computeEuclideanSquaredDistanceSymmetric)
     {
         TestVector vec1;
         vec1[0] = 1.F;
@@ -213,8 +213,8 @@ namespace lms::som
         vec2[2] = 6.F;
 
         {
-            const float dist1{ vec1.computeEuclideanSquareDistance(vec2) };
-            const float dist2{ vec2.computeEuclideanSquareDistance(vec1) };
+            const float dist1{ vec1.computeEuclideanSquaredDistance(vec2) };
+            const float dist2{ vec2.computeEuclideanSquaredDistance(vec1) };
             EXPECT_FLOAT_EQ(dist1, dist2);
         }
 

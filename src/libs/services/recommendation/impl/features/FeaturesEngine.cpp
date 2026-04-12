@@ -248,7 +248,7 @@ namespace lms::recommendation
             const som::MatrixPosition bestMatchingNeuronPos{ _som.getBestMatchingNeuron(inputVector) };
             const AudioFeatureVector& bestMatchingNeuron{ _som.getNeuron(bestMatchingNeuronPos) };
 
-            quantizationError += inputVector.computeEuclideanSquareDistance(bestMatchingNeuron);
+            quantizationError += inputVector.computeEuclideanSquaredDistance(bestMatchingNeuron);
         });
 
         return quantizationError;

@@ -153,7 +153,7 @@ namespace lms::som
         const Vector inputA{ 0.1f, 0.1f };
         const Vector inputB{ 0.9f, 0.9f };
 
-        EXPECT_GT(inputA.computeEuclideanSquareDistance(inputB), 1.0F);
+        EXPECT_GT(inputA.computeEuclideanSquaredDistance(inputB), 1.0F);
 
         {
             Trainer trainer{ network, TrainerParams{ .epochCount = epochCount } };
@@ -174,7 +174,7 @@ namespace lms::som
         const Vector& bestMatchingNeuronA{ network.getNeuron(bestMatchingNeuronAPos) };
         const Vector& bestMatchingNeuronB{ network.getNeuron(bestMatchingNeuronBPos) };
 
-        EXPECT_LT(bestMatchingNeuronA.computeEuclideanSquareDistance(inputA), 0.1F);
-        EXPECT_LT(bestMatchingNeuronB.computeEuclideanSquareDistance(inputB), 0.1F);
+        EXPECT_LT(bestMatchingNeuronA.computeEuclideanSquaredDistance(inputA), 0.1F);
+        EXPECT_LT(bestMatchingNeuronB.computeEuclideanSquaredDistance(inputB), 0.1F);
     }
 } // namespace lms::som
