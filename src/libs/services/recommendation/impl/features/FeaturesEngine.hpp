@@ -23,13 +23,17 @@
 
 #include "core/IOContextRunner.hpp"
 
+#include "database/Object.hpp"
+#include "database/objects/TrackId.hpp"
+
 #include "FeaturesDefs.hpp"
 #include "IEngine.hpp"
 
 namespace lms::db
 {
     class Session;
-}
+    class TrackAudioFeatures;
+} // namespace lms::db
 
 namespace lms::recommendation
 {
@@ -53,13 +57,21 @@ namespace lms::recommendation
         void abort();
         void train();
 
+        void computeDatasetStats();
+        static void getAudioFeatureVector(const db::ObjectPtr<db::TrackAudioFeatures>& features, AudioFeatureVector& inputVector);
+        void getNormalizedAudioFeatureVector(const db::ObjectPtr<db::TrackAudioFeatures>& features, AudioFeatureVector& inputVector) const;
+        void trainSom();
+
         db::IDb& _db;
         bool _abortRequested{};
         boost::asio::io_context _ioContext;
         core::IOContextRunner _ioContextRunner;
 
-        // Used to normalize input data
+        // Stats, used to normalize input data
+        std::size_t _trackCount{};
         AudioFeatureVector _featureMeans;
         AudioFeatureVector _featureStdDevs;
+        AudioSom _som;
+        som::Matrix<std::vector<db::TrackId>> _neuronTrackMap;
     };
 } // namespace lms::recommendation

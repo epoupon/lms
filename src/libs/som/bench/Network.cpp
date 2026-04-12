@@ -38,7 +38,8 @@ namespace lms::som::benchs
         constexpr std::size_t datasetSize{ 50 };
 
         std::minstd_rand networkRandomEngine{ 42 };
-        Network initialNetwork{ size, size, networkRandomEngine, 0.F, 1.F };
+        Network initialNetwork{ size, size };
+        initialNetwork.randomize(networkRandomEngine, 0.F, 1.F);
 
         std::vector<Vector> dataset;
         dataset.resize(datasetSize);

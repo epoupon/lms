@@ -38,7 +38,6 @@ namespace lms::som
         using Vector = typename Network::Vector;
         using FloatType = typename Network::Vector::value_type;
 
-
         Trainer(Network& network, const TrainerParams& params);
         ~Trainer() = default;
         Trainer(const Trainer&) = delete;

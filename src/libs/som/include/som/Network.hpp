@@ -32,12 +32,16 @@ namespace lms::som
     public:
         using Vector = som::Vector<DimensionCount, FloatType>;
 
-        // Init a network with default values, default values
+        Network();
+
+        // Init a network with default values
         Network(Coordinate width, Coordinate height);
 
-        // Init a network with random values
+        // Resize with default values (all values are set)
+        void resize(Coordinate width, Coordinate height);
+
         template<typename RandomEngine>
-        Network(Coordinate width, Coordinate height, RandomEngine& randomEngine, FloatType min, FloatType max);
+        void randomize(RandomEngine& randomEngine, FloatType min, FloatType max);
 
         Coordinate getWidth() const { return _neurons.getWidth(); }
         Coordinate getHeight() const { return _neurons.getHeight(); }
@@ -59,22 +63,33 @@ namespace lms::som
     };
 
     template<std::size_t DimensionCount, typename FloatType>
-    Network<DimensionCount, FloatType>::Network(Coordinate width, Coordinate height)
-        : _neurons{ width, height }
-        , _weights{ 1.F }
+    Network<DimensionCount, FloatType>::Network()
+        : _weights{ 1.F }
     {
     }
 
     template<std::size_t DimensionCount, typename FloatType>
+    Network<DimensionCount, FloatType>::Network(Coordinate width, Coordinate height)
+        : Network{}
+    {
+        resize(width, height);
+    }
+
+    template<std::size_t DimensionCount, typename FloatType>
+    void Network<DimensionCount, FloatType>::resize(Coordinate width, Coordinate height)
+    {
+        _neurons.resize(width, height);
+    }
+
+    template<std::size_t DimensionCount, typename FloatType>
     template<typename RandomEngine>
-    Network<DimensionCount, FloatType>::Network(Coordinate width, Coordinate height, RandomEngine& randomEngine, FloatType min, FloatType max)
-        : Network{ width, height }
+    void Network<DimensionCount, FloatType>::randomize(RandomEngine& randomEngine, FloatType min, FloatType max)
     {
         std::uniform_real_distribution<FloatType> distrib{ min, max };
 
-        for (Coordinate y{}; y < height; ++y)
+        for (Coordinate y{}; y < _neurons.getHeight(); ++y)
         {
-            for (Coordinate x{}; x < width; ++x)
+            for (Coordinate x{}; x < _neurons.getWidth(); ++x) // row major
             {
                 for (auto& v : _neurons.get({ x, y }))
                     v = distrib(randomEngine);

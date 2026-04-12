@@ -23,6 +23,7 @@
 #include <random>
 
 #include "core/ILogger.hpp"
+#include "core/ITraceLogger.hpp"
 
 #include "audio/AudioFeatures.hpp"
 
@@ -40,7 +41,7 @@ namespace lms::recommendation
 {
     namespace
     {
-        void flattenFeatures(const audio::AudioFeatures& features, AudioFeatureVector& somInput)
+        void flattenAudioFeatures(const audio::AudioFeatures& features, AudioFeatureVector& somInput)
         {
             std::size_t featureIndex{};
             for (std::size_t i{}; i < audio::AudioFeatures::melBandCount; ++i, ++featureIndex)
@@ -53,7 +54,7 @@ namespace lms::recommendation
                 somInput[featureIndex] = features.logMelEnergyDeltaStdDev[i];
         }
 
-        void normalizeFeatures(AudioFeatureVector& somInput, const AudioFeatureVector& featureMeans, const AudioFeatureVector& featureStdDevs)
+        void normalizeAudioFeatures(AudioFeatureVector& somInput, const AudioFeatureVector& featureMeans, const AudioFeatureVector& featureStdDevs)
         {
             for (std::size_t i{}; i < AudioFeatureVector::getSize(); ++i)
             {
@@ -116,85 +117,107 @@ namespace lms::recommendation
 
     void FeaturesEngine::train()
     {
+        LMS_SCOPED_TRACE_OVERVIEW("FeaturesEngine", "Training");
+
+        AudioFeatureVector inputVector; // cache values
+
+        computeDatasetStats();
+        trainSom();
+
+        som::Matrix<std::vector<db::TrackId>> trackMap{ _som.getWidth(), _som.getHeight() };
+
+        // TODO put this in a dedicated function
         db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
 
-        audio::AudioFeatures audioFeatures{}; // cache values
-        AudioFeatureVector somInput;          // cache values
-        std::size_t trackCount{};
-
-        // Compute stats over the dataset
-        {
-            std::array<core::math::StatsAccumulator, audioFeatureCount> statsAccumulators;
-
-            db::TrackAudioFeatures::find(session, [&](const db::TrackAudioFeatures::pointer& features) {
-                audio::audioFeaturesFromBlob(features->getData(), audioFeatures);
-                flattenFeatures(audioFeatures, somInput);
-                for (std::size_t i{}; i < audioFeatureCount; ++i)
-                    statsAccumulators[i].add(somInput[i]);
-
-                trackCount++;
-            });
-
-            for (std::size_t featureIndex{}; featureIndex < audioFeatureCount; ++featureIndex)
-            {
-                _featureMeans[featureIndex] = static_cast<audio::FeatureValue>(statsAccumulators[featureIndex].getMean());
-                _featureStdDevs[featureIndex] = static_cast<audio::FeatureValue>(statsAccumulators[featureIndex].getSampleStdDev());
-            }
-        }
-
-        LMS_LOG(RECOMMENDATION, DEBUG, "Audio features stats computed on " << trackCount << " tracks");
-
-        som::Coordinate somSize{ std::max<som::Coordinate>(5, std::round(3.F * std::pow(static_cast<float>(trackCount), 0.25F))) };
-        LMS_LOG(RECOMMENDATION, DEBUG, "Training a " << somSize << "*" << somSize << " network...");
-
-        // We want the training to be deterministic for now (to better spot effects of parameter changes)
-        std::minstd_rand randomEngine{ 42 };
-        AudioSom som{ somSize, somSize, randomEngine, -1.F, 1.F };
-
-        constexpr std::size_t epochCount{ 30 };
-
-        som::Trainer trainer{ som, som::TrainerParams{ .epochCount = epochCount } };
-
-        auto allTrackFeatureIds{ db::TrackAudioFeatures::find(session) };
-        for (std::size_t i{}; i < epochCount; ++i)
-        {
-            std::shuffle(std::begin(allTrackFeatureIds.results), std::end(allTrackFeatureIds.results), randomEngine);
-
-            trainer.beginEpoch();
-            for (db::TrackAudioFeaturesId trackFeaturesId : allTrackFeatureIds.results)
-            {
-                const db::TrackAudioFeatures::pointer features{ db::TrackAudioFeatures::find(session, trackFeaturesId) };
-
-                // db::TrackAudioFeatures::find(session, [&](const db::TrackAudioFeatures::pointer& features) {
-                audio::audioFeaturesFromBlob(features->getData(), audioFeatures);
-
-                // Flatten features into a single vector and normalize them
-                flattenFeatures(audioFeatures, somInput);
-                normalizeFeatures(somInput, _featureMeans, _featureStdDevs);
-                somInput.normalizeL2();
-
-                trainer.train(somInput);
-            }
-
-            LMS_LOG(RECOMMENDATION, DEBUG, "Epoch " << i + 1 << "/" << epochCount << " done");
-        }
-
-        som::Matrix<std::vector<db::TrackId>> trackMap{ som.getWidth(), som.getHeight() };
-
-        // Now we should be able to cluster all tracks using the trained SOM
         db::TrackAudioFeatures::find(session, [&](const db::TrackAudioFeatures::pointer& features) {
-            audio::audioFeaturesFromBlob(features->getData(), audioFeatures);
-
-            // Flatten features into a single vector and normalize them
-            flattenFeatures(audioFeatures, somInput);
-            normalizeFeatures(somInput, _featureMeans, _featureStdDevs);
-            somInput.normalizeL2();
-
-            const som::MatrixPosition pos{ som.getBestMatchingNeuron(somInput) };
+            getNormalizedAudioFeatureVector(features, inputVector);
+            const som::MatrixPosition pos{ _som.getBestMatchingNeuron(inputVector) };
             trackMap.get(pos).push_back(features->getTrackId());
         });
 
         LMS_LOG(RECOMMENDATION, INFO, "Training complete!");
+    }
+
+    void FeaturesEngine::computeDatasetStats()
+    {
+        LMS_SCOPED_TRACE_DETAILED("FeaturesEngine", "Compute dataset stats");
+
+        _trackCount = 0;
+        AudioFeatureVector inputVector;
+        std::array<core::math::StatsAccumulator, audioFeatureCount> statsAccumulators;
+
+        {
+            db::Session& session{ _db.getTLSSession() };
+            auto transaction{ session.createReadTransaction() };
+
+            db::TrackAudioFeatures::find(session, [&](const db::TrackAudioFeatures::pointer& features) {
+                getAudioFeatureVector(features, inputVector);
+                for (std::size_t i{}; i < audioFeatureCount; ++i)
+                    statsAccumulators[i].add(inputVector[i]);
+
+                _trackCount++;
+            });
+        }
+
+        for (std::size_t featureIndex{}; featureIndex < audioFeatureCount; ++featureIndex)
+        {
+            _featureMeans[featureIndex] = static_cast<audio::FeatureValue>(statsAccumulators[featureIndex].getMean());
+            _featureStdDevs[featureIndex] = static_cast<audio::FeatureValue>(statsAccumulators[featureIndex].getSampleStdDev());
+        }
+
+        LMS_LOG(RECOMMENDATION, DEBUG, "Audio features stats computed on " << _trackCount << " tracks");
+    }
+
+    void FeaturesEngine::getAudioFeatureVector(const db::ObjectPtr<db::TrackAudioFeatures>& features, AudioFeatureVector& inputVector)
+    {
+        audio::AudioFeatures audioFeatures;
+        audio::audioFeaturesFromBlob(features->getData(), audioFeatures);
+        flattenAudioFeatures(audioFeatures, inputVector);
+    }
+
+    void FeaturesEngine::getNormalizedAudioFeatureVector(const db::ObjectPtr<db::TrackAudioFeatures>& features, AudioFeatureVector& inputVector) const
+    {
+        getAudioFeatureVector(features, inputVector);
+        normalizeAudioFeatures(inputVector, _featureMeans, _featureStdDevs);
+        inputVector.normalizeL2();
+    }
+
+    void FeaturesEngine::trainSom()
+    {
+        LMS_SCOPED_TRACE_DETAILED("FeaturesEngine", "Train som");
+
+        constexpr std::size_t epochCount{ 30 };
+        std::minstd_rand randomEngine{ 42 }; // We want the training to be deterministic for now (to better spot effects of parameter changes)
+        const som::Coordinate somSize{ std::max<som::Coordinate>(5, std::round(3.F * std::pow(static_cast<float>(_trackCount), 0.25F))) };
+
+        LMS_LOG(RECOMMENDATION, DEBUG, "Training a " << somSize << "*" << somSize << " network...");
+
+        _som.resize(somSize, somSize);
+        _som.randomize(randomEngine, -1.F, 1.F);
+
+        db::Session& session{ _db.getTLSSession() };
+        auto transaction{ session.createReadTransaction() };
+
+        auto allTrackFeatureIds{ std::move(db::TrackAudioFeatures::find(session).results) };
+        AudioFeatureVector inputVector;
+
+        som::Trainer trainer{ _som, som::TrainerParams{ .epochCount = epochCount } };
+        for (std::size_t i{}; i < epochCount; ++i)
+        {
+            LMS_SCOPED_TRACE_DETAILED("FeaturesEngine", "Train som epoch");
+
+            std::shuffle(std::begin(allTrackFeatureIds), std::end(allTrackFeatureIds), randomEngine);
+
+            trainer.beginEpoch();
+            for (db::TrackAudioFeaturesId trackFeaturesId : allTrackFeatureIds)
+            {
+                const db::TrackAudioFeatures::pointer features{ db::TrackAudioFeatures::find(session, trackFeaturesId) };
+                getNormalizedAudioFeatureVector(features, inputVector);
+                trainer.train(inputVector);
+            }
+
+            LMS_LOG(RECOMMENDATION, DEBUG, "Epoch " << i + 1 << "/" << epochCount << " done");
+        }
     }
 } // namespace lms::recommendation

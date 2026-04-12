@@ -17,8 +17,9 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <gtest/gtest.h>
 #include <random>
+
+#include <gtest/gtest.h>
 
 #include "som/Network.hpp"
 #include "som/Trainer.hpp"
@@ -27,11 +28,29 @@ namespace lms::som
 {
     TEST(Network, DefaultConstruction)
     {
-        std::minstd_rand randomEngine{ 42 };
         constexpr std::size_t dimensionCount{ 10 };
+        Network<dimensionCount> network;
+
+        EXPECT_EQ(network.getWidth(), 0);
+        EXPECT_EQ(network.getHeight(), 0);
+
+        for (const auto weight : network.getWeights())
+            EXPECT_EQ(weight, 1.F);
+    }
+
+    TEST(Network, Randomize)
+    {
+        constexpr std::size_t dimensionCount{ 10 };
+
+        Network<dimensionCount> network{ 5, 10 };
+        EXPECT_EQ(network.getWidth(), 5);
+        EXPECT_EQ(network.getHeight(), 10);
+
         constexpr float min{ 1.F };
         constexpr float max{ 2.F };
-        Network<dimensionCount> network{ 10, 10, randomEngine, min, max };
+        std::minstd_rand randomEngine{ 42 };
+        network.randomize(randomEngine, min, max);
+
         for (Coordinate x{}; x < network.getWidth(); ++x)
         {
             for (Coordinate y{}; y < network.getHeight(); ++y)
@@ -128,7 +147,8 @@ namespace lms::som
         constexpr std::size_t epochCount{ 40 };
 
         std::minstd_rand randomEngine{ 0 };
-        Network network{ width, height, randomEngine, 0.F, 1.F };
+        Network network{ width, height };
+        network.randomize(randomEngine, 0.F, 1.F);
 
         const Vector inputA{ 0.1f, 0.1f };
         const Vector inputB{ 0.9f, 0.9f };

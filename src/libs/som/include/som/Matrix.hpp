@@ -43,24 +43,32 @@ namespace lms::som
         Matrix() = default;
 
         constexpr Matrix(Coordinate width, Coordinate height)
-            : _width{ width }
-            , _height{ height }
         {
-            _values.resize(static_cast<std::size_t>(_width) * static_cast<std::size_t>(_height));
+            resize(width, height);
         }
 
-        template<typename... CtrArgs>
-        constexpr Matrix(Coordinate width, Coordinate height, CtrArgs&&... args)
-            : _width{ width }
-            , _height{ height }
+        constexpr Matrix(Coordinate width, Coordinate height, const T& value)
         {
-            _values.resize(static_cast<std::size_t>(_width) * static_cast<std::size_t>(_height), T{ std::forward<CtrArgs>(args)... });
+            resize(width, height, value);
         }
 
-        constexpr void clear()
+        constexpr void fill(const T& value)
         {
-            for (auto& value : _values)
-                value = T{};
+            std::fill(std::begin(_values), std::end(_values), value);
+        }
+
+        constexpr void resize(Coordinate width, Coordinate height)
+        {
+            _width = width;
+            _height = height;
+            _values.assign(static_cast<std::size_t>(_width) * _height, T{});
+        }
+
+        constexpr void resize(Coordinate width, Coordinate height, const T& value)
+        {
+            _width = width;
+            _height = height;
+            _values.assign(static_cast<std::size_t>(_width) * _height, value);
         }
 
         constexpr Coordinate getHeight() const { return _height; }
@@ -70,7 +78,7 @@ namespace lms::som
         {
             assert(x < _width);
             assert(y < _height);
-            return _values[x + _width * y];
+            return _values[static_cast<std::size_t>(x) + static_cast<std::size_t>(_width) * y];
         }
 
         constexpr T& get(const MatrixPosition& position)
@@ -82,7 +90,7 @@ namespace lms::som
         {
             assert(x < _width);
             assert(y < _height);
-            return _values[x + _width * y];
+            return _values[static_cast<std::size_t>(x) + static_cast<std::size_t>(_width) * y];
         }
 
         constexpr const T& get(const MatrixPosition& position) const
@@ -100,13 +108,13 @@ namespace lms::som
             assert(!_values.empty());
             std::size_t bestIndex{};
 
-            float minDist{ distFunc(_values[0]) };
+            auto minDist{ distFunc(_values[0]) };
 
-            const std::size_t size = _values.size();
+            const std::size_t size{ _values.size() };
 
             for (std::size_t i{ 1 }; i < size; ++i)
             {
-                float s{ distFunc(_values[i]) };
+                const auto s{ distFunc(_values[i]) };
                 if (s < minDist)
                 {
                     minDist = s;
@@ -133,7 +141,7 @@ namespace std
         {
             size_t h1 = std::hash<lms::som::Coordinate>()(s.x);
             size_t h2 = std::hash<lms::som::Coordinate>()(s.y);
-            return h1 ^ (h2 << 1);
+            return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
         }
     };
 } // namespace std

@@ -49,6 +49,15 @@ namespace lms::som
             EXPECT_FLOAT_EQ(vec[i], 5.F);
     }
 
+    TEST_F(VectorTest, ConstructorWithCustomValues)
+    {
+        TestVector vec{ 5.F, 6.F, 7.F };
+        EXPECT_EQ(vec.getSize(), VectorSize);
+        EXPECT_FLOAT_EQ(vec[0], 5.F);
+        EXPECT_FLOAT_EQ(vec[1], 6.F);
+        EXPECT_FLOAT_EQ(vec[2], 7.F);
+    }
+
     TEST_F(VectorTest, GetSize)
     {
         TestVector vec;

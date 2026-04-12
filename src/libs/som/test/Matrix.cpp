@@ -67,6 +67,30 @@ namespace lms::som
         }
     }
 
+    TEST_F(MatrixTest, Resize)
+    {
+        Matrix<int> matrix(Width, Height, 42);
+        matrix.resize(Width * 2, Height * 2, 7);
+
+        for (Coordinate y{}; y < matrix.getHeight(); ++y)
+        {
+            for (Coordinate x{}; x < matrix.getWidth(); ++x)
+                EXPECT_EQ(matrix.get(x, y), 7);
+        }
+    }
+
+    TEST_F(MatrixTest, ResizeDefaultValue)
+    {
+        Matrix<int> matrix(Width, Height, 42);
+        matrix.resize(Width * 2, Height * 2);
+
+        for (Coordinate y{}; y < matrix.getHeight(); ++y)
+        {
+            for (Coordinate x{}; x < matrix.getWidth(); ++x)
+                EXPECT_EQ(matrix.get(x, y), 0);
+        }
+    }
+
     TEST_F(MatrixTest, ElementAccessMutableAndConst)
     {
         Matrix<int> matrix{ Width, Height };
@@ -81,15 +105,15 @@ namespace lms::som
         EXPECT_EQ(constMatrix.get(2, 1), 99);
     }
 
-    TEST_F(MatrixTest, ClearResetsValues)
+    TEST_F(MatrixTest, Fill)
     {
         Matrix<int> matrix{ Width, Height, 5 };
-        matrix.clear();
+        matrix.fill(42);
 
         for (Coordinate y{}; y < matrix.getHeight(); ++y)
         {
             for (Coordinate x{}; x < matrix.getWidth(); ++x)
-                EXPECT_EQ(matrix.get(x, y), 0);
+                EXPECT_EQ(matrix.get(x, y), 42);
         }
     }
 
