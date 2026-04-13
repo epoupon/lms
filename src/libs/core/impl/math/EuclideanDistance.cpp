@@ -21,65 +21,39 @@
 
 namespace lms::core::math
 {
-    namespace detail
+    // Rely on compiler ato-vectorization to do a decent job (checked in dedicated benchmark)
+
+#if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__))
+    __attribute__((target_clones("arch=x86-64-v3", "default")))
+#endif
+    float
+    computeEuclideanSquaredDistance(const float* a, const float* b, std::size_t n)
     {
-        float computeEuclideanSquaredDistance(const float* a, const float* b, std::size_t n)
+        float res{};
+
+        for (std::size_t i{}; i < n; ++i)
         {
-            float res{};
-
-            for (std::size_t i{}; i < n; ++i)
-            {
-                const float diff{ a[i] - b[i] };
-                res += diff * diff;
-            }
-
-            return res;
+            const float diff{ a[i] - b[i] };
+            res += diff * diff;
         }
 
-        float computeEuclideanSquaredDistance(const float* a, const float* b, const float* weights, std::size_t n)
-        {
-            float res{};
-
-            for (std::size_t i{}; i < n; ++i)
-            {
-                const float diff{ a[i] - b[i] };
-                res += diff * diff * weights[i];
-            }
-
-            return res;
-        }
-
-#if LMS_SUPPORT_AVX2
-        bool hasAvx2Support()
-        {
-            return __builtin_cpu_supports("avx2");
-        }
-
-        static const bool avx2Available{ hasAvx2Support() };
-
-        float computeEuclideanSquaredDistanceSIMD(const float* a, const float* b, std::size_t n);
-        float computeEuclideanSquaredDistanceSIMD(const float* a, const float* b, const float* weights, std::size_t n);
-#endif // LMS_SUPPORT_AVX2
-    } // namespace detail
-
-    float computeEuclideanSquaredDistance(const float* a, const float* b, std::size_t n)
-    {
-#if LMS_SUPPORT_AVX2
-        if (detail::avx2Available)
-            return detail::computeEuclideanSquaredDistanceSIMD(a, b, n);
-#endif // LMS_SUPPORT_AVX2
-
-        return detail::computeEuclideanSquaredDistance(a, b, n);
+        return res;
     }
 
-    float computeEuclideanSquaredDistance(const float* a, const float* b, const float* weights, std::size_t n)
+#if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__))
+    __attribute__((target_clones("arch=x86-64-v3", "default")))
+#endif
+    float
+    computeEuclideanSquaredDistanceWithWeights(const float* a, const float* b, const float* weights, std::size_t n)
     {
-#if LMS_SUPPORT_AVX2
-        if (detail::avx2Available)
-            return detail::computeEuclideanSquaredDistanceSIMD(a, b, weights, n);
-#endif // LMS_SUPPORT_AVX2
+        float res{};
 
-        return detail::computeEuclideanSquaredDistance(a, b, weights, n);
+        for (std::size_t i{}; i < n; ++i)
+        {
+            const float diff{ a[i] - b[i] };
+            res += diff * diff * weights[i];
+        }
+
+        return res;
     }
-
 } // namespace lms::core::math

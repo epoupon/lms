@@ -42,17 +42,10 @@ add_library(lmscore STATIC
 	${CMAKE_CURRENT_BINARY_DIR}/impl/Version.cpp
 	)
 
-check_cxx_compiler_flag("-mavx2" COMPILER_SUPPORTS_AVX2)
-if (COMPILER_SUPPORTS_AVX2)
-    target_sources(lmscore PRIVATE impl/math/EuclideanDistanceSIMD.cpp)
-    set_source_files_properties(impl/math/EuclideanDistanceSIMD.cpp PROPERTIES 
-		COMPILE_OPTIONS "-mavx2"
+set_source_files_properties(impl/math/EuclideanDistance.cpp PROPERTIES 
+		COMPILE_OPTIONS "-ffast-math"
 	    SKIP_UNITY_BUILD_INCLUSION ON
 	)
-    target_compile_definitions(lmscore PRIVATE LMS_SUPPORT_AVX2=1)
-else()
-    target_compile_definitions(lmscore PRIVATE LMS_SUPPORT_AVX2=0)
-endif()
 
 target_include_directories(lmscore INTERFACE
 	include

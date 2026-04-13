@@ -34,7 +34,7 @@ namespace lms::core::math::euclideanDistanceTests
         const std::array<float, 0> weights{};
 
         EXPECT_FLOAT_EQ(computeEuclideanSquaredDistance(a.data(), b.data(), 0U), 0.F);
-        EXPECT_FLOAT_EQ(computeEuclideanSquaredDistance(a.data(), b.data(), weights.data(), 0U), 0.F);
+        EXPECT_FLOAT_EQ(computeEuclideanSquaredDistanceWithWeights(a.data(), b.data(), weights.data(), 0U), 0.F);
     }
 
     TEST(EuclideanDistance, equalVectors)
@@ -61,6 +61,6 @@ namespace lms::core::math::euclideanDistanceTests
         const std::array<float, 3> weights{ 1.F, 0.5F, 2.F };
 
         const float expected{ 5.F }; // 1*1 + 4*0.5 + 1*2
-        EXPECT_NEAR(computeEuclideanSquaredDistance(a.data(), b.data(), weights.data(), a.size()), expected, epsilon);
+        EXPECT_NEAR(computeEuclideanSquaredDistanceWithWeights(a.data(), b.data(), weights.data(), a.size()), expected, epsilon);
     }
 } // namespace lms::core::math::euclideanDistanceTests

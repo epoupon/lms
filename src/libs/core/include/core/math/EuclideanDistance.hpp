@@ -24,5 +24,5 @@
 namespace lms::core::math
 {
     float computeEuclideanSquaredDistance(const float* a, const float* b, std::size_t);
-    float computeEuclideanSquaredDistance(const float* a, const float* b, const float* weights, std::size_t);
+    float computeEuclideanSquaredDistanceWithWeights(const float* a, const float* b, const float* weights, std::size_t);
 } // namespace lms::core::math

@@ -43,11 +43,13 @@ namespace lms::som
         constexpr std::size_t dimensionCount{ 10 };
 
         Network<dimensionCount> network{ 5, 10 };
+        using FloatType = Network<dimensionCount>::Vector::value_type;
+
         EXPECT_EQ(network.getWidth(), 5);
         EXPECT_EQ(network.getHeight(), 10);
 
-        constexpr float min{ 1.F };
-        constexpr float max{ 2.F };
+        constexpr FloatType min{ 1.F };
+        constexpr FloatType max{ 2.F };
         std::minstd_rand randomEngine{ 42 };
         network.randomize(randomEngine, min, max);
 
@@ -55,7 +57,7 @@ namespace lms::som
         {
             for (Coordinate y{}; y < network.getHeight(); ++y)
             {
-                for (const auto val : network.getNeuron({ x, y }))
+                for (const FloatType val : network.getNeuron({ x, y }))
                 {
                     EXPECT_GE(val, min);
                     EXPECT_LE(val, max);
@@ -118,7 +120,7 @@ namespace lms::som
         {
             Trainer trainer{ network, TrainerParams{ .epochCount = epochCount } };
 
-            for (std::size_t epoch = 0; epoch < epochCount; ++epoch)
+            for (std::size_t epoch{}; epoch < epochCount; ++epoch)
             {
                 trainer.beginEpoch();
                 trainer.train(input);
@@ -158,7 +160,7 @@ namespace lms::som
         {
             Trainer trainer{ network, TrainerParams{ .epochCount = epochCount } };
 
-            for (std::size_t epoch = 0; epoch < epochCount; ++epoch)
+            for (std::size_t epoch{}; epoch < epochCount; ++epoch)
             {
                 trainer.beginEpoch();
                 trainer.train(inputA);

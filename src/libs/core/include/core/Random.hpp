@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <random>
+#include <type_traits>
 
 namespace lms::core::random
 {
@@ -41,6 +42,29 @@ namespace lms::core::random
     {
         std::uniform_real_distribution<> dist{ min, max };
         return dist(getRandGenerator());
+    }
+
+    template<typename RandomEngine, typename Container>
+    void fillContainer(RandomEngine& randomEngine, Container& container, typename Container::value_type min, typename Container::value_type max)
+    {
+        using value_type = Container::value_type;
+
+        if constexpr (std::is_floating_point_v<value_type>)
+        {
+            std::uniform_real_distribution<value_type> distrib{ min, max };
+            for (auto& v : container)
+                v = distrib(randomEngine);
+        }
+        else if constexpr (std::is_integral_v<value_type>)
+        {
+            std::uniform_int_distribution<value_type> distrib{ min, max };
+            for (auto& v : container)
+                v = distrib(randomEngine);
+        }
+        else
+        {
+            static_assert(false, "Unhandled type");
+        }
     }
 
     template<typename Container>

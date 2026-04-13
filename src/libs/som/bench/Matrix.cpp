@@ -21,6 +21,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "core/Random.hpp"
 #include "som/Matrix.hpp"
 #include "som/Vector.hpp"
 
@@ -32,19 +33,12 @@ namespace lms::som::benchs
         using Value = Vector<dimensionCount, float>;
         using randomEngine = std::minstd_rand;
 
-        void fillWithRandom(randomEngine& randomEngine, Value& value)
-        {
-            std::uniform_real_distribution<float> distrib{ 0.F, 1.F };
-            for (auto& v : value)
-                v = distrib(randomEngine);
-        }
-
         void fillWithRandom(randomEngine& randomEngine, Matrix<Value>& matrix)
         {
             for (std::size_t x{}; x < matrix.getWidth(); ++x)
             {
                 for (std::size_t y{}; y < matrix.getHeight(); ++y)
-                    fillWithRandom(randomEngine, matrix.get(x, y));
+                    core::random::fillContainer(randomEngine, matrix.get(x, y), 0.F, 1.F);
             }
         }
     } // namespace

@@ -21,6 +21,8 @@
 
 #include <random>
 
+#include "core/Random.hpp"
+
 #include "Matrix.hpp"
 #include "Vector.hpp"
 
@@ -90,10 +92,7 @@ namespace lms::som
         for (Coordinate y{}; y < _neurons.getHeight(); ++y)
         {
             for (Coordinate x{}; x < _neurons.getWidth(); ++x) // row major
-            {
-                for (auto& v : _neurons.get({ x, y }))
-                    v = distrib(randomEngine);
-            }
+                core::random::fillContainer(randomEngine, _neurons.get({ x, y }), min, max);
         }
     }
 

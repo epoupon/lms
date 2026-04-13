@@ -38,6 +38,7 @@ namespace lms::som
         using Vector = typename Network::Vector;
         using FloatType = typename Network::Vector::value_type;
 
+        // User is responsible to provide a properly initialized network
         Trainer(Network& network, const TrainerParams& params);
         ~Trainer() = default;
         Trainer(const Trainer&) = delete;

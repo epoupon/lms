@@ -94,9 +94,9 @@ namespace lms::som
             return core::math::computeEuclideanSquaredDistance(_values.data(), other.data(), Size);
         }
 
-        Distance computeEuclideanSquaredDistance(const Vector& other, const Vector& weights) const
+        Distance computeEuclideanSquaredDistanceWithWeights(const Vector& other, const Vector& weights) const
         {
-            return core::math::computeEuclideanSquaredDistance(_values.data(), other.data(), weights.data(), Size);
+            return core::math::computeEuclideanSquaredDistanceWithWeights(_values.data(), other.data(), weights.data(), Size);
         }
 
         void normalizeL2()
@@ -157,7 +157,7 @@ namespace lms::som
 
         FloatType operator()(const Vector<Size, FloatType>& a)
         {
-            return _ref.computeEuclideanSquaredDistance(a, _weights);
+            return _ref.computeEuclideanSquaredDistanceWithWeights(a, _weights);
         }
 
         const Vector<Size, FloatType>& _ref;

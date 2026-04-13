@@ -196,7 +196,7 @@ namespace lms::som
 
         // (2-0)^2*1 + (2-0)^2*2 + (2-0)^2*3 = 4 + 8 + 12 = 24
         const float expectedDistance{ 24.F };
-        EXPECT_FLOAT_EQ(vec1.computeEuclideanSquaredDistance(vec2, weights), expectedDistance);
+        EXPECT_FLOAT_EQ(vec1.computeEuclideanSquaredDistanceWithWeights(vec2, weights), expectedDistance);
         EXPECT_FLOAT_EQ((SquaredEuclideanDistanceWithWeights{ vec1, weights }(vec2)), expectedDistance);
     }
 
