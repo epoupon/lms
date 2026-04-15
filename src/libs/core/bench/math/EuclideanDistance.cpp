@@ -41,7 +41,7 @@ namespace lms::core::benchs
 
         for (auto _ : state)
         {
-            core::math::computeEuclideanSquaredDistance(vec1.data(), vec2.data(), dimensionCount);
+            benchmark::DoNotOptimize(core::math::computeEuclideanSquaredDistance(vec1.data(), vec2.data(), dimensionCount));
         }
 
         state.SetItemsProcessed(state.iterations() * dimensionCount);
@@ -63,7 +63,7 @@ namespace lms::core::benchs
 
         for (auto _ : state)
         {
-            core::math::computeEuclideanSquaredDistanceWithWeights(vec1.data(), vec2.data(), weights.data(), dimensionCount);
+            benchmark::DoNotOptimize(core::math::computeEuclideanSquaredDistanceWithWeights(vec1.data(), vec2.data(), weights.data(), dimensionCount));
         }
 
         state.SetItemsProcessed(state.iterations() * dimensionCount);

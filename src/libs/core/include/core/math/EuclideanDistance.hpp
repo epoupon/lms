@@ -23,6 +23,31 @@
 
 namespace lms::core::math
 {
-    float computeEuclideanSquaredDistance(const float* a, const float* b, std::size_t);
-    float computeEuclideanSquaredDistanceWithWeights(const float* a, const float* b, const float* weights, std::size_t);
+    template<typename T>
+    T computeEuclideanSquaredDistance(const T* a, const T* b, std::size_t n)
+    {
+        T res{};
+
+        for (std::size_t i{}; i < n; ++i)
+        {
+            const T diff{ a[i] - b[i] };
+            res += diff * diff;
+        }
+
+        return res;
+    }
+
+    template<typename T>
+    T computeEuclideanSquaredDistanceWithWeights(const T* a, const T* b, const T* weights, std::size_t n)
+    {
+        T res{};
+
+        for (std::size_t i{}; i < n; ++i)
+        {
+            const T diff{ a[i] - b[i] };
+            res += diff * diff * weights[i];
+        }
+
+        return res;
+    }
 } // namespace lms::core::math

@@ -2,8 +2,6 @@ pkg_check_modules(Archive REQUIRED IMPORTED_TARGET libarchive)
 pkg_check_modules(Config++ REQUIRED IMPORTED_TARGET libconfig++)
 pkg_check_modules(XXHASH REQUIRED IMPORTED_TARGET libxxhash)
 
-include(CheckCXXCompilerFlag)
-
 set(LMS_VERSION ${PROJECT_VERSION})
 
 configure_file(
@@ -15,7 +13,6 @@ configure_file(
 add_library(lmscore STATIC
 	impl/http/Client.cpp
 	impl/http/SendQueue.cpp
-	impl/math/EuclideanDistance.cpp
 	impl/math/StatsAccumulator.cpp
 	impl/media/Codec.cpp
 	impl/media/Container.cpp
@@ -40,11 +37,6 @@ add_library(lmscore STATIC
 	impl/UUID.cpp
 	impl/XxHash3.cpp
 	${CMAKE_CURRENT_BINARY_DIR}/impl/Version.cpp
-	)
-
-set_source_files_properties(impl/math/EuclideanDistance.cpp PROPERTIES 
-		COMPILE_OPTIONS "-ffast-math"
-	    SKIP_UNITY_BUILD_INCLUSION ON
 	)
 
 target_include_directories(lmscore INTERFACE
