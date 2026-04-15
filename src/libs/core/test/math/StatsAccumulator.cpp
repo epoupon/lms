@@ -119,4 +119,73 @@ namespace lms::core::math::statsAccumulatorTests
         // Should be positively skewed
         EXPECT_GT(stats.getSampleSkewness(), epsilon);
     }
+
+    TEST(StatsAccumulator, skewnessNeedsAtLeastThreeSamples)
+    {
+        StatsAccumulator stats;
+        stats.add(2.0);
+        stats.add(4.0);
+
+        EXPECT_DOUBLE_EQ(stats.getSampleSkewness(), 0.0);
+    }
+
+    TEST(StatsAccumulator, skewnessConstantData)
+    {
+        StatsAccumulator stats;
+        stats.add(3.0);
+        stats.add(3.0);
+        stats.add(3.0);
+        stats.add(3.0);
+
+        EXPECT_DOUBLE_EQ(stats.getSampleSkewness(), 0.0);
+    }
+
+    TEST(StatsAccumulator, largeMagnitudeValues)
+    {
+        // Welford's algorithm must stay numerically stable with large inputs
+        constexpr double big{ 1e12 };
+        StatsAccumulator stats;
+        stats.add(big);
+        stats.add(big + 1.0);
+        stats.add(big + 2.0);
+
+        EXPECT_NEAR(stats.getMean(), big + 1.0, 1e-6);
+        EXPECT_NEAR(stats.getSampleVariance(), 1.0, 1e-6);
+        EXPECT_NEAR(stats.getSampleStdDev(), 1.0, 1e-6);
+    }
+
+    TEST(StatsAccumulator, negativeValues)
+    {
+        StatsAccumulator stats;
+        stats.add(-6.0);
+        stats.add(-4.0);
+        stats.add(-2.0);
+
+        EXPECT_NEAR(stats.getMean(), -4.0, epsilon);
+        EXPECT_NEAR(stats.getSampleVariance(), 4.0, epsilon);
+    }
+
+    TEST(StatsAccumulator, mixedSignValues)
+    {
+        StatsAccumulator stats;
+        stats.add(-1.0);
+        stats.add(0.0);
+        stats.add(1.0);
+
+        EXPECT_NEAR(stats.getMean(), 0.0, epsilon);
+        EXPECT_NEAR(stats.getSampleVariance(), 1.0, epsilon);
+    }
+
+    TEST(StatsAccumulator, smallMagnitudeValues)
+    {
+        // Values close to double subnormal range; variance must stay non-negative
+        constexpr double tiny{ 1e-300 };
+        StatsAccumulator stats;
+        stats.add(tiny);
+        stats.add(tiny * 2.0);
+        stats.add(tiny * 3.0);
+
+        EXPECT_GE(stats.getSampleVariance(), 0.0);
+        EXPECT_GE(stats.getSampleStdDev(), 0.0);
+    }
 } // namespace lms::core::math::statsAccumulatorTests
