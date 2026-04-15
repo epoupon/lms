@@ -6,6 +6,7 @@ add_executable(test-scanner
 	Lyrics.cpp
 	PlayList.cpp
 	Scanner.cpp
+	ScannerStats.cpp
 	TrackMetadataParser.cpp
 	)
 
