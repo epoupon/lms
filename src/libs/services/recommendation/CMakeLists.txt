@@ -27,3 +27,8 @@ target_link_libraries(lmsrecommendation PUBLIC
 	lmscore
 	lmsdatabase
 	)
+
+# Should be safe enough for what we're doing
+target_compile_options(lmsrecommendation PRIVATE
+	$<$<NOT:$<CONFIG:Debug>>:-ffast-math>
+	)
