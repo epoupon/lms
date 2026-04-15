@@ -17,6 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <limits>
 #include <sstream>
 
 #include <gtest/gtest.h>
@@ -108,6 +109,25 @@ namespace lms::api::subsonic::tests
 
         std::string expected{ R"(<?xml version="1.0" encoding="utf-8"?>
 <subsonic-response openSubsonic="true" serverVersion="${VERSION}" status="ok" type="lms" version="1.16.1" xmlns="http://subsonic.org/restapi"><MyNode Attr1="value1" Attr2="value2" attr3="&lt;value3=&quot;foo&quot;&gt;" attr4="true" attr5="false" attr6="3.14159" attr7="333666"><MyArrayChild Attr42="0"/><MyArrayChild Attr42="1"/><MyArray1>value1</MyArray1><MyArray1>value2</MyArray1><MyArray1>value1</MyArray1><MyArray1>value2</MyArray1><MyArray2>0</MyArray2></MyNode></subsonic-response>)" };
+        expected = core::stringUtils::replaceInString(expected, "${VERSION}", core::getVersion());
+
+        EXPECT_EQ(oss.str(), expected);
+    }
+
+    TEST(SubsonicResponse, jsonNaNAndInfinity)
+    {
+        Response response{ Response::createOkResponse(defaultServerProtocolVersion) };
+
+        Response::Node& node{ response.createNode("MyMath") };
+        node.setAttribute("finite", 1.25F);
+        node.setAttribute("nan", std::numeric_limits<float>::quiet_NaN());
+        node.setAttribute("negInf", -std::numeric_limits<float>::infinity());
+        node.setAttribute("posInf", std::numeric_limits<float>::infinity());
+
+        std::ostringstream oss;
+        response.write(oss, ResponseFormat::json);
+
+        std::string expected{ R"({"subsonic-response":{"openSubsonic":true,"serverVersion":"${VERSION}","status":"ok","type":"lms","version":"1.16.1","MyMath":{"finite":1.25,"nan":null,"negInf":null,"posInf":null}}})" };
         expected = core::stringUtils::replaceInString(expected, "${VERSION}", core::getVersion());
 
         EXPECT_EQ(oss.str(), expected);
