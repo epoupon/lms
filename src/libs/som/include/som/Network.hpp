@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <optional>
 #include <random>
 
 #include "core/Random.hpp"
@@ -34,7 +35,7 @@ namespace lms::som
     public:
         using Vector = som::Vector<DimensionCount, FloatType>;
 
-        Network();
+        Network() = default;
 
         // Init a network with default values
         Network(Coordinate width, Coordinate height);
@@ -49,8 +50,8 @@ namespace lms::som
         Coordinate getHeight() const { return _neurons.getHeight(); }
 
         // Set weight for each dimension (default is 1 for each weight)
-        void setWeights(const Vector& weights) { _weights = weights; }
-        const Vector& getWeights() const { return _weights; }
+        void setWeights(const std::optional<Vector>& weights) { _weights = weights; }
+        const Vector* getWeights() const { return _weights.has_value() ? &(_weights.value()) : nullptr; }
 
         // use this to manually construct a network without training
         void setNeuron(const MatrixPosition& position, const Vector& neuron);
@@ -61,18 +62,11 @@ namespace lms::som
 
     private:
         Matrix<Vector> _neurons;
-        Vector _weights;
+        std::optional<Vector> _weights;
     };
 
     template<std::size_t DimensionCount, typename FloatType>
-    Network<DimensionCount, FloatType>::Network()
-        : _weights{ 1.F }
-    {
-    }
-
-    template<std::size_t DimensionCount, typename FloatType>
     Network<DimensionCount, FloatType>::Network(Coordinate width, Coordinate height)
-        : Network{}
     {
         resize(width, height);
     }
@@ -117,7 +111,9 @@ namespace lms::som
     template<std::size_t DimensionCount, typename FloatType>
     MatrixPosition Network<DimensionCount, FloatType>::getBestMatchingNeuron(const Vector& input) const
     {
-        return _neurons.getPositionMinDistance(SquaredEuclideanDistanceWithWeights{ input, _weights });
-    }
+        if (_weights)
+            return _neurons.getPositionMinDistance(SquaredEuclideanDistanceWithWeights{ input, *_weights });
 
+        return _neurons.getPositionMinDistance(SquaredEuclideanDistance{ input });
+    }
 } // namespace lms::som

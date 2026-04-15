@@ -34,8 +34,7 @@ namespace lms::som
         EXPECT_EQ(network.getWidth(), 0);
         EXPECT_EQ(network.getHeight(), 0);
 
-        for (const auto weight : network.getWeights())
-            EXPECT_EQ(weight, 1.F);
+        EXPECT_EQ(network.getWeights(), nullptr);
     }
 
     TEST(Network, Randomize)
