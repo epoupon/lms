@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -58,18 +59,10 @@ namespace lms::som
         std::size_t _epoch{};
         FloatType _learningRate{};
         FloatType _sigma{};
+        int _influenceRadius{};
         std::vector<FloatType> _influenceLUT;
+        std::vector<int> _xRadiusByAbsDy;
     };
-
-    namespace detail
-    {
-        std::size_t computeSquaredDist(const MatrixPosition& a, const MatrixPosition& b)
-        {
-            const int dx{ static_cast<int>(b.x) - static_cast<int>(a.x) };
-            const int dy{ static_cast<int>(b.y) - static_cast<int>(a.y) };
-            return dx * dx + dy * dy;
-        }
-    } // namespace detail
 
     template<typename Network>
     Trainer<Network>::Trainer(Network& network, const TrainerParams& params)
@@ -103,6 +96,15 @@ namespace lms::som
             _influenceLUT.resize(maxSquaredDist + 1);
             for (std::size_t squaredDist{}; squaredDist <= maxSquaredDist; ++squaredDist)
                 _influenceLUT[squaredDist] = std::exp(-static_cast<FloatType>(squaredDist) * invTwoSquaredSigma);
+
+            _influenceRadius = std::floor(std::sqrt(static_cast<FloatType>(maxSquaredDist)));
+            _xRadiusByAbsDy.resize(_influenceRadius + 1);
+            for (std::size_t absDy{}; absDy <= static_cast<std::size_t>(_influenceRadius); ++absDy)
+            {
+                const std::size_t squaredDy{ absDy * absDy };
+                const std::size_t maxSquaredDx{ maxSquaredDist - squaredDy };
+                _xRadiusByAbsDy[absDy] = static_cast<int>(std::floor(std::sqrt(static_cast<FloatType>(maxSquaredDx))));
+            }
         }
 
         _epoch += 1;
@@ -112,15 +114,25 @@ namespace lms::som
     void Trainer<Network>::train(const Vector& input)
     {
         const MatrixPosition bestMatchingNeuronPos{ _network.getBestMatchingNeuron(input) };
-        for (Coordinate y{}; y < _network.getHeight(); ++y)
-        {
-            for (Coordinate x{}; x < _network.getWidth(); ++x) // row major
-            {
-                const MatrixPosition neuronPos{ x, y };
-                const std::size_t squaredGridDist{ detail::computeSquaredDist(neuronPos, bestMatchingNeuronPos) };
 
-                if (squaredGridDist >= _influenceLUT.size())
-                    continue;
+        const int yMin{ std::max(0, static_cast<int>(bestMatchingNeuronPos.y) - _influenceRadius) };
+        const int yMax{ std::min(static_cast<int>(_network.getHeight()) - 1, static_cast<int>(bestMatchingNeuronPos.y) + _influenceRadius) };
+
+        for (int y{ yMin }; y <= yMax; ++y)
+        {
+            const int dy{ y - static_cast<int>(bestMatchingNeuronPos.y) };
+            const std::size_t squaredDy{ static_cast<std::size_t>(dy * dy) };
+            const std::size_t absDy{ static_cast<std::size_t>(std::abs(dy)) };
+            const int xRadius{ _xRadiusByAbsDy[absDy] };
+
+            const int xMin{ std::max(0, static_cast<int>(bestMatchingNeuronPos.x) - xRadius) };
+            const int xMax{ std::min(static_cast<int>(_network.getWidth()) - 1, static_cast<int>(bestMatchingNeuronPos.x) + xRadius) };
+
+            for (int x{ xMin }; x <= xMax; ++x) // row major
+            {
+                const MatrixPosition neuronPos{ static_cast<Coordinate>(x), static_cast<Coordinate>(y) };
+                const int dx{ x - static_cast<int>(bestMatchingNeuronPos.x) };
+                const std::size_t squaredGridDist{ squaredDy + static_cast<std::size_t>(dx * dx) };
 
                 const FloatType influence{ _influenceLUT[static_cast<std::size_t>(squaredGridDist)] };
 
