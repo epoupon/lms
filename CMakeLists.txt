@@ -49,9 +49,7 @@ if (BUILD_BENCHMARKS)
 	message(STATUS "Building benchmarks")
 endif()
 
-if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_definitions(-DNDEBUG)
-endif()
+add_compile_definitions($<$<NOT:$<CONFIG:Debug>>:NDEBUG>)
 
 add_subdirectory(src)
 
