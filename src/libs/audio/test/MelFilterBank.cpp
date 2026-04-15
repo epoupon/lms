@@ -18,9 +18,12 @@
  */
 
 #include <algorithm>
+#include <limits>
 #include <numeric>
 
 #include <gtest/gtest.h>
+
+#include "audio/Exception.hpp"
 
 #include "features/MelFilterBank.hpp"
 
@@ -37,6 +40,15 @@ namespace lms::audio::features::tests
         const MelFilterBank bank{ computeMelFilterBank(NFFT, sampleRate, filterCount) };
         EXPECT_EQ(bank.getFilterCount(), filterCount);
         EXPECT_EQ(bank.getBinCount(), NFFT / 2 + 1);
+    }
+
+        TEST(MelFilterBank, differentSampleRates)
+    {
+        for (const std::size_t sr : { std::size_t{ 8000 }, std::size_t{ 16000 }, std::size_t{ 44100 }, std::size_t{ 48000 } })
+        {
+            const MelFilterBank bank{ computeMelFilterBank(NFFT, sr, filterCount) };
+            EXPECT_EQ(bank.getFilterCount(), filterCount) << "sr=" << sr;
+        }
     }
 
     TEST(MelFilterBank, nonNegativeWeights)
@@ -145,6 +157,47 @@ namespace lms::audio::features::tests
         {
             const float energy{ bank.computeEnergy(m, flatSpectrum) };
             EXPECT_GT(energy, 0.F) << "Filter " << m << " has zero energy for flat spectrum";
+        }
+    }
+    TEST(MelFilterBank, zeroFilterCount)
+    {
+        const MelFilterBank bank{ computeMelFilterBank(NFFT, sampleRate, 0) };
+
+        EXPECT_EQ(bank.getFilterCount(), 0U);
+        EXPECT_EQ(bank.getBinCount(), NFFT / 2 + 1);
+    }
+
+    TEST(MelFilterBank, computeEnergyRejectsInvalidInputSize)
+    {
+        const MelFilterBank bank{ computeMelFilterBank(NFFT, sampleRate, filterCount) };
+        std::vector<float> invalidInput(bank.getBinCount() - 1, 1.F);
+
+        EXPECT_THROW(bank.computeEnergy(0, invalidInput), Exception);
+    }
+
+    TEST(MelFilterBank, zeroSpectrum)
+    {
+        const MelFilterBank bank{ computeMelFilterBank(NFFT, sampleRate, filterCount) };
+        std::vector<float> zeroSpectrum(bank.getBinCount(), 0.F);
+
+        for (std::size_t m{}; m < bank.getFilterCount(); ++m)
+        {
+            const float energy{ bank.computeEnergy(m, zeroSpectrum) };
+            EXPECT_FLOAT_EQ(energy, 0.F) << "Filter " << m << " should have zero energy for zero spectrum";
+        }
+    }
+
+    TEST(MelFilterBank, largeSpectrumValues)
+    {
+        const MelFilterBank bank{ computeMelFilterBank(NFFT, sampleRate, filterCount) };
+        // Weights sum to 1.0 per filter, so energy = input * 1.0, no overflow risk at max/2
+        const float largeValue{ std::numeric_limits<float>::max() / 2.F };
+        std::vector<float> largeSpectrum(bank.getBinCount(), largeValue);
+
+        for (std::size_t m{}; m < bank.getFilterCount(); ++m)
+        {
+            const float energy{ bank.computeEnergy(m, largeSpectrum) };
+            EXPECT_GT(energy, 0.F) << "Filter " << m << " energy is not positive for large spectrum";
         }
     }
 } // namespace lms::audio::features::tests
