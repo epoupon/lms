@@ -42,7 +42,7 @@ namespace lms::audio::features::tests
         EXPECT_EQ(bank.getBinCount(), NFFT / 2 + 1);
     }
 
-        TEST(MelFilterBank, differentSampleRates)
+    TEST(MelFilterBank, differentSampleRates)
     {
         for (const std::size_t sr : { std::size_t{ 8000 }, std::size_t{ 16000 }, std::size_t{ 44100 }, std::size_t{ 48000 } })
         {
