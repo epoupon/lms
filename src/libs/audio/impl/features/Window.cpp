@@ -30,6 +30,11 @@ namespace lms::audio::features
         const std::size_t frameSize{ window.size() };
         if (frameSize == 0)
             throw Exception{ "Invalid frame size" };
+        if (frameSize == 1)
+        {
+            window[0] = 1.F;
+            return;
+        }
 
         for (size_t i{}; i < frameSize; ++i)
             window[i] = 0.5F * (1.0F - std::cos(2.F * M_PI * i / (static_cast<double>(frameSize) - 1)));

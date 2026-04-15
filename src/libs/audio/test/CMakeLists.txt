@@ -6,6 +6,7 @@ add_executable(test-audio
 	DeltaCalculator.cpp
 	FFT.cpp
 	MelFilterBank.cpp
+	Window.cpp
 	)
 
 target_include_directories(test-audio PRIVATE
