@@ -104,7 +104,7 @@ namespace lms::recommendation
         return res;
     }
 
-    ArtistContainer ClusterEngine::getSimilarArtists(ArtistId artistId, core::EnumSet<TrackArtistLinkType> artistLinkTypes, std::size_t maxCount) const
+    ArtistContainer ClusterEngine::getSimilarArtists(ArtistId artistId, core::EnumSet<TrackArtistLinkType> linkTypes, std::size_t maxCount) const
     {
         if (maxCount == 0)
             return {};
@@ -116,7 +116,7 @@ namespace lms::recommendation
         if (!artist)
             return {};
 
-        auto similarArtistIds{ artist->findSimilarArtistIds(artistLinkTypes, Range{ 0, maxCount }) };
+        auto similarArtistIds{ artist->findSimilarArtistIds(linkTypes, Range{ 0, maxCount }) };
         return std::move(similarArtistIds.results);
     }
 

@@ -1,9 +1,6 @@
 include(GoogleTest)
 
 add_executable(test-core
-	math/EuclideanDistance.cpp
-	math/StatsAccumulator.cpp
-	Core.cpp
 	EnumSet.cpp
 	JobScheduler.cpp
 	LiteralString.cpp
@@ -19,8 +16,10 @@ add_executable(test-core
 
 target_link_libraries(test-core PRIVATE
 	lmscore
+	lmsmath
 	Threads::Threads
 	GTest::GTest
+	GTest::gtest_main
 	)
 
 if (NOT CMAKE_CROSSCOMPILING)

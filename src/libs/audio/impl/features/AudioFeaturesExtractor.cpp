@@ -23,15 +23,16 @@
 #include <cmath>
 #include <numeric>
 
+#include "core/AlignedHeapArray.hpp"
 #include "core/ILogger.hpp"
-#include "core/math/StatsAccumulator.hpp"
 
 #include "audio/IPcmDecoder.hpp"
+#include "math/StatsAccumulator.hpp"
+#include "math/Window.hpp"
 
-#include "AlignedHeapArray.hpp"
 #include "DeltaCalculator.hpp"
-#include "IFFT.hpp"
-#include "Window.hpp"
+#include "SpectralFeatureCalculator.hpp"
+#include "ZeroCrossingRateCalculator.hpp"
 
 namespace lms::audio
 {
@@ -45,22 +46,22 @@ namespace lms::audio::features
 {
     namespace detail
     {
-        std::vector<AudioFeaturesExtractor::FloatType> computeWindow(std::size_t frameSize)
+        template<std::size_t Size, typename FloatType>
+        std::array<FloatType, Size> computeWindow()
         {
-            std::vector<AudioFeaturesExtractor::FloatType> window;
-            window.resize(frameSize);
-            computeHannWindow(window);
+            std::array<FloatType, Size> window;
+            math::computeHannWindow<AudioFeaturesExtractor::FloatType>(window);
             return window;
         }
     } // namespace detail
 
     AudioFeaturesExtractor::AudioFeaturesExtractor()
         : _pcmParams{ .channelCount = 1, .sampleRate = 22050, .sampleType = PcmSampleType::Float32, .byteOrder = std::endian::native, .planar = false }
-        , _frameSize{ 1024 }
-        , _window{ detail::computeWindow(_frameSize) }
+        , _window{ detail::computeWindow<_frameSize, FloatType>() }
         , _windowEnergy{ static_cast<float>(std::accumulate(_window.begin(), _window.end(), double{}, [](double sum, double w) { return sum + w * w; })) }
         , _melFilterBank{ computeMelFilterBank(_frameSize, _pcmParams.sampleRate, AudioFeatures::melBandCount) }
-        , _realFFTPlan{ createRealFFTPlan(_frameSize) }
+        , _mfccCalculator{}
+        , _chromaCalculator{ static_cast<FloatType>(_pcmParams.sampleRate) }
     {
         assert(_window.size() == _frameSize);
         assert(getSampleSize(_pcmParams.sampleType) == sizeof(FeatureValue));
@@ -83,13 +84,49 @@ namespace lms::audio::features
         res.metadata.frameHopSize = _frameSize / 2;
         res.metadata.pcmSampleRate = _pcmParams.sampleRate;
 
-        AlignedHeapArray<FloatType, IRealFFTPlan::minBufferAlignment> windowedFrame{ _realFFTPlan->getInputSize() };
-        AlignedHeapArray<std::complex<FloatType>, IRealFFTPlan::minBufferAlignment> fftOutput{ _realFFTPlan->getOutputSize() };
-        std::vector<FloatType> powerSpectrum(_realFFTPlan->getOutputSize());
+        core::AlignedHeapArray<FloatType, FFTPlan::minBufferAlignment> windowedFrame{ FFTPlan::getInputSize() };
+        core::AlignedHeapArray<std::complex<FloatType>, FFTPlan::minBufferAlignment> fftOutput{ FFTPlan::getOutputSize() };
+        std::array<FloatType, FFTPlan::getOutputSize()> powerSpectrum{};
         const FloatType powerScale{ 1.F / (_windowEnergy * _frameSize) };
-        std::vector<core::math::StatsAccumulator> logMelEnergyAccumulators(_melFilterBank.getFilterCount());
-        std::vector<core::math::StatsAccumulator> logMelEnergyDeltaAccumulators(_melFilterBank.getFilterCount());
+
+        // log mel energy
+        std::vector<math::StatsAccumulator<FloatType>> logMelEnergyAccumulators(_melFilterBank.getFilterCount());
+        std::vector<math::StatsAccumulator<FloatType>> logMelEnergyDeltaAccumulators(_melFilterBank.getFilterCount());
+        std::vector<math::StatsAccumulator<FloatType>> logMelEnergyDeltaMeanAbsAccumulators(_melFilterBank.getFilterCount());
         std::vector<DeltaCalculator> logMelEnergyDeltaCalculators(_melFilterBank.getFilterCount(), DeltaCalculator{ 5 });
+        std::array<FloatType, AudioFeatures::melBandCount> logMel{};
+
+        // MFCCs
+        std::vector<math::StatsAccumulator<FloatType>> mfccAccumulators(AudioFeatures::mfccCount);
+        std::vector<math::StatsAccumulator<FloatType>> mfccDeltaAccumulators(AudioFeatures::mfccCount);
+        std::vector<math::StatsAccumulator<FloatType>> mfccDeltaMeanAbsAccumulators(AudioFeatures::mfccCount);
+        std::vector<DeltaCalculator> mfccDeltaCalculators(AudioFeatures::mfccCount, DeltaCalculator{ 5 });
+
+        // Spectral features
+        SpectralFeatureCalculator<powerSpectrum.size(), FloatType> spectralFeaturesCalculator;
+        const FloatType binWidthHz{ FloatType(_pcmParams.sampleRate) / (2 * powerSpectrum.size()) };
+        // - centroid
+        math::StatsAccumulator<FloatType> spectralCentroidAccumulator;
+        DeltaCalculator spectralCentroidDeltaCalculator{ 5 };
+        math::StatsAccumulator<FloatType> spectralCentroidDeltaAccumulator;
+        // - rolloff
+        math::StatsAccumulator<FloatType> spectralRolloffAccumulator;
+        DeltaCalculator spectralRolloffDeltaCalculator{ 5 };
+        math::StatsAccumulator<FloatType> spectralRolloffDeltaAccumulator;
+        // - flux
+        math::StatsAccumulator<FloatType> spectralFluxAccumulator;
+        DeltaCalculator spectralFluxDeltaCalculator{ 5 };
+        math::StatsAccumulator<FloatType> spectralFluxDeltaAccumulator;
+
+        // Chroma
+        std::vector<math::StatsAccumulator<FloatType>> chromaAccumulators(AudioFeatures::chromaCount);
+        std::vector<math::StatsAccumulator<FloatType>> chromaDeltaAccumulators(AudioFeatures::chromaCount);
+        std::vector<math::StatsAccumulator<FloatType>> chromaDeltaMeanAbsAccumulators(AudioFeatures::chromaCount);
+        std::vector<DeltaCalculator> chromaDeltaCalculators(AudioFeatures::chromaCount, DeltaCalculator{ 5 });
+
+        // Zero crossing rate
+        math::StatsAccumulator<FloatType> zeroCrossingRateAccumulator;
+        ZeroCrossingRateCalculator<FloatType> zeroCrossingRateCalculator;
 
         std::size_t currentSampleOffset{}; // in samples
         while (true)
@@ -116,7 +153,7 @@ namespace lms::audio::features
                 for (std::size_t i{}; i < _frameSize; ++i)
                     windowedFrame[i] = samples[i] * _window[i];
 
-                _realFFTPlan->apply(windowedFrame, fftOutput);
+                _realFFTPlan.apply(windowedFrame, fftOutput);
 
                 // compute power spectrum
                 std::transform(fftOutput.cbegin(), fftOutput.cend(), powerSpectrum.begin(), [powerScale](const std::complex<FloatType>& bin) {
@@ -128,10 +165,64 @@ namespace lms::audio::features
                 {
                     const float melEnergy{ _melFilterBank.computeEnergy(m, powerSpectrum) };
                     const float logMelEnergy{ std::logf(melEnergy + 1e-10F) }; // add small constant to avoid log(0)
+                    logMel[m] = logMelEnergy;
                     logMelEnergyAccumulators[m].add(logMelEnergy);
 
                     if (const std::optional<FloatType> melEnergyDelta{ logMelEnergyDeltaCalculators[m].add(logMelEnergy) })
+                    {
                         logMelEnergyDeltaAccumulators[m].add(*melEnergyDelta);
+                        logMelEnergyDeltaMeanAbsAccumulators[m].add(std::abs(*melEnergyDelta));
+                    }
+                }
+
+                const auto mfccValues{ _mfccCalculator.apply(logMel) };
+                for (std::size_t k{}; k < AudioFeatures::mfccCount; ++k)
+                {
+                    mfccAccumulators[k].add(mfccValues[k]);
+
+                    if (const std::optional<FloatType> mfccDelta{ mfccDeltaCalculators[k].add(mfccValues[k]) })
+                    {
+                        mfccDeltaAccumulators[k].add(*mfccDelta);
+                        mfccDeltaMeanAbsAccumulators[k].add(std::abs(*mfccDelta));
+                    }
+                }
+
+                {
+                    const auto spectralFeatures{ spectralFeaturesCalculator.apply(powerSpectrum, binWidthHz) };
+
+                    spectralCentroidAccumulator.add(spectralFeatures.spectralCentroid);
+                    if (const std::optional<FloatType> centroidDelta{ spectralCentroidDeltaCalculator.add(spectralFeatures.spectralCentroid) })
+                        spectralCentroidDeltaAccumulator.add(std::abs(*centroidDelta));
+
+                    spectralRolloffAccumulator.add(spectralFeatures.spectralRolloff);
+                    if (const std::optional<FloatType> rolloffDelta{ spectralRolloffDeltaCalculator.add(spectralFeatures.spectralRolloff) })
+                        spectralRolloffDeltaAccumulator.add(std::abs(*rolloffDelta));
+
+                    spectralFluxAccumulator.add(spectralFeatures.spectralFlux);
+                    if (const std::optional<FloatType> fluxDelta{ spectralFluxDeltaCalculator.add(spectralFeatures.spectralFlux) })
+                        spectralFluxDeltaAccumulator.add(std::abs(*fluxDelta));
+                }
+
+                // Chroma
+                {
+                    const auto normalizedChroma{ _chromaCalculator.apply(powerSpectrum) };
+
+                    for (std::size_t c{}; c < AudioFeatures::chromaCount; ++c)
+                    {
+                        chromaAccumulators[c].add(normalizedChroma[c]);
+
+                        if (const auto d = chromaDeltaCalculators[c].add(normalizedChroma[c]))
+                        {
+                            chromaDeltaAccumulators[c].add(*d);
+                            chromaDeltaMeanAbsAccumulators[c].add(std::abs(*d));
+                        }
+                    }
+                }
+
+                // Zero crossing rate
+                {
+                    const FloatType zcr{ zeroCrossingRateCalculator.apply(samples) };
+                    zeroCrossingRateAccumulator.add(zcr);
                 }
 
                 res.metadata.frameCount++;
@@ -150,9 +241,40 @@ namespace lms::audio::features
         {
             res.features.logMelEnergyMean[m] = logMelEnergyAccumulators[m].getMean();
             res.features.logMelEnergyStdDev[m] = logMelEnergyAccumulators[m].getSampleStdDev();
-            res.features.logMelEnergySkewness[m] = logMelEnergyAccumulators[m].getSampleSkewness();
             res.features.logMelEnergyDeltaStdDev[m] = logMelEnergyDeltaAccumulators[m].getSampleStdDev();
+            res.features.logMelEnergyDeltaMeanAbs[m] = logMelEnergyDeltaMeanAbsAccumulators[m].getMean();
         }
+
+        for (std::size_t k{}; k < AudioFeatures::mfccCount; ++k)
+        {
+            res.features.mfccMean[k] = mfccAccumulators[k].getMean();
+            res.features.mfccStdDev[k] = mfccAccumulators[k].getSampleStdDev();
+            res.features.mfccDeltaStdDev[k] = mfccDeltaAccumulators[k].getSampleStdDev();
+            res.features.mfccDeltaMeanAbs[k] = mfccDeltaMeanAbsAccumulators[k].getMean();
+        }
+
+        res.features.spectralCentroidMean = spectralCentroidAccumulator.getMean();
+        res.features.spectralCentroidStdDev = spectralCentroidAccumulator.getSampleStdDev();
+        res.features.spectralCentroidDeltaMeanAbs = spectralCentroidDeltaAccumulator.getMean();
+        res.features.spectralCentroidDeltaStdDev = spectralCentroidDeltaAccumulator.getSampleStdDev();
+        res.features.spectralRolloffMean = spectralRolloffAccumulator.getMean();
+        res.features.spectralRolloffStdDev = spectralRolloffAccumulator.getSampleStdDev();
+        res.features.spectralRolloffDeltaMeanAbs = spectralRolloffDeltaAccumulator.getMean();
+        res.features.spectralRolloffDeltaStdDev = spectralRolloffDeltaAccumulator.getSampleStdDev();
+        res.features.spectralFluxMean = spectralFluxAccumulator.getMean();
+        res.features.spectralFluxStdDev = spectralFluxAccumulator.getSampleStdDev();
+        res.features.spectralFluxDeltaMeanAbs = spectralFluxDeltaAccumulator.getMean();
+
+        for (std::size_t c{}; c < AudioFeatures::chromaCount; ++c)
+        {
+            res.features.chromaMean[c] = chromaAccumulators[c].getMean();
+            res.features.chromaStdDev[c] = chromaAccumulators[c].getSampleStdDev();
+            res.features.chromaDeltaStdDev[c] = chromaDeltaAccumulators[c].getSampleStdDev();
+            res.features.chromaDeltaMeanAbs[c] = chromaDeltaMeanAbsAccumulators[c].getMean();
+        }
+
+        res.features.zeroCrossingRateMean = zeroCrossingRateAccumulator.getMean();
+        res.features.zeroCrossingRateStdDev = zeroCrossingRateAccumulator.getSampleStdDev();
 
         return res;
     }

@@ -19,16 +19,16 @@
 
 #pragma once
 
-#include "som/Network.hpp"
-#include "som/Vector.hpp"
+#include "math/Vector.hpp"
 
 #include "audio/AudioFeatures.hpp"
 
 namespace lms::recommendation
 {
-    inline constexpr std::size_t audioFeatureCount{ 4 * audio::AudioFeatures::melBandCount };
     using FloatType = audio::FeatureValue;
+    inline constexpr std::size_t audioFeatureCount{ 4 * audio::AudioFeatures::melBandCount + 4 * audio::AudioFeatures::mfccCount + 11 + 4 * audio::AudioFeatures::chromaCount + 2 };
+    inline constexpr std::size_t pcaDimCount{ 50 };
 
-    using AudioFeatureVector = som::Vector<audioFeatureCount, FloatType>;
-    using AudioSom = som::Network<audioFeatureCount, FloatType>;
+    using AudioFeatureVector = math::Vector<audioFeatureCount, FloatType>;
+    using ReducedFeatureVector = math::Vector<pcaDimCount, FloatType>;
 } // namespace lms::recommendation

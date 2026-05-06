@@ -21,9 +21,11 @@
 
 #include "audio/IAudioFeaturesExtractor.hpp"
 #include "audio/PcmTypes.hpp"
+#include "math/FFT.hpp"
 
-#include "IFFT.hpp"
+#include "ChromaCalculator.hpp"
 #include "MelFilterBank.hpp"
+#include "MfccCalculator.hpp"
 
 namespace lms::audio
 {
@@ -43,15 +45,18 @@ namespace lms::audio::features
         using FloatType = FeatureValue;
 
     private:
-        FeatureExtractionResult extractFeatures(const std::filesystem::path& audioFile) const override;
+        [[nodiscard]] FeatureExtractionResult extractFeatures(const std::filesystem::path& audioFile) const override;
 
         std::size_t readSamples(IPcmDecoder& pcmDecoder, std::span<FloatType> buffer) const;
 
         const PcmParameters _pcmParams;
-        const std::size_t _frameSize;
-        const std::vector<FloatType> _window;
+        static constexpr std::size_t _frameSize{ 1024 };
+        const std::array<FloatType, _frameSize> _window;
         const float _windowEnergy;
         const MelFilterBank _melFilterBank;
-        std::unique_ptr<IRealFFTPlan> _realFFTPlan;
+        using FFTPlan = math::FixedRealFFTPlan<_frameSize>;
+        const FFTPlan _realFFTPlan;
+        const MfccCalculator<AudioFeatures::melBandCount, AudioFeatures::mfccCount, float> _mfccCalculator;
+        const ChromaCalculator<FFTPlan::getOutputSize()> _chromaCalculator;
     };
 } // namespace lms::audio::features

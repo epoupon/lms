@@ -20,22 +20,22 @@
 #include "ScanStepExtractAudioFeatures.hpp"
 
 #include <deque>
+#include <optional>
 
-#include "audio/AudioFeatures.hpp"
-#include "audio/Exception.hpp"
 #include "core/IJob.hpp"
 #include "core/IJobScheduler.hpp"
 #include "core/ILogger.hpp"
 
+#include "audio/AudioFeatures.hpp"
+#include "audio/Exception.hpp"
 #include "audio/IAudioFeaturesExtractor.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Track.hpp"
+#include "database/objects/TrackAudioFeatures.hpp"
 
 #include "JobQueue.hpp"
 #include "ScanContext.hpp"
-#include "database/objects/TrackAudioFeatures.hpp"
-#include <optional>
 
 namespace lms::scanner
 {
@@ -135,7 +135,7 @@ namespace lms::scanner
 
         void updateTrackAudioFeatures(ScanContext& context, db::Session& session, TrackAudioFeatureAssociationContainer& trackAudioFeatureAssociations, bool forceFullBatch)
         {
-            constexpr std::size_t writeBatchSize{ 20 };
+            constexpr std::size_t writeBatchSize{ 10 };
 
             while ((forceFullBatch && trackAudioFeatureAssociations.size() >= writeBatchSize) || (!forceFullBatch && trackAudioFeatureAssociations.empty()))
             {
@@ -146,7 +146,6 @@ namespace lms::scanner
                     updateTrackAudioFeatures(session, trackAudioFeatureAssociations.front());
                     trackAudioFeatureAssociations.pop_front();
 
-                    context.currentStepStats.processedElems += 1;
                     context.stats.featureExtractions += 1;
                 }
             }
@@ -193,12 +192,13 @@ namespace lms::scanner
                     addError<AudioFeaturesExtractError>(context, extractAudioFeaturesJob.getTrackInfo().trackPath, extractAudioFeaturesJob.getErrorMessage());
             }
 
+            context.currentStepStats.processedElems += jobs.size();
             updateTrackAudioFeatures(context, dbSession, trackAudioFeatureAssociations, true);
             _progressCallback(context.currentStepStats);
         } };
 
         {
-            JobQueue queue{ getJobScheduler(), 20, processResults, 10, 0.85F };
+            JobQueue queue{ getJobScheduler(), 50, processResults, 1, 0.85F };
 
             db::TrackId lastRetrievedTrackId;
             TrackInfo trackInfo;

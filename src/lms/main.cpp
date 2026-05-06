@@ -404,7 +404,7 @@ namespace lms
             const std::vector<std::string> wtServerArgs{ generateWtConfig(argv[0]) };
 
             std::vector<const char*> wtArgv(wtServerArgs.size());
-            for (std::size_t i = 0; i < wtServerArgs.size(); ++i)
+            for (std::size_t i{}; i < wtServerArgs.size(); ++i)
             {
                 std::cout << "ARG = " << wtServerArgs[i] << std::endl;
                 wtArgv[i] = wtServerArgs[i].c_str();

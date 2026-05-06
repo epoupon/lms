@@ -1,12 +1,13 @@
 include(GoogleTest)
 
 add_executable(test-audio
-	Audio.cpp
 	AudioFeatures.cpp
+	ChromaCalculator.cpp
 	DeltaCalculator.cpp
-	FFT.cpp
 	MelFilterBank.cpp
-	Window.cpp
+	MfccCalculator.cpp
+	SpectralFeatureCalculator.cpp
+	ZeroCrossingRateCalculator.cpp
 	)
 
 target_include_directories(test-audio PRIVATE
@@ -15,7 +16,13 @@ target_include_directories(test-audio PRIVATE
 
 target_link_libraries(test-audio PRIVATE
 	lmsaudio
+	lmsmath
 	GTest::GTest
+	GTest::gtest_main
+	)
+
+target_compile_options(test-audio PRIVATE
+	$<$<NOT:$<CONFIG:Debug>>:-ffast-math>
 	)
 
 if (NOT CMAKE_CROSSCOMPILING)

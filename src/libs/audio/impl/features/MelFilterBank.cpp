@@ -102,10 +102,10 @@ namespace lms::audio::features
         }
 
         // 5. build filters
-        std::size_t binCount = nfft / 2 + 1;
+        const std::size_t binCount{ nfft / 2 + 1 };
         std::vector<MelFilterBank::Filter> filters{ filterCount };
 
-        for (std::size_t m = 0; m < filterCount; ++m)
+        for (std::size_t m{}; m < filterCount; ++m)
         {
             const std::size_t left{ bins[m] };
             const std::size_t center{ bins[m + 1] };

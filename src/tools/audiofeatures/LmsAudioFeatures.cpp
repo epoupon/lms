@@ -64,14 +64,7 @@ int main(int argc, char* argv[])
 
             const auto res{ extractor->extractFeatures(inputPath) };
             std::cout << "Processed " << res.metadata.pcmSampleCount << " PCM samples in " << res.metadata.frameCount << " frames (" << res.metadata.pcmSampleRate << " Hz), frame size = " << res.metadata.frameSize << " samples (" << res.metadata.frameHopSize << " hop size)" << std::endl;
-
-            for (std::size_t m{}; m < audio::AudioFeatures::melBandCount; ++m)
-            {
-                std::cout << "Mel filter " << m << std::endl;
-                std::cout << "\tmean = " << res.features.logMelEnergyMean[m] << ", stddev = " << res.features.logMelEnergyStdDev[m] << ", skewness = " << res.features.logMelEnergySkewness[m] << std::endl;
-
-                std::cout << "\tDelta. stddev = " << res.features.logMelEnergyDeltaStdDev[m] << std::endl;
-            }
+            std::cout << res.features;
         }
         catch (audio::Exception& e)
         {

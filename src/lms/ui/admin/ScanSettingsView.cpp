@@ -203,7 +203,7 @@ namespace lms::ui
                 _updatePeriodModel->add(Wt::WString::tr("Lms.Admin.Database.monthly"), db::ScanSettings::UpdatePeriod::Monthly);
 
                 _updateStartTimeModel = std::make_shared<ValueStringModel<Wt::WTime>>();
-                for (std::size_t i = 0; i < 24; ++i)
+                for (std::size_t i{}; i < 24; ++i)
                 {
                     Wt::WTime time{ static_cast<int>(i), 0 };
                     _updateStartTimeModel->add(time.toString(), time);

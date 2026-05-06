@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include <boost/crc.hpp> // for boost::crc_32_type
 
 namespace lms::core

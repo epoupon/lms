@@ -20,7 +20,7 @@ target_include_directories(lmsrecommendation PRIVATE
 
 target_link_libraries(lmsrecommendation PRIVATE
 	lmsaudio
-	lmssom
+	lmsmath
 	)
 
 target_link_libraries(lmsrecommendation PUBLIC

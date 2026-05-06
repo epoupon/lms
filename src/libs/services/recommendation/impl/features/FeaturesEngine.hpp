@@ -19,11 +19,15 @@
 
 #pragma once
 
+#include <unordered_map>
+
 #include <boost/asio/io_context.hpp>
 
 #include "core/IOContextRunner.hpp"
 
 #include "database/Object.hpp"
+#include "database/objects/ArtistId.hpp"
+#include "database/objects/ReleaseId.hpp"
 #include "database/objects/TrackId.hpp"
 
 #include "FeaturesDefs.hpp"
@@ -55,14 +59,14 @@ namespace lms::recommendation
         ArtistContainer getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
 
         void abort();
-        void train();
+        void reload();
 
         void computeDatasetStats();
+        void computeReducedFeatures();
         static void getAudioFeatureVector(const db::ObjectPtr<db::TrackAudioFeatures>& features, AudioFeatureVector& inputVector);
-        void getNormalizedAudioFeatureVector(const db::ObjectPtr<db::TrackAudioFeatures>& features, AudioFeatureVector& inputVector) const;
-        void trainSom();
-        void computeTrackMap();
-        float computeQuantizationError(); // for debugging purpose only (slow, uses the whole dataset)
+        void getReducedFeatureVector(const db::ObjectPtr<db::TrackAudioFeatures>& features, ReducedFeatureVector& output) const;
+        void projectToReduced(const AudioFeatureVector& centered, ReducedFeatureVector& output) const;
+        void computeReleaseHitRank(); // for debugging purpose only
 
         db::IDb& _db;
         bool _abortRequested{};
@@ -72,8 +76,16 @@ namespace lms::recommendation
         // Stats, used to normalize input data
         std::size_t _trackCount{};
         AudioFeatureVector _featureMeans;
-        AudioFeatureVector _featureStdDevs;
-        AudioSom _som;
-        som::Matrix<std::vector<db::TrackId>> _neuronTrackMap;
+
+        // PCA basis: top pcaDimCount eigenvectors (rows) and whitening scales
+        std::array<std::array<FloatType, audioFeatureCount>, pcaDimCount> _pcaBasis{};
+        std::array<FloatType, pcaDimCount> _pcaScale{};
+        bool _pcaReady{};
+
+        // In-memory cache of reduced feature vectors
+        std::unordered_map<db::TrackId, ReducedFeatureVector> _reducedFeatures;
+        std::unordered_map<db::ReleaseId, ReducedFeatureVector> _releaseCentroids;
+        std::unordered_map<db::ArtistId, ReducedFeatureVector> _artistCentroids;
+        std::unordered_map<db::ArtistId, core::EnumSet<db::TrackArtistLinkType>> _artistLinkTypes;
     };
 } // namespace lms::recommendation

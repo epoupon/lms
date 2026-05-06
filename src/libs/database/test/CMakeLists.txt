@@ -36,6 +36,7 @@ add_executable(test-database
 target_link_libraries(test-database PRIVATE
 	lmsdatabase
 	GTest::GTest
+	GTest::gtest_main
 	)
 
 if (NOT CMAKE_CROSSCOMPILING)

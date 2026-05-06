@@ -23,7 +23,7 @@
 
 namespace lms::audio::features::benchs
 {
-    void BM_DelataCalculator(benchmark::State& state)
+    void BM_DeltaCalculator(benchmark::State& state)
     {
         DeltaCalculator calc{ static_cast<std::size_t>(state.range(0)) };
 
@@ -38,5 +38,5 @@ namespace lms::audio::features::benchs
         state.SetItemsProcessed(state.iterations());
     }
 
-    BENCHMARK(BM_DelataCalculator)->Arg(5)->Arg(9)->Arg(15)->Arg(31);
+    BENCHMARK(BM_DeltaCalculator)->Arg(5)->Arg(9)->Arg(15)->Arg(31);
 } // namespace lms::audio::features::benchs

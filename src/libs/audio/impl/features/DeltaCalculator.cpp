@@ -22,6 +22,7 @@
 #include <cassert>
 
 #include "audio/Exception.hpp"
+
 namespace lms::audio::features
 {
     namespace detail

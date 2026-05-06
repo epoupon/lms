@@ -285,7 +285,7 @@ namespace lms::audio::ffmpeg
 
     bool AudioFile::hasAttachedPictures() const
     {
-        for (std::size_t i = 0; i < _context->nb_streams; ++i)
+        for (std::size_t i{}; i < _context->nb_streams; ++i)
         {
             if (_context->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)
                 return true;
@@ -304,7 +304,7 @@ namespace lms::audio::ffmpeg
             { AV_CODEC_ID_PPM, "image/x-portable-pixmap" },
         };
 
-        for (std::size_t i = 0; i < _context->nb_streams; ++i)
+        for (std::size_t i{}; i < _context->nb_streams; ++i)
         {
             AVStream* avstream = _context->streams[i];
 

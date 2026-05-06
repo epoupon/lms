@@ -20,6 +20,7 @@
 #pragma once
 
 #include <array>
+#include <iosfwd>
 #include <span>
 
 namespace lms::audio
@@ -28,17 +29,48 @@ namespace lms::audio
 
     struct AudioFeatures
     {
-        static inline constexpr size_t melBandCount{ 20 };
         // log mel energies
+        static inline constexpr size_t melBandCount{ 40 };
         std::array<FeatureValue, melBandCount> logMelEnergyMean;
         std::array<FeatureValue, melBandCount> logMelEnergyStdDev;
-        std::array<FeatureValue, melBandCount> logMelEnergySkewness;
-
-        // delta log mel energies
         std::array<FeatureValue, melBandCount> logMelEnergyDeltaStdDev;
+        std::array<FeatureValue, melBandCount> logMelEnergyDeltaMeanAbs;
+
+        // MFCCs
+        static inline constexpr size_t mfccCount{ 13 };
+        std::array<FeatureValue, mfccCount> mfccMean;
+        std::array<FeatureValue, mfccCount> mfccStdDev;
+        std::array<FeatureValue, mfccCount> mfccDeltaStdDev;
+        std::array<FeatureValue, mfccCount> mfccDeltaMeanAbs;
+
+        // Spectral features
+        FeatureValue spectralCentroidMean;
+        FeatureValue spectralCentroidStdDev;
+        FeatureValue spectralCentroidDeltaMeanAbs;
+        FeatureValue spectralCentroidDeltaStdDev;
+        FeatureValue spectralRolloffMean;
+        FeatureValue spectralRolloffStdDev;
+        FeatureValue spectralRolloffDeltaMeanAbs;
+        FeatureValue spectralRolloffDeltaStdDev;
+        FeatureValue spectralFluxMean;
+        FeatureValue spectralFluxStdDev;
+        FeatureValue spectralFluxDeltaMeanAbs;
+
+        // Chroma (pitch class / harmonic content)
+        static inline constexpr size_t chromaCount{ 12 };
+        std::array<FeatureValue, chromaCount> chromaMean;
+        std::array<FeatureValue, chromaCount> chromaStdDev;
+        std::array<FeatureValue, chromaCount> chromaDeltaStdDev;
+        std::array<FeatureValue, chromaCount> chromaDeltaMeanAbs;
+
+        // Zero crossing rate
+        FeatureValue zeroCrossingRateMean;
+        FeatureValue zeroCrossingRateStdDev;
     };
 
     // Buffer size must be at least sizeof(AudioFeatures)
     void audioFeaturesToBlob(const AudioFeatures& features, std::span<std::byte> buffer);
     void audioFeaturesFromBlob(std::span<const std::byte> buffer, AudioFeatures& features);
+
+    std::ostream& operator<<(std::ostream& os, const AudioFeatures& features);
 } // namespace lms::audio

@@ -1,7 +1,6 @@
 add_executable(bench-audio
 	Audio.cpp
 	DeltaCalculator.cpp
-	FFT.cpp
 	)
 
 target_include_directories(bench-audio PRIVATE

@@ -1,6 +1,5 @@
 
 add_executable(bench-core
-	math/EuclideanDistance.cpp
 	Core.cpp
 	TraceLoggerBench.cpp
 	)
