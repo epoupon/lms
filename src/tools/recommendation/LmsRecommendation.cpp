@@ -17,16 +17,19 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
-#include <stdlib.h>
+#include <sstream>
 
 #include <boost/program_options.hpp>
 
 #include "core/IConfig.hpp"
 #include "core/ILogger.hpp"
 #include "core/Service.hpp"
+#include "core/String.hpp"
 #include "core/SystemPaths.hpp"
+#include "core/UUID.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/Types.hpp"
@@ -38,85 +41,125 @@
 
 namespace lms
 {
-    using namespace db;
-
-    void dumpTracksRecommendation(Session session, recommendation::IRecommendationService& recommendationService, unsigned maxSimilarityCount)
+    void dumpTracksRecommendation(db::Session session, recommendation::IRecommendationService& recommendationService, std::string_view name, unsigned maxSimilarityCount)
     {
-        const RangeResults<TrackId> trackIds{ [&] {
-            auto transaction{ session.createReadTransaction() };
-            return Track::findIds(session, Track::FindParameters{});
-        }() };
+        std::vector<db::TrackId> trackIds;
 
-        std::cout << "*** Tracks (" << trackIds.results.size() << ") ***" << std::endl;
-        for (const TrackId trackId : trackIds.results)
+        if (const auto mbid{ core::UUID::fromString(name) })
         {
-            auto trackToString = [&](const TrackId trackId) {
-                std::string res;
+            auto transaction{ session.createReadTransaction() };
+            for (const auto& track : db::Track::findByMBID(session, *mbid))
+                trackIds.push_back(track->getId());
+        }
+        else
+        {
+            db::Track::FindParameters params;
+            params.setKeywords(core::stringUtils::splitString(name, ' '));
+
+            auto transaction{ session.createReadTransaction() };
+            trackIds = db::Track::findIds(session, params).results;
+        }
+
+        std::cout << "*** Tracks (" << trackIds.size() << ") ***" << std::endl;
+        for (const db::TrackId trackId : trackIds)
+        {
+            auto trackToString = [&](const db::TrackId trackId) {
                 auto transaction{ session.createReadTransaction() };
-                const Track::pointer track{ Track::find(session, trackId) };
+                const db::Track::pointer track{ db::Track::find(session, trackId) };
 
-                res += track->getName();
+                std::ostringstream oss;
+                oss << "'" << track->getName() << "'";
                 if (track->getRelease())
-                    res += " [" + std::string{ track->getRelease()->getName() } + "]";
-                for (const auto& artist : track->getArtists({ TrackArtistLinkType::Artist }))
-                    res += " - " + artist->getName();
+                    oss << " [" << track->getRelease()->getName() << "]";
+                if (std::string_view artistDisplayName{ track->getArtistDisplayName() }; !artistDisplayName.empty())
+                    oss << " by '" << artistDisplayName << "'";
                 for (const auto& cluster : track->getClusters())
-                    res += " {" + std::string{ cluster->getType()->getName() } + "-" + std::string{ cluster->getName() } + "}";
+                    oss << " {" << cluster->getType()->getName() << "-" << cluster->getName() << "}";
+                oss << " - '" + track->getAbsoluteFilePath().string() << "'";
 
-                return res;
+                return oss.str();
             };
 
-            std::cout << "Processing track '" << trackToString(trackId) << std::endl;
-            for (TrackId similarTrackId : recommendationService.findSimilarTracks({ trackId }, maxSimilarityCount))
-                std::cout << "\t- Similar track '" << trackToString(similarTrackId) << std::endl;
+            std::cout << "Processing track " << trackToString(trackId) << std::endl;
+            for (db::TrackId similarTrackId : recommendationService.findSimilarTracks({ trackId }, maxSimilarityCount))
+                std::cout << "\t- Similar track " << trackToString(similarTrackId) << std::endl;
         }
     }
 
-    void dumpReleasesRecommendation(Session session, recommendation::IRecommendationService& recommendationService, unsigned maxSimilarityCount)
+    void dumpReleasesRecommendation(db::Session session, recommendation::IRecommendationService& recommendationService, std::string_view name, unsigned maxSimilarityCount)
     {
-        const RangeResults<ReleaseId> releaseIds{ std::invoke([&] {
+        std::vector<db::ReleaseId> releaseIds;
+
+        if (const auto mbid{ core::UUID::fromString(name) })
+        {
             auto transaction{ session.createReadTransaction() };
-            return Release::findIds(session, Release::FindParameters{});
-        }) };
+            if (const auto release{ db::Release::find(session, *mbid) })
+                releaseIds.push_back(release->getId());
+        }
+        else
+        {
+            db::Release::FindParameters params;
+            params.setKeywords(core::stringUtils::splitString(name, ' '));
+
+            auto transaction{ session.createReadTransaction() };
+            releaseIds = db::Release::findIds(session, params).results;
+        }
 
         std::cout << "*** Releases ***" << std::endl;
-        for (const ReleaseId releaseId : releaseIds.results)
+        for (const db::ReleaseId releaseId : releaseIds)
         {
-            auto releaseToString = [&](ReleaseId releaseId) -> std::string {
+            auto releaseToString = [&](db::ReleaseId releaseId) -> std::string {
                 auto transaction{ session.createReadTransaction() };
 
-                Release::pointer release{ Release::find(session, releaseId) };
-                return std::string{ release->getName() };
+                const db::Release::pointer release{ db::Release::find(session, releaseId) };
+
+                std::ostringstream oss;
+
+                oss << "'" << release->getName() << "'";
+                if (std::string_view artistDisplayName{ release->getArtistDisplayName() }; !artistDisplayName.empty())
+                    oss << " by '" << artistDisplayName << "'";
+
+                return oss.str();
             };
 
             std::cout << "Processing release '" << releaseToString(releaseId) << "'" << std::endl;
-            for (const ReleaseId similarReleaseId : recommendationService.getSimilarReleases(releaseId, maxSimilarityCount))
-                std::cout << "\t- Similar release '" << releaseToString(similarReleaseId) << "'" << std::endl;
+            for (const db::ReleaseId similarReleaseId : recommendationService.getSimilarReleases(releaseId, maxSimilarityCount))
+                std::cout << "\t- Similar release " << releaseToString(similarReleaseId) << std::endl;
         }
     }
 
-    void dumpArtistsRecommendation(Session session, recommendation::IRecommendationService& recommendationService, unsigned maxSimilarityCount)
+    void dumpArtistsRecommendation(db::Session session, recommendation::IRecommendationService& recommendationService, std::string_view name, unsigned maxSimilarityCount)
     {
-        const RangeResults<ArtistId> artistIds = std::invoke([&]() {
+        std::vector<db::ArtistId> artistIds;
+
+        if (const auto mbid{ core::UUID::fromString(name) })
+        {
             auto transaction{ session.createReadTransaction() };
-            return Artist::findIds(session, Artist::FindParameters{});
-        });
+            if (const auto artist{ db::Artist::find(session, *mbid) })
+                artistIds.push_back(artist->getId());
+        }
+        else
+        {
+            db::Artist::FindParameters params;
+            params.setKeywords(core::stringUtils::splitString(name, ' '));
+
+            auto transaction{ session.createReadTransaction() };
+            artistIds = db::Artist::findIds(session, params).results;
+        }
 
         std::cout << "*** Artists ***" << std::endl;
-        for (ArtistId artistId : artistIds.results)
+        for (db::ArtistId artistId : artistIds)
         {
-            auto artistToString = [&](ArtistId artistId) {
+            auto artistToString = [&](db::ArtistId artistId) {
                 auto transaction{ session.createReadTransaction() };
 
-                Artist::pointer artist{ Artist::find(session, artistId) };
+                db::Artist::pointer artist{ db::Artist::find(session, artistId) };
                 return artist->getName();
             };
 
             std::cout << "Processing artist '" << artistToString(artistId) << "'" << std::endl;
-            for (ArtistId similarArtistId : recommendationService.getSimilarArtists(artistId, { TrackArtistLinkType::Artist }, maxSimilarityCount))
-            {
+            for (db::ArtistId similarArtistId : recommendationService.getSimilarArtists(artistId, { db::TrackArtistLinkType::Artist }, maxSimilarityCount))
                 std::cout << "\t- Similar artist '" << artistToString(similarArtistId) << "'" << std::endl;
-            }
         }
     }
 } // namespace lms
@@ -132,7 +175,15 @@ int main(int argc, char* argv[])
         core::Service<core::logging::ILogger> logger{ core::logging::createLogger(core::logging::Severity::DEBUG) };
 
         po::options_description desc{ "Allowed options" };
-        desc.add_options()("help,h", "print usage message")("conf,c", po::value<std::string>()->default_value(core::sysconfDirectory / "lms.conf"), "LMS config file")("artists,a", "Display recommendation for artists")("releases,r", "Display recommendation for releases")("tracks,t", "Display recommendation for tracks")("max,m", po::value<unsigned>()->default_value(3), "Max similarity result count");
+        // clang-format off
+        desc.add_options()
+            ("help,h", "print usage message")
+            ("conf,c", po::value<std::string>()->default_value(core::sysconfDirectory / "lms.conf"), "LMS config file")
+            ("artist,a", po::value<std::string>(), "Display recommendation for a given artist (mbid or name search pattern)")
+            ("release,r", po::value<std::string>(), "Display recommendation for releases (mbid or name search pattern)")
+            ("track,t", po::value<std::string>(), "Display recommendation for tracks (track mbid or name search pattern)")
+            ("max,m", po::value<unsigned>()->default_value(10), "Max similarity result count");
+        // clang-format on
 
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -146,20 +197,23 @@ int main(int argc, char* argv[])
         core::Service<core::IConfig> config{ core::createConfig(vm["conf"].as<std::string>()) };
 
         auto db{ db::createDb(config->getPath("working-dir", "/var/lms") / "lms.db") };
-        Session session{ *db };
+        db::Session session{ *db };
 
         const auto recommendationService{ recommendation::createRecommendationService(*db) };
 
         unsigned maxSimilarityCount{ vm["max"].as<unsigned>() };
 
-        if (vm.count("tracks"))
-            dumpTracksRecommendation(*db, *recommendationService, maxSimilarityCount);
+        // TODO change this
+        std::this_thread::sleep_for(std::chrono::seconds{ 5 });
 
-        if (vm.count("releases"))
-            dumpReleasesRecommendation(*db, *recommendationService, maxSimilarityCount);
+        if (vm.count("track"))
+            dumpTracksRecommendation(*db, *recommendationService, vm["track"].as<std::string>(), maxSimilarityCount);
 
-        if (vm.count("artists"))
-            dumpArtistsRecommendation(*db, *recommendationService, maxSimilarityCount);
+        if (vm.count("release"))
+            dumpReleasesRecommendation(*db, *recommendationService, vm["release"].as<std::string>(), maxSimilarityCount);
+
+        if (vm.count("artist"))
+            dumpArtistsRecommendation(*db, *recommendationService, vm["artist"].as<std::string>(), maxSimilarityCount);
     }
     catch (std::exception& e)
     {

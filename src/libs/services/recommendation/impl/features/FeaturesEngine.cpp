@@ -31,13 +31,14 @@
 #include "audio/AudioFeatures.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
+#include "database/objects/Artist.hpp"
 #include "database/objects/Release.hpp"
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/TrackAudioFeatures.hpp"
-#include "math/CentroidCalculator.hpp"
 #include "math/CovarianceCalculator.hpp"
+#include "math/MedoidCalculator.hpp"
 #include "math/PrincipalComponents.hpp"
 #include "math/StatsAccumulator.hpp"
 
@@ -133,26 +134,26 @@ namespace lms::recommendation
         if (maxCount == 0 || tracksId.empty() || !_pcaReady)
             return res;
 
-        math::CentroidCalculator<ReducedFeatureVector> centroidCalculator;
+        math::MedoidCalculator<ReducedFeatureVector> medoidCalculator;
         for (const db::TrackId trackId : tracksId)
         {
-            const auto it{ _reducedFeatures.find(trackId) };
-            if (it == _reducedFeatures.cend())
+            const auto it{ _trackFeatures.find(trackId) };
+            if (it == _trackFeatures.cend())
                 continue;
 
-            centroidCalculator.add(it->second);
+            medoidCalculator.add(it->second);
         }
 
-        if (centroidCalculator.empty())
+        if (medoidCalculator.empty())
             return res;
 
-        const ReducedFeatureVector queryVector{ centroidCalculator.finalizeNormalized() };
+        const ReducedFeatureVector queryVector{ medoidCalculator.finalize() };
 
         using Distance = float;
         std::vector<std::pair<db::TrackId, Distance>> rankedTracks;
-        rankedTracks.reserve(_reducedFeatures.size());
+        rankedTracks.reserve(_trackFeatures.size());
 
-        for (const auto& [trackId, features] : _reducedFeatures)
+        for (const auto& [trackId, features] : _trackFeatures)
         {
             if (std::find(std::cbegin(tracksId), std::cend(tracksId), trackId) != std::cend(tracksId))
                 continue;
@@ -180,22 +181,22 @@ namespace lms::recommendation
         if (maxCount == 0 || !_pcaReady)
             return res;
 
-        const auto it{ _releaseCentroids.find(releaseId) };
-        if (it == _releaseCentroids.cend())
+        const auto it{ _releaseFeatureMedoids.find(releaseId) };
+        if (it == _releaseFeatureMedoids.cend())
             return res;
 
         const ReducedFeatureVector& queryVector{ it->second };
 
         using Distance = float;
         std::vector<std::pair<db::ReleaseId, Distance>> rankedReleases;
-        rankedReleases.reserve(_releaseCentroids.size());
+        rankedReleases.reserve(_releaseFeatureMedoids.size());
 
-        for (const auto& [candidateId, centroid] : _releaseCentroids)
+        for (const auto& [candidateId, medoid] : _releaseFeatureMedoids)
         {
             if (candidateId == releaseId)
                 continue;
 
-            rankedReleases.emplace_back(candidateId, queryVector.computeEuclideanSquaredDistance(centroid));
+            rankedReleases.emplace_back(candidateId, queryVector.computeEuclideanSquaredDistance(medoid));
         }
 
         const std::size_t resultCount{ std::min(maxCount, rankedReleases.size()) };
@@ -218,29 +219,22 @@ namespace lms::recommendation
         if (maxCount == 0 || !_pcaReady)
             return res;
 
-        const auto it{ _artistCentroids.find(artistId) };
-        if (it == _artistCentroids.cend())
+        const auto it{ _artistFeatureMedoids.find(artistId) };
+        if (it == _artistFeatureMedoids.cend())
             return res;
 
         const ReducedFeatureVector& queryVector{ it->second };
 
         using Distance = float;
         std::vector<std::pair<db::ArtistId, Distance>> rankedArtists;
-        rankedArtists.reserve(_artistCentroids.size());
+        rankedArtists.reserve(_artistFeatureMedoids.size());
 
-        for (const auto& [candidateId, centroid] : _artistCentroids)
+        for (const auto& [candidateId, medoid] : _artistFeatureMedoids)
         {
             if (candidateId == artistId)
                 continue;
 
-            if (!linkTypes.empty())
-            {
-                const auto linkIt{ _artistLinkTypes.find(candidateId) };
-                if (linkIt == _artistLinkTypes.cend() || !(linkIt->second.getBitfield() & linkTypes.getBitfield()))
-                    continue;
-            }
-
-            rankedArtists.emplace_back(candidateId, queryVector.computeEuclideanSquaredDistance(centroid));
+            rankedArtists.emplace_back(candidateId, queryVector.computeEuclideanSquaredDistance(medoid));
         }
 
         const std::size_t resultCount{ std::min(maxCount, rankedArtists.size()) };
@@ -269,6 +263,8 @@ namespace lms::recommendation
         computeDatasetStats();
         computeReducedFeatures();
         LMS_LOG(RECOMMENDATION, INFO, "Loading complete!");
+
+        computeReleaseHitRank();
     }
 
     void FeaturesEngine::computeDatasetStats()
@@ -365,7 +361,7 @@ namespace lms::recommendation
             inputVector[i] -= _featureMeans[i];
 
         projectToReduced(inputVector, output);
-        output.normalizeL2();
+        output.normalizeL2(); // TODO further test without L2 normalization
     }
 
     void FeaturesEngine::projectToReduced(const AudioFeatureVector& centered, ReducedFeatureVector& output) const
@@ -380,9 +376,9 @@ namespace lms::recommendation
     {
         LMS_SCOPED_TRACE_DETAILED("FeaturesEngine", "ComputeReducedFeatures");
 
-        LMS_LOG(RECOMMENDATION, DEBUG, "Computing " << pcaDimCount << " reduced dimensions from " << audioFeatureCount << " audio features...");
+        LMS_LOG(RECOMMENDATION, INFO, "Computing reduced features... Reducing from " << audioFeatureCount << " to " << pcaDimCount << " dimensions");
 
-        _reducedFeatures.clear();
+        _trackFeatures.clear();
 
         db::Session& session{ _db.getTLSSession() };
         auto transaction{ session.createReadTransaction() };
@@ -390,60 +386,67 @@ namespace lms::recommendation
         ReducedFeatureVector reducedVector;
         db::TrackAudioFeatures::find(session, [&](const db::TrackAudioFeatures::pointer& features) {
             getReducedFeatureVector(features, reducedVector);
-            _reducedFeatures.emplace(features->getTrackId(), reducedVector);
+            _trackFeatures.emplace(features->getTrackId(), reducedVector);
         });
 
-        LMS_LOG(RECOMMENDATION, DEBUG, "Cached " << _reducedFeatures.size() << " reduced feature vectors in memory");
+        // Compute release medoids and artist medoids
+        _releaseFeatureMedoids.clear();
+        _artistFeatureMedoids.clear();
 
-        // Compute release centroids and artist centroids
-        _releaseCentroids.clear();
-        _artistCentroids.clear();
-        _artistLinkTypes.clear();
-        std::unordered_map<db::ReleaseId, math::CentroidCalculator<ReducedFeatureVector>> releaseCentroidCalculators;
-        std::unordered_map<db::ArtistId, math::CentroidCalculator<ReducedFeatureVector>> artistCentroidCalculators;
+        math::MedoidCalculator<ReducedFeatureVector> medoidCalculator;
 
-        for (const auto& [trackId, reducedVec] : _reducedFeatures)
-        {
-            const db::Track::pointer track{ db::Track::find(session, trackId) };
-            if (!track)
-                continue;
+        db::Release::find(session, db::Release::FindParameters{}, [&](const db::Release::pointer& release) {
+            medoidCalculator.clear();
 
-            const db::ReleaseId relId{ track->getReleaseId() };
-            if (relId.isValid())
+            db::Track::FindParameters params;
+            params.setRelease(release->getId());
+
+            const auto trackIds{ db::Track::findIds(session, params) };
+            for (const db::TrackId trackId : trackIds.results)
             {
-                releaseCentroidCalculators[relId].add(reducedVec);
+                const auto itTrackFeatures{ _trackFeatures.find(trackId) };
+                if (itTrackFeatures != std::cend(_trackFeatures))
+                    medoidCalculator.add(itTrackFeatures->second);
+            }
 
-                // Release-level artist links (considered as Artist link type)
-                const db::Release::pointer release{ db::Release::find(session, relId) };
-                if (release)
+            if (!medoidCalculator.empty())
+                _releaseFeatureMedoids.try_emplace(release->getId(), medoidCalculator.finalize());
+        });
+
+        db::Artist::find(session, db::Artist::FindParameters{}, [&](const db::Artist::pointer& artist) {
+            medoidCalculator.clear();
+
+            {
+                db::Track::FindParameters params;
+                params.setArtist(artist->getId(), { db::TrackArtistLinkType::Artist });
+
+                const auto trackIds{ db::Track::findIds(session, params) };
+                for (const db::TrackId trackId : trackIds.results)
                 {
-                    for (const auto& link : release->getArtistLinks())
-                    {
-                        const db::ArtistId artistId{ link->getArtistId() };
-                        artistCentroidCalculators[artistId].add(reducedVec);
-                        _artistLinkTypes[artistId].insert(db::TrackArtistLinkType::Artist);
-                    }
+                    const auto itTrackFeatures{ _trackFeatures.find(trackId) };
+                    if (itTrackFeatures != std::cend(_trackFeatures))
+                        medoidCalculator.add(itTrackFeatures->second);
                 }
             }
 
-            // Track-level artist links
-            for (const auto& link : track->getArtistLinks())
             {
-                const db::ArtistId artistId{ link->getArtistId() };
-                artistCentroidCalculators[artistId].add(reducedVec);
-                _artistLinkTypes[artistId].insert(link->getType());
+                db::Release::FindParameters params;
+                params.setArtist(artist->getId());
+
+                const auto releaseIds{ db::Release::findIds(session, params) };
+                for (const db::ReleaseId releaseId : releaseIds.results)
+                {
+                    const auto itReleaseFeatures{ _releaseFeatureMedoids.find(releaseId) };
+                    if (itReleaseFeatures != std::cend(_releaseFeatureMedoids))
+                        medoidCalculator.add(itReleaseFeatures->second);
+                }
             }
-        }
 
-        for (auto& [relId, calculator] : releaseCentroidCalculators)
-            _releaseCentroids[relId] = calculator.finalizeNormalized();
+            if (!medoidCalculator.empty())
+                _artistFeatureMedoids.try_emplace(artist->getId(), medoidCalculator.finalize());
+        });
 
-        for (auto& [artistId, calculator] : artistCentroidCalculators)
-            _artistCentroids[artistId] = calculator.finalizeNormalized();
-
-        LMS_LOG(RECOMMENDATION, DEBUG, "Computed " << _releaseCentroids.size() << " release centroids");
-        LMS_LOG(RECOMMENDATION, DEBUG, "Computed " << _artistCentroids.size() << " artist centroids");
-        LMS_LOG(RECOMMENDATION, DEBUG, "Computing reduced features DONE");
+        LMS_LOG(RECOMMENDATION, INFO, "Computed reduced features: " << _trackFeatures.size() << " tracks, " << _releaseFeatureMedoids.size() << " releases, " << _artistFeatureMedoids.size() << " artists");
     }
 
     void FeaturesEngine::computeReleaseHitRank()
@@ -462,7 +465,7 @@ namespace lms::recommendation
         };
         std::unordered_map<db::TrackId, TrackDesc> trackDescs;
 
-        for (const auto& [trackId, features] : _reducedFeatures)
+        for (const auto& [trackId, features] : _trackFeatures)
         {
             const db::Track::pointer track{ db::Track::find(session, trackId) };
             if (!track)

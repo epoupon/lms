@@ -6,6 +6,7 @@ add_executable(test-math
 	Entropy.cpp
 	EuclideanDistance.cpp
 	FFT.cpp
+	MedoidCalculator.cpp
 	PrincipalComponents.cpp
 	SquareMatrix.cpp
 	StatsAccumulator.cpp

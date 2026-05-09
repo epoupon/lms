@@ -83,9 +83,9 @@ namespace lms::recommendation
         bool _pcaReady{};
 
         // In-memory cache of reduced feature vectors
-        std::unordered_map<db::TrackId, ReducedFeatureVector> _reducedFeatures;
-        std::unordered_map<db::ReleaseId, ReducedFeatureVector> _releaseCentroids;
-        std::unordered_map<db::ArtistId, ReducedFeatureVector> _artistCentroids;
-        std::unordered_map<db::ArtistId, core::EnumSet<db::TrackArtistLinkType>> _artistLinkTypes;
+        // TODO switch to flat_map for these maps
+        std::unordered_map<db::TrackId, ReducedFeatureVector> _trackFeatures;
+        std::unordered_map<db::ReleaseId, ReducedFeatureVector> _releaseFeatureMedoids;
+        std::unordered_map<db::ArtistId, ReducedFeatureVector> _artistFeatureMedoids;
     };
 } // namespace lms::recommendation

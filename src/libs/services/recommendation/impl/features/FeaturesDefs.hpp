@@ -27,7 +27,7 @@ namespace lms::recommendation
 {
     using FloatType = audio::FeatureValue;
     inline constexpr std::size_t audioFeatureCount{ 4 * audio::AudioFeatures::melBandCount + 4 * audio::AudioFeatures::mfccCount + 11 + 4 * audio::AudioFeatures::chromaCount + 2 };
-    inline constexpr std::size_t pcaDimCount{ 50 };
+    inline constexpr std::size_t pcaDimCount{ 80 };
 
     using AudioFeatureVector = math::Vector<audioFeatureCount, FloatType>;
     using ReducedFeatureVector = math::Vector<pcaDimCount, FloatType>;
