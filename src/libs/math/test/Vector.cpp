@@ -210,32 +210,6 @@ namespace lms::math::vectorTests
         EXPECT_FLOAT_EQ(v[2], tiny);
     }
 
-    TEST(Vector, euclideanSquaredDistance)
-    {
-        Vector<3, float> a{ 0.0F, 0.0F, 0.0F };
-        Vector<3, float> b{ 3.0F, 4.0F, 0.0F };
-
-        EXPECT_FLOAT_EQ(a.computeEuclideanSquaredDistance(b), 25.0F);
-    }
-
-    TEST(Vector, euclideanSquaredDistanceSame)
-    {
-        Vector<3, float> a{ 1.0F, 2.0F, 3.0F };
-        Vector<3, float> b{ 1.0F, 2.0F, 3.0F };
-
-        EXPECT_FLOAT_EQ(a.computeEuclideanSquaredDistance(b), 0.0F);
-    }
-
-    TEST(Vector, euclideanSquaredDistanceWithWeights)
-    {
-        Vector<3, float> a{ 1.0F, 2.0F, 3.0F };
-        Vector<3, float> b{ 2.0F, 3.0F, 4.0F };
-        Vector<3, float> weights{ 1.0F, 2.0F, 3.0F };
-
-        // (1^2)*1 + (1^2)*2 + (1^2)*3 = 1 + 2 + 3 = 6
-        EXPECT_FLOAT_EQ(a.computeEuclideanSquaredDistanceWithWeights(b, weights), 6.0F);
-    }
-
     TEST(Vector, iterators)
     {
         Vector<3, float> v{ 1.0F, 2.0F, 3.0F };
@@ -287,8 +261,11 @@ namespace lms::math::vectorTests
     {
         Vector<3, float> a{ -1.0F, 2.0F, -3.0F };
         Vector<3, float> b{ 1.0F, -2.0F, 3.0F };
+        const Vector<3, float> sum{ a + b };
 
-        EXPECT_FLOAT_EQ(a.computeEuclideanSquaredDistance(b), 56.0F); // 4 + 16 + 36
+        EXPECT_FLOAT_EQ(sum[0], 0.0F);
+        EXPECT_FLOAT_EQ(sum[1], 0.0F);
+        EXPECT_FLOAT_EQ(sum[2], 0.0F);
     }
 
     TEST(Vector, doubleType)

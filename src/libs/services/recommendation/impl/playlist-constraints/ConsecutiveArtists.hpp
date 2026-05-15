@@ -19,6 +19,11 @@
 
 #pragma once
 
+#include <span>
+#include <vector>
+
+#include "database/objects/ArtistId.hpp"
+
 #include "IConstraint.hpp"
 
 namespace lms::db
@@ -37,8 +42,8 @@ namespace lms::recommendation::PlaylistGeneratorConstraint
         ConsecutiveArtists& operator=(const ConsecutiveArtists&) = delete;
 
     private:
-        float computeScore(const TrackContainer& trackIds, std::size_t trackIndex) override;
-        ArtistContainer getArtists(db::TrackId trackId);
+        float computeScore(std::span<const db::TrackId> trackIds, std::size_t trackIndex) override;
+        std::vector<db::ArtistId> getArtists(db::TrackId trackId);
 
         db::IDb& _db;
     };

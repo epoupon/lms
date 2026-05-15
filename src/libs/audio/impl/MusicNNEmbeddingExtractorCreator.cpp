@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -17,17 +17,28 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "audio/IMusicNNEmbeddingExtractor.hpp"
+#if LMS_HAVE_ONNX
+    #include "musicnn/MusicNNEmbeddingExtractor.hpp"
+#endif
 
-#include <memory>
-
-namespace lms::db
+namespace lms::audio
 {
-    class IDb;
-}
+    bool canExtractMusicNNEmbeddings()
+    {
+#if LMS_HAVE_ONNX
+        return true;
+#else
+        return false;
+#endif
+    }
 
-namespace lms::recommendation
-{
-    class IEngine;
-    std::unique_ptr<IEngine> createClustersEngine(db::IDb& db);
-} // namespace lms::recommendation
+    std::unique_ptr<IMusicNNEmbeddingExtractor> createMusicNNEmbeddingExtractor([[maybe_unused]] const std::filesystem::path& modelPath)
+    {
+#if LMS_HAVE_ONNX
+        return std::make_unique<musicnn::MusicNNEmbeddingExtractor>(modelPath);
+#else
+        return {};
+#endif
+    }
+} // namespace lms::audio

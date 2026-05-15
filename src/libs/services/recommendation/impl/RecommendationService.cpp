@@ -19,14 +19,13 @@
 
 #include "RecommendationService.hpp"
 
-#include <vector>
-
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/ScanSettings.hpp"
 
-#include "ClustersEngineCreator.hpp"
-#include "FeaturesEngineCreator.hpp"
+#include "audio-similarity/features/AudioFeatureEngine.hpp"
+#include "audio-similarity/musicnn/MusicNNEmbeddingEngine.hpp"
+#include "clusters/ClustersEngine.hpp"
 
 namespace lms::recommendation
 {
@@ -51,9 +50,9 @@ namespace lms::recommendation
         requestReload();
     }
 
-    TrackContainer RecommendationService::findSimilarTracks(db::TrackListId trackListId, std::size_t maxCount) const
+    TrackResults RecommendationService::findSimilarTracks(db::TrackListId trackListId, std::size_t maxCount) const
     {
-        TrackContainer res;
+        TrackResults res;
 
         if (!_engine)
             return res;
@@ -61,9 +60,9 @@ namespace lms::recommendation
         return _engine->findSimilarTracksFromTrackList(trackListId, maxCount);
     }
 
-    TrackContainer RecommendationService::findSimilarTracks(const std::vector<db::TrackId>& trackIds, std::size_t maxCount) const
+    TrackResults RecommendationService::findSimilarTracks(std::span<const db::TrackId> trackIds, std::size_t maxCount) const
     {
-        TrackContainer res;
+        TrackResults res;
 
         if (!_engine)
             return res;
@@ -71,52 +70,59 @@ namespace lms::recommendation
         return _engine->findSimilarTracks(trackIds, maxCount);
     }
 
-    ReleaseContainer RecommendationService::getSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const
+    ReleaseResults RecommendationService::getSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const
     {
-        ReleaseContainer res;
+        ReleaseResults res;
 
         if (!_engine)
             return res;
 
-        return _engine->getSimilarReleases(releaseId, maxCount);
-        ;
+        return _engine->findSimilarReleases(releaseId, maxCount);
     }
 
-    ArtistContainer RecommendationService::getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
+    ArtistResults RecommendationService::getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
     {
-        ArtistContainer res;
+        ArtistResults res;
 
         if (!_engine)
             return res;
 
-        return _engine->getSimilarArtists(artistId, linkTypes, maxCount);
-
-        return res;
+        return _engine->findSimilarArtists(artistId, linkTypes, maxCount);
     }
 
     void RecommendationService::requestReload()
     {
+        // not thread safe :/
         _engine.reset(); // may block
 
         switch (getSimilarityEngineType(_db.getTLSSession()))
         {
         case db::ScanSettings::SimilarityEngineType::Clusters:
-            _engineType = EngineType::Clusters;
-            _engine = createClustersEngine(_db);
+            _engine = std::make_unique<ClusterEngine>(_db);
             break;
 
-        case db::ScanSettings::SimilarityEngineType::Features:
-            _engineType = EngineType::Features;
-            _engine = createFeaturesEngine(_db);
+        case db::ScanSettings::SimilarityEngineType::AudioFeatures:
+            _engine = std::make_unique<AudioFeatureEngine>(_db);
+            break;
+
+        case db::ScanSettings::SimilarityEngineType::AudioEmbeddings:
+            _engine = std::make_unique<MusicNNEmbeddingEngine>(_db);
             break;
 
         case db::ScanSettings::SimilarityEngineType::None:
-            _engineType.reset();
             _engine.reset();
             break;
         }
 
         if (_engine)
             _engine->requestReload();
+    }
+
+    bool RecommendationService::isLoaded() const
+    {
+        if (!_engine)
+            return false;
+
+        return _engine->isLoaded();
     }
 } // namespace lms::recommendation

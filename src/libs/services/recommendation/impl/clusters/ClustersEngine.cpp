@@ -48,7 +48,12 @@ namespace lms::recommendation
         // nothing to do
     }
 
-    TrackContainer ClusterEngine::findSimilarTracks(const std::vector<TrackId>& trackIds, std::size_t maxCount) const
+    bool ClusterEngine::isLoaded() const
+    {
+        return true;
+    }
+
+    TrackResults ClusterEngine::findSimilarTracks(std::span<const TrackId> trackIds, std::size_t maxCount) const
     {
         if (maxCount == 0)
             return {};
@@ -56,13 +61,19 @@ namespace lms::recommendation
         Session& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createReadTransaction() };
 
-        auto similarTrackIds{ Track::findSimilarTrackIds(dbSession, trackIds, Range{ 0, maxCount }) };
-        return std::move(similarTrackIds.results);
+        const std::vector<TrackId> trackIdsVector{ std::cbegin(trackIds), std::cend(trackIds) };
+        auto similarTrackIds{ Track::findSimilarTrackIds(dbSession, trackIdsVector, Range{ 0, maxCount }) };
+        TrackResults res;
+        res.reserve(similarTrackIds.results.size());
+        std::transform(std::cbegin(similarTrackIds.results), std::cend(similarTrackIds.results), std::back_inserter(res), [](const auto trackId) {
+            return RecommendationResult<TrackId>{ .id = trackId, .score = {} };
+        });
+        return res;
     }
 
-    TrackContainer ClusterEngine::findSimilarTracksFromTrackList(TrackListId tracklistId, std::size_t maxCount) const
+    TrackResults ClusterEngine::findSimilarTracksFromTrackList(TrackListId tracklistId, std::size_t maxCount) const
     {
-        TrackContainer res;
+        TrackResults res;
         if (maxCount == 0)
             return res;
 
@@ -76,15 +87,17 @@ namespace lms::recommendation
 
             const auto tracks{ trackList->getSimilarTracks(0, maxCount) };
             res.reserve(tracks.size());
-            std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const auto& track) { return track->getId(); });
+            std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const auto& track) {
+                return RecommendationResult<TrackId>{ .id = track->getId(), .score = {} };
+            });
         }
 
         return res;
     }
 
-    ReleaseContainer ClusterEngine::getSimilarReleases(ReleaseId releaseId, std::size_t maxCount) const
+    ReleaseResults ClusterEngine::findSimilarReleases(ReleaseId releaseId, std::size_t maxCount) const
     {
-        ReleaseContainer res;
+        ReleaseResults res;
         if (maxCount == 0)
             return res;
 
@@ -98,13 +111,15 @@ namespace lms::recommendation
 
             const auto releases{ release->getSimilarReleases(0, maxCount) };
             res.reserve(releases.size());
-            std::transform(std::cbegin(releases), std::cend(releases), std::back_inserter(res), [](const auto& release) { return release->getId(); });
+            std::transform(std::cbegin(releases), std::cend(releases), std::back_inserter(res), [](const auto& release) {
+                return RecommendationResult<ReleaseId>{ .id = release->getId(), .score = {} };
+            });
         }
 
         return res;
     }
 
-    ArtistContainer ClusterEngine::getSimilarArtists(ArtistId artistId, core::EnumSet<TrackArtistLinkType> linkTypes, std::size_t maxCount) const
+    ArtistResults ClusterEngine::findSimilarArtists(ArtistId artistId, core::EnumSet<TrackArtistLinkType> linkTypes, std::size_t maxCount) const
     {
         if (maxCount == 0)
             return {};
@@ -117,7 +132,12 @@ namespace lms::recommendation
             return {};
 
         auto similarArtistIds{ artist->findSimilarArtistIds(linkTypes, Range{ 0, maxCount }) };
-        return std::move(similarArtistIds.results);
+        ArtistResults res;
+        res.reserve(similarArtistIds.results.size());
+        std::transform(std::cbegin(similarArtistIds.results), std::cend(similarArtistIds.results), std::back_inserter(res), [](const auto id) {
+            return RecommendationResult<ArtistId>{ .id = id, .score = {} };
+        });
+        return res;
     }
 
 } // namespace lms::recommendation

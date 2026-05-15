@@ -19,27 +19,54 @@
 
 #pragma once
 
+#include <array>
 #include <cassert>
 #include <cmath>
+#include <cstddef>
 #include <numbers>
 #include <span>
 
 namespace lms::math
 {
-    // Precondition: window.size() > 0.
-    template<typename FloatType>
-    void computeHannWindow(std::span<FloatType> window)
+    template<std::size_t FrameSize, typename FloatType = float>
+    class HannWindow
     {
-        const std::size_t frameSize{ window.size() };
-        assert(frameSize > 0);
+        static_assert(FrameSize > 0, "FrameSize must be greater than zero");
 
-        if (frameSize == 1)
+    public:
+        HannWindow()
         {
-            window[0] = 1.F;
-            return;
+            if constexpr (FrameSize == 1)
+            {
+                _coefficients[0] = FloatType{ 1 };
+                _energy = FloatType{ 1 };
+                return;
+            }
+
+            constexpr auto frameSize{ static_cast<FloatType>(FrameSize) };
+            for (std::size_t i{}; i < FrameSize; ++i)
+            {
+                const auto coefficient{ static_cast<FloatType>(0.5) * (FloatType{ 1 } - std::cos(static_cast<FloatType>(2) * std::numbers::pi_v<FloatType> * static_cast<FloatType>(i) / (frameSize - FloatType{ 1 }))) };
+                _coefficients[i] = coefficient;
+                _energy += coefficient * coefficient;
+            }
         }
 
-        for (std::size_t i{}; i < frameSize; ++i)
-            window[i] = static_cast<FloatType>(0.5) * (1.0F - std::cos(static_cast<FloatType>(2) * std::numbers::pi_v<FloatType> * static_cast<FloatType>(i) / (static_cast<FloatType>(frameSize) - 1.F)));
-    }
+        [[nodiscard]] std::span<const FloatType, FrameSize> values() const noexcept { return _coefficients; }
+
+        [[nodiscard]] FloatType energy() const noexcept { return _energy; }
+
+        void apply(std::span<const FloatType, FrameSize> input, std::span<FloatType, FrameSize> output) const noexcept
+        {
+            assert(input.size() == FrameSize);
+            assert(output.size() == FrameSize);
+
+            for (std::size_t i{}; i < FrameSize; ++i)
+                output[i] = input[i] * _coefficients[i];
+        }
+
+    private:
+        std::array<FloatType, FrameSize> _coefficients{};
+        FloatType _energy{};
+    };
 } // namespace lms::math

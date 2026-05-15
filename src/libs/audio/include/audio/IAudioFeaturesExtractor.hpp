@@ -33,17 +33,20 @@ namespace lms::audio
 
         struct AnalysisMetadata
         {
-            std::size_t frameSize{};
-            std::size_t frameHopSize{};
+            std::size_t frameSize{};    // samples per frame
+            std::size_t frameHopSize{}; // samples between consecutive frames
+            std::size_t patchSize{};    // frames per patch
+            std::size_t patchHopSize{}; // frames between consecutive patches
             std::size_t pcmSampleRate{};
             std::size_t pcmSampleCount{}; // total number of processed PCM samples
-            std::size_t frameCount{};     // total number of processed frames (with overlapping)
+            std::size_t frameCount{};     // total number of processed frames (frame overlap depends on frameHopSize)
+            std::size_t patchCount{};     // number of meaningful patches
         };
 
         struct FeatureExtractionResult
         {
-            AudioFeatures features;
-            AnalysisMetadata metadata;
+            TrackAudioFeatures features{};
+            AnalysisMetadata metadata{};
         };
         [[nodiscard]] virtual FeatureExtractionResult extractFeatures(const std::filesystem::path& audioFile) const = 0;
     };

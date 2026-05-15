@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "services/recommendation/IPlaylistGeneratorService.hpp"
 #include "services/recommendation/IRecommendationService.hpp"
 
@@ -32,9 +34,9 @@ namespace lms::recommendation
         PlaylistGeneratorService(db::IDb& db, IRecommendationService& recommendationService);
 
     private:
-        TrackContainer extendPlaylist(db::TrackListId tracklistId, std::size_t maxCount) const override;
+        std::vector<db::TrackId> extendPlaylist(db::TrackListId tracklistId, std::size_t maxCount) const override;
 
-        TrackContainer getTracksFromTrackList(db::TrackListId tracklistId) const;
+        std::vector<db::TrackId> getTracksFromTrackList(db::TrackListId tracklistId) const;
 
         db::IDb& _db;
         IRecommendationService& _recommendationService;

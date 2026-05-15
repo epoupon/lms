@@ -95,4 +95,9 @@ namespace lms::scanner
     {
         LMS_LOG(DBUPDATER, ERROR, "Failed to extract audio features from " << error.path << ": " << error.errorMsg);
     }
+
+    void ScanErrorLogger::visit(const MusicNNEmbeddingsExtractError& error)
+    {
+        LMS_LOG(DBUPDATER, ERROR, "Failed to extract MusicNN embeddings from " << error.path << ": " << error.errorMsg);
+    }
 } // namespace lms::scanner

@@ -17,7 +17,6 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <array>
 #include <limits>
 
 #include <gtest/gtest.h>
@@ -30,49 +29,49 @@ namespace lms::math::euclideanDistanceTests
 
     TEST(EuclideanDistance, zeroLength)
     {
-        const std::array<float, 0> a{};
-        const std::array<float, 0> b{};
-        const std::array<float, 0> weights{};
+        const Vector<0, float> a{};
+        const Vector<0, float> b{};
+        const Vector<0, float> weights{};
 
-        EXPECT_FLOAT_EQ(computeEuclideanSquaredDistance(a.data(), b.data(), 0U), 0.F);
-        EXPECT_FLOAT_EQ(computeEuclideanSquaredDistanceWithWeights(a.data(), b.data(), weights.data(), 0U), 0.F);
+        EXPECT_FLOAT_EQ(computeEuclideanSquaredDistance(a, b), 0.F);
+        EXPECT_FLOAT_EQ(computeEuclideanSquaredDistanceWithWeights(a, b, weights), 0.F);
     }
 
     TEST(EuclideanDistance, equalVectors)
     {
-        const std::array<float, 3> a{ 1.F, 2.F, 3.F };
-        const std::array<float, 3> b{ 1.F, 2.F, 3.F };
+        const Vector<3, float> a{ 1.F, 2.F, 3.F };
+        const Vector<3, float> b{ 1.F, 2.F, 3.F };
 
-        EXPECT_FLOAT_EQ(computeEuclideanSquaredDistance(a.data(), b.data(), a.size()), 0.F);
+        EXPECT_FLOAT_EQ(computeEuclideanSquaredDistance(a, b), 0.F);
     }
 
     TEST(EuclideanDistance, unweightedDistance)
     {
-        const std::array<float, 3> a{ 1.F, 2.F, 3.F };
-        const std::array<float, 3> b{ 4.F, 6.F, 8.F };
+        const Vector<3, float> a{ 1.F, 2.F, 3.F };
+        const Vector<3, float> b{ 4.F, 6.F, 8.F };
 
         const float expected{ 50.F }; // 3^2 + 4^2 + 5^2
-        EXPECT_NEAR(computeEuclideanSquaredDistance(a.data(), b.data(), a.size()), expected, epsilon);
+        EXPECT_NEAR(computeEuclideanSquaredDistance(a, b), expected, epsilon);
     }
 
     TEST(EuclideanDistance, weightedDistance)
     {
-        const std::array<float, 3> a{ 1.F, 3.F, 5.F };
-        const std::array<float, 3> b{ 2.F, 1.F, 6.F };
-        const std::array<float, 3> weights{ 1.F, 0.5F, 2.F };
+        const Vector<3, float> a{ 1.F, 3.F, 5.F };
+        const Vector<3, float> b{ 2.F, 1.F, 6.F };
+        const Vector<3, float> weights{ 1.F, 0.5F, 2.F };
 
         const float expected{ 5.F }; // 1*1 + 4*0.5 + 1*2
-        EXPECT_NEAR(computeEuclideanSquaredDistanceWithWeights(a.data(), b.data(), weights.data(), a.size()), expected, epsilon);
+        EXPECT_NEAR(computeEuclideanSquaredDistanceWithWeights(a, b, weights), expected, epsilon);
     }
 
     TEST(EuclideanDistance, largeMagnitudeValues)
     {
         // 1e15^2 * 2 = 2e30, well within the float max (~3.4e38), so no overflow
         const float big{ 1e15F };
-        const std::array<float, 2> a{ big, big };
-        const std::array<float, 2> b{ 0.F, 0.F };
+        const Vector<2, float> a{ big, big };
+        const Vector<2, float> b{ 0.F, 0.F };
 
-        const float result{ computeEuclideanSquaredDistance(a.data(), b.data(), a.size()) };
+        const float result{ computeEuclideanSquaredDistance(a, b) };
         EXPECT_GT(result, 0.F);
     }
 
@@ -80,40 +79,40 @@ namespace lms::math::euclideanDistanceTests
     {
         // Subnormal inputs; result must stay non-negative
         const float tiny{ std::numeric_limits<float>::min() };
-        const std::array<float, 3> a{ tiny, tiny, tiny };
-        const std::array<float, 3> b{ 0.F, 0.F, 0.F };
+        const Vector<3, float> a{ tiny, tiny, tiny };
+        const Vector<3, float> b{ 0.F, 0.F, 0.F };
 
-        const float result{ computeEuclideanSquaredDistance(a.data(), b.data(), a.size()) };
+        const float result{ computeEuclideanSquaredDistance(a, b) };
         EXPECT_GE(result, 0.F);
     }
 
     TEST(EuclideanDistance, negativeValues)
     {
         // Negative components must produce the same result as their positive mirror
-        const std::array<float, 3> a{ -1.F, -2.F, -3.F };
-        const std::array<float, 3> b{ 1.F, 2.F, 3.F };
-        const std::array<float, 3> aMirror{ 1.F, 2.F, 3.F };
-        const std::array<float, 3> bMirror{ -1.F, -2.F, -3.F };
+        const Vector<3, float> a{ -1.F, -2.F, -3.F };
+        const Vector<3, float> b{ 1.F, 2.F, 3.F };
+        const Vector<3, float> aMirror{ 1.F, 2.F, 3.F };
+        const Vector<3, float> bMirror{ -1.F, -2.F, -3.F };
 
         EXPECT_FLOAT_EQ(
-            computeEuclideanSquaredDistance(a.data(), b.data(), a.size()),
-            computeEuclideanSquaredDistance(aMirror.data(), bMirror.data(), aMirror.size()));
+            computeEuclideanSquaredDistance(a, b),
+            computeEuclideanSquaredDistance(aMirror, bMirror));
     }
 
     TEST(EuclideanDistance, zeroWeights)
     {
-        const std::array<float, 3> a{ 1.F, 2.F, 3.F };
-        const std::array<float, 3> b{ 4.F, 5.F, 6.F };
-        const std::array<float, 3> weights{ 0.F, 0.F, 0.F };
+        const Vector<3, float> a{ 1.F, 2.F, 3.F };
+        const Vector<3, float> b{ 4.F, 5.F, 6.F };
+        const Vector<3, float> weights{ 0.F, 0.F, 0.F };
 
-        EXPECT_FLOAT_EQ(computeEuclideanSquaredDistanceWithWeights(a.data(), b.data(), weights.data(), a.size()), 0.F);
+        EXPECT_FLOAT_EQ(computeEuclideanSquaredDistanceWithWeights(a, b, weights), 0.F);
     }
 
     TEST(EuclideanDistance, singleElement)
     {
-        const std::array<float, 1> a{ 3.F };
-        const std::array<float, 1> b{ 7.F };
+        const Vector<1, float> a{ 3.F };
+        const Vector<1, float> b{ 7.F };
 
-        EXPECT_FLOAT_EQ(computeEuclideanSquaredDistance(a.data(), b.data(), a.size()), 16.F);
+        EXPECT_FLOAT_EQ(computeEuclideanSquaredDistance(a, b), 16.F);
     }
 } // namespace lms::math::euclideanDistanceTests

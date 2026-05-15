@@ -53,8 +53,13 @@ namespace lms::recommendation
     {
         LMS_LOG(RECOMMENDATION, DEBUG, "Requested to extend playlist by " << maxCount << " similar tracks");
 
-        // supposed to be ordered from most similar to least similar
-        std::vector<TrackId> similarTracks{ _recommendationService.findSimilarTracks(tracklistId, maxCount * 2) }; // ask for more tracks than we need as it will be easier to respect constraints
+        const TrackResults similarTracksResults{ _recommendationService.findSimilarTracks(tracklistId, maxCount * 2) }; // ask for more tracks than we need as it will be easier to respect constraints
+
+        std::vector<TrackId> similarTracks;
+        similarTracks.reserve(similarTracksResults.size());
+        std::transform(std::cbegin(similarTracksResults), std::cend(similarTracksResults), std::back_inserter(similarTracks), [](const auto& result) {
+            return result.id;
+        });
 
         const std::vector<TrackId> startingTracks{ getTracksFromTrackList(tracklistId) };
 
@@ -98,9 +103,9 @@ namespace lms::recommendation
         return std::vector(std::cbegin(finalResult) + startingTracks.size(), std::cend(finalResult));
     }
 
-    TrackContainer PlaylistGeneratorService::getTracksFromTrackList(db::TrackListId tracklistId) const
+    std::vector<TrackId> PlaylistGeneratorService::getTracksFromTrackList(db::TrackListId tracklistId) const
     {
-        TrackContainer tracks;
+        std::vector<TrackId> tracks;
 
         Session& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createReadTransaction() };

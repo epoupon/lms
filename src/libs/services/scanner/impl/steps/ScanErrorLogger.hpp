@@ -40,5 +40,6 @@ namespace lms::scanner
         void visit(const PlayListFilePathMissingError& error) override;
         void visit(const PlayListFileAllPathesMissingError& error) override;
         void visit(const AudioFeaturesExtractError& error) override;
+        void visit(const MusicNNEmbeddingsExtractError& error) override;
     };
 } // namespace lms::scanner

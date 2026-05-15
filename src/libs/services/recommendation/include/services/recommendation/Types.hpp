@@ -28,9 +28,16 @@
 namespace lms::recommendation
 {
     template<typename IdType>
-    using ResultContainer = std::vector<IdType>;
+    struct RecommendationResult
+    {
+        IdType id;
+        float score;
+    };
 
-    using ArtistContainer = ResultContainer<db::ArtistId>;
-    using ReleaseContainer = ResultContainer<db::ReleaseId>;
-    using TrackContainer = ResultContainer<db::TrackId>;
+    template<typename IdType>
+    using ResultContainer = std::vector<RecommendationResult<IdType>>;
+
+    using ArtistResults = ResultContainer<db::ArtistId>;
+    using ReleaseResults = ResultContainer<db::ReleaseId>;
+    using TrackResults = ResultContainer<db::TrackId>;
 } // namespace lms::recommendation

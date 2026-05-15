@@ -20,7 +20,7 @@
 #pragma once
 
 #include <memory>
-#include <vector>
+#include <span>
 
 #include "core/EnumSet.hpp"
 
@@ -43,11 +43,12 @@ namespace lms::recommendation
         virtual ~IRecommendationService() = default;
 
         virtual void requestReload() = 0;
+        virtual bool isLoaded() const = 0;
 
-        virtual TrackContainer findSimilarTracks(db::TrackListId tracklistId, std::size_t maxCount) const = 0;
-        virtual TrackContainer findSimilarTracks(const std::vector<db::TrackId>& tracksId, std::size_t maxCount) const = 0;
-        virtual ReleaseContainer getSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const = 0;
-        virtual ArtistContainer getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const = 0;
+        virtual TrackResults findSimilarTracks(db::TrackListId tracklistId, std::size_t maxCount) const = 0;
+        virtual TrackResults findSimilarTracks(std::span<const db::TrackId> tracksId, std::size_t maxCount) const = 0;
+        virtual ReleaseResults getSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const = 0;
+        virtual ArtistResults getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const = 0;
     };
 
     std::unique_ptr<IRecommendationService> createRecommendationService(db::IDb& db);

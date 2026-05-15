@@ -188,15 +188,12 @@ namespace lms::math::fftTests
         for (std::size_t n{}; n < N; ++n)
             inputSignal[n] = std::sin(2.F * std::numbers::pi_v<float> * static_cast<float>(n) / static_cast<float>(N));
 
-        std::vector<float> window(N);
-        math::computeHannWindow<float>(window);
-        float windowEnergy{};
-        for (std::size_t n{}; n < N; ++n)
-            windowEnergy += window[n] * window[n];
+        const math::HannWindow<N, float> window;
+        const float windowEnergy{ window.energy() };
 
         std::vector<float> windowedInput(N);
-        for (std::size_t n{}; n < N; ++n)
-            windowedInput[n] = inputSignal[n] * window[n];
+        window.apply(std::span<const float, N>{ inputSignal.data(), inputSignal.size() },
+                     std::span<float, N>{ windowedInput.data(), windowedInput.size() });
 
         float E_time{};
         for (float x : windowedInput)

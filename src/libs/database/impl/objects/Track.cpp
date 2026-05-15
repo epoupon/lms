@@ -199,6 +199,14 @@ namespace lms::db
                     query.where("NOT EXISTS (SELECT t_a_f.track_id FROM track_audio_features t_a_f WHERE t_a_f.track_id = t.id)");
             }
 
+            if (params.hasMusicNNEmbeddings.has_value())
+            {
+                if (*params.hasMusicNNEmbeddings)
+                    query.where("EXISTS (SELECT t_m_e.track_id FROM track_musicnn_embeddings t_m_e WHERE t_m_e.track_id = t.id)");
+                else
+                    query.where("NOT EXISTS (SELECT t_m_e.track_id FROM track_musicnn_embeddings t_m_e WHERE t_m_e.track_id = t.id)");
+            }
+
             if (params.lastTrackId.isValid())
             {
                 assert(params.sortMethod == TrackSortMethod::Id);
@@ -336,7 +344,7 @@ namespace lms::db
         });
     }
 
-    void Track::findAbsoluteFilePath(Session& session, TrackId& lastRetrievedId, std::size_t count, const std::function<void(TrackId trackId, const std::filesystem::path& absoluteFilePath)>& func)
+    void Track::findAbsoluteFilePath(Session& session, TrackId& lastRetrievedId, std::size_t count, const TrackLocationVisitor& func)
     {
         session.checkReadTransaction();
 
@@ -345,6 +353,19 @@ namespace lms::db
         utils::forEachQueryResult(query, [&](const auto& res) {
             func(std::get<0>(res), std::get<1>(res));
             lastRetrievedId = std::get<0>(res);
+        });
+    }
+
+    void Track::findAbsoluteFilePath(Session& session, const FindParameters& params, const TrackLocationVisitor& func)
+    {
+        session.checkReadTransaction();
+
+        std::string_view itemToSelect{ "t.id, t.absolute_file_path" };
+
+        auto query{ createQuery<std::tuple<TrackId, std::filesystem::path>>(session, itemToSelect, params) };
+
+        utils::forEachQueryResult(query, [&](const auto& res) {
+            func(std::get<0>(res), std::get<1>(res));
         });
     }
 

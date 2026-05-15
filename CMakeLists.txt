@@ -58,4 +58,3 @@ install(DIRECTORY docroot DESTINATION share/lms)
 install(FILES conf/systemd/default.service DESTINATION share/lms)
 install(FILES conf/pam/lms DESTINATION share/lms)
 install(FILES conf/lms.conf DESTINATION share/lms)
-

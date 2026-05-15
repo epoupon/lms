@@ -28,46 +28,63 @@ namespace lms::math::tests
 {
     TEST(Window, oneSampleWindowIsFinite)
     {
-        std::vector<float> window(1);
+        const HannWindow<1, float> window;
+        const auto values{ window.values() };
 
-        computeHannWindow<float>(window);
-
-        EXPECT_TRUE(std::isfinite(window[0]));
-        EXPECT_GE(window[0], 0.F);
-        EXPECT_LE(window[0], 1.F);
+        EXPECT_TRUE(std::isfinite(values[0]));
+        EXPECT_GE(values[0], 0.F);
+        EXPECT_LE(values[0], 1.F);
+        EXPECT_FLOAT_EQ(window.energy(), 1.F);
     }
 
     TEST(Window, twoSamplesWindow)
     {
-        std::vector<float> window(2);
+        const HannWindow<2, float> window;
+        const auto values{ window.values() };
 
-        computeHannWindow<float>(window);
-
-        EXPECT_FLOAT_EQ(window[0], 0.F);
-        EXPECT_FLOAT_EQ(window[1], 0.F);
+        EXPECT_FLOAT_EQ(values[0], 0.F);
+        EXPECT_FLOAT_EQ(values[1], 0.F);
+        EXPECT_FLOAT_EQ(window.energy(), 0.F);
     }
 
     TEST(Window, coefficientsAreFiniteAndInRange)
     {
-        std::vector<float> window(17);
+        const HannWindow<17, float> window;
 
-        computeHannWindow<float>(window);
-
-        for (float v : window)
+        for (float v : window.values())
         {
             EXPECT_TRUE(std::isfinite(v));
             EXPECT_GE(v, 0.F);
             EXPECT_LE(v, 1.F);
         }
+
+        EXPECT_GT(window.energy(), 0.F);
     }
 
     TEST(Window, symmetric)
     {
-        std::vector<float> window(31);
+        const HannWindow<31, float> window;
+        const auto values{ window.values() };
 
-        computeHannWindow<float>(window);
+        for (std::size_t i{}; i < values.size() / 2; ++i)
+            EXPECT_NEAR(values[i], values[values.size() - 1 - i], 1e-6F);
+    }
 
-        for (std::size_t i{}; i < window.size() / 2; ++i)
-            EXPECT_NEAR(window[i], window[window.size() - 1 - i], 1e-6F);
+    TEST(Window, applyUsesPrecomputedCoefficients)
+    {
+        constexpr std::size_t size{ 8 };
+        const HannWindow<size, float> window;
+
+        std::vector<float> input(size);
+        for (std::size_t i{}; i < size; ++i)
+            input[i] = static_cast<float>(i + 1);
+
+        std::vector<float> output(size);
+        window.apply(std::span<const float, size>{ input.data(), input.size() },
+                     std::span<float, size>{ output.data(), output.size() });
+
+        const auto coefficients{ window.values() };
+        for (std::size_t i{}; i < size; ++i)
+            EXPECT_FLOAT_EQ(output[i], input[i] * coefficients[i]);
     }
 } // namespace lms::math::tests

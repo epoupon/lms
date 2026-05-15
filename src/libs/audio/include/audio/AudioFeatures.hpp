@@ -29,48 +29,65 @@ namespace lms::audio
 
     struct AudioFeatures
     {
-        // log mel energies
+        // Log mel energies
         static inline constexpr size_t melBandCount{ 40 };
-        std::array<FeatureValue, melBandCount> logMelEnergyMean;
-        std::array<FeatureValue, melBandCount> logMelEnergyStdDev;
-        std::array<FeatureValue, melBandCount> logMelEnergyDeltaStdDev;
-        std::array<FeatureValue, melBandCount> logMelEnergyDeltaMeanAbs;
+        std::array<FeatureValue, melBandCount> logMel;
 
         // MFCCs
         static inline constexpr size_t mfccCount{ 13 };
-        std::array<FeatureValue, mfccCount> mfccMean;
-        std::array<FeatureValue, mfccCount> mfccStdDev;
-        std::array<FeatureValue, mfccCount> mfccDeltaStdDev;
-        std::array<FeatureValue, mfccCount> mfccDeltaMeanAbs;
+        std::array<FeatureValue, mfccCount> mfcc;
 
         // Spectral features
-        FeatureValue spectralCentroidMean;
-        FeatureValue spectralCentroidStdDev;
-        FeatureValue spectralCentroidDeltaMeanAbs;
-        FeatureValue spectralCentroidDeltaStdDev;
-        FeatureValue spectralRolloffMean;
-        FeatureValue spectralRolloffStdDev;
-        FeatureValue spectralRolloffDeltaMeanAbs;
-        FeatureValue spectralRolloffDeltaStdDev;
-        FeatureValue spectralFluxMean;
-        FeatureValue spectralFluxStdDev;
-        FeatureValue spectralFluxDeltaMeanAbs;
+        FeatureValue spectralCentroid;
+        FeatureValue spectralRolloff;
+        FeatureValue spectralFlux;
+
+        // Onset strength (mel-band flux novelty)
+        FeatureValue onsetStrength;
 
         // Chroma (pitch class / harmonic content)
         static inline constexpr size_t chromaCount{ 12 };
-        std::array<FeatureValue, chromaCount> chromaMean;
-        std::array<FeatureValue, chromaCount> chromaStdDev;
-        std::array<FeatureValue, chromaCount> chromaDeltaStdDev;
-        std::array<FeatureValue, chromaCount> chromaDeltaMeanAbs;
+        std::array<FeatureValue, chromaCount> chroma;
 
         // Zero crossing rate
+        FeatureValue zeroCrossingRate;
+    };
+
+    struct AudioFeaturesPatchStats
+    {
+        std::array<FeatureValue, AudioFeatures::melBandCount> logMelMean;
+        std::array<FeatureValue, AudioFeatures::melBandCount> logMelStdDev;
+
+        std::array<FeatureValue, AudioFeatures::mfccCount> mfccMean;
+        std::array<FeatureValue, AudioFeatures::mfccCount> mfccStdDev;
+
+        FeatureValue spectralCentroidMean;
+        FeatureValue spectralCentroidStdDev;
+        FeatureValue spectralRolloffMean;
+        FeatureValue spectralRolloffStdDev;
+        FeatureValue spectralFluxMean;
+        FeatureValue spectralFluxStdDev;
+
+        FeatureValue onsetStrengthMean;
+        FeatureValue onsetStrengthStdDev;
+
+        std::array<FeatureValue, AudioFeatures::chromaCount> chromaMean;
+        std::array<FeatureValue, AudioFeatures::chromaCount> chromaStdDev;
+
         FeatureValue zeroCrossingRateMean;
         FeatureValue zeroCrossingRateStdDev;
     };
 
-    // Buffer size must be at least sizeof(AudioFeatures)
-    void audioFeaturesToBlob(const AudioFeatures& features, std::span<std::byte> buffer);
-    void audioFeaturesFromBlob(std::span<const std::byte> buffer, AudioFeatures& features);
+    struct TrackAudioFeatures
+    {
+        AudioFeaturesPatchStats mean;
+    };
+
+    // Buffer size must be at least sizeof(TrackAudioFeatures)
+    void trackAudioFeaturesToBlob(const TrackAudioFeatures& features, std::span<std::byte> buffer);
+    void trackAudioFeaturesFromBlob(std::span<const std::byte> buffer, TrackAudioFeatures& features);
 
     std::ostream& operator<<(std::ostream& os, const AudioFeatures& features);
+    std::ostream& operator<<(std::ostream& os, const AudioFeaturesPatchStats& features);
+    std::ostream& operator<<(std::ostream& os, const TrackAudioFeatures& features);
 } // namespace lms::audio

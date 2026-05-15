@@ -30,9 +30,9 @@ namespace lms::recommendation::PlaylistGeneratorConstraint
 {
     namespace
     {
-        std::size_t countCommonArtists(const ArtistContainer& artists1, const ArtistContainer& artists2)
+        std::size_t countCommonArtists(std::span<const db::ArtistId> artists1, std::span<const db::ArtistId> artists2)
         {
-            ArtistContainer intersection;
+            std::vector<db::ArtistId> intersection;
 
             std::set_intersection(std::cbegin(artists1), std::cend(artists1),
                                   std::cbegin(artists2), std::cend(artists2),
@@ -47,12 +47,12 @@ namespace lms::recommendation::PlaylistGeneratorConstraint
     {
     }
 
-    float ConsecutiveArtists::computeScore(const std::vector<db::TrackId>& trackIds, std::size_t trackIndex)
+    float ConsecutiveArtists::computeScore(std::span<const db::TrackId> trackIds, std::size_t trackIndex)
     {
         assert(!trackIds.empty());
         assert(trackIndex <= trackIds.size() - 1);
 
-        const ArtistContainer artists{ getArtists(trackIds[trackIndex]) };
+        const std::vector<db::ArtistId> artists{ getArtists(trackIds[trackIndex]) };
 
         constexpr std::size_t rangeSize{ 3 }; // check up to rangeSize tracks before/after the target track
         static_assert(rangeSize > 0);
@@ -70,11 +70,11 @@ namespace lms::recommendation::PlaylistGeneratorConstraint
         return score;
     }
 
-    ArtistContainer ConsecutiveArtists::getArtists(db::TrackId trackId)
+    std::vector<db::ArtistId> ConsecutiveArtists::getArtists(db::TrackId trackId)
     {
         using namespace db;
 
-        ArtistContainer res;
+        std::vector<db::ArtistId> res;
 
         Session& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createReadTransaction() };

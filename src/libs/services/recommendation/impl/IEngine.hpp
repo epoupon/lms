@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <memory>
+#include <span>
 
 #include "core/EnumSet.hpp"
 
@@ -40,12 +40,11 @@ namespace lms::recommendation
         virtual ~IEngine() = default;
 
         virtual void requestReload() = 0;
+        virtual bool isLoaded() const = 0;
 
-        virtual TrackContainer findSimilarTracksFromTrackList(db::TrackListId tracklistId, std::size_t maxCount) const = 0;
-        virtual TrackContainer findSimilarTracks(const std::vector<db::TrackId>& tracksId, std::size_t maxCount) const = 0;
-        virtual ReleaseContainer getSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const = 0;
-        virtual ArtistContainer getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const = 0;
+        virtual TrackResults findSimilarTracksFromTrackList(db::TrackListId tracklistId, std::size_t maxCount) const = 0;
+        virtual TrackResults findSimilarTracks(std::span<const db::TrackId> tracksId, std::size_t maxCount) const = 0;
+        virtual ReleaseResults findSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const = 0;
+        virtual ArtistResults findSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const = 0;
     };
-
-    std::unique_ptr<IEngine> createEngine(db::IDb& db);
 } // namespace lms::recommendation

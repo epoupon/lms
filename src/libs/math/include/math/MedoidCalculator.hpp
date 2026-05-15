@@ -25,6 +25,8 @@
 #include <type_traits>
 #include <vector>
 
+#include "math/EuclideanDistance.hpp"
+
 namespace lms::math
 {
     template<typename VectorType>
@@ -55,10 +57,11 @@ namespace lms::math
             for (size_type i{}; i < _vectors.size(); ++i)
             {
                 value_type totalDistance{};
+                const SquaredEuclideanDistance distFunc{ _vectors[i] };
                 for (size_type j{}; j < _vectors.size(); ++j)
                 {
                     if (i != j)
-                        totalDistance += _vectors[i].computeEuclideanSquaredDistance(_vectors[j]);
+                        totalDistance += distFunc(_vectors[j]);
                 }
 
                 if (totalDistance < minTotalDistance)

@@ -17,6 +17,7 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <chrono>
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
@@ -81,8 +82,9 @@ namespace lms
             };
 
             std::cout << "Processing track " << trackToString(trackId) << std::endl;
-            for (db::TrackId similarTrackId : recommendationService.findSimilarTracks({ trackId }, maxSimilarityCount))
-                std::cout << "\t- Similar track " << trackToString(similarTrackId) << std::endl;
+
+            for (const auto& similarTrack : recommendationService.findSimilarTracks(std::span<const db::TrackId>{ &trackId, 1 }, maxSimilarityCount))
+                std::cout << "\t- " << similarTrack.score << ", Similar track " << trackToString(similarTrack.id) << std::endl;
         }
     }
 
@@ -123,8 +125,8 @@ namespace lms
             };
 
             std::cout << "Processing release '" << releaseToString(releaseId) << "'" << std::endl;
-            for (const db::ReleaseId similarReleaseId : recommendationService.getSimilarReleases(releaseId, maxSimilarityCount))
-                std::cout << "\t- Similar release " << releaseToString(similarReleaseId) << std::endl;
+            for (const auto& similarRelease : recommendationService.getSimilarReleases(releaseId, maxSimilarityCount))
+                std::cout << "\t- " << similarRelease.score << ", Similar release " << releaseToString(similarRelease.id) << std::endl;
         }
     }
 
@@ -158,8 +160,8 @@ namespace lms
             };
 
             std::cout << "Processing artist '" << artistToString(artistId) << "'" << std::endl;
-            for (db::ArtistId similarArtistId : recommendationService.getSimilarArtists(artistId, { db::TrackArtistLinkType::Artist }, maxSimilarityCount))
-                std::cout << "\t- Similar artist '" << artistToString(similarArtistId) << "'" << std::endl;
+            for (const auto& similarArtist : recommendationService.getSimilarArtists(artistId, { db::TrackArtistLinkType::Artist }, maxSimilarityCount))
+                std::cout << "\t- " << similarArtist.score << ", Similar artist '" << artistToString(similarArtist.id) << "'" << std::endl;
         }
     }
 } // namespace lms
@@ -201,10 +203,10 @@ int main(int argc, char* argv[])
 
         const auto recommendationService{ recommendation::createRecommendationService(*db) };
 
-        unsigned maxSimilarityCount{ vm["max"].as<unsigned>() };
+        while (!recommendationService->isLoaded())
+            std::this_thread::sleep_for(std::chrono::milliseconds{ 100 });
 
-        // TODO change this
-        std::this_thread::sleep_for(std::chrono::seconds{ 5 });
+        unsigned maxSimilarityCount{ vm["max"].as<unsigned>() };
 
         if (vm.count("track"))
             dumpTracksRecommendation(*db, *recommendationService, vm["track"].as<std::string>(), maxSimilarityCount);

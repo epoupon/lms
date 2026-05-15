@@ -31,7 +31,7 @@ namespace lms::recommendation::PlaylistGeneratorConstraint
     {
     }
 
-    float ConsecutiveReleases::computeScore(const std::vector<db::TrackId>& trackIds, std::size_t trackIndex)
+    float ConsecutiveReleases::computeScore(std::span<const db::TrackId> trackIds, std::size_t trackIndex)
     {
         assert(!trackIds.empty());
         assert(trackIndex <= trackIds.size() - 1);

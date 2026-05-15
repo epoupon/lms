@@ -112,6 +112,7 @@
 <message id="Lms.Admin.ScannerController.bad-duration">Impossible de récupérer la durée de la piste</message>
 <message id="Lms.Admin.ScannerController.bad-embedded-image">Impossible de lire l'image à l'indice {1} : {2}</message>
 <message id="Lms.Admin.ScannerController.cannot-extract-audio-features">Impossible d'extraire les caractéristiques audio : {1}</message>
+<message id="Lms.Admin.ScannerController.cannot-extract-musicnn-embeddings">Impossible d'extraire les embeddings MusicNN : {1}</message>
 <message id="Lms.Admin.ScannerController.cannot-read-artist-info-file">Impossible d'analyser le fichier d'informations sur l'artiste</message>
 <message id="Lms.Admin.ScannerController.cannot-read-audio-file">Impossible d'analyser le fichier audio</message>
 <message id="Lms.Admin.ScannerController.cannot-read-file">Impossible de lire le fichier ({1})</message>
@@ -150,6 +151,7 @@
 <message id="Lms.Admin.ScannerController.step-compact">Compactage de la base de données...</message>
 <message id="Lms.Admin.ScannerController.step-compute-cluster-stats">Calcul des statistiques... {1}%</message>
 <message id="Lms.Admin.ScannerController.step-extract-audio-features">Extraction des caractéristiques audio : {1} sur {2} fichiers ({3}%)</message>
+<message id="Lms.Admin.ScannerController.step-extract-musicnn-embeddings">Extraction des embeddings MusicNN : {1} sur {2} fichiers ({3}%)</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Optimisation de la base de données... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reconciliate-artists">Reconciliation des artistes: {1} entrées...</message>
 <message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Rechargement du moteur de recommandation : {1}%...</message>

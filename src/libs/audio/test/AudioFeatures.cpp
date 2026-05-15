@@ -25,95 +25,34 @@
 
 namespace lms::audio::features::tests
 {
-    TEST(AudioFeatures, blobConversion)
+    TEST(AudioFeatures, trackBlobConversion)
     {
-        AudioFeatures features;
+        TrackAudioFeatures features{};
 
-        std::iota(features.logMelEnergyMean.begin(), features.logMelEnergyMean.end(), 0.F);
-        std::iota(features.logMelEnergyStdDev.begin(), features.logMelEnergyStdDev.end(), 10.F);
-        std::iota(features.logMelEnergyDeltaStdDev.begin(), features.logMelEnergyDeltaStdDev.end(), 30.F);
-        std::iota(features.logMelEnergyDeltaMeanAbs.begin(), features.logMelEnergyDeltaMeanAbs.end(), 31.F);
+        std::iota(features.mean.logMelMean.begin(), features.mean.logMelMean.end(), 0.F);
+        std::iota(features.mean.logMelStdDev.begin(), features.mean.logMelStdDev.end(), 10.F);
 
-        std::iota(features.mfccMean.begin(), features.mfccMean.end(), 40.F);
-        std::iota(features.mfccStdDev.begin(), features.mfccStdDev.end(), 50.F);
-        std::iota(features.mfccDeltaStdDev.begin(), features.mfccDeltaStdDev.end(), 60.F);
-        std::iota(features.mfccDeltaMeanAbs.begin(), features.mfccDeltaMeanAbs.end(), 61.F);
+        std::iota(features.mean.mfccMean.begin(), features.mean.mfccMean.end(), 40.F);
+        std::iota(features.mean.mfccStdDev.begin(), features.mean.mfccStdDev.end(), 50.F);
 
-        features.spectralCentroidMean = 70.F;
-        features.spectralCentroidStdDev = 71.F;
-        features.spectralCentroidDeltaMeanAbs = 72.F;
-        features.spectralCentroidDeltaStdDev = 73.F;
-        features.spectralRolloffMean = 74.F;
-        features.spectralRolloffStdDev = 75.F;
-        features.spectralRolloffDeltaMeanAbs = 76.F;
-        features.spectralRolloffDeltaStdDev = 77.F;
-        features.spectralFluxMean = 78.F;
-        features.spectralFluxStdDev = 79.F;
-        features.spectralFluxDeltaMeanAbs = 80.F;
+        features.mean.spectralCentroidMean = 60.F;
+        features.mean.spectralCentroidStdDev = 61.F;
+        features.mean.zeroCrossingRateMean = 62.F;
+        features.mean.zeroCrossingRateStdDev = 63.F;
 
-        std::iota(features.chromaMean.begin(), features.chromaMean.end(), 81.F);
-        std::iota(features.chromaStdDev.begin(), features.chromaStdDev.end(), 88.F);
-        std::iota(features.chromaDeltaStdDev.begin(), features.chromaDeltaStdDev.end(), 100.F);
-        std::iota(features.chromaDeltaMeanAbs.begin(), features.chromaDeltaMeanAbs.end(), 112.F);
+        std::vector<std::byte> buffer(sizeof(TrackAudioFeatures));
+        trackAudioFeaturesToBlob(features, buffer);
 
-        features.zeroCrossingRateMean = 124.F;
-        features.zeroCrossingRateStdDev = 113.F;
+        TrackAudioFeatures readBackFeatures{};
+        trackAudioFeaturesFromBlob(buffer, readBackFeatures);
 
-        std::vector<std::byte> buffer(sizeof(AudioFeatures));
-        audioFeaturesToBlob(features, buffer);
-
-        AudioFeatures readBackFeatures;
-        audioFeaturesFromBlob(buffer, readBackFeatures);
-
-        for (std::size_t i{}; i < features.logMelEnergyMean.size(); ++i)
-            EXPECT_FLOAT_EQ(features.logMelEnergyMean[i], readBackFeatures.logMelEnergyMean[i]);
-
-        for (std::size_t i{}; i < features.logMelEnergyStdDev.size(); ++i)
-            EXPECT_FLOAT_EQ(features.logMelEnergyStdDev[i], readBackFeatures.logMelEnergyStdDev[i]);
-
-        for (std::size_t i{}; i < features.logMelEnergyDeltaStdDev.size(); ++i)
-            EXPECT_FLOAT_EQ(features.logMelEnergyDeltaStdDev[i], readBackFeatures.logMelEnergyDeltaStdDev[i]);
-
-        for (std::size_t i{}; i < features.logMelEnergyDeltaMeanAbs.size(); ++i)
-            EXPECT_FLOAT_EQ(features.logMelEnergyDeltaMeanAbs[i], readBackFeatures.logMelEnergyDeltaMeanAbs[i]);
-
-        for (std::size_t i{}; i < features.mfccMean.size(); ++i)
-            EXPECT_FLOAT_EQ(features.mfccMean[i], readBackFeatures.mfccMean[i]);
-
-        for (std::size_t i{}; i < features.mfccStdDev.size(); ++i)
-            EXPECT_FLOAT_EQ(features.mfccStdDev[i], readBackFeatures.mfccStdDev[i]);
-
-        for (std::size_t i{}; i < features.mfccDeltaStdDev.size(); ++i)
-            EXPECT_FLOAT_EQ(features.mfccDeltaStdDev[i], readBackFeatures.mfccDeltaStdDev[i]);
-
-        for (std::size_t i{}; i < features.mfccDeltaMeanAbs.size(); ++i)
-            EXPECT_FLOAT_EQ(features.mfccDeltaMeanAbs[i], readBackFeatures.mfccDeltaMeanAbs[i]);
-
-        EXPECT_FLOAT_EQ(features.spectralCentroidMean, readBackFeatures.spectralCentroidMean);
-        EXPECT_FLOAT_EQ(features.spectralCentroidStdDev, readBackFeatures.spectralCentroidStdDev);
-        EXPECT_FLOAT_EQ(features.spectralCentroidDeltaMeanAbs, readBackFeatures.spectralCentroidDeltaMeanAbs);
-        EXPECT_FLOAT_EQ(features.spectralCentroidDeltaStdDev, readBackFeatures.spectralCentroidDeltaStdDev);
-        EXPECT_FLOAT_EQ(features.spectralRolloffMean, readBackFeatures.spectralRolloffMean);
-        EXPECT_FLOAT_EQ(features.spectralRolloffStdDev, readBackFeatures.spectralRolloffStdDev);
-        EXPECT_FLOAT_EQ(features.spectralRolloffDeltaMeanAbs, readBackFeatures.spectralRolloffDeltaMeanAbs);
-        EXPECT_FLOAT_EQ(features.spectralRolloffDeltaStdDev, readBackFeatures.spectralRolloffDeltaStdDev);
-        EXPECT_FLOAT_EQ(features.spectralFluxMean, readBackFeatures.spectralFluxMean);
-        EXPECT_FLOAT_EQ(features.spectralFluxStdDev, readBackFeatures.spectralFluxStdDev);
-        EXPECT_FLOAT_EQ(features.spectralFluxDeltaMeanAbs, readBackFeatures.spectralFluxDeltaMeanAbs);
-
-        for (std::size_t i{}; i < features.chromaMean.size(); ++i)
-            EXPECT_FLOAT_EQ(features.chromaMean[i], readBackFeatures.chromaMean[i]);
-
-        for (std::size_t i{}; i < features.chromaStdDev.size(); ++i)
-            EXPECT_FLOAT_EQ(features.chromaStdDev[i], readBackFeatures.chromaStdDev[i]);
-
-        for (std::size_t i{}; i < features.chromaDeltaStdDev.size(); ++i)
-            EXPECT_FLOAT_EQ(features.chromaDeltaStdDev[i], readBackFeatures.chromaDeltaStdDev[i]);
-
-        for (std::size_t i{}; i < features.chromaDeltaMeanAbs.size(); ++i)
-            EXPECT_FLOAT_EQ(features.chromaDeltaMeanAbs[i], readBackFeatures.chromaDeltaMeanAbs[i]);
-
-        EXPECT_FLOAT_EQ(features.zeroCrossingRateMean, readBackFeatures.zeroCrossingRateMean);
-        EXPECT_FLOAT_EQ(features.zeroCrossingRateStdDev, readBackFeatures.zeroCrossingRateStdDev);
+        EXPECT_FLOAT_EQ(features.mean.logMelMean[0], readBackFeatures.mean.logMelMean[0]);
+        EXPECT_FLOAT_EQ(features.mean.logMelStdDev[0], readBackFeatures.mean.logMelStdDev[0]);
+        EXPECT_FLOAT_EQ(features.mean.mfccMean[0], readBackFeatures.mean.mfccMean[0]);
+        EXPECT_FLOAT_EQ(features.mean.mfccStdDev[0], readBackFeatures.mean.mfccStdDev[0]);
+        EXPECT_FLOAT_EQ(features.mean.spectralCentroidMean, readBackFeatures.mean.spectralCentroidMean);
+        EXPECT_FLOAT_EQ(features.mean.spectralCentroidStdDev, readBackFeatures.mean.spectralCentroidStdDev);
+        EXPECT_FLOAT_EQ(features.mean.zeroCrossingRateMean, readBackFeatures.mean.zeroCrossingRateMean);
+        EXPECT_FLOAT_EQ(features.mean.zeroCrossingRateStdDev, readBackFeatures.mean.zeroCrossingRateStdDev);
     }
 } // namespace lms::audio::features::tests

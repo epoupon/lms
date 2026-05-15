@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Emeric Poupon
+ * Copyright (C) 2026 Emeric Poupon
  *
  * This file is part of LMS.
  *
@@ -19,16 +19,23 @@
 
 #pragma once
 
-#include <memory>
+#include <array>
+#include <span>
 
-#include "IEngine.hpp"
-
-namespace lms::db
+namespace lms::audio
 {
-    class IDb;
-}
+    struct MusicNNEmbedding
+    {
+        static inline constexpr std::size_t size{ 200 };
+        std::array<float, size> values;
+    };
 
-namespace lms::recommendation
-{
-    std::unique_ptr<IEngine> createFeaturesEngine(db::IDb& db);
-}
+    struct TrackMusicNNEmbeddings
+    {
+        MusicNNEmbedding mean;
+    };
+
+    // Buffer size must be at least sizeof(TrackMusicNNEmbeddings)
+    void trackMusicNNEmbeddingsToBlob(const TrackMusicNNEmbeddings& embeddings, std::span<std::byte> buffer);
+    void trackMusicNNEmbeddingsFromBlob(std::span<const std::byte> buffer, TrackMusicNNEmbeddings& embeddings);
+} // namespace lms::audio

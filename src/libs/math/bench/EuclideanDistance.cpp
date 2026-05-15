@@ -17,10 +17,8 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <random>
-#include <vector>
-
 #include <benchmark/benchmark.h>
+#include <random>
 
 #include "core/Random.hpp"
 
@@ -28,48 +26,50 @@
 
 namespace lms::core::benchs
 {
+    template<std::size_t Size>
     static void BM_SquaredEuclideanDistance(benchmark::State& state)
     {
-        const auto dimensionCount{ static_cast<std::size_t>(state.range(0)) };
-
         std::minstd_rand randomEngine{ 0 };
 
-        std::vector<float> vec1(dimensionCount);
-        std::vector<float> vec2(dimensionCount);
+        math::Vector<Size, float> vec1;
+        math::Vector<Size, float> vec2;
 
-        random::fillContainer(randomEngine, vec1, 0.F, 1.F);
-        random::fillContainer(randomEngine, vec2, 0.F, 1.F);
+        core::random::fillContainer(randomEngine, vec1, 0.F, 1.F);
+        core::random::fillContainer(randomEngine, vec2, 0.F, 1.F);
 
         for (auto _ : state)
         {
-            benchmark::DoNotOptimize(math::computeEuclideanSquaredDistance(vec1.data(), vec2.data(), dimensionCount));
+            benchmark::DoNotOptimize(math::computeEuclideanSquaredDistance(vec1, vec2));
         }
 
-        state.SetItemsProcessed(state.iterations() * dimensionCount);
+        state.SetItemsProcessed(state.iterations() * Size);
     }
 
+    template<std::size_t Size>
     static void BM_SquaredEuclideanDistanceWithWeights(benchmark::State& state)
     {
-        const auto dimensionCount{ static_cast<std::size_t>(state.range(0)) };
-
         std::minstd_rand randomEngine{ 0 };
 
-        std::vector<float> vec1(dimensionCount);
-        std::vector<float> vec2(dimensionCount);
-        std::vector<float> weights(dimensionCount);
+        math::Vector<Size, float> vec1;
+        math::Vector<Size, float> vec2;
+        math::Vector<Size, float> weights;
 
-        random::fillContainer(randomEngine, vec1, 0.F, 1.F);
-        random::fillContainer(randomEngine, vec2, 0.F, 1.F);
-        random::fillContainer(randomEngine, weights, 0.F, 1.F);
+        core::random::fillContainer(randomEngine, vec1, 0.F, 1.F);
+        core::random::fillContainer(randomEngine, vec2, 0.F, 1.F);
+        core::random::fillContainer(randomEngine, weights, 0.F, 1.F);
 
         for (auto _ : state)
         {
-            benchmark::DoNotOptimize(math::computeEuclideanSquaredDistanceWithWeights(vec1.data(), vec2.data(), weights.data(), dimensionCount));
+            benchmark::DoNotOptimize(math::computeEuclideanSquaredDistanceWithWeights(vec1, vec2, weights));
         }
 
-        state.SetItemsProcessed(state.iterations() * dimensionCount);
+        state.SetItemsProcessed(state.iterations() * Size);
     }
 
-    BENCHMARK(BM_SquaredEuclideanDistance)->Arg(4)->Arg(50)->Arg(160);
-    BENCHMARK(BM_SquaredEuclideanDistanceWithWeights)->Arg(4)->Arg(50)->Arg(160);
+    BENCHMARK_TEMPLATE(BM_SquaredEuclideanDistance, 4);
+    BENCHMARK_TEMPLATE(BM_SquaredEuclideanDistance, 50);
+    BENCHMARK_TEMPLATE(BM_SquaredEuclideanDistance, 160);
+    BENCHMARK_TEMPLATE(BM_SquaredEuclideanDistanceWithWeights, 4);
+    BENCHMARK_TEMPLATE(BM_SquaredEuclideanDistanceWithWeights, 50);
+    BENCHMARK_TEMPLATE(BM_SquaredEuclideanDistanceWithWeights, 160);
 } // namespace lms::core::benchs

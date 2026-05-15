@@ -20,9 +20,10 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
+#include "database/objects/TrackId.hpp"
 #include "database/objects/TrackListId.hpp"
-#include "services/recommendation/Types.hpp"
 
 namespace lms::db
 {
@@ -38,7 +39,7 @@ namespace lms::recommendation
         virtual ~IPlaylistGeneratorService() = default;
 
         // extend an existing playlist with similar tracks (but use playlist contraints)
-        virtual TrackContainer extendPlaylist(db::TrackListId tracklistId, std::size_t maxCount) const = 0;
+        virtual std::vector<db::TrackId> extendPlaylist(db::TrackListId tracklistId, std::size_t maxCount) const = 0;
     };
 
     std::unique_ptr<IPlaylistGeneratorService> createPlaylistGeneratorService(db::IDb& db, IRecommendationService& recommendationService);

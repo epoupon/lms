@@ -19,35 +19,67 @@
 
 #pragma once
 
-#include <cassert>
+#include "math/Vector.hpp"
 
 namespace lms::math
 {
-    template<typename T>
-    constexpr T computeEuclideanSquaredDistance(const T* a, const T* b, std::size_t n)
+    template<std::size_t Size, typename FloatType>
+    constexpr FloatType computeEuclideanSquaredDistance(const Vector<Size, FloatType>& a, const Vector<Size, FloatType>& b)
     {
-        T res{};
+        FloatType res{};
 
-        for (std::size_t i{}; i < n; ++i)
+        for (std::size_t i{}; i < Size; ++i)
         {
-            const T diff{ a[i] - b[i] };
+            const FloatType diff{ a[i] - b[i] };
             res += diff * diff;
         }
 
         return res;
     }
 
-    template<typename T>
-    constexpr T computeEuclideanSquaredDistanceWithWeights(const T* a, const T* b, const T* weights, std::size_t n)
+    template<std::size_t Size, typename FloatType>
+    constexpr FloatType computeEuclideanSquaredDistanceWithWeights(const Vector<Size, FloatType>& a, const Vector<Size, FloatType>& b, const Vector<Size, FloatType>& weights)
     {
-        T res{};
+        FloatType res{};
 
-        for (std::size_t i{}; i < n; ++i)
+        for (std::size_t i{}; i < Size; ++i)
         {
-            const T diff{ a[i] - b[i] };
+            const FloatType diff{ a[i] - b[i] };
             res += diff * diff * weights[i];
         }
 
         return res;
     }
+
+    template<std::size_t Size, typename FloatType = float>
+    struct SquaredEuclideanDistance
+    {
+        constexpr SquaredEuclideanDistance(const Vector<Size, FloatType>& ref)
+            : _ref{ ref } {}
+
+        constexpr FloatType operator()(const Vector<Size, FloatType>& a) const
+        {
+            return computeEuclideanSquaredDistance(_ref, a);
+        }
+
+        const Vector<Size, FloatType>& _ref;
+    };
+
+    template<std::size_t Size, typename FloatType = float>
+    struct SquaredEuclideanDistanceWithWeights
+    {
+        constexpr SquaredEuclideanDistanceWithWeights(const Vector<Size, FloatType>& ref, const Vector<Size, FloatType>& weights)
+            : _ref{ ref }
+            , _weights{ weights }
+        {
+        }
+
+        constexpr FloatType operator()(const Vector<Size, FloatType>& a) const
+        {
+            return computeEuclideanSquaredDistanceWithWeights(_ref, a, _weights);
+        }
+
+        const Vector<Size, FloatType>& _ref;
+        const Vector<Size, FloatType>& _weights;
+    };
 } // namespace lms::math

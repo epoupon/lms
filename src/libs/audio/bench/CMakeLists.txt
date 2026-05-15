@@ -3,6 +3,12 @@ add_executable(bench-audio
 	DeltaCalculator.cpp
 	)
 
+if (OnnxRuntime_FOUND)
+    target_sources(bench-audio PRIVATE
+		MusicNNModel.cpp
+		)
+endif()
+
 target_include_directories(bench-audio PRIVATE
 	../impl
 	)

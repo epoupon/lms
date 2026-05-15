@@ -17,18 +17,11 @@
  * along with LMS.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "audio-similarity/AudioSimilarityEngine.impl.hpp"
 
-#include "math/Vector.hpp"
-
-#include "audio/AudioFeatures.hpp"
+#include "MusicNNEmbeddingEngine.hpp"
 
 namespace lms::recommendation
 {
-    using FloatType = audio::FeatureValue;
-    inline constexpr std::size_t audioFeatureCount{ 4 * audio::AudioFeatures::melBandCount + 4 * audio::AudioFeatures::mfccCount + 11 + 4 * audio::AudioFeatures::chromaCount + 2 };
-    inline constexpr std::size_t pcaDimCount{ 80 };
-
-    using AudioFeatureVector = math::Vector<audioFeatureCount, FloatType>;
-    using ReducedFeatureVector = math::Vector<pcaDimCount, FloatType>;
-} // namespace lms::recommendation
+    template class AudioSimilarityEngine<MusicNNEmbeddingProvider, 60>;
+}

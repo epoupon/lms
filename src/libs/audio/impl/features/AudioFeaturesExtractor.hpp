@@ -20,17 +20,11 @@
 #pragma once
 
 #include "audio/IAudioFeaturesExtractor.hpp"
-#include "audio/PcmTypes.hpp"
-#include "math/FFT.hpp"
 
 #include "ChromaCalculator.hpp"
 #include "MelFilterBank.hpp"
 #include "MfccCalculator.hpp"
-
-namespace lms::audio
-{
-    class IPcmDecoder;
-}
+#include "utils/PcmSpectralFrameDecoder.hpp"
 
 namespace lms::audio::features
 {
@@ -47,16 +41,11 @@ namespace lms::audio::features
     private:
         [[nodiscard]] FeatureExtractionResult extractFeatures(const std::filesystem::path& audioFile) const override;
 
-        std::size_t readSamples(IPcmDecoder& pcmDecoder, std::span<FloatType> buffer) const;
-
-        const PcmParameters _pcmParams;
-        static constexpr std::size_t _frameSize{ 1024 };
-        const std::array<FloatType, _frameSize> _window;
-        const float _windowEnergy;
+        static constexpr std::size_t _sampleRate{ 16000 };
+        static constexpr std::size_t _frameSize{ 512 };
+        using FrameDecoder = PcmSpectralFrameDecoder<_frameSize, FloatType>;
         const MelFilterBank _melFilterBank;
-        using FFTPlan = math::FixedRealFFTPlan<_frameSize>;
-        const FFTPlan _realFFTPlan;
         const MfccCalculator<AudioFeatures::melBandCount, AudioFeatures::mfccCount, float> _mfccCalculator;
-        const ChromaCalculator<FFTPlan::getOutputSize()> _chromaCalculator;
+        const ChromaCalculator<FrameDecoder::spectrumSize> _chromaCalculator;
     };
 } // namespace lms::audio::features

@@ -51,5 +51,6 @@ namespace lms::audio::features
 
     // Each filter covers a range of FFT bins and is normalized so that the sum of its weights equals 1.0
     // Each filter stores only its non-zero triangular region (sparse representation)
-    MelFilterBank computeMelFilterBank(size_t nfft, size_t sampleRate, size_t filterCount);
+    // fMin/fMax: frequency range in Hz. Defaults (0.f, 0.f) span from 0 to Nyquist.
+    MelFilterBank computeMelFilterBank(size_t nfft, size_t sampleRate, size_t filterCount, float fMin = 0.F, float fMax = 0.F);
 } // namespace lms::audio::features

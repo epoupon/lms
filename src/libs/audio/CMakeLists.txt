@@ -2,6 +2,7 @@ pkg_check_modules(LIBAV IMPORTED_TARGET libavcodec libavutil libavformat libswre
 pkg_check_modules(Taglib REQUIRED IMPORTED_TARGET taglib)
 pkg_check_modules(PulseAudio IMPORTED_TARGET libpulse)
 pkg_check_modules(ALSA IMPORTED_TARGET alsa)
+pkg_check_modules(OnnxRuntime IMPORTED_TARGET libonnxruntime)
 
 if (PulseAudio_FOUND OR ALSA_FOUND)
     message(STATUS "Audio output available (PulseAudio=${PulseAudio_FOUND}, ALSA=${ALSA_FOUND})")
@@ -23,6 +24,7 @@ add_library(lmsaudio STATIC
 	impl/ffmpeg/TagReader.cpp
 	impl/ffmpeg/Transcoder.cpp
 	impl/ffmpeg/Utils.cpp
+	impl/musicnn/MusicNNEmbeddings.cpp
 	impl/taglib/AudioFileInfo.cpp
 	impl/taglib/AudioFileInfoParser.cpp
 	impl/taglib/ImageReader.cpp
@@ -31,6 +33,7 @@ add_library(lmsaudio STATIC
 	impl/utils/PcmDecodeStreamer.cpp
 	impl/AudioFileInfoParser.cpp
 	impl/AudioOutput.cpp
+	impl/MusicNNEmbeddingExtractorCreator.cpp
 	impl/PcmTypes.cpp
 	impl/TagReader.cpp
 	)
@@ -41,6 +44,7 @@ target_include_directories(lmsaudio INTERFACE
 
 target_include_directories(lmsaudio PRIVATE
 	include
+	impl
 	${AVCODEC_INCLUDE_DIR}
 	${AVFORMAT_INCLUDE_DIR}
 	${AVUTIL_INCLUDE_DIR}
@@ -59,6 +63,7 @@ target_link_libraries(lmsaudio PRIVATE
 target_compile_definitions(lmsaudio PRIVATE
     $<$<BOOL:${PulseAudio_FOUND}>:LMS_HAVE_PULSEAUDIO>
     $<$<BOOL:${ALSA_FOUND}>:LMS_HAVE_ALSA>
+	$<$<BOOL:${OnnxRuntime_FOUND}>:LMS_HAVE_ONNX>
 	)
 
 # Should be safe enough for what we're doing
@@ -88,6 +93,17 @@ if (ALSA_FOUND)
     target_link_libraries(lmsaudio PRIVATE
         PkgConfig::ALSA
     )
+endif()
+
+if (OnnxRuntime_FOUND)
+    target_sources(lmsaudio PRIVATE
+		impl/musicnn/MusicNNEmbeddingExtractor.cpp
+        impl/musicnn/MusicNNModel.cpp
+    )
+    target_link_libraries(lmsaudio PRIVATE PkgConfig::OnnxRuntime)
+    message(STATUS "Using ONNX Runtime (${OnnxRuntime_VERSION})")
+
+	install(DIRECTORY models DESTINATION share/lms)
 endif()
 
 if(BUILD_TESTING)

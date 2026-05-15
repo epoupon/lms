@@ -22,8 +22,6 @@
 #include <array>
 #include <cmath>
 
-#include "math/EuclideanDistance.hpp"
-
 namespace lms::math
 {
     template<std::size_t Size, typename FloatType = float>
@@ -88,16 +86,6 @@ namespace lms::math
             return std::sqrt(res);
         }
 
-        constexpr Distance computeEuclideanSquaredDistance(const Vector& other) const
-        {
-            return math::computeEuclideanSquaredDistance(_values.data(), other.data(), Size);
-        }
-
-        constexpr Distance computeEuclideanSquaredDistanceWithWeights(const Vector& other, const Vector& weights) const
-        {
-            return math::computeEuclideanSquaredDistanceWithWeights(_values.data(), other.data(), weights.data(), Size);
-        }
-
         void normalizeL2()
         {
             constexpr value_type smallEpsilon{ 1e-12 };
@@ -151,35 +139,4 @@ namespace lms::math
         return v * scalar;
     }
 
-    template<std::size_t Size, typename FloatType = float>
-    struct SquaredEuclideanDistance
-    {
-        constexpr SquaredEuclideanDistance(const Vector<Size, FloatType>& ref)
-            : _ref{ ref } {}
-
-        constexpr FloatType operator()(const Vector<Size, FloatType>& a) const
-        {
-            return _ref.computeEuclideanSquaredDistance(a);
-        }
-
-        const Vector<Size, FloatType>& _ref;
-    };
-
-    template<std::size_t Size, typename FloatType = float>
-    struct SquaredEuclideanDistanceWithWeights
-    {
-        constexpr SquaredEuclideanDistanceWithWeights(const Vector<Size, FloatType>& ref, const Vector<Size, FloatType>& weights)
-            : _ref{ ref }
-            , _weights{ weights }
-        {
-        }
-
-        constexpr FloatType operator()(const Vector<Size, FloatType>& a) const
-        {
-            return _ref.computeEuclideanSquaredDistanceWithWeights(a, _weights);
-        }
-
-        const Vector<Size, FloatType>& _ref;
-        const Vector<Size, FloatType>& _weights;
-    };
 } // namespace lms::math

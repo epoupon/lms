@@ -1,7 +1,10 @@
 
 add_library(lmsrecommendation STATIC
 	impl/clusters/ClustersEngine.cpp
-	impl/features/FeaturesEngine.cpp
+	impl/audio-similarity/features/AudioFeatureEngine.cpp
+	impl/audio-similarity/features/AudioFeatureProvider.cpp
+	impl/audio-similarity/musicnn/MusicNNEmbeddingEngine.cpp
+	impl/audio-similarity/musicnn/MusicNNEmbeddingProvider.cpp
 	impl/playlist-constraints/ConsecutiveArtists.cpp
 	impl/playlist-constraints/ConsecutiveReleases.cpp
 	impl/playlist-constraints/DuplicateTracks.cpp

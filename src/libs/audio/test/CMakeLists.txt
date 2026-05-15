@@ -6,9 +6,18 @@ add_executable(test-audio
 	DeltaCalculator.cpp
 	MelFilterBank.cpp
 	MfccCalculator.cpp
+	MusicNNEmbeddings.cpp
+	OnsetCalculator.cpp
+	PcmSpectralFrameDecoder.cpp
 	SpectralFeatureCalculator.cpp
 	ZeroCrossingRateCalculator.cpp
 	)
+
+if (OnnxRuntime_FOUND)
+    target_sources(test-audio PRIVATE
+		MusicNNModel.cpp
+		)
+endif()
 
 target_include_directories(test-audio PRIVATE
 	../impl

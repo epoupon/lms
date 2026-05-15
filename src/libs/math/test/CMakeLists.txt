@@ -2,7 +2,9 @@ include(GoogleTest)
 
 add_executable(test-math
 	CentroidCalculator.cpp
+	CosineDistance.cpp
 	CovarianceCalculator.cpp
+	DotProduct.cpp
 	Entropy.cpp
 	EuclideanDistance.cpp
 	FFT.cpp

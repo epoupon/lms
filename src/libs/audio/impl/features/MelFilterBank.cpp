@@ -75,15 +75,18 @@ namespace lms::audio::features
         return energy;
     }
 
-    MelFilterBank computeMelFilterBank(std::size_t nfft, std::size_t sampleRate, std::size_t filterCount)
+    MelFilterBank computeMelFilterBank(std::size_t nfft, std::size_t sampleRate, std::size_t filterCount, float fMin, float fMax)
     {
         const float nyquist{ sampleRate / 2.F };
-        const float melNyquist{ freqToMel(nyquist) };
+        const float effectiveFMin{ (fMin <= 0.F) ? 0.F : fMin };
+        const float effectiveFMax{ (fMax <= 0.F || fMax > nyquist) ? nyquist : fMax };
+        const float melMin{ freqToMel(effectiveFMin) };
+        const float melMax{ freqToMel(effectiveFMax) };
 
         // 1. mel points
         std::vector<float> melPoints(filterCount + 2);
         for (std::size_t i{}; i < melPoints.size(); ++i)
-            melPoints[i] = i * melNyquist / (filterCount + 1);
+            melPoints[i] = melMin + i * (melMax - melMin) / (filterCount + 1);
 
         // 2. mel → Hz
         std::vector<float> freqs(filterCount + 2);

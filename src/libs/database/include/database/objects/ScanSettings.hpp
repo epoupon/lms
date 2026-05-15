@@ -53,8 +53,9 @@ namespace lms::db
         enum class SimilarityEngineType
         {
             Clusters = 0,
-            Features,
+            AudioFeatures,
             None,
+            AudioEmbeddings,
         };
 
         ScanSettings() = default;

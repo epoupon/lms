@@ -39,7 +39,7 @@ namespace lms::recommendation::PlaylistGeneratorConstraint
         ConsecutiveReleases& operator=(const ConsecutiveReleases&) = delete;
 
     private:
-        float computeScore(const std::vector<db::TrackId>& trackIds, std::size_t trackIndex) override;
+        float computeScore(std::span<const db::TrackId> trackIds, std::size_t trackIndex) override;
 
         db::ReleaseId getReleaseId(db::TrackId trackId);
 

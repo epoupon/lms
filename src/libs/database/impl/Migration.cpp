@@ -1718,6 +1718,14 @@ FROM track)");
   "track_id" bigint,
   constraint "fk_track_audio_features_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred
 ))");
+
+        utils::executeCommand(*session.getDboSession(), R"(CREATE TABLE IF NOT EXISTS "track_musicnn_embeddings" (
+  "id" integer primary key autoincrement,
+  "version" integer not null,
+  "data" blob not null,
+  "track_id" bigint,
+  constraint "fk_track_musicnn_embeddings_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred
+    ))");
     }
 
     bool doDbMigration(Session& session)

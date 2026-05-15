@@ -1,6 +1,8 @@
 
 add_executable(bench-math
 	FFT.cpp
+	CosineDistance.cpp
+	DotProduct.cpp
 	EuclideanDistance.cpp
 	Math.cpp
 	)

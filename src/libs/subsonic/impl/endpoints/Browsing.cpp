@@ -19,6 +19,9 @@
 
 #include "Browsing.hpp"
 
+#include <algorithm>
+#include <array>
+
 #include "core/ILogger.hpp"
 #include "core/Random.hpp"
 #include "core/Service.hpp"
@@ -109,7 +112,12 @@ namespace lms::api::subsonic
         {
             // API says: "Returns a random collection of songs from the given artist and similar artists"
             const std::size_t similarArtistCount{ count / 5 };
-            std::vector<ArtistId> artistIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(artistId, { TrackArtistLinkType::Artist }, similarArtistCount) };
+            const recommendation::ArtistResults similarArtists{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(artistId, { TrackArtistLinkType::Artist }, similarArtistCount) };
+            std::vector<ArtistId> artistIds;
+            artistIds.reserve(similarArtists.size() + 1);
+            std::transform(std::cbegin(similarArtists), std::cend(similarArtists), std::back_inserter(artistIds), [](const auto& result) {
+                return result.id;
+            });
             artistIds.push_back(artistId);
 
             const std::size_t meanTrackCountPerArtist{ (count / artistIds.size()) + 1 };
@@ -140,7 +148,12 @@ namespace lms::api::subsonic
             // API says: "Returns a random collection of songs from the given artist and similar artists"
             // so let's extend this for release
             const std::size_t similarReleaseCount{ count / 5 };
-            std::vector<ReleaseId> releaseIds{ core::Service<recommendation::IRecommendationService>::get()->getSimilarReleases(releaseId, similarReleaseCount) };
+            const recommendation::ReleaseResults similarReleases{ core::Service<recommendation::IRecommendationService>::get()->getSimilarReleases(releaseId, similarReleaseCount) };
+            std::vector<ReleaseId> releaseIds;
+            releaseIds.reserve(similarReleases.size() + 1);
+            std::transform(std::cbegin(similarReleases), std::cend(similarReleases), std::back_inserter(releaseIds), [](const auto& result) {
+                return result.id;
+            });
             releaseIds.push_back(releaseId);
 
             const std::size_t meanTrackCountPerRelease{ (count / releaseIds.size()) + 1 };
@@ -168,7 +181,14 @@ namespace lms::api::subsonic
 
         std::vector<TrackId> findSimilarSongs(RequestContext& /*context*/, TrackId trackId, std::size_t count)
         {
-            return core::Service<recommendation::IRecommendationService>::get()->findSimilarTracks({ trackId }, count);
+            const std::array<TrackId, 1> trackIdSpan{ trackId };
+            const recommendation::TrackResults similarTracks{ core::Service<recommendation::IRecommendationService>::get()->findSimilarTracks(trackIdSpan, count) };
+            std::vector<TrackId> trackIds;
+            trackIds.reserve(similarTracks.size());
+            std::transform(std::cbegin(similarTracks), std::cend(similarTracks), std::back_inserter(trackIds), [](const auto& result) {
+                return result.id;
+            });
+            return trackIds;
         }
 
         Response handleGetSimilarSongsRequestCommon(RequestContext& context, bool id3)
@@ -565,16 +585,16 @@ namespace lms::api::subsonic
             });
         }
 
-        auto similarArtistsId{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(id, { TrackArtistLinkType::Artist }, count) };
+        auto similarArtists{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(id, { TrackArtistLinkType::Artist }, count) };
 
         {
             auto transaction{ context.getDbSession().createReadTransaction() };
 
-            for (const ArtistId similarArtistId : similarArtistsId)
+            for (const auto& similarArtist : similarArtists)
             {
-                const Artist::pointer similarArtist{ Artist::find(context.getDbSession(), similarArtistId) };
-                if (similarArtist)
-                    artistInfoNode.addArrayChild("similarArtist", createArtistNode(context, similarArtist));
+                const Artist::pointer artist{ Artist::find(context.getDbSession(), similarArtist.id) };
+                if (artist)
+                    artistInfoNode.addArrayChild("similarArtist", createArtistNode(context, artist));
             }
         }
 

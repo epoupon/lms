@@ -36,66 +36,61 @@
 
 #include "JobQueue.hpp"
 #include "ScanContext.hpp"
+#include "TrackLocation.hpp"
 
 namespace lms::scanner
 {
     namespace
     {
-        struct TrackInfo
-        {
-            db::TrackId track;
-            std::filesystem::path trackPath;
-        };
-
         struct TrackAudioFeatureAssociation
         {
             db::TrackId trackId;
-            std::optional<audio::AudioFeatures> audioFeatures;
+            std::optional<audio::TrackAudioFeatures> trackFeatures;
         };
         using TrackAudioFeatureAssociationContainer = std::deque<TrackAudioFeatureAssociation>;
 
-        db::Track::FindParameters createFindTrackFeaturesParameters()
+        db::Track::FindParameters createFindTrackFeaturesParameters(db::TrackId lastRetrievedTrackId = {})
         {
             db::Track::FindParameters params;
             params.setHasAudioFeatures(false);
             params.setSortMethod(db::TrackSortMethod::Id);
+            params.setLastTrackId(lastRetrievedTrackId);
             params.setRange(db::Range{ .offset = 0, .size = 1 });
 
             return params;
         }
 
-        bool fetchNextTrackWithoutFeatures(db::Session& session, db::TrackId& lastRetrievedTrackId, TrackInfo& trackInfo)
+        bool fetchNextTrackWithoutFeatures(db::Session& session, db::TrackId& lastRetrievedTrackId, TrackLocation& trackLocation)
         {
             auto transaction{ session.createReadTransaction() };
 
-            db::Track::FindParameters params{ createFindTrackFeaturesParameters() };
-            params.setLastTrackId(lastRetrievedTrackId);
+            const db::Track::FindParameters params{ createFindTrackFeaturesParameters(lastRetrievedTrackId) };
 
-            trackInfo.track = db::TrackId{};
-            trackInfo.trackPath.clear();
-            db::Track::find(session, params, [&](const db::Track::pointer& track) {
-                trackInfo.track = track->getId();
-                trackInfo.trackPath = track->getAbsoluteFilePath();
+            trackLocation.track = db::TrackId{};
+            trackLocation.trackPath.clear();
+            db::Track::findAbsoluteFilePath(session, params, [&](db::TrackId trackId, const std::filesystem::path& absoluteFilePath) {
+                trackLocation.track = trackId;
+                trackLocation.trackPath = absoluteFilePath;
             });
 
-            lastRetrievedTrackId = trackInfo.track;
-            return trackInfo.track.isValid();
+            lastRetrievedTrackId = trackLocation.track;
+            return trackLocation.track.isValid();
         }
 
         class ExtractAudioFeaturesJob : public core::IJob
         {
         public:
-            ExtractAudioFeaturesJob(const audio::IAudioFeaturesExtractor& featuresExtractor, const TrackInfo& trackInfo)
+            ExtractAudioFeaturesJob(const audio::IAudioFeaturesExtractor& featuresExtractor, const TrackLocation& trackLocation)
                 : _featuresExtractor{ featuresExtractor }
-                , _trackInfo{ trackInfo }
+                , _trackLocation{ trackLocation }
             {
             }
             ~ExtractAudioFeaturesJob() override = default;
             ExtractAudioFeaturesJob(const ExtractAudioFeaturesJob&) = delete;
             ExtractAudioFeaturesJob& operator=(const ExtractAudioFeaturesJob&) = delete;
 
-            const TrackInfo& getTrackInfo() const { return _trackInfo; }
-            const audio::AudioFeatures* getAudioFeatures() const { return _extractedFeatures ? &_extractedFeatures.value() : nullptr; }
+            const TrackLocation& getTrackLocation() const { return _trackLocation; }
+            const audio::TrackAudioFeatures* getTrackFeatures() const { return _trackFeatures ? &_trackFeatures.value() : nullptr; }
             std::string_view getErrorMessage() const { return _errorMessage; }
 
         private:
@@ -106,9 +101,9 @@ namespace lms::scanner
                 // TODO check for abort!!
                 try
                 {
-                    LMS_LOG(DBUPDATER, DEBUG, "Extracting audio features for " << _trackInfo.trackPath);
-                    _extractedFeatures.emplace(_featuresExtractor.extractFeatures(_trackInfo.trackPath).features);
-                    LMS_LOG(DBUPDATER, DEBUG, "Extracting audio features complete for " << _trackInfo.trackPath);
+                    LMS_LOG(DBUPDATER, DEBUG, "Extracting audio features for " << _trackLocation.trackPath);
+                    _trackFeatures.emplace(_featuresExtractor.extractFeatures(_trackLocation.trackPath).features);
+                    LMS_LOG(DBUPDATER, DEBUG, "Extracting audio features complete for " << _trackLocation.trackPath);
                 }
                 catch (const audio::Exception& e)
                 {
@@ -117,8 +112,8 @@ namespace lms::scanner
             }
 
             const audio::IAudioFeaturesExtractor& _featuresExtractor;
-            const TrackInfo _trackInfo;
-            std::optional<audio::AudioFeatures> _extractedFeatures;
+            const TrackLocation _trackLocation;
+            std::optional<audio::TrackAudioFeatures> _trackFeatures;
             std::string _errorMessage;
         };
 
@@ -127,8 +122,8 @@ namespace lms::scanner
             db::Track::pointer track{ db::Track::find(session, trackAudioFeatureAssociation.trackId) };
             assert(track);
 
-            std::vector<std::byte> blob(sizeof(audio::AudioFeatures));
-            audio::audioFeaturesToBlob(*trackAudioFeatureAssociation.audioFeatures, blob);
+            std::vector<std::byte> blob(sizeof(audio::TrackAudioFeatures));
+            audio::trackAudioFeaturesToBlob(*trackAudioFeatureAssociation.trackFeatures, blob);
             db::TrackAudioFeatures::pointer trackFeatures{ session.create<db::TrackAudioFeatures>(track) };
             trackFeatures.modify()->setData(blob);
         }
@@ -137,7 +132,7 @@ namespace lms::scanner
         {
             constexpr std::size_t writeBatchSize{ 10 };
 
-            while ((forceFullBatch && trackAudioFeatureAssociations.size() >= writeBatchSize) || (!forceFullBatch && trackAudioFeatureAssociations.empty()))
+            while ((forceFullBatch && trackAudioFeatureAssociations.size() >= writeBatchSize) || (!forceFullBatch && !trackAudioFeatureAssociations.empty()))
             {
                 auto transaction{ session.createWriteTransaction() };
 
@@ -186,10 +181,10 @@ namespace lms::scanner
             {
                 const auto& extractAudioFeaturesJob{ static_cast<const ExtractAudioFeaturesJob&>(*job) };
 
-                if (const audio::AudioFeatures * features{ extractAudioFeaturesJob.getAudioFeatures() })
-                    trackAudioFeatureAssociations.push_back(TrackAudioFeatureAssociation{ .trackId = extractAudioFeaturesJob.getTrackInfo().track, .audioFeatures = *features });
+                if (const audio::TrackAudioFeatures * trackFeatures{ extractAudioFeaturesJob.getTrackFeatures() })
+                    trackAudioFeatureAssociations.push_back(TrackAudioFeatureAssociation{ .trackId = extractAudioFeaturesJob.getTrackLocation().track, .trackFeatures = *trackFeatures });
                 else
-                    addError<AudioFeaturesExtractError>(context, extractAudioFeaturesJob.getTrackInfo().trackPath, extractAudioFeaturesJob.getErrorMessage());
+                    addError<AudioFeaturesExtractError>(context, extractAudioFeaturesJob.getTrackLocation().trackPath, extractAudioFeaturesJob.getErrorMessage());
             }
 
             context.currentStepStats.processedElems += jobs.size();
@@ -201,9 +196,9 @@ namespace lms::scanner
             JobQueue queue{ getJobScheduler(), 50, processResults, 1, 0.85F };
 
             db::TrackId lastRetrievedTrackId;
-            TrackInfo trackInfo;
-            while (!_abortScan && fetchNextTrackWithoutFeatures(dbSession, lastRetrievedTrackId, trackInfo))
-                queue.push(std::make_unique<ExtractAudioFeaturesJob>(*_featuresExtractor, trackInfo));
+            TrackLocation trackLocation;
+            while (!_abortScan && fetchNextTrackWithoutFeatures(dbSession, lastRetrievedTrackId, trackLocation))
+                queue.push(std::make_unique<ExtractAudioFeaturesJob>(*_featuresExtractor, trackLocation));
         }
 
         updateTrackAudioFeatures(context, dbSession, trackAudioFeatureAssociations, false);
