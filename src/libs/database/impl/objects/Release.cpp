@@ -749,7 +749,7 @@ namespace lms::db
         return utils::fetchQueryResults(query);
     }
 
-    std::vector<Release::pointer> Release::getSimilarReleases(std::optional<std::size_t> offset, std::optional<std::size_t> count) const
+    std::vector<Release::pointer> Release::findSimilarReleases(std::optional<std::size_t> offset, std::optional<std::size_t> count) const
     {
         assert(session());
 

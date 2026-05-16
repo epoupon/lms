@@ -46,8 +46,8 @@ namespace lms::recommendation
 
         TrackResults findSimilarTracks(db::TrackListId tracklistId, std::size_t maxCount) const override;
         TrackResults findSimilarTracks(std::span<const db::TrackId> trackIds, std::size_t maxCount) const override;
-        ReleaseResults getSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const override;
-        ArtistResults getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
+        ReleaseResults findSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const override;
+        ArtistResults findSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
 
         db::IDb& _db;
         std::unique_ptr<IEngine> _engine;

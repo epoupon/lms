@@ -1726,6 +1726,8 @@ FROM track)");
   "track_id" bigint,
   constraint "fk_track_musicnn_embeddings_track" foreign key ("track_id") references "track" ("id") on delete cascade deferrable initially deferred
     ))");
+
+        // TODO in scan settings, rename similarity engine to recommendation engine
     }
 
     bool doDbMigration(Session& session)

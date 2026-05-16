@@ -58,7 +58,7 @@ namespace lms::scanner
         ExtractMusicNNEmbeddings,
         Optimize,
         ReconciliateArtists,
-        ReloadSimilarityEngine,
+        ReloadRecommendationEngine,
         RemoveOrphanedDbEntries,
         ScanFiles,
         UpdateLibraryFields,

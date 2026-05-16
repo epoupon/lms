@@ -67,7 +67,7 @@ namespace lms::ui
         public:
             static inline constexpr Field UpdatePeriodField{ "update-period" };
             static inline constexpr Field UpdateStartTimeField{ "update-start-time" };
-            static inline constexpr Field SimilarityEngineTypeField{ "similarity-engine-type" };
+            static inline constexpr Field RecommendationEngineTypeField{ "recommendation-engine-type" };
             static inline constexpr Field SkipSingleReleasePlayListsField{ "skip-single-release-playlists" };
             static inline constexpr Field AllowMBIDArtistMergeField{ "allow-mbid-artist-merge" };
             static inline constexpr Field ArtistImageFallbackToReleaseField{ "artist-image-fallback-to-release" };
@@ -81,7 +81,7 @@ namespace lms::ui
 
                 addField(UpdatePeriodField);
                 addField(UpdateStartTimeField);
-                addField(SimilarityEngineTypeField);
+                addField(RecommendationEngineTypeField);
                 addField(SkipSingleReleasePlayListsField);
                 addField(AllowMBIDArtistMergeField);
                 addField(ArtistImageFallbackToReleaseField);
@@ -89,7 +89,7 @@ namespace lms::ui
 
                 setValidator(UpdatePeriodField, createMandatoryValidator());
                 setValidator(UpdateStartTimeField, createMandatoryValidator());
-                setValidator(SimilarityEngineTypeField, createMandatoryValidator());
+                setValidator(RecommendationEngineTypeField, createMandatoryValidator());
                 setValidator(SkipSingleReleasePlayListsField, createMandatoryValidator());
                 setValidator(AllowMBIDArtistMergeField, createMandatoryValidator());
                 setValidator(ArtistImageFallbackToReleaseField, createMandatoryValidator());
@@ -97,7 +97,7 @@ namespace lms::ui
 
             std::shared_ptr<UpdatePeriodModel> updatePeriodModel() { return _updatePeriodModel; }
             std::shared_ptr<Wt::WAbstractItemModel> updateStartTimeModel() { return _updateStartTimeModel; }
-            std::shared_ptr<Wt::WAbstractItemModel> similarityEngineTypeModel() { return _similarityEngineTypeModel; }
+            std::shared_ptr<Wt::WAbstractItemModel> recommendationEngineTypeModel() { return _recommendationEngineTypeModel; }
 
             void loadData(std::vector<std::string>& extraTagsToScan, std::vector<std::string>& artistDelimiters, std::vector<std::string>& defaultDelimiters)
             {
@@ -123,9 +123,9 @@ namespace lms::ui
                 setValue(AllowMBIDArtistMergeField, scanSettings->getAllowMBIDArtistMerge());
                 setValue(ArtistImageFallbackToReleaseField, scanSettings->getArtistImageFallbackToReleaseField());
 
-                auto similarityEngineTypeRow{ _similarityEngineTypeModel->getRowFromValue(scanSettings->getSimilarityEngineType()) };
-                if (similarityEngineTypeRow)
-                    setValue(SimilarityEngineTypeField, _similarityEngineTypeModel->getString(*similarityEngineTypeRow));
+                auto recommendationEngineTypeRow{ _recommendationEngineTypeModel->getRowFromValue(scanSettings->getRecommendationEngineType()) };
+                if (recommendationEngineTypeRow)
+                    setValue(RecommendationEngineTypeField, _recommendationEngineTypeModel->getString(*recommendationEngineTypeRow));
 
                 const auto extraTags{ scanSettings->getExtraTagsToScan() };
                 extraTagsToScan.clear();
@@ -175,9 +175,9 @@ namespace lms::ui
                 }
 
                 {
-                    const auto similarityEngineTypeRow{ _similarityEngineTypeModel->getRowFromString(valueText(SimilarityEngineTypeField)) };
-                    if (similarityEngineTypeRow)
-                        scanSettings.modify()->setSimilarityEngineType(_similarityEngineTypeModel->getValue(*similarityEngineTypeRow));
+                    const auto recommendationEngineTypeRow{ _recommendationEngineTypeModel->getRowFromString(valueText(RecommendationEngineTypeField)) };
+                    if (recommendationEngineTypeRow)
+                        scanSettings.modify()->setRecommendationEngineType(_recommendationEngineTypeModel->getValue(*recommendationEngineTypeRow));
                 }
 
                 scanSettings.modify()->setExtraTagsToScan(extraTagsToScan);
@@ -209,14 +209,14 @@ namespace lms::ui
                     _updateStartTimeModel->add(time.toString(), time);
                 }
 
-                _similarityEngineTypeModel = std::make_shared<ValueStringModel<db::ScanSettings::SimilarityEngineType>>();
-                _similarityEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.similarity-engine-type.clusters"), db::ScanSettings::SimilarityEngineType::Clusters);
-                _similarityEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.similarity-engine-type.none"), db::ScanSettings::SimilarityEngineType::None);
+                _recommendationEngineTypeModel = std::make_shared<ValueStringModel<db::ScanSettings::RecommendationEngineType>>();
+                _recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.clusters"), db::ScanSettings::RecommendationEngineType::Clusters);
+                _recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.none"), db::ScanSettings::RecommendationEngineType::None);
             }
 
             std::shared_ptr<UpdatePeriodModel> _updatePeriodModel;
             std::shared_ptr<ValueStringModel<Wt::WTime>> _updateStartTimeModel;
-            std::shared_ptr<ValueStringModel<db::ScanSettings::SimilarityEngineType>> _similarityEngineTypeModel;
+            std::shared_ptr<ValueStringModel<db::ScanSettings::RecommendationEngineType>> _recommendationEngineTypeModel;
         };
 
         class LineEditEntryModel : public Wt::WFormModel
@@ -381,10 +381,10 @@ namespace lms::ui
         // Allow to fallback on release image if artist image is not available
         t->setFormWidget(DatabaseSettingsModel::ArtistImageFallbackToReleaseField, std::make_unique<Wt::WCheckBox>());
 
-        // Similarity engine type
-        auto similarityEngineType{ std::make_unique<Wt::WComboBox>() };
-        similarityEngineType->setModel(model->similarityEngineTypeModel());
-        t->setFormWidget(DatabaseSettingsModel::SimilarityEngineTypeField, std::move(similarityEngineType));
+        // Recommendation engine type
+        auto recommendationEngineType{ std::make_unique<Wt::WComboBox>() };
+        recommendationEngineType->setModel(model->recommendationEngineTypeModel());
+        t->setFormWidget(DatabaseSettingsModel::RecommendationEngineTypeField, std::move(recommendationEngineType));
 
         // Extra tags
         std::shared_ptr<Wt::WValidator> extraTagValidator{ createUppercaseValidator() };

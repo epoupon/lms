@@ -31,11 +31,11 @@ namespace lms::recommendation
 {
     namespace
     {
-        db::ScanSettings::SimilarityEngineType getSimilarityEngineType(db::Session& session)
+        db::ScanSettings::RecommendationEngineType getRecommendationEngineType(db::Session& session)
         {
             auto transaction{ session.createReadTransaction() };
 
-            return db::ScanSettings::find(session)->getSimilarityEngineType();
+            return db::ScanSettings::find(session)->getRecommendationEngineType();
         }
     } // namespace
 
@@ -70,7 +70,7 @@ namespace lms::recommendation
         return _engine->findSimilarTracks(trackIds, maxCount);
     }
 
-    ReleaseResults RecommendationService::getSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const
+    ReleaseResults RecommendationService::findSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const
     {
         ReleaseResults res;
 
@@ -80,7 +80,7 @@ namespace lms::recommendation
         return _engine->findSimilarReleases(releaseId, maxCount);
     }
 
-    ArtistResults RecommendationService::getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
+    ArtistResults RecommendationService::findSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
     {
         ArtistResults res;
 
@@ -95,21 +95,21 @@ namespace lms::recommendation
         // not thread safe :/
         _engine.reset(); // may block
 
-        switch (getSimilarityEngineType(_db.getTLSSession()))
+        switch (getRecommendationEngineType(_db.getTLSSession()))
         {
-        case db::ScanSettings::SimilarityEngineType::Clusters:
+        case db::ScanSettings::RecommendationEngineType::Clusters:
             _engine = std::make_unique<ClusterEngine>(_db);
             break;
 
-        case db::ScanSettings::SimilarityEngineType::AudioFeatures:
+        case db::ScanSettings::RecommendationEngineType::AudioFeatures:
             _engine = std::make_unique<AudioFeatureEngine>(_db);
             break;
 
-        case db::ScanSettings::SimilarityEngineType::AudioEmbeddings:
+        case db::ScanSettings::RecommendationEngineType::AudioEmbeddings:
             _engine = std::make_unique<MusicNNEmbeddingEngine>(_db);
             break;
 
-        case db::ScanSettings::SimilarityEngineType::None:
+        case db::ScanSettings::RecommendationEngineType::None:
             _engine.reset();
             break;
         }

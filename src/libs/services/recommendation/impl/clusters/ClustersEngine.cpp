@@ -109,7 +109,7 @@ namespace lms::recommendation
             if (!release)
                 return res;
 
-            const auto releases{ release->getSimilarReleases(0, maxCount) };
+            const auto releases{ release->findSimilarReleases(0, maxCount) };
             res.reserve(releases.size());
             std::transform(std::cbegin(releases), std::cend(releases), std::back_inserter(res), [](const auto& release) {
                 return RecommendationResult<ReleaseId>{ .id = release->getId(), .score = {} };

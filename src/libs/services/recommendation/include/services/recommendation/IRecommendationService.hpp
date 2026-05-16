@@ -47,8 +47,8 @@ namespace lms::recommendation
 
         virtual TrackResults findSimilarTracks(db::TrackListId tracklistId, std::size_t maxCount) const = 0;
         virtual TrackResults findSimilarTracks(std::span<const db::TrackId> tracksId, std::size_t maxCount) const = 0;
-        virtual ReleaseResults getSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const = 0;
-        virtual ArtistResults getSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const = 0;
+        virtual ReleaseResults findSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const = 0;
+        virtual ArtistResults findSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const = 0;
     };
 
     std::unique_ptr<IRecommendationService> createRecommendationService(db::IDb& db);

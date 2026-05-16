@@ -94,13 +94,13 @@
 <message id="Lms.Admin.Database.misc">Varios</message>
 <message id="Lms.Admin.Database.monthly">Mensualmente</message>
 <message id="Lms.Admin.Database.never">Nunca</message>
+<message id="Lms.Admin.Database.recommendation-engine-type">Motor de recomendaciones</message>
+<message id="Lms.Admin.Database.recommendation-engine-type.clusters">Basado en las etiquetas</message>
+<message id="Lms.Admin.Database.recommendation-engine-type.none">Ninguno</message>
 <message id="Lms.Admin.Database.scan-aborted">¡Escaneo interrumpido!</message>
 <message id="Lms.Admin.Database.scan-complete">Escaneo terminado : {1} ficheros, {2} añadidos, {3} actualizados, {4} eliminados, {5} duplicados, {6} errores</message>
 <message id="Lms.Admin.Database.scan-launched">¡Escaneo comenzado!</message>
 <message id="Lms.Admin.Database.scan-settings">Opciones de escaneo</message>
-<message id="Lms.Admin.Database.similarity-engine-type">Motor de semejanza</message>
-<message id="Lms.Admin.Database.similarity-engine-type.clusters">Basado en las etiquetas</message>
-<message id="Lms.Admin.Database.similarity-engine-type.none">Ninguno</message>
 <message id="Lms.Admin.Database.skip-single-release-playlists">Ignorar las lista de reproducción que contienen pistas del mismo álbum</message>
 <message id="Lms.Admin.Database.tag-delimiter-must-not-contain-only-spaces">Los delimitadores de las etiquetas no deben consistir solo en espacios</message>
 <message id="Lms.Admin.Database.tag-parsing">Análisis de las etiquetas</message>
@@ -154,7 +154,7 @@
 <message id="Lms.Admin.ScannerController.step-extract-musicnn-embeddings">Extracción de embeddings de MusicNN: {1} de {2} archivos ({3}%)</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Optimizando la base de datos... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reconciliate-artists">Reconciliando artistas: {1} entradas...</message>
-<message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Recargando el motor de similitud: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-reloading-recommendation-engine">Recargando el motor de recomendaciones: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">Borrando entradas huérfanas: {1} entradas...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">Análisis de bibliotecas: {1} ficheros...</message>
 <message id="Lms.Admin.ScannerController.step-status">Estado de las etapas</message>

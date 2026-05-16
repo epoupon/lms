@@ -125,8 +125,8 @@ namespace lms::scanner
             settings->allowArtistMBIDFallback = scanSettings->getAllowMBIDArtistMerge();
             settings->artistImageFallbackToRelease = scanSettings->getArtistImageFallbackToReleaseField();
 
-            settings->extractAudioFeatures = scanSettings->getSimilarityEngineType() == db::ScanSettings::SimilarityEngineType::AudioFeatures;
-            settings->extractMusicNNEmbeddings = scanSettings->getSimilarityEngineType() == db::ScanSettings::SimilarityEngineType::AudioEmbeddings;
+            settings->extractAudioFeatures = scanSettings->getRecommendationEngineType() == db::ScanSettings::RecommendationEngineType::AudioFeatures;
+            settings->extractMusicNNEmbeddings = scanSettings->getRecommendationEngineType() == db::ScanSettings::RecommendationEngineType::AudioEmbeddings;
             settings->musicnnModelPath = core::Service<core::IConfig>::get()->getString("musicnn-model-path", "/usr/share/lms/models/MSD_musicnn_embedding.onnx");
 
             // TODO, store this in DB + expose in UI
@@ -525,7 +525,7 @@ namespace lms::scanner
         _scanSteps.emplace_back(std::make_unique<ScanStepComputeClusterStats>(params));
         _scanSteps.emplace_back(std::make_unique<ScanStepCheckForDuplicatedFiles>(params));
 
-        // Audio similarity scan steps must be the last one because it is the most long running and we want the user be able to browse the library and play music as soon as possible
+        // Audio extraction scan steps must be the last one because it is the most long running and we want the user be able to browse the library and play music as soon as possible
         if (_settings.extractAudioFeatures)
             _scanSteps.emplace_back(std::make_unique<ScanStepExtractAudioFeatures>(params));
 

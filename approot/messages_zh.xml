@@ -92,13 +92,13 @@
 <message id="Lms.Admin.Database.misc">其他</message>
 <message id="Lms.Admin.Database.monthly">每月</message>
 <message id="Lms.Admin.Database.never">从不</message>
+<message id="Lms.Admin.Database.recommendation-engine-type">推荐引擎</message>
+<message id="Lms.Admin.Database.recommendation-engine-type.clusters">基于标签</message>
+<message id="Lms.Admin.Database.recommendation-engine-type.none">无</message>
 <message id="Lms.Admin.Database.scan-aborted">扫描已中止！</message>
 <message id="Lms.Admin.Database.scan-complete">扫描完成：总文件 {1}，添加文件 {2}，更新文件 {3}，删除文件 {4}，重复文件 {5}，错误文件 {6}</message>
 <message id="Lms.Admin.Database.scan-launched">扫描已完成！</message>
 <message id="Lms.Admin.Database.scan-settings">扫描选项</message>
-<message id="Lms.Admin.Database.similarity-engine-type">相似度引擎</message>
-<message id="Lms.Admin.Database.similarity-engine-type.clusters">基于标签</message>
-<message id="Lms.Admin.Database.similarity-engine-type.none">无</message>
 <message id="Lms.Admin.Database.skip-single-release-playlists">跳过仅包含同一专辑曲目的播放列表</message>
 <message id="Lms.Admin.Database.tag-delimiter-must-not-contain-only-spaces">标签分隔符不能仅由空格组成</message>
 <message id="Lms.Admin.Database.tag-parsing">标签解析</message>
@@ -152,7 +152,7 @@
 <message id="Lms.Admin.ScannerController.step-extract-musicnn-embeddings">正在提取 MusicNN 嵌入：{1} / {2} 个文件（{3}%）</message>
 <message id="Lms.Admin.ScannerController.step-optimize">正在优化数据库... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reconciliate-artists">整理艺术家：{1} 条记录...</message>
-<message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">重载相似引擎中 {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-reloading-recommendation-engine">正在重新加载推荐引擎：{1}%...</message>
 <message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">移除孤立条目：{1} 条记录...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">库分析：{1} 个文件...</message>
 <message id="Lms.Admin.ScannerController.step-status">当前步骤状态</message>

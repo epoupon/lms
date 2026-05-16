@@ -95,13 +95,13 @@
 <message id="Lms.Admin.Database.misc">Różne</message>
 <message id="Lms.Admin.Database.monthly">Co miesiąc</message>
 <message id="Lms.Admin.Database.never">Nigdy</message>
+<message id="Lms.Admin.Database.recommendation-engine-type">Silnik rekomendacji</message>
+<message id="Lms.Admin.Database.recommendation-engine-type.clusters">Oparta o znaczniki</message>
+<message id="Lms.Admin.Database.recommendation-engine-type.none">Żadna</message>
 <message id="Lms.Admin.Database.scan-aborted">Skanowanie przerwane!</message>
 <message id="Lms.Admin.Database.scan-complete">Skanowanie ukończone: {1} wszystkich plików, {2} dodane, {3} zmienione, {4} usunięte, {5} duplikaty, {6} błędy</message>
 <message id="Lms.Admin.Database.scan-launched">Skanowanie uruchomione!</message>
 <message id="Lms.Admin.Database.scan-settings">Ustawienia skanowania</message>
-<message id="Lms.Admin.Database.similarity-engine-type">Metoda sprawdzania podobieństwa</message>
-<message id="Lms.Admin.Database.similarity-engine-type.clusters">Oparta o znaczniki</message>
-<message id="Lms.Admin.Database.similarity-engine-type.none">Żadna</message>
 <message id="Lms.Admin.Database.skip-single-release-playlists">Pomiń playlisty zawierające utwory z tego samego albumu</message>
 <message id="Lms.Admin.Database.tag-delimiter-must-not-contain-only-spaces">Rozdzielacz nie może się składać z samych białych znaków</message>
 <message id="Lms.Admin.Database.tag-parsing">Analiza tagów</message>
@@ -167,7 +167,7 @@
 <message id="Lms.Admin.ScannerController.step-extract-musicnn-embeddings">Ekstrakcja embeddingów MusicNN: {1} z {2} plików ({3}%)</message>
 <message id="Lms.Admin.ScannerController.step-optimize">Optymalizowanie bazy danych... {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-reconciliate-artists">Uzgodnianie artystów: {1} wpisów...</message>
-<message id="Lms.Admin.ScannerController.step-reloading-similarity-engine">Przeładowywanie silnika podobieństw: {1}%...</message>
+<message id="Lms.Admin.ScannerController.step-reloading-recommendation-engine">Przeładowywanie silnika rekomendacji: {1}%...</message>
 <message id="Lms.Admin.ScannerController.step-removing-orphaned-entries">Usuwanie osieroconych wpisów: {1} wpisów...</message>
 <message id="Lms.Admin.ScannerController.step-scanning-files">
 	<plural case="0">Analiza bibliotek: {1} plik</plural>

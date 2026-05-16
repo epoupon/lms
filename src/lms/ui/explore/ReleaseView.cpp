@@ -232,7 +232,7 @@ namespace lms::ui
         if (!releaseId)
             throw ReleaseNotFoundException{};
 
-        const auto similarReleases{ core::Service<recommendation::IRecommendationService>::get()->getSimilarReleases(*releaseId, 5) };
+        const auto similarReleases{ core::Service<recommendation::IRecommendationService>::get()->findSimilarReleases(*releaseId, 5) };
         std::vector<db::ReleaseId> similarReleasesIds;
         similarReleasesIds.reserve(similarReleases.size());
         std::transform(std::cbegin(similarReleases), std::cend(similarReleases), std::back_inserter(similarReleasesIds), [](const auto& result) {

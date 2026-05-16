@@ -90,12 +90,12 @@
 			</div>
 		</div>
 		<div class="col-12">
-			<label class="form-label" for="${id:similarity-engine-type}">
-				${tr:Lms.Admin.Database.similarity-engine-type}
+			<label class="form-label" for="${id:recommendation-engine-type}">
+				${tr:Lms.Admin.Database.recommendation-engine-type}
 			</label>
-			${similarity-engine-type class="form-control"}
+			${recommendation-engine-type class="form-control"}
 			<div class="invalid-feedback">
-				${similarity-engine-type-info}
+				${recommendation-engine-type-info}
 			</div>
 		</div>
 	</form>

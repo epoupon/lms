@@ -349,7 +349,7 @@ namespace lms::db
         void visitTrackArtists(TrackArtistLinkType type, std::function<void(const ObjectPtr<Artist>&)> visitor) const;
         std::vector<ArtistId> getTrackArtistIds(TrackArtistLinkType type = TrackArtistLinkType::Artist) const;
         bool hasVariousArtists() const;
-        std::vector<pointer> getSimilarReleases(std::optional<std::size_t> offset = {}, std::optional<std::size_t> count = {}) const;
+        std::vector<pointer> findSimilarReleases(std::optional<std::size_t> offset = {}, std::optional<std::size_t> count = {}) const;
 
         template<class Action>
         void persist(Action& a)

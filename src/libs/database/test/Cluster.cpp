@@ -890,9 +890,9 @@ namespace lms::db::tests
 
         {
             auto transaction{ session.createReadTransaction() };
-            EXPECT_EQ(release1->getSimilarReleases().size(), 0);
-            EXPECT_EQ(release2->getSimilarReleases().size(), 0);
-            EXPECT_EQ(release3->getSimilarReleases().size(), 0);
+            EXPECT_EQ(release1->findSimilarReleases().size(), 0);
+            EXPECT_EQ(release2->findSimilarReleases().size(), 0);
+            EXPECT_EQ(release3->findSimilarReleases().size(), 0);
         }
 
         std::list<ScopedTrack> tracks;
@@ -924,13 +924,13 @@ namespace lms::db::tests
             auto transaction{ session.createReadTransaction() };
 
             {
-                auto releases{ release1->getSimilarReleases() };
+                auto releases{ release1->findSimilarReleases() };
                 ASSERT_EQ(releases.size(), 1);
                 EXPECT_EQ(releases.front()->getId(), release2.getId());
             }
 
             {
-                auto releases{ release2->getSimilarReleases() };
+                auto releases{ release2->findSimilarReleases() };
                 ASSERT_EQ(releases.size(), 2);
                 EXPECT_EQ(releases[0]->getId(), release1.getId());
                 EXPECT_EQ(releases[1]->getId(), release3.getId());

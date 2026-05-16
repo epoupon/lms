@@ -109,7 +109,7 @@ namespace lms::ui
         if (!artistId)
             throw ArtistNotFoundException{};
 
-        const auto similarArtists{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(*artistId, { db::TrackArtistLinkType::Artist }, 6) };
+        const auto similarArtists{ core::Service<recommendation::IRecommendationService>::get()->findSimilarArtists(*artistId, { db::TrackArtistLinkType::Artist }, 6) };
         std::vector<db::ArtistId> similarArtistIds;
         similarArtistIds.reserve(similarArtists.size());
         std::transform(std::cbegin(similarArtists), std::cend(similarArtists), std::back_inserter(similarArtistIds), [](const auto& result) {

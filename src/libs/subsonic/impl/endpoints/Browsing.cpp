@@ -112,7 +112,7 @@ namespace lms::api::subsonic
         {
             // API says: "Returns a random collection of songs from the given artist and similar artists"
             const std::size_t similarArtistCount{ count / 5 };
-            const recommendation::ArtistResults similarArtists{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(artistId, { TrackArtistLinkType::Artist }, similarArtistCount) };
+            const recommendation::ArtistResults similarArtists{ core::Service<recommendation::IRecommendationService>::get()->findSimilarArtists(artistId, { TrackArtistLinkType::Artist }, similarArtistCount) };
             std::vector<ArtistId> artistIds;
             artistIds.reserve(similarArtists.size() + 1);
             std::transform(std::cbegin(similarArtists), std::cend(similarArtists), std::back_inserter(artistIds), [](const auto& result) {
@@ -148,7 +148,7 @@ namespace lms::api::subsonic
             // API says: "Returns a random collection of songs from the given artist and similar artists"
             // so let's extend this for release
             const std::size_t similarReleaseCount{ count / 5 };
-            const recommendation::ReleaseResults similarReleases{ core::Service<recommendation::IRecommendationService>::get()->getSimilarReleases(releaseId, similarReleaseCount) };
+            const recommendation::ReleaseResults similarReleases{ core::Service<recommendation::IRecommendationService>::get()->findSimilarReleases(releaseId, similarReleaseCount) };
             std::vector<ReleaseId> releaseIds;
             releaseIds.reserve(similarReleases.size() + 1);
             std::transform(std::cbegin(similarReleases), std::cend(similarReleases), std::back_inserter(releaseIds), [](const auto& result) {
@@ -585,7 +585,7 @@ namespace lms::api::subsonic
             });
         }
 
-        auto similarArtists{ core::Service<recommendation::IRecommendationService>::get()->getSimilarArtists(id, { TrackArtistLinkType::Artist }, count) };
+        auto similarArtists{ core::Service<recommendation::IRecommendationService>::get()->findSimilarArtists(id, { TrackArtistLinkType::Artist }, count) };
 
         {
             auto transaction{ context.getDbSession().createReadTransaction() };

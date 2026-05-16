@@ -50,7 +50,7 @@ namespace lms::db
         };
 
         // Do not modify values (just add)
-        enum class SimilarityEngineType
+        enum class RecommendationEngineType
         {
             Clusters = 0,
             AudioFeatures,
@@ -69,7 +69,7 @@ namespace lms::db
         Wt::WTime getUpdateStartTime() const { return _startTime; }
         UpdatePeriod getUpdatePeriod() const { return _updatePeriod; }
         std::vector<std::string_view> getExtraTagsToScan() const;
-        SimilarityEngineType getSimilarityEngineType() const { return _similarityEngineType; }
+        RecommendationEngineType getRecommendationEngineType() const { return _recommendationEngineType; }
         std::vector<std::string> getArtistTagDelimiters() const;
         std::vector<std::string> getDefaultTagDelimiters() const;
         std::vector<std::string> getArtistsToNotSplit() const;
@@ -81,7 +81,7 @@ namespace lms::db
         void setUpdateStartTime(Wt::WTime t) { _startTime = t; }
         void setUpdatePeriod(UpdatePeriod p) { _updatePeriod = p; }
         void setExtraTagsToScan(std::span<const std::string_view> extraTags);
-        void setSimilarityEngineType(SimilarityEngineType type) { _similarityEngineType = type; }
+        void setRecommendationEngineType(RecommendationEngineType type) { _recommendationEngineType = type; }
         void setArtistTagDelimiters(std::span<const std::string_view> delimiters);
         void setArtistsToNotSplit(std::span<const std::string_view> artists);
         void setDefaultTagDelimiters(std::span<const std::string_view> delimiters);
@@ -97,7 +97,7 @@ namespace lms::db
             Wt::Dbo::field(a, _artistInfoScanVersion, "artist_info_scan_version");
             Wt::Dbo::field(a, _startTime, "start_time");
             Wt::Dbo::field(a, _updatePeriod, "update_period");
-            Wt::Dbo::field(a, _similarityEngineType, "similarity_engine_type");
+            Wt::Dbo::field(a, _recommendationEngineType, "similarity_engine_type");
             Wt::Dbo::field(a, _extraTagsToScan, "extra_tags_to_scan");
             Wt::Dbo::field(a, _artistTagDelimiters, "artist_tag_delimiters");
             Wt::Dbo::field(a, _artistsToNotSplit, "artists_to_not_split");
@@ -120,7 +120,7 @@ namespace lms::db
         int _artistInfoScanVersion{};
         Wt::WTime _startTime = Wt::WTime{ 0, 0, 0 };
         UpdatePeriod _updatePeriod{ UpdatePeriod::Never };
-        SimilarityEngineType _similarityEngineType{ SimilarityEngineType::Clusters };
+        RecommendationEngineType _recommendationEngineType{ RecommendationEngineType::Clusters };
         std::string _extraTagsToScan;
         std::string _artistTagDelimiters;
         std::string _artistsToNotSplit;
