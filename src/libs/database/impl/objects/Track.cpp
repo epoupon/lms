@@ -364,7 +364,7 @@ namespace lms::db
 
         auto query{ createQuery<std::tuple<TrackId, std::filesystem::path>>(session, itemToSelect, params) };
 
-        utils::forEachQueryResult(query, [&](const auto& res) {
+        utils::forEachQueryRangeResult(query, params.range, [&](const auto& res) {
             func(std::get<0>(res), std::get<1>(res));
         });
     }

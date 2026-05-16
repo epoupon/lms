@@ -65,7 +65,7 @@ namespace lms::scanner
         {
             auto transaction{ session.createReadTransaction() };
 
-            const db::Track::FindParameters params{ createFindTrackParams() };
+            const db::Track::FindParameters params{ createFindTrackParams(lastRetrievedTrackId) };
 
             trackLocation.track = db::TrackId{};
             trackLocation.trackPath.clear();
@@ -73,7 +73,6 @@ namespace lms::scanner
                 trackLocation.track = trackId;
                 trackLocation.trackPath = absoluteFilePath;
             });
-
             lastRetrievedTrackId = trackLocation.track;
             return trackLocation.track.isValid();
         }

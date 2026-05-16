@@ -51,7 +51,6 @@ namespace lms::audio::musicnn
 
         explicit Impl(const std::filesystem::path& onnxPath)
             : env{ ORT_LOGGING_LEVEL_ERROR, "MusicNN" }
-            , sessionOptions{}
             , session{ [&]() -> Ort::Session {
                 sessionOptions.SetIntraOpNumThreads(1);
                 sessionOptions.SetInterOpNumThreads(1);
