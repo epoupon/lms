@@ -127,13 +127,18 @@ namespace lms::audio
             if (frameCount == 0)
                 return 0;
 
-            const std::size_t requiredSampleCount{ frameCount * _hopSize };
-            if (!readAtLeastSamples(requiredSampleCount))
-                return 0;
+            std::size_t skippedFrameCount{};
+            while (skippedFrameCount < frameCount)
+            {
+                if (!readAtLeastSamples(std::max(WindowSize, _hopSize)))
+                    break;
 
-            consumeSamples(requiredSampleCount);
-            _currentFrameIndex += frameCount;
-            return frameCount;
+                consumeSamples(_hopSize);
+                ++_currentFrameIndex;
+                ++skippedFrameCount;
+            }
+
+            return skippedFrameCount;
         }
 
         [[nodiscard]] std::size_t currentFrameIndex() const noexcept { return _currentFrameIndex; }
@@ -154,6 +159,7 @@ namespace lms::audio
             while ((_bufferedSampleCount < sampleCount) && !_endOfStream)
             {
                 std::span<FloatType> dest{ _samplesBuffer.data() + _bufferedSampleCount, _samplesBuffer.size() - _bufferedSampleCount };
+                assert(!dest.empty());
                 if (dest.empty())
                     break;
 
@@ -174,19 +180,18 @@ namespace lms::audio
 
         void consumeSamples(std::size_t samplesToDrop)
         {
+            // TODO use a circular buffer and only compacts at the end of the buffer
             assert(samplesToDrop <= _bufferedSampleCount);
 
-            if (samplesToDrop < _bufferedSampleCount)
+            const auto remaining{ _bufferedSampleCount - samplesToDrop };
+            if (remaining)
             {
-                std::move(_samplesBuffer.begin() + static_cast<std::ptrdiff_t>(samplesToDrop),
-                          _samplesBuffer.begin() + static_cast<std::ptrdiff_t>(_bufferedSampleCount),
+                std::move(_samplesBuffer.begin() + samplesToDrop,
+                          _samplesBuffer.begin() + _bufferedSampleCount,
                           _samplesBuffer.begin());
-                _bufferedSampleCount -= samplesToDrop;
             }
-            else
-            {
-                _bufferedSampleCount = 0;
-            }
+
+            _bufferedSampleCount = remaining;
         }
 
         const PcmParameters _pcmParams;

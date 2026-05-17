@@ -43,12 +43,12 @@ namespace lms::audio::musicnn
         static constexpr std::size_t sampleRate{ 16'000 };
         static constexpr std::size_t windowSize{ 512 }; // 512-sample Hann window (32 ms)
         static constexpr std::size_t fftSize{ 512 };
-        static constexpr std::size_t frameHop{ 256 }; // 16 ms hop (matches FFT_HOP in musicnn)
+        static constexpr std::size_t frameHopSamples{ 256 }; // 16 ms hop (matches FFT_HOP in musicnn)
         static constexpr std::size_t melBandCount{ 96 };
         static constexpr float melFMin{ 0.F };
         static constexpr float melFMax{ 8'000.F };
         static constexpr std::size_t patchFrameCount{ MusicNNModel::inputFrames }; // 187 frames = 3 s
-        static constexpr std::size_t patchHopFrames{ patchFrameCount };            // non-overlapping patches
+        static constexpr std::size_t patchStrideFrameCount{ patchFrameCount };     // non-overlapping patches
 
         class PatchAccumulator;
 

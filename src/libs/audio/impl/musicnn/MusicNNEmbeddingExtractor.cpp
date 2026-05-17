@@ -90,7 +90,7 @@ namespace lms::audio::musicnn
                                                   .sampleType = PcmSampleType::Float32,
                                                   .byteOrder = std::endian::native,
                                                   .planar = false },
-                                   frameHop };
+                                   frameHopSamples };
 
         std::array<float, melBandCount> logMelRow{};
         std::array<math::StatsAccumulator<float>, decltype(_model)::outputSize> embeddingAccumulators;
@@ -108,7 +108,7 @@ namespace lms::audio::musicnn
                     logMelRow[m] = std::log10(10000.F * energy + 1.F);
                 }
 
-                const float rms{ computeRms(frame.rawSamples.subspan(0, frameHop)) };
+                const float rms{ computeRms(frame.rawSamples.subspan(0, frameHopSamples)) };
                 patch.addMelRow(logMelRow, rms);
             } };
 
@@ -125,8 +125,8 @@ namespace lms::audio::musicnn
                 embeddingAccumulators[d].add(embedding[d]);
             ++result.patchCount;
 
-            static_assert(patchHopFrames >= patchFrameCount);
-            const std::size_t framesToSkip{ patchHopFrames - patchFrameCount };
+            static_assert(patchStrideFrameCount >= patchFrameCount);
+            const std::size_t framesToSkip{ patchStrideFrameCount - patchFrameCount };
             if (framesToSkip > 0 && frameDecoder.skipFrames(framesToSkip) == 0)
                 break;
         }
