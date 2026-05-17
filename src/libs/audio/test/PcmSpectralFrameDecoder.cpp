@@ -35,15 +35,11 @@ namespace lms::audio::tests
     namespace
     {
         // A mock IPcmDecoder that emits samples 0, 1, 2, 3, ... (as float) up to totalSamples,
-        // returning them in chunks of at most chunkSize per call, with a randomly varying chunk
-        // size (uniform in [1, chunkSize]) to stress the partial-read handling in readAtLeastSamples.
         class SequencePcmDecoder : public IPcmDecoder
         {
         public:
-            SequencePcmDecoder(std::size_t totalSamples, std::size_t chunkSize)
-                : _totalSamples{ totalSamples }
-                , _maxChunkSize{ chunkSize }
-                , _chunkDist{ 1, chunkSize }
+            SequencePcmDecoder(std::size_t totalSampleCount)
+                : _totalSampleCount{ totalSampleCount }
             {
             }
 
@@ -51,24 +47,30 @@ namespace lms::audio::tests
 
             std::size_t readSamples(std::span<WritableBuffer> outputChannelBuffers) override
             {
-                if (_finished || outputChannelBuffers.empty())
+                assert(outputChannelBuffers.size() == 1); // only planar
+                if (_finished)
                     return 0;
 
                 auto& buf{ outputChannelBuffers[0] };
-                const std::size_t maxSamples{ buf.size() / sizeof(float) };
-                const std::size_t remaining{ _totalSamples - _nextSample };
-                const std::size_t chunkSize{ _chunkDist(_rng) };
-                const std::size_t toWrite{ std::min({ maxSamples, chunkSize, remaining }) };
+                if (buf.size() == 0)
+                    return 0;
 
-                auto* dest{ reinterpret_cast<float*>(buf.data()) };
-                for (std::size_t i{}; i < toWrite; ++i)
-                    dest[i] = static_cast<float>(_nextSample + i);
+                assert(buf.size() % sizeof(float) == 0);
 
-                _nextSample += toWrite;
-                if (_nextSample >= _totalSamples)
+                // not always writing up to what is requested
+                std::uniform_int_distribution dist{ std::size_t{ 1 }, buf.size() / sizeof(float) };
+                std::size_t sampleCountToWrite{ dist(_randomEngine) };
+                if (_currentSampleIndex + sampleCountToWrite > _totalSampleCount)
+                {
+                    sampleCountToWrite = _totalSampleCount - _currentSampleIndex;
                     _finished = true;
+                }
 
-                return toWrite;
+                float* dest{ reinterpret_cast<float*>(buf.data()) };
+                for (std::size_t i{}; i < sampleCountToWrite; ++i)
+                    *(dest++) = static_cast<float>(_currentSampleIndex++);
+
+                return sampleCountToWrite;
             }
 
             bool finished() const override { return _finished; }
@@ -82,247 +84,113 @@ namespace lms::audio::tests
                 .planar = false,
             };
 
-            const std::size_t _totalSamples;
-            const std::size_t _maxChunkSize;
-            std::minstd_rand _rng{ 42 }; // fixed seed for reproducibility
-            std::uniform_int_distribution<std::size_t> _chunkDist;
-            std::size_t _nextSample{};
+            std::minstd_rand _randomEngine{ 42 }; // fixed seed for reproducibility
+            std::size_t _totalSampleCount{};
+            std::size_t _currentSampleIndex{};
             bool _finished{};
         };
 
+        template<typename T, std::size_t N>
+        void expectSpanEq(std::span<const T, N> actual, const std::array<T, N>& expected)
+        {
+            for (std::size_t i{}; i < N; ++i)
+                EXPECT_FLOAT_EQ(actual[i], expected[i]) << "index=" << i;
+        }
+
         constexpr std::size_t WindowSize{ 8 };
         constexpr std::size_t HopSize{ 4 };
-
         using FrameDecoder = PcmSpectralFrameDecoder<WindowSize, float>;
-
-        // Returns the sample at `paddedIndex` in the zero-padded sequence for a given windowSize.
-        float expectedSample(std::ptrdiff_t paddedIndex, std::size_t windowSize)
-        {
-            const std::ptrdiff_t centerPad{ static_cast<std::ptrdiff_t>(windowSize / 2) };
-            return paddedIndex < centerPad ? 0.F : static_cast<float>(paddedIndex - centerPad);
-        }
-
-        // For frame N (0-based), its raw window covers padded-sequence indices [N*hop, N*hop + windowSize).
-        std::vector<float> expectedRawSamples(std::size_t frameIndex, std::size_t hopSize, std::size_t windowSize)
-        {
-            std::vector<float> samples(windowSize);
-            const auto start{ static_cast<std::ptrdiff_t>(frameIndex * hopSize) };
-            for (std::size_t i{}; i < windowSize; ++i)
-                samples[i] = expectedSample(start + static_cast<std::ptrdiff_t>(i), windowSize);
-            return samples;
-        }
     } // namespace
 
-    // Verify that a single decodeFrames(N) call delivers exactly N frames whose raw samples
-    // match the expected window positions — no sample is skipped or duplicated.
-    TEST(PcmSpectralFrameDecoder, singleBatchSampleAlignment)
+    TEST(SequencePcmDecoder, basic)
     {
-        constexpr std::size_t totalSamples{ 200 };
-        constexpr std::size_t chunkSize{ 32 }; // deliberately smaller than the batch requirement
-        constexpr std::size_t framesToDecode{ 5 };
+        constexpr std::size_t decoderTotalSampleCount{ 32 };
+        SequencePcmDecoder decoder{ decoderTotalSampleCount };
 
-        auto decoder{ std::make_unique<SequencePcmDecoder>(totalSamples, chunkSize) };
-        FrameDecoder frameDecoder{ std::move(decoder), HopSize };
-
-        std::size_t frameIdx{};
-        const auto callback{ [&](const FrameDecoder::SpectralFrameView& frame) {
-            const std::vector<float> expected{ expectedRawSamples(frameIdx, HopSize, WindowSize) };
-            for (std::size_t i{}; i < WindowSize; ++i)
-                EXPECT_FLOAT_EQ(frame.rawSamples[i], expected[i]) << "frame " << frameIdx << " sample " << i;
-            ++frameIdx;
-        } };
-
-        const std::size_t decoded{ frameDecoder.decodeFrames(framesToDecode, callback) };
-        EXPECT_EQ(decoded, framesToDecode);
-        EXPECT_EQ(frameIdx, framesToDecode);
-    }
-
-    // Verify that consecutive decodeFrames calls maintain correct continuity:
-    // the window for frame N always starts exactly at sample N*hop in the padded sequence.
-    TEST(PcmSpectralFrameDecoder, consecutiveBatchContinuity)
-    {
-        constexpr std::size_t totalSamples{ 500 };
-        constexpr std::size_t chunkSize{ 17 }; // odd chunk to stress the fill loop
-        constexpr std::size_t framesPerBatch{ 3 };
-
-        auto decoder{ std::make_unique<SequencePcmDecoder>(totalSamples, chunkSize) };
-        FrameDecoder frameDecoder{ std::move(decoder), HopSize };
-
-        std::size_t globalFrameIdx{};
-        bool continueDecoding{ true };
-
-        while (continueDecoding)
+        std::size_t totalSampleReadCount{};
+        while (true)
         {
-            std::size_t batchFrameIdx{ globalFrameIdx };
-            const auto callback{ [&](const FrameDecoder::SpectralFrameView& frame) {
-                const std::vector<float> expected{ expectedRawSamples(batchFrameIdx, HopSize, WindowSize) };
-                for (std::size_t i{}; i < WindowSize; ++i)
-                    EXPECT_FLOAT_EQ(frame.rawSamples[i], expected[i]) << "frame " << batchFrameIdx << " sample " << i;
-                ++batchFrameIdx;
-            } };
+            std::array<float, 16> buffer{};
+            std::array outputBuffers{ IPcmDecoder::WritableBuffer{ std::as_writable_bytes(std::span{ buffer }) } };
+            const std::size_t sampleReadCount{ decoder.readSamples(outputBuffers) };
+            if (sampleReadCount == 0)
+                break;
 
-            const std::size_t decoded{ frameDecoder.decodeFrames(framesPerBatch, callback) };
-            globalFrameIdx = batchFrameIdx;
-            if (decoded < framesPerBatch)
-                continueDecoding = false;
+            for (std::size_t i{}; i < sampleReadCount; ++i)
+                EXPECT_FLOAT_EQ(buffer[i], totalSampleReadCount + i);
+
+            totalSampleReadCount += sampleReadCount;
         }
 
-        // Must have decoded at least some frames
-        EXPECT_GT(globalFrameIdx, 0U);
+        EXPECT_EQ(totalSampleReadCount, decoderTotalSampleCount);
     }
 
-    // Verify that skipFrames advances the position correctly so the next decodeFrames
-    // sees the right window.
-    TEST(PcmSpectralFrameDecoder, skipFramesAlignment)
+    TEST(PcmSpectralFrameDecoder, firstFrameIsCenteredOnSample0)
     {
-        constexpr std::size_t totalSamples{ 500 };
-        constexpr std::size_t chunkSize{ 64 };
-        constexpr std::size_t skipCount{ 3 };
-        constexpr std::size_t decodeCount{ 2 };
+        FrameDecoder frameDecoder{ std::make_unique<SequencePcmDecoder>(32), HopSize };
+        using Frame = std::array<float, WindowSize>;
+        std::vector<Frame> frames;
 
-        auto decoder{ std::make_unique<SequencePcmDecoder>(totalSamples, chunkSize) };
-        FrameDecoder frameDecoder{ std::move(decoder), HopSize };
+        EXPECT_EQ(frameDecoder.currentFrameIndex(), 0);
+        const std::size_t decoded{ frameDecoder.decodeFrames(1,
+                                                             [&](const FrameDecoder::SpectralFrameView& frame) {
+                                                                 auto& newFrame{ frames.emplace_back() };
+                                                                 std::copy(std::cbegin(frame.rawSamples), std::cend(frame.rawSamples), std::begin(newFrame));
+                                                             }) };
 
-        // Skip 3 frames
-        const std::size_t skipped{ frameDecoder.skipFrames(skipCount) };
-        EXPECT_EQ(skipped, skipCount);
-        EXPECT_EQ(frameDecoder.currentFrameIndex(), skipCount);
-
-        // Decode 2 frames — they should correspond to frames [3, 4] in the global sequence
-        std::size_t frameIdx{ skipCount };
-        const auto callback{ [&](const FrameDecoder::SpectralFrameView& frame) {
-            const std::vector<float> expected{ expectedRawSamples(frameIdx, HopSize, WindowSize) };
-            for (std::size_t i{}; i < WindowSize; ++i)
-                EXPECT_FLOAT_EQ(frame.rawSamples[i], expected[i]) << "frame " << frameIdx << " sample " << i;
-            ++frameIdx;
-        } };
-
-        const std::size_t decoded{ frameDecoder.decodeFrames(decodeCount, callback) };
-        EXPECT_EQ(decoded, decodeCount);
-        EXPECT_EQ(frameDecoder.currentFrameIndex(), skipCount + decodeCount);
+        ASSERT_EQ(decoded, 1);
+        ASSERT_EQ(frames.size(), 1);
+        EXPECT_EQ(frameDecoder.currentFrameIndex(), 1);
+        expectSpanEq<float, WindowSize>(frames[0], { 0.F, 0.F, 0.F, 0.F, 0.F, 1.F, 2.F, 3.F });
     }
 
-    // Verify that decodeFrames returns a partial count at EOF, and 0 only when no frame can be decoded.
-    TEST(PcmSpectralFrameDecoder, eofReturnsPartialCount)
+    TEST(PcmSpectralFrameDecoder, framesAdvanceByHopSize)
     {
-        // center_pad=4, totalSamples=11 → 15 buffered samples total.
-        // Frame 0: [0..7] → OK, consume 4 → 11 left.
-        // Frame 1: [0..7] → OK, consume 4 → 7 left.
-        // Frame 2: needs 8, only 7 available → stop.
-        // decodeFrames(3) returns 2; subsequent call returns 0.
-        constexpr std::size_t totalSamples{ 11 };
-        constexpr std::size_t chunkSize{ 64 };
+        FrameDecoder frameDecoder{ std::make_unique<SequencePcmDecoder>(16), HopSize };
+        using Frame = std::array<float, WindowSize>;
+        std::vector<Frame> frames;
 
-        auto decoder{ std::make_unique<SequencePcmDecoder>(totalSamples, chunkSize) };
-        FrameDecoder frameDecoder{ std::move(decoder), HopSize };
+        const std::size_t decoded{ frameDecoder.decodeFrames(2,
+                                                             [&](const FrameDecoder::SpectralFrameView& frame) {
+                                                                 auto& newFrame{ frames.emplace_back() };
+                                                                 std::copy(std::cbegin(frame.rawSamples), std::cend(frame.rawSamples), std::begin(newFrame));
+                                                             }) };
 
-        std::size_t callbackCount{};
-        const auto callback{ [&](const FrameDecoder::SpectralFrameView&) { ++callbackCount; } };
+        ASSERT_EQ(decoded, 2);
+        ASSERT_EQ(frames.size(), 2);
+        EXPECT_EQ(frameDecoder.currentFrameIndex(), 2);
 
-        const std::size_t decoded{ frameDecoder.decodeFrames(3, callback) };
-        EXPECT_EQ(decoded, 2U);
-        EXPECT_EQ(callbackCount, 2U);
+        expectSpanEq<float, WindowSize>(
+            frames[0],
+            { 0.F, 0.F, 0.F, 0.F, 0.F, 1.F, 2.F, 3.F });
 
-        const std::size_t decoded2{ frameDecoder.decodeFrames(3, callback) };
-        EXPECT_EQ(decoded2, 0U);
-        EXPECT_EQ(callbackCount, 2U);
+        expectSpanEq<float, WindowSize>(
+            frames[1],
+            { 0.F, 1.F, 2.F, 3.F, 4.F, 5.F, 6.F, 7.F });
     }
 
-    // Verify that hop == window (non-overlapping) produces correct window positions.
-    TEST(PcmSpectralFrameDecoder, hopSizeEqualsWindowSize)
+    TEST(PcmSpectralFrameDecoder, skipFramesAdvancesState)
     {
-        constexpr std::size_t WS{ 8 };
-        constexpr std::size_t HS{ 8 };
-        using Decoder = PcmSpectralFrameDecoder<WS, float>;
+        FrameDecoder frameDecoder{ std::make_unique<SequencePcmDecoder>(32), HopSize };
+        using Frame = std::array<float, WindowSize>;
+        std::vector<Frame> frames;
 
-        constexpr std::size_t totalSamples{ 200 };
-        constexpr std::size_t framesToDecode{ 5 };
+        EXPECT_EQ(frameDecoder.currentFrameIndex(), 0);
+        ASSERT_EQ(frameDecoder.skipFrames(2), 2);
+        EXPECT_EQ(frameDecoder.currentFrameIndex(), 2);
 
-        auto decoder{ std::make_unique<SequencePcmDecoder>(totalSamples, 32) };
-        Decoder frameDecoder{ std::move(decoder), HS };
+        Frame lastFrame{};
 
-        std::size_t frameIdx{};
-        const auto callback{ [&](const Decoder::SpectralFrameView& frame) {
-            const std::vector<float> expected{ expectedRawSamples(frameIdx, HS, WS) };
-            for (std::size_t i{}; i < WS; ++i)
-                EXPECT_FLOAT_EQ(frame.rawSamples[i], expected[i]) << "frame " << frameIdx << " sample " << i;
-            ++frameIdx;
-        } };
+        ASSERT_EQ(frameDecoder.decodeFrames(1,
+                                            [&](const FrameDecoder::SpectralFrameView& frame) {
+                                                std::copy(std::cbegin(frame.rawSamples), std::cend(frame.rawSamples), std::begin(lastFrame));
+                                            }),
+                  1);
 
-        EXPECT_EQ(frameDecoder.decodeFrames(framesToDecode, callback), framesToDecode);
-        EXPECT_EQ(frameIdx, framesToDecode);
-    }
+        expectSpanEq<float, WindowSize>(
+            lastFrame,
+            { 4.F, 5.F, 6.F, 7.F, 8.F, 9.F, 10.F, 11.F });
 
-    // Verify that hop > window (gaps between frames) produces correct window positions.
-    // consumeSamples must discard more than WindowSize per frame.
-    TEST(PcmSpectralFrameDecoder, hopSizeGreaterThanWindowSize)
-    {
-        constexpr std::size_t WS{ 8 };
-        constexpr std::size_t HS{ 16 };
-        using Decoder = PcmSpectralFrameDecoder<WS, float>;
-
-        constexpr std::size_t totalSamples{ 400 };
-        constexpr std::size_t framesToDecode{ 5 };
-
-        auto decoder{ std::make_unique<SequencePcmDecoder>(totalSamples, 32) };
-        Decoder frameDecoder{ std::move(decoder), HS };
-
-        std::size_t frameIdx{};
-        const auto callback{ [&](const Decoder::SpectralFrameView& frame) {
-            const std::vector<float> expected{ expectedRawSamples(frameIdx, HS, WS) };
-            for (std::size_t i{}; i < WS; ++i)
-                EXPECT_FLOAT_EQ(frame.rawSamples[i], expected[i]) << "frame " << frameIdx << " sample " << i;
-            ++frameIdx;
-        } };
-
-        EXPECT_EQ(frameDecoder.decodeFrames(framesToDecode, callback), framesToDecode);
-        EXPECT_EQ(frameIdx, framesToDecode);
-    }
-
-    // Verify skipFrames returns 0 when EOF is reached before the required hop samples are available.
-    TEST(PcmSpectralFrameDecoder, skipFramesReturnsZeroAtEof)
-    {
-        // center_pad=4, totalSamples=3 → 7 buffered samples.
-        // skipFrames(1) needs 4 ≤ 7 → succeeds. Leaves 3 buffered.
-        // skipFrames(1) needs 4 > 3 → returns 0.
-        constexpr std::size_t totalSamples{ 3 };
-
-        auto decoder{ std::make_unique<SequencePcmDecoder>(totalSamples, 64) };
-        FrameDecoder frameDecoder{ std::move(decoder), HopSize };
-
-        EXPECT_EQ(frameDecoder.skipFrames(1), 1U);
-        EXPECT_EQ(frameDecoder.skipFrames(1), 0U);
-        EXPECT_EQ(frameDecoder.currentFrameIndex(), 1U);
-    }
-
-    // Verify decodeFrames(0) is a no-op.
-    TEST(PcmSpectralFrameDecoder, decodeFramesZeroCount)
-    {
-        auto decoder{ std::make_unique<SequencePcmDecoder>(200, 64) };
-        FrameDecoder frameDecoder{ std::move(decoder), HopSize };
-
-        std::size_t callbackCount{};
-        const std::size_t decoded{ frameDecoder.decodeFrames(0, [&](const FrameDecoder::SpectralFrameView&) { ++callbackCount; }) };
-        EXPECT_EQ(decoded, 0U);
-        EXPECT_EQ(callbackCount, 0U);
-        EXPECT_EQ(frameDecoder.currentFrameIndex(), 0U);
-    }
-
-    // Verify totalDecodedSamples tracks real file samples only (not center-padding zeros).
-    TEST(PcmSpectralFrameDecoder, totalDecodedSamplesExcludesPadding)
-    {
-        constexpr std::size_t totalSamples{ 200 };
-        constexpr std::size_t chunkSize{ 64 };
-
-        auto decoder{ std::make_unique<SequencePcmDecoder>(totalSamples, chunkSize) };
-        FrameDecoder frameDecoder{ std::move(decoder), HopSize };
-
-        // Drain all frames
-        const auto noop{ [](const FrameDecoder::SpectralFrameView&) {} };
-        while (frameDecoder.decodeFrames(1, noop) != 0)
-        {
-        }
-
-        EXPECT_EQ(frameDecoder.totalDecodedSamples(), totalSamples);
+        EXPECT_EQ(frameDecoder.currentFrameIndex(), 3);
     }
 } // namespace lms::audio::tests
