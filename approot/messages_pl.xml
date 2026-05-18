@@ -96,7 +96,8 @@
 <message id="Lms.Admin.Database.monthly">Co miesiąc</message>
 <message id="Lms.Admin.Database.never">Nigdy</message>
 <message id="Lms.Admin.Database.recommendation-engine-type">Silnik rekomendacji</message>
-<message id="Lms.Admin.Database.recommendation-engine-type.clusters">Oparta o znaczniki</message>
+<message id="Lms.Admin.Database.recommendation-engine-type.audio-embeddings">Osadzenia audio (MusicNN)</message>
+<message id="Lms.Admin.Database.recommendation-engine-type.clusters">Tagi</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.none">Żadna</message>
 <message id="Lms.Admin.Database.scan-aborted">Skanowanie przerwane!</message>
 <message id="Lms.Admin.Database.scan-complete">Skanowanie ukończone: {1} wszystkich plików, {2} dodane, {3} zmienione, {4} usunięte, {5} duplikaty, {6} błędy</message>

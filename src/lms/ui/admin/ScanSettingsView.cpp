@@ -210,6 +210,7 @@ namespace lms::ui
                 }
 
                 _recommendationEngineTypeModel = std::make_shared<ValueStringModel<db::ScanSettings::RecommendationEngineType>>();
+                _recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.audio-embeddings"), db::ScanSettings::RecommendationEngineType::AudioEmbeddings);
                 _recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.clusters"), db::ScanSettings::RecommendationEngineType::Clusters);
                 _recommendationEngineTypeModel->add(Wt::WString::tr("Lms.Admin.Database.recommendation-engine-type.none"), db::ScanSettings::RecommendationEngineType::None);
             }

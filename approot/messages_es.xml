@@ -95,7 +95,8 @@
 <message id="Lms.Admin.Database.monthly">Mensualmente</message>
 <message id="Lms.Admin.Database.never">Nunca</message>
 <message id="Lms.Admin.Database.recommendation-engine-type">Motor de recomendaciones</message>
-<message id="Lms.Admin.Database.recommendation-engine-type.clusters">Basado en las etiquetas</message>
+<message id="Lms.Admin.Database.recommendation-engine-type.audio-embeddings">Embeddings de audio (MusicNN)</message>
+<message id="Lms.Admin.Database.recommendation-engine-type.clusters">Etiquetas</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.none">Ninguno</message>
 <message id="Lms.Admin.Database.scan-aborted">¡Escaneo interrumpido!</message>
 <message id="Lms.Admin.Database.scan-complete">Escaneo terminado : {1} ficheros, {2} añadidos, {3} actualizados, {4} eliminados, {5} duplicados, {6} errores</message>

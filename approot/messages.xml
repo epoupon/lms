@@ -95,7 +95,8 @@
 <message id="Lms.Admin.Database.monthly">Monthly</message>
 <message id="Lms.Admin.Database.never">Never</message>
 <message id="Lms.Admin.Database.recommendation-engine-type">Recommendation engine</message>
-<message id="Lms.Admin.Database.recommendation-engine-type.clusters">Tag-based</message>
+<message id="Lms.Admin.Database.recommendation-engine-type.audio-embeddings">Audio embeddings (MusicNN)</message>
+<message id="Lms.Admin.Database.recommendation-engine-type.clusters">Tags</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.none">None</message>
 <message id="Lms.Admin.Database.scan-aborted">Scan aborted!</message>
 <message id="Lms.Admin.Database.scan-complete">Scan complete: {1} total files, {2} additions, {3} updates, {4} deletions, {5} duplicates, {6} errors</message>
