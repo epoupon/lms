@@ -90,6 +90,13 @@ namespace lms::recommendation
         return _engine->findSimilarArtists(artistId, linkTypes, maxCount);
     }
 
+    TrackResults RecommendationService::findTrackSimilarityPath([[maybe_unused]] db::TrackId startTrackId, [[maybe_unused]] db::TrackId endTrackId, [[maybe_unused]] std::size_t maxCount) const
+    {
+        TrackResults res;
+        // TODO: Implement actual pathfinding algorithm
+        return res;
+    }
+
     void RecommendationService::requestReload()
     {
         // not thread safe :/

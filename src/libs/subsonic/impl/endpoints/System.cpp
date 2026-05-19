@@ -58,6 +58,7 @@ namespace lms::api::subsonic
             Extension{ "songLyrics", 1 },
             Extension{ "transcodeOffset", 1 },
             Extension{ "transcoding", 1 },
+            Extension{ "sonicSimilarity", 1 },
         };
 
         for (const Extension& extension : extensions)

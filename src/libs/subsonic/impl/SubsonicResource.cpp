@@ -153,6 +153,8 @@ namespace lms::api::subsonic
             { "/getSimilarSongs", { handleGetSimilarSongsRequest } },
             { "/getSimilarSongs2", { handleGetSimilarSongs2Request } },
             { "/getTopSongs", { handleGetTopSongs } },
+            { "/getSonicSimilarTracks", { handleGetSonicSimilarTracksRequest } },
+            { "/findSonicPath", { handleFindSonicPathRequest } },
 
             // Album/song lists
             { "/getAlbumList", { handleGetAlbumListRequest } },

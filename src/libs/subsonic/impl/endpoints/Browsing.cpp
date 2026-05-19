@@ -673,4 +673,67 @@ namespace lms::api::subsonic
 
         return response;
     }
+
+    Response handleGetSonicSimilarTracksRequest(RequestContext& context)
+    {
+        // Mandatory params
+        const auto trackId{ getMandatoryParameterAs<TrackId>(context.getParameters(), "id") };
+
+        // Optional params
+        std::size_t count{ getParameterAs<std::size_t>(context.getParameters(), "count").value_or(50) };
+        if (count > defaultMaxCountSize)
+            throw ParameterValueTooHighGenericError{ "count", defaultMaxCountSize };
+
+        const auto similarTracks{ core::Service<recommendation::IRecommendationService>::get()->findSimilarTracks(std::span{ &trackId, 1 }, count) };
+
+        auto transaction{ context.getDbSession().createReadTransaction() };
+
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response::Node& sonicMatchesNode{ response.createNode("sonicMatches") };
+
+        for (const auto& similarTrack : similarTracks)
+        {
+            const Track::pointer track{ Track::find(context.getDbSession(), similarTrack.id) };
+            if (track)
+            {
+                Response::Node& sonicMatchNode{ sonicMatchesNode.createArrayChild("sonicMatch") };
+                sonicMatchNode.setAttribute("similarity", similarTrack.score);
+                sonicMatchNode.addArrayChild("entry", createSongNode(context, track, context.getUser()));
+            }
+        }
+
+        return response;
+    }
+
+    Response handleFindSonicPathRequest(RequestContext& context)
+    {
+        // Mandatory params
+        const auto startTrackId{ getMandatoryParameterAs<TrackId>(context.getParameters(), "startId") };
+        const auto endTrackId{ getMandatoryParameterAs<TrackId>(context.getParameters(), "endId") };
+
+        // Optional params
+        std::size_t maxCount{ getParameterAs<std::size_t>(context.getParameters(), "maxCount").value_or(50) };
+        if (maxCount > defaultMaxCountSize)
+            throw ParameterValueTooHighGenericError{ "maxCount", defaultMaxCountSize };
+
+        const auto pathTracks{ core::Service<recommendation::IRecommendationService>::get()->findTrackSimilarityPath(startTrackId, endTrackId, maxCount) };
+
+        auto transaction{ context.getDbSession().createReadTransaction() };
+
+        Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
+        Response::Node& sonicPathNode{ response.createNode("sonicPath") };
+
+        for (const auto& pathTrack : pathTracks)
+        {
+            const Track::pointer track{ Track::find(context.getDbSession(), pathTrack.id) };
+            if (track)
+            {
+                Response::Node& sonicMatchNode{ sonicPathNode.createArrayChild("sonicMatch") };
+                sonicMatchNode.setAttribute("similarity", pathTrack.score);
+                sonicMatchNode.addArrayChild("entry", createSongNode(context, track, context.getUser()));
+            }
+        }
+
+        return response;
+    }
 } // namespace lms::api::subsonic
