@@ -33,10 +33,10 @@ namespace lms::audio
 #endif
     }
 
-    std::unique_ptr<IMusicNNEmbeddingExtractor> createMusicNNEmbeddingExtractor([[maybe_unused]] const std::filesystem::path& modelPath)
+    std::unique_ptr<IMusicNNEmbeddingExtractor> createMusicNNEmbeddingExtractor([[maybe_unused]] const std::filesystem::path& modelPath, std::size_t maxPatchCount)
     {
 #if LMS_HAVE_ONNX
-        return std::make_unique<musicnn::MusicNNEmbeddingExtractor>(modelPath);
+        return std::make_unique<musicnn::MusicNNEmbeddingExtractor>(modelPath, maxPatchCount);
 #else
         return {};
 #endif

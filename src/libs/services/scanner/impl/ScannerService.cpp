@@ -128,6 +128,7 @@ namespace lms::scanner
             settings->extractAudioFeatures = scanSettings->getRecommendationEngineType() == db::ScanSettings::RecommendationEngineType::AudioFeatures;
             settings->extractMusicNNEmbeddings = scanSettings->getRecommendationEngineType() == db::ScanSettings::RecommendationEngineType::AudioEmbeddings;
             settings->musicnnModelPath = core::Service<core::IConfig>::get()->getString("musicnn-model-path", "/usr/share/lms/models/MSD_musicnn_embedding.onnx");
+            settings->musicnnMaxPatchCountPerTrack = core::Service<core::IConfig>::get()->getULong("musicnn-max-patch-count-per-track", 20);
 
             // TODO, store this in DB + expose in UI
             settings->skipDuplicateTrackMBID = core::Service<core::IConfig>::get()->getBool("scanner-skip-duplicate-mbid", false);
@@ -530,7 +531,7 @@ namespace lms::scanner
             _scanSteps.emplace_back(std::make_unique<ScanStepExtractAudioFeatures>(params));
 
         if (_settings.extractMusicNNEmbeddings)
-            _scanSteps.emplace_back(std::make_unique<ScanStepExtractMusicNNEmbeddings>(params, _settings.musicnnModelPath));
+            _scanSteps.emplace_back(std::make_unique<ScanStepExtractMusicNNEmbeddings>(params, _settings.musicnnModelPath, _settings.musicnnMaxPatchCountPerTrack));
     }
 
     void ScannerService::notifyInProgress(const ScanStepStats& stepStats)

@@ -30,14 +30,14 @@ namespace lms::audio::musicnn
     class MusicNNEmbeddingExtractor : public IMusicNNEmbeddingExtractor
     {
     public:
-        explicit MusicNNEmbeddingExtractor(const std::filesystem::path& modelPath);
+        MusicNNEmbeddingExtractor(const std::filesystem::path& modelPath, std::size_t maxPatchCount);
         ~MusicNNEmbeddingExtractor() override = default;
 
         MusicNNEmbeddingExtractor(const MusicNNEmbeddingExtractor&) = delete;
         MusicNNEmbeddingExtractor& operator=(const MusicNNEmbeddingExtractor&) = delete;
 
     private:
-        [[nodiscard]] ExtractionResult extract(const std::filesystem::path& audioFile) const override;
+        [[nodiscard]] ExtractionResult extract(const std::filesystem::path& audioFile) const;
 
         // MusicNN signal processing constants (from musicnn/configuration.py and musicnn_torch.py)
         static constexpr std::size_t sampleRate{ 16'000 };
@@ -48,12 +48,12 @@ namespace lms::audio::musicnn
         static constexpr float melFMin{ 0.F };
         static constexpr float melFMax{ 8'000.F };
         static constexpr std::size_t patchFrameCount{ MusicNNModel::inputFrames }; // 187 frames = 3 s
-        static constexpr std::size_t maxPatchCount{ 30 };                          // don't extract more than 30 patches (can be less for short tracks), looks like enough for the mean embedding (>0.998 cosine similarity)
 
         class PatchAccumulator;
 
         using FrameDecoder = PcmSpectralFrameDecoder<512, float>;
         const features::MelFilterBank _melFilterBank;
         const MusicNNModel _model;
+        const std::size_t _maxPatchCount;
     };
 } // namespace lms::audio::musicnn

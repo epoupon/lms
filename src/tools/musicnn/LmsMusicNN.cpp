@@ -37,7 +37,8 @@ int main(int argc, char* argv[])
         options.add_options()
             ("help,h",   "Display this help message")
             ("model,m",  program_options::value<std::string>()->required(), "Path to the MusicNN model file")
-            ("input,i",  program_options::value<std::string>()->required(), "Input audio file path");
+            ("input,i",  program_options::value<std::string>()->required(), "Input audio file path")
+            ("max-patch-count,p", program_options::value<unsigned>()->default_value(20), "Max non-overlapping patches (more = better accuracy but slower, must be > 0)");
         // clang-format on
 
         program_options::variables_map vm;
@@ -63,7 +64,9 @@ int main(int argc, char* argv[])
 
         try
         {
-            auto extractor{ audio::createMusicNNEmbeddingExtractor(modelPath) };
+            const unsigned maxPatchCount{ vm["max-patch-count"].as<unsigned>() };
+
+            const auto extractor{ audio::createMusicNNEmbeddingExtractor(modelPath, maxPatchCount) };
             const auto result{ extractor->extract(inputPath) };
 
             std::cout << "patch_count=" << result.patchCount << "\n";

@@ -41,5 +41,5 @@ namespace lms::audio
     };
 
     bool canExtractMusicNNEmbeddings();
-    std::unique_ptr<IMusicNNEmbeddingExtractor> createMusicNNEmbeddingExtractor(const std::filesystem::path& modelPath);
+    std::unique_ptr<IMusicNNEmbeddingExtractor> createMusicNNEmbeddingExtractor(const std::filesystem::path& modelPath, std::size_t maxPatchCount);
 } // namespace lms::audio

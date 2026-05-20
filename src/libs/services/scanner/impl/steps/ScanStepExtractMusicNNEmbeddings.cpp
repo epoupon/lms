@@ -147,9 +147,9 @@ namespace lms::scanner
         }
     } // namespace
 
-    ScanStepExtractMusicNNEmbeddings::ScanStepExtractMusicNNEmbeddings(InitParams& initParams, const std::filesystem::path& modelPath)
+    ScanStepExtractMusicNNEmbeddings::ScanStepExtractMusicNNEmbeddings(InitParams& initParams, const std::filesystem::path& modelPath, std::size_t musicnnMaxPatchCountPerTrack)
         : ScanStepBase{ initParams }
-        , _embeddingExtractor{ audio::createMusicNNEmbeddingExtractor(modelPath) }
+        , _embeddingExtractor{ audio::createMusicNNEmbeddingExtractor(modelPath, musicnnMaxPatchCountPerTrack) }
     {
     }
 

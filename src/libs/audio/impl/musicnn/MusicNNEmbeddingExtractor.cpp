@@ -25,6 +25,7 @@
 #include <cmath>
 #include <numeric>
 
+#include "audio/Exception.hpp"
 #include "audio/IMusicNNEmbeddingExtractor.hpp"
 #include "math/StatsAccumulator.hpp"
 #include "musicnn/MusicNNModel.hpp"
@@ -88,11 +89,14 @@ namespace lms::audio::musicnn
         std::array<float, patchFrameCount * melBandCount> _melMatrix{};
     };
 
-    MusicNNEmbeddingExtractor::MusicNNEmbeddingExtractor(const std::filesystem::path& modelPath)
+    MusicNNEmbeddingExtractor::MusicNNEmbeddingExtractor(const std::filesystem::path& modelPath, std::size_t maxPatchCount)
         : _melFilterBank{ features::computeMelFilterBank(fftSize, sampleRate, melBandCount, melFMin, melFMax) }
         , _model{ modelPath }
+        , _maxPatchCount{ maxPatchCount }
     {
         static_assert(MusicNNEmbeddingExtractor::windowSize == MusicNNEmbeddingExtractor::fftSize);
+        if (_maxPatchCount <= 0)
+            throw audio::Exception{ "MusicNN embedding extractor: max patch count must be > 0" };
     }
 
     IMusicNNEmbeddingExtractor::ExtractionResult MusicNNEmbeddingExtractor::extract(const std::filesystem::path& audioFile) const
@@ -112,7 +116,7 @@ namespace lms::audio::musicnn
         const std::size_t estimatedFrameCount{ frameDecoder.getEstimatedFrameCount() };
 
         // Fallback: use a gap of two patch lengths if the frame count is unknown
-        const std::size_t patchGapFrameCount{ estimatedFrameCount ? computePatchGap(frameDecoder.getEstimatedFrameCount(), patchFrameCount, maxPatchCount) : (2 * patchFrameCount) };
+        const std::size_t patchGapFrameCount{ estimatedFrameCount ? computePatchGap(frameDecoder.getEstimatedFrameCount(), patchFrameCount, _maxPatchCount) : (2 * patchFrameCount) };
 
         while (true)
         {

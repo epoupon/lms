@@ -31,7 +31,7 @@ namespace lms::scanner
     class ScanStepExtractMusicNNEmbeddings : public ScanStepBase
     {
     public:
-        ScanStepExtractMusicNNEmbeddings(InitParams& initParams, const std::filesystem::path& modelPath);
+        ScanStepExtractMusicNNEmbeddings(InitParams& initParams, const std::filesystem::path& modelPath, std::size_t maxPatchCountPerTrack);
         ~ScanStepExtractMusicNNEmbeddings() override;
         ScanStepExtractMusicNNEmbeddings(const ScanStepExtractMusicNNEmbeddings&) = delete;
         ScanStepExtractMusicNNEmbeddings& operator=(const ScanStepExtractMusicNNEmbeddings&) = delete;

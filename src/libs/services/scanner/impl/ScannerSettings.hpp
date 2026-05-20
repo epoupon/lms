@@ -50,6 +50,7 @@ namespace lms::scanner
         bool extractAudioFeatures{};
         bool extractMusicNNEmbeddings{};
         std::filesystem::path musicnnModelPath;
+        std::size_t musicnnMaxPatchCountPerTrack{};
 
         std::vector<MediaLibraryInfo> mediaLibraries;
 
