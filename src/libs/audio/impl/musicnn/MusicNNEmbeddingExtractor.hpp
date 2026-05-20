@@ -48,7 +48,7 @@ namespace lms::audio::musicnn
         static constexpr float melFMin{ 0.F };
         static constexpr float melFMax{ 8'000.F };
         static constexpr std::size_t patchFrameCount{ MusicNNModel::inputFrames }; // 187 frames = 3 s
-        static constexpr std::size_t patchStrideFrameCount{ patchFrameCount };     // non-overlapping patches
+        static constexpr std::size_t maxPatchCount{ 30 };                          // don't extract more than 30 patches (can be less for short tracks), looks like enough for the mean embedding (>0.998 cosine similarity)
 
         class PatchAccumulator;
 

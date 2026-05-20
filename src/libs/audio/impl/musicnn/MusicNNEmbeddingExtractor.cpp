@@ -42,6 +42,19 @@ namespace lms::audio::musicnn
             return std::sqrt(sumSq / static_cast<FloatType>(samples.size()));
         }
 
+        // We want something like this:
+        // gap patch(0) gap patch(1) gap patch(maxPatchCount) gap
+        std::size_t computePatchGap(std::size_t totalFrameCount, std::size_t patchFrameCount, std::size_t maxPatchCount)
+        {
+            assert(maxPatchCount > 0);
+            assert(patchFrameCount > 0);
+
+            const std::size_t patchCount{ std::min(maxPatchCount, totalFrameCount / patchFrameCount) };
+            if (patchCount == 0)
+                return 0;
+
+            return (totalFrameCount - patchCount * patchFrameCount) / (patchCount + 1);
+        }
     } // namespace
 
     // Accumulates one 187-frame MusicNN mel patch
@@ -96,6 +109,11 @@ namespace lms::audio::musicnn
         std::array<math::StatsAccumulator<float>, decltype(_model)::outputSize> embeddingAccumulators;
         ExtractionResult result;
 
+        const std::size_t estimatedFrameCount{ frameDecoder.getEstimatedFrameCount() };
+
+        // Fallback: use a gap of two patch lengths if the frame count is unknown
+        const std::size_t patchGapFrameCount{ estimatedFrameCount ? computePatchGap(frameDecoder.getEstimatedFrameCount(), patchFrameCount, maxPatchCount) : (2 * patchFrameCount) };
+
         while (true)
         {
             PatchAccumulator patch;
@@ -112,6 +130,9 @@ namespace lms::audio::musicnn
                 patch.addMelRow(logMelRow, rms);
             } };
 
+            if (patchGapFrameCount > 0 && frameDecoder.skipFrames(patchGapFrameCount) == 0)
+                break;
+
             if (frameDecoder.decodeFrames(patchFrameCount, onFrame) < patchFrameCount)
                 break;
 
@@ -124,11 +145,6 @@ namespace lms::audio::musicnn
             for (std::size_t d{}; d < embedding.size(); ++d)
                 embeddingAccumulators[d].add(embedding[d]);
             ++result.patchCount;
-
-            static_assert(patchStrideFrameCount >= patchFrameCount);
-            const std::size_t framesToSkip{ patchStrideFrameCount - patchFrameCount };
-            if (framesToSkip > 0 && frameDecoder.skipFrames(framesToSkip) == 0)
-                break;
         }
 
         if (result.patchCount > 0)

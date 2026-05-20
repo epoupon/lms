@@ -40,6 +40,8 @@ namespace lms::audio::ffmpeg
         std::size_t readSamples(std::span<WritableBuffer> outputChannelBuffers) override;
         bool finished() const override;
 
+        std::chrono::milliseconds getEstimatedDuration() const override;
+
         std::size_t computeSampleCountPerChannel(std::span<WritableBuffer> outputChannelBuffers) const;
         void feedDecoder();
         std::size_t drainResampler(std::span<WritableBuffer> outputChannelBuffers, std::size_t maxSamplesPerChannel);
@@ -52,6 +54,7 @@ namespace lms::audio::ffmpeg
         bool _draining{};
 
         AVFormatContextPtr _context;
+        std::chrono::milliseconds _estimatedDuration{};
         int _inputStreamIndex{};
         AVCodecContextPtr _decoderContext;
         AVFramePtr _decodedFrame;

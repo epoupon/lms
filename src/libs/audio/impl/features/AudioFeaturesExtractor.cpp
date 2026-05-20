@@ -349,8 +349,6 @@ namespace lms::audio::features
                 frameIndex += framesToSkip;
             }
         }
-        res.metadata.pcmSampleCount = frameDecoder.totalDecodedSamples();
-
         res.features = trackMeanStatsAccumulators.finalize();
 
         return res;

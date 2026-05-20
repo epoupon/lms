@@ -127,6 +127,14 @@ namespace lms::audio::ffmpeg
             }
         }
 
+        {
+            _estimatedDuration = std::chrono::milliseconds{ _context->duration == AV_NOPTS_VALUE ? 0 : _context->duration / AV_TIME_BASE * 1'000 };
+            if (_estimatedDuration > offset)
+                _estimatedDuration = _estimatedDuration - std::chrono::duration_cast<std::chrono::milliseconds>(offset);
+            else
+                _estimatedDuration = {};
+        }
+
         _decoderContext = AVCodecContextPtr{ ::avcodec_alloc_context3(decoder) };
         if (!_decoderContext)
             throw Exception{ "Cannot allocate decoder context" };
@@ -264,6 +272,11 @@ namespace lms::audio::ffmpeg
     bool PcmDecoder::finished() const
     {
         return _finished;
+    }
+
+    std::chrono::milliseconds PcmDecoder::getEstimatedDuration() const
+    {
+        return _estimatedDuration;
     }
 
     std::size_t PcmDecoder::computeSampleCountPerChannel(std::span<WritableBuffer> outputChannelBuffers) const

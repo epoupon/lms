@@ -73,6 +73,21 @@ namespace lms::audio
         std::size_t hopSize() const noexcept { return _hopSize; }
         const PcmParameters& pcmParameters() const noexcept { return _pcmParams; }
 
+        std::size_t getEstimatedFrameCount() const
+        {
+            const auto duration{ _decoder->getEstimatedDuration() };
+            if (duration <= std::chrono::milliseconds::zero())
+                return 0;
+
+            const auto totalSamples{ static_cast<std::size_t>((static_cast<std::uint64_t>(duration.count()) * _pcmParams.sampleRate) / 1'000) };
+
+            constexpr std::size_t halfWindow{ WindowSize / 2 };
+            if (totalSamples < halfWindow) // Not enough samples to produce even the first frame.
+                return 0;
+
+            return 1 + ((totalSamples - halfWindow) / _hopSize);
+        }
+
         // Spectral data for a single frame.
         struct SpectralFrameView
         {
@@ -143,8 +158,6 @@ namespace lms::audio
 
         [[nodiscard]] std::size_t currentFrameIndex() const noexcept { return _currentFrameIndex; }
 
-        std::size_t totalDecodedSamples() const noexcept { return _totalDecodedSamples; }
-
     private:
         static constexpr std::size_t bufferFrameCount{ 20 };
 
@@ -172,7 +185,6 @@ namespace lms::audio
                 }
 
                 _bufferedSampleCount += samplesRead;
-                _totalDecodedSamples += samplesRead;
             }
 
             return _bufferedSampleCount >= sampleCount;
@@ -204,7 +216,6 @@ namespace lms::audio
         core::AlignedHeapArray<FloatType, FFTPlan::minBufferAlignment> _windowedFrame{ FFTPlan::getInputSize() };
         core::AlignedHeapArray<std::complex<FloatType>, FFTPlan::minBufferAlignment> _fftOutput{ FFTPlan::getOutputSize() };
         std::size_t _bufferedSampleCount{};
-        std::size_t _totalDecodedSamples{};
         std::size_t _currentFrameIndex{};
         bool _endOfStream{};
     };

@@ -46,6 +46,8 @@ namespace lms::audio
         // The decoder will not try to fill in the whole supplied buffer
         virtual std::size_t readSamples(std::span<WritableBuffer> outputChannelBuffers) = 0;
         virtual bool finished() const = 0;
+
+        virtual std::chrono::milliseconds getEstimatedDuration() const = 0; // initial offset is taken into account, 0 if unknown
     };
 
     // Throw on error

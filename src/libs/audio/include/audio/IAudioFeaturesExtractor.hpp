@@ -38,9 +38,8 @@ namespace lms::audio
             std::size_t patchSize{};    // frames per patch
             std::size_t patchHopSize{}; // frames between consecutive patches
             std::size_t pcmSampleRate{};
-            std::size_t pcmSampleCount{}; // total number of processed PCM samples
-            std::size_t frameCount{};     // total number of processed frames (frame overlap depends on frameHopSize)
-            std::size_t patchCount{};     // number of meaningful patches
+            std::size_t frameCount{}; // total number of processed frames (frame overlap depends on frameHopSize)
+            std::size_t patchCount{}; // number of meaningful patches
         };
 
         struct FeatureExtractionResult

@@ -75,6 +75,11 @@ namespace lms::audio::tests
 
             bool finished() const override { return _finished; }
 
+            std::chrono::milliseconds getEstimatedDuration() const override
+            {
+                return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<float>{ static_cast<float>(_totalSampleCount) / static_cast<float>(_params.sampleRate) });
+            }
+
         private:
             const PcmParameters _params{
                 .channelCount = 1,

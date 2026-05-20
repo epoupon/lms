@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
             auto extractor{ audio::createAudioFeaturesExtractor() };
 
             const auto res{ extractor->extractFeatures(inputPath) };
-            std::cout << "Processed " << res.metadata.pcmSampleCount << " PCM samples in " << res.metadata.frameCount << " frames (" << res.metadata.pcmSampleRate << " Hz), frame size = " << res.metadata.frameSize << " samples (" << res.metadata.frameHopSize << " hop size), patch size = " << res.metadata.patchSize << " frames (" << res.metadata.patchHopSize << " hop size), patch count = " << res.metadata.patchCount << std::endl;
+            std::cout << "Processed " << res.metadata.frameCount << " frames (" << res.metadata.pcmSampleRate << " Hz), frame size = " << res.metadata.frameSize << " samples (" << res.metadata.frameHopSize << " hop size), patch size = " << res.metadata.patchSize << " frames (" << res.metadata.patchHopSize << " hop size), patch count = " << res.metadata.patchCount << std::endl;
             std::cout << res.features;
         }
         catch (audio::Exception& e)
