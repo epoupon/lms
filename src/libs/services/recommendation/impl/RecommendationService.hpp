@@ -41,6 +41,8 @@ namespace lms::recommendation
         RecommendationService& operator=(const RecommendationService&) = delete;
 
     private:
+        bool isEngineTypeSupported(EngineType type) const override;
+
         void requestReload() override;
         bool isLoaded() const override;
 

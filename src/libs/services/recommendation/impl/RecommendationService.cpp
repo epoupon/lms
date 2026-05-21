@@ -19,6 +19,7 @@
 
 #include "RecommendationService.hpp"
 
+#include "audio/IMusicNNEmbeddingExtractor.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/ScanSettings.hpp"
@@ -95,6 +96,22 @@ namespace lms::recommendation
         TrackResults res;
         // TODO: Implement actual pathfinding algorithm
         return res;
+    }
+
+    bool RecommendationService::isEngineTypeSupported(EngineType type) const
+    {
+        switch (type)
+        {
+        case EngineType::AudioEmbeddings:
+            return audio::canExtractMusicNNEmbeddings();
+
+        case EngineType::None:
+        case EngineType::AudioFeatures:
+        case EngineType::Clusters:
+            return true;
+        }
+
+        return false;
     }
 
     void RecommendationService::requestReload()

@@ -63,7 +63,7 @@ target_link_libraries(lmsaudio PRIVATE
 target_compile_definitions(lmsaudio PRIVATE
     $<$<BOOL:${PulseAudio_FOUND}>:LMS_HAVE_PULSEAUDIO>
     $<$<BOOL:${ALSA_FOUND}>:LMS_HAVE_ALSA>
-	$<$<BOOL:${OnnxRuntime_FOUND}>:LMS_HAVE_ONNX>
+	$<$<BOOL:${OnnxRuntime_FOUND}>:LMS_HAVE_ONNX_RUNTIME>
 	)
 
 # Should be safe enough for what we're doing

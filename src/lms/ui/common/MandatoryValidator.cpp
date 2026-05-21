@@ -27,8 +27,7 @@ namespace lms::ui
         std::string javaScriptValidate() const override { return {}; }
     };
 
-    std::unique_ptr<Wt::WValidator>
-    createMandatoryValidator()
+    std::unique_ptr<Wt::WValidator> createMandatoryValidator()
     {
         auto v{ std::make_unique<MandatoryValidator>() };
         v->setMandatory(true);

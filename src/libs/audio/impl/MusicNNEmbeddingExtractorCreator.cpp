@@ -18,7 +18,7 @@
  */
 
 #include "audio/IMusicNNEmbeddingExtractor.hpp"
-#if LMS_HAVE_ONNX
+#if LMS_HAVE_ONNX_RUNTIME
     #include "musicnn/MusicNNEmbeddingExtractor.hpp"
 #endif
 
@@ -26,7 +26,7 @@ namespace lms::audio
 {
     bool canExtractMusicNNEmbeddings()
     {
-#if LMS_HAVE_ONNX
+#if LMS_HAVE_ONNX_RUNTIME
         return true;
 #else
         return false;
@@ -35,7 +35,7 @@ namespace lms::audio
 
     std::unique_ptr<IMusicNNEmbeddingExtractor> createMusicNNEmbeddingExtractor([[maybe_unused]] const std::filesystem::path& modelPath, std::size_t maxPatchCount)
     {
-#if LMS_HAVE_ONNX
+#if LMS_HAVE_ONNX_RUNTIME
         return std::make_unique<musicnn::MusicNNEmbeddingExtractor>(modelPath, maxPatchCount);
 #else
         return {};

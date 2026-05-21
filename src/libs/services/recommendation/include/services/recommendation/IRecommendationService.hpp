@@ -37,10 +37,20 @@ namespace lms::db
 
 namespace lms::recommendation
 {
+    enum class EngineType
+    {
+        None,
+        Clusters,
+        AudioFeatures,
+        AudioEmbeddings,
+    };
+
     class IRecommendationService
     {
     public:
         virtual ~IRecommendationService() = default;
+
+        virtual bool isEngineTypeSupported(EngineType type) const = 0;
 
         virtual void requestReload() = 0;
         virtual bool isLoaded() const = 0;

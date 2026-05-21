@@ -44,6 +44,39 @@ namespace lms::ui
 {
     namespace
     {
+        using RecommendationEngineTypeModel = ValueStringModel<db::ScanSettings::RecommendationEngineType>;
+
+        class RecommendationEngineValidator : public Wt::WValidator
+        {
+        public:
+            RecommendationEngineValidator(std::shared_ptr<RecommendationEngineTypeModel> model)
+                : _model{ model }
+            {
+            }
+
+        private:
+            Wt::WValidator::Result validate(const Wt::WString& input) const override
+            {
+                if (input.empty())
+                    return Wt::WValidator::validate(input);
+
+                std::string inputStr{ input.toUTF8() };
+
+                const auto row{ _model->getRowFromString(inputStr) };
+                if (row && _model->getValue(*row) == db::ScanSettings::RecommendationEngineType::AudioEmbeddings)
+                {
+                    if (!core::Service<recommendation::IRecommendationService>::get()->isEngineTypeSupported(recommendation::EngineType::AudioEmbeddings))
+                        return Wt::WValidator::Result{ Wt::ValidationState::Invalid, Wt::WString::tr("Lms.Admin.Database.recommendation-engine-not-supported") };
+                }
+
+                return Wt::WValidator::Result{ Wt::ValidationState::Valid };
+            }
+
+            std::string javaScriptValidate() const override { return {}; }
+
+            std::shared_ptr<RecommendationEngineTypeModel> _model;
+        };
+
         class TagDelimitersValidator : public Wt::WValidator
         {
         private:
@@ -89,7 +122,13 @@ namespace lms::ui
 
                 setValidator(UpdatePeriodField, createMandatoryValidator());
                 setValidator(UpdateStartTimeField, createMandatoryValidator());
-                setValidator(RecommendationEngineTypeField, createMandatoryValidator());
+
+                {
+                    std::shared_ptr<Wt::WValidator> recommendationEngineValidator{ std::make_shared<RecommendationEngineValidator>(_recommendationEngineTypeModel) };
+                    recommendationEngineValidator->setMandatory(true);
+                    setValidator(RecommendationEngineTypeField, recommendationEngineValidator);
+                }
+
                 setValidator(SkipSingleReleasePlayListsField, createMandatoryValidator());
                 setValidator(AllowMBIDArtistMergeField, createMandatoryValidator());
                 setValidator(ArtistImageFallbackToReleaseField, createMandatoryValidator());
@@ -192,8 +231,7 @@ namespace lms::ui
             }
 
         private:
-            void
-            initializeModels()
+            void initializeModels()
             {
                 _updatePeriodModel = std::make_shared<ValueStringModel<db::ScanSettings::UpdatePeriod>>();
                 _updatePeriodModel->add(Wt::WString::tr("Lms.Admin.Database.never"), db::ScanSettings::UpdatePeriod::Never);
@@ -217,7 +255,7 @@ namespace lms::ui
 
             std::shared_ptr<UpdatePeriodModel> _updatePeriodModel;
             std::shared_ptr<ValueStringModel<Wt::WTime>> _updateStartTimeModel;
-            std::shared_ptr<ValueStringModel<db::ScanSettings::RecommendationEngineType>> _recommendationEngineTypeModel;
+            std::shared_ptr<RecommendationEngineTypeModel> _recommendationEngineTypeModel;
         };
 
         class LineEditEntryModel : public Wt::WFormModel
@@ -226,7 +264,6 @@ namespace lms::ui
             static inline constexpr Field ValueField{ "value" };
 
             LineEditEntryModel(const Wt::WString& initialValue, std::shared_ptr<Wt::WValidator> validator)
-                : Wt::WFormModel()
             {
                 addField(ValueField);
 

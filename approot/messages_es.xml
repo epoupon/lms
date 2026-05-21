@@ -94,6 +94,7 @@
 <message id="Lms.Admin.Database.misc">Varios</message>
 <message id="Lms.Admin.Database.monthly">Mensualmente</message>
 <message id="Lms.Admin.Database.never">Nunca</message>
+<message id="Lms.Admin.Database.recommendation-engine-not-supported">Este motor no es compatible</message>
 <message id="Lms.Admin.Database.recommendation-engine-type">Motor de recomendaciones</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.audio-embeddings">Embeddings de audio (MusicNN)</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.clusters">Etiquetas</message>

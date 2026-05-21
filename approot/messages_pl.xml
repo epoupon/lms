@@ -95,6 +95,7 @@
 <message id="Lms.Admin.Database.misc">Różne</message>
 <message id="Lms.Admin.Database.monthly">Co miesiąc</message>
 <message id="Lms.Admin.Database.never">Nigdy</message>
+<message id="Lms.Admin.Database.recommendation-engine-not-supported">Ten silnik nie jest obsługiwany</message>
 <message id="Lms.Admin.Database.recommendation-engine-type">Silnik rekomendacji</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.audio-embeddings">Osadzenia audio (MusicNN)</message>
 <message id="Lms.Admin.Database.recommendation-engine-type.clusters">Tagi</message>
