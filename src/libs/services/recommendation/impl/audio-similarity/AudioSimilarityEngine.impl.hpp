@@ -30,7 +30,6 @@
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 
-#include "audio/MusicNNEmbeddings.hpp"
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
 #include "database/objects/Artist.hpp"
@@ -39,9 +38,9 @@
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/TrackMusicNNEmbeddings.hpp"
-#include "math/CosineDistance.hpp"
 #include "math/CovarianceCalculator.hpp"
 #include "math/MedoidCalculator.hpp"
+#include "math/NormalizedCosineDistance.hpp"
 #include "math/PrincipalComponents.hpp"
 #include "math/StatsAccumulator.hpp"
 
@@ -65,7 +64,7 @@ namespace lms::recommendation
             {
                 typename Vector::value_type bestDist{ std::numeric_limits<FloatType>::max() };
 
-                const math::CosineDistance distFunc{ *a };
+                const math::NormalizedCosineDistance distFunc{ *a };
 
                 for (const auto& b : B)
                 {
@@ -139,7 +138,7 @@ namespace lms::recommendation
             return res;
 
         const ReducedVector queryVector{ medoidCalculator.finalize() };
-        const math::CosineDistance distFunc{ queryVector };
+        const math::NormalizedCosineDistance distFunc{ queryVector };
 
         using Distance = float;
         std::vector<std::pair<db::TrackId, Distance>> rankedTracks;
@@ -369,7 +368,7 @@ namespace lms::recommendation
             centeredSourceVector[i] -= _sourceMeans[i];
 
         projectToReduced(centeredSourceVector, reducedVector);
-        reducedVector.normalizeL2(); // TODO further test with/without L2 normalization
+        reducedVector.normalizeL2();
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
@@ -540,7 +539,7 @@ namespace lms::recommendation
                     if (index % 1'000 == 0)
                         LMS_LOG(RECOMMENDATION, DEBUG, "Processing " << index << "th track... rank 0 = " << ranks[0] << ", out of rank = " << ranks[maxSimilarTrackCount]);
 
-                    math::CosineDistance dist{ *trackDesc.vectors };
+                    math::NormalizedCosineDistance dist{ *trackDesc.vectors };
                     std::sort(sortedTrackIds.begin(), sortedTrackIds.end(), [&](db::TrackId trackA, db::TrackId trackB) {
                         return dist(*trackDescs[trackA].vectors) < dist(*trackDescs[trackB].vectors);
                     });

@@ -9,6 +9,7 @@ add_executable(test-math
 	EuclideanDistance.cpp
 	FFT.cpp
 	MedoidCalculator.cpp
+	NormalizedCosineDistance.cpp
 	PrincipalComponents.cpp
 	SquareMatrix.cpp
 	StatsAccumulator.cpp
