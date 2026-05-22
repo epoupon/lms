@@ -23,6 +23,7 @@
 #include "core/Random.hpp"
 
 #include "math/CosineDistance.hpp"
+#include "math/NormalizedCosineDistance.hpp"
 
 namespace lms::math::benchs
 {
@@ -45,7 +46,60 @@ namespace lms::math::benchs
         state.SetItemsProcessed(state.iterations() * Size);
     }
 
+    template<std::size_t Size>
+    static void BM_NormalizedCosineDistance(benchmark::State& state)
+    {
+        std::minstd_rand randomEngine{ 0 };
+
+        Vector<Size, float> vec1;
+        Vector<Size, float> vec2;
+
+        core::random::fillContainer(randomEngine, vec1, 0.F, 1.F);
+        core::random::fillContainer(randomEngine, vec2, 0.F, 1.F);
+
+        // normalize once, the normalized distance assumes L2-normalized vectors
+        vec1.normalizeL2();
+        vec2.normalizeL2();
+
+        for (auto _ : state)
+        {
+            benchmark::DoNotOptimize(computeNormalizedCosineDistance(vec1, vec2));
+        }
+
+        state.SetItemsProcessed(state.iterations() * Size);
+    }
+
+    template<std::size_t Size>
+    static void BM_NormalizedCosineDistance_Functor(benchmark::State& state)
+    {
+        std::minstd_rand randomEngine{ 0 };
+
+        Vector<Size, float> vec1;
+        Vector<Size, float> vec2;
+
+        core::random::fillContainer(randomEngine, vec1, 0.F, 1.F);
+        core::random::fillContainer(randomEngine, vec2, 0.F, 1.F);
+
+        vec1.normalizeL2();
+        vec2.normalizeL2();
+
+        const NormalizedCosineDistance<Size, float> dist{ vec1 };
+
+        for (auto _ : state)
+        {
+            benchmark::DoNotOptimize(dist(vec2));
+        }
+
+        state.SetItemsProcessed(state.iterations() * Size);
+    }
+
     BENCHMARK_TEMPLATE(BM_CosineDistance, 4);
     BENCHMARK_TEMPLATE(BM_CosineDistance, 50);
     BENCHMARK_TEMPLATE(BM_CosineDistance, 160);
+    BENCHMARK_TEMPLATE(BM_NormalizedCosineDistance, 4);
+    BENCHMARK_TEMPLATE(BM_NormalizedCosineDistance, 50);
+    BENCHMARK_TEMPLATE(BM_NormalizedCosineDistance, 160);
+    BENCHMARK_TEMPLATE(BM_NormalizedCosineDistance_Functor, 4);
+    BENCHMARK_TEMPLATE(BM_NormalizedCosineDistance_Functor, 50);
+    BENCHMARK_TEMPLATE(BM_NormalizedCosineDistance_Functor, 160);
 } // namespace lms::math::benchs
