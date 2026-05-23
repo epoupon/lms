@@ -36,6 +36,7 @@
 #include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
+#include "database/objects/TrackList.hpp"
 #include "database/objects/TrackMusicNNEmbeddings.hpp"
 #include "math/ChamferDistance.hpp"
 #include "math/CovarianceCalculator.hpp"
@@ -140,7 +141,27 @@ namespace lms::recommendation
 
     TrackResults AudioSimilarityEngine<Provider, ReducedDimCount>::findSimilarTracksFromTrackList(db::TrackListId tracklistId, std::size_t maxCount) const
     {
-        return {};
+        LMS_SCOPED_TRACE_DETAILED("FeaturesEngine", "Find similar tracks from tracklist");
+
+        if (maxCount == 0 || !_isReady)
+            return {};
+
+        std::vector<db::TrackId> trackIds;
+        {
+            db::Session& session{ _db.getTLSSession() };
+            auto transaction{ session.createReadTransaction() };
+
+            const db::TrackList::pointer trackList{ db::TrackList::find(session, tracklistId) };
+            if (!trackList)
+                return {};
+
+            trackIds = trackList->getTrackIds();
+        }
+
+        if (trackIds.empty())
+            return {};
+
+        return findSimilarTracks(trackIds, maxCount);
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
@@ -192,13 +213,16 @@ namespace lms::recommendation
         // Greedy selection: at each step pick the candidate with the lowest penalized score.
         // distanceToPrevious is the cosine distance to the last selected track, so that
         // SmoothTransitionConstraint penalises large acoustic jumps between consecutive results.
-        std::vector<db::TrackId> selectedTracks;
-        selectedTracks.reserve(maxCount);
+        // Pre-seed selectedTracks with the input tracks so that soft constraints (same release,
+        // same artist) treat them as already taken, preventing the first results from being
+        // from the same release/artist as the inputs.
+        std::vector<db::TrackId> selectedTracks(std::cbegin(tracksId), std::cend(tracksId));
+        selectedTracks.reserve(selectedTracks.size() + maxCount);
         res.reserve(maxCount);
 
         const ReducedVector* previousVector{};
 
-        while (selectedTracks.size() < maxCount && !rankedTracks.empty())
+        while (res.size() < maxCount && !rankedTracks.empty())
         {
             std::optional<std::size_t> bestIdx;
             float bestScore{ std::numeric_limits<float>::max() };
@@ -477,7 +501,7 @@ namespace lms::recommendation
             db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
 
-            Provider::visitVectors(session, [&](db::TrackId trackId, const SourceVector& sourceVector) {
+            Provider::visitVectors(session, [&]([[maybe_unused]] db::TrackId trackId, const SourceVector& sourceVector) {
                 for (std::size_t i{}; i < SourceDimCount; ++i)
                     statsAccumulators[i].add(sourceVector[i]);
 
