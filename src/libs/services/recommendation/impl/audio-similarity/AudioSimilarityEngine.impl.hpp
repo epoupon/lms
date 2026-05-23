@@ -181,14 +181,61 @@ namespace lms::recommendation
             rankedTracks.emplace_back(trackId, distFunc(*vectors));
         }
 
-        const std::size_t resultCount{ std::min(maxCount, rankedTracks.size()) };
-        std::partial_sort(std::begin(rankedTracks), std::next(std::begin(rankedTracks), resultCount), std::end(rankedTracks), [](const auto& lhs, const auto& rhs) {
+        // Oversample to give the diversity selection enough candidates to work with
+        static constexpr std::size_t oversamplingFactor{ 5 };
+        const std::size_t candidateCount{ std::min(maxCount * oversamplingFactor, rankedTracks.size()) };
+        std::partial_sort(std::begin(rankedTracks), std::next(std::begin(rankedTracks), static_cast<std::ptrdiff_t>(candidateCount)), std::end(rankedTracks), [](const auto& lhs, const auto& rhs) {
             return lhs.second < rhs.second;
         });
+        rankedTracks.resize(candidateCount);
 
-        res.reserve(resultCount);
-        for (std::size_t i{}; i < resultCount; ++i)
-            res.push_back({ .id = rankedTracks[i].first, .score = rankedTracks[i].second });
+        // Greedy selection: at each step pick the candidate with the lowest penalized score.
+        // distanceToPrevious is the cosine distance to the last selected track, so that
+        // SmoothTransitionConstraint penalises large acoustic jumps between consecutive results.
+        std::vector<db::TrackId> selectedTracks;
+        selectedTracks.reserve(maxCount);
+        res.reserve(maxCount);
+
+        const ReducedVector* previousVector{};
+
+        while (selectedTracks.size() < maxCount && !rankedTracks.empty())
+        {
+            std::optional<std::size_t> bestIdx;
+            float bestScore{ std::numeric_limits<float>::max() };
+
+            for (std::size_t i{}; i < rankedTracks.size(); ++i)
+            {
+                const auto& [candidateId, distanceToQuery]{ rankedTracks[i] };
+                const ReducedVector* candidateVector{ _trackVectors.at(candidateId) };
+                const float distanceToPrevious{ previousVector ? math::NormalizedCosineDistance{ *previousVector }(*candidateVector) : 0.F };
+
+                const TrackCandidateContext context{
+                    .candidateTrackId = candidateId,
+                    .selectedTracks = selectedTracks,
+                    .distanceToQuery = distanceToQuery,
+                    .distanceToPrevious = distanceToPrevious,
+                };
+
+                if (_trackCandidateEvaluator.rejects(context))
+                    continue;
+
+                const float score{ _trackCandidateEvaluator.score(context) };
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    bestIdx = i;
+                }
+            }
+
+            if (!bestIdx)
+                break;
+
+            const auto& [selectedId, distanceToQuery]{ rankedTracks[*bestIdx] };
+            res.push_back({ .id = selectedId, .score = distanceToQuery }); // report raw cosine distance
+            selectedTracks.push_back(selectedId);
+            previousVector = _trackVectors.at(selectedId);
+            rankedTracks.erase(std::begin(rankedTracks) + static_cast<std::ptrdiff_t>(*bestIdx));
+        }
 
         return res;
     }
