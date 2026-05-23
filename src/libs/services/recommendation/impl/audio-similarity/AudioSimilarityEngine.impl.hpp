@@ -280,8 +280,6 @@ namespace lms::recommendation
         computeReducedFeatures();
         _isReady = true;
         LMS_LOG(RECOMMENDATION, INFO, "Loading complete!");
-
-        // computeReleaseHitRank();
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
@@ -465,118 +463,5 @@ namespace lms::recommendation
         });
 
         LMS_LOG(RECOMMENDATION, INFO, "Computed reduced vectors: " << _trackVectors.size() << " tracks, " << _releaseVectors.size() << " releases, " << _artistVectors.size() << " artists");
-    }
-
-    template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
-    void AudioSimilarityEngine<Provider, ReducedDimCount>::computeReleaseHitRank()
-    {
-        db::Session& session{ _db.getTLSSession() };
-        auto transaction{ session.createReadTransaction() };
-
-        constexpr std::size_t maxSimilarTrackCount{ 250 };
-
-        LMS_LOG(RECOMMENDATION, DEBUG, "Getting all features");
-
-        struct TrackDesc
-        {
-            db::ReleaseId releaseId;
-            const ReducedVector* vectors{};
-        };
-        std::unordered_map<db::TrackId, TrackDesc> trackDescs;
-
-        for (const auto& [trackId, vectors] : _trackVectors)
-        {
-            assert(vectors);
-
-            const db::Track::pointer track{ db::Track::find(session, trackId) };
-            if (!track)
-                continue;
-
-            const db::ReleaseId releaseId{ track->getReleaseId() };
-            if (!releaseId.isValid())
-                continue;
-
-            {
-                db::Track::FindParameters params;
-                params.setRelease(releaseId);
-                const auto releaseTrackIds{ db::Track::findIds(session, params) };
-                if (releaseTrackIds.results.size() == 1)
-                    continue;
-            }
-
-            trackDescs[trackId] = TrackDesc{ .releaseId = releaseId, .vectors = vectors };
-            assert(trackDescs[trackId].vectors);
-        }
-
-        std::array<std::atomic<std::size_t>, maxSimilarTrackCount + 1> ranks{};
-
-        LMS_LOG(RECOMMENDATION, DEBUG, "processing " << trackDescs.size() << " tracks using " << std::thread::hardware_concurrency() << " threads");
-        std::atomic<std::size_t> i;
-
-        std::vector<std::unique_ptr<std::thread>> threads;
-
-        for (std::size_t t = 0; t < std::thread::hardware_concurrency(); ++t)
-        {
-            threads.push_back(std::make_unique<std::thread>([&]() {
-                std::vector<db::TrackId> sortedTrackIds;
-
-                while (true)
-                {
-                    const std::size_t index = i++;
-                    if (index >= trackDescs.size())
-                        break;
-
-                    const auto itEntry{ std::next(trackDescs.cbegin(), index) };
-                    const TrackDesc& trackDesc = itEntry->second;
-
-                    sortedTrackIds.clear();
-                    for (const auto& [trackId, desc] : trackDescs)
-                    {
-                        if (trackId != itEntry->first)
-                            sortedTrackIds.push_back(trackId);
-                    }
-
-                    if (index % 1'000 == 0)
-                        LMS_LOG(RECOMMENDATION, DEBUG, "Processing " << index << "th track... rank 0 = " << ranks[0] << ", out of rank = " << ranks[maxSimilarTrackCount]);
-
-                    math::NormalizedCosineDistance dist{ *trackDesc.vectors };
-                    std::sort(sortedTrackIds.begin(), sortedTrackIds.end(), [&](db::TrackId trackA, db::TrackId trackB) {
-                        return dist(*trackDescs[trackA].vectors) < dist(*trackDescs[trackB].vectors);
-                    });
-
-                    bool found{};
-                    for (std::size_t i{}; i < maxSimilarTrackCount; ++i)
-                    {
-                        const auto itTrackDesc{ trackDescs.find(sortedTrackIds[i]) };
-                        if (itTrackDesc == std::cend(trackDescs))
-                        {
-                            LMS_LOG(RECOMMENDATION, DEBUG, "??");
-                            continue;
-                        }
-
-                        if (itTrackDesc->second.releaseId == trackDesc.releaseId)
-                        {
-                            ranks[i]++;
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    if (!found)
-                        ranks[maxSimilarTrackCount]++;
-                }
-
-                return 0;
-            }));
-        }
-
-        for (auto& t : threads)
-            t->join();
-
-        LMS_LOG(RECOMMENDATION, DEBUG, "Release hit ranks computed using kNN");
-        for (std::size_t i{}; i < maxSimilarTrackCount; ++i)
-            LMS_LOG(RECOMMENDATION, DEBUG, "Rank " << i << ": " << ranks[i]);
-
-        LMS_LOG(RECOMMENDATION, DEBUG, "Too far rank: " << ranks[maxSimilarTrackCount]);
     }
 } // namespace lms::recommendation

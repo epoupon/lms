@@ -68,7 +68,6 @@ namespace lms::recommendation
 
         void getReducedVector(const SourceVector& sourceVector, ReducedVector& output) const;
         void projectToReduced(const SourceVector& sourceVectorCentered, ReducedVector& output) const;
-        void computeReleaseHitRank(); // for debugging purpose only
 
         db::IDb& _db;
         bool _abortRequested{};
