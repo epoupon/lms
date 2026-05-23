@@ -27,7 +27,7 @@ namespace lms::recommendation
     {
     public:
         virtual ~ITrackCandidateHardConstraint() = default;
-        
+
         virtual bool rejects(const TrackCandidateContext& context) const = 0;
     };
 } // namespace lms::recommendation

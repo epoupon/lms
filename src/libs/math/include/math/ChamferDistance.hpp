@@ -54,12 +54,12 @@ namespace lms::math
 
         for (const auto& a : A)
         {
-            DistanceFunc distFunc{a};
-            ValueType bestDist{std::numeric_limits<ValueType>::max()};
+            DistanceFunc distFunc{ a };
+            ValueType bestDist{ std::numeric_limits<ValueType>::max() };
 
             for (const auto& b : B)
             {
-                const ValueType dist{distFunc(b)};
+                const ValueType dist{ distFunc(b) };
                 if (dist < bestDist)
                     bestDist = dist;
             }
@@ -86,8 +86,8 @@ namespace lms::math
                               std::ranges::range_value_t<RangeB>>
     auto symmetricalChamferDistance(const RangeA& A, const RangeB& B)
     {
-        const auto aToB{chamferDistanceAtoB<DistanceFunc>(A, B)};
-        const auto bToA{chamferDistanceAtoB<DistanceFunc>(B, A)};
+        const auto aToB{ chamferDistanceAtoB<DistanceFunc>(A, B) };
+        const auto bToA{ chamferDistanceAtoB<DistanceFunc>(B, A) };
         return (aToB + bToA) / static_cast<decltype(aToB)>(2);
     }
 } // namespace lms::math

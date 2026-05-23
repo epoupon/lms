@@ -19,15 +19,28 @@
 
 #pragma once
 
-#include "TrackCandidateContext.hpp"
+#include "ITrackCandidateSoftConstraint.hpp"
+
+namespace lms::db
+{
+    class IDb;
+}
 
 namespace lms::recommendation
 {
-    class ITrackCandidateSoftConstraint
+    class SameReleaseConstraint : public ITrackCandidateSoftConstraint
     {
     public:
-        virtual ~ITrackCandidateSoftConstraint() = default;
+        SameReleaseConstraint(db::IDb& db, std::size_t window = 4);
+        ~SameReleaseConstraint() override;
 
-        virtual float computeScore(const TrackCandidateContext& context) const = 0;
+        SameReleaseConstraint(const SameReleaseConstraint&) = delete;
+        SameReleaseConstraint& operator=(const SameReleaseConstraint&) = delete;
+
+        float computeScore(const TrackCandidateContext& context) const override;
+
+    private:
+        db::IDb& _db;
+        const std::size_t _window;
     };
 } // namespace lms::recommendation

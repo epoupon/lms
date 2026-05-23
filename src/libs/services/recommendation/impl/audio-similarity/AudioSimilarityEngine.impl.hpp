@@ -46,6 +46,8 @@
 
 #include "track-selection-constraints/DuplicateTrackConstraint.hpp"
 #include "track-selection-constraints/InterpolationFitConstraint.hpp"
+#include "track-selection-constraints/SameArtistConstraint.hpp"
+#include "track-selection-constraints/SameReleaseConstraint.hpp"
 #include "track-selection-constraints/SmoothTransitionConstraint.hpp"
 
 #include "Types.hpp"
@@ -122,9 +124,16 @@ namespace lms::recommendation
     {
         _trackCandidateEvaluator = {};
 
+        constexpr float interpolationFitWeight{ 0.8F };
+        constexpr float smoothTransitionWeight{ 0.2F };
+        constexpr float sameReleaseWeight{ 0.5F };
+        constexpr float sameArtistWeight{ 0.5F };
+
         _trackCandidateEvaluator.addHardConstraint(std::make_unique<DuplicateTrackConstraint>());
-        _trackCandidateEvaluator.addSoftConstraint(std::make_unique<InterpolationFitConstraint>(), 0.8F);
-        _trackCandidateEvaluator.addSoftConstraint(std::make_unique<SmoothTransitionConstraint>(), 0.2F);
+        _trackCandidateEvaluator.addSoftConstraint(std::make_unique<InterpolationFitConstraint>(), interpolationFitWeight);
+        _trackCandidateEvaluator.addSoftConstraint(std::make_unique<SmoothTransitionConstraint>(), smoothTransitionWeight);
+        _trackCandidateEvaluator.addSoftConstraint(std::make_unique<SameReleaseConstraint>(_db), sameReleaseWeight);
+        _trackCandidateEvaluator.addSoftConstraint(std::make_unique<SameArtistConstraint>(_db), sameArtistWeight);
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
