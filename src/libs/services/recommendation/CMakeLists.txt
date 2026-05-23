@@ -5,12 +5,8 @@ add_library(lmsrecommendation STATIC
 	impl/audio-similarity/features/AudioFeatureProvider.cpp
 	impl/audio-similarity/musicnn/MusicNNEmbeddingEngine.cpp
 	impl/audio-similarity/musicnn/MusicNNEmbeddingProvider.cpp
-	impl/playlist-constraints/ConsecutiveArtists.cpp
-	impl/playlist-constraints/ConsecutiveReleases.cpp
-	impl/playlist-constraints/DuplicateTracks.cpp
 	impl/track-selection-constraints/SameArtistConstraint.cpp
 	impl/track-selection-constraints/SameReleaseConstraint.cpp
-	impl/PlaylistGeneratorService.cpp
 	impl/RecommendationService.cpp
 	)
 

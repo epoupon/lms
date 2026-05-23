@@ -40,7 +40,7 @@
 #include "database/objects/TrackList.hpp"
 #include "database/objects/User.hpp"
 #include "services/feedback/IFeedbackService.hpp"
-#include "services/recommendation/IPlaylistGeneratorService.hpp"
+#include "services/recommendation/IRecommendationService.hpp"
 
 #include "LmsApplication.hpp"
 #include "MediaPlayer.hpp"
@@ -610,7 +610,13 @@ namespace lms::ui
 
     void PlayQueue::enqueueRadioTracks()
     {
-        std::vector<db::TrackId> trackIds = core::Service<recommendation::IPlaylistGeneratorService>::get()->extendPlaylist(_queueId, 15);
+        const recommendation::TrackResults results{ core::Service<recommendation::IRecommendationService>::get()->findSimilarTracks(_queueId, 15) };
+
+        std::vector<db::TrackId> trackIds;
+        trackIds.reserve(results.size());
+        for (const auto& result : results)
+            trackIds.push_back(result.id);
+
         enqueueTracks(trackIds);
     }
 
