@@ -140,4 +140,29 @@ namespace lms::recommendation
         return res;
     }
 
+    TrackResults ClusterEngine::findTrackSimilarityPath(db::TrackId startTrackId, db::TrackId endTrackId, std::size_t maxCount) const
+    {
+        if (maxCount == 0)
+            return {};
+
+        if (startTrackId == endTrackId)
+            return { RecommendationResult<TrackId>{ .id = startTrackId, .score = {} } };
+
+        Session& dbSession{ _db.getTLSSession() };
+        auto transaction{ dbSession.createReadTransaction() };
+
+        const auto startTrack{ Track::find(dbSession, startTrackId) };
+        const auto endTrack{ Track::find(dbSession, endTrackId) };
+        if (!startTrack || !endTrack)
+            return {};
+
+        TrackResults res;
+        res.reserve(std::min<std::size_t>(maxCount, 2));
+        res.push_back({ .id = startTrackId, .score = {} });
+        if (maxCount > 1)
+            res.push_back({ .id = endTrackId, .score = {} });
+
+        return res;
+    }
+
 } // namespace lms::recommendation

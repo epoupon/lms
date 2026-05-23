@@ -46,5 +46,6 @@ namespace lms::recommendation
         virtual TrackResults findSimilarTracks(std::span<const db::TrackId> tracksId, std::size_t maxCount) const = 0;
         virtual ReleaseResults findSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const = 0;
         virtual ArtistResults findSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const = 0;
+        virtual TrackResults findTrackSimilarityPath(db::TrackId startTrackId, db::TrackId endTrackId, std::size_t maxCount) const = 0;
     };
 } // namespace lms::recommendation

@@ -91,11 +91,14 @@ namespace lms::recommendation
         return _engine->findSimilarArtists(artistId, linkTypes, maxCount);
     }
 
-    TrackResults RecommendationService::findTrackSimilarityPath([[maybe_unused]] db::TrackId startTrackId, [[maybe_unused]] db::TrackId endTrackId, [[maybe_unused]] std::size_t maxCount) const
+    TrackResults RecommendationService::findTrackSimilarityPath(db::TrackId startTrackId, db::TrackId endTrackId, std::size_t maxCount) const
     {
         TrackResults res;
-        // TODO: Implement actual pathfinding algorithm
-        return res;
+
+        if (!_engine)
+            return res;
+
+        return _engine->findTrackSimilarityPath(startTrackId, endTrackId, maxCount);
     }
 
     bool RecommendationService::isEngineTypeSupported(EngineType type) const

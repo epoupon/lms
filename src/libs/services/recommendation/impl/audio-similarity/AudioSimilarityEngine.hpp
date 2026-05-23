@@ -19,7 +19,9 @@
 
 #pragma once
 
+#include <functional>
 #include <unordered_map>
+#include <vector>
 
 #include <boost/asio/io_context.hpp>
 
@@ -34,6 +36,7 @@
 #include "AudioVectorProvider.hpp"
 #include "IEngine.hpp"
 #include "Types.hpp"
+#include "track-selection-constraints/TrackCandidateEvaluator.hpp"
 
 namespace lms::recommendation
 {
@@ -57,11 +60,13 @@ namespace lms::recommendation
 
         TrackResults findSimilarTracksFromTrackList(db::TrackListId tracklistId, std::size_t maxCount) const override;
         TrackResults findSimilarTracks(std::span<const db::TrackId> tracksId, std::size_t maxCount) const override;
+        TrackResults findTrackSimilarityPath(db::TrackId startTrackId, db::TrackId endTrackId, std::size_t maxCount) const override;
         ReleaseResults findSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const override;
         ArtistResults findSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const override;
 
         void abort();
         void reload();
+        void initializeConstraints();
 
         void computeDatasetStats();
         void computeReducedFeatures();
@@ -87,7 +92,9 @@ namespace lms::recommendation
         bool _isReady{};
         std::vector<ReducedVector> _vectors;
         std::unordered_map<db::TrackId, const ReducedVector*> _trackVectors;
-        std::unordered_map<db::ReleaseId, std::vector<const ReducedVector*>> _releaseVectors;
-        std::unordered_map<db::ArtistId, std::vector<const ReducedVector*>> _artistVectors;
+        std::unordered_map<db::ReleaseId, std::vector<std::reference_wrapper<const ReducedVector>>> _releaseVectors;
+        std::unordered_map<db::ArtistId, std::vector<std::reference_wrapper<const ReducedVector>>> _artistVectors;
+
+        TrackCandidateEvaluator _trackCandidateEvaluator;
     };
 } // namespace lms::recommendation

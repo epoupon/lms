@@ -1,9 +1,10 @@
 
 add_executable(bench-math
-	FFT.cpp
+	ChamferDistance.cpp
 	CosineDistance.cpp
 	DotProduct.cpp
 	EuclideanDistance.cpp
+	FFT.cpp
 	Math.cpp
 	)
 

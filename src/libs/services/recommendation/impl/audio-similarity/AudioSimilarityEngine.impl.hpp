@@ -23,7 +23,6 @@
 
 #include <algorithm>
 #include <array>
-#include <memory>
 #include <unordered_map>
 #include <utility>
 
@@ -38,11 +37,16 @@
 #include "database/objects/Track.hpp"
 #include "database/objects/TrackArtistLink.hpp"
 #include "database/objects/TrackMusicNNEmbeddings.hpp"
+#include "math/ChamferDistance.hpp"
 #include "math/CovarianceCalculator.hpp"
 #include "math/MedoidCalculator.hpp"
 #include "math/NormalizedCosineDistance.hpp"
 #include "math/PrincipalComponents.hpp"
 #include "math/StatsAccumulator.hpp"
+
+#include "track-selection-constraints/DuplicateTrackConstraint.hpp"
+#include "track-selection-constraints/InterpolationFitConstraint.hpp"
+#include "track-selection-constraints/SmoothTransitionConstraint.hpp"
 
 #include "Types.hpp"
 
@@ -50,33 +54,38 @@ namespace lms::recommendation
 {
     namespace detail
     {
-        template<typename Vector>
-        FloatType chamferDistanceAtoB(
-            const std::span<const Vector* const>& A,
-            const std::span<const Vector* const>& B)
+        template<typename ReducedVector>
+        TrackResults findNearestNeighbors(
+            const ReducedVector& queryVector, // expected to be normalized
+            const std::unordered_map<db::TrackId, const ReducedVector*>& trackVectors,
+            std::size_t maxNeighbors,
+            db::TrackId excludeTrackId)
         {
-            assert(!A.empty());
-            assert(!B.empty());
+            const math::NormalizedCosineDistance distFunc{ queryVector };
 
-            FloatType total{};
+            TrackResults neighbors;
+            neighbors.reserve(trackVectors.size());
 
-            for (const auto& a : A)
+            for (const auto& [trackId, trackVector] : trackVectors)
             {
-                typename Vector::value_type bestDist{ std::numeric_limits<FloatType>::max() };
+                if (trackId == excludeTrackId)
+                    continue;
 
-                const math::NormalizedCosineDistance distFunc{ *a };
-
-                for (const auto& b : B)
-                {
-                    const FloatType dist{ distFunc(*b) };
-                    if (dist < bestDist)
-                        bestDist = dist;
-                }
-
-                total += bestDist;
+                neighbors.push_back({ .id = trackId, .score = distFunc(*trackVector) });
             }
 
-            return total / static_cast<FloatType>(A.size());
+            maxNeighbors = std::min(maxNeighbors, neighbors.size());
+            if (maxNeighbors == 0)
+                return {};
+
+            std::nth_element(neighbors.begin(), neighbors.begin() + static_cast<std::ptrdiff_t>(maxNeighbors), neighbors.end(), [](const auto& lhs, const auto& rhs) {
+                return lhs.score < rhs.score;
+            });
+            neighbors.resize(maxNeighbors);
+            std::sort(neighbors.begin(), neighbors.end(), [](const auto& lhs, const auto& rhs) {
+                return lhs.score < rhs.score;
+            });
+            return neighbors;
         }
     } // namespace detail
 
@@ -85,6 +94,7 @@ namespace lms::recommendation
         : _db{ db }
         , _ioContextRunner{ _ioContext, 1, "FeaturesEngine" }
     {
+        initializeConstraints();
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
@@ -105,6 +115,16 @@ namespace lms::recommendation
     bool AudioSimilarityEngine<Provider, ReducedDimCount>::isLoaded() const
     {
         return _isReady;
+    }
+
+    template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
+    void AudioSimilarityEngine<Provider, ReducedDimCount>::initializeConstraints()
+    {
+        _trackCandidateEvaluator = {};
+
+        _trackCandidateEvaluator.addHardConstraint(std::make_unique<DuplicateTrackConstraint>());
+        _trackCandidateEvaluator.addSoftConstraint(std::make_unique<InterpolationFitConstraint>(), 0.8F);
+        _trackCandidateEvaluator.addSoftConstraint(std::make_unique<SmoothTransitionConstraint>(), 0.2F);
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
@@ -165,6 +185,111 @@ namespace lms::recommendation
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
+    TrackResults AudioSimilarityEngine<Provider, ReducedDimCount>::findTrackSimilarityPath(db::TrackId startTrackId, db::TrackId endTrackId, std::size_t maxCount) const
+    {
+        LMS_SCOPED_TRACE_DETAILED("FeaturesEngine", "Find track similarity path");
+
+        if (maxCount == 0 || !_isReady)
+            return {};
+
+        const auto itStart{ _trackVectors.find(startTrackId) };
+        const auto itEnd{ _trackVectors.find(endTrackId) };
+        if (itStart == _trackVectors.cend() || itEnd == _trackVectors.cend())
+            return {};
+
+        const ReducedVector startVector{ *itStart->second };
+        const ReducedVector endVector{ *itEnd->second };
+        const ReducedVector direction{ endVector - startVector };
+
+        std::vector<db::TrackId> path;
+        path.reserve(maxCount);
+        path.push_back(startTrackId);
+
+        const ReducedVector* previousVector{ itStart->second };
+        static constexpr std::size_t DefaultNeighborCount{ 16 };
+        static constexpr std::size_t BroadNeighborCount{ 64 };
+        std::size_t neighborCount{ DefaultNeighborCount };
+        const std::size_t interiorCount{ (maxCount > 2) ? (maxCount - 2) : 0 };
+
+        auto evaluateCandidates = [&](const auto& neighborList) -> std::optional<db::TrackId> {
+            std::optional<db::TrackId> best;
+            float bestScore{ std::numeric_limits<float>::max() };
+
+            for (const auto& [candidateId, candidateDistance] : neighborList)
+            {
+                const auto* candidateVector{ _trackVectors.at(candidateId) };
+                const float transitionDistance{ math::NormalizedCosineDistance{ *previousVector }(*candidateVector) };
+
+                const TrackCandidateContext context{
+                    .candidateTrackId = candidateId,
+                    .selectedTracks = path,
+                    .distanceToQuery = candidateDistance,
+                    .distanceToPrevious = transitionDistance,
+                };
+
+                if (_trackCandidateEvaluator.rejects(context))
+                    continue;
+
+                const float score{ _trackCandidateEvaluator.score(context) };
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    best = candidateId;
+                }
+            }
+
+            return best;
+        };
+
+        for (std::size_t i{}; i < interiorCount; ++i)
+        {
+            const float t{ static_cast<float>(i + 1) / static_cast<float>(interiorCount + 1) };
+            auto queryPoint{ startVector + direction * t };
+            queryPoint.normalizeL2();
+
+            const auto neighbors{ detail::findNearestNeighbors(queryPoint, _trackVectors, neighborCount, endTrackId) };
+            std::optional<db::TrackId> bestCandidate{ evaluateCandidates(neighbors) };
+
+            if (!bestCandidate && neighborCount < BroadNeighborCount)
+            {
+                neighborCount = BroadNeighborCount;
+                const auto broaderNeighbors{ detail::findNearestNeighbors(queryPoint, _trackVectors, neighborCount, endTrackId) };
+                bestCandidate = evaluateCandidates(broaderNeighbors);
+            }
+
+            if (!bestCandidate)
+                continue;
+
+            path.push_back(*bestCandidate);
+            previousVector = _trackVectors.at(*bestCandidate);
+        }
+
+        if (maxCount > 1)
+            path.push_back(endTrackId);
+
+        TrackResults results;
+        results.reserve(path.size());
+
+        float cumulativeCost{};
+        for (std::size_t i{}; i < path.size(); ++i)
+        {
+            const db::TrackId trackId{ path[i] };
+            if (i == 0)
+            {
+                results.push_back({ .id = trackId, .score = cumulativeCost });
+                continue;
+            }
+
+            const auto* previousVector{ _trackVectors.at(path[i - 1]) };
+            const auto* currentVector{ _trackVectors.at(trackId) };
+            cumulativeCost += math::NormalizedCosineDistance{ *currentVector }(*previousVector);
+            results.push_back({ .id = trackId, .score = cumulativeCost });
+        }
+
+        return results;
+    }
+
+    template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
     ReleaseResults AudioSimilarityEngine<Provider, ReducedDimCount>::findSimilarReleases(
         db::ReleaseId releaseId,
         std::size_t maxCount) const
@@ -185,18 +310,16 @@ namespace lms::recommendation
         std::vector<std::pair<db::ReleaseId, Distance>> rankedReleases;
         rankedReleases.reserve(_releaseVectors.size());
 
+        using CosineDistance = math::NormalizedCosineDistance<ReducedVector::getSize(), FloatType>;
+
         for (const auto& [candidateId, candidateReleaseVectors] : _releaseVectors)
         {
             if (candidateId == releaseId || candidateReleaseVectors.empty())
                 continue;
 
-            const FloatType lhsToRhs{ detail::chamferDistanceAtoB(
-                std::span<const ReducedVector* const>{ queryReleaseFeatures },
-                std::span<const ReducedVector* const>{ candidateReleaseVectors }) };
-            const FloatType rhsToLhs{ detail::chamferDistanceAtoB(
-                std::span<const ReducedVector* const>{ candidateReleaseVectors },
-                std::span<const ReducedVector* const>{ queryReleaseFeatures }) };
-            const FloatType distance{ (lhsToRhs + rhsToLhs) * FloatType{ 0.5F } };
+            const FloatType distance{ math::symmetricalChamferDistance<CosineDistance>(
+                queryReleaseFeatures,
+                candidateReleaseVectors) };
 
             rankedReleases.emplace_back(candidateId, distance);
         }
@@ -235,18 +358,16 @@ namespace lms::recommendation
         std::vector<std::pair<db::ArtistId, Distance>> rankedArtists;
         rankedArtists.reserve(_artistVectors.size());
 
+        using CosineDistance = math::NormalizedCosineDistance<ReducedVector::getSize(), typename ReducedVector::value_type>;
+
         for (const auto& [candidateId, candidateArtistFeatures] : _artistVectors)
         {
             if (candidateId == artistId || candidateArtistFeatures.empty())
                 continue;
 
-            const FloatType lhsToRhs{ detail::chamferDistanceAtoB(
-                std::span<const ReducedVector* const>{ queryArtistFeatures },
-                std::span<const ReducedVector* const>{ candidateArtistFeatures }) };
-            const FloatType rhsToLhs{ detail::chamferDistanceAtoB(
-                std::span<const ReducedVector* const>{ candidateArtistFeatures },
-                std::span<const ReducedVector* const>{ queryArtistFeatures }) };
-            const FloatType distance{ (lhsToRhs + rhsToLhs) * FloatType{ 0.5F } };
+            const FloatType distance{ math::symmetricalChamferDistance<CosineDistance>(
+                queryArtistFeatures,
+                candidateArtistFeatures) };
 
             rankedArtists.emplace_back(candidateId, distance);
         }
@@ -400,7 +521,7 @@ namespace lms::recommendation
         });
 
         db::Release::find(session, db::Release::FindParameters{}, [&](const db::Release::pointer& release) {
-            std::vector<const ReducedVector*> releaseTrackFeatures;
+            std::vector<std::reference_wrapper<const ReducedVector>> releaseTrackFeatures;
 
             db::Track::FindParameters params;
             params.setRelease(release->getId());
@@ -412,7 +533,7 @@ namespace lms::recommendation
                 if (itFeatures != std::cend(_trackVectors))
                 {
                     assert(itFeatures->second);
-                    releaseTrackFeatures.push_back(itFeatures->second);
+                    releaseTrackFeatures.emplace_back(*itFeatures->second);
                 }
             }
 
@@ -421,7 +542,7 @@ namespace lms::recommendation
         });
 
         db::Artist::find(session, db::Artist::FindParameters{}, [&](const db::Artist::pointer& artist) {
-            std::vector<const ReducedVector*> artistTrackVectors;
+            std::vector<std::reference_wrapper<const ReducedVector>> artistTrackVectors;
 
             {
                 db::Track::FindParameters params;
@@ -434,7 +555,7 @@ namespace lms::recommendation
                     if (itFeatures != std::cend(_trackVectors))
                     {
                         assert(itFeatures->second);
-                        artistTrackVectors.push_back(itFeatures->second);
+                        artistTrackVectors.emplace_back(*itFeatures->second);
                     }
                 }
             }

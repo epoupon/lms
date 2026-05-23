@@ -1,6 +1,7 @@
 include(GoogleTest)
 
 add_executable(test-math
+	ChamferDistance.cpp
 	CentroidCalculator.cpp
 	CosineDistance.cpp
 	CovarianceCalculator.cpp

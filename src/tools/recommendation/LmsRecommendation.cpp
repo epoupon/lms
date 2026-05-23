@@ -349,6 +349,99 @@ namespace lms
                 std::cout << "\t- " << similarArtist.score << ", Similar artist '" << artistToString(similarArtist.id) << "'" << std::endl;
         }
     }
+
+    void dumpTrackPaths(
+        db::Session session,
+        recommendation::IRecommendationService& recommendationService,
+        std::string_view fromName,
+        std::string_view toName,
+        unsigned maxCount)
+    {
+        std::vector<db::TrackId> fromTrackIds;
+        std::vector<db::TrackId> toTrackIds;
+
+        // Find 'from' tracks
+        if (const auto mbid{ core::UUID::fromString(fromName) })
+        {
+            auto transaction{ session.createReadTransaction() };
+            for (const auto& track : db::Track::findByMBID(session, *mbid))
+                fromTrackIds.push_back(track->getId());
+        }
+        else
+        {
+            db::Track::FindParameters params;
+            params.setKeywords(core::stringUtils::splitString(fromName, ' '));
+
+            auto transaction{ session.createReadTransaction() };
+            fromTrackIds = db::Track::findIds(session, params).results;
+        }
+
+        // Find 'to' tracks
+        if (const auto mbid{ core::UUID::fromString(toName) })
+        {
+            auto transaction{ session.createReadTransaction() };
+            for (const auto& track : db::Track::findByMBID(session, *mbid))
+                toTrackIds.push_back(track->getId());
+        }
+        else
+        {
+            db::Track::FindParameters params;
+            params.setKeywords(core::stringUtils::splitString(toName, ' '));
+
+            auto transaction{ session.createReadTransaction() };
+            toTrackIds = db::Track::findIds(session, params).results;
+        }
+
+        if (fromTrackIds.empty() || toTrackIds.empty())
+        {
+            std::cout << "*** Track Paths ***" << std::endl;
+            std::cout << "No matching tracks found" << std::endl;
+            return;
+        }
+
+        auto trackToString = [&](const db::TrackId trackId) {
+            auto transaction{ session.createReadTransaction() };
+            const db::Track::pointer track{ db::Track::find(session, trackId) };
+
+            std::ostringstream oss;
+            oss << "'" << track->getName() << "'";
+            if (track->getRelease())
+                oss << " [" << track->getRelease()->getName() << "]";
+            if (std::string_view artistDisplayName{ track->getArtistDisplayName() }; !artistDisplayName.empty())
+                oss << " by '" << artistDisplayName << "'";
+
+            return oss.str();
+        };
+
+        std::cout << "*** Track Paths ***" << std::endl;
+        std::cout << "From (" << fromTrackIds.size() << ") To (" << toTrackIds.size() << ") - max path length " << maxCount << std::endl;
+
+        std::size_t pathCount{};
+        for (const auto& fromTrackId : fromTrackIds)
+        {
+            for (const auto& toTrackId : toTrackIds)
+            {
+                ++pathCount;
+                std::cout << std::endl
+                          << "Path " << pathCount << ": ";
+                std::cout << trackToString(fromTrackId) << " => " << trackToString(toTrackId) << std::endl;
+
+                const auto path{ recommendationService.findTrackSimilarityPath(fromTrackId, toTrackId, maxCount) };
+
+                if (path.empty())
+                {
+                    std::cout << "\t(no path found)" << std::endl;
+                    continue;
+                }
+
+                for (std::size_t i{}; i < path.size(); ++i)
+                {
+                    const auto& result{ path[i] };
+                    std::cout << "\t" << (i + 1) << ". " << trackToString(result.id) << " (score: " << result.score << ")" << std::endl;
+                }
+            }
+        }
+    }
 } // namespace lms
 
 int main(int argc, char* argv[])
@@ -369,6 +462,8 @@ int main(int argc, char* argv[])
             ("artist,a", po::value<std::string>(), "Display recommendation for a given artist (mbid or name search pattern)")
             ("release,r", po::value<std::string>(), "Display recommendation for releases (mbid or name search pattern)")
             ("track,t", po::value<std::string>(), "Display recommendation for tracks (track mbid or name search pattern)")
+            ("track-path-from", po::value<std::string>(), "Find similarity path from track (mbid or name search pattern)")
+            ("track-path-to", po::value<std::string>(), "Find similarity path to track (mbid or name search pattern)")
             ("random-tracks", po::value<unsigned>(), "Display recommendation for N random tracks")
             ("random-releases", po::value<unsigned>(), "Display recommendation for N random releases")
             ("random-artists", po::value<unsigned>(), "Display recommendation for N random artists")
@@ -405,6 +500,9 @@ int main(int argc, char* argv[])
 
         if (vm.count("artist"))
             dumpArtistsRecommendation(*db, *recommendationService, vm["artist"].as<std::string>(), maxCount);
+
+        if (vm.count("track-path-from") && vm.count("track-path-to"))
+            dumpTrackPaths(*db, *recommendationService, vm["track-path-from"].as<std::string>(), vm["track-path-to"].as<std::string>(), maxCount);
 
         if (vm.count("random-tracks"))
             dumpRandomTracksRecommendation(*db, *recommendationService, vm["random-tracks"].as<unsigned>(), vm["seed"].as<unsigned>(), maxCount);
