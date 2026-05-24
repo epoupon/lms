@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <functional>
 #include <unordered_map>
 #include <vector>
@@ -90,7 +91,7 @@ namespace lms::recommendation
         bool _pcaReady{};
 
         // In-memory cache of reduced feature vectors
-        bool _isReady{};
+        std::atomic<bool> _isReady;
         std::vector<ReducedVector> _vectors;
         std::unordered_map<db::TrackId, const ReducedVector*> _trackVectors;
         std::unordered_map<db::ReleaseId, std::vector<std::reference_wrapper<const ReducedVector>>> _releaseVectors;

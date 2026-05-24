@@ -20,6 +20,7 @@
 #pragma once
 
 #include <optional>
+#include <shared_mutex>
 
 #include "services/recommendation/IRecommendationService.hpp"
 
@@ -53,6 +54,7 @@ namespace lms::recommendation
         TrackResults findTrackSimilarityPath(db::TrackId startTrackId, db::TrackId endTrackId, std::size_t maxCount) const override;
 
         db::IDb& _db;
+        mutable std::shared_mutex _mutex;
         std::unique_ptr<IEngine> _engine;
     };
 

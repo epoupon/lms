@@ -53,50 +53,45 @@ namespace lms::recommendation
 
     TrackResults RecommendationService::findSimilarTracks(db::TrackListId trackListId, std::size_t maxCount) const
     {
-        TrackResults res;
-
-        if (!_engine)
-            return res;
+        std::shared_lock lock{ _mutex, std::try_to_lock };
+        if (!lock || !_engine)
+            return {};
 
         return _engine->findSimilarTracksFromTrackList(trackListId, maxCount);
     }
 
     TrackResults RecommendationService::findSimilarTracks(std::span<const db::TrackId> trackIds, std::size_t maxCount) const
     {
-        TrackResults res;
-
-        if (!_engine)
-            return res;
+        std::shared_lock lock{ _mutex, std::try_to_lock };
+        if (!lock || !_engine)
+            return {};
 
         return _engine->findSimilarTracks(trackIds, maxCount);
     }
 
     ReleaseResults RecommendationService::findSimilarReleases(db::ReleaseId releaseId, std::size_t maxCount) const
     {
-        ReleaseResults res;
-
-        if (!_engine)
-            return res;
+        std::shared_lock lock{ _mutex, std::try_to_lock };
+        if (!lock || !_engine)
+            return {};
 
         return _engine->findSimilarReleases(releaseId, maxCount);
     }
 
     ArtistResults RecommendationService::findSimilarArtists(db::ArtistId artistId, core::EnumSet<db::TrackArtistLinkType> linkTypes, std::size_t maxCount) const
     {
-        ArtistResults res;
-
-        if (!_engine)
-            return res;
+        std::shared_lock lock{ _mutex, std::try_to_lock };
+        if (!lock || !_engine)
+            return {};
 
         return _engine->findSimilarArtists(artistId, linkTypes, maxCount);
     }
 
     TrackResults RecommendationService::findTrackSimilarityPath(db::TrackId startTrackId, db::TrackId endTrackId, std::size_t maxCount) const
     {
-        TrackResults res;
-
-        if (!_engine)
-            return res;
+        std::shared_lock lock{ _mutex, std::try_to_lock };
+        if (!lock || !_engine)
+            return {};
 
         return _engine->findTrackSimilarityPath(startTrackId, endTrackId, maxCount);
     }
@@ -119,7 +114,7 @@ namespace lms::recommendation
 
     void RecommendationService::requestReload()
     {
-        // not thread safe :/
+        std::unique_lock lock{ _mutex };
         _engine.reset(); // may block
 
         switch (getRecommendationEngineType(_db.getTLSSession()))
@@ -147,7 +142,8 @@ namespace lms::recommendation
 
     bool RecommendationService::isLoaded() const
     {
-        if (!_engine)
+        std::shared_lock lock{ _mutex, std::try_to_lock };
+        if (!lock || !_engine)
             return false;
 
         return _engine->isLoaded();
