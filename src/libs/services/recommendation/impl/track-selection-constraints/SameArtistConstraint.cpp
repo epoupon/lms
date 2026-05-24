@@ -20,42 +20,13 @@
 #include "SameArtistConstraint.hpp"
 
 #include <algorithm>
-#include <vector>
 
-#include "database/IDb.hpp"
-#include "database/Session.hpp"
-#include "database/objects/Artist.hpp"
-#include "database/objects/ArtistId.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/ReleaseArtistLink.hpp"
-#include "database/objects/Track.hpp"
+#include "TrackCandidateContext.hpp"
 
 namespace lms::recommendation
 {
     namespace
     {
-        std::vector<db::ArtistId> getArtistIds(db::IDb& db, db::TrackId trackId)
-        {
-            db::Session& session{ db.getTLSSession() };
-            auto transaction{ session.createReadTransaction() };
-            const db::Track::pointer track{ db::Track::find(session, trackId) };
-            if (!track)
-                return {};
-
-            std::vector<db::ArtistId> ids{ track->getArtistIds({}) }; // all track-level link types
-
-            // Also include album artists from ReleaseArtistLink
-            if (const db::Release::pointer release{ track->getRelease() })
-            {
-                release->visitArtistLinks([&](const db::ReleaseArtistLink::pointer& link) {
-                    ids.push_back(link->getArtistId());
-                });
-            }
-
-            std::sort(ids.begin(), ids.end());
-            return ids;
-        }
-
         bool hasCommonArtist(const std::vector<db::ArtistId>& a, const std::vector<db::ArtistId>& b)
         {
             // Both vectors are sorted
@@ -74,8 +45,8 @@ namespace lms::recommendation
         }
     } // namespace
 
-    SameArtistConstraint::SameArtistConstraint(db::IDb& db, std::size_t window)
-        : _db{ db }
+    SameArtistConstraint::SameArtistConstraint(const TrackMetadataMap& trackMetadata, std::size_t window)
+        : _trackMetadata{ trackMetadata }
         , _window{ window }
     {
     }
@@ -84,15 +55,18 @@ namespace lms::recommendation
 
     float SameArtistConstraint::computeScore(const TrackCandidateContext& context) const
     {
-        const std::vector<db::ArtistId> candidateArtists{ getArtistIds(_db, context.candidateTrackId) };
-        if (candidateArtists.empty())
+        const auto it{ _trackMetadata.find(context.candidateTrackId) };
+        if (it == _trackMetadata.cend() || it->second.artistIds.empty())
             return {};
+
+        const auto& candidateArtists{ it->second.artistIds };
 
         float score{};
         const auto& selected{ context.selectedTracks };
         for (std::size_t i{ 1 }; i <= _window && i <= selected.size(); ++i)
         {
-            if (hasCommonArtist(candidateArtists, getArtistIds(_db, selected[selected.size() - i])))
+            const auto sit{ _trackMetadata.find(selected[selected.size() - i]) };
+            if (sit != _trackMetadata.cend() && hasCommonArtist(candidateArtists, sit->second.artistIds))
                 score += 1.F / static_cast<float>(i);
         }
         return score;

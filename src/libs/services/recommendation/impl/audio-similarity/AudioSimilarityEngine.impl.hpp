@@ -134,8 +134,8 @@ namespace lms::recommendation
         _trackCandidateEvaluator.addHardConstraint(std::make_unique<DuplicateTrackConstraint>());
         _trackCandidateEvaluator.addSoftConstraint(std::make_unique<InterpolationFitConstraint>(), interpolationFitWeight);
         _trackCandidateEvaluator.addSoftConstraint(std::make_unique<SmoothTransitionConstraint>(), smoothTransitionWeight);
-        _trackCandidateEvaluator.addSoftConstraint(std::make_unique<SameReleaseConstraint>(_db), sameReleaseWeight);
-        _trackCandidateEvaluator.addSoftConstraint(std::make_unique<SameArtistConstraint>(_db), sameArtistWeight);
+        _trackCandidateEvaluator.addSoftConstraint(std::make_unique<SameReleaseConstraint>(_trackMetadata), sameReleaseWeight);
+        _trackCandidateEvaluator.addSoftConstraint(std::make_unique<SameArtistConstraint>(_trackMetadata), sameArtistWeight);
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
@@ -593,6 +593,7 @@ namespace lms::recommendation
         _vectors.reserve(_trackCount); // must keep pointers valid
         _releaseVectors.clear();
         _artistVectors.clear();
+        _trackMetadata.clear();
 
         Provider::visitVectors(session, [&](db::TrackId trackId, const SourceVector& sourceVector) {
             assert(_vectors.size() < _vectors.capacity());
@@ -615,6 +616,7 @@ namespace lms::recommendation
                 {
                     assert(itFeatures->second);
                     releaseTrackFeatures.emplace_back(*itFeatures->second);
+                    _trackMetadata[trackId].releaseId = release->getId();
                 }
             }
 
@@ -659,12 +661,17 @@ namespace lms::recommendation
                 {
                     assert(it->second);
                     artistTrackVectors.emplace_back(*it->second);
+                    _trackMetadata[trackId].artistIds.push_back(artist->getId());
                 }
             }
 
             if (!artistTrackVectors.empty())
                 _artistVectors.try_emplace(artist->getId(), std::move(artistTrackVectors));
         });
+
+        // Sort artistIds in each TrackMetadata entry for set-intersection in SameArtistConstraint
+        for (auto& [trackId, metadata] : _trackMetadata)
+            std::sort(metadata.artistIds.begin(), metadata.artistIds.end());
 
         LMS_LOG(RECOMMENDATION, INFO, "Computed reduced vectors: " << _trackVectors.size() << " tracks, " << _releaseVectors.size() << " releases, " << _artistVectors.size() << " artists");
     }

@@ -20,18 +20,14 @@
 #pragma once
 
 #include "ITrackCandidateSoftConstraint.hpp"
-
-namespace lms::db
-{
-    class IDb;
-}
+#include "TrackMetadata.hpp"
 
 namespace lms::recommendation
 {
     class SameArtistConstraint : public ITrackCandidateSoftConstraint
     {
     public:
-        SameArtistConstraint(db::IDb& db, std::size_t window = 4);
+        SameArtistConstraint(const TrackMetadataMap& trackMetadata, std::size_t window = 4);
         ~SameArtistConstraint() override;
 
         SameArtistConstraint(const SameArtistConstraint&) = delete;
@@ -40,7 +36,7 @@ namespace lms::recommendation
         float computeScore(const TrackCandidateContext& context) const override;
 
     private:
-        db::IDb& _db;
+        const TrackMetadataMap& _trackMetadata;
         const std::size_t _window;
     };
 } // namespace lms::recommendation

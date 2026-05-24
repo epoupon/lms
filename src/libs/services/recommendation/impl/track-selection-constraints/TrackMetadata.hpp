@@ -19,24 +19,21 @@
 
 #pragma once
 
-#include "ITrackCandidateSoftConstraint.hpp"
-#include "TrackMetadata.hpp"
+#include <unordered_map>
+#include <vector>
+
+#include "database/objects/ArtistId.hpp"
+#include "database/objects/ReleaseId.hpp"
+#include "database/objects/TrackId.hpp"
 
 namespace lms::recommendation
 {
-    class SameReleaseConstraint : public ITrackCandidateSoftConstraint
+    struct TrackMetadata
     {
-    public:
-        SameReleaseConstraint(const TrackMetadataMap& trackMetadata, std::size_t window = 4);
-        ~SameReleaseConstraint() override;
-
-        SameReleaseConstraint(const SameReleaseConstraint&) = delete;
-        SameReleaseConstraint& operator=(const SameReleaseConstraint&) = delete;
-
-        float computeScore(const TrackCandidateContext& context) const override;
-
-    private:
-        const TrackMetadataMap& _trackMetadata;
-        const std::size_t _window;
+        db::ReleaseId releaseId;              // invalid if track has no release
+        std::vector<db::ArtistId> artistIds;  // sorted; track-level + album-level artists
+        // Future: db::MediaLibraryId mediaLibraryId;
     };
+
+    using TrackMetadataMap = std::unordered_map<db::TrackId, TrackMetadata>;
 } // namespace lms::recommendation

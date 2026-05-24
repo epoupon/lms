@@ -19,30 +19,12 @@
 
 #include "SameReleaseConstraint.hpp"
 
-#include "database/IDb.hpp"
-#include "database/Session.hpp"
-#include "database/objects/Release.hpp"
-#include "database/objects/ReleaseId.hpp"
-#include "database/objects/Track.hpp"
+#include "TrackCandidateContext.hpp"
 
 namespace lms::recommendation
 {
-    namespace
-    {
-        db::ReleaseId getReleaseId(db::IDb& db, db::TrackId trackId)
-        {
-            db::Session& session{ db.getTLSSession() };
-            auto transaction{ session.createReadTransaction() };
-            const db::Track::pointer track{ db::Track::find(session, trackId) };
-            if (!track)
-                return {};
-            const db::Release::pointer release{ track->getRelease() };
-            return release ? release->getId() : db::ReleaseId{};
-        }
-    } // namespace
-
-    SameReleaseConstraint::SameReleaseConstraint(db::IDb& db, std::size_t window)
-        : _db{ db }
+    SameReleaseConstraint::SameReleaseConstraint(const TrackMetadataMap& trackMetadata, std::size_t window)
+        : _trackMetadata{ trackMetadata }
         , _window{ window }
     {
     }
@@ -51,15 +33,18 @@ namespace lms::recommendation
 
     float SameReleaseConstraint::computeScore(const TrackCandidateContext& context) const
     {
-        const db::ReleaseId candidateRelease{ getReleaseId(_db, context.candidateTrackId) };
-        if (!candidateRelease.isValid())
+        const auto it{ _trackMetadata.find(context.candidateTrackId) };
+        if (it == _trackMetadata.cend() || !it->second.releaseId.isValid())
             return {};
+
+        const db::ReleaseId candidateRelease{ it->second.releaseId };
 
         float score{};
         const auto& selected{ context.selectedTracks };
         for (std::size_t i{ 1 }; i <= _window && i <= selected.size(); ++i)
         {
-            if (getReleaseId(_db, selected[selected.size() - i]) == candidateRelease)
+            const auto itMetadata{ _trackMetadata.find(selected[selected.size() - i]) };
+            if (itMetadata != _trackMetadata.cend() && itMetadata->second.releaseId == candidateRelease)
                 score += 1.F / static_cast<float>(i);
         }
         return score;

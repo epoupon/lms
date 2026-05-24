@@ -37,6 +37,7 @@
 #include "IEngine.hpp"
 #include "Types.hpp"
 #include "track-selection-constraints/TrackCandidateEvaluator.hpp"
+#include "track-selection-constraints/TrackMetadata.hpp"
 
 namespace lms::recommendation
 {
@@ -94,6 +95,7 @@ namespace lms::recommendation
         std::unordered_map<db::TrackId, const ReducedVector*> _trackVectors;
         std::unordered_map<db::ReleaseId, std::vector<std::reference_wrapper<const ReducedVector>>> _releaseVectors;
         std::unordered_map<db::ArtistId, std::vector<std::reference_wrapper<const ReducedVector>>> _artistVectors;
+        TrackMetadataMap _trackMetadata;
 
         TrackCandidateEvaluator _trackCandidateEvaluator;
     };
