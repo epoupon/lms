@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <array>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 
 #include "core/ILogger.hpp"
@@ -622,42 +623,44 @@ namespace lms::recommendation
         });
 
         db::Artist::find(session, db::Artist::FindParameters{}, [&](const db::Artist::pointer& artist) {
-            std::vector<std::reference_wrapper<const ReducedVector>> artistTrackVectors;
+            std::unordered_set<db::TrackId> artistTrackIds;
 
+            // Track-level artists
             {
                 db::Track::FindParameters params;
                 params.setArtist(artist->getId(), { db::TrackArtistLinkType::Artist });
-
-                const auto trackIds{ db::Track::findIds(session, params) };
-                for (const db::TrackId trackId : trackIds.results)
-                {
-                    const auto itFeatures{ _trackVectors.find(trackId) };
-                    if (itFeatures != std::cend(_trackVectors))
-                    {
-                        assert(itFeatures->second);
-                        artistTrackVectors.emplace_back(*itFeatures->second);
-                    }
-                }
+                for (const db::TrackId trackId : db::Track::findIds(session, params).results)
+                    artistTrackIds.insert(trackId);
             }
 
-// TODO ALBUM ARTIST
-#if 0
+            // Album-level artists
             {
                 db::Release::FindParameters params;
                 params.setArtist(artist->getId());
-
-                const auto releaseIds{ db::Release::findIds(session, params) };
-                for (const db::ReleaseId releaseId : releaseIds.results)
+                for (const db::ReleaseId releaseId : db::Release::findIds(session, params).results)
                 {
-                    const auto itReleaseFeatures{ _releaseFeatures.find(releaseId) };
-                    if (itReleaseFeatures != std::cend(_releaseFeatures))
+                    if (_releaseVectors.contains(releaseId))
                     {
-                        for (const auto* features : itReleaseFeatures->second)
-                            medoidCalculator.add(features);
+                        db::Track::FindParameters trackParams;
+                        trackParams.setRelease(releaseId);
+                        for (const db::TrackId trackId : db::Track::findIds(session, trackParams).results)
+                            artistTrackIds.insert(trackId);
                     }
                 }
             }
-#endif
+
+            // Build vectors from deduplicated track IDs
+            std::vector<std::reference_wrapper<const ReducedVector>> artistTrackVectors;
+            artistTrackVectors.reserve(artistTrackIds.size());
+            for (const db::TrackId trackId : artistTrackIds)
+            {
+                const auto it{ _trackVectors.find(trackId) };
+                if (it != std::cend(_trackVectors))
+                {
+                    assert(it->second);
+                    artistTrackVectors.emplace_back(*it->second);
+                }
+            }
 
             if (!artistTrackVectors.empty())
                 _artistVectors.try_emplace(artist->getId(), std::move(artistTrackVectors));

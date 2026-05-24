@@ -24,7 +24,10 @@
 
 #include "database/IDb.hpp"
 #include "database/Session.hpp"
+#include "database/objects/Artist.hpp"
 #include "database/objects/ArtistId.hpp"
+#include "database/objects/Release.hpp"
+#include "database/objects/ReleaseArtistLink.hpp"
 #include "database/objects/Track.hpp"
 
 namespace lms::recommendation
@@ -41,7 +44,13 @@ namespace lms::recommendation
 
             std::vector<db::ArtistId> ids{ track->getArtistIds({}) }; // all track-level link types
 
-            // TODO ALBUM ARTIST: also add artists from ReleaseArtistLink (see _artistVectors TODO)
+            // Also include album artists from ReleaseArtistLink
+            if (const db::Release::pointer release{ track->getRelease() })
+            {
+                release->visitArtistLinks([&](const db::ReleaseArtistLink::pointer& link) {
+                    ids.push_back(link->getArtistId());
+                });
+            }
 
             std::sort(ids.begin(), ids.end());
             return ids;
