@@ -27,6 +27,8 @@
 #include <unordered_set>
 #include <utility>
 
+#include <boost/asio/post.hpp>
+
 #include "core/ILogger.hpp"
 #include "core/ITraceLogger.hpp"
 
@@ -111,7 +113,7 @@ namespace lms::recommendation
     void AudioSimilarityEngine<Provider, ReducedDimCount>::requestReload()
     {
         _isReady = false;
-        _ioContext.post([this] { reload(); });
+        boost::asio::post(_ioContext, [this] { reload(); });
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
