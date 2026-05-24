@@ -22,6 +22,7 @@ ARG	LMS_BUILD_PACKAGES=" \
 	libarchive-dev \
 	libconfig-dev \
 	musl-dev \
+	onnxruntime-dev \
 	pugixml-dev \
 	pulseaudio-dev \
 	stb \
@@ -43,4 +44,4 @@ RUN \
 		PKG_CONFIG_PATH=/$(xx-info)/usr/lib/pkgconfig cmake /tmp/lms/ -DCMAKE_INCLUDE_PATH=/$(xx-info)/usr/include -DCMAKE_UNITY_BUILD=ON -DCMAKE_BUILD_TYPE=${LMS_BUILD_TYPE} $(xx-clang --print-cmake-defines) -DCMAKE_PREFIX_PATH=/$(xx-info)/usr/lib/cmake -DBUILD_TESTING=${BUILD_TESTS} -DBUILD_BENCHMARKS=ON && \
 		VERBOSE=1 make -j$(nproc) && \
 		xx-verify src/lms/lms && \
-		(xx-info is-cross || make test)
+		(xx-info is-cross || LMS_MUSICNN_MODEL=/tmp/lms/src/libs/audio/models/MSD_musicnn_embedding.onnx make test)

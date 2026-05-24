@@ -42,7 +42,7 @@ apt-get install build-essential cmake libboost-program-options-dev libboost-syst
 __Optional dependencies__:
 * `libpam0g-dev`: used to handle PAM authentication
 * `libpulse-dev`: used to output audio via PulseAudio in jukebox mode
-* `libonnxruntime-dev`: used to extract MusicNN embeddings from tracks, for the recommendation engine
+* `libonnxruntime-dev`: used to extract MusicNN embeddings from tracks for the recommendation engine
 
 __Notes__:
 * `libstb-dev` can be replaced by `libgraphicsmagick++1-dev` (the latter will likely use more RAM)

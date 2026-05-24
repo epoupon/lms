@@ -10,11 +10,12 @@ jobs:
       with:
         usesh: true
         prepare: |
-          pkg install -y cmake pkgconf boost-libs ffmpeg stb libconfig taglib libarchive xxhash wt googletest pugixml pulseaudio
+          pkg install -y cmake pkgconf boost-libs ffmpeg stb libconfig taglib libarchive xxhash wt googletest onnxruntime pugixml pulseaudio
 
         run: |
+          LMSROOT=$(pwd)
           mkdir build
           cd build
           cmake .. -DCMAKE_UNITY_BUILD=ON -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON -DBUILD_BENCHMARKS=OFF
           make -j$(nproc)
-          make test
+          LMS_MUSICNN_MODEL=$LMSROOT/src/libs/audio/models/MSD_musicnn_embedding.onnx make test

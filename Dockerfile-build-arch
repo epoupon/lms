@@ -12,6 +12,7 @@ ARG BUILD_PACKAGES="\
 	libconfig \
 	libpulse \
 	make \
+	onnxruntime-cpu \
 	pkgconfig \
 	pugixml \
 	stb \
@@ -33,4 +34,4 @@ ARG LMS_UNITY_BUILD=ON
 ARG LMS_IMAGE_BACKEND=stb
 RUN cmake .. -DCMAKE_BUILD_TYPE=${LMS_BUILD_TYPE} -DCMAKE_UNITY_BUILD=${LMS_UNITY_BUILD} -DLMS_IMAGE_BACKEND=${LMS_IMAGE_BACKEND} -DBUILD_BENCHMARKS=ON
 RUN VERBOSE=1 make -j$(nproc)
-RUN make test
+RUN LMS_MUSICNN_MODEL=/tmp/lms/src/libs/audio/models/MSD_musicnn_embedding.onnx make test

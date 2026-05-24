@@ -23,6 +23,7 @@ ARG	BUILD_PACKAGES=" \
 	libtool \
 	libvorbis-dev \
 	make \
+	onnxruntime-dev \
 	openjpeg-dev \
 	openssl-dev \
 	opus-dev \
@@ -119,7 +120,7 @@ RUN \
 	DIR=/tmp/lms/build && mkdir -p ${DIR} && cd ${DIR} && \
 	PKG_CONFIG_PATH=/tmp/install/lib/pkgconfig CXXFLAGS="-I${PREFIX}/include" LDFLAGS="-L${PREFIX}/lib -Wl,--rpath-link=${PREFIX}/lib" cmake /tmp/lms/ -DCMAKE_BUILD_TYPE=Release -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE -DCMAKE_UNITY_BUILD=ON -DCMAKE_INSTALL_PREFIX=${PREFIX} -DCMAKE_PREFIX_PATH=${PREFIX} && \
 	LD_LIBRARY_PATH=${PREFIX}/lib make -j$(nproc) install && \
-	LD_LIBRARY_PATH=${PREFIX}/lib make test && \
+	LD_LIBRARY_PATH=${PREFIX}/lib LMS_MUSICNN_MODEL=/tmp/lms/src/libs/audio/models/MSD_musicnn_embedding.onnx make test && \
 	mkdir -p ${PREFIX}/etc/ && \
 	cp /tmp/lms/conf/lms.conf ${PREFIX}/etc
 
@@ -162,6 +163,7 @@ ARG	RUNTIME_PACKAGES=" \
 	libpulse \
 	libvorbis \
 	libssl3 \
+	onnxruntime \
 	openjpeg \
 	opus \
 	pugixml \
@@ -171,7 +173,13 @@ ARG	RUNTIME_PACKAGES=" \
 ARG	LMS_USER=lms
 ARG	LMS_GROUP=lms
 
-RUN	apk add --no-cache --update ${RUNTIME_PACKAGES}
+# Install packages and remove useless stuff brought by onnxruntime
+RUN \
+	apk add --no-cache --update ${RUNTIME_PACKAGES} && \
+	rm -f \
+		/usr/bin/protoc* \
+		/usr/bin/onnx* \
+		/usr/lib/libprotoc*
 
 RUN	addgroup -S ${LMS_GROUP} && \
 	adduser -S -H ${LMS_USER} && \

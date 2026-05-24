@@ -14,7 +14,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew update
-          brew install pkg-config cmake boost ffmpeg libconfig taglib libarchive xxhash pugixml googletest openssl git
+          brew install pkg-config cmake boost ffmpeg libconfig taglib libarchive xxhash pugixml googletest onnxruntime openssl git
 
       - name: Build and install Wt
         run: |
@@ -48,4 +48,4 @@ jobs:
         run: cmake --build build --parallel 2
 
       - name: Test LMS
-        run: ctest --test-dir build --output-on-failure
+        run: LMS_MUSICNN_MODEL=$GITHUB_WORKSPACE/src/libs/audio/models/MSD_musicnn_embedding.onnx ctest --test-dir build --output-on-failure
