@@ -14,6 +14,7 @@ ARG BUILD_PACKAGES="\
 	make \
 	onnxruntime-cpu \
 	pkgconfig \
+	protobuf \
 	pugixml \
 	stb \
 	taglib \
