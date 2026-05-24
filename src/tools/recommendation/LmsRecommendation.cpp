@@ -87,7 +87,7 @@ namespace lms
             std::cout << "Processing track " << trackToString(trackId) << std::endl;
 
             for (const auto& similarTrack : recommendationService.findSimilarTracks(std::span<const db::TrackId>{ &trackId, 1 }, maxCount))
-                std::cout << "\t- " << similarTrack.score << ", Similar track " << trackToString(similarTrack.id) << std::endl;
+                std::cout << "\t- " << similarTrack.distance << ", Similar track " << trackToString(similarTrack.id) << std::endl;
         }
     }
 
@@ -129,7 +129,7 @@ namespace lms
 
             std::cout << "Processing release '" << releaseToString(releaseId) << "'" << std::endl;
             for (const auto& similarRelease : recommendationService.findSimilarReleases(releaseId, maxCount))
-                std::cout << "\t- " << similarRelease.score << ", Similar release " << releaseToString(similarRelease.id) << std::endl;
+                std::cout << "\t- " << similarRelease.distance << ", Similar release " << releaseToString(similarRelease.id) << std::endl;
         }
     }
 
@@ -164,7 +164,7 @@ namespace lms
 
             std::cout << "Processing artist '" << artistToString(artistId) << "'" << std::endl;
             for (const auto& similarArtist : recommendationService.findSimilarArtists(artistId, { db::TrackArtistLinkType::Artist }, maxCount))
-                std::cout << "\t- " << similarArtist.score << ", Similar artist '" << artistToString(similarArtist.id) << "'" << std::endl;
+                std::cout << "\t- " << similarArtist.distance << ", Similar artist '" << artistToString(similarArtist.id) << "'" << std::endl;
         }
     }
 
@@ -230,7 +230,7 @@ namespace lms
             }
 
             for (const auto& similarTrack : similarTracks)
-                std::cout << "\t- " << similarTrack.score << ", Similar track " << trackToString(similarTrack.id) << std::endl;
+                std::cout << "\t- " << similarTrack.distance << ", Similar track " << trackToString(similarTrack.id) << std::endl;
         }
     }
 
@@ -291,7 +291,7 @@ namespace lms
             }
 
             for (const auto& similarRelease : similarReleases)
-                std::cout << "\t- " << similarRelease.score << ", Similar release " << releaseToString(similarRelease.id) << std::endl;
+                std::cout << "\t- " << similarRelease.distance << ", Similar release " << releaseToString(similarRelease.id) << std::endl;
         }
     }
 
@@ -346,7 +346,7 @@ namespace lms
             }
 
             for (const auto& similarArtist : similarArtists)
-                std::cout << "\t- " << similarArtist.score << ", Similar artist '" << artistToString(similarArtist.id) << "'" << std::endl;
+                std::cout << "\t- " << similarArtist.distance << ", Similar artist '" << artistToString(similarArtist.id) << "'" << std::endl;
         }
     }
 
@@ -437,7 +437,7 @@ namespace lms
                 for (std::size_t i{}; i < path.size(); ++i)
                 {
                     const auto& result{ path[i] };
-                    std::cout << "\t" << (i + 1) << ". " << trackToString(result.id) << " (score: " << result.score << ")" << std::endl;
+                    std::cout << "\t" << (i + 1) << ". " << trackToString(result.id) << " (distance: " << result.distance << ")" << std::endl;
                 }
             }
         }

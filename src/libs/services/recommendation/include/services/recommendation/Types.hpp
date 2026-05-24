@@ -31,7 +31,7 @@ namespace lms::recommendation
     struct RecommendationResult
     {
         IdType id;
-        float score;
+        float distance{};
     };
 
     template<typename IdType>

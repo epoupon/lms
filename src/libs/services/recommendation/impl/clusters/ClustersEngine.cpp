@@ -66,7 +66,7 @@ namespace lms::recommendation
         TrackResults res;
         res.reserve(similarTrackIds.results.size());
         std::transform(std::cbegin(similarTrackIds.results), std::cend(similarTrackIds.results), std::back_inserter(res), [](const auto trackId) {
-            return RecommendationResult<TrackId>{ .id = trackId, .score = {} };
+            return RecommendationResult<TrackId>{ .id = trackId, .distance = {} };
         });
         return res;
     }
@@ -88,7 +88,7 @@ namespace lms::recommendation
             const auto tracks{ trackList->getSimilarTracks(0, maxCount) };
             res.reserve(tracks.size());
             std::transform(std::cbegin(tracks), std::cend(tracks), std::back_inserter(res), [](const auto& track) {
-                return RecommendationResult<TrackId>{ .id = track->getId(), .score = {} };
+                return RecommendationResult<TrackId>{ .id = track->getId(), .distance = {} };
             });
         }
 
@@ -112,7 +112,7 @@ namespace lms::recommendation
             const auto releases{ release->findSimilarReleases(0, maxCount) };
             res.reserve(releases.size());
             std::transform(std::cbegin(releases), std::cend(releases), std::back_inserter(res), [](const auto& release) {
-                return RecommendationResult<ReleaseId>{ .id = release->getId(), .score = {} };
+                return RecommendationResult<ReleaseId>{ .id = release->getId(), .distance = {} };
             });
         }
 
@@ -135,7 +135,7 @@ namespace lms::recommendation
         ArtistResults res;
         res.reserve(similarArtistIds.results.size());
         std::transform(std::cbegin(similarArtistIds.results), std::cend(similarArtistIds.results), std::back_inserter(res), [](const auto id) {
-            return RecommendationResult<ArtistId>{ .id = id, .score = {} };
+            return RecommendationResult<ArtistId>{ .id = id, .distance = {} };
         });
         return res;
     }
@@ -146,7 +146,7 @@ namespace lms::recommendation
             return {};
 
         if (startTrackId == endTrackId)
-            return { RecommendationResult<TrackId>{ .id = startTrackId, .score = {} } };
+            return { RecommendationResult<TrackId>{ .id = startTrackId, .distance = {} } };
 
         Session& dbSession{ _db.getTLSSession() };
         auto transaction{ dbSession.createReadTransaction() };
@@ -158,9 +158,9 @@ namespace lms::recommendation
 
         TrackResults res;
         res.reserve(std::min<std::size_t>(maxCount, 2));
-        res.push_back({ .id = startTrackId, .score = {} });
+        res.push_back({ .id = startTrackId, .distance = {} });
         if (maxCount > 1)
-            res.push_back({ .id = endTrackId, .score = {} });
+            res.push_back({ .id = endTrackId, .distance = {} });
 
         return res;
     }

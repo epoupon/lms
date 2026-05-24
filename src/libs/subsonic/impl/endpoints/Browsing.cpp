@@ -691,13 +691,23 @@ namespace lms::api::subsonic
         Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node& sonicMatchesNode{ response.createNode("sonicMatches") };
 
+        float minDist{ std::numeric_limits<float>::max() };
+        float maxDist{};
+        for (const auto& t : similarTracks)
+        {
+            minDist = std::min(minDist, t.distance);
+            maxDist = std::max(maxDist, t.distance);
+        }
+        const float similarityRange{ maxDist - minDist };
+
         for (const auto& similarTrack : similarTracks)
         {
             const Track::pointer track{ Track::find(context.getDbSession(), similarTrack.id) };
             if (track)
             {
                 Response::Node& sonicMatchNode{ sonicMatchesNode.createArrayChild("sonicMatch") };
-                sonicMatchNode.setAttribute("similarity", similarTrack.score);
+                const float similarity{ (similarityRange > 0.0f) ? 1.0f - (similarTrack.distance - minDist) / similarityRange : 1.0f };
+                sonicMatchNode.setAttribute("similarity", similarity);
                 sonicMatchNode.addArrayChild("entry", createSongNode(context, track, context.getUser()));
             }
         }
@@ -723,13 +733,23 @@ namespace lms::api::subsonic
         Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node& sonicPathNode{ response.createNode("sonicPath") };
 
+        float minDist{ std::numeric_limits<float>::max() };
+        float maxDist{};
+        for (const auto& t : pathTracks)
+        {
+            minDist = std::min(minDist, t.distance);
+            maxDist = std::max(maxDist, t.distance);
+        }
+        const float similarityRange{ maxDist - minDist };
+
         for (const auto& pathTrack : pathTracks)
         {
             const Track::pointer track{ Track::find(context.getDbSession(), pathTrack.id) };
             if (track)
             {
                 Response::Node& sonicMatchNode{ sonicPathNode.createArrayChild("sonicMatch") };
-                sonicMatchNode.setAttribute("similarity", pathTrack.score);
+                const float similarity{ (similarityRange > 0.0f) ? 1.0f - (pathTrack.distance - minDist) / similarityRange : 1.0f };
+                sonicMatchNode.setAttribute("similarity", similarity);
                 sonicMatchNode.addArrayChild("entry", createSongNode(context, track, context.getUser()));
             }
         }

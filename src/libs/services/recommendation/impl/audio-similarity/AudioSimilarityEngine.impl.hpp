@@ -75,7 +75,7 @@ namespace lms::recommendation
                 if (trackId == excludeTrackId)
                     continue;
 
-                neighbors.push_back({ .id = trackId, .score = distFunc(*trackVector) });
+                neighbors.push_back({ .id = trackId, .distance = distFunc(*trackVector) });
             }
 
             maxNeighbors = std::min(maxNeighbors, neighbors.size());
@@ -83,11 +83,11 @@ namespace lms::recommendation
                 return {};
 
             std::nth_element(neighbors.begin(), neighbors.begin() + static_cast<std::ptrdiff_t>(maxNeighbors), neighbors.end(), [](const auto& lhs, const auto& rhs) {
-                return lhs.score < rhs.score;
+                return lhs.distance < rhs.distance;
             });
             neighbors.resize(maxNeighbors);
             std::sort(neighbors.begin(), neighbors.end(), [](const auto& lhs, const auto& rhs) {
-                return lhs.score < rhs.score;
+                return lhs.distance < rhs.distance;
             });
             return neighbors;
         }
@@ -256,7 +256,7 @@ namespace lms::recommendation
                 break;
 
             const auto& [selectedId, distanceToQuery]{ rankedTracks[*bestIdx] };
-            res.push_back({ .id = selectedId, .score = distanceToQuery }); // report raw cosine distance
+            res.push_back({ .id = selectedId, .distance = distanceToQuery });
             selectedTracks.push_back(selectedId);
             previousVector = _trackVectors.at(selectedId);
             rankedTracks.erase(std::begin(rankedTracks) + static_cast<std::ptrdiff_t>(*bestIdx));
@@ -351,20 +351,11 @@ namespace lms::recommendation
         TrackResults results;
         results.reserve(path.size());
 
-        float cumulativeCost{};
-        for (std::size_t i{}; i < path.size(); ++i)
+        const math::NormalizedCosineDistance startDistFunc{ startVector };
+        for (const db::TrackId trackId : path)
         {
-            const db::TrackId trackId{ path[i] };
-            if (i == 0)
-            {
-                results.push_back({ .id = trackId, .score = cumulativeCost });
-                continue;
-            }
-
-            const auto* previousVector{ _trackVectors.at(path[i - 1]) };
-            const auto* currentVector{ _trackVectors.at(trackId) };
-            cumulativeCost += math::NormalizedCosineDistance{ *currentVector }(*previousVector);
-            results.push_back({ .id = trackId, .score = cumulativeCost });
+            const auto* trackVector{ _trackVectors.at(trackId) };
+            results.push_back({ .id = trackId, .distance = startDistFunc(*trackVector) });
         }
 
         return results;
@@ -412,7 +403,7 @@ namespace lms::recommendation
 
         res.reserve(resultCount);
         for (std::size_t i{}; i < resultCount; ++i)
-            res.push_back({ .id = rankedReleases[i].first, .score = rankedReleases[i].second });
+            res.push_back({ .id = rankedReleases[i].first, .distance = rankedReleases[i].second });
 
         return res;
     }
@@ -460,7 +451,7 @@ namespace lms::recommendation
 
         res.reserve(resultCount);
         for (std::size_t i{}; i < resultCount; ++i)
-            res.push_back({ .id = rankedArtists[i].first, .score = rankedArtists[i].second });
+            res.push_back({ .id = rankedArtists[i].first, .distance = rankedArtists[i].second });
 
         return res;
     }
