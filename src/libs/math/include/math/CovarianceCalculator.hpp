@@ -52,11 +52,11 @@ namespace lms::math
                 add(*first);
         }
 
-        constexpr CovarianceMatrix finalizeSample() const
+        constexpr void finalizeSample(CovarianceMatrix& out) const
         {
-            CovarianceMatrix result;
+            out.fill(FloatType{});
             if (_count < 2)
-                return result;
+                return;
 
             const FloatType divisor{ static_cast<FloatType>(_count - 1) };
             for (std::size_t i{}; i < Size; ++i)
@@ -64,19 +64,17 @@ namespace lms::math
                 for (std::size_t j{}; j <= i; ++j)
                 {
                     const FloatType value{ _cov[i][j] / divisor };
-                    result[i][j] = value;
-                    result[j][i] = value;
+                    out[i][j] = value;
+                    out[j][i] = value;
                 }
             }
-
-            return result;
         }
 
-        constexpr CovarianceMatrix finalizePopulation() const
+        constexpr void finalizePopulation(CovarianceMatrix& out) const
         {
-            CovarianceMatrix result;
+            out.fill(FloatType{});
             if (_count == 0)
-                return result;
+                return;
 
             const FloatType divisor{ static_cast<FloatType>(_count) };
             for (std::size_t i{}; i < Size; ++i)
@@ -84,12 +82,10 @@ namespace lms::math
                 for (std::size_t j{}; j <= i; ++j)
                 {
                     const FloatType value{ _cov[i][j] / divisor };
-                    result[i][j] = value;
-                    result[j][i] = value;
+                    out[i][j] = value;
+                    out[j][i] = value;
                 }
             }
-
-            return result;
         }
 
         constexpr bool empty() const

@@ -41,7 +41,8 @@ namespace lms::math::covarianceCalculatorTests
         calculator.add({ 1.0F, 0.0F });
         calculator.add({ -1.0F, 0.0F });
 
-        const SquareMatrix<float, 2> covariance{ calculator.finalizeSample() };
+        SquareMatrix<float, 2> covariance;
+        calculator.finalizeSample(covariance);
 
         EXPECT_NEAR(covariance[0][0], 2.0F, epsilon);
         EXPECT_NEAR(covariance[0][1], 0.0F, epsilon);
@@ -55,7 +56,8 @@ namespace lms::math::covarianceCalculatorTests
         calculator.add(Vector<2, float>{ 1.0F, 0.0F });
         calculator.add(Vector<2, float>{ -1.0F, 0.0F });
 
-        const SquareMatrix<float, 2> covariance{ calculator.finalizePopulation() };
+        SquareMatrix<float, 2> covariance;
+        calculator.finalizePopulation(covariance);
 
         EXPECT_NEAR(covariance[0][0], 1.0F, epsilon);
         EXPECT_NEAR(covariance[0][1], 0.0F, epsilon);
@@ -68,7 +70,8 @@ namespace lms::math::covarianceCalculatorTests
         CovarianceMatrixCalculator<2, float> calculator;
         calculator.add({ 1.0F, 2.0F });
 
-        const SquareMatrix<float, 2> covariance{ calculator.finalizeSample() };
+        SquareMatrix<float, 2> covariance;
+        calculator.finalizeSample(covariance);
 
         EXPECT_FLOAT_EQ(covariance[0][0], 0.0F);
         EXPECT_FLOAT_EQ(covariance[0][1], 0.0F);

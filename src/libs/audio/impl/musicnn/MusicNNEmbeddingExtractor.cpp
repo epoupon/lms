@@ -71,6 +71,12 @@ namespace lms::audio::musicnn
             ++_frameCount;
         }
 
+        void reset() noexcept
+        {
+            _frameCount = {};
+            _rmsAccum = {};
+        }
+
         [[nodiscard]] bool complete() const { return _frameCount == patchFrameCount; }
 
         [[nodiscard]] bool meaningful() const
@@ -86,7 +92,7 @@ namespace lms::audio::musicnn
     private:
         std::size_t _frameCount{};
         float _rmsAccum{};
-        std::array<float, patchFrameCount * melBandCount> _melMatrix{};
+        std::array<float, patchFrameCount * melBandCount> _melMatrix;
     };
 
     MusicNNEmbeddingExtractor::MusicNNEmbeddingExtractor(const std::filesystem::path& modelPath, std::size_t maxPatchCount)
@@ -101,26 +107,26 @@ namespace lms::audio::musicnn
 
     IMusicNNEmbeddingExtractor::ExtractionResult MusicNNEmbeddingExtractor::extract(const std::filesystem::path& audioFile) const
     {
-        FrameDecoder frameDecoder{ audioFile,
-                                   PcmParameters{ .channelCount = 1,
-                                                  .sampleRate = static_cast<unsigned>(sampleRate),
-                                                  .sampleType = PcmSampleType::Float32,
-                                                  .byteOrder = std::endian::native,
-                                                  .planar = false },
-                                   frameHopSamples };
+        auto frameDecoder{ std::make_unique<FrameDecoder>(audioFile,
+                                                          PcmParameters{ .channelCount = 1,
+                                                                         .sampleRate = static_cast<unsigned>(sampleRate),
+                                                                         .sampleType = PcmSampleType::Float32,
+                                                                         .byteOrder = std::endian::native,
+                                                                         .planar = false },
+                                                          frameHopSamples) };
 
         std::array<float, melBandCount> logMelRow{};
         std::array<math::StatsAccumulator<float>, decltype(_model)::outputSize> embeddingAccumulators;
         ExtractionResult result;
-
-        const std::size_t estimatedFrameCount{ frameDecoder.getEstimatedFrameCount() };
+        const std::size_t estimatedFrameCount{ frameDecoder->getEstimatedFrameCount() };
 
         // Fallback: use a gap of two patch lengths if the frame count is unknown
-        const std::size_t patchGapFrameCount{ estimatedFrameCount ? computePatchGap(frameDecoder.getEstimatedFrameCount(), patchFrameCount, _maxPatchCount) : (2 * patchFrameCount) };
+        const std::size_t patchGapFrameCount{ estimatedFrameCount ? computePatchGap(frameDecoder->getEstimatedFrameCount(), patchFrameCount, _maxPatchCount) : (2 * patchFrameCount) };
+        const auto patchAccumulator{ std::make_unique<PatchAccumulator>() };
 
         while (true)
         {
-            PatchAccumulator patch;
+            patchAccumulator->reset();
 
             const auto onFrame{ [&](const FrameDecoder::SpectralFrameView& frame) {
                 // MusicNN log compression: log10(10000 * mel + 1)
@@ -131,21 +137,21 @@ namespace lms::audio::musicnn
                 }
 
                 const float rms{ computeRms(frame.rawSamples.subspan(0, frameHopSamples)) };
-                patch.addMelRow(logMelRow, rms);
+                patchAccumulator->addMelRow(logMelRow, rms);
             } };
 
-            if (patchGapFrameCount > 0 && frameDecoder.skipFrames(patchGapFrameCount) == 0)
+            if (patchGapFrameCount > 0 && frameDecoder->skipFrames(patchGapFrameCount) == 0)
                 break;
 
-            if (frameDecoder.decodeFrames(patchFrameCount, onFrame) < patchFrameCount)
+            if (frameDecoder->decodeFrames(patchFrameCount, onFrame) < patchFrameCount)
                 break;
 
-            assert(patch.complete());
+            assert(patchAccumulator->complete());
 
-            if (!patch.meaningful())
+            if (!patchAccumulator->meaningful())
                 continue;
 
-            const auto embedding{ _model.forward(patch.data()) };
+            const auto embedding{ _model.forward(patchAccumulator->data()) };
             for (std::size_t d{}; d < embedding.size(); ++d)
                 embeddingAccumulators[d].add(embedding[d]);
             ++result.patchCount;

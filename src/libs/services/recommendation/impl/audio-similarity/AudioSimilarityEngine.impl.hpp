@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <array>
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -112,12 +113,13 @@ namespace lms::recommendation
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
     void AudioSimilarityEngine<Provider, ReducedDimCount>::requestReload()
     {
+        LMS_LOG(RECOMMENDATION, DEBUG, "Request audio similarity engine reload");
+
         _isReady = false;
         boost::asio::post(_ioContext, [this] { reload(); });
     }
 
     template<AudioVectorProvider Provider, std::size_t ReducedDimCount>
-
     bool AudioSimilarityEngine<Provider, ReducedDimCount>::isLoaded() const
     {
         return _isReady;
@@ -471,9 +473,11 @@ namespace lms::recommendation
         LMS_SCOPED_TRACE_OVERVIEW("FeaturesEngine", "Loading");
 
         LMS_LOG(RECOMMENDATION, INFO, "Loading...");
+
         computeDatasetStats();
         computeReducedFeatures();
         _isReady = true;
+
         LMS_LOG(RECOMMENDATION, INFO, "Loading complete!");
     }
 
@@ -482,13 +486,11 @@ namespace lms::recommendation
     {
         LMS_SCOPED_TRACE_DETAILED("FeaturesEngine", "Compute dataset stats");
 
-        using AudioFeatureMatrix = math::SquareMatrix<FloatType, SourceDimCount>;
-
         LMS_LOG(RECOMMENDATION, DEBUG, "Computing dataset stats...");
 
         _pcaReady = false;
         _trackCount = 0;
-        SourceVector sourceVector; // cache
+
         std::array<math::StatsAccumulator<FloatType>, SourceDimCount> statsAccumulators;
 
         {
@@ -507,8 +509,10 @@ namespace lms::recommendation
             _sourceMeans[featureIndex] = static_cast<FloatType>(statsAccumulators[featureIndex].getMean());
 
         // Compute covariance
-        const AudioFeatureMatrix covariance = [&]() {
-            math::CovarianceMatrixCalculator<SourceDimCount, FloatType> calculator;
+        using AudioFeatureMatrix = math::SquareMatrix<FloatType, SourceDimCount>;
+        const auto covariance{ std::make_unique<AudioFeatureMatrix>() };
+        {
+            const auto calculator{ std::make_unique<math::CovarianceMatrixCalculator<SourceDimCount, FloatType>>() };
 
             db::Session& session{ _db.getTLSSession() };
             auto transaction{ session.createReadTransaction() };
@@ -517,35 +521,36 @@ namespace lms::recommendation
                 for (std::size_t i{}; i < SourceDimCount; ++i)
                     sourceVector[i] -= _sourceMeans[i];
 
-                calculator.add(sourceVector);
+                calculator->add(sourceVector);
             });
 
-            return calculator.finalizeSample();
-        }();
+            calculator->finalizeSample(*covariance);
+        }
 
         // PCA via power iteration + deflation in double precision
         {
             using EigenMatrix = math::SquareMatrix<double, SourceDimCount>;
             using EigenVector = math::Vector<SourceDimCount, double>;
-            EigenMatrix covCopy;
+
+            auto covarianceCopy{ std::make_unique<EigenMatrix>() };
             for (std::size_t i{}; i < SourceDimCount; ++i)
             {
                 for (std::size_t j{}; j < SourceDimCount; ++j)
-                    covCopy[i][j] = static_cast<double>(covariance[i][j]);
+                    (*covarianceCopy)[i][j] = static_cast<double>((*covariance)[i][j]);
             }
 
-            EigenVector eigenvalues{};
-            std::array<EigenVector, SourceDimCount> eigenvectors;
+            EigenVector eigenValues{};
+            auto eigenVectors{ std::make_unique<std::array<EigenVector, SourceDimCount>>() };
 
-            math::computeEigenpairsViaPowerIteration(covCopy, eigenvectors, eigenvalues);
+            math::computeEigenpairsViaPowerIteration(*covarianceCopy, *eigenVectors, eigenValues);
 
             // Store PCA basis and whitening scales
             for (std::size_t k{}; k < ReducedDimCount; ++k)
             {
                 for (std::size_t j{}; j < SourceDimCount; ++j)
-                    _pcaBasis[k][j] = static_cast<FloatType>(eigenvectors[k][j]);
+                    _pcaBasis[k][j] = static_cast<FloatType>((*eigenVectors)[k][j]);
 
-                _pcaScale[k] = (eigenvalues[k] > 1e-15) ? static_cast<FloatType>(1.0 / std::sqrt(eigenvalues[k])) : FloatType{};
+                _pcaScale[k] = (eigenValues[k] > 1e-15) ? static_cast<FloatType>(1.0 / std::sqrt(eigenValues[k])) : FloatType{};
             }
         }
 
@@ -589,7 +594,8 @@ namespace lms::recommendation
         _trackMetadata.clear();
 
         Provider::visitVectors(session, [&](db::TrackId trackId, const SourceVector& sourceVector) {
-            assert(_vectors.size() < _vectors.capacity());
+            if (_vectors.size() >= _trackCount)
+                return; // more tracks appeared since computeDatasetStats(); skip to avoid reallocation (a further reload will include them)
             auto& reducedVector{ _vectors.emplace_back() };
             getReducedVector(sourceVector, reducedVector);
             _trackVectors.try_emplace(trackId, &reducedVector);

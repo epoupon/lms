@@ -22,6 +22,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <memory>
 #include <random>
 
 #include "math/SquareMatrix.hpp"
@@ -49,7 +50,7 @@ namespace lms::math
         // Iteratively finds the largest eigenvalue and corresponding eigenvector,
         // then removes it from the matrix and repeats.
 
-        SquareMatrix<FloatType, Size> covCopy{ covariance };
+        auto covarianceCopy{ std::make_unique<SquareMatrix<FloatType, Size>>(covariance) };
         std::minstd_rand rng{ 42 };
         std::uniform_real_distribution<FloatType> dist{ static_cast<FloatType>(-1.0), static_cast<FloatType>(1.0) };
 
@@ -66,7 +67,7 @@ namespace lms::math
                 for (std::size_t i{}; i < Size; ++i)
                 {
                     for (std::size_t j{}; j < Size; ++j)
-                        Av[i] += covCopy[i][j] * v[j];
+                        Av[i] += (*covarianceCopy)[i][j] * v[j];
                 }
 
                 FloatType normSquared{};
@@ -95,7 +96,7 @@ namespace lms::math
             for (std::size_t i{}; i < Size; ++i)
             {
                 for (std::size_t j{}; j < Size; ++j)
-                    covCopy[i][j] -= eigenvalues[k] * v[i] * v[j];
+                    (*covarianceCopy)[i][j] -= eigenvalues[k] * v[i] * v[j];
             }
         }
     }

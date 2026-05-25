@@ -171,6 +171,8 @@ namespace lms::scanner
         , _jobScheduler{ core::createJobScheduler("Scanner", getScannerThreadCount()) }
         , _cachePath{ cachePath }
     {
+        LMS_LOG(DBUPDATER, INFO, "Starting service...");
+
         _ioService.setThreadCount(1);
 
         LMS_LOG(DBUPDATER, INFO, "Using " << _jobScheduler->getThreadCount() << " thread(s) for jobs");
@@ -193,6 +195,8 @@ namespace lms::scanner
         refreshScanSettings();
 
         start();
+
+        LMS_LOG(DBUPDATER, INFO, "Service started!");
     }
 
     ScannerService::~ScannerService()
