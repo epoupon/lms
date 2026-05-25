@@ -37,10 +37,10 @@
 	<h3>${tr:Lms.Explore.tracks}</h3>
 	${tracks class="mb-3"}
 	${</if-has-non-release-tracks>}
-	${<if-has-similar-artists>}
-	<h3>${tr:Lms.Explore.Artist.similar-artists}</h3>
-	${similar-artists class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-6 gx-2 gy-4"}
-	${</if-has-similar-artists>}
+	${<if-has-related-artists>}
+	<h3>${tr:Lms.Explore.Artist.related-artists}</h3>
+	${related-artists class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-6 gx-2 gy-4"}
+	${</if-has-related-artists>}
 </message>
 
 <message id="Lms.Explore.Artist.template.release-container">

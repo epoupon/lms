@@ -132,7 +132,7 @@ namespace lms::ui
         refreshAppearsOnReleases();
         refreshNonReleaseTracks();
         refreshLinks(artist);
-        refreshSimilarArtists(similarArtistIds);
+        refreshRelatedArtists(similarArtistIds);
 
         Wt::WContainerWidget* clusterContainers{ bindNew<Wt::WContainerWidget>("clusters") };
 
@@ -369,13 +369,13 @@ namespace lms::ui
         setCondition("if-has-non-release-tracks", added);
     }
 
-    void Artist::refreshSimilarArtists(const std::vector<db::ArtistId>& similarArtistsId)
+    void Artist::refreshRelatedArtists(const std::vector<db::ArtistId>& similarArtistsId)
     {
         if (similarArtistsId.empty())
             return;
 
-        setCondition("if-has-similar-artists", true);
-        Wt::WContainerWidget* similarArtistsContainer{ bindNew<Wt::WContainerWidget>("similar-artists") };
+        setCondition("if-has-related-artists", true);
+        Wt::WContainerWidget* similarArtistsContainer{ bindNew<Wt::WContainerWidget>("related-artists") };
 
         for (const db::ArtistId artistId : similarArtistsId)
         {

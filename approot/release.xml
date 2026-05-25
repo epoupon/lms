@@ -45,10 +45,10 @@
 	<h3>${tr:Lms.Explore.Release.other-versions}</h3>
 	${other-versions class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 gx-2 gy-4"}
 	${</if-has-other-versions>}
-	${<if-has-similar-releases>}
-	<h3>${tr:Lms.Explore.Release.similar-releases}</h3>
-	${similar-releases class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 gx-2 gy-4"}
-	${</if-has-similar-releases>}
+	${<if-has-related-releases>}
+	<h3>${tr:Lms.Explore.Release.related-releases}</h3>
+	${related-releases class="row row-cols-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 gx-2 gy-4"}
+	${</if-has-related-releases>}
 </message>
 
 <message id="Lms.Explore.Release.template.entry-release-artist">

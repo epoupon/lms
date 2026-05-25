@@ -254,13 +254,13 @@
 <!--Explore:Artist-->
 <message id="Lms.Explore.Artist.appears-on">出现于</message>
 <message id="Lms.Explore.Artist.biography">简介</message>
-<message id="Lms.Explore.Artist.similar-artists">相似歌手</message>
+<message id="Lms.Explore.Artist.related-artists">相关歌手</message>
 
 <!--Explore:Release-->
 <message id="Lms.Explore.Release.copyright">版权所有</message>
 <message id="Lms.Explore.Release.disc">唱片 {1}</message>
 <message id="Lms.Explore.Release.other-versions">其他版本</message>
-<message id="Lms.Explore.Release.similar-releases">相似专辑</message>
+<message id="Lms.Explore.Release.related-releases">相关专辑</message>
 <message id="Lms.Explore.Release.type">类型</message>
 <message id="Lms.Explore.Release.type-primary-album">专辑</message>
 <message id="Lms.Explore.Release.type-primary-broadcast">广播</message>

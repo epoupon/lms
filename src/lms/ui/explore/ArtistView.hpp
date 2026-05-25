@@ -58,7 +58,7 @@ namespace lms::ui
         void refreshReleases();
         void refreshAppearsOnReleases();
         void refreshNonReleaseTracks();
-        void refreshSimilarArtists(const std::vector<db::ArtistId>& similarArtistsId);
+        void refreshRelatedArtists(const std::vector<db::ArtistId>& similarArtistsId);
         void refreshLinks(const db::ObjectPtr<db::Artist>& artist);
 
         struct ReleaseContainer;

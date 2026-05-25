@@ -309,13 +309,13 @@
 <!--Explore:Artist-->
 <message id="Lms.Explore.Artist.appears-on">Pojawia się na</message>
 <message id="Lms.Explore.Artist.biography">Biografia</message>
-<message id="Lms.Explore.Artist.similar-artists">Podobni artyści</message>
+<message id="Lms.Explore.Artist.related-artists">Powiązani artyści</message>
 
 <!--Explore:Release-->
 <message id="Lms.Explore.Release.copyright">Prawa autorskie</message>
 <message id="Lms.Explore.Release.disc">Dysk {1}</message>
 <message id="Lms.Explore.Release.other-versions">Inne wersje</message>
-<message id="Lms.Explore.Release.similar-releases">Podobne albumy</message>
+<message id="Lms.Explore.Release.related-releases">Powiązane albumy</message>
 <message id="Lms.Explore.Release.type">Typ</message>
 <message id="Lms.Explore.Release.type-primary-album">Album</message>
 <message id="Lms.Explore.Release.type-primary-broadcast">Audycja</message>

@@ -50,7 +50,7 @@ namespace lms::ui
         void refreshCopyright(const db::ObjectPtr<db::Release>& release);
         void refreshLinks(const db::ObjectPtr<db::Release>& release);
         void refreshOtherVersions(const db::ObjectPtr<db::Release>& release);
-        void refreshSimilarReleases(const std::vector<db::ReleaseId>& similarReleaseIds);
+        void refreshRelatedReleases(const std::vector<db::ReleaseId>& similarReleaseIds);
 
         std::unique_ptr<Wt::WTemplate> createDisc(const db::ObjectPtr<db::Medium>& medium);
 

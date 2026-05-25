@@ -283,13 +283,13 @@
 <!--Explore:Artist-->
 <message id="Lms.Explore.Artist.appears-on">Appears on</message>
 <message id="Lms.Explore.Artist.biography">Biography</message>
-<message id="Lms.Explore.Artist.similar-artists">Similar artists</message>
+<message id="Lms.Explore.Artist.related-artists">Related artists</message>
 
 <!--Explore:Release-->
 <message id="Lms.Explore.Release.copyright">Copyright</message>
 <message id="Lms.Explore.Release.disc">Disc {1}</message>
 <message id="Lms.Explore.Release.other-versions">Other versions</message>
-<message id="Lms.Explore.Release.similar-releases">Similar albums</message>
+<message id="Lms.Explore.Release.related-releases">Related albums</message>
 <message id="Lms.Explore.Release.type">Type</message>
 <message id="Lms.Explore.Release.type-primary-album">Album</message>
 <message id="Lms.Explore.Release.type-primary-broadcast">Broadcast</message>
