@@ -296,7 +296,7 @@ namespace lms::recommendation
         std::size_t neighborCount{ DefaultNeighborCount };
         const std::size_t interiorCount{ (maxCount > 2) ? (maxCount - 2) : 0 };
 
-        auto evaluateCandidates = [&](const auto& neighborList) -> std::optional<db::TrackId> {
+        auto evaluateCandidates = [&](const TrackResults& neighborList) -> std::optional<db::TrackId> {
             std::optional<db::TrackId> best;
             float bestScore{ std::numeric_limits<float>::max() };
 
