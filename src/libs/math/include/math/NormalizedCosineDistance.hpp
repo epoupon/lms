@@ -26,12 +26,14 @@
 
 namespace lms::math
 {
+    // Returns the cosine distance in [0, 1] for L2-normalized vectors:
+    //   0 = identical direction, 0.5 = orthogonal, 1 = opposite directions.
     template<std::size_t Size, typename FloatType>
     constexpr FloatType computeNormalizedCosineDistance(
         const Vector<Size, FloatType>& a,
         const Vector<Size, FloatType>& b)
     {
-        return FloatType{ 1 } - computeDotProduct(a, b);
+        return (FloatType{ 1 } - computeDotProduct(a, b)) / FloatType{ 2 };
     }
 
     template<std::size_t Size, typename FloatType = float>
@@ -44,7 +46,7 @@ namespace lms::math
 
         constexpr FloatType operator()(const Vector<Size, FloatType>& a) const
         {
-            return FloatType{ 1 } - computeDotProduct(_ref, a);
+            return (FloatType{ 1 } - computeDotProduct(_ref, a)) / FloatType{ 2 };
         }
 
         const Vector<Size, FloatType>& _ref;

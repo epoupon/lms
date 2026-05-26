@@ -44,7 +44,7 @@ namespace lms::math::normalizedCosineDistanceTests
         a.normalizeL2();
         b.normalizeL2();
 
-        EXPECT_NEAR(computeNormalizedCosineDistance(a, b), 1.F, epsilon);
+        EXPECT_NEAR(computeNormalizedCosineDistance(a, b), 0.5F, epsilon);
     }
 
     TEST(NormalizedCosineDistance, oppositeNormalizedVectors)
@@ -55,7 +55,7 @@ namespace lms::math::normalizedCosineDistanceTests
         a.normalizeL2();
         b.normalizeL2();
 
-        EXPECT_NEAR(computeNormalizedCosineDistance(a, b), 2.F, epsilon);
+        EXPECT_NEAR(computeNormalizedCosineDistance(a, b), 1.F, epsilon);
     }
 
     TEST(NormalizedCosineDistance, functor)
@@ -68,6 +68,6 @@ namespace lms::math::normalizedCosineDistanceTests
 
         const NormalizedCosineDistance<3, float> distance{ reference };
 
-        EXPECT_NEAR(distance(candidate), 1.F, epsilon);
+        EXPECT_NEAR(distance(candidate), 0.5F, epsilon);
     }
 } // namespace lms::math::normalizedCosineDistanceTests

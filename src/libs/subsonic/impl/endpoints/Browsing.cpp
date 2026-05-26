@@ -680,7 +680,7 @@ namespace lms::api::subsonic
         const auto trackId{ getMandatoryParameterAs<TrackId>(context.getParameters(), "id") };
 
         // Optional params
-        std::size_t count{ getParameterAs<std::size_t>(context.getParameters(), "count").value_or(50) };
+        std::size_t count{ getParameterAs<std::size_t>(context.getParameters(), "count").value_or(10) };
         if (count > defaultMaxCountSize)
             throw ParameterValueTooHighGenericError{ "count", defaultMaxCountSize };
 
@@ -691,23 +691,13 @@ namespace lms::api::subsonic
         Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node& sonicMatchesNode{ response.createNode("sonicMatches") };
 
-        float minDist{ std::numeric_limits<float>::max() };
-        float maxDist{};
-        for (const auto& t : similarTracks)
-        {
-            minDist = std::min(minDist, t.distance);
-            maxDist = std::max(maxDist, t.distance);
-        }
-        const float similarityRange{ maxDist - minDist };
-
         for (const auto& similarTrack : similarTracks)
         {
             const Track::pointer track{ Track::find(context.getDbSession(), similarTrack.id) };
             if (track)
             {
                 Response::Node& sonicMatchNode{ sonicMatchesNode.createArrayChild("sonicMatch") };
-                const float similarity{ (similarityRange > 0.0f) ? 1.0f - (similarTrack.distance - minDist) / similarityRange : 1.0f };
-                sonicMatchNode.setAttribute("similarity", similarity);
+                sonicMatchNode.setAttribute("similarity", 1.0F - similarTrack.distance);
                 sonicMatchNode.addArrayChild("entry", createSongNode(context, track, context.getUser()));
             }
         }
@@ -718,11 +708,11 @@ namespace lms::api::subsonic
     Response handleFindSonicPathRequest(RequestContext& context)
     {
         // Mandatory params
-        const auto startTrackId{ getMandatoryParameterAs<TrackId>(context.getParameters(), "startId") };
-        const auto endTrackId{ getMandatoryParameterAs<TrackId>(context.getParameters(), "endId") };
+        const auto startTrackId{ getMandatoryParameterAs<TrackId>(context.getParameters(), "startSongId") };
+        const auto endTrackId{ getMandatoryParameterAs<TrackId>(context.getParameters(), "endSongId") };
 
         // Optional params
-        std::size_t maxCount{ getParameterAs<std::size_t>(context.getParameters(), "maxCount").value_or(50) };
+        std::size_t maxCount{ getParameterAs<std::size_t>(context.getParameters(), "maxCount").value_or(25) };
         if (maxCount > defaultMaxCountSize)
             throw ParameterValueTooHighGenericError{ "maxCount", defaultMaxCountSize };
 
@@ -733,23 +723,13 @@ namespace lms::api::subsonic
         Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
         Response::Node& sonicPathNode{ response.createNode("sonicPath") };
 
-        float minDist{ std::numeric_limits<float>::max() };
-        float maxDist{};
-        for (const auto& t : pathTracks)
-        {
-            minDist = std::min(minDist, t.distance);
-            maxDist = std::max(maxDist, t.distance);
-        }
-        const float similarityRange{ maxDist - minDist };
-
         for (const auto& pathTrack : pathTracks)
         {
             const Track::pointer track{ Track::find(context.getDbSession(), pathTrack.id) };
             if (track)
             {
                 Response::Node& sonicMatchNode{ sonicPathNode.createArrayChild("sonicMatch") };
-                const float similarity{ (similarityRange > 0.0f) ? 1.0f - (pathTrack.distance - minDist) / similarityRange : 1.0f };
-                sonicMatchNode.setAttribute("similarity", similarity);
+                sonicMatchNode.setAttribute("similarity", 1.0F - pathTrack.distance);
                 sonicMatchNode.addArrayChild("entry", createSongNode(context, track, context.getUser()));
             }
         }
