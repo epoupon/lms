@@ -689,14 +689,13 @@ namespace lms::api::subsonic
         auto transaction{ context.getDbSession().createReadTransaction() };
 
         Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
-        Response::Node& sonicMatchesNode{ response.createNode("sonicMatches") };
 
         for (const auto& similarTrack : similarTracks)
         {
             const Track::pointer track{ Track::find(context.getDbSession(), similarTrack.id) };
             if (track)
             {
-                Response::Node& sonicMatchNode{ sonicMatchesNode.createArrayChild("sonicMatch") };
+                Response::Node& sonicMatchNode{ response.createArrayNode("sonicMatch") };
                 sonicMatchNode.setAttribute("similarity", 1.0F - similarTrack.distance);
                 sonicMatchNode.addArrayChild("entry", createSongNode(context, track, context.getUser()));
             }
@@ -712,23 +711,22 @@ namespace lms::api::subsonic
         const auto endTrackId{ getMandatoryParameterAs<TrackId>(context.getParameters(), "endSongId") };
 
         // Optional params
-        std::size_t maxCount{ getParameterAs<std::size_t>(context.getParameters(), "maxCount").value_or(25) };
-        if (maxCount > defaultMaxCountSize)
-            throw ParameterValueTooHighGenericError{ "maxCount", defaultMaxCountSize };
+        std::size_t count{ getParameterAs<std::size_t>(context.getParameters(), "count").value_or(25) };
+        if (count > defaultMaxCountSize)
+            throw ParameterValueTooHighGenericError{ "count", defaultMaxCountSize };
 
-        const auto pathTracks{ core::Service<recommendation::IRecommendationService>::get()->findTrackSimilarityPath(startTrackId, endTrackId, maxCount) };
+        const auto pathTracks{ core::Service<recommendation::IRecommendationService>::get()->findTrackSimilarityPath(startTrackId, endTrackId, count) };
 
         auto transaction{ context.getDbSession().createReadTransaction() };
 
         Response response{ Response::createOkResponse(context.getServerProtocolVersion()) };
-        Response::Node& sonicPathNode{ response.createNode("sonicPath") };
 
         for (const auto& pathTrack : pathTracks)
         {
             const Track::pointer track{ Track::find(context.getDbSession(), pathTrack.id) };
             if (track)
             {
-                Response::Node& sonicMatchNode{ sonicPathNode.createArrayChild("sonicMatch") };
+                Response::Node& sonicMatchNode{ response.createArrayNode("sonicMatch") };
                 sonicMatchNode.setAttribute("similarity", 1.0F - pathTrack.distance);
                 sonicMatchNode.addArrayChild("entry", createSongNode(context, track, context.getUser()));
             }
